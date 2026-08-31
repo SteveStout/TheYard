@@ -1,33 +1,33 @@
-// TheYard deployment. Target design (ADR-001): App Service origin behind Azure
-// Front Door, origin locked to the Front Door ID header.
-// Naming standard (ADR-003): UPPERCASE, TYPE-WORKLOAD-OWNER(-SUFFIX), owner tag
-// SS. Platform-forced lowercase exceptions: the container registry and any
-// hostname-bearing name (Front Door endpoint, Container Apps resources).
-// Switches carried from the trial-day journey (ADR-001 addenda, ADR-004):
-//   computeKind appservice|containerapp, skuName, enableFrontDoor, minReplicas.
+// TheYard deployment. Production target (ADR-001): App Service origin behind
+// Azure Front Door with the origin locked to the Front Door ID header.
+// Author decision 2026-08-31: on the trial subscription, run WITHOUT Front
+// Door or any restricted resource; the target stays the documented best
+// practice for production and activates by parameters after an upgrade.
+// computeKind: appservice (target) | containerapp | aci (trial-compatible).
 
 @description('Workload token used to derive resource names')
 param baseName string = 'theyard'
 
-@description('Owner tag appended to resource names per the naming ADR')
+@description('Owner tag appended to resource names per ADR-003')
 param ownerTag string = 'SS'
 
 @description('Region for regional resources; Front Door itself is global')
 param location string = resourceGroup().location
 
-@description('Container image; defaults to a public placeholder until the real image lands in ACR')
+@description('Container image; the placeholder default is replaced by the ACR image once built')
 param appImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-@description('Deploy Front Door and lock the origin to it')
+@description('Deploy Front Door and lock the origin to it (production best practice; requires pay-as-you-go)')
 param enableFrontDoor bool = true
 
 @description('App Service plan SKU when computeKind is appservice')
 param skuName string = 'B1'
 
-@description('appservice is the ADR-001 target; containerapp was the trial-compatible path')
+@description('Compute platform')
 @allowed([
   'appservice'
   'containerapp'
+  'aci'
 ])
 param computeKind string = 'appservice'
 
@@ -39,6 +39,7 @@ var upperTag = toUpper('${baseName}-${ownerTag}')
 var acrName = toLower('cr${baseName}${ownerTag}${suffix}')
 var useAppService = computeKind == 'appservice'
 var useContainerApp = computeKind == 'containerapp'
+var useAci = computeKind == 'aci'
 
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: acrName
@@ -126,7 +127,6 @@ resource acrPullSite 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (
   }
 }
 
-// Container Apps branch: hostname-bearing, so lowercase by platform rule.
 resource caEnv 'Microsoft.App/managedEnvironments@2024-03-01' = if (useContainerApp) {
   name: toLower('cae-${baseName}-${ownerTag}')
   location: location
@@ -181,6 +181,77 @@ resource acrPullCa 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (us
     principalId: caApp!.identity.principalId
     principalType: 'ServicePrincipal'
   }
+}
+
+// ACI branch: user-assigned identity because the container group needs a
+// registry credential at creation time, and a system identity cannot grant
+// itself AcrPull before it exists.
+resource uai 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (useAci) {
+  name: toLower('id-${baseName}-${ownerTag}')
+  location: location
+}
+
+resource acrPullUai 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useAci) {
+  name: guid(acr.id, 'uai', 'acrpull')
+  scope: acr
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+    principalId: uai!.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource aci 'Microsoft.ContainerInstance/containerGroups@2023-05-01' = if (useAci) {
+  name: toLower('aci-${baseName}-${ownerTag}')
+  location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${uai!.id}': {}
+    }
+  }
+  properties: {
+    osType: 'Linux'
+    restartPolicy: 'Always'
+    ipAddress: {
+      type: 'Public'
+      dnsNameLabel: toLower('${baseName}-${ownerTag}-${suffix}')
+      ports: [
+        {
+          protocol: 'TCP'
+          port: 8080
+        }
+      ]
+    }
+    imageRegistryCredentials: [
+      {
+        server: acr.properties.loginServer
+        identity: uai!.id
+      }
+    ]
+    containers: [
+      {
+        name: 'theyard'
+        properties: {
+          image: appImage
+          ports: [
+            {
+              port: 8080
+            }
+          ]
+          resources: {
+            requests: {
+              cpu: 1
+              memoryInGB: json('1.5')
+            }
+          }
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    acrPullUai
+  ]
 }
 
 resource fdEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = if (enableFrontDoor) {
@@ -250,6 +321,5 @@ resource fdRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = if (e
 
 output acrNameOut string = acr.name
 output acrLoginServer string = acr.properties.loginServer
-output appHost string = useContainerApp ? caApp!.properties.configuration.ingress.fqdn : site!.properties.defaultHostName
-output appName string = useContainerApp ? caApp!.name : site!.name
-output frontDoorHost string = enableFrontDoor ? fdEndpoint!.properties.hostName : 'disabled'
+output appName string = useAci ? aci!.name : (useContainerApp ? caApp!.name : site!.name)
+output appUrl string = useAci ? 'http://${aci!.properties.ipAddress.fqdn}:8080' : (useContainerApp ? 'https://${caApp!.properties.configuration.ingress.fqdn}' : 'https://${site!.properties.defaultHostName}')

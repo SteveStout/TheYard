@@ -72,3 +72,12 @@ logic shows up as zero trial quota on paid compute tiers.
 One upgrade to pay-as-you-go lifts all of it: skuName returns to B1 and
 enableFrontDoor flips to true, which also applies the origin lock. The
 template already carries both parameters.
+
+## Decision under trial constraints, 2026-08-31 (the author's call)
+
+Proceed WITHOUT Front Door or any trial-restricted resource for now, and say
+so plainly here: Front Door with a locked origin remains the best practice
+for production and is exactly what this template deploys after a subscription
+upgrade (enableFrontDoor=true, computeKind=appservice, skuName=B1). Until
+then the app runs on the least-restricted compute the subscription accepts,
+publicly reachable by design, carrying no secrets and no persistent user data.

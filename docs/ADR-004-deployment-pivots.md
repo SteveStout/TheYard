@@ -43,3 +43,10 @@ portable today; going live is gated on one account decision (upgrade to
 pay-as-you-go, or wait). Every wall above was measured, recorded, and
 parameterized around the same day it was hit, which is the honest story this
 repository tells an interviewer.
+## Addendum: phase 1 realized on Container Instances
+
+With Front Door and App Service off the table and Container Apps expiring
+revisions, phase 1 ships on Azure Container Instances: one container group,
+public FQDN, plain HTTP on port 8080, pulled from ACR with a user-assigned
+identity. No TLS and no edge is acceptable for a demo artifact and is exactly
+the gap phase 2 closes.
