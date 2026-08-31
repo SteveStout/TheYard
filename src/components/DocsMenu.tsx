@@ -17,7 +17,7 @@ function ExternalIcon() {
   );
 }
 
-type DocKey = 'readme' | 'dataflow' | 'projects' | 'adrOrigin' | 'adrDocker';
+type DocKey = 'readme' | 'dataflow' | 'projects' | 'adrOrigin' | 'adrDocker' | 'adrNaming' | 'adrPivots';
 
 const DOCS: Record<DocKey, { title: string; url: string }> = {
   readme: { title: 'README', url: '/api/docs/readme' },
@@ -25,6 +25,8 @@ const DOCS: Record<DocKey, { title: string; url: string }> = {
   projects: { title: 'Projects', url: '/api/docs/projects' },
   adrOrigin: { title: 'ADR: Front Door origin', url: '/api/docs/adr-origin' },
   adrDocker: { title: 'ADR: Docker packaging', url: '/api/docs/adr-docker' },
+  adrNaming: { title: 'ADR: Azure naming', url: '/api/docs/adr-naming' },
+  adrPivots: { title: 'ADR: Deployment strategy', url: '/api/docs/adr-pivots' },
 };
 
 /**
@@ -105,6 +107,12 @@ export function DocsMenu() {
           </button>
           <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrDocker')}>
             ADR: Docker packaging
+          </button>
+          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrNaming')}>
+            ADR: Azure naming
+          </button>
+          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrPivots')}>
+            ADR: Deployment strategy
           </button>
           <a
             className={styles.item}

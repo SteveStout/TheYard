@@ -102,3 +102,28 @@ interview days.
 - When the free trial exhausts: upgrade to pay-as-you-go or let it lapse?
 - Is the equipment-domain rebrand permanently dead, or a later fork once the
   URL is live?
+## Deployment appendix, added end of day one
+
+The container went to Azure eight times today and the walls were all measured:
+Front Door is forbidden on the free trial (verbatim quote in ADR-001), App
+Service quota is zero at every tier in two regions, and Container Apps
+expired revision provisioning three times across two regions with the stock
+hello-world image. Full story: docs/ADR-004-deployment-pivots.md.
+
+Open fork, decision owner me: upgrade the subscription to pay-as-you-go
+(unlocks the ADR-001 target: B1 + Front Door + origin lock, deployed by
+flipping two parameters), or park the live URL until the upgrade happens.
+
+Standing infrastructure right now: resource group RG-THEYARD-SS (westus2)
+holding the registry, a Container Apps environment, and a failed app. It
+costs approximately nothing while idle. Teardown is one command:
+
+    az group delete --name RG-THEYARD-SS --yes
+
+Deploy (after upgrade), also one command:
+
+    az deployment group create --resource-group RG-THEYARD-SS --template-file infra/main.bicep --parameters skuName=B1 enableFrontDoor=true
+
+Housekeeping: two runner windows ended the day executing the queue in
+parallel (log lines doubled); close one. The queue and logs live in
+C:\Claude\Claude_Job_Hunt.
