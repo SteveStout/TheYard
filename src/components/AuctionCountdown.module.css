@@ -1,0 +1,76 @@
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.live {
+  color: var(--color-success);
+}
+
+.live .dot {
+  background: var(--color-live);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.upcoming {
+  color: var(--color-accent);
+}
+
+.upcoming .dot {
+  background: var(--color-accent);
+}
+
+.ended {
+  color: var(--color-text-faint);
+}
+
+.ended .dot {
+  background: var(--color-border-strong);
+}
+
+/* Dark translucent chip for use on top of images. */
+.overlay {
+  background: rgba(15, 23, 42, 0.78);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+}
+
+.overlay.live {
+  color: #4ade80;
+}
+
+.overlay.upcoming {
+  color: #93c5fd;
+}
+
+.overlay.ended {
+  color: #cbd5e1;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live .dot {
+    animation: none;
+  }
+}

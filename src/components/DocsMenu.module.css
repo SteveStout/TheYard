@@ -1,0 +1,232 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.trigger {
+  appearance: none;
+  background: none;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  transition: color var(--transition-fast);
+}
+
+.trigger:hover,
+.trigger[aria-expanded='true'] {
+  color: var(--color-heading);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 220px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+}
+
+.item {
+  appearance: none;
+  background: none;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-align: left;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.dialog {
+  width: min(760px, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100vh - 2 * var(--space-6));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background: rgba(10, 27, 95, 0.45);
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+}
+
+.dialogTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.close {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: var(--space-2);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+}
+
+.close:hover {
+  color: var(--color-heading);
+  background: var(--color-neutral-soft);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--color-accent);
+}
+
+.dialogBody {
+  padding: var(--space-5) var(--space-6) var(--space-7);
+  overflow-y: auto;
+}
+
+.docLoading,
+.docError {
+  color: var(--color-text-muted);
+}
+
+/* Markdown prose, kept consistent with the app's tokens. */
+.prose {
+  font-size: var(--text-md);
+  line-height: 1.65;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+  margin: var(--space-6) 0 var(--space-3);
+  line-height: 1.25;
+}
+
+.prose h1 {
+  font-size: var(--text-2xl);
+  margin-top: 0;
+}
+
+.prose h2 {
+  font-size: var(--text-xl);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+
+.prose h3 {
+  font-size: var(--text-lg);
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 var(--space-3);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: var(--space-6);
+}
+
+.prose li {
+  margin-bottom: var(--space-1);
+}
+
+.prose code {
+  font-family: Consolas, 'SF Mono', Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-1);
+}
+
+.prose pre {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin: 0 0 var(--space-4);
+}
+
+.prose pre code {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.prose a {
+  color: var(--color-accent);
+}
+
+.prose strong {
+  font-weight: var(--weight-semibold);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.prose th,
+.prose td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+}
+
+.prose th {
+  background: var(--color-surface-muted);
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}

@@ -1,0 +1,13 @@
+@host = http://localhost:5210
+
+GET {{host}}/api/vehicles
+Accept: application/json
+
+###
+
+GET {{host}}/api/vehicles/3cc3b89e-68b0-479e-af39-bca6251ea0b4
+Accept: application/json
+
+###
+
+GET {{host}}/api/images/suv-01.jpg
