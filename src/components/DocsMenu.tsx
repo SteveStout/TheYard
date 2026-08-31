@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
 import styles from './DocsMenu.module.css';
 
@@ -17,17 +17,19 @@ function ExternalIcon() {
   );
 }
 
-type DocKey = 'readme' | 'dataflow' | 'projects';
+type DocKey = 'readme' | 'dataflow' | 'projects' | 'adrOrigin' | 'adrDocker';
 
 const DOCS: Record<DocKey, { title: string; url: string }> = {
   readme: { title: 'README', url: '/api/docs/readme' },
   dataflow: { title: 'Data Flow', url: '/api/docs/dataflow' },
   projects: { title: 'Projects', url: '/api/docs/projects' },
+  adrOrigin: { title: 'ADR: Front Door origin', url: '/api/docs/adr-origin' },
+  adrDocker: { title: 'ADR: Docker packaging', url: '/api/docs/adr-docker' },
 };
 
 /**
  * The header's About dropdown: view the project docs in-app (markdown,
- * served by the API), open the author's résumé PDF, or visit the repository.
+ * served by the API), open the author's rÃ©sumÃ© PDF, or visit the repository.
  */
 export function DocsMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,7 +66,7 @@ export function DocsMenu() {
       const response = await fetch(DOCS[key].url);
       if (!response.ok) throw new Error(String(response.status));
       const markdown = await response.text();
-      // Our own docs — trusted, repo-authored content.
+      // Our own docs â€” trusted, repo-authored content.
       const html = await marked.parse(markdown);
       setDocHtml((prev) => ({ ...prev, [key]: html }));
     } catch {
@@ -98,6 +100,12 @@ export function DocsMenu() {
           <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('projects')}>
             Project structure
           </button>
+          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrOrigin')}>
+            ADR: Front Door origin
+          </button>
+          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrDocker')}>
+            ADR: Docker packaging
+          </button>
           <a
             className={styles.item}
             role="menuitem"
@@ -106,7 +114,7 @@ export function DocsMenu() {
             rel="noreferrer"
             onClick={() => setMenuOpen(false)}
           >
-            Steven's résumé (PDF)
+            Steven's rÃ©sumÃ© (PDF)
             <ExternalIcon />
           </a>
           <a
@@ -148,10 +156,10 @@ export function DocsMenu() {
         <div className={styles.dialogBody}>
           {docError ? (
             <p className={styles.docError}>
-              Couldn't load the {DOCS[activeDoc].title} — is the API running?
+              Couldn't load the {DOCS[activeDoc].title} â€” is the API running?
             </p>
           ) : docHtml[activeDoc] === undefined ? (
-            <p className={styles.docLoading}>Loading…</p>
+            <p className={styles.docLoading}>Loadingâ€¦</p>
           ) : (
             <div className={styles.prose} dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }} />
           )}

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.FileProviders;
 using TheBlock.Api;
 using TheBlock.Application;
@@ -15,7 +15,7 @@ using TheBlock.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 string contentRoot = builder.Environment.ContentRootPath;
-// Walk up to the repo root rather than assuming a fixed depth — keeps
+// Walk up to the repo root rather than assuming a fixed depth â€” keeps
 // `dotnet run`, tests, and published output all working from one line.
 string dataPath = FindUpward(contentRoot, Path.Combine("data", "vehicles.json"));
 string readmePath = FindUpward(contentRoot, "README.md");
@@ -26,7 +26,7 @@ string manifestPath = Path.Combine(contentRoot, "photo-manifest.json");
 string imagesRoot = Path.Combine(contentRoot, "wwwroot", "images");
 
 // The 200-record seed dataset is deterministically expanded to TargetCount
-// synthetic records (default 100,000) — scale testing without a giant file.
+// synthetic records (default 100,000) â€” scale testing without a giant file.
 int targetCount = builder.Configuration.GetValue("Inventory:TargetCount", 100_000);
 builder.Services.AddSingleton<IVehicleSource>(
     new SyntheticVehicleSource(new JsonFileVehicleSource(dataPath), targetCount));
@@ -41,7 +41,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 var app = builder.Build();
 
 // Materialize the inventory now so a bad dataset fails the process at
-// startup, visibly — not as a 500 on the first request.
+// startup, visibly â€” not as a 500 on the first request.
 app.Services.GetRequiredService<InventoryService>().GetAll();
 
 // The dataset is snake_case; keep the wire shape identical to the source file.
@@ -87,7 +87,7 @@ app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, s
 });
 
 // ---------------------------------------------------------------------------
-// Bidding — validated server-side by the domain's BidRules. Single anonymous
+// Bidding â€” validated server-side by the domain's BidRules. Single anonymous
 // buyer; state lives in API memory (isolated demo).
 // ---------------------------------------------------------------------------
 
@@ -114,7 +114,7 @@ app.MapDelete("/api/bids", (BidService bids) =>
 });
 
 // ---------------------------------------------------------------------------
-// About documents — the project README and the author's résumé, surfaced in
+// About documents â€” the project README and the author's rÃ©sumÃ©, surfaced in
 // the UI's About menu.
 // ---------------------------------------------------------------------------
 
@@ -126,6 +126,12 @@ app.MapGet("/api/docs/dataflow", () =>
 
 app.MapGet("/api/docs/projects", () =>
     Results.Text(File.ReadAllText(projectsPath), "text/markdown"));
+
+app.MapGet("/api/docs/adr-origin", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-001-front-door-origin.md"))), "text/markdown"));
+
+app.MapGet("/api/docs/adr-docker", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-002-docker-packaging.md"))), "text/markdown"));
 
 app.MapGet("/api/docs/resume", () =>
     Results.File(resumePath, "application/pdf"));
