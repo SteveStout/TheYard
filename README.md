@@ -318,3 +318,37 @@ And beyond that:
   plus a fuller accessibility audit
 - A real image pipeline (srcset, blur-up placeholders) once photography replaces the
   representative stock photos
+
+## Running with Docker
+
+The repo ships a multi-stage Dockerfile that builds the frontend, publishes the API,
+and produces a single runtime image serving both on port 8080.
+
+Build the image:
+
+```
+docker build -t theyard:local .
+```
+
+Run it:
+
+```
+docker run --rm -d -p 8080:8080 --name theyard theyard:local
+```
+
+Then open http://localhost:8080. The API serves the SPA with a fallback route, so deep
+links to item URLs work. A container HEALTHCHECK probes /api/facets every 30 seconds;
+`docker ps` shows the container as healthy once the app is accepting traffic.
+
+Stop it:
+
+```
+docker stop theyard
+```
+
+Notes:
+
+- The final image runs as the base image's built-in non-root `app` user.
+- Building needs no local Node or .NET; both toolchains live in intermediate stages.
+- The final image carries the published API plus README.md, docs/ and data/, because
+  the app serves the docs and loads the dataset at runtime.

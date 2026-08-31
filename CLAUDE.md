@@ -44,6 +44,7 @@ React.**
 
 - `npm install` then `npm start` runs the API and the frontend together.
 - API alone: `npm run api`. Frontend alone: `npm run dev`.
+- Docker: `docker build -t theyard:local .` then `docker run --rm -d -p 8080:8080 --name theyard theyard:local` serves everything at http://localhost:8080; `docker stop theyard` stops it.
 
 ## Environment
 
