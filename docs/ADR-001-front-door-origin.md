@@ -44,3 +44,13 @@ rejected at the origin.
   Private Link; documented here, deliberately not purchased at this size.
 - A custom domain and TLS terminate at the edge later without touching the
   origin.
+## Addendum, 2026-08-31 deploy day
+
+Measured during the first deployment: Azure rejects Front Door creation on
+free-trial subscriptions ("Free Trial and Student account is forbidden for
+Azure Frontdoor resources"), and Central US had no B1 capacity at that moment.
+Interim state shipped instead: enableFrontDoor=false, the app public at its
+azurewebsites.net address in another region. The decision above stands; it
+activates by upgrading the subscription to pay-as-you-go and redeploying with
+enableFrontDoor=true, which also applies the origin lock. Until then the
+origin is deliberately, temporarily public.

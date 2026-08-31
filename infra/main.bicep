@@ -1,6 +1,12 @@
-// TheYard minimal deployment: ACR + App Service (container) behind Azure Front Door.
-// Decisions and tradeoffs are recorded in docs/ADR-001-front-door-origin.md.
-// Deliberately minimal for the first deploy; monitoring and polish come later.
+// TheYard deployment: ACR + App Service (container), optionally fronted by
+// Azure Front Door. Decisions in docs/ADR-001-front-door-origin.md.
+//
+// Reality check, measured 2026-08-31: free-trial subscriptions are FORBIDDEN
+// from creating Front Door resources ("Free Trial and Student account is
+// forbidden for Azure Frontdoor resources"). Until the subscription upgrades
+// to pay-as-you-go, deploy with enableFrontDoor=false and the app serves from
+// its azurewebsites.net address; flip it to true after the upgrade to add the
+// edge plus the origin lock without touching anything else.
 
 @description('Base name used to derive resource names')
 param baseName string = 'theyard'
@@ -11,14 +17,14 @@ param location string = resourceGroup().location
 @description('Container image; defaults to a public placeholder until the real image lands in ACR')
 param appImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
+@description('Deploy Front Door and lock the origin to it. Requires a pay-as-you-go subscription.')
+param enableFrontDoor bool = true
+
 var suffix = uniqueString(resourceGroup().id)
 var acrName = 'cr${baseName}${suffix}'
-var planName = 'plan-${baseName}'
-var siteName = 'app-${baseName}-${suffix}'
 
 // Container registry. Basic tier, admin user OFF: the web app pulls with its
-// managed identity via the AcrPull role assignment below, which is the answer
-// to the interview question about registry credentials.
+// managed identity via the AcrPull role assignment below.
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: acrName
   location: location
@@ -30,9 +36,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   }
 }
 
-// Front Door profile is declared before the site so the site's access
-// restriction can pin this profile's unique frontDoorId header value.
-resource fdProfile 'Microsoft.Cdn/profiles@2024-02-01' = {
+resource fdProfile 'Microsoft.Cdn/profiles@2024-02-01' = if (enableFrontDoor) {
   name: 'fd-${baseName}'
   location: 'global'
   sku: {
@@ -42,7 +46,7 @@ resource fdProfile 'Microsoft.Cdn/profiles@2024-02-01' = {
 
 // Linux App Service plan. B1: smallest tier with always-on, predictable cost.
 resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
-  name: planName
+  name: 'plan-${baseName}'
   location: location
   kind: 'linux'
   sku: {
@@ -53,11 +57,11 @@ resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
   }
 }
 
-// The web app: single container, system-assigned identity, and the origin
-// lock: default Deny, allow only Front Door's service tag AND only when the
-// X-Azure-FDID header matches THIS profile, so other Front Doors bounce too.
+// The web app: single container, system-assigned identity. The Front Door
+// origin lock lives in a separate conditional config resource below so this
+// resource stays valid whether or not Front Door exists.
 resource site 'Microsoft.Web/sites@2023-12-01' = {
-  name: siteName
+  name: 'app-${baseName}-${suffix}'
   location: location
   identity: {
     type: 'SystemAssigned'
@@ -75,22 +79,31 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
           value: '8080'
         }
       ]
-      ipSecurityRestrictionsDefaultAction: 'Deny'
-      ipSecurityRestrictions: [
-        {
-          name: 'AllowFrontDoorOnly'
-          priority: 100
-          action: 'Allow'
-          tag: 'ServiceTag'
-          ipAddress: 'AzureFrontDoor.Backend'
-          headers: {
-            'x-azure-fdid': [
-              fdProfile.properties.frontDoorId
-            ]
-          }
-        }
-      ]
     }
+  }
+}
+
+// Origin lock, only when Front Door exists: default Deny, allow only Front
+// Door's service tag AND only when X-Azure-FDID matches THIS profile.
+resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = if (enableFrontDoor) {
+  parent: site
+  name: 'web'
+  properties: {
+    ipSecurityRestrictionsDefaultAction: 'Deny'
+    ipSecurityRestrictions: [
+      {
+        name: 'AllowFrontDoorOnly'
+        priority: 100
+        action: 'Allow'
+        tag: 'ServiceTag'
+        ipAddress: 'AzureFrontDoor.Backend'
+        headers: {
+          'x-azure-fdid': [
+            fdProfile!.properties.frontDoorId
+          ]
+        }
+      }
+    ]
   }
 }
 
@@ -105,7 +118,7 @@ resource acrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
-resource fdEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = {
+resource fdEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = if (enableFrontDoor) {
   parent: fdProfile
   name: 'fde-${baseName}-${suffix}'
   location: 'global'
@@ -114,7 +127,7 @@ resource fdEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = {
   }
 }
 
-resource fdOriginGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
+resource fdOriginGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = if (enableFrontDoor) {
   parent: fdProfile
   name: 'og-app'
   properties: {
@@ -123,8 +136,6 @@ resource fdOriginGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
       successfulSamplesRequired: 3
       additionalLatencyInMilliseconds: 50
     }
-    // The probe is what keeps the origin permanently awake; that tradeoff is
-    // accepted in ADR-001. 100s is the gentlest useful cadence.
     healthProbeSettings: {
       probePath: '/api/facets'
       probeRequestType: 'GET'
@@ -134,7 +145,7 @@ resource fdOriginGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
   }
 }
 
-resource fdOrigin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
+resource fdOrigin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = if (enableFrontDoor) {
   parent: fdOriginGroup
   name: 'app-origin'
   properties: {
@@ -149,7 +160,7 @@ resource fdOrigin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
   }
 }
 
-resource fdRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
+resource fdRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = if (enableFrontDoor) {
   parent: fdEndpoint
   name: 'route-all'
   dependsOn: [
@@ -157,7 +168,7 @@ resource fdRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
   ]
   properties: {
     originGroup: {
-      id: fdOriginGroup.id
+      id: fdOriginGroup!.id
     }
     supportedProtocols: [
       'Http'
@@ -176,4 +187,4 @@ output acrNameOut string = acr.name
 output acrLoginServer string = acr.properties.loginServer
 output webAppName string = site.name
 output webAppHost string = site.properties.defaultHostName
-output frontDoorUrl string = 'https://${fdEndpoint.properties.hostName}'
+output frontDoorEnabled bool = enableFrontDoor
