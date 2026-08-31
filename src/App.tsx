@@ -309,7 +309,7 @@ export default function App() {
             <svg className={styles.brandMark} viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path d="M13 2 5 14h5l-2 8 8-12h-5l2-8z" fill="currentColor" />
             </svg>
-            The Block
+            The Yard
             <span className={styles.brandSub}>Vehicle Auctions</span>
           </button>
           <div className={styles.headerActions}>
