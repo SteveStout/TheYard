@@ -63,7 +63,7 @@ test('the About menu shows the README in-app and links the résumé PDF', async 
   await page.goto('/');
   await page.getByRole('button', { name: 'About' }).click();
   await page.getByRole('menuitem', { name: 'Project README' }).click();
-  await expect(page.getByRole('dialog').getByRole('heading', { name: /The Block/ })).toBeVisible();
+  await expect(page.getByRole('dialog').getByRole('heading', { name: /TheYard/ })).toBeVisible();
   await page.getByRole('dialog').getByLabel('Close').click();
   await expect(page.getByRole('dialog')).toBeHidden();
 
@@ -87,7 +87,7 @@ test('the About menu shows the README in-app and links the résumé PDF', async 
   await page.getByRole('button', { name: 'About' }).click();
   await expect(page.getByRole('menuitem', { name: 'GitHub repository' })).toHaveAttribute(
     'href',
-    'https://github.com/SteveStout/CodingChallengeOpenLane'
+    'https://github.com/SteveStout/TheYard'
   );
 });
 

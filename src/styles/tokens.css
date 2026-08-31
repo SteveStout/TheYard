@@ -3,12 +3,12 @@
  * typography, and shadow. Imported once at the app root; every component
  * module consumes these variables.
  *
- * Palette and type mirror openlane.com's design language: "Onward" navy
- * #0A1B5F for headings, OPENLANE blue #0061FF for actions, silver neutrals,
+ * Palette and type follow a clean commercial automotive aesthetic: deep navy
+ * #0A1B5F for headings, strong blue #0061FF for actions, silver neutrals,
  * Poppins, and pill-shaped buttons.
  */
 :root {
-  /* Color — OPENLANE navy/blue over silver neutrals */
+  /* Color — deep navy/blue over silver neutrals */
   --color-bg: #f5f5f5;
   --color-surface: #ffffff;
   --color-surface-muted: #f9f9f9;

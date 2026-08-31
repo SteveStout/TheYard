@@ -243,7 +243,7 @@ public class ApiIntegrationTests(WebApplicationFactory<Program> factory)
     {
         var readme = await _client.GetAsync("/api/docs/readme");
         Assert.Equal(HttpStatusCode.OK, readme.StatusCode);
-        Assert.Contains("The Block", await readme.Content.ReadAsStringAsync());
+        Assert.Contains("TheYard", await readme.Content.ReadAsStringAsync());
 
         var dataflow = await _client.GetAsync("/api/docs/dataflow");
         Assert.Equal(HttpStatusCode.OK, dataflow.StatusCode);

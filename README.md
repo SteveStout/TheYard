@@ -1,9 +1,9 @@
-# The Block — Buyer Prototype
+# TheYard — Used-Vehicle Auction Platform
 
-The buyer side of a used-vehicle auction platform, built for the OPENLANE coding challenge:
-browse 100,000 listings, inspect a vehicle in detail, and place bids. React frontend backed
-by a .NET 10 API that owns the data, the search, and the auction rules. The original
-challenge brief is preserved in git history.
+TheYard is my portfolio implementation of a used-vehicle auction platform: browse a large
+inventory, inspect a vehicle in detail, and place bids in a polished auction flow. The
+frontend is a React app backed by a .NET 10 API that owns the data, the search, and the
+auction rules.
 
 ## How to Run
 
@@ -120,10 +120,10 @@ can happen without leaving it.
 
 - **Frontend:** React 19 + TypeScript (strict) on Vite; plain CSS via CSS Modules over a
   single design-token sheet (`src/styles/tokens.css`); Vitest for tests. No component,
-  icon, or CSS libraries — icons are small inline SVGs. The visual language mirrors
-  openlane.com: Onward navy `#0A1B5F`, OPENLANE blue `#0061FF`, silver neutrals, pill
-  buttons, and Poppins (a Google Fonts stylesheet link — the one external asset — with a
-  system-font fallback).
+  icon, or CSS libraries — icons are small inline SVGs. The visual language uses a clean
+  commercial automotive palette with deep navy headings `#0A1B5F`, strong blue actions
+  `#0061FF`, silver neutrals, pill buttons, and Poppins (a Google Fonts stylesheet link —
+  the one external asset — with a system-font fallback).
 - **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheBlock.Data`
   (the pure data records — no dependencies), `TheBlock.Domain` (photo selection, auction
   schedule, filter and bid rules), `TheBlock.Application` (the `InventoryService` and

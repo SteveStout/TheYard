@@ -18,7 +18,7 @@ const THUMB_WIDTH = 1280;
 const PER_STYLE = 10;
 const PER_QUERY = 2;
 const USER_AGENT =
-  'TheBlockChallengePrototype/1.0 (OPENLANE coding challenge; one-time asset fetch)';
+  'TheYardPortfolio/1.0 (used-vehicle auction asset fetch)';
 
 // Generation codes (NX4, G20, D41...) appear in Commons filenames and keep
 // results on current models — the dataset spans 2016–2026.

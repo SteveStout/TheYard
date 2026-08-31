@@ -72,7 +72,7 @@ React + TypeScript, deliberately thin — no business math runs in the browser:
   - `format.ts` — currency, odometer, countdown, and date formatting (one
     CURRENCY/LOCALE constant).
 - `styles/tokens.css` — every color, space, radius, type, and shadow token; the
-  OPENLANE-inspired theme lives here, so a reskin is one file.
+  navy-and-blue theme lives here, so a reskin is one file.
 - `tests/e2e/` (repo root) — Playwright smokes that prove the whole stack end to end.
 
 ### Its architecture

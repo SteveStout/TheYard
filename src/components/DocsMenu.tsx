@@ -112,7 +112,7 @@ export function DocsMenu() {
           <a
             className={styles.item}
             role="menuitem"
-            href="https://github.com/SteveStout/CodingChallengeOpenLane"
+            href="https://github.com/SteveStout/TheYard"
             target="_blank"
             rel="noreferrer"
             onClick={() => setMenuOpen(false)}
