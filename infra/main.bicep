@@ -1,12 +1,13 @@
-// TheYard deployment: ACR + App Service (container), optionally fronted by
-// Azure Front Door. Decisions in docs/ADR-001-front-door-origin.md.
-//
-// Reality check, measured 2026-08-31: free-trial subscriptions are FORBIDDEN
-// from creating Front Door resources ("Free Trial and Student account is
-// forbidden for Azure Frontdoor resources"). Until the subscription upgrades
-// to pay-as-you-go, deploy with enableFrontDoor=false and the app serves from
-// its azurewebsites.net address; flip it to true after the upgrade to add the
-// edge plus the origin lock without touching anything else.
+// TheYard deployment. Target design (ADR-001): App Service origin behind Azure
+// Front Door with the origin locked to the Front Door ID header. Both of those
+// are forbidden or quota-zero on a free-trial subscription (measured
+// 2026-08-31, quoted in the ADR addenda), so the template carries three
+// switches that describe the whole journey:
+//   computeKind      appservice (target) | containerapp (works on the trial)
+//   skuName          B1 (target) | F1 (was also quota-blocked on the trial)
+//   enableFrontDoor  true (target) | false (forbidden on the trial)
+// Trial deploy: computeKind=containerapp, enableFrontDoor=false.
+// Post-upgrade:  computeKind=appservice, skuName=B1, enableFrontDoor=true.
 
 @description('Base name used to derive resource names')
 param baseName string = 'theyard'
@@ -17,17 +18,24 @@ param location string = resourceGroup().location
 @description('Container image; defaults to a public placeholder until the real image lands in ACR')
 param appImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-@description('Deploy Front Door and lock the origin to it. Requires a pay-as-you-go subscription.')
+@description('Deploy Front Door and lock the origin to it. Requires pay-as-you-go and computeKind=appservice.')
 param enableFrontDoor bool = true
 
-@description('App Service plan SKU. F1 free tier for the trial subscription; B1 or better after upgrade.')
+@description('App Service plan SKU when computeKind is appservice.')
 param skuName string = 'B1'
+
+@description('Compute platform: appservice is the ADR-001 target; containerapp is the trial-compatible path.')
+@allowed([
+  'appservice'
+  'containerapp'
+])
+param computeKind string = 'appservice'
 
 var suffix = uniqueString(resourceGroup().id)
 var acrName = 'cr${baseName}${suffix}'
+var useAppService = computeKind == 'appservice'
+var useContainerApp = computeKind == 'containerapp'
 
-// Container registry. Basic tier, admin user OFF: the web app pulls with its
-// managed identity via the AcrPull role assignment below.
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: acrName
   location: location
@@ -47,8 +55,9 @@ resource fdProfile 'Microsoft.Cdn/profiles@2024-02-01' = if (enableFrontDoor) {
   }
 }
 
-// Linux App Service plan. B1: smallest tier with always-on, predictable cost.
-resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
+// ---------- App Service branch (the ADR-001 target) ----------
+
+resource plan 'Microsoft.Web/serverfarms@2023-12-01' = if (useAppService) {
   name: 'plan-${baseName}'
   location: location
   kind: 'linux'
@@ -60,17 +69,14 @@ resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
   }
 }
 
-// The web app: single container, system-assigned identity. The Front Door
-// origin lock lives in a separate conditional config resource below so this
-// resource stays valid whether or not Front Door exists.
-resource site 'Microsoft.Web/sites@2023-12-01' = {
+resource site 'Microsoft.Web/sites@2023-12-01' = if (useAppService) {
   name: 'app-${baseName}-${suffix}'
   location: location
   identity: {
     type: 'SystemAssigned'
   }
   properties: {
-    serverFarmId: plan.id
+    serverFarmId: plan!.id
     httpsOnly: true
     siteConfig: {
       linuxFxVersion: 'DOCKER|${appImage}'
@@ -86,9 +92,7 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
-// Origin lock, only when Front Door exists: default Deny, allow only Front
-// Door's service tag AND only when X-Azure-FDID matches THIS profile.
-resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = if (enableFrontDoor) {
+resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = if (useAppService && enableFrontDoor) {
   parent: site
   name: 'web'
   properties: {
@@ -110,16 +114,76 @@ resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = if (enableFrontDoor)
   }
 }
 
-// AcrPull for the site identity: pull rights, nothing more.
-resource acrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, site.id, 'acrpull')
+resource acrPullSite 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useAppService) {
+  name: guid(acr.id, 'site', 'acrpull')
   scope: acr
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
-    principalId: site.identity.principalId
+    principalId: site!.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
+
+// ---------- Container Apps branch (trial-compatible; also the shape that
+// scales to zero, which works BECAUSE Front Door is absent here) ----------
+
+resource caEnv 'Microsoft.App/managedEnvironments@2024-03-01' = if (useContainerApp) {
+  name: 'cae-${baseName}'
+  location: location
+  properties: {}
+}
+
+resource caApp 'Microsoft.App/containerApps@2024-03-01' = if (useContainerApp) {
+  name: 'ca-${baseName}-${suffix}'
+  location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    managedEnvironmentId: caEnv!.id
+    configuration: {
+      ingress: {
+        external: true
+        targetPort: 8080
+        transport: 'auto'
+      }
+      registries: [
+        {
+          server: acr.properties.loginServer
+          identity: 'system'
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'theyard'
+          image: appImage
+          resources: {
+            cpu: json('0.5')
+            memory: '1Gi'
+          }
+        }
+      ]
+      scale: {
+        minReplicas: 0
+        maxReplicas: 1
+      }
+    }
+  }
+}
+
+resource acrPullCa 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useContainerApp) {
+  name: guid(acr.id, 'ca', 'acrpull')
+  scope: acr
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+    principalId: caApp!.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// ---------- Front Door details (activate post-upgrade with appservice) ----------
 
 resource fdEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = if (enableFrontDoor) {
   parent: fdProfile
@@ -152,8 +216,8 @@ resource fdOrigin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = if 
   parent: fdOriginGroup
   name: 'app-origin'
   properties: {
-    hostName: site.properties.defaultHostName
-    originHostHeader: site.properties.defaultHostName
+    hostName: site!.properties.defaultHostName
+    originHostHeader: site!.properties.defaultHostName
     httpPort: 80
     httpsPort: 443
     priority: 1
@@ -188,6 +252,6 @@ resource fdRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = if (e
 
 output acrNameOut string = acr.name
 output acrLoginServer string = acr.properties.loginServer
-output webAppName string = site.name
-output webAppHost string = site.properties.defaultHostName
-output frontDoorEnabled bool = enableFrontDoor
+output appHost string = useContainerApp ? caApp!.properties.configuration.ingress.fqdn : site!.properties.defaultHostName
+output appName string = useContainerApp ? caApp!.name : site!.name
+output computeKindOut string = computeKind
