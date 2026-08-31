@@ -54,3 +54,21 @@ azurewebsites.net address in another region. The decision above stands; it
 activates by upgrading the subscription to pay-as-you-go and redeploying with
 enableFrontDoor=true, which also applies the origin lock. Until then the
 origin is deliberately, temporarily public.
+
+## Second addendum, same day
+
+Next measurement: the trial subscription's compute quota for Basic-tier App
+Service is zero (SubscriptionIsOverQuotaForSku, "Current Limit (Total VMs):
+0"), so B1 cannot deploy either. The interim deployment therefore runs on the
+F1 Free tier: cold starts and a daily CPU cap, accepted for a demo link.
+
+The rationale behind these trial restrictions, as we read it: Azure Front Door
+provisions standing capacity across Microsoft's global edge network, so its
+base fee reflects reserved physical infrastructure in many locations at once,
+and Microsoft limits that class of service to verified, paying subscriptions
+rather than spending-capped trial accounts that are often abandoned. The same
+logic shows up as zero trial quota on paid compute tiers.
+
+One upgrade to pay-as-you-go lifts all of it: skuName returns to B1 and
+enableFrontDoor flips to true, which also applies the origin lock. The
+template already carries both parameters.

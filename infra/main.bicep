@@ -20,6 +20,9 @@ param appImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:la
 @description('Deploy Front Door and lock the origin to it. Requires a pay-as-you-go subscription.')
 param enableFrontDoor bool = true
 
+@description('App Service plan SKU. F1 free tier for the trial subscription; B1 or better after upgrade.')
+param skuName string = 'B1'
+
 var suffix = uniqueString(resourceGroup().id)
 var acrName = 'cr${baseName}${suffix}'
 
@@ -50,7 +53,7 @@ resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
   location: location
   kind: 'linux'
   sku: {
-    name: 'B1'
+    name: skuName
   }
   properties: {
     reserved: true
@@ -71,7 +74,7 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
     httpsOnly: true
     siteConfig: {
       linuxFxVersion: 'DOCKER|${appImage}'
-      alwaysOn: true
+      alwaysOn: skuName == 'F1' ? false : true
       acrUseManagedIdentityCreds: true
       appSettings: [
         {
