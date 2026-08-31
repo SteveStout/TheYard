@@ -1,0 +1,38 @@
+# Dependency folders
+node_modules/
+**/node_modules/
+
+# Git and editor metadata
+.git/
+.gitignore
+.vs/
+.vscode/
+
+# Local environment and IDE settings
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.swp
+*.tmp
+*.temp
+*.log
+.env
+.env.*
+
+# Test output and reports
+playwright-report/
+test-results/
+**/playwright-report/
+**/test-results/
+
+# .NET build artifacts and lock files
+**/bin/
+**/obj/
+**/*.binlog
+
+# Docker build file itself should never be sent as part of the build context
+Dockerfile
+
+# Optional: keep the repo clean if local artifacts are generated elsewhere
+*.orig

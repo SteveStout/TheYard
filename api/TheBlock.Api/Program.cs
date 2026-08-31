@@ -159,6 +159,9 @@ IResult HandleBid(
     }, wireFormat);
 }
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(imagesRoot),
@@ -168,6 +171,8 @@ app.UseStaticFiles(new StaticFileOptions
     OnPrepareResponse = ctx =>
         ctx.Context.Response.Headers.CacheControl = "public, max-age=86400",
 });
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
