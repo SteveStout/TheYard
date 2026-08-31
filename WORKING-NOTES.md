@@ -127,3 +127,20 @@ Deploy (after upgrade), also one command:
 Housekeeping: two runner windows ended the day executing the queue in
 parallel (log lines doubled); close one. The queue and logs live in
 C:\Claude\Claude_Job_Hunt.
+
+## LIVE, end of day one
+
+The app is deployed and serving from Azure:
+
+    http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
+
+How it finally landed: Azure Container Instances in RG-THEYARD-SS (westus2),
+one container group, pulled from ACR with a user-assigned identity. One more
+trial wall was measured on the way: ACR Tasks (az acr build) is not permitted
+on this subscription either, so the locally built and verified image was
+pushed with docker push after az acr login (AAD token, admin user still off).
+
+Serving plain HTTP on port 8080 by design for phase 1; phase 2 (post-upgrade)
+adds App Service + Front Door + TLS + the origin lock by flipping parameters.
+Redeploy: the az deployment command above with computeKind=aci. Teardown:
+az group delete --name RG-THEYARD-SS --yes (takes the live URL with it).
