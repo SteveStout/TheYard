@@ -4,7 +4,8 @@ TheYard is on the internet at https://theyard.stevenstout.biz. This page is the
 parent record for how that works, written for a hiring manager or anyone
 learning how a small production setup fits together. The records under it in
 this menu are its children: read this page for the shape, open a child for the
-full reasoning behind one decision.
+full reasoning behind one decision. Everything, the infrastructure code
+included, is served from these menus; nothing requires opening the repository.
 
 ## Websites and resources used
 
@@ -43,39 +44,19 @@ certificate closes that hop end to end.
 ## Why not Front Door today
 
 The free trial refuses to create it, and that was measured rather than assumed
-(child 4). The registrar also refuses nameserver changes, which rules out
+(see ADR: Deployment strategy). The registrar also refuses nameserver changes, which rules out
 Cloudflare's free tier until the domain can transfer, earliest late October
 2026. The pattern survived both walls. Only the vendor is temporary.
 
-## Phase 2
+## How this would be hosted in production
 
-Upgrade the subscription, flip the parameters in infra/main.bicep, and point
-the same subdomain at Front Door. The resume URL never changes. That permanence
-is the entire point of the domain layer.
+The production design exists as code and costs nothing to keep. Open
+Infrastructure (Bicep) in this menu: infra/main.bicep stands up App Service
+behind Azure Front Door with the origin locked, so nothing reaches the app
+except through the edge. Deploying it is one command and two parameter flips.
 
-## The configurations, as they stand
-
-Screenshots of the real settings, so nothing here is taken on faith.
-
-**Netlify holds the certificate and the custom domain.** HTTPS enabled,
-Let's Encrypt, renewing itself.
-
-![Netlify domain management with the Let's Encrypt certificate](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/netlify-domain-cert.jpg)
-
-**Netlify deploys the edge straight from GitHub.** No build command; it
-publishes the repo's edge folder on every push.
-
-![Netlify build configuration linked to the GitHub repository](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/netlify-build-config.jpg)
-
-**Wix answers DNS.** One CNAME sends theyard traffic to the edge; TTLs are
-short while the setup is young.
-
-![Wix DNS records with the theyard CNAME](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/wix-dns-records.jpg)
-
-**Cloudflare waits in the wings.** A fully configured zone sits dormant
-(pending banner and all) until the domain can transfer registrars; activating
-it is a nameserver change away.
-
-![The staged Cloudflare DNS records](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cloudflare-dns-staged.jpg)
-
-![The staged Cloudflare redirect rule](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cloudflare-rules-staged.jpg)
+It stays undeployed on purpose. A public demo carrying no secrets does not
+need a paid stack, and keeping the bill at zero while keeping the design
+reviewable is part of the engineering story. If this were a production
+workload, that file is exactly what would run, and the domain layer means the
+public URL would never change in the switch.

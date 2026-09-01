@@ -89,3 +89,15 @@ Phase 2 is unchanged by any of this: upgrade the subscription, deploy App
 Service plus Front Door with the origin lock by flipping the Bicep parameters,
 and point the same subdomain at it. The resume URL never changes. That
 permanence is the entire point of the domain layer.
+
+## Decision update, later on 2026-09-01
+
+The paid phase-2 deployment is declined, deliberately and indefinitely, for
+this demo. The free stack, the ACI origin behind a free TLS edge, is the
+permanent hosting for TheYard as a portfolio piece. infra/main.bicep remains
+the documented production design, served inside the app under Hosting,
+Infrastructure (Bicep), so the target architecture stays reviewable without
+running a bill. The same day, the bare domain and www were pointed at the edge
+and 301-forwarded to the primary URL, so a trimmed or retyped address still
+lands on the app. The resume distributes theyard.stevenstout.biz; the forward
+is the safety net.
