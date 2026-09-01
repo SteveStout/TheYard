@@ -145,11 +145,31 @@ app.MapGet("/api/docs/hosting", () =>
 app.MapGet("/api/docs/cicd", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "CICD.md"))), "text/markdown"));
 
+app.MapGet("/api/docs/practices", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "BEST-PRACTICES.md"))), "text/markdown"));
+
+app.MapGet("/api/docs/adr-versioning", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-005-version-footer.md"))), "text/markdown"));
+
+app.MapGet("/api/docs/adr-docs", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-006-docs-and-testing.md"))), "text/markdown"));
+
 app.MapGet("/api/docs/bicep", () =>
     Results.Text("# infra/main.bicep" + "\n\nThe production design as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. Kept deliberately undeployed; the Hosting overview explains that choice.\n\n```bicep\n" + File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("infra", "main.bicep"))) + "\n```\n", "text/markdown"));
 
 app.MapGet("/api/docs/resume", () =>
     Results.File(resumePath, "application/pdf"));
+
+// ---------------------------------------------------------------------------
+// Build provenance - the version and commit this container was built from,
+// baked in as environment variables by the Docker build (ADR-005).
+// ---------------------------------------------------------------------------
+
+app.MapGet("/api/version", () => Results.Json(new
+{
+    version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev",
+    commit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local",
+}));
 
 IResult HandleBid(
     InventoryService inventory,

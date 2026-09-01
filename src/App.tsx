@@ -59,6 +59,8 @@ export default function App() {
   const [sort, setSort] = useState<SortKey>(INITIAL_URL_STATE.sort);
   const [loadingMore, setLoadingMore] = useState(false);
   const now = useNow();
+  /** The running build, reported by the container itself (ADR-005). */
+  const [build, setBuild] = useState<{ version: string; commit: string } | null>(null);
   // Bid state lives in the API; refetch the list whenever it changes.
   const refreshList = useCallback(() => setReloadNonce((n) => n + 1), []);
   const { bids, placeBid, buyNow, resetBids } = useBids(refreshList);
@@ -78,6 +80,14 @@ export default function App() {
       .catch(() => {});
     return () => controller.abort();
   }, [reloadNonce]);
+
+  // The footer's version line: ask the running API which build it is.
+  useEffect(() => {
+    fetch('/api/version')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setBuild)
+      .catch(() => {});
+  }, []);
 
   // Filtering, sorting, and paging are server-side: every change becomes a
   // GET request, debounced so typing doesn't spam the API and cached per
@@ -315,6 +325,7 @@ export default function App() {
           <div className={styles.headerActions}>
             <DocsMenu menu="hosting" />
             <DocsMenu menu="cicd" />
+            <DocsMenu menu="practices" />
             <DocsMenu />
             {bidCount > 0 && (
               <button type="button" className={styles.resetBids} onClick={handleResetBids}>
@@ -412,6 +423,27 @@ export default function App() {
           </section>
         )}
       </main>
+
+      {build && (
+        <footer className={styles.footer}>
+          <span data-testid="build-version">
+            {build.version === 'dev' ? 'dev build' : `v${build.version}`}
+          </span>
+          {build.commit !== 'local' && (
+            <>
+              <span aria-hidden="true">·</span>
+              <a
+                className={styles.footerCommit}
+                href={`https://github.com/SteveStout/TheYard/commit/${build.commit}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {build.commit}
+              </a>
+            </>
+          )}
+        </footer>
+      )}
     </div>
   );
 }

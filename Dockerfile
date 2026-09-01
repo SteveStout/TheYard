@@ -67,6 +67,14 @@ COPY --chown=app:app infra ./infra
 # The built frontend bundle is copied into wwwroot so the ASP.NET API can serve it and provide SPA fallback routing.
 COPY --chown=app:app --from=frontend-build /src/dist/ /app/wwwroot/
 
+# Build provenance, baked in at image build so the running container can report
+# exactly which build it is. The API serves these at /api/version and the page
+# footer renders them; the ship pipeline passes both arguments (ADR-005).
+ARG APP_VERSION=dev
+ARG APP_COMMIT=local
+ENV APP_VERSION=${APP_VERSION}
+ENV APP_COMMIT=${APP_COMMIT}
+
 # Set the runtime URL to port 8080, which matches the container runtime conventions we want for a single-process app.
 ENV ASPNETCORE_URLS=http://+:8080
 # Expose the application port so orchestrators and humans know which port to publish and probe.

@@ -101,3 +101,16 @@ running a bill. The same day, the bare domain and www were pointed at the edge
 and 301-forwarded to the primary URL, so a trimmed or retyped address still
 lands on the app. The resume distributes theyard.stevenstout.biz; the forward
 is the safety net.
+
+## Completion note, later still on 2026-09-01
+
+The bare-domain forward finished the same afternoon. One Let's Encrypt
+certificate now covers stevenstout.biz, www.stevenstout.biz, and
+theyard.stevenstout.biz, and every variant of the bare and www names
+redirects to the app with a valid padlock.
+
+The delay taught one operational lesson worth keeping: certificate issuance
+validates every attached name, and resolvers that cached the old DNS records
+keep serving them until their TTL runs out. A renewal attempted inside that
+cache window fails and tells you nothing. Wait out the longest old TTL,
+renew once, and it works on the first try.

@@ -27,7 +27,10 @@ type DocKey =
   | 'adrNaming'
   | 'adrPivots'
   | 'bicep'
-  | 'cicd';
+  | 'cicd'
+  | 'practices'
+  | 'adrVersioning'
+  | 'adrDocs';
 
 const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = {
   readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme' },
@@ -40,9 +43,12 @@ const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = 
   adrPivots: { title: 'ADR: Deployment strategy', menuLabel: 'ADR: Deployment strategy', url: '/api/docs/adr-pivots' },
   bicep: { title: 'Infrastructure (Bicep)', menuLabel: 'Infrastructure (Bicep)', url: '/api/docs/bicep' },
   cicd: { title: 'CI/CD', menuLabel: 'CI/CD overview', url: '/api/docs/cicd' },
+  practices: { title: 'Best Practices', menuLabel: 'Best practices overview', url: '/api/docs/practices' },
+  adrVersioning: { title: 'ADR: Version in the footer', menuLabel: 'ADR: Version in the footer', url: '/api/docs/adr-versioning' },
+  adrDocs: { title: 'ADR: Docs and testing', menuLabel: 'ADR: Docs and testing', url: '/api/docs/adr-docs' },
 };
 
-type MenuVariant = 'about' | 'hosting' | 'cicd';
+type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices';
 
 type MenuEntry = { key: DocKey; sub?: boolean };
 
@@ -65,6 +71,10 @@ const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
   cicd: {
     label: 'CI/CD',
     items: [{ key: 'cicd' }],
+  },
+  practices: {
+    label: 'Best Practices',
+    items: [{ key: 'practices' }, { key: 'adrVersioning', sub: true }, { key: 'adrDocs', sub: true }],
   },
 };
 
