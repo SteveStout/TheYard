@@ -6,19 +6,20 @@ learning how a small production setup fits together. The records under it in
 this menu are its children: read this page for the shape, open a child for the
 full reasoning behind one decision.
 
-## The children, in reading order
+## Websites and resources used
 
-1. **ADR: Front Door origin.** The target architecture. An edge stands in front
-   of an origin that is never exposed directly.
-2. **ADR: Docker packaging.** The image this container runs, built by hand and
-   reviewed line by line.
-3. **ADR: Azure naming.** Why everything is named in the RG-THEYARD-SS style.
-4. **ADR: Deployment strategy.** Every wall the free trial put up, measured
-   rather than assumed, and the pivots that got the app live anyway. Its
-   2026-09-01 addendum carries the domain story: the Wix wall, the Netlify
-   pivot, and the dormant Cloudflare zone waiting on a registrar transfer.
-5. **Infrastructure (Bicep).** The phase-2 stack as code, staged and waiting
-   on the subscription upgrade.
+- **Azure (portal.azure.com).** Runs the app: Container Instances for the
+  compute, Container Registry for the image. The only place code executes.
+- **Wix (wix.com).** The domain registrar. Holds stevenstout.biz and answers
+  DNS; one CNAME record points theyard at the edge.
+- **Netlify (netlify.com).** The free edge. Terminates HTTPS, holds the
+  certificate, and forwards every request to Azure unchanged.
+- **Let's Encrypt (letsencrypt.org).** Issues the certificate at no cost;
+  Netlify renews it automatically.
+- **Cloudflare (cloudflare.com).** Configured and dormant; becomes the edge
+  after the domain transfers registrars, around late October 2026.
+- **GitHub (github.com/SteveStout/TheYard).** Holds the code, runs the test
+  wall on every push, and feeds the edge deploys.
 
 ## The chain, request by request
 
