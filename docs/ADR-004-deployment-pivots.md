@@ -50,3 +50,42 @@ revisions, phase 1 ships on Azure Container Instances: one container group,
 public FQDN, plain HTTP on port 8080, pulled from ACR with a user-assigned
 identity. No TLS and no edge is acceptable for a demo artifact and is exactly
 the gap phase 2 closes.
+
+## Addendum, 2026-09-01: the custom domain and the registrar wall
+
+Goal of the day: serve this app at https://theyard.stevenstout.biz with a valid
+certificate, changing nothing else about the build.
+
+What we hit. The domain stevenstout.biz was bought at Wix. Wix, as a registrar,
+does not allow changing a domain's nameservers at all; their help center says so
+and the dashboard's NS section is read-only. That closed the original plan
+(Cloudflare's free tier in front, which requires pointing nameservers at
+Cloudflare). The ICANN 60-day lock closes the other exit, a registrar transfer,
+until about 2026-10-30. Neither wall is the trial's fault; one is Wix product
+policy and the other is ICANN policy on new registrations.
+
+What we did instead. Same architecture shape as ADR-001, an edge terminating TLS
+in front of the origin, but the phase-1 edge is Netlify's free tier, because it
+attaches to a plain CNAME record, which Wix does allow. The entire edge is three
+files in this repository: netlify.toml, edge/_redirects (one proxy rule to the
+ACI origin on 8080), and edge/README.md. Netlify deploys them from GitHub on
+every push. The application never moved; Azure serves every request.
+
+The small choices, so they are not re-litigated later:
+- DNS TTLs are 30 minutes (Wix's shortest) during cutover so future changes
+  propagate fast; lengthen once the setup is boring.
+- A TXT record named subdomain-owner-verification proves domain ownership to
+  Netlify for a subdomain of a domain the Netlify account does not own.
+- The Netlify project is public on purpose; the platform's private-by-default
+  would ask every visitor to log in.
+- The Cloudflare zone for stevenstout.biz is fully configured and dormant:
+  Flexible SSL, proxied CNAME to the origin, a port-8080 origin rule, and a
+  root-and-www redirect. Transferring the domain to Cloudflare once the ICANN
+  lock expires activates all of it and retires Netlify with a single DNS change.
+- The certificate is Let's Encrypt via Netlify, auto-renewing. Nothing was
+  purchased, and no secret lives anywhere in this setup.
+
+Phase 2 is unchanged by any of this: upgrade the subscription, deploy App
+Service plus Front Door with the origin lock by flipping the Bicep parameters,
+and point the same subdomain at it. The resume URL never changes. That
+permanence is the entire point of the domain layer.

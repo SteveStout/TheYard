@@ -144,3 +144,15 @@ Serving plain HTTP on port 8080 by design for phase 1; phase 2 (post-upgrade)
 adds App Service + Front Door + TLS + the origin lock by flipping parameters.
 Redeploy: the az deployment command above with computeKind=aci. Teardown:
 az group delete --name RG-THEYARD-SS --yes (takes the live URL with it).
+
+## LIVE UPDATE, 2026-09-01: the custom domain
+
+    https://theyard.stevenstout.biz
+
+Valid Let's Encrypt padlock, auto-renewing, no port anywhere. Behind it, unchanged,
+the raw ACI origin: http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
+(still the fallback address if the edge is ever in question). The edge is Netlify's
+free tier, deployed automatically from this repo's edge/ folder; the full story of
+why (Wix forbids nameserver changes, so the Cloudflare plan waits for a registrar
+transfer after ~Oct 30) lives in docs/ADR-004's 2026-09-01 addendum. DNS records sit
+in Wix's panel with 30-minute TTLs during cutover; lengthen once stable.

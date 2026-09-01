@@ -1,4 +1,6 @@
-# TheYard ??? Used-Vehicle Auction Platform
+﻿# TheYard ??? Used-Vehicle Auction Platform
+
+**Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz)
 
 TheYard is my portfolio implementation of a used-vehicle auction platform: browse a large
 inventory, inspect a vehicle in detail, and place bids in a polished auction flow. The
