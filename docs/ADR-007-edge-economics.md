@@ -30,6 +30,12 @@ planned registrar transfer around the end of October anyway.
   themselves, which is the behavior that was always wanted.
 - Build hooks would bypass the rule; this project uses none. A deliberate
   edge redeploy can be forced from the Netlify UI.
+- The known trap: on a cold build cache (a cache clear, or Netlify's first
+  build after a config change) the two commit references can be equal, the
+  diff comes back empty, and a REAL edge change gets silently skipped. The
+  routine after any edge change is therefore: push, then glance at the
+  deploys page and confirm a build actually ran; force one from the UI if
+  it did not.
 - The general lesson, worth keeping: a managed platform bills on its
   defaults, not on your intent. Read the meter in the first week, find
   which line item is really moving, and fix the configuration before
