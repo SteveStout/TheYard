@@ -230,3 +230,8 @@
   color: var(--color-heading);
   font-weight: var(--weight-semibold);
 }
+
+/* Child records sit indented under their parent entry. */
+.subItem {
+  padding-left: calc(var(--space-3) * 2.5);
+}

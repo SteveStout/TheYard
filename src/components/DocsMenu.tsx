@@ -40,9 +40,23 @@ const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = 
 
 type MenuVariant = 'about' | 'hosting';
 
-const MENUS: Record<MenuVariant, { label: string; docs: DocKey[] }> = {
-  about: { label: 'About', docs: ['readme', 'dataflow', 'projects'] },
-  hosting: { label: 'Hosting', docs: ['hosting', 'adrOrigin', 'adrDocker', 'adrNaming', 'adrPivots'] },
+type MenuEntry = { key: DocKey; sub?: boolean };
+
+const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
+  about: {
+    label: 'About',
+    items: [{ key: 'readme' }, { key: 'dataflow' }, { key: 'projects' }],
+  },
+  hosting: {
+    label: 'Hosting',
+    items: [
+      { key: 'hosting' },
+      { key: 'adrOrigin', sub: true },
+      { key: 'adrDocker', sub: true },
+      { key: 'adrNaming', sub: true },
+      { key: 'adrPivots', sub: true },
+    ],
+  },
 };
 
 /**
@@ -52,9 +66,9 @@ const MENUS: Record<MenuVariant, { label: string; docs: DocKey[] }> = {
  * decision in one place.
  */
 export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
-  const { label, docs } = MENUS[menu];
+  const { label, items } = MENUS[menu];
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeDoc, setActiveDoc] = useState<DocKey>(docs[0]);
+  const [activeDoc, setActiveDoc] = useState<DocKey>(items[0].key);
   const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>({});
   const [docError, setDocError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -112,11 +126,11 @@ export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
 
       {menuOpen && (
         <div className={styles.menu} role="menu">
-          {docs.map((key) => (
+          {items.map(({ key, sub }) => (
             <button
               key={key}
               type="button"
-              className={styles.item}
+              className={sub ? `${styles.item} ${styles.subItem}` : styles.item}
               role="menuitem"
               onClick={() => void openDoc(key)}
             >
