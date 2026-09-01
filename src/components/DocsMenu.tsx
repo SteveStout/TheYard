@@ -25,7 +25,9 @@ type DocKey =
   | 'adrOrigin'
   | 'adrDocker'
   | 'adrNaming'
-  | 'adrPivots';
+  | 'adrPivots'
+  | 'bicep'
+  | 'cicd';
 
 const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = {
   readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme' },
@@ -36,9 +38,11 @@ const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = 
   adrDocker: { title: 'ADR: Docker packaging', menuLabel: 'ADR: Docker packaging', url: '/api/docs/adr-docker' },
   adrNaming: { title: 'ADR: Azure naming', menuLabel: 'ADR: Azure naming', url: '/api/docs/adr-naming' },
   adrPivots: { title: 'ADR: Deployment strategy', menuLabel: 'ADR: Deployment strategy', url: '/api/docs/adr-pivots' },
+  bicep: { title: 'Infrastructure (Bicep)', menuLabel: 'Infrastructure (Bicep)', url: '/api/docs/bicep' },
+  cicd: { title: 'CI/CD', menuLabel: 'CI/CD overview', url: '/api/docs/cicd' },
 };
 
-type MenuVariant = 'about' | 'hosting';
+type MenuVariant = 'about' | 'hosting' | 'cicd';
 
 type MenuEntry = { key: DocKey; sub?: boolean };
 
@@ -55,7 +59,12 @@ const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
       { key: 'adrDocker', sub: true },
       { key: 'adrNaming', sub: true },
       { key: 'adrPivots', sub: true },
+      { key: 'bicep', sub: true },
     ],
+  },
+  cicd: {
+    label: 'CI/CD',
+    items: [{ key: 'cicd' }],
   },
 };
 
@@ -137,6 +146,19 @@ export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
               {DOCS[key].menuLabel}
             </button>
           ))}
+          {menu === 'cicd' && (
+            <a
+              className={styles.item}
+              role="menuitem"
+              href="https://github.com/SteveStout/TheYard/actions"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setMenuOpen(false)}
+            >
+              CI runs on GitHub
+              <ExternalIcon />
+            </a>
+          )}
           {menu === 'about' && (
             <>
               <a

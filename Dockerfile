@@ -63,6 +63,7 @@ COPY --chown=app:app --from=api-publish /app/publish/ /app/
 COPY --chown=app:app README.md ./
 COPY --chown=app:app docs ./docs
 COPY --chown=app:app data ./data
+COPY --chown=app:app infra ./infra
 # The built frontend bundle is copied into wwwroot so the ASP.NET API can serve it and provide SPA fallback routing.
 COPY --chown=app:app --from=frontend-build /src/dist/ /app/wwwroot/
 

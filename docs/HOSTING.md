@@ -1,9 +1,10 @@
 # Hosting
 
 TheYard is on the internet at https://theyard.stevenstout.biz. This page is the
-parent record for how that works. The four decision records under it in this
-menu are its children: read this page for the shape, open a child for the full
-reasoning behind one decision.
+parent record for how that works, written for a hiring manager or anyone
+learning how a small production setup fits together. The records under it in
+this menu are its children: read this page for the shape, open a child for the
+full reasoning behind one decision.
 
 ## The children, in reading order
 
@@ -16,6 +17,8 @@ reasoning behind one decision.
    rather than assumed, and the pivots that got the app live anyway. Its
    2026-09-01 addendum carries the domain story: the Wix wall, the Netlify
    pivot, and the dormant Cloudflare zone waiting on a registrar transfer.
+5. **Infrastructure (Bicep).** The phase-2 stack as code, staged and waiting
+   on the subscription upgrade.
 
 ## The chain, request by request
 
@@ -48,3 +51,30 @@ Cloudflare's free tier until the domain can transfer, earliest late October
 Upgrade the subscription, flip the parameters in infra/main.bicep, and point
 the same subdomain at Front Door. The resume URL never changes. That permanence
 is the entire point of the domain layer.
+
+## The configurations, as they stand
+
+Screenshots of the real settings, so nothing here is taken on faith.
+
+**Netlify holds the certificate and the custom domain.** HTTPS enabled,
+Let's Encrypt, renewing itself.
+
+![Netlify domain management with the Let's Encrypt certificate](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/netlify-domain-cert.jpg)
+
+**Netlify deploys the edge straight from GitHub.** No build command; it
+publishes the repo's edge folder on every push.
+
+![Netlify build configuration linked to the GitHub repository](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/netlify-build-config.jpg)
+
+**Wix answers DNS.** One CNAME sends theyard traffic to the edge; TTLs are
+short while the setup is young.
+
+![Wix DNS records with the theyard CNAME](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/wix-dns-records.jpg)
+
+**Cloudflare waits in the wings.** A fully configured zone sits dormant
+(pending banner and all) until the domain can transfer registrars; activating
+it is a nameserver change away.
+
+![The staged Cloudflare DNS records](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cloudflare-dns-staged.jpg)
+
+![The staged Cloudflare redirect rule](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cloudflare-rules-staged.jpg)

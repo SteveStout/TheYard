@@ -314,6 +314,7 @@ export default function App() {
           </button>
           <div className={styles.headerActions}>
             <DocsMenu menu="hosting" />
+            <DocsMenu menu="cicd" />
             <DocsMenu />
             {bidCount > 0 && (
               <button type="button" className={styles.resetBids} onClick={handleResetBids}>

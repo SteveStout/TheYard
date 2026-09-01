@@ -142,6 +142,12 @@ app.MapGet("/api/docs/adr-pivots", () =>
 app.MapGet("/api/docs/hosting", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "HOSTING.md"))), "text/markdown"));
 
+app.MapGet("/api/docs/cicd", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "CICD.md"))), "text/markdown"));
+
+app.MapGet("/api/docs/bicep", () =>
+    Results.Text("# infra/main.bicep" + "\n\nThe phase-2 infrastructure as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. The Hosting overview explains why it is staged rather than live.\n\n```bicep\n" + File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("infra", "main.bicep"))) + "\n```\n", "text/markdown"));
+
 app.MapGet("/api/docs/resume", () =>
     Results.File(resumePath, "application/pdf"));
 
