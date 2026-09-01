@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
 import styles from './DocsMenu.module.css';
 
@@ -17,25 +17,44 @@ function ExternalIcon() {
   );
 }
 
-type DocKey = 'readme' | 'dataflow' | 'projects' | 'adrOrigin' | 'adrDocker' | 'adrNaming' | 'adrPivots';
+type DocKey =
+  | 'readme'
+  | 'dataflow'
+  | 'projects'
+  | 'hosting'
+  | 'adrOrigin'
+  | 'adrDocker'
+  | 'adrNaming'
+  | 'adrPivots';
 
-const DOCS: Record<DocKey, { title: string; url: string }> = {
-  readme: { title: 'README', url: '/api/docs/readme' },
-  dataflow: { title: 'Data Flow', url: '/api/docs/dataflow' },
-  projects: { title: 'Projects', url: '/api/docs/projects' },
-  adrOrigin: { title: 'ADR: Front Door origin', url: '/api/docs/adr-origin' },
-  adrDocker: { title: 'ADR: Docker packaging', url: '/api/docs/adr-docker' },
-  adrNaming: { title: 'ADR: Azure naming', url: '/api/docs/adr-naming' },
-  adrPivots: { title: 'ADR: Deployment strategy', url: '/api/docs/adr-pivots' },
+const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = {
+  readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme' },
+  dataflow: { title: 'Data Flow', menuLabel: 'Data flow diagram', url: '/api/docs/dataflow' },
+  projects: { title: 'Projects', menuLabel: 'Project structure', url: '/api/docs/projects' },
+  hosting: { title: 'Hosting', menuLabel: 'Hosting overview', url: '/api/docs/hosting' },
+  adrOrigin: { title: 'ADR: Front Door origin', menuLabel: 'ADR: Front Door origin', url: '/api/docs/adr-origin' },
+  adrDocker: { title: 'ADR: Docker packaging', menuLabel: 'ADR: Docker packaging', url: '/api/docs/adr-docker' },
+  adrNaming: { title: 'ADR: Azure naming', menuLabel: 'ADR: Azure naming', url: '/api/docs/adr-naming' },
+  adrPivots: { title: 'ADR: Deployment strategy', menuLabel: 'ADR: Deployment strategy', url: '/api/docs/adr-pivots' },
+};
+
+type MenuVariant = 'about' | 'hosting';
+
+const MENUS: Record<MenuVariant, { label: string; docs: DocKey[] }> = {
+  about: { label: 'About', docs: ['readme', 'dataflow', 'projects'] },
+  hosting: { label: 'Hosting', docs: ['hosting', 'adrOrigin', 'adrDocker', 'adrNaming', 'adrPivots'] },
 };
 
 /**
- * The header's About dropdown: view the project docs in-app (markdown,
- * served by the API), open the author's rÃ©sumÃ© PDF, or visit the repository.
+ * A header dropdown that opens repo docs in an in-app dialog (markdown served
+ * by the API). The About variant also links the resume PDF and the repository;
+ * the Hosting variant collects every Azure, certificate, and deployment
+ * decision in one place.
  */
-export function DocsMenu() {
+export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
+  const { label, docs } = MENUS[menu];
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeDoc, setActiveDoc] = useState<DocKey>('readme');
+  const [activeDoc, setActiveDoc] = useState<DocKey>(docs[0]);
   const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>({});
   const [docError, setDocError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -68,7 +87,7 @@ export function DocsMenu() {
       const response = await fetch(DOCS[key].url);
       if (!response.ok) throw new Error(String(response.status));
       const markdown = await response.text();
-      // Our own docs â€” trusted, repo-authored content.
+      // Our own docs - trusted, repo-authored content.
       const html = await marked.parse(markdown);
       setDocHtml((prev) => ({ ...prev, [key]: html }));
     } catch {
@@ -85,7 +104,7 @@ export function DocsMenu() {
         aria-expanded={menuOpen}
         onClick={() => setMenuOpen((open) => !open)}
       >
-        About
+        {label}
         <svg viewBox="0 0 12 8" width="10" height="7" aria-hidden="true">
           <path d="M1 1.5 6 6.5 11 1.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
@@ -93,49 +112,43 @@ export function DocsMenu() {
 
       {menuOpen && (
         <div className={styles.menu} role="menu">
-          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('readme')}>
-            Project README
-          </button>
-          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('dataflow')}>
-            Data flow diagram
-          </button>
-          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('projects')}>
-            Project structure
-          </button>
-          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrOrigin')}>
-            ADR: Front Door origin
-          </button>
-          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrDocker')}>
-            ADR: Docker packaging
-          </button>
-          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrNaming')}>
-            ADR: Azure naming
-          </button>
-          <button type="button" className={styles.item} role="menuitem" onClick={() => void openDoc('adrPivots')}>
-            ADR: Deployment strategy
-          </button>
-          <a
-            className={styles.item}
-            role="menuitem"
-            href="/api/docs/resume"
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => setMenuOpen(false)}
-          >
-            Steven's rÃ©sumÃ© (PDF)
-            <ExternalIcon />
-          </a>
-          <a
-            className={styles.item}
-            role="menuitem"
-            href="https://github.com/SteveStout/TheYard"
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => setMenuOpen(false)}
-          >
-            GitHub repository
-            <ExternalIcon />
-          </a>
+          {docs.map((key) => (
+            <button
+              key={key}
+              type="button"
+              className={styles.item}
+              role="menuitem"
+              onClick={() => void openDoc(key)}
+            >
+              {DOCS[key].menuLabel}
+            </button>
+          ))}
+          {menu === 'about' && (
+            <>
+              <a
+                className={styles.item}
+                role="menuitem"
+                href="/api/docs/resume"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setMenuOpen(false)}
+              >
+                Steven's resume (PDF)
+                <ExternalIcon />
+              </a>
+              <a
+                className={styles.item}
+                role="menuitem"
+                href="https://github.com/SteveStout/TheYard"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setMenuOpen(false)}
+              >
+                GitHub repository
+                <ExternalIcon />
+              </a>
+            </>
+          )}
         </div>
       )}
 
@@ -164,10 +177,10 @@ export function DocsMenu() {
         <div className={styles.dialogBody}>
           {docError ? (
             <p className={styles.docError}>
-              Couldn't load the {DOCS[activeDoc].title} â€” is the API running?
+              Couldn't load the {DOCS[activeDoc].title} - is the API running?
             </p>
           ) : docHtml[activeDoc] === undefined ? (
-            <p className={styles.docLoading}>Loadingâ€¦</p>
+            <p className={styles.docLoading}>Loading...</p>
           ) : (
             <div className={styles.prose} dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }} />
           )}

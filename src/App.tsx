@@ -313,6 +313,7 @@ export default function App() {
             <span className={styles.brandSub}>Vehicle Auctions</span>
           </button>
           <div className={styles.headerActions}>
+            <DocsMenu menu="hosting" />
             <DocsMenu />
             {bidCount > 0 && (
               <button type="button" className={styles.resetBids} onClick={handleResetBids}>

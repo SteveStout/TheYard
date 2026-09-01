@@ -139,6 +139,9 @@ app.MapGet("/api/docs/adr-naming", () =>
 app.MapGet("/api/docs/adr-pivots", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-004-deployment-pivots.md"))), "text/markdown"));
 
+app.MapGet("/api/docs/hosting", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "HOSTING.md"))), "text/markdown"));
+
 app.MapGet("/api/docs/resume", () =>
     Results.File(resumePath, "application/pdf"));
 
