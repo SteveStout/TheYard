@@ -206,6 +206,77 @@ IResult HandleBid(
     }, wireFormat);
 }
 
+// ---------------------------------------------------------------------------
+// Observability (ADR-010, roughed in 2026-09-01). Three surfaces feed the
+// Admin tab: hand-rolled health checks, an in-memory error ring buffer, and
+// the container group's own state read from Azure with its managed identity.
+// ---------------------------------------------------------------------------
+
+var startedAt = DateTimeOffset.UtcNow;
+var errorLog = new ErrorRingBuffer(50);
+// Identifiers, not secrets: the identity's client id and this group's ARM path.
+var azureSelf = new AzureSelf(
+    builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
+    builder.Configuration["Azure:SelfResourceId"]
+        ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
+
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+        if (context.Response.StatusCode >= 500)
+        {
+            errorLog.Record(context.Request.Path, context.Response.StatusCode, "server error response");
+        }
+    }
+    catch (Exception ex)
+    {
+        errorLog.Record(context.Request.Path, 500, ex.GetType().Name + ": " + ex.Message);
+        throw;
+    }
+});
+
+HealthCheckEntry[] RunChecks()
+{
+    HealthCheckEntry Check(string name, Func<bool> probe, string detail)
+    {
+        try { return new HealthCheckEntry(name, probe() ? "pass" : "fail", detail); }
+        catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name); }
+    }
+    return
+    [
+        Check("dataset file", () => File.Exists(dataPath), "data/vehicles.json present"),
+        Check("docs", () => File.Exists(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "HOSTING.md"))), "served documents findable"),
+        Check("photo manifest", () => File.Exists(manifestPath), "image manifest present"),
+    ];
+}
+
+app.MapGet("/healthz", () => Results.Text("ok"));
+
+app.MapGet("/readyz", () =>
+    RunChecks().All(c => c.Status == "pass") ? Results.Text("ready") : Results.StatusCode(503));
+
+app.MapGet("/api/health", () =>
+{
+    var checks = RunChecks();
+    return Results.Json(new
+    {
+        status = checks.All(c => c.Status == "pass") ? "healthy" : "degraded",
+        uptime_seconds = (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
+        version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev",
+        commit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local",
+        checks,
+    }, wireFormat);
+});
+
+app.MapGet("/api/errors", () => Results.Json(errorLog.Snapshot(), wireFormat));
+
+app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
+
+app.MapGet("/api/docs/adr-observability", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-010-observability.md"))), "text/markdown"));
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -244,3 +315,117 @@ public sealed record BuyNowRequest(long? AnchorMs);
 
 // Exposes the entry point to WebApplicationFactory for integration tests.
 public partial class Program;
+
+/// <summary>One health probe's outcome, serialized snake_case for the Admin tab.</summary>
+public sealed record HealthCheckEntry(string Name, string Status, string Detail);
+
+/// <summary>One recorded server error, newest first in snapshots.</summary>
+public sealed record ErrorEntry(DateTimeOffset At, string Path, int Status, string Message);
+
+/// <summary>
+/// Fixed-size, thread-safe buffer of recent server errors. In-memory on
+/// purpose for this demo: it resets on every roll, and the Admin tab says so.
+/// </summary>
+public sealed class ErrorRingBuffer(int capacity)
+{
+    private readonly object _gate = new();
+    private readonly Queue<ErrorEntry> _entries = new();
+
+    public void Record(string path, int status, string message)
+    {
+        lock (_gate)
+        {
+            _entries.Enqueue(new ErrorEntry(DateTimeOffset.UtcNow, path, status, message));
+            while (_entries.Count > capacity)
+            {
+                _entries.Dequeue();
+            }
+        }
+    }
+
+    public IReadOnlyList<ErrorEntry> Snapshot()
+    {
+        lock (_gate)
+        {
+            return _entries.Reverse().ToArray();
+        }
+    }
+}
+
+/// <summary>
+/// The site asking Azure about itself: a management-plane token from the
+/// container group's own user-assigned identity, then a read of this group's
+/// resource. Degrades to available=false anywhere that identity endpoint
+/// does not exist (local dev, tests), and caches success for 60 seconds.
+/// </summary>
+public sealed class AzureSelf(string clientId, string resourceId)
+{
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(4) };
+    private readonly object _gate = new();
+    private object? _cached;
+    private DateTimeOffset _cachedAt;
+
+    public async Task<object> GetStateAsync()
+    {
+        lock (_gate)
+        {
+            if (_cached is not null && DateTimeOffset.UtcNow - _cachedAt < TimeSpan.FromSeconds(60))
+            {
+                return _cached;
+            }
+        }
+        try
+        {
+            using var tokenReq = new HttpRequestMessage(HttpMethod.Get,
+                "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01" +
+                "&resource=https%3A%2F%2Fmanagement.azure.com%2F&client_id=" + clientId);
+            tokenReq.Headers.Add("Metadata", "true");
+            using var tokenResp = await Http.SendAsync(tokenReq);
+            tokenResp.EnsureSuccessStatusCode();
+            using var tokenJson = JsonDocument.Parse(await tokenResp.Content.ReadAsStringAsync());
+            string token = tokenJson.RootElement.GetProperty("access_token").GetString()!;
+
+            using var armReq = new HttpRequestMessage(HttpMethod.Get,
+                "https://management.azure.com" + resourceId + "?api-version=2023-05-01");
+            armReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            using var armResp = await Http.SendAsync(armReq);
+            armResp.EnsureSuccessStatusCode();
+            using var arm = JsonDocument.Parse(await armResp.Content.ReadAsStringAsync());
+
+            var props = arm.RootElement.GetProperty("properties");
+            string groupState = props.TryGetProperty("instanceView", out var iv)
+                && iv.TryGetProperty("state", out var st) ? st.GetString() ?? "unknown" : "unknown";
+            var containerProps = props.GetProperty("containers")[0].GetProperty("properties");
+            string image = containerProps.GetProperty("image").GetString() ?? "unknown";
+            int restarts = 0;
+            string containerState = "unknown";
+            if (containerProps.TryGetProperty("instanceView", out var civ))
+            {
+                restarts = civ.TryGetProperty("restartCount", out var rc) ? rc.GetInt32() : 0;
+                if (civ.TryGetProperty("currentState", out var cs))
+                {
+                    containerState = cs.TryGetProperty("state", out var css) ? css.GetString() ?? "unknown" : "unknown";
+                }
+            }
+            var result = new
+            {
+                available = true,
+                group_state = groupState,
+                container_state = containerState,
+                restart_count = restarts,
+                image,
+                fetched_at = DateTimeOffset.UtcNow,
+            };
+            lock (_gate)
+            {
+                _cached = result;
+                _cachedAt = DateTimeOffset.UtcNow;
+            }
+            return result;
+        }
+        catch (Exception ex)
+        {
+            return new { available = false, reason = ex.GetType().Name };
+        }
+    }
+}

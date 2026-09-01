@@ -17,6 +17,7 @@ import {
 } from './lib/inventory';
 import { applyBidRecord, useBids } from './hooks/useBids';
 import { useNow } from './hooks/useNow';
+import { AdminPanel } from './components/AdminPanel';
 import { DocsMenu } from './components/DocsMenu';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
@@ -58,6 +59,8 @@ export default function App() {
   const [filters, setFilters] = useState<InventoryFilters>(INITIAL_URL_STATE.filters);
   const [sort, setSort] = useState<SortKey>(INITIAL_URL_STATE.sort);
   const [loadingMore, setLoadingMore] = useState(false);
+  /** The Admin tab (ADR-010): health, errors, and Azure's view, ?view=admin. */
+  const [adminOpen, setAdminOpen] = useState(INITIAL_PARAMS.get('view') === 'admin');
   const now = useNow();
   /** The running build, reported by the container itself (ADR-005). */
   const [build, setBuild] = useState<{ version: string; commit: string } | null>(null);
@@ -160,13 +163,14 @@ export default function App() {
     if (deepLinkPending.current) return;
     const params = filtersToSearchParams(filters, sort);
     if (selectedVehicle) params.set('vehicle', selectedVehicle.id);
+    if (adminOpen) params.set('view', 'admin');
     const query = params.toString();
     window.history.replaceState(
       window.history.state,
       '',
       query ? `?${query}` : window.location.pathname
     );
-  }, [filters, sort, selectedVehicle]);
+  }, [filters, sort, selectedVehicle, adminOpen]);
 
   // Restore a deep-linked detail view on first load (?vehicle={id}).
   useEffect(() => {
@@ -205,6 +209,7 @@ export default function App() {
       const restored = filtersFromSearchParams(params);
       setFilters(restored.filters);
       setSort(restored.sort);
+      setAdminOpen(params.get('view') === 'admin');
       const vehicleId = params.get('vehicle');
       if (!vehicleId) {
         setSelectedVehicle(null);
@@ -285,6 +290,23 @@ export default function App() {
     window.scrollTo(0, selectedVehicle ? 0 : listScrollY.current);
   }, [selectedVehicle]);
 
+  const openAdmin = () => {
+    const params = filtersToSearchParams(filters, sort);
+    params.set('view', 'admin');
+    window.history.pushState({ viaAdmin: true }, '', `?${params}`);
+    setSelectedVehicle(null);
+    setAdminOpen(true);
+  };
+  const closeAdmin = () => {
+    if ((window.history.state as { viaAdmin?: boolean } | null)?.viaAdmin) {
+      window.history.back();
+      return;
+    }
+    setAdminOpen(false);
+    const query = filtersToSearchParams(filters, sort).toString();
+    window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
+  };
+
   const patchFilters = (patch: Partial<InventoryFilters>) =>
     setFilters((prev) => ({ ...prev, ...patch }));
   const clearFilters = () => setFilters(EMPTY_FILTERS);
@@ -327,6 +349,9 @@ export default function App() {
             <DocsMenu menu="cicd" />
             <DocsMenu menu="practices" />
             <DocsMenu />
+            <button type="button" className={styles.adminTab} onClick={openAdmin}>
+              Admin
+            </button>
             {bidCount > 0 && (
               <button type="button" className={styles.resetBids} onClick={handleResetBids}>
                 Reset bids ({bidCount})
@@ -337,7 +362,9 @@ export default function App() {
       </header>
 
       <main className={styles.main}>
-        {loadState === 'loading' ? (
+        {adminOpen ? (
+          <AdminPanel onBack={closeAdmin} />
+        ) : loadState === 'loading' ? (
           <p className={styles.notice} role="status">
             Loading inventory…
           </p>

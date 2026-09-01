@@ -32,7 +32,8 @@ type DocKey =
   | 'cicd'
   | 'practices'
   | 'adrVersioning'
-  | 'adrDocs';
+  | 'adrDocs'
+  | 'adrObservability';
 
 const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = {
   readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme' },
@@ -50,6 +51,7 @@ const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = 
   practices: { title: 'Best Practices', menuLabel: 'Best practices overview', url: '/api/docs/practices' },
   adrVersioning: { title: 'ADR: Version in the footer', menuLabel: 'ADR: Version in the footer', url: '/api/docs/adr-versioning' },
   adrDocs: { title: 'ADR: Docs and testing', menuLabel: 'ADR: Docs and testing', url: '/api/docs/adr-docs' },
+  adrObservability: { title: 'ADR: Observability', menuLabel: 'ADR: Observability (Admin tab)', url: '/api/docs/adr-observability' },
 };
 
 type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices';
@@ -80,7 +82,7 @@ const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
   },
   practices: {
     label: 'Best Practices',
-    items: [{ key: 'practices' }, { key: 'adrVersioning', sub: true }, { key: 'adrDocs', sub: true }],
+    items: [{ key: 'practices' }, { key: 'adrVersioning', sub: true }, { key: 'adrDocs', sub: true }, { key: 'adrObservability', sub: true }],
   },
 };
 

@@ -81,7 +81,7 @@ ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
 # Healthcheck against a real API endpoint to confirm the app is accepting traffic, not just that the process is alive.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD curl -fsS http://localhost:8080/api/facets || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD curl -fsS http://localhost:8080/healthz || exit 1
 
 # Run as a non-root user to reduce attack surface and comply with container hardening best practices.
 USER app

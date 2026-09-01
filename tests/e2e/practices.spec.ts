@@ -21,6 +21,13 @@ test('the Best Practices menu opens the overview and the versioning ADR', async 
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: Docs and testing' })
   ).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button', { name: 'Best Practices' }).click();
+  await page.getByRole('menuitem', { name: 'ADR: Observability (Admin tab)' }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: Observability, the Admin tab' })
+  ).toBeVisible();
 });
 
 test('the footer reports the running build', async ({ page }) => {

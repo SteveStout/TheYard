@@ -248,3 +248,25 @@
   color: var(--color-accent);
   text-decoration: underline;
 }
+
+.adminTab {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-header-text);
+  padding: 6px 14px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.adminTab:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.adminTab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
