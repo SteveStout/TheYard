@@ -145,6 +145,12 @@ app.MapGet("/api/docs/hosting", () =>
 app.MapGet("/api/docs/cicd", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "CICD.md"))), "text/markdown"));
 
+app.MapGet("/api/docs/adr-edge-economics", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-007-edge-economics.md"))), "text/markdown"));
+
+app.MapGet("/api/docs/adr-linux", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-008-linux-containers.md"))), "text/markdown"));
+
 app.MapGet("/api/docs/practices", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "BEST-PRACTICES.md"))), "text/markdown"));
 

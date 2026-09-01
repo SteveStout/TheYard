@@ -26,6 +26,8 @@ type DocKey =
   | 'adrDocker'
   | 'adrNaming'
   | 'adrPivots'
+  | 'adrEdgeCost'
+  | 'adrLinux'
   | 'bicep'
   | 'cicd'
   | 'practices'
@@ -41,6 +43,8 @@ const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = 
   adrDocker: { title: 'ADR: Docker packaging', menuLabel: 'ADR: Docker packaging', url: '/api/docs/adr-docker' },
   adrNaming: { title: 'ADR: Azure naming', menuLabel: 'ADR: Azure naming', url: '/api/docs/adr-naming' },
   adrPivots: { title: 'ADR: Deployment strategy', menuLabel: 'ADR: Deployment strategy', url: '/api/docs/adr-pivots' },
+  adrEdgeCost: { title: 'ADR: Edge deploy economics', menuLabel: 'ADR: Edge deploy economics', url: '/api/docs/adr-edge-economics' },
+  adrLinux: { title: 'ADR: Linux over Windows', menuLabel: 'ADR: Linux over Windows', url: '/api/docs/adr-linux' },
   bicep: { title: 'Infrastructure (Bicep)', menuLabel: 'Infrastructure (Bicep)', url: '/api/docs/bicep' },
   cicd: { title: 'CI/CD', menuLabel: 'CI/CD overview', url: '/api/docs/cicd' },
   practices: { title: 'Best Practices', menuLabel: 'Best practices overview', url: '/api/docs/practices' },
@@ -65,6 +69,8 @@ const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
       { key: 'adrDocker', sub: true },
       { key: 'adrNaming', sub: true },
       { key: 'adrPivots', sub: true },
+      { key: 'adrEdgeCost', sub: true },
+      { key: 'adrLinux', sub: true },
       { key: 'bicep', sub: true },
     ],
   },
