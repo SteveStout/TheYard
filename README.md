@@ -61,11 +61,9 @@ CI (GitHub Actions, `.github/workflows/ci.yml`) runs all three suites on every p
 
 To refresh the photo set from Wikimedia Commons, run `node scripts/fetch_photos.mjs`.
 
-## Time Spent
+## How It Was Built
 
-Around 6???8 hours total. The core challenge ??? domain rules, inventory browsing, filters,
-the detail view, the bid flow, and responsive polish ??? landed within the suggested 3???4
-hour timebox, built domain-first with tests before any UI. I then deliberately spent the
+Built domain-first, with tests before any UI. I then deliberately spent the
 rest going past the budget, because the project became a vehicle for demonstrating how I
 build production systems: the .NET API in onion architecture, server-side
 filtering/sorting/paging over a 100,000-record synthetic dataset, server-owned bidding
@@ -115,7 +113,7 @@ can happen without leaving it.
   scheduling, and bid validation. The browser formats, counts down, and relays actions.
   Bid state is in API memory for a single anonymous buyer (no auth by design ??? isolated
   demo); it survives browser reloads but not an API restart.
-- Out of scope per the brief: auth, accounts, seller tooling, checkout, payments, backend,
+- Out of scope by design: auth, accounts, seller tooling, checkout, payments, backend,
   real-time multi-user bidding.
 
 ## Stack
@@ -237,7 +235,7 @@ can happen without leaving it.
 
 ## Problems Hit and Solved
 
-- **The dataset contradicted its own example.** The brief's sample vehicle shows
+- **The dataset contradicted its own example.** The sample record shows
   `current_bid: 22800`, but 112 of the 200 real records have `current_bid: null`.
   Profiling the data before writing the types caught it; the fix rippled into the type
   (`number | null`), the minimum-bid rule (first bid meets the opening ask), and the
