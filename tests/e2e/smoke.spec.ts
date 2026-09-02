@@ -83,6 +83,19 @@ test('the About section shows the README in-app and links the résumé PDF', asy
   await expect(openFlow).toHaveAttribute('href', '/api/docs/diagrams/dataflow');
   await page.keyboard.press('Escape');
 
+  // Architecture and style are the App Architecture section's own pages (ADR-022).
+  await nav.getByRole('button', { name: 'Architecture overview' }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('heading', { level: 1, name: 'App Architecture' })
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await nav.getByRole('button', { name: 'Coding and commenting style' }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Coding and Commenting Style' })
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+
   await nav.getByRole('button', { name: 'Project structure' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 2, name: 'TheBlock.Data' })

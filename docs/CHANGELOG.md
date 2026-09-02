@@ -5,6 +5,7 @@ footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Best Practices menu.
 
+- **1.0.0.28** (2026-09-02): The sidebar gained an App Architecture section holding the new architecture and style pages, the data flow, the project structure and the three records that walk the code (ADR-022).
 - **1.0.0.27** (2026-09-02): The third record for a new developer, the tests explained, with teaching comments in the samples it shows, and the resume dated 2026-09-02 served from About (ADR-021).
 - **1.0.0.26** (2026-09-02): ADR: Diagram pages gained its screenshots from the live site, the caption on a phone, the page as it opens and zoomed in, and the laptop view (ADR-020).
 - **1.0.0.25** (2026-09-02): Every diagram opens on its own page in a new tab, zoomable with the text selectable, from a preview in the record; the data flow was drawn in the same style as the infrastructure diagram; links inside a document open in a new tab (ADR-020).

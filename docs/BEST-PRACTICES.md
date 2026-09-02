@@ -22,7 +22,12 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Twenty-one ADRs record why the architecture is
+- **The architecture is written down, not remembered.** One page for the
+  layers and the rules that keep them, one for naming, layering and
+  commenting, and an `.editorconfig` doing the mechanical half. Both are
+  served under App Architecture in the sidebar, beside the records that
+  walk the code.
+- **Decisions get written down.** Twenty-two ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.

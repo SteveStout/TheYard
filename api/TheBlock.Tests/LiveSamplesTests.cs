@@ -66,6 +66,7 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     [InlineData("Dockerfile")]
     [InlineData("netlify.toml")]
     [InlineData("tsconfig.app.json")]
+    [InlineData(".editorconfig")]
     public void Paths_under_the_roots_and_the_named_root_files_are_allowed(string path)
     {
         Assert.True(LiveSamples.IsAllowedPath(path));

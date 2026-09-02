@@ -82,7 +82,7 @@ COPY --chown=app:app api/TheBlock.Infrastructure/*.cs api/TheBlock.Infrastructur
 COPY --chown=app:app api/TheBlock.Tests/*.cs api/TheBlock.Tests/*.csproj ./api/TheBlock.Tests/
 # The rest of what the records show live (ADR-017, the references pass): the edge,
 # the end-to-end specs, and the root files the build and the tests are configured by.
-COPY --chown=app:app Dockerfile netlify.toml playwright.config.ts vite.config.ts package.json index.html tsconfig.json tsconfig.app.json tsconfig.node.json ./
+COPY --chown=app:app Dockerfile netlify.toml playwright.config.ts vite.config.ts package.json index.html tsconfig.json tsconfig.app.json tsconfig.node.json .editorconfig ./
 COPY --chown=app:app edge ./edge
 COPY --chown=app:app tests ./tests
 # The built frontend bundle is copied into wwwroot so the ASP.NET API can serve it and provide SPA fallback routing.

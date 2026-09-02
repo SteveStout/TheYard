@@ -49,7 +49,10 @@ export type DocKey =
   | 'adrProgram'
   | 'adrReact'
   | 'adrDiagrams'
-  | 'adrTests';
+  | 'adrTests'
+  | 'adrGrouping'
+  | 'architecture'
+  | 'style';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
@@ -90,18 +93,35 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrReact: { title: 'ADR: The React configuration, explained', menuLabel: 'ADR: The React configuration, explained', url: '/api/docs/adr-react', kind: 'adr' },
   adrDiagrams: { title: 'ADR: Diagram pages', menuLabel: 'ADR: Diagram pages', url: '/api/docs/adr-diagrams', kind: 'adr' },
   adrTests: { title: 'ADR: The tests, explained', menuLabel: 'ADR: The tests, explained', url: '/api/docs/adr-tests', kind: 'adr' },
+  architecture: { title: 'App Architecture', menuLabel: 'Architecture overview', url: '/api/docs/architecture', kind: 'overview' },
+  style: { title: 'Coding and Commenting Style', menuLabel: 'Coding and commenting style', url: '/api/docs/style', kind: 'overview' },
+  adrGrouping: { title: 'ADR: App Architecture section', menuLabel: 'ADR: App Architecture section', url: '/api/docs/adr-grouping', kind: 'adr' },
 };
 // #endregion docs-record
 
-export type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices' | 'changelog';
+export type MenuVariant = 'about' | 'architecture' | 'hosting' | 'cicd' | 'practices' | 'changelog';
 
 export type MenuEntry = { key: DocKey; sub?: boolean };
 
 export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
   about: {
     label: 'About',
-    items: [{ key: 'readme' }, { key: 'dataflow' }, { key: 'projects' }],
+    items: [{ key: 'readme' }],
   },
+  // #region architecture-menu
+  architecture: {
+    label: 'App Architecture',
+    items: [
+      { key: 'architecture' },
+      { key: 'style', sub: true },
+      { key: 'dataflow', sub: true },
+      { key: 'projects', sub: true },
+      { key: 'adrProgram', sub: true },
+      { key: 'adrReact', sub: true },
+      { key: 'adrTests', sub: true },
+    ],
+  },
+  // #endregion architecture-menu
   hosting: {
     label: 'Hosting',
     items: [
@@ -133,10 +153,8 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrCaching', sub: true },
       { key: 'adrPalette', sub: true },
       { key: 'adrReview', sub: true },
-      { key: 'adrProgram', sub: true },
-      { key: 'adrReact', sub: true },
       { key: 'adrDiagrams', sub: true },
-      { key: 'adrTests', sub: true },
+      { key: 'adrGrouping', sub: true },
     ],
   },
   // #region menu-changelog
@@ -150,7 +168,7 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
 
 // #region MENU_ORDER
 /** Section order, top to bottom. The sidebar renders from it in both of its shapes (ADR-013). */
-export const MENU_ORDER: MenuVariant[] = ['hosting', 'cicd', 'practices', 'changelog', 'about'];
+export const MENU_ORDER: MenuVariant[] = ['architecture', 'hosting', 'cicd', 'practices', 'changelog', 'about'];
 // #endregion MENU_ORDER
 
 /** Links that sit beside the docs in the sidebar. */

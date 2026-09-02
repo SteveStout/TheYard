@@ -94,3 +94,9 @@ lib/          inner ring — pure functions and the API seam; imports NO React,
 holding view state and wiring the rings together. And `lib/data.ts` is a genuine port:
 when data moved from a JSON import to an API to a paged API, every change landed in
 that one file.
+
+## Where to start reading
+
+- [`docs/ARCHITECTURE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ARCHITECTURE.md): the layers, the rules that keep them, and where a change goes (served as Architecture overview under App Architecture).
+- [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): naming, layering and commenting rules, with `.editorconfig` enforcing the mechanical half.
+- ADR: Program.cs, explained and ADR: The React configuration, explained walk the two entry points line by line; ADR: The tests, explained walks the three suites.

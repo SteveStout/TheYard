@@ -25,7 +25,7 @@ test('the drawer lists every menu, opens a doc full-screen, and closes on Escape
   await page.getByRole('button', { name: 'Menu' }).click();
   const drawer = page.getByRole('dialog', { name: 'Menu' });
   await expect(drawer).toBeVisible();
-  for (const section of ['Hosting', 'CI/CD', 'Best Practices', 'Changelog', 'About']) {
+  for (const section of ['App Architecture', 'Hosting', 'CI/CD', 'Best Practices', 'Changelog', 'About']) {
     await expect(drawer.getByRole('heading', { name: section, exact: true })).toBeVisible();
   }
   await expect(drawer.getByRole('link', { name: "Steven's resume (PDF)" })).toHaveAttribute(

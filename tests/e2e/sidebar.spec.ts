@@ -15,7 +15,7 @@ test.describe('the docked rail', () => {
     await expect(page.getByRole('button', { name: 'Menu' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Hosting', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'About', exact: true })).toHaveCount(0);
-    for (const section of ['Hosting', 'CI/CD', 'Best Practices', 'Changelog', 'About']) {
+    for (const section of ['App Architecture', 'Hosting', 'CI/CD', 'Best Practices', 'Changelog', 'About']) {
       await expect(rail.getByRole('heading', { name: section, exact: true })).toBeVisible();
     }
     const box = await rail.boundingBox();

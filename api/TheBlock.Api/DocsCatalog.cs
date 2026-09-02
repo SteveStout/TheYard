@@ -44,6 +44,9 @@ public static class DocsCatalog
         ["adr-react"] = "docs/ADR-019-react-configuration-explained.md",
         ["adr-diagrams"] = "docs/ADR-020-diagram-pages.md",
         ["adr-tests"] = "docs/ADR-021-tests-explained.md",
+        ["adr-grouping"] = "docs/ADR-022-app-architecture-group.md",
+        ["architecture"] = "docs/ARCHITECTURE.md",
+        ["style"] = "docs/STYLE.md",
     };
     // #endregion docs-catalog
 
