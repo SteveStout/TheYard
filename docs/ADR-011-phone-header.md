@@ -182,3 +182,15 @@ rule from the addendum above stand; only the colors changed.
   the palette and its measured contrast.
 - [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts): the 375 by 812 proof.
 - [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the viewport meta that makes a phone a phone.
+
+## The look, from the live site
+
+![A 375 pixel phone: the header with the brand and the hamburger, the inventory below](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-phone-home.jpg)
+
+![The drawer open on the phone: icon-led rows under muted section headings](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-phone-drawer.jpg)
+
+The icon per row kind, seven paths that cover every row
+([`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx)):
+
+```live path=src/components/SheetIcons.tsx region=icons
+```

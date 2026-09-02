@@ -94,3 +94,15 @@ WCAG AA, so a shade that fails contrast fails the build.
 - [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css) and [`src/components/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BrandMark.tsx):
   the brand mark in the palette's taupe.
 - [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the favicon.
+
+## The look, from the live site
+
+![The inventory in Urban slate: the light gray ground, white cards and rail, brown-gray text, the taupe brand mark](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
+
+![A vehicle open: the slate-blue Place bid button and Back link on the same ground](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-vehicle.jpg)
+
+The measurements that hold the palette to WCAG AA, read from this build
+([`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts)):
+
+```live path=src/styles/tokens.test.ts region=site-palette
+```

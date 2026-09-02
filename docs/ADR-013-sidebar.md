@@ -151,3 +151,20 @@ checks passed unchanged.
 - [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the rail widths and the sheet tokens.
 - [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts) and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts):
   the proof at 1280, 1023 and 375.
+
+## The look, from the live site
+
+Captured from the domain at 1.0.0.22 by the same headless Chrome the
+end-to-end suite uses (ADR: Docs and testing, addendum).
+
+![The docked rail beside the inventory at 1280 pixels: sections of icon rows, Admin and the links pinned below](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
+
+![The rail collapsed to a 64 pixel icon column, the page taking the width](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-rail-collapsed.jpg)
+
+![The drawer on a 375 pixel phone: the same rows, sliding in over the dimmed page](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-phone-drawer.jpg)
+
+The rows themselves, one loop over the shared record
+([`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx)):
+
+```live path=src/components/SideNav.tsx region=rows
+```

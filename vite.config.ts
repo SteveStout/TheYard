@@ -22,6 +22,7 @@ export default defineConfig({
   preview: {
     proxy: apiProxy,
   },
+  // #region unit-tests
   test: {
     // Unit tests only — tests/e2e belongs to Playwright.
     include: ['src/**/*.test.ts'],
@@ -29,4 +30,5 @@ export default defineConfig({
     // the palette file raw to measure its contrast, so that one goes through.
     css: { include: [/tokens\.css\?raw$/] },
   },
+  // #endregion unit-tests
 });

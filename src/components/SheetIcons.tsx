@@ -9,6 +9,7 @@ export type RowKind = DocKind | 'external' | 'admin' | 'reset';
  * record, the infrastructure file, or the changelog; the rest are links out,
  * the Admin tab, and Reset bids. Rows reuse these; nothing gets a bespoke icon.
  */
+// #region icons
 const PATHS: Record<RowKind, string> = {
   overview:
     'M6 2.5h6.5L17 6.5v10a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1zM12.5 2.5v4h4M8 10.5h5M8 13.5h5',
@@ -20,6 +21,7 @@ const PATHS: Record<RowKind, string> = {
   admin: 'M3 10.5h3.2l2-5.5 3.6 10 2-4.5H17',
   reset: 'M4.5 10a5.5 5.5 0 1 1 1.6 3.9M4.5 15v-4.5H9',
 };
+// #endregion icons
 
 /**
  * A sidebar row's leading icon. Decorative, so hidden from assistive tech;

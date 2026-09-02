@@ -52,6 +52,10 @@ footer displays exactly that.
   palette is held to WCAG AA by a unit test that reads the tokens file, so
   a shade that fails contrast fails the build. Recorded in ADR: The
   palette.
+- **The picture matches the words.** The infrastructure diagram on the
+  Hosting page is drawn from the records, every surface carries a screenshot
+  taken from the live site, and code shown in a record counts as documented
+  by it. Recorded in ADR: Docs and testing.
 - **The code reviews itself before anyone else does.** A staff-level pass
   over each day's work, every finding written down as kept, fixed or
   deferred, and the fixes shipped with tests. Recorded in ADR: The staff

@@ -37,6 +37,7 @@ export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
  * looks up in api/TheBlock.Api/DocsCatalog.cs; DocsCatalogTests holds the two
  * lists to each other (ADR-017).
  */
+// #region docs-record
 export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string; kind: DocKind }> = {
   readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme', kind: 'overview' },
   dataflow: { title: 'Data Flow', menuLabel: 'Data flow diagram', url: '/api/docs/dataflow', kind: 'overview' },
@@ -64,6 +65,7 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrPalette: { title: 'ADR: The palette', menuLabel: 'ADR: The palette', url: '/api/docs/adr-palette', kind: 'adr' },
   adrReview: { title: 'ADR: The staff review', menuLabel: 'ADR: The staff review', url: '/api/docs/adr-review', kind: 'adr' },
 };
+// #endregion docs-record
 
 export type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices' | 'changelog';
 

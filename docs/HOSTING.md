@@ -7,6 +7,15 @@ this menu are its children: read this page for the shape, open a child for the
 full reasoning behind one decision. Everything, the infrastructure code
 included, is served from these menus; nothing requires opening the repository.
 
+## The picture
+
+![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to the container group on Azure; a merge through CI and Deploy to the registry and the roll; and the designed, undeployed Front Door and App Service target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)
+
+Three lanes: a request from left to right, a merge becoming a roll, and the
+production target that waits for a subscription upgrade. Every name in it is
+the one the records and the pipeline logs carry. The source is
+[`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg); the records below explain each box.
+
 ## Websites and resources used
 
 - **Azure (portal.azure.com).** Runs the app: Container Instances for the

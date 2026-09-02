@@ -79,3 +79,11 @@ says no-cache rather than immutable; a photo keeps its day.
 - [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts) and [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the build that names
   every bundle file by its contents and rewrites the page to match.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): where the built bundle lands (`/app/wwwroot`).
+
+## More of the code
+
+The static file middleware, the photo set's own rule, and the fallback that
+answers only app routes ([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)):
+
+```live path=api/TheBlock.Api/Program.cs region=static-files
+```

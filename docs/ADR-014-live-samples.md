@@ -134,3 +134,7 @@ configuration files sit outside them. The whitelist now also allows
 the image copies them, and the rejection tests gained cases for the
 neighbors that stay out (`.env`, the lock file, anything under `docs/`).
 The string check still runs before any filesystem touch.
+
+## The look, from the live site
+
+![This record open in the app, scrolled to its first sample: the whitelist read from the running build, with the Live from line naming the file, the region and the commit](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-record-live.jpg)

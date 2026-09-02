@@ -95,6 +95,7 @@ jobs:
             --query "{state:provisioningState,image:containers[0].image,fqdn:ipAddress.fqdn}" -o json
 
       # #endregion roll
+      # #region verify
       - name: Verify
         run: |
           # The roll restarts the group: wait for the NEW build to answer at the origin.
@@ -131,3 +132,4 @@ jobs:
             echo "- image: $IMAGE"
             echo "- site: $SITE"
           } >> "$GITHUB_STEP_SUMMARY"
+      # #endregion verify

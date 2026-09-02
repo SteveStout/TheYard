@@ -87,6 +87,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
         seconds. Public on purpose; the reasoning is in the Best Practices menu.
       </p>
       <div className={styles.grid}>
+        {/* #region health-card */}
         <article className={styles.card} data-testid="health-card">
           <h2 className={styles.cardTitle}>Application health</h2>
           {health === null ? (
@@ -116,6 +117,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
             </>
           )}
         </article>
+        {/* #endregion health-card */}
 
         <article className={styles.card} data-testid="azure-card">
           <h2 className={styles.cardTitle}>Azure's view of the container</h2>

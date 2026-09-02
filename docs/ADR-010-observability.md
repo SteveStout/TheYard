@@ -108,3 +108,13 @@ Azure can ask about itself.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the container health check that hits `/healthz`.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the deploy's Verify step asks
   `/readyz` before it trusts a roll (ADR: The staff review).
+
+## The look, from the live site
+
+![The Admin tab at 1.0.0.22: three passing health checks with their durations, Azure reporting the container group Running with its last three events, and no server errors recorded](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-admin.jpg)
+
+The health card, from the fetch to the rows
+([`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx)):
+
+```live path=src/components/AdminPanel.tsx region=health-card
+```

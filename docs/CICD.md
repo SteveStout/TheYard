@@ -10,7 +10,7 @@ API suite, the frontend suite, and a browser suite that clicks through the
 running app the way a person would. A change that fails any of them does not
 ship.
 
-![Twenty green CI runs on GitHub Actions](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-ci-green.jpg)
+![The CI workflow runs on GitHub Actions, every one green, forty-one of them by the end of the second day](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-ci-runs.jpg)
 
 **Continuous deployment.** When CI finishes green on main, a second workflow
 named Deploy builds the container image, pushes it to Azure Container

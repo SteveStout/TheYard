@@ -73,3 +73,44 @@ Testing:
 
 ```live path=.github/workflows/ci.yml region=ci-jobs
 ```
+
+## Addendum, 2026-09-02: the diagram, the screenshots, and what counts as commented
+
+Steve's words, the evening of the second build day: "Make sure we have a
+diagram of our infrastructure and make sure we have as many screen shots
+and code references as possible and if the code is in the ADR it's good
+enough to be commented." Three rules follow from it, all in force.
+
+- **The infrastructure has a picture.** [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg)
+  is drawn by hand from the records and the pipeline logs, rendered to
+  [`docs/images/infrastructure.png`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.png), and served at the top of the
+  Hosting page and the README. It is redrawn when a box changes; a picture
+  that disagrees with the records is a bug in the picture.
+- **Every surface has a screenshot from the live site.** The records that
+  decided a look carry a capture of that look from the domain, taken by the
+  same headless Chrome the end-to-end suite uses, signed out, so the picture
+  is what a visitor sees and not what a developer sees. The captures live in
+  [`docs/images`](https://github.com/SteveStout/TheYard/blob/main/docs/images) beside the configuration screenshots from the first
+  day. The first pass found a real defect: a long Azure event message ran
+  past the edge of its card, fixed in the same version.
+- **Code shown in a record is documented by the record.** A region marker
+  names its record in a comment, the record explains the code beside the
+  live sample, and the code itself carries only the comments a reader needs
+  at the line. Code that no record shows keeps its own comments. So the
+  question for a reviewer is never "is this commented" but "which record
+  shows this", and the Files section at the end of every record answers it.
+
+The unit suite's configuration and the end-to-end suite's two servers, read
+from this build ([`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts), [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts)):
+
+```live path=vite.config.ts region=unit-tests
+```
+
+```live path=playwright.config.ts region=web-servers
+```
+
+The one record of every document the sidebar can open
+([`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx)):
+
+```live path=src/components/DocsMenu.tsx region=docs-record
+```

@@ -133,3 +133,11 @@
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
+
+/* Long messages (an image digest, say) wrap inside the card instead of running
+   past its edge. Found by the screenshot pass (ADR-006 addendum). */
+.checkRow > span,
+.errorRow > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

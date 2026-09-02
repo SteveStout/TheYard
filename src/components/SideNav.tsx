@@ -182,6 +182,7 @@ function NavContent({
 
       <nav className={styles.sections} aria-label="Project documents">
         <div className={styles.scroll}>
+          {/* #region rows */}
           {MENU_ORDER.map((variant) => (
             <section key={variant} className={styles.section}>
               <h2 className={iconsOnly ? styles.srOnly : styles.sectionTitle}>{MENUS[variant].label}</h2>
@@ -201,6 +202,7 @@ function NavContent({
               {variant === 'cicd' && <LinkRow link={LINKS.ciRuns} iconsOnly={iconsOnly} />}
             </section>
           ))}
+          {/* #endregion rows */}
         </div>
 
         <div className={styles.pinned}>

@@ -32,6 +32,7 @@ export function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
+// #region site-palette
 describe('the site palette (ADR-016)', () => {
   it('body, muted and heading text clear AA on white and on the page ground', () => {
     for (const ground of ['color-surface', 'color-bg']) {
@@ -57,6 +58,7 @@ describe('the site palette (ADR-016)', () => {
     expect(contrast(token('color-header-text-muted'), token('color-header'))).toBeGreaterThanOrEqual(4.5);
   });
 });
+// #endregion site-palette
 
 describe('the sidebar palette', () => {
   const grounds = ['color-sheet-bg', 'color-sheet-bg-raised'];

@@ -14,6 +14,7 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     channel: 'chrome',
   },
+  // #region web-servers
   webServer: [
     {
       command: 'npm run api',
@@ -28,4 +29,5 @@ export default defineConfig({
       timeout: 120_000,
     },
   ],
+  // #endregion web-servers
 });

@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>TheYard infrastructure: what runs today, how a merge becomes a roll, and the designed production target</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#536786"/>
+    </marker>
+    <marker id="arrow-taupe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#ab978c"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .lane { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .target { fill: #ffffff; stroke: #ab978c; stroke-width: 1.5; stroke-dasharray: 7 5; rx: 10; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 600; }
+      .lane-title { fill: #3f3a37; font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+      .lane-sub { fill: #62666f; font-size: 13px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .muted { fill: #62666f; font-size: 11.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .flow { stroke: #536786; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .flow-label { fill: #536786; font-size: 12px; font-weight: 500; }
+      .target-flow { stroke: #ab978c; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow-taupe); }
+      .target-label { fill: #8a766b; font-size: 12px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="960" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-09-02</text>
+  <text x="40" y="68" class="caption">Everything in the solid boxes is live and measured; the dashed group is the production design, defined in code and deliberately undeployed.</text>
+
+  <!-- ===================== Lane 1: the request path ===================== -->
+  <rect x="40" y="92" width="1320" height="300" class="lane"/>
+  <text x="60" y="120" class="lane-title">A request, left to right</text>
+  <text x="60" y="140" class="lane-sub">HOSTING.md and ADR-004, ADR-007 record the chain; ADR-010 the Admin tab; ADR-015 the cache rules.</text>
+
+  <!-- Visitor -->
+  <rect x="60" y="170" width="180" height="180" class="box"/>
+  <text x="75" y="196" class="title">Visitor's browser</text>
+  <text x="75" y="220" class="mono">https://theyard.</text>
+  <text x="75" y="236" class="mono">stevenstout.biz</text>
+  <text x="75" y="262" class="body">Hashed bundle files are</text>
+  <text x="75" y="279" class="body">cached a year; the page,</text>
+  <text x="75" y="296" class="body">the API and the docs</text>
+  <text x="75" y="313" class="body">say no-cache.</text>
+  <text x="75" y="336" class="muted">ADR-015</text>
+
+  <!-- DNS -->
+  <rect x="280" y="170" width="200" height="180" class="box"/>
+  <text x="295" y="196" class="title">DNS at Wix</text>
+  <text x="295" y="220" class="mono">theyard  CNAME</text>
+  <text x="295" y="236" class="mono">  theyard-edge.netlify.app</text>
+  <text x="295" y="258" class="mono">stevenstout.biz, www</text>
+  <text x="295" y="274" class="mono">  A records at Netlify</text>
+  <text x="295" y="300" class="body">Registrar-locked to Wix; the</text>
+  <text x="295" y="317" class="body">Cloudflare zone is staged for</text>
+  <text x="295" y="334" class="body">the transfer around Oct 30.</text>
+
+  <!-- Netlify edge -->
+  <rect x="520" y="170" width="240" height="180" class="box"/>
+  <text x="535" y="196" class="title">HTTPS edge: Netlify (free)</text>
+  <text x="535" y="220" class="body">Let's Encrypt certificate, auto-renewed.</text>
+  <text x="535" y="244" class="mono">edge/_redirects</text>
+  <text x="535" y="260" class="body">bare and www names: 301 to theyard</text>
+  <text x="535" y="276" class="body">everything else: proxy 200 to origin</text>
+  <text x="535" y="300" class="mono">netlify.toml</text>
+  <text x="535" y="316" class="body">rebuilds only when edge/ changes</text>
+  <text x="535" y="338" class="muted">ADR-007; not caching the API (measured)</text>
+
+  <!-- Origin container group -->
+  <rect x="800" y="150" width="540" height="228" class="box"/>
+  <text x="815" y="176" class="title">Origin: Azure Container Instances, RG-THEYARD-SS, westus2</text>
+  <text x="815" y="198" class="mono">aci-theyard-ss  1 vCPU  1.5 GB  port 8080</text>
+  <text x="815" y="214" class="mono">theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io</text>
+  <text x="815" y="238" class="body">Runs image theyard:vN from the registry, pulled with the</text>
+  <text x="815" y="254" class="body">user-assigned identity id-theyard-ss (AcrPull; Reader on the group).</text>
+
+  <rect x="815" y="268" width="510" height="96" fill="#f4f2f3" stroke="#d8d3d4" rx="8"/>
+  <text x="828" y="290" class="title">Inside: one ASP.NET Core 10 process (Dockerfile, ADR-002)</text>
+  <text x="828" y="310" class="body">Serves the built React SPA from wwwroot, /api/* over the in-memory inventory,</text>
+  <text x="828" y="326" class="body">the docs with live code read from its own source (ADR-014), /healthz and /readyz,</text>
+  <text x="828" y="342" class="body">and the Admin tab, which trades the identity for a token and reads its own</text>
+  <text x="828" y="358" class="body">container group from management.azure.com (ADR-010).</text>
+
+  <!-- request flow arrows -->
+  <path d="M240 260 L280 260" class="flow"/>
+  <path d="M480 260 L520 260" class="flow"/>
+  <path d="M760 260 L800 260" class="flow"/>
+  <text x="248" y="250" class="flow-label">resolve</text>
+  <text x="484" y="250" class="flow-label">TLS</text>
+  <text x="764" y="250" class="flow-label">:8080</text>
+
+  <!-- ===================== Lane 2: the ship path ===================== -->
+  <rect x="40" y="412" width="1320" height="250" class="lane"/>
+  <text x="60" y="440" class="lane-title">A merge becomes a roll, no hands on it</text>
+  <text x="60" y="460" class="lane-sub">ADR-009 records the pipeline, ADR-005 the version, ADR-012 the changelog line each version writes.</text>
+
+  <rect x="60" y="486" width="180" height="150" class="box"/>
+  <text x="75" y="512" class="title">GitHub: push to main</text>
+  <text x="75" y="536" class="body">The commit carries its</text>
+  <text x="75" y="552" class="body">own changelog line, one</text>
+  <text x="75" y="568" class="body">past the footer's number.</text>
+  <text x="75" y="594" class="mono">SteveStout/TheYard</text>
+
+  <rect x="280" y="486" width="240" height="150" class="box"/>
+  <text x="295" y="512" class="title">CI (.github/workflows/ci.yml)</text>
+  <text x="295" y="536" class="body">frontend: tsc, vitest, vite build</text>
+  <text x="295" y="552" class="body">api: dotnet test (124 tests)</text>
+  <text x="295" y="568" class="body">e2e: Playwright in Chrome (24)</text>
+  <text x="295" y="594" class="body">A red job stops everything below.</text>
+  <text x="295" y="618" class="muted">read-only token</text>
+
+  <rect x="560" y="486" width="360" height="150" class="box"/>
+  <text x="575" y="512" class="title">Deploy (.github/workflows/deploy.yml)</text>
+  <text x="575" y="536" class="body">Fires on green CI. OIDC federated credential,</text>
+  <text x="575" y="552" class="body">no secret stored anywhere. Version = 1.0.0.(11 + run).</text>
+  <text x="575" y="568" class="body">docker build with APP_VERSION and APP_COMMIT,</text>
+  <text x="575" y="584" class="body">push, render infra/aci-theyard.yaml,</text>
+  <text x="575" y="600" class="body">az container create, verify origin and domain.</text>
+  <text x="575" y="620" class="muted">roles: AcrPush, ACI Contributor, Managed Identity Operator</text>
+
+  <rect x="960" y="486" width="200" height="150" class="box"/>
+  <text x="975" y="512" class="title">Registry (ACR)</text>
+  <text x="975" y="536" class="mono">crtheyardsszmnetj67bn5h2</text>
+  <text x="975" y="552" class="mono">  .azurecr.io</text>
+  <text x="975" y="576" class="body">One tag per version,</text>
+  <text x="975" y="592" class="body">theyard:v12 to v22 today.</text>
+
+  <path d="M240 560 L280 560" class="flow"/>
+  <path d="M520 560 L560 560" class="flow"/>
+  <path d="M920 560 L960 560" class="flow"/>
+  <text x="244" y="550" class="flow-label">push</text>
+  <text x="522" y="550" class="flow-label">green</text>
+  <text x="922" y="550" class="flow-label">image</text>
+
+  <!-- registry to container group (up into lane 1) -->
+  <path d="M1060 486 L1060 440 L1100 440 L1100 378" class="flow"/>
+  <text x="1110" y="432" class="flow-label">pulled by id-theyard-ss</text>
+  <!-- deploy rolls the group -->
+  <path d="M740 486 L740 400 L800 400 L800 378" class="flow"/>
+  <text x="590" y="396" class="flow-label">az container create (roll)</text>
+
+  <!-- ===================== Lane 3: the production target ===================== -->
+  <rect x="40" y="682" width="1320" height="238" class="lane"/>
+  <text x="60" y="710" class="lane-title">The production target, designed and undeployed</text>
+  <text x="60" y="730" class="lane-sub">infra/main.bicep with enableFrontDoor=true and computeKind=appservice; ADR-001 the decision, ADR-004 why it waits.</text>
+
+  <rect x="60" y="756" width="260" height="140" class="target"/>
+  <text x="75" y="782" class="title">Azure Front Door</text>
+  <text x="75" y="806" class="body">Global entry, TLS, the custom domain</text>
+  <text x="75" y="822" class="body">on Azure instead of the Netlify edge.</text>
+  <text x="75" y="846" class="mono">fdProfile, fdEndpoint,</text>
+  <text x="75" y="862" class="mono">fdOriginGroup, fdOrigin, fdRoute</text>
+
+  <rect x="380" y="756" width="300" height="140" class="target"/>
+  <text x="395" y="782" class="title">App Service (B1), the locked origin</text>
+  <text x="395" y="806" class="body">Answers only Azure Front Door's backend</text>
+  <text x="395" y="822" class="body">range, and only with this profile's ID in</text>
+  <text x="395" y="838" class="body">the X-Azure-FDID header (siteLock).</text>
+  <text x="395" y="862" class="mono">plan, site, siteLock</text>
+
+  <rect x="740" y="756" width="300" height="140" class="target"/>
+  <text x="755" y="782" class="title">The same image</text>
+  <text x="755" y="806" class="body">Nothing about the container changes;</text>
+  <text x="755" y="822" class="body">only the host does. The pipeline would</text>
+  <text x="755" y="838" class="body">point at the App Service instead of the</text>
+  <text x="755" y="854" class="body">container group, and get deployment slots.</text>
+
+  <rect x="1080" y="756" width="260" height="140" class="target"/>
+  <text x="1095" y="782" class="title">Why it waits</text>
+  <text x="1095" y="806" class="body">The free trial forbids Front Door and</text>
+  <text x="1095" y="822" class="body">gave no App Service quota (measured</text>
+  <text x="1095" y="838" class="body">2026-08-31). Flipping two parameters</text>
+  <text x="1095" y="854" class="body">deploys this after an upgrade.</text>
+  <text x="1095" y="878" class="muted">ADR-004</text>
+
+  <path d="M320 826 L380 826" class="target-flow"/>
+  <path d="M680 826 L740 826" class="target-flow"/>
+  <text x="326" y="816" class="target-label">locked</text>
+  <text x="688" y="816" class="target-label">runs</text>
+
+  <text x="40" y="946" class="caption">Source: docs/images/infrastructure.svg in the repository. Names, sizes and roles are the ones the records and the pipeline logs carry; the picture is redrawn when they change.</text>
+</svg>

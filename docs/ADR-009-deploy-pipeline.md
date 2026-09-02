@@ -124,3 +124,11 @@ against any later export restores that build. Nothing was deleted.
   arguments (ADR: Version in the footer).
 - [`docs/CICD.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CICD.md): the design written before the build, and the
   screenshots of the runs.
+
+## More of the code
+
+The Verify step: the origin must serve the new version, then answer
+readiness, then the domain must agree ([`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml)):
+
+```live path=.github/workflows/deploy.yml region=verify
+```

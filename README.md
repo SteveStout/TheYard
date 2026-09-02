@@ -7,6 +7,13 @@ inventory, inspect a vehicle in detail, and place bids in a polished auction flo
 frontend is a React app backed by a .NET 10 API that owns the data, the search, and the
 auction rules.
 
+![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
+
+Everything about how it is built and hosted is served from inside the app,
+under Hosting, CI/CD and Best Practices in the sidebar. The shape of it:
+
+![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)
+
 ## How to Run
 
 Requires [Node 20+](https://nodejs.org) (built on Node 24) and the

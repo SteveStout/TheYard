@@ -280,6 +280,7 @@ app.Use(async (context, next) =>
 });
 #endregion cache-headers
 
+#region static-files
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -297,6 +298,7 @@ app.UseStaticFiles(new StaticFileOptions
 // looks like a file (a hashed bundle name that no longer exists, say) is a
 // 404, never a page dressed as a script.
 app.MapFallbackToFile("{*path:nonfile}", "index.html");
+#endregion static-files
 
 app.Run();
 
