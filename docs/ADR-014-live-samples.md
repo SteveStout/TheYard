@@ -65,10 +65,12 @@ only sample that cannot possibly be stale:
 ```live path=api/TheBlock.Api/LiveSamples.cs region=expander
 ```
 
-The helper every docs endpoint goes through
-([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)):
+The one endpoint every document goes through, since ADR: The staff review
+folded the per-document routes into a catalog
+([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs),
+[`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs)):
 
-```live path=api/TheBlock.Api/Program.cs region=live-doc
+```live path=api/TheBlock.Api/Program.cs region=docs-endpoint
 ```
 
 The rejection cases the tests hold the whitelist to, read from this build

@@ -24,6 +24,9 @@ type AzureState = {
 
 const REFRESH_MS = 30_000;
 
+/** A card's data: nothing yet, the value, or the word that the last fetch failed (ADR-017). */
+type Fetched<T> = T | null | 'failed';
+
 function formatUptime(totalSeconds: number): string {
   const days = Math.floor(totalSeconds / 86_400);
   const hours = Math.floor((totalSeconds % 86_400) / 3_600);
@@ -39,9 +42,9 @@ function formatUptime(totalSeconds: number): string {
  * leg never hides app health. Public on purpose; the ADR explains why.
  */
 export function AdminPanel({ onBack }: { onBack: () => void }) {
-  const [health, setHealth] = useState<Health | null>(null);
-  const [errors, setErrors] = useState<ErrorEntry[] | null>(null);
-  const [azure, setAzure] = useState<AzureState | null>(null);
+  const [health, setHealth] = useState<Fetched<Health>>(null);
+  const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
+  const [azure, setAzure] = useState<Fetched<AzureState>>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -51,11 +54,12 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     let live = true;
-    const grab = <T,>(url: string, set: (v: T | null) => void) =>
+    // A failed or non-200 answer marks the card failed instead of leaving it loading forever.
+    const grab = <T,>(url: string, set: (v: Fetched<T>) => void) =>
       fetch(url)
-        .then((r) => (r.ok ? r.json() : null))
+        .then((r) => (r.ok ? (r.json() as Promise<T>) : Promise.reject(new Error(String(r.status)))))
         .then((v) => { if (live) set(v); })
-        .catch(() => { if (live) set(null); });
+        .catch(() => { if (live) set('failed'); });
     void grab<Health>('/api/health', setHealth);
     void grab<ErrorEntry[]>('/api/errors', setErrors);
     void grab<AzureState>('/api/admin/azure', setAzure);
@@ -63,6 +67,11 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
   }, [tick]);
 
   const pill = (ok: boolean) => (ok ? `${styles.pill} ${styles.ok}` : `${styles.pill} ${styles.bad}`);
+  const failed = (what: string) => (
+    <p className={styles.muted} data-testid="card-failed">
+      Could not read {what} on the last try; the next try is in 30 seconds.
+    </p>
+  );
 
   return (
     <section className={styles.wrap} aria-label="Admin">
@@ -82,6 +91,8 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           <h2 className={styles.cardTitle}>Application health</h2>
           {health === null ? (
             <p className={styles.muted}>Loading…</p>
+          ) : health === 'failed' ? (
+            failed('the health report')
           ) : (
             <>
               <p className={styles.statusRow}>
@@ -110,6 +121,8 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           <h2 className={styles.cardTitle}>Azure's view of the container</h2>
           {azure === null ? (
             <p className={styles.muted}>Loading…</p>
+          ) : azure === 'failed' ? (
+            failed("Azure's view")
           ) : azure.available ? (
             <ul className={styles.checkList}>
               <li className={styles.checkRow}>
@@ -153,6 +166,8 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           <h2 className={styles.cardTitle}>Recent server errors</h2>
           {errors === null ? (
             <p className={styles.muted}>Loading…</p>
+          ) : errors === 'failed' ? (
+            failed('the error list')
           ) : errors.length === 0 ? (
             <p className={styles.muted}>
               None recorded since the container started. The buffer holds the

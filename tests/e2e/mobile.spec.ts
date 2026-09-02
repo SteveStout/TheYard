@@ -91,6 +91,9 @@ test('Admin is reachable from the drawer and the footer still renders', async ({
   await expect(page.getByTestId('health-card')).toContainText('healthy');
   await expect(page.getByTestId('check-duration').first()).toHaveText(/^\d+ ms$/);
   await expect(page.getByTestId('build-version')).toBeVisible();
+  // The header brand is the way home from Admin on a phone too (ADR-017).
+  await page.getByRole('banner').getByRole('button', { name: /The Yard/ }).click();
+  await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
 });
 
 test('the phone header has its own decision record, reachable from the drawer', async ({ page }) => {

@@ -9,6 +9,7 @@ import {
   type DocRequest,
 } from './DocsMenu';
 import { RowIcon } from './SheetIcons';
+import { BrandMark } from './BrandMark';
 import styles from './SideNav.module.css';
 
 /** The rail's collapsed state survives reloads per browser; a missing or blocked store means open. */
@@ -145,9 +146,7 @@ function NavContent({
           }}
           title="The Yard: back to the inventory"
         >
-          <svg className={styles.brandMark} viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path d="M13 2 5 14h5l-2 8 8-12h-5l2-8z" fill="currentColor" />
-          </svg>
+          <BrandMark size={22} className={styles.brandMark} />
           <span className={iconsOnly ? styles.srOnly : styles.brandText}>
             The Yard
             {versionLabel && <small className={styles.brandSub}>{versionLabel}</small>}
@@ -183,36 +182,25 @@ function NavContent({
 
       <nav className={styles.sections} aria-label="Project documents">
         <div className={styles.scroll}>
-        {MENU_ORDER.map((variant) => (
-          <section key={variant} className={styles.section}>
-            <h3 className={iconsOnly ? styles.srOnly : styles.sectionTitle}>{MENUS[variant].label}</h3>
-            {MENUS[variant].items.map(({ key, sub }) => (
-              <button
-                key={key}
-                type="button"
-                className={sub ? `${styles.row} ${styles.subRow}` : styles.row}
-                onClick={() => onOpenDoc(key)}
-                aria-current={openKey === key ? 'true' : undefined}
-                title={iconsOnly ? DOCS[key].menuLabel : undefined}
-              >
-                <RowIcon kind={DOCS[key].kind} className={styles.icon} />
-                <span className={iconsOnly ? styles.srOnly : styles.label}>{DOCS[key].menuLabel}</span>
-              </button>
-            ))}
-            {variant === 'cicd' && (
-              <a
-                className={styles.row}
-                href={LINKS.ciRuns.href}
-                target="_blank"
-                rel="noreferrer"
-                title={iconsOnly ? LINKS.ciRuns.label : undefined}
-              >
-                <RowIcon kind="external" className={styles.icon} />
-                <span className={iconsOnly ? styles.srOnly : styles.label}>{LINKS.ciRuns.label}</span>
-              </a>
-            )}
-          </section>
-        ))}
+          {MENU_ORDER.map((variant) => (
+            <section key={variant} className={styles.section}>
+              <h2 className={iconsOnly ? styles.srOnly : styles.sectionTitle}>{MENUS[variant].label}</h2>
+              {MENUS[variant].items.map(({ key, sub }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={sub ? `${styles.row} ${styles.subRow}` : styles.row}
+                  onClick={() => onOpenDoc(key)}
+                  aria-current={openKey === key ? 'true' : undefined}
+                  title={iconsOnly ? DOCS[key].menuLabel : undefined}
+                >
+                  <RowIcon kind={DOCS[key].kind} className={styles.icon} />
+                  <span className={iconsOnly ? styles.srOnly : styles.label}>{DOCS[key].menuLabel}</span>
+                </button>
+              ))}
+              {variant === 'cicd' && <LinkRow link={LINKS.ciRuns} iconsOnly={iconsOnly} />}
+            </section>
+          ))}
         </div>
 
         <div className={styles.pinned}>
@@ -243,28 +231,26 @@ function NavContent({
               <span className={iconsOnly ? styles.srOnly : styles.label}>Reset bids ({bidCount})</span>
             </button>
           )}
-          <a
-            className={styles.row}
-            href={LINKS.resume.href}
-            target="_blank"
-            rel="noreferrer"
-            title={iconsOnly ? LINKS.resume.label : undefined}
-          >
-            <RowIcon kind="external" className={styles.icon} />
-            <span className={iconsOnly ? styles.srOnly : styles.label}>{LINKS.resume.label}</span>
-          </a>
-          <a
-            className={styles.row}
-            href={LINKS.repo.href}
-            target="_blank"
-            rel="noreferrer"
-            title={iconsOnly ? LINKS.repo.label : undefined}
-          >
-            <RowIcon kind="external" className={styles.icon} />
-            <span className={iconsOnly ? styles.srOnly : styles.label}>{LINKS.repo.label}</span>
-          </a>
+          <LinkRow link={LINKS.resume} iconsOnly={iconsOnly} />
+          <LinkRow link={LINKS.repo} iconsOnly={iconsOnly} />
         </div>
       </nav>
     </>
+  );
+}
+
+/** A link drawn as a row, the same icon and label rules as a doc row; opens in a new tab. */
+function LinkRow({ link, iconsOnly }: { link: { href: string; label: string }; iconsOnly: boolean }) {
+  return (
+    <a
+      className={styles.row}
+      href={link.href}
+      target="_blank"
+      rel="noreferrer"
+      title={iconsOnly ? link.label : undefined}
+    >
+      <RowIcon kind="external" className={styles.icon} />
+      <span className={iconsOnly ? styles.srOnly : styles.label}>{link.label}</span>
+    </a>
   );
 }

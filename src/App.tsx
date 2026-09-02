@@ -19,6 +19,7 @@ import { applyBidRecord, useBids } from './hooks/useBids';
 import { useNow } from './hooks/useNow';
 import { AdminPanel } from './components/AdminPanel';
 import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
+import { BrandMark } from './components/BrandMark';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
@@ -381,10 +382,8 @@ export default function App() {
         {!docked && (
           <header className={styles.header}>
             <div className={styles.headerInner}>
-              <button type="button" className={styles.brand} onClick={backToInventory}>
-                <svg className={styles.brandMark} viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                  <path d="M13 2 5 14h5l-2 8 8-12h-5l2-8z" fill="currentColor" />
-                </svg>
+              <button type="button" className={styles.brand} onClick={goHome}>
+                <BrandMark size={18} className={styles.brandMark} />
                 The Yard
                 <span className={styles.brandSub}>Vehicle Auctions</span>
               </button>

@@ -19,14 +19,14 @@ string contentRoot = builder.Environment.ContentRootPath;
 // `dotnet run`, tests, and published output all working from one line.
 string dataPath = FindUpward(contentRoot, Path.Combine("data", "vehicles.json"));
 string readmePath = FindUpward(contentRoot, "README.md");
-string dataflowPath = FindUpward(contentRoot, Path.Combine("docs", "DATAFLOW.md"));
-string projectsPath = FindUpward(contentRoot, Path.Combine("docs", "PROJECTS.md"));
 string resumePath = Path.Combine(contentRoot, "wwwroot", "docs", "resume.pdf");
 string manifestPath = Path.Combine(contentRoot, "photo-manifest.json");
 string imagesRoot = Path.Combine(contentRoot, "wwwroot", "images");
 // Live code samples (ADR-014) read whitelisted source files under the repo root,
 // which is the folder README.md sits in, both in the image and in a checkout.
 string repoRoot = Path.GetDirectoryName(readmePath)!;
+// Build provenance (ADR-005), read once: the Docker build bakes both in.
+string buildVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev";
 string buildCommit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local";
 
 // The 200-record seed dataset is deterministically expanded to TargetCount
@@ -118,69 +118,26 @@ app.MapDelete("/api/bids", (BidService bids) =>
 });
 
 // ---------------------------------------------------------------------------
-// About documents: the project README and the author's resume, surfaced in
-// the UI's About menu.
+// Documents: every markdown the sidebar can open, served from one endpoint.
 // ---------------------------------------------------------------------------
 
-app.MapGet("/api/docs/readme", () =>
-    Results.Text(File.ReadAllText(readmePath), "text/markdown"));
-
-app.MapGet("/api/docs/dataflow", () =>
-    Results.Text(File.ReadAllText(dataflowPath), "text/markdown"));
-
-app.MapGet("/api/docs/projects", () =>
-    Results.Text(File.ReadAllText(projectsPath), "text/markdown"));
-
-// Live code samples (ADR-014): every markdown doc under docs/ goes through one
-// helper that expands ```live blocks from this build's own source files.
-#region live-doc
-IResult LiveDoc(string file) =>
-    Results.Text(
-        LiveSamples.Expand(
-            File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", file))),
-            repoRoot,
-            buildCommit),
-        "text/markdown");
-#endregion live-doc
-
-app.MapGet("/api/docs/adr-origin", () =>
-    LiveDoc("ADR-001-front-door-origin.md"));
-
-app.MapGet("/api/docs/adr-docker", () =>
-    LiveDoc("ADR-002-docker-packaging.md"));
-
-app.MapGet("/api/docs/adr-naming", () =>
-    LiveDoc("ADR-003-azure-naming.md"));
-
-app.MapGet("/api/docs/adr-pivots", () =>
-    LiveDoc("ADR-004-deployment-pivots.md"));
-
-app.MapGet("/api/docs/hosting", () =>
-    LiveDoc("HOSTING.md"));
-
-app.MapGet("/api/docs/cicd", () =>
-    LiveDoc("CICD.md"));
-
-app.MapGet("/api/docs/adr-pipeline", () =>
-    LiveDoc("ADR-009-deploy-pipeline.md"));
-
-app.MapGet("/api/docs/adr-edge-economics", () =>
-    LiveDoc("ADR-007-edge-economics.md"));
-
-app.MapGet("/api/docs/adr-linux", () =>
-    LiveDoc("ADR-008-linux-containers.md"));
-
-app.MapGet("/api/docs/practices", () =>
-    LiveDoc("BEST-PRACTICES.md"));
-
-app.MapGet("/api/docs/adr-versioning", () =>
-    LiveDoc("ADR-005-version-footer.md"));
-
-app.MapGet("/api/docs/adr-docs", () =>
-    LiveDoc("ADR-006-docs-and-testing.md"));
+#region docs-endpoint
+// One route for every document (ADR-017): the slug is looked up in the catalog
+// (DocsCatalog.cs, the same slugs src/components/DocsMenu.tsx carries), the file
+// is read from the repo root and its live blocks are expanded (ADR-014). A slug
+// missing from the catalog is a 404, never a file read. The Bicep file and the
+// resume keep their own routes below because they are not markdown; a literal
+// route wins over the {slug} pattern.
+app.MapGet("/api/docs/{slug}", (string slug) =>
+    DocsCatalog.Files.TryGetValue(slug, out var file)
+        ? Results.Text(
+            LiveSamples.Expand(File.ReadAllText(Path.Combine(repoRoot, file)), repoRoot, buildCommit),
+            "text/markdown")
+        : Results.NotFound());
+#endregion docs-endpoint
 
 app.MapGet("/api/docs/bicep", () =>
-    Results.Text("# infra/main.bicep" + "\n\nThe production design as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. Kept deliberately undeployed; the Hosting overview explains that choice.\n\n```bicep\n" + File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("infra", "main.bicep"))) + "\n```\n", "text/markdown"));
+    Results.Text("# infra/main.bicep" + "\n\nThe production design as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. Kept deliberately undeployed; the Hosting overview explains that choice.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "main.bicep")) + "\n```\n", "text/markdown"));
 
 app.MapGet("/api/docs/resume", () =>
     Results.File(resumePath, "application/pdf"));
@@ -190,11 +147,7 @@ app.MapGet("/api/docs/resume", () =>
 // baked in as environment variables by the Docker build (ADR-005).
 // ---------------------------------------------------------------------------
 
-app.MapGet("/api/version", () => Results.Json(new
-{
-    version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev",
-    commit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local",
-}));
+app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, commit = buildCommit }));
 
 IResult HandleBid(
     InventoryService inventory,
@@ -270,7 +223,7 @@ HealthCheckEntry[] RunChecks()
     return
     [
         Check("dataset file", () => File.Exists(dataPath), "data/vehicles.json present"),
-        Check("docs", () => File.Exists(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "HOSTING.md"))), "served documents findable"),
+        Check("docs", () => File.Exists(Path.Combine(repoRoot, "docs", "HOSTING.md")), "served documents findable"),
         Check("photo manifest", () => File.Exists(manifestPath), "image manifest present"),
     ];
 }
@@ -288,8 +241,8 @@ app.MapGet("/api/health", () =>
     {
         status = checks.All(c => c.Status == "pass") ? "healthy" : "degraded",
         uptime_seconds = (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
-        version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev",
-        commit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local",
+        version = buildVersion,
+        commit = buildCommit,
         checks,
     }, wireFormat);
 });
@@ -297,33 +250,6 @@ app.MapGet("/api/health", () =>
 app.MapGet("/api/errors", () => Results.Json(errorLog.Snapshot(), wireFormat));
 
 app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
-
-app.MapGet("/api/docs/adr-observability", () =>
-    LiveDoc("ADR-010-observability.md"));
-
-app.MapGet("/api/docs/adr-phone", () =>
-    LiveDoc("ADR-011-phone-header.md"));
-
-#region docs-changelog
-// The changelog and its record (ADR-012): one file, one sentence per version.
-app.MapGet("/api/docs/changelog", () =>
-    LiveDoc("CHANGELOG.md"));
-
-app.MapGet("/api/docs/adr-changelog", () =>
-    LiveDoc("ADR-012-changelog.md"));
-#endregion docs-changelog
-
-app.MapGet("/api/docs/adr-sidebar", () =>
-    LiveDoc("ADR-013-sidebar.md"));
-
-app.MapGet("/api/docs/adr-live-samples", () =>
-    LiveDoc("ADR-014-live-samples.md"));
-
-app.MapGet("/api/docs/adr-caching", () =>
-    LiveDoc("ADR-015-cache-headers.md"));
-
-app.MapGet("/api/docs/adr-palette", () =>
-    LiveDoc("ADR-016-palette.md"));
 
 #region cache-headers
 // Cache rules (ADR-015), from the shape of the address. Vite names every
@@ -393,143 +319,3 @@ public sealed record BuyNowRequest(long? AnchorMs);
 
 // Exposes the entry point to WebApplicationFactory for integration tests.
 public partial class Program;
-
-/// <summary>One health probe's outcome and how long it took, serialized snake_case for the Admin tab.</summary>
-public sealed record HealthCheckEntry(string Name, string Status, string Detail, long DurationMs);
-
-/// <summary>One recorded server error, newest first in snapshots.</summary>
-public sealed record ErrorEntry(DateTimeOffset At, string Path, int Status, string Message);
-
-/// <summary>
-/// Fixed-size, thread-safe buffer of recent server errors. In-memory on
-/// purpose for this demo: it resets on every roll, and the Admin tab says so.
-/// </summary>
-public sealed class ErrorRingBuffer(int capacity)
-{
-    private readonly object _gate = new();
-    private readonly Queue<ErrorEntry> _entries = new();
-
-    public void Record(string path, int status, string message)
-    {
-        lock (_gate)
-        {
-            _entries.Enqueue(new ErrorEntry(DateTimeOffset.UtcNow, path, status, message));
-            while (_entries.Count > capacity)
-            {
-                _entries.Dequeue();
-            }
-        }
-    }
-
-    public IReadOnlyList<ErrorEntry> Snapshot()
-    {
-        lock (_gate)
-        {
-            return _entries.Reverse().ToArray();
-        }
-    }
-}
-
-/// <summary>
-/// The site asking Azure about itself: a management-plane token from the
-/// container group's own user-assigned identity, then a read of this group's
-/// resource. Degrades to available=false anywhere that identity endpoint
-/// does not exist (local dev, tests), and caches success for 60 seconds.
-/// </summary>
-public sealed class AzureSelf(string clientId, string resourceId)
-{
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(4) };
-
-    private static string Trim(string text, int max) =>
-        text.Length <= max ? text : text[..max].TrimEnd() + "...";
-
-    private readonly object _gate = new();
-    private object? _cached;
-    private DateTimeOffset _cachedAt;
-
-    public async Task<object> GetStateAsync()
-    {
-        lock (_gate)
-        {
-            if (_cached is not null && DateTimeOffset.UtcNow - _cachedAt < TimeSpan.FromSeconds(60))
-            {
-                return _cached;
-            }
-        }
-        try
-        {
-            using var tokenReq = new HttpRequestMessage(HttpMethod.Get,
-                "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01" +
-                "&resource=https%3A%2F%2Fmanagement.azure.com%2F&client_id=" + clientId);
-            tokenReq.Headers.Add("Metadata", "true");
-            using var tokenResp = await Http.SendAsync(tokenReq);
-            tokenResp.EnsureSuccessStatusCode();
-            using var tokenJson = JsonDocument.Parse(await tokenResp.Content.ReadAsStringAsync());
-            string token = tokenJson.RootElement.GetProperty("access_token").GetString()!;
-
-            using var armReq = new HttpRequestMessage(HttpMethod.Get,
-                "https://management.azure.com" + resourceId + "?api-version=2023-05-01");
-            armReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            using var armResp = await Http.SendAsync(armReq);
-            armResp.EnsureSuccessStatusCode();
-            using var arm = JsonDocument.Parse(await armResp.Content.ReadAsStringAsync());
-
-            var props = arm.RootElement.GetProperty("properties");
-            string groupState = props.TryGetProperty("instanceView", out var iv)
-                && iv.TryGetProperty("state", out var st) ? st.GetString() ?? "unknown" : "unknown";
-            var containerProps = props.GetProperty("containers")[0].GetProperty("properties");
-            string image = containerProps.GetProperty("image").GetString() ?? "unknown";
-            int restarts = 0;
-            string containerState = "unknown";
-            var events = new List<object>();
-            if (containerProps.TryGetProperty("instanceView", out var civ))
-            {
-                restarts = civ.TryGetProperty("restartCount", out var rc) ? rc.GetInt32() : 0;
-                if (civ.TryGetProperty("currentState", out var cs))
-                {
-                    containerState = cs.TryGetProperty("state", out var css) ? css.GetString() ?? "unknown" : "unknown";
-                }
-                #region azure-events
-                // The last three events Azure recorded for the container (pulls, starts,
-                // kills), newest first, each message trimmed: enough to read a restart
-                // story from the Admin tab without opening the portal (ADR-010, second pass).
-                if (civ.TryGetProperty("events", out var evs) && evs.ValueKind == JsonValueKind.Array)
-                {
-                    events = evs.EnumerateArray()
-                        .Select(e => new
-                        {
-                            name = e.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",
-                            count = e.TryGetProperty("count", out var c) && c.TryGetInt32(out int ci) ? ci : 1,
-                            last_at = e.TryGetProperty("lastTimestamp", out var lt) ? lt.GetString() ?? "" : "",
-                            message = Trim(e.TryGetProperty("message", out var msg) ? msg.GetString() ?? "" : "", 140),
-                        })
-                        .OrderByDescending(e => e.last_at, StringComparer.Ordinal)
-                        .Take(3)
-                        .Cast<object>()
-                        .ToList();
-                }
-                #endregion azure-events
-            }
-            var result = new
-            {
-                available = true,
-                group_state = groupState,
-                container_state = containerState,
-                restart_count = restarts,
-                image,
-                events,
-                fetched_at = DateTimeOffset.UtcNow,
-            };
-            lock (_gate)
-            {
-                _cached = result;
-                _cachedAt = DateTimeOffset.UtcNow;
-            }
-            return result;
-        }
-        catch (Exception ex)
-        {
-            return new { available = false, reason = ex.GetType().Name };
-        }
-    }
-}

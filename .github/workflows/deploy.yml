@@ -28,6 +28,8 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     # #endregion deploy-trigger
     runs-on: ubuntu-latest
+    # A hung roll must not hold the deploy-production group for the default six hours (ADR-017).
+    timeout-minutes: 30
     env:
       REGISTRY_NAME: crtheyardsszmnetj67bn5h2
       ACR: crtheyardsszmnetj67bn5h2.azurecr.io
@@ -109,6 +111,9 @@ jobs:
             fi
           done
           curl -fsS --max-time 20 "$ORIGIN/api/facets" > /dev/null
+          # Readiness is the container's own word that its files are in place (ADR-010).
+          curl -fsS --max-time 20 "$ORIGIN/readyz"
+          echo
           # The domain is the edge in front of the same origin: what a visitor sees.
           site=$(curl -fsS --max-time 30 "$SITE/api/version")
           echo "domain: $site"

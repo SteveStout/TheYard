@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+# Read-only token for every job: CI checks out and tests, nothing more (ADR-017).
+permissions:
+  contents: read
+
 jobs:
   frontend:
     runs-on: ubuntu-latest

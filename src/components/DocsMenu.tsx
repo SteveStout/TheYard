@@ -26,11 +26,17 @@ export type DocKey =
   | 'adrSidebar'
   | 'adrLiveSamples'
   | 'adrCaching'
-  | 'adrPalette';
+  | 'adrPalette'
+  | 'adrReview';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
 
+/**
+ * Every doc the sidebar can open. The url's last segment is the slug the API
+ * looks up in api/TheBlock.Api/DocsCatalog.cs; DocsCatalogTests holds the two
+ * lists to each other (ADR-017).
+ */
 export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string; kind: DocKind }> = {
   readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme', kind: 'overview' },
   dataflow: { title: 'Data Flow', menuLabel: 'Data flow diagram', url: '/api/docs/dataflow', kind: 'overview' },
@@ -56,6 +62,7 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrLiveSamples: { title: 'ADR: Live code samples', menuLabel: 'ADR: Live code samples', url: '/api/docs/adr-live-samples', kind: 'adr' },
   adrCaching: { title: 'ADR: Cache headers', menuLabel: 'ADR: Cache headers', url: '/api/docs/adr-caching', kind: 'adr' },
   adrPalette: { title: 'ADR: The palette', menuLabel: 'ADR: The palette', url: '/api/docs/adr-palette', kind: 'adr' },
+  adrReview: { title: 'ADR: The staff review', menuLabel: 'ADR: The staff review', url: '/api/docs/adr-review', kind: 'adr' },
 };
 
 export type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices' | 'changelog';
@@ -97,6 +104,7 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrLiveSamples', sub: true },
       { key: 'adrCaching', sub: true },
       { key: 'adrPalette', sub: true },
+      { key: 'adrReview', sub: true },
     ],
   },
   // #region menu-changelog

@@ -56,10 +56,12 @@ Ceremony per ship: one line in one file, inside the commit that earns it.
 ## In the code
 
 The samples below are read from this build's source each time the page is
-served (ADR: Live code samples). The endpoints, in
-[`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs):
+served (ADR: Live code samples). The two entries in the documents catalog
+([`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs),
+served by the one endpoint in
+[`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)):
 
-```live path=api/TheBlock.Api/Program.cs region=docs-changelog
+```live path=api/TheBlock.Api/DocsCatalog.cs region=docs-changelog
 ```
 
 The menu, one item on purpose, in

@@ -22,7 +22,7 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Sixteen ADRs record why the architecture is
+- **Decisions get written down.** Seventeen ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -52,3 +52,7 @@ footer displays exactly that.
   palette is held to WCAG AA by a unit test that reads the tokens file, so
   a shade that fails contrast fails the build. Recorded in ADR: The
   palette.
+- **The code reviews itself before anyone else does.** A staff-level pass
+  over each day's work, every finding written down as kept, fixed or
+  deferred, and the fixes shipped with tests. Recorded in ADR: The staff
+  review.

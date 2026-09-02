@@ -9,14 +9,25 @@ namespace TheBlock.Tests;
 /// failure renders a one-line note instead of an error.
 /// </summary>
 public class LiveSamplesTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+    : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     private readonly HttpClient _client = factory.CreateClient();
+    private readonly List<string> _tempRoots = [];
+
+    /// <summary>Every throwaway repo root is deleted when the test class is done (ADR-017).</summary>
+    public void Dispose()
+    {
+        foreach (string root in _tempRoots)
+        {
+            try { Directory.Delete(root, recursive: true); } catch (IOException) { }
+        }
+    }
 
     /// <summary>A throwaway repo root with one whitelisted file and one off-root file.</summary>
-    private static string TempRepo()
+    private string TempRepo()
     {
         string root = Path.Combine(Path.GetTempPath(), "theyard-live-" + Guid.NewGuid().ToString("N"));
+        _tempRoots.Add(root);
         Directory.CreateDirectory(Path.Combine(root, "src"));
         File.WriteAllText(
             Path.Combine(root, "src", "sample.ts"),

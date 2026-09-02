@@ -76,9 +76,12 @@ served (ADR: Live code samples). The timed checks
 ```live path=api/TheBlock.Api/Program.cs region=health-checks
 ```
 
-The events, read from the same management response:
+The events, read from the same management response (the observability
+types moved to
+[`api/TheBlock.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Observability.cs)
+in ADR: The staff review):
 
-```live path=api/TheBlock.Api/Program.cs region=azure-events
+```live path=api/TheBlock.Api/Observability.cs region=azure-events
 ```
 
 The proof is one API test that every check carries a non-negative
