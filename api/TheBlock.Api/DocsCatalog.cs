@@ -43,6 +43,7 @@ public static class DocsCatalog
         ["adr-program"] = "docs/ADR-018-program-cs-explained.md",
         ["adr-react"] = "docs/ADR-019-react-configuration-explained.md",
         ["adr-diagrams"] = "docs/ADR-020-diagram-pages.md",
+        ["adr-tests"] = "docs/ADR-021-tests-explained.md",
     };
     // #endregion docs-catalog
 

@@ -5,6 +5,7 @@ footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Best Practices menu.
 
+- **1.0.0.27** (2026-09-02): The third record for a new developer, the tests explained, with teaching comments in the samples it shows, and the resume dated 2026-09-02 served from About (ADR-021).
 - **1.0.0.26** (2026-09-02): ADR: Diagram pages gained its screenshots from the live site, the caption on a phone, the page as it opens and zoomed in, and the laptop view (ADR-020).
 - **1.0.0.25** (2026-09-02): Every diagram opens on its own page in a new tab, zoomable with the text selectable, from a preview in the record; the data flow was drawn in the same style as the infrastructure diagram; links inside a document open in a new tab (ADR-020).
 - **1.0.0.24** (2026-09-02): Two records written for a new developer walk Program.cs and the React configuration top to bottom with the why beside every choice and the code read from the build, and a live sample can now show a whole file (ADR-018, ADR-019).

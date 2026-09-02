@@ -48,6 +48,10 @@ describe('vehicleQueryParams', () => {
   });
 });
 
+// #region cache-tests
+// The network is a counter here: vi.stubGlobal replaces fetch with a mock that
+// answers one page, and fake timers let the five-minute TTL expire in a line.
+// Each test asserts how many times the "network" was touched.
 describe('fetchVehicles caching', () => {
   const okResponse = () =>
     ({ ok: true, json: async () => ({ total: 1, vehicles: [{ id: 'v1' }] }) }) as unknown as Response;
@@ -94,6 +98,7 @@ describe('fetchVehicles caching', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+  // #endregion cache-tests
 
   it('peekVehicles reports a hit synchronously and respects the TTL', async () => {
     const fetchMock = vi.fn().mockImplementation(async () => okResponse());

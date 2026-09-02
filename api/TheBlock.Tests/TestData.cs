@@ -5,6 +5,11 @@ namespace TheBlock.Tests;
 
 internal static class TestData
 {
+    // #region builders
+    // Builders, not fixture files: a test asks for a Vehicle and overrides only
+    // the fields it cares about, so the test reads as its intent and a new
+    // required field on the record is added here once. The clock helper anchors
+    // time to a chosen midnight, so no test depends on when it runs.
     /// <summary>An AuctionClock anchored at midnight of <paramref name="now"/>'s own day and offset.</summary>
     public static AuctionClock ClockAt(DateTimeOffset now) =>
         new(
@@ -49,6 +54,7 @@ internal static class TestData
         CurrentBid = currentBid,
         BidCount = 16,
     };
+    // #endregion builders
 
     public static IReadOnlyDictionary<string, IReadOnlyList<PhotoEntry>> Pools(
         params (string Style, PhotoEntry[] Photos)[] pools) =>

@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace TheBlock.Tests;
 
+// #region lifecycle
+// WebApplicationFactory<Program> boots Program.cs inside the test process with
+// an in-memory server: real routing, binding, services and serializer, no port.
+// IClassFixture shares that one host across the class.
 /// <summary>
 /// The bid lifecycle through the real host. Its own fixture class, so the
 /// mutable bid state can't leak into the read-only integration tests.
@@ -23,6 +27,8 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task Bid_lifecycle_place_verify_buy_now_and_reset()
     {
+        // One clock for the whole test: every request carries the same anchor, so
+        // the server and the assertions agree on which auctions are live.
         long anchor = Anchor;
 
         // Pick a live vehicle sorted by most bids — its window ends hours or
@@ -51,6 +57,7 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
         var tooLow = await _client.PostAsJsonAsync($"/api/vehicles/{id}/bids",
             new { amount = min, anchor_ms = anchor });
         Assert.Equal(HttpStatusCode.BadRequest, tooLow.StatusCode);
+        // #endregion lifecycle
 
         // Buy Now on a live vehicle that has a price.
         string? buyNowId = null;

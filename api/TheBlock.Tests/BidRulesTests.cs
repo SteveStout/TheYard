@@ -21,6 +21,10 @@ public class BidRulesTests
         throw new InvalidOperationException($"No probe id found with status {status}");
     }
 
+    // #region tiers
+    // A Theory runs once per InlineData row: six tiers, one test. The rule under
+    // test is a pure function in the Domain project, so no host, no file and no
+    // clock are needed; the Fact below covers the two edges of the same rule.
     [Theory]
     [InlineData(3500, 100)]
     [InlineData(4999, 100)]
@@ -39,6 +43,7 @@ public class BidRulesTests
         Assert.Equal(23_300, BidRules.MinNextBid(TestData.Vehicle(currentBid: 22_800)));
         Assert.Equal(14_500, BidRules.MinNextBid(TestData.Vehicle(currentBid: null)));
     }
+    // #endregion tiers
 
     [Fact]
     public void Live_auction_accepts_a_bid_at_the_minimum_and_rejects_below_it()

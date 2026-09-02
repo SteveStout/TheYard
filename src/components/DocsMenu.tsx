@@ -48,7 +48,8 @@ export type DocKey =
   | 'adrReview'
   | 'adrProgram'
   | 'adrReact'
-  | 'adrDiagrams';
+  | 'adrDiagrams'
+  | 'adrTests';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
@@ -88,6 +89,7 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrProgram: { title: 'ADR: Program.cs, explained', menuLabel: 'ADR: Program.cs, explained', url: '/api/docs/adr-program', kind: 'adr' },
   adrReact: { title: 'ADR: The React configuration, explained', menuLabel: 'ADR: The React configuration, explained', url: '/api/docs/adr-react', kind: 'adr' },
   adrDiagrams: { title: 'ADR: Diagram pages', menuLabel: 'ADR: Diagram pages', url: '/api/docs/adr-diagrams', kind: 'adr' },
+  adrTests: { title: 'ADR: The tests, explained', menuLabel: 'ADR: The tests, explained', url: '/api/docs/adr-tests', kind: 'adr' },
 };
 // #endregion docs-record
 
@@ -134,6 +136,7 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrProgram', sub: true },
       { key: 'adrReact', sub: true },
       { key: 'adrDiagrams', sub: true },
+      { key: 'adrTests', sub: true },
     ],
   },
   // #region menu-changelog

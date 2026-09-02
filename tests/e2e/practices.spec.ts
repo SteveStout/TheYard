@@ -84,6 +84,15 @@ test('the Best Practices section opens the overview and its decision records', a
   ).toBeVisible();
   await expect(diagrams.locator('pre code').first()).toContainText('/api/docs/diagrams/{name}');
   await expect(diagrams.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
+  await nav.getByRole('button', { name: 'ADR: The tests, explained' }).click();
+  const tests = page.getByRole('dialog', { name: 'ADR: The tests, explained' });
+  await expect(
+    tests.getByRole('heading', { level: 1, name: 'ADR: The tests, explained' })
+  ).toBeVisible();
+  await expect(tests.locator('pre code').first()).toContainText('Increments_are_tiered');
+  await expect(tests.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
 });
 
 test('the footer reports the running build', async ({ page }) => {

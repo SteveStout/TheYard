@@ -33,6 +33,10 @@ test('load more appends the next page', async ({ page }) => {
   await expect(page.locator('article')).toHaveCount(200);
 });
 
+// #region get-navigation
+// Locators are by role and accessible name, so the test sees what a visitor
+// sees; the URL is asserted at every step because the address bar is the
+// app's state, and page.goBack() is the real Back button.
 test('tile clicks are GET navigation: URL updates, Back works, deep links restore', async ({ page }) => {
   await page.goto('/?status=live&sort=most-bids');
   await page.waitForSelector('article');
@@ -58,6 +62,7 @@ test('tile clicks are GET navigation: URL updates, Back works, deep links restor
   await expect(page).not.toHaveURL(/vehicle=/);
   await expect(page.locator('article').first()).toBeVisible();
 });
+// #endregion get-navigation
 
 test('the About section shows the README in-app and links the résumé PDF', async ({ page }) => {
   await page.goto('/');

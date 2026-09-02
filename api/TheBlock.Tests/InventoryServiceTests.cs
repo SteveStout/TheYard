@@ -4,6 +4,10 @@ using TheBlock.Data;
 
 namespace TheBlock.Tests;
 
+// #region fakes
+// Fakes at the ports. The `file` modifier keeps these two classes private to
+// this file; each stands in for a JSON adapter, so the service is tested with
+// no filesystem, and LoadCalls proves the dataset is read exactly once.
 file sealed class FakeVehicles(params Vehicle[] vehicles) : IVehicleSource
 {
     public int LoadCalls { get; private set; }
@@ -34,6 +38,7 @@ public class InventoryServiceTests
         Assert.Equal(PhotoGallery.GallerySize, vehicle.Images.Count);
         Assert.All(vehicle.Images, url => Assert.StartsWith("/api/images/suv-", url));
     }
+    // #endregion fakes
 
     [Fact]
     public void Keeps_dataset_images_when_the_body_style_has_no_pool()
