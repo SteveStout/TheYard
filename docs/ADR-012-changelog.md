@@ -55,40 +55,28 @@ Ceremony per ship: one line in one file, inside the commit that earns it.
 
 ## In the code
 
-The endpoint, in
+The samples below are read from this build's source each time the page is
+served (ADR: Live code samples). The endpoints, in
 [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs):
 
-```csharp
-app.MapGet("/api/docs/changelog", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "CHANGELOG.md"))), "text/markdown"));
+```live path=api/TheBlock.Api/Program.cs region=docs-changelog
 ```
 
-The menu and the header order, in
+The menu, one item on purpose, in
 [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx);
-the desktop header and the phone drawer both render from `MENU_ORDER`, so
-the new menu appeared on both surfaces from this one entry:
+the sidebar renders its sections from `MENU_ORDER`, so the new menu
+appeared on every screen from this one entry:
 
-```ts
-changelog: {
-  label: 'Changelog',
-  items: [{ key: 'changelog' }],
-},
+```live path=src/components/DocsMenu.tsx region=menu-changelog
 ```
 
-```ts
-/** Header order, left to right. The desktop header and the phone drawer both render from it. */
-export const MENU_ORDER: MenuVariant[] = ['hosting', 'cicd', 'practices', 'changelog', 'about'];
+```live path=src/components/DocsMenu.tsx region=MENU_ORDER
 ```
 
 The warning in the Deploy workflow's version step,
 [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml):
 
-```bash
-if grep -q "^- \*\*1\.0\.0\.$N\*\*" docs/CHANGELOG.md; then
-  echo "docs/CHANGELOG.md names 1.0.0.$N"
-else
-  echo "::warning file=docs/CHANGELOG.md::No changelog line for 1.0.0.$N; add it with the next ship (ADR-012)"
-fi
+```live path=.github/workflows/deploy.yml region=changelog-check
 ```
 
 The shape test,

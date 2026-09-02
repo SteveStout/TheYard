@@ -47,45 +47,28 @@ dropdowns and the drawer already shared. The dropdowns are deleted.
 
 ## In the code
 
-The one component and its two shapes
+The samples below are read from this build's source each time the page is
+served (ADR: Live code samples). The one component and its two shapes
 ([`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx)):
 
-```tsx
-{docked ? (
-  <aside className={styles.rail} data-collapsed={collapsed} data-testid="side-rail">
-    {content}
-  </aside>
-) : (
-  <dialog ref={drawerRef} className={styles.drawer} aria-label="Menu" onClose={onDrawerClose}>
-    {content}
-  </dialog>
-)}
+```live path=src/components/SideNav.tsx region=shapes
 ```
 
-The docking line, read by the app as a media query
+The docking line, read by the app as a media query, and the rail's memory
 ([`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx)
 and [`src/hooks/useMediaQuery.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useMediaQuery.ts)):
 
-```ts
-const docked = useMediaQuery('(min-width: 1024px)');
-const [railCollapsed, setRailCollapsed] = useState(readRailCollapsed);
+```live path=src/App.tsx region=docking
 ```
 
 The layout, two columns with the rail's width from a token
 ([`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css)
 and [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css)):
 
-```css
-.app[data-rail='open'],
-.app[data-rail='collapsed'] {
-  display: grid;
-  grid-template-columns: var(--rail-width) minmax(0, 1fr);
-  align-items: start;
-}
+```live path=src/App.module.css region=rail-grid
+```
 
-.app[data-rail='collapsed'] {
-  grid-template-columns: var(--rail-width-collapsed) minmax(0, 1fr);
-}
+```live path=src/styles/tokens.css region=rail-widths
 ```
 
 The rows, the icons, and the palette are unchanged from the phone record:
@@ -95,9 +78,6 @@ and the contrast proof in
 [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts).
 The proof of the docked shape is
 [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts).
-
-These excerpts were copied at the commit that shipped them; the live-sample
-mechanism that keeps such blocks current is the next decision in line.
 
 ## What this replaced
 
@@ -115,8 +95,8 @@ is where a hiring manager lands first. The rail keeps them one glance away.
 
 - Five menus became one panel; a new doc or section appears in the rail and
   the drawer from one line of data, as before.
-- Twenty end-to-end checks, five of them at phone size and four in the new
-  sidebar file. The desktop specs read simpler than they did, because a
+- Twenty-four end-to-end checks, five of them at phone size and five in
+  the new sidebar file. The desktop specs read simpler than they did, because a
   rail row is one click where a dropdown was two.
 - The header exists only below 1024 pixels now. Anything added to it later
   needs a home in the rail as well, which the pinned group provides.

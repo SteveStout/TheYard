@@ -5,6 +5,7 @@
 # three identifiers as repository variables and no secret exists anywhere.
 name: Deploy
 
+# #region deploy-trigger
 on:
   workflow_run:
     workflows: ["CI"]
@@ -25,6 +26,7 @@ jobs:
     # workflow_run fires on red CI too; this gate is what keeps a red run from
     # shipping. The run counter still ticks, so displayed versions may skip.
     if: github.event.workflow_run.conclusion == 'success'
+    # #endregion deploy-trigger
     runs-on: ubuntu-latest
     env:
       REGISTRY_NAME: crtheyardsszmnetj67bn5h2
@@ -36,6 +38,7 @@ jobs:
       # Displayed version = 1.0.0.(OFFSET + run number); see ADR-005 and ADR-009.
       OFFSET: 11
     steps:
+      # #region compute-version
       # Pin to the exact commit CI tested, not wherever main has moved since.
       - uses: actions/checkout@v7
         with:
@@ -54,6 +57,7 @@ jobs:
             echo "IMAGE=$ACR/theyard:v$N"
           } >> "$GITHUB_ENV"
           echo "Deploying 1.0.0.$N from ${HEAD_SHA:0:7} as $ACR/theyard:v$N"
+          # #region changelog-check
           # The changelog names the version it ships with (ADR-012). A miss is a
           # warning in the run, never a stopped deploy; the next ship corrects it.
           if grep -q "^- \*\*1\.0\.0\.$N\*\*" docs/CHANGELOG.md; then
@@ -61,6 +65,8 @@ jobs:
           else
             echo "::warning file=docs/CHANGELOG.md::No changelog line for 1.0.0.$N; add it with the next ship (ADR-012)"
           fi
+          # #endregion changelog-check
+      # #endregion compute-version
 
       - uses: azure/login@v3
         with:
@@ -77,6 +83,7 @@ jobs:
             -t "$IMAGE" .
           docker push "$IMAGE"
 
+      # #region roll
       - name: Roll the container group
         run: |
           # Only the value line is rewritten; the header comment keeps its placeholder text.
@@ -85,6 +92,7 @@ jobs:
           az container create -g "$RG" -f "$RUNNER_TEMP/aci.yaml" \
             --query "{state:provisioningState,image:containers[0].image,fqdn:ipAddress.fqdn}" -o json
 
+      # #endregion roll
       - name: Verify
         run: |
           # The roll restarts the group: wait for the NEW build to answer at the origin.

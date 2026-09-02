@@ -63,6 +63,7 @@ export function SideNav(props: SideNavProps) {
   const [request, setRequest] = useState<DocRequest | null>(null);
   const [openKey, setOpenKey] = useState<DocKey | null>(null);
 
+  // #region drawer-dialog
   // The drawer is a native dialog: App flips drawerOpen, this mirrors it.
   useEffect(() => {
     const drawer = drawerRef.current;
@@ -76,6 +77,7 @@ export function SideNav(props: SideNavProps) {
     setOpenKey(key);
     setRequest((prev) => ({ key, nonce: (prev?.nonce ?? 0) + 1 }));
   };
+  // #endregion drawer-dialog
 
   const content = (
     <NavContent {...props} openKey={openKey} onOpenDoc={openDoc} onCloseDrawer={() => drawerRef.current?.close()} />
@@ -83,6 +85,7 @@ export function SideNav(props: SideNavProps) {
 
   return (
     <>
+      {/* #region shapes */}
       {docked ? (
         <aside className={styles.rail} data-collapsed={collapsed} data-testid="side-rail">
           {content}
@@ -101,6 +104,7 @@ export function SideNav(props: SideNavProps) {
           {content}
         </dialog>
       )}
+      {/* #endregion shapes */}
       <DocDialog request={request} onClose={() => setOpenKey(null)} />
     </>
   );

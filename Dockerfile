@@ -64,6 +64,17 @@ COPY --chown=app:app README.md ./
 COPY --chown=app:app docs ./docs
 COPY --chown=app:app data ./data
 COPY --chown=app:app infra ./infra
+# Live code samples (ADR-014): the docs endpoints read these at request time. Sources only;
+# wwwroot and the photo set already arrive through the publish above.
+COPY --chown=app:app src ./src
+COPY --chown=app:app .github/workflows ./.github/workflows
+COPY --chown=app:app api/TheBlock.slnx ./api/
+COPY --chown=app:app api/TheBlock.Api/*.cs api/TheBlock.Api/*.csproj ./api/TheBlock.Api/
+COPY --chown=app:app api/TheBlock.Application/*.cs api/TheBlock.Application/*.csproj ./api/TheBlock.Application/
+COPY --chown=app:app api/TheBlock.Data/*.cs api/TheBlock.Data/*.csproj ./api/TheBlock.Data/
+COPY --chown=app:app api/TheBlock.Domain/*.cs api/TheBlock.Domain/*.csproj ./api/TheBlock.Domain/
+COPY --chown=app:app api/TheBlock.Infrastructure/*.cs api/TheBlock.Infrastructure/*.csproj ./api/TheBlock.Infrastructure/
+COPY --chown=app:app api/TheBlock.Tests/*.cs api/TheBlock.Tests/*.csproj ./api/TheBlock.Tests/
 # The built frontend bundle is copied into wwwroot so the ASP.NET API can serve it and provide SPA fallback routing.
 COPY --chown=app:app --from=frontend-build /src/dist/ /app/wwwroot/
 

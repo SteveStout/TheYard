@@ -4,6 +4,7 @@
   flex-direction: column;
 }
 
+/* #region rail-grid */
 /* The docked rail (ADR-013): two columns, the rail's width from its token. */
 .app[data-rail='open'],
 .app[data-rail='collapsed'] {
@@ -15,6 +16,7 @@
 .app[data-rail='collapsed'] {
   grid-template-columns: var(--rail-width-collapsed) minmax(0, 1fr);
 }
+/* #endregion rail-grid */
 
 /* Header (below the docking line), main, and footer: one column beside the rail. */
 .page {

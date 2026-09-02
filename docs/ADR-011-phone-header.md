@@ -36,93 +36,39 @@ pixels nothing changes. The four choices inside that:
 
 ## In the code
 
-The sheet renders from the same record the dropdowns use
-([`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx)):
+The samples below are read from this build's source each time the page is
+served (ADR: Live code samples). The header half of this record was
+superseded by ADR: The sidebar the same day, so what follows is the part
+that still stands, shown as it is today.
 
-```ts
-/** Header order, left to right. The phone sheet lists its sections the same way. */
-export const MENU_ORDER: MenuVariant[] = ['hosting', 'cicd', 'practices', 'about'];
+The sidebar renders its sections from the same record the dropdowns once
+used ([`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx)):
 
-/** Links that sit beside the docs, shared by the dropdowns and the phone sheet. */
-export const LINKS = {
-  ciRuns: { label: 'CI runs on GitHub', href: 'https://github.com/SteveStout/TheYard/actions' },
-  resume: { label: "Steven's resume (PDF)", href: '/api/docs/resume' },
-  repo: { label: 'GitHub repository', href: 'https://github.com/SteveStout/TheYard' },
-} as const;
+```live path=src/components/DocsMenu.tsx region=MENU_ORDER
 ```
 
-Opening a doc from the sheet closes the sheet and hands the request to the
-one shared viewer ([`src/components/MobileDocs.tsx`](https://github.com/SteveStout/TheYard/blob/587c9e9/src/components/MobileDocs.tsx)):
+Opening a doc from the drawer closes the drawer and hands the request to
+the one shared viewer ([`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx)):
 
-```ts
-const openSheet = () => {
-  sheetRef.current?.showModal();
-  setSheetOpen(true);
-};
-const closeSheet = () => sheetRef.current?.close();
-
-const openDoc = (key: DocKey) => {
-  closeSheet();
-  setRequest((prev) => ({ key, nonce: (prev?.nonce ?? 0) + 1 }));
-};
+```live path=src/components/SideNav.tsx region=drawer-dialog
 ```
 
-The header swaps surfaces with CSS alone; both sets of controls are always
-in the tree ([`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx) and
-[`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css)):
+Below the docking line the header carries the brand, Reset bids, and the
+hamburger; above it the rail makes a header redundant
+([`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx)):
 
-```tsx
-<div className={styles.desktopActions}>
-  <DocsMenu menu="hosting" />
-  <DocsMenu menu="cicd" />
-  <DocsMenu menu="practices" />
-  <DocsMenu />
-  <button type="button" className={styles.adminTab} onClick={openAdmin}>
-    Admin
-  </button>
-</div>
-{bidCount > 0 && (
-  <button type="button" className={styles.resetBids} onClick={handleResetBids}>
-    Reset bids ({bidCount})
-  </button>
-)}
-<MobileDocs onOpenAdmin={openAdmin} />
-```
-
-```css
-/* Phones: the dropdowns and the Admin button give way to the hamburger sheet. */
-@media (max-width: 639px) {
-  .desktopActions {
-    display: none;
-  }
-}
+```live path=src/App.tsx region=header-below-dock
 ```
 
 The doc viewer goes edge to edge on a phone
 ([`src/components/DocsMenu.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.module.css)):
 
-```css
-@media (max-width: 639px) {
-  .dialog {
-    width: 100vw;
-    max-width: 100vw;
-    height: 100dvh;
-    max-height: 100dvh;
-    margin: 0;
-    border-radius: 0;
-  }
-}
+```live path=src/components/DocsMenu.module.css region=phone-dialog
 ```
 
-The proof ([`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts)):
-
-```ts
-test.use({ viewport: { width: 375, height: 812 } });
-```
-
-These excerpts were copied from the files at the commit that shipped them.
-A follow-up decision covers keeping samples like these live rather than
-copied.
+The proof is [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts),
+which runs at 375 by 812 pixels. The test tree sits outside the roots a
+live block may read, so it is linked rather than shown.
 
 ## What this replaced
 

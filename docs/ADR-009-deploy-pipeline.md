@@ -62,41 +62,21 @@ A second GitHub Actions workflow, Deploy, separate from CI on purpose.
 
 The workflow is [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml)
 and the template it renders is [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml).
-The trigger and the gate, from the workflow:
+The samples below are read from this build's copy of the workflow each time
+the page is served (ADR: Live code samples). The trigger and the gate:
 
-```yaml
-on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
-
-jobs:
-  deploy:
-    if: github.event.workflow_run.conclusion == 'success'
+```live path=.github/workflows/deploy.yml region=deploy-trigger
 ```
 
-The version arithmetic, and the checkout pinned to the commit CI tested:
+The checkout pinned to the commit CI tested, the version arithmetic, and
+the changelog check that joined the step later (ADR: The changelog):
 
-```yaml
-- uses: actions/checkout@v7
-  with:
-    ref: ${{ github.event.workflow_run.head_sha }}
-
-- name: Compute version
-  env:
-    HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-    RUN_NUMBER: ${{ github.run_number }}
-  run: |
-    N=$(( OFFSET + RUN_NUMBER ))
+```live path=.github/workflows/deploy.yml region=compute-version
 ```
 
 The roll, which is the whole deploy step:
 
-```bash
-sed "s|^\(\s*image: \)__IMAGE__$|\1$IMAGE|" infra/aci-theyard.yaml > "$RUNNER_TEMP/aci.yaml"
-grep -q "^\s*image: $IMAGE$" "$RUNNER_TEMP/aci.yaml"
-az container create -g "$RG" -f "$RUNNER_TEMP/aci.yaml"
+```live path=.github/workflows/deploy.yml region=roll
 ```
 
 The footer build arguments the image is stamped with live in the

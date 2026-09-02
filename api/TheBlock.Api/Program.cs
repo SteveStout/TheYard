@@ -24,6 +24,10 @@ string projectsPath = FindUpward(contentRoot, Path.Combine("docs", "PROJECTS.md"
 string resumePath = Path.Combine(contentRoot, "wwwroot", "docs", "resume.pdf");
 string manifestPath = Path.Combine(contentRoot, "photo-manifest.json");
 string imagesRoot = Path.Combine(contentRoot, "wwwroot", "images");
+// Live code samples (ADR-014) read whitelisted source files under the repo root,
+// which is the folder README.md sits in, both in the image and in a checkout.
+string repoRoot = Path.GetDirectoryName(readmePath)!;
+string buildCommit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local";
 
 // The 200-record seed dataset is deterministically expanded to TargetCount
 // synthetic records (default 100,000) â€” scale testing without a giant file.
@@ -127,41 +131,53 @@ app.MapGet("/api/docs/dataflow", () =>
 app.MapGet("/api/docs/projects", () =>
     Results.Text(File.ReadAllText(projectsPath), "text/markdown"));
 
+// Live code samples (ADR-014): every markdown doc under docs/ goes through one
+// helper that expands ```live blocks from this build's own source files.
+#region live-doc
+IResult LiveDoc(string file) =>
+    Results.Text(
+        LiveSamples.Expand(
+            File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", file))),
+            repoRoot,
+            buildCommit),
+        "text/markdown");
+#endregion live-doc
+
 app.MapGet("/api/docs/adr-origin", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-001-front-door-origin.md"))), "text/markdown"));
+    LiveDoc("ADR-001-front-door-origin.md"));
 
 app.MapGet("/api/docs/adr-docker", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-002-docker-packaging.md"))), "text/markdown"));
+    LiveDoc("ADR-002-docker-packaging.md"));
 
 app.MapGet("/api/docs/adr-naming", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-003-azure-naming.md"))), "text/markdown"));
+    LiveDoc("ADR-003-azure-naming.md"));
 
 app.MapGet("/api/docs/adr-pivots", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-004-deployment-pivots.md"))), "text/markdown"));
+    LiveDoc("ADR-004-deployment-pivots.md"));
 
 app.MapGet("/api/docs/hosting", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "HOSTING.md"))), "text/markdown"));
+    LiveDoc("HOSTING.md"));
 
 app.MapGet("/api/docs/cicd", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "CICD.md"))), "text/markdown"));
+    LiveDoc("CICD.md"));
 
 app.MapGet("/api/docs/adr-pipeline", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-009-deploy-pipeline.md"))), "text/markdown"));
+    LiveDoc("ADR-009-deploy-pipeline.md"));
 
 app.MapGet("/api/docs/adr-edge-economics", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-007-edge-economics.md"))), "text/markdown"));
+    LiveDoc("ADR-007-edge-economics.md"));
 
 app.MapGet("/api/docs/adr-linux", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-008-linux-containers.md"))), "text/markdown"));
+    LiveDoc("ADR-008-linux-containers.md"));
 
 app.MapGet("/api/docs/practices", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "BEST-PRACTICES.md"))), "text/markdown"));
+    LiveDoc("BEST-PRACTICES.md"));
 
 app.MapGet("/api/docs/adr-versioning", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-005-version-footer.md"))), "text/markdown"));
+    LiveDoc("ADR-005-version-footer.md"));
 
 app.MapGet("/api/docs/adr-docs", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-006-docs-and-testing.md"))), "text/markdown"));
+    LiveDoc("ADR-006-docs-and-testing.md"));
 
 app.MapGet("/api/docs/bicep", () =>
     Results.Text("# infra/main.bicep" + "\n\nThe production design as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. Kept deliberately undeployed; the Hosting overview explains that choice.\n\n```bicep\n" + File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("infra", "main.bicep"))) + "\n```\n", "text/markdown"));
@@ -278,20 +294,25 @@ app.MapGet("/api/errors", () => Results.Json(errorLog.Snapshot(), wireFormat));
 app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
 
 app.MapGet("/api/docs/adr-observability", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-010-observability.md"))), "text/markdown"));
+    LiveDoc("ADR-010-observability.md"));
 
 app.MapGet("/api/docs/adr-phone", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-011-phone-header.md"))), "text/markdown"));
+    LiveDoc("ADR-011-phone-header.md"));
 
+#region docs-changelog
 // The changelog and its record (ADR-012): one file, one sentence per version.
 app.MapGet("/api/docs/changelog", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "CHANGELOG.md"))), "text/markdown"));
+    LiveDoc("CHANGELOG.md"));
 
 app.MapGet("/api/docs/adr-changelog", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-012-changelog.md"))), "text/markdown"));
+    LiveDoc("ADR-012-changelog.md"));
+#endregion docs-changelog
 
 app.MapGet("/api/docs/adr-sidebar", () =>
-    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-013-sidebar.md"))), "text/markdown"));
+    LiveDoc("ADR-013-sidebar.md"));
+
+app.MapGet("/api/docs/adr-live-samples", () =>
+    LiveDoc("ADR-014-live-samples.md"));
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

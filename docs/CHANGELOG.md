@@ -5,6 +5,7 @@ footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Best Practices menu.
 
+- **1.0.0.16** (2026-09-02): Decision records began showing live code samples read from the running build's own source, with that source shipped inside the image (ADR-014).
 - **1.0.0.15** (2026-09-02): The five header dropdowns gave way to one sidebar at every width, a docked rail on laptops and the drawer on phones (ADR-013).
 - **1.0.0.14** (2026-09-02): A Changelog menu joined the header, and the phone menu became a dark slide-out panel with an icon on every row.
 - **1.0.0.13** (2026-09-02): The phone header shipped as the first real passenger through the new pipeline, alongside the pipeline's own record (ADR-011).

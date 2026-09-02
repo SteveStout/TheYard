@@ -31,6 +31,14 @@ test('the Best Practices section opens the overview and its decision records', a
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: The sidebar' })
   ).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // The live-sample record shows the expander's own code, read from this build.
+  await nav.getByRole('button', { name: 'ADR: Live code samples' }).click();
+  const live = page.getByRole('dialog', { name: 'ADR: Live code samples' });
+  await expect(live.getByRole('heading', { level: 1, name: 'ADR: Live code samples' })).toBeVisible();
+  await expect(live.locator('pre code').first()).toContainText('IsAllowedPath');
+  await expect(live.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
 });
 
 test('the footer reports the running build', async ({ page }) => {

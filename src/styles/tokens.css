@@ -60,9 +60,11 @@
   --space-7: 32px;
   --space-8: 48px;
 
+  /* #region rail-widths */
   /* The sidebar's docked rail (ADR-013): open, and collapsed to icons. */
   --rail-width: 272px;
   --rail-width-collapsed: 64px;
+  /* #endregion rail-widths */
 
   /* Radius — cards 16px, controls 8px, buttons pill */
   --radius-sm: 6px;

@@ -65,6 +65,7 @@ export default function App() {
   const now = useNow();
   /** The running build, reported by the container itself (ADR-005). */
   const [build, setBuild] = useState<{ version: string; commit: string } | null>(null);
+  // #region docking
   /** The sidebar (ADR-013): a docked rail at 1024px and up, a drawer below. */
   const docked = useMediaQuery('(min-width: 1024px)');
   const [railCollapsed, setRailCollapsed] = useState(readRailCollapsed);
@@ -76,6 +77,7 @@ export default function App() {
   useEffect(() => {
     if (docked) setDrawerOpen(false);
   }, [docked]);
+  // #endregion docking
   // Bid state lives in the API; refetch the list whenever it changes.
   const refreshList = useCallback(() => setReloadNonce((n) => n + 1), []);
   const { bids, placeBid, buyNow, resetBids } = useBids(refreshList);
@@ -373,6 +375,7 @@ export default function App() {
       />
 
       <div className={styles.page}>
+        {/* #region header-below-dock */}
         {/* Below the docking line the header carries the brand, Reset bids,
             and the hamburger; the docked rail makes it redundant above it. */}
         {!docked && (
@@ -407,6 +410,7 @@ export default function App() {
             </div>
           </header>
         )}
+        {/* #endregion header-below-dock */}
 
         <main className={styles.main}>
           {adminOpen ? (
