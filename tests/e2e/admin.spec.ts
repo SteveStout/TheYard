@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('the Admin tab shows the running system reporting on itself', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Admin' }).click();
+  await page.getByRole('navigation', { name: 'Project documents' }).getByRole('button', { name: 'Admin', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
   await expect(page.getByTestId('health-card')).toContainText('healthy');
   await expect(page.getByTestId('errors-card')).toBeVisible();

@@ -1,0 +1,285 @@
+/*
+ * The one navigation surface (ADR-013). Two shapes, one set of rows:
+ * .rail docks beside the page at 1024px and up and collapses to icons;
+ * .drawer slides in over the page below that. Colors are the sheet tokens in
+ * tokens.css, each pair measured against WCAG AA in tokens.test.ts.
+ */
+
+/* ---- the docked rail ---- */
+
+.rail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: var(--rail-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-sheet-bg);
+  color: var(--color-sheet-text);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: width var(--transition-fast);
+}
+
+.rail[data-collapsed='true'] {
+  width: var(--rail-width-collapsed);
+}
+
+/* ---- the drawer (phones and narrow windows) ---- */
+
+.drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(84vw, 360px);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--color-sheet-bg);
+  color: var(--color-sheet-text);
+  box-shadow: var(--shadow-lg);
+  flex-direction: column;
+}
+
+.drawer[open] {
+  display: flex;
+  animation: drawerIn 200ms ease-out;
+}
+
+@keyframes drawerIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer[open] {
+    animation: none;
+  }
+
+  .rail {
+    transition: none;
+  }
+}
+
+.drawer::backdrop {
+  background: rgba(10, 27, 95, 0.55);
+}
+
+/* ---- the brand block: home button plus collapse (rail) or close (drawer) ---- */
+
+.brandBlock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 64px;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-sheet-divider-strong);
+}
+
+.rail[data-collapsed='true'] .brandBlock {
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-2) 0;
+}
+
+.brand {
+  appearance: none;
+  background: none;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-1);
+  color: #ffffff;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.01em;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.brand:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid var(--color-sheet-focus);
+  outline-offset: 2px;
+}
+
+.brandMark {
+  flex: none;
+  color: var(--color-sheet-icon-active);
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brandSub {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-sheet-text-muted);
+  letter-spacing: 0;
+}
+
+/* Collapse or close: a full 44px target, ringed so it reads as a button. */
+.toggle {
+  appearance: none;
+  background: none;
+  border: 1px solid var(--color-sheet-divider-strong);
+  border-radius: var(--radius-full);
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-sheet-text);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  background: var(--color-sheet-bg-raised);
+  color: #ffffff;
+}
+
+/* ---- sections and rows ---- */
+
+.sections {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: var(--space-3);
+}
+
+.section {
+  margin-top: var(--space-2);
+}
+
+.rail[data-collapsed='true'] .section + .section {
+  border-top: 1px solid var(--color-sheet-divider-strong);
+  padding-top: var(--space-2);
+}
+
+/* Muted section headers, the way the reference groups its rows. */
+.sectionTitle {
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-sheet-text-muted);
+  white-space: nowrap;
+}
+
+/* One row shape for docs, links, and actions: icon, label, 48px tall. */
+.row {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--color-sheet-divider);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-sheet-text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.row:hover,
+.row:active {
+  background: var(--color-sheet-bg-raised);
+  color: #ffffff;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--color-sheet-focus);
+  outline-offset: -2px;
+}
+
+/* The row whose doc is open, or Admin while the tab is showing. */
+.row[aria-current] {
+  background: var(--color-sheet-bg-raised);
+  color: #ffffff;
+  box-shadow: inset 3px 0 0 var(--color-sheet-icon-active);
+}
+
+/* Child records sit a step in from their parent, as in the old dropdowns. */
+.subRow {
+  padding-left: calc(var(--space-4) + var(--space-3));
+  font-weight: var(--weight-regular);
+}
+
+.rail[data-collapsed='true'] .row {
+  justify-content: center;
+  padding: var(--space-2) 0;
+}
+
+.icon {
+  flex: none;
+  color: var(--color-sheet-icon);
+}
+
+.row:hover .icon,
+.row:active .icon,
+.row[aria-current] .icon {
+  color: var(--color-sheet-icon-active);
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Admin, Reset bids, the resume, and the repository stay pinned below the scroll. */
+.pinned {
+  flex: none;
+  border-top: 1px solid var(--color-sheet-divider-strong);
+  padding-top: var(--space-2);
+  padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
+}
+
+.pinned .row:last-child {
+  border-bottom: 0;
+}
+
+/* Visually hidden, still read by assistive tech and still the accessible name. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

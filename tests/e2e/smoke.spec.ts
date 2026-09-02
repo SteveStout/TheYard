@@ -59,23 +59,21 @@ test('tile clicks are GET navigation: URL updates, Back works, deep links restor
   await expect(page.locator('article').first()).toBeVisible();
 });
 
-test('the About menu shows the README in-app and links the résumé PDF', async ({ page }) => {
+test('the About section shows the README in-app and links the résumé PDF', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'About' }).click();
-  await page.getByRole('menuitem', { name: 'Project README' }).click();
+  const nav = page.getByRole('navigation', { name: 'Project documents' });
+  await nav.getByRole('button', { name: 'Project README' }).click();
   await expect(page.getByRole('dialog').getByRole('heading', { name: /TheYard/ })).toBeVisible();
   await page.getByRole('dialog').getByLabel('Close').click();
   await expect(page.getByRole('dialog')).toBeHidden();
 
-  await page.getByRole('button', { name: 'About' }).click();
-  await page.getByRole('menuitem', { name: 'Data flow diagram' }).click();
+  await nav.getByRole('button', { name: 'Data flow diagram' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Data Flow' })
   ).toBeVisible();
   await page.keyboard.press('Escape');
 
-  await page.getByRole('button', { name: 'About' }).click();
-  await page.getByRole('menuitem', { name: 'Project structure' }).click();
+  await nav.getByRole('button', { name: 'Project structure' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 2, name: 'TheBlock.Data' })
   ).toBeVisible();
@@ -84,8 +82,7 @@ test('the About menu shows the README in-app and links the résumé PDF', async 
   const resume = await page.request.get('/api/docs/resume');
   expect(resume.headers()['content-type']).toContain('application/pdf');
 
-  await page.getByRole('button', { name: 'About' }).click();
-  await expect(page.getByRole('menuitem', { name: 'GitHub repository' })).toHaveAttribute(
+  await expect(nav.getByRole('link', { name: 'GitHub repository' })).toHaveAttribute(
     'href',
     'https://github.com/SteveStout/TheYard'
   );

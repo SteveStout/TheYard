@@ -22,7 +22,7 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Twelve ADRs record why the architecture is
+- **Decisions get written down.** Thirteen ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -30,7 +30,7 @@ footer displays exactly that.
   under the Hosting menu, deployable by flipping parameters.
 - **Containers run hardened.** Multi-stage build, a non-root user, a real
   HTTP healthcheck, and no SDK in the runtime image.
-- **The system reports on itself.** The Admin tab in the header shows live
+- **The system reports on itself.** The Admin tab in the sidebar shows live
   health checks, Azure's own view of the container, and recent server
   errors, public on purpose. Recorded in ADR: Observability.
 - **Merges deploy themselves.** A green CI run on main builds the image,

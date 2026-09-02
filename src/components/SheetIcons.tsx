@@ -1,13 +1,13 @@
 import type { DocKind } from './DocsMenu';
 
-/** Every row kind the phone drawer draws: the four doc kinds plus two actions. */
-export type RowKind = DocKind | 'external' | 'admin';
+/** Every row kind the sidebar draws: the four doc kinds plus three actions. */
+export type RowKind = DocKind | 'external' | 'admin' | 'reset';
 
 /**
- * One stroked path per kind on a 20x20 grid. Six icons cover every row in
- * the drawer (ADR-011 addendum): a doc is an overview, a decision record,
- * the infrastructure file, or the changelog; the rest are links out and the
- * Admin tab. Rows reuse these; nothing gets a bespoke icon.
+ * One stroked path per kind on a 20x20 grid. Seven icons cover every row in
+ * the sidebar (ADR-011 addendum, ADR-013): a doc is an overview, a decision
+ * record, the infrastructure file, or the changelog; the rest are links out,
+ * the Admin tab, and Reset bids. Rows reuse these; nothing gets a bespoke icon.
  */
 const PATHS: Record<RowKind, string> = {
   overview:
@@ -18,10 +18,11 @@ const PATHS: Record<RowKind, string> = {
   external:
     'M11 4H5.5A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16h9a1.5 1.5 0 0 0 1.5-1.5V9M12.5 3.5h4v4M16.5 3.5l-7 7',
   admin: 'M3 10.5h3.2l2-5.5 3.6 10 2-4.5H17',
+  reset: 'M4.5 10a5.5 5.5 0 1 1 1.6 3.9M4.5 15v-4.5H9',
 };
 
 /**
- * A drawer row's leading icon. Decorative, so hidden from assistive tech;
+ * A sidebar row's leading icon. Decorative, so hidden from assistive tech;
  * the row's text carries the meaning. Drawn in currentColor so the row's
  * state (rest, hover, pressed) colors it through CSS alone.
  */

@@ -52,7 +52,7 @@ export const LINKS = {
 ```
 
 Opening a doc from the sheet closes the sheet and hands the request to the
-one shared viewer ([`src/components/MobileDocs.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/MobileDocs.tsx)):
+one shared viewer ([`src/components/MobileDocs.tsx`](https://github.com/SteveStout/TheYard/blob/587c9e9/src/components/MobileDocs.tsx)):
 
 ```ts
 const openSheet = () => {
@@ -179,9 +179,9 @@ What changed:
 In the code: the icon set is
 [`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx),
 the drawer is
-[`src/components/MobileDocs.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/MobileDocs.tsx)
+[`src/components/MobileDocs.tsx`](https://github.com/SteveStout/TheYard/blob/587c9e9/src/components/MobileDocs.tsx)
 with its styles in
-[`src/components/MobileDocs.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/MobileDocs.module.css),
+[`src/components/MobileDocs.module.css`](https://github.com/SteveStout/TheYard/blob/587c9e9/src/components/MobileDocs.module.css),
 the palette lives in
 [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css)
 with its proof in
@@ -202,3 +202,17 @@ shape; today it reads:
   </button>
 </div>
 ```
+
+## Note, 2026-09-02, later the same day: superseded on the desktop
+
+Shipped as 1.0.0.15, the dropdowns are gone at every width and the drawer
+above became one shape of the sidebar. The record of that decision is
+ADR: The sidebar, under Best Practices. What this record still owns: the
+one-data-source rule, the native dialog, the shared viewer, the phone-sized
+proof, and the palette and icon rows from the addendum. The component moved
+from `src/components/MobileDocs.tsx` to
+[`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx)
+with its styles in
+[`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css);
+the links above that name the old files now point at 587c9e9, the commit
+that shipped them, so they keep resolving.

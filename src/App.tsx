@@ -18,8 +18,8 @@ import {
 import { applyBidRecord, useBids } from './hooks/useBids';
 import { useNow } from './hooks/useNow';
 import { AdminPanel } from './components/AdminPanel';
-import { DocsMenu, MENU_ORDER } from './components/DocsMenu';
-import { MobileDocs } from './components/MobileDocs';
+import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
 import { VehicleDetail } from './components/VehicleDetail';
@@ -65,6 +65,17 @@ export default function App() {
   const now = useNow();
   /** The running build, reported by the container itself (ADR-005). */
   const [build, setBuild] = useState<{ version: string; commit: string } | null>(null);
+  /** The sidebar (ADR-013): a docked rail at 1024px and up, a drawer below. */
+  const docked = useMediaQuery('(min-width: 1024px)');
+  const [railCollapsed, setRailCollapsed] = useState(readRailCollapsed);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  useEffect(() => {
+    storeRailCollapsed(railCollapsed);
+  }, [railCollapsed]);
+  // A window widened past the docking line has no drawer to keep open.
+  useEffect(() => {
+    if (docked) setDrawerOpen(false);
+  }, [docked]);
   // Bid state lives in the API; refetch the list whenever it changes.
   const refreshList = useCallback(() => setReloadNonce((n) => n + 1), []);
   const { bids, placeBid, buyNow, resetBids } = useBids(refreshList);
@@ -308,6 +319,15 @@ export default function App() {
     window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
   };
 
+  /** The sidebar's brand block: home is the inventory list, whatever is showing. */
+  const goHome = () => {
+    if (adminOpen) {
+      closeAdmin();
+      return;
+    }
+    backToInventory();
+  };
+
   const patchFilters = (patch: Partial<InventoryFilters>) =>
     setFilters((prev) => ({ ...prev, ...patch }));
   const clearFilters = () => setFilters(EMPTY_FILTERS);
@@ -335,148 +355,170 @@ export default function App() {
   };
 
   return (
-    <div className={styles.app}>
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <button type="button" className={styles.brand} onClick={backToInventory}>
-            <svg className={styles.brandMark} viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path d="M13 2 5 14h5l-2 8 8-12h-5l2-8z" fill="currentColor" />
-            </svg>
-            The Yard
-            <span className={styles.brandSub}>Vehicle Auctions</span>
-          </button>
-          <div className={styles.headerActions}>
-            {/* Desktop: one dropdown per header menu, in MENU_ORDER, plus Admin.
-                Below 640px this block hides and MobileDocs offers the same
-                entries from one drawer built from the same record. */}
-            <div className={styles.desktopActions}>
-              {MENU_ORDER.map((menu) => (
-                <DocsMenu key={menu} menu={menu} />
-              ))}
-              <button type="button" className={styles.adminTab} onClick={openAdmin}>
-                Admin
-              </button>
-            </div>
-            {bidCount > 0 && (
-              <button type="button" className={styles.resetBids} onClick={handleResetBids}>
-                Reset bids ({bidCount})
-              </button>
-            )}
-            <MobileDocs onOpenAdmin={openAdmin} />
-          </div>
-        </div>
-      </header>
+    <div className={styles.app} data-rail={docked ? (railCollapsed ? 'collapsed' : 'open') : 'drawer'}>
+      {/* The one navigation surface (ADR-013): a docked rail on wide screens,
+          a drawer behind the header's hamburger below 1024px. */}
+      <SideNav
+        docked={docked}
+        collapsed={railCollapsed}
+        onToggleCollapsed={() => setRailCollapsed((collapsed) => !collapsed)}
+        drawerOpen={drawerOpen}
+        onDrawerClose={() => setDrawerOpen(false)}
+        onHome={goHome}
+        adminOpen={adminOpen}
+        onOpenAdmin={openAdmin}
+        bidCount={bidCount}
+        onResetBids={handleResetBids}
+        build={build}
+      />
 
-      <main className={styles.main}>
-        {adminOpen ? (
-          <AdminPanel onBack={closeAdmin} />
-        ) : loadState === 'loading' ? (
-          <p className={styles.notice} role="status">
-            Loading inventory…
-          </p>
-        ) : loadState === 'error' ? (
-          <div className={styles.notice} role="alert">
-            <p className={styles.noticeTitle}>Couldn't reach the inventory API.</p>
-            <p>
-              Make sure it's running — <code>npm run api</code> in a second terminal — then try
-              again.
-            </p>
-            <button
-              type="button"
-              className={styles.retry}
-              onClick={() => {
-                initialAttempts.current = 0;
-                setReloadNonce((n) => n + 1);
-              }}
-            >
-              Try again
-            </button>
-          </div>
-        ) : selected ? (
-          <VehicleDetail
-            key={selected.id}
-            vehicle={selected}
-            now={now}
-            onBack={backToInventory}
-            isHighBidder={highBidderIds.has(selected.id)}
-            wonBuyNow={wonIds.has(selected.id)}
-            onPlaceBid={handlePlaceBid}
-            onBuyNow={handleBuyNow}
-          />
-        ) : (
-          <section aria-label="Vehicle inventory">
-            <div className={styles.listHeader}>
-              <h1 className={styles.listTitle}>Inventory</h1>
+      <div className={styles.page}>
+        {/* Below the docking line the header carries the brand, Reset bids,
+            and the hamburger; the docked rail makes it redundant above it. */}
+        {!docked && (
+          <header className={styles.header}>
+            <div className={styles.headerInner}>
+              <button type="button" className={styles.brand} onClick={backToInventory}>
+                <svg className={styles.brandMark} viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <path d="M13 2 5 14h5l-2 8 8-12h-5l2-8z" fill="currentColor" />
+                </svg>
+                The Yard
+                <span className={styles.brandSub}>Vehicle Auctions</span>
+              </button>
+              <div className={styles.headerActions}>
+                {bidCount > 0 && (
+                  <button type="button" className={styles.resetBids} onClick={handleResetBids}>
+                    Reset bids ({bidCount})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={styles.hamburger}
+                  aria-label="Menu"
+                  aria-haspopup="dialog"
+                  aria-expanded={drawerOpen}
+                  onClick={() => setDrawerOpen(true)}
+                >
+                  <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+                    <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <FilterBar
-              filters={filters}
-              onFiltersChange={patchFilters}
-              sort={sort}
-              onSortChange={setSort}
-              onClear={clearFilters}
-              makes={facets.makes}
-              bodyStyles={facets.body_styles}
-              titleStatuses={facets.title_statuses}
-              provinces={facets.provinces}
-              shownCount={visibleVehicles.length}
-              totalCount={page.total}
-            />
-            {staleResults && (
-              <div className={styles.staleBanner} role="alert">
-                Couldn't update results from the API — showing the previous list.
-                <button
-                  type="button"
-                  className={styles.staleRetry}
-                  onClick={() => setReloadNonce((n) => n + 1)}
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-            <InventoryGrid
-              vehicles={visibleVehicles}
-              now={now}
-              onSelect={openVehicle}
-              highBidderIds={highBidderIds}
-              wonIds={wonIds}
-              onClearFilters={clearFilters}
-            />
-            {page.vehicles.length < page.total && (
-              <div className={styles.loadMoreRow}>
-                <button
-                  type="button"
-                  className={styles.loadMore}
-                  onClick={() => void loadMore()}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? 'Loading…' : 'Load more vehicles'}
-                </button>
-              </div>
-            )}
-          </section>
+          </header>
         )}
-      </main>
 
-      {build && (
-        <footer className={styles.footer}>
-          <span data-testid="build-version">
-            {build.version === 'dev' ? 'dev build' : `v${build.version}`}
-          </span>
-          {build.commit !== 'local' && (
-            <>
-              <span aria-hidden="true">·</span>
-              <a
-                className={styles.footerCommit}
-                href={`https://github.com/SteveStout/TheYard/commit/${build.commit}`}
-                target="_blank"
-                rel="noreferrer"
+        <main className={styles.main}>
+          {adminOpen ? (
+            <AdminPanel onBack={closeAdmin} />
+          ) : loadState === 'loading' ? (
+            <p className={styles.notice} role="status">
+              Loading inventory…
+            </p>
+          ) : loadState === 'error' ? (
+            <div className={styles.notice} role="alert">
+              <p className={styles.noticeTitle}>Couldn't reach the inventory API.</p>
+              <p>
+                Make sure it's running — <code>npm run api</code> in a second terminal — then try
+                again.
+              </p>
+              <button
+                type="button"
+                className={styles.retry}
+                onClick={() => {
+                  initialAttempts.current = 0;
+                  setReloadNonce((n) => n + 1);
+                }}
               >
-                {build.commit}
-              </a>
-            </>
+                Try again
+              </button>
+            </div>
+          ) : selected ? (
+            <VehicleDetail
+              key={selected.id}
+              vehicle={selected}
+              now={now}
+              onBack={backToInventory}
+              isHighBidder={highBidderIds.has(selected.id)}
+              wonBuyNow={wonIds.has(selected.id)}
+              onPlaceBid={handlePlaceBid}
+              onBuyNow={handleBuyNow}
+            />
+          ) : (
+            <section aria-label="Vehicle inventory">
+              <div className={styles.listHeader}>
+                <h1 className={styles.listTitle}>Inventory</h1>
+              </div>
+              <FilterBar
+                filters={filters}
+                onFiltersChange={patchFilters}
+                sort={sort}
+                onSortChange={setSort}
+                onClear={clearFilters}
+                makes={facets.makes}
+                bodyStyles={facets.body_styles}
+                titleStatuses={facets.title_statuses}
+                provinces={facets.provinces}
+                shownCount={visibleVehicles.length}
+                totalCount={page.total}
+              />
+              {staleResults && (
+                <div className={styles.staleBanner} role="alert">
+                  Couldn't update results from the API — showing the previous list.
+                  <button
+                    type="button"
+                    className={styles.staleRetry}
+                    onClick={() => setReloadNonce((n) => n + 1)}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              <InventoryGrid
+                vehicles={visibleVehicles}
+                now={now}
+                onSelect={openVehicle}
+                highBidderIds={highBidderIds}
+                wonIds={wonIds}
+                onClearFilters={clearFilters}
+              />
+              {page.vehicles.length < page.total && (
+                <div className={styles.loadMoreRow}>
+                  <button
+                    type="button"
+                    className={styles.loadMore}
+                    onClick={() => void loadMore()}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Loading…' : 'Load more vehicles'}
+                  </button>
+                </div>
+              )}
+            </section>
           )}
-        </footer>
-      )}
+        </main>
+
+        {build && (
+          <footer className={styles.footer}>
+            <span data-testid="build-version">
+              {build.version === 'dev' ? 'dev build' : `v${build.version}`}
+            </span>
+            {build.commit !== 'local' && (
+              <>
+                <span aria-hidden="true">·</span>
+                <a
+                  className={styles.footerCommit}
+                  href={`https://github.com/SteveStout/TheYard/commit/${build.commit}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {build.commit}
+                </a>
+              </>
+            )}
+          </footer>
+        )}
+      </div>
     </div>
   );
 }

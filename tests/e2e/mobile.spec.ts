@@ -1,16 +1,17 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * Phone-sized viewport (iPhone-class, 375x812). Below 640px the header
- * dropdowns and the Admin button give way to one hamburger drawer built from
- * the same MENUS record, and docs open full-screen. The desktop specs keep
- * proving the dropdowns; this file only proves the phone.
+ * Phone-sized viewport (iPhone-class, 375x812). Below 1024px the sidebar is a
+ * drawer behind the header's hamburger (ADR-013), built from the same MENUS
+ * record as the docked rail, and docs open full-screen. sidebar.spec proves
+ * the rail; this file only proves the phone.
  */
 test.use({ viewport: { width: 375, height: 812 } });
 
-test('a phone gets one hamburger instead of the dropdowns', async ({ page }) => {
+test('a phone gets one hamburger and no rail', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(page.getByTestId('side-rail')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Hosting' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'CI/CD' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Best Practices' })).toBeHidden();

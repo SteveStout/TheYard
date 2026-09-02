@@ -100,7 +100,7 @@ can happen without leaving it.
   it would fail the minimum-increment check — the instant-win rule takes precedence.
 - **Single anonymous buyer.** Your bids live in the API's memory, mark you high bidder,
   and survive browser reloads (not API restarts); there are no competing bidders
-  advancing prices. "Reset bids" (header) clears the slate.
+  advancing prices. "Reset bids" (in the sidebar, or the header on a phone) clears the slate.
 - **Currency is CAD** (`en-CA`) since every listing is Canadian — one constant in
   `src/lib/format.ts` switches it.
 - **Photos are representative, not the actual lot.** 50 free-license photos (10 per body
@@ -146,7 +146,7 @@ can happen without leaving it.
   with buyer-facing reasons, a persistent "You're the high bidder" state, Buy Now with a
   distinct sold/purchase-price presentation, and bids that survive refresh.
 - **Navigation and docs** — every view is a GET URL (filters, sorts, and open vehicles
-  are shareable, deep-linkable, and browser-Back friendly), and the header's About menu
+  are shareable, deep-linkable, and browser-Back friendly), and the sidebar's About section
   serves this README, [docs/DATAFLOW.md](docs/DATAFLOW.md),
   [docs/PROJECTS.md](docs/PROJECTS.md), and the author's r??sum?? from inside the app.
 
@@ -278,7 +278,7 @@ forced bypass, no caching of failures). Run with `npm test`.
 
 **End-to-end (7 Playwright smokes):** the real stack — landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
-Back and deep links), Load More appends a page, the About menu serves the docs, a
+Back and deep links), Load More appends a page, the About section serves the docs, a
 transient API failure recovers via the retry banner, and a bid round-trips through the
 API, survives a reload, and resets. Run with `npm run test:e2e` (launches both servers
 itself; uses your installed Chrome). All three suites run in CI on every push.

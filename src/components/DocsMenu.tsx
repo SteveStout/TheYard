@@ -2,21 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
 import styles from './DocsMenu.module.css';
 
-export function ExternalIcon() {
-  return (
-    <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
-      <path
-        d="M4.5 1.5h6v6M10.5 1.5 5 7M8 10.5H1.5V4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export type DocKey =
   | 'readme'
   | 'dataflow'
@@ -37,7 +22,8 @@ export type DocKey =
   | 'adrObservability'
   | 'adrPhone'
   | 'changelog'
-  | 'adrChangelog';
+  | 'adrChangelog'
+  | 'adrSidebar';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
@@ -63,6 +49,7 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrPhone: { title: 'ADR: The phone header', menuLabel: 'ADR: The phone header', url: '/api/docs/adr-phone', kind: 'adr' },
   changelog: { title: 'Changelog', menuLabel: 'Version history', url: '/api/docs/changelog', kind: 'changelog' },
   adrChangelog: { title: 'ADR: The changelog', menuLabel: 'ADR: The changelog', url: '/api/docs/adr-changelog', kind: 'adr' },
+  adrSidebar: { title: 'ADR: The sidebar', menuLabel: 'ADR: The sidebar', url: '/api/docs/adr-sidebar', kind: 'adr' },
 };
 
 export type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices' | 'changelog';
@@ -100,6 +87,7 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrObservability', sub: true },
       { key: 'adrPhone', sub: true },
       { key: 'adrChangelog', sub: true },
+      { key: 'adrSidebar', sub: true },
     ],
   },
   /** One item on purpose: one file, one sentence per version (ADR-012). */
@@ -109,10 +97,10 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
   },
 };
 
-/** Header order, left to right. The desktop header and the phone drawer both render from it. */
+/** Section order, top to bottom. The sidebar renders from it in both of its shapes (ADR-013). */
 export const MENU_ORDER: MenuVariant[] = ['hosting', 'cicd', 'practices', 'changelog', 'about'];
 
-/** Links that sit beside the docs, shared by the dropdowns and the phone sheet. */
+/** Links that sit beside the docs in the sidebar. */
 export const LINKS = {
   ciRuns: { label: 'CI runs on GitHub', href: 'https://github.com/SteveStout/TheYard/actions' },
   resume: { label: "Steven's resume (PDF)", href: '/api/docs/resume' },
@@ -124,10 +112,11 @@ export type DocRequest = { key: DocKey; nonce: number };
 
 /**
  * The in-app doc viewer: a native modal dialog that fetches the markdown the
- * API serves, renders it, and caches it per doc. Every menu (the desktop
- * dropdowns and the phone sheet) opens docs through one of these.
+ * API serves, renders it, and caches it per doc. Every sidebar row opens its
+ * doc through the one instance the sidebar owns; onClose lets the sidebar
+ * drop the row's current marker.
  */
-export function DocDialog({ request }: { request: DocRequest | null }) {
+export function DocDialog({ request, onClose }: { request: DocRequest | null; onClose?: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>({});
   const [docError, setDocError] = useState(false);
@@ -159,6 +148,7 @@ export function DocDialog({ request }: { request: DocRequest | null }) {
       ref={dialogRef}
       className={styles.dialog}
       aria-label={DOCS[activeDoc].title}
+      onClose={onClose}
       onClick={(event) => {
         // Native dialog: a click on the backdrop targets the dialog itself.
         if (event.target === dialogRef.current) dialogRef.current?.close();
@@ -189,115 +179,5 @@ export function DocDialog({ request }: { request: DocRequest | null }) {
         )}
       </div>
     </dialog>
-  );
-}
-
-/**
- * A header dropdown that opens repo docs in an in-app dialog (markdown served
- * by the API). The About variant also links the resume PDF and the repository;
- * the Hosting variant collects every Azure, certificate, and deployment
- * decision in one place. Desktop only: below 640px the MobileDocs sheet takes
- * over, built from the same MENUS record.
- */
-export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
-  const { label, items } = MENUS[menu];
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [request, setRequest] = useState<DocRequest | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close the dropdown on outside click or Escape.
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [menuOpen]);
-
-  const openDoc = (key: DocKey) => {
-    setMenuOpen(false);
-    setRequest((prev) => ({ key, nonce: (prev?.nonce ?? 0) + 1 }));
-  };
-
-  return (
-    <div className={styles.wrap} ref={menuRef}>
-      <button
-        type="button"
-        className={styles.trigger}
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((open) => !open)}
-      >
-        {label}
-        <svg viewBox="0 0 12 8" width="10" height="7" aria-hidden="true">
-          <path d="M1 1.5 6 6.5 11 1.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </button>
-
-      {menuOpen && (
-        <div className={styles.menu} role="menu">
-          {items.map(({ key, sub }) => (
-            <button
-              key={key}
-              type="button"
-              className={sub ? `${styles.item} ${styles.subItem}` : styles.item}
-              role="menuitem"
-              onClick={() => openDoc(key)}
-            >
-              {DOCS[key].menuLabel}
-            </button>
-          ))}
-          {menu === 'cicd' && (
-            <a
-              className={styles.item}
-              role="menuitem"
-              href={LINKS.ciRuns.href}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setMenuOpen(false)}
-            >
-              {LINKS.ciRuns.label}
-              <ExternalIcon />
-            </a>
-          )}
-          {menu === 'about' && (
-            <>
-              <a
-                className={styles.item}
-                role="menuitem"
-                href={LINKS.resume.href}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => setMenuOpen(false)}
-              >
-                {LINKS.resume.label}
-                <ExternalIcon />
-              </a>
-              <a
-                className={styles.item}
-                role="menuitem"
-                href={LINKS.repo.href}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => setMenuOpen(false)}
-              >
-                {LINKS.repo.label}
-                <ExternalIcon />
-              </a>
-            </>
-          )}
-        </div>
-      )}
-
-      <DocDialog request={request} />
-    </div>
   );
 }

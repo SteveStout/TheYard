@@ -4,6 +4,27 @@
   flex-direction: column;
 }
 
+/* The docked rail (ADR-013): two columns, the rail's width from its token. */
+.app[data-rail='open'],
+.app[data-rail='collapsed'] {
+  display: grid;
+  grid-template-columns: var(--rail-width) minmax(0, 1fr);
+  align-items: start;
+}
+
+.app[data-rail='collapsed'] {
+  grid-template-columns: var(--rail-width-collapsed) minmax(0, 1fr);
+}
+
+/* Header (below the docking line), main, and footer: one column beside the rail. */
+.page {
+  flex: 1;
+  min-height: 100vh;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .header {
   background: var(--color-header);
   color: var(--color-header-text);
@@ -69,17 +90,30 @@
   gap: var(--space-3);
 }
 
-.desktopActions {
-  display: flex;
+/* The hamburger that opens the sidebar's drawer shape (ADR-013). */
+.hamburger {
+  appearance: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
+  justify-content: center;
+  color: var(--color-header-text);
+  cursor: pointer;
 }
 
-/* Phones: the dropdowns and the Admin button give way to the hamburger sheet. */
-@media (max-width: 639px) {
-  .desktopActions {
-    display: none;
-  }
+.hamburger:hover,
+.hamburger[aria-expanded='true'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.hamburger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .resetBids {
@@ -260,26 +294,4 @@
 .footerCommit:focus-visible {
   color: var(--color-accent);
   text-decoration: underline;
-}
-
-.adminTab {
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  color: var(--color-header-text);
-  padding: 6px 14px;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.adminTab:hover {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-}
-
-.adminTab:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
 }

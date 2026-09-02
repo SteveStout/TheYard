@@ -290,6 +290,9 @@ app.MapGet("/api/docs/changelog", () =>
 app.MapGet("/api/docs/adr-changelog", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-012-changelog.md"))), "text/markdown"));
 
+app.MapGet("/api/docs/adr-sidebar", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-013-sidebar.md"))), "text/markdown"));
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 

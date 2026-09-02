@@ -1,32 +1,35 @@
 import { expect, test } from '@playwright/test';
 
-test('the Best Practices menu opens the overview and the versioning ADR', async ({ page }) => {
+test('the Best Practices section opens the overview and its decision records', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Best Practices' }).click();
-  await page.getByRole('menuitem', { name: 'Best practices overview' }).click();
+  const nav = page.getByRole('navigation', { name: 'Project documents' });
+  await nav.getByRole('button', { name: 'Best practices overview' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Best Practices' })
   ).toBeVisible();
   await page.keyboard.press('Escape');
 
-  await page.getByRole('button', { name: 'Best Practices' }).click();
-  await page.getByRole('menuitem', { name: 'ADR: Version in the footer' }).click();
+  await nav.getByRole('button', { name: 'ADR: Version in the footer' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: Version in the footer' })
   ).toBeVisible();
   await page.keyboard.press('Escape');
 
-  await page.getByRole('button', { name: 'Best Practices' }).click();
-  await page.getByRole('menuitem', { name: 'ADR: Docs and testing' }).click();
+  await nav.getByRole('button', { name: 'ADR: Docs and testing' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: Docs and testing' })
   ).toBeVisible();
   await page.keyboard.press('Escape');
 
-  await page.getByRole('button', { name: 'Best Practices' }).click();
-  await page.getByRole('menuitem', { name: 'ADR: Observability (Admin tab)' }).click();
+  await nav.getByRole('button', { name: 'ADR: Observability (Admin tab)' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: Observability, the Admin tab' })
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await nav.getByRole('button', { name: 'ADR: The sidebar' }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: The sidebar' })
   ).toBeVisible();
 });
 
