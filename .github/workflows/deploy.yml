@@ -1,0 +1,113 @@
+# Deploy: the continuous delivery leg (ADR-009).
+# Fires when CI finishes green on main, builds the image with the two footer
+# build arguments, pushes it to the registry, rewrites infra/aci-theyard.yaml
+# to the new tag and rolls the container group. Auth is OIDC: GitHub holds
+# three identifiers as repository variables and no secret exists anywhere.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+# Two quick merges must not fight over the one container group.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # workflow_run fires on red CI too; this gate is what keeps a red run from
+    # shipping. The run counter still ticks, so displayed versions may skip.
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY_NAME: crtheyardsszmnetj67bn5h2
+      ACR: crtheyardsszmnetj67bn5h2.azurecr.io
+      RG: RG-THEYARD-SS
+      ORIGIN: http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
+      SITE: https://theyard.stevenstout.biz
+      # The live footer read 1.0.0.11 when this workflow was written (2026-09-02).
+      # Displayed version = 1.0.0.(OFFSET + run number); see ADR-005 and ADR-009.
+      OFFSET: 11
+    steps:
+      # Pin to the exact commit CI tested, not wherever main has moved since.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Compute version
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          N=$(( OFFSET + RUN_NUMBER ))
+          {
+            echo "N=$N"
+            echo "APP_VERSION=1.0.0.$N"
+            echo "APP_COMMIT=${HEAD_SHA:0:7}"
+            echo "IMAGE=$ACR/theyard:v$N"
+          } >> "$GITHUB_ENV"
+          echo "Deploying 1.0.0.$N from ${HEAD_SHA:0:7} as $ACR/theyard:v$N"
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push
+        run: |
+          az acr login --name "$REGISTRY_NAME"
+          docker build \
+            --build-arg APP_VERSION="$APP_VERSION" \
+            --build-arg APP_COMMIT="$APP_COMMIT" \
+            -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Roll the container group
+        run: |
+          # Only the value line is rewritten; the header comment keeps its placeholder text.
+          sed "s|^\(\s*image: \)__IMAGE__$|\1$IMAGE|" infra/aci-theyard.yaml > "$RUNNER_TEMP/aci.yaml"
+          grep -q "^\s*image: $IMAGE$" "$RUNNER_TEMP/aci.yaml"
+          az container create -g "$RG" -f "$RUNNER_TEMP/aci.yaml" \
+            --query "{state:provisioningState,image:containers[0].image,fqdn:ipAddress.fqdn}" -o json
+
+      - name: Verify
+        run: |
+          # The roll restarts the group: wait for the NEW build to answer at the origin.
+          for i in $(seq 1 30); do
+            sleep 10
+            body=$(curl -fsS --max-time 10 "$ORIGIN/api/version" || true)
+            if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
+              echo "origin serves $APP_VERSION after $((i * 10))s: $body"
+              break
+            fi
+            if [[ "$i" -eq 30 ]]; then
+              echo "origin never served $APP_VERSION (last answer: $body)"
+              exit 1
+            fi
+          done
+          curl -fsS --max-time 20 "$ORIGIN/api/facets" > /dev/null
+          # The domain is the edge in front of the same origin: what a visitor sees.
+          site=$(curl -fsS --max-time 30 "$SITE/api/version")
+          echo "domain: $site"
+          if [[ "$site" != *"\"$APP_VERSION\""* || "$site" != *"\"$APP_COMMIT\""* ]]; then
+            echo "domain does not report $APP_VERSION at $APP_COMMIT"
+            exit 1
+          fi
+          curl -fsS --max-time 30 "$SITE/api/facets" > /dev/null
+          # Azure's own view of the container (the Admin tab's card), informational.
+          curl -sS --max-time 40 "$SITE/api/admin/azure" || true
+          echo
+          {
+            echo "## Deployed 1.0.0.$N"
+            echo "- commit: $APP_COMMIT"
+            echo "- image: $IMAGE"
+            echo "- site: $SITE"
+          } >> "$GITHUB_STEP_SUMMARY"
