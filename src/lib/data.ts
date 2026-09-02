@@ -44,6 +44,27 @@ export interface BidResult {
   vehicle?: Vehicle;
 }
 
+// #region problem-detail
+/**
+ * Reads the message out of a failed response. The API answers RFC 9457
+ * ProblemDetails, so `detail` is the field to trust (ADR: Error handling);
+ * `reason` and `error` are the two shapes it used to answer with, kept here
+ * so a browser holding an old bundle still shows a real message during a roll.
+ */
+async function problemDetail(response: Response, fallback: string): Promise<string> {
+  // A failure can arrive without a JSON body at all: an edge or proxy error
+  // page, or an empty 502. Anything unreadable falls back to the sentence the
+  // caller supplied rather than throwing a second error over the first.
+  let body: { detail?: string; reason?: string; error?: string } | null = null;
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+  return body?.detail ?? body?.reason ?? body?.error ?? fallback;
+}
+// #endregion problem-detail
+
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 30;
 
@@ -125,7 +146,9 @@ export async function fetchVehicles(
 
   const response = await fetch(`/api/vehicles${key ? `?${key}` : ''}`, { signal });
   if (!response.ok) {
-    throw new Error(`The inventory API responded with ${response.status}`);
+    throw new Error(
+      await problemDetail(response, `The inventory API responded with ${response.status}`)
+    );
   }
   const page = (await response.json()) as VehiclePage;
 
@@ -190,8 +213,7 @@ async function postBidAction(url: string, body: Record<string, unknown>): Promis
     const reason =
       response.status === 404
         ? 'This vehicle no longer exists.'
-        : ((await response.json().catch(() => null)) as { reason?: string } | null)?.reason ??
-          `The auction API responded with ${response.status}.`;
+        : await problemDetail(response, `The auction API responded with ${response.status}.`);
     return { outcome: { kind: 'rejected', reason } };
   }
 

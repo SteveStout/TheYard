@@ -99,7 +99,8 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Contains("ended", body.RootElement.GetProperty("reason").GetString());
+        // One failure shape for the whole API: the reason is in `detail` (ADR-023).
+        Assert.Contains("ended", body.RootElement.GetProperty("detail").GetString());
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.FileProviders;
 using TheBlock.Api;
 using TheBlock.Application;
@@ -43,11 +44,42 @@ builder.Services.AddSingleton<BidService>();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower);
 
+#region problem-details
+// Every failure answers RFC 9457 ProblemDetails (ADR-023): one shape for a
+// rejected query, a rejected bid and an unhandled exception alike, so a caller
+// reads one field, `detail`, for the message. The trace identifier ties the
+// response to the request's log line.
+builder.Services.AddProblemDetails(options =>
+    options.CustomizeProblemDetails = context =>
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
+
+// Every API call is logged as one structured line: method, path, status,
+// duration. The JSON console formatter keeps it machine-readable wherever the
+// container's output lands.
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = HttpLoggingFields.RequestMethod
+        | HttpLoggingFields.RequestPath
+        | HttpLoggingFields.ResponseStatusCode
+        | HttpLoggingFields.Duration;
+    options.CombineLogs = true;
+});
+builder.Logging.AddJsonConsole(options => options.IncludeScopes = false);
+#endregion problem-details
+
 var app = builder.Build();
 
 // Materialize the inventory now so a bad dataset fails the process at
 // startup, visibly, and not as a 500 on the first request.
 app.Services.GetRequiredService<InventoryService>().GetAll();
+
+// First in the pipeline, because it can only catch what is registered after
+// it: an unhandled exception becomes a 500 ProblemDetails instead of an empty
+// body (ADR-023). The request logger sits behind it so a failed request is
+// still logged with its real status.
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+app.UseHttpLogging();
 
 // The dataset is snake_case; keep the wire shape identical to the source file.
 var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
@@ -66,7 +98,9 @@ app.MapGet("/api/vehicles", (
 {
     if (!query.TryBuildFilter(out var filter, out var clock, out var sort, out var error))
     {
-        return Results.BadRequest(new { error });
+        // One failure shape for the whole API (ADR-023): the message a person
+        // can act on goes in `detail`, never in a key only this endpoint uses.
+        return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
     }
     var snapshot = bids.Snapshot();
     Func<Vehicle, Vehicle>? overlay = snapshot.Count == 0 ? null : bids.Apply;
@@ -87,7 +121,7 @@ app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, s
 {
     if (!Clocks.TryResolve(anchor_ms, out var clock, out var error))
     {
-        return Results.BadRequest(new { error });
+        return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
     }
     return inventory.GetById(id) is { } vehicle
         ? Results.Json(VehicleWire.ToWire(bids.Apply(vehicle), clock, wireFormat), wireFormat)
@@ -179,7 +213,7 @@ IResult HandleBid(
 {
     if (!Clocks.TryResolve(anchorMs, out var clock, out var clockError))
     {
-        return Results.BadRequest(new { reason = clockError });
+        return Results.Problem(detail: clockError, statusCode: 400, title: "The bid was rejected");
     }
     if (inventory.GetById(id) is not { } vehicle)
     {
@@ -188,7 +222,7 @@ IResult HandleBid(
     var outcome = action(vehicle, clock);
     if (outcome.Kind == BidOutcomeKind.Rejected)
     {
-        return Results.BadRequest(new { reason = outcome.Reason });
+        return Results.Problem(detail: outcome.Reason, statusCode: 400, title: "The bid was rejected");
     }
     return Results.Json(new
     {
@@ -275,6 +309,27 @@ app.MapGet("/api/health", () =>
 
 app.MapGet("/api/errors", () => Results.Json(errorLog.Snapshot(), wireFormat));
 
+#region client-errors
+// Browser errors land where server errors already do (ADR-023): a render
+// crash caught by the boundary, or an unhandled rejection, POSTs here and
+// shows up on the Admin tab's Recent errors card tagged with the page the
+// visitor was on. Status 0 marks the entry as coming from the browser.
+app.MapPost("/api/errors/client", (ClientErrorReport report) =>
+{
+    if (string.IsNullOrWhiteSpace(report.Message))
+    {
+        return Results.Problem(detail: "A client error report needs a message.", statusCode: 400,
+            title: "The error report could not be read");
+    }
+    // Bounded on the way in: a stack trace from a minified bundle can be long,
+    // and the buffer is a demo's memory, not a log store.
+    string message = report.Message.Length > 500 ? report.Message[..500] : report.Message;
+    string where = string.IsNullOrWhiteSpace(report.Path) ? "(browser)" : report.Path;
+    errorLog.Record(where, 0, "browser: " + message);
+    return Results.NoContent();
+});
+#endregion client-errors
+
 app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
 
 #region cache-headers
@@ -347,6 +402,9 @@ public sealed record BidRequest(int Amount, long? AnchorMs);
 
 /// <summary>Buy-now submission: just the client's clock anchor.</summary>
 public sealed record BuyNowRequest(long? AnchorMs);
+
+/// <summary>What the browser reports when a render crashes or a promise rejects (ADR-023).</summary>
+public sealed record ClientErrorReport(string? Message, string? Stack, string? Path);
 
 // Exposes the entry point to WebApplicationFactory for integration tests.
 public partial class Program;

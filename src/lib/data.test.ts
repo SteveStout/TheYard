@@ -126,7 +126,16 @@ describe('fetchVehicles caching', () => {
   it('does not cache failed responses', async () => {
     const fetchMock = vi
       .fn()
-      .mockImplementationOnce(async () => ({ ok: false, status: 500 }) as unknown as Response)
+      .mockImplementationOnce(
+        async () =>
+          ({
+            ok: false,
+            status: 500,
+            // A real Response always has json(); the API answers ProblemDetails
+            // on a failure, so the stub does too (ADR: Error handling).
+            json: async () => ({ status: 500, title: 'Server error', detail: 'The API responded with 500' }),
+          }) as unknown as Response
+      )
       .mockImplementation(async () => okResponse());
     vi.stubGlobal('fetch', fetchMock);
 

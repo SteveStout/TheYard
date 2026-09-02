@@ -14,6 +14,17 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
 });
 
+test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }) => {
+  const marker = `e2e boundary probe ${Date.now()}`;
+  const posted = await request.post('http://localhost:5210/api/errors/client', {
+    data: { message: marker, stack: 'at VehicleCard', path: '/?probe=1' },
+  });
+  expect(posted.status()).toBe(204);
+
+  await page.goto('/?view=admin');
+  await expect(page.getByTestId('errors-card')).toContainText(marker);
+});
+
 test('?view=admin deep-links straight to the Admin tab', async ({ page }) => {
   await page.goto('/?view=admin');
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();

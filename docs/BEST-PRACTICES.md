@@ -27,7 +27,7 @@ footer displays exactly that.
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
   walk the code.
-- **Decisions get written down.** Twenty-two ADRs record why the architecture is
+- **Decisions get written down.** Twenty-three ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -35,6 +35,12 @@ footer displays exactly that.
   under the Hosting menu, deployable by flipping parameters.
 - **Containers run hardened.** Multi-stage build, a non-root user, a real
   HTTP healthcheck, and no SDK in the runtime image.
+- **Every failure has one shape.** Rejected queries, rejected bids and
+  unhandled exceptions all answer RFC 9457 ProblemDetails with the message
+  in `detail` and a trace identifier; every request is logged as
+  structured JSON; a React error boundary turns a render crash into a page
+  with a way out, and reports it to the same list the Admin tab reads.
+  Recorded in ADR: Error handling.
 - **The system reports on itself.** The Admin tab in the sidebar shows live
   health checks, Azure's own view of the container, and recent server
   errors, public on purpose. Recorded in ADR: Observability.
