@@ -102,3 +102,37 @@ is where a hiring manager lands first. The rail keeps them one glance away.
   needs a home in the rail as well, which the pinned group provides.
 - The collapsed rail depends on tooltips for labels, so it is a power-user
   shape; the default is open, and the memory is per browser.
+
+## Addendum, 2026-09-02: light, on Steve's word, shipped as 1.0.0.19
+
+Steve's words, from his phone, after seeing 1.0.0.17: "the side panel is
+too dark, keep everything light and modern". The dark navy panel came from
+the reference in ADR: The phone header's addendum; the rest of the site
+never followed it, so the sidebar was the one dark surface on a light
+page. It is light now.
+
+What changed, all of it in the tokens and one stylesheet:
+
+- **White ground, a hairline instead of a shadow.** The rail is white with
+  a one-pixel border on its page side; the drawer stays white over a
+  lighter dim. The brand and the current row read in the heading navy,
+  and the brand blue marks active icons, the focus ring and the current
+  row's edge.
+- **Rows without dividers.** The hairline under every row is gone; a row
+  is a rounded highlight that appears on hover and stays on the current
+  one, the shape most light sidebars use. Rows are still 48 pixels tall
+  with an icon leading each.
+- **Contrast measured again.** Text 15.1:1 on white and 13.6:1 on the
+  tinted row, muted text 5.9:1 and 5.3:1, icons 4.8:1 and 4.4:1, the
+  brand blue 5.1:1 and 4.5:1. The unit test that guarded the dark palette
+  guards this one; only the numbers it reads changed.
+
+The palette, read from this build
+([`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css)):
+
+```live path=src/styles/tokens.css region=sheet-tokens
+```
+
+Nothing moved: the rows, the icons, the docking line, the collapse and the
+drawer are as this record describes above, and the twenty-four end-to-end
+checks passed unchanged.

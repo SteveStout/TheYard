@@ -37,18 +37,21 @@
   --color-header-text: #0a1b5f;
   --color-header-text-muted: #707070;
 
-  /* The phone drawer (ADR-011 addendum): the brand navy as the ground, silver
-     text. Every pair below clears WCAG AA against both grounds, measured
-     before it was chosen and asserted by tokens.test.ts beside this file. */
-  --color-sheet-bg: #0a1b5f;
-  --color-sheet-bg-raised: #14297a;
-  --color-sheet-text: #f5f5f5;
-  --color-sheet-text-muted: #9aa3c7;
-  --color-sheet-icon: #c3c3c3;
-  --color-sheet-icon-active: #8ab4ff;
-  --color-sheet-focus: #8ab4ff;
-  --color-sheet-divider: rgba(255, 255, 255, 0.08);
-  --color-sheet-divider-strong: rgba(255, 255, 255, 0.16);
+  /* #region sheet-tokens */
+  /* The sidebar (ADR-013, light addendum): a white ground, a soft blue tint
+     for the hover and current rows, the brand blue for active icons. Every
+     pair below clears WCAG AA against both grounds, measured before it was
+     chosen and asserted by tokens.test.ts beside this file. */
+  --color-sheet-bg: #ffffff;
+  --color-sheet-bg-raised: #eef3ff;
+  --color-sheet-text: #262626;
+  --color-sheet-text-muted: #5b6478;
+  --color-sheet-icon: #6b7280;
+  --color-sheet-icon-active: #0061ff;
+  --color-sheet-focus: #0061ff;
+  --color-sheet-divider: #eef0f4;
+  --color-sheet-divider-strong: #e3e6ee;
+  /* #endregion sheet-tokens */
 
   /* Spacing — 4px base scale */
   --space-1: 4px;

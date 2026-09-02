@@ -2,7 +2,8 @@
  * The one navigation surface (ADR-013). Two shapes, one set of rows:
  * .rail docks beside the page at 1024px and up and collapses to icons;
  * .drawer slides in over the page below that. Colors are the sheet tokens in
- * tokens.css, each pair measured against WCAG AA in tokens.test.ts.
+ * tokens.css (a light ground since the ADR-013 addendum), each pair measured
+ * against WCAG AA in tokens.test.ts.
  */
 
 /* ---- the docked rail ---- */
@@ -17,7 +18,7 @@
   flex-direction: column;
   background: var(--color-sheet-bg);
   color: var(--color-sheet-text);
-  box-shadow: var(--shadow-md);
+  border-right: 1px solid var(--color-border);
   overflow: hidden;
   transition: width var(--transition-fast);
 }
@@ -69,7 +70,7 @@
 }
 
 .drawer::backdrop {
-  background: rgba(10, 27, 95, 0.55);
+  background: rgba(10, 27, 95, 0.35);
 }
 
 /* ---- the brand block: home button plus collapse (rail) or close (drawer) ---- */
@@ -99,7 +100,7 @@
   gap: var(--space-2);
   min-height: 44px;
   padding: 0 var(--space-1);
-  color: #ffffff;
+  color: var(--color-heading);
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   letter-spacing: -0.01em;
@@ -150,7 +151,7 @@
 
 .toggle:hover {
   background: var(--color-sheet-bg-raised);
-  color: #ffffff;
+  color: var(--color-heading);
 }
 
 /* ---- sections and rows ---- */
@@ -190,18 +191,20 @@
   white-space: nowrap;
 }
 
-/* One row shape for docs, links, and actions: icon, label, 48px tall. */
+/* One row shape for docs, links, and actions: icon, label, 48px tall. A row
+   is a rounded highlight inside the panel's edge, no divider under it. */
 .row {
   appearance: none;
   background: none;
   border: 0;
-  border-bottom: 1px solid var(--color-sheet-divider);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  width: 100%;
+  width: calc(100% - 2 * var(--space-2));
+  margin: 1px var(--space-2);
   min-height: 48px;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   color: var(--color-sheet-text);
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
@@ -214,7 +217,7 @@
 .row:hover,
 .row:active {
   background: var(--color-sheet-bg-raised);
-  color: #ffffff;
+  color: var(--color-heading);
 }
 
 .row:focus-visible {
@@ -225,7 +228,8 @@
 /* The row whose doc is open, or Admin while the tab is showing. */
 .row[aria-current] {
   background: var(--color-sheet-bg-raised);
-  color: #ffffff;
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
   box-shadow: inset 3px 0 0 var(--color-sheet-icon-active);
 }
 
@@ -265,10 +269,6 @@
   border-top: 1px solid var(--color-sheet-divider-strong);
   padding-top: var(--space-2);
   padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
-}
-
-.pinned .row:last-child {
-  border-bottom: 0;
 }
 
 /* Visually hidden, still read by assistive tech and still the accessible name. */

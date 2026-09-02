@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import tokens from './tokens.css?raw';
 
 /**
- * The phone drawer's palette (ADR-011 addendum) is dark, and "looks readable"
- * is not a measurement. This reads the sheet tokens straight from tokens.css
- * and holds every pair to WCAG AA: 4.5:1 for normal text, 3:1 for icons and
- * other graphics. A future shade change cannot slip under it.
+ * The sidebar's palette (ADR-013; light since its addendum, dark in ADR-011's
+ * first pass) is chosen by measurement, because "looks readable" is not one.
+ * This reads the sheet tokens straight from tokens.css and holds every pair
+ * to WCAG AA: 4.5:1 for normal text, 3:1 for icons and other graphics. A
+ * future shade change cannot slip under it.
  */
 
 function token(name: string): string {
@@ -31,7 +32,7 @@ export function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-describe('the phone drawer palette', () => {
+describe('the sidebar palette', () => {
   const grounds = ['color-sheet-bg', 'color-sheet-bg-raised'];
 
   it.each(grounds)('text and muted text clear AA for normal text on %s', (ground) => {
