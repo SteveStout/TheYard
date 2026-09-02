@@ -97,3 +97,18 @@ and the XML prolog a standalone SVG may carry never reaches the page:
 - [`docs/images/dataflow.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/dataflow.svg) and [`docs/images/dataflow.png`](https://github.com/SteveStout/TheYard/blob/main/docs/images/dataflow.png): the new drawing and its preview; [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg) the first one.
 - [`docs/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/DATAFLOW.md), [`docs/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md), [`README.md`](https://github.com/SteveStout/TheYard/blob/main/README.md): the previews and their captions.
 - [`tests/e2e/hosting.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/hosting.spec.ts) and [`tests/e2e/smoke.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/smoke.spec.ts): the browser checks that the captions link to the pages, in a new tab, and that the pages answer.
+
+## The look, from the live site
+
+![The Hosting page on a 375 pixel phone: the infrastructure preview, unreadable at that width, with the caption under it that opens the diagram in a new page](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-diagram-caption.jpg)
+
+![The data flow page as it opens on the phone: the title, the zoom hint, the Source and TheYard links, and the whole drawing fitted to the width](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-diagram-page.jpg)
+
+![The same page zoomed in, the way a pinch does it: the read path boxes readable, InventoryService through Cards, detail, bid panel](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-diagram-zoomed.jpg)
+
+![The infrastructure page on a laptop: the drawing at its full width with the header above it](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-diagram-laptop.jpg)
+
+Taken from the domain at 1.0.0.25 by the repository's headless Chrome
+(`mentor` tooling, no sign-in), the phone captures at 375 pixels and twice
+the density; the third one has the SVG widened to 270 percent and scrolled,
+which is what a pinch does on a phone.
