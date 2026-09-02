@@ -32,6 +32,32 @@ export function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
+describe('the site palette (ADR-016)', () => {
+  it('body, muted and heading text clear AA on white and on the page ground', () => {
+    for (const ground of ['color-surface', 'color-bg']) {
+      expect(contrast(token('color-text'), token(ground))).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(token('color-text-muted'), token(ground))).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(token('color-heading'), token(ground))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('faint labels clear AA on white, where they sit, and 3:1 on the ground', () => {
+    expect(contrast(token('color-text-faint'), token('color-surface'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token('color-text-faint'), token('color-bg'))).toBeGreaterThanOrEqual(3);
+  });
+
+  it('actions read both ways: white on the accent, and the accent as link text on white', () => {
+    expect(contrast(token('color-on-accent'), token('color-accent'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token('color-accent'), token('color-surface'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token('color-accent'), token('color-accent-soft'))).toBeGreaterThanOrEqual(3);
+  });
+
+  it('the header text clears AA on the header', () => {
+    expect(contrast(token('color-header-text'), token('color-header'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token('color-header-text-muted'), token('color-header'))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 describe('the sidebar palette', () => {
   const grounds = ['color-sheet-bg', 'color-sheet-bg-raised'];
 

@@ -45,6 +45,12 @@ test('the Best Practices section opens the overview and its decision records', a
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: Cache headers' })
   ).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await nav.getByRole('button', { name: 'ADR: The palette' }).click();
+  const palette = page.getByRole('dialog', { name: 'ADR: The palette' });
+  await expect(palette.getByRole('heading', { level: 1, name: 'ADR: The palette' })).toBeVisible();
+  await expect(palette.locator('pre code').first()).toContainText('--color-bg: #e9e6e7');
 });
 
 test('the footer reports the running build', async ({ page }) => {

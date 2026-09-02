@@ -22,7 +22,7 @@
 .media {
   position: relative;
   aspect-ratio: 4 / 3;
-  background: linear-gradient(160deg, #e2e8f0, #f8fafc);
+  background: linear-gradient(160deg, #e9e6e7, #f8f6f7);
   overflow: hidden;
 }
 

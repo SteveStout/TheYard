@@ -77,7 +77,7 @@
 
 .brandMark {
   align-self: center;
-  color: var(--color-accent);
+  color: var(--color-brand-mark);
 }
 
 .brandSub {

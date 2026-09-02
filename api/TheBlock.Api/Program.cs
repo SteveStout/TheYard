@@ -322,6 +322,9 @@ app.MapGet("/api/docs/adr-live-samples", () =>
 app.MapGet("/api/docs/adr-caching", () =>
     LiveDoc("ADR-015-cache-headers.md"));
 
+app.MapGet("/api/docs/adr-palette", () =>
+    LiveDoc("ADR-016-palette.md"));
+
 #region cache-headers
 // Cache rules (ADR-015), from the shape of the address. Vite names every
 // bundle file by a hash of its contents, so /assets/* can be kept for a year

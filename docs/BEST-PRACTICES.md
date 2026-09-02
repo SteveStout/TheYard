@@ -22,7 +22,7 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Fifteen ADRs record why the architecture is
+- **Decisions get written down.** Sixteen ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -48,3 +48,7 @@ footer displays exactly that.
   contents and cached for a year; the page, the API and the documents say
   no-cache, so a new version shows on the next load on any device. Recorded
   in ADR: Cache headers.
+- **Color is measured, not eyeballed.** Every text and ground pair in the
+  palette is held to WCAG AA by a unit test that reads the tokens file, so
+  a shade that fails contrast fails the build. Recorded in ADR: The
+  palette.

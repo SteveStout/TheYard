@@ -39,9 +39,9 @@
   background: var(--color-border-strong);
 }
 
-/* Dark translucent chip for use on top of images. */
+/* Dark translucent chip for use on top of images: the palette's brown-gray. */
 .overlay {
-  background: rgba(15, 23, 42, 0.78);
+  background: rgba(63, 58, 55, 0.82);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
@@ -52,11 +52,11 @@
 }
 
 .overlay.upcoming {
-  color: #93c5fd;
+  color: #c9d3e3;
 }
 
 .overlay.ended {
-  color: #cbd5e1;
+  color: #e9e6e7;
 }
 
 @keyframes pulse {

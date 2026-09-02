@@ -70,7 +70,7 @@
 }
 
 .drawer::backdrop {
-  background: rgba(10, 27, 95, 0.35);
+  background: rgba(94, 86, 83, 0.4);
 }
 
 /* ---- the brand block: home button plus collapse (rail) or close (drawer) ---- */
@@ -117,7 +117,7 @@
 
 .brandMark {
   flex: none;
-  color: var(--color-sheet-icon-active);
+  color: var(--color-brand-mark);
 }
 
 .brandText {
