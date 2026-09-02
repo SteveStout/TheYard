@@ -24,7 +24,8 @@ export type DocKey =
   | 'changelog'
   | 'adrChangelog'
   | 'adrSidebar'
-  | 'adrLiveSamples';
+  | 'adrLiveSamples'
+  | 'adrCaching';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
@@ -52,6 +53,7 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrChangelog: { title: 'ADR: The changelog', menuLabel: 'ADR: The changelog', url: '/api/docs/adr-changelog', kind: 'adr' },
   adrSidebar: { title: 'ADR: The sidebar', menuLabel: 'ADR: The sidebar', url: '/api/docs/adr-sidebar', kind: 'adr' },
   adrLiveSamples: { title: 'ADR: Live code samples', menuLabel: 'ADR: Live code samples', url: '/api/docs/adr-live-samples', kind: 'adr' },
+  adrCaching: { title: 'ADR: Cache headers', menuLabel: 'ADR: Cache headers', url: '/api/docs/adr-caching', kind: 'adr' },
 };
 
 export type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices' | 'changelog';
@@ -91,6 +93,7 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrChangelog', sub: true },
       { key: 'adrSidebar', sub: true },
       { key: 'adrLiveSamples', sub: true },
+      { key: 'adrCaching', sub: true },
     ],
   },
   // #region menu-changelog

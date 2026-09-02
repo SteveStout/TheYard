@@ -5,6 +5,7 @@ footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Best Practices menu.
 
+- **1.0.0.20** (2026-09-02): Cache headers arrived: hashed bundle files cache for a year and everything else says no-cache, so a new version shows on the next load on any device (ADR-015).
 - **1.0.0.19** (2026-09-02): The sidebar turned light and modern, a white rail and drawer with the brand blue as the only accent (ADR-013 addendum).
 - **1.0.0.18** (2026-09-02): The CI/CD page gained its Deploy screenshots, the six green runs and one run's steps, captured from the public Actions pages.
 - **1.0.0.17** (2026-09-02): The Admin tab's health checks report how long each one took and Azure's card lists the container's last three events (ADR-010, second pass).

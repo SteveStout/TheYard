@@ -22,7 +22,7 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Fourteen ADRs record why the architecture is
+- **Decisions get written down.** Fifteen ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -44,3 +44,7 @@ footer displays exactly that.
 - **The docs show the code that runs.** A decision record's samples are
   read from this build's own source files at request time, so the words and
   the code cannot drift apart. Recorded in ADR: Live code samples.
+- **Nothing stale reaches a browser.** Bundle files are named by their own
+  contents and cached for a year; the page, the API and the documents say
+  no-cache, so a new version shows on the next load on any device. Recorded
+  in ADR: Cache headers.

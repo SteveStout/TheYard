@@ -319,6 +319,36 @@ app.MapGet("/api/docs/adr-sidebar", () =>
 app.MapGet("/api/docs/adr-live-samples", () =>
     LiveDoc("ADR-014-live-samples.md"));
 
+app.MapGet("/api/docs/adr-caching", () =>
+    LiveDoc("ADR-015-cache-headers.md"));
+
+#region cache-headers
+// Cache rules (ADR-015), from the shape of the address. Vite names every
+// bundle file by a hash of its contents, so /assets/* can be kept for a year
+// and never goes stale: a new build has new names. Everything that can change
+// under the same address (the page, the API, the documents) says no-cache, so
+// a browser asks before reusing it. The photo set keeps its own one-day rule
+// below, and a response that already chose its rule is left alone.
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        var response = context.Response;
+        if (!response.Headers.ContainsKey("Cache-Control"))
+        {
+            bool hashedBundleFile = context.Request.Path.StartsWithSegments("/assets")
+                && response.StatusCode == StatusCodes.Status200OK
+                && !(response.ContentType ?? "").StartsWith("text/html", StringComparison.OrdinalIgnoreCase);
+            response.Headers.CacheControl = hashedBundleFile
+                ? "public, max-age=31536000, immutable"
+                : "no-cache";
+        }
+        return Task.CompletedTask;
+    });
+    await next();
+});
+#endregion cache-headers
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -332,7 +362,10 @@ app.UseStaticFiles(new StaticFileOptions
         ctx.Context.Response.Headers.CacheControl = "public, max-age=86400",
 });
 
-app.MapFallbackToFile("index.html");
+// The SPA fallback serves index.html for app routes only; an address that
+// looks like a file (a hashed bundle name that no longer exists, say) is a
+// 404, never a page dressed as a script.
+app.MapFallbackToFile("{*path:nonfile}", "index.html");
 
 app.Run();
 
