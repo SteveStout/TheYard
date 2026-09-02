@@ -20,7 +20,13 @@ repository's main branch, so no password or key is stored anywhere. The
 version in the page footer is stamped by that build. The full record is
 ADR: The deploy pipeline, below this entry in the menu.
 
-![The first green Deploy run](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-deploy-green.jpg)
+![The Deploy workflow's runs on GitHub Actions, one green run per version on the live site](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-deploy-runs.jpg)
+
+One run, step by step: compute the version, sign in to Azure with the
+minted token, build and push the image, roll the container group, verify
+the origin and the domain. Every version on the site has a page like this.
+
+![One Deploy run's steps: compute the version, sign in to Azure, build and push, roll the container group, verify](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-deploy-steps.jpg)
 
 **The edge deploys itself.** The HTTPS front door of this site (see the
 Hosting menu) is three files in this repository. Netlify watches the repo and
