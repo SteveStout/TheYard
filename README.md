@@ -1,4 +1,4 @@
-# TheYard — Used-Vehicle Auction Platform
+# TheYard, a used-vehicle auction platform
 
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz)
 
@@ -9,8 +9,10 @@ auction rules.
 
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
-Everything about how it is built and hosted is served from inside the app,
-under Hosting, CI/CD and Best Practices in the sidebar. The shape of it:
+Everything about how it is built and hosted is served from inside the running app, under
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-three decision
+records explain each choice, and the code samples in them are read from the running build
+rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 
@@ -19,7 +21,7 @@ under Hosting, CI/CD and Best Practices in the sidebar. The shape of it:
 ## How to Run
 
 Requires [Node 20+](https://nodejs.org) (built on Node 24) and the
-[.NET 10 SDK](https://dotnet.microsoft.com/download) — on Windows:
+[.NET 10 SDK](https://dotnet.microsoft.com/download). On Windows:
 `winget install OpenJS.NodeJS.LTS Microsoft.DotNet.SDK.10`.
 
 ```
@@ -32,9 +34,9 @@ npm start          # API + frontend in one command; opens the browser
 Open http://localhost:5173. The dev server proxies `/api` to the .NET API, which serves
 the inventory and the vehicle photos (`/api/images/...`). The inventory is **100,000
 records**, deterministically synthesized at startup from the 200-record seed dataset
-(`Inventory:TargetCount` in `api/TheBlock.Api/appsettings.json`) — no giant file in the
-repo. All filtering, sorting, and paging are server-side via LINQ over GET parameters;
-the landing page is the top 100 by auction time (live, ending soonest first):
+(`Inventory:TargetCount` in `api/TheBlock.Api/appsettings.json`), so there is no giant
+file in the repo. All filtering, sorting, and paging are server-side via LINQ over GET
+parameters; the landing page is the top 100 by auction time (live, ending soonest first):
 
 ```
 GET /api/vehicles?make=Ford&status=live&sort=price-asc&limit=100
@@ -45,16 +47,24 @@ Parameters: `q` (matches every filterable field, including derived auction statu
 `min_condition`, `price_min`, `price_max`, `sort` (ending-soonest, price-asc,
 price-desc, condition, most-bids), `limit` (default 100, max 500), `offset`. Responses
 are an envelope `{ total, vehicles }`, each vehicle carrying server-derived auction
-facts (`auction_starts_at`, `auction_ends_at`, `auction_status`, `min_next_bid`);
-invalid `status`/`sort`/`anchor_ms` return 400. `GET /api/vehicles/{id}` fetches one
-vehicle; `GET /api/facets` feeds the filter dropdowns from the full dataset.
+facts (`auction_starts_at`, `auction_ends_at`, `auction_status`, `min_next_bid`).
+Invalid `status`, `sort` or `anchor_ms` values return 400 as RFC 9457 ProblemDetails
+with the message in `detail`. `GET /api/vehicles/{id}` fetches one vehicle;
+`GET /api/facets` feeds the filter dropdowns from the full dataset.
 
 Bidding is server-side and validated by the domain rules:
-`POST /api/vehicles/{id}/bids` `{ amount, anchor_ms }` → accepted/won or 400 with a
-reason; `POST /api/vehicles/{id}/buy-now`; `GET /api/bids` (the single anonymous
-buyer's standing); `DELETE /api/bids` (reset). Bid state lives in API memory and is
-overlaid on vehicles BEFORE filtering, so price filters see what the UI shows. If the
-API isn't running, the app shows a clear error state with a retry.
+`POST /api/vehicles/{id}/bids` `{ amount, anchor_ms }` answers accepted or won, or 400
+in the same problem shape; `POST /api/vehicles/{id}/buy-now`; `GET /api/bids` (the
+single anonymous buyer's standing); `DELETE /api/bids` (reset). Bid state lives in API
+memory and is overlaid on vehicles before filtering, so price filters see what the UI
+shows. If the API is not running, the app shows a clear error state with a retry.
+
+The app also serves its own documentation and health:
+`GET /api/docs/{slug}` (every document in the sidebar, live code samples expanded at
+request time), `GET /api/docs/diagrams/{name}` (a diagram on its own zoomable page),
+`GET /api/version` (the build and commit the footer shows), `GET /healthz` and
+`GET /readyz` (liveness and readiness), `GET /api/health`, `GET /api/errors` and
+`GET /api/admin/azure` (the Admin tab).
 
 Other scripts:
 
@@ -66,33 +76,41 @@ npm run build      # typecheck + production bundle to dist/
 npm run preview    # serve the production build
 ```
 
-CI (GitHub Actions, `.github/workflows/ci.yml`) runs all three suites on every push.
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs all three suites on every push, and
+a green run on `main` builds the image and rolls the live container with no human step
+(`.github/workflows/deploy.yml`).
 
 To refresh the photo set from Wikimedia Commons, run `node scripts/fetch_photos.mjs`.
 
 ## How It Was Built
 
-Built domain-first, with tests before any UI. It then grew in deliberate passes into a demonstration of how I
-build production systems: the .NET API in onion architecture, server-side
-filtering/sorting/paging over a 100,000-record synthetic dataset, server-owned bidding
-rules, three test suites, and CI.
+Built domain-first, with tests before any UI. It then grew in deliberate passes into a
+demonstration of how I build production systems: the .NET API in onion architecture,
+server-side filtering, sorting and paging over a 100,000-record synthetic dataset,
+server-owned bidding rules, three test suites, CI, a container, a live host, and a
+written architecture the code is reviewed against.
 
-The work was pair-built with Claude Code throughout — I directed the scope, the
-architecture, and every product decision, and I'm happy to walk through the reasoning
+The work was pair-built with Claude Code throughout. I directed the scope, the
+architecture, and every product decision, and I am happy to walk through the reasoning
 behind any line of it.
 
 ## Workflow
 
 AI-assisted, verification-driven. I directed scope, architecture, and product decisions;
 Claude Code implemented under that direction, and nothing merged on trust: every change
-ran the typechecker and both unit suites, UI work was verified against real screenshots
-at desktop/tablet/mobile widths, and features were driven end to end in a headless
-browser before being called done. The build went domain-first (rules and tests before
-any UI), then grew in deliberate passes — frontend, API, scale, bidding — with an
-adversarial multi-agent code review mid-stream whose findings were fixed, tested, and
-in one case turned into a regression test. The living documentation (this README, the
-data-flow and project docs) is served inside the app under **About**, so the walkthrough
-can happen without leaving it.
+ran the typechecker and all three suites, UI work was verified against real screenshots
+at desktop, tablet and mobile widths, and features were driven end to end in a headless
+browser before being called done. The build went domain-first (rules and tests before any
+UI), then grew in deliberate passes: frontend, API, scale, bidding, hosting, then the
+documentation and observability passes. Two adversarial reviews ran mid-stream, one
+multi-agent and one staff-level, and their findings were fixed, tested, and in one case
+turned into a regression test. The living documentation is served inside the app, so the
+walkthrough can happen without leaving it.
+
+On the second build day the loop tightened further: a lead session wrote the tasks and a
+developer session implemented them, every change gated by the full suite before commit
+and verified from the live domain after the deploy. Eighteen versions shipped that day,
+each with its own changelog line and, where it decided something, its own record.
 
 ## Assumptions and Scope
 
@@ -102,15 +120,16 @@ can happen without leaving it.
   (no increment), a reserve cannot be met, and the UI labels the price "Starting bid".
 - **Auction windows are derived, not read.** `auction_start` is synthetic, so each
   vehicle's id hashes to an end time spread across two days before to five days after
-  "now" (anchored to local midnight), with a 2–4 day duration. Windows are stable across
-  reloads within a day and re-seed at midnight, so the inventory always shows a live mix
-  of ended, live, and upcoming auctions.
+  "now" (anchored to local midnight), with a two to four day duration. Windows are stable
+  across reloads within a day and re-seed at midnight, so the inventory always shows a
+  live mix of ended, live, and upcoming auctions.
 - **A bid at or above the Buy Now price wins immediately at the Buy Now price**, even if
-  it would fail the minimum-increment check — the instant-win rule takes precedence.
+  it would fail the minimum-increment check: the instant-win rule takes precedence.
 - **Single anonymous buyer.** Your bids live in the API's memory, mark you high bidder,
   and survive browser reloads (not API restarts); there are no competing bidders
-  advancing prices. "Reset bids" (in the sidebar, or the header on a phone) clears the slate.
-- **Currency is CAD** (`en-CA`) since every listing is Canadian — one constant in
+  advancing prices. "Reset bids" (in the sidebar, or the header on a phone) clears the
+  slate.
+- **Currency is CAD** (`en-CA`) since every listing is Canadian; one constant in
   `src/lib/format.ts` switches it.
 - **Photos are representative, not the actual lot.** 50 free-license photos (10 per body
   style, modern generations) are fetched from Wikimedia Commons and mapped
@@ -119,127 +138,147 @@ can happen without leaving it.
   `api/TheBlock.Api/wwwroot/images/CREDITS.md`.
 - **The API owns everything**: data, filtering, sorting, paging, photo mapping, auction
   scheduling, and bid validation. The browser formats, counts down, and relays actions.
-  Bid state is in API memory for a single anonymous buyer (no auth by design — isolated
-  demo); it survives browser reloads but not an API restart.
-- Out of scope by design: auth, accounts, seller tooling, checkout, payments, backend,
+- Out of scope by design: auth, accounts, seller tooling, checkout, payments, a database,
   real-time multi-user bidding.
 
 ## Stack
 
-- **Frontend:** React 19 + TypeScript (strict) on Vite; plain CSS via CSS Modules over a
-  single design-token sheet (`src/styles/tokens.css`); Vitest for tests. No component,
-  icon, or CSS libraries — icons are small inline SVGs. The visual language uses a clean
-  commercial automotive palette with deep navy headings `#0A1B5F`, strong blue actions
-  `#0061FF`, silver neutrals, pill buttons, and Poppins (a Google Fonts stylesheet link —
-  the one external asset — with a system-font fallback).
+- **Frontend:** React 19 + TypeScript (strict) on Vite 8; plain CSS via CSS Modules over
+  a single design-token sheet (`src/styles/tokens.css`); Vitest for tests. No component,
+  icon, state or CSS libraries, and no router: icons are small inline SVGs and the
+  address bar is the application state. Three runtime dependencies: react, react-dom, and
+  marked for rendering the served documents. The palette is Figma's Urban slate, gray,
+  brown and blue, with every text and ground pair measured against WCAG AA by a unit
+  test, and Poppins from Google Fonts (the one external asset) with a system fallback.
 - **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheBlock.Data`
-  (the pure data records — no dependencies), `TheBlock.Domain` (photo selection, auction
+  (the pure data records, no dependencies), `TheBlock.Domain` (photo selection, auction
   schedule, filter and bid rules), `TheBlock.Application` (the `InventoryService` and
   `BidService` use cases behind source ports), `TheBlock.Infrastructure` (JSON file
-  adapters, synthetic scale-up), `TheBlock.Api` (host, endpoints, static images). Filtering is LINQ over GET parameters, including auction status —
-  the window derivation is ported to C# with identical math so server filtering agrees
-  with client rendering. `src/lib/data.ts` remains the frontend's single data seam.
-- **Database:** none (the API reads the JSON file; bid state lives in API memory).
+  adapters, synthetic scale-up), `TheBlock.Api` (host, endpoints, static images, the
+  served documents, observability). Filtering is LINQ over GET parameters, including
+  auction status; all auction math lives in Domain and travels on the wire, so the
+  browser only formats. `src/lib/data.ts` is the frontend's single data seam.
+- **Hosting:** a hand-authored multi-stage Dockerfile, an image in Azure Container
+  Registry, a container group on Azure Container Instances, and Netlify's free tier as
+  the TLS edge in front of it. GitHub Actions builds and rolls it on every green push.
+  `infra/main.bicep` holds the production design (App Service behind Front Door with an
+  origin lock), deliberately undeployed and explained on the Hosting page.
+- **Database:** none. The API reads the JSON file; bid state lives in API memory.
 
 ## What I Built
 
-- **Inventory** — responsive card grid (3/2/1 across), token search over year, make,
+- **Inventory:** responsive card grid (3/2/1 across), token search over year, make,
   model, and trim, filters for make, body style, title status, province, auction status,
-  minimum condition, and price range — all applied server-side (debounced GET requests),
+  minimum condition, and price range, all applied server-side (debounced GET requests),
   five server-side sorts (ending soonest with live first, price both ways, condition,
   most bids), Load More paging, and a clear empty state.
-- **Detail view** — image gallery with thumbnails and graceful fallback art, full specs,
+- **Detail view:** image gallery with thumbnails and graceful fallback art, full specs,
   condition grade with report and damage notes, a warning banner for salvage or rebuilt
   titles, seller and location, and the auction panel.
-- **Bidding** — live countdowns on a shared clock, tiered minimum increments, validation
+- **Bidding:** live countdowns on a shared clock, tiered minimum increments, validation
   with buyer-facing reasons, a persistent "You're the high bidder" state, Buy Now with a
-  distinct sold/purchase-price presentation, and bids that survive refresh.
-- **Navigation and docs** — every view is a GET URL (filters, sorts, and open vehicles
-  are shareable, deep-linkable, and browser-Back friendly), and the sidebar's About section
-  serves this README, [docs/DATAFLOW.md](docs/DATAFLOW.md),
-  [docs/PROJECTS.md](docs/PROJECTS.md), and the author's r??sum?? from inside the app.
+  distinct sold and purchase-price presentation, and bids that survive refresh.
+- **Navigation:** every view is a GET URL. Filters, sorts, the open vehicle and the Admin
+  tab are all shareable, deep-linkable and browser-Back friendly, with no router.
+- **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
+  Best Practices, Changelog and About, holding the architecture and style pages, the
+  data flow and infrastructure diagrams on their own zoomable pages, twenty-three
+  decision records, the Bicep infrastructure, and my resume.
+- **An Admin tab:** timed health checks, the recent-errors list (server and browser
+  alike), and the container group's own state read from Azure with a managed identity.
 
 ## Strengths
 
 - **GET-parameter-driven filtering and navigation.** Every filter, the text search,
   sorting, and paging are query parameters on `GET /api/vehicles`, applied server-side
-  with LINQ — and the browser's address bar mirrors the same parameters, so any filtered
+  with LINQ, and the browser's address bar mirrors the same parameters, so any filtered
   view is shareable and bookmarkable. Opening a vehicle is GET navigation too
   (`?vehicle={id}` pushes a history entry): the browser's Back button closes the detail,
   Forward reopens it, and a cold load of a vehicle URL deep-links straight to it.
-  *Where:* `src/lib/inventory.ts` (URL ↔ filter serialization), `src/App.tsx`
-  (pushState/popstate), `api/TheBlock.Api/VehicleQueryParams.cs` (binding),
+  *Where:* `src/lib/inventory.ts` (URL and filter serialization), `src/App.tsx`
+  (pushState and popstate), `api/TheBlock.Api/VehicleQueryParams.cs` (binding),
   `api/TheBlock.Domain/VehicleFilter.cs` (the LINQ predicate).
-- **Debounced, cached requests.** Filter changes debounce 500 ms so typing doesn't
+- **Debounced, cached requests.** Filter changes debounce 500 ms so typing does not
   hammer the API, and responses are cached per query string (5-minute TTL, bounded).
-  Cache hits skip the debounce entirely — the delay only exists to protect the server,
+  Cache hits skip the debounce entirely: the delay only exists to protect the server,
   and a hit never touches it.
   *Where:* `src/lib/data.ts` (cache, `peekVehicles`), `src/App.tsx` (the debounced
-  fetch effect), `api/TheBlock.Api/Program.cs` (`Cache-Control` on photos).
+  fetch effect), `api/TheBlock.Api/Program.cs` (cache headers).
 - **Server-side pagination at scale.** 100,000 records, but the wire only ever carries a
-  page: an envelope of `{ total, vehicles }` with `limit`/`offset`, a landing page of
+  page: an envelope of `{ total, vehicles }` with `limit` and `offset`, a landing page of
   the top 100 by auction time, and Load More to walk deeper.
   *Where:* `api/TheBlock.Application/InventoryService.cs` (`Search`),
   `api/TheBlock.Infrastructure/SyntheticVehicleSource.cs` (the 100k expansion),
   `src/App.tsx` (`loadMore`).
 - **One authoritative home for every business rule.** Auction windows, status, minimum
-  increments, bid validation, buy-now precedence — all live in `TheBlock.Domain` and
-  nowhere else. The wire carries the derived facts (`auction_ends_at`, `min_next_bid`,
-  …) so the browser only formats and counts down. This wasn't free: early versions
-  mirrored the math in TypeScript, and cross-language drift bit twice (a timezone
-  anchor, then DST) before the consolidation — the architecture exists because the bug
-  class it eliminates actually happened.
+  increments, bid validation and buy-now precedence all live in `TheBlock.Domain` and
+  nowhere else. The wire carries the derived facts (`auction_ends_at`, `min_next_bid`)
+  so the browser only formats and counts down. This was not free: early versions mirrored
+  the math in TypeScript, and cross-language drift bit twice (a timezone anchor, then
+  DST) before the consolidation. The architecture exists because the bug class it
+  eliminates actually happened.
   *Where:* `api/TheBlock.Domain/AuctionSchedule.cs`, `BidRules.cs`, and
   `AuctionClock.cs`; `api/TheBlock.Api/VehicleWire.cs` (derived facts onto the wire);
   `src/lib/auction.ts` (all that remains client-side).
 - **Sealed records everywhere data is data.** Every C# data shape (`Vehicle`,
-  `VehicleFilter`, `BidState`, `SearchResult`, …) is a `sealed record`: records give
-  value-based comparison — two vehicles with the same fields *are* equal — and sealing
-  keeps that trustworthy, because record equality includes a hidden runtime-type check
-  (`EqualityContract`) that inheritance would quietly poison. Sealing also states intent
-  (a wire contract is not an extension point), lets the JIT devirtualize the generated
-  `Equals`/`GetHashCode`, and is the low-regret default: unsealing later is non-breaking,
-  sealing later isn't. The payoff shows up in practice — determinism tests compare whole
-  vehicle lists by value, and non-destructive `with` mutations power the bid overlay and
-  the synthetic variants.
-  *Where:* `api/TheBlock.Data/Vehicle.cs` (and every record beside it); `with` usage in
+  `VehicleFilter`, `BidState`, `SearchResult`) is a `sealed record`: records give
+  value-based comparison, and sealing keeps that trustworthy, because record equality
+  includes a hidden runtime-type check (`EqualityContract`) that inheritance would
+  quietly poison. Sealing also states intent (a wire contract is not an extension point),
+  lets the JIT devirtualize the generated `Equals` and `GetHashCode`, and is the
+  low-regret default: unsealing later is non-breaking, sealing later is not. The payoff
+  shows up in practice: determinism tests compare whole vehicle lists by value, and
+  non-destructive `with` mutations power the bid overlay and the synthetic variants.
+  *Where:* `api/TheBlock.Data/Vehicle.cs`; `with` usage in
   `api/TheBlock.Application/BidService.cs` and
   `api/TheBlock.Infrastructure/SyntheticVehicleSource.cs`; value-equality assertions in
   `api/TheBlock.Tests/SyntheticVehicleSourceTests.cs`.
 - **Onion architecture that earns its layers.** Data (the pure records) has zero
   dependencies; Domain (the rules) depends only on Data; Application talks through ports
   (`IVehicleSource`, `IPhotoManifestSource`); Infrastructure adapts files; the host only
-  binds and serializes. The proof it's not ceremony: the 100k scale-up is a decorator on
-  a port (`SyntheticVehicleSource`) — nothing above it changed — and the test suite
+  binds and serializes. The proof it is not ceremony: the 100k scale-up is a decorator on
+  a port (`SyntheticVehicleSource`) and nothing above it changed, and the test suite
   swaps in-memory fakes at the same seams.
-  *Where:* `api/TheBlock.Data/` → `api/TheBlock.Domain/` → `api/TheBlock.Application/`
-  (`Ports.cs`, `InventoryService.cs`, `BidService.cs`) → `api/TheBlock.Infrastructure/`
-  → `api/TheBlock.Api/Program.cs` (composition root); fakes in
-  `api/TheBlock.Tests/InventoryServiceTests.cs`.
+  *Where:* `api/TheBlock.Data/` to `api/TheBlock.Domain/` to
+  `api/TheBlock.Application/` (`Ports.cs`, `InventoryService.cs`, `BidService.cs`) to
+  `api/TheBlock.Infrastructure/` to `api/TheBlock.Api/Program.cs` (composition root);
+  fakes in `api/TheBlock.Tests/InventoryServiceTests.cs`. The whole picture is written
+  down in `docs/ARCHITECTURE.md`, served as Architecture overview.
+- **The documentation cannot drift from the code.** A record's samples are marked
+  regions read out of the running container at request time, not pasted, and every
+  record ends with a map of the files it decided. A test holds the document catalog to
+  the sidebar's menu, another holds the changelog to the version being shipped.
+  *Where:* `api/TheBlock.Api/LiveSamples.cs`, `DocsCatalog.cs`,
+  `api/TheBlock.Tests/LiveSamplesTests.cs`, `DocsCatalogTests.cs`, `ChangelogTests.cs`.
 
 ## Notable Decisions
 
-- **Domain rules live in pure functions**, fully separate from any framework — window
+- **Domain rules live in pure functions**, fully separate from any framework: window
   derivation, increments, validation, and bid resolution in `api/TheBlock.Domain`
   (unit-tested without hosting anything), reserve display and status recomputation in
   `src/lib/auction.ts` (unit-tested without rendering anything). Components stay thin.
-- **The reserve amount is never rendered** — only its state (No reserve / Reserve met /
+- **The reserve amount is never rendered**, only its state (No reserve, Reserve met,
   Reserve not met), matching how real auction platforms guard seller data.
-- **Price filtering and sorting use the "competing price"** — the high bid, or the
-  opening ask when there are no bids — so unbid vehicles don't sort as free.
-- **Buy Now is a purchase, not a bid**: it doesn't inflate the bid count, and the vehicle
-  presents as "Sold" with a purchase price everywhere.
+- **Price filtering and sorting use the competing price**, the high bid or the opening
+  ask when there are no bids, so unbid vehicles do not sort as free.
+- **Buy Now is a purchase, not a bid**: it does not inflate the bid count, and the
+  vehicle presents as "Sold" with a purchase price everywhere.
 - **One clock at the app root** (`useNow`) drives every countdown and status, so a card
   and its detail view can never disagree about liveness.
 - **Query requests are debounced (500 ms) and cached (5 min, per query string,
-  bounded)** in the data seam. The debounce only exists to avoid hammering the API, so
-  cache hits skip it entirely — revisited filter combinations render instantly. Refresh
-  paths (retry buttons, the periodic status-filter refresh) bypass the cache; photos
-  carry `Cache-Control: public, max-age=86400` so the browser's HTTP cache keeps them.
-- **Photo mapping lives behind the API**: the server swaps the dataset's
-  placeholder URLs for vendored stock photos, preferring same-make photos from the
-  body-style pool. `data/vehicles.json` itself stays untouched, and the frontend simply
-  renders whatever image URLs the API returns — as it would in production.
+  bounded)** in the data seam. Refresh paths (retry buttons, the periodic status-filter
+  refresh) bypass the cache.
+- **Nothing stale reaches a browser.** Vite names every bundle file by a hash of its
+  contents, so `/assets/*` is cached for a year, and everything that can change under
+  the same address says `no-cache`. Photos keep a one-day rule.
+- **Photo mapping lives behind the API**: the server swaps the dataset's placeholder URLs
+  for vendored stock photos, preferring same-make photos from the body-style pool.
+  `data/vehicles.json` itself stays untouched, and the frontend renders whatever image
+  URLs the API returns, as it would in production.
+- **Every failure has one shape.** Rejected queries, rejected bids and unhandled
+  exceptions all answer RFC 9457 ProblemDetails with the message in `detail` and a trace
+  identifier; a React error boundary turns a render crash into a page with a way out and
+  reports it to the Admin tab.
 
 ## Problems Hit and Solved
 
@@ -250,77 +289,93 @@ can happen without leaving it.
   "Starting bid" labels.
 - **Cross-language rule drift bit twice.** With auction math mirrored in TypeScript and
   C#, the server and browser disagreed first across timezones, then on DST transition
-  days. The durable fix wasn't a patch — the client now sends its literal local-midnight
-  `anchor_ms`, and all derived facts moved server-side so the drift class can't recur.
-- **A "passing" test suite was proven blind by mutation.** Reordering the buy-now check
-  ahead of bid validation left all tests green while breaking the rules — so the test
-  that catches it now exists, along with a guard against `Infinity` instantly winning a
+  days. The durable fix was not a patch: the client now sends its literal local-midnight
+  `anchor_ms`, and all derived facts moved server-side so the drift class cannot recur.
+- **A passing test suite was proven blind by mutation.** Reordering the buy-now check
+  ahead of bid validation left all tests green while breaking the rules, so the test that
+  catches it now exists, along with a guard against `Infinity` instantly winning a
   buy-now (found by adversarial review).
-- **The first E2E failure was the rules being smarter than the test.** Bidding the
+- **The first end-to-end failure was the rules being smarter than the test.** Bidding the
   minimum on a vehicle whose `min_next_bid` crossed its `buy_now_price` triggered a
-  legitimate instant win the test didn't expect; the test now documents both outcomes as
+  legitimate instant win the test did not expect; the test now documents both outcomes as
   correct.
 - **Vite's file watcher crashed on .NET build output.** Windows file locks in
   `api/**/obj` killed the dev server with `EBUSY`; fixed by excluding `api/**` from the
   watcher in `vite.config.ts`.
-- **`npm start` raced its own browser tab.** Vite opens the browser in ~0.4 s while the
-  API takes seconds to boot, so first paint could show a dead-API error. The initial
-  load now retries quietly for up to 30 s, and the fix carries a regression E2E written
+- **`npm start` raced its own browser tab.** Vite opens the browser in about 0.4 s while
+  the API takes seconds to boot, so first paint could show a dead-API error. The initial
+  load now retries quietly for up to 30 s, and the fix carries a regression test written
   from the actual bug report.
+- **The deploy's first run failed on its own identity.** The federated credential subject
+  GitHub presents is not the one the portal suggests; one `az` update fixed it, and the
+  pipeline has rolled every version since with no human step. Recorded in ADR: The deploy
+  pipeline.
+- **A phone would not pick up a new stylesheet.** The old trick of appending a date to an
+  import does not apply to a hashed bundle; the real answer was cache headers, measured
+  before and after. Recorded in ADR: Cache headers.
 
 ## Testing
 
-**API (81 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer —
-domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
+**API (139 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
+Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
-and buy-now precedence), application (`InventoryService`/`BidService` with in-memory
-fakes standing in for the file adapters), infrastructure (snake_case deserialization,
-the synthetic 100k expansion's invariants, the real dataset and manifest), and
-integration tests that boot the real host in-memory (`WebApplicationFactory`) to verify
-endpoints, filtering/sorting/paging parameters, the 400 paths, the full bid lifecycle,
-and static image serving. Run with `npm run test:api`.
+and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
+fakes standing in for the file adapters), infrastructure (snake_case deserialization, the
+synthetic 100k expansion's invariants, the real dataset and manifest), and integration
+tests that boot the real host in memory (`WebApplicationFactory`) to verify endpoints,
+filtering, sorting and paging parameters, the problem shape on every 400, the full bid
+lifecycle, static image serving, cache headers, the document catalog, the live-sample
+expander, the diagram pages, and the changelog. Run with `npm run test:api`.
 
-**Frontend (27 Vitest tests):** presentation logic only, since the API owns the rules —
-status recomputation from server windows, reserve states, formatting and countdowns,
-URL/filter round-tripping, query-parameter mapping, and the request cache (TTL, per-key,
-forced bypass, no caching of failures). Run with `npm test`.
+**Frontend (36 Vitest tests):** presentation logic only, since the API owns the rules.
+Status recomputation from server windows, reserve states, formatting and countdowns, URL
+and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
+forced bypass, no caching of failures), and the palette's contrast against WCAG AA. Run
+with `npm test`.
 
-**End-to-end (7 Playwright smokes):** the real stack — landing page shows 100 of
+**End-to-end (25 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
-Back and deep links), Load More appends a page, the About section serves the docs, a
-transient API failure recovers via the retry banner, and a bid round-trips through the
-API, survives a reload, and resets. Run with `npm run test:e2e` (launches both servers
-itself; uses your installed Chrome). All three suites run in CI on every push.
+Back and deep links), Load More appends a page, every sidebar section and document opens,
+the diagrams open on their own pages, the Admin tab reports on the running system, a
+browser error reaches it, a transient API failure recovers via the retry banner, the
+phone drawer works at 375 pixels, and a bid round-trips through the API, survives a
+reload, and resets. Run with `npm run test:e2e` (launches both servers itself, uses your
+installed Chrome). All three suites run in CI on every push, and a green run on `main`
+deploys.
+
+ADR: The tests, explained walks all three suites for a developer new to the stack.
 
 ## What I'd Do With More Time
 
-In priority order:
+The four promises this section made when the build started have all shipped:
 
-1. **Consistent coding and commenting styles, documented** — `docs/STYLE.md` (naming,
-   layering rules, comments that explain *why and how*, never *what*) and
-   `docs/ARCHITECTURE.md` (the onion, the wire contract, the derive-don't-store
-   principle), enforced with `.editorconfig` and formatters rather than convention alone.
-2. **Error handling** — a global exception handler returning RFC 7807 ProblemDetails
-   (unhandled exceptions currently surface as shapeless 500s), one unified 400 body
-   (queries return `{ error }`, bids return `{ reason }` today), structured request
-   logging, and a React error boundary so a render crash degrades instead of
-   white-screening.
-3. **Code review** — a full adversarial review pass against the written style guide; the
-   codebase has roughly tripled since the last one.
-4. **Hosting (AWS or Azure)** — likely Azure App Service as a single deployable, with
-   the API serving the built SPA: the frontend already calls relative `/api` paths, so
-   same-origin hosting needs no code changes, and a single instance matches the
-   in-memory bid state honestly.
+1. **Consistent coding and commenting styles, documented.** `docs/STYLE.md` (naming,
+   layering, comments that explain why and how, never what) and `docs/ARCHITECTURE.md`
+   (the onion, the wire contract, the derive-don't-store principle), both served under
+   App Architecture, with an `.editorconfig` enforcing the mechanical half.
+2. **Error handling.** RFC 9457 ProblemDetails on every failure with the message in
+   `detail` and a trace identifier, one shape for queries and bids alike, structured
+   JSON request logging, and a React error boundary that reports render crashes to the
+   Admin tab. Recorded in ADR: Error handling.
+3. **Code review.** A staff-level adversarial pass over the second day's work, every
+   finding written down as kept, fixed or deferred, and the fixes shipped with tests.
+   Recorded in ADR: The staff review.
+4. **Hosting.** Live on Azure with HTTPS, a container built and rolled by GitHub Actions
+   on every green push, and the production design (App Service behind Front Door) written
+   in Bicep and deliberately undeployed, with the reason recorded.
 
-And beyond that:
+What is genuinely still open, in priority order:
 
+- Application Insights for real telemetry: request, dependency and exception traces from
+  both the API and the browser, so the Admin tab reads from something durable instead of
+  an in-memory ring buffer that resets on every roll
 - Real-time updates (Server-Sent Events): push bid changes and auction closes so
-  countdowns rotate expired rows out and "you've been outbid" moments become possible
-- Auth and per-user bid state, persisted — the single anonymous in-memory buyer is the
+  countdowns rotate expired rows out and "you have been outbid" moments become possible
+- Auth and per-user bid state, persisted; the single anonymous in-memory buyer is the
   demo shortcut
 - Simulated competing bidders so the high-bidder state can be lost, with outbid alerts
 - Search indexing: precompute each vehicle's lowercase haystack at startup instead of
-  rebuilding it per request (the biggest lever on the ~300 ms full-scan query)
+  rebuilding it per request (the biggest lever on the roughly 300 ms full-scan query)
 - A virtualized grid once Load More accumulates thousands of rows
 - Focus management on view switches (the detail page should receive keyboard focus),
   plus a fuller accessibility audit
@@ -354,7 +409,7 @@ docker run --rm -d -p 8080:8080 --name theyard theyard:local
 ```
 
 Then open http://localhost:8080. The API serves the SPA with a fallback route, so deep
-links to item URLs work. A container HEALTHCHECK probes /api/facets every 30 seconds;
+links to item URLs work. A container HEALTHCHECK probes `/healthz` every 30 seconds;
 `docker ps` shows the container as healthy once the app is accepting traffic.
 
 Stop it:
@@ -367,5 +422,8 @@ Notes:
 
 - The final image runs as the base image's built-in non-root `app` user.
 - Building needs no local Node or .NET; both toolchains live in intermediate stages.
-- The final image carries the published API plus README.md, docs/ and data/, because
-  the app serves the docs and loads the dataset at runtime.
+- The final image carries the published API plus README.md, docs/, data/, and the source
+  files the served records read their samples from, because the app documents itself at
+  runtime.
+- The image is built by the pipeline with `APP_VERSION` and `APP_COMMIT` baked in, which
+  is what the footer and `/api/version` report.
