@@ -87,6 +87,9 @@ test('Admin is reachable from the drawer and the footer still renders', async ({
   await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Admin', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
   await expect(page).toHaveURL(/view=admin/);
+  // The timed checks fit a phone row too (ADR-010, second pass).
+  await expect(page.getByTestId('health-card')).toContainText('healthy');
+  await expect(page.getByTestId('check-duration').first()).toHaveText(/^\d+ ms$/);
   await expect(page.getByTestId('build-version')).toBeVisible();
 });
 

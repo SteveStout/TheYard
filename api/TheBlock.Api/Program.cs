@@ -15,7 +15,7 @@ using TheBlock.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 string contentRoot = builder.Environment.ContentRootPath;
-// Walk up to the repo root rather than assuming a fixed depth â€” keeps
+// Walk up to the repo root rather than assuming a fixed depth, which keeps
 // `dotnet run`, tests, and published output all working from one line.
 string dataPath = FindUpward(contentRoot, Path.Combine("data", "vehicles.json"));
 string readmePath = FindUpward(contentRoot, "README.md");
@@ -30,7 +30,7 @@ string repoRoot = Path.GetDirectoryName(readmePath)!;
 string buildCommit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local";
 
 // The 200-record seed dataset is deterministically expanded to TargetCount
-// synthetic records (default 100,000) â€” scale testing without a giant file.
+// synthetic records (default 100,000): scale testing without a giant file.
 int targetCount = builder.Configuration.GetValue("Inventory:TargetCount", 100_000);
 builder.Services.AddSingleton<IVehicleSource>(
     new SyntheticVehicleSource(new JsonFileVehicleSource(dataPath), targetCount));
@@ -45,7 +45,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 var app = builder.Build();
 
 // Materialize the inventory now so a bad dataset fails the process at
-// startup, visibly â€” not as a 500 on the first request.
+// startup, visibly, and not as a 500 on the first request.
 app.Services.GetRequiredService<InventoryService>().GetAll();
 
 // The dataset is snake_case; keep the wire shape identical to the source file.
@@ -91,7 +91,7 @@ app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, s
 });
 
 // ---------------------------------------------------------------------------
-// Bidding â€” validated server-side by the domain's BidRules. Single anonymous
+// Bidding, validated server-side by the domain's BidRules. Single anonymous
 // buyer; state lives in API memory (isolated demo).
 // ---------------------------------------------------------------------------
 
@@ -118,7 +118,7 @@ app.MapDelete("/api/bids", (BidService bids) =>
 });
 
 // ---------------------------------------------------------------------------
-// About documents â€” the project README and the author's rÃ©sumÃ©, surfaced in
+// About documents: the project README and the author's resume, surfaced in
 // the UI's About menu.
 // ---------------------------------------------------------------------------
 
@@ -256,12 +256,16 @@ app.Use(async (context, next) =>
     }
 });
 
+#region health-checks
 HealthCheckEntry[] RunChecks()
 {
+    // Each probe is timed: the Admin tab shows the milliseconds beside the check,
+    // so a slow disk or a slow lookup shows up before it fails (ADR-010, second pass).
     HealthCheckEntry Check(string name, Func<bool> probe, string detail)
     {
-        try { return new HealthCheckEntry(name, probe() ? "pass" : "fail", detail); }
-        catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name); }
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        try { return new HealthCheckEntry(name, probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds); }
+        catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name, clock.ElapsedMilliseconds); }
     }
     return
     [
@@ -270,6 +274,7 @@ HealthCheckEntry[] RunChecks()
         Check("photo manifest", () => File.Exists(manifestPath), "image manifest present"),
     ];
 }
+#endregion health-checks
 
 app.MapGet("/healthz", () => Results.Text("ok"));
 
@@ -353,8 +358,8 @@ public sealed record BuyNowRequest(long? AnchorMs);
 // Exposes the entry point to WebApplicationFactory for integration tests.
 public partial class Program;
 
-/// <summary>One health probe's outcome, serialized snake_case for the Admin tab.</summary>
-public sealed record HealthCheckEntry(string Name, string Status, string Detail);
+/// <summary>One health probe's outcome and how long it took, serialized snake_case for the Admin tab.</summary>
+public sealed record HealthCheckEntry(string Name, string Status, string Detail, long DurationMs);
 
 /// <summary>One recorded server error, newest first in snapshots.</summary>
 public sealed record ErrorEntry(DateTimeOffset At, string Path, int Status, string Message);
@@ -398,6 +403,10 @@ public sealed class ErrorRingBuffer(int capacity)
 public sealed class AzureSelf(string clientId, string resourceId)
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(4) };
+
+    private static string Trim(string text, int max) =>
+        text.Length <= max ? text : text[..max].TrimEnd() + "...";
+
     private readonly object _gate = new();
     private object? _cached;
     private DateTimeOffset _cachedAt;
@@ -436,6 +445,7 @@ public sealed class AzureSelf(string clientId, string resourceId)
             string image = containerProps.GetProperty("image").GetString() ?? "unknown";
             int restarts = 0;
             string containerState = "unknown";
+            var events = new List<object>();
             if (containerProps.TryGetProperty("instanceView", out var civ))
             {
                 restarts = civ.TryGetProperty("restartCount", out var rc) ? rc.GetInt32() : 0;
@@ -443,6 +453,26 @@ public sealed class AzureSelf(string clientId, string resourceId)
                 {
                     containerState = cs.TryGetProperty("state", out var css) ? css.GetString() ?? "unknown" : "unknown";
                 }
+                #region azure-events
+                // The last three events Azure recorded for the container (pulls, starts,
+                // kills), newest first, each message trimmed: enough to read a restart
+                // story from the Admin tab without opening the portal (ADR-010, second pass).
+                if (civ.TryGetProperty("events", out var evs) && evs.ValueKind == JsonValueKind.Array)
+                {
+                    events = evs.EnumerateArray()
+                        .Select(e => new
+                        {
+                            name = e.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",
+                            count = e.TryGetProperty("count", out var c) && c.TryGetInt32(out int ci) ? ci : 1,
+                            last_at = e.TryGetProperty("lastTimestamp", out var lt) ? lt.GetString() ?? "" : "",
+                            message = Trim(e.TryGetProperty("message", out var msg) ? msg.GetString() ?? "" : "", 140),
+                        })
+                        .OrderByDescending(e => e.last_at, StringComparer.Ordinal)
+                        .Take(3)
+                        .Cast<object>()
+                        .ToList();
+                }
+                #endregion azure-events
             }
             var result = new
             {
@@ -451,6 +481,7 @@ public sealed class AzureSelf(string clientId, string resourceId)
                 container_state = containerState,
                 restart_count = restarts,
                 image,
+                events,
                 fetched_at = DateTimeOffset.UtcNow,
             };
             lock (_gate)

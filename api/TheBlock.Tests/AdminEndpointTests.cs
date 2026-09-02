@@ -38,6 +38,10 @@ public class AdminEndpointTests(WebApplicationFactory<Program> factory)
         using var json = JsonDocument.Parse(body);
         Assert.Equal("healthy", json.RootElement.GetProperty("status").GetString());
         Assert.True(json.RootElement.GetProperty("checks").GetArrayLength() >= 3);
+        foreach (var check in json.RootElement.GetProperty("checks").EnumerateArray())
+        {
+            Assert.True(check.GetProperty("duration_ms").GetInt64() >= 0, "every check reports how long it took");
+        }
         Assert.True(json.RootElement.TryGetProperty("uptime_seconds", out _));
         Assert.True(json.RootElement.TryGetProperty("version", out _));
         Assert.True(json.RootElement.TryGetProperty("commit", out _));

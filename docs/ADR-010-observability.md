@@ -46,3 +46,46 @@ pattern as the undeployed production design.
 - Reader scope means the site can see itself but change nothing.
 - The error buffer is honest about its limits, which is the demo working
   as intended: the limits are part of the story.
+
+## Addendum, 2026-09-02: second pass, shipped as 1.0.0.17
+
+Steve's words after the first pass: "I like a screen where you can easily
+see health checks". The second pass makes the screen say more without
+saying it louder.
+
+- **Every health check reports its duration.** Each probe is timed with a
+  stopwatch and the Admin tab prints the milliseconds beside the check in
+  the muted style, so a slow disk or a slow lookup is visible before it
+  turns into a failure. The readiness endpoint uses the same probes and is
+  unchanged.
+- **Azure's card lists the container's recent events.** The management
+  read already returned the container's instance view; the card now shows
+  its last three events, newest first, with the name, how many times it
+  happened, when it last happened, and the message trimmed to a line. A
+  restart story (pulled, started, killed, started again) reads from the
+  tab without opening the portal. Unavailable degrades exactly as before.
+- **The sweep.** Five comments in Program.cs carried a double-encoded em
+  dash, and one of them a mangled "resume", from an encoding-blind edit on
+  the first day; they are plain ASCII now, changed byte by byte with
+  everything else in the file untouched.
+
+The samples below are read from this build's source each time the page is
+served (ADR: Live code samples). The timed checks
+([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)):
+
+```live path=api/TheBlock.Api/Program.cs region=health-checks
+```
+
+The events, read from the same management response:
+
+```live path=api/TheBlock.Api/Program.cs region=azure-events
+```
+
+The proof is one API test that every check carries a non-negative
+duration and two end-to-end checks that the Admin tab prints it, on a
+laptop and on a phone, in
+[`api/TheBlock.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AdminEndpointTests.cs),
+[`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts)
+and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts).
+The events list is proven by the live site, since only the container on
+Azure can ask about itself.

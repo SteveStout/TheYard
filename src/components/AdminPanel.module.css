@@ -125,3 +125,11 @@
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
   font-size: var(--text-xs);
 }
+
+/* How long a health probe took, kept to the right edge of its row. */
+.duration {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import styles from './AdminPanel.module.css';
 
-type HealthCheck = { name: string; status: string; detail: string };
+type HealthCheck = { name: string; status: string; detail: string; duration_ms: number };
 type Health = {
   status: string;
   uptime_seconds: number;
@@ -10,6 +10,7 @@ type Health = {
   checks: HealthCheck[];
 };
 type ErrorEntry = { at: string; path: string; status: number; message: string };
+type AzureEvent = { name: string; count: number; last_at: string; message: string };
 type AzureState = {
   available: boolean;
   reason?: string;
@@ -17,6 +18,7 @@ type AzureState = {
   container_state?: string;
   restart_count?: number;
   image?: string;
+  events?: AzureEvent[];
   fetched_at?: string;
 };
 
@@ -94,6 +96,9 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
                     <span className={pill(check.status === 'pass')}>{check.status}</span>
                     <span>{check.name}</span>
                     <span className={styles.muted}>{check.detail}</span>
+                    <span className={styles.duration} data-testid="check-duration">
+                      {check.duration_ms} ms
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -119,6 +124,21 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
                 <span className={styles.mono}>{azure.image?.split('/').pop()}</span>
                 <span className={styles.muted}>image Azure reports</span>
               </li>
+              {azure.events && azure.events.length > 0 && (
+                <li className={styles.checkRow}>
+                  <span className={styles.muted}>recent events, newest first</span>
+                </li>
+              )}
+              {azure.events?.map((event, index) => (
+                <li key={index} className={styles.checkRow} data-testid="azure-event">
+                  <span className={styles.mono}>{event.name}</span>
+                  <span className={styles.muted}>
+                    {event.count > 1 ? `${event.count} times, last ` : ''}
+                    {event.last_at ? new Date(event.last_at).toLocaleString() : ''}
+                  </span>
+                  <span className={styles.muted}>{event.message}</span>
+                </li>
+              ))}
             </ul>
           ) : (
             <p className={styles.muted}>
