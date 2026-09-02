@@ -69,6 +69,19 @@
   gap: var(--space-3);
 }
 
+.desktopActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Phones: the dropdowns and the Admin button give way to the hamburger sheet. */
+@media (max-width: 639px) {
+  .desktopActions {
+    display: none;
+  }
+}
+
 .resetBids {
   appearance: none;
   background: var(--color-surface);

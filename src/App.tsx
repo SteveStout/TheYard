@@ -19,6 +19,7 @@ import { applyBidRecord, useBids } from './hooks/useBids';
 import { useNow } from './hooks/useNow';
 import { AdminPanel } from './components/AdminPanel';
 import { DocsMenu } from './components/DocsMenu';
+import { MobileDocs } from './components/MobileDocs';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
 import { VehicleDetail } from './components/VehicleDetail';
@@ -345,18 +346,23 @@ export default function App() {
             <span className={styles.brandSub}>Vehicle Auctions</span>
           </button>
           <div className={styles.headerActions}>
-            <DocsMenu menu="hosting" />
-            <DocsMenu menu="cicd" />
-            <DocsMenu menu="practices" />
-            <DocsMenu />
-            <button type="button" className={styles.adminTab} onClick={openAdmin}>
-              Admin
-            </button>
+            {/* Desktop: four dropdowns plus Admin. Below 640px this block hides
+                and MobileDocs offers the same entries from one sheet. */}
+            <div className={styles.desktopActions}>
+              <DocsMenu menu="hosting" />
+              <DocsMenu menu="cicd" />
+              <DocsMenu menu="practices" />
+              <DocsMenu />
+              <button type="button" className={styles.adminTab} onClick={openAdmin}>
+                Admin
+              </button>
+            </div>
             {bidCount > 0 && (
               <button type="button" className={styles.resetBids} onClick={handleResetBids}>
                 Reset bids ({bidCount})
               </button>
             )}
+            <MobileDocs onOpenAdmin={openAdmin} />
           </div>
         </div>
       </header>

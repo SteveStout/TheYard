@@ -22,7 +22,7 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Nine ADRs record why the architecture is
+- **Decisions get written down.** Eleven ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -33,3 +33,7 @@ footer displays exactly that.
 - **The system reports on itself.** The Admin tab in the header shows live
   health checks, Azure's own view of the container, and recent server
   errors, public on purpose. Recorded in ADR: Observability.
+- **Merges deploy themselves.** A green CI run on main builds the image,
+  pushes it, and rolls the container with no human step and no stored
+  secret, signed in through OIDC with least-privilege roles. Recorded in
+  ADR: The deploy pipeline, under the CI/CD menu.

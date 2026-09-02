@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
 import styles from './DocsMenu.module.css';
 
-function ExternalIcon() {
+export function ExternalIcon() {
   return (
     <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
       <path
@@ -17,7 +17,7 @@ function ExternalIcon() {
   );
 }
 
-type DocKey =
+export type DocKey =
   | 'readme'
   | 'dataflow'
   | 'projects'
@@ -30,12 +30,14 @@ type DocKey =
   | 'adrLinux'
   | 'bicep'
   | 'cicd'
+  | 'adrPipeline'
   | 'practices'
   | 'adrVersioning'
   | 'adrDocs'
-  | 'adrObservability';
+  | 'adrObservability'
+  | 'adrPhone';
 
-const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = {
+export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = {
   readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme' },
   dataflow: { title: 'Data Flow', menuLabel: 'Data flow diagram', url: '/api/docs/dataflow' },
   projects: { title: 'Projects', menuLabel: 'Project structure', url: '/api/docs/projects' },
@@ -48,17 +50,19 @@ const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = 
   adrLinux: { title: 'ADR: Linux over Windows', menuLabel: 'ADR: Linux over Windows', url: '/api/docs/adr-linux' },
   bicep: { title: 'Infrastructure (Bicep)', menuLabel: 'Infrastructure (Bicep)', url: '/api/docs/bicep' },
   cicd: { title: 'CI/CD', menuLabel: 'CI/CD overview', url: '/api/docs/cicd' },
+  adrPipeline: { title: 'ADR: The deploy pipeline', menuLabel: 'ADR: The deploy pipeline', url: '/api/docs/adr-pipeline' },
   practices: { title: 'Best Practices', menuLabel: 'Best practices overview', url: '/api/docs/practices' },
   adrVersioning: { title: 'ADR: Version in the footer', menuLabel: 'ADR: Version in the footer', url: '/api/docs/adr-versioning' },
   adrDocs: { title: 'ADR: Docs and testing', menuLabel: 'ADR: Docs and testing', url: '/api/docs/adr-docs' },
   adrObservability: { title: 'ADR: Observability', menuLabel: 'ADR: Observability (Admin tab)', url: '/api/docs/adr-observability' },
+  adrPhone: { title: 'ADR: The phone header', menuLabel: 'ADR: The phone header', url: '/api/docs/adr-phone' },
 };
 
-type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices';
+export type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices';
 
-type MenuEntry = { key: DocKey; sub?: boolean };
+export type MenuEntry = { key: DocKey; sub?: boolean };
 
-const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
+export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
   about: {
     label: 'About',
     items: [{ key: 'readme' }, { key: 'dataflow' }, { key: 'projects' }],
@@ -78,28 +82,115 @@ const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> = {
   },
   cicd: {
     label: 'CI/CD',
-    items: [{ key: 'cicd' }],
+    items: [{ key: 'cicd' }, { key: 'adrPipeline', sub: true }],
   },
   practices: {
     label: 'Best Practices',
-    items: [{ key: 'practices' }, { key: 'adrVersioning', sub: true }, { key: 'adrDocs', sub: true }, { key: 'adrObservability', sub: true }],
+    items: [
+      { key: 'practices' },
+      { key: 'adrVersioning', sub: true },
+      { key: 'adrDocs', sub: true },
+      { key: 'adrObservability', sub: true },
+      { key: 'adrPhone', sub: true },
+    ],
   },
 };
+
+/** Header order, left to right. The phone sheet lists its sections the same way. */
+export const MENU_ORDER: MenuVariant[] = ['hosting', 'cicd', 'practices', 'about'];
+
+/** Links that sit beside the docs, shared by the dropdowns and the phone sheet. */
+export const LINKS = {
+  ciRuns: { label: 'CI runs on GitHub', href: 'https://github.com/SteveStout/TheYard/actions' },
+  resume: { label: "Steven's resume (PDF)", href: '/api/docs/resume' },
+  repo: { label: 'GitHub repository', href: 'https://github.com/SteveStout/TheYard' },
+} as const;
+
+/** One open request: the nonce lets the same doc be reopened after a close. */
+export type DocRequest = { key: DocKey; nonce: number };
+
+/**
+ * The in-app doc viewer: a native modal dialog that fetches the markdown the
+ * API serves, renders it, and caches it per doc. Every menu (the desktop
+ * dropdowns and the phone sheet) opens docs through one of these.
+ */
+export function DocDialog({ request }: { request: DocRequest | null }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>({});
+  const [docError, setDocError] = useState(false);
+  /** Same content as docHtml, readable inside the effect without a stale closure. */
+  const cache = useRef<Partial<Record<DocKey, string>>>({});
+  const activeDoc: DocKey = request?.key ?? 'readme';
+
+  useEffect(() => {
+    if (!request) return;
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    setDocError(false);
+    const { key } = request;
+    if (cache.current[key] !== undefined) return;
+    fetch(DOCS[key].url)
+      .then(async (response) => {
+        if (!response.ok) throw new Error(String(response.status));
+        const markdown = await response.text();
+        // Our own docs - trusted, repo-authored content.
+        const html = await marked.parse(markdown);
+        cache.current[key] = html;
+        setDocHtml((prev) => ({ ...prev, [key]: html }));
+      })
+      .catch(() => setDocError(true));
+  }, [request]);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className={styles.dialog}
+      aria-label={DOCS[activeDoc].title}
+      onClick={(event) => {
+        // Native dialog: a click on the backdrop targets the dialog itself.
+        if (event.target === dialogRef.current) dialogRef.current?.close();
+      }}
+    >
+      <div className={styles.dialogHeader}>
+        <h2 className={styles.dialogTitle}>{DOCS[activeDoc].title}</h2>
+        <button
+          type="button"
+          className={styles.close}
+          onClick={() => dialogRef.current?.close()}
+          aria-label="Close"
+        >
+          <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
+            <path d="M2 2l10 10M12 2 2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+      <div className={styles.dialogBody}>
+        {docError ? (
+          <p className={styles.docError}>
+            Couldn't load the {DOCS[activeDoc].title} - is the API running?
+          </p>
+        ) : docHtml[activeDoc] === undefined ? (
+          <p className={styles.docLoading}>Loading...</p>
+        ) : (
+          <div className={styles.prose} dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }} />
+        )}
+      </div>
+    </dialog>
+  );
+}
 
 /**
  * A header dropdown that opens repo docs in an in-app dialog (markdown served
  * by the API). The About variant also links the resume PDF and the repository;
  * the Hosting variant collects every Azure, certificate, and deployment
- * decision in one place.
+ * decision in one place. Desktop only: below 640px the MobileDocs sheet takes
+ * over, built from the same MENUS record.
  */
 export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
   const { label, items } = MENUS[menu];
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeDoc, setActiveDoc] = useState<DocKey>(items[0].key);
-  const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>({});
-  const [docError, setDocError] = useState(false);
+  const [request, setRequest] = useState<DocRequest | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Close the dropdown on outside click or Escape.
   useEffect(() => {
@@ -118,22 +209,9 @@ export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
     };
   }, [menuOpen]);
 
-  const openDoc = async (key: DocKey) => {
+  const openDoc = (key: DocKey) => {
     setMenuOpen(false);
-    setActiveDoc(key);
-    setDocError(false);
-    dialogRef.current?.showModal();
-    if (docHtml[key] !== undefined) return;
-    try {
-      const response = await fetch(DOCS[key].url);
-      if (!response.ok) throw new Error(String(response.status));
-      const markdown = await response.text();
-      // Our own docs - trusted, repo-authored content.
-      const html = await marked.parse(markdown);
-      setDocHtml((prev) => ({ ...prev, [key]: html }));
-    } catch {
-      setDocError(true);
-    }
+    setRequest((prev) => ({ key, nonce: (prev?.nonce ?? 0) + 1 }));
   };
 
   return (
@@ -159,7 +237,7 @@ export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
               type="button"
               className={sub ? `${styles.item} ${styles.subItem}` : styles.item}
               role="menuitem"
-              onClick={() => void openDoc(key)}
+              onClick={() => openDoc(key)}
             >
               {DOCS[key].menuLabel}
             </button>
@@ -168,12 +246,12 @@ export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
             <a
               className={styles.item}
               role="menuitem"
-              href="https://github.com/SteveStout/TheYard/actions"
+              href={LINKS.ciRuns.href}
               target="_blank"
               rel="noreferrer"
               onClick={() => setMenuOpen(false)}
             >
-              CI runs on GitHub
+              {LINKS.ciRuns.label}
               <ExternalIcon />
             </a>
           )}
@@ -182,23 +260,23 @@ export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
               <a
                 className={styles.item}
                 role="menuitem"
-                href="/api/docs/resume"
+                href={LINKS.resume.href}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setMenuOpen(false)}
               >
-                Steven's resume (PDF)
+                {LINKS.resume.label}
                 <ExternalIcon />
               </a>
               <a
                 className={styles.item}
                 role="menuitem"
-                href="https://github.com/SteveStout/TheYard"
+                href={LINKS.repo.href}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setMenuOpen(false)}
               >
-                GitHub repository
+                {LINKS.repo.label}
                 <ExternalIcon />
               </a>
             </>
@@ -206,40 +284,7 @@ export function DocsMenu({ menu = 'about' }: { menu?: MenuVariant }) {
         </div>
       )}
 
-      <dialog
-        ref={dialogRef}
-        className={styles.dialog}
-        aria-label={DOCS[activeDoc].title}
-        onClick={(event) => {
-          // Native dialog: a click on the backdrop targets the dialog itself.
-          if (event.target === dialogRef.current) dialogRef.current?.close();
-        }}
-      >
-        <div className={styles.dialogHeader}>
-          <h2 className={styles.dialogTitle}>{DOCS[activeDoc].title}</h2>
-          <button
-            type="button"
-            className={styles.close}
-            onClick={() => dialogRef.current?.close()}
-            aria-label="Close"
-          >
-            <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
-              <path d="M2 2l10 10M12 2 2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-        <div className={styles.dialogBody}>
-          {docError ? (
-            <p className={styles.docError}>
-              Couldn't load the {DOCS[activeDoc].title} - is the API running?
-            </p>
-          ) : docHtml[activeDoc] === undefined ? (
-            <p className={styles.docLoading}>Loading...</p>
-          ) : (
-            <div className={styles.prose} dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }} />
-          )}
-        </div>
-      </dialog>
+      <DocDialog request={request} />
     </div>
   );
 }

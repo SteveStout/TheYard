@@ -156,3 +156,24 @@ free tier, deployed automatically from this repo's edge/ folder; the full story 
 why (Wix forbids nameserver changes, so the Cloudflare plan waits for a registrar
 transfer after ~Oct 30) lives in docs/ADR-004's 2026-09-01 addendum. DNS records sit
 in Wix's panel with 30-minute TTLs during cutover; lengthen once stable.
+
+## LIVE UPDATE, 2026-09-02: merges deploy themselves
+
+A merge to main now reaches https://theyard.stevenstout.biz with no human
+step. CI runs the three suites; when it finishes green on main, the Deploy
+workflow (.github/workflows/deploy.yml) builds the image on GitHub's runner
+with the footer build arguments, pushes it to the registry, renders
+infra/aci-theyard.yaml with the new tag, and recreates the container group.
+Auth is OIDC (app registration gha-theyard-deploy, federated credential
+pinned to this repo's main branch by owner id and repo id, three scoped roles); GitHub holds three
+identifiers as repository variables and no secret anywhere. Displayed
+version is 1.0.0.(11 + Deploy run number). Full record:
+docs/ADR-009-deploy-pipeline.md, served under the CI/CD menu.
+
+The scripted manual pipeline (suites, local docker build, acr login, push,
+export, strip, create) retires to fallback duty and doubles as the rollback:
+
+    az container create -g RG-THEYARD-SS -f C:\Claude\Claude_Job_Hunt\aci-export-v11.yaml
+
+restores the last manual build (v11). Docker Desktop is no longer on the
+ship path.

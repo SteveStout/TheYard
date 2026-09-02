@@ -145,6 +145,9 @@ app.MapGet("/api/docs/hosting", () =>
 app.MapGet("/api/docs/cicd", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "CICD.md"))), "text/markdown"));
 
+app.MapGet("/api/docs/adr-pipeline", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-009-deploy-pipeline.md"))), "text/markdown"));
+
 app.MapGet("/api/docs/adr-edge-economics", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-007-edge-economics.md"))), "text/markdown"));
 
@@ -276,6 +279,9 @@ app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetState
 
 app.MapGet("/api/docs/adr-observability", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-010-observability.md"))), "text/markdown"));
+
+app.MapGet("/api/docs/adr-phone", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-011-phone-header.md"))), "text/markdown"));
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
