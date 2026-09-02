@@ -31,8 +31,8 @@ test-results/
 **/obj/
 **/*.binlog
 
-# Docker build file itself should never be sent as part of the build context
-Dockerfile
+# The Dockerfile rides along in the context on purpose: the runtime image copies
+# it so the records can show it live (ADR-002, ADR-008, ADR-017).
 
 # Optional: keep the repo clean if local artifacts are generated elsewhere
 *.orig

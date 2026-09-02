@@ -169,3 +169,16 @@ that shipped them, so they keep resolving.
 dark, keep everything light and modern"); ADR: The sidebar records the new
 palette. The icon rows, the 48-pixel targets and the measure-before-choosing
 rule from the addendum above stand; only the colors changed.
+
+## Files
+
+- [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx) and
+  [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css): the drawer, now one shape of
+  the sidebar (ADR: The sidebar).
+- [`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx): the icon per row kind.
+- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the one data record both shapes
+  render from.
+- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css) and [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts):
+  the palette and its measured contrast.
+- [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts): the 375 by 812 proof.
+- [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the viewport meta that makes a phone a phone.

@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 
+# #region frontend-build
 # Stage 1: build the frontend in a Node environment.
 FROM node:22-alpine AS frontend-build
 # This gives us a standard Node toolchain for Vite and keeps the build dependencies isolated from the final runtime image.
@@ -20,7 +21,9 @@ COPY src ./src
 
 # Build the production bundle that will be served by the ASP.NET host.
 RUN npm run build
+# #endregion frontend-build
 
+# #region api-publish
 # Stage 2: publish the .NET API in Release mode.
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-publish
 # We use the SDK image here because publishing requires a toolchain that can compile and package the ASP.NET app.
@@ -46,7 +49,9 @@ RUN set -eu; \
     [ -n "${TARGET_FRAMEWORK}" ] || { echo "No TargetFramework found under /src/api" >&2; exit 1; }; \
     echo "Using target framework: ${TARGET_FRAMEWORK}"; \
     dotnet publish api/TheBlock.Api/TheBlock.Api.csproj -c Release --no-restore -f "${TARGET_FRAMEWORK}" -o /app/publish
+# #endregion api-publish
 
+# #region runtime
 # Stage 3: final runtime image.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 # The runtime image is the correct final stage for a production container because it does not include the SDK or compilers.
@@ -75,16 +80,23 @@ COPY --chown=app:app api/TheBlock.Data/*.cs api/TheBlock.Data/*.csproj ./api/The
 COPY --chown=app:app api/TheBlock.Domain/*.cs api/TheBlock.Domain/*.csproj ./api/TheBlock.Domain/
 COPY --chown=app:app api/TheBlock.Infrastructure/*.cs api/TheBlock.Infrastructure/*.csproj ./api/TheBlock.Infrastructure/
 COPY --chown=app:app api/TheBlock.Tests/*.cs api/TheBlock.Tests/*.csproj ./api/TheBlock.Tests/
+# The rest of what the records show live (ADR-017, the references pass): the edge,
+# the end-to-end specs, and the root files the build and the tests are configured by.
+COPY --chown=app:app Dockerfile netlify.toml playwright.config.ts vite.config.ts package.json index.html ./
+COPY --chown=app:app edge ./edge
+COPY --chown=app:app tests ./tests
 # The built frontend bundle is copied into wwwroot so the ASP.NET API can serve it and provide SPA fallback routing.
 COPY --chown=app:app --from=frontend-build /src/dist/ /app/wwwroot/
 
 # Build provenance, baked in at image build so the running container can report
 # exactly which build it is. The API serves these at /api/version and the page
 # footer renders them; the ship pipeline passes both arguments (ADR-005).
+# #region build-args
 ARG APP_VERSION=dev
 ARG APP_COMMIT=local
 ENV APP_VERSION=${APP_VERSION}
 ENV APP_COMMIT=${APP_COMMIT}
+# #endregion build-args
 
 # Set the runtime URL to port 8080, which matches the container runtime conventions we want for a single-process app.
 ENV ASPNETCORE_URLS=http://+:8080
@@ -99,3 +111,4 @@ USER app
 
 # Start the hosted API; it serves both the API endpoints and the SPA shell.
 ENTRYPOINT ["dotnet", "TheBlock.Api.dll"]
+# #endregion runtime

@@ -81,3 +81,20 @@ for production and is exactly what this template deploys after a subscription
 upgrade (enableFrontDoor=true, computeKind=appservice, skuName=B1). Until
 then the app runs on the least-restricted compute the subscription accepts,
 publicly reachable by design, carrying no secrets and no persistent user data.
+
+## Files
+
+- [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the target as code. `enableFrontDoor` and
+  `computeKind` select it; `fdProfile`, `fdEndpoint`, `fdOriginGroup`,
+  `fdOrigin` and `fdRoute` are the Front Door; `plan` and `site` are the App
+  Service origin; `siteLock` is the origin lock this record is about, shown
+  live below.
+- [`docs/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md): why the site does not run this today, and what
+  runs instead.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the container group that does run, per
+  ADR: Deployment strategy.
+
+The origin lock, read from this build:
+
+```live path=infra/main.bicep region=origin-lock
+```

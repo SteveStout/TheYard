@@ -88,3 +88,11 @@ pipeline: the image and the workflow stay the same, only the target moves.
 Tests first, automation second. A pipeline that ships untested code is a
 faster way to break production. The test wall existed before this site had a
 URL, and every deploy so far has been gated on it.
+
+## Files
+
+- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the three suites as jobs.
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Deploy workflow, step by step.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the template Deploy renders and rolls.
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image Deploy builds.
+- [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): the line every version writes for itself.

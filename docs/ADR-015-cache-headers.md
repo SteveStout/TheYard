@@ -68,3 +68,14 @@ says no-cache rather than immutable; a photo keeps its day.
   rules above reach the browser as written.
 - The Admin tab, the version endpoint and the documents are fetched fresh
   every time. They are small, and being current is their whole job.
+
+## Files
+
+- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the middleware (region
+  cache-headers above), the photo set's own rule, and the SPA fallback that
+  answers only app routes.
+- [`api/TheBlock.Tests/CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/CacheHeaderTests.cs): the proof, header by
+  header.
+- [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts) and [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the build that names
+  every bundle file by its contents and rewrites the page to match.
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): where the built bundle lands (`/app/wwwroot`).

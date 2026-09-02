@@ -52,3 +52,28 @@ A .dockerignore keeps node_modules, bin, obj and .git out of the build context.
   layers.
 - Visitors run the whole thing with `npm run docker` and stop it with
   `npm run docker:stop`.
+
+## Files
+
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the three stages, each shown live below.
+- [`.dockerignore`](https://github.com/SteveStout/TheYard/blob/main/.dockerignore): what never enters the build context.
+- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the one process the image runs,
+  serving the API and the built SPA from wwwroot with the fallback route.
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the build that passes the two
+  provenance arguments and pushes the image (ADR: The deploy pipeline).
+
+The frontend build stage:
+
+```live path=Dockerfile region=frontend-build
+```
+
+The API publish stage:
+
+```live path=Dockerfile region=api-publish
+```
+
+The runtime stage, non-root, with the health check and the sources the live
+samples read (ADR: Live code samples):
+
+```live path=Dockerfile region=runtime
+```

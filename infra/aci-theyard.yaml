@@ -15,6 +15,7 @@ identity:
 location: westus2
 name: aci-theyard-ss
 properties:
+  # #region container
   containers:
   - name: theyard
     properties:
@@ -28,6 +29,7 @@ properties:
         requests:
           cpu: 1.0
           memoryInGB: 1.5
+  # #endregion container
   imageRegistryCredentials:
   - identity: /subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-theyard-ss
     isDelegatedIdentity: false

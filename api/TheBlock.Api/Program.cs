@@ -147,7 +147,9 @@ app.MapGet("/api/docs/resume", () =>
 // baked in as environment variables by the Docker build (ADR-005).
 // ---------------------------------------------------------------------------
 
+#region version-endpoint
 app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, commit = buildCommit }));
+#endregion version-endpoint
 
 IResult HandleBid(
     InventoryService inventory,

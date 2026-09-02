@@ -113,3 +113,14 @@ against any later export restores that build. Nothing was deleted.
   the laptop and the Docker Desktop dependency is gone from the path.
 - The manual scripts, the export-and-strip step included, are now
   documentation of how it used to work rather than the way it works.
+
+## Files
+
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the whole pipeline; its trigger,
+  version, changelog check and roll are the live blocks above.
+- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the gate it waits for.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the template it renders and rolls.
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image it builds, with the two provenance
+  arguments (ADR: Version in the footer).
+- [`docs/CICD.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CICD.md): the design written before the build, and the
+  screenshots of the runs.

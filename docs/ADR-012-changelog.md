@@ -104,3 +104,15 @@ reads like a person wrote it.
 - The predicted number can be wrong by one after a red CI run. The rule
   accepts that and fixes it on the next ship rather than adding a second
   workflow to rewrite the file.
+
+## Files
+
+- [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): the file, one sentence per version.
+- [`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs): its two entries (region
+  docs-changelog above).
+- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the one-item menu (region
+  menu-changelog above).
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the warning when a version has no
+  line (region changelog-check above).
+- [`api/TheBlock.Tests/ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ChangelogTests.cs) and
+  [`tests/e2e/changelog.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/changelog.spec.ts): the proof.

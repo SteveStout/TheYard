@@ -114,3 +114,17 @@ validates every attached name, and resolvers that cached the old DNS records
 keep serving them until their TTL runs out. A renewal attempted inside that
 cache window fails and tells you nothing. Wait out the longest old TTL,
 renew once, and it works on the first try.
+
+## Files
+
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): what runs, the container group template
+  every deploy renders; the container itself is shown live below.
+- [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): what would run after an upgrade, the App
+  Service and Front Door target of ADR: Front Door origin, deliberately
+  undeployed.
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the roll, `az container create`
+  from the rendered template (ADR: The deploy pipeline).
+- [`docs/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md): the chain a request follows today.
+
+```live path=infra/aci-theyard.yaml region=container
+```

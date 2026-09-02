@@ -34,9 +34,11 @@ param computeKind string = 'appservice'
 @description('Minimum replicas for the container app path')
 param minReplicas int = 1
 
+// #region naming
 var suffix = uniqueString(resourceGroup().id)
 var upperTag = toUpper('${baseName}-${ownerTag}')
 var acrName = toLower('cr${baseName}${ownerTag}${suffix}')
+// #endregion naming
 var useAppService = computeKind == 'appservice'
 var useContainerApp = computeKind == 'containerapp'
 var useAci = computeKind == 'aci'
@@ -95,6 +97,7 @@ resource site 'Microsoft.Web/sites@2023-12-01' = if (useAppService) {
   }
 }
 
+// #region origin-lock
 resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = if (useAppService && enableFrontDoor) {
   parent: site
   name: 'web'
@@ -116,6 +119,7 @@ resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = if (useAppService &&
     ]
   }
 }
+// #endregion origin-lock
 
 resource acrPullSite 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useAppService) {
   name: guid(acr.id, 'site', 'acrpull')

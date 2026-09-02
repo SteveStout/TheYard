@@ -46,6 +46,10 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     [InlineData("api\\TheBlock.Api\\Program.cs")]
     [InlineData("src/")]
     [InlineData("")]
+    [InlineData(".env")]
+    [InlineData("package-lock.json")]
+    [InlineData("docs/CHANGELOG.md")]
+    [InlineData("Dockerfile.bak")]
     public void Paths_off_the_roots_or_with_escapes_are_rejected_as_strings(string path)
     {
         Assert.False(LiveSamples.IsAllowedPath(path));
@@ -57,7 +61,11 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     [InlineData("api/TheBlock.Api/Program.cs")]
     [InlineData("infra/main.bicep")]
     [InlineData(".github/workflows/deploy.yml")]
-    public void Paths_under_the_four_roots_are_allowed(string path)
+    [InlineData("tests/e2e/mobile.spec.ts")]
+    [InlineData("edge/_redirects")]
+    [InlineData("Dockerfile")]
+    [InlineData("netlify.toml")]
+    public void Paths_under_the_roots_and_the_named_root_files_are_allowed(string path)
     {
         Assert.True(LiveSamples.IsAllowedPath(path));
     }

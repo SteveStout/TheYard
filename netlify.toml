@@ -1,6 +1,8 @@
 [build]
   publish = "edge"
+  # #region ignore-rule
   # Only rebuild the edge when the edge itself changed. App pushes were
   # burning 15 Netlify credits each on redeploys of three unchanged files;
   # exit 0 here means "nothing under edge/ or this file moved, skip it".
   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- edge/ netlify.toml"
+  # #endregion ignore-rule

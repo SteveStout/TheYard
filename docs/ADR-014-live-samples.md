@@ -110,3 +110,27 @@ hour ago.
 - The expander is a parsing surface on a public endpoint. It reads only
   whitelisted text files inside the image, writes nothing, and answers with
   a note on every failure, and the tests hold it to that.
+
+## Files
+
+- [`api/TheBlock.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/LiveSamples.cs): the whitelist and the expander.
+- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs) and
+  [`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs): the one endpoint and the slugs
+  it serves through the expander.
+- [`api/TheBlock.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/LiveSamplesTests.cs): the rejection cases and
+  the served-record checks.
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the sources copied into the image so the container
+  can read its own code.
+- [`tests/e2e/practices.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/practices.spec.ts): the browser check that a record
+  renders its sample and no fallback note.
+
+## Addendum, 2026-09-02: the whitelist widened for the references pass
+
+The four roots were not enough once every record was to show the files it
+decided: the Dockerfile, the edge, the end-to-end specs and the root
+configuration files sit outside them. The whitelist now also allows
+`tests/`, `edge/` and six named root files (`Dockerfile`, `netlify.toml`,
+`playwright.config.ts`, `vite.config.ts`, `package.json`, `index.html`),
+the image copies them, and the rejection tests gained cases for the
+neighbors that stay out (`.env`, the lock file, anything under `docs/`).
+The string check still runs before any filesystem touch.

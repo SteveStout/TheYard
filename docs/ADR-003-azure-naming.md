@@ -40,3 +40,16 @@ Azure resources cannot be renamed, only recreated, so this standard applies
 from creation; anything born before it gets recreated, which the one-command
 teardown makes cheap. Browser-visible hostnames render lowercase regardless of
 the resource name casing.
+
+## Files
+
+- [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the pattern as code, `upperTag` for the
+  uppercase names and `acrName` for the registry's forced-lowercase
+  exception, shown live below.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the names in use today, `aci-theyard-ss`,
+  `id-theyard-ss`, the registry and the DNS label.
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the same names as workflow
+  variables (`REGISTRY_NAME`, `RG`), so the pipeline and the template agree.
+
+```live path=infra/main.bicep region=naming
+```

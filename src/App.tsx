@@ -501,6 +501,7 @@ export default function App() {
           )}
         </main>
 
+        {/* #region footer-version */}
         {build && (
           <footer className={styles.footer}>
             <span data-testid="build-version">
@@ -521,6 +522,7 @@ export default function App() {
             )}
           </footer>
         )}
+        {/* #endregion footer-version */}
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
+# #region rules
 https://stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 https://www.stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 http://stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 http://www.stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 /* http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080/:splat 200!
+# #endregion rules

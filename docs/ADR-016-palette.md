@@ -79,3 +79,18 @@ WCAG AA, so a shade that fails contrast fails the build.
   sidebar icons, the hover tint, the brand mark.
 - A future palette is the same exercise: replace the values in the region
   above, run the unit test, ship.
+
+## Files
+
+- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): every color token (regions palette and
+  sheet-tokens above).
+- [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts): the contrast proof.
+- [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css),
+  [`src/components/DocsMenu.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.module.css),
+  [`src/components/AuctionCountdown.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AuctionCountdown.module.css),
+  [`src/components/VehicleCard.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleCard.module.css),
+  [`src/components/VehicleImage.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleImage.module.css): the five stylesheets
+  that carried a color of their own before the repaint.
+- [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css) and [`src/components/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BrandMark.tsx):
+  the brand mark in the palette's taupe.
+- [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the favicon.

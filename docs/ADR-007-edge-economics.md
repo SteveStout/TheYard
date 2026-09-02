@@ -40,3 +40,18 @@ planned registrar transfer around the end of October anyway.
   defaults, not on your intent. Read the meter in the first week, find
   which line item is really moving, and fix the configuration before
   reaching for a credit card.
+
+## Files
+
+- [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml): the ignore rule that stops app-only pushes from
+  redeploying the edge, shown live below.
+- [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the whole edge, five lines, shown live below:
+  the bare and www names redirect, everything else proxies to the origin.
+- [`edge/README.md`](https://github.com/SteveStout/TheYard/blob/main/edge/README.md): how the edge project is wired to the repo.
+- [`docs/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md): where the edge sits in the chain.
+
+```live path=netlify.toml region=ignore-rule
+```
+
+```live path=edge/_redirects region=rules
+```

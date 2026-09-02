@@ -39,3 +39,15 @@ Linux containers, everywhere the image runs.
   cost.
 - Anything Windows-specific can never quietly creep into the runtime; the
   container would refuse it. That constraint is a feature.
+
+## Files
+
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): Linux base images in every stage; the runtime stage
+  is shown live below (the other two are in ADR: Docker packaging).
+- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) and
+  [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): every job runs on
+  `ubuntu-latest`, so the image is built where it runs.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the Linux container group that hosts it.
+
+```live path=Dockerfile region=runtime
+```

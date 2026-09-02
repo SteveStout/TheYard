@@ -60,3 +60,12 @@ need a paid stack, and keeping the bill at zero while keeping the design
 reviewable is part of the engineering story. If this were a production
 workload, that file is exactly what would run, and the domain layer means the
 public URL would never change in the switch.
+
+## Files
+
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the container group that runs today.
+- [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the production design, deliberately
+  undeployed (served above as Infrastructure (Bicep)).
+- [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the HTTPS edge.
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image both of them run.
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): how a merge becomes a roll.

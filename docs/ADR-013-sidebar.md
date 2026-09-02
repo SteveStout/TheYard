@@ -136,3 +136,18 @@ The palette, read from this build
 Nothing moved: the rows, the icons, the docking line, the collapse and the
 drawer are as this record describes above, and the twenty-four end-to-end
 checks passed unchanged.
+
+## Files
+
+- [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx) and
+  [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css): the one navigation surface in
+  its two shapes.
+- [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx) and [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css): the docking line,
+  the rail grid, and the header that exists only below it.
+- [`src/hooks/useMediaQuery.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useMediaQuery.ts): how the docking line is read.
+- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the sections, in `MENU_ORDER`.
+- [`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx) and
+  [`src/components/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BrandMark.tsx): the row icons and the brand.
+- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the rail widths and the sheet tokens.
+- [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts) and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts):
+  the proof at 1280, 1023 and 375.
