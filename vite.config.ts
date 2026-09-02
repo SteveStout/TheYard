@@ -25,5 +25,8 @@ export default defineConfig({
   test: {
     // Unit tests only — tests/e2e belongs to Playwright.
     include: ['src/**/*.test.ts'],
+    // Vitest blanks CSS imports it is not told to process. tokens.test.ts reads
+    // the palette file raw to measure its contrast, so that one goes through.
+    css: { include: [/tokens\.css\?raw$/] },
   },
 });

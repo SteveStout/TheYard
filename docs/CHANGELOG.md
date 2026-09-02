@@ -1,0 +1,21 @@
+# Changelog
+
+One line per shipped version, newest first. The number is the one the page
+footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
+line gets here, and why there is only ever one sentence, is recorded in
+ADR: The changelog under the Best Practices menu.
+
+- **1.0.0.14** (2026-09-02): A Changelog menu joined the header, and the phone menu became a dark slide-out panel with an icon on every row.
+- **1.0.0.13** (2026-09-02): The phone header shipped as the first real passenger through the new pipeline, alongside the pipeline's own record (ADR-011).
+- **1.0.0.12** (2026-09-02): The first automated deploy: the CD pipeline shipped itself and rolled this version with no hands (ADR-009).
+- **1.0.0.11** (2026-09-01): The Admin tab was roughed in with health checks, the error buffer, and Azure's own view of the container (ADR-010).
+- **1.0.0.10** (2026-09-01): The Netlify credit fix landed with two lesson records, edge deploy economics and Linux over Windows.
+- **1.0.0.9** (2026-09-01): The version footer arrived and the page started reporting its own build (ADR-005, ADR-006).
+- **1.0.0.8** (2026-09-01): The About menu began serving the current resume.
+- **1.0.0.7** (2026-09-01): The README was reframed on the project's own terms and its typography restored after the encoding damage.
+- **1.0.0.6** (2026-09-01): The production design was documented as deliberately undeployed, and the bare domain got its edge rules.
+- **1.0.0.5** (2026-09-01): The Hosting overview's child index gave way to the websites-and-resources list after a proofread.
+- **1.0.0.4** (2026-09-01): Configuration screenshots were embedded in the docs, the CI/CD menu was seeded, and the Bicep file started serving from the dropdown.
+- **1.0.0.3** (2026-09-01): Hosting became the parent record, with the ADRs nested under it in a new Hosting menu.
+- **1.0.0.2** (2026-09-01): The domain docs shipped and the ADRs went live in the About menu behind https://theyard.stevenstout.biz.
+- **1.0.0.1** (2026-08-31): The first live deploy, Azure Container Instances over plain HTTP on port 8080, the day the site got a URL.

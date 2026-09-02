@@ -177,3 +177,9 @@ export, strip, create) retires to fallback duty and doubles as the rollback:
 
 restores the last manual build (v11). Docker Desktop is no longer on the
 ship path.
+
+Every ship also adds its one-sentence line to docs/CHANGELOG.md, numbered one
+past the footer, inside the commit that earns it. The deploy counter mints the
+number, and the Deploy run's version step prints a warning when the line for
+the number it minted is missing. Record: docs/ADR-012-changelog.md, served
+under Best Practices; the file itself is the Changelog menu.

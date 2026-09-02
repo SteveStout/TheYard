@@ -35,30 +35,37 @@ export type DocKey =
   | 'adrVersioning'
   | 'adrDocs'
   | 'adrObservability'
-  | 'adrPhone';
+  | 'adrPhone'
+  | 'changelog'
+  | 'adrChangelog';
 
-export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string }> = {
-  readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme' },
-  dataflow: { title: 'Data Flow', menuLabel: 'Data flow diagram', url: '/api/docs/dataflow' },
-  projects: { title: 'Projects', menuLabel: 'Project structure', url: '/api/docs/projects' },
-  hosting: { title: 'Hosting', menuLabel: 'Hosting overview', url: '/api/docs/hosting' },
-  adrOrigin: { title: 'ADR: Front Door origin', menuLabel: 'ADR: Front Door origin', url: '/api/docs/adr-origin' },
-  adrDocker: { title: 'ADR: Docker packaging', menuLabel: 'ADR: Docker packaging', url: '/api/docs/adr-docker' },
-  adrNaming: { title: 'ADR: Azure naming', menuLabel: 'ADR: Azure naming', url: '/api/docs/adr-naming' },
-  adrPivots: { title: 'ADR: Deployment strategy', menuLabel: 'ADR: Deployment strategy', url: '/api/docs/adr-pivots' },
-  adrEdgeCost: { title: 'ADR: Edge deploy economics', menuLabel: 'ADR: Edge deploy economics', url: '/api/docs/adr-edge-economics' },
-  adrLinux: { title: 'ADR: Linux over Windows', menuLabel: 'ADR: Linux over Windows', url: '/api/docs/adr-linux' },
-  bicep: { title: 'Infrastructure (Bicep)', menuLabel: 'Infrastructure (Bicep)', url: '/api/docs/bicep' },
-  cicd: { title: 'CI/CD', menuLabel: 'CI/CD overview', url: '/api/docs/cicd' },
-  adrPipeline: { title: 'ADR: The deploy pipeline', menuLabel: 'ADR: The deploy pipeline', url: '/api/docs/adr-pipeline' },
-  practices: { title: 'Best Practices', menuLabel: 'Best practices overview', url: '/api/docs/practices' },
-  adrVersioning: { title: 'ADR: Version in the footer', menuLabel: 'ADR: Version in the footer', url: '/api/docs/adr-versioning' },
-  adrDocs: { title: 'ADR: Docs and testing', menuLabel: 'ADR: Docs and testing', url: '/api/docs/adr-docs' },
-  adrObservability: { title: 'ADR: Observability', menuLabel: 'ADR: Observability (Admin tab)', url: '/api/docs/adr-observability' },
-  adrPhone: { title: 'ADR: The phone header', menuLabel: 'ADR: The phone header', url: '/api/docs/adr-phone' },
+/** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
+export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
+
+export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string; kind: DocKind }> = {
+  readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme', kind: 'overview' },
+  dataflow: { title: 'Data Flow', menuLabel: 'Data flow diagram', url: '/api/docs/dataflow', kind: 'overview' },
+  projects: { title: 'Projects', menuLabel: 'Project structure', url: '/api/docs/projects', kind: 'overview' },
+  hosting: { title: 'Hosting', menuLabel: 'Hosting overview', url: '/api/docs/hosting', kind: 'overview' },
+  adrOrigin: { title: 'ADR: Front Door origin', menuLabel: 'ADR: Front Door origin', url: '/api/docs/adr-origin', kind: 'adr' },
+  adrDocker: { title: 'ADR: Docker packaging', menuLabel: 'ADR: Docker packaging', url: '/api/docs/adr-docker', kind: 'adr' },
+  adrNaming: { title: 'ADR: Azure naming', menuLabel: 'ADR: Azure naming', url: '/api/docs/adr-naming', kind: 'adr' },
+  adrPivots: { title: 'ADR: Deployment strategy', menuLabel: 'ADR: Deployment strategy', url: '/api/docs/adr-pivots', kind: 'adr' },
+  adrEdgeCost: { title: 'ADR: Edge deploy economics', menuLabel: 'ADR: Edge deploy economics', url: '/api/docs/adr-edge-economics', kind: 'adr' },
+  adrLinux: { title: 'ADR: Linux over Windows', menuLabel: 'ADR: Linux over Windows', url: '/api/docs/adr-linux', kind: 'adr' },
+  bicep: { title: 'Infrastructure (Bicep)', menuLabel: 'Infrastructure (Bicep)', url: '/api/docs/bicep', kind: 'infra' },
+  cicd: { title: 'CI/CD', menuLabel: 'CI/CD overview', url: '/api/docs/cicd', kind: 'overview' },
+  adrPipeline: { title: 'ADR: The deploy pipeline', menuLabel: 'ADR: The deploy pipeline', url: '/api/docs/adr-pipeline', kind: 'adr' },
+  practices: { title: 'Best Practices', menuLabel: 'Best practices overview', url: '/api/docs/practices', kind: 'overview' },
+  adrVersioning: { title: 'ADR: Version in the footer', menuLabel: 'ADR: Version in the footer', url: '/api/docs/adr-versioning', kind: 'adr' },
+  adrDocs: { title: 'ADR: Docs and testing', menuLabel: 'ADR: Docs and testing', url: '/api/docs/adr-docs', kind: 'adr' },
+  adrObservability: { title: 'ADR: Observability', menuLabel: 'ADR: Observability (Admin tab)', url: '/api/docs/adr-observability', kind: 'adr' },
+  adrPhone: { title: 'ADR: The phone header', menuLabel: 'ADR: The phone header', url: '/api/docs/adr-phone', kind: 'adr' },
+  changelog: { title: 'Changelog', menuLabel: 'Version history', url: '/api/docs/changelog', kind: 'changelog' },
+  adrChangelog: { title: 'ADR: The changelog', menuLabel: 'ADR: The changelog', url: '/api/docs/adr-changelog', kind: 'adr' },
 };
 
-export type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices';
+export type MenuVariant = 'about' | 'hosting' | 'cicd' | 'practices' | 'changelog';
 
 export type MenuEntry = { key: DocKey; sub?: boolean };
 
@@ -92,12 +99,18 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrDocs', sub: true },
       { key: 'adrObservability', sub: true },
       { key: 'adrPhone', sub: true },
+      { key: 'adrChangelog', sub: true },
     ],
+  },
+  /** One item on purpose: one file, one sentence per version (ADR-012). */
+  changelog: {
+    label: 'Changelog',
+    items: [{ key: 'changelog' }],
   },
 };
 
-/** Header order, left to right. The phone sheet lists its sections the same way. */
-export const MENU_ORDER: MenuVariant[] = ['hosting', 'cicd', 'practices', 'about'];
+/** Header order, left to right. The desktop header and the phone drawer both render from it. */
+export const MENU_ORDER: MenuVariant[] = ['hosting', 'cicd', 'practices', 'changelog', 'about'];
 
 /** Links that sit beside the docs, shared by the dropdowns and the phone sheet. */
 export const LINKS = {

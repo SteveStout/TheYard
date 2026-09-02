@@ -37,6 +37,19 @@
   --color-header-text: #0a1b5f;
   --color-header-text-muted: #707070;
 
+  /* The phone drawer (ADR-011 addendum): the brand navy as the ground, silver
+     text. Every pair below clears WCAG AA against both grounds, measured
+     before it was chosen and asserted by tokens.test.ts beside this file. */
+  --color-sheet-bg: #0a1b5f;
+  --color-sheet-bg-raised: #14297a;
+  --color-sheet-text: #f5f5f5;
+  --color-sheet-text-muted: #9aa3c7;
+  --color-sheet-icon: #c3c3c3;
+  --color-sheet-icon-active: #8ab4ff;
+  --color-sheet-focus: #8ab4ff;
+  --color-sheet-divider: rgba(255, 255, 255, 0.08);
+  --color-sheet-divider-strong: rgba(255, 255, 255, 0.16);
+
   /* Spacing — 4px base scale */
   --space-1: 4px;
   --space-2: 8px;

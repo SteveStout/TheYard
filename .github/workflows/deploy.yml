@@ -54,6 +54,13 @@ jobs:
             echo "IMAGE=$ACR/theyard:v$N"
           } >> "$GITHUB_ENV"
           echo "Deploying 1.0.0.$N from ${HEAD_SHA:0:7} as $ACR/theyard:v$N"
+          # The changelog names the version it ships with (ADR-012). A miss is a
+          # warning in the run, never a stopped deploy; the next ship corrects it.
+          if grep -q "^- \*\*1\.0\.0\.$N\*\*" docs/CHANGELOG.md; then
+            echo "docs/CHANGELOG.md names 1.0.0.$N"
+          else
+            echo "::warning file=docs/CHANGELOG.md::No changelog line for 1.0.0.$N; add it with the next ship (ADR-012)"
+          fi
 
       - uses: azure/login@v3
         with:

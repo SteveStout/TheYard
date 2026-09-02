@@ -283,6 +283,13 @@ app.MapGet("/api/docs/adr-observability", () =>
 app.MapGet("/api/docs/adr-phone", () =>
     Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-011-phone-header.md"))), "text/markdown"));
 
+// The changelog and its record (ADR-012): one file, one sentence per version.
+app.MapGet("/api/docs/changelog", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "CHANGELOG.md"))), "text/markdown"));
+
+app.MapGet("/api/docs/adr-changelog", () =>
+    Results.Text(File.ReadAllText(FindUpward(AppContext.BaseDirectory, Path.Combine("docs", "ADR-012-changelog.md"))), "text/markdown"));
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 

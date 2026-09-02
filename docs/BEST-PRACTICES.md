@@ -22,7 +22,7 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Eleven ADRs record why the architecture is
+- **Decisions get written down.** Twelve ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -37,3 +37,7 @@ footer displays exactly that.
   pushes it, and rolls the container with no human step and no stored
   secret, signed in through OIDC with least-privilege roles. Recorded in
   ADR: The deploy pipeline, under the CI/CD menu.
+- **Every version gets its sentence.** One file, one line per shipped
+  version, newest first, written by the commit that ships it and checked by
+  the deploy that mints the number. Served as the Changelog menu; recorded in
+  ADR: The changelog.

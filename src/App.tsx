@@ -18,7 +18,7 @@ import {
 import { applyBidRecord, useBids } from './hooks/useBids';
 import { useNow } from './hooks/useNow';
 import { AdminPanel } from './components/AdminPanel';
-import { DocsMenu } from './components/DocsMenu';
+import { DocsMenu, MENU_ORDER } from './components/DocsMenu';
 import { MobileDocs } from './components/MobileDocs';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
@@ -346,13 +346,13 @@ export default function App() {
             <span className={styles.brandSub}>Vehicle Auctions</span>
           </button>
           <div className={styles.headerActions}>
-            {/* Desktop: four dropdowns plus Admin. Below 640px this block hides
-                and MobileDocs offers the same entries from one sheet. */}
+            {/* Desktop: one dropdown per header menu, in MENU_ORDER, plus Admin.
+                Below 640px this block hides and MobileDocs offers the same
+                entries from one drawer built from the same record. */}
             <div className={styles.desktopActions}>
-              <DocsMenu menu="hosting" />
-              <DocsMenu menu="cicd" />
-              <DocsMenu menu="practices" />
-              <DocsMenu />
+              {MENU_ORDER.map((menu) => (
+                <DocsMenu key={menu} menu={menu} />
+              ))}
               <button type="button" className={styles.adminTab} onClick={openAdmin}>
                 Admin
               </button>
