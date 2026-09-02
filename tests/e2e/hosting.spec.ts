@@ -7,6 +7,15 @@ test('the Hosting section opens the hosting overview and the deployment ADRs', a
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Hosting' })
   ).toBeVisible();
+  // The diagram opens on its own page, in a new tab, from a link the hook made relative (ADR-020).
+  const open = page
+    .getByRole('dialog')
+    .getByRole('link', { name: 'Open the infrastructure diagram in a new page' });
+  await expect(open).toHaveAttribute('target', '_blank');
+  await expect(open).toHaveAttribute('href', '/api/docs/diagrams/infrastructure');
+  const diagram = await page.request.get('/api/docs/diagrams/infrastructure');
+  expect(diagram.ok()).toBe(true);
+  expect(await diagram.text()).toContain('<svg');
   await page.keyboard.press('Escape');
 
   await nav.getByRole('button', { name: 'ADR: Deployment strategy' }).click();

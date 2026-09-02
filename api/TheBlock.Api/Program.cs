@@ -142,6 +142,18 @@ app.MapGet("/api/docs/{slug}", (string slug) =>
         : Results.NotFound());
 #endregion docs-endpoint
 
+#region diagram-page
+// A diagram on its own page (ADR-020): the SVG inlined in a small HTML document,
+// so it opens in a new tab, zooms with the browser, and keeps its text
+// selectable. The name is looked up in the catalog; nothing else is read.
+app.MapGet("/api/docs/diagrams/{name}", (string name) =>
+    DocsCatalog.Diagrams.TryGetValue(name, out var diagram)
+        ? Results.Content(
+            DiagramPage.Render(diagram.Title, File.ReadAllText(Path.Combine(repoRoot, diagram.File)), diagram.File),
+            "text/html; charset=utf-8")
+        : Results.NotFound());
+#endregion diagram-page
+
 app.MapGet("/api/docs/bicep", () =>
     Results.Text("# infra/main.bicep" + "\n\nThe production design as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. Kept deliberately undeployed; the Hosting overview explains that choice.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "main.bicep")) + "\n```\n", "text/markdown"));
 

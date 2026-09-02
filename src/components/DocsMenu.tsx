@@ -2,6 +2,24 @@ import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
 import styles from './DocsMenu.module.css';
 
+// #region doc-links
+// Links in a served document lead out of the app (GitHub, a diagram page), so
+// they open in a new tab and the dialog stays where the reader was. The docs
+// name the live domain in full, which keeps them right on GitHub; here the same
+// links are made relative, so a checkout on localhost opens its own diagram
+// page and not the live one (ADR-020).
+const SITE = 'https://theyard.stevenstout.biz/';
+marked.use({
+  hooks: {
+    postprocess(html: string) {
+      return html
+        .replaceAll(`href="${SITE}`, 'href="/')
+        .replace(/<a href="(?!#)/g, '<a target="_blank" rel="noopener" href="');
+    },
+  },
+});
+// #endregion doc-links
+
 export type DocKey =
   | 'readme'
   | 'dataflow'
@@ -29,7 +47,8 @@ export type DocKey =
   | 'adrPalette'
   | 'adrReview'
   | 'adrProgram'
-  | 'adrReact';
+  | 'adrReact'
+  | 'adrDiagrams';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
@@ -68,6 +87,7 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrReview: { title: 'ADR: The staff review', menuLabel: 'ADR: The staff review', url: '/api/docs/adr-review', kind: 'adr' },
   adrProgram: { title: 'ADR: Program.cs, explained', menuLabel: 'ADR: Program.cs, explained', url: '/api/docs/adr-program', kind: 'adr' },
   adrReact: { title: 'ADR: The React configuration, explained', menuLabel: 'ADR: The React configuration, explained', url: '/api/docs/adr-react', kind: 'adr' },
+  adrDiagrams: { title: 'ADR: Diagram pages', menuLabel: 'ADR: Diagram pages', url: '/api/docs/adr-diagrams', kind: 'adr' },
 };
 // #endregion docs-record
 
@@ -113,6 +133,7 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrReview', sub: true },
       { key: 'adrProgram', sub: true },
       { key: 'adrReact', sub: true },
+      { key: 'adrDiagrams', sub: true },
     ],
   },
   // #region menu-changelog

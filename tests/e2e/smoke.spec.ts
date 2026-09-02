@@ -71,6 +71,11 @@ test('the About section shows the README in-app and links the résumé PDF', asy
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Data Flow' })
   ).toBeVisible();
+  const openFlow = page
+    .getByRole('dialog')
+    .getByRole('link', { name: 'Open the data flow diagram in a new page' });
+  await expect(openFlow).toHaveAttribute('target', '_blank');
+  await expect(openFlow).toHaveAttribute('href', '/api/docs/diagrams/dataflow');
   await page.keyboard.press('Escape');
 
   await nav.getByRole('button', { name: 'Project structure' }).click();

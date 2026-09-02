@@ -75,6 +75,15 @@ test('the Best Practices section opens the overview and its decision records', a
   ).toBeVisible();
   await expect(react.locator('pre code').first()).toContainText('"build": "tsc -b && vite build"');
   await expect(react.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
+  await nav.getByRole('button', { name: 'ADR: Diagram pages' }).click();
+  const diagrams = page.getByRole('dialog', { name: 'ADR: Diagram pages' });
+  await expect(
+    diagrams.getByRole('heading', { level: 1, name: 'ADR: Every diagram opens on its own page' })
+  ).toBeVisible();
+  await expect(diagrams.locator('pre code').first()).toContainText('/api/docs/diagrams/{name}');
+  await expect(diagrams.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
 });
 
 test('the footer reports the running build', async ({ page }) => {

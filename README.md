@@ -12,7 +12,9 @@ auction rules.
 Everything about how it is built and hosted is served from inside the app,
 under Hosting, CI/CD and Best Practices in the sidebar. The shape of it:
 
-![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)
+[![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
+
+*A preview. [Open the infrastructure diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure) to zoom in and follow it. The data flow has [its own drawing](https://theyard.stevenstout.biz/api/docs/diagrams/dataflow) too.*
 
 ## How to Run
 

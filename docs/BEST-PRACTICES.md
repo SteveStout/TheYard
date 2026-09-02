@@ -22,7 +22,7 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Nineteen ADRs record why the architecture is
+- **Decisions get written down.** Twenty ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -54,8 +54,9 @@ footer displays exactly that.
   palette.
 - **The picture matches the words.** The infrastructure diagram on the
   Hosting page is drawn from the records, every surface carries a screenshot
-  taken from the live site, and code shown in a record counts as documented
-  by it. Recorded in ADR: Docs and testing.
+  taken from the live site, code shown in a record counts as documented by
+  it, and every diagram opens on its own page, zoomable, from a preview in
+  the record. Recorded in ADR: Docs and testing and ADR: Diagram pages.
 - **The code reviews itself before anyone else does.** A staff-level pass
   over each day's work, every finding written down as kept, fixed or
   deferred, and the fixes shipped with tests. Recorded in ADR: The staff

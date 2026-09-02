@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1732" viewBox="0 0 1400 1732" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>TheYard data flow: a vehicle from a JSON file on disk to a card in the browser, and a bid back</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#536786"/>
+    </marker>
+    <marker id="arrow-taupe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#ab978c"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .lane { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 600; }
+      .lane-title { fill: #3f3a37; font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+      .lane-sub { fill: #62666f; font-size: 13px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .flow { stroke: #536786; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .flow-label { fill: #536786; font-size: 12px; font-weight: 500; }
+      .loop { stroke: #ab978c; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow-taupe); }
+      .loop-label { fill: #8a766b; font-size: 12px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="1732" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">TheYard data flow: a vehicle from a JSON file to a card in the browser, and a bid back</text>
+  <text x="40" y="68" class="caption">Every box is a file; the path under each title is where that step lives. Domain, Application, Infrastructure and Api are the projects under api/.</text>
+
+  <!-- ===================== Lane 1: the read path ===================== -->
+  <rect x="40" y="92" width="800" height="1568" class="lane"/>
+  <text x="60" y="120" class="lane-title">The read path, top to bottom</text>
+  <text x="60" y="140" class="lane-sub">The first four boxes run once at startup; the rest run for every request.</text>
+
+  <!-- ===================== Lane 2: the write path ===================== -->
+  <rect x="870" y="92" width="490" height="858" class="lane"/>
+  <text x="890" y="120" class="lane-title">The write path: a bid</text>
+  <text x="890" y="140" class="lane-sub">One anonymous buyer, state in API memory; the domain decides.</text>
+
+  <rect x="60" y="170" width="760" height="101" class="box"/>
+  <text x="75" y="196" class="title">The seed file</text>
+  <text x="75" y="218" class="mono">data/vehicles.json</text>
+  <text x="75" y="240" class="body">The 200 records from the challenge, never modified. The Vehicle record they load into</text>
+  <text x="75" y="257" class="body">lives with the other plain data shapes in api/TheBlock.Data.</text>
+  <path d="M120 271 L120 305" class="flow"/>
+  <text x="132" y="293" class="flow-label">once, at startup</text>
+  <rect x="60" y="307" width="760" height="84" class="box"/>
+  <text x="75" y="333" class="title">JsonFileVehicleSource</text>
+  <text x="75" y="355" class="mono">api/TheBlock.Infrastructure/JsonFileSources.cs</text>
+  <text x="75" y="377" class="body">Reads the seed once, at startup.</text>
+  <path d="M120 391 L120 425" class="flow"/>
+  <rect x="60" y="427" width="760" height="118" class="box"/>
+  <text x="75" y="453" class="title">SyntheticVehicleSource</text>
+  <text x="75" y="475" class="mono">api/TheBlock.Infrastructure/SyntheticVehicleSource.cs</text>
+  <text x="75" y="497" class="body">Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a,</text>
+  <text x="75" y="514" class="body">api/TheBlock.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state</text>
+  <text x="75" y="531" class="body">while keeping the seed's make, model and trim mix.</text>
+  <path d="M120 545 L120 579" class="flow"/>
+  <rect x="60" y="581" width="760" height="118" class="box"/>
+  <text x="75" y="607" class="title">InventoryService</text>
+  <text x="75" y="629" class="mono">api/TheBlock.Application/InventoryService.cs</text>
+  <text x="75" y="651" class="body">Applies each vehicle's photo gallery (api/TheBlock.Domain/PhotoGallery.cs picks from the</text>
+  <text x="75" y="668" class="body">pools in api/TheBlock.Api/photo-manifest.json) and materializes the list plus an id</text>
+  <text x="75" y="685" class="body">index, once, in a Lazy that Program.cs forces at startup.</text>
+  <path d="M120 699 L120 733" class="flow"/>
+  <text x="132" y="721" class="flow-label">then, for every request</text>
+  <rect x="60" y="735" width="760" height="135" class="box"/>
+  <text x="75" y="761" class="title">GET /api/vehicles</text>
+  <text x="75" y="783" class="mono">api/TheBlock.Api/Program.cs</text>
+  <text x="75" y="805" class="body">api/TheBlock.Api/VehicleQueryParams.cs binds and validates every parameter into a</text>
+  <text x="75" y="822" class="body">filter, a sort and a clock. api/TheBlock.Api/Clocks.cs turns the browser's anchor_ms</text>
+  <text x="75" y="839" class="body">(its local midnight) into that clock, so the schedule math agrees with the buyer in any</text>
+  <text x="75" y="856" class="body">time zone.</text>
+  <path d="M120 870 L120 904" class="flow"/>
+  <rect x="60" y="906" width="760" height="169" class="box"/>
+  <text x="75" y="932" class="title">Search, in InventoryService.Search</text>
+  <text x="75" y="954" class="mono">api/TheBlock.Application/InventoryService.cs</text>
+  <text x="75" y="976" class="body">1. The buyer's bids are overlaid first (api/TheBlock.Application/BidService.cs), so</text>
+  <text x="75" y="993" class="body">price bounds see the figures the page shows.</text>
+  <text x="75" y="1010" class="body">2. Where: api/TheBlock.Domain/VehicleFilter.cs</text>
+  <text x="75" y="1027" class="body">3. OrderBy: api/TheBlock.Domain/VehicleOrdering.cs</text>
+  <text x="75" y="1044" class="body">4. Skip and Take for the page. Auction windows come from</text>
+  <text x="75" y="1061" class="body">api/TheBlock.Domain/AuctionSchedule.cs, all in memory.</text>
+  <path d="M120 1075 L120 1109" class="flow"/>
+  <rect x="60" y="1111" width="760" height="101" class="box"/>
+  <text x="75" y="1137" class="title">VehicleWire</text>
+  <text x="75" y="1159" class="mono">api/TheBlock.Api/VehicleWire.cs</text>
+  <text x="75" y="1181" class="body">Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at,</text>
+  <text x="75" y="1198" class="body">auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.</text>
+  <path d="M120 1212 L120 1246" class="flow"/>
+  <text x="132" y="1234" class="flow-label">{ total, vehicles } as JSON</text>
+  <rect x="60" y="1248" width="760" height="118" class="box"/>
+  <text x="75" y="1274" class="title">The fetch seam</text>
+  <text x="75" y="1296" class="mono">src/lib/data.ts</text>
+  <text x="75" y="1318" class="body">Debounces filter changes (500 ms), caches responses per query string for five minutes (a</text>
+  <text x="75" y="1335" class="body">hit skips the debounce) and aborts superseded requests. The query string comes from</text>
+  <text x="75" y="1352" class="body">src/lib/inventory.ts, the same serializer that feeds the address bar.</text>
+  <path d="M120 1366 L120 1400" class="flow"/>
+  <rect x="60" y="1402" width="760" height="101" class="box"/>
+  <text x="75" y="1428" class="title">App state and the address bar</text>
+  <text x="75" y="1450" class="mono">src/App.tsx</text>
+  <text x="75" y="1472" class="body">Holds the page. Filters, sort, ?vehicle and ?view are mirrored into the URL, and Back</text>
+  <text x="75" y="1489" class="body">and Forward re-read it.</text>
+  <path d="M120 1503 L120 1537" class="flow"/>
+  <rect x="60" y="1539" width="760" height="101" class="box"/>
+  <text x="75" y="1565" class="title">Cards, detail, bid panel</text>
+  <text x="75" y="1587" class="mono">src/components/*</text>
+  <text x="75" y="1609" class="body">Format currency (src/lib/format.ts) and tick the countdowns from the server's window</text>
+  <text x="75" y="1626" class="body">(src/lib/auction.ts). No business math runs in the browser.</text>
+  <rect x="890" y="170" width="450" height="118" class="box"/>
+  <text x="905" y="196" class="title">BidPanel</text>
+  <text x="905" y="218" class="mono">src/components/BidPanel.tsx</text>
+  <text x="905" y="240" class="body">Posts { amount, anchor_ms } to POST</text>
+  <text x="905" y="257" class="body">/api/vehicles/{id}/bids through src/lib/data.ts; buy now</text>
+  <text x="905" y="274" class="body">posts to /buy-now.</text>
+  <path d="M950 288 L950 322" class="flow"/>
+  <text x="962" y="310" class="flow-label">POST</text>
+  <rect x="890" y="324" width="450" height="118" class="box"/>
+  <text x="905" y="350" class="title">HandleBid</text>
+  <text x="905" y="372" class="mono">api/TheBlock.Api/Program.cs</text>
+  <text x="905" y="394" class="body">Three questions in order: is the clock anchor valid (400</text>
+  <text x="905" y="411" class="body">if not), does the vehicle exist (404 if not), does the</text>
+  <text x="905" y="428" class="body">domain accept the action (400 with the reason if not).</text>
+  <path d="M950 442 L950 476" class="flow"/>
+  <text x="962" y="464" class="flow-label">the domain decides</text>
+  <rect x="890" y="478" width="450" height="118" class="box"/>
+  <text x="905" y="504" class="title">BidRules</text>
+  <text x="905" y="526" class="mono">api/TheBlock.Domain/BidRules.cs</text>
+  <text x="905" y="548" class="body">The sole authority: the live window, the tiered minimum</text>
+  <text x="905" y="565" class="body">increment, and the buy-now override (a bid at or above</text>
+  <text x="905" y="582" class="body">buy_now_price wins outright at that price).</text>
+  <path d="M950 596 L950 630" class="flow"/>
+  <text x="962" y="618" class="flow-label">accepted, won, or rejected</text>
+  <rect x="890" y="632" width="450" height="118" class="box"/>
+  <text x="905" y="658" class="title">BidService</text>
+  <text x="905" y="680" class="mono">api/TheBlock.Application/BidService.cs</text>
+  <text x="905" y="702" class="body">Accepted and won bids land in an in-memory map, one</text>
+  <text x="905" y="719" class="body">anonymous buyer. The response carries the updated</text>
+  <text x="905" y="736" class="body">vehicle with a fresh min_next_bid.</text>
+  <path d="M950 750 L950 784" class="flow"/>
+  <text x="962" y="772" class="flow-label">the updated vehicle</text>
+  <rect x="890" y="786" width="450" height="118" class="box"/>
+  <text x="905" y="812" class="title">useBids</text>
+  <text x="905" y="834" class="mono">src/hooks/useBids.ts</text>
+  <text x="905" y="856" class="body">Clears the query cache and refetches, so every list,</text>
+  <text x="905" y="873" class="body">filter and total reflects the bid through the same read</text>
+  <text x="905" y="890" class="body">path.</text>
+  <path d="M920 904 L920 924 L855 924 L855 1307 L822 1307" class="loop"/>
+  <text x="930" y="920" class="loop-label">refetch, through the same read path</text>
+
+  <text x="40" y="1686" class="caption">One rule shapes everything: derive, do not store. Windows, statuses, galleries and the 100,000 inventory are computed from stable ids, never persisted.</text>
+  <text x="40" y="1706" class="caption">Source: docs/images/dataflow.svg in the repository, drawn by docs/images/dataflow.mjs and redrawn when a box moves.</text>
+</svg>

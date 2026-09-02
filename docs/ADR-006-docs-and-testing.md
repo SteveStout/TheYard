@@ -99,6 +99,11 @@ enough to be commented." Three rules follow from it, all in force.
   at the line. Code that no record shows keeps its own comments. So the
   question for a reviewer is never "is this commented" but "which record
   shows this", and the Files section at the end of every record answers it.
+- **A diagram opens on its own page.** The picture in a record is a preview
+  that links to the drawing on a page of its own, opened in a new tab,
+  zoomable, with its text selectable; the Data Flow page's text diagram
+  became a drawing in the same style as the infrastructure one. Recorded in
+  ADR: Diagram pages.
 
 The unit suite's configuration and the end-to-end suite's two servers, read
 from this build ([`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts), [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts)):

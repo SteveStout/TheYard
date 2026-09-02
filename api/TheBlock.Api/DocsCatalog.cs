@@ -42,6 +42,16 @@ public static class DocsCatalog
         ["adr-review"] = "docs/ADR-017-staff-review.md",
         ["adr-program"] = "docs/ADR-018-program-cs-explained.md",
         ["adr-react"] = "docs/ADR-019-react-configuration-explained.md",
+        ["adr-diagrams"] = "docs/ADR-020-diagram-pages.md",
     };
     // #endregion docs-catalog
+
+    // #region diagrams
+    /// <summary>Diagram name to its SVG file and page title (ADR-020): each opens on its own page at /api/docs/diagrams/{name}.</summary>
+    public static readonly IReadOnlyDictionary<string, (string File, string Title)> Diagrams = new Dictionary<string, (string File, string Title)>(StringComparer.Ordinal)
+    {
+        ["infrastructure"] = ("docs/images/infrastructure.svg", "TheYard infrastructure"),
+        ["dataflow"] = ("docs/images/dataflow.svg", "TheYard data flow"),
+    };
+    // #endregion diagrams
 }
