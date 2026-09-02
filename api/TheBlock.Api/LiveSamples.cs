@@ -9,8 +9,9 @@ namespace TheBlock.Api;
 /// <c>live path=src/components/DocsMenu.tsx region=MENU_ORDER</c>, and this
 /// expands it at request time into an ordinary fenced block holding the
 /// current lines between the matching <c>#region NAME</c> and
-/// <c>#endregion</c> comment pair in that file, read from this build. Paths
-/// are confined to a short list of repo roots and checked as strings before
+/// <c>#endregion</c> comment pair in that file, read from this build;
+/// <c>region=*</c> shows the whole file, for the files that cannot carry a
+/// marker (package.json, the tsconfig files). Paths are confined to a short list of repo roots and checked as strings before
 /// any filesystem touch; anything missing renders a one-line note, never an
 /// error.
 /// </summary>
@@ -21,7 +22,7 @@ public static partial class LiveSamples
     public static readonly string[] AllowedRoots = ["src/", "api/", "infra/", ".github/", "tests/", "edge/"];
 
     /// <summary>The single files at the repo root a live block may read: the ones the records decide (ADR-017).</summary>
-    public static readonly string[] AllowedFiles = ["Dockerfile", "netlify.toml", "playwright.config.ts", "vite.config.ts", "package.json", "index.html"];
+    public static readonly string[] AllowedFiles = ["Dockerfile", "netlify.toml", "playwright.config.ts", "vite.config.ts", "package.json", "index.html", "tsconfig.json", "tsconfig.app.json", "tsconfig.node.json"];
 
     /// <summary>
     /// A relative path is allowed when it is plain (letters, digits, dot, dash,
@@ -143,13 +144,17 @@ public static partial class LiveSamples
             return Note($"`{path}` could not be read.");
         }
 
-        int start = Array.FindIndex(source, line =>
+        // #region whole-file
+        // region=* is the whole file, for files that cannot carry a comment marker
+        // (package.json, the tsconfig files); everything else is a marked region.
+        bool wholeFile = region == "*";
+        int start = wholeFile ? -1 : Array.FindIndex(source, line =>
         {
             var m = RegionStart().Match(line);
             return m.Success && m.Groups["name"].Value == region;
         });
         // A named end marker wins, so regions may nest; a bare #endregion closes the nearest open one.
-        int end = -1;
+        int end = wholeFile ? source.Length : -1;
         if (start >= 0)
         {
             end = Array.FindIndex(source, start + 1, line =>
@@ -166,10 +171,11 @@ public static partial class LiveSamples
                 });
             }
         }
-        if (start < 0 || end < 0)
+        if (!wholeFile && (start < 0 || end < 0))
         {
             return Note($"region `{region}` was not found in `{path}`.");
         }
+        // #endregion whole-file
 
         var body = source[(start + 1)..end].ToList();
         while (body.Count > 0 && string.IsNullOrWhiteSpace(body[^1]))

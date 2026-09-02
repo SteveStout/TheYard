@@ -12,6 +12,7 @@ using TheBlock.Data;
 // adapters, synthetic scale-up) <- this host. The React app consumes it
 // through Vite's /api proxy, so no CORS is needed.
 
+#region composition
 var builder = WebApplication.CreateBuilder(args);
 
 string contentRoot = builder.Environment.ContentRootPath;
@@ -50,7 +51,9 @@ app.Services.GetRequiredService<InventoryService>().GetAll();
 
 // The dataset is snake_case; keep the wire shape identical to the source file.
 var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+#endregion composition
 
+#region inventory-endpoint
 // All filters, sorting, and paging are optional GET parameters, applied
 // server-side. The default page is the top 100 by auction time (live and
 // ending soonest first). Responses are an envelope: { total, vehicles },
@@ -74,6 +77,7 @@ app.MapGet("/api/vehicles", (
         vehicles = result.Vehicles.Select(v => VehicleWire.ToWire(v, clock, wireFormat)).ToList(),
     }, wireFormat);
 });
+#endregion inventory-endpoint
 
 // Dropdown values, computed from the full dataset (the page only ever holds a slice).
 app.MapGet("/api/facets", (InventoryService inventory) =>
@@ -90,6 +94,7 @@ app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, s
         : Results.NotFound();
 });
 
+#region bid-endpoints
 // ---------------------------------------------------------------------------
 // Bidding, validated server-side by the domain's BidRules. Single anonymous
 // buyer; state lives in API memory (isolated demo).
@@ -116,6 +121,7 @@ app.MapDelete("/api/bids", (BidService bids) =>
     bids.Reset();
     return Results.NoContent();
 });
+#endregion bid-endpoints
 
 // ---------------------------------------------------------------------------
 // Documents: every markdown the sidebar can open, served from one endpoint.
@@ -151,6 +157,7 @@ app.MapGet("/api/docs/resume", () =>
 app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, commit = buildCommit }));
 #endregion version-endpoint
 
+#region bid-handling
 IResult HandleBid(
     InventoryService inventory,
     BidService bids,
@@ -179,6 +186,7 @@ IResult HandleBid(
         vehicle = VehicleWire.ToWire(bids.Apply(vehicle), clock, wireFormat),
     }, wireFormat);
 }
+#endregion bid-handling
 
 // ---------------------------------------------------------------------------
 // Observability (ADR-010, roughed in 2026-09-01). Three surfaces feed the
@@ -194,6 +202,7 @@ var azureSelf = new AzureSelf(
     builder.Configuration["Azure:SelfResourceId"]
         ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
 
+#region error-log
 app.Use(async (context, next) =>
 {
     try
@@ -210,6 +219,7 @@ app.Use(async (context, next) =>
         throw;
     }
 });
+#endregion error-log
 
 #region health-checks
 HealthCheckEntry[] RunChecks()
@@ -231,6 +241,7 @@ HealthCheckEntry[] RunChecks()
 }
 #endregion health-checks
 
+#region probes
 app.MapGet("/healthz", () => Results.Text("ok"));
 
 app.MapGet("/readyz", () =>
@@ -248,6 +259,7 @@ app.MapGet("/api/health", () =>
         checks,
     }, wireFormat);
 });
+#endregion probes
 
 app.MapGet("/api/errors", () => Results.Json(errorLog.Snapshot(), wireFormat));
 
@@ -302,6 +314,7 @@ app.MapFallbackToFile("{*path:nonfile}", "index.html");
 
 app.Run();
 
+#region find-upward
 static string FindUpward(string startDirectory, string relativePath)
 {
     for (var dir = new DirectoryInfo(startDirectory); dir is not null; dir = dir.Parent)
@@ -314,7 +327,9 @@ static string FindUpward(string startDirectory, string relativePath)
     }
     throw new FileNotFoundException($"Could not locate {relativePath} in or above {startDirectory}");
 }
+#endregion find-upward
 
+#region records-and-test-hook
 /// <summary>Bid submission: the amount plus the client's clock anchor.</summary>
 public sealed record BidRequest(int Amount, long? AnchorMs);
 
@@ -323,3 +338,4 @@ public sealed record BuyNowRequest(long? AnchorMs);
 
 // Exposes the entry point to WebApplicationFactory for integration tests.
 public partial class Program;
+#endregion records-and-test-hook

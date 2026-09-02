@@ -135,6 +135,23 @@ the image copies them, and the rejection tests gained cases for the
 neighbors that stay out (`.env`, the lock file, anything under `docs/`).
 The string check still runs before any filesystem touch.
 
+## Addendum, 2026-09-02: whole files, for the ones that cannot carry a marker
+
+The two records written for a new developer (ADR: Program.cs, explained
+and ADR: The React configuration, explained) show package.json, index.html
+and the three tsconfig files. package.json is strict JSON and cannot hold a
+comment marker, and the others are small enough that a region would be the
+whole file anyway. A live block may now say `region=*`, which renders the
+whole file with a link to its first line; the star can never collide with
+a real region because names are letters, digits, dots and dashes. The three
+tsconfig files joined the named root files, the image copies them, and the
+tests gained the whole-file case. The test itself is not shown here on
+purpose: its source spells out a live fence, and a record that showed it
+would fail the check that no fence is left in a served document.
+
+```live path=api/TheBlock.Api/LiveSamples.cs region=whole-file
+```
+
 ## The look, from the live site
 
 ![This record open in the app, scrolled to its first sample: the whitelist read from the running build, with the Live from line naming the file, the region and the commit](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-record-live.jpg)

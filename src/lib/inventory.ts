@@ -43,8 +43,9 @@ export const SORT_OPTIONS: ReadonlyArray<{ value: SortKey; label: string }> = [
   { value: 'most-bids', label: 'Most bids' },
 ];
 
+// #region url-state
 /**
- * The browser-facing filter serialization — the same names the API takes, so
+ * The browser-facing filter serialization: the same names the API takes, so
  * the address bar mirrors the API request. Used for both the URL bar and
  * (with the clock anchor appended) the actual fetch; see data.ts.
  */
@@ -97,6 +98,7 @@ export function filtersFromSearchParams(params: URLSearchParams): {
       : 'ending-soonest',
   };
 }
+// #endregion url-state
 
 export function countActiveFilters(filters: InventoryFilters): number {
   let count = 0;

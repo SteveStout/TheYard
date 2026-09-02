@@ -57,6 +57,24 @@ test('the Best Practices section opens the overview and its decision records', a
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: The staff review' })
   ).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // The two records for a new developer (ADR-018, ADR-019) render their first
+  // sample from the build and no fallback note anywhere.
+  await nav.getByRole('button', { name: 'ADR: Program.cs, explained' }).click();
+  const program = page.getByRole('dialog', { name: 'ADR: Program.cs, explained' });
+  await expect(program.getByRole('heading', { level: 1, name: 'ADR: Program.cs, explained' })).toBeVisible();
+  await expect(program.locator('pre code').first()).toContainText('FindUpward');
+  await expect(program.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
+  await nav.getByRole('button', { name: 'ADR: The React configuration, explained' }).click();
+  const react = page.getByRole('dialog', { name: 'ADR: The React configuration, explained' });
+  await expect(
+    react.getByRole('heading', { level: 1, name: 'ADR: The React configuration, explained' })
+  ).toBeVisible();
+  await expect(react.locator('pre code').first()).toContainText('"build": "tsc -b && vite build"');
+  await expect(react.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
 });
 
 test('the footer reports the running build', async ({ page }) => {

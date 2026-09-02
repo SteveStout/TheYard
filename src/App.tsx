@@ -169,8 +169,9 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, sort, reloadNonce]);
 
+  // #region url-mirror
   // Mirror the current view into the address bar: the filter GET parameters
-  // plus ?vehicle={id} when a detail page is open. replaceState here —
+  // plus ?vehicle={id} when a detail page is open. replaceState here, because
   // typing shouldn't pile up history entries; opening a tile pushes its own
   // entry (below) so the browser's Back button closes the detail view.
   const deepLinkPending = useRef(INITIAL_VEHICLE_ID !== null);
@@ -186,6 +187,7 @@ export default function App() {
       query ? `?${query}` : window.location.pathname
     );
   }, [filters, sort, selectedVehicle, adminOpen]);
+  // #endregion url-mirror
 
   // Restore a deep-linked detail view on first load (?vehicle={id}).
   useEffect(() => {
@@ -213,6 +215,7 @@ export default function App() {
     };
   }, []);
 
+  // #region back-forward
   // Browser Back/Forward: re-read the whole view from the URL.
   const selectedIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -238,6 +241,7 @@ export default function App() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+  // #endregion back-forward
 
   // While a status filter is active, membership drifts as auctions open and
   // close — re-ask the server periodically so the list stays honest.
@@ -279,6 +283,7 @@ export default function App() {
     [selectedVehicle, bids]
   );
 
+  // #region history
   // Open the detail at the top; restore the list scroll position on back.
   const listScrollY = useRef(0);
   const openVehicle = (vehicle: Vehicle) => {
@@ -300,6 +305,7 @@ export default function App() {
     const query = filtersToSearchParams(filters, sort).toString();
     window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
   };
+  // #endregion history
 
   useEffect(() => {
     window.scrollTo(0, selectedVehicle ? 0 : listScrollY.current);

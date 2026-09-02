@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// #region dev-server
 // The .NET API (api/) owns /api — data and vehicle photos. Proxying keeps the
 // browser same-origin, so the API needs no CORS configuration. The preview
 // server needs the same proxy or `npm run preview` breaks.
@@ -22,9 +23,10 @@ export default defineConfig({
   preview: {
     proxy: apiProxy,
   },
+  // #endregion dev-server
   // #region unit-tests
   test: {
-    // Unit tests only — tests/e2e belongs to Playwright.
+    // Unit tests only; tests/e2e belongs to Playwright.
     include: ['src/**/*.test.ts'],
     // Vitest blanks CSS imports it is not told to process. tokens.test.ts reads
     // the palette file raw to measure its contrast, so that one goes through.

@@ -27,7 +27,9 @@ export type DocKey =
   | 'adrLiveSamples'
   | 'adrCaching'
   | 'adrPalette'
-  | 'adrReview';
+  | 'adrReview'
+  | 'adrProgram'
+  | 'adrReact';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
@@ -64,6 +66,8 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrCaching: { title: 'ADR: Cache headers', menuLabel: 'ADR: Cache headers', url: '/api/docs/adr-caching', kind: 'adr' },
   adrPalette: { title: 'ADR: The palette', menuLabel: 'ADR: The palette', url: '/api/docs/adr-palette', kind: 'adr' },
   adrReview: { title: 'ADR: The staff review', menuLabel: 'ADR: The staff review', url: '/api/docs/adr-review', kind: 'adr' },
+  adrProgram: { title: 'ADR: Program.cs, explained', menuLabel: 'ADR: Program.cs, explained', url: '/api/docs/adr-program', kind: 'adr' },
+  adrReact: { title: 'ADR: The React configuration, explained', menuLabel: 'ADR: The React configuration, explained', url: '/api/docs/adr-react', kind: 'adr' },
 };
 // #endregion docs-record
 
@@ -107,6 +111,8 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrCaching', sub: true },
       { key: 'adrPalette', sub: true },
       { key: 'adrReview', sub: true },
+      { key: 'adrProgram', sub: true },
+      { key: 'adrReact', sub: true },
     ],
   },
   // #region menu-changelog

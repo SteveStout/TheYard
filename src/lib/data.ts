@@ -101,6 +101,7 @@ export function peekVehicles(filters?: InventoryFilters, sort?: SortKey): Vehicl
   return cachedPage(cacheKey(filters, sort));
 }
 
+// #region fetch-vehicles
 export interface FetchVehiclesOptions {
   sort?: SortKey;
   offset?: number;
@@ -137,6 +138,7 @@ export async function fetchVehicles(
   }
   return page;
 }
+// #endregion fetch-vehicles
 
 /** One vehicle by id, or null when it doesn't exist — backs detail deep links. */
 export async function fetchVehicleById(id: string, signal?: AbortSignal): Promise<Vehicle | null> {

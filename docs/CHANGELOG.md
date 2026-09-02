@@ -5,6 +5,7 @@ footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Best Practices menu.
 
+- **1.0.0.24** (2026-09-02): Two records written for a new developer walk Program.cs and the React configuration top to bottom with the why beside every choice and the code read from the build, and a live sample can now show a whole file (ADR-018, ADR-019).
 - **1.0.0.23** (2026-09-02): The Hosting page and the README gained an infrastructure diagram, the records gained screenshots from the live site and more live code, and the documenting rule was written down (ADR-006 addendum).
 - **1.0.0.22** (2026-09-02): A staff-level review of the day's work landed its corrections (one documents endpoint over a catalog, honest failure states on the Admin tab, the phone header's way home from Admin) and every decision record gained a map of the files it decided (ADR-017).
 - **1.0.0.21** (2026-09-02): The whole site repainted to Figma's Urban slate, gray, brown and blue, with every text and ground pair measured against WCAG AA (ADR-016).

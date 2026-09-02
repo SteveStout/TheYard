@@ -40,6 +40,8 @@ public static class DocsCatalog
         ["adr-caching"] = "docs/ADR-015-cache-headers.md",
         ["adr-palette"] = "docs/ADR-016-palette.md",
         ["adr-review"] = "docs/ADR-017-staff-review.md",
+        ["adr-program"] = "docs/ADR-018-program-cs-explained.md",
+        ["adr-react"] = "docs/ADR-019-react-configuration-explained.md",
     };
     // #endregion docs-catalog
 }

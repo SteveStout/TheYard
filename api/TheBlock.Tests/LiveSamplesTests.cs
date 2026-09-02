@@ -65,6 +65,7 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     [InlineData("edge/_redirects")]
     [InlineData("Dockerfile")]
     [InlineData("netlify.toml")]
+    [InlineData("tsconfig.app.json")]
     public void Paths_under_the_roots_and_the_named_root_files_are_allowed(string path)
     {
         Assert.True(LiveSamples.IsAllowedPath(path));
@@ -85,6 +86,20 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
         Assert.DoesNotContain("const before", expanded);
         Assert.StartsWith("# Doc\n\nBefore.\n\n", expanded);
         Assert.EndsWith("\n\nAfter.\n", expanded);
+    }
+
+    [Fact]
+    public void A_star_region_shows_the_whole_file_with_a_first_line_link()
+    {
+        string root = TempRepo();
+        string doc = "```live path=src/sample.ts region=*\n```\n";
+
+        string expanded = LiveSamples.Expand(doc, root, "abc1234");
+
+        Assert.StartsWith("```ts\nconst before = 1;\n", expanded);
+        Assert.Contains("const after = 2;\n```\n", expanded);
+        Assert.Contains("blob/abc1234/src/sample.ts#L1-L7", expanded);
+        Assert.DoesNotContain("Sample unavailable", expanded);
     }
 
     [Fact]

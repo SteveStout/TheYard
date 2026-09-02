@@ -22,7 +22,7 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
-- **Decisions get written down.** Seventeen ADRs record why the architecture is
+- **Decisions get written down.** Nineteen ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -60,3 +60,8 @@ footer displays exactly that.
   over each day's work, every finding written down as kept, fixed or
   deferred, and the fixes shipped with tests. Recorded in ADR: The staff
   review.
+- **The configuration explains itself.** Two records walk Program.cs and
+  the React configuration file by file at a new developer's level, the why
+  beside every choice and the code read from the running build. Recorded
+  in ADR: Program.cs, explained and ADR: The React configuration,
+  explained.
