@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -28,6 +29,35 @@ public class AdminEndpointTests(WebApplicationFactory<Program> factory)
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("ready", await response.Content.ReadAsStringAsync());
     }
+
+    // #region error-eviction
+    [Fact]
+    public async Task A_flood_of_browser_reports_cannot_push_out_a_server_error()
+    {
+        // The endpoint that throws on purpose, so there is a real server error
+        // in the buffer to try to lose.
+        var failed = await _client.GetAsync("/api/admin/selftest/exception");
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
+
+        // More browser reports than the whole buffer used to hold. Anybody can
+        // send these: the endpoint is anonymous on purpose, so that a crash in
+        // the page reaches the same place a crash in the server does.
+        for (int i = 0; i < 60; i++)
+        {
+            var posted = await _client.PostAsJsonAsync(
+                "/api/errors/client", new { message = $"flood {i}", path = "/?flood=1" });
+            Assert.Equal(HttpStatusCode.NoContent, posted.StatusCode);
+        }
+
+        string body = await _client.GetStringAsync("/api/errors");
+
+        // Still one list, and the server error is still in it. Sharing fifty
+        // slots, sixty anonymous posts erased every real error on the page an
+        // operator would open during an outage.
+        Assert.Contains("selftest", body, StringComparison.Ordinal);
+        Assert.Contains("browser: flood 59", body, StringComparison.Ordinal);
+    }
+    // #endregion error-eviction
 
     // #region readiness-and-health
     [Fact]

@@ -759,6 +759,18 @@ IResult HandleBid(
 
 var startedAt = DateTimeOffset.UtcNow;
 var errorLog = new ErrorRingBuffer(50);
+// #region two-rings
+// Browser reports get their own fifty slots rather than sharing the server's.
+//
+// One list was the decision (ADR: Browser errors land where server errors do)
+// and it still is: the Admin tab shows them merged, because one place to look is
+// the point. What changed is where they are kept. POST /api/errors/client is
+// anonymous by design, and while the message and the stack were bounded, the
+// number of reports was not, so fifty posts from anybody evicted every real
+// server error from the page an operator would use to diagnose an outage. A
+// separate ring means a flood of reports can only push out other reports.
+var browserErrors = new ErrorRingBuffer(50);
+// #endregion two-rings
 // Identifiers, not secrets: the identity's client id and this group's ARM path.
 var azureSelf = new AzureSelf(
     builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
@@ -782,7 +794,20 @@ app.Use(async (context, next) =>
     }
     catch (Exception ex)
     {
-        errorLog.Record(context.Request.Path, 500, ex.GetType().Name + ": " + ex.Message);
+        // The type, not the message.
+        //
+        // This buffer is served at /api/errors, unauthenticated, and an
+        // exception message is where a framework writes a filesystem path, a
+        // connection detail, or the value that broke a constraint. The
+        // ProblemDetails handler two regions up already refuses to put one in a
+        // response for exactly that reason, and this line was quietly putting
+        // the same text on a public page through a different door.
+        //
+        // The message is not lost. It goes to the console and to Application
+        // Insights as a structured exception, where it is behind a sign-in
+        // (ADR: Reviewing my own work, which caught the same defect in the log
+        // buffer and missed this one).
+        errorLog.Record(context.Request.Path, 500, ex.GetType().Name);
         throw;
     }
 });
@@ -876,7 +901,13 @@ app.MapGet("/api/health", () =>
 });
 #endregion probes
 
-app.MapGet("/api/errors", () => Results.Json(errorLog.Snapshot(), wireFormat));
+// Both rings, merged newest first, so the page is still one list.
+app.MapGet("/api/errors", () => Results.Json(
+    errorLog.Snapshot()
+        .Concat(browserErrors.Snapshot())
+        .OrderByDescending(entry => entry.At)
+        .ToArray(),
+    wireFormat));
 
 #region admin-observability-endpoints
 // The raw SQL, newest first. Statement text, parameter names and types, how
@@ -950,7 +981,7 @@ app.MapPost("/api/errors/client", (ClientErrorReport report, ILoggerFactory logg
     // Insights, so both get a ceiling (the staff review, 2026-09-03).
     string stack = report.Stack is null ? "" : (report.Stack.Length > 2_000 ? report.Stack[..2_000] : report.Stack);
     string where = string.IsNullOrWhiteSpace(report.Path) ? "(browser)" : report.Path;
-    errorLog.Record(where, 0, "browser: " + message);
+    browserErrors.Record(where, 0, "browser: " + message);
     // The same report goes to Application Insights as a structured log, so a
     // browser error is searchable beside the server's own (ADR-024). Logging
     // rather than posting from the browser keeps the page free of a second

@@ -150,6 +150,49 @@ divergence. And the readiness split itself was sound, including that
 `GatesReadiness` defaults to true so a check added later gates by default rather
 than being silently excluded.
 
+## Addendum, later the same day: the same defect, one buffer over
+
+The review above found that a database exception's message reached a public page
+through the log ring, and the fix was to put the exception in the exception slot
+rather than inside a message template.
+
+There were two rings. The other one:
+
+```csharp
+catch (Exception ex)
+{
+    errorLog.Record(context.Request.Path, 500, ex.GetType().Name + ": " + ex.Message);
+    throw;
+}
+```
+
+`errorLog` is served at `/api/errors`, unauthenticated, and this is the catch
+that sees every unhandled exception in the application. So the same class of
+text, from a wider set of exceptions, was reaching the same kind of reader
+through a door nobody opened during the review, including mine.
+
+It is worth being precise about why it was missed. The review was asked to check
+`/api/admin/logs`, and it checked it thoroughly. `/api/errors` was older than the
+change under review, so it was outside the diff, and a review scoped to a diff
+sees a change rather than a system. That is usually the right scope. It is the
+wrong scope for a question of the form "can this kind of thing reach that kind of
+reader", because the answer depends on every path into the reader and not on the
+one that changed.
+
+The type only, now, with the message going to the console and Application
+Insights as a structured exception. The `ProblemDetails` handler two regions away
+has refused to put an exception message in a response since the day it was
+written, for exactly this reason, and it had two neighbours quietly doing it.
+
+The second finding in the same pass is smaller and the same shape. `POST
+/api/errors/client` is anonymous on purpose, so that a crash in the page reaches
+the same place a crash in the server does, and its message and stack were both
+bounded. The number of reports was not, and they shared the server's fifty slots,
+so fifty posts from anybody erased every real server error from the page an
+operator would open during an outage. Browser reports have their own fifty now.
+The Admin tab still shows one list, because one place to look was the decision
+and still is; what changed is that a flood can only push out other floods.
+
 ## Consequences
 
 - Nothing a database driver writes into an exception message can reach a public
