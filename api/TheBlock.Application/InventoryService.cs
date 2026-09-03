@@ -24,10 +24,17 @@ public sealed class InventoryService(
     IPhotoManifestSource manifestSource,
     string imagePathPrefix = "/api/images")
 {
-    private readonly Lazy<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById)> _inventory =
+    private readonly Lazy<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index)> _inventory =
         new(() => Build(vehicleSource, manifestSource, imagePathPrefix));
 
     public IReadOnlyList<Vehicle> GetAll() => _inventory.Value.All;
+
+    /// <summary>
+    /// The searchable text for the loaded dataset, built with it. Exposed
+    /// because the thing worth asserting about an index is that it covers the
+    /// dataset it was built from (ADR: Search index).
+    /// </summary>
+    public VehicleSearchIndex SearchIndex => _inventory.Value.Index;
 
     /// <summary>
     /// Vehicles matching <paramref name="filter"/> (statuses derived from
@@ -49,7 +56,15 @@ public sealed class InventoryService(
         {
             source = source.Select(overlay);
         }
-        var matched = source.Where(vehicle => filter.Matches(vehicle, clock));
+        // #region search
+        // Compile the filter once, then run the predicate down the rows. Both
+        // halves of the free-text comparison are precomputed by this point: the
+        // query's tokens by Compile, each vehicle's searchable text by the index
+        // built at load (ADR: Search index). What is left per row is a
+        // dictionary lookup and a substring test.
+        var matches = filter.Compile(clock, _inventory.Value.Index);
+        var matched = source.Where(matches);
+        // #endregion search
         var ordered = VehicleOrdering.Sort(matched, sort, clock).ToList();
         return new SearchResult(ordered.Count, ordered.Skip(offset).Take(limit).ToList());
     }
@@ -73,12 +88,12 @@ public sealed class InventoryService(
     public Vehicle? GetById(string id) =>
         _inventory.Value.ById.TryGetValue(id, out var vehicle) ? vehicle : null;
 
-    private static (IReadOnlyList<Vehicle>, IReadOnlyDictionary<string, Vehicle>) Build(
+    private static (IReadOnlyList<Vehicle>, IReadOnlyDictionary<string, Vehicle>, VehicleSearchIndex) Build(
         IVehicleSource vehicleSource,
         IPhotoManifestSource manifestSource,
         string imagePathPrefix)
     {
-        // Key pools by lowercase style — PhotoGallery looks them up lowercased,
+        // Key pools by lowercase style, because PhotoGallery looks them up lowercased,
         // so a capitalized style in the manifest must not silently miss.
         var pools = manifestSource
             .Load()
@@ -98,6 +113,12 @@ public sealed class InventoryService(
             })
             .ToList();
 
-        return (vehicles, vehicles.ToDictionary(vehicle => vehicle.Id));
+        // The index is built here, with the dictionary, for the same reason the
+        // dictionary is: the work is identical for every request that follows,
+        // and after this point the vehicles never change (ADR: Search index).
+        return (
+            vehicles,
+            vehicles.ToDictionary(vehicle => vehicle.Id),
+            new VehicleSearchIndex(vehicles));
     }
 }

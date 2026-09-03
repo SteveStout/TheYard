@@ -53,6 +53,7 @@ export type DocKey =
   | 'adrGrouping'
   | 'adrErrors'
   | 'adrTelemetry'
+  | 'adrSearch'
   | 'architecture'
   | 'style';
 
@@ -104,6 +105,7 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrGrouping: { title: 'ADR: App Architecture section', menuLabel: 'ADR: App Architecture section', url: '/api/docs/adr-grouping', kind: 'adr' },
   adrErrors: { title: 'ADR: Error handling', menuLabel: 'ADR: Error handling', url: '/api/docs/adr-errors', kind: 'adr' },
   adrTelemetry: { title: 'ADR: Telemetry', menuLabel: 'ADR: Telemetry', url: '/api/docs/adr-telemetry', kind: 'adr' },
+  adrSearch: { title: 'ADR: The search index', menuLabel: 'ADR: The search index', url: '/api/docs/adr-search', kind: 'adr' },
 };
 // #endregion docs-record
 
@@ -156,6 +158,7 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrObservability', sub: true },
       { key: 'adrErrors', sub: true },
       { key: 'adrTelemetry', sub: true },
+      { key: 'adrSearch', sub: true },
       { key: 'adrPhone', sub: true },
       { key: 'adrChangelog', sub: true },
       { key: 'adrSidebar', sub: true },

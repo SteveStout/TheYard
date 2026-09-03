@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -29,7 +30,10 @@ public static partial class LiveSamples
     /// underscore, forward slashes), starts under an allowed root, and has no
     /// parent-directory segment anywhere. Pure string checks: no filesystem.
     /// </summary>
-    public static bool IsAllowedPath(string? path)
+    // NotNullWhen is the whole fix for the one nullable warning this build
+    // carried: the guard inside already proves path is not null when it
+    // returns true, and the attribute is how that proof reaches the caller.
+    public static bool IsAllowedPath([NotNullWhen(true)] string? path)
     {
         if (string.IsNullOrWhiteSpace(path) || !PlainPath().IsMatch(path))
         {

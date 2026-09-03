@@ -27,7 +27,7 @@ footer displays exactly that.
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
   walk the code.
-- **Decisions get written down.** Twenty-four ADRs record why the architecture is
+- **Decisions get written down.** Twenty-five ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -41,6 +41,11 @@ footer displays exactly that.
   structured JSON; a React error boundary turns a render crash into a page
   with a way out, and reports it to the same list the Admin tab reads.
   Recorded in ADR: Error handling.
+- **Work that does not depend on the request happens before it.** Each
+  vehicle's searchable text is built once when the dataset loads, and a query's
+  tokens once when the filter compiles, so a full-text scan of the hundred
+  thousand rows stopped rebuilding both per row. The suite carries the
+  measurement rather than the claim. Recorded in ADR: The search index.
 - **Telemetry outlives the container.** Every request, dependency and
   exception goes to Application Insights, browser errors included, and the
   Admin tab reads the last hour back with the container's own identity. The

@@ -10,7 +10,7 @@ auction rules.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-three decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-five decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -182,10 +182,11 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, twenty-three
+  data flow and infrastructure diagrams on their own zoomable pages, twenty-five
   decision records, the Bicep infrastructure, and my resume.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
-  alike), and the container group's own state read from Azure with a managed identity.
+  alike), the container group's own state read from Azure with a managed identity, and
+  the last hour of traffic as Application Insights recorded it.
 
 ## Strengths
 
@@ -210,6 +211,18 @@ each with its own changelog line and, where it decided something, its own record
   *Where:* `api/TheBlock.Application/InventoryService.cs` (`Search`),
   `api/TheBlock.Infrastructure/SyntheticVehicleSource.cs` (the 100k expansion),
   `src/App.tsx` (`loadMore`).
+- **A search that does its work once.** Both halves of a free-text comparison are
+  precomputed: each vehicle's searchable text when the dataset loads, each query's
+  tokens when the filter compiles. The version before this rebuilt both inside the
+  loop, so one search allocated a lowercase copy of nine fields a hundred thousand
+  times for a query typed once. The scan went from a 37 ms median to 17 ms across the
+  full dataset, measured by a test in the suite rather than asserted in prose. The
+  auction status stays out of the index on purpose, because the clock decides it, and
+  it is computed only for tokens the static text did not already satisfy.
+  *Where:* `api/TheBlock.Domain/VehicleSearchIndex.cs`, `VehicleFilter.cs`
+  (`Compile`), `api/TheBlock.Application/InventoryService.cs` (built with the
+  dataset), `api/TheBlock.Tests/SearchIndexBenchmarkTests.cs` (the measurement),
+  `VehicleSearchIndexTests.cs` (the indexed and unindexed paths must agree).
 - **One authoritative home for every business rule.** Auction windows, status, minimum
   increments, bid validation and buy-now precedence all live in `TheBlock.Domain` and
   nowhere else. The wire carries the derived facts (`auction_ends_at`, `min_next_bid`)
@@ -316,7 +329,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (139 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
+**API (164 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -364,18 +377,24 @@ The four promises this section made when the build started have all shipped:
    on every green push, and the production design (App Service behind Front Door) written
    in Bicep and deliberately undeployed, with the reason recorded.
 
+Two more came off the list afterwards, on time that was no longer the deadline's:
+
+5. **Application Insights.** Every request, dependency and exception the API handles is
+   traced, browser errors included, and the Admin tab reads the last hour back with the
+   container's own managed identity. The ingestion key is read from Azure at roll time
+   and is nowhere in this repository. Recorded in ADR: Telemetry.
+6. **Search indexing.** Each vehicle's searchable text is built once when the dataset
+   loads and each query's tokens once when the filter compiles, rather than both being
+   rebuilt for every one of the hundred thousand rows a scan touches. The scan halved,
+   measured by a test that ships with it. Recorded in ADR: The search index.
+
 What is genuinely still open, in priority order:
 
-- Application Insights for real telemetry: request, dependency and exception traces from
-  both the API and the browser, so the Admin tab reads from something durable instead of
-  an in-memory ring buffer that resets on every roll
 - Real-time updates (Server-Sent Events): push bid changes and auction closes so
   countdowns rotate expired rows out and "you have been outbid" moments become possible
 - Auth and per-user bid state, persisted; the single anonymous in-memory buyer is the
   demo shortcut
 - Simulated competing bidders so the high-bidder state can be lost, with outbid alerts
-- Search indexing: precompute each vehicle's lowercase haystack at startup instead of
-  rebuilding it per request (the biggest lever on the roughly 300 ms full-scan query)
 - A virtualized grid once Load More accumulates thousands of rows
 - Focus management on view switches (the detail page should receive keyboard focus),
   plus a fuller accessibility audit
