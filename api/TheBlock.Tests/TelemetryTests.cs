@@ -56,6 +56,45 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
+    public void The_query_avoids_the_three_things_that_made_the_first_one_a_400()
+    {
+        // 1.0.0.34's query did not parse, and none of the three causes is
+        // visible in C#: they are Kusto's rules. Holding them here is cheaper
+        // than another deploy to find out (ADR-024, second pass).
+        string kql = ReadQuery();
+
+        // `kind` is reserved. `part` is the label column instead.
+        Assert.DoesNotContain("kind =", kql);
+        Assert.Contains("part = \"requests\"", kql);
+        // A literal column belongs in extend; summarize takes aggregations.
+        foreach (string line in kql.Split('\n'))
+        {
+            if (line.Contains("| summarize", StringComparison.Ordinal))
+            {
+                Assert.DoesNotContain("part =", line);
+            }
+        }
+        // `success` is a string in the classic schema and a bool in the
+        // workspace one, so it is compared as text in both.
+        Assert.Contains("tostring(success)", kql);
+        Assert.DoesNotContain("success == false", kql);
+    }
+
+    /// <summary>
+    /// The query is private, which is right: it is an implementation detail of
+    /// the reader. Reflection is the narrow exception a test earns when the
+    /// alternative is making the field public for the test's convenience.
+    /// </summary>
+    private static string ReadQuery()
+    {
+        var field = typeof(TelemetryReader).GetField(
+            "Query",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.NotNull(field);
+        return (string)field!.GetRawConstantValue()!;
+    }
+
+    [Fact]
     public async Task A_browser_error_still_records_when_telemetry_is_off()
     {
         // The endpoint logs to Application Insights as well as the ring buffer

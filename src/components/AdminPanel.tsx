@@ -14,6 +14,7 @@ type AzureEvent = { name: string; count: number; last_at: string; message: strin
 type TelemetrySummary = { total: number; failed: number; p50_ms: number | null; p95_ms: number | null };
 type TelemetryRoute = { name: string; calls: number; avg_ms: number | null };
 type TelemetryException = { type: string; method: string; count: number; last_at: string };
+type TelemetryBrowser = { count: number; last_at: string };
 type Telemetry = {
   configured: boolean;
   available?: boolean;
@@ -22,6 +23,7 @@ type Telemetry = {
   summary?: TelemetrySummary;
   slowest?: TelemetryRoute[];
   exceptions?: TelemetryException[];
+  browser?: TelemetryBrowser;
 };
 type AzureState = {
   available: boolean;
@@ -209,6 +211,11 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
                 </span>
                 <span className={styles.mono}>
                   p95 {telemetry.summary?.p95_ms ?? 0} ms
+                </span>
+                {/* Steve asked for every React error, so the count of them is
+                    on the card rather than only in the portal. */}
+                <span className={pill((telemetry.browser?.count ?? 0) === 0)}>
+                  {telemetry.browser?.count ?? 0} browser
                 </span>
               </div>
               {telemetry.slowest && telemetry.slowest.length > 0 && (
