@@ -60,6 +60,8 @@ export type DocKey =
   | 'adrRecords'
   | 'adrExceptions'
   | 'adrVersionSource'
+  | 'adrMethod'
+  | 'aiDevelopment'
   | 'architecture'
   | 'style';
 
@@ -352,6 +354,19 @@ export const DOCS: Record<
     kind: 'adr',
     number: '031',
   },
+  adrMethod: {
+    title: 'ADR: Saying how it was built',
+    menuLabel: 'ADR: Saying how it was built',
+    url: '/api/docs/adr-method',
+    kind: 'adr',
+    number: '032',
+  },
+  aiDevelopment: {
+    title: 'How this was built',
+    menuLabel: 'How this was built',
+    url: '/api/docs/ai-development',
+    kind: 'overview',
+  },
 };
 // #endregion docs-record
 
@@ -366,7 +381,7 @@ export const MENUS: Record<
 > = {
   about: {
     label: 'About',
-    items: [{ key: 'readme' }],
+    items: [{ key: 'readme' }, { key: 'aiDevelopment' }],
   },
   // #region architecture-menu
   architecture: {
@@ -433,6 +448,7 @@ export const MENUS: Record<
       { key: 'adrRecords' },
       { key: 'adrExceptions' },
       { key: 'adrVersionSource' },
+      { key: 'adrMethod' },
     ],
   },
   // #endregion records-menu

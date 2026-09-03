@@ -54,6 +54,8 @@ public static class DocsCatalog
         ["adr-records"] = "docs/ADR-029-records-index.md",
         ["adr-exceptions"] = "docs/ADR-030-exception-handler.md",
         ["adr-version-source"] = "docs/ADR-031-version-from-changelog.md",
+        ["adr-method"] = "docs/ADR-032-ai-development.md",
+        ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };

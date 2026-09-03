@@ -108,6 +108,12 @@ footer displays exactly that.
   the one log line holding both. An endpoint throws on purpose so that path
   can be exercised against the live container rather than assumed. Recorded
   in ADR: The exception handler.
+- **The method is on the page, not implied.** How this was built, in the About
+  menu, states that this was written with heavy AI assistance, names the
+  criteria a reviewer should apply, and spends most of its length on the times
+  the work was wrong: eleven defects found in a self review, a check that
+  failed in CI on the command that had just passed locally, a guard that failed
+  the day after it was chosen. Recorded in ADR: Saying how it was built.
 - **The build cannot ship a version nothing describes.** The changelog's top
   line is where the deploy reads the version, so the footer and the file that
   documents the footer are the same string, and a ship that forgets its line

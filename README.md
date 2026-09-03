@@ -182,8 +182,10 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, thirty-one
-  decision records in one numbered index, the Bicep infrastructure, and my resume.
+  data flow and infrastructure diagrams on their own zoomable pages, thirty-two
+  decision records in one numbered index, the Bicep infrastructure, my resume, and
+  How this was built, which says plainly that an AI agent wrote most of this and
+  points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
   alike), the container group's own state read from Azure with a managed identity, and
   the last hour of traffic as Application Insights recorded it.
