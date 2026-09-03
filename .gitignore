@@ -17,3 +17,6 @@ playwright-output.txt
 # repository for review and deliberately not in it: these are full-page captures
 # of a page that changes every deploy, and a megabyte each.
 docs/images/shots/
+
+# Coverage output, written by the api job and by anybody running the same command.
+TestResults/

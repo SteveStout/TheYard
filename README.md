@@ -17,7 +17,7 @@ it has sent and how long the database took.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Fifty decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Fifty-one decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -86,6 +86,25 @@ npm run preview    # serve the production build
 CI (GitHub Actions, `.github/workflows/ci.yml`) runs all three suites on every push, and
 a green run on `main` builds the image and rolls the live container with no human step
 (`.github/workflows/deploy.yml`).
+
+The .NET suite is measured as well as run: **89.6% of lines and 71.7% of branches**,
+published as an annotation on every run so it can be read without a GitHub sign-in. The
+shape matters more than the total, and it is the shape the architecture predicts:
+
+| Project | Lines | Branches |
+| --- | ---: | ---: |
+| `TheYard.Data` | 100.0% | 100.0% |
+| `TheYard.Domain` | 98.8% | 97.9% |
+| `TheYard.Migrations.Sqlite` | 97.6% | 100.0% |
+| `TheYard.Infrastructure` | 93.8% | 89.3% |
+| `TheYard.Application` | 93.2% | 88.8% |
+| `TheYard.Api` | 78.2% | 64.1% |
+
+The rules and the use cases are the parts worth being sure about. The host is lowest
+because two of its classes talk to Azure with a managed identity, and CI has no Azure
+credential and is never getting one; what is worth asserting about those two is that they
+degrade rather than throw when the identity endpoint is not there, and that is tested
+(ADR: Counting what the tests cover).
 
 To refresh the photo set from Wikimedia Commons, run `node scripts/fetch_photos.mjs`.
 
@@ -205,7 +224,7 @@ each with its own changelog line and, where it decided something, its own record
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
   data flow, infrastructure and entity relationship diagrams on their own zoomable
-  pages, fifty decision records in one numbered index, the Bicep infrastructure, my resume, and
+  pages, fifty-one decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser

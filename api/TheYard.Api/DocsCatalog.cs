@@ -73,6 +73,7 @@ public static class DocsCatalog
         ["adr-reset"] = "docs/ADR-048-reset-is-one-persons.md",
         ["adr-room-account"] = "docs/ADR-049-the-room-needs-an-account.md",
         ["adr-lockout"] = "docs/ADR-050-a-password-guess-should-cost-something.md",
+        ["adr-coverage"] = "docs/ADR-051-counting-what-the-tests-cover.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",

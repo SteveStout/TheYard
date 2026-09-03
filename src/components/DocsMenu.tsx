@@ -79,6 +79,7 @@ export type DocKey =
   | 'adrReset'
   | 'adrRoomAccount'
   | 'adrLockout'
+  | 'adrCoverage'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -505,6 +506,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '050',
   },
+  adrCoverage: {
+    title: 'ADR: Counting what the tests cover',
+    menuLabel: 'ADR: Counting what tests cover',
+    url: '/api/docs/adr-coverage',
+    kind: 'adr',
+    number: '051',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -611,6 +619,7 @@ export const MENUS: Record<
       { key: 'adrReset' },
       { key: 'adrRoomAccount' },
       { key: 'adrLockout' },
+      { key: 'adrCoverage' },
     ],
   },
   // #endregion records-menu
