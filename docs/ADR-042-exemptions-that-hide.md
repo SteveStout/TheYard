@@ -182,6 +182,45 @@ everything else in this record from the other direction: not a check that asked
 an easier question, but a real check that could only be read by somebody with
 credentials, on a defect that only appeared where nobody was looking.
 
+## Correction, later the same day: it was not the machine
+
+The addendum above ends by saying the load wait was moved to every navigation.
+What it does not say, and what was said out loud at the time, is that three ship
+attempts in a row came back two green of three, and that this was attributed to
+the machine:
+
+> the local browser gate has stopped being a measuring instrument
+
+That call was made on real measurements. The same suite ran in 2.0 minutes at
+midday and 3.4 in the evening, and the .NET suite was unchanged, so something
+about the machine had changed. All of that was true and none of it was the cause.
+
+Since `openTheYard` started waiting for something that is there rather than for
+something that is gone, the browser suite has run twelve times in a row without a
+failure, at 1.7 to 1.9 minutes:
+
+```
+1.0.0.56   44 passed (1.8m)   44 passed (1.7m)
+1.0.0.57   44 passed (1.7m)   44 passed (1.7m)
+1.0.0.58   44 passed (1.8m)   44 passed (1.7m)
+1.0.0.59   44 passed (2.2m)   44 passed (1.9m)
+1.0.0.59b  44 passed (1.8m)   44 passed (1.7m)
+1.0.0.60   44 passed (1.8m)   44 passed (1.8m)
+```
+
+So the defect was the helper, and the slow evening was a coincidence that fitted.
+The reasoning was written down honestly and it was still the wrong conclusion,
+which is worth keeping for a reason that has nothing to do with Playwright: a
+measurement that is real and an explanation that is true are different things,
+and having taken the trouble to measure makes the explanation feel earned. It
+should not. The measurement said the machine was slower. It never said the
+slowness was what broke the tests.
+
+The rule this leaves: an environmental explanation is the one to hold most
+loosely, because it is unfalsifiable in the moment and it exonerates the code.
+Ship on it if the alternative is worse, say so out loud as was done here, and
+then go back and check, which is what this paragraph is.
+
 ## What these five have in common
 
 Each one was a check that answered a slightly easier question than the one it was

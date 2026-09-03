@@ -76,6 +76,7 @@ export type DocKey =
   | 'adrSelfReview'
   | 'adrTheName'
   | 'adrSecondManifest'
+  | 'adrReset'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -481,6 +482,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '047',
   },
+  adrReset: {
+    title: "ADR: Reset is one person's start-over",
+    menuLabel: 'ADR: Reset belongs to one person',
+    url: '/api/docs/adr-reset',
+    kind: 'adr',
+    number: '048',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -584,6 +592,7 @@ export const MENUS: Record<
       { key: 'adrSelfReview' },
       { key: 'adrTheName' },
       { key: 'adrSecondManifest' },
+      { key: 'adrReset' },
     ],
   },
   // #endregion records-menu

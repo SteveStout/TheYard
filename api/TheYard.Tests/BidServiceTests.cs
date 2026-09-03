@@ -135,18 +135,57 @@ public class BidServiceTests
         Assert.Equal(28_000, state.Amount);
     }
 
+    // #region reset
     [Fact]
-    public void Reset_clears_every_bid()
+    public void Reset_clears_the_callers_bids_and_names_the_vehicles_it_touched()
     {
         var service = new BidService();
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
         service.PlaceBid(vehicle, 23_300, Now, Buyer);
 
-        service.Reset();
+        var touched = service.Reset(Buyer);
 
         Assert.Empty(service.SnapshotFor(Buyer));
         Assert.Equal(22_800, service.Apply(vehicle).CurrentBid);
+        // The caller passes these to the room, so the room's answers on the same
+        // vehicles go too.
+        Assert.Equal([vehicle.Id], touched);
     }
+
+    [Fact]
+    public void Reset_leaves_a_stranger_bidding_on_the_same_vehicle_alone()
+    {
+        // This is the whole point of the change. Before it, this endpoint took
+        // no user at all, so either of two visitors could delete the other's
+        // bids, on a site whose changelog says they can outbid each other and
+        // both be told the truth.
+        var service = new BidService();
+        var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
+        service.PlaceBid(vehicle, 23_300, Now, Buyer);
+        service.PlaceBid(vehicle, 24_000, Now, "somebody-else");
+
+        service.Reset(Buyer);
+
+        Assert.Empty(service.SnapshotFor(Buyer));
+        Assert.Single(service.SnapshotFor("somebody-else"));
+        // And the stranger keeps the lead they earned: the standing is
+        // recomputed from who is left rather than deleted with the caller.
+        var merged = service.Apply(vehicle);
+        Assert.Equal(24_000, merged.CurrentBid);
+    }
+
+    [Fact]
+    public void Reset_by_somebody_who_has_not_bid_touches_nothing()
+    {
+        var service = new BidService();
+        var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
+        service.PlaceBid(vehicle, 23_300, Now, Buyer);
+
+        Assert.Empty(service.Reset("a-stranger"));
+        Assert.Single(service.SnapshotFor(Buyer));
+        Assert.Equal(23_300, service.Apply(vehicle).CurrentBid);
+    }
+    // #endregion reset
 
     [Fact]
     public void Rejected_bids_leave_no_state_behind()

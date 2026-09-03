@@ -187,4 +187,22 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
     // #endregion tick
 
     public void Reset() => _bids.Clear();
+
+    /// <summary>
+    /// Forget the room's answers on these vehicles only.
+    ///
+    /// <para>The room's bids are shared, which is the reason the reset used to
+    /// clear everything: a reset that took away your bid and left the room's
+    /// counter-bid standing reads as a bug however carefully it is explained.
+    /// That reasoning is still right, and it only ever needed to apply to the
+    /// vehicles the person actually bid on
+    /// (ADR: Reset is one person's start-over).</para>
+    /// </summary>
+    public void Forget(IEnumerable<string> vehicleIds)
+    {
+        foreach (string id in vehicleIds)
+        {
+            _bids.TryRemove(id, out _);
+        }
+    }
 }

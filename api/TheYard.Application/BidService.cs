@@ -170,20 +170,68 @@ public sealed class BidService
         }
     }
 
+    // #region reset
     /// <summary>
-    /// The demo's start-over button. It clears everybody, not just the caller,
-    /// because the room's bids (ADR-027) are shared and a reset that left half
-    /// of an auction standing reads as a bug however carefully it is explained.
+    /// One person's start-over.
+    ///
+    /// <para>This used to clear everybody, and the comment explaining why was
+    /// honest about it: the room's bids are shared, and a reset that took away
+    /// your bid while leaving the room's counter-bid standing reads as a bug
+    /// however carefully it is explained. That was written when a bid belonged
+    /// to a browser. Since bids got owners and a database, it meant any signed
+    /// in visitor could delete every other visitor's rows, on a site whose own
+    /// changelog says two visitors can outbid each other and both be told the
+    /// truth (ADR: Reset is one person's start-over).</para>
+    ///
+    /// <para>The original reasoning survives, narrowed to the vehicles the
+    /// caller actually touched: their bids go, the room's answers on those same
+    /// vehicles go with them, and each of those vehicles gets its standing
+    /// recomputed from whoever is left rather than deleted, so a stranger who
+    /// bid on the same car keeps their bid and keeps the lead they earned.</para>
+    ///
+    /// <para>Returns the vehicles it touched, which the caller passes to the
+    /// room. The room is a separate service and this one does not reach into
+    /// it.</para>
     /// </summary>
-    public void Reset()
+    public IReadOnlyList<string> Reset(string userId)
     {
         lock (_gate)
         {
-            _store.Clear();
-            _standing.Clear();
-            _byUser.Clear();
+            if (!_byUser.TryRemove(userId, out var mine))
+            {
+                return [];
+            }
+
+            string[] touched = mine.Keys.ToArray();
+            _store.Clear(userId);
+
+            foreach (string vehicleId in touched)
+            {
+                // Recomputed, not removed. Removing it would hand the vehicle
+                // back to its opening ask and quietly delete a third person's
+                // bid, which is the same defect one size smaller.
+                var best = _byUser
+                    .Select(user => user.Value.TryGetValue(vehicleId, out var state) ? (user.Key, state) : (null, null))
+                    .Where(pair => pair.Item2 is not null)
+                    .OrderByDescending(pair => pair.Item2!.Amount)
+                    .ThenBy(pair => pair.Item2!.AtMs)
+                    .FirstOrDefault();
+
+                if (best.Item1 is null)
+                {
+                    _standing.TryRemove(vehicleId, out _);
+                    continue;
+                }
+
+                var state = best.Item2!;
+                _standing[vehicleId] = new VehicleStanding(
+                    state.Amount, state.BidCount, best.Item1, state.WonBuyNow, state.AtMs);
+            }
+
+            return touched;
         }
     }
+    // #endregion reset
 
     // #region record
     /// <summary>

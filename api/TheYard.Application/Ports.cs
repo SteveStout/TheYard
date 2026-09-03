@@ -32,7 +32,12 @@ public interface IBidStore
 
     void Save(string userId, string vehicleId, BidState state);
 
-    void Clear();
+    /// <summary>
+    /// Forget one person's bids. Not everybody's: this is what the reset button
+    /// on a page a stranger can also be looking at is allowed to do
+    /// (ADR: Reset is one person's start-over).
+    /// </summary>
+    void Clear(string userId);
 }
 
 /// <summary>
@@ -54,7 +59,7 @@ public sealed class NullBidStore : IBidStore
     {
     }
 
-    public void Clear()
+    public void Clear(string userId)
     {
     }
 }

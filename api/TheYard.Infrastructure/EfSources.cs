@@ -198,10 +198,13 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
         db.SaveChanges();
     }
 
-    public void Clear()
+    public void Clear(string userId)
     {
         using var db = factory.CreateDbContext();
-        db.Bids.ExecuteDelete();
+        // One person's rows. ExecuteDelete over the whole table was what this
+        // did, which on a site two strangers can be looking at meant either of
+        // them could delete the other's (ADR: Reset is one person's start-over).
+        db.Bids.Where(bid => bid.UserId == userId).ExecuteDelete();
     }
     // #endregion bid-store
 }

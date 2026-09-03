@@ -606,13 +606,20 @@ app.MapPost("/api/market/tick", (
 });
 #endregion market-endpoints
 
-app.MapDelete("/api/bids", (BidService bids, MarketService market) =>
+app.MapDelete("/api/bids", (BidService bids, MarketService market, HttpContext http) =>
 {
-    bids.Reset();
-    // The room resets with the buyer. Leaving its bids standing would mean the
-    // reset button clears your side of an auction and not the other one, which
-    // reads as a bug however carefully it is explained.
-    market.Reset();
+    if (http.UserIdOrNull() is not { } userId)
+    {
+        return Results.Unauthorized();
+    }
+
+    // The caller's bids, and the room's answers on the vehicles the caller
+    // touched. The room resets with the buyer, because leaving its bids
+    // standing would mean the reset button clears your side of an auction and
+    // not the other one. What it no longer does is clear anybody else's: this
+    // endpoint used to take no user at all (ADR: Reset is one person's
+    // start-over).
+    market.Forget(bids.Reset(userId));
     return Results.NoContent();
 }).RequireAuthorization();
 #endregion bid-endpoints

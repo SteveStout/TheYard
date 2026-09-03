@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
-import { signIn } from './signIn';
+import { bidTheMinimum } from './bidding';
 
 /**
  * Smokes over the real stack: Vite → proxy → .NET API → 100k synthetic
@@ -145,20 +145,14 @@ test('a transient API failure shows the stale banner and Retry recovers', async 
 });
 
 test('a bid round-trips through the API and survives a reload', async ({ page }) => {
-  await signIn(page);
-  // Sort by most bids: the top card is live with a window ending hours or
-  // days out (the default sort's first card can expire within seconds).
-  await openTheYard(page, '/?status=live&sort=most-bids');
-  await page.waitForSelector('article');
-
-  await page.locator('article h3 button').first().click();
-  await expect(page.getByText('Specifications')).toBeVisible();
-  const min = await page.locator('#bid-amount').getAttribute('placeholder');
-  await page.locator('#bid-amount').fill(min!);
-  await page.getByRole('button', { name: 'Place bid' }).click();
-  // A minimum bid is normally accepted, but when min_next_bid crosses the
-  // vehicle's buy-now price, the rules award an instant win. Both are valid.
-  await expect(page.getByText(/You're the high bidder|You bought this vehicle/)).toBeVisible();
+  test.setTimeout(90_000);
+  // Signs in, opens a live vehicle and bids the minimum, reading it again if the
+  // room raised the price in between. This test used to do that itself, once,
+  // with no retry, and pass: market.spec's reset was clearing the simulated room
+  // globally, so there was nothing bidding against it. Scoping that reset to its
+  // own user took the crutch away and this failed twice in a row
+  // (ADR: Reset is one person's start-over).
+  await bidTheMinimum(page);
 
   // Server-side state: still the high bidder after a full reload.
   await page.reload();
