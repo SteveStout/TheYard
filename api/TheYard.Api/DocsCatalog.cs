@@ -71,6 +71,7 @@ public static class DocsCatalog
         ["adr-the-name"] = "docs/ADR-046-the-name.md",
         ["adr-second-manifest"] = "docs/ADR-047-the-second-manifest.md",
         ["adr-reset"] = "docs/ADR-048-reset-is-one-persons.md",
+        ["adr-room-account"] = "docs/ADR-049-the-room-needs-an-account.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",

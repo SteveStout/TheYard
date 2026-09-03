@@ -77,6 +77,7 @@ export type DocKey =
   | 'adrTheName'
   | 'adrSecondManifest'
   | 'adrReset'
+  | 'adrRoomAccount'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -489,6 +490,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '048',
   },
+  adrRoomAccount: {
+    title: 'ADR: The room needs an account too',
+    menuLabel: 'ADR: The room needs an account',
+    url: '/api/docs/adr-room-account',
+    kind: 'adr',
+    number: '049',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -593,6 +601,7 @@ export const MENUS: Record<
       { key: 'adrTheName' },
       { key: 'adrSecondManifest' },
       { key: 'adrReset' },
+      { key: 'adrRoomAccount' },
     ],
   },
   // #endregion records-menu

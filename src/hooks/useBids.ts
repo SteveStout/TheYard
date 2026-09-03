@@ -80,6 +80,13 @@ export function useBids(onMutate?: () => void, accountKey?: string | null) {
   // onMutate fires only when something actually moved, so a quiet round costs
   // one small request and no rerender of the grid.
   useEffect(() => {
+    // And not while signed out. The room bids against the standing price rather
+    // than against a person, but advancing it is now something only an account
+    // can do (ADR: The room needs an account too), so a signed-out tab polling
+    // every eight seconds would be asking for a 401 forever. A visitor who has
+    // not signed in has nothing bidding against them, which is the honest state
+    // rather than a missing feature.
+    if (!accountKey) return;
     let cancelled = false;
     const id = window.setInterval(() => {
       if (document.hidden || inFlight.current) return;
@@ -99,7 +106,7 @@ export function useBids(onMutate?: () => void, accountKey?: string | null) {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [onMutate]);
+  }, [onMutate, accountKey]);
   // #endregion market-loop
 
   const placeBid = useCallback(

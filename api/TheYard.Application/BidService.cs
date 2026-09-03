@@ -189,9 +189,13 @@ public sealed class BidService
     /// recomputed from whoever is left rather than deleted, so a stranger who
     /// bid on the same car keeps their bid and keeps the lead they earned.</para>
     ///
-    /// <para>Returns the vehicles it touched, which the caller passes to the
-    /// room. The room is a separate service and this one does not reach into
-    /// it.</para>
+    /// <para>Returns the vehicles that have nobody bidding on them any more,
+    /// which the caller passes to the room. Not every vehicle the caller
+    /// touched: the first version of this returned all of them, and "vehicles
+    /// this person bid on" is not "vehicles only this person bid on", so
+    /// clearing the room's answer on a shared car took away a stranger's outbid
+    /// badge and dropped the price a stranger was competing at. The room is a
+    /// separate service and this one does not reach into it.</para>
     /// </summary>
     public IReadOnlyList<string> Reset(string userId)
     {
@@ -203,6 +207,7 @@ public sealed class BidService
             }
 
             string[] touched = mine.Keys.ToArray();
+            var orphaned = new List<string>();
             _store.Clear(userId);
 
             foreach (string vehicleId in touched)
@@ -219,7 +224,11 @@ public sealed class BidService
 
                 if (best.Item1 is null)
                 {
+                    // Nobody left on this one, so the room's answer to it has
+                    // nothing to be an answer to. These are the only vehicles
+                    // the caller gets to clear the room on.
                     _standing.TryRemove(vehicleId, out _);
+                    orphaned.Add(vehicleId);
                     continue;
                 }
 
@@ -228,7 +237,7 @@ public sealed class BidService
                     state.Amount, state.BidCount, best.Item1, state.WonBuyNow, state.AtMs);
             }
 
-            return touched;
+            return orphaned;
         }
     }
     // #endregion reset

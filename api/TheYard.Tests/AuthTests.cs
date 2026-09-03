@@ -132,11 +132,18 @@ public class AuthTests : IDisposable
             $"/api/vehicles/{id}/buy-now", new { anchor_ms = anchor });
         var reset = await client.DeleteAsync("/api/bids");
         var history = await client.GetAsync("/api/bids/history");
+        // The room, too. This one was open, and it is the one that mattered
+        // most: it takes no user and it advances state derived from every
+        // account, so a stranger with curl and a loop could counter-bid every
+        // auction a signed-in visitor was winning, and nothing recorded who
+        // (ADR: The room needs an account too).
+        var tick = await client.PostAsJsonAsync("/api/market/tick", new { anchor_ms = anchor });
 
         Assert.Equal(HttpStatusCode.Unauthorized, bid.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, buyNow.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, reset.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, history.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, tick.StatusCode);
 
         // Reading is still open. An auction nobody can watch without signing up
         // is a worse demo and no safer.

@@ -490,8 +490,15 @@ app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, M
 
 #region bid-endpoints
 // ---------------------------------------------------------------------------
-// Bidding, validated server-side by the domain's BidRules. Single anonymous
-// buyer; state lives in API memory (isolated demo).
+// Bidding, validated server-side by the domain's BidRules.
+//
+// This used to say "single anonymous buyer; state lives in API memory (isolated
+// demo)", and every clause of it became false without the sentence changing. A
+// bid belongs to an account (ADR: Accounts and per-user bids) and lives in Azure
+// SQL Database (ADR: The SQL Server backend), so nothing in this region is
+// consequence-free and none of it is only the caller's to change. Two places
+// still read as though it were, and both are recorded: ADR: Reset is one
+// person's start-over, and ADR: The room needs an account too.
 // ---------------------------------------------------------------------------
 
 app.MapPost("/api/vehicles/{id}/bids", (
@@ -574,6 +581,14 @@ app.MapPost("/api/market/tick", (
     // price rather than a person, and a room that only responded to whoever
     // happened to be looking would stop being a room the moment there were two
     // of them.
+    //
+    // That is still the right rule for what the room bids against. It is not a
+    // reason for anybody at all to be allowed to advance it, which is what this
+    // endpoint used to permit: no account, no cookie, and a loop of these
+    // raises the price on every auction any signed-in visitor is winning, from
+    // a stranger with curl, with nothing in the request ring to attribute it to
+    // (ADR: The room needs an account too). Signing in is now the price of
+    // moving the room, which is the same price as bidding.
     var buyerBids = bids.StandingAsBids();
     // Candidates: everything the buyer is in on, plus a page of live auctions
     // so the grid moves even when the visitor has bid on nothing.
@@ -595,15 +610,15 @@ app.MapPost("/api/market/tick", (
         new
         {
             raised = raised.Count,
-            // The caller's own badges ride back with the tick when there is a
-            // caller, so a signed-in page does not need a second request to
-            // find out it has been outbid.
+            // The caller's own badges ride back with the tick, so a page does
+            // not need a second request to find out it has been outbid. There
+            // is always a caller now: the endpoint requires one.
             bids = http.UserIdOrNull() is { } me
                 ? BidViews.For(bids, market, me)
                 : new Dictionary<string, BidView>(StringComparer.Ordinal),
         },
         wireFormat);
-});
+}).RequireAuthorization();
 #endregion market-endpoints
 
 app.MapDelete("/api/bids", (BidService bids, MarketService market, HttpContext http) =>
@@ -706,8 +721,10 @@ IResult HandleBid(
         amount = outcome.Amount,
         // The room's answer rides back with the bid, so the badge is right
         // the moment the response lands rather than at the next tick.
-        // TryGetValue, not the indexer: DELETE /api/bids is public and can
-        // land between the bid being recorded and this line reading it back.
+        // TryGetValue, not the indexer: a reset can land between the bid being
+        // recorded and this line reading it back. That used to be any visitor's
+        // reset, because DELETE /api/bids took no user at all; it is now only
+        // this account's, from a second tab, which is rarer and just as real.
         bid = BidViews.For(bids, market, userId).TryGetValue(id, out var view) ? view : null,
         vehicle = VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat),
     }, wireFormat);

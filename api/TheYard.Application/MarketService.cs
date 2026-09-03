@@ -8,7 +8,7 @@ namespace TheYard.Application;
 public sealed record MarketBid(int Amount, int BidCount, long AtMs);
 
 /// <summary>
-/// The other bidders (ADR: Competing bidders). A demo with one anonymous buyer
+/// The other bidders (ADR: Competing bidders). A demo where nothing bids back
 /// has no way to lose: every bid is the high bid forever, the reserve badge
 /// never changes hands, and "you have been outbid" is a state the code can
 /// describe but never reach. This service is the room the buyer is bidding in.
@@ -194,8 +194,11 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
     /// <para>The room's bids are shared, which is the reason the reset used to
     /// clear everything: a reset that took away your bid and left the room's
     /// counter-bid standing reads as a bug however carefully it is explained.
-    /// That reasoning is still right, and it only ever needed to apply to the
-    /// vehicles the person actually bid on
+    /// That reasoning is right and it applies to fewer vehicles than it first
+    /// appears. The caller gets to clear the room only where nobody is bidding
+    /// any more, because a car somebody else is still competing for is not the
+    /// caller's to quiet: doing that took away a stranger's outbid badge and
+    /// dropped the price they were bidding against
     /// (ADR: Reset is one person's start-over).</para>
     /// </summary>
     public void Forget(IEnumerable<string> vehicleIds)

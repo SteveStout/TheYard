@@ -147,8 +147,7 @@ public class BidServiceTests
 
         Assert.Empty(service.SnapshotFor(Buyer));
         Assert.Equal(22_800, service.Apply(vehicle).CurrentBid);
-        // The caller passes these to the room, so the room's answers on the same
-        // vehicles go too.
+        // Nobody is bidding on it any more, so the room's answer to it goes too.
         Assert.Equal([vehicle.Id], touched);
     }
 
@@ -164,7 +163,7 @@ public class BidServiceTests
         service.PlaceBid(vehicle, 23_300, Now, Buyer);
         service.PlaceBid(vehicle, 24_000, Now, "somebody-else");
 
-        service.Reset(Buyer);
+        var orphaned = service.Reset(Buyer);
 
         Assert.Empty(service.SnapshotFor(Buyer));
         Assert.Single(service.SnapshotFor("somebody-else"));
@@ -172,6 +171,11 @@ public class BidServiceTests
         // recomputed from who is left rather than deleted with the caller.
         var merged = service.Apply(vehicle);
         Assert.Equal(24_000, merged.CurrentBid);
+        // And the room is not told to forget this one. It is still somebody's
+        // auction, and the room's answer is what that somebody is bidding
+        // against: clearing it would take away their outbid badge and drop the
+        // price, which is the same defect one size smaller again.
+        Assert.Empty(orphaned);
     }
 
     [Fact]
