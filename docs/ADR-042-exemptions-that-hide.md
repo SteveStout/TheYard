@@ -152,6 +152,36 @@ than the class passes the run in front of you and leaves the defect in place,
 and the second sighting is more expensive than the first because by then the
 first one is written down as solved.
 
+## Addendum, 2026-09-03: the check that could not be read
+
+Two CI runs failed and said nothing. The run page's only public words were
+"Process completed with exit code 1"; the report artifact holding the answer is
+253 KB and behind a GitHub sign-in.
+
+The first attempt at fixing that wrote the suite's output into a job summary,
+which also renders only for somebody signed in. The second attempt emitted
+annotations, which come back from the public API and sit at the top of the run
+page, and on its first red run it printed:
+
+```
+1) tests/e2e/axe.spec.ts:66:3 > WCAG 2.1 AA, on every view > the admin tab
+   Error: expect(received).toEqual(expected)
+   + Received  + 3
+   43 passed (1.8m)
+```
+
+Three violations, and three is the number of scrollable table containers the SQL
+section had just added. A box with `overflow-x: auto` and nothing focusable
+inside is a region a mouse can scroll and a keyboard cannot, which is WCAG 2.1.1
+and which axe names `scrollable-region-focusable`.
+
+It fires only when the box actually overflows. On a wide development window the
+tables fit, so eleven local runs of the suite reported nothing, and the runner's
+narrower viewport made all three overflow at once. That is the same species as
+everything else in this record from the other direction: not a check that asked
+an easier question, but a real check that could only be read by somebody with
+credentials, on a defect that only appeared where nobody was looking.
+
 ## What these five have in common
 
 Each one was a check that answered a slightly easier question than the one it was

@@ -341,7 +341,12 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
               {metrics.requests.p95_ms} ms. SQL p50 {metrics.sql.p50_ms} ms, p95{' '}
               {metrics.sql.p95_ms} ms, slowest {metrics.sql.max_ms} ms.
             </p>
-            <div className={styles.tableWrap}>
+            <div
+              className={styles.tableWrap}
+              role="region"
+              aria-label="Request timing by endpoint"
+              tabIndex={0}
+            >
               <table className={styles.table}>
                 <thead>
                   <tr>
@@ -391,7 +396,12 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
             container runs no SQL at all.
           </p>
         ) : (
-          <div className={styles.tableWrap}>
+          <div
+            className={styles.tableWrap}
+            role="region"
+            aria-label="SQL statements this application ran"
+            tabIndex={0}
+          >
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -447,7 +457,12 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
         ) : logs.length === 0 ? (
           <p className={styles.muted}>Nothing recorded since the container started.</p>
         ) : (
-          <div className={styles.tableWrap}>
+          <div
+            className={styles.tableWrap}
+            role="region"
+            aria-label="Recent log lines"
+            tabIndex={0}
+          >
             <table className={styles.table}>
               <thead>
                 <tr>
