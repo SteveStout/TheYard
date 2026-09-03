@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using TheBlock.Application;
 
 namespace TheBlock.Api;
@@ -18,15 +19,36 @@ namespace TheBlock.Api;
 /// </summary>
 public sealed class SqlRingBuffer(int capacity) : ISqlLog
 {
+    private readonly int _capacity = Math.Max(1, capacity);
     private readonly object _gate = new();
     private readonly Queue<SqlStatement> _entries = new();
 
+    /// <summary>
+    /// A statement the Admin tab caused by being looked at.
+    ///
+    /// The health check runs two SELECTs to prove the catalogue is in the
+    /// store, and an open Admin tab asks for it every thirty seconds. Kept,
+    /// those four statements a minute fill a two hundred slot ring in under an
+    /// hour and the section shows nothing but the act of reading it
+    /// (the staff review, 2026-09-03).
+    /// </summary>
+    private static bool SelfObservation(string? request) =>
+        request is not null
+        && (request.Contains("/api/admin/", StringComparison.Ordinal)
+            || request.EndsWith("/api/health", StringComparison.Ordinal)
+            || request.EndsWith("/readyz", StringComparison.Ordinal));
+
     public void Record(SqlStatement statement)
     {
+        if (SelfObservation(statement.Request))
+        {
+            return;
+        }
+
         lock (_gate)
         {
             _entries.Enqueue(statement);
-            while (_entries.Count > capacity)
+            while (_entries.Count > _capacity)
             {
                 _entries.Dequeue();
             }
@@ -48,6 +70,7 @@ public sealed record LogEntry(DateTimeOffset At, string Level, string Category, 
 /// <summary>Fixed-size, thread-safe ring of recent log lines.</summary>
 public sealed class LogRingBuffer(int capacity)
 {
+    private readonly int _capacity = Math.Max(1, capacity);
     private readonly object _gate = new();
     private readonly Queue<LogEntry> _entries = new();
 
@@ -56,7 +79,7 @@ public sealed class LogRingBuffer(int capacity)
         lock (_gate)
         {
             _entries.Enqueue(entry);
-            while (_entries.Count > capacity)
+            while (_entries.Count > _capacity)
             {
                 _entries.Dequeue();
             }
@@ -74,14 +97,38 @@ public sealed class LogRingBuffer(int capacity)
 
 /// <summary>
 /// A logging provider that writes into <see cref="LogRingBuffer"/>, so the
-/// Admin tab shows the same lines the console does rather than a summary of
-/// them. It stores the formatted message and the exception's type, never the
-/// exception's message: a provider's exception text can quote the value that
-/// broke a constraint, and this page is public.
+/// Admin tab shows the lines this application writes rather than a summary of
+/// them.
+///
+/// <para>Two rules, both because the page it feeds is public.</para>
+///
+/// <para>It stores the formatted message and the exception's <em>type</em>,
+/// never the exception's message. A database driver writes the server name, the
+/// login name and the caller's IP address into an exception message.</para>
+///
+/// <para>And it captures only the categories <see cref="Captured"/> lists. The
+/// framework's own categories are not on that list and the reason is specific:
+/// on a completely healthy container, <c>Microsoft.Hosting.Lifetime</c>
+/// announces the content root and <c>Microsoft.AspNetCore.DataProtection</c>
+/// warns about the directory it keeps keys in. Those are server filesystem
+/// paths, they are written before anything goes wrong, and nothing in this
+/// application chose to publish them. An allow-list rather than a deny-list, so
+/// a dependency added next year is silent here by default rather than public by
+/// default (the staff review, 2026-09-03).</para>
 /// </summary>
 public sealed class RingBufferLoggerProvider(LogRingBuffer buffer) : ILoggerProvider
 {
-    public ILogger CreateLogger(string categoryName) => new RingLogger(buffer, categoryName);
+    /// <summary>
+    /// Whose log lines reach the Admin tab: this application's own, and the one
+    /// framework category the SQL section exists to show.
+    /// </summary>
+    public static bool Captured(string category) =>
+        category.StartsWith("TheBlock.", StringComparison.Ordinal)
+        || category.StartsWith("TheYard.", StringComparison.Ordinal)
+        || category == "Microsoft.EntityFrameworkCore.Database.Command";
+
+    public ILogger CreateLogger(string categoryName) =>
+        Captured(categoryName) ? new RingLogger(buffer, categoryName) : NullLogger.Instance;
 
     public void Dispose() { }
 
@@ -116,6 +163,9 @@ public sealed record RequestEntry(DateTimeOffset At, string Method, string Path,
 /// <summary>Fixed-size, thread-safe ring of recent requests and their timings.</summary>
 public sealed class RequestRingBuffer(int capacity)
 {
+    // Zero would make the drain loop dequeue an empty queue and throw, inside a
+    // logger or an interceptor, where an exception is somebody else's bad day.
+    private readonly int _capacity = Math.Max(1, capacity);
     private readonly object _gate = new();
     private readonly Queue<RequestEntry> _entries = new();
 
@@ -124,7 +174,7 @@ public sealed class RequestRingBuffer(int capacity)
         lock (_gate)
         {
             _entries.Enqueue(entry);
-            while (_entries.Count > capacity)
+            while (_entries.Count > _capacity)
             {
                 _entries.Dequeue();
             }
@@ -140,7 +190,18 @@ public sealed class RequestRingBuffer(int capacity)
     }
 }
 
-/// <summary>Answers <see cref="ICurrentRequest"/> from the ambient HttpContext.</summary>
+/// <summary>
+/// Answers <see cref="ICurrentRequest"/> from the ambient HttpContext: the
+/// method and the path, and deliberately not the query string.
+///
+/// <para>The first version included the query string, on the reasoning that
+/// "GET /api/vehicles?make=Ford" explains a statement better than
+/// "GET /api/vehicles" does. It does. It is also the line a password-reset
+/// token, an email confirmation link or a share link would arrive on, and this
+/// answer is printed on a public page. Losing the filter is a smaller cost than
+/// being one feature away from publishing a token
+/// (the staff review, 2026-09-03).</para>
+/// </summary>
 public sealed class HttpCurrentRequest(IHttpContextAccessor accessor) : ICurrentRequest
 {
     public string? Describe()
@@ -151,8 +212,8 @@ public sealed class HttpCurrentRequest(IHttpContextAccessor accessor) : ICurrent
             return null;
         }
 
-        string query = context.Request.QueryString.HasValue ? context.Request.QueryString.Value! : "";
-        return $"{context.Request.Method} {context.Request.Path}{query}";
+        string path = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
+        return $"{context.Request.Method} {(path.Length > 200 ? path[..200] + "..." : path)}";
     }
 }
 

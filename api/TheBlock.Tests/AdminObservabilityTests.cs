@@ -38,6 +38,16 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         // rule here that a new column could get past.
         Assert.DoesNotContain(email, body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("leak-canary", body, StringComparison.OrdinalIgnoreCase);
+
+        // And not through the log section either, which is the door the first
+        // version left open. It captures Entity Framework's own command lines,
+        // and those render parameters as `@p='?'` only because sensitive data
+        // logging is off. This assertion is what holds that switch down: turn it
+        // on and this fails here rather than on the live site.
+        string logs = await _client.GetStringAsync("/api/admin/logs");
+        Assert.Contains("AspNetUsers", logs, StringComparison.Ordinal);
+        Assert.DoesNotContain(email, logs, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("leak-canary", logs, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -86,9 +96,11 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
             .Where(request => request is not null)
             .ToArray();
         Assert.Contains("POST /api/auth/login", requests);
-        // Startup runs SQL too, before any request exists, and those say so
-        // rather than borrowing whichever request happened to be first.
-        Assert.All(requests, request => Assert.StartsWith("POST /api/auth/login", request!, StringComparison.Ordinal));
+        // And nothing stronger. Every test in this class shares one server and
+        // therefore one ring, xUnit orders them by a hash of their names, and an
+        // earlier test's registration puts its own statements in there. An
+        // assertion that every entry came from this request would pass today and
+        // break when somebody renames a test (the staff review, 2026-09-03).
     }
 
     [Fact]

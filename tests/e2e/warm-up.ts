@@ -26,8 +26,10 @@ import { chromium, type FullConfig } from '@playwright/test';
 async function warmUp(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL ?? 'http://localhost:5173';
   const browser = await chromium.launch({ channel: 'chrome' });
-  const page = await browser.newPage();
+  // Inside the try from here, so a failure to open a page does not leave the
+  // browser process running for the length of the suite.
   try {
+    const page = await browser.newPage();
     // webServer is up before this runs, but a retry costs nothing and removes
     // the ordering question entirely.
     for (let attempt = 1; attempt <= 5; attempt++) {
@@ -43,7 +45,6 @@ async function warmUp(config: FullConfig) {
       .getByRole('heading', { name: 'Inventory' })
       .waitFor({ state: 'visible', timeout: 120_000 });
   } finally {
-    await page.close();
     await browser.close();
   }
 }

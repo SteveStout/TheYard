@@ -198,7 +198,7 @@ each with its own changelog line and, where it decided something, its own record
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
   data flow, infrastructure and entity relationship diagrams on their own zoomable
-  pages, forty-four decision records in one numbered index, the Bicep infrastructure, my resume, and
+  pages, forty-five decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser

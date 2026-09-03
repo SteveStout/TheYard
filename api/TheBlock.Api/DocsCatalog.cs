@@ -67,6 +67,7 @@ public static class DocsCatalog
         ["adr-exemptions"] = "docs/ADR-042-exemptions-that-hide.md",
         ["adr-sql-visible"] = "docs/ADR-043-what-the-database-is-doing.md",
         ["adr-interceptors"] = "docs/ADR-044-interceptors-explained.md",
+        ["adr-self-review"] = "docs/ADR-045-reviewing-my-own-work.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",

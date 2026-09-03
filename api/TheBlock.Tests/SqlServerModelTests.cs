@@ -257,7 +257,7 @@ public class SqlServerModelTests
 
     // #region resume-budget
     [Fact]
-    public void A_connection_with_no_timeout_gets_ninety_seconds_to_wake_the_database()
+    public void A_connection_with_no_timeout_gets_a_minute_to_wake_the_database()
     {
         string widened = YardConnection.WithResumeBudget(
             "Server=tcp:sql-example.database.windows.net,1433;Initial Catalog=sqldb-example;"
@@ -273,7 +273,11 @@ public class SqlServerModelTests
         // reaches the database.
         var read = new SqlConnectionStringBuilder(widened);
 
-        Assert.Equal(90, read.ConnectTimeout);
+        Assert.Equal(YardConnection.ConnectSeconds, read.ConnectTimeout);
+        // The number is only right in company. It is multiplied by the retry
+        // policy in Configure, and three attempts of it has to fit inside the
+        // deploy's five minutes with the container's start-up still to pay for.
+        Assert.True(3 * YardConnection.ConnectSeconds < 300, "three attempts must fit the deploy window");
         // Everything else survives. A helper that quietly dropped the
         // authentication mode would be worse than the timeout it fixed.
         Assert.Contains("sql-example.database.windows.net", read.DataSource, StringComparison.Ordinal);

@@ -8,7 +8,15 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: 'tests/e2e',
-  timeout: 30_000,
+  // #region timeout
+  // Sixty, not Playwright's thirty. A spec here is a walk through a real
+  // application against a real API, and the first thing every one of them does
+  // is wait for a cold start through openTheYard. Thirty seconds left that
+  // helper unable to spend the budget it was written to give, which is how a
+  // load failure kept arriving under the name of whatever test went first. The
+  // accessibility scans had already been raised to sixty for the same reason.
+  timeout: 60_000,
+  // #endregion timeout
   fullyParallel: false,
   // #region reporters
   // A list on the console and an HTML report on disk.

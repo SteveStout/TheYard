@@ -8,6 +8,27 @@ on:
 permissions:
   contents: read
 
+# #region action-versions
+# Why these pins, and why they are not all the same number.
+#
+# Every run, green ones included, was warning that checkout, setup-node,
+# setup-dotnet and upload-artifact target Node 20 and were being forced onto
+# Node 24. That is GitHub carrying the build on compatibility that ends, which
+# is a deadline nobody set and everybody inherits.
+#
+# The runtime each major declares was read rather than assumed, from
+# action.yml on each tag:
+#
+#   checkout          v5 node24  v6 node24  v7 node24   -> v7
+#   setup-node        v5 node24  v6 node24  v7 node24   -> v7
+#   setup-dotnet      v5 node24  v6 node24  v7 absent   -> v6
+#   upload-artifact   v5 node20  v6 node24  v7 node24   -> v7
+#
+# The upload-artifact row is the reason for looking. Bumping everything by one
+# major is the obvious move and it would have left that one on Node 20 and the
+# warning in place.
+# #endregion action-versions
+
 # #region ci-jobs
 # Three jobs, one per suite, all on every push. They are separate so a failing
 # browser test does not hide a failing unit test, and so the slowest one (the
@@ -28,12 +49,12 @@ jobs:
   style:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - run: npm ci
@@ -50,8 +71,8 @@ jobs:
     needs: style
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -64,8 +85,8 @@ jobs:
     needs: style
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - run: dotnet test api
@@ -85,8 +106,8 @@ jobs:
     needs: style
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - run: dotnet build api/TheBlock.Database/TheBlock.Database.sqlproj -c Debug
@@ -98,12 +119,12 @@ jobs:
     needs: style
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - run: npm ci
@@ -155,7 +176,7 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion e2e-evidence
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report

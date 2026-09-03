@@ -42,7 +42,9 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   // the budget on a quiet machine and timing out on a busy one, twice in eight
   // full runs. Nothing is being asserted less: the assertion is still zero
   // violations. The scan is being given the time it measurably takes.
-  test.describe.configure({ timeout: 60_000 });
+  //
+  // The per-describe override that used to sit here is gone: the whole suite
+  // runs at sixty now, for the same reason and one the load wait needs too.
 
   test('the inventory', async ({ page }) => {
     await openTheYard(page);

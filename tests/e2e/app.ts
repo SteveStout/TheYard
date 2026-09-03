@@ -1,29 +1,44 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Open a view of TheYard and wait for the application to have finished loading.
+ * Open a view of TheYard and wait until the application has actually loaded.
  *
  * Every spec here starts with a navigation and then asserts something on the
  * loaded app. Until the first inventory query answers, the view is the words
  * "Loading inventory", so each of those first assertions was also, quietly,
  * asserting that a cold start finishes inside Playwright's five-second default.
- * It usually does. On a run where four workers arrive at the same server at the
- * same moment, it sometimes does not, and the failure reads as whatever the test
- * was named for: a keyboard test failing before a key is pressed, a focus test
- * failing because no vehicle tile exists yet.
+ * On a run where four workers arrive at the same server together it sometimes
+ * does not, and the failure reads as whatever the test was named for: a keyboard
+ * test failing before a key is pressed, a focus test failing because no vehicle
+ * tile exists yet.
  *
- * The load gets its own budget here, once, at the point where waiting is the
- * actual subject. Everything after it is measured against five seconds again,
- * which is the right budget for "did clicking this do the thing" and the wrong
- * one for "has the server finished starting".
+ * The load gets its own budget here, once, where waiting is the actual subject.
  *
- * This is not a longer timeout in disguise. A server that is genuinely down
- * still fails, in this function, with a sentence that says the app never
- * finished loading rather than one about a missing button.
+ * Two things about how it waits, both of which the first version got wrong.
+ *
+ * It waits for something to be **there**, not for something to be gone. The
+ * first version waited for the text "Loading inventory" to reach a count of
+ * zero, which is already true in the instant after `goto` resolves and before
+ * React has mounted anything at all: `goto` returns on `load`, and the module
+ * graph is fetched after that. So it passed immediately, having waited for
+ * nothing, and handed the next assertion back its five seconds. It was also a
+ * silent no-op on `?view=admin`, where that text never appears.
+ *
+ * And its budget is under the per-test timeout. The first version asked for
+ * 45 seconds inside a 30-second test, so it could never spend what it claimed
+ * to be giving; the test died first, with the generic message this helper exists
+ * to replace.
+ *
+ * The announcement region is the signal because every view has one and it says
+ * which view arrived, so this works for the inventory, the admin tab and the
+ * account view alike (the staff review, 2026-09-03).
  */
 export async function openTheYard(page: Page, path = '/'): Promise<void> {
   await page.goto(path);
-  // Gone, not hidden: the notice is removed from the tree when the load ends.
-  // A run that never shows it at all is already at zero and passes at once.
-  await expect(page.getByText('Loading inventory')).toHaveCount(0, { timeout: 45_000 });
+  const announcement = page.getByTestId('view-announcement');
+  // Present at all: React has mounted and rendered a view.
+  await expect(announcement).toHaveCount(1, { timeout: 20_000 });
+  // And settled: the announcement says "Loading inventory" only while the first
+  // query is in flight, and names the view it arrived at once it is not.
+  await expect(announcement).not.toHaveText('Loading inventory', { timeout: 20_000 });
 }

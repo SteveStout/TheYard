@@ -12,3 +12,8 @@ test-results/
 
 # The browser suite output CI keeps so a red run can say what broke on its own page.
 playwright-output.txt
+
+# Screenshot evidence for a change, taken against the live site. Kept beside the
+# repository for review and deliberately not in it: these are full-page captures
+# of a page that changes every deploy, and a megabyte each.
+docs/images/shots/

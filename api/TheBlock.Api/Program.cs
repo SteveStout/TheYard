@@ -96,6 +96,34 @@ builder.Services.AddSingleton<ISqlLog>(sqlLog);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<ICurrentRequest, HttpCurrentRequest>();
 builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
+
+// One request, timed and filed, unless it is the Admin tab watching itself.
+//
+// The observability endpoints are excluded because otherwise they take the
+// page over. An open Admin tab polls seven endpoints every thirty seconds, and
+// /api/health runs two SQL statements each time it is asked; left in, that is
+// fourteen requests a minute of /api/admin/* and enough health-check SELECTs to
+// push every real statement out of a two-hundred slot ring inside an hour. The
+// section would show nothing but itself, which is the observer effect with a
+// literal implementation (the staff review, 2026-09-03).
+void RecordRequest(HttpContext context, TimeSpan elapsed)
+{
+    string path = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
+    if (path.StartsWith("/api/admin/", StringComparison.Ordinal)
+        || path is "/api/health" or "/readyz" or "/healthz")
+    {
+        return;
+    }
+
+    requestLog.Record(new RequestEntry(
+        DateTimeOffset.UtcNow,
+        context.Request.Method,
+        // Bounded, because a request line can be eight kilobytes and five
+        // hundred of those is four megabytes of ring nobody asked for.
+        path.Length > 200 ? path[..200] + "..." : path,
+        context.Response.StatusCode,
+        (long)elapsed.TotalMilliseconds));
+}
 #endregion admin-rings
 
 if (database.Ready)
@@ -282,7 +310,13 @@ else
     // files, so this line covers a missing dataset as well as a database that
     // will not open, and naming only one of them sends the next person to the
     // wrong place (the staff review, 2026-09-03).
+    // The exception goes in the exception slot, not into the template. What is
+    // in the template reaches the Admin tab's log section, which is public; what
+    // is in the exception slot reaches the console and Application Insights,
+    // and the Admin tab shows only its type. A SqlException here says the server
+    // name, the login name and this container's IP address.
     app.Logger.LogError(
+        database.Failure,
         "The store could not be prepared, which covers both the database and the seed files it fills from. The catalogue is being served from the JSON files and bids will not outlive this process: {Note}",
         database.Note);
 }
@@ -290,8 +324,11 @@ else
 if (configuredDatabase is null && yard.Provider == YardProvider.Sqlite)
 {
     app.Logger.LogWarning(
-        "No ConnectionStrings:Yard is configured, so this process is using a scratch database at {Path} and will delete it on shutdown",
-        scratchDatabase);
+        "No ConnectionStrings:Yard is configured, so this process is using a scratch database in the system temp folder and will delete it on shutdown");
+    // The path itself at Debug, which the Admin tab's log section does not
+    // capture. A temp path names the account the process runs as, and that page
+    // is public.
+    app.Logger.LogDebug("The scratch database is at {Path}", scratchDatabase);
     // A scratch database belongs to one process, so it goes when the process
     // does. The pool has to be emptied first or the handle is still open and
     // the delete fails on Windows.
@@ -330,6 +367,35 @@ app.Services.GetRequiredService<InventoryService>().GetAll();
 // it: an unhandled exception becomes a 500 ProblemDetails instead of an empty
 // body (ADR-023), filled in by ProblemHandler (ADR-030). The request logger
 // sits behind it so a failed request is still logged with its real status.
+#region request-timing
+// Timing, and it has to be the outermost thing here.
+//
+// The first version of this sat further down the pipeline, below
+// UseExceptionHandler, and its comment claimed it measured "the whole cost a
+// caller waited for, including the time spent turning an exception into a
+// ProblemDetails". Both halves were false. Unwinding runs inner to outer, so a
+// request that threw reached this finally before the handler had written
+// anything, and every failed request was recorded as a 200 with the handler's
+// time excluded. /api/admin/selftest/exception answers 500 to its caller and
+// was appearing in the metrics as 200 (the staff review, 2026-09-03).
+//
+// Above the handler it sees the status that was actually sent. Above
+// UseAuthentication too, so a request rejected with 401 is counted rather than
+// short-circuited before it ever reaches the ring.
+app.Use(async (context, next) =>
+{
+    long start = Stopwatch.GetTimestamp();
+    try
+    {
+        await next();
+    }
+    finally
+    {
+        RecordRequest(context, Stopwatch.GetElapsedTime(start));
+    }
+});
+#endregion request-timing
+
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseHttpLogging();
@@ -636,30 +702,6 @@ var azureSelf = new AzureSelf(
     builder.Configuration["Azure:SelfResourceId"]
         ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
 
-#region request-timing
-// Timing, outside the error middleware so the number is the whole cost a
-// caller waited for, including the time spent turning an exception into a
-// ProblemDetails. Recorded in a finally, so a request that throws is still
-// timed: an endpoint that fails slowly is the one worth seeing.
-app.Use(async (context, next) =>
-{
-    long start = Stopwatch.GetTimestamp();
-    try
-    {
-        await next();
-    }
-    finally
-    {
-        requestLog.Record(new RequestEntry(
-            DateTimeOffset.UtcNow,
-            context.Request.Method,
-            context.Request.Path.HasValue ? context.Request.Path.Value! : "/",
-            context.Response.StatusCode,
-            (long)Stopwatch.GetElapsedTime(start).TotalMilliseconds));
-    }
-});
-#endregion request-timing
-
 #region error-log
 // Middleware, so it sees every response including the ones no endpoint
 // returned. It records and rethrows rather than handling: the ProblemDetails
@@ -687,12 +729,19 @@ app.Use(async (context, next) =>
 // Each probe is timed and each answer is a value, never an exception: a
 // health endpoint that throws tells an orchestrator nothing. The checks are
 // deliberately about the files this app cannot run without.
-HealthCheckEntry[] RunChecks()
+HealthCheckEntry[] RunChecks(bool readinessOnly = false)
 {
     // Each probe is timed: the Admin tab shows the milliseconds beside the check,
     // so a slow disk or a slow lookup shows up before it fails (ADR-010, second pass).
     HealthCheckEntry Check(string name, Func<bool> probe, string detail, bool gatesReadiness = true)
     {
+        if (readinessOnly && !gatesReadiness)
+        {
+            // Not asked, so not run. The caller filters these out anyway; this
+            // is what stops the probe behind them from happening at all.
+            return new HealthCheckEntry(name, "pass", "not asked", 0, gatesReadiness);
+        }
+
         var clock = Stopwatch.StartNew();
         try { return new HealthCheckEntry(name, probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds, gatesReadiness); }
         catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name, clock.ElapsedMilliseconds, gatesReadiness); }
@@ -742,8 +791,11 @@ HealthCheckEntry[] RunChecks()
 // orchestrator treats those differently (ADR-010).
 app.MapGet("/healthz", () => Results.Text("ok"));
 
+// Only the checks that gate it, and only those get run: the database probe is
+// two SQL statements whose answer readiness discards, and this endpoint is
+// polled by the orchestrator and by every deploy.
 app.MapGet("/readyz", () =>
-    RunChecks().Where(check => check.GatesReadiness).All(check => check.Status == "pass")
+    RunChecks(readinessOnly: true).Where(check => check.GatesReadiness).All(check => check.Status == "pass")
         ? Results.Text("ready")
         : Results.StatusCode(503));
 
@@ -778,14 +830,15 @@ app.MapGet("/api/admin/metrics", () =>
 {
     var requests = requestLog.Snapshot();
     var statements = sqlLog.Snapshot();
+    long[] requestDurations = requests.Select(entry => entry.DurationMs).ToArray();
     long[] sqlDurations = statements.Select(statement => statement.DurationMs).ToArray();
     return Results.Json(new
     {
         requests = new
         {
             window = requests.Count,
-            p50_ms = Percentiles.Of(requests.Select(entry => entry.DurationMs).ToArray(), 50),
-            p95_ms = Percentiles.Of(requests.Select(entry => entry.DurationMs).ToArray(), 95),
+            p50_ms = Percentiles.Of(requestDurations, 50),
+            p95_ms = Percentiles.Of(requestDurations, 95),
             by_path = Percentiles.ByPath(requests),
         },
         sql = new
@@ -795,7 +848,12 @@ app.MapGet("/api/admin/metrics", () =>
             p95_ms = Percentiles.Of(sqlDurations, 95),
             max_ms = sqlDurations.Length == 0 ? 0 : sqlDurations.Max(),
         },
-        recent_requests = requests,
+        // No recent_requests list. The first version returned the whole ring,
+        // five hundred entries of method, path, status and timing, which is a
+        // near-real-time feed of what every other visitor to a public site is
+        // doing: which vehicles they opened, which filters they typed. The page
+        // never rendered it. Aggregates answer the question the section is for
+        // and name nobody (the staff review, 2026-09-03).
     }, wireFormat);
 });
 #endregion admin-observability-endpoints
@@ -815,6 +873,10 @@ app.MapPost("/api/errors/client", (ClientErrorReport report, ILoggerFactory logg
     // Bounded on the way in: a stack trace from a minified bundle can be long,
     // and the buffer is a demo's memory, not a log store.
     string message = report.Message.Length > 500 ? report.Message[..500] : report.Message;
+    // The stack was not bounded here, only the message was. Both come from an
+    // unauthenticated POST and both end up on a public page and in Application
+    // Insights, so both get a ceiling (the staff review, 2026-09-03).
+    string stack = report.Stack is null ? "" : (report.Stack.Length > 2_000 ? report.Stack[..2_000] : report.Stack);
     string where = string.IsNullOrWhiteSpace(report.Path) ? "(browser)" : report.Path;
     errorLog.Record(where, 0, "browser: " + message);
     // The same report goes to Application Insights as a structured log, so a
@@ -822,7 +884,7 @@ app.MapPost("/api/errors/client", (ClientErrorReport report, ILoggerFactory logg
     // rather than posting from the browser keeps the page free of a second
     // external script and keeps the ingestion key server-side.
     loggers.CreateLogger("TheBlock.Browser").LogError(
-        "Browser error on {Path}: {BrowserMessage} {BrowserStack}", where, message, report.Stack ?? "");
+        "Browser error on {Path}: {BrowserMessage} {BrowserStack}", where, message, stack);
     return Results.NoContent();
 });
 #endregion client-errors

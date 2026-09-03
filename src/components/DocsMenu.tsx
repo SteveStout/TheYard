@@ -73,6 +73,7 @@ export type DocKey =
   | 'adrExemptions'
   | 'adrSqlVisible'
   | 'adrInterceptors'
+  | 'adrSelfReview'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -457,6 +458,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '044',
   },
+  adrSelfReview: {
+    title: 'ADR: Reviewing my own work, and what that found',
+    menuLabel: 'ADR: Reviewing my own work',
+    url: '/api/docs/adr-self-review',
+    kind: 'adr',
+    number: '045',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -557,6 +565,7 @@ export const MENUS: Record<
       { key: 'adrExemptions' },
       { key: 'adrSqlVisible' },
       { key: 'adrInterceptors' },
+      { key: 'adrSelfReview' },
     ],
   },
   // #endregion records-menu

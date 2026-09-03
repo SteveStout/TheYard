@@ -337,9 +337,9 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           <>
             <p className={styles.muted}>
               Measured in this process, over the last {metrics.requests.window} requests and{' '}
-              {metrics.sql.window} statements. Requests p50 {metrics.requests.p50_ms} ms, p95{' '}
-              {metrics.requests.p95_ms} ms. SQL p50 {metrics.sql.p50_ms} ms, p95{' '}
-              {metrics.sql.p95_ms} ms, slowest {metrics.sql.max_ms} ms.
+              {metrics.sql.window} statements, this page&rsquo;s own excluded. Requests p50{' '}
+              {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms. SQL p50{' '}
+              {metrics.sql.p50_ms} ms, p95 {metrics.sql.p95_ms} ms, slowest {metrics.sql.max_ms} ms.
             </p>
             <div
               className={styles.tableWrap}
@@ -383,8 +383,10 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           how long the database took. Parameters are listed by name, type and size. Their values are
           not here and never were: the type this table is built from has no field to put one in,
           because this page is public and a registration&rsquo;s parameters carry an email address.
-          The buffer holds the last 200 statements in this container&rsquo;s memory and empties on
-          every deploy.
+          The request is the method and the path, without its query string, for the same reason.
+          Statements caused by this page and by the health check are left out, or watching would be
+          all there was to see. The buffer holds the last 200 in this container&rsquo;s memory and
+          empties on every deploy.
         </p>
         {sql === null ? (
           <p className={styles.muted}>Loading…</p>
@@ -446,9 +448,12 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
       <article className={styles.wide} data-testid="log-card">
         <h2 className={styles.cardTitle}>The log, as the console got it</h2>
         <p className={styles.muted}>
-          The application&rsquo;s own log lines at Information and above, newest first, holding the
-          last 300 in memory. An exception shows its type; its message stays server-side, because a
-          database driver will happily quote the value that broke a constraint.
+          This application&rsquo;s own log lines at Information and above, newest first, holding the
+          last 300 in memory. Its own, and the one framework category the section above exists to
+          show: the rest of the framework is left out because a healthy container announces its
+          content root and its key directory, and those are server paths on a public page. An
+          exception shows its type. Its message stays server-side, because a database driver writes
+          the server name, the login name and the caller&rsquo;s address into one.
         </p>
         {logs === null ? (
           <p className={styles.muted}>Loading…</p>

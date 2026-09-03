@@ -26,6 +26,29 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request) : Db
 
     private void Record(DbCommand command, TimeSpan duration, string outcome)
     {
+        // Nothing in here is allowed to break a query that worked.
+        //
+        // This runs on the path of every command the application sends. A
+        // provider whose DbType getter throws for some exotic parameter, or a
+        // ring that is somehow in a bad state, would otherwise turn a healthy
+        // SELECT into a failed request, and the Admin tab would have caused the
+        // outage it exists to explain. An observability hook that can break the
+        // thing it observes is worse than no hook (the staff review,
+        // 2026-09-03).
+        try
+        {
+            RecordOrThrow(command, duration, outcome);
+        }
+        catch
+        {
+            // Deliberately silent, and deliberately not logged: this is called
+            // from inside a database command, and a logger here is one more
+            // thing that can fail on the same path.
+        }
+    }
+
+    private void RecordOrThrow(DbCommand command, TimeSpan duration, string outcome)
+    {
         var parameters = new List<SqlParameterShape>(command.Parameters.Count);
         foreach (DbParameter parameter in command.Parameters)
         {

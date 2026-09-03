@@ -212,7 +212,22 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
 /// open changes which adapters are wired rather than becoming a 500 on the
 /// first request (ADR: The relational store).
 /// </summary>
-public sealed record DatabaseState(bool Ready, string Note);
+public sealed record DatabaseState(bool Ready, string Note, Exception? Failure = null)
+{
+    /// <summary>
+    /// One sentence safe to put anywhere, including a public page.
+    ///
+    /// <para><see cref="Note"/> names the engine and, on a failure, the type of
+    /// exception. It never carries the exception's message, because a provider
+    /// writes the server name, the login name, the database name and the
+    /// caller's IP address into that message, and because a caller who has one
+    /// of these sentences cannot know where it will be printed. The message
+    /// travels as <see cref="Failure"/> instead, so a logger can record it in
+    /// full while a surface that must not publish it can take the type alone
+    /// (the staff review, 2026-09-03).</para>
+    /// </summary>
+    public string Note { get; } = Note;
+}
 
 /// <summary>
 /// Bring the database up, or report that it could not be brought up. Called
@@ -254,7 +269,10 @@ public static class YardDatabase
             // without a store, and it cannot do that if this throws. What went
             // wrong travels back as a sentence, is logged as an error, and shows
             // up as a failed health check on the Admin tab.
-            return new DatabaseState(false, $"{connection.Describe()}: {ex.GetType().Name}: {ex.Message}");
+            // The type, not the message. See DatabaseState.Note: the message
+            // goes back as the exception so a log can have it and a public page
+            // cannot.
+            return new DatabaseState(false, $"{connection.Describe()}: {ex.GetType().Name}", ex);
         }
     }
     // #endregion prepare
