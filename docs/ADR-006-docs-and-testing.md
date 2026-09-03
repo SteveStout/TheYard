@@ -90,7 +90,7 @@ enough to be commented." Three rules follow from it, all in force.
   decided a look carry a capture of that look from the domain, taken by the
   same headless Chrome the end-to-end suite uses, signed out, so the picture
   is what a visitor sees and not what a developer sees. The captures live in
-  [`docs/images`](https://github.com/SteveStout/TheYard/blob/main/docs/images) beside the configuration screenshots from the first
+  [`docs/images`](https://github.com/SteveStout/TheYard/tree/main/docs/images) beside the configuration screenshots from the first
   day. The first pass found a real defect: a long Azure event message ran
   past the edge of its card, fixed in the same version.
 - **Code shown in a record is documented by the record, and teaches.** A
