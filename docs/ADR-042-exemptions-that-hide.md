@@ -219,7 +219,7 @@ real one would fail, which is the only property that matters in a gate.
 - [`src/components/AuctionCountdown.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AuctionCountdown.module.css): where the pair was composed.
 - [`tests/e2e/account.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/account.spec.ts): waiting for the answer rather than for the consequence.
 - [`tests/e2e/market.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/market.spec.ts): answering the price it posts against.
-- [`api/TheBlock.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/DiagramPageTests.cs): the encoded title, and the apostrophe pinned on its own.
+- [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the encoded title, and the apostrophe pinned on its own.
 - [`tests/e2e/warm-up.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/warm-up.ts): the cold start, paid once, somewhere it is allowed to be slow.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts): where that runs from.
 - [`docs/ADR-035-accessibility-check.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-035-accessibility-check.md): the first time this exact thing happened, and the sentence that should have prevented this one.

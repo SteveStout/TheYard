@@ -22,7 +22,7 @@ interview days.
 ## The exact commands
 
 - Dev: npm install then npm start (API + frontend together)
-- Tests: dotnet test api/TheBlock.slnx ; npm test -- --run ; npx playwright test
+- Tests: dotnet test api/TheYard.slnx ; npm test -- --run ; npx playwright test
 - Container: npm run docker  ->  http://localhost:8080 ; npm run docker:stop
 - Raw: docker build -t theyard:local .
        docker run --rm -d -p 8080:8080 --name theyard theyard:local

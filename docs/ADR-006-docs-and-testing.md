@@ -53,7 +53,7 @@ Documentation:
 
 - [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): every document the sidebar can
   open, its title, its menu and its kind, one record.
-- [`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs): the same documents by slug on
+- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the same documents by slug on
   the server, held to the sidebar's list by a test (ADR: The staff review).
 - [`docs/BEST-PRACTICES.md`](https://github.com/SteveStout/TheYard/blob/main/docs/BEST-PRACTICES.md), [`docs/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md),
   [`docs/CICD.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CICD.md): the three overviews the records hang under.
@@ -62,7 +62,7 @@ Testing:
 
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the three suites as CI jobs, shown
   live below; a red job stops the deploy (ADR: The deploy pipeline).
-- [`api/TheBlock.Tests/TheBlock.Tests.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/TheBlock.Tests.csproj) and the tests beside
+- [`api/TheYard.Tests/TheYard.Tests.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TheYard.Tests.csproj) and the tests beside
   it: the API suite, integration tests over the real host.
 - [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts): the unit suite's configuration (vitest, only
   `src/**/*.test.ts`).

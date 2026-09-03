@@ -17,7 +17,7 @@ it has sent and how long the database took.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Forty-five decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Forty-six decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -41,7 +41,7 @@ npm start          # API + frontend in one command; opens the browser
 Open http://localhost:5173. The dev server proxies `/api` to the .NET API, which serves
 the inventory and the vehicle photos (`/api/images/...`). The inventory is **100,000
 records**, deterministically synthesized at startup from the 200-record seed dataset
-(`Inventory:TargetCount` in `api/TheBlock.Api/appsettings.json`), so there is no giant
+(`Inventory:TargetCount` in `api/TheYard.Api/appsettings.json`), so there is no giant
 file in the repo. All filtering, sorting, and paging are server-side via LINQ over GET
 parameters; the landing page is the top 100 by auction time (live, ending soonest first):
 
@@ -142,7 +142,7 @@ each with its own changelog line and, where it decided something, its own record
   style, modern generations) are fetched from Wikimedia Commons and mapped
   deterministically per vehicle id, preferring photos of the vehicle's own make. Real
   listings would use real lot photography; credits in
-  `api/TheBlock.Api/wwwroot/images/CREDITS.md`.
+  `api/TheYard.Api/wwwroot/images/CREDITS.md`.
 - **The API owns everything**: data, filtering, sorting, paging, photo mapping, auction
   scheduling, and bid validation. The browser formats, counts down, and relays actions.
 - Out of scope by design: auth, accounts, seller tooling, checkout, payments, a database,
@@ -157,11 +157,11 @@ each with its own changelog line and, where it decided something, its own record
   marked for rendering the served documents. The palette is Figma's Urban slate, gray,
   brown and blue, with every text and ground pair measured against WCAG AA by a unit
   test, and Poppins from Google Fonts (the one external asset) with a system fallback.
-- **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheBlock.Data`
-  (the pure data records, no dependencies), `TheBlock.Domain` (photo selection, auction
-  schedule, filter and bid rules), `TheBlock.Application` (the `InventoryService` and
-  `BidService` use cases behind source ports), `TheBlock.Infrastructure` (the EF Core
-  adapters over Azure SQL Database or SQLite, the JSON readers that seed them, the synthetic scale-up), `TheBlock.Api` (host, endpoints, static images, the
+- **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheYard.Data`
+  (the pure data records, no dependencies), `TheYard.Domain` (photo selection, auction
+  schedule, filter and bid rules), `TheYard.Application` (the `InventoryService` and
+  `BidService` use cases behind source ports), `TheYard.Infrastructure` (the EF Core
+  adapters over Azure SQL Database or SQLite, the JSON readers that seed them, the synthetic scale-up), `TheYard.Api` (host, endpoints, static images, the
   served documents, observability). Filtering is LINQ over GET parameters, including
   auction status; all auction math lives in Domain and travels on the wire, so the
   browser only formats. `src/lib/data.ts` is the frontend's single data seam.
@@ -205,7 +205,7 @@ each with its own changelog line and, where it decided something, its own record
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
   data flow, infrastructure and entity relationship diagrams on their own zoomable
-  pages, forty-five decision records in one numbered index, the Bicep infrastructure, my resume, and
+  pages, forty-six decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -225,19 +225,19 @@ each with its own changelog line and, where it decided something, its own record
   (`?vehicle={id}` pushes a history entry): the browser's Back button closes the detail,
   Forward reopens it, and a cold load of a vehicle URL deep-links straight to it.
   *Where:* `src/lib/inventory.ts` (URL and filter serialization), `src/App.tsx`
-  (pushState and popstate), `api/TheBlock.Api/VehicleQueryParams.cs` (binding),
-  `api/TheBlock.Domain/VehicleFilter.cs` (the LINQ predicate).
+  (pushState and popstate), `api/TheYard.Api/VehicleQueryParams.cs` (binding),
+  `api/TheYard.Domain/VehicleFilter.cs` (the LINQ predicate).
 - **Debounced, cached requests.** Filter changes debounce 500 ms so typing does not
   hammer the API, and responses are cached per query string (5-minute TTL, bounded).
   Cache hits skip the debounce entirely: the delay only exists to protect the server,
   and a hit never touches it.
   *Where:* `src/lib/data.ts` (cache, `peekVehicles`), `src/App.tsx` (the debounced
-  fetch effect), `api/TheBlock.Api/Program.cs` (cache headers).
+  fetch effect), `api/TheYard.Api/Program.cs` (cache headers).
 - **Server-side pagination at scale.** 100,000 records, but the wire only ever carries a
   page: an envelope of `{ total, vehicles }` with `limit` and `offset`, a landing page of
   the top 100 by auction time, and Load More to walk deeper.
-  *Where:* `api/TheBlock.Application/InventoryService.cs` (`Search`),
-  `api/TheBlock.Infrastructure/SyntheticVehicleSource.cs` (the 100k expansion),
+  *Where:* `api/TheYard.Application/InventoryService.cs` (`Search`),
+  `api/TheYard.Infrastructure/SyntheticVehicleSource.cs` (the 100k expansion),
   `src/App.tsx` (`loadMore`).
 - **A search that does its work once.** Both halves of a free-text comparison are
   precomputed: each vehicle's searchable text when the dataset loads, each query's
@@ -247,19 +247,19 @@ each with its own changelog line and, where it decided something, its own record
   full dataset, measured by a test in the suite rather than asserted in prose. The
   auction status stays out of the index on purpose, because the clock decides it, and
   it is computed only for tokens the static text did not already satisfy.
-  *Where:* `api/TheBlock.Domain/VehicleSearchIndex.cs`, `VehicleFilter.cs`
-  (`Compile`), `api/TheBlock.Application/InventoryService.cs` (built with the
-  dataset), `api/TheBlock.Tests/SearchIndexBenchmarkTests.cs` (the measurement),
+  *Where:* `api/TheYard.Domain/VehicleSearchIndex.cs`, `VehicleFilter.cs`
+  (`Compile`), `api/TheYard.Application/InventoryService.cs` (built with the
+  dataset), `api/TheYard.Tests/SearchIndexBenchmarkTests.cs` (the measurement),
   `VehicleSearchIndexTests.cs` (the indexed and unindexed paths must agree).
 - **One authoritative home for every business rule.** Auction windows, status, minimum
-  increments, bid validation and buy-now precedence all live in `TheBlock.Domain` and
+  increments, bid validation and buy-now precedence all live in `TheYard.Domain` and
   nowhere else. The wire carries the derived facts (`auction_ends_at`, `min_next_bid`)
   so the browser only formats and counts down. This was not free: early versions mirrored
   the math in TypeScript, and cross-language drift bit twice (a timezone anchor, then
   DST) before the consolidation. The architecture exists because the bug class it
   eliminates actually happened.
-  *Where:* `api/TheBlock.Domain/AuctionSchedule.cs`, `BidRules.cs`, and
-  `AuctionClock.cs`; `api/TheBlock.Api/VehicleWire.cs` (derived facts onto the wire);
+  *Where:* `api/TheYard.Domain/AuctionSchedule.cs`, `BidRules.cs`, and
+  `AuctionClock.cs`; `api/TheYard.Api/VehicleWire.cs` (derived facts onto the wire);
   `src/lib/auction.ts` (all that remains client-side).
 - **Sealed records everywhere data is data.** Every C# data shape (`Vehicle`,
   `VehicleFilter`, `BidState`, `SearchResult`) is a `sealed record`: records give
@@ -270,32 +270,32 @@ each with its own changelog line and, where it decided something, its own record
   low-regret default: unsealing later is non-breaking, sealing later is not. The payoff
   shows up in practice: determinism tests compare whole vehicle lists by value, and
   non-destructive `with` mutations power the bid overlay and the synthetic variants.
-  *Where:* `api/TheBlock.Data/Vehicle.cs`; `with` usage in
-  `api/TheBlock.Application/BidService.cs` and
-  `api/TheBlock.Infrastructure/SyntheticVehicleSource.cs`; value-equality assertions in
-  `api/TheBlock.Tests/SyntheticVehicleSourceTests.cs`.
+  *Where:* `api/TheYard.Data/Vehicle.cs`; `with` usage in
+  `api/TheYard.Application/BidService.cs` and
+  `api/TheYard.Infrastructure/SyntheticVehicleSource.cs`; value-equality assertions in
+  `api/TheYard.Tests/SyntheticVehicleSourceTests.cs`.
 - **Onion architecture that earns its layers.** Data (the pure records) has zero
   dependencies; Domain (the rules) depends only on Data; Application talks through ports
   (`IVehicleSource`, `IPhotoManifestSource`); Infrastructure adapts files; the host only
   binds and serializes. The proof it is not ceremony: the 100k scale-up is a decorator on
   a port (`SyntheticVehicleSource`) and nothing above it changed, and the test suite
   swaps in-memory fakes at the same seams.
-  *Where:* `api/TheBlock.Data/` to `api/TheBlock.Domain/` to
-  `api/TheBlock.Application/` (`Ports.cs`, `InventoryService.cs`, `BidService.cs`) to
-  `api/TheBlock.Infrastructure/` to `api/TheBlock.Api/Program.cs` (composition root);
-  fakes in `api/TheBlock.Tests/InventoryServiceTests.cs`. The whole picture is written
+  *Where:* `api/TheYard.Data/` to `api/TheYard.Domain/` to
+  `api/TheYard.Application/` (`Ports.cs`, `InventoryService.cs`, `BidService.cs`) to
+  `api/TheYard.Infrastructure/` to `api/TheYard.Api/Program.cs` (composition root);
+  fakes in `api/TheYard.Tests/InventoryServiceTests.cs`. The whole picture is written
   down in `docs/ARCHITECTURE.md`, served as Architecture overview.
 - **The documentation cannot drift from the code.** A record's samples are marked
   regions read out of the running container at request time, not pasted, and every
   record ends with a map of the files it decided. A test holds the document catalog to
   the sidebar's menu, another holds the changelog to the version being shipped.
-  *Where:* `api/TheBlock.Api/LiveSamples.cs`, `DocsCatalog.cs`,
-  `api/TheBlock.Tests/LiveSamplesTests.cs`, `DocsCatalogTests.cs`, `ChangelogTests.cs`.
+  *Where:* `api/TheYard.Api/LiveSamples.cs`, `DocsCatalog.cs`,
+  `api/TheYard.Tests/LiveSamplesTests.cs`, `DocsCatalogTests.cs`, `ChangelogTests.cs`.
 
 ## Notable Decisions
 
 - **Domain rules live in pure functions**, fully separate from any framework: window
-  derivation, increments, validation, and bid resolution in `api/TheBlock.Domain`
+  derivation, increments, validation, and bid resolution in `api/TheYard.Domain`
   (unit-tested without hosting anything), reserve display and status recomputation in
   `src/lib/auction.ts` (unit-tested without rendering anything). Components stay thin.
 - **The reserve amount is never rendered**, only its state (No reserve, Reserve met,
@@ -357,7 +357,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (236 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
+**API (236 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory

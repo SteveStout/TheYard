@@ -74,6 +74,7 @@ export type DocKey =
   | 'adrSqlVisible'
   | 'adrInterceptors'
   | 'adrSelfReview'
+  | 'adrTheName'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -83,7 +84,7 @@ export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
 
 /**
  * Every doc the sidebar can open. The url's last segment is the slug the API
- * looks up in api/TheBlock.Api/DocsCatalog.cs; DocsCatalogTests holds the two
+ * looks up in api/TheYard.Api/DocsCatalog.cs; DocsCatalogTests holds the two
  * lists to each other (ADR-017).
  */
 // #region docs-record
@@ -465,6 +466,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '045',
   },
+  adrTheName: {
+    title: 'ADR: The name, and how a rename was done without losing the history',
+    menuLabel: 'ADR: The name',
+    url: '/api/docs/adr-the-name',
+    kind: 'adr',
+    number: '046',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -566,6 +574,7 @@ export const MENUS: Record<
       { key: 'adrSqlVisible' },
       { key: 'adrInterceptors' },
       { key: 'adrSelfReview' },
+      { key: 'adrTheName' },
     ],
   },
   // #endregion records-menu

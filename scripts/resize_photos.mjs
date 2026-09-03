@@ -18,7 +18,7 @@ import path from 'node:path';
 import process from 'node:process';
 import sharp from 'sharp';
 
-const DIR = path.join(process.cwd(), 'api', 'TheBlock.Api', 'wwwroot', 'images');
+const DIR = path.join(process.cwd(), 'api', 'TheYard.Api', 'wwwroot', 'images');
 const WIDTH = 480;
 const SUFFIX = '-480.jpg';
 

@@ -63,28 +63,28 @@ for reading either.
 ## In the code
 
 The registration, and the reader it hands the Admin tab
-(`api/TheBlock.Api/Program.cs`):
+(`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheBlock.Api/Program.cs region=telemetry
+```live path=api/TheYard.Api/Program.cs region=telemetry
 ```
 
-```live path=api/TheBlock.Api/Program.cs region=telemetry-endpoint
+```live path=api/TheYard.Api/Program.cs region=telemetry-endpoint
 ```
 
 One query answers the whole card, because three questions in three round
-trips is three chances to time out (`api/TheBlock.Api/Telemetry.cs`):
+trips is three chances to time out (`api/TheYard.Api/Telemetry.cs`):
 
-```live path=api/TheBlock.Api/Telemetry.cs region=kql
+```live path=api/TheYard.Api/Telemetry.cs region=kql
 ```
 
-```live path=api/TheBlock.Api/Telemetry.cs region=read
+```live path=api/TheYard.Api/Telemetry.cs region=read
 ```
 
 Kusto answers in columns and rows; the card wants objects. Reading each row
 by column name rather than position is what keeps a query edit from shifting
 every value silently:
 
-```live path=api/TheBlock.Api/Telemetry.cs region=shape
+```live path=api/TheYard.Api/Telemetry.cs region=shape
 ```
 
 The card, which renders every state the reader can answer with
@@ -133,11 +133,11 @@ the connection string.
 
 ## Files
 
-- [`api/TheBlock.Api/Telemetry.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Telemetry.cs): the reader, its query and its shaping.
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the registration, the browser-error log, and the Admin endpoint.
-- [`api/TheBlock.Api/TheBlock.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/TheBlock.Api.csproj): the one package this added.
+- [`api/TheYard.Api/Telemetry.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Telemetry.cs): the reader, its query and its shaping.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the registration, the browser-error log, and the Admin endpoint.
+- [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the one package this added.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card and its three states.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the placeholder and the roll-time substitution.
-- [`api/TheBlock.Tests/TelemetryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/TelemetryTests.cs): the off path, the shape of every answer, and the endpoint.
+- [`api/TheYard.Tests/TelemetryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TelemetryTests.cs): the off path, the shape of every answer, and the endpoint.
 - [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the card rendering its not-configured state in a browser.
 - [`docs/ADR-010-observability.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-010-observability.md) and [`docs/ADR-023-error-handling.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-023-error-handling.md): the Admin tab and the error path this extends.

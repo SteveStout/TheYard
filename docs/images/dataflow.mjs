@@ -30,21 +30,21 @@ const STYLE = `
 /** Every box: a title, the file it lives in, and one or more paragraphs. */
 const READ = [
   ['The seed file', 'data/vehicles.json', [
-    'The 200 records from the challenge, never modified. The Vehicle record they load into lives with the other plain data shapes in api/TheBlock.Data.']],
-  ['JsonFileVehicleSource', 'api/TheBlock.Infrastructure/JsonFileSources.cs', [
+    'The 200 records from the challenge, never modified. The Vehicle record they load into lives with the other plain data shapes in api/TheYard.Data.']],
+  ['JsonFileVehicleSource', 'api/TheYard.Infrastructure/JsonFileSources.cs', [
     'Reads the seed once, at startup.']],
-  ['SyntheticVehicleSource', 'api/TheBlock.Infrastructure/SyntheticVehicleSource.cs', [
-    "Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a, api/TheBlock.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state while keeping the seed's make, model and trim mix."]],
-  ['InventoryService', 'api/TheBlock.Application/InventoryService.cs', [
-    "Applies each vehicle's photo gallery (api/TheBlock.Domain/PhotoGallery.cs picks from the pools in api/TheBlock.Api/photo-manifest.json) and materializes the list plus an id index, once, in a Lazy that Program.cs forces at startup."]],
-  ['GET /api/vehicles', 'api/TheBlock.Api/Program.cs', [
-    "api/TheBlock.Api/VehicleQueryParams.cs binds and validates every parameter into a filter, a sort and a clock. api/TheBlock.Api/Clocks.cs turns the browser's anchor_ms (its local midnight) into that clock, so the schedule math agrees with the buyer in any time zone."]],
-  ['Search, in InventoryService.Search', 'api/TheBlock.Application/InventoryService.cs', [
-    "1. The buyer's bids are overlaid first (api/TheBlock.Application/BidService.cs), so price bounds see the figures the page shows.",
-    '2. Where: api/TheBlock.Domain/VehicleFilter.cs',
-    '3. OrderBy: api/TheBlock.Domain/VehicleOrdering.cs',
-    '4. Skip and Take for the page. Auction windows come from api/TheBlock.Domain/AuctionSchedule.cs, all in memory.']],
-  ['VehicleWire', 'api/TheBlock.Api/VehicleWire.cs', [
+  ['SyntheticVehicleSource', 'api/TheYard.Infrastructure/SyntheticVehicleSource.cs', [
+    "Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a, api/TheYard.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state while keeping the seed's make, model and trim mix."]],
+  ['InventoryService', 'api/TheYard.Application/InventoryService.cs', [
+    "Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and materializes the list plus an id index, once, in a Lazy that Program.cs forces at startup."]],
+  ['GET /api/vehicles', 'api/TheYard.Api/Program.cs', [
+    "api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a filter, a sort and a clock. api/TheYard.Api/Clocks.cs turns the browser's anchor_ms (its local midnight) into that clock, so the schedule math agrees with the buyer in any time zone."]],
+  ['Search, in InventoryService.Search', 'api/TheYard.Application/InventoryService.cs', [
+    "1. The buyer's bids are overlaid first (api/TheYard.Application/BidService.cs), so price bounds see the figures the page shows.",
+    '2. Where: api/TheYard.Domain/VehicleFilter.cs',
+    '3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs',
+    '4. Skip and Take for the page. Auction windows come from api/TheYard.Domain/AuctionSchedule.cs, all in memory.']],
+  ['VehicleWire', 'api/TheYard.Api/VehicleWire.cs', [
     'Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at, auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.']],
   ['The fetch seam', 'src/lib/data.ts', [
     'Debounces filter changes (500 ms), caches responses per query string for five minutes (a hit skips the debounce) and aborts superseded requests. The query string comes from src/lib/inventory.ts, the same serializer that feeds the address bar.']],
@@ -58,11 +58,11 @@ const READ_LABELS = { 0: 'once, at startup', 3: 'then, for every request', 6: '{
 const WRITE = [
   ['BidPanel', 'src/components/BidPanel.tsx', [
     'Posts { amount, anchor_ms } to POST /api/vehicles/{id}/bids through src/lib/data.ts; buy now posts to /buy-now.']],
-  ['HandleBid', 'api/TheBlock.Api/Program.cs', [
+  ['HandleBid', 'api/TheYard.Api/Program.cs', [
     'Three questions in order: is the clock anchor valid (400 if not), does the vehicle exist (404 if not), does the domain accept the action (400 with the reason if not).']],
-  ['BidRules', 'api/TheBlock.Domain/BidRules.cs', [
+  ['BidRules', 'api/TheYard.Domain/BidRules.cs', [
     'The sole authority: the live window, the tiered minimum increment, and the buy-now override (a bid at or above buy_now_price wins outright at that price).']],
-  ['BidService', 'api/TheBlock.Application/BidService.cs', [
+  ['BidService', 'api/TheYard.Application/BidService.cs', [
     'Accepted and won bids land in an in-memory map, one anonymous buyer. The response carries the updated vehicle with a fresh min_next_bid.']],
   ['useBids', 'src/hooks/useBids.ts', [
     'Clears the query cache and refetches, so every list, filter and total reflects the bid through the same read path.']],

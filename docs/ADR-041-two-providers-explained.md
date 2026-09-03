@@ -18,7 +18,7 @@ which is Microsoft's managed SQL Server. On your laptop and in CI it is
 **SQLite**, which is a database in a single file.
 
 Two engines, one application, and one set of C# classes describing the data.
-Nothing above `TheBlock.Infrastructure` knows which one is underneath.
+Nothing above `TheYard.Infrastructure` knows which one is underneath.
 
 Why two? Because CI runs on a machine with no Azure credential and is never
 getting one, and because a developer should be able to clone this and run
@@ -36,7 +36,7 @@ is the part this project deliberately does not use on SQL Server, and it is the
 one thing worth understanding before anything else here makes sense.
 
 On SQL Server, **the schema is written by hand as SQL** and lives in
-`api/TheBlock.Database`. EF maps to it. If the C# says a column is 64 characters
+`api/TheYard.Database`. EF maps to it. If the C# says a column is 64 characters
 and the SQL says 32, the SQL is right and a test fails. The reason is in ADR:
 Data first, and it is Steve's: a schema written as DDL survives a change of
 framework, and a schema written as C# attributes does not.
@@ -69,7 +69,7 @@ models, and two models cannot share one snapshot.
 
 **A SQL project** is a project whose source files are `.sql` and whose output is
 a **DACPAC**: a compiled description of a database. `dotnet build` on
-`api/TheBlock.Database` reads the `CREATE TABLE` files, checks that they make
+`api/TheYard.Database` reads the `CREATE TABLE` files, checks that they make
 sense together (a foreign key pointing at a table nobody declared is an error,
 not a runtime surprise), and produces the package.
 
@@ -107,17 +107,17 @@ store, rotate, or leak. ADR: The SQL Server backend has the before and after.
 ## Where each thing lives
 
 ```
-api/TheBlock.Database/            the schema, hand-written SQL, the authority
+api/TheYard.Database/            the schema, hand-written SQL, the authority
   Tables/Vehicles.sql             one file per table, with the reason beside every length
   Tables/Identity/                the seven tables ASP.NET Core Identity expects
-api/TheBlock.Infrastructure/
+api/TheYard.Infrastructure/
   YardConnection.cs               which provider, which connection, and the retry policy
   YardDbContext.cs                the mapping, and the two lines SQL Server alone can express
   Rows.cs                         the storage row types, which are not the domain records
   EfSources.cs                    the adapters, the seed, and how a schema arrives per provider
-api/TheBlock.Migrations.Sqlite/   the SQLite schema's history
-api/TheBlock.Api/DesignTime.cs    what `dotnet ef` uses when it needs the model
-api/TheBlock.Tests/
+api/TheYard.Migrations.Sqlite/   the SQLite schema's history
+api/TheYard.Api/DesignTime.cs    what `dotnet ef` uses when it needs the model
+api/TheYard.Tests/
   SchemaConformanceTests.cs       holds the mapping to the SQL project
   SqlServerModelTests.cs          the mapping's own rules, asserted without a database
   RelationalConstraintTests.cs    the foreign key and the token, against a real engine
@@ -127,7 +127,7 @@ api/TheBlock.Tests/
 
 In this order, because the tests enforce it.
 
-1. **Add it to the SQL file.** `api/TheBlock.Database/Tables/Vehicles.sql`, with
+1. **Add it to the SQL file.** `api/TheYard.Database/Tables/Vehicles.sql`, with
    a type and a length and a comment saying why that length.
 2. **Add it to the row type**, `Rows.cs`.
 3. **Map it** in `YardDbContext.OnModelCreating` if it needs a length, a type or
@@ -138,8 +138,8 @@ In this order, because the tests enforce it.
 
    ```
    dotnet ef migrations add AddedTheColumn ^
-     --project api/TheBlock.Migrations.Sqlite ^
-     --startup-project api/TheBlock.Api ^
+     --project api/TheYard.Migrations.Sqlite ^
+     --startup-project api/TheYard.Api ^
      --context YardDbContext -- --sqlite
    ```
 
@@ -148,8 +148,8 @@ In this order, because the tests enforce it.
 7. **Publish the schema** to Azure when it ships:
 
    ```
-   dotnet build api/TheBlock.Database/TheBlock.Database.sqlproj
-   sqlpackage /Action:Publish /SourceFile:api/TheBlock.Database/bin/Debug/TheBlock.Database.dacpac ^
+   dotnet build api/TheYard.Database/TheYard.Database.sqlproj
+   sqlpackage /Action:Publish /SourceFile:api/TheYard.Database/bin/Debug/TheYard.Database.dacpac ^
      /TargetConnectionString:"Server=tcp:...;Initial Catalog=sqldb-theyard-ss;Authentication=Active Directory Default;Encrypt=True;"
    ```
 
@@ -180,10 +180,10 @@ file it replaced.
 
 ## Files
 
-- [`api/TheBlock.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardConnection.cs)
-- [`api/TheBlock.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardDbContext.cs)
-- [`api/TheBlock.Api/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DesignTime.cs)
-- [`api/TheBlock.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Database)
+- [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs)
+- [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs)
+- [`api/TheYard.Api/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DesignTime.cs)
+- [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database)
 - [`docs/ADR-039-sql-server-backend.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-039-sql-server-backend.md)
 - [`docs/ADR-040-database-source-control.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-040-database-source-control.md)
 - [`docs/ADR-034-entity-framework-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-034-entity-framework-explained.md)

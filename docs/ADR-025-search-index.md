@@ -107,27 +107,27 @@ JIT reads as a slow release. The table above is warm on both sides.
 
 ## In the code
 
-The index, and the text it holds (`api/TheBlock.Domain/VehicleSearchIndex.cs`):
+The index, and the text it holds (`api/TheYard.Domain/VehicleSearchIndex.cs`):
 
-```live path=api/TheBlock.Domain/VehicleSearchIndex.cs region=text
+```live path=api/TheYard.Domain/VehicleSearchIndex.cs region=text
 ```
 
-```live path=api/TheBlock.Domain/VehicleSearchIndex.cs region=lookup
+```live path=api/TheYard.Domain/VehicleSearchIndex.cs region=lookup
 ```
 
-Compiling the filter once (`api/TheBlock.Domain/VehicleFilter.cs`):
+Compiling the filter once (`api/TheYard.Domain/VehicleFilter.cs`):
 
-```live path=api/TheBlock.Domain/VehicleFilter.cs region=compile
+```live path=api/TheYard.Domain/VehicleFilter.cs region=compile
 ```
 
 The scan, and why the status is checked separately:
 
-```live path=api/TheBlock.Domain/VehicleFilter.cs region=query
+```live path=api/TheYard.Domain/VehicleFilter.cs region=query
 ```
 
-Where the two meet (`api/TheBlock.Application/InventoryService.cs`):
+Where the two meet (`api/TheYard.Application/InventoryService.cs`):
 
-```live path=api/TheBlock.Application/InventoryService.cs region=search
+```live path=api/TheYard.Application/InventoryService.cs region=search
 ```
 
 ## Consequences
@@ -152,8 +152,8 @@ Where the two meet (`api/TheBlock.Application/InventoryService.cs`):
 
 ## Files
 
-- [`api/TheBlock.Domain/VehicleSearchIndex.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Domain/VehicleSearchIndex.cs): the index, its text and its fallback.
-- [`api/TheBlock.Domain/VehicleFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Domain/VehicleFilter.cs): `Compile`, and the two-part token check.
-- [`api/TheBlock.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/InventoryService.cs): built with the dataset, used by `Search`.
-- [`api/TheBlock.Tests/VehicleSearchIndexTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/VehicleSearchIndexTests.cs): the indexed and unindexed paths must answer identically.
-- [`api/TheBlock.Tests/SearchIndexBenchmarkTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/SearchIndexBenchmarkTests.cs): the measurement above, and the coverage assertion.
+- [`api/TheYard.Domain/VehicleSearchIndex.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleSearchIndex.cs): the index, its text and its fallback.
+- [`api/TheYard.Domain/VehicleFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleFilter.cs): `Compile`, and the two-part token check.
+- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): built with the dataset, used by `Search`.
+- [`api/TheYard.Tests/VehicleSearchIndexTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/VehicleSearchIndexTests.cs): the indexed and unindexed paths must answer identically.
+- [`api/TheYard.Tests/SearchIndexBenchmarkTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SearchIndexBenchmarkTests.cs): the measurement above, and the coverage assertion.

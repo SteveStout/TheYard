@@ -31,8 +31,8 @@ tool cannot check.
 
 ## Layering
 
-- Dependencies point inward. `TheBlock.Data` references nothing;
-  `TheBlock.Domain` may reference Data; Application talks to
+- Dependencies point inward. `TheYard.Data` references nothing;
+  `TheYard.Domain` may reference Data; Application talks to
   Infrastructure only through ports. If a file needs a `using` that points
   outward, the code is in the wrong project.
 - Domain code is pure: no `DateTime.Now`, no filesystem, no HTTP. Time
@@ -102,7 +102,7 @@ Four more habits:
 
 - [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/.editorconfig): the mechanical rules, applied by the editor and the compiler.
 - [`docs/ARCHITECTURE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ARCHITECTURE.md): the layers these rules protect.
-- [`api/TheBlock.Api/TheBlock.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/TheBlock.Api.csproj): nullable reference types and implicit usings on.
+- [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): nullable reference types and implicit usings on.
 - [`tsconfig.app.json`](https://github.com/SteveStout/TheYard/blob/main/tsconfig.app.json): `strict`, `noUnusedLocals`, `noUnusedParameters`, explained option by option in ADR: The React configuration, explained.
 - [`docs/ADR-006-docs-and-testing.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-006-docs-and-testing.md): the documenting rule the comment section points at.
 - [`docs/ADR-017-staff-review.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-017-staff-review.md): the review pass these rules are reviewed against.

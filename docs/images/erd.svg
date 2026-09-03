@@ -23,7 +23,7 @@
   </defs>
 
   <rect width="1400" height="880" fill="#e9e6e7"/>
-  <text x="40" y="46" class="heading">TheYard's database, as api/TheBlock.Database declares it</text>
+  <text x="40" y="46" class="heading">TheYard's database, as api/TheYard.Database declares it</text>
   <text x="40" y="70" class="caption">Hand-written DDL is the authority; Entity Framework maps to it and a conformance test fails the build if they disagree (ADR-039, ADR-040).</text>
   <text x="40" y="92" class="caption">Solid lines are constraints the database enforces. Dashed lines are relationships that exist in the application and deliberately not in the schema.</text>
 

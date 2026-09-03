@@ -2,14 +2,14 @@
 
 Seven pieces, listed inside-out. Each may only depend on the ones above it.
 
-## TheBlock.Data
+## TheYard.Data
 
 The innermost ring and the language every other layer speaks: the pure data records,
 `Vehicle` exactly as it appears in `data/vehicles.json`, and `PhotoEntry` from the photo
 manifest. Sealed records, value equality, zero dependencies, zero behavior. If it
 computes anything, it doesn't belong here.
 
-## TheBlock.Domain
+## TheYard.Domain
 
 The business rules, as pure functions over Data: `AuctionSchedule` derives each
 vehicle's auction window from its id, `BidRules` owns increments, validation, and the
@@ -18,7 +18,7 @@ results, and `PhotoGallery` picks deterministic galleries. Everything takes its 
 an argument (`AuctionClock`), so every rule is testable with a fixed timestamp and no
 mocking.
 
-## TheBlock.Application
+## TheYard.Application
 
 The use cases, and the seams. `InventoryService` loads the dataset once and answers
 search/facet/by-id queries by composing Domain rules; `BidService` holds the buyer's
@@ -27,7 +27,7 @@ bid, and applies it *before* filtering so prices never disagree with the
 UI. Both consume data through ports (`IVehicleSource`, `IPhotoManifestSource`): the
 interfaces that make Infrastructure swappable and the tests trivial to fake.
 
-## TheBlock.Infrastructure
+## TheYard.Infrastructure
 
 The adapters behind those ports: `JsonFileVehicleSource` and
 `JsonFilePhotoManifestSource` deserialize the files on disk, and
@@ -35,7 +35,7 @@ The adapters behind those ports: `JsonFileVehicleSource` and
 deterministic records, proof the port design works, since nothing above it changed when
 the dataset grew 500×.
 
-## TheBlock.Api
+## TheYard.Api
 
 The composition root and nothing more: `Program.cs` wires the dependency graph and
 declares every HTTP route, `VehicleQueryParams` binds and validates GET parameters,
@@ -43,7 +43,7 @@ declares every HTTP route, `VehicleQueryParams` binds and validates GET paramete
 auction facts onto each outgoing vehicle. Endpoints contain no logic, only binding and
 delegation.
 
-## TheBlock.Tests
+## TheYard.Tests
 
 One suite per ring: Domain rules with fixed clocks, Application services with in-memory
 fakes at the ports, Infrastructure against both fixtures and the real dataset, and

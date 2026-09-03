@@ -75,30 +75,30 @@ this record has room for.
 
 ## In the code
 
-Issuing the session (`api/TheBlock.Api/Tokens.cs`):
+Issuing the session (`api/TheYard.Api/Tokens.cs`):
 
-```live path=api/TheBlock.Api/Tokens.cs region=issue
+```live path=api/TheYard.Api/Tokens.cs region=issue
 ```
 
-Reading it back, and who is asking (`api/TheBlock.Api/Tokens.cs`):
+Reading it back, and who is asking (`api/TheYard.Api/Tokens.cs`):
 
-```live path=api/TheBlock.Api/Tokens.cs region=who
+```live path=api/TheYard.Api/Tokens.cs region=who
 ```
 
-Two indexes, one fact (`api/TheBlock.Application/BidService.cs`):
+Two indexes, one fact (`api/TheYard.Application/BidService.cs`):
 
-```live path=api/TheBlock.Application/BidService.cs region=record
+```live path=api/TheYard.Application/BidService.cs region=record
 ```
 
-What a badge is told (`api/TheBlock.Api/BidViews.cs`):
+What a badge is told (`api/TheYard.Api/BidViews.cs`):
 
-```live path=api/TheBlock.Api/BidViews.cs region=views
+```live path=api/TheYard.Api/BidViews.cs region=views
 ```
 
 The tests, including the two accounts and the restart
-(`api/TheBlock.Tests/AuthTests.cs`):
+(`api/TheYard.Tests/AuthTests.cs`):
 
-```live path=api/TheBlock.Tests/AuthTests.cs region=auth-tests
+```live path=api/TheYard.Tests/AuthTests.cs region=auth-tests
 ```
 
 ## What the suite found on the way
@@ -165,12 +165,12 @@ else on it; the fix is the same one that record already names.
 
 ## Files
 
-- [`api/TheBlock.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Tokens.cs): the token, the cookie, and who is asking.
-- [`api/TheBlock.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Accounts.cs): what a register or login answers with.
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the composition, the endpoints, and the three that refuse.
-- [`api/TheBlock.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/BidService.cs): the two indexes.
-- [`api/TheBlock.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/Ports.cs): the store port, now keyed on the pair.
-- [`api/TheBlock.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardUser.cs): the one field Identity does not already have.
-- [`api/TheBlock.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AuthTests.cs): the proof.
+- [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the token, the cookie, and who is asking.
+- [`api/TheYard.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Accounts.cs): what a register or login answers with.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composition, the endpoints, and the three that refuse.
+- [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the two indexes.
+- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the store port, now keyed on the pair.
+- [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the one field Identity does not already have.
+- [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the proof.
 - [`docs/ADR-038-identity-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-038-identity-explained.md): the same setup, walked at a new developer's level.
 - [`docs/ADR-033-relational-store.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-033-relational-store.md): where bids got somewhere to live.

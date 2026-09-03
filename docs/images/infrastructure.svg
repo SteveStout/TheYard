@@ -99,7 +99,7 @@
   <text x="815" y="468" class="body">The server is Entra-only: it has no SQL login and therefore no password. The</text>
   <text x="815" y="484" class="body">container authenticates as id-theyard-ss, which holds db_datareader and</text>
   <text x="815" y="500" class="body">db_datawriter and cannot create or alter a table.</text>
-  <text x="815" y="522" class="body">The schema is api/TheBlock.Database, hand-written DDL published by SqlPackage.</text>
+  <text x="815" y="522" class="body">The schema is api/TheYard.Database, hand-written DDL published by SqlPackage.</text>
   <text x="815" y="538" class="body">Entity Framework maps to it; a conformance test fails the build if they differ.</text>
   <text x="815" y="560" class="muted">West US 3 because West US 2 refused: RegionDoesNotAllowProvisioning.</text>
 

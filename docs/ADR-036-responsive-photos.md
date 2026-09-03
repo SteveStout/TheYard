@@ -87,9 +87,9 @@ Choosing the copy (`src/components/VehicleImage.tsx`):
 ```
 
 The test that makes the convention safe
-(`api/TheBlock.Tests/PhotoSizeTests.cs`):
+(`api/TheYard.Tests/PhotoSizeTests.cs`):
 
-```live path=api/TheBlock.Tests/PhotoSizeTests.cs region=photo-sizes
+```live path=api/TheYard.Tests/PhotoSizeTests.cs region=photo-sizes
 ```
 
 ## Consequences
@@ -108,5 +108,5 @@ The test that makes the convention safe
 - [`scripts/resize_photos.mjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/resize_photos.mjs): the resizer.
 - [`src/components/VehicleImage.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleImage.tsx): the srcset and the derived name.
 - [`src/components/VehicleDetail.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleDetail.tsx): the two other sizes.
-- [`api/TheBlock.Tests/PhotoSizeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/PhotoSizeTests.cs): the convention, held.
+- [`api/TheYard.Tests/PhotoSizeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PhotoSizeTests.cs): the convention, held.
 - [`docs/ADR-015-cache-headers.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-015-cache-headers.md): why these files are cached the way they are once they arrive.

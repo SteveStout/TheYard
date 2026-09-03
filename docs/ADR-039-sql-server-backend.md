@@ -163,7 +163,7 @@ cloud database needs.
 **The provider is chosen by whether there is a SQL Server to talk to,** and a
 placeholder counts as nothing:
 
-```live path=api/TheBlock.Infrastructure/YardConnection.cs region=choose
+```live path=api/TheYard.Infrastructure/YardConnection.cs region=choose
 ```
 
 The `__` test is the difference between a bad deploy and an outage. The
@@ -175,7 +175,7 @@ week, instead of crash-looping against a string that is not a connection string.
 
 **Retries, because a serverless database is sometimes asleep:**
 
-```live path=api/TheBlock.Infrastructure/YardConnection.cs region=configure
+```live path=api/TheYard.Infrastructure/YardConnection.cs region=configure
 ```
 
 The database auto-pauses after an idle hour. The first connection after that
@@ -203,16 +203,16 @@ Steve scoped this: the current model done properly. Vehicles, photos, accounts,
 bids. Correct types and lengths, real foreign keys, the indexes the queries
 actually need, a concurrency token on bids. Nothing speculative.
 
-Every decision below is written in `api/TheBlock.Database` as DDL and mirrored in
+Every decision below is written in `api/TheYard.Database` as DDL and mirrored in
 the EF model, and a conformance test fails the build if the two disagree. The
 catalogue table, with the reason beside every length:
 
-```live path=api/TheBlock.Database/Tables/Vehicles.sql region=*
+```live path=api/TheYard.Database/Tables/Vehicles.sql region=*
 ```
 
 The mapping that has to agree with it:
 
-```live path=api/TheBlock.Infrastructure/YardDbContext.cs region=model
+```live path=api/TheYard.Infrastructure/YardDbContext.cs region=model
 ```
 
 **Lengths on every text column this application owns.** Without them every string
@@ -248,7 +248,7 @@ now rather than only in C#. The property stays a string for the same reason the
 grade stays a double, and the converter is asserted to round-trip every one of
 the 200 rows in the dataset rather than an example:
 
-```live path=api/TheBlock.Infrastructure/YardDbContext.cs region=auction-start
+```live path=api/TheYard.Infrastructure/YardDbContext.cs region=auction-start
 ```
 
 **Damage notes and images stay JSON columns.** They are read and written whole
@@ -300,7 +300,7 @@ save and the guarantee is the same with a different owner. The store retries a c
 correct answer to "somebody moved this row" is to start again from what is there
 now:
 
-```live path=api/TheBlock.Infrastructure/EfSources.cs region=bid-store
+```live path=api/TheYard.Infrastructure/EfSources.cs region=bid-store
 ```
 
 **Identity's own tables were left alone**, including the `nvarchar(max)` columns
@@ -317,18 +317,18 @@ and applied it with migrations at startup. That lasted about an hour, until Stev
 asked for data first and gave the reason: the data structure outlives the
 framework that reads it.
 
-So the schema is `api/TheBlock.Database`, a SQL project of hand-written DDL that
+So the schema is `api/TheYard.Database`, a SQL project of hand-written DDL that
 builds to a DACPAC, and this application maps to it. The decision, what it costs
 and what enforces it are in ADR: Data first, and the database in source control.
 What matters here is the shape it leaves behind:
 
 ```
-api/TheBlock.Database/            the SQL Server schema, the authority, published by SqlPackage
-api/TheBlock.Migrations.Sqlite/   the SQLite schema's history, applied by the process that uses it
+api/TheYard.Database/            the SQL Server schema, the authority, published by SqlPackage
+api/TheYard.Migrations.Sqlite/   the SQLite schema's history, applied by the process that uses it
 ```
 
 The SQLite history is the same history it has always had, moved out of
-`TheBlock.Infrastructure` and renamed, carrying the same migration ids, so a
+`TheYard.Infrastructure` and renamed, carrying the same migration ids, so a
 database created last week still matches its own `__EFMigrationsHistory` rows.
 The SQL Server migrations were deleted rather than kept, because a migrations
 chain nobody applies is a second definition of the schema waiting to be believed.
@@ -336,7 +336,7 @@ chain nobody applies is a second definition of the schema waiting to be believed
 One design-time factory still exists, in the host project, because SQLite still
 has migrations to write:
 
-```live path=api/TheBlock.Api/DesignTime.cs region=design-time
+```live path=api/TheYard.Api/DesignTime.cs region=design-time
 ```
 
 ### What the first publish said, and what it cost to ignore
@@ -386,7 +386,7 @@ the SQL Server schema is asserted from the model rather than against a server:
 each test builds the context with the SQL Server provider, reads the model or
 generates the CREATE script, and never opens a connection.
 
-```live path=api/TheBlock.Tests/SqlServerModelTests.cs region=lengths
+```live path=api/TheYard.Tests/SqlServerModelTests.cs region=lengths
 ```
 
 That covers the lengths, the types, the keys, the clustering, the token and the
@@ -397,7 +397,7 @@ up on the Admin tab if it fails.
 The constraints that both providers share are exercised against a real engine,
 which is SQLite for the same reason it is SQLite in CI:
 
-```live path=api/TheBlock.Tests/RelationalConstraintTests.cs region=concurrency
+```live path=api/TheYard.Tests/RelationalConstraintTests.cs region=concurrency
 ```
 
 ## What this does not give you
@@ -638,16 +638,16 @@ for, and it is recorded in ADR: The exemption that hid a contrast failure.
 
 ## Files
 
-- [`api/TheBlock.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardConnection.cs): the provider choice, the retry policy, and what may be said about the database.
-- [`api/TheBlock.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardDbContext.cs): the model, both providers, and the value converters.
-- [`api/TheBlock.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/Rows.cs): the row types, and the concurrency token.
-- [`api/TheBlock.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/EfSources.cs): the adapters, the seed, and the store that retries a conflict.
-- [`api/TheBlock.Api/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DesignTime.cs): the one design-time factory, and the two commands that use it.
-- [`api/TheBlock.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Database): the SQL Server schema, hand written, and the authority for it.
-- [`api/TheBlock.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Migrations.Sqlite): the SQLite schema's history.
-- [`api/TheBlock.Tests/SchemaConformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/SchemaConformanceTests.cs): what holds the mapping to the schema.
-- [`api/TheBlock.Tests/SqlServerModelTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/SqlServerModelTests.cs): the schema, asserted without a SQL Server.
-- [`api/TheBlock.Tests/RelationalConstraintTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/RelationalConstraintTests.cs): the foreign key and the token, exercised against an engine.
+- [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the provider choice, the retry policy, and what may be said about the database.
+- [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the model, both providers, and the value converters.
+- [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs): the row types, and the concurrency token.
+- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the adapters, the seed, and the store that retries a conflict.
+- [`api/TheYard.Api/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DesignTime.cs): the one design-time factory, and the two commands that use it.
+- [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the SQL Server schema, hand written, and the authority for it.
+- [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the SQLite schema's history.
+- [`api/TheYard.Tests/SchemaConformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SchemaConformanceTests.cs): what holds the mapping to the schema.
+- [`api/TheYard.Tests/SqlServerModelTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SqlServerModelTests.cs): the schema, asserted without a SQL Server.
+- [`api/TheYard.Tests/RelationalConstraintTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RelationalConstraintTests.cs): the foreign key and the token, exercised against an engine.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the setting, and the placeholder that is not a connection string.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): where the setting is built, at roll time, from the resource itself.
 - [`docs/ADR-040-database-source-control.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-040-database-source-control.md): the SQL project, why it is the authority, and what enforces that.

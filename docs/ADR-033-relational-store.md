@@ -52,7 +52,7 @@ exists. The one seam that is new is `IBidStore`, which is a port for the same
 reason the other two are: `BidService` decides the rules and does not get to
 know where the answer is kept.
 
-**Row types, not domain records.** `TheBlock.Data.Vehicle` is a sealed record
+**Row types, not domain records.** `TheYard.Data.Vehicle` is a sealed record
 with init-only members and `IReadOnlyList<string>` collections. Those are the
 right choices for a value the whole application passes around and the wrong
 ones for something a mapper builds a field at a time, so `VehicleRow` is its
@@ -228,31 +228,31 @@ strategy).
 ## In the code
 
 Bringing the store up, or reporting that it could not be brought up
-(`api/TheBlock.Infrastructure/EfSources.cs`):
+(`api/TheYard.Infrastructure/EfSources.cs`):
 
-```live path=api/TheBlock.Infrastructure/EfSources.cs region=prepare
+```live path=api/TheYard.Infrastructure/EfSources.cs region=prepare
 ```
 
 The model, and why the ordering column exists
-(`api/TheBlock.Infrastructure/YardDbContext.cs`):
+(`api/TheYard.Infrastructure/YardDbContext.cs`):
 
-```live path=api/TheBlock.Infrastructure/YardDbContext.cs region=model
+```live path=api/TheYard.Infrastructure/YardDbContext.cs region=model
 ```
 
-The seam, unchanged above it (`api/TheBlock.Infrastructure/EfSources.cs`):
+The seam, unchanged above it (`api/TheYard.Infrastructure/EfSources.cs`):
 
-```live path=api/TheBlock.Infrastructure/EfSources.cs region=ef-sources
+```live path=api/TheYard.Infrastructure/EfSources.cs region=ef-sources
 ```
 
 Bids, written through the lock that was already there
-(`api/TheBlock.Application/BidService.cs`):
+(`api/TheYard.Application/BidService.cs`):
 
-```live path=api/TheBlock.Application/BidService.cs region=store
+```live path=api/TheYard.Application/BidService.cs region=store
 ```
 
-The proof (`api/TheBlock.Tests/PersistenceTests.cs`):
+The proof (`api/TheYard.Tests/PersistenceTests.cs`):
 
-```live path=api/TheBlock.Tests/PersistenceTests.cs region=restart
+```live path=api/TheYard.Tests/PersistenceTests.cs region=restart
 ```
 
 ## Consequences
@@ -335,12 +335,12 @@ every check stopped gating readiness.
 
 ## Files
 
-- [`api/TheBlock.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardDbContext.cs): the context, the model, and the design-time factory.
-- [`api/TheBlock.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/Rows.cs): the three row types.
-- [`api/TheBlock.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/EfSources.cs): the adapters, the mapping, and the seed.
-- [`api/TheBlock.Infrastructure/Migrations`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Infrastructure/Migrations): the schema's history.
-- [`api/TheBlock.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/Ports.cs): the third port, and the null store.
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the registration, the migrate and seed block, and the health check.
-- [`api/TheBlock.Tests/PersistenceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/PersistenceTests.cs): the restart, the seeding, the migration history, and the file on disk.
+- [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the context, the model, and the design-time factory.
+- [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs): the three row types.
+- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the adapters, the mapping, and the seed.
+- [`api/TheYard.Infrastructure/Migrations`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Infrastructure/Migrations): the schema's history.
+- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the third port, and the null store.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the registration, the migrate and seed block, and the health check.
+- [`api/TheYard.Tests/PersistenceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PersistenceTests.cs): the restart, the seeding, the migration history, and the file on disk.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the writable directory and the connection string.
 - [`docs/ADR-034-entity-framework-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-034-entity-framework-explained.md): the same setup, walked at a new developer's level.

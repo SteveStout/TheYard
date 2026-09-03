@@ -56,30 +56,30 @@ that file, read from inside the running image.
 ## In the code
 
 The whitelist, read from this build
-([`api/TheBlock.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/LiveSamples.cs)):
+([`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs)):
 
-```live path=api/TheBlock.Api/LiveSamples.cs region=whitelist
+```live path=api/TheYard.Api/LiveSamples.cs region=whitelist
 ```
 
 The expander, showing itself. This is the most self-referential sample in
 the building, and it is shown here with a straight face because it is the
 only sample that cannot possibly be stale:
 
-```live path=api/TheBlock.Api/LiveSamples.cs region=expander
+```live path=api/TheYard.Api/LiveSamples.cs region=expander
 ```
 
 The one endpoint every document goes through, since ADR: The staff review
 folded the per-document routes into a catalog
-([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs),
-[`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs)):
+([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs),
+[`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs)):
 
-```live path=api/TheBlock.Api/Program.cs region=docs-endpoint
+```live path=api/TheYard.Api/Program.cs region=docs-endpoint
 ```
 
 The rejection cases the tests hold the whitelist to, read from this build
-([`api/TheBlock.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/LiveSamplesTests.cs)):
+([`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs)):
 
-```live path=api/TheBlock.Tests/LiveSamplesTests.cs region=rejection
+```live path=api/TheYard.Tests/LiveSamplesTests.cs region=rejection
 ```
 
 The copy lines are in the
@@ -116,11 +116,11 @@ hour ago.
 
 ## Files
 
-- [`api/TheBlock.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/LiveSamples.cs): the whitelist and the expander.
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs) and
-  [`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs): the one endpoint and the slugs
+- [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the whitelist and the expander.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs) and
+  [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the one endpoint and the slugs
   it serves through the expander.
-- [`api/TheBlock.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/LiveSamplesTests.cs): the rejection cases and
+- [`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs): the rejection cases and
   the served-record checks.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the sources copied into the image so the container
   can read its own code.
@@ -154,7 +154,7 @@ files now, beside the six roots. The test itself is not shown here on
 purpose: its source spells out a live fence, and a record that showed it
 would fail the check that no fence is left in a served document.
 
-```live path=api/TheBlock.Api/LiveSamples.cs region=whole-file
+```live path=api/TheYard.Api/LiveSamples.cs region=whole-file
 ```
 
 ## The look, from the live site

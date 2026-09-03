@@ -166,9 +166,9 @@ than being silently excluded.
 
 ## Files
 
-- [`api/TheBlock.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/EfSources.cs): `DatabaseState` carrying the failure as an exception rather than as text.
-- [`api/TheBlock.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/AdminObservability.cs): the category allow-list, the self-observation filter, the capacity guards.
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the timing middleware where it belongs, and readiness that runs only what it needs.
-- [`api/TheBlock.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardConnection.cs): the connect budget and the retry policy read together.
+- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): `DatabaseState` carrying the failure as an exception rather than as text.
+- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the category allow-list, the self-observation filter, the capacity guards.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the timing middleware where it belongs, and readiness that runs only what it needs.
+- [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the connect budget and the retry policy read together.
 - [`tests/e2e/app.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/app.ts): a wait for something that is there.
 - [`docs/ADR-042-exemptions-that-hide.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-042-exemptions-that-hide.md): the checks that asked easier questions, which this is the sequel to.

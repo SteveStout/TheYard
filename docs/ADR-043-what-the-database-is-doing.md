@@ -146,10 +146,10 @@ browser suite repeats the same check against the rendered page.
 
 ## Files
 
-- [`api/TheBlock.Application/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/SqlLog.cs): the types with nowhere to put a value, and the two ports.
-- [`api/TheBlock.Infrastructure/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/SqlLogInterceptor.cs): reading the command instead of the log line.
-- [`api/TheBlock.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/AdminObservability.cs): the three rings, the logging provider, and the percentiles.
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): where they are wired, and the timing middleware.
-- [`api/TheBlock.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AdminObservabilityTests.cs): the canary, the shape check, and the percentile table.
+- [`api/TheYard.Application/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/SqlLog.cs): the types with nowhere to put a value, and the two ports.
+- [`api/TheYard.Infrastructure/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SqlLogInterceptor.cs): reading the command instead of the log line.
+- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the three rings, the logging provider, and the percentiles.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): where they are wired, and the timing middleware.
+- [`api/TheYard.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminObservabilityTests.cs): the canary, the shape check, and the percentile table.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the three sections.
 - [`docs/ADR-010-observability.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-010-observability.md): why this page is public in the first place.

@@ -74,9 +74,9 @@ The refusal (`.github/workflows/deploy.yml`):
 ```live path=.github/workflows/deploy.yml region=changelog-check
 ```
 
-The same rule from the other side (`api/TheBlock.Tests/ChangelogTests.cs`):
+The same rule from the other side (`api/TheYard.Tests/ChangelogTests.cs`):
 
-```live path=api/TheBlock.Tests/ChangelogTests.cs region=version-order
+```live path=api/TheYard.Tests/ChangelogTests.cs region=version-order
 ```
 
 ## Consequences
@@ -99,7 +99,7 @@ The same rule from the other side (`api/TheBlock.Tests/ChangelogTests.cs`):
 ## Files
 
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the version step and the refusal.
-- [`api/TheBlock.Tests/ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ChangelogTests.cs): the same rule, enforced a minute earlier.
+- [`api/TheYard.Tests/ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ChangelogTests.cs): the same rule, enforced a minute earlier.
 - [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): now an input to the build.
 - [`docs/ADR-012-changelog.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-012-changelog.md): the record that predicted this failure and chose the procedural guard.
 - [`docs/ADR-005-version-footer.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-005-version-footer.md), [`docs/ADR-009-deploy-pipeline.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-009-deploy-pipeline.md): where the old formula was written down.

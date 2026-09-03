@@ -43,7 +43,7 @@ never does. The folder README.md sits in becomes `repoRoot`, and every
 later path is built from it; ADR: The staff review removed the per-request
 walks that used to repeat this work.
 
-```live path=api/TheBlock.Api/Program.cs region=find-upward
+```live path=api/TheYard.Api/Program.cs region=find-upward
 ```
 
 ### The services, and why they are singletons
@@ -67,7 +67,7 @@ overridable through configuration), so the app demonstrates scale without
 a giant file in the repository. The project structure document explains
 the layers those types come from.
 
-```live path=api/TheBlock.Api/Program.cs region=composition
+```live path=api/TheYard.Api/Program.cs region=composition
 ```
 
 ### snake_case, in two places
@@ -104,7 +104,7 @@ shape every failure uses (ADR: Error handling), a good one
 the auction facts on each vehicle come from `VehicleWire.ToWire`, so the
 same rules serve the list, the detail, and the bid responses.
 
-```live path=api/TheBlock.Api/Program.cs region=inventory-endpoint
+```live path=api/TheYard.Api/Program.cs region=inventory-endpoint
 ```
 
 The two bid endpoints share one local function, `HandleBid`, which answers
@@ -113,10 +113,10 @@ vehicle exist (404 if not), does the domain accept the action (400 with
 the reason if not). The status codes are the contract the React app relies
 on: it reads `detail` out of a 400 and treats a 404 as gone.
 
-```live path=api/TheBlock.Api/Program.cs region=bid-endpoints
+```live path=api/TheYard.Api/Program.cs region=bid-endpoints
 ```
 
-```live path=api/TheBlock.Api/Program.cs region=bid-handling
+```live path=api/TheYard.Api/Program.cs region=bid-handling
 ```
 
 The documents come from one endpoint over a catalog (ADR: The staff
@@ -134,7 +134,7 @@ what they cover: they cover everything. The error middleware is the
 simplest example, a try around `next()` that records a 500 or an exception
 and rethrows so the framework still answers.
 
-```live path=api/TheBlock.Api/Program.cs region=error-log
+```live path=api/TheYard.Api/Program.cs region=error-log
 ```
 
 The static file middleware and the SPA fallback are registered last on
@@ -143,7 +143,7 @@ index.html and the bundle files get their headers; the fallback answers
 only addresses without a file extension, so a missing bundle file is a 404
 rather than a page dressed as a script.
 
-```live path=api/TheBlock.Api/Program.cs region=static-files
+```live path=api/TheYard.Api/Program.cs region=static-files
 ```
 
 ### Liveness, readiness, and the Admin tab
@@ -156,10 +156,10 @@ the same probes with their timings for the Admin tab. The difference
 matters: a process can be alive and not yet ready, and an orchestrator
 treats the two differently.
 
-```live path=api/TheBlock.Api/Program.cs region=health-checks
+```live path=api/TheYard.Api/Program.cs region=health-checks
 ```
 
-```live path=api/TheBlock.Api/Program.cs region=probes
+```live path=api/TheYard.Api/Program.cs region=probes
 ```
 
 ### The environment the container sets
@@ -170,7 +170,7 @@ build and read once at startup (ADR: Version in the footer). Locally
 neither exists, so the footer says "dev build" and the commit reads
 "local".
 
-```live path=api/TheBlock.Api/Program.cs region=version-endpoint
+```live path=api/TheYard.Api/Program.cs region=version-endpoint
 ```
 
 ### The records at the bottom
@@ -181,14 +181,14 @@ give value equality and a one-line declaration; there is no reason for a
 class here. The partial `Program` line under them is the test hook from
 the top of this record.
 
-```live path=api/TheBlock.Api/Program.cs region=records-and-test-hook
+```live path=api/TheYard.Api/Program.cs region=records-and-test-hook
 ```
 
 ## What to change when
 
 - **A new endpoint:** one `app.MapGet` or `app.MapPost` beside its
   neighbors, binding and delegation only; the rule goes in Domain or
-  Application, and a test in `api/TheBlock.Tests` boots the host and calls
+  Application, and a test in `api/TheYard.Tests` boots the host and calls
   it.
 - **A new document:** one line in `DocsCatalog.cs` and one in
   `DocsMenu.tsx`; a test fails if the two disagree.
@@ -200,12 +200,12 @@ the top of this record.
 
 ## Files
 
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the file this record walks.
-- [`api/TheBlock.Api/TheBlock.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/TheBlock.Api.csproj): `net10.0`, nullable reference types on, implicit usings on (which is why the file has so few `using` lines).
-- [`api/TheBlock.Api/VehicleQueryParams.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/VehicleQueryParams.cs), [`api/TheBlock.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Clocks.cs), [`api/TheBlock.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/VehicleWire.cs): binding, the clock anchor, and the outgoing shape.
-- [`api/TheBlock.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/InventoryService.cs): the `Lazy` that makes the singleton registration matter.
-- [`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs), [`api/TheBlock.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/LiveSamples.cs), [`api/TheBlock.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Observability.cs): the pieces the host wires.
-- [`api/TheBlock.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AdminEndpointTests.cs) and the tests beside it: every one boots this file through `WebApplicationFactory<Program>`.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the file this record walks.
+- [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): `net10.0`, nullable reference types on, implicit usings on (which is why the file has so few `using` lines).
+- [`api/TheYard.Api/VehicleQueryParams.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleQueryParams.cs), [`api/TheYard.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Clocks.cs), [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): binding, the clock anchor, and the outgoing shape.
+- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the `Lazy` that makes the singleton registration matter.
+- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs), [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs), [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the pieces the host wires.
+- [`api/TheYard.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminEndpointTests.cs) and the tests beside it: every one boots this file through `WebApplicationFactory<Program>`.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the port, the provenance arguments, the HEALTHCHECK, and the files copied for the walk to find.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Verify step that asks `/readyz`.
 - [`docs/PROJECTS.md`](https://github.com/SteveStout/TheYard/blob/main/docs/PROJECTS.md): the layers the services come from (served as Project structure under About).

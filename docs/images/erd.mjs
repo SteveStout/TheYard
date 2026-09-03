@@ -5,7 +5,7 @@
 // drawing exercise, and the file that is committed is the picture (ADR-020,
 // every diagram opens on its own page).
 //
-// The authority for what is in here is api/TheBlock.Database, and a conformance
+// The authority for what is in here is api/TheYard.Database, and a conformance
 // test holds the Entity Framework model to those same .sql files
 // (ADR: Data first, and the database in source control). This drawing is the
 // third copy and the only one a person reads at a glance, so when it is wrong
@@ -257,7 +257,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="${canv
   </defs>
 
   <rect width="1400" height="${canvasHeight}" fill="${PALETTE.ground}"/>
-  <text x="40" y="46" class="heading">TheYard's database, as api/TheBlock.Database declares it</text>
+  <text x="40" y="46" class="heading">TheYard's database, as api/TheYard.Database declares it</text>
   <text x="40" y="70" class="caption">Hand-written DDL is the authority; Entity Framework maps to it and a conformance test fails the build if they disagree (ADR-039, ADR-040).</text>
   <text x="40" y="92" class="caption">Solid lines are constraints the database enforces. Dashed lines are relationships that exist in the application and deliberately not in the schema.</text>
 

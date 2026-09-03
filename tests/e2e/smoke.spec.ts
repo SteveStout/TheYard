@@ -113,7 +113,7 @@ test('the About section shows the README in-app and links the résumé PDF', asy
 
   await nav.getByRole('button', { name: 'Project structure' }).click();
   await expect(
-    page.getByRole('dialog').getByRole('heading', { level: 2, name: 'TheBlock.Data' })
+    page.getByRole('dialog').getByRole('heading', { level: 2, name: 'TheYard.Data' })
   ).toBeVisible();
   await page.keyboard.press('Escape');
 

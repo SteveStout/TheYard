@@ -46,13 +46,13 @@ name is the same idea, done by the build, for every file, every time.
 ## In the code
 
 The rules, read from this build
-([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)):
+([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
 
-```live path=api/TheBlock.Api/Program.cs region=cache-headers
+```live path=api/TheYard.Api/Program.cs region=cache-headers
 ```
 
 The proof is
-[`api/TheBlock.Tests/CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/CacheHeaderTests.cs):
+[`api/TheYard.Tests/CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CacheHeaderTests.cs):
 the API, the documents and the version say no-cache; a missing bundle file
 says no-cache rather than immutable; a photo keeps its day.
 
@@ -71,10 +71,10 @@ says no-cache rather than immutable; a photo keeps its day.
 
 ## Files
 
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the middleware (region
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the middleware (region
   cache-headers above), the photo set's own rule, and the SPA fallback that
   answers only app routes.
-- [`api/TheBlock.Tests/CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/CacheHeaderTests.cs): the proof, header by
+- [`api/TheYard.Tests/CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CacheHeaderTests.cs): the proof, header by
   header.
 - [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts) and [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the build that names
   every bundle file by its contents and rewrites the page to match.
@@ -83,7 +83,7 @@ says no-cache rather than immutable; a photo keeps its day.
 ## More of the code
 
 The static file middleware, the photo set's own rule, and the fallback that
-answers only app routes ([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)):
+answers only app routes ([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
 
-```live path=api/TheBlock.Api/Program.cs region=static-files
+```live path=api/TheYard.Api/Program.cs region=static-files
 ```

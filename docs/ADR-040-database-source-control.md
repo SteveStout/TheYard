@@ -9,7 +9,7 @@ still keep your data structure."
 
 ## The decision
 
-**`api/TheBlock.Database` is the authority for the SQL Server schema.** It is a
+**`api/TheYard.Database` is the authority for the SQL Server schema.** It is a
 SQL project: hand-written `CREATE TABLE` files, one per object, that `dotnet
 build` compiles into a DACPAC. Entity Framework maps to what is in there. It does
 not create it, it cannot alter it, and when the two disagree the `.sql` file is
@@ -48,7 +48,7 @@ code. The conformance test is what replaces the generator.
 ## The authority, and the one chain to it
 
 ```
-api/TheBlock.Database/Tables/*.sql        the authority
+api/TheYard.Database/Tables/*.sql        the authority
         |  SchemaConformanceTests
         v
 YardDbContext (SQL Server model)          the mapping, held to the authority by a test
@@ -64,7 +64,7 @@ same table and no way to tell which one the database in front of you came from.
 
 ## What enforces it
 
-```live path=api/TheBlock.Tests/SchemaConformanceTests.cs region=conformance
+```live path=api/TheYard.Tests/SchemaConformanceTests.cs region=conformance
 ```
 
 Six checks, all reading the `.sql` files off disk and the EF model out of memory,
@@ -82,7 +82,7 @@ credential:
 Physical design is checked separately, and against the DDL only, because the
 model does not know about it and should not:
 
-```live path=api/TheBlock.Tests/SchemaConformanceTests.cs region=physical
+```live path=api/TheYard.Tests/SchemaConformanceTests.cs region=physical
 ```
 
 The reader those tests use is not a T-SQL parser. It understands the shape the
@@ -103,7 +103,7 @@ a policy that it does not; it is not permitted to.
 What follows from that is in `YardDatabase.BringSchemaUp`, which is the whole of
 the difference between the two providers:
 
-```live path=api/TheBlock.Infrastructure/EfSources.cs region=schema
+```live path=api/TheYard.Infrastructure/EfSources.cs region=schema
 ```
 
 On SQL Server it asks whether the schema it maps to is present and refuses the
@@ -116,9 +116,9 @@ to it and nothing else reads it, so it has no second authority to disagree with.
 ## How the schema gets to Azure
 
 ```
-dotnet build api/TheBlock.Database/TheBlock.Database.sqlproj
+dotnet build api/TheYard.Database/TheYard.Database.sqlproj
 sqlpackage /Action:Publish ^
-  /SourceFile:api/TheBlock.Database/bin/Debug/TheBlock.Database.dacpac ^
+  /SourceFile:api/TheYard.Database/bin/Debug/TheYard.Database.dacpac ^
   /TargetConnectionString:"Server=tcp:...;Authentication=Active Directory Default;"
 ```
 
@@ -137,7 +137,7 @@ serves the catalogue from files.
 - The database is a reviewable artifact. A schema change shows up in a pull
   request as SQL, and a reviewer who does not read C# can still say whether the
   column is right.
-- The schema is portable. Every statement in `api/TheBlock.Database` is standard
+- The schema is portable. Every statement in `api/TheYard.Database` is standard
   enough to be read by anything that speaks T-SQL, and the parts that are not,
   the clustered index choices, are the parts a different engine would want to
   make differently anyway.
@@ -151,10 +151,10 @@ serves the catalogue from files.
 
 ## Files
 
-- [`api/TheBlock.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Database): the schema, and the authority.
-- [`api/TheBlock.Database/Tables/Vehicles.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Database/Tables/Vehicles.sql): the catalogue, with the reason beside every length.
-- [`api/TheBlock.Database/Tables/Bids.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Database/Tables/Bids.sql): the concurrency token, the foreign key, and the two things deliberately absent.
-- [`api/TheBlock.Tests/SchemaConformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/SchemaConformanceTests.cs): what holds the mapping to the schema.
-- [`api/TheBlock.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/EfSources.cs): the two ways a schema arrives, and the refusal when it has not.
+- [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the schema, and the authority.
+- [`api/TheYard.Database/Tables/Vehicles.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Vehicles.sql): the catalogue, with the reason beside every length.
+- [`api/TheYard.Database/Tables/Bids.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Bids.sql): the concurrency token, the foreign key, and the two things deliberately absent.
+- [`api/TheYard.Tests/SchemaConformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SchemaConformanceTests.cs): what holds the mapping to the schema.
+- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the two ways a schema arrives, and the refusal when it has not.
 - [`docs/ADR-039-sql-server-backend.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-039-sql-server-backend.md): the database itself, and the connection string that is not a credential.
 - [`docs/ADR-041-two-providers-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-041-two-providers-explained.md): the same setup, walked at a new developer's level.

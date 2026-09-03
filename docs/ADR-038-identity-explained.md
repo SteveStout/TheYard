@@ -6,7 +6,7 @@ touches, and ADR: Accounts and per-user bids touched the composition root, the
 request pipeline and the database schema in one change. That record says what
 was decided. This one says what the words mean.
 
-Read it beside `api/TheBlock.Api/Program.cs` and `api/TheBlock.Api/Tokens.cs`.
+Read it beside `api/TheYard.Api/Program.cs` and `api/TheYard.Api/Tokens.cs`.
 The samples below are those files, read from this build.
 
 ## Context
@@ -31,7 +31,7 @@ ASP.NET Core Identity is two things wearing one name.
 The first is a **schema**: seven tables, all prefixed `AspNet`, holding users,
 their password hashes, their roles, their external logins and their claims. You
 can see them created in
-`api/TheBlock.Infrastructure/Migrations/20260903084932_AccountsAndPerUserBids.cs`.
+`api/TheYard.Infrastructure/Migrations/20260903084932_AccountsAndPerUserBids.cs`.
 This project uses one of the seven. The other six are along for the ride
 because the store that manages the first one knows how to manage all of them.
 
@@ -74,7 +74,7 @@ install a second, competing one, and the symptom would be a 302 redirect to a
 login page that does not exist where a 401 was expected. `AddIdentityCore` is
 the one line that avoids all of that.
 
-```live path=api/TheBlock.Api/Program.cs region=auth
+```live path=api/TheYard.Api/Program.cs region=auth
 ```
 
 ### Why a scoped DbContext sits beside the factory
@@ -120,7 +120,7 @@ knows the key, only the server can produce a signature that validates, so a
 token that validates is one this server issued. Forging one means guessing 32
 random bytes.
 
-```live path=api/TheBlock.Api/Tokens.cs region=issue
+```live path=api/TheYard.Api/Tokens.cs region=issue
 ```
 
 `ClockSkew` deserves a note. The library defaults to five minutes of slack on
@@ -227,13 +227,13 @@ Four endpoints carry it: placing a bid, buying now, clearing your bids, and the
 bid history. Reading stays open, so an anonymous visitor still watches the
 auction and cannot bid in it.
 
-```live path=api/TheBlock.Api/Program.cs region=auth-endpoints
+```live path=api/TheYard.Api/Program.cs region=auth-endpoints
 ```
 
 Inside an endpoint that requires it, `http.UserId()` reads the account id from
 the validated claims:
 
-```live path=api/TheBlock.Api/Tokens.cs region=who
+```live path=api/TheYard.Api/Tokens.cs region=who
 ```
 
 It throws rather than returning null. Reaching that line with no id would mean
@@ -245,12 +245,12 @@ sibling for endpoints where signing in is optional.
 
 - **A new endpoint that changes something:** `.RequireAuthorization()` on the
   map call, `HttpContext` in the parameter list, `http.UserId()` for the owner.
-  A test in `api/TheBlock.Tests/AuthTests.cs` should assert it answers 401 to a
+  A test in `api/TheYard.Tests/AuthTests.cs` should assert it answers 401 to a
   caller with no cookie, because that is the assertion that fails when somebody
   copies the endpoint above it and forgets the attribute.
 - **A new field on the user:** add the property to `YardUser`, then
-  `dotnet ef migrations add <Name> --project api/TheBlock.Infrastructure
-  --startup-project api/TheBlock.Api`. The startup project argument is required
+  `dotnet ef migrations add <Name> --project api/TheYard.Infrastructure
+  --startup-project api/TheYard.Api`. The startup project argument is required
   and ADR: The relational store explains why.
 - **A password rule:** the options block inside `AddIdentityCore`. Length is
   the requirement with evidence behind it; the composition rules mostly teach
@@ -263,11 +263,11 @@ sibling for endpoints where signing in is optional.
 
 ## Files
 
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the composition root, the pipeline, and the four auth endpoints.
-- [`api/TheBlock.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Tokens.cs): issuing, validating, the cookie attributes, and reading the caller back out.
-- [`api/TheBlock.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Accounts.cs): the request and response shapes, and the translation of Identity's error codes into a sentence.
-- [`api/TheBlock.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardUser.cs): the user row and its one extra column.
-- [`api/TheBlock.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardDbContext.cs): now an `IdentityDbContext`, which is what puts the seven tables in the model.
-- [`api/TheBlock.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AuthTests.cs): the suite that holds all of this to its claims, including that the token never appears in a response body.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composition root, the pipeline, and the four auth endpoints.
+- [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): issuing, validating, the cookie attributes, and reading the caller back out.
+- [`api/TheYard.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Accounts.cs): the request and response shapes, and the translation of Identity's error codes into a sentence.
+- [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the user row and its one extra column.
+- [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): now an `IdentityDbContext`, which is what puts the seven tables in the model.
+- [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the suite that holds all of this to its claims, including that the token never appears in a response body.
 - [`docs/ADR-037-accounts.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-037-accounts.md): the decisions this record explains.
 - [`docs/ADR-018-program-cs-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-018-program-cs-explained.md): the rest of the host file, walked the same way.

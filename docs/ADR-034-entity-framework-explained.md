@@ -92,7 +92,7 @@ happened here and is written up in ADR: The relational store.
 
 ## Why the row types are not the domain records
 
-`TheBlock.Data.Vehicle` is a sealed record with `required init` properties and
+`TheYard.Data.Vehicle` is a sealed record with `required init` properties and
 `IReadOnlyList<string>` collections. Every one of those choices is deliberate
 and every one of them is awkward for a persistence layer: init-only members
 cannot be set field by field after construction, and a read-only interface is
@@ -127,25 +127,25 @@ have recorded the attempt and left the tables empty forever.
 
 ## In the code
 
-The context and its model (`api/TheBlock.Infrastructure/YardDbContext.cs`):
+The context and its model (`api/TheYard.Infrastructure/YardDbContext.cs`):
 
-```live path=api/TheBlock.Infrastructure/YardDbContext.cs region=model
+```live path=api/TheYard.Infrastructure/YardDbContext.cs region=model
 ```
 
-The seed (`api/TheBlock.Infrastructure/EfSources.cs`):
+The seed (`api/TheYard.Infrastructure/EfSources.cs`):
 
-```live path=api/TheBlock.Infrastructure/EfSources.cs region=seed
+```live path=api/TheYard.Infrastructure/EfSources.cs region=seed
 ```
 
 The bid store, which is the only thing here that writes
-(`api/TheBlock.Infrastructure/EfSources.cs`):
+(`api/TheYard.Infrastructure/EfSources.cs`):
 
-```live path=api/TheBlock.Infrastructure/EfSources.cs region=bid-store
+```live path=api/TheYard.Infrastructure/EfSources.cs region=bid-store
 ```
 
-Startup: migrate, then seed, then serve (`api/TheBlock.Api/Program.cs`):
+Startup: migrate, then seed, then serve (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheBlock.Api/Program.cs region=migrate-and-seed
+```live path=api/TheYard.Api/Program.cs region=migrate-and-seed
 ```
 
 ## If you want to change the schema
@@ -157,12 +157,12 @@ it, and a conformance test fails the build if the two disagree. The full list,
 in order, is in ADR: Two providers and a SQL project, explained. The short
 version:
 
-1. Change the DDL in `api/TheBlock.Database`, with a length and a reason.
+1. Change the DDL in `api/TheYard.Database`, with a length and a reason.
 2. Change the row class in `Rows.cs`, and the mapping in `EfSources.cs` if the
    field also exists on the domain record.
 3. Add the SQLite migration, so local development and CI get the column too:
-   `dotnet ef migrations add <Name> --project api/TheBlock.Migrations.Sqlite
-   --startup-project api/TheBlock.Api --context YardDbContext -- --sqlite`
+   `dotnet ef migrations add <Name> --project api/TheYard.Migrations.Sqlite
+   --startup-project api/TheYard.Api --context YardDbContext -- --sqlite`
 4. Read the generated `Up` method. It is ordinary C# and it is where the change
    becomes real on SQLite.
 5. Commit all three generated files. The snapshot is not optional; without it
@@ -171,7 +171,7 @@ version:
 
 Two things in the original wording are now wrong and are worth naming rather
 than quietly deleting. The migrations project is
-`api/TheBlock.Migrations.Sqlite` and not `api/TheBlock.Infrastructure`, because
+`api/TheYard.Migrations.Sqlite` and not `api/TheYard.Infrastructure`, because
 two providers produce two models and EF Core keeps one snapshot per assembly.
 And "there is no step for applying it, the application does that on start" is
 true of SQLite only: on SQL Server the application holds `db_datareader` and
@@ -179,11 +179,11 @@ true of SQLite only: on SQL Server the application holds `db_datareader` and
 
 ## Files
 
-- [`api/TheBlock.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardDbContext.cs)
-- [`api/TheBlock.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/Rows.cs)
-- [`api/TheBlock.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/EfSources.cs)
-- [`api/TheBlock.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Migrations.Sqlite): the SQLite schema's history, which moved out of Infrastructure when a second provider arrived.
-- [`api/TheBlock.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Database): the SQL Server schema, which is the authority Entity Framework maps to.
+- [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs)
+- [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs)
+- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs)
+- [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the SQLite schema's history, which moved out of Infrastructure when a second provider arrived.
+- [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the SQL Server schema, which is the authority Entity Framework maps to.
 - [`docs/ADR-033-relational-store.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-033-relational-store.md): what was decided, and what this deliberately does not give you.
 - [`docs/ADR-018-program-cs-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-018-program-cs-explained.md): the same treatment for the composition root.
 - [`docs/ADR-041-two-providers-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-041-two-providers-explained.md): the same treatment for the two engines and the SQL project, which is where this record continues.

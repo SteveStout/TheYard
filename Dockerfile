@@ -30,21 +30,21 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-publish
 WORKDIR /src
 
 # Copy the solution and project files first so restore is cached separately from the rest of the source tree.
-COPY api/TheBlock.slnx ./api/
-COPY api/TheBlock.Data/TheBlock.Data.csproj ./api/TheBlock.Data/
-COPY api/TheBlock.Domain/TheBlock.Domain.csproj ./api/TheBlock.Domain/
-COPY api/TheBlock.Application/TheBlock.Application.csproj ./api/TheBlock.Application/
-COPY api/TheBlock.Infrastructure/TheBlock.Infrastructure.csproj ./api/TheBlock.Infrastructure/
-COPY api/TheBlock.Migrations.Sqlite/TheBlock.Migrations.Sqlite.csproj ./api/TheBlock.Migrations.Sqlite/
+COPY api/TheYard.slnx ./api/
+COPY api/TheYard.Data/TheYard.Data.csproj ./api/TheYard.Data/
+COPY api/TheYard.Domain/TheYard.Domain.csproj ./api/TheYard.Domain/
+COPY api/TheYard.Application/TheYard.Application.csproj ./api/TheYard.Application/
+COPY api/TheYard.Infrastructure/TheYard.Infrastructure.csproj ./api/TheYard.Infrastructure/
+COPY api/TheYard.Migrations.Sqlite/TheYard.Migrations.Sqlite.csproj ./api/TheYard.Migrations.Sqlite/
 # The SQL project is in the solution, so restore needs to see it. It is not
 # published into the image: the schema is deployed by SqlPackage, and this
 # container has no rights to change it (ADR: Data first, and the database in
 # source control).
-COPY api/TheBlock.Database/TheBlock.Database.sqlproj ./api/TheBlock.Database/
-COPY api/TheBlock.Api/TheBlock.Api.csproj ./api/TheBlock.Api/
-COPY api/TheBlock.Tests/TheBlock.Tests.csproj ./api/TheBlock.Tests/
+COPY api/TheYard.Database/TheYard.Database.sqlproj ./api/TheYard.Database/
+COPY api/TheYard.Api/TheYard.Api.csproj ./api/TheYard.Api/
+COPY api/TheYard.Tests/TheYard.Tests.csproj ./api/TheYard.Tests/
 # This restore is intentionally separate from source-copy so incremental Docker builds stay fast.
-RUN dotnet restore api/TheBlock.slnx
+RUN dotnet restore api/TheYard.slnx
 
 # Copy the rest of the backend source after restore so code changes do not force a dependency re-restore.
 COPY api ./api
@@ -54,7 +54,7 @@ RUN set -eu; \
     TARGET_FRAMEWORK="$(grep -R -h -m1 --include='*.csproj' -Eo '<TargetFramework>[^<]+</TargetFramework>' /src/api | sed -E 's#<TargetFramework>([^<]+)</TargetFramework>#\1#' | head -n 1)"; \
     [ -n "${TARGET_FRAMEWORK}" ] || { echo "No TargetFramework found under /src/api" >&2; exit 1; }; \
     echo "Using target framework: ${TARGET_FRAMEWORK}"; \
-    dotnet publish api/TheBlock.Api/TheBlock.Api.csproj -c Release --no-restore -f "${TARGET_FRAMEWORK}" -o /app/publish
+    dotnet publish api/TheYard.Api/TheYard.Api.csproj -c Release --no-restore -f "${TARGET_FRAMEWORK}" -o /app/publish
 # #endregion api-publish
 
 # #region runtime
@@ -79,16 +79,16 @@ COPY --chown=app:app infra ./infra
 # wwwroot and the photo set already arrive through the publish above.
 COPY --chown=app:app src ./src
 COPY --chown=app:app .github/workflows ./.github/workflows
-COPY --chown=app:app api/TheBlock.slnx ./api/
-COPY --chown=app:app api/TheBlock.Api/*.cs api/TheBlock.Api/*.csproj ./api/TheBlock.Api/
-COPY --chown=app:app api/TheBlock.Application/*.cs api/TheBlock.Application/*.csproj ./api/TheBlock.Application/
-COPY --chown=app:app api/TheBlock.Data/*.cs api/TheBlock.Data/*.csproj ./api/TheBlock.Data/
-COPY --chown=app:app api/TheBlock.Domain/*.cs api/TheBlock.Domain/*.csproj ./api/TheBlock.Domain/
-COPY --chown=app:app api/TheBlock.Infrastructure/*.cs api/TheBlock.Infrastructure/*.csproj ./api/TheBlock.Infrastructure/
-COPY --chown=app:app api/TheBlock.Migrations.Sqlite/*.cs api/TheBlock.Migrations.Sqlite/*.csproj ./api/TheBlock.Migrations.Sqlite/
+COPY --chown=app:app api/TheYard.slnx ./api/
+COPY --chown=app:app api/TheYard.Api/*.cs api/TheYard.Api/*.csproj ./api/TheYard.Api/
+COPY --chown=app:app api/TheYard.Application/*.cs api/TheYard.Application/*.csproj ./api/TheYard.Application/
+COPY --chown=app:app api/TheYard.Data/*.cs api/TheYard.Data/*.csproj ./api/TheYard.Data/
+COPY --chown=app:app api/TheYard.Domain/*.cs api/TheYard.Domain/*.csproj ./api/TheYard.Domain/
+COPY --chown=app:app api/TheYard.Infrastructure/*.cs api/TheYard.Infrastructure/*.csproj ./api/TheYard.Infrastructure/
+COPY --chown=app:app api/TheYard.Migrations.Sqlite/*.cs api/TheYard.Migrations.Sqlite/*.csproj ./api/TheYard.Migrations.Sqlite/
 # The DDL, so the records can show the schema they describe (ADR-014).
-COPY --chown=app:app api/TheBlock.Database ./api/TheBlock.Database
-COPY --chown=app:app api/TheBlock.Tests/*.cs api/TheBlock.Tests/*.csproj ./api/TheBlock.Tests/
+COPY --chown=app:app api/TheYard.Database ./api/TheYard.Database
+COPY --chown=app:app api/TheYard.Tests/*.cs api/TheYard.Tests/*.csproj ./api/TheYard.Tests/
 # The rest of what the records show live (ADR-017, the references pass): the edge,
 # the end-to-end specs, and the root files the build and the tests are configured by.
 COPY --chown=app:app Dockerfile netlify.toml playwright.config.ts vite.config.ts package.json index.html tsconfig.json tsconfig.app.json tsconfig.node.json .editorconfig ./
@@ -130,5 +130,5 @@ ENV ConnectionStrings__Yard="Data Source=/app/state/yard.db"
 USER app
 
 # Start the hosted API; it serves both the API endpoints and the SPA shell.
-ENTRYPOINT ["dotnet", "TheBlock.Api.dll"]
+ENTRYPOINT ["dotnet", "TheYard.Api.dll"]
 # #endregion runtime

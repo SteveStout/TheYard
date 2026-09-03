@@ -71,23 +71,23 @@ saying it louder.
 
 The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The timed checks
-([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)):
+([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
 
-```live path=api/TheBlock.Api/Program.cs region=health-checks
+```live path=api/TheYard.Api/Program.cs region=health-checks
 ```
 
 The events, read from the same management response (the observability
 types moved to
-[`api/TheBlock.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Observability.cs)
+[`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs)
 in ADR: The staff review):
 
-```live path=api/TheBlock.Api/Observability.cs region=azure-events
+```live path=api/TheYard.Api/Observability.cs region=azure-events
 ```
 
 The proof is one API test that every check carries a non-negative
 duration and two end-to-end checks that the Admin tab prints it, on a
 laptop and on a phone, in
-[`api/TheBlock.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AdminEndpointTests.cs),
+[`api/TheYard.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminEndpointTests.cs),
 [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts)
 and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts).
 The events list is proven by the live site, since only the container on
@@ -95,14 +95,14 @@ Azure can ask about itself.
 
 ## Files
 
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the probes (region health-checks),
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the probes (region health-checks),
   `/healthz`, `/readyz`, `/api/health`, `/api/errors`, `/api/admin/azure`,
   and the middleware that records server errors.
-- [`api/TheBlock.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Observability.cs): the health record, the error
+- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health record, the error
   ring buffer and the Azure reader (region azure-events).
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx) and
   [`src/components/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.module.css): the three cards.
-- [`api/TheBlock.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AdminEndpointTests.cs): the API proof;
+- [`api/TheYard.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminEndpointTests.cs): the API proof;
   [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts) and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts):
   the browser proof.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the container health check that hits `/healthz`.

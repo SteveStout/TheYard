@@ -72,7 +72,7 @@ Why the renderer is not in the bundle is measured in ADR: Style, enforced.*
 
 The database is reached as the managed identity, with no password anywhere in
 the connection string, and the schema it maps to is published from
-`api/TheBlock.Database` rather than created by the container (ADR: The SQL Server
+`api/TheYard.Database` rather than created by the container (ADR: The SQL Server
 backend, and ADR: Data first).
 
 The two things that are not on this picture are on it on purpose. Cloudflare
@@ -86,7 +86,7 @@ diagram a wish rather than a map.
 
 What the database actually holds, which is four tables of this application's own
 plus the seven ASP.NET Core Identity brings with it. The authority for this
-picture is `api/TheBlock.Database`, and a conformance test holds the Entity
+picture is `api/TheYard.Database`, and a conformance test holds the Entity
 Framework model to it, so this diagram cannot quietly stop being true without
 something failing (ADR: Data first, and the database in source control).
 
@@ -225,7 +225,7 @@ erDiagram
 *Mermaid uses underscores where SQL uses brackets and parentheses, so
 `nvarchar_64` is `nvarchar(64)` and `decimal_3_1` is `decimal(3,1)`. The types
 themselves are the ones in
-[`api/TheBlock.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Database).*
+[`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database).*
 
 Two relationships on that diagram are dotted, and both are dotted because the
 database does not enforce them.
@@ -249,11 +249,11 @@ The dependency direction inside the API, which is the other half of the shape:
 
 ```mermaid
 flowchart RL
-  Api["TheBlock.Api<br/>host, endpoints, composition"]
-  Infra["TheBlock.Infrastructure<br/>adapters"]
-  App["TheBlock.Application<br/>use cases and ports"]
-  Domain["TheBlock.Domain<br/>rules, pure functions"]
-  Data["TheBlock.Data<br/>records, no logic"]
+  Api["TheYard.Api<br/>host, endpoints, composition"]
+  Infra["TheYard.Infrastructure<br/>adapters"]
+  App["TheYard.Application<br/>use cases and ports"]
+  Domain["TheYard.Domain<br/>rules, pure functions"]
+  Data["TheYard.Data<br/>records, no logic"]
 
   Api --> Infra
   Api --> App
@@ -267,7 +267,7 @@ flowchart RL
   Domain --> Data
 ```
 
-Every arrow points inward and none points back. `TheBlock.Data` has no
+Every arrow points inward and none points back. `TheYard.Data` has no
 dependencies at all, which is what makes it safe for every other layer to hold
 its records.
 
@@ -284,13 +284,13 @@ knows nothing about the ones around it.
 
 | Project | Owns | Depends on |
 | --- | --- | --- |
-| `api/TheBlock.Data` | The plain records: `Vehicle`, `PhotoEntry`. No logic. | nothing |
-| `api/TheBlock.Domain` | The rules: auction schedule and clock, filter, ordering, bid rules, photo gallery, FNV-1a. Pure functions and records. | Data |
-| `api/TheBlock.Application` | The use cases: `InventoryService`, `BidService`, and the ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`) they read through. | Domain, Data |
-| `api/TheBlock.Database` | The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is. | nothing |
-| `api/TheBlock.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator. | Application, Domain, Data |
-| `api/TheBlock.Migrations.Sqlite` | The SQLite schema's history, applied by the process that uses it. | Infrastructure |
-| `api/TheBlock.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | all of the above |
+| `api/TheYard.Data` | The plain records: `Vehicle`, `PhotoEntry`. No logic. | nothing |
+| `api/TheYard.Domain` | The rules: auction schedule and clock, filter, ordering, bid rules, photo gallery, FNV-1a. Pure functions and records. | Data |
+| `api/TheYard.Application` | The use cases: `InventoryService`, `BidService`, and the ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`) they read through. | Domain, Data |
+| `api/TheYard.Database` | The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is. | nothing |
+| `api/TheYard.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator. | Application, Domain, Data |
+| `api/TheYard.Migrations.Sqlite` | The SQLite schema's history, applied by the process that uses it. | Infrastructure |
+| `api/TheYard.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | all of the above |
 | `src/` | The browser: rendering, formatting, countdowns, URL state, one fetch seam. | the wire only |
 
 The test for whether a layer is earning its place is whether something can
@@ -300,7 +300,7 @@ suite hands the same services in-memory fakes, and the catalogue moved from
 JSON files to SQLite without one line changing in Application or Domain
 (ADR: The relational store).
 
-```live path=api/TheBlock.Application/Ports.cs region=ports
+```live path=api/TheYard.Application/Ports.cs region=ports
 ```
 
 ## The rules that keep it that way
@@ -310,7 +310,7 @@ JSON files to SQLite without one line changing in Application or Domain
 so nothing can drift out of date, and the same id always produces the same
 answer. The seed file is never modified.
 
-**One authority per rule.** A rule lives in `TheBlock.Domain` and nowhere
+**One authority per rule.** A rule lives in `TheYard.Domain` and nowhere
 else. The browser once mirrored the auction math in TypeScript and the two
 disagreed twice, across time zones and then on a daylight-saving day. The
 derived facts now travel on the wire (`auction_starts_at`,
@@ -345,10 +345,10 @@ runs all three on every push and the deploy will not fire without them
 
 | The change | Where it goes |
 | --- | --- |
-| A new auction or bidding rule | `api/TheBlock.Domain`, with a unit test first |
+| A new auction or bidding rule | `api/TheYard.Domain`, with a unit test first |
 | A new endpoint | one `MapGet`/`MapPost` in Program.cs, plus an integration test |
 | A new data source | a port in Application, an adapter in Infrastructure |
-| A new derived fact for the browser | `api/TheBlock.Api/VehicleWire.cs` |
+| A new derived fact for the browser | `api/TheYard.Api/VehicleWire.cs` |
 | A new API call from the browser | one function in `src/lib/data.ts` |
 | A new view state | the URL, through `filtersToSearchParams` |
 | A visitor preference (not a view) | `localStorage`, like the collapsed rail |
@@ -369,9 +369,9 @@ side of the same question.
 ## Files
 
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the naming, layering and commenting rules this page's principles turn into, and the `.editorconfig` that enforces the mechanical half.
-- [`api/TheBlock.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/Ports.cs): the two ports the layers meet at.
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the composition root, walked line by line in ADR: Program.cs, explained.
-- [`api/TheBlock.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/VehicleWire.cs): the derived facts that make the browser's job formatting.
+- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the two ports the layers meet at.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composition root, walked line by line in ADR: Program.cs, explained.
+- [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the derived facts that make the browser's job formatting.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts) and [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): the one seam and the URL state.
 - [`docs/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/DATAFLOW.md): the same shape as a walk, step by step.
 - [`docs/PROJECTS.md`](https://github.com/SteveStout/TheYard/blob/main/docs/PROJECTS.md): every project and folder, one line each.

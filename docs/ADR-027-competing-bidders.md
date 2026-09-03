@@ -101,30 +101,30 @@ cannot vouch for.
 ## In the code
 
 The overlay, and why the order is the way it is
-(`api/TheBlock.Application/MarketService.cs`):
+(`api/TheYard.Application/MarketService.cs`):
 
-```live path=api/TheBlock.Application/MarketService.cs region=apply
+```live path=api/TheYard.Application/MarketService.cs region=apply
 ```
 
 One round of bidding, and the three limits:
 
-```live path=api/TheBlock.Application/MarketService.cs region=tick
+```live path=api/TheYard.Application/MarketService.cs region=tick
 ```
 
-Where the two overlays are composed (`api/TheBlock.Api/Program.cs`):
+Where the two overlays are composed (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheBlock.Api/Program.cs region=overlays
+```live path=api/TheYard.Api/Program.cs region=overlays
 ```
 
-The endpoints (`api/TheBlock.Api/Program.cs`):
+The endpoints (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheBlock.Api/Program.cs region=market-endpoints
+```live path=api/TheYard.Api/Program.cs region=market-endpoints
 ```
 
 The answer the badge needs, derived server-side
-(`api/TheBlock.Api/BidViews.cs`):
+(`api/TheYard.Api/BidViews.cs`):
 
-```live path=api/TheBlock.Api/BidViews.cs region=views
+```live path=api/TheYard.Api/BidViews.cs region=views
 ```
 
 The browser's half: the round it asks for, and the sentence it shows
@@ -214,11 +214,11 @@ now exists.
 
 ## Files
 
-- [`api/TheBlock.Application/MarketService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/MarketService.cs): the room, its overlay and its three limits.
-- [`api/TheBlock.Api/BidViews.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/BidViews.cs): whether the buyer is still ahead, decided server-side.
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the composed overlays, the tick endpoint, and bidding against the room's price.
-- [`api/TheBlock.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Application/BidService.cs): the buyer's side, now stamped with when each bid was placed.
+- [`api/TheYard.Application/MarketService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MarketService.cs): the room, its overlay and its three limits.
+- [`api/TheYard.Api/BidViews.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/BidViews.cs): whether the buyer is still ahead, decided server-side.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composed overlays, the tick endpoint, and bidding against the room's price.
+- [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the buyer's side, now stamped with when each bid was placed.
 - [`src/hooks/useBids.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useBids.ts) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the round the page asks for.
 - [`src/components/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BidPanel.tsx) and [`VehicleCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleCard.tsx): the sentence and the chip.
-- [`api/TheBlock.Tests/MarketServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/MarketServiceTests.cs): every limit, held.
+- [`api/TheYard.Tests/MarketServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MarketServiceTests.cs): every limit, held.
 - [`tests/e2e/market.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/market.spec.ts): a bid, a round, and the badge changing hands in a browser.

@@ -44,21 +44,21 @@ own tab away from the app.
 
 ## In the code
 
-The endpoint, in `api/TheBlock.Api/Program.cs`, and the catalog beside the
-documents in `api/TheBlock.Api/DocsCatalog.cs`:
+The endpoint, in `api/TheYard.Api/Program.cs`, and the catalog beside the
+documents in `api/TheYard.Api/DocsCatalog.cs`:
 
-```live path=api/TheBlock.Api/Program.cs region=diagram-page
+```live path=api/TheYard.Api/Program.cs region=diagram-page
 ```
 
-```live path=api/TheBlock.Api/DocsCatalog.cs region=diagrams
+```live path=api/TheYard.Api/DocsCatalog.cs region=diagrams
 ```
 
-The page itself, `api/TheBlock.Api/DiagramPage.cs`. The palette is repeated
+The page itself, `api/TheYard.Api/DiagramPage.cs`. The palette is repeated
 here and in each SVG on purpose: the page carries no bundle, so the tokens
 file is not loaded, and a palette change touches the drawings anyway (ADR:
 The palette):
 
-```live path=api/TheBlock.Api/DiagramPage.cs region=page
+```live path=api/TheYard.Api/DiagramPage.cs region=page
 ```
 
 The hook in `src/components/DocsMenu.tsx` that makes links leave the dialog
@@ -67,11 +67,11 @@ without leaving the app:
 ```live path=src/components/DocsMenu.tsx region=doc-links
 ```
 
-The tests, in `api/TheBlock.Tests/DiagramPageTests.cs`: every name in the
+The tests, in `api/TheYard.Tests/DiagramPageTests.cs`: every name in the
 catalog opens as HTML with its SVG and its title, an unknown name is a 404,
 and the XML prolog a standalone SVG may carry never reaches the page:
 
-```live path=api/TheBlock.Tests/DiagramPageTests.cs region=page-tests
+```live path=api/TheYard.Tests/DiagramPageTests.cs region=page-tests
 ```
 
 ## Consequences
@@ -89,10 +89,10 @@ and the XML prolog a standalone SVG may carry never reaches the page:
 
 ## Files
 
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the `/api/docs/diagrams/{name}` endpoint.
-- [`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs): the diagram catalog beside the documents.
-- [`api/TheBlock.Api/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DiagramPage.cs): the HTML page around an SVG.
-- [`api/TheBlock.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/DiagramPageTests.cs): the page tests.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the `/api/docs/diagrams/{name}` endpoint.
+- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the diagram catalog beside the documents.
+- [`api/TheYard.Api/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DiagramPage.cs): the HTML page around an SVG.
+- [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the page tests.
 - [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the link hook.
 - [`docs/images/dataflow.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/dataflow.svg) and [`docs/images/dataflow.png`](https://github.com/SteveStout/TheYard/blob/main/docs/images/dataflow.png): the new drawing and its preview; [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg) the first one.
 - [`docs/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/DATAFLOW.md), [`docs/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md), [`README.md`](https://github.com/SteveStout/TheYard/blob/main/README.md): the previews and their captions.

@@ -64,19 +64,19 @@ Recent errors card now shows both sides of the app.
 
 ## In the code
 
-The handler and the logging, in `api/TheBlock.Api/Program.cs`:
+The handler and the logging, in `api/TheYard.Api/Program.cs`:
 
-```live path=api/TheBlock.Api/Program.cs region=problem-details
+```live path=api/TheYard.Api/Program.cs region=problem-details
 ```
 
 The endpoint browser errors report to:
 
-```live path=api/TheBlock.Api/Program.cs region=client-errors
+```live path=api/TheYard.Api/Program.cs region=client-errors
 ```
 
 A deliberate 400, in the same shape:
 
-```live path=api/TheBlock.Api/Program.cs region=inventory-endpoint
+```live path=api/TheYard.Api/Program.cs region=inventory-endpoint
 ```
 
 The boundary, and the reporter every path uses:
@@ -115,11 +115,11 @@ How the browser reads a failure:
 
 ## Files
 
-- [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the handler, the logging, the client-error endpoint, and the 400s.
-- [`api/TheBlock.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Observability.cs): the ring buffer both sides record into.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the handler, the logging, the client-error endpoint, and the 400s.
+- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the ring buffer both sides record into.
 - [`src/components/ErrorBoundary.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/ErrorBoundary.tsx) and [`ErrorBoundary.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/ErrorBoundary.module.css): the boundary and the reporter.
 - [`src/main.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/main.tsx): the boundary around the app and the two window handlers.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): reading `detail`.
-- [`api/TheBlock.Tests/ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ProblemDetailsTests.cs): every 400 carries the same shape, and a browser report reaches the errors list.
+- [`api/TheYard.Tests/ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProblemDetailsTests.cs): every 400 carries the same shape, and a browser report reaches the errors list.
 - [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): a reported browser error appears on the Admin tab.
 - [`docs/ADR-010-observability.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-010-observability.md): the Admin tab this feeds.

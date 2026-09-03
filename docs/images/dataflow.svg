@@ -42,50 +42,50 @@
   <text x="75" y="196" class="title">The seed file</text>
   <text x="75" y="218" class="mono">data/vehicles.json</text>
   <text x="75" y="240" class="body">The 200 records from the challenge, never modified. The Vehicle record they load into</text>
-  <text x="75" y="257" class="body">lives with the other plain data shapes in api/TheBlock.Data.</text>
+  <text x="75" y="257" class="body">lives with the other plain data shapes in api/TheYard.Data.</text>
   <path d="M120 271 L120 305" class="flow"/>
   <text x="132" y="293" class="flow-label">once, at startup</text>
   <rect x="60" y="307" width="760" height="84" class="box"/>
   <text x="75" y="333" class="title">JsonFileVehicleSource</text>
-  <text x="75" y="355" class="mono">api/TheBlock.Infrastructure/JsonFileSources.cs</text>
+  <text x="75" y="355" class="mono">api/TheYard.Infrastructure/JsonFileSources.cs</text>
   <text x="75" y="377" class="body">Reads the seed once, at startup.</text>
   <path d="M120 391 L120 425" class="flow"/>
   <rect x="60" y="427" width="760" height="118" class="box"/>
   <text x="75" y="453" class="title">SyntheticVehicleSource</text>
-  <text x="75" y="475" class="mono">api/TheBlock.Infrastructure/SyntheticVehicleSource.cs</text>
+  <text x="75" y="475" class="mono">api/TheYard.Infrastructure/SyntheticVehicleSource.cs</text>
   <text x="75" y="497" class="body">Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a,</text>
-  <text x="75" y="514" class="body">api/TheBlock.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state</text>
+  <text x="75" y="514" class="body">api/TheYard.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state</text>
   <text x="75" y="531" class="body">while keeping the seed's make, model and trim mix.</text>
   <path d="M120 545 L120 579" class="flow"/>
   <rect x="60" y="581" width="760" height="118" class="box"/>
   <text x="75" y="607" class="title">InventoryService</text>
-  <text x="75" y="629" class="mono">api/TheBlock.Application/InventoryService.cs</text>
-  <text x="75" y="651" class="body">Applies each vehicle's photo gallery (api/TheBlock.Domain/PhotoGallery.cs picks from the</text>
-  <text x="75" y="668" class="body">pools in api/TheBlock.Api/photo-manifest.json) and materializes the list plus an id</text>
+  <text x="75" y="629" class="mono">api/TheYard.Application/InventoryService.cs</text>
+  <text x="75" y="651" class="body">Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the</text>
+  <text x="75" y="668" class="body">pools in api/TheYard.Api/photo-manifest.json) and materializes the list plus an id</text>
   <text x="75" y="685" class="body">index, once, in a Lazy that Program.cs forces at startup.</text>
   <path d="M120 699 L120 733" class="flow"/>
   <text x="132" y="721" class="flow-label">then, for every request</text>
   <rect x="60" y="735" width="760" height="135" class="box"/>
   <text x="75" y="761" class="title">GET /api/vehicles</text>
-  <text x="75" y="783" class="mono">api/TheBlock.Api/Program.cs</text>
-  <text x="75" y="805" class="body">api/TheBlock.Api/VehicleQueryParams.cs binds and validates every parameter into a</text>
-  <text x="75" y="822" class="body">filter, a sort and a clock. api/TheBlock.Api/Clocks.cs turns the browser's anchor_ms</text>
+  <text x="75" y="783" class="mono">api/TheYard.Api/Program.cs</text>
+  <text x="75" y="805" class="body">api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a</text>
+  <text x="75" y="822" class="body">filter, a sort and a clock. api/TheYard.Api/Clocks.cs turns the browser's anchor_ms</text>
   <text x="75" y="839" class="body">(its local midnight) into that clock, so the schedule math agrees with the buyer in any</text>
   <text x="75" y="856" class="body">time zone.</text>
   <path d="M120 870 L120 904" class="flow"/>
   <rect x="60" y="906" width="760" height="169" class="box"/>
   <text x="75" y="932" class="title">Search, in InventoryService.Search</text>
-  <text x="75" y="954" class="mono">api/TheBlock.Application/InventoryService.cs</text>
-  <text x="75" y="976" class="body">1. The buyer's bids are overlaid first (api/TheBlock.Application/BidService.cs), so</text>
+  <text x="75" y="954" class="mono">api/TheYard.Application/InventoryService.cs</text>
+  <text x="75" y="976" class="body">1. The buyer's bids are overlaid first (api/TheYard.Application/BidService.cs), so</text>
   <text x="75" y="993" class="body">price bounds see the figures the page shows.</text>
-  <text x="75" y="1010" class="body">2. Where: api/TheBlock.Domain/VehicleFilter.cs</text>
-  <text x="75" y="1027" class="body">3. OrderBy: api/TheBlock.Domain/VehicleOrdering.cs</text>
+  <text x="75" y="1010" class="body">2. Where: api/TheYard.Domain/VehicleFilter.cs</text>
+  <text x="75" y="1027" class="body">3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs</text>
   <text x="75" y="1044" class="body">4. Skip and Take for the page. Auction windows come from</text>
-  <text x="75" y="1061" class="body">api/TheBlock.Domain/AuctionSchedule.cs, all in memory.</text>
+  <text x="75" y="1061" class="body">api/TheYard.Domain/AuctionSchedule.cs, all in memory.</text>
   <path d="M120 1075 L120 1109" class="flow"/>
   <rect x="60" y="1111" width="760" height="101" class="box"/>
   <text x="75" y="1137" class="title">VehicleWire</text>
-  <text x="75" y="1159" class="mono">api/TheBlock.Api/VehicleWire.cs</text>
+  <text x="75" y="1159" class="mono">api/TheYard.Api/VehicleWire.cs</text>
   <text x="75" y="1181" class="body">Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at,</text>
   <text x="75" y="1198" class="body">auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.</text>
   <path d="M120 1212 L120 1246" class="flow"/>
@@ -118,7 +118,7 @@
   <text x="962" y="310" class="flow-label">POST</text>
   <rect x="890" y="324" width="450" height="118" class="box"/>
   <text x="905" y="350" class="title">HandleBid</text>
-  <text x="905" y="372" class="mono">api/TheBlock.Api/Program.cs</text>
+  <text x="905" y="372" class="mono">api/TheYard.Api/Program.cs</text>
   <text x="905" y="394" class="body">Three questions in order: is the clock anchor valid (400</text>
   <text x="905" y="411" class="body">if not), does the vehicle exist (404 if not), does the</text>
   <text x="905" y="428" class="body">domain accept the action (400 with the reason if not).</text>
@@ -126,7 +126,7 @@
   <text x="962" y="464" class="flow-label">the domain decides</text>
   <rect x="890" y="478" width="450" height="118" class="box"/>
   <text x="905" y="504" class="title">BidRules</text>
-  <text x="905" y="526" class="mono">api/TheBlock.Domain/BidRules.cs</text>
+  <text x="905" y="526" class="mono">api/TheYard.Domain/BidRules.cs</text>
   <text x="905" y="548" class="body">The sole authority: the live window, the tiered minimum</text>
   <text x="905" y="565" class="body">increment, and the buy-now override (a bid at or above</text>
   <text x="905" y="582" class="body">buy_now_price wins outright at that price).</text>
@@ -134,7 +134,7 @@
   <text x="962" y="618" class="flow-label">accepted, won, or rejected</text>
   <rect x="890" y="632" width="450" height="118" class="box"/>
   <text x="905" y="658" class="title">BidService</text>
-  <text x="905" y="680" class="mono">api/TheBlock.Application/BidService.cs</text>
+  <text x="905" y="680" class="mono">api/TheYard.Application/BidService.cs</text>
   <text x="905" y="702" class="body">Accepted and won bids land in an in-memory map, one</text>
   <text x="905" y="719" class="body">anonymous buyer. The response carries the updated</text>
   <text x="905" y="736" class="body">vehicle with a fresh min_next_bid.</text>

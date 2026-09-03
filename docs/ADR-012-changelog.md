@@ -59,11 +59,11 @@ Ceremony per ship: one line in one file, inside the commit that earns it.
 
 The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The two entries in the documents catalog
-([`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs),
+([`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs),
 served by the one endpoint in
-[`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)):
+[`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
 
-```live path=api/TheBlock.Api/DocsCatalog.cs region=docs-changelog
+```live path=api/TheYard.Api/DocsCatalog.cs region=docs-changelog
 ```
 
 The menu, one item on purpose, in
@@ -84,7 +84,7 @@ The refusal in the Deploy workflow's version step,
 ```
 
 The shape test,
-[`api/TheBlock.Tests/ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ChangelogTests.cs):
+[`api/TheYard.Tests/ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ChangelogTests.cs):
 every entry line matches `- **1.0.0.N** (date): sentence.`, the versions
 descend with no repeats, the bottom line is 1.0.0.1, and the file carries
 no em dash.
@@ -110,13 +110,13 @@ reads like a person wrote it.
 ## Files
 
 - [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): the file, one sentence per version.
-- [`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs): its two entries (region
+- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): its two entries (region
   docs-changelog above).
 - [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the one-item menu (region
   menu-changelog above).
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the warning when a version has no
   line (region changelog-check above).
-- [`api/TheBlock.Tests/ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ChangelogTests.cs) and
+- [`api/TheYard.Tests/ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ChangelogTests.cs) and
   [`tests/e2e/changelog.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/changelog.spec.ts): the proof.
 
 ## Addendum, 2026-09-03: a version is a deploy run, not a commit

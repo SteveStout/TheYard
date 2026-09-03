@@ -7,7 +7,7 @@ suites, how each is built, and why there are three.
 
 ## Context
 
-The repository carries 139 xunit tests under `api/TheBlock.Tests`, 36
+The repository carries 139 xunit tests under `api/TheYard.Tests`, 36
 Vitest tests beside the code they test under `src/`, and 25 Playwright
 tests under `tests/e2e`. Every push runs all three in CI, and nothing
 ships to the live site without them (ADR: Docs and testing). A newcomer
@@ -29,7 +29,7 @@ failing run reads like a report. The domain tests need no host and no
 file: `BidRules` is a static class of pure functions, so the test hands it
 values and checks the answer.
 
-```live path=api/TheBlock.Tests/BidRulesTests.cs region=tiers
+```live path=api/TheYard.Tests/BidRulesTests.cs region=tiers
 ```
 
 ### Builders instead of fixtures files
@@ -41,7 +41,7 @@ and a new required field on `Vehicle` is added in one place. The clock
 helper does the same for time: an `AuctionClock` anchored to a chosen
 midnight, so a test never depends on when it runs.
 
-```live path=api/TheBlock.Tests/TestData.cs region=builders
+```live path=api/TheYard.Tests/TestData.cs region=builders
 ```
 
 ### Fakes at the ports
@@ -53,7 +53,7 @@ keeps them invisible to every other file. That is the onion architecture
 paying for itself: the service is tested with no filesystem, and the
 `LoadCalls` counter proves the dataset is read once.
 
-```live path=api/TheBlock.Tests/InventoryServiceTests.cs region=fakes
+```live path=api/TheYard.Tests/InventoryServiceTests.cs region=fakes
 ```
 
 ### Integration tests boot the real host in memory
@@ -66,7 +66,7 @@ bid lifecycle has a class of its own: its bids would otherwise leak into
 the read-only tests. The `public partial class Program;` line at the end
 of Program.cs exists for this factory (ADR: Program.cs, explained).
 
-```live path=api/TheBlock.Tests/BidFlowIntegrationTests.cs region=lifecycle
+```live path=api/TheYard.Tests/BidFlowIntegrationTests.cs region=lifecycle
 ```
 
 Two habits in that test are worth copying. The anchor is captured once and
@@ -127,12 +127,12 @@ build, so a type error fails the run before any test does.
 
 ## Files
 
-- [`api/TheBlock.Tests/TheBlock.Tests.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/TheBlock.Tests.csproj): xunit, the test SDK, `Microsoft.AspNetCore.Mvc.Testing` for the factory, and a global `using Xunit`.
-- [`api/TheBlock.Tests/TestData.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/TestData.cs): the builders.
-- [`api/TheBlock.Tests/BidRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/BidRulesTests.cs), [`VehicleFilterTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/VehicleFilterTests.cs), [`AuctionScheduleTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AuctionScheduleTests.cs), [`PhotoGalleryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/PhotoGalleryTests.cs): the domain, pure.
-- [`api/TheBlock.Tests/InventoryServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/InventoryServiceTests.cs) and [`BidServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/BidServiceTests.cs): the application layer with fakes at the ports.
-- [`api/TheBlock.Tests/JsonFileSourceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/JsonFileSourceTests.cs) and [`SyntheticVehicleSourceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/SyntheticVehicleSourceTests.cs): the infrastructure, against the real files.
-- [`api/TheBlock.Tests/ApiIntegrationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ApiIntegrationTests.cs), [`BidFlowIntegrationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/BidFlowIntegrationTests.cs), [`AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/AdminEndpointTests.cs), [`ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ProblemDetailsTests.cs), [`CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/CacheHeaderTests.cs), [`DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/DocsCatalogTests.cs), [`LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/LiveSamplesTests.cs), [`DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/DiagramPageTests.cs), [`ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ChangelogTests.cs): through the real host.
+- [`api/TheYard.Tests/TheYard.Tests.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TheYard.Tests.csproj): xunit, the test SDK, `Microsoft.AspNetCore.Mvc.Testing` for the factory, and a global `using Xunit`.
+- [`api/TheYard.Tests/TestData.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TestData.cs): the builders.
+- [`api/TheYard.Tests/BidRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidRulesTests.cs), [`VehicleFilterTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/VehicleFilterTests.cs), [`AuctionScheduleTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuctionScheduleTests.cs), [`PhotoGalleryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PhotoGalleryTests.cs): the domain, pure.
+- [`api/TheYard.Tests/InventoryServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/InventoryServiceTests.cs) and [`BidServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidServiceTests.cs): the application layer with fakes at the ports.
+- [`api/TheYard.Tests/JsonFileSourceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/JsonFileSourceTests.cs) and [`SyntheticVehicleSourceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SyntheticVehicleSourceTests.cs): the infrastructure, against the real files.
+- [`api/TheYard.Tests/ApiIntegrationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ApiIntegrationTests.cs), [`BidFlowIntegrationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidFlowIntegrationTests.cs), [`AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminEndpointTests.cs), [`ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProblemDetailsTests.cs), [`CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CacheHeaderTests.cs), [`DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs), [`LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs), [`DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs), [`ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ChangelogTests.cs): through the real host.
 - [`src/lib/data.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.test.ts), [`inventory.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.test.ts), [`auction.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auction.test.ts), [`format.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/format.test.ts), [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts): Vitest.
 - [`tests/e2e`](https://github.com/SteveStout/TheYard/tree/main/tests/e2e) and [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts): the browser suite and the two servers it starts.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the three jobs.

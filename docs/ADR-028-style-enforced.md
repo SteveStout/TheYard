@@ -24,8 +24,8 @@ the number in hand.
 
 **`dotnet format --verify-no-changes`: failed.** Not on sloppiness. It wanted
 three things, and all three were right: whitespace inside a handful of object
-initialisers, `using` directives sorted (`TheBlock.Data` before
-`TheBlock.Domain`), one unused `using` removed from `Ports.cs`, and the UTF-8
+initialisers, `using` directives sorted (`TheYard.Data` before
+`TheYard.Domain`), one unused `using` removed from `Ports.cs`, and the UTF-8
 BOM taken off `Program.cs`. That last one is worth naming: `.editorconfig` says
 `charset = utf-8`, not `utf-8-bom`, so the BOM was the file disagreeing with the
 project's own stated rule. The formatter found a real inconsistency that a

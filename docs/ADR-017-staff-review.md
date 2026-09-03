@@ -28,13 +28,13 @@ pass gets its own dated addendum here.
   per document, each naming its file, and three of them bypassed the
   live-sample expander. They are one route over a catalog now: the slug in
   the address is looked up in
-  [`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs),
+  [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs),
   the file is read from the repo root, and every document goes through
   the expander. A slug that is not in the catalog is a 404, never a file
   read. Adding a record is one line in the catalog and one in
   [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx),
   and
-  [`api/TheBlock.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/DocsCatalogTests.cs)
+  [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs)
   fails the build when the two lists disagree, when a file is missing, or
   when any slug serves a live fence unexpanded. The directory walk that
   found the docs folder on every request is gone; the repo root is
@@ -54,7 +54,7 @@ pass gets its own dated addendum here.
 - **The observability types out of the host file.** The health record,
   the error buffer and the Azure reader lived at the bottom of Program.cs.
   They moved verbatim to
-  [`api/TheBlock.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Observability.cs),
+  [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs),
   so Program.cs reads as a composition root: what is wired, not how each
   piece works. The live block in ADR: Observability follows them.
 - **Build provenance read once.** The version and commit environment
@@ -71,7 +71,7 @@ pass gets its own dated addendum here.
 - **Tests clean up after themselves.** The live-sample tests created a
   temporary repository per test and left it in the temp folder; the test
   class now deletes what it made
-  ([`api/TheBlock.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/LiveSamplesTests.cs)).
+  ([`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs)).
 - **The pipeline's small safeties.** The Deploy job has a thirty-minute
   timeout, so a hung roll cannot hold the deploy-production concurrency
   group for the default six hours, and its Verify step asks the origin's
@@ -99,7 +99,7 @@ pass gets its own dated addendum here.
 - **The Admin endpoints stay public**, as ADR: Observability decided.
 - **The live-sample whitelist is a string check first**, then a resolved
   path check, then the read, in that order, with tests for each rejection
-  ([`api/TheBlock.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/LiveSamples.cs)).
+  ([`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs)).
   The review looked for a way around it and found none.
 
 ### Deferred
@@ -118,14 +118,14 @@ pass gets its own dated addendum here.
 ## In the code
 
 The endpoint and the catalog, read from this build
-([`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs)
+([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)
 and
-[`api/TheBlock.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/DocsCatalog.cs)):
+[`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs)):
 
-```live path=api/TheBlock.Api/Program.cs region=docs-endpoint
+```live path=api/TheYard.Api/Program.cs region=docs-endpoint
 ```
 
-```live path=api/TheBlock.Api/DocsCatalog.cs region=docs-catalog
+```live path=api/TheYard.Api/DocsCatalog.cs region=docs-catalog
 ```
 
 ## Consequences

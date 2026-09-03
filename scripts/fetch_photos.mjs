@@ -12,7 +12,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const OUT_DIR = path.resolve(import.meta.dirname, '../api/TheBlock.Api/wwwroot/images');
+const OUT_DIR = path.resolve(import.meta.dirname, '../api/TheYard.Api/wwwroot/images');
 const EXCLUSIONS_FILE = path.resolve(import.meta.dirname, 'photo-exclusions.txt');
 const THUMB_WIDTH = 1280;
 const PER_STYLE = 10;
@@ -226,7 +226,7 @@ const manifest = credits.map((c) => ({
   title: c.commonsTitle,
 }));
 await writeFile(
-  path.resolve(import.meta.dirname, '../api/TheBlock.Api/photo-manifest.json'),
+  path.resolve(import.meta.dirname, '../api/TheYard.Api/photo-manifest.json'),
   JSON.stringify(manifest, null, 2)
 );
 console.log(`\nDone: ${credits.length} photos in ${OUT_DIR}`);
