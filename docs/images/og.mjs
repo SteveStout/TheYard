@@ -8,9 +8,16 @@
 // from the repository rather than typed here, so a card cannot claim a count
 // the project no longer has.
 //
-// Run: node docs/images/og.mjs   (writes public/og.svg; the PNG is rendered
-// from it, because most unfurlers will not fetch an SVG.)
+// Run: node docs/images/og.mjs
+//
+// It writes both the SVG and the PNG, in that order, from one invocation. That
+// is deliberate. The first version wrote the SVG here and rendered the PNG from
+// a throwaway script kept somewhere else, and the two immediately drifted: the
+// count in the drawing said forty-six and the picture every unfurler would
+// actually fetch still said forty-five. Two artefacts that must agree should not
+// have two commands.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { chromium } from '@playwright/test';
 
 const palette = {
   ink: '#5e5653',
@@ -65,4 +72,23 @@ ${facts
 `;
 
 writeFileSync('docs/images/og.svg', svg);
-console.log(`wrote docs/images/og.svg with ${records} records, version ${version}`);
+
+// The PNG is what a link preview actually fetches: an SVG og:image is ignored by
+// most unfurlers. Rendered rather than converted, so the Poppins the site uses
+// is the Poppins in the card.
+const browser = await chromium.launch({ channel: 'chrome' });
+const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
+await page.setContent(
+  `<!doctype html><html><head><meta charset="utf-8">
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+   <style>html,body{margin:0;padding:0;width:1200px;height:630px;overflow:hidden}</style>
+   </head><body>${svg}</body></html>`,
+  { waitUntil: 'networkidle' }
+);
+// The font has to have painted before the shutter, or the card ships in Arial.
+await page.waitForTimeout(1200);
+await page.screenshot({ path: 'public/og.png' });
+await browser.close();
+
+console.log(`wrote docs/images/og.svg and public/og.png with ${records} records, version ${version}`);

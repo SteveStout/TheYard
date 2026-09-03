@@ -52,6 +52,13 @@ public class PublicFaceTests
         var claim = Regex.Match(card, @">(\d+)</text>\s*<text[^>]*>decision records<");
         Assert.True(claim.Success, "the preview card should state a record count next to the words 'decision records'");
         Assert.Equal(records, int.Parse(claim.Groups[1].Value));
+
+        // And the picture an unfurler actually fetches exists beside it. One
+        // command writes both, for the reason in docs/images/og.mjs: when they
+        // were two commands they drifted on the first change that moved a count.
+        var png = new FileInfo(Path.Combine(Repo.Root(), "public", "og.png"));
+        Assert.True(png.Exists, "public/og.png should be generated alongside the drawing");
+        Assert.True(png.Length > 10_000, "a card that small has not rendered its text");
     }
 
     // #region head
