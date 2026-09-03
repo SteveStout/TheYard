@@ -64,6 +64,7 @@ export type DocKey =
   | 'adrStore'
   | 'adrEf'
   | 'adrA11yCheck'
+  | 'adrPhotos'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -385,6 +386,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '035',
   },
+  adrPhotos: {
+    title: 'ADR: Responsive photos',
+    menuLabel: 'ADR: Responsive photos',
+    url: '/api/docs/adr-photos',
+    kind: 'adr',
+    number: '036',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -476,6 +484,7 @@ export const MENUS: Record<
       { key: 'adrStore' },
       { key: 'adrEf' },
       { key: 'adrA11yCheck' },
+      { key: 'adrPhotos' },
     ],
   },
   // #endregion records-menu

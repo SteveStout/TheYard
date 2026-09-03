@@ -94,6 +94,7 @@ export function VehicleDetail({
                 alt={`${alt}, photo ${imageIndex + 1} of ${vehicle.images.length}`}
                 fallbackLabel={alt}
                 loading="eager"
+                sizes="(min-width: 1024px) 640px, 94vw"
               />
             </div>
             {vehicle.images.length > 1 && (
@@ -107,7 +108,7 @@ export function VehicleDetail({
                       aria-label={`Show photo ${index + 1}`}
                       aria-current={index === imageIndex ? 'true' : undefined}
                     >
-                      <VehicleImage key={image} src={image} alt="" />
+                      <VehicleImage key={image} src={image} alt="" sizes="88px" />
                     </button>
                   </li>
                 ))}

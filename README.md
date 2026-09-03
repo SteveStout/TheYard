@@ -187,7 +187,7 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, thirty-five
+  data flow and infrastructure diagrams on their own zoomable pages, thirty-six
   decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
@@ -336,7 +336,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (191 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
+**API (193 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -347,9 +347,10 @@ filtering, sorting and paging parameters, the problem shape on every 400 and on 
 lifecycle, static image serving, cache headers, the document catalog, the live-sample
 expander, the diagram pages, the changelog, and a persistence suite that places a bid,
 disposes the application, starts a second one against the same database file and reads
-the bid back, and one test that points the connection string at a path which cannot be
-opened to prove the site still serves its inventory when the store does not come up.
-Run with `npm run test:api`.
+the bid back, one test that points the connection string at a path which cannot be
+opened to prove the site still serves its inventory when the store does not come up, and
+two that hold the photo manifest and the image directory to the naming that responsive
+images rely on. Run with `npm run test:api`.
 
 **Frontend (38 Vitest tests):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL

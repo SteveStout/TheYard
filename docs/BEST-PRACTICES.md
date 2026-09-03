@@ -108,6 +108,12 @@ footer displays exactly that.
   the one log line holding both. An endpoint throws on purpose so that path
   can be exercised against the live container rather than assumed. Recorded
   in ADR: The exception handler.
+- **Photos are sized for the box they land in.** The originals are 1280 wide
+  and a card paints them at about 358, so a first load pulled 2.3 MB to fill
+  nine boxes and a phone pulled exactly the same bytes as a desktop. There is a
+  480-wide copy of every photo now, chosen by the browser through srcset, and a
+  test holds the manifest and the image directory to the naming the browser
+  relies on. Recorded in ADR: Responsive photos.
 - **The accessibility rules a machine can check are checked on every run.**
   axe holds six views to WCAG 2.1 AA inside the browser suite. Its first run
   found two serious contrast failures on the busiest elements on the page, in

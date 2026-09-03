@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "images:resize": "node scripts/resize_photos.mjs",
     "lint": "oxlint --deny-warnings",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"*.ts\" \"scripts/**/*.mjs\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"*.ts\" \"scripts/**/*.mjs\"",
@@ -35,6 +36,7 @@
     "concurrently": "^10.0.5",
     "oxlint": "^1.81.0",
     "prettier": "^3.9.6",
+    "sharp": "^0.35.4",
     "typescript": "^7.0.2",
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
