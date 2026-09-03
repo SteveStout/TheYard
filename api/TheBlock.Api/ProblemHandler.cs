@@ -22,6 +22,14 @@ public sealed class ProblemHandler(IProblemDetailsService problems, ILogger<Prob
     /// same every time: an error message that varies with the exception is a
     /// map of the inside of the process, drawn for whoever asks.
     /// </summary>
+    /// <summary>
+    /// Not an HTTP standard, and the standard has nothing for this. nginx uses
+    /// 499 for a client that closed the connection before an answer, enough
+    /// tooling understands it, and the alternative is leaving a 200 on a
+    /// request that was never answered.
+    /// </summary>
+    public const int ClientClosedRequest = 499;
+
     public const string ServerDetail =
         "Something went wrong on the server. Quote the trace id below and the "
         + "request can be found in the logs.";
@@ -32,12 +40,21 @@ public sealed class ProblemHandler(IProblemDetailsService problems, ILogger<Prob
         CancellationToken cancellationToken)
     {
         // The caller hung up mid-response. There is no socket left to answer
-        // on and nothing went wrong here, so this is a debug line and not an
-        // error, and it must not reach the ring buffer as a 500.
+        // on, so nothing is written. It is still recorded, at Information and
+        // with a status that says what happened: the first shape of a real
+        // outage is clients timing out and aborting, and a version of this that
+        // logged at Debug and left the status at 200 would have made that
+        // outage invisible in the request log and in telemetry alike (the staff
+        // review, 2026-09-03). 499 is nginx's convention for it and is what
+        // shows up in a log as "the caller left", not "we answered".
         if (exception is OperationCanceledException && context.RequestAborted.IsCancellationRequested)
         {
-            log.LogDebug(
-                "{Method} {Path} was abandoned by the caller",
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = ClientClosedRequest;
+            }
+            log.LogInformation(
+                "{Method} {Path} was abandoned by the caller; nothing was written",
                 context.Request.Method,
                 context.Request.Path);
             return true;

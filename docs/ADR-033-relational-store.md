@@ -50,10 +50,15 @@ queries: both catalogue tables are read whole, once, at startup, and every
 filter and sort after that runs in memory. An index here would cost writes at
 seed time and earn nothing.
 
-**Read once, write through.** The catalogue is read at startup into
-`InventoryService`'s `Lazy`, and the bids are read at startup into
+**Read once, write through, store first.** The catalogue is read at startup
+into `InventoryService`'s `Lazy`, and the bids are read at startup into
 `BidService`'s dictionary. Bidding writes to both the dictionary and the store,
-inside the lock that was already there. This is the only shape that works: the
+inside the lock that was already there, and the order is the store and then the
+dictionary. The other order shipped first and is wrong in a way that looks
+harmless: a store that throws would leave the dictionary holding a bid the
+caller had just been told had failed, displayed as winning until the next
+restart deleted it. Writing the store first means a failed write is a bid that
+did not happen anywhere, which is the answer the caller already has. This is the only shape that works: the
 bid overlay runs over a hundred thousand vehicles on a listing request, so a
 per-row query would not be a slower feature, it would be no feature.
 
@@ -162,9 +167,15 @@ photos and the bidding all keep working; the only thing lost is that bids stop
 outliving the process, which is exactly where this site was an hour earlier.
 
 The failure is loud rather than silent. The exception's type and message go to
-the log as an error, and the health check on the Admin tab turns red with the
-same sentence in it. A degraded site that says so is a different thing from a
-site that quietly stopped persisting.
+the log as an error, and the health check on the Admin tab turns red saying the
+catalogue is being served from files.
+
+The health check does not repeat the exception's message, and the first version
+did. `/api/health` is public on purpose, and a storage failure's message is
+usually a filesystem path: handing that to anonymous callers is the same "map
+of the inside of the process" that `ProblemHandler.ServerDetail` exists to
+refuse. The reason belongs in the log, which is where the trace id sends you
+anyway.
 
 The catch is deliberately over `Exception`, which is usually a smell. It is not
 one here: the whole purpose of the block is that the caller keeps serving
@@ -233,6 +244,12 @@ The proof (`api/TheBlock.Tests/PersistenceTests.cs`):
   empty inventory.
 - The site cannot be taken down by the storage. It can be degraded by it, and
   it says so when it is.
+- A scratch database runs with connection pooling off. The alternative is
+  `SqliteConnection.ClearAllPools()`, which is process wide, and xUnit runs
+  test classes in parallel in one process: one class tidying up its own file
+  on shutdown was pulling connections out from under nine others. The
+  persistence test that proved it passes alone, passes with its own class, and
+  failed only in the full suite, which is the signature of a global.
 - A container killed rather than stopped leaves an uncheckpointed write-ahead
   log beside the database. That is safe, because the next open replays it, and
   it is worth knowing before somebody copies a `.db` file somewhere and wonders

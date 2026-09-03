@@ -336,7 +336,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (189 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
+**API (191 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -358,7 +358,7 @@ forced bypass, no caching of failures), and the palette's contrast against WCAG 
 including the two pairs a stylesheet composes that nobody had listed. Run with
 `npm test`.
 
-**End-to-end (37 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (38 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a

@@ -118,10 +118,18 @@ export function SideNav(props: SideNavProps) {
 
 // #region section-shell
 /**
- * A sidebar section. Most are always open. The records index is twenty-seven
+ * A sidebar section. Most are always open. The records index is thirty-five
  * rows, which is a wall at the bottom of the rail, so it is a native details:
  * closed until asked for, and the keyboard and screen-reader behaviour comes
  * from the element rather than from a reimplementation of it.
+ *
+ * The icons-only rail is the case that nearly went out wrong. Every other
+ * section hides its heading there, because the rows underneath are icons and
+ * speak for themselves. A closed `details` has no rows, so hiding its summary
+ * hid the only way to open it: thirty-five documents behind a control a mouse
+ * could not see. On that rail the summary keeps its marker and only the words
+ * are hidden, which leaves the accessible name intact and the affordance
+ * visible (the staff review, 2026-09-03).
  */
 function SectionShell({
   label,
@@ -151,7 +159,9 @@ function SectionShell({
         }
       }}
     >
-      <summary className={iconsOnly ? styles.srOnly : styles.sectionToggle}>{label}</summary>
+      <summary className={iconsOnly ? styles.sectionToggleIcons : styles.sectionToggle}>
+        <span className={iconsOnly ? styles.srOnly : undefined}>{label}</span>
+      </summary>
       {children}
     </details>
   );

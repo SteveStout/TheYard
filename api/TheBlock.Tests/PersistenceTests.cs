@@ -22,12 +22,20 @@ public class PersistenceTests : IDisposable
     private readonly string _file =
         Path.Combine(Path.GetTempPath(), $"theyard-restart-{Guid.NewGuid():N}.db");
 
+    /// <summary>
+    /// Pooling off, for the same reason the application turns it off for a
+    /// scratch database: the alternative is ClearAllPools, which is process
+    /// wide, and xUnit runs test classes in parallel in one process. A class
+    /// that clears the pool to tidy up its own file clears everybody's.
+    /// </summary>
+    private string Connection => $"Data Source={_file};Pooling=False";
+
     private WebApplicationFactory<Program> Api() =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-            builder.UseSetting("ConnectionStrings:Yard", $"Data Source={_file}"));
+            builder.UseSetting("ConnectionStrings:Yard", Connection));
 
     private YardDbContext Context() =>
-        new(new DbContextOptionsBuilder<YardDbContext>().UseSqlite($"Data Source={_file}").Options);
+        new(new DbContextOptionsBuilder<YardDbContext>().UseSqlite(Connection).Options);
 
     // #region restart
     [Fact]
@@ -92,7 +100,6 @@ public class PersistenceTests : IDisposable
             api.CreateClient().Dispose();
         }
 
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         long bytes = OnDisk();
 
         using var db = Context();
@@ -131,6 +138,67 @@ public class PersistenceTests : IDisposable
         // a database with no history cannot be brought forward later.
         Assert.NotEmpty(db.Database.GetAppliedMigrations());
     }
+
+    // #region mapping-round-trip
+    /// <summary>
+    /// The failure `VehicleRows` names in its own summary, which nothing was
+    /// checking: "a field that quietly stops being copied". Comparing whole
+    /// records by value catches a dropped field, a narrowed type and a swapped
+    /// pair at once, which is what record equality is for (the staff review,
+    /// 2026-09-03).
+    /// </summary>
+    [Fact]
+    public void Every_field_survives_the_round_trip_through_a_row()
+    {
+        var source = new JsonFileVehicleSource(SeedPath()).Load();
+
+        var roundTripped = source.Select((vehicle, index) => vehicle.ToRow(index).ToVehicle()).ToList();
+
+        Assert.Equal(source.Count, roundTripped.Count);
+
+        // Comparing the records outright fails, and not because a field is
+        // dropped. Vehicle exposes DamageNotes and Images as
+        // IReadOnlyList<string>; the default comparer for an interface type
+        // calls the instance's own Equals, which for a list is reference
+        // equality. Two vehicles with equal but distinct lists are therefore
+        // not equal, so the two collections are compared by sequence and the
+        // other twenty-seven fields are left to the record, with one shared
+        // empty instance standing in so its equality can do its job.
+        IReadOnlyList<string> none = Array.Empty<string>();
+        for (int i = 0; i < source.Count; i++)
+        {
+            Assert.Equal(source[i].DamageNotes, roundTripped[i].DamageNotes);
+            Assert.Equal(source[i].Images, roundTripped[i].Images);
+            Assert.Equal(
+                source[i] with { DamageNotes = none, Images = none },
+                roundTripped[i] with { DamageNotes = none, Images = none });
+        }
+    }
+
+    /// <summary>
+    /// And the order, which is the other thing the model comments say matters:
+    /// the synthetic scale-up expands the seed catalogue from its order, so a
+    /// set that came back differently ordered would be a different hundred
+    /// thousand vehicles.
+    /// </summary>
+    [Fact]
+    public async Task The_store_returns_the_catalogue_in_the_order_the_file_had_it()
+    {
+        await using (var api = Api())
+        {
+            api.CreateClient().Dispose();
+        }
+
+        var fromFile = new JsonFileVehicleSource(SeedPath()).Load().Select(v => v.Id).ToList();
+        using var db = Context();
+        var fromStore = db.Vehicles.AsNoTracking().OrderBy(row => row.Seq).Select(row => row.Id).ToList();
+
+        Assert.Equal(fromFile, fromStore);
+    }
+    /// <summary>The seed catalogue on disk, found the way the other suites find it.</summary>
+    private static string SeedPath() =>
+        Path.Combine(JsonFileSourceTests.RepoRoot(), "data", "vehicles.json");
+    // #endregion mapping-round-trip
 
     // #region fallback
     /// <summary>
@@ -198,14 +266,16 @@ public class PersistenceTests : IDisposable
 
     public void Dispose()
     {
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-        try
+        foreach (string leftover in new[] { _file, _file + "-wal", _file + "-shm" })
         {
-            File.Delete(_file);
-        }
-        catch (IOException)
-        {
-            // A test's scratch file that outlives the test is litter, not a failure.
+            try
+            {
+                File.Delete(leftover);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A test's scratch file that outlives the test is litter, not a failure.
+            }
         }
         GC.SuppressFinalize(this);
     }

@@ -9,8 +9,10 @@ namespace TheBlock.Infrastructure;
 /// here that change after startup.
 ///
 /// The context lives in Infrastructure because it is an adapter. Nothing above
-/// this layer references EF Core, or knows that SQLite is what is underneath
-/// the two ports it does know about.
+/// this layer references EF Core except the composition root, which is the one
+/// place that is supposed to: wiring an adapter means naming it. Application
+/// and Domain do not, and the three ports they read through are the same three
+/// whether a database is underneath them or a pair of JSON files is.
 /// </summary>
 public sealed class YardDbContext(DbContextOptions<YardDbContext> options) : DbContext(options)
 {

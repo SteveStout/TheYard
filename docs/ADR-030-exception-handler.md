@@ -61,9 +61,19 @@ and the same trace id. The response can afford to say nothing precisely because
 everything it withholds is in that line.
 
 There is a fourth case worth naming: a caller who hangs up mid-response
-produces an `OperationCanceledException` on an aborted request. Nothing went
-wrong, and there is no socket left to answer on, so it is a debug line and
-returns handled, which also keeps it out of the Admin tab's error list.
+produces an `OperationCanceledException` on an aborted request. There is no
+socket left to answer on, so nothing is written, and it does not belong in the
+Admin tab's error list as a server failure.
+
+The first version of this logged it at Debug and returned without touching the
+status, which leaves a 200 on a request that was never answered. That is wrong
+in the one situation it matters: the opening shape of a real outage is a slow
+server, clients timing out, and every abandoned request landing here. A version
+that logs at Debug and reports 200 makes exactly that invisible in the request
+log and in telemetry at once. It logs at Information now and sets 499, which is
+nginx's convention for a client that left and is understood widely enough to
+read as what it is. That correction came from the staff review of the same
+night's diff, not from a failure in production.
 
 **A deliberate failure endpoint, `/api/admin/selftest/exception`.** Every other
 endpoint here is written not to throw, which is why the exception path had
@@ -76,6 +86,14 @@ and the answer it produces is the answer any real bug would produce.
 It is public, like every other endpoint on this site, and cheaper to serve than
 the inventory query. `DELETE /api/bids`, which resets the auction for everyone,
 has been public since the first deploy.
+
+The exposure it does add is worth naming rather than leaving for someone to
+find: the recent-errors buffer holds fifty entries, so fifty anonymous requests
+to this endpoint would push every real error out of the Admin tab, and each one
+also sends an exception to Application Insights, which is billed by ingestion.
+On a demo with a public reset endpoint that is an acceptable trade. On anything
+with users it would need a rate limit or an authenticated route, and the reason
+it does not have one here is the deployment, not the design.
 
 **The tests run against Production.** `ProductionApi` is a factory that sets
 the environment, because asking what a caller sees means asking the environment

@@ -49,7 +49,13 @@ int targetCount = builder.Configuration.GetValue("Inventory:TargetCount", 100_00
 // misconfigured deploy than quietly writing somewhere nobody will look.
 string? configuredDatabase = builder.Configuration.GetConnectionString("Yard");
 string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
-string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase}";
+// Pooling off for a scratch database, which is what makes it deletable
+// without a process-wide ClearAllPools. That call empties the pool for every
+// connection in the process, and a test run holds ten applications at once
+// against ten different databases, so one of them tidying up on shutdown was
+// pulling connections out from under the others (the staff review, 2026-09-03,
+// confirmed by a test that passed alone and failed in the suite).
+string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase};Pooling=False";
 #endregion persistence
 
 #region migrate-and-seed
@@ -179,12 +185,16 @@ if (database.Ready)
 }
 else
 {
+    // "The store" rather than "the database": Prepare also reads the seed
+    // files, so this line covers a missing dataset as well as a database that
+    // will not open, and naming only one of them sends the next person to the
+    // wrong place (the staff review, 2026-09-03).
     app.Logger.LogError(
-        "The database could not be prepared, so the catalogue is being served from the JSON files and bids will not outlive this process: {Note}",
+        "The store could not be prepared, which covers both the database and the seed files it fills from. The catalogue is being served from the JSON files and bids will not outlive this process: {Note}",
         database.Note);
 }
 
-if (database.Ready && configuredDatabase is null)
+if (configuredDatabase is null)
 {
     app.Logger.LogWarning(
         "No ConnectionStrings:Yard is configured, so this process is using a scratch database at {Path} and will delete it on shutdown",
@@ -194,14 +204,27 @@ if (database.Ready && configuredDatabase is null)
     // the delete fails on Windows.
     app.Lifetime.ApplicationStopped.Register(() =>
     {
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-        try
+        // SQLite writes three files, not one: the database, the write-ahead log
+        // and the shared-memory index. Deleting only the first leaves the other
+        // two behind, and this runs whether or not the store came up, because
+        // the half-created file is exactly the case that used to leak (the
+        // staff review, 2026-09-03).
+        foreach (string leftover in new[]
+                 {
+                     scratchDatabase,
+                     scratchDatabase + "-wal",
+                     scratchDatabase + "-shm",
+                     scratchDatabase + "-journal",
+                 })
         {
-            File.Delete(scratchDatabase);
-        }
-        catch (IOException)
-        {
-            // A leftover scratch file is litter, not a reason to fail a shutdown.
+            try
+            {
+                File.Delete(leftover);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A leftover scratch file is litter, not a reason to fail a shutdown.
+            }
         }
     });
 }
@@ -515,9 +538,14 @@ HealthCheckEntry[] RunChecks()
                 using var db = contexts.CreateDbContext();
                 return db.Vehicles.Any() && db.Photos.Any();
             },
+            // The reason is in the log, not in this response. A health endpoint
+            // is public on purpose, and an exception message from a storage
+            // failure is typically a filesystem path: exactly the map of the
+            // inside of the process that ProblemHandler refuses to draw
+            // (the staff review, 2026-09-03).
             database.Ready
                 ? "the seed catalogue is in the store"
-                : "unavailable, serving the catalogue from files: " + database.Note),
+                : "unavailable, serving the catalogue from files; the reason is in the log"),
     ];
 }
 #endregion health-checks

@@ -32,7 +32,12 @@ async function violations(page: Page): Promise<string[]> {
 test.describe('WCAG 2.1 AA, on every view', () => {
   test('the inventory', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
+    // The heading is there before the fetch returns. Waiting for a tile is
+    // waiting for the hundred cards, their badges and their countdowns, which
+    // is where both of the contrast failures were: a scan that ran on the
+    // heading alone could have found nothing and reported a clean page (the
+    // staff review, 2026-09-03).
+    await expect(page.locator('article h3 button').first()).toBeVisible();
     expect(await violations(page)).toEqual([]);
   });
   // #endregion axe
@@ -61,7 +66,18 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   test('the inventory on a phone', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
+    await expect(page.locator('article h3 button').first()).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+  });
+
+  test('the records index, open', async ({ page }) => {
+    await page.goto('/');
+    const nav = page.getByRole('navigation', { name: 'Project documents' });
+    // Closed, those thirty-five rows are not in the accessibility tree at all,
+    // so every other test in this file was scanning a rail with a third of its
+    // controls hidden.
+    await nav.getByText('Decision Records', { exact: true }).click();
+    await expect(nav.getByRole('button', { name: 'ADR: Front Door origin' })).toBeVisible();
     expect(await violations(page)).toEqual([]);
   });
 

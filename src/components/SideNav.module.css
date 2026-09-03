@@ -313,8 +313,49 @@ details[open] > .sectionToggle::after {
   outline-offset: -2px;
 }
 
+/* The same disclosure on the icons-only rail: the words go, the marker stays.
+   Hiding the summary outright would hide the only control that opens it. */
+.sectionToggleIcons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  margin: var(--space-1) 0;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-sheet-icon);
+}
+
+.sectionToggleIcons::-webkit-details-marker {
+  display: none;
+}
+
+.sectionToggleIcons::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--transition-fast);
+}
+
+details[open] > .sectionToggleIcons::after {
+  transform: rotate(45deg);
+}
+
+.sectionToggleIcons:hover {
+  background: var(--color-sheet-bg-raised);
+}
+
+.sectionToggleIcons:focus-visible {
+  outline: 2px solid var(--color-sheet-focus);
+  outline-offset: -2px;
+}
+
 /* The record's file number, in the index section. Tabular figures so the
-   twenty-seven of them line up in a column rather than wandering. */
+   thirty-five of them line up in a column rather than wandering. */
 .recordNumber {
   font-variant-numeric: tabular-nums;
   color: var(--color-sheet-text-muted);

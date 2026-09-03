@@ -86,12 +86,15 @@ public sealed class BidService
                     merged.BidCount + 1,
                     WonBuyNow: outcome.Kind == BidOutcomeKind.Won,
                     AtMs: clock.NowMs);
-                _bids[vehicle.Id] = state;
-                // Written inside the lock, which serialises bids behind one
-                // SQLite write. At this scale that costs a millisecond and buys
-                // the guarantee that what is in memory and what is on disk
-                // cannot disagree about who is winning.
+                // The store first, then memory. The other order looks
+                // harmless and is not: a store that throws would leave the
+                // dictionary holding a bid the caller was just told had failed,
+                // shown as winning until the next restart deleted it. This way
+                // a failed write means the bid did not happen anywhere, which
+                // is the answer the caller already has (the staff review,
+                // 2026-09-03).
                 _store.Save(vehicle.Id, state);
+                _bids[vehicle.Id] = state;
             }
             return outcome;
         }
@@ -107,8 +110,8 @@ public sealed class BidService
             if (outcome.Kind == BidOutcomeKind.Won)
             {
                 var state = new BidState(outcome.Amount, merged.BidCount, WonBuyNow: true, AtMs: clock.NowMs);
-                _bids[vehicle.Id] = state;
                 _store.Save(vehicle.Id, state);
+                _bids[vehicle.Id] = state;
             }
             return outcome;
         }
@@ -118,8 +121,8 @@ public sealed class BidService
     {
         lock (_gate)
         {
-            _bids.Clear();
             _store.Clear();
+            _bids.Clear();
         }
     }
 }

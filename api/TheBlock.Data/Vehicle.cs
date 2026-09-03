@@ -10,6 +10,14 @@ namespace TheBlock.Data;
 /// wire contract is not an extension point. Tests compare whole vehicle
 /// lists by value, and `with` copies power the bid overlay, and both rely on
 /// equality staying purely "same fields".
+///
+/// With one exception, which is worth knowing before you write a test against
+/// it: DamageNotes and Images are declared as IReadOnlyList&lt;string&gt;, and
+/// the default equality comparer for an interface type calls the instance's own
+/// Equals. For a list that is reference equality, so two vehicles carrying
+/// equal but distinct lists are not equal. Twenty-seven fields compare by value
+/// and two compare by identity. A test that needs those two compared by
+/// contents has to say so, which PersistenceTests does.
 /// </summary>
 public sealed record Vehicle
 {

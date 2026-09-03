@@ -47,11 +47,20 @@ and a stylesheet combines whatever it likes.
 
 ## Decision
 
-**axe-core through Playwright, on six views, at WCAG 2.1 AA, with zero
+**axe-core through Playwright, on seven views, at WCAG 2.1 AA, with zero
 tolerance.** The inventory and a vehicle at desktop width, the Admin tab, an
-open document dialog, and the inventory and drawer on a phone. Each is its own
-test so a failure names the view. It runs inside the existing browser job, so
-it is in CI without a new job or a new runner.
+open document dialog, the records index open, and the inventory and drawer on a
+phone. Each is its own test so a failure names the view. It runs inside the
+existing browser job, so it is in CI without a new job or a new runner.
+
+Two of those tests were wrong when they were written, and the staff review the
+same night caught both. The inventory scans waited for the page heading, which
+is present before the vehicles arrive, so they could have run against a page
+with no cards on it and reported a clean result, on the exact view where both
+contrast failures were. They wait for a tile now. And the records index is a
+closed `details`, so its thirty-five rows were in no scan at all until one test
+opened it. A check that runs on less than it claims to is worse than no check,
+because it is quoted.
 
 **The tags are `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`.** Best-practice
 rules outside the standard are deliberately not included: a check that fails on
@@ -100,7 +109,7 @@ The two pairs the palette test now also holds
 
 ## Consequences
 
-- Six more browser tests, from 31 to 37, adding a few seconds to the suite.
+- Seven more browser tests, from 31 to 38, adding a few seconds to the suite.
 - A colour change that fails AA now fails in two places, one of them fast.
 - The live site had two serious contrast failures on it for as long as those
   colours have existed, and both were on the busiest elements on the page.
