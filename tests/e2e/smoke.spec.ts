@@ -12,7 +12,7 @@ test.beforeEach(async ({ request }) => {
 
 test('landing page shows the top 100 of the full dataset', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('status')).toHaveText(/Showing 100 of 100,000 vehicles/);
+  await expect(page.getByTestId('result-count')).toHaveText(/Showing 100 of 100,000 vehicles/);
   await expect(page.locator('article')).toHaveCount(100);
 });
 
@@ -23,7 +23,7 @@ test('filtering updates the URL and a filtered URL restores the view', async ({ 
 
   await page.goto('/?make=Kia&status=upcoming&sort=price-asc');
   await expect(page.locator('select').nth(1)).toHaveValue('Kia');
-  await expect(page.getByRole('status')).toHaveText(/of [\d,]+ vehicles/);
+  await expect(page.getByTestId('result-count')).toHaveText(/of [\d,]+ vehicles/);
 });
 
 test('load more appends the next page', async ({ page }) => {
@@ -126,7 +126,7 @@ test('a transient API failure shows the stale banner and Retry recovers', async 
   await page.unroute('**/api/vehicles*');
   await page.getByRole('button', { name: 'Retry' }).click();
   await expect(page.getByText(/Couldn't update results/)).toHaveCount(0);
-  await expect(page.getByRole('status')).toHaveText(/of [\d,]+ vehicles/);
+  await expect(page.getByTestId('result-count')).toHaveText(/of [\d,]+ vehicles/);
 });
 
 test('a bid round-trips through the API and survives a reload', async ({ page }) => {

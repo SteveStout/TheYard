@@ -54,7 +54,9 @@ test.describe('the docked rail', () => {
     await rail.getByRole('button', { name: 'Hosting overview' }).click();
     const doc = page.getByRole('dialog', { name: 'Hosting' });
     await expect(doc.getByRole('heading', { level: 1, name: 'Hosting' })).toBeVisible();
-    await expect(page.locator('[data-testid="side-rail"] [aria-current="true"]')).toHaveText('Hosting overview');
+    // "page" rather than "true" since ADR-026: aria-current takes a token
+    // saying what kind of current thing this is, and a document row is a page.
+    await expect(page.locator('[data-testid="side-rail"] [aria-current="page"]')).toHaveText('Hosting overview');
     await page.keyboard.press('Escape');
     await expect(doc).toBeHidden();
     await expect(page.locator('[data-testid="side-rail"] [aria-current]')).toHaveCount(0);

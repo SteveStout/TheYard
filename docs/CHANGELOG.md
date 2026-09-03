@@ -5,6 +5,7 @@ footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Best Practices menu.
 
+- **1.0.0.36** (2026-09-03): The keyboard path is walkable end to end: a skip link past the thirty-button rail, focus that moves to the view that changed instead of falling to the document body, and a live region that names where you arrived, all four held by Playwright (ADR-026).
 - **1.0.0.35** (2026-09-03): Free-text search stopped rebuilding each vehicle's searchable text inside the scan, which halves the work across the hundred thousand rows and is measured by a test that ships with it (ADR-025), the telemetry query that shipped broken in 1.0.0.34 now parses and the Admin card counts browser errors beside the server's (ADR-024), and the em dashes are gone from the code comments the records display.
 - **1.0.0.34** (2026-09-03): Application Insights is wired: every request, dependency and exception the API handles goes to it, browser errors ride the endpoint that already existed, and the Admin tab reads the last hour back with the container's own identity, with the ingestion key read from Azure at roll time and never stored in the repository (ADR-024).
 - **1.0.0.33** (2026-09-03): The changelog was corrected after two commits shipped in one deploy run: they became one version, not two, and this line records the fix (ADR-012).

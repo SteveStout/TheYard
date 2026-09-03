@@ -192,7 +192,7 @@ function NavContent({
                   type="button"
                   className={sub ? `${styles.row} ${styles.subRow}` : styles.row}
                   onClick={() => onOpenDoc(key)}
-                  aria-current={openKey === key ? 'true' : undefined}
+                  aria-current={openKey === key ? 'page' : undefined}
                   title={iconsOnly ? DOCS[key].menuLabel : undefined}
                 >
                   <RowIcon kind={DOCS[key].kind} className={styles.icon} />

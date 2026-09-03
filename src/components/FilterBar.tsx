@@ -230,7 +230,7 @@ export function FilterBar({
       </div>
 
       <div className={styles.footer}>
-        <p className={styles.count} role="status">
+        <p className={styles.count} role="status" data-testid="result-count">
           {totalCount > shownCount
             ? `Showing ${shownCount} of ${formatInteger(totalCount)} vehicles`
             : `${totalCount} ${totalCount === 1 ? 'vehicle' : 'vehicles'}`}

@@ -283,6 +283,25 @@ export default function App() {
     [selectedVehicle, bids]
   );
 
+  // #region focus
+  // A single-page app swaps the view without changing the document, so the
+  // browser has nothing to move focus to. Open a vehicle from a tile and the
+  // tile is gone: focus falls to <body>, the next Tab starts from the top of
+  // the page, and a screen reader announces nothing at all. Moving focus to
+  // the region that just changed is the standard repair, and it is why <main>
+  // carries tabIndex={-1}: focusable by script, never by Tab.
+  const mainRef = useRef<HTMLElement>(null);
+  const viewKey = adminOpen ? 'admin' : selectedVehicle ? `vehicle:${selectedVehicle.id}` : 'list';
+  const lastView = useRef(viewKey);
+  useEffect(() => {
+    if (lastView.current === viewKey) return;
+    lastView.current = viewKey;
+    // preventScroll because the effect below already decides where the page
+    // sits; without it the two fight and the detail opens part-scrolled.
+    mainRef.current?.focus({ preventScroll: true });
+  }, [viewKey]);
+  // #endregion focus
+
   // #region history
   // Open the detail at the top; restore the list scroll position on back.
   const listScrollY = useRef(0);
@@ -363,8 +382,29 @@ export default function App() {
     return result.outcome;
   };
 
+  // #region announcement
+  // Focus says where you are; this says what you arrived at. Moving focus to a
+  // container is announced inconsistently across screen readers, so the view's
+  // name is stated outright. The match count is deliberately not repeated here:
+  // the filter bar's own status line already owns that sentence, and two live
+  // regions saying the same thing is worse than one saying it once.
+  const announcement = adminOpen
+    ? 'Admin panel'
+    : selectedVehicle
+      ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}, vehicle detail`
+      : 'Vehicle inventory';
+  // #endregion announcement
+
   return (
     <div className={styles.app} data-rail={docked ? (railCollapsed ? 'collapsed' : 'open') : 'drawer'}>
+      {/* #region skip-link */}
+      {/* First in the tab order on purpose. The docked rail is around thirty
+          buttons, and without this a keyboard user tabs every one of them to
+          reach the grid, on every page view. Hidden until it has focus. */}
+      <a className={styles.skipLink} href="#main-content">
+        Skip to content
+      </a>
+      {/* #endregion skip-link */}
       {/* The one navigation surface (ADR-013): a docked rail on wide screens,
           a drawer behind the header's hamburger below 1024px. */}
       <SideNav
@@ -417,7 +457,10 @@ export default function App() {
         )}
         {/* #endregion header-below-dock */}
 
-        <main className={styles.main}>
+        <main className={styles.main} id="main-content" ref={mainRef} tabIndex={-1}>
+          <p className={styles.srOnly} role="status" data-testid="view-announcement">
+            {announcement}
+          </p>
           {adminOpen ? (
             <AdminPanel onBack={closeAdmin} />
           ) : loadState === 'loading' ? (

@@ -10,7 +10,7 @@ auction rules.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-five decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-six decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -182,7 +182,7 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, twenty-five
+  data flow and infrastructure diagrams on their own zoomable pages, twenty-six
   decision records, the Bicep infrastructure, and my resume.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
   alike), the container group's own state read from Azure with a managed identity, and
@@ -346,13 +346,14 @@ and filter round-tripping, query-parameter mapping, the request cache (TTL, per 
 forced bypass, no caching of failures), and the palette's contrast against WCAG AA. Run
 with `npm test`.
 
-**End-to-end (25 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (29 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a
 browser error reaches it, a transient API failure recovers via the retry banner, the
-phone drawer works at 375 pixels, and a bid round-trips through the API, survives a
-reload, and resets. Run with `npm run test:e2e` (launches both servers itself, uses your
+phone drawer works at 375 pixels, the keyboard path walks from the skip link through
+every view switch, and a bid round-trips through the API, survives a reload, and
+resets. Run with `npm run test:e2e` (launches both servers itself, uses your
 installed Chrome). All three suites run in CI on every push, and a green run on `main`
 deploys.
 
@@ -396,8 +397,8 @@ What is genuinely still open, in priority order:
   demo shortcut
 - Simulated competing bidders so the high-bidder state can be lost, with outbid alerts
 - A virtualized grid once Load More accumulates thousands of rows
-- Focus management on view switches (the detail page should receive keyboard focus),
-  plus a fuller accessibility audit
+- An audit with a real screen reader, which is a person's job rather than a checklist's;
+  the keyboard path itself is now walkable and held by tests
 - A real image pipeline (srcset, blur-up placeholders) once photography replaces the
   representative stock photos
 

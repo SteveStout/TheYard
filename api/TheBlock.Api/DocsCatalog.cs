@@ -48,6 +48,7 @@ public static class DocsCatalog
         ["adr-errors"] = "docs/ADR-023-error-handling.md",
         ["adr-telemetry"] = "docs/ADR-024-telemetry.md",
         ["adr-search"] = "docs/ADR-025-search-index.md",
+        ["adr-keyboard"] = "docs/ADR-026-keyboard.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };
