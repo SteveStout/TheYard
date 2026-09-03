@@ -75,6 +75,7 @@ export type DocKey =
   | 'adrInterceptors'
   | 'adrSelfReview'
   | 'adrTheName'
+  | 'adrSecondManifest'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -473,6 +474,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '046',
   },
+  adrSecondManifest: {
+    title: 'ADR: The second manifest',
+    menuLabel: 'ADR: The second manifest',
+    url: '/api/docs/adr-second-manifest',
+    kind: 'adr',
+    number: '047',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -575,6 +583,7 @@ export const MENUS: Record<
       { key: 'adrInterceptors' },
       { key: 'adrSelfReview' },
       { key: 'adrTheName' },
+      { key: 'adrSecondManifest' },
     ],
   },
   // #endregion records-menu

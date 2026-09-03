@@ -69,6 +69,7 @@ public static class DocsCatalog
         ["adr-interceptors"] = "docs/ADR-044-interceptors-explained.md",
         ["adr-self-review"] = "docs/ADR-045-reviewing-my-own-work.md",
         ["adr-the-name"] = "docs/ADR-046-the-name.md",
+        ["adr-second-manifest"] = "docs/ADR-047-the-second-manifest.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",

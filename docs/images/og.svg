@@ -17,7 +17,7 @@
     <text x="140" y="424" font-size="38" font-weight="700" fill="#536786">100,000</text>
     <text x="140" y="458" font-size="22" font-weight="500" fill="#5f636c">listings</text>
     <rect x="448" y="374" width="304" height="108" rx="16" fill="#e4e9f1"/>
-    <text x="476" y="424" font-size="38" font-weight="700" fill="#536786">46</text>
+    <text x="476" y="424" font-size="38" font-weight="700" fill="#536786">47</text>
     <text x="476" y="458" font-size="22" font-weight="500" fill="#5f636c">decision records</text>
     <rect x="784" y="374" width="304" height="108" rx="16" fill="#e4e9f1"/>
     <text x="812" y="424" font-size="38" font-weight="700" fill="#536786">.NET 10</text>
@@ -25,5 +25,5 @@
   </g>
 
   <text x="112" y="534" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="24" font-weight="500" fill="#5f636c">theyard.stevenstout.biz</text>
-  <text x="1088" y="534" text-anchor="end" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="24" font-weight="500" fill="#5f636c">Steven Stout · 1.0.0.59</text>
+  <text x="1088" y="534" text-anchor="end" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="24" font-weight="500" fill="#5f636c">Steven Stout · 1.0.0.60</text>
 </svg>

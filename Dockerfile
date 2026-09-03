@@ -18,6 +18,12 @@ COPY tsconfig.app.json ./
 COPY tsconfig.node.json ./
 COPY vite.config.ts ./
 COPY src ./src
+# Vite copies everything in public/ to the root of the built site untouched, so
+# this is where robots.txt, sitemap.xml and the link preview image come from.
+# It is easy to leave out, and leaving it out fails in the one place nobody
+# looks: the built site loses those files while every local check stays green,
+# because locally the folder is simply there (ADR: The second manifest).
+COPY public ./public
 
 # Build the production bundle that will be served by the ASP.NET host.
 RUN npm run build
