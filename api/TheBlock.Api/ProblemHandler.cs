@@ -87,7 +87,13 @@ public sealed class ProblemHandler(IProblemDetailsService problems, ILogger<Prob
         // so a crash and a rejected query are one shape on the wire. The
         // traceId extension is added by the customization in Program.cs, which
         // means it is on this response too without being repeated here.
-        return await problems.TryWriteAsync(new ProblemDetailsContext
+        //
+        // It can decline. A caller who accepts only text/plain gets no
+        // ProblemDetails, TryWriteAsync returns false, and the middleware
+        // rethrows, which is the right outcome and not the one the log line
+        // above describes. So the log says what was actually sent (the staff
+        // review, 2026-09-03).
+        bool written = await problems.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = context,
             Exception = exception,
@@ -100,6 +106,17 @@ public sealed class ProblemHandler(IProblemDetailsService problems, ILogger<Prob
                 Detail = callersFault ? exception.Message : ServerDetail,
             },
         });
+
+        if (!written)
+        {
+            log.LogWarning(
+                "Nothing was written for {Exception} on {Method} {Path}: no problem details writer accepted it, so the request will be reset",
+                exception.GetType().Name,
+                context.Request.Method,
+                context.Request.Path);
+        }
+
+        return written;
     }
     // #endregion exception-handler
 }

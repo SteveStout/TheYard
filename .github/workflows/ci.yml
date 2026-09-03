@@ -43,6 +43,11 @@ jobs:
   # #endregion style-job
 
   frontend:
+    # The style job's comment says it runs first so a missing semicolon does not
+    # cost a browser suite to discover. That was a description of an intention
+    # until this line existed: without `needs` these all start at once and the
+    # claim was decoration (the staff review, 2026-09-03).
+    needs: style
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +61,7 @@ jobs:
       - run: npm run build
 
   api:
+    needs: style
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -65,6 +71,7 @@ jobs:
       - run: dotnet test api
 
   e2e:
+    needs: style
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -50,7 +49,12 @@ public class PersistenceTests : IDisposable
             var client = first.CreateClient();
             using var page = JsonDocument.Parse(
                 await client.GetStringAsync($"/api/vehicles?status=live&limit=1&anchor_ms={anchor}"));
-            var vehicle = page.RootElement.GetProperty("vehicles")[0];
+            var live = page.RootElement.GetProperty("vehicles");
+            // The auction clock is anchored per request, so a live vehicle is
+            // always there. Saying so out loud costs nothing and turns a future
+            // index-out-of-range into a sentence (the staff review).
+            Assert.True(live.GetArrayLength() > 0, "the anchored clock should always have a live auction");
+            var vehicle = live[0];
             id = vehicle.GetProperty("id").GetString()!;
             amount = vehicle.GetProperty("min_next_bid").GetInt32();
 
@@ -64,8 +68,15 @@ public class PersistenceTests : IDisposable
         await using var second = Api();
         string bids = await second.CreateClient().GetStringAsync("/api/bids");
 
-        Assert.Contains(id, bids, StringComparison.Ordinal);
-        Assert.Contains(amount.ToString(CultureInfo.InvariantCulture), bids, StringComparison.Ordinal);
+        // Parsed rather than matched as a substring: a thirteen-digit
+        // timestamp contains almost any five-digit amount somewhere inside it,
+        // so the old assertion could pass on a bid that had not survived at all
+        // (the staff review, 2026-09-03).
+        using var restored = JsonDocument.Parse(bids);
+        Assert.True(
+            restored.RootElement.TryGetProperty(id, out var mine),
+            $"the restored process has no bid for {id}: {bids}");
+        Assert.Equal(amount, mine.GetProperty("amount").GetInt32());
     }
     // #endregion restart
 

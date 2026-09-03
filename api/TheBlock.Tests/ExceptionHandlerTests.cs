@@ -102,6 +102,10 @@ public class ExceptionHandlerTests(ProductionApi factory) : IClassFixture<Produc
         // has to be there when the server falls over, or the client needs two.
         var crashFields = crash.RootElement.EnumerateObject().Select(p => p.Name).Order().ToArray();
         var rejectedFields = rejected.RootElement.EnumerateObject().Select(p => p.Name).Order().ToArray();
+        // Two empty sets are equal, so without this the test would pass on two
+        // empty bodies, which is the failure it exists to catch (the staff
+        // review, 2026-09-03).
+        Assert.NotEmpty(rejectedFields);
         Assert.Equal(rejectedFields, crashFields);
     }
     // #endregion exception-tests
