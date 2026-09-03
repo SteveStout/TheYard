@@ -30,6 +30,15 @@ export function BidPanel({ vehicle, now, isHighBidder, isOutbid, wonBuyNow, onPl
   const status = wonBuyNow ? 'ended' : timing.status;
   const hasBids = vehicle.current_bid !== null;
   const min = vehicle.min_next_bid;
+  // #region stale-minimum
+  // The minimum next bid is domain math (tiered increments) and only the
+  // server has it, so the browser cannot recompute it when a competing bid
+  // arrives. It can tell that the one it holds is out of date: a minimum at or
+  // below the standing price is arithmetically impossible. For the moment
+  // between the room raising a bid and the refetch landing, the panel says so
+  // rather than showing a number that would be rejected on submission.
+  const minIsStale = status === 'live' && min <= currentPrice(vehicle);
+  // #endregion stale-minimum
   const reserve = reserveState(vehicle);
   const wonAtClose = status === 'ended' && isHighBidder && (reserve === 'met' || reserve === 'no-reserve');
   const canBuyNow = status === 'live' && vehicle.buy_now_price !== null;
@@ -128,7 +137,10 @@ export function BidPanel({ vehicle, now, isHighBidder, isOutbid, wonBuyNow, onPl
 
           <form className={styles.form} onSubmit={submitBid}>
             <label className={styles.inputLabel} htmlFor="bid-amount">
-              Your bid <span className={styles.minHint}>(minimum {formatCurrency(min)})</span>
+              Your bid{' '}
+              <span className={styles.minHint}>
+                {minIsStale ? '(updating the minimum)' : `(minimum ${formatCurrency(min)})`}
+              </span>
             </label>
             <div className={styles.inputRow}>
               <div className={styles.amountWrap}>
@@ -140,7 +152,7 @@ export function BidPanel({ vehicle, now, isHighBidder, isOutbid, wonBuyNow, onPl
                   className={styles.amountInput}
                   type="number"
                   inputMode="numeric"
-                  placeholder={String(min)}
+                  placeholder={minIsStale ? '' : String(min)}
                   value={amountInput}
                   onChange={(e) => {
                     setAmountInput(e.target.value);
@@ -148,7 +160,7 @@ export function BidPanel({ vehicle, now, isHighBidder, isOutbid, wonBuyNow, onPl
                   }}
                 />
               </div>
-              <button type="submit" className={styles.bidButton} disabled={pending}>
+              <button type="submit" className={styles.bidButton} disabled={pending || minIsStale}>
                 {pending ? 'Placing…' : 'Place bid'}
               </button>
             </div>

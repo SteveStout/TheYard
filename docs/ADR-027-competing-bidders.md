@@ -76,6 +76,28 @@ which ADR: Front Door origin already plans, SSE becomes a change to one endpoint
 one hook, and the rest of this design does not move. Writing that down is worth
 more than shipping a streaming endpoint that silently does not stream.
 
+## What it looks like
+
+The room has answered a bid on the live site. The green line said "You're the
+high bidder at $48,500" a moment before this:
+
+![The vehicle detail page: the bid stands at $49,000 and a red panel reads "Someone outbid you"](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-outbid-panel.jpg)
+
+And the same vehicle back in the grid, with the chip that could never appear
+before this change:
+
+![The inventory grid with a red Outbid chip on the first card, which now stands at $49,000 with 26 bids](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-outbid-grid.jpg)
+
+The first of those two screenshots found a defect on its way into this record.
+It was taken the instant the outbid line appeared, and it showed "minimum
+$49,000" beside a standing bid of $49,000, which is arithmetically impossible:
+the browser was still holding the minimum from before the room's bid, and the
+refetch had not landed. Typing the number the page displayed would have been
+rejected. The minimum is domain math and the browser will not recompute it, but
+it can tell that the one it holds is impossible, so for that moment the panel
+now says it is updating and the button waits rather than showing a number it
+cannot vouch for.
+
 ## In the code
 
 The overlay, and why the order is the way it is
@@ -112,6 +134,11 @@ The browser's half: the round it asks for, and the sentence it shows
 ```
 
 ```live path=src/components/BidPanel.tsx region=outbid
+```
+
+And the guard that keeps the panel from offering a minimum it cannot vouch for:
+
+```live path=src/components/BidPanel.tsx region=stale-minimum
 ```
 
 ## What the review caught before this shipped
