@@ -101,6 +101,34 @@ this kind of sweep occasionally rather than an argument about naming.
   and stale build output. There is one clone and it is the machine this was done
   on.
 
+## Addendum, the same day: two files the rename did not touch
+
+The rename swept 921 references to a name. Reading the root directory afterwards
+found two files that were never about the name at all and were the same
+inheritance:
+
+**`WALKTHROUGH.md`** was the challenge's own interview brief. "After you submit
+your project, we'll schedule a 45-60 minute conversation." It had been sitting at
+the root of a public repository, explaining to anybody who opened it how a
+submission to somebody else's exercise would be evaluated. Removed.
+
+**`WORKING-NOTES.md`** was a hundred and eighty lines of my own notes from the
+first build day, addressed to myself, describing among other things which parts
+of the challenge's identity had been scrubbed and how. It was three days stale by
+its own numbers, quoting 81 tests where there are now 279. It is a useful
+document and it is not a public one; it lives with the other working files now.
+
+And `CLAUDE.md`, the file an agent reads first to learn what it is working on,
+opened with "An industrial and farm equipment auction marketplace". That rename
+was considered on the first day and deliberately not done, and the sentence
+describing the version that never happened stayed for three days in the worst
+place in the repository for a sentence to be wrong.
+
+A test now asserts that only this record names the challenge, and that the two
+files which say what this project is agree about what it is. All three were found
+by reading the root directory, which no check had ever done, and which is a
+reminder that a repository has a front door as well as a source tree.
+
 ## Files
 
 - [`api/TheYard.slnx`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.slnx): eight projects, all renamed.

@@ -129,9 +129,9 @@ check that the README's stated test counts match the numbers the suites
 actually printed, then verifies the deployed result from the public domain
 rather than from the build log.
 
-The suites are measured rather than counted, too. 89.6 per cent of lines and
-71.7 per cent of branches, published as an annotation on every run so it reads
-without a GitHub sign-in, and the per-project shape says more than the total:
+The suites are measured rather than counted, too. At 1.0.0.65 that was 89.6 per
+cent of lines and 71.7 per cent of branches, published as an annotation on every
+run so the current figure reads without a GitHub sign-in, and the per-project shape says more than the total:
 the entities at 100, the domain at 98.8, the use cases and adapters in the low
 nineties, the host lowest at 78.2 because two of its classes talk to Azure and
 CI has no credential (ADR: Counting what the tests cover).

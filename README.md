@@ -87,8 +87,9 @@ CI (GitHub Actions, `.github/workflows/ci.yml`) runs all three suites on every p
 a green run on `main` builds the image and rolls the live container with no human step
 (`.github/workflows/deploy.yml`).
 
-The .NET suite is measured as well as run: **89.6% of lines and 71.7% of branches**,
-published as an annotation on every run so it can be read without a GitHub sign-in. The
+The .NET suite is measured as well as run, and published as an annotation on every run so
+it can be read without a GitHub sign-in. At 1.0.0.65 it was **89.6% of lines and 71.7% of
+branches**; the current figure is on the latest run rather than in this paragraph. The
 shape matters more than the total, and it is the shape the architecture predicts:
 
 | Project | Lines | Branches |

@@ -1,7 +1,12 @@
 # TheYard
 
-An industrial and farm equipment auction marketplace. React + TypeScript (Vite) frontend,
-.NET minimal API backend in onion architecture.
+A used-vehicle auction platform. React + TypeScript (Vite) frontend, .NET minimal API
+backend in onion architecture.
+
+This line said "an industrial and farm equipment auction marketplace" until 2026-09-03.
+That rename was considered on the first day and deliberately not done, and the file that
+tells an agent what it is working on was left describing the version that never happened,
+which is the worst place in a repository for a sentence to be wrong.
 
 ## Architecture, and it is not negotiable
 
