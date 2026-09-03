@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="880" viewBox="0 0 1400 880" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif">
+  <title>TheYard's database: four tables this application owns, seven ASP.NET Core Identity brings, and the two relationships deliberately left unenforced</title>
+  <defs>
+    <marker id="rel-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#536786"/>
+    </marker>
+    <style>
+      .table { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .table-head { fill: #f4f2f3; stroke: none; rx: 10; }
+      .table-name { fill: #3f3a37; font-size: 15px; font-weight: 700; }
+      .table-note { fill: #62666f; font-size: 11.5px; }
+      .col { fill: #5e5653; font-size: 12px; }
+      .col-key { fill: #3f3a37; font-size: 12px; font-weight: 600; }
+      .type { fill: #536786; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11px; }
+      .note { fill: #62666f; font-size: 10.5px; }
+      .rel { stroke: #536786; stroke-width: 2; fill: none; marker-end: url(#rel-arrow); }
+      .rel-absent { stroke: #ab978c; stroke-width: 2; fill: none; stroke-dasharray: 6 5; }
+      .rel-label { fill: #536786; font-size: 11.5px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+      .legend { fill: #5e5653; font-size: 12px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="880" fill="#e9e6e7"/>
+  <text x="40" y="46" class="heading">TheYard's database, as api/TheBlock.Database declares it</text>
+  <text x="40" y="70" class="caption">Hand-written DDL is the authority; Entity Framework maps to it and a conformance test fails the build if they disagree (ADR-039, ADR-040).</text>
+  <text x="40" y="92" class="caption">Solid lines are constraints the database enforces. Dashed lines are relationships that exist in the application and deliberately not in the schema.</text>
+
+  <rect x="40" y="150" width="400" height="572" class="table"/>
+  <rect x="40" y="150" width="400" height="30" class="table-head"/>
+  <text x="54" y="171" class="table-name">Vehicles</text>
+  <text x="54" y="194" class="table-note">the 200-row seed catalogue, read whole in Seq order once at startup</text>
+  <text x="54" y="214" class="col-key">Id</text>
+  <text x="224" y="214" class="type">nvarchar(64)</text>
+  <text x="336" y="214" class="note">PK</text>
+  <text x="54" y="231" class="col">Seq</text>
+  <text x="224" y="231" class="type">int</text>
+  <text x="336" y="231" class="note">UK, clustered</text>
+  <text x="54" y="248" class="col">Vin</text>
+  <text x="224" y="248" class="type">varchar(17)</text>
+  <text x="336" y="248" class="note">ISO 3779</text>
+  <text x="54" y="265" class="col">Year</text>
+  <text x="224" y="265" class="type">int</text>
+  <text x="54" y="282" class="col">Make</text>
+  <text x="224" y="282" class="type">nvarchar(64)</text>
+  <text x="54" y="299" class="col">Model</text>
+  <text x="224" y="299" class="type">nvarchar(64)</text>
+  <text x="54" y="316" class="col">Trim</text>
+  <text x="224" y="316" class="type">nvarchar(64)</text>
+  <text x="54" y="333" class="col">BodyStyle</text>
+  <text x="224" y="333" class="type">nvarchar(32)</text>
+  <text x="54" y="350" class="col">ExteriorColor</text>
+  <text x="224" y="350" class="type">nvarchar(32)</text>
+  <text x="54" y="367" class="col">InteriorColor</text>
+  <text x="224" y="367" class="type">nvarchar(32)</text>
+  <text x="54" y="384" class="col">Engine</text>
+  <text x="224" y="384" class="type">nvarchar(128)</text>
+  <text x="54" y="401" class="col">Transmission</text>
+  <text x="224" y="401" class="type">nvarchar(64)</text>
+  <text x="54" y="418" class="col">Drivetrain</text>
+  <text x="224" y="418" class="type">nvarchar(16)</text>
+  <text x="54" y="435" class="col">OdometerKm</text>
+  <text x="224" y="435" class="type">int</text>
+  <text x="54" y="452" class="col">FuelType</text>
+  <text x="224" y="452" class="type">nvarchar(32)</text>
+  <text x="54" y="469" class="col">ConditionGrade</text>
+  <text x="224" y="469" class="type">decimal(3,1)</text>
+  <text x="336" y="469" class="note">exact, not float</text>
+  <text x="54" y="486" class="col">ConditionReport</text>
+  <text x="224" y="486" class="type">nvarchar(1024)</text>
+  <text x="54" y="503" class="col">DamageNotes</text>
+  <text x="224" y="503" class="type">nvarchar(max)</text>
+  <text x="336" y="503" class="note">JSON array</text>
+  <text x="54" y="520" class="col">TitleStatus</text>
+  <text x="224" y="520" class="type">nvarchar(32)</text>
+  <text x="54" y="537" class="col">Province</text>
+  <text x="224" y="537" class="type">nvarchar(64)</text>
+  <text x="54" y="554" class="col">City</text>
+  <text x="224" y="554" class="type">nvarchar(64)</text>
+  <text x="54" y="571" class="col">AuctionStart</text>
+  <text x="224" y="571" class="type">datetime2(0)</text>
+  <text x="336" y="571" class="note">local, to the second</text>
+  <text x="54" y="588" class="col">StartingBid</text>
+  <text x="224" y="588" class="type">int</text>
+  <text x="54" y="605" class="col">ReservePrice</text>
+  <text x="224" y="605" class="type">int</text>
+  <text x="336" y="605" class="note">null: no reserve</text>
+  <text x="54" y="622" class="col">BuyNowPrice</text>
+  <text x="224" y="622" class="type">int</text>
+  <text x="336" y="622" class="note">null: no buy now</text>
+  <text x="54" y="639" class="col">Images</text>
+  <text x="224" y="639" class="type">nvarchar(max)</text>
+  <text x="336" y="639" class="note">JSON array</text>
+  <text x="54" y="656" class="col">SellingDealership</text>
+  <text x="224" y="656" class="type">nvarchar(128)</text>
+  <text x="54" y="673" class="col">Lot</text>
+  <text x="224" y="673" class="type">nvarchar(32)</text>
+  <text x="54" y="690" class="col">CurrentBid</text>
+  <text x="224" y="690" class="type">int</text>
+  <text x="336" y="690" class="note">null until bid on</text>
+  <text x="54" y="707" class="col">BidCount</text>
+  <text x="224" y="707" class="type">int</text>
+
+  <rect x="490" y="150" width="360" height="130" class="table"/>
+  <rect x="490" y="150" width="360" height="30" class="table-head"/>
+  <text x="504" y="171" class="table-name">Photos</text>
+  <text x="504" y="194" class="table-note">the vendored stock-photo manifest, read whole in Seq order once</text>
+  <text x="504" y="214" class="col-key">File</text>
+  <text x="655.6" y="214" class="type">nvarchar(128)</text>
+  <text x="756.4" y="214" class="note">PK</text>
+  <text x="504" y="231" class="col">Seq</text>
+  <text x="655.6" y="231" class="type">int</text>
+  <text x="756.4" y="231" class="note">UK, clustered</text>
+  <text x="504" y="248" class="col">Style</text>
+  <text x="655.6" y="248" class="type">nvarchar(32)</text>
+  <text x="756.4" y="248" class="note">body-style pool</text>
+  <text x="504" y="265" class="col">Title</text>
+  <text x="655.6" y="265" class="type">nvarchar(256)</text>
+  <text x="756.4" y="265" class="note">source title</text>
+
+  <rect x="490" y="360" width="360" height="181" class="table"/>
+  <rect x="490" y="360" width="360" height="30" class="table-head"/>
+  <text x="504" y="381" class="table-name">Bids</text>
+  <text x="504" y="404" class="table-note">the only table that changes after startup</text>
+  <text x="504" y="424" class="col-key">UserId</text>
+  <text x="655.6" y="424" class="type">nvarchar(128)</text>
+  <text x="756.4" y="424" class="note">PK, FK</text>
+  <text x="504" y="441" class="col-key">VehicleId</text>
+  <text x="655.6" y="441" class="type">nvarchar(64)</text>
+  <text x="756.4" y="441" class="note">PK</text>
+  <text x="504" y="458" class="col">Amount</text>
+  <text x="655.6" y="458" class="type">int</text>
+  <text x="504" y="475" class="col">BidCount</text>
+  <text x="655.6" y="475" class="type">int</text>
+  <text x="504" y="492" class="col">WonBuyNow</text>
+  <text x="655.6" y="492" class="type">bit</text>
+  <text x="504" y="509" class="col">AtMs</text>
+  <text x="655.6" y="509" class="type">bigint</text>
+  <text x="504" y="526" class="col">RowVersion</text>
+  <text x="655.6" y="526" class="type">rowversion</text>
+  <text x="756.4" y="526" class="note">concurrency token</text>
+
+  <rect x="900" y="150" width="460" height="334" class="table"/>
+  <rect x="900" y="150" width="460" height="30" class="table-head"/>
+  <text x="914" y="171" class="table-name">AspNetUsers</text>
+  <text x="914" y="194" class="table-note">ASP.NET Core Identity, plus the one column this application adds</text>
+  <text x="914" y="214" class="col-key">Id</text>
+  <text x="1111.6" y="214" class="type">nvarchar(128)</text>
+  <text x="1240.4" y="214" class="note">PK</text>
+  <text x="914" y="231" class="col">CreatedAtMs</text>
+  <text x="1111.6" y="231" class="type">bigint</text>
+  <text x="1240.4" y="231" class="note">this application's addition</text>
+  <text x="914" y="248" class="col">UserName</text>
+  <text x="1111.6" y="248" class="type">nvarchar(256)</text>
+  <text x="914" y="265" class="col">NormalizedUserName</text>
+  <text x="1111.6" y="265" class="type">nvarchar(256)</text>
+  <text x="1240.4" y="265" class="note">UK, filtered</text>
+  <text x="914" y="282" class="col">Email</text>
+  <text x="1111.6" y="282" class="type">nvarchar(256)</text>
+  <text x="914" y="299" class="col">NormalizedEmail</text>
+  <text x="1111.6" y="299" class="type">nvarchar(256)</text>
+  <text x="1240.4" y="299" class="note">indexed</text>
+  <text x="914" y="316" class="col">EmailConfirmed</text>
+  <text x="1111.6" y="316" class="type">bit</text>
+  <text x="914" y="333" class="col">PasswordHash</text>
+  <text x="1111.6" y="333" class="type">nvarchar(max)</text>
+  <text x="1240.4" y="333" class="note">Identity's, left alone</text>
+  <text x="914" y="350" class="col">SecurityStamp</text>
+  <text x="1111.6" y="350" class="type">nvarchar(max)</text>
+  <text x="914" y="367" class="col">ConcurrencyStamp</text>
+  <text x="1111.6" y="367" class="type">nvarchar(max)</text>
+  <text x="914" y="384" class="col">PhoneNumber</text>
+  <text x="1111.6" y="384" class="type">nvarchar(max)</text>
+  <text x="914" y="401" class="col">PhoneNumberConfirmed</text>
+  <text x="1111.6" y="401" class="type">bit</text>
+  <text x="914" y="418" class="col">TwoFactorEnabled</text>
+  <text x="1111.6" y="418" class="type">bit</text>
+  <text x="914" y="435" class="col">LockoutEnd</text>
+  <text x="1111.6" y="435" class="type">datetimeoffset</text>
+  <text x="914" y="452" class="col">LockoutEnabled</text>
+  <text x="1111.6" y="452" class="type">bit</text>
+  <text x="914" y="469" class="col">AccessFailedCount</text>
+  <text x="1111.6" y="469" class="type">int</text>
+
+  <rect x="900" y="620" width="460" height="182" class="table"/>
+  <rect x="900" y="620" width="460" height="30" class="table-head"/>
+  <text x="914" y="641" class="table-name">Identity's other six</text>
+  <text x="914" y="664" class="table-note">Declared because IdentityDbContext expects them; this application writes to none of them.</text>
+  <text x="914" y="684" class="col-key">AspNetRoles</text>
+  <text x="1090" y="684" class="note">Id PK nvarchar(128), Name, NormalizedName UK</text>
+  <text x="914" y="704" class="col-key">AspNetUserRoles</text>
+  <text x="1090" y="704" class="note">UserId + RoleId PK, both FK, cascade</text>
+  <text x="914" y="724" class="col-key">AspNetUserClaims</text>
+  <text x="1090" y="724" class="note">Id PK identity, UserId FK, cascade</text>
+  <text x="914" y="744" class="col-key">AspNetRoleClaims</text>
+  <text x="1090" y="744" class="note">Id PK identity, RoleId FK, cascade</text>
+  <text x="914" y="764" class="col-key">AspNetUserLogins</text>
+  <text x="1090" y="764" class="note">LoginProvider + ProviderKey PK, UserId FK</text>
+  <text x="914" y="784" class="col-key">AspNetUserTokens</text>
+  <text x="1090" y="784" class="note">UserId + LoginProvider + Name PK, UserId FK</text>
+
+  <path d="M850 430 L900 444" class="rel"/>
+  <text x="862" y="418" class="rel-label">FK, ON DELETE CASCADE</text>
+  <path d="M440 400 L490 400" class="rel-absent"/>
+  <text x="446" y="390" class="rel-label">no foreign key: a bid names a synthetic id</text>
+  <path d="M440 190 L490 190" class="rel-absent"/>
+  <text x="446" y="180" class="rel-label">no join table: the gallery is a hash of the vehicle id</text>
+
+  <text x="40" y="834" class="legend">Every length was chosen from what the seed dataset actually holds, with headroom, and the reason sits beside the column in the .sql file.</text>
+  <text x="40" y="854" class="legend">Identity's keys are nvarchar(128) and not its default 450, because 450 is 900 bytes and puts every composite key it takes part in over SQL Server's clustered index limit.</text>
+</svg>

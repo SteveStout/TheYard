@@ -150,24 +150,40 @@ Startup: migrate, then seed, then serve (`api/TheBlock.Api/Program.cs`):
 
 ## If you want to change the schema
 
-1. Change the row class in `Rows.cs`, and the mapping in `EfSources.cs` if the
-   field also exists on the domain record.
-2. `dotnet ef migrations add <Name> --project api/TheBlock.Infrastructure
-   --startup-project api/TheBlock.Api`
-3. Read the generated `Up` method. It is ordinary C# and it is the only place
-   the change becomes real.
-4. Commit all three generated files. The snapshot is not optional; without it
-   the next migration compares against the wrong model.
+These four steps were right when this record was written and are now the second
+half of the job rather than the whole of it. The schema is authored as SQL first
+(ADR: Data first, and the database in source control), Entity Framework maps to
+it, and a conformance test fails the build if the two disagree. The full list,
+in order, is in ADR: Two providers and a SQL project, explained. The short
+version:
 
-There is no step for applying it. The application does that on start, and a
-container rolling onto a database from an older build brings it forward on the
-way up.
+1. Change the DDL in `api/TheBlock.Database`, with a length and a reason.
+2. Change the row class in `Rows.cs`, and the mapping in `EfSources.cs` if the
+   field also exists on the domain record.
+3. Add the SQLite migration, so local development and CI get the column too:
+   `dotnet ef migrations add <Name> --project api/TheBlock.Migrations.Sqlite
+   --startup-project api/TheBlock.Api --context YardDbContext -- --sqlite`
+4. Read the generated `Up` method. It is ordinary C# and it is where the change
+   becomes real on SQLite.
+5. Commit all three generated files. The snapshot is not optional; without it
+   the next migration compares against the wrong model.
+6. Publish the SQL project with SqlPackage when it ships.
+
+Two things in the original wording are now wrong and are worth naming rather
+than quietly deleting. The migrations project is
+`api/TheBlock.Migrations.Sqlite` and not `api/TheBlock.Infrastructure`, because
+two providers produce two models and EF Core keeps one snapshot per assembly.
+And "there is no step for applying it, the application does that on start" is
+true of SQLite only: on SQL Server the application holds `db_datareader` and
+`db_datawriter` and cannot create or alter a table at all.
 
 ## Files
 
 - [`api/TheBlock.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardDbContext.cs)
 - [`api/TheBlock.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/Rows.cs)
 - [`api/TheBlock.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/EfSources.cs)
-- [`api/TheBlock.Infrastructure/Migrations`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Infrastructure/Migrations)
+- [`api/TheBlock.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Migrations.Sqlite): the SQLite schema's history, which moved out of Infrastructure when a second provider arrived.
+- [`api/TheBlock.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheBlock.Database): the SQL Server schema, which is the authority Entity Framework maps to.
 - [`docs/ADR-033-relational-store.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-033-relational-store.md): what was decided, and what this deliberately does not give you.
 - [`docs/ADR-018-program-cs-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-018-program-cs-explained.md): the same treatment for the composition root.
+- [`docs/ADR-041-two-providers-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-041-two-providers-explained.md): the same treatment for the two engines and the SQL project, which is where this record continues.

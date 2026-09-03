@@ -10,6 +10,23 @@ export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 30_000,
   fullyParallel: false,
+  // #region reporters
+  // A list on the console and an HTML report on disk.
+  //
+  // The HTML report is the reason this line exists. CI has an upload-artifact
+  // step for `playwright-report/` and it has never uploaded anything, because
+  // without an html reporter that directory is never written: every failing run
+  // said "No files were found with the provided path". A failure on a runner
+  // nobody can log into is only useful if it leaves evidence behind, and this
+  // is the evidence.
+  reporter: [['list'], ['html', { open: 'never' }]],
+  // #endregion reporters
+  // #region warm-up
+  // The first page load of a run pays for Vite's first compile and the API's
+  // first query. Paid once here, where a slow answer is expected, rather than
+  // inside whichever spec happens to go first.
+  globalSetup: './tests/e2e/warm-up.ts',
+  // #endregion warm-up
   use: {
     baseURL: 'http://localhost:5173',
     channel: 'chrome',

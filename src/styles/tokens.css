@@ -20,7 +20,7 @@
   --color-border-strong: #b6afb0;
   --color-text: #5e5653; /* the brown-gray, as printed */
   --color-text-muted: #5f636c; /* the slate gray; deepened again in ADR-035, where axe found it at 4.39 on the neutral chip */
-  --color-text-faint: #6f737e; /* the slate gray, deepened for AA on white */
+  --color-text-faint: #61656e; /* the slate gray; deepened again in ADR-042, where axe found it at 3.82 as an ended countdown on the page ground */
   --color-heading: #3f3a37; /* the brown-gray, deepened for weight */
 
   --color-accent: #536786; /* the slate blue, deepened so white text clears AA */

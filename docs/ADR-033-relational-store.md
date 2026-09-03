@@ -1,5 +1,28 @@
 # ADR: The relational store
 
+**Read this first: the store described below is no longer the deployed one.**
+This record is the decision to have a relational store at all, and it is still
+the reason the ports, the row types, the seeding and the fallback are shaped the
+way they are. What changed later the same day is the engine underneath it and who
+owns the schema: the deployed site is on Azure SQL Database, and the schema is a
+SQL project rather than something Entity Framework creates. That is
+ADR: The SQL Server backend and ADR: Data first, and the database in source
+control.
+
+Everything below is left as it was written rather than edited into agreement with
+today. A record that quietly becomes true again is worse than one that says when
+it stopped being true, and the measurements in here are measurements of SQLite
+and should keep saying so. Where a sentence is in the present tense and no longer
+is, read it as "as of 1.0.0.43".
+
+The one paragraph worth carrying forward without a caveat is the fallback. A
+container that cannot reach its store serves the catalogue from files and says so
+on the health check. That was built here, it is unchanged, and on 2026-09-03 it
+was the only reason a release that shipped with a misconfigured connection string
+was invisible to everyone using the site.
+
+---
+
 Status: accepted, 2026-09-03, shipped as 1.0.0.43. Steve's ask: "swap the
 in-memory or file-backed data layer for a real relational store behind the
 existing ports, with migrations, seeding, and a bid that survives a restart."

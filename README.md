@@ -154,7 +154,7 @@ each with its own changelog line and, where it decided something, its own record
   (the pure data records, no dependencies), `TheBlock.Domain` (photo selection, auction
   schedule, filter and bid rules), `TheBlock.Application` (the `InventoryService` and
   `BidService` use cases behind source ports), `TheBlock.Infrastructure` (the EF Core
-  adapters over SQLite, the JSON readers that seed it, the synthetic scale-up), `TheBlock.Api` (host, endpoints, static images, the
+  adapters over Azure SQL Database or SQLite, the JSON readers that seed them, the synthetic scale-up), `TheBlock.Api` (host, endpoints, static images, the
   served documents, observability). Filtering is LINQ over GET parameters, including
   auction status; all auction math lives in Domain and travels on the wire, so the
   browser only formats. `src/lib/data.ts` is the frontend's single data seam.
@@ -163,12 +163,17 @@ each with its own changelog line and, where it decided something, its own record
   the TLS edge in front of it. GitHub Actions builds and rolls it on every green push.
   `infra/main.bicep` holds the production design (App Service behind Front Door with an
   origin lock), deliberately undeployed and explained on the Hosting page.
-- **Database:** SQLite through EF Core, behind the same ports the JSON readers used to
-  answer. Migrations are applied at startup, the catalogue is seeded on first boot from
-  `data/vehicles.json`, and bids are written through so they survive a restart. The
-  catalogue is read once into memory, so the database is not on the path a request takes.
-  What it does not survive is a container roll, because nothing is mounted; the reasoning
-  and the numbers are in ADR: The relational store.
+- **Database:** Azure SQL Database through EF Core, behind the same ports the JSON
+  readers used to answer, with SQLite for local development and CI because neither has
+  an Azure credential and neither should need one. There is no password anywhere: the
+  server was created Entra-only, so it has no SQL login to have one, and the container
+  authenticates as the managed identity it already carried. The schema is a SQL project
+  of hand-written DDL that compiles to a DACPAC and is the authority; EF maps to it and a
+  conformance test fails the build when the two disagree, and the running application
+  holds read and write and cannot alter a table. The catalogue is read once into memory,
+  so the database is not on the path a request takes, and a container that cannot reach
+  it serves the catalogue from files and says so. ADR: The SQL Server backend, ADR: Data
+  first, and ADR: Two providers, explained.
 
 ## What I Built
 
@@ -192,7 +197,7 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, forty-one
+  data flow and infrastructure diagrams on their own zoomable pages, forty-two
   decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
@@ -430,8 +435,9 @@ What is genuinely still open, in priority order:
   the reasoning is in ADR: Competing bidders
 - Auth and per-user bid state; bids are persisted now, but they belong to one anonymous
   buyer, and the competing bidders are simulated rather than real people
-- Durable storage across a container roll, which means an Azure Files share mounted where
-  the SQLite file lives; the persistence is real, the volume under it is not
+- Durable storage across a container roll, which is done: the store is Azure SQL Database
+  now rather than a file inside the container, so a bid outlives the deploy that was
+  erasing it twice a day
 - A virtualized grid once Load More accumulates thousands of rows
 - An audit with a real screen reader, which is a person's job rather than a checklist's;
   the keyboard path is walkable and held by tests, and axe now holds every view to

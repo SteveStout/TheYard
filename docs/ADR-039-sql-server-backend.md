@@ -514,6 +514,38 @@ now reads `/api/health` and warns when the container is not on Azure SQL Databas
 A warning, not a failure, because the difference between those two is the
 difference between a safety net and a tripwire.
 
+## Addendum: the CI failure that could not explain itself
+
+The commit that fixed the deploy went red on CI, and the only thing the run
+could say was `Process completed with exit code 1` followed by
+`No files were found with the provided path: playwright-report/`.
+
+Four of the five jobs passed, including the new one: the SQL project compiled on
+a Linux runner in fifteen seconds, first time, and the style job was untroubled
+by a `.sqlproj` sitting in a C# solution. The browser suite failed, on a runner
+that took 4m19s where a developer's machine takes 2m.
+
+Two things came out of it.
+
+**The evidence step had never worked.** CI has uploaded `playwright-report/` on
+failure since the suite existed, and Playwright only writes that directory when
+an html reporter is configured, which it was not. Every failing browser run on a
+machine nobody can log into has left nothing behind. That is fixed in
+`playwright.config.ts`, and it is the more useful of the two fixes: the next
+failure will be readable.
+
+**A fix for one machine was a defect on another.** The bid helper introduced
+hours earlier waited six seconds for the accepted state and treated anything else
+as a refusal. On a developer's machine that is generous. On a two-core runner it
+is not, so a slow accept was read as a refusal and three of them threw, turning
+an intermittent pass into a hard failure. It races the two possible answers
+against each other now and returns as soon as either appears: fast when the
+machine is fast, patient when it is not.
+
+The general lesson is the one this record keeps arriving at from different
+directions. A number chosen against the machine in front of you is a measurement
+of that machine, not of the thing you are testing.
+
 ## Consequences
 
 - A bid survives a deploy, which is the sentence this record exists for. It

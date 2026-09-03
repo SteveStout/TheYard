@@ -127,6 +127,12 @@ footer displays exactly that.
   now survives a restart, which a test proves by starting a second
   application against the same file. Recorded in ADR: The relational store
   and walked at a new developer's level in ADR: Entity Framework, explained.
+  It then moved again, to Azure SQL Database, and the same sentence still
+  holds: nothing above the Infrastructure layer knew either time. The schema
+  stopped being something Entity Framework creates and became a SQL project
+  that it maps to, which is the difference between a data structure that
+  outlives its framework and one that does not. ADR: The SQL Server backend
+  and ADR: Data first, and the database in source control.
 - **The method is on the page, not implied.** How this was built, in the About
   menu, states that this was written with heavy AI assistance, names the
   criteria a reviewer should apply, and spends most of its length on the times

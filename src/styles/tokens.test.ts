@@ -46,9 +46,18 @@ describe('the site palette (ADR-016)', () => {
     }
   });
 
-  it('faint labels clear AA on white, where they sit, and 3:1 on the ground', () => {
-    expect(contrast(token('color-text-faint'), token('color-surface'))).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(token('color-text-faint'), token('color-bg'))).toBeGreaterThanOrEqual(3);
+  // This test used to allow the faint colour 3:1 on the page ground, on the
+  // reasoning that faint labels sit on white "where they sit". The stylesheet
+  // did not agree: AuctionCountdown paints an ended auction in the faint colour
+  // at 13px on the page ground, which is normal text and needs 4.5, and axe
+  // found it at 3.82 (ADR-042). The exemption was the defect, not the colour,
+  // so it is gone: a token used for text clears AA on every ground this site
+  // puts it on, and if a future label really is large text it can say so with
+  // its own assertion rather than by lowering everybody's floor.
+  it('faint labels clear AA on white and on the page ground, not 3:1 on either', () => {
+    for (const ground of ['color-surface', 'color-bg']) {
+      expect(contrast(token('color-text-faint'), token(ground))).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it('actions read both ways: white on the accent, and the accent as link text on white', () => {

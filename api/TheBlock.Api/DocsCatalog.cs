@@ -64,6 +64,7 @@ public static class DocsCatalog
         ["adr-sql-server"] = "docs/ADR-039-sql-server-backend.md",
         ["adr-data-first"] = "docs/ADR-040-database-source-control.md",
         ["adr-providers"] = "docs/ADR-041-two-providers-explained.md",
+        ["adr-exemptions"] = "docs/ADR-042-exemptions-that-hide.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
@@ -76,6 +77,7 @@ public static class DocsCatalog
     {
         ["infrastructure"] = ("docs/images/infrastructure.svg", "TheYard infrastructure"),
         ["dataflow"] = ("docs/images/dataflow.svg", "TheYard data flow"),
+        ["erd"] = ("docs/images/erd.svg", "TheYard's database"),
     };
     // #endregion diagrams
 }

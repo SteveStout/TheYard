@@ -27,23 +27,41 @@ async function bidTheMinimum(page: import('@playwright/test').Page) {
   // review found. What that leaves behind is a test whose bid silently did not
   // happen, failing later on a button that only exists once there is a bid.
   //
-  // A real bidder reads the new number and bids again. So does this, three
-  // times, which turned a test that lost about a third of its runs inside the
-  // full suite into one that does not.
+  // A real bidder reads the new number and bids again. So does this.
+  //
+  // What it waits for is the server's answer and not a number of seconds. The
+  // first version of this waited six seconds for the accepted state and treated
+  // anything else as a refusal, which is fine on a developer's machine and
+  // wrong on a two-core runner where the same suite takes twice as long: a slow
+  // accept was read as a refusal, and after three of those the helper threw.
+  // Racing the two outcomes against each other returns as soon as either one
+  // appears, so it is fast when the answer is fast and patient when the machine
+  // is slow.
   const landed = page.getByText(/You're the high bidder at|You bought this vehicle/);
+  const refused = page.getByRole('alert');
   for (let attempt = 1; attempt <= 3; attempt++) {
     const min = await page.locator('#bid-amount').getAttribute('placeholder');
     await page.locator('#bid-amount').fill(min!);
     await page.getByRole('button', { name: 'Place bid' }).click();
-    try {
-      await landed.first().waitFor({ state: 'visible', timeout: 6_000 });
+
+    const answer = await Promise.race([
+      landed
+        .first()
+        .waitFor({ state: 'visible', timeout: 30_000 })
+        .then(() => 'accepted')
+        .catch(() => 'nothing'),
+      refused
+        .first()
+        .waitFor({ state: 'visible', timeout: 30_000 })
+        .then(() => 'refused')
+        .catch(() => 'nothing'),
+    ]);
+    if (answer === 'accepted') {
       return;
-    } catch {
-      // Refused, because the price moved. Read it again and answer the new one.
     }
   }
   throw new Error(
-    'three bids in a row were refused: the room is raising faster than the page can answer'
+    'three bids in a row were refused or unanswered: the room is raising faster than the page can answer'
   );
 }
 

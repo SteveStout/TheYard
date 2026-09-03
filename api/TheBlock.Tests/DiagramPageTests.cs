@@ -24,7 +24,11 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
             string body = await response.Content.ReadAsStringAsync();
-            Assert.Contains($"<title>{diagram.Title}</title>", body);
+            // The title goes through HtmlEncode on the way into the tab, so this
+            // asks for the encoded form. Asserting the raw string only ever passed
+            // because the first two diagram titles had nothing in them to encode:
+            // the ERD arrived with an apostrophe and the assertion fell over.
+            Assert.Contains($"<title>{WebUtility.HtmlEncode(diagram.Title)}</title>", body);
             Assert.Contains("name=\"viewport\"", body);
             Assert.Contains("<svg", body);
             Assert.Contains("</svg>", body);
@@ -51,6 +55,15 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         Assert.DoesNotContain("<?xml", page);
         Assert.Contains("<svg xmlns=\"http://www.w3.org/2000/svg\"><title>t</title></svg>", page);
         Assert.Contains("blob/main/docs/images/x.svg", page);
+    }
+
+    [Fact]
+    public void An_apostrophe_in_a_title_reaches_the_tab_encoded()
+    {
+        string page = DiagramPage.Render("TheYard's database", "<svg></svg>", "docs/images/erd.svg");
+
+        Assert.Contains("<title>TheYard&#39;s database</title>", page);
+        Assert.DoesNotContain("<title>TheYard's database</title>", page);
     }
     // #endregion page-tests
 }

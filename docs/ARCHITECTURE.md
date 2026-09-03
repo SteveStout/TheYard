@@ -90,6 +90,18 @@ picture is `api/TheBlock.Database`, and a conformance test holds the Entity
 Framework model to it, so this diagram cannot quietly stop being true without
 something failing (ADR: Data first, and the database in source control).
 
+[![TheYard's database: the four tables this application owns with every column and type, Identity's seven, and the two relationships deliberately left unenforced](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/erd.svg)](https://theyard.stevenstout.biz/api/docs/diagrams/erd)
+
+*A preview. [Open the database diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/erd)
+to zoom in and read the column types. It is drawn by
+[`docs/images/erd.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/erd.mjs)
+from a table of facts, so a column that changes is a one-line edit rather than a
+drawing exercise. There is no PNG copy beside it, unlike the older two drawings:
+raw.githubusercontent serves an SVG as an image, so a second file would be one
+more thing to keep in step for nothing.*
+
+The same thing as text, which is what shows up in a diff:
+
 ```mermaid
 erDiagram
   AspNetUsers ||--o{ Bids : places

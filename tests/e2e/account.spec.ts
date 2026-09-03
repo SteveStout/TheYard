@@ -13,6 +13,33 @@ function anAddress(): string {
   return `form-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}@example.com`;
 }
 
+/**
+ * Click the button that registers, and wait for the request it makes rather
+ * than for the heading that appears afterwards.
+ *
+ * The difference matters. Waiting on the heading gives Playwright's default
+ * five seconds to cover a network round trip whose cost is dominated by a
+ * password hash that is deliberately expensive: 120 ms on an idle machine,
+ * measured, and longer when the whole browser suite is sharing the CPU with a
+ * simulated room bidding over a hundred thousand vehicles. When it overran, the
+ * failure said "heading not found", which is true and useless.
+ *
+ * Waiting on the response is not a longer timeout wearing a disguise. It waits
+ * for the thing the test is actually blocked on, and it can say what the server
+ * answered, so a rejected registration reads as a rejected registration instead
+ * of as a missing heading.
+ */
+async function register(page: import('@playwright/test').Page, email: string) {
+  const answered = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/register') && response.request().method() === 'POST'
+  );
+  await page.getByRole('button', { name: 'Create an account' }).click();
+  const response = await answered;
+  expect(response.status(), await response.text()).toBe(200);
+  await expect(page.getByRole('heading', { name: email })).toBeVisible();
+}
+
 test('the form creates an account, and the rail shows who is signed in', async ({ page }) => {
   const email = anAddress();
   await page.goto('/?view=account');
@@ -20,9 +47,7 @@ test('the form creates an account, and the rail shows who is signed in', async (
   await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('correct horse');
-  await page.getByRole('button', { name: 'Create an account' }).click();
-
-  await expect(page.getByRole('heading', { name: email })).toBeVisible();
+  await register(page, email);
   // The rail's account row is the address once there is one.
   await expect(page.getByRole('button', { name: email })).toBeVisible();
 
@@ -36,8 +61,7 @@ test("a wrong password is refused in the server's own words", async ({ page }) =
   await page.goto('/?view=account');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('correct horse');
-  await page.getByRole('button', { name: 'Create an account' }).click();
-  await expect(page.getByRole('heading', { name: email })).toBeVisible();
+  await register(page, email);
 
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();
@@ -58,8 +82,7 @@ test('a bid belongs to the account, and signing out takes it off the page', asyn
   await page.goto('/?view=account');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('correct horse');
-  await page.getByRole('button', { name: 'Create an account' }).click();
-  await expect(page.getByRole('heading', { name: email })).toBeVisible();
+  await register(page, email);
   await expect(page.getByText('Nothing yet')).toBeVisible();
 
   // Most bids first: the top card is live with a window ending hours out.

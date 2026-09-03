@@ -70,6 +70,7 @@ export type DocKey =
   | 'adrSqlServer'
   | 'adrDataFirst'
   | 'adrProviders'
+  | 'adrExemptions'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -433,6 +434,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '041',
   },
+  adrExemptions: {
+    title: 'ADR: The exemption that hid a contrast failure',
+    menuLabel: 'ADR: Exemptions that hide',
+    url: '/api/docs/adr-exemptions',
+    kind: 'adr',
+    number: '042',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -530,6 +538,7 @@ export const MENUS: Record<
       { key: 'adrSqlServer' },
       { key: 'adrDataFirst' },
       { key: 'adrProviders' },
+      { key: 'adrExemptions' },
     ],
   },
   // #endregion records-menu
