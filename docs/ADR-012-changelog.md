@@ -40,16 +40,18 @@ standing there to write the sentence when it becomes known.
 The number is minted by the deploy counter, so the line is written one ship
 ahead of the mint:
 
-1. The commit that ships a change adds its line at the top of the file,
-   numbered one past what the footer shows. Deploys are serialized and every
-   green merge to main deploys, so the next number is known before the push.
-2. The push is the deploy. The Deploy workflow's version step checks that
-   the file names the number it just computed and prints a warning into the
-   run when it does not. It never stops a deploy over a sentence.
-3. When a red CI run consumes a run number, the displayed version skips and
-   the line is off by one. The next ship corrects it. The API test keeps the
-   file honest in the ways a test can: newest first, no repeats, every line
-   in the one-line shape, no em dash anywhere.
+1. The commit that ships a change adds its line at the top of the file. That
+   line is the version: the deploy reads it (ADR: The version comes from the
+   changelog), so the number in the footer and the number in this file are the
+   same string rather than two numbers kept in step by hand.
+2. The push is the deploy. The Deploy workflow's version step refuses to ship
+   when the top line is missing or is not above the line below it, which is
+   exactly the case where a commit forgot its own line.
+3. A number can no longer skip. One did: 1.0.0.39, under the old formula, when
+   a red CI run consumed a deploy run number. The gap stays rather than being
+   renumbered. The API test keeps the file honest in the ways a test can:
+   newest first, no repeats, the top line above the second, every line in the
+   one-line shape, no em dash anywhere.
 
 Ceremony per ship: one line in one file, inside the commit that earns it.
 
@@ -75,7 +77,7 @@ appeared on every screen from this one entry:
 ```live path=src/components/DocsMenu.tsx region=MENU_ORDER
 ```
 
-The warning in the Deploy workflow's version step,
+The refusal in the Deploy workflow's version step,
 [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml):
 
 ```live path=.github/workflows/deploy.yml region=changelog-check
@@ -134,9 +136,12 @@ means.
 The deploy's changelog check would not have caught it. It asks whether a
 line exists for the version being shipped, which was true; it cannot know
 that a line further up describes a version that never will. The cheap guard
-is procedural: write the changelog line when the ship script is written,
-with the run number in front of you, not when the commit is gated.
+chosen here was procedural: write the changelog line when the ship script is
+written, with the run number in front of you, not when the commit is gated.
 
-The pipeline warns rather than fails on a missing line on purpose (see
-above), and that stays: a documentation slip should never block a deploy
-that passed its tests.
+That guard failed the next day. A red CI run consumed deploy run number 28,
+the fix shipped on run 29 and displayed 1.0.0.40, and the line written with it
+said 1.0.0.39. The structural answer is in ADR: The version comes from the
+changelog: the top line is what the deploy reads, so the two cannot disagree,
+and a missing line now fails the deploy instead of warning into a log nobody
+opens.

@@ -47,9 +47,10 @@ second claim is the one the footer makes.
 
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the two build arguments become environment
   variables in the image, shown live below.
-- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the pipeline computes the version
-  from its run number and passes both arguments (region compute-version in
-  ADR: The deploy pipeline).
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the pipeline reads the version
+  from the changelog's top line and passes both arguments (region
+  compute-version in ADR: The deploy pipeline, and ADR: The version comes from
+  the changelog for why it is no longer a run counter).
 - [`api/TheBlock.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Api/Program.cs): the endpoint that reports them.
 - [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the footer that renders them, linking the commit to
   GitHub.

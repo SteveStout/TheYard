@@ -52,9 +52,10 @@ on purpose: the plan is a deliverable too.
 - Roles are scoped to least privilege: push to this one registry,
   manage container groups in this one resource group, assign this one
   identity.
-- Displayed versions continue as 1.0.0.(11 + deploy run number), 11
-  being the last manual image. Numbers may skip when a red CI run
-  consumes one; a gap is a change that never shipped.
+- Displayed versions are read from the changelog's top line, so the
+  footer and the file that documents the footer cannot disagree. One
+  number is missing, 1.0.0.39: it was skipped under the old run-counter
+  formula, and a gap is a change that never shipped.
 - The manual scripted pipeline retires to fallback duty and stays
   documented: it is also the rollback.
 

@@ -102,3 +102,14 @@ footer displays exactly that.
   developer's level, the why beside every choice and the code read from
   the running build. Recorded in ADR: Program.cs, explained, ADR: The
   React configuration, explained and ADR: The tests, explained.
+- **The failure nobody wrote code for still answers properly.** An unhandled
+  exception returns the same problem shape as a rejected query, keeps the
+  message and the stack trace inside, and hands back the trace id that finds
+  the one log line holding both. An endpoint throws on purpose so that path
+  can be exercised against the live container rather than assumed. Recorded
+  in ADR: The exception handler.
+- **The build cannot ship a version nothing describes.** The changelog's top
+  line is where the deploy reads the version, so the footer and the file that
+  documents the footer are the same string, and a ship that forgets its line
+  fails rather than displaying a number with no sentence attached. Recorded
+  in ADR: The version comes from the changelog.

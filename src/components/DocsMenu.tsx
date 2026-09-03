@@ -58,6 +58,8 @@ export type DocKey =
   | 'adrBidders'
   | 'adrStyle'
   | 'adrRecords'
+  | 'adrExceptions'
+  | 'adrVersionSource'
   | 'architecture'
   | 'style';
 
@@ -336,6 +338,20 @@ export const DOCS: Record<
     kind: 'adr',
     number: '029',
   },
+  adrExceptions: {
+    title: 'ADR: The exception handler',
+    menuLabel: 'ADR: The exception handler',
+    url: '/api/docs/adr-exceptions',
+    kind: 'adr',
+    number: '030',
+  },
+  adrVersionSource: {
+    title: 'ADR: The version comes from the changelog',
+    menuLabel: 'ADR: The version comes from the changelog',
+    url: '/api/docs/adr-version-source',
+    kind: 'adr',
+    number: '031',
+  },
 };
 // #endregion docs-record
 
@@ -415,6 +431,8 @@ export const MENUS: Record<
       { key: 'adrBidders' },
       { key: 'adrStyle' },
       { key: 'adrRecords' },
+      { key: 'adrExceptions' },
+      { key: 'adrVersionSource' },
     ],
   },
   // #endregion records-menu

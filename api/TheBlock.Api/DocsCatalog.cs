@@ -52,6 +52,8 @@ public static class DocsCatalog
         ["adr-bidders"] = "docs/ADR-027-competing-bidders.md",
         ["adr-style"] = "docs/ADR-028-style-enforced.md",
         ["adr-records"] = "docs/ADR-029-records-index.md",
+        ["adr-exceptions"] = "docs/ADR-030-exception-handler.md",
+        ["adr-version-source"] = "docs/ADR-031-version-from-changelog.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };

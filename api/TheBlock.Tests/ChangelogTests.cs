@@ -56,4 +56,31 @@ public class ChangelogTests(WebApplicationFactory<Program> factory)
         Assert.Equal(versions.Count, versions.Distinct().Count());
         Assert.Equal(1, versions[^1]);
     }
+
+    // #region version-order
+    /// <summary>
+    /// The same rule the deploy enforces (ADR: The version comes from the
+    /// changelog). The top line is the version about to ship, so it has to sit
+    /// above the one below it. A commit that forgets its own line leaves the
+    /// last shipped version on top, and this notices a minute before the
+    /// deploy would.
+    /// </summary>
+    [Fact]
+    public async Task The_top_line_is_above_the_one_below_it()
+    {
+        string markdown = await _client.GetStringAsync("/api/docs/changelog");
+
+        var versions = markdown.Split('\n')
+            .Select(line => EntryLine.Match(line.TrimEnd('\r')))
+            .Where(match => match.Success)
+            .Select(match => int.Parse(match.Groups[1].Value))
+            .ToList();
+
+        Assert.True(versions.Count >= 2, "two versions are needed before this rule means anything");
+        Assert.True(
+            versions[0] > versions[1],
+            $"the top line is 1.0.0.{versions[0]} and the line below it is 1.0.0.{versions[1]}, "
+            + "so this ship has no changelog line of its own and the deploy will refuse it");
+    }
+    // #endregion version-order
 }

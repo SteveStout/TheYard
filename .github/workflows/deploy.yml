@@ -39,9 +39,6 @@ jobs:
       RG: RG-THEYARD-SS
       ORIGIN: http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
       SITE: https://theyard.stevenstout.biz
-      # The live footer read 1.0.0.11 when this workflow was written (2026-09-02).
-      # Displayed version = 1.0.0.(OFFSET + run number); see ADR-005 and ADR-009.
-      OFFSET: 11
       # The Application Insights component this deploy reads the connection
       # string from. The name is not a secret; the string it returns is.
       AI_NAME: appi-theyard-ss
@@ -55,9 +52,28 @@ jobs:
       - name: Compute version
         env:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          N=$(( OFFSET + RUN_NUMBER ))
+          # The changelog's top line is the version (ADR-031). Not a run
+          # counter: a counter ticks on runs that are gated off and never ship,
+          # which is how 1.0.0.39 became a number the changelog named and
+          # nothing ever displayed.
+          VERSIONS=$(sed -n 's/^- \*\*1\.0\.0\.\([0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md)
+          N=$(echo "$VERSIONS" | sed -n 1p)
+          PREV=$(echo "$VERSIONS" | sed -n 2p)
+          # #region changelog-check
+          # Both of these used to be a warning nobody reads. They stop the
+          # deploy now, because the file they check is where the version comes
+          # from: shipping past either one means shipping a number with no
+          # sentence attached to it (ADR-031).
+          if [ -z "$N" ]; then
+            echo "::error file=docs/CHANGELOG.md::No 1.0.0.N line at the top of the changelog, so there is no version to ship"
+            exit 1
+          fi
+          if [ -n "$PREV" ] && [ "$N" -le "$PREV" ]; then
+            echo "::error file=docs/CHANGELOG.md::The top line is 1.0.0.$N and 1.0.0.$PREV is already below it, so this ship has no changelog line of its own"
+            exit 1
+          fi
+          # #endregion changelog-check
           {
             echo "N=$N"
             echo "APP_VERSION=1.0.0.$N"
@@ -65,15 +81,6 @@ jobs:
             echo "IMAGE=$ACR/theyard:v$N"
           } >> "$GITHUB_ENV"
           echo "Deploying 1.0.0.$N from ${HEAD_SHA:0:7} as $ACR/theyard:v$N"
-          # #region changelog-check
-          # The changelog names the version it ships with (ADR-012). A miss is a
-          # warning in the run, never a stopped deploy; the next ship corrects it.
-          if grep -q "^- \*\*1\.0\.0\.$N\*\*" docs/CHANGELOG.md; then
-            echo "docs/CHANGELOG.md names 1.0.0.$N"
-          else
-            echo "::warning file=docs/CHANGELOG.md::No changelog line for 1.0.0.$N; add it with the next ship (ADR-012)"
-          fi
-          # #endregion changelog-check
       # #endregion compute-version
 
       - uses: azure/login@v3

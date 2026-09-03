@@ -65,6 +65,16 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = context =>
         context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
+// What goes in that shape when nothing planned the failure: which exceptions
+// are the caller's fault and may say so, what a 500 is allowed to reveal, and
+// the log line that makes the returned trace id worth having (ADR-030).
+builder.Services.AddExceptionHandler<ProblemHandler>();
+// A body that will not parse answers a bare 400 with nothing in it by default,
+// because the framework would rather not spend an exception on a bad request.
+// That left one kind of failure on this API with no sentence in it. One shape
+// for every failure is worth an exception on a request that was already wrong
+// (ADR-030).
+builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
 
 // Every API call is logged as one structured line: method, path, status,
 // duration. The JSON console formatter keeps it machine-readable wherever the
@@ -114,8 +124,8 @@ app.Services.GetRequiredService<InventoryService>().GetAll();
 
 // First in the pipeline, because it can only catch what is registered after
 // it: an unhandled exception becomes a 500 ProblemDetails instead of an empty
-// body (ADR-023). The request logger sits behind it so a failed request is
-// still logged with its real status.
+// body (ADR-023), filled in by ProblemHandler (ADR-030). The request logger
+// sits behind it so a failed request is still logged with its real status.
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseHttpLogging();
@@ -463,6 +473,19 @@ app.MapPost("/api/errors/client", (ClientErrorReport report, ILoggerFactory logg
     return Results.NoContent();
 });
 #endregion client-errors
+
+#region selftest
+// A failure on purpose, in production, because every other endpoint here is
+// written not to throw and so the exception path had never once run against
+// the live container: not the middleware's catch, not the ring buffer's
+// record, not the Application Insights exceptions the Admin tab reads. This
+// asks all three at once, and the answer it produces is the answer any real
+// bug would produce (ADR-030).
+app.MapGet("/api/admin/selftest/exception", IResult () =>
+    throw new InvalidOperationException(
+        "Deliberate self-test failure. No caller ever sees this sentence, which "
+        + "is the point of it: it exists to be found in a log and nowhere else."));
+#endregion selftest
 
 app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
 

@@ -46,11 +46,12 @@ A second GitHub Actions workflow, Deploy, separate from CI on purpose.
   Managed Identity Operator on the one identity the container group assigns
   at create time. The scoped set worked on the first deploy; the wider
   Contributor fallback the plan allowed for was never needed.
-- **Displayed versions continue as 1.0.0.(11 + deploy run number).** The
-  offset is the number the footer showed the morning the workflow was
-  written, so the sequence continues without a jump. Numbers may skip when a
-  red CI run consumes a run number; a gap is a change that never shipped,
-  which is more honest than a renumbering.
+- **Displayed versions are read from the changelog's top line.** They were
+  1.0.0.(11 + deploy run number) until 1.0.0.41, the offset being what the
+  footer showed the morning this workflow was written. A red CI run consumes a
+  run number without shipping anything, so that formula could name a version
+  nothing ever displayed, and once did. ADR: The version comes from the
+  changelog holds the replacement and the incident.
 - **Deploys are serialized.** A concurrency group makes two quick merges
   wait their turn instead of fighting over one container group.
 - **The workflow verifies what it shipped** the way the runner scripts did:
