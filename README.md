@@ -3,14 +3,21 @@
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz)
 
 TheYard is my portfolio implementation of a used-vehicle auction platform: browse a large
-inventory, inspect a vehicle in detail, and place bids in a polished auction flow. The
-frontend is a React app backed by a .NET 10 API that owns the data, the search, and the
-auction rules.
+inventory, inspect a vehicle in detail, and place bids against a simulated room of other
+bidders. The frontend is a React app backed by a .NET 10 API that owns the data, the
+search, and the auction rules, storing accounts and bids in Azure SQL Database reached
+with a managed identity, so the connection string in the container is a server name and
+an authentication mode and nothing worth stealing.
+
+It runs on a free tier and costs nothing, and it keeps serving when the database does
+not: the catalogue falls back to files and the health endpoint says which store answered.
+The Admin tab shows the running system reporting on itself, including every SQL statement
+it has sent and how long the database took.
 
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-nine decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Forty-five decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 

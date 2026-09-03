@@ -13,7 +13,79 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
     />
-    <title>The Yard - Vehicle Auctions</title>
+    <title>TheYard, a used-vehicle auction platform</title>
+
+    <!--
+      What an automated reader gets.
+
+      Everything below this line exists because the first thing that visits a
+      link is rarely a person. A crawler, a chat client unfurling a URL, a
+      recruiter's applicant system and a search engine all read the head and
+      nothing else, and until now the head held a title and a font. A page that
+      says nothing about itself to those readers is invisible to the ones that
+      matter most for a portfolio.
+
+      The description is one sentence and under 160 characters, because that is
+      what gets shown rather than truncated. The Open Graph image is absolute:
+      a relative og:image is silently dropped by most unfurlers.
+    -->
+    <meta
+      name="description"
+      content="A used-vehicle auction platform in .NET 10 and React: 100,000 listings, live bidding, and forty-five decision records served from inside the running app."
+    />
+    <link rel="canonical" href="https://theyard.stevenstout.biz/" />
+    <meta name="author" content="Steven Stout" />
+    <meta name="theme-color" content="#5e5653" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TheYard" />
+    <meta property="og:url" content="https://theyard.stevenstout.biz/" />
+    <meta property="og:title" content="TheYard, a used-vehicle auction platform" />
+    <meta
+      property="og:description"
+      content="100,000 listings, live bidding, and forty-five decision records served from inside the running app. .NET 10 and React on Azure."
+    />
+    <meta property="og:image" content="https://theyard.stevenstout.biz/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="TheYard: a used-vehicle auction platform in .NET 10 and React, by Steven Stout"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TheYard, a used-vehicle auction platform" />
+    <meta
+      name="twitter:description"
+      content="100,000 listings, live bidding, and forty-five decision records served from inside the running app."
+    />
+    <meta name="twitter:image" content="https://theyard.stevenstout.biz/og.png" />
+
+    <!--
+      Structured data, as SoftwareSourceCode rather than the WebSite most sites
+      declare. This is a portfolio piece: what a reader wants to know is who
+      wrote it, in what, and where the source is, and there is a schema that
+      says exactly that. Claiming to be an Organization or a Product would be
+      more impressive and less true.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareSourceCode",
+        "name": "TheYard",
+        "description": "A used-vehicle auction platform: browse 100,000 listings, inspect a vehicle, and bid against a simulated room.",
+        "url": "https://theyard.stevenstout.biz/",
+        "codeRepository": "https://github.com/SteveStout/TheYard",
+        "programmingLanguage": ["C#", "TypeScript"],
+        "runtimePlatform": [".NET 10", "React 19", "Azure Container Instances", "Azure SQL Database"],
+        "license": "https://github.com/SteveStout/TheYard/blob/main/LICENSE",
+        "author": {
+          "@type": "Person",
+          "name": "Steven Stout",
+          "url": "https://github.com/SteveStout"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

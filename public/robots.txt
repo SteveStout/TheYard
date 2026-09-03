@@ -1,0 +1,11 @@
+# Everything here is meant to be read, by people and by crawlers alike.
+#
+# The one exception is the deliberate-failure endpoint, which throws on purpose
+# so the error path can be exercised in production (ADR: The failure nobody
+# wrote code for). A crawler hitting it would generate real 500s and real
+# Application Insights exceptions for no reason.
+User-agent: *
+Allow: /
+Disallow: /api/admin/selftest/
+
+Sitemap: https://theyard.stevenstout.biz/sitemap.xml

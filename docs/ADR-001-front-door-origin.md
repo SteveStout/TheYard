@@ -82,6 +82,56 @@ upgrade (enableFrontDoor=true, computeKind=appservice, skuName=B1). Until
 then the app runs on the least-restricted compute the subscription accepts,
 publicly reachable by design, carrying no secrets and no persistent user data.
 
+## Addendum, 2026-09-03: the last sentence stopped being true
+
+The decision above ends by accepting a publicly reachable origin on the grounds
+that it is "carrying no secrets and no persistent user data".
+
+That was accurate when it was written on 31 August. It stopped being accurate on
+3 September and nobody came back to this record to say so. Two versions changed
+it. 1.0.0.48 gave bids owners, which means accounts: ASP.NET Core Identity, real
+password hashes, a session token. 1.0.0.49 moved the store to Azure SQL Database,
+which means those accounts and every bid outlive the container.
+
+So the origin now fronts persistent user data, and the argument that made an
+unlocked origin acceptable no longer holds on its own terms.
+
+What is written down about a system is part of the system. A record that quietly
+becomes wrong is worse than one that says plainly when it stopped being right,
+because the second kind can be read. This is the second kind.
+
+### What actually stands between the internet and that data today
+
+The origin lock is still not deployed and is still the right answer. Meanwhile
+this is what the risk actually consists of, stated so it can be argued with:
+
+- **The database has no password to steal, because it has no login to hold one.**
+  The server was created Entra-only, so there is no SQL authentication path at
+  all. The container reaches it as the managed identity it already carried, and
+  the connection string in its environment is a server name, a database name and
+  an authentication mode (ADR: The SQL Server backend).
+- **That identity can read and write rows and nothing else.** It holds
+  `db_datareader` and `db_datawriter`. It cannot alter a table, which is why the
+  schema lives in a SQL project published separately.
+- **Passwords are hashed by Identity, not stored**, and the session is a signed
+  token in an httpOnly cookie the page cannot read (ADR: Accounts and per-user
+  bids).
+- **The public surfaces were reviewed for what they publish** on 3 September, and
+  that review found and fixed a path by which a database exception message,
+  which carries the server name and the caller's address, reached a public page
+  (ADR: Reviewing my own work).
+
+### What is still owed
+
+The origin lock. `enableFrontDoor=true` with `siteLock` is in the template and
+has never been deployed, because the subscription that would allow it is the
+subscription this project deliberately does not pay for. That trade was worth
+making when the origin held nothing. It is a smaller trade now, and it should be
+revisited before this application holds anybody's data but mine.
+
+Recorded rather than fixed, because pretending an unfunded control is in place is
+the failure this addendum exists to correct.
+
 ## Files
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the target as code. `enableFrontDoor` and
