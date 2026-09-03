@@ -1,4 +1,4 @@
-﻿using TheBlock.Data;
+using TheBlock.Data;
 
 namespace TheBlock.Domain;
 

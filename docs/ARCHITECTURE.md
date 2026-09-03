@@ -12,6 +12,89 @@ would exist and be enforced rather than remembered.
 *A preview. [Open the data flow diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/dataflow)
 to zoom in and follow it. The infrastructure has [its own drawing](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure).*
 
+## The topology, in the document
+
+The two drawings above are pictures. This one is text: it lives in this file,
+changes in the same commit as the thing it describes, and shows up in a diff
+when the topology moves. That is the whole reason it is here in a format a
+reviewer can read as source rather than open in an editor.
+
+Solid lines are what serves a request today. Dotted lines are the deploy path
+and the identity path, which are real but not on the request's critical route.
+
+```mermaid
+flowchart LR
+  B["Browser<br/>theyard.stevenstout.biz"]
+
+  subgraph edge["Phase 1 edge: Netlify, free tier"]
+    TLS["TLS termination, Let's Encrypt<br/>rewrite proxy: /* to the origin"]
+  end
+
+  subgraph azure["Azure, resource group RG-THEYARD-SS"]
+    ACI["Container Instances<br/>1 vCPU, 1.5 GB, port 8080"]
+    ACR[("Container Registry")]
+    MI["Managed identity<br/>id-theyard-ss"]
+    AI["Application Insights<br/>appi-theyard-ss"]
+    LAW[("Log Analytics<br/>log-theyard-ss, 0.1 GB cap")]
+  end
+
+  subgraph box["Inside the container"]
+    API["ASP.NET Core minimal API, .NET 10"]
+    SPA["React 19 bundle, served as static files"]
+    SEED[("data/vehicles.json<br/>200 records, expanded to 100,000")]
+  end
+
+  B -->|HTTPS| TLS
+  TLS -->|HTTP 8080| ACI
+  ACI --> API
+  API --> SPA
+  API --> SEED
+  ACR -.->|image pulled on every roll| ACI
+  ACI -.->|IMDS token| MI
+  MI -.->|Reader, Monitoring Reader| AI
+  API -.->|requests, dependencies, exceptions| AI
+  AI --> LAW
+```
+
+*Mermaid source. It renders as a picture on GitHub, and it is kept here as text
+on purpose: it lives in this file, so it changes in the same commit as the
+topology and shows up in a diff. The drawn version of the same thing, to zoom
+in on, is the [infrastructure diagram](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure).
+Why the renderer is not in the bundle is measured in ADR: Style, enforced.*
+
+The two things that are not on this picture are on it on purpose. Cloudflare
+is a staged, dormant zone that cannot take over until the registrar transfer
+(ADR: Front Door origin), and Azure Front Door is written in Bicep and
+deliberately undeployed because the free trial forbids it (ADR: Deployment
+strategy). Drawing either as though it were serving traffic would make this
+diagram a wish rather than a map.
+
+The dependency direction inside the API, which is the other half of the shape:
+
+```mermaid
+flowchart RL
+  Api["TheBlock.Api<br/>host, endpoints, composition"]
+  Infra["TheBlock.Infrastructure<br/>adapters"]
+  App["TheBlock.Application<br/>use cases and ports"]
+  Domain["TheBlock.Domain<br/>rules, pure functions"]
+  Data["TheBlock.Data<br/>records, no logic"]
+
+  Api --> Infra
+  Api --> App
+  Api --> Domain
+  Api --> Data
+  Infra --> App
+  Infra --> Domain
+  Infra --> Data
+  App --> Domain
+  App --> Data
+  Domain --> Data
+```
+
+Every arrow points inward and none points back. `TheBlock.Data` has no
+dependencies at all, which is what makes it safe for every other layer to hold
+its records.
+
 ## One picture in words
 
 A browser asks the API for a page of vehicles. The API owns the data, the

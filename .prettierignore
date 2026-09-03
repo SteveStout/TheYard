@@ -1,0 +1,12 @@
+node_modules
+dist
+playwright-report
+test-results
+api/**/bin
+api/**/obj
+public/data
+data
+docs/images
+*.md
+*.csproj
+*.slnx

@@ -15,7 +15,14 @@ test.describe('the docked rail', () => {
     await expect(page.getByRole('button', { name: 'Menu' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Hosting', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'About', exact: true })).toHaveCount(0);
-    for (const section of ['App Architecture', 'Hosting', 'CI/CD', 'Best Practices', 'Changelog', 'About']) {
+    for (const section of [
+      'App Architecture',
+      'Hosting',
+      'CI/CD',
+      'Best Practices',
+      'Changelog',
+      'About',
+    ]) {
       await expect(rail.getByRole('heading', { name: section, exact: true })).toBeVisible();
     }
     const box = await rail.boundingBox();
@@ -28,7 +35,9 @@ test.describe('the docked rail', () => {
     await expect(page.getByTestId('build-version')).toBeVisible();
   });
 
-  test('the rail collapses to icons, keeps its names, and remembers the choice', async ({ page }) => {
+  test('the rail collapses to icons, keeps its names, and remembers the choice', async ({
+    page,
+  }) => {
     await page.goto('/');
     const rail = page.getByTestId('side-rail');
     await rail.getByRole('button', { name: 'Collapse the sidebar' }).click();
@@ -48,7 +57,9 @@ test.describe('the docked rail', () => {
       .toBeGreaterThanOrEqual(240);
   });
 
-  test('a doc opens from the rail and its row reads as current while it is open', async ({ page }) => {
+  test('a doc opens from the rail and its row reads as current while it is open', async ({
+    page,
+  }) => {
     await page.goto('/');
     const rail = page.getByTestId('side-rail');
     await rail.getByRole('button', { name: 'Hosting overview' }).click();
@@ -56,19 +67,25 @@ test.describe('the docked rail', () => {
     await expect(doc.getByRole('heading', { level: 1, name: 'Hosting' })).toBeVisible();
     // "page" rather than "true" since ADR-026: aria-current takes a token
     // saying what kind of current thing this is, and a document row is a page.
-    await expect(page.locator('[data-testid="side-rail"] [aria-current="page"]')).toHaveText('Hosting overview');
+    await expect(page.locator('[data-testid="side-rail"] [aria-current="page"]')).toHaveText(
+      'Hosting overview'
+    );
     await page.keyboard.press('Escape');
     await expect(doc).toBeHidden();
     await expect(page.locator('[data-testid="side-rail"] [aria-current]')).toHaveCount(0);
   });
 
-  test('Admin opens from the rail, reads as the current page, and the brand goes home', async ({ page }) => {
+  test('Admin opens from the rail, reads as the current page, and the brand goes home', async ({
+    page,
+  }) => {
     await page.goto('/');
     const rail = page.getByTestId('side-rail');
     await rail.getByRole('button', { name: 'Admin', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
     await expect(page).toHaveURL(/view=admin/);
-    await expect(page.locator('[data-testid="side-rail"] [aria-current="page"]')).toHaveText('Admin');
+    await expect(page.locator('[data-testid="side-rail"] [aria-current="page"]')).toHaveText(
+      'Admin'
+    );
     await rail.getByRole('button', { name: 'The Yard' }).click();
     await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
     await expect(page).not.toHaveURL(/view=admin/);

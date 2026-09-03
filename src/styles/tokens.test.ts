@@ -63,15 +63,23 @@ describe('the site palette (ADR-016)', () => {
     // you"), and the card chips put white on the strong shade of each. Four
     // pairs, all normal text.
     for (const status of ['success', 'danger']) {
-      expect(contrast(token(`color-${status}`), token(`color-${status}-soft`))).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(token(`color-${status}`), token('color-surface'))).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(token('color-on-accent'), token(`color-${status}`))).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrast(token(`color-${status}`), token(`color-${status}-soft`))
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(token(`color-${status}`), token('color-surface'))).toBeGreaterThanOrEqual(
+        4.5
+      );
+      expect(contrast(token('color-on-accent'), token(`color-${status}`))).toBeGreaterThanOrEqual(
+        4.5
+      );
     }
   });
 
   it('the header text clears AA on the header', () => {
     expect(contrast(token('color-header-text'), token('color-header'))).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(token('color-header-text-muted'), token('color-header'))).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrast(token('color-header-text-muted'), token('color-header'))
+    ).toBeGreaterThanOrEqual(4.5);
   });
 });
 // #endregion site-palette

@@ -81,7 +81,12 @@ export function SideNav(props: SideNavProps) {
   // #endregion drawer-dialog
 
   const content = (
-    <NavContent {...props} openKey={openKey} onOpenDoc={openDoc} onCloseDrawer={() => drawerRef.current?.close()} />
+    <NavContent
+      {...props}
+      openKey={openKey}
+      onOpenDoc={openDoc}
+      onCloseDrawer={() => drawerRef.current?.close()}
+    />
   );
 
   return (
@@ -110,6 +115,48 @@ export function SideNav(props: SideNavProps) {
     </>
   );
 }
+
+// #region section-shell
+/**
+ * A sidebar section. Most are always open. The records index is twenty-seven
+ * rows, which is a wall at the bottom of the rail, so it is a native details:
+ * closed until asked for, and the keyboard and screen-reader behaviour comes
+ * from the element rather than from a reimplementation of it.
+ */
+function SectionShell({
+  label,
+  collapsible,
+  iconsOnly,
+  children,
+}: {
+  label: string;
+  collapsible: boolean;
+  iconsOnly: boolean;
+  children: React.ReactNode;
+}) {
+  if (!collapsible) {
+    return (
+      <section className={styles.section}>
+        <h2 className={iconsOnly ? styles.srOnly : styles.sectionTitle}>{label}</h2>
+        {children}
+      </section>
+    );
+  }
+  return (
+    <details
+      className={styles.section}
+      onToggle={(event) => {
+        if (event.currentTarget.open) {
+          event.currentTarget.scrollIntoView({ block: 'nearest' });
+        }
+      }}
+    >
+      <summary className={iconsOnly ? styles.srOnly : styles.sectionToggle}>{label}</summary>
+      {children}
+    </details>
+  );
+}
+// #endregion section-shell
 
 type ContentProps = SideNavProps & {
   openKey: DocKey | null;
@@ -172,9 +219,19 @@ function NavContent({
             </svg>
           </button>
         ) : (
-          <button type="button" className={styles.toggle} onClick={onCloseDrawer} aria-label="Close">
+          <button
+            type="button"
+            className={styles.toggle}
+            onClick={onCloseDrawer}
+            aria-label="Close"
+          >
             <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
-              <path d="M2 2l10 10M12 2 2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M2 2l10 10M12 2 2 12"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         )}
@@ -184,8 +241,12 @@ function NavContent({
         <div className={styles.scroll}>
           {/* #region rows */}
           {MENU_ORDER.map((variant) => (
-            <section key={variant} className={styles.section}>
-              <h2 className={iconsOnly ? styles.srOnly : styles.sectionTitle}>{MENUS[variant].label}</h2>
+            <SectionShell
+              key={variant}
+              label={MENUS[variant].label}
+              collapsible={MENUS[variant].collapsible === true}
+              iconsOnly={iconsOnly}
+            >
               {MENUS[variant].items.map(({ key, sub }) => (
                 <button
                   key={key}
@@ -196,11 +257,18 @@ function NavContent({
                   title={iconsOnly ? DOCS[key].menuLabel : undefined}
                 >
                   <RowIcon kind={DOCS[key].kind} className={styles.icon} />
-                  <span className={iconsOnly ? styles.srOnly : styles.label}>{DOCS[key].menuLabel}</span>
+                  <span className={iconsOnly ? styles.srOnly : styles.label}>
+                    {DOCS[key].number ? (
+                      <>
+                        <span className={styles.recordNumber}>{DOCS[key].number}</span>{' '}
+                      </>
+                    ) : null}
+                    {DOCS[key].menuLabel}
+                  </span>
                 </button>
               ))}
               {variant === 'cicd' && <LinkRow link={LINKS.ciRuns} iconsOnly={iconsOnly} />}
-            </section>
+            </SectionShell>
           ))}
           {/* #endregion rows */}
         </div>
@@ -230,7 +298,9 @@ function NavContent({
               title={iconsOnly ? `Reset bids (${bidCount})` : undefined}
             >
               <RowIcon kind="reset" className={styles.icon} />
-              <span className={iconsOnly ? styles.srOnly : styles.label}>Reset bids ({bidCount})</span>
+              <span className={iconsOnly ? styles.srOnly : styles.label}>
+                Reset bids ({bidCount})
+              </span>
             </button>
           )}
           <LinkRow link={LINKS.resume} iconsOnly={iconsOnly} />
@@ -242,7 +312,13 @@ function NavContent({
 }
 
 /** A link drawn as a row, the same icon and label rules as a doc row; opens in a new tab. */
-function LinkRow({ link, iconsOnly }: { link: { href: string; label: string }; iconsOnly: boolean }) {
+function LinkRow({
+  link,
+  iconsOnly,
+}: {
+  link: { href: string; label: string };
+  iconsOnly: boolean;
+}) {
   return (
     <a
       className={styles.row}

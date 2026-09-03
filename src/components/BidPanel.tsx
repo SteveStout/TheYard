@@ -20,7 +20,15 @@ interface BidPanelProps {
   onBuyNow: () => Promise<BidOutcome>;
 }
 
-export function BidPanel({ vehicle, now, isHighBidder, isOutbid, wonBuyNow, onPlaceBid, onBuyNow }: BidPanelProps) {
+export function BidPanel({
+  vehicle,
+  now,
+  isHighBidder,
+  isOutbid,
+  wonBuyNow,
+  onPlaceBid,
+  onBuyNow,
+}: BidPanelProps) {
   const [amountInput, setAmountInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -40,7 +48,8 @@ export function BidPanel({ vehicle, now, isHighBidder, isOutbid, wonBuyNow, onPl
   const minIsStale = status === 'live' && min <= currentPrice(vehicle);
   // #endregion stale-minimum
   const reserve = reserveState(vehicle);
-  const wonAtClose = status === 'ended' && isHighBidder && (reserve === 'met' || reserve === 'no-reserve');
+  const wonAtClose =
+    status === 'ended' && isHighBidder && (reserve === 'met' || reserve === 'no-reserve');
   const canBuyNow = status === 'live' && vehicle.buy_now_price !== null;
 
   const submitBid = async (event: { preventDefault(): void }) => {

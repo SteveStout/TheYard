@@ -40,8 +40,7 @@ export interface BidRecord {
 export type BidMap = Record<string, BidRecord>;
 
 export type BidOutcome =
-  | { kind: 'rejected'; reason: string }
-  | { kind: 'accepted' | 'won'; amount: number };
+  { kind: 'rejected'; reason: string } | { kind: 'accepted' | 'won'; amount: number };
 
 export interface BidResult {
   outcome: BidOutcome;

@@ -37,7 +37,9 @@ test('load more appends the next page', async ({ page }) => {
 // Locators are by role and accessible name, so the test sees what a visitor
 // sees; the URL is asserted at every step because the address bar is the
 // app's state, and page.goBack() is the real Back button.
-test('tile clicks are GET navigation: URL updates, Back works, deep links restore', async ({ page }) => {
+test('tile clicks are GET navigation: URL updates, Back works, deep links restore', async ({
+  page,
+}) => {
   await page.goto('/?status=live&sort=most-bids');
   await page.waitForSelector('article');
 

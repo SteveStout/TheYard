@@ -54,7 +54,10 @@ describe('vehicleQueryParams', () => {
 // Each test asserts how many times the "network" was touched.
 describe('fetchVehicles caching', () => {
   const okResponse = () =>
-    ({ ok: true, json: async () => ({ total: 1, vehicles: [{ id: 'v1' }] }) }) as unknown as Response;
+    ({
+      ok: true,
+      json: async () => ({ total: 1, vehicles: [{ id: 'v1' }] }),
+    }) as unknown as Response;
 
   beforeEach(() => {
     clearVehicleCache();
@@ -133,7 +136,11 @@ describe('fetchVehicles caching', () => {
             status: 500,
             // A real Response always has json(); the API answers ProblemDetails
             // on a failure, so the stub does too (ADR: Error handling).
-            json: async () => ({ status: 500, title: 'Server error', detail: 'The API responded with 500' }),
+            json: async () => ({
+              status: 500,
+              title: 'Server error',
+              detail: 'The API responded with 500',
+            }),
           }) as unknown as Response
       )
       .mockImplementation(async () => okResponse());

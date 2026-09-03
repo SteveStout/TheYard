@@ -20,12 +20,21 @@ test('a phone gets one hamburger and no rail', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Admin', exact: true })).toBeHidden();
 });
 
-test('the drawer lists every menu, opens a doc full-screen, and closes on Escape', async ({ page }) => {
+test('the drawer lists every menu, opens a doc full-screen, and closes on Escape', async ({
+  page,
+}) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Menu' }).click();
   const drawer = page.getByRole('dialog', { name: 'Menu' });
   await expect(drawer).toBeVisible();
-  for (const section of ['App Architecture', 'Hosting', 'CI/CD', 'Best Practices', 'Changelog', 'About']) {
+  for (const section of [
+    'App Architecture',
+    'Hosting',
+    'CI/CD',
+    'Best Practices',
+    'Changelog',
+    'About',
+  ]) {
     await expect(drawer.getByRole('heading', { name: section, exact: true })).toBeVisible();
   }
   await expect(drawer.getByRole('link', { name: "Steven's resume (PDF)" })).toHaveAttribute(
@@ -77,14 +86,19 @@ test('every drawer row leads with an icon, stands at least 44px tall, and the ch
   await changelogRow.click();
   await expect(drawer).toBeHidden();
   await expect(
-    page.getByRole('dialog', { name: 'Changelog' }).getByRole('heading', { level: 1, name: 'Changelog' })
+    page
+      .getByRole('dialog', { name: 'Changelog' })
+      .getByRole('heading', { level: 1, name: 'Changelog' })
   ).toBeVisible();
 });
 
 test('Admin is reachable from the drawer and the footer still renders', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Menu' }).click();
-  await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Admin', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Menu' })
+    .getByRole('button', { name: 'Admin', exact: true })
+    .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
   await expect(page).toHaveURL(/view=admin/);
   // The timed checks fit a phone row too (ADR-010, second pass).
@@ -92,15 +106,30 @@ test('Admin is reachable from the drawer and the footer still renders', async ({
   await expect(page.getByTestId('check-duration').first()).toHaveText(/^\d+ ms$/);
   await expect(page.getByTestId('build-version')).toBeVisible();
   // The header brand is the way home from Admin on a phone too (ADR-017).
-  await page.getByRole('banner').getByRole('button', { name: /The Yard/ }).click();
+  await page
+    .getByRole('banner')
+    .getByRole('button', { name: /The Yard/ })
+    .click();
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
 });
 
-test('the phone header has its own decision record, reachable from the drawer', async ({ page }) => {
+test('the phone header has its own decision record, reachable from the drawer', async ({
+  page,
+}) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Menu' }).click();
-  await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'ADR: The phone header' }).click();
+  // The records live in one collapsed index now (ADR-029); open it first.
+  await page
+    .getByRole('dialog', { name: 'Menu' })
+    .getByText('Decision Records', { exact: true })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'Menu' })
+    .getByRole('button', { name: 'ADR: The phone header' })
+    .click();
   await expect(
-    page.getByRole('dialog', { name: 'ADR: The phone header' }).getByRole('heading', { level: 1, name: 'ADR: The phone header' })
+    page
+      .getByRole('dialog', { name: 'ADR: The phone header' })
+      .getByRole('heading', { level: 1, name: 'ADR: The phone header' })
   ).toBeVisible();
 });

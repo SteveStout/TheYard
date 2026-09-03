@@ -1,4 +1,4 @@
-﻿namespace TheBlock.Data;
+namespace TheBlock.Data;
 
 /// <summary>
 /// One photo in the vendored stock-photo manifest: its file name, the body

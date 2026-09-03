@@ -1,4 +1,4 @@
-﻿using TheBlock.Domain;
+using TheBlock.Domain;
 
 namespace TheBlock.Tests;
 

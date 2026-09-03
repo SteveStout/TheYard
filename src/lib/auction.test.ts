@@ -41,7 +41,10 @@ const baseVehicle: Vehicle = {
   min_next_bid: 23300,
 };
 
-const makeVehicle = (overrides: Partial<Vehicle> = {}): Vehicle => ({ ...baseVehicle, ...overrides });
+const makeVehicle = (overrides: Partial<Vehicle> = {}): Vehicle => ({
+  ...baseVehicle,
+  ...overrides,
+});
 
 describe('auctionStatus', () => {
   it('is upcoming before the window, live inside it, ended after it', () => {

@@ -1,4 +1,4 @@
-﻿using TheBlock.Infrastructure;
+using TheBlock.Infrastructure;
 
 namespace TheBlock.Tests;
 

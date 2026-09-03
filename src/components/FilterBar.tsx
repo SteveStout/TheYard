@@ -68,7 +68,13 @@ export function FilterBar({
     <section className={styles.bar} aria-label="Search and filters">
       <div className={styles.topRow}>
         <div className={styles.search}>
-          <svg className={styles.searchIcon} viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+          <svg
+            className={styles.searchIcon}
+            viewBox="0 0 20 20"
+            width="16"
+            height="16"
+            aria-hidden="true"
+          >
             <path
               d="M9 3.5a5.5 5.5 0 1 0 3.4 9.82l3.64 3.64a.9.9 0 0 0 1.28-1.28l-3.64-3.64A5.5 5.5 0 0 0 9 3.5Zm-3.7 5.5a3.7 3.7 0 1 1 7.4 0 3.7 3.7 0 0 1-7.4 0Z"
               fill="currentColor"

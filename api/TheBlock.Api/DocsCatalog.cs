@@ -50,6 +50,8 @@ public static class DocsCatalog
         ["adr-search"] = "docs/ADR-025-search-index.md",
         ["adr-keyboard"] = "docs/ADR-026-keyboard.md",
         ["adr-bidders"] = "docs/ADR-027-competing-bidders.md",
+        ["adr-style"] = "docs/ADR-028-style-enforced.md",
+        ["adr-records"] = "docs/ADR-029-records-index.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };

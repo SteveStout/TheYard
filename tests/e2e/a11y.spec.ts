@@ -19,7 +19,9 @@ test('the first Tab reaches the skip link, and it jumps past the rail', async ({
   await expect(page.locator('#main-content')).toBeFocused();
 });
 
-test('opening a vehicle, and coming back, moves focus to the view that changed', async ({ page }) => {
+test('opening a vehicle, and coming back, moves focus to the view that changed', async ({
+  page,
+}) => {
   await page.goto('/');
   const firstTile = page.locator('article h3 button').first();
   await expect(firstTile).toBeVisible();

@@ -272,6 +272,55 @@
 }
 
 /* Visually hidden, still read by assistive tech and still the accessible name. */
+/* The records index reuses the section heading's look, plus the marker that
+   says it opens. list-style on the summary itself is what hides the default
+   triangle in every engine that matters. */
+.sectionToggle {
+  composes: sectionTitle;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  border-radius: var(--radius-sm);
+}
+
+.sectionToggle::-webkit-details-marker {
+  display: none;
+}
+
+.sectionToggle::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-right: var(--space-2);
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--transition-fast);
+}
+
+details[open] > .sectionToggle::after {
+  transform: rotate(45deg);
+}
+
+.sectionToggle:hover {
+  background: var(--color-sheet-bg-raised);
+}
+
+.sectionToggle:focus-visible {
+  outline: 2px solid var(--color-sheet-focus);
+  outline-offset: -2px;
+}
+
+/* The record's file number, in the index section. Tabular figures so the
+   twenty-seven of them line up in a column rather than wandering. */
+.recordNumber {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-sheet-text-muted);
+  font-size: var(--text-xs);
+}
+
 .srOnly {
   position: absolute;
   width: 1px;

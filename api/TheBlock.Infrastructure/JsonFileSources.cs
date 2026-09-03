@@ -1,6 +1,5 @@
 using System.Text.Json;
 using TheBlock.Application;
-using TheBlock.Domain;
 using TheBlock.Data;
 
 namespace TheBlock.Infrastructure;

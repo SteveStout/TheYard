@@ -9,6 +9,8 @@ test('the CI/CD section opens its overview and Hosting serves the Bicep file', a
   ).toBeVisible();
   await page.keyboard.press('Escape');
 
+  // The records live in one collapsed index now (ADR-029); open it first.
+  await nav.getByText('Decision Records', { exact: true }).click();
   await nav.getByRole('button', { name: 'ADR: The deploy pipeline' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: The deploy pipeline' })

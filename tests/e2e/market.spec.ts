@@ -51,7 +51,10 @@ test('resetting clears the room along with the buyer', async ({ page }) => {
   // Reset asks for confirmation, and Playwright dismisses dialogs unless told
   // otherwise, so without this the click does nothing at all.
   page.on('dialog', (dialog) => void dialog.accept());
-  await page.getByRole('button', { name: /Reset bids/ }).first().click();
+  await page
+    .getByRole('button', { name: /Reset bids/ })
+    .first()
+    .click();
 
   // Neither side of the auction survives the reset: the buyer's bid is gone,
   // and so is the room's answer to it.

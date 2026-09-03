@@ -119,8 +119,8 @@ export function VehicleDetail({
             <aside className={styles.titleWarning}>
               <TitleStatusBadge status={vehicle.title_status} size="lg" />
               <p>
-                This vehicle carries a {vehicle.title_status} title. Review the condition report
-                and damage notes carefully before bidding.
+                This vehicle carries a {vehicle.title_status} title. Review the condition report and
+                damage notes carefully before bidding.
               </p>
             </aside>
           )}

@@ -29,7 +29,8 @@ export function applyBidRecord(vehicle: Vehicle, record: BidRecord | undefined):
   // amount, and undefined slipping through here becomes current_bid:
   // undefined, which reads as "reserve not met" on a vehicle whose reserve is
   // met (reserveState tests for null, and undefined is not null).
-  const winning = record.outbid && record.market_amount != null ? record.market_amount : record.amount;
+  const winning =
+    record.outbid && record.market_amount != null ? record.market_amount : record.amount;
   return { ...vehicle, current_bid: winning, bid_count: record.bid_count };
 }
 

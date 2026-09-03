@@ -1,12 +1,12 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.FileProviders;
 using TheBlock.Api;
 using TheBlock.Application;
+using TheBlock.Data;
 using TheBlock.Domain;
 using TheBlock.Infrastructure;
-using TheBlock.Data;
 
 // Inventory + bidding API, composed onion-style: Domain (entities, photo
 // selection, auction schedule, filter and bid rules) <- Application

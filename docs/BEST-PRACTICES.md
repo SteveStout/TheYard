@@ -27,7 +27,7 @@ footer displays exactly that.
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
   walk the code.
-- **Decisions get written down.** Twenty-seven ADRs record why the architecture is
+- **Decisions get written down.** Twenty-nine ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -41,6 +41,11 @@ footer displays exactly that.
   structured JSON; a React error boundary turns a render crash into a page
   with a way out, and reports it to the same list the Admin tab reads.
   Recorded in ADR: Error handling.
+- **The style rules are checked by machines, not by memory.** Four checks fail
+  the build: `dotnet format` on the C#, Prettier on the TypeScript and CSS,
+  oxlint on what a formatter cannot see, and the typecheck that was already
+  there. Each one was run against deliberately bad input to prove it fails.
+  Recorded in ADR: Style, enforced.
 - **One implementation of every rule, including the simulated one.** The
   competing bidders place their bids through the same `BidRules` the visitor's
   bids go through, and whether the visitor is still ahead is answered by the

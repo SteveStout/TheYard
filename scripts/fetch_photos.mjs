@@ -17,8 +17,7 @@ const EXCLUSIONS_FILE = path.resolve(import.meta.dirname, 'photo-exclusions.txt'
 const THUMB_WIDTH = 1280;
 const PER_STYLE = 10;
 const PER_QUERY = 2;
-const USER_AGENT =
-  'TheYardPortfolio/1.0 (used-vehicle auction asset fetch)';
+const USER_AGENT = 'TheYardPortfolio/1.0 (used-vehicle auction asset fetch)';
 
 // Generation codes (NX4, G20, D41...) appear in Commons filenames and keep
 // results on current models, and the dataset spans 2016 to 2026.
@@ -73,7 +72,11 @@ const EXCLUDE_TITLE =
 const OLD_MODEL_YEAR = /\b(19[0-9]{2}|200[0-9]|201[0-5])\b/;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const stripHtml = (html) => (html ?? '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+const stripHtml = (html) =>
+  (html ?? '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 async function commonsSearch(term) {
   const url = new URL('https://commons.wikimedia.org/w/api.php');
@@ -98,7 +101,8 @@ async function commonsSearch(term) {
       throw new Error(`Commons search failed (${res.status}) for "${term}"`);
     }
     const retryAfter = Number(res.headers.get('retry-after'));
-    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000 * 2 ** (attempt - 1);
+    const waitMs =
+      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000 * 2 ** (attempt - 1);
     console.log(`  search rate-limited (${res.status}), waiting ${Math.round(waitMs / 1000)}s...`);
     await sleep(waitMs);
   }
@@ -127,7 +131,8 @@ async function download(url) {
       throw new Error(`Download failed (${res.status}): ${cleanUrl}`);
     }
     const retryAfter = Number(res.headers.get('retry-after'));
-    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000 * 2 ** (attempt - 1);
+    const waitMs =
+      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000 * 2 ** (attempt - 1);
     console.log(`  rate-limited (${res.status}), waiting ${Math.round(waitMs / 1000)}s...`);
     await sleep(waitMs);
   }
@@ -136,7 +141,12 @@ async function download(url) {
 
 const excluded = new Set(
   await readFile(EXCLUSIONS_FILE, 'utf8')
-    .then((text) => text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))
+    .then((text) =>
+      text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+    )
     .catch(() => [])
 );
 
@@ -201,9 +211,7 @@ const md = [
   'Vehicle photos sourced from Wikimedia Commons via `scripts/fetch_photos.mjs`.',
   'Each file below links to its source page with full license details.',
   '',
-  ...credits.map(
-    (c) => `- **${c.file}**, ${c.artist}, ${c.license}, [source](${c.source})`
-  ),
+  ...credits.map((c) => `- **${c.file}**, ${c.artist}, ${c.license}, [source](${c.source})`),
   '',
 ].join('\n');
 

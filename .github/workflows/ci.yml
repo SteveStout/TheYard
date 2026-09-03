@@ -15,6 +15,33 @@ permissions:
 # frontend job also typechecks and builds: a type error should fail before a
 # test does.
 jobs:
+  # #region style-job
+  # Format drift fails the build rather than getting argued about in review.
+  # It runs first and on its own because it is the cheapest job here: a style
+  # failure should not cost the time of a browser suite to discover.
+  #
+  # dotnet format checks three things at once against .editorconfig: whitespace,
+  # using order, and unused usings. Prettier owns the TypeScript and the CSS.
+  # oxlint owns the rules a formatter cannot see. The typecheck in the frontend
+  # job already enforces noUnusedLocals and noUnusedParameters, so the linter is
+  # not asked to repeat it (ADR-028).
+  style:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run format:api:check
+  # #endregion style-job
+
   frontend:
     runs-on: ubuntu-latest
     steps:

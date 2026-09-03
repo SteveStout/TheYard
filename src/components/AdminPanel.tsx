@@ -11,7 +11,12 @@ type Health = {
 };
 type ErrorEntry = { at: string; path: string; status: number; message: string };
 type AzureEvent = { name: string; count: number; last_at: string; message: string };
-type TelemetrySummary = { total: number; failed: number; p50_ms: number | null; p95_ms: number | null };
+type TelemetrySummary = {
+  total: number;
+  failed: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+};
 type TelemetryRoute = { name: string; calls: number; avg_ms: number | null };
 type TelemetryException = { type: string; method: string; count: number; last_at: string };
 type TelemetryBrowser = { count: number; last_at: string };
@@ -72,17 +77,26 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
     // A failed or non-200 answer marks the card failed instead of leaving it loading forever.
     const grab = <T,>(url: string, set: (v: Fetched<T>) => void) =>
       fetch(url)
-        .then((r) => (r.ok ? (r.json() as Promise<T>) : Promise.reject(new Error(String(r.status)))))
-        .then((v) => { if (live) set(v); })
-        .catch(() => { if (live) set('failed'); });
+        .then((r) =>
+          r.ok ? (r.json() as Promise<T>) : Promise.reject(new Error(String(r.status)))
+        )
+        .then((v) => {
+          if (live) set(v);
+        })
+        .catch(() => {
+          if (live) set('failed');
+        });
     void grab<Health>('/api/health', setHealth);
     void grab<ErrorEntry[]>('/api/errors', setErrors);
     void grab<AzureState>('/api/admin/azure', setAzure);
     void grab<Telemetry>('/api/admin/telemetry', setTelemetry);
-    return () => { live = false; };
+    return () => {
+      live = false;
+    };
   }, [tick]);
 
-  const pill = (ok: boolean) => (ok ? `${styles.pill} ${styles.ok}` : `${styles.pill} ${styles.bad}`);
+  const pill = (ok: boolean) =>
+    ok ? `${styles.pill} ${styles.ok}` : `${styles.pill} ${styles.bad}`;
   const failed = (what: string) => (
     <p className={styles.muted} data-testid="card-failed">
       Could not read {what} on the last try; the next try is in 30 seconds.
@@ -98,11 +112,10 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
         </button>
       </div>
       <p className={styles.blurb}>
-        The running system reporting on itself: application health, what Azure
-        says about the container, the last hour of traffic as Application
-        Insights recorded it, and recent errors from both the server and the
-        browser. Refreshes every 30 seconds. Public on purpose; the reasoning
-        is in the Best Practices menu.
+        The running system reporting on itself: application health, what Azure says about the
+        container, the last hour of traffic as Application Insights recorded it, and recent errors
+        from both the server and the browser. Refreshes every 30 seconds. Public on purpose; the
+        reasoning is in the Best Practices menu.
       </p>
       <div className={styles.grid}>
         {/* #region health-card */}
@@ -150,8 +163,12 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
                 <span>container group</span>
               </li>
               <li className={styles.checkRow}>
-                <span className={pill(azure.container_state === 'Running')}>{azure.container_state}</span>
-                <span>container, {azure.restart_count} restart{azure.restart_count === 1 ? '' : 's'}</span>
+                <span className={pill(azure.container_state === 'Running')}>
+                  {azure.container_state}
+                </span>
+                <span>
+                  container, {azure.restart_count} restart{azure.restart_count === 1 ? '' : 's'}
+                </span>
               </li>
               <li className={styles.checkRow}>
                 <span className={styles.mono}>{azure.image?.split('/').pop()}</span>
@@ -175,9 +192,8 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
             </ul>
           ) : (
             <p className={styles.muted}>
-              The Azure view is unavailable from here ({azure.reason}). It works
-              when this page is served by the container on Azure, which asks
-              about itself with its own identity.
+              The Azure view is unavailable from here ({azure.reason}). It works when this page is
+              served by the container on Azure, which asks about itself with its own identity.
             </p>
           )}
         </article>
@@ -195,7 +211,9 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           ) : telemetry === 'failed' ? (
             failed('the telemetry')
           ) : !telemetry.configured || telemetry.available === false ? (
-            <p className={styles.muted} data-testid="telemetry-note">{telemetry.note}</p>
+            <p className={styles.muted} data-testid="telemetry-note">
+              {telemetry.note}
+            </p>
           ) : (
             <>
               <div className={styles.statusRow}>
@@ -203,15 +221,9 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
                   {telemetry.summary?.total ?? 0} request
                   {(telemetry.summary?.total ?? 0) === 1 ? '' : 's'}
                 </span>
-                <span className={styles.muted}>
-                  {telemetry.summary?.failed ?? 0} failed
-                </span>
-                <span className={styles.mono}>
-                  p50 {telemetry.summary?.p50_ms ?? 0} ms
-                </span>
-                <span className={styles.mono}>
-                  p95 {telemetry.summary?.p95_ms ?? 0} ms
-                </span>
+                <span className={styles.muted}>{telemetry.summary?.failed ?? 0} failed</span>
+                <span className={styles.mono}>p50 {telemetry.summary?.p50_ms ?? 0} ms</span>
+                <span className={styles.mono}>p95 {telemetry.summary?.p95_ms ?? 0} ms</span>
                 {/* Steve asked for every React error, so the count of them is
                     on the card rather than only in the portal. */}
                 <span className={pill((telemetry.browser?.count ?? 0) === 0)}>
@@ -261,9 +273,9 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
             failed('the error list')
           ) : errors.length === 0 ? (
             <p className={styles.muted}>
-              None recorded since the container started, from the server or the
-              browser. The buffer holds the last 50 and resets on every deploy;
-              Application Insights keeps the durable copy (ADR: Telemetry).
+              None recorded since the container started, from the server or the browser. The buffer
+              holds the last 50 and resets on every deploy; Application Insights keeps the durable
+              copy (ADR: Telemetry).
             </p>
           ) : (
             <ul className={styles.errorList}>

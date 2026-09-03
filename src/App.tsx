@@ -39,7 +39,12 @@ const STATUS_REFRESH_MS = 60_000;
 const INITIAL_RETRY_MS = 2_000;
 const MAX_INITIAL_RETRIES = 15;
 
-const EMPTY_FACETS: InventoryFacets = { makes: [], body_styles: [], title_statuses: [], provinces: [] };
+const EMPTY_FACETS: InventoryFacets = {
+  makes: [],
+  body_styles: [],
+  title_statuses: [],
+  provinces: [],
+};
 const EMPTY_PAGE: VehiclePage = { total: 0, vehicles: [] };
 
 /** Filters arrive in the URL (?make=Ford&status=live) so views are shareable. */
@@ -260,7 +265,9 @@ export default function App() {
   // rather than patched. Without this the panel said "someone outbid you, the
   // bid stands at $12,500" directly above "minimum $12,500", and submitting
   // the number the page showed was rejected.
-  const openMarketAmount = selectedVehicle ? (bids[selectedVehicle.id]?.market_amount ?? null) : null;
+  const openMarketAmount = selectedVehicle
+    ? (bids[selectedVehicle.id]?.market_amount ?? null)
+    : null;
   useEffect(() => {
     const id = selectedIdRef.current;
     if (!id || openMarketAmount === null) return;
@@ -277,15 +284,30 @@ export default function App() {
   // #endregion refresh-open-vehicle
 
   const highBidderIds = useMemo(
-    () => new Set(Object.entries(bids).filter(([, bid]) => !bid.outbid).map(([id]) => id)),
+    () =>
+      new Set(
+        Object.entries(bids)
+          .filter(([, bid]) => !bid.outbid)
+          .map(([id]) => id)
+      ),
     [bids]
   );
   const outbidIds = useMemo(
-    () => new Set(Object.entries(bids).filter(([, bid]) => bid.outbid).map(([id]) => id)),
+    () =>
+      new Set(
+        Object.entries(bids)
+          .filter(([, bid]) => bid.outbid)
+          .map(([id]) => id)
+      ),
     [bids]
   );
   const wonIds = useMemo(
-    () => new Set(Object.entries(bids).filter(([, b]) => b.won_buy_now).map(([id]) => id)),
+    () =>
+      new Set(
+        Object.entries(bids)
+          .filter(([, b]) => b.won_buy_now)
+          .map(([id]) => id)
+      ),
     [bids]
   );
 
@@ -403,7 +425,11 @@ export default function App() {
   const bidCount = Object.keys(bids).length;
 
   const handleResetBids = () => {
-    if (window.confirm(`Clear your ${bidCount === 1 ? 'bid' : `${bidCount} bids`}? This can't be undone.`)) {
+    if (
+      window.confirm(
+        `Clear your ${bidCount === 1 ? 'bid' : `${bidCount} bids`}? This can't be undone.`
+      )
+    ) {
       void resetBids();
     }
   };
@@ -440,7 +466,10 @@ export default function App() {
   // #endregion announcement
 
   return (
-    <div className={styles.app} data-rail={docked ? (railCollapsed ? 'collapsed' : 'open') : 'drawer'}>
+    <div
+      className={styles.app}
+      data-rail={docked ? (railCollapsed ? 'collapsed' : 'open') : 'drawer'}
+    >
       {/* #region skip-link */}
       {/* First in the tab order on purpose. The docked rail is around thirty
           buttons, and without this a keyboard user tabs every one of them to
@@ -492,7 +521,12 @@ export default function App() {
                   onClick={() => setDrawerOpen(true)}
                 >
                   <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
-                    <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path
+                      d="M3 5h14M3 10h14M3 15h14"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </button>
               </div>
@@ -515,8 +549,8 @@ export default function App() {
             <div className={styles.notice} role="alert">
               <p className={styles.noticeTitle}>Couldn't reach the inventory API.</p>
               <p>
-                Make sure it's running (<code>npm run api</code> in a second terminal), then
-                try again.
+                Make sure it's running (<code>npm run api</code> in a second terminal), then try
+                again.
               </p>
               <button
                 type="button"

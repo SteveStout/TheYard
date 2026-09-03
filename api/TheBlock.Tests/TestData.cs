@@ -1,5 +1,5 @@
-using TheBlock.Domain;
 using TheBlock.Data;
+using TheBlock.Domain;
 
 namespace TheBlock.Tests;
 
@@ -23,37 +23,37 @@ internal static class TestData
         string bodyStyle = "SUV",
         IReadOnlyList<string>? images = null,
         int? currentBid = 22800) => new()
-    {
-        Id = id,
-        Vin = "TRD7L1KS0HNB5X3K3",
-        Year = 2023,
-        Make = make,
-        Model = "Bronco",
-        Trim = "Big Bend",
-        BodyStyle = bodyStyle,
-        ExteriorColor = "Burgundy",
-        InteriorColor = "Beige",
-        Engine = "2.7L EcoBoost V6",
-        Transmission = "automatic",
-        Drivetrain = "4WD",
-        OdometerKm = 47731,
-        FuelType = "gasoline",
-        ConditionGrade = 3.8,
-        ConditionReport = "Average condition.",
-        DamageNotes = ["Scratch on liftgate"],
-        TitleStatus = "clean",
-        Province = "Ontario",
-        City = "Toronto",
-        AuctionStart = "2026-04-05T14:00:00",
-        StartingBid = 14500,
-        ReservePrice = 25000,
-        BuyNowPrice = null,
-        Images = images ?? ["https://placehold.co/800x600"],
-        SellingDealership = "King City Auto",
-        Lot = "A-0043",
-        CurrentBid = currentBid,
-        BidCount = 16,
-    };
+        {
+            Id = id,
+            Vin = "TRD7L1KS0HNB5X3K3",
+            Year = 2023,
+            Make = make,
+            Model = "Bronco",
+            Trim = "Big Bend",
+            BodyStyle = bodyStyle,
+            ExteriorColor = "Burgundy",
+            InteriorColor = "Beige",
+            Engine = "2.7L EcoBoost V6",
+            Transmission = "automatic",
+            Drivetrain = "4WD",
+            OdometerKm = 47731,
+            FuelType = "gasoline",
+            ConditionGrade = 3.8,
+            ConditionReport = "Average condition.",
+            DamageNotes = ["Scratch on liftgate"],
+            TitleStatus = "clean",
+            Province = "Ontario",
+            City = "Toronto",
+            AuctionStart = "2026-04-05T14:00:00",
+            StartingBid = 14500,
+            ReservePrice = 25000,
+            BuyNowPrice = null,
+            Images = images ?? ["https://placehold.co/800x600"],
+            SellingDealership = "King City Auto",
+            Lot = "A-0043",
+            CurrentBid = currentBid,
+            BidCount = 16,
+        };
     // #endregion builders
 
     public static IReadOnlyDictionary<string, IReadOnlyList<PhotoEntry>> Pools(

@@ -40,7 +40,10 @@ public class ChangelogTests(WebApplicationFactory<Program> factory)
         foreach (string raw in markdown.Split('\n'))
         {
             string line = raw.TrimEnd('\r');
-            if (!line.StartsWith("- ", StringComparison.Ordinal)) continue;
+            if (!line.StartsWith("- ", StringComparison.Ordinal))
+            {
+                continue;
+            }
 
             var match = EntryLine.Match(line);
             Assert.True(match.Success, $"changelog line does not fit the one-line shape: {line}");

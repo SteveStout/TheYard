@@ -10,7 +10,7 @@ auction rules.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-seven decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-nine decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -182,8 +182,8 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, twenty-seven
-  decision records, the Bicep infrastructure, and my resume.
+  data flow and infrastructure diagrams on their own zoomable pages, twenty-nine
+  decision records in one numbered index, the Bicep infrastructure, and my resume.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
   alike), the container group's own state read from Azure with a managed identity, and
   the last hour of traffic as Application Insights recorded it.

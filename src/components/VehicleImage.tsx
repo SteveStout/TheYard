@@ -32,6 +32,12 @@ export function VehicleImage({ src, alt, fallbackLabel, loading = 'lazy' }: Vehi
   }
 
   return (
-    <img className={styles.image} src={src} alt={alt} loading={loading} onError={() => setFailed(true)} />
+    <img
+      className={styles.image}
+      src={src}
+      alt={alt}
+      loading={loading}
+      onError={() => setFailed(true)}
+    />
   );
 }

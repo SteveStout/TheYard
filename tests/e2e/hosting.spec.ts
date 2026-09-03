@@ -18,6 +18,8 @@ test('the Hosting section opens the hosting overview and the deployment ADRs', a
   expect(await diagram.text()).toContain('<svg');
   await page.keyboard.press('Escape');
 
+  // The records live in one collapsed index now (ADR-029); open it first.
+  await nav.getByText('Decision Records', { exact: true }).click();
   await nav.getByRole('button', { name: 'ADR: Deployment strategy' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 2, name: 'ADR: Deployment strategy' })
@@ -32,6 +34,8 @@ test('the Hosting section opens the hosting overview and the deployment ADRs', a
 
   await nav.getByRole('button', { name: 'ADR: Linux over Windows' }).click();
   await expect(
-    page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: Linux containers over Windows' })
+    page
+      .getByRole('dialog')
+      .getByRole('heading', { level: 1, name: 'ADR: Linux containers over Windows' })
   ).toBeVisible();
 });

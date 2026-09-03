@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
-using TheBlock.Domain;
 using TheBlock.Data;
+using TheBlock.Domain;
 
 namespace TheBlock.Application;
 

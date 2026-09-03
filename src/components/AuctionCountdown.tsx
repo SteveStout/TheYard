@@ -21,7 +21,9 @@ export function AuctionCountdown({ timing, now, variant = 'inline' }: AuctionCou
         : `Ended ${formatAuctionDateTime(endsAt)}`;
 
   return (
-    <span className={`${styles.countdown} ${styles[status]} ${variant === 'overlay' ? styles.overlay : ''}`}>
+    <span
+      className={`${styles.countdown} ${styles[status]} ${variant === 'overlay' ? styles.overlay : ''}`}
+    >
       <span className={styles.dot} aria-hidden="true" />
       {label}
     </span>

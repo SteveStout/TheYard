@@ -1,4 +1,4 @@
-﻿using TheBlock.Data;
+using TheBlock.Data;
 
 namespace TheBlock.Domain;
 
@@ -25,14 +25,14 @@ public static class VehicleOrdering
         IEnumerable<Vehicle> vehicles,
         VehicleSort sort,
         AuctionClock clock) => sort switch
-    {
-        VehicleSort.EndingSoonest => vehicles.OrderBy(v => EndingSoonestRank(v, clock)),
-        VehicleSort.PriceAsc => vehicles.OrderBy(CompetingPrice),
-        VehicleSort.PriceDesc => vehicles.OrderByDescending(CompetingPrice),
-        VehicleSort.Condition => vehicles.OrderByDescending(v => v.ConditionGrade),
-        VehicleSort.MostBids => vehicles.OrderByDescending(v => v.BidCount),
-        _ => vehicles,
-    };
+        {
+            VehicleSort.EndingSoonest => vehicles.OrderBy(v => EndingSoonestRank(v, clock)),
+            VehicleSort.PriceAsc => vehicles.OrderBy(CompetingPrice),
+            VehicleSort.PriceDesc => vehicles.OrderByDescending(CompetingPrice),
+            VehicleSort.Condition => vehicles.OrderByDescending(v => v.ConditionGrade),
+            VehicleSort.MostBids => vehicles.OrderByDescending(v => v.BidCount),
+            _ => vehicles,
+        };
 
     private static int CompetingPrice(Vehicle vehicle) => vehicle.CurrentBid ?? vehicle.StartingBid;
 
