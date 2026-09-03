@@ -7,6 +7,8 @@ interface InventoryGridProps {
   now: number;
   onSelect: (vehicle: Vehicle) => void;
   highBidderIds?: ReadonlySet<string>;
+  /** Vehicles the simulated room has taken back (ADR-027). */
+  outbidIds?: ReadonlySet<string>;
   wonIds?: ReadonlySet<string>;
   onClearFilters?: () => void;
 }
@@ -17,6 +19,7 @@ export function InventoryGrid({
   now,
   onSelect,
   highBidderIds,
+  outbidIds,
   wonIds,
   onClearFilters,
 }: InventoryGridProps) {
@@ -43,6 +46,7 @@ export function InventoryGrid({
             now={now}
             onSelect={onSelect}
             isHighBidder={highBidderIds?.has(vehicle.id) ?? false}
+            isOutbid={outbidIds?.has(vehicle.id) ?? false}
             isWon={wonIds?.has(vehicle.id) ?? false}
           />
         </li>

@@ -85,6 +85,15 @@
   font-size: var(--text-sm);
 }
 
+/* The same box, in the losing colour. Both pairs are held to WCAG AA by
+   src/styles/tokens.test.ts (ADR-016), which is why the soft ground and the
+   strong text are the two halves of one token pair rather than a guess. */
+.outbid {
+  composes: highBidder;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
 .form {
   display: flex;
   flex-direction: column;

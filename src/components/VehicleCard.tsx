@@ -13,6 +13,8 @@ interface VehicleCardProps {
   now: number;
   onSelect: (vehicle: Vehicle) => void;
   isHighBidder?: boolean;
+  /** The simulated room has bid past the buyer here (ADR-027). */
+  isOutbid?: boolean;
   /** The buyer bought this vehicle via Buy Now, so the auction is over. */
   isWon?: boolean;
 }
@@ -22,6 +24,7 @@ export function VehicleCard({
   now,
   onSelect,
   isHighBidder = false,
+  isOutbid = false,
   isWon = false,
 }: VehicleCardProps) {
   const timing = auctionTiming(vehicle, now);
@@ -39,6 +42,7 @@ export function VehicleCard({
             <AuctionCountdown timing={timing} now={now} variant="overlay" />
           )}
           {isHighBidder && !isWon && <span className={styles.highBidder}>High bidder</span>}
+          {isOutbid && !isWon && <span className={styles.outbid}>Outbid</span>}
         </div>
       </div>
 

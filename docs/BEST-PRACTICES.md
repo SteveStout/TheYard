@@ -27,7 +27,7 @@ footer displays exactly that.
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
   walk the code.
-- **Decisions get written down.** Twenty-six ADRs record why the architecture is
+- **Decisions get written down.** Twenty-seven ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -41,6 +41,12 @@ footer displays exactly that.
   structured JSON; a React error boundary turns a render crash into a page
   with a way out, and reports it to the same list the Admin tab reads.
   Recorded in ADR: Error handling.
+- **One implementation of every rule, including the simulated one.** The
+  competing bidders place their bids through the same `BidRules` the visitor's
+  bids go through, and whether the visitor is still ahead is answered by the
+  server rather than by two numbers compared in a browser. A second, quieter
+  implementation of the auction is exactly what the layering here exists to
+  prevent. Recorded in ADR: Competing bidders.
 - **The keyboard path is walkable end to end.** A skip link past the rail,
   focus that follows the view instead of falling to the body, a live region
   that names what you arrived at, and a palette measured against WCAG AA

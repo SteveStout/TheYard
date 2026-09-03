@@ -29,6 +29,12 @@ export interface BidRecord {
   amount: number;
   bid_count: number;
   won_buy_now: boolean;
+  /** When the bid was placed, which the simulated room reads (ADR-027). */
+  at_ms: number;
+  /** True when the room has since bid higher. The server decides this. */
+  outbid: boolean;
+  /** What the room is standing at, or null when it has not bid here. */
+  market_amount: number | null;
 }
 
 export type BidMap = Record<string, BidRecord>;
@@ -236,6 +242,38 @@ async function postBidAction(url: string, body: Record<string, unknown>): Promis
     vehicle: result.vehicle,
   };
 }
+
+// #region tick
+/**
+ * One round of bidding by the simulated room (ADR-027). Driven by the page
+ * rather than a timer on the server: the room moves while somebody is
+ * watching, which is the only time it matters, and the anchor rides along
+ * because the browser's midnight is what decides which auctions are live.
+ *
+ * Returns how many vehicles it raised and the buyer's refreshed map. A failure
+ * is not worth surfacing: the room going quiet for eight seconds is invisible.
+ */
+export async function tickMarket(): Promise<{ raised: number; bids: BidMap } | null> {
+  try {
+    const response = await fetch('/api/market/tick', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anchor_ms: localMidnightMs() }),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const result = (await response.json()) as { raised: number; bids: BidMap };
+    if (result.raised > 0) {
+      // Somebody else's bids changed the figures, so cached pages are stale.
+      clearVehicleCache();
+    }
+    return result;
+  } catch {
+    return null;
+  }
+}
+// #endregion tick
 
 export function placeBidRequest(vehicleId: string, amount: number): Promise<BidResult> {
   return postBidAction(`/api/vehicles/${vehicleId}/bids`, { amount });

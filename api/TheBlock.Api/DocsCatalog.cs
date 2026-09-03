@@ -49,6 +49,7 @@ public static class DocsCatalog
         ["adr-telemetry"] = "docs/ADR-024-telemetry.md",
         ["adr-search"] = "docs/ADR-025-search-index.md",
         ["adr-keyboard"] = "docs/ADR-026-keyboard.md",
+        ["adr-bidders"] = "docs/ADR-027-competing-bidders.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };

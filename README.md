@@ -10,7 +10,7 @@ auction rules.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-six decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Twenty-seven decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -182,7 +182,7 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, twenty-six
+  data flow and infrastructure diagrams on their own zoomable pages, twenty-seven
   decision records, the Bicep infrastructure, and my resume.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
   alike), the container group's own state read from Azure with a managed identity, and
@@ -329,7 +329,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (164 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
+**API (177 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -340,20 +340,20 @@ filtering, sorting and paging parameters, the problem shape on every 400, the fu
 lifecycle, static image serving, cache headers, the document catalog, the live-sample
 expander, the diagram pages, and the changelog. Run with `npm run test:api`.
 
-**Frontend (36 Vitest tests):** presentation logic only, since the API owns the rules.
+**Frontend (37 Vitest tests):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), and the palette's contrast against WCAG AA. Run
 with `npm test`.
 
-**End-to-end (29 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (31 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a
 browser error reaches it, a transient API failure recovers via the retry banner, the
 phone drawer works at 375 pixels, the keyboard path walks from the skip link through
-every view switch, and a bid round-trips through the API, survives a reload, and
-resets. Run with `npm run test:e2e` (launches both servers itself, uses your
+every view switch, a bid round-trips through the API, survives a reload, and resets,
+and the simulated room answers a bid so the high-bidder badge changes hands. Run with `npm run test:e2e` (launches both servers itself, uses your
 installed Chrome). All three suites run in CI on every push, and a green run on `main`
 deploys.
 
@@ -388,14 +388,23 @@ Two more came off the list afterwards, on time that was no longer the deadline's
    loads and each query's tokens once when the filter compiles, rather than both being
    rebuilt for every one of the hundred thousand rows a scan touches. The scan halved,
    measured by a test that ships with it. Recorded in ADR: The search index.
+7. **Keyboard access.** A skip link past the rail, focus that follows the view instead
+   of falling to the document body, and a live region that names where you arrived.
+   Recorded in ADR: Keyboard and screen reader.
+8. **Simulated competing bidders.** A room that answers your bids through the same
+   rules yours go through, with three limits that keep it a demo: it waits before
+   answering, it stops at twice the opening ask, and it never buys a vehicle out from
+   under you. The high-bidder badge can finally come off. Recorded in
+   ADR: Competing bidders.
 
 What is genuinely still open, in priority order:
 
-- Real-time updates (Server-Sent Events): push bid changes and auction closes so
-  countdowns rotate expired rows out and "you have been outbid" moments become possible
+- Real-time updates (Server-Sent Events) rather than the eight-second poll the
+  competing bidders use now. The phase-one edge is a Netlify rewrite proxy, which
+  buffers a streaming response, and the edge is not mine to change on a free tier;
+  the reasoning is in ADR: Competing bidders
 - Auth and per-user bid state, persisted; the single anonymous in-memory buyer is the
-  demo shortcut
-- Simulated competing bidders so the high-bidder state can be lost, with outbid alerts
+  demo shortcut, and the competing bidders are simulated rather than real people
 - A virtualized grid once Load More accumulates thousands of rows
 - An audit with a real screen reader, which is a person's job rather than a checklist's;
   the keyboard path itself is now walkable and held by tests

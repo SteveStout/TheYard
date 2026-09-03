@@ -10,7 +10,7 @@ namespace TheBlock.Api;
 /// the same identity that already reads the container group's state, so no key
 /// is stored anywhere for reading.
 /// </summary>
-public sealed class TelemetryReader(string appId, string clientId)
+public sealed class TelemetryReader(string appId, string clientId, bool enabled)
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
 
@@ -18,8 +18,14 @@ public sealed class TelemetryReader(string appId, string clientId)
     private object? _cached;
     private DateTimeOffset _cachedAt;
 
-    /// <summary>True when the component id was configured; false locally and in tests.</summary>
-    public bool Configured => !string.IsNullOrWhiteSpace(appId);
+    /// <summary>
+    /// True only where telemetry is actually wired, which is the deployed
+    /// container. The component's app id is not the test: it has a default,
+    /// so reading it alone made this always true, the unconfigured path dead
+    /// code, and every local request an eight-second wait on a metadata
+    /// endpoint that only exists in Azure.
+    /// </summary>
+    public bool Configured => enabled && !string.IsNullOrWhiteSpace(appId);
 
     // #region kql
     /// <summary>
@@ -118,20 +124,14 @@ public sealed class TelemetryReader(string appId, string clientId)
             string payload = await resp.Content.ReadAsStringAsync();
             if (!resp.IsSuccessStatusCode)
             {
-                return Failed($"the telemetry API answered {(int)resp.StatusCode}: {Trim(payload)}");
+                return Cache(Failed($"the telemetry API answered {(int)resp.StatusCode}: {Trim(payload)}"));
             }
             using var body = JsonDocument.Parse(payload);
-            var state = Shape(body);
-            lock (_gate)
-            {
-                _cached = state;
-                _cachedAt = DateTimeOffset.UtcNow;
-            }
-            return state;
+            return Cache(Shape(body));
         }
         catch (Exception ex)
         {
-            return Failed(ex.GetType().Name);
+            return Cache(Failed(ex.GetType().Name));
         }
     }
     // #endregion read
@@ -143,6 +143,21 @@ public sealed class TelemetryReader(string appId, string clientId)
     /// </summary>
     private static string Trim(string payload) =>
         payload.Length <= 300 ? payload : payload[..300] + "...";
+
+    /// <summary>
+    /// Failures are cached like successes. Without this, a component that has
+    /// gone unreachable costs a full timeout on every request to a public,
+    /// unauthenticated endpoint, and the answer is the same every time anyway.
+    /// </summary>
+    private object Cache(object state)
+    {
+        lock (_gate)
+        {
+            _cached = state;
+            _cachedAt = DateTimeOffset.UtcNow;
+        }
+        return state;
+    }
 
     private static object Failed(string reason) => new
     {

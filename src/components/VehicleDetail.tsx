@@ -16,6 +16,8 @@ interface VehicleDetailProps {
   now: number;
   onBack: () => void;
   isHighBidder: boolean;
+  /** The simulated room has bid past the buyer here (ADR-027). */
+  isOutbid: boolean;
   wonBuyNow: boolean;
   onPlaceBid: (amount: number) => Promise<BidOutcome>;
   onBuyNow: () => Promise<BidOutcome>;
@@ -26,6 +28,7 @@ export function VehicleDetail({
   now,
   onBack,
   isHighBidder,
+  isOutbid,
   wonBuyNow,
   onPlaceBid,
   onBuyNow,
@@ -102,7 +105,7 @@ export function VehicleDetail({
                       className={`${styles.thumb} ${index === imageIndex ? styles.thumbActive : ''}`}
                       onClick={() => setImageIndex(index)}
                       aria-label={`Show photo ${index + 1}`}
-                      aria-current={index === imageIndex}
+                      aria-current={index === imageIndex ? 'true' : undefined}
                     >
                       <VehicleImage key={image} src={image} alt="" />
                     </button>
@@ -171,6 +174,7 @@ export function VehicleDetail({
             vehicle={vehicle}
             now={now}
             isHighBidder={isHighBidder}
+            isOutbid={isOutbid}
             wonBuyNow={wonBuyNow}
             onPlaceBid={onPlaceBid}
             onBuyNow={onBuyNow}

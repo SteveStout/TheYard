@@ -46,6 +46,12 @@ builder.Services.AddSingleton<IVehicleSource>(
 builder.Services.AddSingleton<IPhotoManifestSource>(new JsonFilePhotoManifestSource(manifestPath));
 builder.Services.AddSingleton<InventoryService>();
 builder.Services.AddSingleton<BidService>();
+// The other bidders (ADR-027). A singleton like the buyer's own bids, and for
+// the same reason: one room, held in memory, for the life of the container.
+// The grace period is the one thing about it worth configuring, and the only
+// thing that sets it is the browser suite.
+builder.Services.AddSingleton(new MarketService(
+    builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)));
 
 // Request bodies are snake_case like everything else on this wire.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -94,7 +100,10 @@ if (telemetryOn)
 // tab queries with the container's managed identity.
 var telemetry = new TelemetryReader(
     builder.Configuration["Azure:AppInsightsAppId"] ?? "6ff89351-7fcc-4a41-8238-db65c5903c36",
-    builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5");
+    builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
+    // Wired only where the connection string is: the app id has a default and
+    // is therefore no evidence at all that this build can read anything.
+    enabled: telemetryOn);
 #endregion telemetry
 
 var app = builder.Build();
@@ -124,6 +133,7 @@ var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPo
 app.MapGet("/api/vehicles", (
     InventoryService inventory,
     BidService bids,
+    MarketService market,
     [AsParameters] VehicleQueryParams query) =>
 {
     if (!query.TryBuildFilter(out var filter, out var clock, out var sort, out var error))
@@ -132,8 +142,23 @@ app.MapGet("/api/vehicles", (
         // can act on goes in `detail`, never in a key only this endpoint uses.
         return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
     }
-    var snapshot = bids.Snapshot();
-    Func<Vehicle, Vehicle>? overlay = snapshot.Count == 0 ? null : bids.Apply;
+    // #region overlays
+    // The buyer's bids first, the room's second, and the room only wins where
+    // it is actually higher (ADR-027). In the other order the buyer would
+    // always look like the high bidder, which is the bug this feature exists
+    // to make impossible. Both are skipped entirely when nobody has bid, so
+    // the common cold request pays for neither.
+    // IsEmpty, not Snapshot().Count: a snapshot is a full dictionary copy, and
+    // copying both of them on every inventory request to ask whether they are
+    // empty is work that grows with the number of bids ever placed.
+    Func<Vehicle, Vehicle>? overlay = (bids.IsEmpty, market.IsEmpty) switch
+    {
+        (true, true) => null,
+        (false, true) => bids.Apply,
+        (true, false) => market.Apply,
+        _ => vehicle => market.Apply(bids.Apply(vehicle)),
+    };
+    // #endregion overlays
     var result = inventory.Search(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset, overlay);
     return Results.Json(new
     {
@@ -147,14 +172,14 @@ app.MapGet("/api/vehicles", (
 app.MapGet("/api/facets", (InventoryService inventory) =>
     Results.Json(inventory.Facets(), wireFormat));
 
-app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, string id, long? anchor_ms) =>
+app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, MarketService market, string id, long? anchor_ms) =>
 {
     if (!Clocks.TryResolve(anchor_ms, out var clock, out var error))
     {
         return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
     }
     return inventory.GetById(id) is { } vehicle
-        ? Results.Json(VehicleWire.ToWire(bids.Apply(vehicle), clock, wireFormat), wireFormat)
+        ? Results.Json(VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat), wireFormat)
         : Results.NotFound();
 });
 
@@ -167,22 +192,71 @@ app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, s
 app.MapPost("/api/vehicles/{id}/bids", (
     InventoryService inventory,
     BidService bids,
+    MarketService market,
     string id,
-    BidRequest request) => HandleBid(inventory, bids, id, request.AnchorMs,
-        (vehicle, clock) => bids.PlaceBid(vehicle, request.Amount, clock)));
+    BidRequest request) => HandleBid(inventory, bids, market, id, request.AnchorMs,
+        // The room's standing price is what the minimum next bid is measured
+        // against (ADR-027). Handing BidRules the dataset's figure instead
+        // would let the buyer retake the lead with a bid below the going rate.
+        (vehicle, clock) => bids.PlaceBid(market.Apply(vehicle), request.Amount, clock)));
 
 app.MapPost("/api/vehicles/{id}/buy-now", (
     InventoryService inventory,
     BidService bids,
+    MarketService market,
     string id,
-    BuyNowRequest request) => HandleBid(inventory, bids, id, request.AnchorMs,
-        (vehicle, clock) => bids.BuyNow(vehicle, clock)));
+    BuyNowRequest request) => HandleBid(inventory, bids, market, id, request.AnchorMs,
+        (vehicle, clock) => bids.BuyNow(market.Apply(vehicle), clock)));
 
-app.MapGet("/api/bids", (BidService bids) => Results.Json(bids.Snapshot(), wireFormat));
+#region market-endpoints
+// The buyer's bids, each one answering the question the badge asks: am I still
+// winning this? The server owns that answer because it owns both sides of it.
+app.MapGet("/api/bids", (BidService bids, MarketService market) =>
+    Results.Json(BidViews.For(bids, market), wireFormat));
 
-app.MapDelete("/api/bids", (BidService bids) =>
+// One round of bidding by the room, driven by the page rather than a timer
+// (ADR-027). The anchor comes from the caller for the same reason every other
+// schedule-dependent call carries one: the browser's midnight decides which
+// auctions are live, and a room bidding on a different set than the visitor
+// can see would be a bug nobody could reproduce.
+app.MapPost("/api/market/tick", (
+    InventoryService inventory,
+    BidService bids,
+    MarketService market,
+    MarketTickRequest request) =>
+{
+    if (!Clocks.TryResolve(request.AnchorMs, out var clock, out var error))
+    {
+        return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
+    }
+    var buyerBids = bids.Snapshot();
+    // Candidates: everything the buyer is in on, plus a page of live auctions
+    // so the grid moves even when the visitor has bid on nothing.
+    var contested = buyerBids.Keys
+        .Select(inventory.GetById)
+        .Where(v => v is not null)
+        .Select(v => v!);
+    // Take the first forty live auctions rather than searching for them.
+    // Search would derive a status for all hundred thousand rows and then sort
+    // the forty-odd thousand matches to keep forty of them, every eight
+    // seconds, for every open tab. Nothing here needs the soonest-ending ones;
+    // it needs forty live ones, and the room shuffles them anyway.
+    var live = inventory.GetAll()
+        .Where(v => AuctionSchedule.StatusFor(v.Id, clock) == AuctionStatus.Live)
+        .Take(40);
+    var candidates = contested.Concat(live).DistinctBy(v => v.Id).ToList();
+    var raised = market.Tick(candidates, buyerBids, clock);
+    return Results.Json(new { raised = raised.Count, bids = BidViews.For(bids, market) }, wireFormat);
+});
+#endregion market-endpoints
+
+app.MapDelete("/api/bids", (BidService bids, MarketService market) =>
 {
     bids.Reset();
+    // The room resets with the buyer. Leaving its bids standing would mean the
+    // reset button clears your side of an auction and not the other one, which
+    // reads as a bug however carefully it is explained.
+    market.Reset();
     return Results.NoContent();
 });
 #endregion bid-endpoints
@@ -244,6 +318,7 @@ app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, comm
 IResult HandleBid(
     InventoryService inventory,
     BidService bids,
+    MarketService market,
     string id,
     long? anchorMs,
     Func<Vehicle, AuctionClock, BidOutcome> action)
@@ -265,8 +340,12 @@ IResult HandleBid(
     {
         kind = outcome.Kind.ToString().ToLowerInvariant(),
         amount = outcome.Amount,
-        bid = bids.Snapshot()[id],
-        vehicle = VehicleWire.ToWire(bids.Apply(vehicle), clock, wireFormat),
+        // The room's answer rides back with the bid, so the badge is right
+        // the moment the response lands rather than at the next tick.
+        // TryGetValue, not the indexer: DELETE /api/bids is public and can
+        // land between the bid being recorded and this line reading it back.
+        bid = BidViews.For(bids, market).TryGetValue(id, out var view) ? view : null,
+        vehicle = VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat),
     }, wireFormat);
 }
 #endregion bid-handling
@@ -473,6 +552,9 @@ public sealed record BidRequest(int Amount, long? AnchorMs);
 
 /// <summary>Buy-now submission: just the client's clock anchor.</summary>
 public sealed record BuyNowRequest(long? AnchorMs);
+
+/// <summary>One round of bidding by the simulated room (ADR-027).</summary>
+public sealed record MarketTickRequest(long? AnchorMs);
 
 /// <summary>What the browser reports when a render crashes or a promise rejects (ADR-023).</summary>
 public sealed record ClientErrorReport(string? Message, string? Stack, string? Path);

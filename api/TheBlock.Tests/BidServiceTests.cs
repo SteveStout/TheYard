@@ -1,10 +1,86 @@
 ﻿using TheBlock.Application;
+using TheBlock.Data;
 using TheBlock.Domain;
 
 namespace TheBlock.Tests;
 
 public class BidServiceTests
 {
+    // #region composed
+    [Fact]
+    public void A_bid_is_measured_against_the_composed_price_not_the_buyers_own()
+    {
+        // The bug this catches: BidService.Apply overwrote CurrentBid instead
+        // of taking the max, so when the endpoint handed it a vehicle the room
+        // had already raised, the buyer's own older bid was written back over
+        // the room's higher one and the minimum next bid was computed against
+        // the wrong number. The buyer could then sit permanently one increment
+        // under the room and be accepted every time (ADR-027, self review).
+        var clock = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
+        var vehicle = LiveVehicleFor(clock, currentBid: 22_800);
+        var bids = new BidService();
+        var market = new MarketService();
+
+        // The buyer takes the lead at the minimum, 22,800 + 500.
+        Assert.Equal(BidOutcomeKind.Accepted, bids.PlaceBid(vehicle, 23_300, clock).Kind);
+
+        // The room answers twice, so it stands at 24,300.
+        var buyer = bids.Snapshot();
+        var later = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 1, 0, TimeSpan.FromHours(-4)));
+        market.Tick([vehicle], buyer, later);
+        var laterStill = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 2, 0, TimeSpan.FromHours(-4)));
+        market.Tick([vehicle], buyer, laterStill);
+        Assert.Equal(24_300, market.For(vehicle.Id)!.Amount);
+
+        // 23,800 is a raise on the buyer's own bid and $500 under the room.
+        var rejected = bids.PlaceBid(market.Apply(vehicle), 23_800, laterStill);
+
+        Assert.Equal(BidOutcomeKind.Rejected, rejected.Kind);
+        Assert.Contains("24,800", rejected.Reason);
+        // And the price the page advertises is the price it enforces.
+        Assert.Equal(24_800, BidRules.MinNextBid(market.Apply(bids.Apply(vehicle))));
+    }
+
+    [Fact]
+    public void Retaking_the_lead_never_lowers_the_bid_count()
+    {
+        // The count used to come from the buyer's own state, which is behind
+        // the room's, so a vehicle went from seven bids to six on being bid on.
+        var clock = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
+        var vehicle = LiveVehicleFor(clock, currentBid: 22_800);
+        var bids = new BidService();
+        var market = new MarketService();
+
+        bids.PlaceBid(vehicle, 23_300, clock);
+        int afterMine = market.Apply(bids.Apply(vehicle)).BidCount;
+
+        var later = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 1, 0, TimeSpan.FromHours(-4)));
+        market.Tick([vehicle], bids.Snapshot(), later);
+        int afterTheirs = market.Apply(bids.Apply(vehicle)).BidCount;
+        Assert.True(afterTheirs > afterMine);
+
+        var composed = market.Apply(bids.Apply(vehicle));
+        bids.PlaceBid(composed, BidRules.MinNextBid(composed), later);
+
+        Assert.True(market.Apply(bids.Apply(vehicle)).BidCount >= afterTheirs,
+            "the bid count fell when the buyer retook the lead");
+    }
+
+    /// <summary>A vehicle whose auction is live under the supplied clock.</summary>
+    private static Vehicle LiveVehicleFor(AuctionClock clock, int? currentBid)
+    {
+        for (int i = 0; i < 500; i++)
+        {
+            string candidate = $"composed-{i}";
+            if (AuctionSchedule.StatusFor(candidate, clock) == AuctionStatus.Live)
+            {
+                return TestData.Vehicle(id: candidate, currentBid: currentBid);
+            }
+        }
+        throw new InvalidOperationException("no live id found, which the schedule makes impossible");
+    }
+    // #endregion composed
+
     private static readonly AuctionClock Now =
         TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
 

@@ -251,7 +251,39 @@ export default function App() {
     return () => window.clearInterval(id);
   }, [filters.status]);
 
-  const highBidderIds = useMemo(() => new Set(Object.keys(bids)), [bids]);
+  // Having bid is not the same as leading any more (ADR-027): the room may
+  // have answered. The server decides which it is; this only reads the answer.
+  // #region refresh-open-vehicle
+  // current_bid can be overlaid in the browser; min_next_bid cannot, because
+  // the increment tiers are domain rules and live only on the server. So when
+  // the room's figure on the open vehicle moves, the snapshot is refetched
+  // rather than patched. Without this the panel said "someone outbid you, the
+  // bid stands at $12,500" directly above "minimum $12,500", and submitting
+  // the number the page showed was rejected.
+  const openMarketAmount = selectedVehicle ? (bids[selectedVehicle.id]?.market_amount ?? null) : null;
+  useEffect(() => {
+    const id = selectedIdRef.current;
+    if (!id || openMarketAmount === null) return;
+    let cancelled = false;
+    void fetchVehicleById(id)
+      .then((fresh) => {
+        if (!cancelled && fresh && selectedIdRef.current === fresh.id) setSelectedVehicle(fresh);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [openMarketAmount]);
+  // #endregion refresh-open-vehicle
+
+  const highBidderIds = useMemo(
+    () => new Set(Object.entries(bids).filter(([, bid]) => !bid.outbid).map(([id]) => id)),
+    [bids]
+  );
+  const outbidIds = useMemo(
+    () => new Set(Object.entries(bids).filter(([, bid]) => bid.outbid).map(([id]) => id)),
+    [bids]
+  );
   const wonIds = useMemo(
     () => new Set(Object.entries(bids).filter(([, b]) => b.won_buy_now).map(([id]) => id)),
     [bids]
@@ -295,7 +327,12 @@ export default function App() {
   const lastView = useRef(viewKey);
   useEffect(() => {
     if (lastView.current === viewKey) return;
+    const arrivedByItself = deepLinkPending.current;
     lastView.current = viewKey;
+    // A deep-linked vehicle resolving is data arriving, not a view the visitor
+    // chose. Moving focus for it yanks a screen reader's cursor mid-sentence
+    // seconds into the page, and pulls a keyboard user off the skip link.
+    if (arrivedByItself) return;
     // preventScroll because the effect below already decides where the page
     // sits; without it the two fight and the detail opens part-scrolled.
     mainRef.current?.focus({ preventScroll: true });
@@ -327,8 +364,11 @@ export default function App() {
   // #endregion history
 
   useEffect(() => {
-    window.scrollTo(0, selectedVehicle ? 0 : listScrollY.current);
-  }, [selectedVehicle]);
+    // Admin is a view switch the same as a vehicle is. Left out of this, it
+    // opened at the list's scroll offset with its heading above the fold and
+    // focus on something the visitor could not see.
+    window.scrollTo(0, selectedVehicle || adminOpen ? 0 : listScrollY.current);
+  }, [selectedVehicle, adminOpen]);
 
   const openAdmin = () => {
     const params = filtersToSearchParams(filters, sort);
@@ -392,7 +432,11 @@ export default function App() {
     ? 'Admin panel'
     : selectedVehicle
       ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}, vehicle detail`
-      : 'Vehicle inventory';
+      : loadState === 'loading'
+        ? 'Loading inventory'
+        : loadState === 'error'
+          ? 'The inventory API could not be reached'
+          : 'Vehicle inventory';
   // #endregion announcement
 
   return (
@@ -492,6 +536,7 @@ export default function App() {
               now={now}
               onBack={backToInventory}
               isHighBidder={highBidderIds.has(selected.id)}
+              isOutbid={outbidIds.has(selected.id)}
               wonBuyNow={wonIds.has(selected.id)}
               onPlaceBid={handlePlaceBid}
               onBuyNow={handleBuyNow}
@@ -531,6 +576,7 @@ export default function App() {
                 now={now}
                 onSelect={openVehicle}
                 highBidderIds={highBidderIds}
+                outbidIds={outbidIds}
                 wonIds={wonIds}
                 onClearFilters={clearFilters}
               />

@@ -21,6 +21,10 @@ export default defineConfig({
   webServer: [
     {
       command: 'npm run api',
+      // The simulated room waits twenty seconds before answering a bid
+      // (ADR-027). Zero here so the outbid test watches a lead change hands
+      // instead of watching a clock. Nothing else sets this.
+      env: { Market__GraceSeconds: '0' },
       url: 'http://localhost:5210/api/facets',
       reuseExistingServer: true,
       timeout: 120_000,

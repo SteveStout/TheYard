@@ -56,6 +56,13 @@
   border-radius: var(--radius-full);
 }
 
+/* The same chip in the losing colour. Danger rather than warning because
+   being outbid is a thing that already happened, not a thing to watch. */
+.outbid {
+  composes: highBidder;
+  background: var(--color-danger);
+}
+
 .body {
   display: flex;
   flex-direction: column;

@@ -55,6 +55,7 @@ export type DocKey =
   | 'adrTelemetry'
   | 'adrSearch'
   | 'adrKeyboard'
+  | 'adrBidders'
   | 'architecture'
   | 'style';
 
@@ -108,6 +109,7 @@ export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: strin
   adrTelemetry: { title: 'ADR: Telemetry', menuLabel: 'ADR: Telemetry', url: '/api/docs/adr-telemetry', kind: 'adr' },
   adrSearch: { title: 'ADR: The search index', menuLabel: 'ADR: The search index', url: '/api/docs/adr-search', kind: 'adr' },
   adrKeyboard: { title: 'ADR: Keyboard and screen reader', menuLabel: 'ADR: Keyboard access', url: '/api/docs/adr-keyboard', kind: 'adr' },
+  adrBidders: { title: 'ADR: Competing bidders', menuLabel: 'ADR: Competing bidders', url: '/api/docs/adr-bidders', kind: 'adr' },
 };
 // #endregion docs-record
 
@@ -162,6 +164,7 @@ export const MENUS: Record<MenuVariant, { label: string; items: MenuEntry[] }> =
       { key: 'adrTelemetry', sub: true },
       { key: 'adrSearch', sub: true },
       { key: 'adrKeyboard', sub: true },
+      { key: 'adrBidders', sub: true },
       { key: 'adrPhone', sub: true },
       { key: 'adrChangelog', sub: true },
       { key: 'adrSidebar', sub: true },

@@ -12,13 +12,15 @@ interface BidPanelProps {
   vehicle: Vehicle;
   now: number;
   isHighBidder: boolean;
+  /** The simulated room has bid past the buyer here (ADR-027). */
+  isOutbid: boolean;
   wonBuyNow: boolean;
   /** Bids are validated by the API; these resolve to its verdict. */
   onPlaceBid: (amount: number) => Promise<BidOutcome>;
   onBuyNow: () => Promise<BidOutcome>;
 }
 
-export function BidPanel({ vehicle, now, isHighBidder, wonBuyNow, onPlaceBid, onBuyNow }: BidPanelProps) {
+export function BidPanel({ vehicle, now, isHighBidder, isOutbid, wonBuyNow, onPlaceBid, onBuyNow }: BidPanelProps) {
   const [amountInput, setAmountInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -93,7 +95,9 @@ export function BidPanel({ vehicle, now, isHighBidder, wonBuyNow, onPlaceBid, on
             ? `You won this auction at ${formatCurrency(currentPrice(vehicle))}.`
             : isHighBidder
               ? 'The auction ended below reserve, so the vehicle was not sold.'
-              : 'This auction has ended.'}
+              : isOutbid
+                ? 'This auction ended with someone else ahead of you.'
+                : 'This auction has ended.'}
         </p>
       )}
 
@@ -105,11 +109,22 @@ export function BidPanel({ vehicle, now, isHighBidder, wonBuyNow, onPlaceBid, on
 
       {status === 'live' && (
         <>
+          {/* #region outbid */}
+          {/* The two halves of the same sentence (ADR-027). role="status" on
+              both, so a screen reader is told when the lead changes hands
+              rather than only seeing it. */}
           {isHighBidder && (
             <p className={styles.highBidder} role="status">
               You're the high bidder at {formatCurrency(currentPrice(vehicle))}
             </p>
           )}
+
+          {isOutbid && (
+            <p className={styles.outbid} role="status" data-testid="outbid-notice">
+              Someone outbid you. The bid stands at {formatCurrency(currentPrice(vehicle))}.
+            </p>
+          )}
+          {/* #endregion outbid */}
 
           <form className={styles.form} onSubmit={submitBid}>
             <label className={styles.inputLabel} htmlFor="bid-amount">

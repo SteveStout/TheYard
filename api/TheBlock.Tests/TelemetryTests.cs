@@ -36,7 +36,7 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task An_unconfigured_reader_says_so_instead_of_reaching_the_network()
     {
-        var reader = new TelemetryReader(appId: "", clientId: "");
+        var reader = new TelemetryReader(appId: "", clientId: "", enabled: false);
 
         Assert.False(reader.Configured);
         // Awaited, but nothing is awaited on the wire: an empty app id
@@ -51,8 +51,20 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
     [Fact]
     public void A_configured_reader_reports_itself_configured()
     {
-        var reader = new TelemetryReader("6ff89351-7fcc-4a41-8238-db65c5903c36", "some-client-id");
+        var reader = new TelemetryReader("6ff89351-7fcc-4a41-8238-db65c5903c36", "some-client-id", enabled: true);
         Assert.True(reader.Configured);
+    }
+
+    [Fact]
+    public void An_app_id_alone_does_not_make_a_reader_configured()
+    {
+        // The app id has a default at the composition root, so reading it
+        // alone made Configured always true, the unconfigured path dead code,
+        // and a local request an eight-second wait on Azure's metadata
+        // endpoint. The connection string is the evidence; the app id is not.
+        var reader = new TelemetryReader("6ff89351-7fcc-4a41-8238-db65c5903c36", "client", enabled: false);
+
+        Assert.False(reader.Configured);
     }
 
     [Fact]
