@@ -6,6 +6,9 @@
 name: Deploy
 
 # #region deploy-trigger
+# Deploy fires only when CI has already gone green on main, never on a push
+# directly. workflow_run gives that ordering for free, and the job below checks
+# the conclusion, because the event fires on failure too.
 on:
   workflow_run:
     workflows: ["CI"]
@@ -86,6 +89,10 @@ jobs:
           docker push "$IMAGE"
 
       # #region roll
+      # The image tag is the only thing that changes between rolls, so the
+      # template is rewritten by one sed and then checked before Azure sees it.
+      # A silent no-match would redeploy the previous image and look like a
+      # success.
       - name: Roll the container group
         run: |
           # Only the value line is rewritten; the header comment keeps its placeholder text.
@@ -96,10 +103,10 @@ jobs:
 
       # #endregion roll
       # #region verify
-              # A deploy is not done when Azure returns; it is done when the new
-              # build answers. This waits for the version it just built, at the
-              # origin and then at the domain, and fails the run if it never
-              # appears, so a bad roll cannot be reported as a good one.
+      # A deploy is not done when Azure returns; it is done when the new build
+      # answers. This waits for the version it just built, at the origin and then
+      # at the domain, and fails the run if it never appears, so a bad roll
+      # cannot be reported as a good one.
       - name: Verify
         run: |
           # The roll restarts the group: wait for the NEW build to answer at the origin.

@@ -14,6 +14,12 @@ using TheBlock.Data;
 // through Vite's /api proxy, so no CORS is needed.
 
 #region composition
+// The composition root: what is wired, not how each piece works. Every
+// registration is a singleton because the dataset is loaded once and shared;
+// InventoryService holds it in a Lazy, so a scoped registration would expand
+// 100,000 records per request. The source is built by decoration, a synthetic
+// scale-up wrapped around the file reader, which is the onion paying for
+// itself (ADR: Program.cs, explained).
 var builder = WebApplication.CreateBuilder(args);
 
 string contentRoot = builder.Environment.ContentRootPath;
@@ -200,10 +206,17 @@ app.MapGet("/api/docs/resume", () =>
 // ---------------------------------------------------------------------------
 
 #region version-endpoint
+// Read once at startup, not per request: these are baked into the image and
+// cannot change while the process lives (ADR-005).
 app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, commit = buildCommit }));
 #endregion version-endpoint
 
 #region bid-handling
+// One local function behind both bid endpoints, answering three questions in
+// order: is the clock anchor valid, does the vehicle exist, does the domain
+// accept the action. The order matters, because a bad anchor would make the
+// domain's answer meaningless. The status codes are the contract the browser
+// relies on (ADR-023).
 IResult HandleBid(
     InventoryService inventory,
     BidService bids,
@@ -249,6 +262,10 @@ var azureSelf = new AzureSelf(
         ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
 
 #region error-log
+// Middleware, so it sees every response including the ones no endpoint
+// returned. It records and rethrows rather than handling: the ProblemDetails
+// handler registered earlier owns the response, this only owns the record
+// (ADR-010, ADR-023).
 app.Use(async (context, next) =>
 {
     try
@@ -268,6 +285,9 @@ app.Use(async (context, next) =>
 #endregion error-log
 
 #region health-checks
+// Each probe is timed and each answer is a value, never an exception: a
+// health endpoint that throws tells an orchestrator nothing. The checks are
+// deliberately about the files this app cannot run without.
 HealthCheckEntry[] RunChecks()
 {
     // Each probe is timed: the Admin tab shows the milliseconds beside the check,
@@ -288,6 +308,11 @@ HealthCheckEntry[] RunChecks()
 #endregion health-checks
 
 #region probes
+// Three endpoints, three audiences. /healthz is the container's HEALTHCHECK
+// and answers only "the process is up". /readyz is the deploy's Verify step
+// and answers 503 until the files are in place. /api/health is the Admin tab
+// and carries the timings. A process can be alive and not yet ready, and the
+// orchestrator treats those differently (ADR-010).
 app.MapGet("/healthz", () => Results.Text("ok"));
 
 app.MapGet("/readyz", () =>
@@ -360,6 +385,10 @@ app.Use(async (context, next) =>
 #endregion cache-headers
 
 #region static-files
+// Registered last on purpose. Middleware runs in registration order, so the
+// cache rules above must already be in place, and the SPA fallback must be
+// the last word: it answers app routes with index.html, while an address that
+// looks like a file stays a 404 rather than a page dressed as a script.
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
