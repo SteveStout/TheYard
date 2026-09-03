@@ -42,6 +42,9 @@ jobs:
       # The live footer read 1.0.0.11 when this workflow was written (2026-09-02).
       # Displayed version = 1.0.0.(OFFSET + run number); see ADR-005 and ADR-009.
       OFFSET: 11
+      # The Application Insights component this deploy reads the connection
+      # string from. The name is not a secret; the string it returns is.
+      AI_NAME: appi-theyard-ss
     steps:
       # #region compute-version
       # Pin to the exact commit CI tested, not wherever main has moved since.
@@ -98,6 +101,42 @@ jobs:
           # Only the value line is rewritten; the header comment keeps its placeholder text.
           sed "s|^\(\s*image: \)__IMAGE__$|\1$IMAGE|" infra/aci-theyard.yaml > "$RUNNER_TEMP/aci.yaml"
           grep -q "^\s*image: $IMAGE$" "$RUNNER_TEMP/aci.yaml"
+          # The Application Insights connection string is an ingestion key, so it
+          # lives only in Azure: read it here with the credential this job already
+          # holds, mask it in the log, and substitute it in python rather than sed
+          # because the value carries characters a shell would treat as syntax.
+          # az resource show is core CLI; az monitor app-insights would pull an
+          # extension at run time, which is a second thing that can fail a deploy.
+          # Telemetry is an addition, not a dependency. If the read fails, the
+          # placeholder stays, the app reads anything starting with __ as "no
+          # telemetry", and the site still ships: a deploy pipeline held hostage
+          # to its own observability is worse than a quiet hour of no traces.
+          CONN=$(az resource show -g "$RG" -n "$AI_NAME" \
+            --resource-type "Microsoft.Insights/components" \
+            --query "properties.ConnectionString" -o tsv 2>/dev/null || true)
+          if [ -z "$CONN" ]; then
+            echo "::warning::Application Insights was unreadable; this roll ships with telemetry off"
+            CONN="__APPINSIGHTS_CONNECTION_STRING__"
+          else
+            echo "::add-mask::$CONN"
+          fi
+          CONN="$CONN" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
+          import os, sys
+          path = sys.argv[1]
+          text = open(path, encoding="utf-8").read()
+          placeholder = "__APPINSIGHTS_CONNECTION_STRING__"
+          if placeholder not in text:
+              sys.exit("the connection string placeholder is missing from the container spec")
+          open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["CONN"]))
+          PY
+          if [ "$CONN" = "__APPINSIGHTS_CONNECTION_STRING__" ]; then
+            echo "the container spec keeps its placeholder: telemetry is off for this roll"
+          elif grep -q "__APPINSIGHTS_CONNECTION_STRING__" "$RUNNER_TEMP/aci.yaml"; then
+            echo "the placeholder survived the substitution"
+            exit 1
+          else
+            echo "the container spec carries the connection string (value masked)"
+          fi
           az container create -g "$RG" -f "$RUNNER_TEMP/aci.yaml" \
             --query "{state:provisioningState,image:containers[0].image,fqdn:ipAddress.fqdn}" -o json
 

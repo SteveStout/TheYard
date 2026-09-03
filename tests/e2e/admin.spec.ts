@@ -10,6 +10,10 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   expect(await page.getByTestId('check-duration').count()).toBeGreaterThanOrEqual(3);
   await expect(page.getByTestId('errors-card')).toBeVisible();
   await expect(page.getByTestId('azure-card')).toBeVisible();
+  // Telemetry is wired at deploy time, so a local run must render the card's
+  // "not configured" state rather than an empty box or a crash (ADR-024).
+  await expect(page.getByTestId('telemetry-card')).toBeVisible();
+  await expect(page.getByTestId('telemetry-card')).toContainText('Traffic, last hour');
   await page.getByRole('button', { name: 'Back to inventory' }).click();
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
 });

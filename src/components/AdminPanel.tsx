@@ -11,6 +11,18 @@ type Health = {
 };
 type ErrorEntry = { at: string; path: string; status: number; message: string };
 type AzureEvent = { name: string; count: number; last_at: string; message: string };
+type TelemetrySummary = { total: number; failed: number; p50_ms: number | null; p95_ms: number | null };
+type TelemetryRoute = { name: string; calls: number; avg_ms: number | null };
+type TelemetryException = { type: string; method: string; count: number; last_at: string };
+type Telemetry = {
+  configured: boolean;
+  available?: boolean;
+  note?: string;
+  window?: string;
+  summary?: TelemetrySummary;
+  slowest?: TelemetryRoute[];
+  exceptions?: TelemetryException[];
+};
 type AzureState = {
   available: boolean;
   reason?: string;
@@ -45,6 +57,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
   const [health, setHealth] = useState<Fetched<Health>>(null);
   const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
   const [azure, setAzure] = useState<Fetched<AzureState>>(null);
+  const [telemetry, setTelemetry] = useState<Fetched<Telemetry>>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -63,6 +76,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
     void grab<Health>('/api/health', setHealth);
     void grab<ErrorEntry[]>('/api/errors', setErrors);
     void grab<AzureState>('/api/admin/azure', setAzure);
+    void grab<Telemetry>('/api/admin/telemetry', setTelemetry);
     return () => { live = false; };
   }, [tick]);
 
@@ -83,8 +97,10 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
       </div>
       <p className={styles.blurb}>
         The running system reporting on itself: application health, what Azure
-        says about the container, and recent server errors. Refreshes every 30
-        seconds. Public on purpose; the reasoning is in the Best Practices menu.
+        says about the container, the last hour of traffic as Application
+        Insights recorded it, and recent errors from both the server and the
+        browser. Refreshes every 30 seconds. Public on purpose; the reasoning
+        is in the Best Practices menu.
       </p>
       <div className={styles.grid}>
         {/* #region health-card */}
@@ -164,16 +180,83 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           )}
         </article>
 
+        {/* #region telemetry-card */}
+        {/* Application Insights, read back through the container's own identity
+            (ADR-024). Every state the reader can answer with is rendered here:
+            not configured (a local run), configured but unreadable, and the
+            happy path. A telemetry panel that can break the page it reports on
+            would be worse than no panel. */}
+        <article className={styles.card} data-testid="telemetry-card">
+          <h2 className={styles.cardTitle}>Traffic, last hour</h2>
+          {telemetry === null ? (
+            <p className={styles.muted}>Loading…</p>
+          ) : telemetry === 'failed' ? (
+            failed('the telemetry')
+          ) : !telemetry.configured || telemetry.available === false ? (
+            <p className={styles.muted} data-testid="telemetry-note">{telemetry.note}</p>
+          ) : (
+            <>
+              <div className={styles.statusRow}>
+                <span className={pill((telemetry.summary?.failed ?? 0) === 0)}>
+                  {telemetry.summary?.total ?? 0} request
+                  {(telemetry.summary?.total ?? 0) === 1 ? '' : 's'}
+                </span>
+                <span className={styles.muted}>
+                  {telemetry.summary?.failed ?? 0} failed
+                </span>
+                <span className={styles.mono}>
+                  p50 {telemetry.summary?.p50_ms ?? 0} ms
+                </span>
+                <span className={styles.mono}>
+                  p95 {telemetry.summary?.p95_ms ?? 0} ms
+                </span>
+              </div>
+              {telemetry.slowest && telemetry.slowest.length > 0 && (
+                <p className={styles.muted}>Slowest routes</p>
+              )}
+              <ul className={styles.checkList}>
+                {telemetry.slowest?.map((route) => (
+                  <li key={route.name} className={styles.checkRow} data-testid="telemetry-route">
+                    <span className={styles.mono}>{route.name}</span>
+                    <span className={styles.duration}>{route.avg_ms} ms</span>
+                    <span className={styles.muted}>
+                      {route.calls} call{route.calls === 1 ? '' : 's'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {telemetry.exceptions && telemetry.exceptions.length > 0 && (
+                <>
+                  <p className={styles.muted}>Exceptions</p>
+                  <ul className={styles.errorList}>
+                    {telemetry.exceptions.map((entry, index) => (
+                      <li key={index} className={styles.errorRow} data-testid="telemetry-exception">
+                        <span className={styles.mono}>{entry.type}</span>
+                        <span className={styles.muted}>{entry.method}</span>
+                        <span className={styles.muted}>
+                          {entry.count} time{entry.count === 1 ? '' : 's'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </>
+          )}
+        </article>
+        {/* #endregion telemetry-card */}
+
         <article className={styles.card} data-testid="errors-card">
-          <h2 className={styles.cardTitle}>Recent server errors</h2>
+          <h2 className={styles.cardTitle}>Recent errors</h2>
           {errors === null ? (
             <p className={styles.muted}>Loading…</p>
           ) : errors === 'failed' ? (
             failed('the error list')
           ) : errors.length === 0 ? (
             <p className={styles.muted}>
-              None recorded since the container started. The buffer holds the
-              last 50 and resets on every deploy.
+              None recorded since the container started, from the server or the
+              browser. The buffer holds the last 50 and resets on every deploy;
+              Application Insights keeps the durable copy (ADR: Telemetry).
             </p>
           ) : (
             <ul className={styles.errorList}>

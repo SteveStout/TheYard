@@ -27,7 +27,7 @@ footer displays exactly that.
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
   walk the code.
-- **Decisions get written down.** Twenty-three ADRs record why the architecture is
+- **Decisions get written down.** Twenty-four ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -41,6 +41,11 @@ footer displays exactly that.
   structured JSON; a React error boundary turns a render crash into a page
   with a way out, and reports it to the same list the Admin tab reads.
   Recorded in ADR: Error handling.
+- **Telemetry outlives the container.** Every request, dependency and
+  exception goes to Application Insights, browser errors included, and the
+  Admin tab reads the last hour back with the container's own identity. The
+  ingestion key is never in the repository: the deploy reads it from Azure at
+  roll time. Recorded in ADR: Telemetry.
 - **The system reports on itself.** The Admin tab in the sidebar shows live
   health checks, Azure's own view of the container, and recent server
   errors, public on purpose. Recorded in ADR: Observability.

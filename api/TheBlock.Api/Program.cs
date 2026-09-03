@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.FileProviders;
 using TheBlock.Api;
@@ -72,6 +73,29 @@ builder.Services.AddHttpLogging(options =>
 });
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = false);
 #endregion problem-details
+
+#region telemetry
+// Application Insights (ADR-024). The connection string is an ingestion key,
+// so it is never in the repository: the deploy reads it from Azure at roll
+// time and passes it to the container as an environment variable. Absent, as
+// it is locally and in every test, this block does nothing and the app runs
+// exactly as before, which is why no test needs a fake for it.
+string? telemetryConnection = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+bool telemetryOn = !string.IsNullOrWhiteSpace(telemetryConnection)
+    && !telemetryConnection.StartsWith("__", StringComparison.Ordinal);
+if (telemetryOn)
+{
+    builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
+    {
+        options.ConnectionString = telemetryConnection;
+    });
+}
+// The component's app id is public (it is not a key) and is what the Admin
+// tab queries with the container's managed identity.
+var telemetry = new TelemetryReader(
+    builder.Configuration["Azure:AppInsightsAppId"] ?? "6ff89351-7fcc-4a41-8238-db65c5903c36",
+    builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5");
+#endregion telemetry
 
 var app = builder.Build();
 
@@ -339,7 +363,7 @@ app.MapGet("/api/errors", () => Results.Json(errorLog.Snapshot(), wireFormat));
 // crash caught by the boundary, or an unhandled rejection, POSTs here and
 // shows up on the Admin tab's Recent errors card tagged with the page the
 // visitor was on. Status 0 marks the entry as coming from the browser.
-app.MapPost("/api/errors/client", (ClientErrorReport report) =>
+app.MapPost("/api/errors/client", (ClientErrorReport report, ILoggerFactory loggers) =>
 {
     if (string.IsNullOrWhiteSpace(report.Message))
     {
@@ -351,11 +375,25 @@ app.MapPost("/api/errors/client", (ClientErrorReport report) =>
     string message = report.Message.Length > 500 ? report.Message[..500] : report.Message;
     string where = string.IsNullOrWhiteSpace(report.Path) ? "(browser)" : report.Path;
     errorLog.Record(where, 0, "browser: " + message);
+    // The same report goes to Application Insights as a structured log, so a
+    // browser error is searchable beside the server's own (ADR-024). Logging
+    // rather than posting from the browser keeps the page free of a second
+    // external script and keeps the ingestion key server-side.
+    loggers.CreateLogger("TheBlock.Browser").LogError(
+        "Browser error on {Path}: {BrowserMessage} {BrowserStack}", where, message, report.Stack ?? "");
     return Results.NoContent();
 });
 #endregion client-errors
 
 app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
+
+#region telemetry-endpoint
+// The last hour as Application Insights has it, for the Admin tab (ADR-024).
+// Answers a shape the card can render even when telemetry is off or the query
+// fails, because a panel that reports on the system must not be able to break
+// the page it reports from.
+app.MapGet("/api/admin/telemetry", async () => Results.Json(await telemetry.GetRecentAsync(), wireFormat));
+#endregion telemetry-endpoint
 
 #region cache-headers
 // Cache rules (ADR-015), from the shape of the address. Vite names every

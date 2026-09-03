@@ -1,6 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <!-- Azure Monitor's OpenTelemetry distro: requests, dependencies and
+         exceptions to Application Insights with one call in Program.cs, and
+         nothing at all when the connection string is absent (ADR-024). -->
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TheBlock.Application\TheBlock.Application.csproj" />
     <ProjectReference Include="..\TheBlock.Infrastructure\TheBlock.Infrastructure.csproj" />
   </ItemGroup>

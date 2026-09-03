@@ -5,6 +5,7 @@ footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Best Practices menu.
 
+- **1.0.0.34** (2026-09-03): Application Insights is wired: every request, dependency and exception the API handles goes to it, browser errors ride the endpoint that already existed, and the Admin tab reads the last hour back with the container's own identity, with the ingestion key read from Azure at roll time and never stored in the repository (ADR-024).
 - **1.0.0.33** (2026-09-03): The changelog was corrected after two commits shipped in one deploy run: they became one version, not two, and this line records the fix (ADR-012).
 - **1.0.0.32** (2026-09-02): Every served document was audited against the code in six classes and the twelve claims that had drifted were corrected, the largest being a record still describing the old 400 body, and the nine teaching comments a staging bug had dropped were put back (ADR-017 addendum).
 - **1.0.0.31** (2026-09-02): Every code sample a record shows now carries a teaching comment explaining why it is written that way, so a reader meeting the pattern for the first time learns from it (ADR-006 addendum).

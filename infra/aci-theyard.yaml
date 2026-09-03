@@ -24,7 +24,14 @@ properties:
     properties:
       configMap:
         keyValuePairs: {}
-      environmentVariables: []
+      environmentVariables:
+      # Filled in at roll time by the deploy workflow, which reads the value
+      # from Azure with the credential it already has (ADR-024). The literal
+      # placeholder below is what a manual rollback would set, and the app
+      # treats anything starting with __ as "no telemetry", so a rollback runs
+      # clean rather than sending to nowhere.
+      - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+        secureValue: __APPINSIGHTS_CONNECTION_STRING__
       image: __IMAGE__
       ports:
       - port: 8080

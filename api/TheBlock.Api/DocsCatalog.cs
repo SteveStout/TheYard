@@ -46,6 +46,7 @@ public static class DocsCatalog
         ["adr-tests"] = "docs/ADR-021-tests-explained.md",
         ["adr-grouping"] = "docs/ADR-022-app-architecture-group.md",
         ["adr-errors"] = "docs/ADR-023-error-handling.md",
+        ["adr-telemetry"] = "docs/ADR-024-telemetry.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };
