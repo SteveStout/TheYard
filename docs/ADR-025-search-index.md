@@ -79,6 +79,32 @@ The test asserts only that the indexed path is not slower. A tight timing
 assertion on a shared build agent fails for reasons unrelated to the code, and
 a suite people learn to re-run is worse than no suite.
 
+### And on the live container, nothing changed
+
+Worth writing down because it is the part that would be easy to leave out. The
+same five queries were timed against the running site before and after, warm
+both times, twelve calls each:
+
+| query | 1.0.0.34 | 1.0.0.35 |
+| --- | --- | --- |
+| `q=ford` | 236 ms | 228 ms |
+| `q=ford ontario clean` | 239 ms | 231 ms |
+| `q=live` | 256 ms | 246 ms |
+| no query | 201 ms | 209 ms |
+| `make=Ford` | 171 ms | 193 ms |
+
+That is noise, in both directions. On one vCPU behind a proxy, twenty
+milliseconds of scan is not what a request costs; TLS, the hop through the
+edge, ordering the matches and serialising the page are. The change is still
+right, because the work it removes is work that never needed doing and the
+cost of not doing it grows with the dataset. But a record claiming the site
+got faster would be claiming something these numbers do not show.
+
+The first pass at this measurement did show a large regression, which was an
+artefact: the 1.0.0.35 numbers were taken ten seconds after the container
+rolled, against 1.0.0.34 numbers taken twelve minutes into its life. A cold
+JIT reads as a slow release. The table above is warm on both sides.
+
 ## In the code
 
 The index, and the text it holds (`api/TheBlock.Domain/VehicleSearchIndex.cs`):
