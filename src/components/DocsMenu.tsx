@@ -35,6 +35,7 @@ export type DocKey =
   | 'cicd'
   | 'adrPipeline'
   | 'practices'
+  | 'security'
   | 'adrVersioning'
   | 'adrDocs'
   | 'adrObservability'
@@ -185,6 +186,12 @@ export const DOCS: Record<
     title: 'Best Practices',
     menuLabel: 'Best practices overview',
     url: '/api/docs/practices',
+    kind: 'overview',
+  },
+  security: {
+    title: 'Security',
+    menuLabel: 'Security',
+    url: '/api/docs/security',
     kind: 'overview',
   },
   adrVersioning: {
@@ -556,7 +563,7 @@ export const MENUS: Record<
   },
   practices: {
     label: 'Best Practices',
-    items: [{ key: 'practices' }],
+    items: [{ key: 'practices' }, { key: 'security' }],
   },
   // #region records-menu
   /**
