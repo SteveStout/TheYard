@@ -216,6 +216,26 @@ if (database.Ready)
             options.Password.RequireUppercase = false;
             options.Password.RequireDigit = false;
             options.User.RequireUniqueEmail = true;
+            // #region lockout
+            // Five wrong passwords buys five minutes off.
+            //
+            // Without this, and without it there was nothing, POST /api/auth/login
+            // is an unmetered password oracle against real accounts: the endpoint
+            // is public, there is no throttle in front of it, and every attempt
+            // costs an attacker one request. Five and five is the usual shape and
+            // the reason it works is arithmetic rather than strength: it turns
+            // thousands of guesses a minute into twelve an hour, per account,
+            // which is the difference between a wordlist finishing and not.
+            //
+            // The refusal after a lockout says the same sentence as a wrong
+            // password, deliberately. A distinct "this account is locked" is a
+            // reply that confirms the address is registered here, and the login
+            // endpoint already goes out of its way not to be that
+            // (ADR: A password guess should cost something).
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            options.Lockout.AllowedForNewUsers = true;
+            // #endregion lockout
         })
         .AddEntityFrameworkStores<YardDbContext>();
 }
@@ -1012,14 +1032,38 @@ app.MapPost("/api/auth/login", async (
     // One message for "no such account" and for "wrong password", because two
     // messages are an endpoint that tells a stranger which email addresses are
     // registered here.
-    if (user is null
-        || request.Password is null
-        || !await users.CheckPasswordAsync(user, request.Password))
+    // One sentence for every way this can fail, including a locked account. See
+    // the lockout options: a reply that distinguishes them is a reply that tells
+    // a stranger which addresses are registered here.
+    var refused = Results.Problem(
+        detail: "That email address and password do not match an account.",
+        statusCode: 401, title: "Not signed in");
+
+    if (user is null || request.Password is null)
     {
-        return Results.Problem(
-            detail: "That email address and password do not match an account.",
-            statusCode: 401, title: "Not signed in");
+        return refused;
     }
+
+    // Asked before the password is checked, so a locked account does not keep
+    // answering guesses, and asked through UserManager rather than by reading
+    // the column, because that is what knows the window has expired.
+    if (await users.IsLockedOutAsync(user))
+    {
+        return refused;
+    }
+
+    if (!await users.CheckPasswordAsync(user, request.Password))
+    {
+        // The count is the whole mechanism. CheckPasswordAsync on its own does
+        // not touch it, which is why this endpoint had a lockout policy on paper
+        // and none in practice for as long as it has existed.
+        await users.AccessFailedAsync(user);
+        return refused;
+    }
+
+    // A success clears the count, or five wrong guesses spread over a week would
+    // eventually lock somebody out of their own account.
+    await users.ResetAccessFailedCountAsync(user);
 
     http.Response.Cookies.Append(
         TokenIssuer.CookieName,

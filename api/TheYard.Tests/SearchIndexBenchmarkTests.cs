@@ -50,14 +50,26 @@ public class SearchIndexBenchmarkTests(ITestOutputHelper output)
         Run(filter.Compile(Now), vehicles);
         Run(filter.Compile(Now, index), vehicles);
 
-        // Best of five rather than the median. Both paths do identical work on
-        // identical data; what varies between runs is how often the operating
-        // system took the core away, and that only ever adds time. The fastest
-        // run is the closest either path gets to the work itself.
-        long without = Fastest(filter.Compile(Now), vehicles);
-        long with = Fastest(filter.Compile(Now, index), vehicles);
+        // Best of five each, and the two paths take turns.
+        //
+        // Best of five because both paths do identical work on identical data;
+        // what varies between runs is how often the operating system took the
+        // core away, and that only ever adds time, so the fastest run is the
+        // closest either path gets to the work itself.
+        //
+        // Turns because the first version measured one path five times and then
+        // the other five times, which compares two numbers taken at two
+        // different moments on a shared machine. It failed at 243 ms against
+        // 115 ms with eight dotnet processes on eight cores, and passed six
+        // times out of six alone, five minutes later, unchanged. Alternating
+        // means a busy stretch lands on both paths rather than on whichever one
+        // happened to be running through it. The threshold was not touched: a
+        // measurement that is unfair is not fixed by widening what it allows
+        // (ADR: The exemption that hid a contrast failure).
 
-        output.WriteLine($"{Rows:N0} rows, query \"ford\", median of 5 scans:");
+        var (without, with) = FastestByTurns(filter.Compile(Now), filter.Compile(Now, index), vehicles);
+
+        output.WriteLine($"{Rows:N0} rows, query \"ford\", best of 5 alternating scans:");
         output.WriteLine($"  text rebuilt per row: {without} ms");
         output.WriteLine($"  index:                {with} ms");
         output.WriteLine($"  difference:           {without - with} ms");
@@ -88,14 +100,21 @@ public class SearchIndexBenchmarkTests(ITestOutputHelper output)
             Assert.Equal(VehicleSearchIndex.TextFor(vehicle), index.For(vehicle)));
     }
 
-    private static long Fastest(Func<Vehicle, bool> predicate, IReadOnlyList<Vehicle> vehicles)
+    /// <summary>
+    /// Five rounds, both paths in each, so the machine's mood is shared out
+    /// between them rather than landing on one.
+    /// </summary>
+    private static (long Without, long With) FastestByTurns(
+        Func<Vehicle, bool> plain, Func<Vehicle, bool> indexed, IReadOnlyList<Vehicle> vehicles)
     {
-        long best = long.MaxValue;
-        for (int i = 0; i < 5; i++)
+        long bestPlain = long.MaxValue;
+        long bestIndexed = long.MaxValue;
+        for (int round = 0; round < 5; round++)
         {
-            best = Math.Min(best, Run(predicate, vehicles));
+            bestPlain = Math.Min(bestPlain, Run(plain, vehicles));
+            bestIndexed = Math.Min(bestIndexed, Run(indexed, vehicles));
         }
-        return best;
+        return (bestPlain, bestIndexed);
     }
 
     private static long Run(Func<Vehicle, bool> predicate, IReadOnlyList<Vehicle> vehicles)

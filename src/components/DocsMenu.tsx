@@ -78,6 +78,7 @@ export type DocKey =
   | 'adrSecondManifest'
   | 'adrReset'
   | 'adrRoomAccount'
+  | 'adrLockout'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -497,6 +498,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '049',
   },
+  adrLockout: {
+    title: 'ADR: A password guess should cost something',
+    menuLabel: 'ADR: A password guess should cost',
+    url: '/api/docs/adr-lockout',
+    kind: 'adr',
+    number: '050',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -602,6 +610,7 @@ export const MENUS: Record<
       { key: 'adrSecondManifest' },
       { key: 'adrReset' },
       { key: 'adrRoomAccount' },
+      { key: 'adrLockout' },
     ],
   },
   // #endregion records-menu

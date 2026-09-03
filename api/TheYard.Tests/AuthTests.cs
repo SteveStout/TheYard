@@ -118,6 +118,69 @@ public class AuthTests : IDisposable
         Assert.DoesNotContain("token", body, StringComparison.OrdinalIgnoreCase);
     }
 
+    // #region lockout
+    [Fact]
+    public async Task Five_wrong_passwords_lock_the_account_and_the_right_one_stops_working()
+    {
+        await using var api = Api();
+        var client = api.CreateClient();
+        string email = $"locked-{Guid.NewGuid():N}@example.com";
+        var registered = await client.PostAsJsonAsync(
+            "/api/auth/register", new { email, password = "correct horse battery" });
+        Assert.Equal(HttpStatusCode.OK, registered.StatusCode);
+
+        for (int attempt = 1; attempt <= 5; attempt++)
+        {
+            var wrong = await client.PostAsJsonAsync("/api/auth/login", new { email, password = "not it" });
+            Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);
+        }
+
+        // The real password, now refused. This is the assertion that proves the
+        // lockout is doing something: without it the sixth guess is as cheap as
+        // the first, and CheckPasswordAsync on its own never counts a failure.
+        var right = await client.PostAsJsonAsync(
+            "/api/auth/login", new { email, password = "correct horse battery" });
+        Assert.Equal(HttpStatusCode.Unauthorized, right.StatusCode);
+
+        // And it says the same thing it says to a wrong password, because a
+        // reply that distinguishes them tells a stranger the address is real.
+        Assert.Contains(
+            "do not match an account",
+            await right.Content.ReadAsStringAsync(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_correct_password_clears_the_count_before_it_reaches_the_limit()
+    {
+        await using var api = Api();
+        var client = api.CreateClient();
+        string email = $"nearly-{Guid.NewGuid():N}@example.com";
+        await client.PostAsJsonAsync("/api/auth/register", new { email, password = "correct horse battery" });
+
+        for (int attempt = 1; attempt <= 4; attempt++)
+        {
+            await client.PostAsJsonAsync("/api/auth/login", new { email, password = "not it" });
+        }
+
+        var right = await client.PostAsJsonAsync(
+            "/api/auth/login", new { email, password = "correct horse battery" });
+        Assert.Equal(HttpStatusCode.OK, right.StatusCode);
+
+        // Four more wrong guesses do not lock it, because the success reset the
+        // count. Without the reset, five wrong guesses spread over a week would
+        // eventually lock somebody out of their own account.
+        for (int attempt = 1; attempt <= 4; attempt++)
+        {
+            await client.PostAsJsonAsync("/api/auth/login", new { email, password = "not it" });
+        }
+
+        var again = await client.PostAsJsonAsync(
+            "/api/auth/login", new { email, password = "correct horse battery" });
+        Assert.Equal(HttpStatusCode.OK, again.StatusCode);
+    }
+    // #endregion lockout
+
     [Fact]
     public async Task Bidding_without_an_account_is_refused()
     {
