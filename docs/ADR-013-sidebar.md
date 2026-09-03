@@ -95,7 +95,7 @@ is where a hiring manager lands first. The rail keeps them one glance away.
 
 - Five menus became one panel; a new doc or section appears in the rail and
   the drawer from one line of data, as before.
-- Twenty-four end-to-end checks, five of them at phone size and five in
+- Twenty-five end-to-end checks, five of them at phone size and five in
   the new sidebar file. The desktop specs read simpler than they did, because a
   rail row is one click where a dropdown was two.
 - The header exists only below 1024 pixels now. Anything added to it later
@@ -134,7 +134,7 @@ The palette, read from this build
 ```
 
 Nothing moved: the rows, the icons, the docking line, the collapse and the
-drawer are as this record describes above, and the twenty-four end-to-end
+drawer are as this record describes above, and the end-to-end
 checks passed unchanged.
 
 ## Files

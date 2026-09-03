@@ -7,7 +7,7 @@ configuration file is for and why the source is laid out the way it is.
 
 ## Context
 
-The root of the repository holds a package.json with a dozen scripts and
+The root of the repository holds a package.json with eleven scripts and
 three runtime dependencies, an index.html, a vite.config.ts, three
 tsconfig files, and a playwright.config.ts. Under `src/` there is no
 router, no state library and no CSS framework. A newcomer used to larger

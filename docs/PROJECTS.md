@@ -72,7 +72,9 @@ React + TypeScript, deliberately thin. No business math runs in the browser:
   - `format.ts`: currency, odometer, countdown, and date formatting (one
     CURRENCY/LOCALE constant).
 - `styles/tokens.css`: every color, space, radius, type, and shadow token. The
-  navy-and-blue theme lives here, so a reskin is one file.
+  Urban slate palette lives here (ADR-016): a light gray ground, brown-gray
+  text, a slate-blue accent, every text and ground pair measured against WCAG
+  AA by a unit test. A reskin is one file.
 - `tests/e2e/` (repo root): Playwright smokes that prove the whole stack end to end.
 
 ### Its architecture

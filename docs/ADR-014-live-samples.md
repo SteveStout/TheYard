@@ -32,15 +32,18 @@ that file, read from inside the running image.
 - **The image carries the source.** The Dockerfile copies `src`,
   `.github/workflows`, and the API's `.cs`, `.csproj` and `.slnx` files
   into the runtime image beside the docs it already carried. Photos and the
-  built bundle were already there; the addition measured 279,121 bytes (273 KB) across
-  89 files, uncompressed, before Docker's layer compression.
+  built bundle were already there. The addition measured 279,121 bytes across
+  89 files when this was written; the whitelist has widened twice since (the
+  addenda below), and the image now carries 367,822 bytes across 119 files,
+  uncompressed, before Docker's layer compression.
 - **The whitelist is code, checked before any filesystem touch.** A path is
   allowed only when it is plain characters and forward slashes, has no
-  empty, dot, or parent segment, and starts under `src/`, `api/`, `infra/`,
-  or `.github/`. That is a string check. Only then does the expander resolve
+  empty, dot, or parent segment, and starts under one of the allowed roots
+  (`src/`, `api/`, `infra/`, `.github/` when this was written, plus `tests/`
+  and `edge/` since) or is one of the named root files listed in the first
+  addendum below. That is a string check. Only then does the expander resolve
   the full path, confirm it still sits inside the repo root, and read the
-  file. The test tree is deliberately outside the roots: the image does not
-  carry it, and a doc that wants a test points at it with a link.
+  file.
 - **The fallback is a sentence, never a 500.** A path off the roots, a
   missing file, a region that is not there, or a file that cannot be read
   renders one italic line beginning "Sample unavailable" with the reason.
@@ -81,8 +84,8 @@ The rejection cases the tests hold the whitelist to, read from this build
 
 The copy lines are in the
 [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile),
-which sits at the repo root outside the four roots, so it is linked rather
-than shown.
+which the first addendum below added to the whitelist, so other records now
+show it live.
 
 ## What this replaced
 
@@ -126,8 +129,8 @@ hour ago.
 
 ## Addendum, 2026-09-02: the whitelist widened for the references pass
 
-The four roots were not enough once every record was to show the files it
-decided: the Dockerfile, the edge, the end-to-end specs and the root
+The original four roots were not enough once every record was to show the
+files it decided: the Dockerfile, the edge, the end-to-end specs and the root
 configuration files sit outside them. The whitelist now also allows
 `tests/`, `edge/` and six named root files (`Dockerfile`, `netlify.toml`,
 `playwright.config.ts`, `vite.config.ts`, `package.json`, `index.html`),
@@ -144,8 +147,10 @@ comment marker, and the others are small enough that a region would be the
 whole file anyway. A live block may now say `region=*`, which renders the
 whole file with a link to its first line; the star can never collide with
 a real region because names are letters, digits, dots and dashes. The three
-tsconfig files joined the named root files, the image copies them, and the
-tests gained the whole-file case. The test itself is not shown here on
+tsconfig files joined the named root files, `.editorconfig` followed when
+the style rules were written down (ADR: App Architecture section), the image
+copies them all, and the tests gained the whole-file case. Ten named root
+files now, beside the six roots. The test itself is not shown here on
 purpose: its source spells out a live fence, and a record that showed it
 would fail the check that no fence is left in a served document.
 

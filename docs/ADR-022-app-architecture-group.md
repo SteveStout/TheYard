@@ -34,7 +34,7 @@ Architecture sits first in the sidebar, above Hosting, and holds
 everything about how the application is built:
 
 - Architecture overview, the new `docs/ARCHITECTURE.md`: the layers and
-  which way they point, the six rules that keep them, a table of where a
+  which way they point, the seven rules that keep them, a table of where a
   change goes, and what is deliberately absent.
 - Coding and commenting style, the new `docs/STYLE.md`: naming, layering,
   the why-and-how comment rule with an example of a comment that earns its
@@ -48,10 +48,10 @@ place to file its internals. The resume link stays pinned below the
 sections, where it already was.
 
 **Best Practices keeps the decisions about how the work is done**:
-versioning, documentation and testing, observability, the phone header,
-the changelog, the sidebar, live samples, cache headers, the palette, the
-staff review, diagram pages, and this record. Eleven entries about
-practice, none about the code's shape.
+versioning, documentation and testing, observability, error handling, the
+phone header, the changelog, the sidebar, live samples, cache headers, the
+palette, the staff review, diagram pages, and this record. Every entry is
+about practice, none about the code's shape.
 
 **`.editorconfig` does the mechanical half.** Indentation, line endings,
 using order, `var` usage, braces, unused locals: a tool applies those on

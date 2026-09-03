@@ -7,7 +7,7 @@ the way it is.
 
 ## Context
 
-Program.cs is the one file that starts the API. A newcomer sees three
+Program.cs is the one file that starts the API. A newcomer sees four
 hundred lines with no class and no `Main`, a block of `builder.Services`
 calls, a run of `app.MapGet` calls, two `app.Use` blocks, and helpers after
 `app.Run()`. Every one of those has a reason, and most of the reasons are
@@ -98,9 +98,9 @@ first visitor, which is a worse place to learn it.
 `app.MapGet("/api/vehicles", ...)` is a minimal API endpoint: a route and a
 lambda. `[AsParameters] VehicleQueryParams query` binds every query string
 parameter into one record, whose `TryBuildFilter` validates them all and
-returns one error message; a bad request is `Results.BadRequest(new {
-error })`, a good one `Results.Json(..., wireFormat)`. The endpoint holds
-no rules. Filtering, sorting and paging happen in `InventoryService`, and
+returns one error message; a bad request is `Results.Problem(...)` in the
+shape every failure uses (ADR: Error handling), a good one
+`Results.Json(..., wireFormat)`. The endpoint holds no rules. Filtering, sorting and paging happen in `InventoryService`, and
 the auction facts on each vehicle come from `VehicleWire.ToWire`, so the
 same rules serve the list, the detail, and the bid responses.
 
@@ -111,7 +111,7 @@ The two bid endpoints share one local function, `HandleBid`, which answers
 three questions in order: is the clock anchor valid (400 if not), does the
 vehicle exist (404 if not), does the domain accept the action (400 with
 the reason if not). The status codes are the contract the React app relies
-on: it shows the reason for a 400 and treats a 404 as gone.
+on: it reads `detail` out of a 400 and treats a 404 as gone.
 
 ```live path=api/TheBlock.Api/Program.cs region=bid-endpoints
 ```

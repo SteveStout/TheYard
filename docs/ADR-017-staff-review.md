@@ -135,6 +135,36 @@ and
   cannot be forgotten on the server without a red test.
 - The Admin tab's three cards each have three states, and a reviewer can
   see all three in the component.
-- Seventeen records, every one reachable from the sidebar and from
+- Every record reachable from the sidebar and from
   /api/docs/{slug}; the files each one decided are listed in the record
   itself, so a code review starts from the record and lands on the lines.
+
+## Addendum, 2026-09-02: the documents audited against the code
+
+Steve's ask, at the end of the second build day: "make sure every document
+matches the code." A mechanical pass over all thirty-two served documents,
+checked in six classes rather than by reading: every count (tests, records,
+endpoints, projects, entries), every backticked file path, every route,
+every named identifier, every stated fact that could be measured, and every
+live fence's file and region.
+
+Three of the six came back clean: no served document names a retired route,
+all one hundred live fences resolve to a real file and a real region, and
+every colour token named in a document exists in `tokens.css`.
+
+Twelve claims had drifted, all of them in prose rather than in samples,
+which is the live-sample rule working as intended. The one that mattered:
+ADR: Program.cs, explained still described a rejected query as
+`Results.BadRequest(new { error })`, which ADR: Error handling replaced with
+ProblemDetails the same day. The rest were counts a later version moved
+(tests 131 to 139, browser checks 24 to 25, "Seventeen records", "Eleven
+entries", "the six rules", "three hundred lines"), a palette sentence in
+the project structure that still said navy after the repaint, and ADR: Live
+code samples describing the four original roots in its body while both of
+its addenda recorded the widening.
+
+The lesson is the same one the live samples answered for code: a number
+written in prose is a claim with no test behind it. Where a count is
+load-bearing it now reads as a range or points at the thing that counts it;
+where it is decorative it was removed. The audit script is worth keeping in
+the mentor notes and rerunning before any review.
