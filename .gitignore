@@ -9,3 +9,6 @@ api/**/bin/
 api/**/obj/
 playwright-report/
 test-results/
+
+# The browser suite output CI keeps so a red run can say what broke on its own page.
+playwright-output.txt

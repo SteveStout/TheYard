@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 test('the Hosting section opens the hosting overview and the deployment ADRs', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
   await nav.getByRole('button', { name: 'Hosting overview' }).click();
   await expect(

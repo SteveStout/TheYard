@@ -11,10 +11,17 @@ import { chromium, type FullConfig } from '@playwright/test';
  * same moment, it did not, and a11y.spec failed on line 9 with the keyboard
  * never pressed: a test named for the keyboard path reporting on load time.
  *
- * This pays that cost once, in a place that is allowed to be slow, so the
- * five-second timeout in the specs measures what the specs are named for.
- * A server that is genuinely down still fails here, with a longer wait and a
- * clearer sentence than a heading that was never found.
+ * This was the first fix and it was too narrow: it only helps whichever test
+ * goes first. The same failure came back two versions later in a different spec
+ * partway through a run, and the general fix is `openTheYard` in ./app, which
+ * every navigation goes through.
+ *
+ * This file stays because the two cover different costs. `openTheYard` waits for
+ * the first inventory query to answer, which is an assertion timeout.
+ * The navigation itself is what pays for Vite compiling the module graph, and
+ * that is bounded by the navigation timeout instead, which no assertion budget
+ * can widen. Paying it once here, with retries, keeps a cold runner from losing
+ * its first `goto` to a compile.
  */
 async function warmUp(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL ?? 'http://localhost:5173';

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 import { signIn } from './signIn';
 
 // The simulated room, end to end (ADR-027). The unit tests hold its rules; this
@@ -12,7 +13,7 @@ async function bidTheMinimum(page: import('@playwright/test').Page) {
   // bids. The room is still shared, which is the point of the second test.
   await signIn(page);
   // Most bids first: the default sort's top card can expire mid-test.
-  await page.goto('/?status=live&sort=most-bids');
+  await openTheYard(page, '/?status=live&sort=most-bids');
   await page.waitForSelector('article');
   await page.locator('article h3 button').first().click();
   await expect(page.getByText('Specifications')).toBeVisible();

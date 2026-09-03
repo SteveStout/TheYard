@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 /**
  * The Changelog section (ADR-012): one item, one file, one sentence per
@@ -7,7 +8,7 @@ import { expect, test } from '@playwright/test';
 test('the Changelog section opens the version list, newest first, and its record sits under Best Practices', async ({
   page,
 }) => {
-  await page.goto('/');
+  await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
   await nav.getByRole('button', { name: 'Version history' }).click();
   const doc = page.getByRole('dialog', { name: 'Changelog' });

@@ -108,7 +108,32 @@ jobs:
           dotnet-version: 10.0.x
       - run: npm ci
       - run: npx playwright install --with-deps chrome
-      - run: npx playwright test
+      # #region e2e-evidence
+      # Keep the output, and on a failure put it on the run page.
+      #
+      # The report artifact below is the full evidence, and downloading it needs
+      # a GitHub login. The run page does not. A red build whose only public
+      # words are "Process completed with exit code 1" costs somebody a session
+      # to find out what broke, which is the same problem the html reporter was
+      # added to solve, one step further out.
+      #
+      # pipefail so that tee does not swallow the exit code and turn a failing
+      # suite into a passing step.
+      - name: Run the browser suite
+        run: |
+          set -o pipefail
+          npx playwright test 2>&1 | tee playwright-output.txt
+      - name: Say what failed, on the run page
+        if: failure()
+        run: |
+          {
+            echo '## The browser suite failed'
+            echo
+            echo '```'
+            tail -n 120 playwright-output.txt || echo 'no output was captured'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      # #endregion e2e-evidence
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

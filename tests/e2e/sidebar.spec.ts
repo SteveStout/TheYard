@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 /**
  * The sidebar's docked shape (ADR-013): at 1024px and up the panel is a
@@ -9,7 +10,7 @@ test.describe('the docked rail', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test('a laptop gets the rail, no hamburger, and no dropdowns', async ({ page }) => {
-    await page.goto('/');
+    await openTheYard(page);
     const rail = page.getByTestId('side-rail');
     await expect(rail).toBeVisible();
     await expect(page.getByRole('button', { name: 'Menu' })).toBeHidden();
@@ -38,7 +39,7 @@ test.describe('the docked rail', () => {
   test('the rail collapses to icons, keeps its names, and remembers the choice', async ({
     page,
   }) => {
-    await page.goto('/');
+    await openTheYard(page);
     const rail = page.getByTestId('side-rail');
     await rail.getByRole('button', { name: 'Collapse the sidebar' }).click();
     await expect(rail).toHaveAttribute('data-collapsed', 'true');
@@ -60,7 +61,7 @@ test.describe('the docked rail', () => {
   test('a doc opens from the rail and its row reads as current while it is open', async ({
     page,
   }) => {
-    await page.goto('/');
+    await openTheYard(page);
     const rail = page.getByTestId('side-rail');
     await rail.getByRole('button', { name: 'Hosting overview' }).click();
     const doc = page.getByRole('dialog', { name: 'Hosting' });
@@ -78,7 +79,7 @@ test.describe('the docked rail', () => {
   test('Admin opens from the rail, reads as the current page, and the brand goes home', async ({
     page,
   }) => {
-    await page.goto('/');
+    await openTheYard(page);
     const rail = page.getByTestId('side-rail');
     await rail.getByRole('button', { name: 'Admin', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
@@ -96,7 +97,7 @@ test.describe('just under the docking line', () => {
   test.use({ viewport: { width: 1023, height: 800 } });
 
   test('1023px gets the header and the hamburger, not the rail', async ({ page }) => {
-    await page.goto('/');
+    await openTheYard(page);
     await expect(page.getByTestId('side-rail')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
     await page.getByRole('button', { name: 'Menu' }).click();

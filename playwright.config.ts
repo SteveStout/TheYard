@@ -22,9 +22,12 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   // #endregion reporters
   // #region warm-up
-  // The first page load of a run pays for Vite's first compile and the API's
-  // first query. Paid once here, where a slow answer is expected, rather than
-  // inside whichever spec happens to go first.
+  // The first navigation of a run pays for Vite compiling the module graph,
+  // which is bounded by the navigation timeout and cannot be widened by an
+  // assertion budget. Paid once here, with retries, where being slow is
+  // expected. Waiting for the first inventory query is a separate job and
+  // belongs to openTheYard in tests/e2e/app.ts, which every spec navigates
+  // through.
   globalSetup: './tests/e2e/warm-up.ts',
   // #endregion warm-up
   use: {

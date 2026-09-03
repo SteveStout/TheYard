@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 // The keyboard path, walked (ADR-026). Focus is the kind of behaviour a
 // refactor breaks without breaking anything visible, which is what makes it
 // worth a test rather than a note.
 
 test('the first Tab reaches the skip link, and it jumps past the rail', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
 
   await page.keyboard.press('Tab');
@@ -22,7 +23,7 @@ test('the first Tab reaches the skip link, and it jumps past the rail', async ({
 test('opening a vehicle, and coming back, moves focus to the view that changed', async ({
   page,
 }) => {
-  await page.goto('/');
+  await openTheYard(page);
   const firstTile = page.locator('article h3 button').first();
   await expect(firstTile).toBeVisible();
 
@@ -37,7 +38,7 @@ test('opening a vehicle, and coming back, moves focus to the view that changed',
 });
 
 test('the Admin tab takes focus too', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await page
     .getByRole('navigation', { name: 'Project documents' })
     .getByRole('button', { name: 'Admin', exact: true })
@@ -47,7 +48,7 @@ test('the Admin tab takes focus too', async ({ page }) => {
 });
 
 test('the live region names the view, and the filter bar keeps the count', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await expect(page.getByTestId('view-announcement')).toHaveText('Vehicle inventory');
   await expect(page.getByTestId('result-count')).toContainText('vehicles');
 

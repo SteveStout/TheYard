@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 /**
  * The account view end to end (ADR: Accounts and per-user bids): the form a
@@ -42,7 +43,7 @@ async function register(page: import('@playwright/test').Page, email: string) {
 
 test('the form creates an account, and the rail shows who is signed in', async ({ page }) => {
   const email = anAddress();
-  await page.goto('/?view=account');
+  await openTheYard(page, '/?view=account');
 
   await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();
   await page.getByLabel('Email').fill(email);
@@ -58,7 +59,7 @@ test('the form creates an account, and the rail shows who is signed in', async (
 
 test("a wrong password is refused in the server's own words", async ({ page }) => {
   const email = anAddress();
-  await page.goto('/?view=account');
+  await openTheYard(page, '/?view=account');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('correct horse');
   await register(page, email);
@@ -79,14 +80,14 @@ test('a bid belongs to the account, and signing out takes it off the page', asyn
   test.setTimeout(60_000);
   const email = anAddress();
 
-  await page.goto('/?view=account');
+  await openTheYard(page, '/?view=account');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('correct horse');
   await register(page, email);
   await expect(page.getByText('Nothing yet')).toBeVisible();
 
   // Most bids first: the top card is live with a window ending hours out.
-  await page.goto('/?status=live&sort=most-bids');
+  await openTheYard(page, '/?status=live&sort=most-bids');
   await page.waitForSelector('article');
   await page.locator('article h3 button').first().click();
   await expect(page.getByText('Specifications')).toBeVisible();

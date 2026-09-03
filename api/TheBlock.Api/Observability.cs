@@ -6,8 +6,20 @@ namespace TheBlock.Api;
 // Program.cs verbatim in the staff review (ADR-017) so the host file stays a
 // composition root: what is wired, not how each piece works.
 
-/// <summary>One health probe's outcome and how long it took, serialized snake_case for the Admin tab.</summary>
-public sealed record HealthCheckEntry(string Name, string Status, string Detail, long DurationMs);
+/// <summary>
+/// One health probe's outcome and how long it took, serialized snake_case for
+/// the Admin tab.
+///
+/// <para><see cref="GatesReadiness"/> is the difference between "this container
+/// is unwell" and "this container cannot serve". Readiness decides whether the
+/// orchestrator and the deploy will send traffic here; health is the fuller
+/// picture the Admin tab shows. A container running on the file-backed fallback
+/// is degraded and entirely able to serve, so the database check reports its
+/// failure without withholding the container from service
+/// (ADR: The relational store).</para>
+/// </summary>
+public sealed record HealthCheckEntry(
+    string Name, string Status, string Detail, long DurationMs, bool GatesReadiness = true);
 
 /// <summary>One recorded server error, newest first in snapshots.</summary>
 public sealed record ErrorEntry(DateTimeOffset At, string Path, int Status, string Message);

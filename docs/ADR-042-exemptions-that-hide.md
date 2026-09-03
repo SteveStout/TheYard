@@ -110,6 +110,48 @@ The suite loads the app once in a `globalSetup` that is allowed to be slow, so
 the five-second budget in the specs measures what the specs are named for. A
 server that is actually down still fails, earlier and in a sentence that says so.
 
+## Addendum, 2026-09-03: the fix that was too narrow
+
+The cold-start case above was fixed by warming the app once in a `globalSetup`,
+and that fix was too small. It helps whichever test runs first. Two versions
+later the same failure came back in the middle of a run, in a different spec:
+
+```
+a11y.spec.ts:27 opening a vehicle, and coming back, moves focus to the view
+  Locator: locator('article h3 button').first()
+  Timeout: 5000ms
+  Error: element(s) not found
+```
+
+A focus test, failing because no vehicle tile existed yet. Same cause, different
+name on the failure, and it was never about the first test: every spec here opens
+with a navigation and then asserts against a loaded app, and every one of those
+first assertions was carrying an unstated five-second load budget.
+
+So the fix is now where the navigation is, and every navigation goes through it:
+
+```ts
+export async function openTheYard(page: Page, path = '/'): Promise<void> {
+  await page.goto(path);
+  await expect(page.getByText('Loading inventory')).toHaveCount(0, { timeout: 45_000 });
+}
+```
+
+The load gets its own budget once, at the point where waiting is the actual
+subject. Everything after it is back on five seconds, which is the right budget
+for "did clicking this do the thing" and the wrong one for "has the server
+finished starting".
+
+The warm-up stays, because the two cover different costs. `openTheYard` waits for
+the first query, which is an assertion timeout. The navigation itself is what
+pays for Vite compiling the module graph, and that is bounded by the navigation
+timeout, which no assertion budget can widen.
+
+The lesson to keep is not about Playwright. A fix aimed at the instance rather
+than the class passes the run in front of you and leaves the defect in place,
+and the second sighting is more expensive than the first because by then the
+first one is written down as solved.
+
 ## What these five have in common
 
 Each one was a check that answered a slightly easier question than the one it was

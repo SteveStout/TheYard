@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 /**
  * Phone-sized viewport (iPhone-class, 375x812). Below 1024px the sidebar is a
@@ -9,7 +10,7 @@ import { expect, test } from '@playwright/test';
 test.use({ viewport: { width: 375, height: 812 } });
 
 test('a phone gets one hamburger and no rail', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
   await expect(page.getByTestId('side-rail')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Hosting' })).toBeHidden();
@@ -23,7 +24,7 @@ test('a phone gets one hamburger and no rail', async ({ page }) => {
 test('the drawer lists every menu, opens a doc full-screen, and closes on Escape', async ({
   page,
 }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await page.getByRole('button', { name: 'Menu' }).click();
   const drawer = page.getByRole('dialog', { name: 'Menu' });
   await expect(drawer).toBeVisible();
@@ -61,7 +62,7 @@ test('the drawer lists every menu, opens a doc full-screen, and closes on Escape
 test('every drawer row leads with an icon, stands at least 44px tall, and the changelog opens from its section', async ({
   page,
 }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await page.getByRole('button', { name: 'Menu' }).click();
   const drawer = page.getByRole('dialog', { name: 'Menu' });
   await expect(drawer).toBeVisible();
@@ -93,7 +94,7 @@ test('every drawer row leads with an icon, stands at least 44px tall, and the ch
 });
 
 test('Admin is reachable from the drawer and the footer still renders', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await page.getByRole('button', { name: 'Menu' }).click();
   await page
     .getByRole('dialog', { name: 'Menu' })
@@ -116,7 +117,7 @@ test('Admin is reachable from the drawer and the footer still renders', async ({
 test('the phone header has its own decision record, reachable from the drawer', async ({
   page,
 }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await page.getByRole('button', { name: 'Menu' }).click();
   // The records live in one collapsed index now (ADR-029); open it first.
   await page

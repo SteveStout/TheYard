@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 test('the Admin tab shows the running system reporting on itself', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await page
     .getByRole('navigation', { name: 'Project documents' })
     .getByRole('button', { name: 'Admin', exact: true })
@@ -31,12 +32,12 @@ test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }
   });
   expect(posted.status()).toBe(204);
 
-  await page.goto('/?view=admin');
+  await openTheYard(page, '/?view=admin');
   await expect(page.getByTestId('errors-card')).toContainText(marker);
 });
 
 test('?view=admin deep-links straight to the Admin tab', async ({ page }) => {
-  await page.goto('/?view=admin');
+  await openTheYard(page, '/?view=admin');
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
 });
 
@@ -50,7 +51,7 @@ test('the SQL section shows statements and never a parameter value', async ({ pa
   });
   expect(registered.status(), await registered.text()).toBe(200);
 
-  await page.goto('/?view=admin');
+  await openTheYard(page, '/?view=admin');
   const card = page.getByTestId('sql-card');
   await expect(card).toBeVisible();
   // A statement, with the request that caused it and a parameter described.

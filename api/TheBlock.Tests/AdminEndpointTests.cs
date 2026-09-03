@@ -29,6 +29,39 @@ public class AdminEndpointTests(WebApplicationFactory<Program> factory)
         Assert.Equal("ready", await response.Content.ReadAsStringAsync());
     }
 
+    // #region readiness-and-health
+    [Fact]
+    public async Task The_database_is_the_one_check_that_does_not_withhold_the_container_from_service()
+    {
+        // Readiness answers "send traffic here". Health answers "how is it".
+        // A container whose database is gone still serves the catalogue, the
+        // filters, the photos and the bidding out of files, and the only thing
+        // it has lost is bids outliving the process, so it is degraded and
+        // entirely able to serve.
+        //
+        // This is not theoretical. The 1.0.0.51 deploy failed on
+        // `curl -fsS /readyz` because the database check gated readiness, while
+        // the site it was checking was answering with 100,000 vehicles.
+        var response = await _client.GetAsync("/api/health");
+        string body = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(body);
+
+        var checks = json.RootElement.GetProperty("checks").EnumerateArray().ToArray();
+        var database = checks.Single(check => check.GetProperty("name").GetString() == "database");
+        Assert.False(database.GetProperty("gates_readiness").GetBoolean());
+
+        // And every other check does gate it. A check that reports a missing
+        // dataset file while the container claims to be ready would be worse
+        // than no check.
+        foreach (var check in checks.Where(check => check.GetProperty("name").GetString() != "database"))
+        {
+            Assert.True(
+                check.GetProperty("gates_readiness").GetBoolean(),
+                check.GetProperty("name").GetString() + " should gate readiness");
+        }
+    }
+    // #endregion readiness-and-health
+
     [Fact]
     public async Task Health_reports_status_checks_and_build_in_snake_case()
     {

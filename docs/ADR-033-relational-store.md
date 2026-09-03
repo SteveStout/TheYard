@@ -281,6 +281,58 @@ The proof (`api/TheBlock.Tests/PersistenceTests.cs`):
   the row, and the mapping. That is the price of not letting the persistence
   layer dictate the domain shape, and it is paid once per field.
 
+## Addendum, 2026-09-03: the fallback worked and the deploy failed anyway
+
+This record's central promise is that the site comes up when the database does
+not. 1.0.0.51 was the first roll where that promise was actually tested, and it
+held: the container could not reach Azure SQL Database, fell back to the JSON
+files, and served the full catalogue, the filters, the photos and the bidding to
+100,000 vehicles.
+
+The deploy failed.
+
+`/readyz` answered "ready" only when every health check passed, and the database
+check had joined that set when the relational store did. So a container doing
+precisely what this ADR designed it to do reported itself unfit for traffic, and
+the deploy's `curl -fsS "$ORIGIN/readyz"` failed the roll.
+
+The defect is a category error, and it is worth naming because the three probes
+already had names that should have prevented it:
+
+- **Liveness** (`/healthz`): is this process running. Restart it if not.
+- **Readiness** (`/readyz`): send traffic here. Take it out of rotation if not.
+- **Health** (`/api/health`): the full picture, for a person.
+
+"The database is unreachable" is a health fact. It is not a readiness fact,
+because the container can serve. Putting it in the readiness set means an outage
+in a dependency takes down a service that was specifically built to survive that
+outage, which is worse than having no fallback at all: with no fallback the
+failure at least happens once, rather than being engineered around and then
+undone by the check.
+
+Readiness now asks only the checks that gate it:
+
+```csharp
+app.MapGet("/readyz", () =>
+    RunChecks().Where(check => check.GatesReadiness).All(check => check.Status == "pass")
+        ? Results.Text("ready")
+        : Results.StatusCode(503));
+```
+
+and the database check is the one that declares itself out:
+
+```csharp
+Check("database", ..., gatesReadiness: false)
+```
+
+`/api/health` is unchanged: it still reports `degraded`, still names the store,
+and the Admin tab still shows the failure. The deploy still warns when a roll
+lands on files rather than the database. What changed is that a site which is
+serving is now allowed to say so.
+
+The test asserts both halves, because asserting only the first would pass if
+every check stopped gating readiness.
+
 ## Files
 
 - [`api/TheBlock.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardDbContext.cs): the context, the model, and the design-time factory.

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 import { signIn } from './signIn';
 
 /**
@@ -23,23 +24,23 @@ test.beforeEach(async ({ request }) => {
 });
 
 test('landing page shows the top 100 of the full dataset', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await expect(page.getByTestId('result-count')).toHaveText(/Showing 100 of 100,000 vehicles/);
   await expect(page.locator('article')).toHaveCount(100);
 });
 
 test('filtering updates the URL and a filtered URL restores the view', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await page.getByLabel('Search vehicles').fill('bronco');
   await expect(page).toHaveURL(/q=bronco/);
 
-  await page.goto('/?make=Kia&status=upcoming&sort=price-asc');
+  await openTheYard(page, '/?make=Kia&status=upcoming&sort=price-asc');
   await expect(page.locator('select').nth(1)).toHaveValue('Kia');
   await expect(page.getByTestId('result-count')).toHaveText(/of [\d,]+ vehicles/);
 });
 
 test('load more appends the next page', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await expect(page.locator('article')).toHaveCount(100);
   await page.getByRole('button', { name: 'Load more vehicles' }).click();
   await expect(page.locator('article')).toHaveCount(200);
@@ -52,7 +53,7 @@ test('load more appends the next page', async ({ page }) => {
 test('tile clicks are GET navigation: URL updates, Back works, deep links restore', async ({
   page,
 }) => {
-  await page.goto('/?status=live&sort=most-bids');
+  await openTheYard(page, '/?status=live&sort=most-bids');
   await page.waitForSelector('article');
 
   // Opening a tile pushes a history entry with ?vehicle={id}.
@@ -68,7 +69,7 @@ test('tile clicks are GET navigation: URL updates, Back works, deep links restor
   await expect(page.locator('article').first()).toBeVisible();
 
   // A cold load of the detail URL deep-links straight into the detail view.
-  await page.goto(detailUrl);
+  await openTheYard(page, detailUrl);
   await expect(page.getByText('Specifications')).toBeVisible();
 
   // The in-app back control from a deep link swaps to the list without exiting.
@@ -79,7 +80,7 @@ test('tile clicks are GET navigation: URL updates, Back works, deep links restor
 // #endregion get-navigation
 
 test('the About section shows the README in-app and links the résumé PDF', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
   await nav.getByRole('button', { name: 'Project README' }).click();
   await expect(page.getByRole('dialog').getByRole('heading', { name: /TheYard/ })).toBeVisible();
@@ -126,7 +127,7 @@ test('the About section shows the README in-app and links the résumé PDF', asy
 });
 
 test('a transient API failure shows the stale banner and Retry recovers', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   await page.waitForSelector('article');
 
   // Simulate the API dropping out mid-session.
@@ -147,7 +148,7 @@ test('a bid round-trips through the API and survives a reload', async ({ page })
   await signIn(page);
   // Sort by most bids: the top card is live with a window ending hours or
   // days out (the default sort's first card can expire within seconds).
-  await page.goto('/?status=live&sort=most-bids');
+  await openTheYard(page, '/?status=live&sort=most-bids');
   await page.waitForSelector('article');
 
   await page.locator('article h3 button').first().click();

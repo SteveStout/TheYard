@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 test('the CI/CD section opens its overview and Hosting serves the Bicep file', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
   await nav.getByRole('button', { name: 'CI/CD overview' }).click();
   await expect(

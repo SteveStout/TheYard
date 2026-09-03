@@ -691,11 +691,11 @@ HealthCheckEntry[] RunChecks()
 {
     // Each probe is timed: the Admin tab shows the milliseconds beside the check,
     // so a slow disk or a slow lookup shows up before it fails (ADR-010, second pass).
-    HealthCheckEntry Check(string name, Func<bool> probe, string detail)
+    HealthCheckEntry Check(string name, Func<bool> probe, string detail, bool gatesReadiness = true)
     {
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        try { return new HealthCheckEntry(name, probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds); }
-        catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name, clock.ElapsedMilliseconds); }
+        var clock = Stopwatch.StartNew();
+        try { return new HealthCheckEntry(name, probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds, gatesReadiness); }
+        catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name, clock.ElapsedMilliseconds, gatesReadiness); }
     }
     return
     [
@@ -721,7 +721,15 @@ HealthCheckEntry[] RunChecks()
             database.Ready
                 ? $"the seed catalogue is in the store ({yard.Describe()})"
                 : $"{yard.Describe()} is unavailable, serving the catalogue from files; "
-                    + "the reason is in the log"),
+                    + "the reason is in the log",
+            // The one check that does not gate readiness, which is the whole
+            // point of the fallback. A container with no database still serves
+            // the catalogue, the filters, the photos and the bidding; the only
+            // thing it loses is bids outliving the process. Reporting itself
+            // not ready would take a working site out of service, and it did:
+            // the 1.0.0.51 deploy failed on `curl -fsS /readyz` while the site
+            // it was checking was serving 100,000 vehicles perfectly well.
+            gatesReadiness: false),
     ];
 }
 #endregion health-checks
@@ -735,7 +743,9 @@ HealthCheckEntry[] RunChecks()
 app.MapGet("/healthz", () => Results.Text("ok"));
 
 app.MapGet("/readyz", () =>
-    RunChecks().All(c => c.Status == "pass") ? Results.Text("ready") : Results.StatusCode(503));
+    RunChecks().Where(check => check.GatesReadiness).All(check => check.Status == "pass")
+        ? Results.Text("ready")
+        : Results.StatusCode(503));
 
 app.MapGet("/api/health", () =>
 {

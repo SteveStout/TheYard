@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { openTheYard } from './app';
 
 test('the Best Practices section opens the overview and its decision records', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
   await nav.getByRole('button', { name: 'Best practices overview' }).click();
   await expect(
@@ -104,7 +105,7 @@ test('the Best Practices section opens the overview and its decision records', a
 });
 
 test('the footer reports the running build', async ({ page }) => {
-  await page.goto('/');
+  await openTheYard(page);
   const version = page.getByTestId('build-version');
   await expect(version).toBeVisible();
   await expect(version).toHaveText(/^(dev build|v\d+\.\d+\.\d+\.\d+)$/);
