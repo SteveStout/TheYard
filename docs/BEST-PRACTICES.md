@@ -108,6 +108,12 @@ footer displays exactly that.
   the one log line holding both. An endpoint throws on purpose so that path
   can be exercised against the live container rather than assumed. Recorded
   in ADR: The exception handler.
+- **The accessibility rules a machine can check are checked on every run.**
+  axe holds six views to WCAG 2.1 AA inside the browser suite. Its first run
+  found two serious contrast failures on the busiest elements on the page, in
+  a repository that already had a passing contrast test, because that test
+  holds the colour pairs somebody listed and a stylesheet composes whatever it
+  likes. Recorded in ADR: The accessibility check.
 - **The storage moved without the application noticing.** The catalogue went
   from JSON files to SQLite through EF Core, with migrations applied at
   startup and a first boot that seeds itself, and not one line changed in the

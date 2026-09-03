@@ -57,6 +57,7 @@ public static class DocsCatalog
         ["adr-method"] = "docs/ADR-032-ai-development.md",
         ["adr-store"] = "docs/ADR-033-relational-store.md",
         ["adr-ef"] = "docs/ADR-034-entity-framework-explained.md",
+        ["adr-a11y-check"] = "docs/ADR-035-accessibility-check.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",

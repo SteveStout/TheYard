@@ -63,6 +63,7 @@ export type DocKey =
   | 'adrMethod'
   | 'adrStore'
   | 'adrEf'
+  | 'adrA11yCheck'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -377,6 +378,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '034',
   },
+  adrA11yCheck: {
+    title: 'ADR: The accessibility check',
+    menuLabel: 'ADR: The accessibility check',
+    url: '/api/docs/adr-a11y-check',
+    kind: 'adr',
+    number: '035',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -467,6 +475,7 @@ export const MENUS: Record<
       { key: 'adrMethod' },
       { key: 'adrStore' },
       { key: 'adrEf' },
+      { key: 'adrA11yCheck' },
     ],
   },
   // #endregion records-menu

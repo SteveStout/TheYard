@@ -19,7 +19,7 @@
   --color-border: #d8d3d4; /* the light gray, one step darker */
   --color-border-strong: #b6afb0;
   --color-text: #5e5653; /* the brown-gray, as printed */
-  --color-text-muted: #62666f; /* the slate gray, deepened for AA on the ground */
+  --color-text-muted: #5f636c; /* the slate gray; deepened again in ADR-035, where axe found it at 4.39 on the neutral chip */
   --color-text-faint: #6f737e; /* the slate gray, deepened for AA on white */
   --color-heading: #3f3a37; /* the brown-gray, deepened for weight */
 
@@ -32,7 +32,7 @@
 
   /* Status colors carry meaning (clean, rebuilt, salvage, live) and stay
      semantic on purpose: the one part of the page outside the five. */
-  --color-success: #15803d;
+  --color-success: #146c34; /* deepened in ADR-035: it read 4.04 as countdown text on the page ground */
   --color-success-soft: #dcfce7;
   --color-warning: #b45309;
   --color-warning-soft: #fef3c7;

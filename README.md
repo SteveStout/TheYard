@@ -187,7 +187,7 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, thirty-four
+  data flow and infrastructure diagrams on their own zoomable pages, thirty-five
   decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
@@ -351,13 +351,14 @@ the bid back, and one test that points the connection string at a path which can
 opened to prove the site still serves its inventory when the store does not come up.
 Run with `npm run test:api`.
 
-**Frontend (37 Vitest tests):** presentation logic only, since the API owns the rules.
+**Frontend (38 Vitest tests):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
-forced bypass, no caching of failures), and the palette's contrast against WCAG AA. Run
-with `npm test`.
+forced bypass, no caching of failures), and the palette's contrast against WCAG AA,
+including the two pairs a stylesheet composes that nobody had listed. Run with
+`npm test`.
 
-**End-to-end (31 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (37 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a
@@ -420,7 +421,8 @@ What is genuinely still open, in priority order:
   the SQLite file lives; the persistence is real, the volume under it is not
 - A virtualized grid once Load More accumulates thousands of rows
 - An audit with a real screen reader, which is a person's job rather than a checklist's;
-  the keyboard path itself is now walkable and held by tests
+  the keyboard path is walkable and held by tests, and axe now holds every view to
+  WCAG 2.1 AA on every run, which is the mechanical half of the same question
 - A real image pipeline (srcset, blur-up placeholders) once photography replaces the
   representative stock photos
 

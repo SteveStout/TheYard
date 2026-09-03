@@ -75,6 +75,20 @@ describe('the site palette (ADR-016)', () => {
     }
   });
 
+  // #region composed-pairs
+  // The two pairs axe found and this file did not (ADR-035). Neither is
+  // exotic. They are pairs composed by a stylesheet rather than listed by a
+  // person, which is the category an enumerated test cannot cover on its own.
+  it('the pairs the stylesheet composes clear AA, not only the ones listed here', () => {
+    // The "Reserve not met" chip: muted text on the neutral chip ground.
+    expect(contrast(token('color-text-muted'), token('color-neutral-soft'))).toBeGreaterThanOrEqual(
+      4.5
+    );
+    // The live countdown on a vehicle: success green on the page ground.
+    expect(contrast(token('color-success'), token('color-bg'))).toBeGreaterThanOrEqual(4.5);
+  });
+  // #endregion composed-pairs
+
   it('the header text clears AA on the header', () => {
     expect(contrast(token('color-header-text'), token('color-header'))).toBeGreaterThanOrEqual(4.5);
     expect(
