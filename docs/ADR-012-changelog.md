@@ -116,3 +116,27 @@ reads like a person wrote it.
   line (region changelog-check above).
 - [`api/TheBlock.Tests/ChangelogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Tests/ChangelogTests.cs) and
   [`tests/e2e/changelog.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/changelog.spec.ts): the proof.
+
+## Addendum, 2026-09-03: a version is a deploy run, not a commit
+
+Two commits were gated separately and pushed together at the end of the
+second build day. One CI run, one Deploy run, one version: 1.0.0.32. The
+changelog by then carried a line for 1.0.0.32 and another for 1.0.0.33,
+because each commit had written its own line as it was gated, and 1.0.0.33
+described a version that never reached the site.
+
+The rule this record already states is the fix: the number is the one the
+page footer shows, and 1.0.0.N is the Nth build that reached the live site.
+A line belongs to a deploy run, not to a commit. When two commits ship in
+one run their lines merge into one, and the merged line is what the version
+means.
+
+The deploy's changelog check would not have caught it. It asks whether a
+line exists for the version being shipped, which was true; it cannot know
+that a line further up describes a version that never will. The cheap guard
+is procedural: write the changelog line when the ship script is written,
+with the run number in front of you, not when the commit is gated.
+
+The pipeline warns rather than fails on a missing line on purpose (see
+above), and that stays: a documentation slip should never block a deploy
+that passed its tests.
