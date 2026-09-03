@@ -473,6 +473,47 @@ test runs, and a Playwright config that reuses whatever server it finds
 listening. The failures were a loaded machine, and that sentence is now a
 measurement rather than a hope.
 
+## Addendum, the same day: the release that shipped on SQLite
+
+1.0.0.49 went out with every gate green and came up on SQLite. The site was
+healthy, `/readyz` said ready, 42,775 auctions were answering, and the health
+check said, correctly, "the seed catalogue is in the store (SQLite)".
+
+The container's own first log line settles what happened and what did not:
+
+```
+Database ready: SQLite, migrated in 2477 ms and seeded in 1158 ms,
+inserting 200 vehicles and 50 photos, now holding 200 and 50
+```
+
+No error. Nothing failed to connect. `YardConnection.Choose` was handed the
+literal `__YARD_SQL_CONNECTION__` and read it as "no SQL Server here", which is
+exactly what that check exists for.
+
+The placeholder survived because the deploy asked Azure for the server's fully
+qualified name and the deploy's own identity is not allowed to read it. Its role
+assignments are Container Instances Contributor, AcrPush and Managed Identity
+Operator, and no reader role anywhere, so `az sql server show` failed, `|| true`
+swallowed it, and the substitution had nothing to substitute.
+
+The fix is to stop asking. An Azure SQL logical server's address is its name plus
+the service suffix; it is not a secret, it does not change, and it does not need
+a permission. The deploy composes it now.
+
+Two things worth keeping out of this.
+
+**The fallback is not theoretical any more.** It was written for a paused
+serverless database and the first thing it actually caught was a deploy
+misconfiguration. A visitor saw a working site throughout, and nothing about the
+release was wrong except which store it was reading from.
+
+**Silence was the real defect.** A roll landing on SQLite must not fail a deploy,
+because that is the fallback doing its job. It must also not be invisible, and it
+was: nothing said so until the health endpoint was read by hand. The Verify step
+now reads `/api/health` and warns when the container is not on Azure SQL Database.
+A warning, not a failure, because the difference between those two is the
+difference between a safety net and a tripwire.
+
 ## Consequences
 
 - A bid survives a deploy, which is the sentence this record exists for. It

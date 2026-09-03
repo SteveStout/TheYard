@@ -146,18 +146,24 @@ jobs:
           # The database, by the same rule and for the same reason. The value
           # substituted here names a server, a database and an authentication
           # mode; the credential is the container's managed identity, which
-          # never leaves Azure. If the server cannot be read the placeholder
-          # survives, YardConnection.Choose reads it as "no SQL Server here",
-          # and the container serves the catalogue from SQLite exactly as it did
-          # before this database existed. A deploy is not allowed to fail
-          # because a database is asleep.
-          SQL_FQDN=$(az sql server show -g "$RG" -n "$SQL_SERVER" \
-            --query "fullyQualifiedDomainName" -o tsv 2>/dev/null || true)
-          if [ -z "$SQL_FQDN" ]; then
-            echo "::warning::the SQL server was unreadable; this roll ships on SQLite"
+          # never leaves Azure.
+          #
+          # The name is composed rather than read back from Azure. The first
+          # version of this asked `az sql server show` for the fully qualified
+          # name, which this job's identity is not allowed to do: it holds
+          # Container Instances Contributor, AcrPush and Managed Identity
+          # Operator, and no reader role. The call failed silently under
+          # `|| true`, the placeholder survived, and 1.0.0.49 shipped on SQLite
+          # and said so, which is the fallback working and is also a whole
+          # release spent on a lookup that was never needed. An Azure SQL
+          # logical server's address is its name plus the service suffix. It is
+          # not a secret and it does not need a permission.
+          if [ -z "$SQL_SERVER" ]; then
+            echo "::warning::no SQL server is configured; this roll ships on SQLite"
             YARD_SQL="__YARD_SQL_CONNECTION__"
           else
-            YARD_SQL="Server=tcp:${SQL_FQDN},1433;Initial Catalog=${SQL_DB};Encrypt=True;TrustServerCertificate=False;Connect Timeout=60;Authentication=Active Directory Managed Identity;User Id=${MI_CLIENT_ID};"
+            SQL_FQDN="${SQL_SERVER}.database.windows.net"
+            YARD_SQL="Server=tcp:${SQL_FQDN},1433;Initial Catalog=${SQL_DB};Encrypt=True;TrustServerCertificate=False;Connect Timeout=30;Authentication=Active Directory Managed Identity;User Id=${MI_CLIENT_ID};"
           fi
           YARD_SQL="$YARD_SQL" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
           import os, sys
@@ -217,6 +223,20 @@ jobs:
             exit 1
           fi
           curl -fsS --max-time 30 "$SITE/api/facets" > /dev/null
+          # Which store the container actually came up on, said out loud.
+          #
+          # A warning and not a failure, on purpose. The whole point of the
+          # file-backed fallback is that the site serves when the database does
+          # not (ADR: The relational store), so a roll that lands on SQLite is
+          # the design working and must not fail a deploy. What it must not be
+          # is silent: 1.0.0.49 shipped that way and nothing said so until
+          # somebody read the health endpoint by hand.
+          store=$(curl -fsS --max-time 30 "$SITE/api/health" || true)
+          case "$store" in
+            *"Azure SQL Database"*) echo "the container is on Azure SQL Database" ;;
+            *SQLite*) echo "::warning::this roll is serving from SQLite, not Azure SQL Database" ;;
+            *) echo "::warning::could not tell which store the container is on" ;;
+          esac
           # Azure's own view of the container (the Admin tab's card), informational.
           curl -sS --max-time 40 "$SITE/api/admin/azure" || true
           echo
