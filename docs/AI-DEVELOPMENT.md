@@ -95,7 +95,7 @@ footer and the file documenting the footer are the same string rather than two
 numbers kept in step by hand. Every document in the sidebar is served by the
 API from the repository. Nothing in the app is a screenshot of itself.
 
-## Three things a reviewer should be suspicious of
+## Four things a reviewer should be suspicious of
 
 **"Nobody understands code they did not write."**
 Fair, and the honest answer is that understanding is not proven by a document
@@ -106,13 +106,16 @@ is keyed by vehicle id rather than by reference. The explanations are written
 down, which means they can be checked against me in a conversation. A document
 that could not survive that question would be worse than no document.
 
-**"Thirty-two decision records is documentation theatre."**
+**"Fifty-one decision records is documentation theatre."**
 It would be, if they all said yes. Several of them exist to record a rejection,
 a deviation, or a mistake: the Mermaid runtime that was measured and removed,
 the linter that could not run, the naming convention that was not adopted, the
 eleven defects, the guard that failed the day after it was chosen. The test of
 a record is whether it would embarrass you to have written it, and some of
-these do.
+these do. Two of them correct earlier records that were wrong, which is a harder
+test: ADR-042 now says plainly that a run of test failures was blamed on the
+machine when the cause was mine, and ADR-048 records that the fix in its own
+decision section was insufficient, and why.
 
 **"A green suite proves nothing when the tests were written alongside the code."**
 The strongest version of this objection is right: tests generated with an
@@ -126,6 +129,42 @@ check that the README's stated test counts match the numbers the suites
 actually printed, then verifies the deployed result from the public domain
 rather than from the build log.
 
+The suites are measured rather than counted, too. 89.6 per cent of lines and
+71.7 per cent of branches, published as an annotation on every run so it reads
+without a GitHub sign-in, and the per-project shape says more than the total:
+the entities at 100, the domain at 98.8, the use cases and adapters in the low
+nineties, the host lowest at 78.2 because two of its classes talk to Azure and
+CI has no credential (ADR: Counting what the tests cover).
+
+**"An AI reviewing its own work is theatre."**
+The best objection on this page, and the answer is a list rather than an
+argument.
+
+The day's whole diff went to a reviewer with no memory of writing any of it,
+told to be skeptical, to ignore style, and to hunt for privacy, concurrency,
+leaks and arithmetic. It found seven things. Two contradicted arguments made in
+the same commit: the change had spent a page explaining why a database parameter
+value must be structurally impossible to publish, then put the raw database
+exception message on the same public page through a different door. One proved a
+feature wrong in the direction that made it look right, a timing panel recording
+every failed request as a success because a comment asserted an ordering nobody
+had checked against the pipeline.
+
+The shape of one finding was then used as a search. An endpoint that took no user
+turned out to have two siblings: a simulated auction room any stranger could
+advance with `curl`, and a login endpoint whose lockout existed in the schema, in
+the framework, and nowhere in the code path. All three were deliberate decisions,
+defended in comments, correct when written, and left standing after accounts and
+a database arrived underneath them.
+
+What makes that evidence rather than theatre is what happened next. Each one is
+fixed, recorded with what it allowed rather than with what it was mitigated by,
+and covered by a test that fails against the old behaviour. Three were fired at
+the live site to watch them fail there. They are listed in a table on
+`docs/SECURITY.md`, which the site serves. A review that found nothing, or found
+things that made its author look careful, would be the theatre this objection is
+about.
+
 ## How the loop actually ran
 
 Measure before deciding. Write the decision down with the number that drove it.
@@ -133,6 +172,13 @@ Ship through a gate that runs everything and refuses on any failure. Push only
 after an objection window. Verify from the live domain, not from the pipeline's
 own account of itself. When something is wrong, reproduce it before fixing it,
 and put the reproduction in the record.
+
+One step was earned on 3 September, after a defect turned out to have two
+siblings: when something is found, treat its shape as a search rather than its
+instance as a fix. The three worst findings that day share one sentence, which is
+that a justification written for an earlier version of the system was still
+sitting above code the system had outgrown. That is a query you can run against a
+repository, and running it costs less than waiting to be told.
 
 That loop is the reason this repository is worth reading. The AI made it
 possible to run it many times in a day. It did not make the loop unnecessary.
