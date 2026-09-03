@@ -18,4 +18,42 @@ public interface IPhotoManifestSource
 {
     IReadOnlyList<PhotoEntry> Load();
 }
+
+/// <summary>
+/// Port: where the buyer's bids are kept between one run of this process and
+/// the next. Read once at startup and written through on every accepted bid,
+/// which is the shape the bidding path can afford (ADR: The relational store).
+/// </summary>
+public interface IBidStore
+{
+    IReadOnlyDictionary<string, BidState> Load();
+
+    void Save(string vehicleId, BidState state);
+
+    void Clear();
+}
+
+/// <summary>
+/// The port wired to nothing. Bidding works without a store and forgets at the
+/// end of the process, which is what the unit tests want and what this
+/// application did before it had anywhere to write.
+/// </summary>
+public sealed class NullBidStore : IBidStore
+{
+    public static readonly NullBidStore Instance = new();
+
+    private NullBidStore()
+    {
+    }
+
+    public IReadOnlyDictionary<string, BidState> Load() => new Dictionary<string, BidState>(StringComparer.Ordinal);
+
+    public void Save(string vehicleId, BidState state)
+    {
+    }
+
+    public void Clear()
+    {
+    }
+}
 // #endregion ports

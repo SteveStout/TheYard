@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using TheBlock.Api;
 using TheBlock.Application;
@@ -41,9 +42,61 @@ string buildCommit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local"
 // The 200-record seed dataset is deterministically expanded to TargetCount
 // synthetic records (default 100,000): scale testing without a giant file.
 int targetCount = builder.Configuration.GetValue("Inventory:TargetCount", 100_000);
-builder.Services.AddSingleton<IVehicleSource>(
-    new SyntheticVehicleSource(new JsonFileVehicleSource(dataPath), targetCount));
-builder.Services.AddSingleton<IPhotoManifestSource>(new JsonFilePhotoManifestSource(manifestPath));
+#region persistence
+// SQLite through EF Core (ADR: The relational store). The connection string is
+// configuration, and without one this process gets a scratch file it deletes on
+// the way out: that is what every test wants, and it is a better answer for a
+// misconfigured deploy than quietly writing somewhere nobody will look.
+string? configuredDatabase = builder.Configuration.GetConnectionString("Yard");
+string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
+string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase}";
+#endregion persistence
+
+#region migrate-and-seed
+// The schema and the contents, before anything is registered, because the
+// answer decides what gets registered. Migrate rather than EnsureCreated: the
+// schema's history is a set of files in this repository, so a container
+// starting against an older database brings it forward instead of finding a
+// shape it half recognises. The JSON readers are still where a fresh database
+// gets its contents, which keeps `npm run data` the way the dataset is
+// regenerated and means the seed cannot drift from the file it came from.
+var database = YardDatabase.Prepare(
+    databaseConnection,
+    new JsonFileVehicleSource(dataPath),
+    new JsonFilePhotoManifestSource(manifestPath));
+
+if (database.Ready)
+{
+    // A factory rather than a scoped context: the two sources and the bid store
+    // are singletons that each want a context for the length of one operation,
+    // and there is no request scope at startup when the catalogue is read.
+    builder.Services.AddDbContextFactory<YardDbContext>(options => options.UseSqlite(databaseConnection));
+    // The same two ports, now answered out of the database. The synthetic
+    // scale-up still decorates the vehicle source, and nothing above this line
+    // can tell that the catalogue stopped being a file.
+    builder.Services.AddSingleton<IVehicleSource>(services =>
+        new SyntheticVehicleSource(
+            new EfVehicleSource(services.GetRequiredService<IDbContextFactory<YardDbContext>>()),
+            targetCount));
+    builder.Services.AddSingleton<IPhotoManifestSource>(services =>
+        new EfPhotoManifestSource(services.GetRequiredService<IDbContextFactory<YardDbContext>>()));
+    builder.Services.AddSingleton<IBidStore>(services =>
+        new EfBidStore(services.GetRequiredService<IDbContextFactory<YardDbContext>>()));
+}
+else
+{
+    // The store did not come up. These are the adapters that served this site
+    // until the database existed, so the inventory, the filters, the photos and
+    // the bidding all still work; the only thing lost is that bids stop
+    // outliving the process. A site that serves everything except persistence
+    // beats a site that serves nothing, and the health check says which one
+    // this is (ADR: The relational store).
+    builder.Services.AddSingleton<IVehicleSource>(
+        new SyntheticVehicleSource(new JsonFileVehicleSource(dataPath), targetCount));
+    builder.Services.AddSingleton<IPhotoManifestSource>(new JsonFilePhotoManifestSource(manifestPath));
+    builder.Services.AddSingleton<IBidStore>(NullBidStore.Instance);
+}
+#endregion migrate-and-seed
 builder.Services.AddSingleton<InventoryService>();
 builder.Services.AddSingleton<BidService>();
 // The other bidders (ADR-027). A singleton like the buyer's own bids, and for
@@ -117,6 +170,41 @@ var telemetry = new TelemetryReader(
 #endregion telemetry
 
 var app = builder.Build();
+
+var contexts = app.Services.GetService<IDbContextFactory<YardDbContext>>();
+
+if (database.Ready)
+{
+    app.Logger.LogInformation("Database ready: {Note}", database.Note);
+}
+else
+{
+    app.Logger.LogError(
+        "The database could not be prepared, so the catalogue is being served from the JSON files and bids will not outlive this process: {Note}",
+        database.Note);
+}
+
+if (database.Ready && configuredDatabase is null)
+{
+    app.Logger.LogWarning(
+        "No ConnectionStrings:Yard is configured, so this process is using a scratch database at {Path} and will delete it on shutdown",
+        scratchDatabase);
+    // A scratch database belongs to one process, so it goes when the process
+    // does. The pool has to be emptied first or the handle is still open and
+    // the delete fails on Windows.
+    app.Lifetime.ApplicationStopped.Register(() =>
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        try
+        {
+            File.Delete(scratchDatabase);
+        }
+        catch (IOException)
+        {
+            // A leftover scratch file is litter, not a reason to fail a shutdown.
+        }
+    });
+}
 
 // Materialize the inventory now so a bad dataset fails the process at
 // startup, visibly, and not as a 500 on the first request.
@@ -416,6 +504,20 @@ HealthCheckEntry[] RunChecks()
         Check("dataset file", () => File.Exists(dataPath), "data/vehicles.json present"),
         Check("docs", () => File.Exists(Path.Combine(repoRoot, "docs", "HOSTING.md")), "served documents findable"),
         Check("photo manifest", () => File.Exists(manifestPath), "image manifest present"),
+        Check(
+            "database",
+            () =>
+            {
+                if (!database.Ready || contexts is null)
+                {
+                    return false;
+                }
+                using var db = contexts.CreateDbContext();
+                return db.Vehicles.Any() && db.Photos.Any();
+            },
+            database.Ready
+                ? "the seed catalogue is in the store"
+                : "unavailable, serving the catalogue from files: " + database.Note),
     ];
 }
 #endregion health-checks

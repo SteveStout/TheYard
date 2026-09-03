@@ -153,8 +153,8 @@ each with its own changelog line and, where it decided something, its own record
 - **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheBlock.Data`
   (the pure data records, no dependencies), `TheBlock.Domain` (photo selection, auction
   schedule, filter and bid rules), `TheBlock.Application` (the `InventoryService` and
-  `BidService` use cases behind source ports), `TheBlock.Infrastructure` (JSON file
-  adapters, synthetic scale-up), `TheBlock.Api` (host, endpoints, static images, the
+  `BidService` use cases behind source ports), `TheBlock.Infrastructure` (the EF Core
+  adapters over SQLite, the JSON readers that seed it, the synthetic scale-up), `TheBlock.Api` (host, endpoints, static images, the
   served documents, observability). Filtering is LINQ over GET parameters, including
   auction status; all auction math lives in Domain and travels on the wire, so the
   browser only formats. `src/lib/data.ts` is the frontend's single data seam.
@@ -163,7 +163,12 @@ each with its own changelog line and, where it decided something, its own record
   the TLS edge in front of it. GitHub Actions builds and rolls it on every green push.
   `infra/main.bicep` holds the production design (App Service behind Front Door with an
   origin lock), deliberately undeployed and explained on the Hosting page.
-- **Database:** none. The API reads the JSON file; bid state lives in API memory.
+- **Database:** SQLite through EF Core, behind the same ports the JSON readers used to
+  answer. Migrations are applied at startup, the catalogue is seeded on first boot from
+  `data/vehicles.json`, and bids are written through so they survive a restart. The
+  catalogue is read once into memory, so the database is not on the path a request takes.
+  What it does not survive is a container roll, because nothing is mounted; the reasoning
+  and the numbers are in ADR: The relational store.
 
 ## What I Built
 
@@ -182,7 +187,7 @@ each with its own changelog line and, where it decided something, its own record
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, thirty-two
+  data flow and infrastructure diagrams on their own zoomable pages, thirty-four
   decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
@@ -331,7 +336,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (183 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
+**API (189 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -340,7 +345,11 @@ synthetic 100k expansion's invariants, the real dataset and manifest), and integ
 tests that boot the real host in memory (`WebApplicationFactory`) to verify endpoints,
 filtering, sorting and paging parameters, the problem shape on every 400 and on a crash, the full bid
 lifecycle, static image serving, cache headers, the document catalog, the live-sample
-expander, the diagram pages, and the changelog. Run with `npm run test:api`.
+expander, the diagram pages, the changelog, and a persistence suite that places a bid,
+disposes the application, starts a second one against the same database file and reads
+the bid back, and one test that points the connection string at a path which cannot be
+opened to prove the site still serves its inventory when the store does not come up.
+Run with `npm run test:api`.
 
 **Frontend (37 Vitest tests):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
@@ -405,8 +414,10 @@ What is genuinely still open, in priority order:
   competing bidders use now. The phase-one edge is a Netlify rewrite proxy, which
   buffers a streaming response, and the edge is not mine to change on a free tier;
   the reasoning is in ADR: Competing bidders
-- Auth and per-user bid state, persisted; the single anonymous in-memory buyer is the
-  demo shortcut, and the competing bidders are simulated rather than real people
+- Auth and per-user bid state; bids are persisted now, but they belong to one anonymous
+  buyer, and the competing bidders are simulated rather than real people
+- Durable storage across a container roll, which means an Azure Files share mounted where
+  the SQLite file lives; the persistence is real, the volume under it is not
 - A virtualized grid once Load More accumulates thousands of rows
 - An audit with a real screen reader, which is a person's job rather than a checklist's;
   the keyboard path itself is now walkable and held by tests

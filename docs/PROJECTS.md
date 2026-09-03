@@ -22,7 +22,8 @@ mocking.
 
 The use cases, and the seams. `InventoryService` loads the dataset once and answers
 search/facet/by-id queries by composing Domain rules; `BidService` holds the buyer's
-in-memory bid state and applies it *before* filtering so prices never disagree with the
+bid state, read from the database at startup and written through on every accepted
+bid, and applies it *before* filtering so prices never disagree with the
 UI. Both consume data through ports (`IVehicleSource`, `IPhotoManifestSource`): the
 interfaces that make Infrastructure swappable and the tests trivial to fake.
 

@@ -41,14 +41,16 @@ flowchart LR
   subgraph box["Inside the container"]
     API["ASP.NET Core minimal API, .NET 10"]
     SPA["React 19 bundle, served as static files"]
-    SEED[("data/vehicles.json<br/>200 records, expanded to 100,000")]
+    SEED[("data/vehicles.json<br/>200 records, seeds the database on first boot")]
+    DB[("SQLite, /app/state/yard.db<br/>catalogue, photo manifest, bids")]
   end
 
   B -->|HTTPS| TLS
   TLS -->|HTTP 8080| ACI
   ACI --> API
   API --> SPA
-  API --> SEED
+  API -->|read once at startup, expanded to 100,000| DB
+  SEED -.->|first boot only| DB
   ACR -.->|image pulled on every roll| ACI
   ACI -.->|IMDS token| MI
   MI -.->|Reader, Monitoring Reader| AI
@@ -110,15 +112,17 @@ knows nothing about the ones around it.
 | --- | --- | --- |
 | `api/TheBlock.Data` | The plain records: `Vehicle`, `PhotoEntry`. No logic. | nothing |
 | `api/TheBlock.Domain` | The rules: auction schedule and clock, filter, ordering, bid rules, photo gallery, FNV-1a. Pure functions and records. | Data |
-| `api/TheBlock.Application` | The use cases: `InventoryService`, `BidService`, and the ports (`IVehicleSource`, `IPhotoManifestSource`) they read through. | Domain, Data |
-| `api/TheBlock.Infrastructure` | The adapters: JSON file sources, the synthetic scale-up decorator. | Application, Domain, Data |
+| `api/TheBlock.Application` | The use cases: `InventoryService`, `BidService`, and the ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`) they read through. | Domain, Data |
+| `api/TheBlock.Infrastructure` | The adapters: EF Core over SQLite, the JSON readers that seed it, the synthetic scale-up decorator. | Application, Domain, Data |
 | `api/TheBlock.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | all of the above |
 | `src/` | The browser: rendering, formatting, countdowns, URL state, one fetch seam. | the wire only |
 
 The test for whether a layer is earning its place is whether something can
-be swapped at its seam. Two things have been: the 100,000-record scale-up
-is a decorator on `IVehicleSource` and nothing above it changed, and the
-test suite hands the same services in-memory fakes.
+be swapped at its seam. Three things have been: the 100,000-record scale-up
+is a decorator on `IVehicleSource` and nothing above it changed, the test
+suite hands the same services in-memory fakes, and the catalogue moved from
+JSON files to SQLite without one line changing in Application or Domain
+(ADR: The relational store).
 
 ```live path=api/TheBlock.Application/Ports.cs region=ports
 ```
@@ -177,8 +181,10 @@ runs all three on every push and the deploy will not fire without them
 
 ## What is deliberately not here
 
-No database (the dataset is a file and bids live in memory, on purpose, for
-an isolated demo). No authentication (one anonymous buyer). No state
+No durable volume: there is a database now (SQLite through EF Core), but the
+file lives in the container's own writable layer, so bids survive a restart
+and not a roll, which ADR: The relational store is explicit about. No
+authentication (one anonymous buyer). No state
 library, router, component library or CSS framework. No server-rendered
 React. Each of those is a decision with a record behind it, not an
 oversight; ADR: Deployment strategy and the Hosting page cover the hosting

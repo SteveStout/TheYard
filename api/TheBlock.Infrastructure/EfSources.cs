@@ -1,0 +1,273 @@
+using Microsoft.EntityFrameworkCore;
+using TheBlock.Application;
+using TheBlock.Data;
+
+namespace TheBlock.Infrastructure;
+
+/// <summary>
+/// Row to domain and back. The mapping is dull on purpose and lives in one
+/// place, because the interesting failure mode of a persistence layer is a
+/// field that quietly stops being copied.
+/// </summary>
+public static class VehicleRows
+{
+    // #region mapping
+    public static Vehicle ToVehicle(this VehicleRow row) => new()
+    {
+        Id = row.Id,
+        Vin = row.Vin,
+        Year = row.Year,
+        Make = row.Make,
+        Model = row.Model,
+        Trim = row.Trim,
+        BodyStyle = row.BodyStyle,
+        ExteriorColor = row.ExteriorColor,
+        InteriorColor = row.InteriorColor,
+        Engine = row.Engine,
+        Transmission = row.Transmission,
+        Drivetrain = row.Drivetrain,
+        OdometerKm = row.OdometerKm,
+        FuelType = row.FuelType,
+        ConditionGrade = row.ConditionGrade,
+        ConditionReport = row.ConditionReport,
+        DamageNotes = row.DamageNotes,
+        TitleStatus = row.TitleStatus,
+        Province = row.Province,
+        City = row.City,
+        AuctionStart = row.AuctionStart,
+        StartingBid = row.StartingBid,
+        ReservePrice = row.ReservePrice,
+        BuyNowPrice = row.BuyNowPrice,
+        Images = row.Images,
+        SellingDealership = row.SellingDealership,
+        Lot = row.Lot,
+        CurrentBid = row.CurrentBid,
+        BidCount = row.BidCount,
+    };
+
+    public static VehicleRow ToRow(this Vehicle vehicle, int seq) => new()
+    {
+        Seq = seq,
+        Id = vehicle.Id,
+        Vin = vehicle.Vin,
+        Year = vehicle.Year,
+        Make = vehicle.Make,
+        Model = vehicle.Model,
+        Trim = vehicle.Trim,
+        BodyStyle = vehicle.BodyStyle,
+        ExteriorColor = vehicle.ExteriorColor,
+        InteriorColor = vehicle.InteriorColor,
+        Engine = vehicle.Engine,
+        Transmission = vehicle.Transmission,
+        Drivetrain = vehicle.Drivetrain,
+        OdometerKm = vehicle.OdometerKm,
+        FuelType = vehicle.FuelType,
+        ConditionGrade = vehicle.ConditionGrade,
+        ConditionReport = vehicle.ConditionReport,
+        DamageNotes = [.. vehicle.DamageNotes],
+        TitleStatus = vehicle.TitleStatus,
+        Province = vehicle.Province,
+        City = vehicle.City,
+        AuctionStart = vehicle.AuctionStart,
+        StartingBid = vehicle.StartingBid,
+        ReservePrice = vehicle.ReservePrice,
+        BuyNowPrice = vehicle.BuyNowPrice,
+        Images = [.. vehicle.Images],
+        SellingDealership = vehicle.SellingDealership,
+        Lot = vehicle.Lot,
+        CurrentBid = vehicle.CurrentBid,
+        BidCount = vehicle.BidCount,
+    };
+    // #endregion mapping
+}
+
+/// <summary>
+/// Adapter: the seed catalogue, out of the database. Same port the JSON file
+/// reader implements, and the synthetic scale-up still wraps it, so nothing
+/// above this line changed when the storage did.
+/// </summary>
+public sealed class EfVehicleSource(IDbContextFactory<YardDbContext> factory) : IVehicleSource
+{
+    // #region ef-sources
+    public IReadOnlyList<Vehicle> Load()
+    {
+        using var db = factory.CreateDbContext();
+        // Read once, in seed order, tracking nothing: these rows are a
+        // catalogue this process will never write back.
+        return [.. db.Vehicles.AsNoTracking().OrderBy(row => row.Seq).Select(row => row.ToVehicle())];
+    }
+    // #endregion ef-sources
+}
+
+/// <summary>Adapter: the photo manifest, out of the database.</summary>
+public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> factory) : IPhotoManifestSource
+{
+    public IReadOnlyList<PhotoEntry> Load()
+    {
+        using var db = factory.CreateDbContext();
+        return
+        [
+            .. db.Photos.AsNoTracking().OrderBy(row => row.Seq)
+                .Select(row => new PhotoEntry(row.File, row.Style, row.Title)),
+        ];
+    }
+}
+
+/// <summary>
+/// Adapter: bids, which are the only thing here that survives a restart
+/// because they are the only thing a visitor creates.
+/// </summary>
+public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidStore
+{
+    // #region bid-store
+    public IReadOnlyDictionary<string, BidState> Load()
+    {
+        using var db = factory.CreateDbContext();
+        return db.Bids.AsNoTracking().ToDictionary(
+            row => row.VehicleId,
+            row => new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs),
+            StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// One row per vehicle, replaced rather than appended. Called inside
+    /// BidService's lock, which is what makes "read the row, decide, write the
+    /// row" safe here without the database needing an opinion about it.
+    /// </summary>
+    public void Save(string vehicleId, BidState state)
+    {
+        using var db = factory.CreateDbContext();
+        var existing = db.Bids.Find(vehicleId);
+        if (existing is null)
+        {
+            db.Bids.Add(new BidRow
+            {
+                VehicleId = vehicleId,
+                Amount = state.Amount,
+                BidCount = state.BidCount,
+                WonBuyNow = state.WonBuyNow,
+                AtMs = state.AtMs,
+            });
+        }
+        else
+        {
+            existing.Amount = state.Amount;
+            existing.BidCount = state.BidCount;
+            existing.WonBuyNow = state.WonBuyNow;
+            existing.AtMs = state.AtMs;
+        }
+        db.SaveChanges();
+    }
+
+    public void Clear()
+    {
+        using var db = factory.CreateDbContext();
+        db.Bids.ExecuteDelete();
+    }
+    // #endregion bid-store
+}
+
+/// <summary>
+/// Whether the store is usable, and one sentence about why. The composition
+/// root asks this before it registers anything, so a database that will not
+/// open changes which adapters are wired rather than becoming a 500 on the
+/// first request (ADR: The relational store).
+/// </summary>
+public sealed record DatabaseState(bool Ready, string Note);
+
+/// <summary>
+/// Bring the database up, or report that it could not be brought up. Called
+/// once, before the container is built, because the answer decides what gets
+/// registered.
+/// </summary>
+public static class YardDatabase
+{
+    // #region prepare
+    public static DatabaseState Prepare(
+        string connection,
+        IVehicleSource seedVehicles,
+        IPhotoManifestSource seedPhotos)
+    {
+        try
+        {
+            var options = new DbContextOptionsBuilder<YardDbContext>().UseSqlite(connection).Options;
+            using var db = new YardDbContext(options);
+
+            // Both halves are timed because both are new work on every cold
+            // start, and a container that takes longer to answer its first
+            // request is a cost this change has to be able to state.
+            var migrating = System.Diagnostics.Stopwatch.StartNew();
+            db.Database.Migrate();
+            migrating.Stop();
+            var seeding = System.Diagnostics.Stopwatch.StartNew();
+            var seeded = YardSeed.EnsureSeeded(db, seedVehicles, seedPhotos);
+            seeding.Stop();
+
+            return new DatabaseState(
+                true,
+                $"migrated in {migrating.ElapsedMilliseconds} ms and seeded in {seeding.ElapsedMilliseconds} ms, "
+                + $"inserting {seeded.VehiclesInserted} vehicles and {seeded.PhotosInserted} photos, "
+                + $"now holding {seeded.VehiclesTotal} and {seeded.PhotosTotal}");
+        }
+        catch (Exception ex)
+        {
+            // Deliberately every exception. The caller's job is to keep serving
+            // without a store, and it cannot do that if this throws. What went
+            // wrong travels back as a sentence, is logged as an error, and shows
+            // up as a failed health check on the Admin tab.
+            return new DatabaseState(false, $"{ex.GetType().Name}: {ex.Message}");
+        }
+    }
+    // #endregion prepare
+}
+
+/// <summary>What the first boot found, so the log line can say it.</summary>
+public sealed record SeedResult(int VehiclesInserted, int PhotosInserted, int VehiclesTotal, int PhotosTotal);
+
+/// <summary>
+/// First boot fills the catalogue tables from the files that used to be the
+/// catalogue. The JSON readers are still the source of truth for what a fresh
+/// database contains, which keeps `npm run data` the way the dataset is
+/// regenerated and means the seed cannot drift from the file it came from.
+/// </summary>
+public static class YardSeed
+{
+    // #region seed
+    public static SeedResult EnsureSeeded(YardDbContext db, IVehicleSource vehicles, IPhotoManifestSource photos)
+    {
+        int vehiclesAdded = 0;
+        int photosAdded = 0;
+
+        // "Empty" rather than "new", so a database that half-filled because a
+        // process died mid-seed is not left half-filled forever.
+        if (!db.Vehicles.Any())
+        {
+            var rows = vehicles.Load().Select((vehicle, index) => vehicle.ToRow(index)).ToList();
+            db.Vehicles.AddRange(rows);
+            vehiclesAdded = rows.Count;
+        }
+
+        if (!db.Photos.Any())
+        {
+            var rows = photos.Load()
+                .Select((photo, index) => new PhotoRow
+                {
+                    Seq = index,
+                    File = photo.File,
+                    Style = photo.Style,
+                    Title = photo.Title,
+                })
+                .ToList();
+            db.Photos.AddRange(rows);
+            photosAdded = rows.Count;
+        }
+
+        if (vehiclesAdded > 0 || photosAdded > 0)
+        {
+            db.SaveChanges();
+        }
+
+        return new SeedResult(vehiclesAdded, photosAdded, db.Vehicles.Count(), db.Photos.Count());
+    }
+    // #endregion seed
+}

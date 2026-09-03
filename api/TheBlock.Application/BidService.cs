@@ -19,7 +19,28 @@ public sealed record BidState(int Amount, int BidCount, bool WonBuyNow, long AtM
 /// </summary>
 public sealed class BidService
 {
-    private readonly ConcurrentDictionary<string, BidState> _bids = new();
+    private readonly ConcurrentDictionary<string, BidState> _bids;
+    private readonly IBidStore _store;
+
+    /// <summary>Bids that live exactly as long as this process does.</summary>
+    public BidService()
+        : this(NullBidStore.Instance)
+    {
+    }
+
+    // #region store
+    /// <summary>
+    /// Bids read back from wherever the store keeps them, once, here. Every
+    /// read after this one is the dictionary: Apply runs over a hundred
+    /// thousand vehicles on a listing request, and a per-row query would end
+    /// the feature rather than persist it (ADR: The relational store).
+    /// </summary>
+    public BidService(IBidStore store)
+    {
+        _store = store;
+        _bids = new ConcurrentDictionary<string, BidState>(store.Load(), StringComparer.Ordinal);
+    }
+    // #endregion store
 
     /// <summary>
     /// Bidding is read, decide, write. A ConcurrentDictionary makes each of
@@ -60,11 +81,17 @@ public sealed class BidService
             var outcome = BidRules.ResolveBid(merged, amount, clock);
             if (outcome.Kind != BidOutcomeKind.Rejected)
             {
-                _bids[vehicle.Id] = new BidState(
+                var state = new BidState(
                     outcome.Amount,
                     merged.BidCount + 1,
                     WonBuyNow: outcome.Kind == BidOutcomeKind.Won,
                     AtMs: clock.NowMs);
+                _bids[vehicle.Id] = state;
+                // Written inside the lock, which serialises bids behind one
+                // SQLite write. At this scale that costs a millisecond and buys
+                // the guarantee that what is in memory and what is on disk
+                // cannot disagree about who is winning.
+                _store.Save(vehicle.Id, state);
             }
             return outcome;
         }
@@ -79,7 +106,9 @@ public sealed class BidService
             var outcome = BidRules.ResolveBuyNow(merged, clock);
             if (outcome.Kind == BidOutcomeKind.Won)
             {
-                _bids[vehicle.Id] = new BidState(outcome.Amount, merged.BidCount, WonBuyNow: true, AtMs: clock.NowMs);
+                var state = new BidState(outcome.Amount, merged.BidCount, WonBuyNow: true, AtMs: clock.NowMs);
+                _bids[vehicle.Id] = state;
+                _store.Save(vehicle.Id, state);
             }
             return outcome;
         }
@@ -90,6 +119,7 @@ public sealed class BidService
         lock (_gate)
         {
             _bids.Clear();
+            _store.Clear();
         }
     }
 }

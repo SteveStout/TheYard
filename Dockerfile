@@ -109,6 +109,14 @@ EXPOSE 8080
 # Healthcheck against a real API endpoint to confirm the app is accepting traffic, not just that the process is alive.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD curl -fsS http://localhost:8080/healthz || exit 1
 
+# Somewhere for the runtime user to write (ADR: The relational store). /app
+# itself is created by WORKDIR and owned by root, so the SQLite file gets a
+# directory of its own that the app user owns. Nothing is mounted here: the
+# database lives and dies with the container, which the record is explicit
+# about, and which is why the catalogue is seeded on every first boot.
+RUN mkdir -p /app/state && chown app:app /app/state
+ENV ConnectionStrings__Yard="Data Source=/app/state/yard.db"
+
 # Run as a non-root user to reduce attack surface and comply with container hardening best practices.
 USER app
 

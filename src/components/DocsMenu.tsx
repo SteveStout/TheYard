@@ -61,6 +61,8 @@ export type DocKey =
   | 'adrExceptions'
   | 'adrVersionSource'
   | 'adrMethod'
+  | 'adrStore'
+  | 'adrEf'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -361,6 +363,20 @@ export const DOCS: Record<
     kind: 'adr',
     number: '032',
   },
+  adrStore: {
+    title: 'ADR: The relational store',
+    menuLabel: 'ADR: The relational store',
+    url: '/api/docs/adr-store',
+    kind: 'adr',
+    number: '033',
+  },
+  adrEf: {
+    title: 'ADR: Entity Framework, explained',
+    menuLabel: 'ADR: Entity Framework, explained',
+    url: '/api/docs/adr-ef',
+    kind: 'adr',
+    number: '034',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -449,6 +465,8 @@ export const MENUS: Record<
       { key: 'adrExceptions' },
       { key: 'adrVersionSource' },
       { key: 'adrMethod' },
+      { key: 'adrStore' },
+      { key: 'adrEf' },
     ],
   },
   // #endregion records-menu
