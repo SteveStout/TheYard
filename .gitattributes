@@ -1,0 +1,20 @@
+# Line endings belong to the repository, not to whoever checked it out.
+#
+# Without this file the working tree depends on each machine's core.autocrlf,
+# which is how .editorconfig's `end_of_line` rule came to be true on Windows
+# and false on the Linux CI runner: the same command passed locally and failed
+# in CI on the same commit. The repository stores LF, so LF is what every
+# checkout gets (ADR-028).
+* text=auto eol=lf
+
+# Written by other tools, byte for byte.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.tgz binary

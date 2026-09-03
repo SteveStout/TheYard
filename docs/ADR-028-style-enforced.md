@@ -104,6 +104,47 @@ That is `docs/STYLE.md`'s own derive-do-not-store rule, violated in the
 component that serves `docs/STYLE.md`, found by a tool on its first run. It is
 the cleanest possible argument for the tool.
 
+## What CI found that the same command locally did not
+
+The style job failed on its first run, on `dotnet format --verify-no-changes`,
+against a commit where that exact command had just exited 0 on the machine that
+wrote it. Both machines were right.
+
+`.editorconfig` said `end_of_line = crlf`. Git stores LF for every file in this
+repository and there was no `.gitattributes`, so the working tree was whatever
+each machine's `core.autocrlf` made it: CRLF on Windows, LF on the Linux
+runner. The rule held on one of the two machines that check it, and which
+machine you were sitting at decided whether the repository was correctly
+formatted.
+
+The explanation was tested before it was acted on. One C# file was rewritten
+with LF endings locally and the same command run again, which is the whole
+experiment:
+
+| endings on disk | `end_of_line` | exit |
+| --- | --- | --- |
+| CRLF, a Windows checkout | crlf | 0 |
+| LF, a Linux checkout | crlf | 2 |
+| LF | lf | 0 |
+| CRLF | lf | 2 |
+
+Three files changed, and the third is the one worth reading:
+
+- `.gitattributes` now declares `* text=auto eol=lf`, so every checkout gets
+  the same bytes whatever anyone's git is configured to do.
+- `.editorconfig` says `end_of_line = lf`, which is what git has stored all
+  along.
+- `.prettierrc.json` said `"endOfLine": "auto"`, which means "accept whatever
+  the file already has". That is a check that cannot fail, and it is why
+  Prettier had nothing to say about a repository holding two kinds of line
+  ending at once. It says `"lf"` now, and the working tree was normalized to
+  match in the same commit.
+
+A rule that holds only on the machine that wrote it is the exact thing this
+record exists to stop, and it survived right up until something ran it
+somewhere else. That is the argument for enforcing style in CI, made by the
+enforcement, on its first run, against the record proposing it.
+
 ## The diagram, and the runtime that is not shipping with it
 
 `docs/ARCHITECTURE.md` now carries the topology as Mermaid. The point is that
@@ -142,6 +183,8 @@ The style job (`.github/workflows/ci.yml`):
 - `dotnet format` reformatted a small number of C# files as a one-off. The diff
   was checked with `git diff --ignore-all-space` before it was accepted, and
   every one of the three suites was run after it.
+- Line endings are now the repository's business rather than each
+  checkout's, and Prettier enforces them instead of accepting them.
 - The `Program.cs` BOM is gone. The ship gate had a check asserting the BOM was
   present, added when an encoding-blind PowerShell edit once corrupted a file.
   That check now asserts the opposite, because the formatter is the thing
@@ -160,6 +203,7 @@ The style job (`.github/workflows/ci.yml`):
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the style job.
 - [`.oxlintrc.json`](https://github.com/SteveStout/TheYard/blob/main/.oxlintrc.json), [`.prettierrc.json`](https://github.com/SteveStout/TheYard/blob/main/.prettierrc.json), [`.prettierignore`](https://github.com/SteveStout/TheYard/blob/main/.prettierignore): the three configs.
 - [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/.editorconfig): the C# half, now enforced by `dotnet format` rather than requested of an editor.
+- [`.gitattributes`](https://github.com/SteveStout/TheYard/blob/main/.gitattributes): the line endings, so the same command answers the same on every machine.
 - [`package.json`](https://github.com/SteveStout/TheYard/blob/main/package.json): `lint`, `format`, `format:check`, `format:api`, `format:api:check`.
 - [`docs/ARCHITECTURE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ARCHITECTURE.md): the topology and the layer direction, in Mermaid.
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the half a tool cannot check.

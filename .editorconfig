@@ -5,7 +5,10 @@ root = true
 
 [*]
 charset = utf-8
-end_of_line = crlf
+# LF, which is what git has stored for every file here since the first commit.
+# .gitattributes is what makes that true in the working tree as well, on every
+# machine rather than only on the ones whose core.autocrlf agrees (ADR-028).
+end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
