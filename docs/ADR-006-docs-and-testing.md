@@ -93,10 +93,14 @@ enough to be commented." Three rules follow from it, all in force.
   [`docs/images`](https://github.com/SteveStout/TheYard/blob/main/docs/images) beside the configuration screenshots from the first
   day. The first pass found a real defect: a long Azure event message ran
   past the edge of its card, fixed in the same version.
-- **Code shown in a record is documented by the record.** A region marker
-  names its record in a comment, the record explains the code beside the
-  live sample, and the code itself carries only the comments a reader needs
-  at the line. Code that no record shows keeps its own comments. So the
+- **Code shown in a record is documented by the record, and teaches.** A
+  region marker names its record in a comment, the record explains the code
+  beside the live sample, and the region itself opens with a comment written
+  for someone meeting the pattern for the first time: why it is done this
+  way, and what breaks otherwise. Steve's rule for it, on the second build
+  day: "any code samples must be well documented, that helps people learn
+  and grow." Code no record shows keeps the comments a reader needs at the
+  line. Code that no record shows keeps its own comments. So the
   question for a reviewer is never "is this commented" but "which record
   shows this", and the Files section at the end of every record answers it.
 - **A diagram opens on its own page.** The picture in a record is a preview

@@ -16,6 +16,9 @@ location: westus2
 name: aci-theyard-ss
 properties:
   # #region container
+    # The image line is a placeholder the pipeline rewrites per roll; everything
+    # else is the shape of the container group. This file is the rollback path
+    # too: `az container create -f` with it restores a known-good group.
   containers:
   - name: theyard
     properties:

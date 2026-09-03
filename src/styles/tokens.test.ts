@@ -33,6 +33,10 @@ export function contrast(a: string, b: string): number {
 }
 
 // #region site-palette
+// Contrast is measured, not eyeballed. The test reads the real tokens.css with
+// ?raw and computes the WCAG ratio for every text and ground pair the site
+// actually uses, so a palette change that fails AA fails the build instead of
+// shipping (ADR-016).
 describe('the site palette (ADR-016)', () => {
   it('body, muted and heading text clear AA on white and on the page ground', () => {
     for (const ground of ['color-surface', 'color-bg']) {

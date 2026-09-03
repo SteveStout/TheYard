@@ -10,6 +10,10 @@ export type RowKind = DocKind | 'external' | 'admin' | 'reset';
  * the Admin tab, and Reset bids. Rows reuse these; nothing gets a bespoke icon.
  */
 // #region icons
+// One stroked path per row kind on a shared 20x20 grid, rather than an icon
+// library: seven paths cover every row in the rail and the drawer, they inherit
+// currentColor so a theme change needs no icon work, and the bundle carries no
+// font or sprite (ADR-011).
 const PATHS: Record<RowKind, string> = {
   overview:
     'M6 2.5h6.5L17 6.5v10a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1zM12.5 2.5v4h4M8 10.5h5M8 13.5h5',

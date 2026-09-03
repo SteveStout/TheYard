@@ -35,6 +35,10 @@ param computeKind string = 'appservice'
 param minReplicas int = 1
 
 // #region naming
+// Steve's naming rule in three lines: UPPERCASE for the things people read in
+// the portal, lowercase for the ones Azure requires to be (a registry name must
+// be lowercase alphanumeric), and a deterministic suffix from the resource
+// group id so a name is unique without being random (ADR-003).
 var suffix = uniqueString(resourceGroup().id)
 var upperTag = toUpper('${baseName}-${ownerTag}')
 var acrName = toLower('cr${baseName}${ownerTag}${suffix}')

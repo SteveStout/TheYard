@@ -5,6 +5,7 @@ footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Best Practices menu.
 
+- **1.0.0.31** (2026-09-02): Every code sample a record shows now carries a teaching comment explaining why it is written that way, so a reader meeting the pattern for the first time learns from it (ADR-006 addendum).
 - **1.0.0.30** (2026-09-02): The README was rewritten to what is live now, with all four "with more time" promises closed and what remains listed honestly, and the last two documents carrying em dashes from before the voice rule were rewritten.
 - **1.0.0.29** (2026-09-02): Every failure now answers one shape, RFC 9457 ProblemDetails with the message in detail and a trace identifier, every request is logged as structured JSON, and a React error boundary turns a render crash into a page with a way out and reports it to the Admin tab (ADR-023).
 - **1.0.0.28** (2026-09-02): The sidebar gained an App Architecture section holding the new architecture and style pages, the data flow, the project structure and the three records that walk the code (ADR-022).

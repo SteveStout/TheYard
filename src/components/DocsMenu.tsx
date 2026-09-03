@@ -64,6 +64,10 @@ export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
  * lists to each other (ADR-017).
  */
 // #region docs-record
+// One record, one place. The URL's last segment is the slug the API looks up
+// in DocsCatalog.cs, and a test fails if the two lists ever disagree, so a
+// document can never appear in the menu without being servable, or the other
+// way around (ADR-017).
 export const DOCS: Record<DocKey, { title: string; menuLabel: string; url: string; kind: DocKind }> = {
   readme: { title: 'README', menuLabel: 'Project README', url: '/api/docs/readme', kind: 'overview' },
   dataflow: { title: 'Data Flow', menuLabel: 'Data flow diagram', url: '/api/docs/dataflow', kind: 'overview' },

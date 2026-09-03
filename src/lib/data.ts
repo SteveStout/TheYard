@@ -123,6 +123,11 @@ export function peekVehicles(filters?: InventoryFilters, sort?: SortKey): Vehicl
 }
 
 // #region fetch-vehicles
+// The one function every list view goes through. Three things share this seam:
+// a cache keyed by the exact query string (a filter combination revisited
+// renders instantly), an AbortSignal so an effect's cleanup can cancel a
+// request the visitor has already typed past, and forceRefresh for the paths
+// that must not read a cache (retry buttons, the periodic status refresh).
 export interface FetchVehiclesOptions {
   sort?: SortKey;
   offset?: number;

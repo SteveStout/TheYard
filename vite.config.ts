@@ -25,6 +25,11 @@ export default defineConfig({
   },
   // #endregion dev-server
   // #region unit-tests
+    // Vitest reads its settings from the same file as the dev server, which is
+    // why there is no vitest.config.ts. The include pattern keeps it to the unit
+    // tests, and the one CSS entry exists because Vitest blanks CSS imports it
+    // is not told to process, which would leave the palette test with nothing to
+    // measure.
   test: {
     // Unit tests only; tests/e2e belongs to Playwright.
     include: ['src/**/*.test.ts'],

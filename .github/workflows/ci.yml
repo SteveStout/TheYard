@@ -9,6 +9,11 @@ permissions:
   contents: read
 
 # #region ci-jobs
+# Three jobs, one per suite, all on every push. They are separate so a failing
+# browser test does not hide a failing unit test, and so the slowest one (the
+# end-to-end job, which installs Chrome) does not gate the other two. The
+# frontend job also typechecks and builds: a type error should fail before a
+# test does.
 jobs:
   frontend:
     runs-on: ubuntu-latest

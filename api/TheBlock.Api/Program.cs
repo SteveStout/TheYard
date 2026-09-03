@@ -382,6 +382,10 @@ app.MapFallbackToFile("{*path:nonfile}", "index.html");
 app.Run();
 
 #region find-upward
+// Started from three different folders (dotnet run, the test host's bin
+// directory, /app in the image), so nothing may assume a fixed depth. Walking
+// up until the file appears works from all three, and the throw names what
+// was missing instead of failing later as a null.
 static string FindUpward(string startDirectory, string relativePath)
 {
     for (var dir = new DirectoryInfo(startDirectory); dir is not null; dir = dir.Parent)

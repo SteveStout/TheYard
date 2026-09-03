@@ -15,6 +15,9 @@ export default defineConfig({
     channel: 'chrome',
   },
   // #region web-servers
+    // Playwright starts both servers itself, so `npm run test:e2e` needs nothing
+    // running first, and reuses ones already up, so it also works mid-development.
+    // Each server is considered ready when a real URL answers, not after a sleep.
   webServer: [
     {
       command: 'npm run api',

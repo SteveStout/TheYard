@@ -92,6 +92,9 @@ COPY --chown=app:app --from=frontend-build /src/dist/ /app/wwwroot/
 # exactly which build it is. The API serves these at /api/version and the page
 # footer renders them; the ship pipeline passes both arguments (ADR-005).
 # #region build-args
+# Provenance, baked in at build time: the running container can then tell you
+# exactly which version and commit it is (the page footer and /api/version read
+# these). Defaults keep a local `docker build` working without arguments.
 ARG APP_VERSION=dev
 ARG APP_COMMIT=local
 ENV APP_VERSION=${APP_VERSION}
