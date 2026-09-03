@@ -97,6 +97,26 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<ICurrentRequest, HttpCurrentRequest>();
 builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
 
+// The endpoints that exist to be read by the Admin tab, which are excluded from
+// the Admin tab's own numbers.
+//
+// Named one by one rather than matched on the /api/admin/ prefix, because
+// /api/admin/selftest/exception is not an observability read: it is the
+// deliberate failure that proves the error path works, and it is exactly the
+// request the timing section should be showing.
+var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
+{
+    "/api/admin/sql",
+    "/api/admin/logs",
+    "/api/admin/metrics",
+    "/api/admin/azure",
+    "/api/admin/telemetry",
+    "/api/errors",
+    "/api/health",
+    "/readyz",
+    "/healthz",
+};
+
 // One request, timed and filed, unless it is the Admin tab watching itself.
 //
 // The observability endpoints are excluded because otherwise they take the
@@ -109,8 +129,7 @@ builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
 void RecordRequest(HttpContext context, TimeSpan elapsed)
 {
     string path = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
-    if (path.StartsWith("/api/admin/", StringComparison.Ordinal)
-        || path is "/api/health" or "/readyz" or "/healthz")
+    if (observabilityReads.Contains(path))
     {
         return;
     }
@@ -841,6 +860,15 @@ app.MapGet("/api/admin/metrics", () =>
             p95_ms = Percentiles.Of(requestDurations, 95),
             by_path = Percentiles.ByPath(requests),
         },
+        // Counts by status, which is the aggregate that makes the timing above
+        // mean something: a p95 of eight milliseconds reads very differently
+        // when a third of the window is 500s. It also names nobody, which the
+        // per-request list it replaced could not say.
+        by_status = requests
+            .GroupBy(entry => entry.Status)
+            .OrderBy(group => group.Key)
+            .Select(group => new { status = group.Key, count = group.Count() })
+            .ToArray(),
         sql = new
         {
             window = statements.Count,

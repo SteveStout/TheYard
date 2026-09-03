@@ -53,8 +53,10 @@ type EndpointTiming = {
   p95_ms: number;
   max_ms: number;
 };
+type StatusCount = { status: number; count: number };
 type Metrics = {
   requests: { window: number; p50_ms: number; p95_ms: number; by_path: EndpointTiming[] };
+  by_status: StatusCount[];
   sql: { window: number; p50_ms: number; p95_ms: number; max_ms: number };
 };
 type AzureState = {
@@ -337,10 +339,27 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           <>
             <p className={styles.muted}>
               Measured in this process, over the last {metrics.requests.window} requests and{' '}
-              {metrics.sql.window} statements, this page&rsquo;s own excluded. Requests p50{' '}
-              {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms. SQL p50{' '}
-              {metrics.sql.p50_ms} ms, p95 {metrics.sql.p95_ms} ms, slowest {metrics.sql.max_ms} ms.
+              {metrics.sql.window} statements, with the endpoints this page reads left out so it
+              does not fill with the act of being read.
             </p>
+            <ul className={styles.summaryList}>
+              <li>
+                Requests: p50 {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms.
+              </li>
+              <li>
+                SQL: p50 {metrics.sql.p50_ms} ms, p95 {metrics.sql.p95_ms} ms, slowest{' '}
+                {metrics.sql.max_ms} ms.
+              </li>
+              <li>
+                Answers:{' '}
+                {metrics.by_status.length === 0
+                  ? 'nothing recorded yet'
+                  : metrics.by_status
+                      .map((entry) => `${entry.count} of ${entry.status}`)
+                      .join(', ')}
+                .
+              </li>
+            </ul>
             <div
               className={styles.tableWrap}
               role="region"

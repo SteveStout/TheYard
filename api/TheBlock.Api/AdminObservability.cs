@@ -34,9 +34,11 @@ public sealed class SqlRingBuffer(int capacity) : ISqlLog
     /// </summary>
     private static bool SelfObservation(string? request) =>
         request is not null
-        && (request.Contains("/api/admin/", StringComparison.Ordinal)
-            || request.EndsWith("/api/health", StringComparison.Ordinal)
-            || request.EndsWith("/readyz", StringComparison.Ordinal));
+        && (request.EndsWith("/api/health", StringComparison.Ordinal)
+            || request.EndsWith("/readyz", StringComparison.Ordinal)
+            || request.EndsWith("/api/admin/sql", StringComparison.Ordinal)
+            || request.EndsWith("/api/admin/logs", StringComparison.Ordinal)
+            || request.EndsWith("/api/admin/metrics", StringComparison.Ordinal));
 
     public void Record(SqlStatement statement)
     {

@@ -137,6 +137,57 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         Assert.True(json.RootElement.GetProperty("sql").GetProperty("window").GetInt32() >= 0);
     }
 
+    // #region status
+    [Fact]
+    public async Task A_request_that_throws_is_counted_as_the_status_its_caller_got()
+    {
+        // The self-test endpoint throws on purpose and answers 500. It is the
+        // one request in the application guaranteed to take the exception path.
+        var failed = await _client.GetAsync("/api/admin/selftest/exception");
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
+
+        string body = await _client.GetStringAsync("/api/admin/metrics");
+        using var json = JsonDocument.Parse(body);
+
+        var statuses = json.RootElement.GetProperty("by_status").EnumerateArray()
+            .ToDictionary(
+                entry => entry.GetProperty("status").GetInt32(),
+                entry => entry.GetProperty("count").GetInt32());
+
+        // This is the assertion that pins the middleware's position. Below the
+        // exception handler, the finally reads the status before the handler
+        // writes one, and this request is filed as a 200: the first version of
+        // the timing section did exactly that, so the endpoint that exists to
+        // prove the failure path works was reported as a success.
+        Assert.True(
+            statuses.TryGetValue(500, out int failures) && failures >= 1,
+            "a request that threw should be counted as a 500, saw: "
+            + string.Join(", ", statuses.Select(pair => $"{pair.Key}={pair.Value}")));
+    }
+
+    [Fact]
+    public async Task The_endpoints_the_admin_tab_reads_stay_out_of_its_own_numbers()
+    {
+        await _client.GetAsync("/api/facets");
+        await _client.GetAsync("/api/health");
+        await _client.GetAsync("/api/admin/logs");
+
+        string body = await _client.GetStringAsync("/api/admin/metrics");
+        using var json = JsonDocument.Parse(body);
+        var paths = json.RootElement.GetProperty("requests").GetProperty("by_path").EnumerateArray()
+            .Select(timing => timing.GetProperty("path").GetString())
+            .ToArray();
+
+        Assert.Contains("/api/facets", paths);
+        Assert.DoesNotContain("/api/health", paths);
+        Assert.DoesNotContain("/api/admin/logs", paths);
+        Assert.DoesNotContain("/api/admin/metrics", paths);
+        // But the deliberate failure is not an observability read, and the
+        // timing section is exactly where it should show up.
+        Assert.DoesNotContain(paths, path => path == "/api/admin/sql");
+    }
+    // #endregion status
+
     // #region percentiles
     [Theory]
     [InlineData(new long[] { 5 }, 50, 5)]
