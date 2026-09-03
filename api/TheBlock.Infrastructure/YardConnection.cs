@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace TheBlock.Infrastructure;
@@ -73,12 +74,58 @@ public sealed record YardConnection(YardProvider Provider, string ConnectionStri
     /// </summary>
     public DbContextOptionsBuilder Configure(DbContextOptionsBuilder builder) =>
         Provider == YardProvider.SqlServer
-            ? builder.UseSqlServer(ConnectionString, sql =>
+            ? builder.UseSqlServer(WithResumeBudget(ConnectionString), sql =>
             {
                 sql.EnableRetryOnFailure(maxRetryCount: 4, maxRetryDelay: TimeSpan.FromSeconds(8), errorNumbersToAdd: null);
                 sql.CommandTimeout(120);
             })
             : builder.UseSqlite(ConnectionString, sqlite => sqlite.MigrationsAssembly(SqliteMigrations));
+    // #region resume-budget
+    /// <summary>
+    /// Give a paused serverless database time to wake up, by widening the
+    /// connect timeout in code rather than in the setting.
+    ///
+    /// The first roll on Azure SQL failed here, and the exception said exactly
+    /// where:
+    ///
+    ///   Connection Timeout Expired. The timeout period elapsed during the
+    ///   post-login phase. [Pre-Login] initialization=135; handshake=432;
+    ///   [Login] initialization=1; authentication=4; [Post-Login] complete=29347
+    ///
+    /// Read the phases. The handshake worked, and the login worked in four
+    /// milliseconds, so the managed identity is fine and the firewall is fine.
+    /// What ran out was post-login, at 29.3 seconds against SqlClient's default
+    /// 30, which is what waking a paused database looks like: the free tier
+    /// auto-pauses after an idle hour and a resume takes thirty to sixty
+    /// seconds. A container rolls about once a day, so almost every deploy
+    /// arrives at a database that is asleep.
+    ///
+    /// Ninety seconds, not thirty, and not five minutes. A resume that has not
+    /// finished in ninety is not a resume any more, and the fallback to files
+    /// has to still happen while the deploy is watching.
+    ///
+    /// In code rather than in the connection string because the connection
+    /// string is a setting somebody edits under pressure, and this number has a
+    /// reason that belongs next to it. An explicit Connect Timeout in the
+    /// setting still wins: this only fills in a value that was never given.
+    /// </summary>
+    public static string WithResumeBudget(string connectionString)
+    {
+        var builder = new SqlConnectionStringBuilder(connectionString);
+        // ShouldSerialize, not ContainsKey. A strongly typed connection string
+        // builder knows every keyword the provider has, so ContainsKey answers
+        // true for all of them whether or not anybody set one, and the first
+        // version of this method used it and therefore never widened anything.
+        // ShouldSerialize is the one that means "the caller supplied this".
+        if (!builder.ShouldSerialize("Connect Timeout"))
+        {
+            builder.ConnectTimeout = 90;
+        }
+
+        return builder.ConnectionString;
+    }
+    // #endregion resume-budget
+
     // #endregion configure
 
     /// <summary>The options a context is built from, for callers that are not going through DI.</summary>

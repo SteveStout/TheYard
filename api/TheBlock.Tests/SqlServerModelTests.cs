@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using TheBlock.Infrastructure;
@@ -253,4 +254,41 @@ public class SqlServerModelTests
         Assert.Equal(ValueGenerated.Never, version.ValueGenerated);
     }
     // #endregion token
+
+    // #region resume-budget
+    [Fact]
+    public void A_connection_with_no_timeout_gets_ninety_seconds_to_wake_the_database()
+    {
+        string widened = YardConnection.WithResumeBudget(
+            "Server=tcp:sql-example.database.windows.net,1433;Initial Catalog=sqldb-example;"
+            + "Authentication=Active Directory Managed Identity;User Id=00000000-0000-0000-0000-000000000000;"
+            + "Encrypt=True");
+
+        // Read the values back as values rather than matching on the text. The
+        // builder normalises what it is handed: "Server" comes back as "Data
+        // Source", "User Id" as "User ID", and "Active Directory Managed
+        // Identity" as "ActiveDirectoryManagedIdentity". Both spellings are
+        // accepted by the driver, and a test that asserted the spelling would
+        // be asserting the builder's formatting rather than the setting that
+        // reaches the database.
+        var read = new SqlConnectionStringBuilder(widened);
+
+        Assert.Equal(90, read.ConnectTimeout);
+        // Everything else survives. A helper that quietly dropped the
+        // authentication mode would be worse than the timeout it fixed.
+        Assert.Contains("sql-example.database.windows.net", read.DataSource, StringComparison.Ordinal);
+        Assert.Equal("sqldb-example", read.InitialCatalog);
+        Assert.Equal(SqlAuthenticationMethod.ActiveDirectoryManagedIdentity, read.Authentication);
+        Assert.Equal("True", read.Encrypt.ToString());
+    }
+
+    [Fact]
+    public void A_timeout_somebody_chose_on_purpose_is_left_alone()
+    {
+        string widened = YardConnection.WithResumeBudget(
+            "Server=tcp:sql-example.database.windows.net,1433;Initial Catalog=sqldb-example;Connect Timeout=15");
+
+        Assert.Equal(15, new SqlConnectionStringBuilder(widened).ConnectTimeout);
+    }
+    // #endregion resume-budget
 }

@@ -141,3 +141,62 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* #region wide-sections */
+/*
+ * The SQL, the log and the timing are tables, and a table in a 380px grid
+ * column is a column of ellipses. These sit below the grid at full width and
+ * scroll sideways inside themselves, so the page body never does.
+ */
+.wide {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* The statement itself. Wrapped rather than truncated: a query nobody can read
+   the end of is a decoration. */
+.sql {
+  margin: 0 0 var(--space-1);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 46ch;
+}
+/* #endregion wide-sections */

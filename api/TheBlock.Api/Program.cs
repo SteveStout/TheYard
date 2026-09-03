@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
@@ -82,12 +83,34 @@ var database = YardDatabase.Prepare(
     new JsonFileVehicleSource(dataPath),
     new JsonFilePhotoManifestSource(manifestPath));
 
+#region admin-rings
+// The three rings behind the Admin tab's new sections, registered here because
+// the SQL one has to exist before the context factory that feeds it. All three
+// are this process's memory and nothing else: they empty on every roll, which
+// the page says out loud (ADR: What the database is actually doing).
+var sqlLog = new SqlRingBuffer(200);
+var logLog = new LogRingBuffer(300);
+var requestLog = new RequestRingBuffer(500);
+builder.Services.AddSingleton(sqlLog);
+builder.Services.AddSingleton<ISqlLog>(sqlLog);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<ICurrentRequest, HttpCurrentRequest>();
+builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
+#endregion admin-rings
+
 if (database.Ready)
 {
     // A factory rather than a scoped context: the two sources and the bid store
     // are singletons that each want a context for the length of one operation,
     // and there is no request scope at startup when the catalogue is read.
-    builder.Services.AddDbContextFactory<YardDbContext>(options => yard.Configure(options));
+    // The interceptor is what puts every statement on the Admin tab, and it is
+    // attached here rather than inside YardConnection so that the connection
+    // type stays a description of where the database is.
+    builder.Services.AddDbContextFactory<YardDbContext>((services, options) =>
+    {
+        yard.Configure(options);
+        options.AddInterceptors(new SqlLogInterceptor(sqlLog, services.GetRequiredService<ICurrentRequest>()));
+    });
     // Identity's stores want a context per request, and the factory hands out
     // contexts rather than registering one. This is the adapter between the two
     // and the only scoped registration in the application.
@@ -613,6 +636,30 @@ var azureSelf = new AzureSelf(
     builder.Configuration["Azure:SelfResourceId"]
         ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
 
+#region request-timing
+// Timing, outside the error middleware so the number is the whole cost a
+// caller waited for, including the time spent turning an exception into a
+// ProblemDetails. Recorded in a finally, so a request that throws is still
+// timed: an endpoint that fails slowly is the one worth seeing.
+app.Use(async (context, next) =>
+{
+    long start = Stopwatch.GetTimestamp();
+    try
+    {
+        await next();
+    }
+    finally
+    {
+        requestLog.Record(new RequestEntry(
+            DateTimeOffset.UtcNow,
+            context.Request.Method,
+            context.Request.Path.HasValue ? context.Request.Path.Value! : "/",
+            context.Response.StatusCode,
+            (long)Stopwatch.GetElapsedTime(start).TotalMilliseconds));
+    }
+});
+#endregion request-timing
+
 #region error-log
 // Middleware, so it sees every response including the ones no endpoint
 // returned. It records and rethrows rather than handling: the ProblemDetails
@@ -705,6 +752,43 @@ app.MapGet("/api/health", () =>
 #endregion probes
 
 app.MapGet("/api/errors", () => Results.Json(errorLog.Snapshot(), wireFormat));
+
+#region admin-observability-endpoints
+// The raw SQL, newest first. Statement text, parameter names and types, how
+// long the database took, and the request that caused it. No parameter values:
+// see the comment on SqlStatement for why there is nowhere to put one.
+app.MapGet("/api/admin/sql", () => Results.Json(sqlLog.Snapshot(), wireFormat));
+
+// The raw log lines, newest first, exactly as the console got them.
+app.MapGet("/api/admin/logs", () => Results.Json(logLog.Snapshot(), wireFormat));
+
+// Timing, computed on read from the two rings. The window is whatever the
+// rings currently hold, which the page states rather than implying.
+app.MapGet("/api/admin/metrics", () =>
+{
+    var requests = requestLog.Snapshot();
+    var statements = sqlLog.Snapshot();
+    long[] sqlDurations = statements.Select(statement => statement.DurationMs).ToArray();
+    return Results.Json(new
+    {
+        requests = new
+        {
+            window = requests.Count,
+            p50_ms = Percentiles.Of(requests.Select(entry => entry.DurationMs).ToArray(), 50),
+            p95_ms = Percentiles.Of(requests.Select(entry => entry.DurationMs).ToArray(), 95),
+            by_path = Percentiles.ByPath(requests),
+        },
+        sql = new
+        {
+            window = statements.Count,
+            p50_ms = Percentiles.Of(sqlDurations, 50),
+            p95_ms = Percentiles.Of(sqlDurations, 95),
+            max_ms = sqlDurations.Length == 0 ? 0 : sqlDurations.Max(),
+        },
+        recent_requests = requests,
+    }, wireFormat);
+});
+#endregion admin-observability-endpoints
 
 #region client-errors
 // Browser errors land where server errors already do (ADR-023): a render

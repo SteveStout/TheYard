@@ -17,6 +17,9 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   // "not configured" state rather than an empty box or a crash (ADR-024).
   await expect(page.getByTestId('telemetry-card')).toBeVisible();
   await expect(page.getByTestId('telemetry-card')).toContainText('Traffic, last hour');
+  await expect(page.getByTestId('timing-card')).toContainText('Path');
+  await expect(page.getByTestId('sql-card')).toBeVisible();
+  await expect(page.getByTestId('log-card')).toContainText('Category');
   await page.getByRole('button', { name: 'Back to inventory' }).click();
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
 });
@@ -35,4 +38,26 @@ test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }
 test('?view=admin deep-links straight to the Admin tab', async ({ page }) => {
   await page.goto('/?view=admin');
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
+});
+
+test('the SQL section shows statements and never a parameter value', async ({ page, request }) => {
+  // Register through the API so the browser is not the thing under test here.
+  // A registration is the request whose parameters carry an email address, and
+  // it is the reason this section shows names and types and nothing else.
+  const email = `sql-canary-${Date.now()}@example.com`;
+  const registered = await request.post('http://localhost:5210/api/auth/register', {
+    data: { email, password: 'correct horse battery' },
+  });
+  expect(registered.status(), await registered.text()).toBe(200);
+
+  await page.goto('/?view=admin');
+  const card = page.getByTestId('sql-card');
+  await expect(card).toBeVisible();
+  // A statement, with the request that caused it and a parameter described.
+  await expect(card).toContainText('AspNetUsers');
+  await expect(card).toContainText('POST /api/auth/register');
+  await expect(card).toContainText(/@\w+ \w+/);
+  // The address itself is nowhere on the page.
+  await expect(page.locator('body')).not.toContainText(email);
+  await expect(page.locator('body')).not.toContainText('sql-canary');
 });

@@ -564,6 +564,78 @@ of that machine, not of the thing you are testing.
 - The connection string is configuration, so reverting this is removing an
   environment variable rather than a deploy. `aci-export-v11.yaml` is untouched.
 
+## Addendum, 2026-09-03: the first container that actually connected
+
+Every part of this had been verified separately. The server exists, the schema is
+published, the identity has exactly two roles, the connection string carries no
+secret. What had never been observed was a container coming up and saying it was
+on Azure SQL Database, because 1.0.0.49 shipped on SQLite through the fallback
+and 1.0.0.50 never reached the site.
+
+1.0.0.51 got there, and failed, and the failure is worth keeping because of how
+precisely it named itself:
+
+```
+Connection Timeout Expired. The timeout period elapsed during the post-login
+phase. The duration spent while attempting to connect to this server was -
+[Pre-Login] initialization=135; handshake=432;
+[Login] initialization=1; authentication=4;
+[Post-Login] complete=29347;
+```
+
+Read the phases before reaching for an explanation. The handshake completed in
+432 ms, so the network path and the firewall rule are fine. Login authentication
+completed in 4 ms, so the managed identity is fine and the contained user exists
+with the right SID. Everything this ADR was uncertain about had just been proved
+working, by the error.
+
+What ran out was post-login, at 29.3 seconds against SqlClient's 30. That is not
+a connection problem. That is a serverless database waking up: the free tier
+auto-pauses after an idle hour, a resume takes thirty to sixty seconds, and a
+container rolls about once a day, so nearly every deploy will arrive at a
+database that is asleep.
+
+The fix is a wider connect timeout, ninety seconds, set in code:
+
+```csharp
+var builder = new SqlConnectionStringBuilder(connectionString);
+// ShouldSerialize, not ContainsKey. A strongly typed connection string builder
+// knows every keyword the provider has, so ContainsKey answers true for all of
+// them whether or not anybody set one.
+if (!builder.ShouldSerialize("Connect Timeout"))
+{
+    builder.ConnectTimeout = 90;
+}
+```
+
+Three things about that, each of which was a choice:
+
+**Ninety, not five minutes.** A resume that has not finished in ninety seconds is
+not a resume. The deploy gives a new build five minutes to answer, and the
+fallback to files has to still happen while the deploy is watching, or an outage
+becomes a failed deploy as well.
+
+**In code, not in the setting.** The connection string is a value somebody edits
+under pressure at two in the morning. This number has a reason, and the reason
+belongs beside it. An explicit timeout in the setting still wins.
+
+**One attempt, not a retry loop.** Retrying a ninety-second attempt four times is
+six minutes, which is longer than the deploy will wait. The retry policy that is
+already here covers transient errors during commands; the cold connect gets one
+honest budget.
+
+One thing worth knowing, because it surprised the test: the builder rewrites what
+it is handed. `Server` comes back as `Data Source`, `User Id` as `User ID`, and
+`Active Directory Managed Identity` as `ActiveDirectoryManagedIdentity`. The
+driver accepts either spelling, so the setting the deploy writes and the string
+the driver receives are equivalent without being identical. The test reads the
+values back as values for exactly that reason.
+
+The first version of that method used `ContainsKey` and therefore never widened
+anything, which the test caught before it shipped. That is the second time on
+this work that a check answered an easier question than the one it was written
+for, and it is recorded in ADR: The exemption that hid a contrast failure.
+
 ## Files
 
 - [`api/TheBlock.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheBlock.Infrastructure/YardConnection.cs): the provider choice, the retry policy, and what may be said about the database.

@@ -30,6 +30,33 @@ type Telemetry = {
   exceptions?: TelemetryException[];
   browser?: TelemetryBrowser;
 };
+type SqlParameterShape = { name: string; type: string; size: number | null };
+type SqlStatement = {
+  at: string;
+  text: string;
+  parameters: SqlParameterShape[];
+  duration_ms: number;
+  outcome: string;
+  request: string | null;
+};
+type LogEntry = {
+  at: string;
+  level: string;
+  category: string;
+  message: string;
+  exception: string | null;
+};
+type EndpointTiming = {
+  path: string;
+  count: number;
+  p50_ms: number;
+  p95_ms: number;
+  max_ms: number;
+};
+type Metrics = {
+  requests: { window: number; p50_ms: number; p95_ms: number; by_path: EndpointTiming[] };
+  sql: { window: number; p50_ms: number; p95_ms: number; max_ms: number };
+};
 type AzureState = {
   available: boolean;
   reason?: string;
@@ -65,6 +92,9 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
   const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
   const [azure, setAzure] = useState<Fetched<AzureState>>(null);
   const [telemetry, setTelemetry] = useState<Fetched<Telemetry>>(null);
+  const [sql, setSql] = useState<Fetched<SqlStatement[]>>(null);
+  const [logs, setLogs] = useState<Fetched<LogEntry[]>>(null);
+  const [metrics, setMetrics] = useState<Fetched<Metrics>>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -90,6 +120,9 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
     void grab<ErrorEntry[]>('/api/errors', setErrors);
     void grab<AzureState>('/api/admin/azure', setAzure);
     void grab<Telemetry>('/api/admin/telemetry', setTelemetry);
+    void grab<SqlStatement[]>('/api/admin/sql', setSql);
+    void grab<LogEntry[]>('/api/admin/logs', setLogs);
+    void grab<Metrics>('/api/admin/metrics', setMetrics);
     return () => {
       live = false;
     };
@@ -113,9 +146,10 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
       </div>
       <p className={styles.blurb}>
         The running system reporting on itself: application health, what Azure says about the
-        container, the last hour of traffic as Application Insights recorded it, and recent errors
-        from both the server and the browser. Refreshes every 30 seconds. Public on purpose; the
-        reasoning is in the Best Practices menu.
+        container, the last hour of traffic as Application Insights recorded it, recent errors from
+        both the server and the browser, and below those, every SQL statement it has sent, its own
+        log, and how long both take. Refreshes every 30 seconds. Public on purpose; the reasoning is
+        in the Best Practices menu.
       </p>
       <div className={styles.grid}>
         {/* #region health-card */}
@@ -291,6 +325,158 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           )}
         </article>
       </div>
+
+      {/* #region timing-section */}
+      <article className={styles.wide} data-testid="timing-card">
+        <h2 className={styles.cardTitle}>Timing</h2>
+        {metrics === null ? (
+          <p className={styles.muted}>Loading…</p>
+        ) : metrics === 'failed' ? (
+          failed('the timing')
+        ) : (
+          <>
+            <p className={styles.muted}>
+              Measured in this process, over the last {metrics.requests.window} requests and{' '}
+              {metrics.sql.window} statements. Requests p50 {metrics.requests.p50_ms} ms, p95{' '}
+              {metrics.requests.p95_ms} ms. SQL p50 {metrics.sql.p50_ms} ms, p95{' '}
+              {metrics.sql.p95_ms} ms, slowest {metrics.sql.max_ms} ms.
+            </p>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">Path</th>
+                    <th scope="col">Calls</th>
+                    <th scope="col">p50</th>
+                    <th scope="col">p95</th>
+                    <th scope="col">Slowest</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.requests.by_path.slice(0, 15).map((timing) => (
+                    <tr key={timing.path}>
+                      <td className={styles.mono}>{timing.path}</td>
+                      <td>{timing.count}</td>
+                      <td>{timing.p50_ms} ms</td>
+                      <td>{timing.p95_ms} ms</td>
+                      <td>{timing.max_ms} ms</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </article>
+      {/* #endregion timing-section */}
+
+      {/* #region sql-section */}
+      <article className={styles.wide} data-testid="sql-card">
+        <h2 className={styles.cardTitle}>The SQL this application ran</h2>
+        <p className={styles.muted}>
+          Every statement Entity Framework sent, newest first, with the request that caused it and
+          how long the database took. Parameters are listed by name, type and size. Their values are
+          not here and never were: the type this table is built from has no field to put one in,
+          because this page is public and a registration&rsquo;s parameters carry an email address.
+          The buffer holds the last 200 statements in this container&rsquo;s memory and empties on
+          every deploy.
+        </p>
+        {sql === null ? (
+          <p className={styles.muted}>Loading…</p>
+        ) : sql === 'failed' ? (
+          failed('the SQL log')
+        ) : sql.length === 0 ? (
+          <p className={styles.muted}>
+            Nothing recorded yet. The catalogue is read once at startup and cached, so an idle
+            container runs no SQL at all.
+          </p>
+        ) : (
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">At</th>
+                  <th scope="col">Took</th>
+                  <th scope="col">Caused by</th>
+                  <th scope="col">Statement</th>
+                  <th scope="col">Parameters</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sql.slice(0, 60).map((statement, index) => (
+                  <tr key={index}>
+                    <td className={styles.mono}>{new Date(statement.at).toLocaleTimeString()}</td>
+                    <td className={styles.mono}>{statement.duration_ms} ms</td>
+                    <td className={styles.mono}>{statement.request ?? 'startup'}</td>
+                    <td>
+                      <pre className={styles.sql}>{statement.text}</pre>
+                      <span className={styles.muted}>{statement.outcome}</span>
+                    </td>
+                    <td className={styles.mono}>
+                      {statement.parameters.length === 0
+                        ? 'none'
+                        : statement.parameters
+                            .map(
+                              (parameter) =>
+                                `${parameter.name} ${parameter.type}` +
+                                (parameter.size === null ? '' : `(${parameter.size})`)
+                            )
+                            .join(', ')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </article>
+      {/* #endregion sql-section */}
+
+      {/* #region log-section */}
+      <article className={styles.wide} data-testid="log-card">
+        <h2 className={styles.cardTitle}>The log, as the console got it</h2>
+        <p className={styles.muted}>
+          The application&rsquo;s own log lines at Information and above, newest first, holding the
+          last 300 in memory. An exception shows its type; its message stays server-side, because a
+          database driver will happily quote the value that broke a constraint.
+        </p>
+        {logs === null ? (
+          <p className={styles.muted}>Loading…</p>
+        ) : logs === 'failed' ? (
+          failed('the log')
+        ) : logs.length === 0 ? (
+          <p className={styles.muted}>Nothing recorded since the container started.</p>
+        ) : (
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">At</th>
+                  <th scope="col">Level</th>
+                  <th scope="col">Category</th>
+                  <th scope="col">Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.slice(0, 80).map((entry, index) => (
+                  <tr key={index}>
+                    <td className={styles.mono}>{new Date(entry.at).toLocaleTimeString()}</td>
+                    <td className={styles.mono}>{entry.level}</td>
+                    <td className={styles.mono}>{entry.category}</td>
+                    <td>
+                      {entry.message}
+                      {entry.exception === null ? null : (
+                        <span className={styles.muted}> ({entry.exception})</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </article>
+      {/* #endregion log-section */}
     </section>
   );
 }

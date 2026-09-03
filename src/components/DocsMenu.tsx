@@ -71,6 +71,8 @@ export type DocKey =
   | 'adrDataFirst'
   | 'adrProviders'
   | 'adrExemptions'
+  | 'adrSqlVisible'
+  | 'adrInterceptors'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -441,6 +443,20 @@ export const DOCS: Record<
     kind: 'adr',
     number: '042',
   },
+  adrSqlVisible: {
+    title: 'ADR: What the database is actually doing',
+    menuLabel: 'ADR: What the database is doing',
+    url: '/api/docs/adr-sql-visible',
+    kind: 'adr',
+    number: '043',
+  },
+  adrInterceptors: {
+    title: 'ADR: Watching your own SQL, explained',
+    menuLabel: 'ADR: Watching your own SQL',
+    url: '/api/docs/adr-interceptors',
+    kind: 'adr',
+    number: '044',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -539,6 +555,8 @@ export const MENUS: Record<
       { key: 'adrDataFirst' },
       { key: 'adrProviders' },
       { key: 'adrExemptions' },
+      { key: 'adrSqlVisible' },
+      { key: 'adrInterceptors' },
     ],
   },
   // #endregion records-menu
