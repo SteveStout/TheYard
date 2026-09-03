@@ -70,6 +70,30 @@ jobs:
           dotnet-version: 10.0.x
       - run: dotnet test api
 
+  # #region database-job
+  # The database is compiled like everything else. api/TheBlock.Database is the
+  # authority for the SQL Server schema (ADR: Data first, and the database in
+  # source control), and Microsoft.Build.Sql turns its .sql files into a DACPAC,
+  # so a column with a type that does not exist or a foreign key pointing at
+  # nothing fails here rather than during a publish.
+  #
+  # It is a job of its own and not a step in the api job, because `dotnet build`
+  # on the solution does not build a SQL project. That was found the hard way:
+  # a solution build reported success, the DACPAC on disk was the previous one,
+  # and a schema change was published that did not contain the change.
+  database:
+    needs: style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet build api/TheBlock.Database/TheBlock.Database.sqlproj -c Debug
+      - name: The build has to have produced a package
+        run: test -f api/TheBlock.Database/bin/Debug/TheBlock.Database.dacpac
+  # #endregion database-job
+
   e2e:
     needs: style
     runs-on: ubuntu-latest

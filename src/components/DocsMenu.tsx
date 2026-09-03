@@ -67,6 +67,9 @@ export type DocKey =
   | 'adrPhotos'
   | 'adrAccounts'
   | 'adrIdentity'
+  | 'adrSqlServer'
+  | 'adrDataFirst'
+  | 'adrProviders'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -409,6 +412,27 @@ export const DOCS: Record<
     kind: 'adr',
     number: '038',
   },
+  adrSqlServer: {
+    title: 'ADR: The SQL Server backend',
+    menuLabel: 'ADR: The SQL Server backend',
+    url: '/api/docs/adr-sql-server',
+    kind: 'adr',
+    number: '039',
+  },
+  adrDataFirst: {
+    title: 'ADR: Data first, and the database in source control',
+    menuLabel: 'ADR: Data first',
+    url: '/api/docs/adr-data-first',
+    kind: 'adr',
+    number: '040',
+  },
+  adrProviders: {
+    title: 'ADR: Two providers and a SQL project, explained',
+    menuLabel: 'ADR: Two providers, explained',
+    url: '/api/docs/adr-providers',
+    kind: 'adr',
+    number: '041',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -503,6 +527,9 @@ export const MENUS: Record<
       { key: 'adrPhotos' },
       { key: 'adrAccounts' },
       { key: 'adrIdentity' },
+      { key: 'adrSqlServer' },
+      { key: 'adrDataFirst' },
+      { key: 'adrProviders' },
     ],
   },
   // #endregion records-menu

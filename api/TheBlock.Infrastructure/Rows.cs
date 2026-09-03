@@ -106,4 +106,14 @@ public sealed class BidRow
     public required bool WonBuyNow { get; set; }
 
     public required long AtMs { get; set; }
+
+    /// <summary>
+    /// The optimistic concurrency token (ADR: The SQL Server backend). On SQL
+    /// Server this is a <c>rowversion</c> the database maintains; on SQLite the
+    /// store assigns a new value on every save, because SQLite has no such type.
+    /// Either way a write that read a stale row fails instead of overwriting
+    /// somebody else's bid. Nullable because a row that has not been read yet
+    /// does not have one.
+    /// </summary>
+    public byte[]? RowVersion { get; set; }
 }

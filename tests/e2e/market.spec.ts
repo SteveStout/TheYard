@@ -16,9 +16,35 @@ async function bidTheMinimum(page: import('@playwright/test').Page) {
   await page.waitForSelector('article');
   await page.locator('article h3 button').first().click();
   await expect(page.getByText('Specifications')).toBeVisible();
-  const min = await page.locator('#bid-amount').getAttribute('placeholder');
-  await page.locator('#bid-amount').fill(min!);
-  await page.getByRole('button', { name: 'Place bid' }).click();
+
+  // Read the minimum, bid it, and if the server refuses, read it again.
+  //
+  // The room raises prices every eight seconds (ADR-027) and it is shared by
+  // every spec in this file's process, so by the time this one runs it has been
+  // bidding for a while. A round landing between reading the placeholder and
+  // clicking the button makes the amount stale, and the server is right to
+  // refuse it: a bid below the going rate is the defect that record's own
+  // review found. What that leaves behind is a test whose bid silently did not
+  // happen, failing later on a button that only exists once there is a bid.
+  //
+  // A real bidder reads the new number and bids again. So does this, three
+  // times, which turned a test that lost about a third of its runs inside the
+  // full suite into one that does not.
+  const landed = page.getByText(/You're the high bidder at|You bought this vehicle/);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const min = await page.locator('#bid-amount').getAttribute('placeholder');
+    await page.locator('#bid-amount').fill(min!);
+    await page.getByRole('button', { name: 'Place bid' }).click();
+    try {
+      await landed.first().waitFor({ state: 'visible', timeout: 6_000 });
+      return;
+    } catch {
+      // Refused, because the price moved. Read it again and answer the new one.
+    }
+  }
+  throw new Error(
+    'three bids in a row were refused: the room is raising faster than the page can answer'
+  );
 }
 
 test('a bid is answered by the room, and the lead changes hands', async ({ page }) => {

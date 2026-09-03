@@ -4,5 +4,7 @@
   <Project Path="TheBlock.Data/TheBlock.Data.csproj" />
   <Project Path="TheBlock.Domain/TheBlock.Domain.csproj" />
   <Project Path="TheBlock.Infrastructure/TheBlock.Infrastructure.csproj" />
+  <Project Path="TheBlock.Database/TheBlock.Database.sqlproj" />
+  <Project Path="TheBlock.Migrations.Sqlite/TheBlock.Migrations.Sqlite.csproj" />
   <Project Path="TheBlock.Tests/TheBlock.Tests.csproj" />
 </Solution>

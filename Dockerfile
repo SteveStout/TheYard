@@ -35,6 +35,12 @@ COPY api/TheBlock.Data/TheBlock.Data.csproj ./api/TheBlock.Data/
 COPY api/TheBlock.Domain/TheBlock.Domain.csproj ./api/TheBlock.Domain/
 COPY api/TheBlock.Application/TheBlock.Application.csproj ./api/TheBlock.Application/
 COPY api/TheBlock.Infrastructure/TheBlock.Infrastructure.csproj ./api/TheBlock.Infrastructure/
+COPY api/TheBlock.Migrations.Sqlite/TheBlock.Migrations.Sqlite.csproj ./api/TheBlock.Migrations.Sqlite/
+# The SQL project is in the solution, so restore needs to see it. It is not
+# published into the image: the schema is deployed by SqlPackage, and this
+# container has no rights to change it (ADR: Data first, and the database in
+# source control).
+COPY api/TheBlock.Database/TheBlock.Database.sqlproj ./api/TheBlock.Database/
 COPY api/TheBlock.Api/TheBlock.Api.csproj ./api/TheBlock.Api/
 COPY api/TheBlock.Tests/TheBlock.Tests.csproj ./api/TheBlock.Tests/
 # This restore is intentionally separate from source-copy so incremental Docker builds stay fast.
@@ -79,6 +85,9 @@ COPY --chown=app:app api/TheBlock.Application/*.cs api/TheBlock.Application/*.cs
 COPY --chown=app:app api/TheBlock.Data/*.cs api/TheBlock.Data/*.csproj ./api/TheBlock.Data/
 COPY --chown=app:app api/TheBlock.Domain/*.cs api/TheBlock.Domain/*.csproj ./api/TheBlock.Domain/
 COPY --chown=app:app api/TheBlock.Infrastructure/*.cs api/TheBlock.Infrastructure/*.csproj ./api/TheBlock.Infrastructure/
+COPY --chown=app:app api/TheBlock.Migrations.Sqlite/*.cs api/TheBlock.Migrations.Sqlite/*.csproj ./api/TheBlock.Migrations.Sqlite/
+# The DDL, so the records can show the schema they describe (ADR-014).
+COPY --chown=app:app api/TheBlock.Database ./api/TheBlock.Database
 COPY --chown=app:app api/TheBlock.Tests/*.cs api/TheBlock.Tests/*.csproj ./api/TheBlock.Tests/
 # The rest of what the records show live (ADR-017, the references pass): the edge,
 # the end-to-end specs, and the root files the build and the tests are configured by.

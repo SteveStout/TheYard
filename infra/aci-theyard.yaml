@@ -32,6 +32,16 @@ properties:
       # clean rather than sending to nowhere.
       - name: APPLICATIONINSIGHTS_CONNECTION_STRING
         secureValue: __APPINSIGHTS_CONNECTION_STRING__
+      # Azure SQL Database, substituted the same way (ADR: The SQL Server
+      # backend). What lands here is a server, a database and
+      # `Authentication=Active Directory Managed Identity`: no password, because
+      # the server has no SQL login to have one. It is still written as a
+      # secureValue, because the setting is where a secret would go if the
+      # authentication model ever changed, and a placeholder left behind by a
+      # failed substitution means the container falls back to SQLite rather than
+      # crash-looping.
+      - name: ConnectionStrings__YardSql
+        secureValue: __YARD_SQL_CONNECTION__
       image: __IMAGE__
       ports:
       - port: 8080

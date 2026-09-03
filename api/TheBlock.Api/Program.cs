@@ -51,6 +51,13 @@ int targetCount = builder.Configuration.GetValue("Inventory:TargetCount", 100_00
 // the way out: that is what every test wants, and it is a better answer for a
 // misconfigured deploy than quietly writing somewhere nobody will look.
 string? configuredDatabase = builder.Configuration.GetConnectionString("Yard");
+// Azure SQL Database, when there is one to talk to (ADR: The SQL Server
+// backend). A separate setting rather than a second meaning for the one above,
+// so the SQLite path that a developer, a test and a plain `docker run` all use
+// is untouched by the existence of a cloud database. The deploy substitutes
+// this at roll time and a failed substitution leaves a placeholder, which
+// YardConnection.Choose reads as "no SQL Server here" and falls back.
+string? configuredSqlServer = builder.Configuration.GetConnectionString("YardSql");
 string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
 // Pooling off for a scratch database, which is what makes it deletable
 // without a process-wide ClearAllPools. That call empties the pool for every
@@ -59,6 +66,7 @@ string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Gui
 // pulling connections out from under the others (the staff review, 2026-09-03,
 // confirmed by a test that passed alone and failed in the suite).
 string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase};Pooling=False";
+var yard = YardConnection.Choose(configuredSqlServer, databaseConnection);
 #endregion persistence
 
 #region migrate-and-seed
@@ -70,7 +78,7 @@ string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase
 // gets its contents, which keeps `npm run data` the way the dataset is
 // regenerated and means the seed cannot drift from the file it came from.
 var database = YardDatabase.Prepare(
-    databaseConnection,
+    yard,
     new JsonFileVehicleSource(dataPath),
     new JsonFilePhotoManifestSource(manifestPath));
 
@@ -79,7 +87,7 @@ if (database.Ready)
     // A factory rather than a scoped context: the two sources and the bid store
     // are singletons that each want a context for the length of one operation,
     // and there is no request scope at startup when the catalogue is read.
-    builder.Services.AddDbContextFactory<YardDbContext>(options => options.UseSqlite(databaseConnection));
+    builder.Services.AddDbContextFactory<YardDbContext>(options => yard.Configure(options));
     // Identity's stores want a context per request, and the factory hands out
     // contexts rather than registering one. This is the adapter between the two
     // and the only scoped registration in the application.
@@ -256,7 +264,7 @@ else
         database.Note);
 }
 
-if (configuredDatabase is null)
+if (configuredDatabase is null && yard.Provider == YardProvider.Sqlite)
 {
     app.Logger.LogWarning(
         "No ConnectionStrings:Yard is configured, so this process is using a scratch database at {Path} and will delete it on shutdown",
@@ -664,8 +672,9 @@ HealthCheckEntry[] RunChecks()
             // inside of the process that ProblemHandler refuses to draw
             // (the staff review, 2026-09-03).
             database.Ready
-                ? "the seed catalogue is in the store"
-                : "unavailable, serving the catalogue from files; the reason is in the log"),
+                ? $"the seed catalogue is in the store ({yard.Describe()})"
+                : $"{yard.Describe()} is unavailable, serving the catalogue from files; "
+                    + "the reason is in the log"),
     ];
 }
 #endregion health-checks

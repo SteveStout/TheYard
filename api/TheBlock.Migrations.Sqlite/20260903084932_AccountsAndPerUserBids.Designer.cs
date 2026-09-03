@@ -2,17 +2,20 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheBlock.Infrastructure;
 
 #nullable disable
 
-namespace TheBlock.Infrastructure.Migrations
+namespace TheBlock.Migrations.Sqlite
 {
     [DbContext(typeof(YardDbContext))]
-    partial class YardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260903084932_AccountsAndPerUserBids")]
+    partial class AccountsAndPerUserBids
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");

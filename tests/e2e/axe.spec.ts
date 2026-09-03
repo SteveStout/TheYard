@@ -31,6 +31,18 @@ async function violations(page: Page): Promise<string[]> {
 }
 
 test.describe('WCAG 2.1 AA, on every view', () => {
+  // Sixty seconds rather than the file-wide thirty, and only here.
+  //
+  // Every other test in this repository does one navigation and a handful of
+  // assertions, which is what thirty seconds was chosen for. These scan a whole
+  // rendered view with axe, and the inventory view is a hundred cards with
+  // badges and live countdowns on them. That scan is the slowest single thing
+  // in the browser suite, and at thirty seconds it was finishing just inside
+  // the budget on a quiet machine and timing out on a busy one, twice in eight
+  // full runs. Nothing is being asserted less: the assertion is still zero
+  // violations. The scan is being given the time it measurably takes.
+  test.describe.configure({ timeout: 60_000 });
+
   test('the inventory', async ({ page }) => {
     await page.goto('/');
     // The heading is there before the fetch returns. Waiting for a tile is

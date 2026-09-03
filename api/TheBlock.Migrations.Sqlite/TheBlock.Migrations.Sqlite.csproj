@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The SQLite schema's history, and nothing else.
+
+       EF Core keeps one model snapshot per migrations assembly, and this
+       application has two models: the SQL Server one has a rowversion column,
+       a clustered index chosen for the query the catalogue runs, and two column
+       types SQLite does not have. Two models cannot share one snapshot, so each
+       provider's migrations live in their own assembly and YardConnection names
+       them (ADR: The SQL Server backend, and the junior record beside it). -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\TheBlock.Infrastructure\TheBlock.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>TheBlock.Migrations.Sqlite</RootNamespace>
+  </PropertyGroup>
+
+</Project>

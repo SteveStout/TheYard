@@ -2,20 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheBlock.Infrastructure;
 
 #nullable disable
 
-namespace TheBlock.Infrastructure.Migrations
+namespace TheBlock.Migrations.Sqlite
 {
     [DbContext(typeof(YardDbContext))]
-    [Migration("20260903084932_AccountsAndPerUserBids")]
-    partial class AccountsAndPerUserBids
+    partial class YardDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
@@ -23,6 +20,7 @@ namespace TheBlock.Infrastructure.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -60,6 +58,7 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("RoleId")
                         .IsRequired()
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -83,6 +82,7 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -95,9 +95,11 @@ namespace TheBlock.Infrastructure.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderKey")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderDisplayName")
@@ -105,6 +107,7 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.HasKey("LoginProvider", "ProviderKey");
@@ -117,9 +120,11 @@ namespace TheBlock.Infrastructure.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
                     b.Property<string>("UserId")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RoleId")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.HasKey("UserId", "RoleId");
@@ -132,12 +137,15 @@ namespace TheBlock.Infrastructure.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
                     b.Property<string>("UserId")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LoginProvider")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
@@ -151,9 +159,11 @@ namespace TheBlock.Infrastructure.Migrations
             modelBuilder.Entity("TheBlock.Infrastructure.BidRow", b =>
                 {
                     b.Property<string>("UserId")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("VehicleId")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Amount")
@@ -165,19 +175,22 @@ namespace TheBlock.Infrastructure.Migrations
                     b.Property<int>("BidCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("BLOB");
+
                     b.Property<bool>("WonBuyNow")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("UserId", "VehicleId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Bids");
+                    b.ToTable("Bids", (string)null);
                 });
 
             modelBuilder.Entity("TheBlock.Infrastructure.PhotoRow", b =>
                 {
                     b.Property<string>("File")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Seq")
@@ -185,20 +198,26 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("Style")
                         .IsRequired()
+                        .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.HasKey("File");
 
-                    b.ToTable("Photos");
+                    b.HasIndex("Seq")
+                        .IsUnique();
+
+                    b.ToTable("Photos", (string)null);
                 });
 
             modelBuilder.Entity("TheBlock.Infrastructure.VehicleRow", b =>
                 {
                     b.Property<string>("Id")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("AuctionStart")
@@ -210,6 +229,7 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("BodyStyle")
                         .IsRequired()
+                        .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("BuyNowPrice")
@@ -217,6 +237,7 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("City")
                         .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<double>("ConditionGrade")
@@ -224,6 +245,7 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("ConditionReport")
                         .IsRequired()
+                        .HasMaxLength(1024)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("CurrentBid")
@@ -235,18 +257,22 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("Drivetrain")
                         .IsRequired()
+                        .HasMaxLength(16)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Engine")
                         .IsRequired()
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ExteriorColor")
                         .IsRequired()
+                        .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FuelType")
                         .IsRequired()
+                        .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
                     b.PrimitiveCollection<string>("Images")
@@ -255,18 +281,22 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("InteriorColor")
                         .IsRequired()
+                        .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Lot")
                         .IsRequired()
+                        .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Make")
                         .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Model")
                         .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("OdometerKm")
@@ -274,6 +304,7 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("Province")
                         .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("ReservePrice")
@@ -281,6 +312,7 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("SellingDealership")
                         .IsRequired()
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Seq")
@@ -291,18 +323,23 @@ namespace TheBlock.Infrastructure.Migrations
 
                     b.Property<string>("TitleStatus")
                         .IsRequired()
+                        .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Transmission")
                         .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Trim")
                         .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Vin")
                         .IsRequired()
+                        .HasMaxLength(17)
+                        .IsUnicode(false)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Year")
@@ -313,12 +350,13 @@ namespace TheBlock.Infrastructure.Migrations
                     b.HasIndex("Seq")
                         .IsUnique();
 
-                    b.ToTable("Vehicles");
+                    b.ToTable("Vehicles", (string)null);
                 });
 
             modelBuilder.Entity("TheBlock.Infrastructure.YardUser", b =>
                 {
                     b.Property<string>("Id")
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AccessFailedCount")
@@ -426,6 +464,15 @@ namespace TheBlock.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("TheBlock.Infrastructure.YardUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TheBlock.Infrastructure.BidRow", b =>
                 {
                     b.HasOne("TheBlock.Infrastructure.YardUser", null)
                         .WithMany()

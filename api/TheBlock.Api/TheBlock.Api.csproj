@@ -15,6 +15,12 @@
   <ItemGroup>
     <ProjectReference Include="..\TheBlock.Application\TheBlock.Application.csproj" />
     <ProjectReference Include="..\TheBlock.Infrastructure\TheBlock.Infrastructure.csproj" />
+    <!-- Referenced so the assembly lands beside the host: EF resolves a
+         migrations assembly by name at run time, and a name that is not loaded
+         is a migration that does not exist. Only SQLite has migrations; the SQL
+         Server schema is the SQL project (ADR: Data first, and the database in
+         source control). -->
+    <ProjectReference Include="..\TheBlock.Migrations.Sqlite\TheBlock.Migrations.Sqlite.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

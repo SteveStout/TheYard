@@ -10,6 +10,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <!-- Two providers, one model. Azure SQL Database is where the deployed site
+         keeps its data; SQLite is what a developer and a CI runner get, because
+         neither has an Azure credential and neither should need one
+         (ADR: The SQL Server backend). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
   </ItemGroup>
 

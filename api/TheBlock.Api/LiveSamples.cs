@@ -220,7 +220,8 @@ public static partial class LiveSamples
         ".bicep" => "bicep",
         ".json" => "json",
         ".md" => "markdown",
-        ".csproj" or ".slnx" => "xml",
+        ".csproj" or ".slnx" or ".sqlproj" => "xml",
+        ".sql" => "sql",
         _ => "text",
     };
 }

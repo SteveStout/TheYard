@@ -42,6 +42,13 @@ jobs:
       # The Application Insights component this deploy reads the connection
       # string from. The name is not a secret; the string it returns is.
       AI_NAME: appi-theyard-ss
+      # Azure SQL Database (ADR: The SQL Server backend). None of these three is
+      # a secret, and neither is the connection string built from them: the
+      # server has no SQL login at all, so the container authenticates as the
+      # managed identity it already carries and there is no password to hold.
+      SQL_SERVER: sql-theyard-ss-westus3
+      SQL_DB: sqldb-theyard-ss
+      MI_CLIENT_ID: 2888a6ca-be1c-46a5-a1de-c666b1d193e5
     steps:
       # #region compute-version
       # Pin to the exact commit CI tested, not wherever main has moved since.
@@ -136,6 +143,36 @@ jobs:
               sys.exit("the connection string placeholder is missing from the container spec")
           open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["CONN"]))
           PY
+          # The database, by the same rule and for the same reason. The value
+          # substituted here names a server, a database and an authentication
+          # mode; the credential is the container's managed identity, which
+          # never leaves Azure. If the server cannot be read the placeholder
+          # survives, YardConnection.Choose reads it as "no SQL Server here",
+          # and the container serves the catalogue from SQLite exactly as it did
+          # before this database existed. A deploy is not allowed to fail
+          # because a database is asleep.
+          SQL_FQDN=$(az sql server show -g "$RG" -n "$SQL_SERVER" \
+            --query "fullyQualifiedDomainName" -o tsv 2>/dev/null || true)
+          if [ -z "$SQL_FQDN" ]; then
+            echo "::warning::the SQL server was unreadable; this roll ships on SQLite"
+            YARD_SQL="__YARD_SQL_CONNECTION__"
+          else
+            YARD_SQL="Server=tcp:${SQL_FQDN},1433;Initial Catalog=${SQL_DB};Encrypt=True;TrustServerCertificate=False;Connect Timeout=60;Authentication=Active Directory Managed Identity;User Id=${MI_CLIENT_ID};"
+          fi
+          YARD_SQL="$YARD_SQL" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
+          import os, sys
+          path = sys.argv[1]
+          text = open(path, encoding="utf-8").read()
+          placeholder = "__YARD_SQL_CONNECTION__"
+          if placeholder not in text:
+              sys.exit("the database placeholder is missing from the container spec")
+          open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["YARD_SQL"]))
+          PY
+          if [ "$YARD_SQL" = "__YARD_SQL_CONNECTION__" ]; then
+            echo "the container spec keeps its database placeholder: this roll uses SQLite"
+          else
+            echo "the container spec points at $SQL_FQDN as the managed identity"
+          fi
           if [ "$CONN" = "__APPINSIGHTS_CONNECTION_STRING__" ]; then
             echo "the container spec keeps its placeholder: telemetry is off for this roll"
           elif grep -q "__APPINSIGHTS_CONNECTION_STRING__" "$RUNNER_TEMP/aci.yaml"; then

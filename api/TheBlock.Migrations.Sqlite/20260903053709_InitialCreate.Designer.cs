@@ -7,7 +7,7 @@ using TheBlock.Infrastructure;
 
 #nullable disable
 
-namespace TheBlock.Infrastructure.Migrations
+namespace TheBlock.Migrations.Sqlite
 {
     [DbContext(typeof(YardDbContext))]
     [Migration("20260903053709_InitialCreate")]

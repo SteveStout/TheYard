@@ -141,11 +141,33 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
     /// </summary>
     public void Save(string userId, string vehicleId, BidState state)
     {
+        // Three tries, then the exception travels. A conflict here means
+        // another writer changed this row between this one reading it and
+        // writing it, and the answer to that is to start again from what is
+        // there now, not to overwrite it. A fresh context per attempt, because
+        // a context that has just thrown a concurrency exception is holding the
+        // values that lost.
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                Write(userId, vehicleId, state);
+                return;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < 3)
+            {
+                // Deliberately empty. The retry is the handling.
+            }
+        }
+    }
+
+    private void Write(string userId, string vehicleId, BidState state)
+    {
         using var db = factory.CreateDbContext();
         var existing = db.Bids.Find(userId, vehicleId);
         if (existing is null)
         {
-            db.Bids.Add(new BidRow
+            existing = new BidRow
             {
                 UserId = userId,
                 VehicleId = vehicleId,
@@ -153,7 +175,8 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
                 BidCount = state.BidCount,
                 WonBuyNow = state.WonBuyNow,
                 AtMs = state.AtMs,
-            });
+            };
+            db.Bids.Add(existing);
         }
         else
         {
@@ -162,6 +185,16 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
             existing.WonBuyNow = state.WonBuyNow;
             existing.AtMs = state.AtMs;
         }
+
+        // SQL Server keeps the token itself; SQLite has no rowversion type, so
+        // the store is what moves it. Setting it here rather than in a trigger
+        // keeps the difference between the two providers in one readable place
+        // (ADR: The SQL Server backend).
+        if (db.Database.IsSqlite())
+        {
+            existing.RowVersion = Guid.NewGuid().ToByteArray();
+        }
+
         db.SaveChanges();
     }
 
@@ -190,20 +223,19 @@ public static class YardDatabase
 {
     // #region prepare
     public static DatabaseState Prepare(
-        string connection,
+        YardConnection connection,
         IVehicleSource seedVehicles,
         IPhotoManifestSource seedPhotos)
     {
         try
         {
-            var options = new DbContextOptionsBuilder<YardDbContext>().UseSqlite(connection).Options;
-            using var db = new YardDbContext(options);
+            using var db = new YardDbContext(connection.Options());
 
             // Both halves are timed because both are new work on every cold
             // start, and a container that takes longer to answer its first
             // request is a cost this change has to be able to state.
             var migrating = System.Diagnostics.Stopwatch.StartNew();
-            db.Database.Migrate();
+            string schemaNote = BringSchemaUp(db, connection);
             migrating.Stop();
             var seeding = System.Diagnostics.Stopwatch.StartNew();
             var seeded = YardSeed.EnsureSeeded(db, seedVehicles, seedPhotos);
@@ -211,7 +243,8 @@ public static class YardDatabase
 
             return new DatabaseState(
                 true,
-                $"migrated in {migrating.ElapsedMilliseconds} ms and seeded in {seeding.ElapsedMilliseconds} ms, "
+                $"{connection.Describe()}, {schemaNote} in {migrating.ElapsedMilliseconds} ms "
+                + $"and seeded in {seeding.ElapsedMilliseconds} ms, "
                 + $"inserting {seeded.VehiclesInserted} vehicles and {seeded.PhotosInserted} photos, "
                 + $"now holding {seeded.VehiclesTotal} and {seeded.PhotosTotal}");
         }
@@ -221,10 +254,51 @@ public static class YardDatabase
             // without a store, and it cannot do that if this throws. What went
             // wrong travels back as a sentence, is logged as an error, and shows
             // up as a failed health check on the Admin tab.
-            return new DatabaseState(false, $"{ex.GetType().Name}: {ex.Message}");
+            return new DatabaseState(false, $"{connection.Describe()}: {ex.GetType().Name}: {ex.Message}");
         }
     }
     // #endregion prepare
+
+    // #region schema
+    /// <summary>
+    /// How the schema gets there, which is different per provider and is the
+    /// whole of the difference (ADR: Data first, and the database in source
+    /// control).
+    ///
+    /// On SQL Server it does not get there from here at all. The schema is
+    /// `api/TheBlock.Database`, published by SqlPackage, and this process holds
+    /// `db_datareader` and `db_datawriter` and nothing else: it cannot create a
+    /// table, so the only honest thing it can do is check that the schema it
+    /// maps to is present and refuse the store if it is not. A container that
+    /// silently created its own tables would be a second authority for the
+    /// schema, and two authorities is the drift you cannot test your way out of.
+    ///
+    /// On SQLite it applies its own migrations, because a SQLite database here
+    /// is created and thrown away by the process that uses it: a scratch file
+    /// per test, and a container-lifetime file in the fallback. Nothing
+    /// publishes to it and nothing else reads it.
+    /// </summary>
+    private static string BringSchemaUp(YardDbContext db, YardConnection connection)
+    {
+        if (connection.Provider == YardProvider.Sqlite)
+        {
+            db.Database.Migrate();
+            return "migrated";
+        }
+
+        // The names are listed once. An earlier version had them in the array
+        // and again inside the SQL, which is two lists that can drift, on a
+        // check whose whole job is to notice drift.
+        string[] required = ["Vehicles", "Photos", "Bids", "AspNetUsers"];
+        var present = db.Database.SqlQuery<string>($"SELECT name AS Value FROM sys.tables").ToList();
+        var missing = required.Where(table => !present.Contains(table, StringComparer.OrdinalIgnoreCase)).ToList();
+        return missing.Count == 0
+            ? "found the published schema"
+            : throw new InvalidOperationException(
+                $"the published schema is missing {string.Join(", ", missing)}. "
+                + "Publish api/TheBlock.Database before pointing a container at this database.");
+    }
+    // #endregion schema
 }
 
 /// <summary>What the first boot found, so the log line can say it.</summary>
