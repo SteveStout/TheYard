@@ -126,11 +126,32 @@ jobs:
       - name: Say what failed, on the run page
         if: failure()
         run: |
+          # Two places, because they are readable by different people.
+          #
+          # The step summary is the nice one and it renders only for somebody
+          # signed in. Annotations are the ones that survive: they come back
+          # from the public API and show at the top of the run page, which is
+          # what a person with no login to this repository can actually read.
+          # The first attempt at this wrote only a summary and taught us that.
+          if [ ! -f playwright-output.txt ]; then
+            echo "::error::the browser suite left no output to report"
+            exit 0
+          fi
+          grep -E '^[[:space:]]+[0-9]+\) |Error: |Timeout of |Locator: |Expected: |Received' playwright-output.txt \
+            | head -n 20 \
+            | while IFS= read -r line; do
+                # One annotation per line, trimmed: a control character or a
+                # newline inside one silently truncates the whole annotation.
+                printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
+              done
+          tail -n 4 playwright-output.txt | while IFS= read -r line; do
+            printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
+          done
           {
             echo '## The browser suite failed'
             echo
             echo '```'
-            tail -n 120 playwright-output.txt || echo 'no output was captured'
+            tail -n 150 playwright-output.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion e2e-evidence
