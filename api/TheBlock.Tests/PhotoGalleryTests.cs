@@ -57,7 +57,7 @@ public class PhotoGalleryTests
     [Fact]
     public void Fnv1a_matches_known_vectors()
     {
-        // Standard FNV-1a test vectors — parity with the frontend's hash.
+        // Standard FNV-1a test vectors, for parity with the frontend's hash.
         Assert.Equal(2166136261u, Fnv1a.Hash(""));
         Assert.Equal(0xe40c292cu, Fnv1a.Hash("a"));
         Assert.Equal(0xbf9cf968u, Fnv1a.Hash("foobar"));

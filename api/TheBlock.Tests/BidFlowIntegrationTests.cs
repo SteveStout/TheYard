@@ -31,7 +31,7 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
         // the server and the assertions agree on which auctions are live.
         long anchor = Anchor;
 
-        // Pick a live vehicle sorted by most bids — its window ends hours or
+        // Pick a live vehicle sorted by most bids, because its window ends hours or
         // days out, so it cannot flip to ended mid-test.
         using var live = await GetAsync($"/api/vehicles?status=live&sort=most-bids&limit=50&anchor_ms={anchor}");
         var target = live.RootElement.GetProperty("vehicles")[0];

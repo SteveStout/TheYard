@@ -1,6 +1,6 @@
 /**
  * All user-facing formatting. Currency display is driven by the constants
- * below — moving the app to another currency/locale is a one-line change.
+ * below, so moving the app to another currency or locale is a one-line change.
  * CAD is the default because every listing in the dataset is Canadian.
  */
 export const CURRENCY = 'CAD';
@@ -17,14 +17,14 @@ const currencyFormat = new Intl.NumberFormat(LOCALE, {
   maximumFractionDigits: 0,
 });
 
-/** "$22,800" — whole dollars only. */
+/** "$22,800", whole dollars only. */
 export function formatCurrency(amount: number): string {
   return currencyFormat.format(amount);
 }
 
 const integerFormat = new Intl.NumberFormat(LOCALE);
 
-/** "100,000" — grouped whole number. */
+/** "100,000", grouped whole number. */
 export function formatInteger(value: number): string {
   return integerFormat.format(value);
 }
@@ -46,14 +46,14 @@ const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, {
   minute: '2-digit',
 });
 
-/** "Apr. 5, 2:00 p.m." — for auction start/end stamps. */
+/** "Apr. 5, 2:00 p.m.", for auction start and end stamps. */
 export function formatAuctionDateTime(epochMs: number): string {
   return dateTimeFormat.format(epochMs);
 }
 
 /**
  * Compact countdown to `target`: "2d 4h", "3h 12m", "12m 5s", "45s",
- * or "Ended" once the target has passed. Callers pick the target — an
+ * or "Ended" once the target has passed. Callers pick the target: an
  * auction's end while live, its start while upcoming.
  */
 export function formatCountdown(target: number, now: number): string {

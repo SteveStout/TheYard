@@ -8,7 +8,7 @@ namespace TheBlock.Api;
 /// <summary>
 /// The wire shape of a vehicle: the dataset fields plus the server-derived
 /// auction facts (window, status, minimum next bid). Deriving these once,
-/// server-side, keeps the client from re-implementing schedule math — the
+/// server-side, keeps the client from re-implementing schedule math. The
 /// browser only formats and counts down.
 /// </summary>
 public static class VehicleWire

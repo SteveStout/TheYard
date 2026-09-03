@@ -1,7 +1,7 @@
 namespace TheBlock.Domain;
 
 /// <summary>
-/// FNV-1a 32-bit — the same stable id hash the frontend uses, so every value
+/// FNV-1a 32-bit, the same stable id hash the frontend uses, so every value
 /// derived from a vehicle id (photo galleries, auction windows) is identical
 /// on both sides and survives restarts and reloads.
 /// </summary>

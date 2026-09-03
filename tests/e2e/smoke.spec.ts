@@ -140,7 +140,7 @@ test('a bid round-trips through the API and survives a reload', async ({ page })
   const min = await page.locator('#bid-amount').getAttribute('placeholder');
   await page.locator('#bid-amount').fill(min!);
   await page.getByRole('button', { name: 'Place bid' }).click();
-  // A minimum bid is normally accepted — but when min_next_bid crosses the
+  // A minimum bid is normally accepted, but when min_next_bid crosses the
   // vehicle's buy-now price, the rules award an instant win. Both are valid.
   await expect(page.getByText(/You're the high bidder|You bought this vehicle/)).toBeVisible();
 

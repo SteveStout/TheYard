@@ -1,7 +1,7 @@
 import type { Vehicle } from './types';
 
 /**
- * Client-side auction presentation logic. The API owns all auction math —
+ * Client-side auction presentation logic. The API owns all auction math:
  * windows, status, minimum bids, and bid validation arrive on the wire
  * (auction_starts_at / auction_ends_at / auction_status / min_next_bid).
  * The browser's only jobs are recomputing status from the window as the

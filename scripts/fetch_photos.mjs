@@ -21,7 +21,7 @@ const USER_AGENT =
   'TheYardPortfolio/1.0 (used-vehicle auction asset fetch)';
 
 // Generation codes (NX4, G20, D41...) appear in Commons filenames and keep
-// results on current models — the dataset spans 2016–2026.
+// results on current models, and the dataset spans 2016 to 2026.
 const QUERIES = {
   suv: [
     'Ford Bronco 2021',
@@ -118,7 +118,7 @@ function isUsable(page, excluded) {
 }
 
 async function download(url) {
-  // upload.wikimedia.org rate-limits anonymous bursts — back off and retry.
+  // upload.wikimedia.org rate-limits anonymous bursts, so back off and retry.
   const cleanUrl = url.split('?')[0];
   for (let attempt = 1; attempt <= 6; attempt++) {
     const res = await fetch(cleanUrl, { headers: { 'User-Agent': USER_AGENT } });
@@ -202,7 +202,7 @@ const md = [
   'Each file below links to its source page with full license details.',
   '',
   ...credits.map(
-    (c) => `- **${c.file}** — ${c.artist} — ${c.license} — [source](${c.source})`
+    (c) => `- **${c.file}**, ${c.artist}, ${c.license}, [source](${c.source})`
   ),
   '',
 ].join('\n');

@@ -9,7 +9,7 @@ public sealed record BidState(int Amount, int BidCount, bool WonBuyNow);
 
 /// <summary>
 /// The single anonymous buyer's bids, held in API memory (this is an
-/// isolated demo — a real system would persist per-user bids). The overlay
+/// isolated demo; a real system would persist per-user bids). The overlay
 /// is applied to vehicles BEFORE filtering and sorting, so price filters
 /// see the same figures the UI displays.
 /// </summary>
@@ -40,7 +40,7 @@ public sealed class BidService
         return outcome;
     }
 
-    /// <summary>Buy Now is a purchase, not a bid — the bid count stays as-is.</summary>
+    /// <summary>Buy Now is a purchase, not a bid, so the bid count stays as-is.</summary>
     public BidOutcome BuyNow(Vehicle vehicle, AuctionClock clock)
     {
         var merged = Apply(vehicle);

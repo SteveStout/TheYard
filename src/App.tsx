@@ -34,7 +34,7 @@ const FILTER_DEBOUNCE_MS = 500;
 /** A status-filtered list goes stale as auctions cross their boundaries; refresh this often. */
 const STATUS_REFRESH_MS = 60_000;
 
-/** `npm start` opens the browser before the API finishes booting — keep
+/** `npm start` opens the browser before the API finishes booting, so keep
  *  retrying the first load quietly for a while before declaring an error. */
 const INITIAL_RETRY_MS = 2_000;
 const MAX_INITIAL_RETRIES = 15;
@@ -53,7 +53,7 @@ export default function App() {
   const [page, setPage] = useState<VehiclePage>(EMPTY_PAGE);
   const [facets, setFacets] = useState<InventoryFacets>(EMPTY_FACETS);
   const [loadState, setLoadState] = useState<LoadState>('loading');
-  /** A filter request failed — the list shows the previous results. */
+  /** A filter request failed, so the list shows the previous results. */
   const [staleResults, setStaleResults] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
   /** Snapshot of the opened vehicle, so the detail view survives page refetches. */
@@ -109,7 +109,7 @@ export default function App() {
 
   // Filtering, sorting, and paging are server-side: every change becomes a
   // GET request, debounced so typing doesn't spam the API and cached per
-  // query string in data.ts. Cache hits skip the debounce entirely — it only
+  // query string in data.ts. Cache hits skip the debounce entirely, because it
   // exists to simulate not hammering the server. reloadNonce bumps are
   // refreshes (retry buttons, the status interval): immediate and uncached.
   const lastNonce = useRef(reloadNonce);
@@ -144,7 +144,7 @@ export default function App() {
             if (controller.signal.aborted) return;
             if (firstLoad) {
               // The API may still be booting (npm start opens the browser
-              // first) — keep retrying quietly before showing the error.
+              // first), so keep retrying quietly before showing the error.
               if (initialAttempts.current < MAX_INITIAL_RETRIES) {
                 initialAttempts.current += 1;
                 retryTimer = window.setTimeout(
@@ -244,7 +244,7 @@ export default function App() {
   // #endregion back-forward
 
   // While a status filter is active, membership drifts as auctions open and
-  // close — re-ask the server periodically so the list stays honest.
+  // close, so re-ask the server periodically and the list stays honest.
   useEffect(() => {
     if (!filters.status) return;
     const id = window.setInterval(() => setReloadNonce((n) => n + 1), STATUS_REFRESH_MS);
@@ -428,8 +428,8 @@ export default function App() {
             <div className={styles.notice} role="alert">
               <p className={styles.noticeTitle}>Couldn't reach the inventory API.</p>
               <p>
-                Make sure it's running — <code>npm run api</code> in a second terminal — then try
-                again.
+                Make sure it's running (<code>npm run api</code> in a second terminal), then
+                try again.
               </p>
               <button
                 type="button"
@@ -473,7 +473,7 @@ export default function App() {
               />
               {staleResults && (
                 <div className={styles.staleBanner} role="alert">
-                  Couldn't update results from the API — showing the previous list.
+                  Couldn't update results from the API. Showing the previous list.
                   <button
                     type="button"
                     className={styles.staleRetry}

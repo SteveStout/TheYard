@@ -92,7 +92,7 @@ export function BidPanel({ vehicle, now, isHighBidder, wonBuyNow, onPlaceBid, on
           {wonAtClose
             ? `You won this auction at ${formatCurrency(currentPrice(vehicle))}.`
             : isHighBidder
-              ? 'The auction ended below reserve — the vehicle was not sold.'
+              ? 'The auction ended below reserve, so the vehicle was not sold.'
               : 'This auction has ended.'}
         </p>
       )}

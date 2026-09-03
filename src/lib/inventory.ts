@@ -2,7 +2,7 @@ import type { AuctionStatus } from './auction';
 
 /**
  * Inventory browsing state: the filter and sort model the UI edits. Both are
- * applied server-side via /api/vehicles GET parameters (see data.ts) — the
+ * applied server-side via /api/vehicles GET parameters (see data.ts). The
  * browser never filters or sorts the dataset itself.
  */
 

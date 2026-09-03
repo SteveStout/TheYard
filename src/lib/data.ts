@@ -80,7 +80,7 @@ export function clearVehicleCache(): void {
   queryCache.clear();
 }
 
-/** The buyer's local midnight — the anchor every schedule-dependent request carries. */
+/** The buyer's local midnight, the anchor every schedule-dependent request carries. */
 export function localMidnightMs(): number {
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
@@ -97,7 +97,7 @@ export function vehicleQueryParams(
   // (tokens like "live"), the default auction-time sort, and the derived
   // fields on each vehicle all depend on it. Stable within a day, so cache
   // keys stay stable too. (The URL bar uses filtersToSearchParams directly,
-  // without the anchor — it's clock plumbing, not user state.)
+  // without the anchor, because it's clock plumbing, not user state.)
   params.set('anchor_ms', String(localMidnightMs()));
   return params;
 }
@@ -115,7 +115,7 @@ function cachedPage(key: string): VehiclePage | null {
 
 /**
  * Synchronous cache peek. Callers use this to skip their request debounce on
- * a hit — the debounce only exists to avoid hammering the API, and a cached
+ * a hit: the debounce only exists to avoid hammering the API, and a cached
  * result never touches the API.
  */
 export function peekVehicles(filters?: InventoryFilters, sort?: SortKey): VehiclePage | null {
@@ -168,7 +168,7 @@ export async function fetchVehicles(
 }
 // #endregion fetch-vehicles
 
-/** One vehicle by id, or null when it doesn't exist — backs detail deep links. */
+/** One vehicle by id, or null when it doesn't exist. Backs detail deep links. */
 export async function fetchVehicleById(id: string, signal?: AbortSignal): Promise<Vehicle | null> {
   const response = await fetch(
     `/api/vehicles/${encodeURIComponent(id)}?anchor_ms=${localMidnightMs()}`,
@@ -191,7 +191,7 @@ export async function fetchFacets(signal?: AbortSignal): Promise<InventoryFacets
 }
 
 // ---------------------------------------------------------------------------
-// Bidding — validation is server-side; these calls relay outcomes.
+// Bidding. Validation is server-side; these calls relay outcomes.
 // ---------------------------------------------------------------------------
 
 export async function fetchBids(signal?: AbortSignal): Promise<BidMap> {
@@ -228,7 +228,7 @@ async function postBidAction(url: string, body: Record<string, unknown>): Promis
     bid: BidRecord;
     vehicle: Vehicle;
   };
-  // Server data changed — cached pages are stale now.
+  // Server data changed, so cached pages are stale now.
   clearVehicleCache();
   return {
     outcome: { kind: result.kind, amount: result.amount },

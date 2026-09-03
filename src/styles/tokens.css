@@ -1,5 +1,5 @@
 /*
- * Design tokens — the single source of truth for color, spacing, radius,
+ * Design tokens: the single source of truth for color, spacing, radius,
  * typography, and shadow. Imported once at the app root; every component
  * module consumes these variables.
  *
@@ -62,7 +62,7 @@
   --color-sheet-divider-strong: #d8d3d4;
   /* #endregion sheet-tokens */
 
-  /* Spacing — 4px base scale */
+  /* Spacing, on a 4px base scale */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -78,7 +78,7 @@
   --rail-width-collapsed: 64px;
   /* #endregion rail-widths */
 
-  /* Radius — cards 16px, controls 8px, buttons pill */
+  /* Radius: cards 16px, controls 8px, buttons pill */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 16px;
@@ -108,7 +108,7 @@
   --transition-fast: 150ms ease;
 }
 
-/* Minimal base styles — everything else lives in component modules. */
+/* Minimal base styles; everything else lives in component modules. */
 *,
 *::before,
 *::after {

@@ -5,7 +5,7 @@ interface ReserveBadgeProps {
   state: ReserveState;
 }
 
-/** Shows only the reserve state — the reserve amount is never displayed. */
+/** Shows only the reserve state. The reserve amount is never displayed. */
 export function ReserveBadge({ state }: ReserveBadgeProps) {
   const tone =
     state === 'met' ? styles.met : state === 'no-reserve' ? styles.noReserve : styles.notMet;

@@ -8,7 +8,7 @@ namespace TheBlock.Data;
 /// Sealed, like every data record here: record equality is value-based but
 /// includes a runtime-type check that inheritance would quietly break, and a
 /// wire contract is not an extension point. Tests compare whole vehicle
-/// lists by value, and `with` copies power the bid overlay — both rely on
+/// lists by value, and `with` copies power the bid overlay, and both rely on
 /// equality staying purely "same fields".
 /// </summary>
 public sealed record Vehicle

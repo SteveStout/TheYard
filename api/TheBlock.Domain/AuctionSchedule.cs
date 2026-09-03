@@ -11,7 +11,7 @@ public enum AuctionStatus
 public readonly record struct AuctionWindow(long StartsAtMs, long EndsAtMs);
 
 /// <summary>
-/// Derives each vehicle's auction window from its id — the same math as the
+/// Derives each vehicle's auction window from its id, with the same math as the
 /// frontend's src/lib/auction.ts (FNV-1a seed, end times spread across the
 /// two days before through five days after the midnight anchor, 2–4 day
 /// runs), so server-side status filtering agrees with what the client renders.

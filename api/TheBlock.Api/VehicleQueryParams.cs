@@ -4,7 +4,7 @@ using TheBlock.Domain;
 namespace TheBlock.Api;
 
 /// <summary>
-/// GET-parameter binding for /api/vehicles — the wire names mirror the
+/// GET-parameter binding for /api/vehicles. The wire names mirror the
 /// payload's snake_case fields. Translates itself into the domain's
 /// VehicleFilter plus the AuctionClock statuses are evaluated against,
 /// rejecting unknown status values and implausible anchors.
@@ -46,7 +46,7 @@ public sealed record VehicleQueryParams(
             return false;
         }
 
-        // Explicit name matching — Enum.TryParse would also accept numeric
+        // Explicit name matching, because Enum.TryParse would also accept numeric
         // strings ("9") and comma lists ("live,ended"), which should be 400s.
         AuctionStatus? status = Status?.ToLowerInvariant() switch
         {

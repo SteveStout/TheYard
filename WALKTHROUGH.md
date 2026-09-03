@@ -24,7 +24,7 @@ Your turn. Ask us anything about the team, the role, or what we're building.
 ## How to Prepare
 
 - Be ready to screen-share and navigate your codebase
-- Know your code — be able to explain any part of it
+- Know your code, and be able to explain any part of it
 - Think about the decisions you made and why
 - Be ready to explain what you intentionally did not build within the time box
 - Have opinions about what you'd improve

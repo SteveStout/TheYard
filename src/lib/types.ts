@@ -1,5 +1,5 @@
 /**
- * A vehicle listing exactly as it appears in data/vehicles.json — the shape a
+ * A vehicle listing exactly as it appears in data/vehicles.json, the shape a
  * real inventory API would return. Field names stay snake_case to match the
  * payload, so the seam in data.ts needs no mapping layer.
  */
@@ -30,7 +30,7 @@ export interface Vehicle {
   /** Synthetic scheduling data; real auction windows are derived in auction.ts. */
   auction_start: string;
   starting_bid: number;
-  /** null → no reserve. Never displayed — the UI shows only the reserve state. */
+  /** null means no reserve. Never displayed; the UI shows only the reserve state. */
   reserve_price: number | null;
   /** null → no Buy Now option. */
   buy_now_price: number | null;

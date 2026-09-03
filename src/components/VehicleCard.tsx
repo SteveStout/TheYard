@@ -13,7 +13,7 @@ interface VehicleCardProps {
   now: number;
   onSelect: (vehicle: Vehicle) => void;
   isHighBidder?: boolean;
-  /** The buyer bought this vehicle via Buy Now — the auction is over. */
+  /** The buyer bought this vehicle via Buy Now, so the auction is over. */
   isWon?: boolean;
 }
 

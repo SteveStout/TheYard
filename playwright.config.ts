@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 /**
  * End-to-end smokes against the real stack. Playwright launches both servers
  * itself (and reuses ones already running, so `npm run test:e2e` works while
- * you're developing). Uses the locally installed Chrome — in CI, install the
+ * you're developing). Uses the locally installed Chrome; in CI, install the
  * chrome channel first: npx playwright install --with-deps chrome
  */
 export default defineConfig({

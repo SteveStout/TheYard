@@ -9,7 +9,7 @@ namespace TheBlock.Infrastructure;
 /// deterministically varying each seed vehicle's identity and numbers while
 /// keeping the seed's make/model/trim distributions. Everything derives from
 /// FNV-1a of the new id, so every run (and every machine) produces the same
-/// inventory — 100k records with no 100 MB file in the repository.
+/// inventory: 100k records with no 100 MB file in the repository.
 /// </summary>
 public sealed class SyntheticVehicleSource(IVehicleSource seedSource, int targetCount) : IVehicleSource
 {

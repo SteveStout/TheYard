@@ -65,7 +65,7 @@ export function useBids(onMutate?: () => void) {
       setBids({});
       onMutate?.();
     } catch {
-      // The API is unreachable — keep the current state visible.
+      // The API is unreachable, so keep the current state visible.
     }
   }, [onMutate]);
 
