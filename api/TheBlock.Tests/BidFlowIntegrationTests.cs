@@ -14,9 +14,21 @@ namespace TheBlock.Tests;
 /// mutable bid state can't leak into the read-only integration tests.
 /// </summary>
 public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+    : IClassFixture<WebApplicationFactory<Program>>, IAsyncLifetime
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    // Bidding needs an account now (ADR: Accounts and per-user bids). A field
+    // initialiser cannot await, so registering happens in InitializeAsync,
+    // which xunit runs once before the first test in the class. That keeps
+    // these tests about the bidding rules rather than about registration.
+    private HttpClient _client = null!;
+
+    public async Task InitializeAsync() => _client = await Buyers.SignedIn(factory);
+
+    public Task DisposeAsync()
+    {
+        _client.Dispose();
+        return Task.CompletedTask;
+    }
 
     private static long Anchor =>
         new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();

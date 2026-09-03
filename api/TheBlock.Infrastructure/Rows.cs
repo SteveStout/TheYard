@@ -86,13 +86,17 @@ public sealed class PhotoRow
 }
 
 /// <summary>
-/// The buyer's standing on one vehicle, and the only thing in this database
-/// that changes after startup. One row per vehicle: a later bid replaces the
-/// earlier one rather than appending, because the application has never needed
-/// bid history and a table that keeps it would be a claim that it does.
+/// One buyer's standing on one vehicle, and the only thing in this database
+/// that changes after startup. One row per buyer per vehicle: a later bid from
+/// the same person replaces their earlier one rather than appending, because
+/// what the application asks is "where do I stand", never "what did I bid an
+/// hour ago" (ADR: Accounts and per-user bids).
 /// </summary>
 public sealed class BidRow
 {
+    /// <summary>The account that placed it. Half of this row's key.</summary>
+    public required string UserId { get; set; }
+
     public required string VehicleId { get; set; }
 
     public required int Amount { get; set; }

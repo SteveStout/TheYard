@@ -3,9 +3,9 @@ using TheBlock.Data;
 namespace TheBlock.Application;
 
 // #region ports
-// The two seams the layers meet at. Application declares what it needs and
+// The three seams the layers meet at. Application declares what it needs and
 // never learns where the data lives; Infrastructure implements these against
-// JSON files, the tests against in-memory arrays, and the 100,000-record
+// EF Core and SQLite, the tests against in-memory arrays, and the 100,000-record
 // scale-up is a decorator over IVehicleSource that nothing above it can see.
 /// <summary>Port: where the vehicle dataset comes from.</summary>
 public interface IVehicleSource
@@ -20,15 +20,17 @@ public interface IPhotoManifestSource
 }
 
 /// <summary>
-/// Port: where the buyer's bids are kept between one run of this process and
+/// Port: where everybody's bids are kept between one run of this process and
 /// the next. Read once at startup and written through on every accepted bid,
 /// which is the shape the bidding path can afford (ADR: The relational store).
+/// A bid belongs to a user (ADR: Accounts and per-user bids), so the key is the
+/// pair and not the vehicle.
 /// </summary>
 public interface IBidStore
 {
-    IReadOnlyDictionary<string, BidState> Load();
+    IReadOnlyList<StoredBid> Load();
 
-    void Save(string vehicleId, BidState state);
+    void Save(string userId, string vehicleId, BidState state);
 
     void Clear();
 }
@@ -46,9 +48,9 @@ public sealed class NullBidStore : IBidStore
     {
     }
 
-    public IReadOnlyDictionary<string, BidState> Load() => new Dictionary<string, BidState>(StringComparer.Ordinal);
+    public IReadOnlyList<StoredBid> Load() => [];
 
-    public void Save(string vehicleId, BidState state)
+    public void Save(string userId, string vehicleId, BidState state)
     {
     }
 

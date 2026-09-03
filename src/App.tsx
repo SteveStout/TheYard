@@ -18,6 +18,8 @@ import {
 import { applyBidRecord, useBids } from './hooks/useBids';
 import { useNow } from './hooks/useNow';
 import { AdminPanel } from './components/AdminPanel';
+import { AccountPanel } from './components/AccountPanel';
+import { fetchAccount, SIGNED_OUT, type Account } from './lib/auth';
 import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
 import { BrandMark } from './components/BrandMark';
 import { useMediaQuery } from './hooks/useMediaQuery';
@@ -68,6 +70,9 @@ export default function App() {
   const [loadingMore, setLoadingMore] = useState(false);
   /** The Admin tab (ADR-010): health, errors, and Azure's view, ?view=admin. */
   const [adminOpen, setAdminOpen] = useState(INITIAL_PARAMS.get('view') === 'admin');
+  /** The account view (ADR: Accounts and per-user bids), ?view=account. */
+  const [accountOpen, setAccountOpen] = useState(INITIAL_PARAMS.get('view') === 'account');
+  const [account, setAccount] = useState<Account>(SIGNED_OUT);
   const now = useNow();
   /** The running build, reported by the container itself (ADR-005). */
   const [build, setBuild] = useState<{ version: string; commit: string } | null>(null);
@@ -86,7 +91,9 @@ export default function App() {
   // #endregion docking
   // Bid state lives in the API; refetch the list whenever it changes.
   const refreshList = useCallback(() => setReloadNonce((n) => n + 1), []);
-  const { bids, placeBid, buyNow, resetBids } = useBids(refreshList);
+  // Keyed on the address: the bid map belongs to an account, so signing in or
+  // out has to fetch a different one rather than keep showing the old badges.
+  const { bids, placeBid, buyNow, resetBids } = useBids(refreshList, account.email);
 
   /** The current page with the buyer's bids layered on for instant feedback. */
   const visibleVehicles = useMemo(
@@ -111,6 +118,17 @@ export default function App() {
       .then(setBuild)
       .catch(() => {});
   }, []);
+
+  // #region who
+  // Who is signed in, if anyone. The session is an httpOnly cookie, so the
+  // page cannot read it and has to ask (ADR: Accounts and per-user bids). A
+  // failure here leaves the visitor signed out, which is the safe answer.
+  useEffect(() => {
+    fetchAccount()
+      .then(setAccount)
+      .catch(() => {});
+  }, []);
+  // #endregion who
 
   // Filtering, sorting, and paging are server-side: every change becomes a
   // GET request, debounced so typing doesn't spam the API and cached per
@@ -185,13 +203,14 @@ export default function App() {
     const params = filtersToSearchParams(filters, sort);
     if (selectedVehicle) params.set('vehicle', selectedVehicle.id);
     if (adminOpen) params.set('view', 'admin');
+    if (accountOpen) params.set('view', 'account');
     const query = params.toString();
     window.history.replaceState(
       window.history.state,
       '',
       query ? `?${query}` : window.location.pathname
     );
-  }, [filters, sort, selectedVehicle, adminOpen]);
+  }, [filters, sort, selectedVehicle, adminOpen, accountOpen]);
   // #endregion url-mirror
 
   // Restore a deep-linked detail view on first load (?vehicle={id}).
@@ -233,6 +252,7 @@ export default function App() {
       setFilters(restored.filters);
       setSort(restored.sort);
       setAdminOpen(params.get('view') === 'admin');
+      setAccountOpen(params.get('view') === 'account');
       const vehicleId = params.get('vehicle');
       if (!vehicleId) {
         setSelectedVehicle(null);
@@ -345,7 +365,13 @@ export default function App() {
   // the region that just changed is the standard repair, and it is why <main>
   // carries tabIndex={-1}: focusable by script, never by Tab.
   const mainRef = useRef<HTMLElement>(null);
-  const viewKey = adminOpen ? 'admin' : selectedVehicle ? `vehicle:${selectedVehicle.id}` : 'list';
+  const viewKey = adminOpen
+    ? 'admin'
+    : accountOpen
+      ? 'account'
+      : selectedVehicle
+        ? `vehicle:${selectedVehicle.id}`
+        : 'list';
   const lastView = useRef(viewKey);
   useEffect(() => {
     if (lastView.current === viewKey) return;
@@ -372,6 +398,14 @@ export default function App() {
     window.history.pushState({ viaTile: true }, '', `?${params}`);
     setSelectedVehicle(vehicle);
   };
+  /** From the account page's bid list: open that vehicle's detail view. */
+  const openVehicleById = (vehicleId: string) => {
+    void fetchVehicleById(vehicleId).then((vehicle) => {
+      if (!vehicle) return;
+      setAccountOpen(false);
+      openVehicle(vehicle);
+    });
+  };
   const backToInventory = () => {
     // If we pushed this entry, going back keeps history clean; a deep-linked
     // visit has no list entry behind it, so just swap the URL in place.
@@ -389,16 +423,39 @@ export default function App() {
     // Admin is a view switch the same as a vehicle is. Left out of this, it
     // opened at the list's scroll offset with its heading above the fold and
     // focus on something the visitor could not see.
-    window.scrollTo(0, selectedVehicle || adminOpen ? 0 : listScrollY.current);
-  }, [selectedVehicle, adminOpen]);
+    window.scrollTo(0, selectedVehicle || adminOpen || accountOpen ? 0 : listScrollY.current);
+  }, [selectedVehicle, adminOpen, accountOpen]);
 
   const openAdmin = () => {
     const params = filtersToSearchParams(filters, sort);
     params.set('view', 'admin');
     window.history.pushState({ viaAdmin: true }, '', `?${params}`);
     setSelectedVehicle(null);
+    setAccountOpen(false);
     setAdminOpen(true);
   };
+
+  // #region open-account
+  // The same shape as Admin, because it is the same kind of thing: one more
+  // view at its own ?view= value, pushed so Back closes it.
+  const openAccount = () => {
+    const params = filtersToSearchParams(filters, sort);
+    params.set('view', 'account');
+    window.history.pushState({ viaAccount: true }, '', `?${params}`);
+    setSelectedVehicle(null);
+    setAdminOpen(false);
+    setAccountOpen(true);
+  };
+  const closeAccount = () => {
+    if ((window.history.state as { viaAccount?: boolean } | null)?.viaAccount) {
+      window.history.back();
+      return;
+    }
+    setAccountOpen(false);
+    const query = filtersToSearchParams(filters, sort).toString();
+    window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
+  };
+  // #endregion open-account
   const closeAdmin = () => {
     if ((window.history.state as { viaAdmin?: boolean } | null)?.viaAdmin) {
       window.history.back();
@@ -413,6 +470,10 @@ export default function App() {
   const goHome = () => {
     if (adminOpen) {
       closeAdmin();
+      return;
+    }
+    if (accountOpen) {
+      closeAccount();
       return;
     }
     backToInventory();
@@ -456,13 +517,15 @@ export default function App() {
   // regions saying the same thing is worse than one saying it once.
   const announcement = adminOpen
     ? 'Admin panel'
-    : selectedVehicle
-      ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}, vehicle detail`
-      : loadState === 'loading'
-        ? 'Loading inventory'
-        : loadState === 'error'
-          ? 'The inventory API could not be reached'
-          : 'Vehicle inventory';
+    : accountOpen
+      ? 'Account'
+      : selectedVehicle
+        ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}, vehicle detail`
+        : loadState === 'loading'
+          ? 'Loading inventory'
+          : loadState === 'error'
+            ? 'The inventory API could not be reached'
+            : 'Vehicle inventory';
   // #endregion announcement
 
   return (
@@ -489,6 +552,9 @@ export default function App() {
         onHome={goHome}
         adminOpen={adminOpen}
         onOpenAdmin={openAdmin}
+        accountOpen={accountOpen}
+        onOpenAccount={openAccount}
+        accountEmail={account.email}
         bidCount={bidCount}
         onResetBids={handleResetBids}
         build={build}
@@ -541,6 +607,13 @@ export default function App() {
           </p>
           {adminOpen ? (
             <AdminPanel onBack={closeAdmin} />
+          ) : accountOpen ? (
+            <AccountPanel
+              account={account}
+              onAccountChange={setAccount}
+              onOpenVehicle={openVehicleById}
+              onBack={closeAccount}
+            />
           ) : loadState === 'loading' ? (
             <p className={styles.notice} role="status">
               Loading inventory…

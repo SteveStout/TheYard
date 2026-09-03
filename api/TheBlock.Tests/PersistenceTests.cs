@@ -33,6 +33,18 @@ public class PersistenceTests : IDisposable
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
             builder.UseSetting("ConnectionStrings:Yard", Connection));
 
+    /// <summary>
+    /// A live vehicle with time left on it. Most bids rather than the default
+    /// sort, which is EndingSoonest and so returns the one auction in the
+    /// dataset with the least time on it. AuctionClock carries two instants
+    /// and only one of them is the anchor these tests pin: NowMs is real
+    /// wall-clock, read per request, and liveness is judged against it. Under
+    /// the full suite that vehicle closes between reading min_next_bid and
+    /// posting the bid, about one run in three.
+    /// </summary>
+    private static string ALiveVehicleQuery(long anchor) =>
+        $"/api/vehicles?status=live&sort=most-bids&limit=1&anchor_ms={anchor}";
+
     private YardDbContext Context() =>
         new(new DbContextOptionsBuilder<YardDbContext>().UseSqlite(Connection).Options);
 
@@ -43,12 +55,13 @@ public class PersistenceTests : IDisposable
         long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
         string id;
         int amount;
+        string email;
 
         await using (var first = Api())
         {
-            var client = first.CreateClient();
+            var client = await Buyers.SignedIn(first);
             using var page = JsonDocument.Parse(
-                await client.GetStringAsync($"/api/vehicles?status=live&limit=1&anchor_ms={anchor}"));
+                await client.GetStringAsync(ALiveVehicleQuery(anchor)));
             var live = page.RootElement.GetProperty("vehicles");
             // The auction clock is anchored per request, so a live vehicle is
             // always there. Saying so out loud costs nothing and turns a future
@@ -60,13 +73,26 @@ public class PersistenceTests : IDisposable
 
             var placed = await client.PostAsJsonAsync(
                 $"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
-            Assert.Equal(HttpStatusCode.OK, placed.StatusCode);
+            // The reason, not just the number. Every rejection on this API
+            // carries its sentence in `detail` (ADR: Error handling), and a
+            // bare "Expected OK, actual BadRequest" is a test that knows
+            // something is wrong and will not say what.
+            Assert.True(
+                placed.StatusCode == HttpStatusCode.OK,
+                $"the bid of {amount} was refused: {await placed.Content.ReadAsStringAsync()}\n"
+                    + $"the vehicle was {vehicle}");
+            email = await WhoAmI(client);
         }
 
         // A second application. It shares nothing with the first except the
-        // bytes on disk, which is the entire claim under test.
+        // bytes on disk, which is the entire claim under test. The same person
+        // signs in again, because a bid that survived and could not be found by
+        // its owner would not have survived in any useful sense.
         await using var second = Api();
-        string bids = await second.CreateClient().GetStringAsync("/api/bids");
+        var returning = second.CreateClient();
+        (await returning.PostAsJsonAsync(
+            "/api/auth/login", new { email, password = "correct horse" })).EnsureSuccessStatusCode();
+        string bids = await returning.GetStringAsync("/api/bids");
 
         // Parsed rather than matched as a substring: a thirteen-digit
         // timestamp contains almost any five-digit amount somewhere inside it,
@@ -253,9 +279,9 @@ public class PersistenceTests : IDisposable
 
         await using (var first = Api())
         {
-            var client = first.CreateClient();
+            var client = await Buyers.SignedIn(first);
             using var page = JsonDocument.Parse(
-                await client.GetStringAsync($"/api/vehicles?status=live&limit=1&anchor_ms={anchor}"));
+                await client.GetStringAsync(ALiveVehicleQuery(anchor)));
             var vehicle = page.RootElement.GetProperty("vehicles")[0];
             string id = vehicle.GetProperty("id").GetString()!;
             int amount = vehicle.GetProperty("min_next_bid").GetInt32();
@@ -267,6 +293,13 @@ public class PersistenceTests : IDisposable
         await using var second = Api();
         string bids = await second.CreateClient().GetStringAsync("/api/bids");
         Assert.Equal("{}", bids.Trim());
+    }
+
+    /// <summary>The signed-in account's email, so the next process can sign in as them.</summary>
+    private static async Task<string> WhoAmI(HttpClient client)
+    {
+        using var me = JsonDocument.Parse(await client.GetStringAsync("/api/auth/me"));
+        return me.RootElement.GetProperty("email").GetString()!;
     }
 
     private int Count()

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { signIn } from './signIn';
 
 /**
  * The accessibility rules a machine can check (ADR: The accessibility check).
@@ -73,11 +74,27 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   test('the records index, open', async ({ page }) => {
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Project documents' });
-    // Closed, those thirty-five rows are not in the accessibility tree at all,
-    // so every other test in this file was scanning a rail with a third of its
+    // Closed, the index's rows are not in the accessibility tree at all, so
+    // every other test in this file was scanning a rail with a third of its
     // controls hidden.
     await nav.getByText('Decision Records', { exact: true }).click();
     await expect(nav.getByRole('button', { name: 'ADR: Front Door origin' })).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+  });
+
+  test('the account view, signed out', async ({ page }) => {
+    await page.goto('/?view=account');
+    await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+  });
+
+  test('the account view, signed in', async ({ page }) => {
+    // A different page: an identity block, a sign-out, and a bid list rather
+    // than a form. Scanning only the signed-out half would leave the half with
+    // the coloured winning and outbid states unchecked.
+    const email = await signIn(page);
+    await page.goto('/?view=account');
+    await expect(page.getByRole('heading', { name: email })).toBeVisible();
     expect(await violations(page)).toEqual([]);
   });
 

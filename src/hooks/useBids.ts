@@ -38,8 +38,10 @@ export function applyBidRecord(vehicle: Vehicle, record: BidRecord | undefined):
  * The buyer's bids, owned by the API (validation and state live server-side;
  * this hook relays actions and mirrors the bid map for card badges).
  * `onMutate` fires after any successful change so the caller can refetch.
+ * `accountKey` identifies whose bids these are: change it and the map is
+ * re-asked for (ADR: Accounts and per-user bids).
  */
-export function useBids(onMutate?: () => void) {
+export function useBids(onMutate?: () => void, accountKey?: string | null) {
   const [bids, setBids] = useState<BidMap>({});
   // #region tick-ordering
   // Everything the buyer does bumps this. A tick response carries the number
@@ -57,13 +59,19 @@ export function useBids(onMutate?: () => void) {
   }, []);
   // #endregion tick-ordering
 
+  // #region whose-bids
+  // The map belongs to whoever is signed in, so signing in or out re-asks for
+  // it. applyMine rather than setBids: it bumps the mutation counter, so a
+  // tick that was already in flight for the previous account is discarded
+  // instead of putting somebody else's badges back on the grid.
   useEffect(() => {
     const controller = new AbortController();
     fetchBids(controller.signal)
-      .then(setBids)
+      .then(applyMine)
       .catch(() => {});
     return () => controller.abort();
-  }, []);
+  }, [accountKey, applyMine]);
+  // #endregion whose-bids
 
   // #region market-loop
   // The room bids while the tab is open and not otherwise (ADR-027). A hidden

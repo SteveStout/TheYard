@@ -1,6 +1,9 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using TheBlock.Api;
@@ -77,6 +80,11 @@ if (database.Ready)
     // are singletons that each want a context for the length of one operation,
     // and there is no request scope at startup when the catalogue is read.
     builder.Services.AddDbContextFactory<YardDbContext>(options => options.UseSqlite(databaseConnection));
+    // Identity's stores want a context per request, and the factory hands out
+    // contexts rather than registering one. This is the adapter between the two
+    // and the only scoped registration in the application.
+    builder.Services.AddScoped(services =>
+        services.GetRequiredService<IDbContextFactory<YardDbContext>>().CreateDbContext());
     // The same two ports, now answered out of the database. The synthetic
     // scale-up still decorates the vehicle source, and nothing above this line
     // can tell that the catalogue stopped being a file.
@@ -102,6 +110,60 @@ else
     builder.Services.AddSingleton<IPhotoManifestSource>(new JsonFilePhotoManifestSource(manifestPath));
     builder.Services.AddSingleton<IBidStore>(NullBidStore.Instance);
 }
+// #region auth
+// Accounts (ADR: Accounts and per-user bids). Identity owns the password
+// hashing, the normalised lookups and the account tables, which is the part
+// worth not writing twice; the session is a JWT this service signs and reads
+// itself, carried in a cookie the page cannot touch.
+//
+// The signing key is configuration. Without one the process invents a random
+// key and says so, which means a deploy signs everybody out and no key is ever
+// committed. A production deployment reads it from a secret store; that is the
+// one line of this that would change.
+string? configuredSigningKey = builder.Configuration["Auth:SigningKey"];
+string signingKey = configuredSigningKey ?? Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+var tokens = new TokenIssuer(signingKey, TimeSpan.FromDays(7));
+builder.Services.AddSingleton(tokens);
+
+if (database.Ready)
+{
+    builder.Services
+        .AddIdentityCore<YardUser>(options =>
+        {
+            // Long over ornate. A length requirement is the only one of these
+            // that measurably helps, and the rest mostly teach people to write
+            // the password down (NIST 800-63B says so at more length).
+            options.Password.RequiredLength = 8;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireDigit = false;
+            options.User.RequireUniqueEmail = true;
+        })
+        .AddEntityFrameworkStores<YardDbContext>();
+}
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = tokens.Validation;
+        options.Events = new JwtBearerEvents
+        {
+            // The token arrives in a cookie rather than an Authorization
+            // header, because a page that can read its own token can leak it.
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.TryGetValue(TokenIssuer.CookieName, out string? cookie))
+                {
+                    context.Token = cookie;
+                }
+                return Task.CompletedTask;
+            },
+        };
+    });
+builder.Services.AddAuthorization();
+// #endregion auth
+
 #endregion migrate-and-seed
 builder.Services.AddSingleton<InventoryService>();
 builder.Services.AddSingleton<BidService>();
@@ -241,6 +303,12 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseHttpLogging();
 
+// Before any endpoint, so a request carries its user by the time one runs. The
+// reads do not require it and still get a principal when a cookie is present,
+// which is how the listing knows whose badges to draw.
+app.UseAuthentication();
+app.UseAuthorization();
+
 // The dataset is snake_case; keep the wire shape identical to the source file.
 var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 #endregion composition
@@ -314,26 +382,61 @@ app.MapPost("/api/vehicles/{id}/bids", (
     InventoryService inventory,
     BidService bids,
     MarketService market,
+    HttpContext http,
     string id,
-    BidRequest request) => HandleBid(inventory, bids, market, id, request.AnchorMs,
+    BidRequest request) => HandleBid(inventory, bids, market, http.UserId(), id, request.AnchorMs,
         // The room's standing price is what the minimum next bid is measured
         // against (ADR-027). Handing BidRules the dataset's figure instead
         // would let the buyer retake the lead with a bid below the going rate.
-        (vehicle, clock) => bids.PlaceBid(market.Apply(vehicle), request.Amount, clock)));
+        (vehicle, clock) => bids.PlaceBid(market.Apply(vehicle), request.Amount, clock, http.UserId())))
+    .RequireAuthorization();
 
 app.MapPost("/api/vehicles/{id}/buy-now", (
     InventoryService inventory,
     BidService bids,
     MarketService market,
+    HttpContext http,
     string id,
-    BuyNowRequest request) => HandleBid(inventory, bids, market, id, request.AnchorMs,
-        (vehicle, clock) => bids.BuyNow(market.Apply(vehicle), clock)));
+    BuyNowRequest request) => HandleBid(inventory, bids, market, http.UserId(), id, request.AnchorMs,
+        (vehicle, clock) => bids.BuyNow(market.Apply(vehicle), clock, http.UserId())))
+    .RequireAuthorization();
 
 #region market-endpoints
 // The buyer's bids, each one answering the question the badge asks: am I still
 // winning this? The server owns that answer because it owns both sides of it.
-app.MapGet("/api/bids", (BidService bids, MarketService market) =>
-    Results.Json(BidViews.For(bids, market), wireFormat));
+// Signed out, this is an empty map rather than a 401: the page asks for it on
+// every load, and "you have no bids" is the true answer for somebody who has
+// not signed in. The endpoints that change something are the ones that refuse.
+app.MapGet("/api/bids", (BidService bids, MarketService market, HttpContext http) =>
+    Results.Json(
+        http.UserIdOrNull() is { } me
+            ? BidViews.For(bids, market, me)
+            : new Dictionary<string, BidView>(StringComparer.Ordinal),
+        wireFormat));
+
+#region history
+// The account page's list, newest first, with the vehicle each bid is on. The
+// only query the bids table serves that is not "load everything at startup",
+// which is why it is the only reason there is an index on the user column.
+app.MapGet("/api/bids/history", (
+    InventoryService inventory,
+    BidService bids,
+    MarketService market,
+    HttpContext http) =>
+{
+    var mine = BidViews.For(bids, market, http.UserId());
+    var history = mine
+        .OrderByDescending(entry => entry.Value.AtMs)
+        .Select(entry => new
+        {
+            vehicle_id = entry.Key,
+            title = inventory.GetById(entry.Key) is { } v ? $"{v.Year} {v.Make} {v.Model}" : "(withdrawn)",
+            bid = entry.Value,
+        })
+        .ToList();
+    return Results.Json(new { count = history.Count, bids = history }, wireFormat);
+}).RequireAuthorization();
+#endregion history
 
 // One round of bidding by the room, driven by the page rather than a timer
 // (ADR-027). The anchor comes from the caller for the same reason every other
@@ -344,13 +447,18 @@ app.MapPost("/api/market/tick", (
     InventoryService inventory,
     BidService bids,
     MarketService market,
+    HttpContext http,
     MarketTickRequest request) =>
 {
     if (!Clocks.TryResolve(request.AnchorMs, out var clock, out var error))
     {
         return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
     }
-    var buyerBids = bids.Snapshot();
+    // Everybody's high-water marks, not one account's. The room answers a
+    // price rather than a person, and a room that only responded to whoever
+    // happened to be looking would stop being a room the moment there were two
+    // of them.
+    var buyerBids = bids.StandingAsBids();
     // Candidates: everything the buyer is in on, plus a page of live auctions
     // so the grid moves even when the visitor has bid on nothing.
     var contested = buyerBids.Keys
@@ -367,7 +475,18 @@ app.MapPost("/api/market/tick", (
         .Take(40);
     var candidates = contested.Concat(live).DistinctBy(v => v.Id).ToList();
     var raised = market.Tick(candidates, buyerBids, clock);
-    return Results.Json(new { raised = raised.Count, bids = BidViews.For(bids, market) }, wireFormat);
+    return Results.Json(
+        new
+        {
+            raised = raised.Count,
+            // The caller's own badges ride back with the tick when there is a
+            // caller, so a signed-in page does not need a second request to
+            // find out it has been outbid.
+            bids = http.UserIdOrNull() is { } me
+                ? BidViews.For(bids, market, me)
+                : new Dictionary<string, BidView>(StringComparer.Ordinal),
+        },
+        wireFormat);
 });
 #endregion market-endpoints
 
@@ -379,7 +498,7 @@ app.MapDelete("/api/bids", (BidService bids, MarketService market) =>
     // reads as a bug however carefully it is explained.
     market.Reset();
     return Results.NoContent();
-});
+}).RequireAuthorization();
 #endregion bid-endpoints
 
 // ---------------------------------------------------------------------------
@@ -440,6 +559,7 @@ IResult HandleBid(
     InventoryService inventory,
     BidService bids,
     MarketService market,
+    string userId,
     string id,
     long? anchorMs,
     Func<Vehicle, AuctionClock, BidOutcome> action)
@@ -465,7 +585,7 @@ IResult HandleBid(
         // the moment the response lands rather than at the next tick.
         // TryGetValue, not the indexer: DELETE /api/bids is public and can
         // land between the bid being recorded and this line reading it back.
-        bid = BidViews.For(bids, market).TryGetValue(id, out var view) ? view : null,
+        bid = BidViews.For(bids, market, userId).TryGetValue(id, out var view) ? view : null,
         vehicle = VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat),
     }, wireFormat);
 }
@@ -616,6 +736,100 @@ app.MapGet("/api/admin/selftest/exception", IResult () =>
         "Deliberate self-test failure. No caller ever sees this sentence, which "
         + "is the point of it: it exists to be found in a log and nowhere else."));
 #endregion selftest
+
+#region auth-endpoints
+// Register, sign in, sign out, and who am I. The token never reaches the page:
+// it is set as an httpOnly cookie on the way out and read from the cookie on the
+// way back in, so a script on the page cannot read it and cannot be tricked into
+// sending it somewhere else (ADR: Accounts and per-user bids).
+app.MapPost("/api/auth/register", async (
+    IServiceProvider services,
+    TokenIssuer issuer,
+    HttpContext http,
+    Credentials request) =>
+{
+    if (services.GetService<UserManager<YardUser>>() is not { } users)
+    {
+        return Accounts.Unavailable();
+    }
+    if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+    {
+        return Results.Problem(
+            detail: "An email address and a password, please.",
+            statusCode: 400, title: "The registration could not be read");
+    }
+
+    var user = new YardUser
+    {
+        UserName = request.Email,
+        Email = request.Email,
+        CreatedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+    };
+    var created = await users.CreateAsync(user, request.Password);
+    if (!created.Succeeded)
+    {
+        return Results.Problem(
+            detail: Accounts.Explain(created),
+            statusCode: 400, title: "The account was not created");
+    }
+
+    http.Response.Cookies.Append(
+        TokenIssuer.CookieName,
+        issuer.Issue(user.Id, user.Email!),
+        TokenIssuer.CookieFor(http, issuer.Lifetime));
+    return Results.Json(Accounts.Describe(user), wireFormat);
+});
+
+app.MapPost("/api/auth/login", async (
+    IServiceProvider services,
+    TokenIssuer issuer,
+    HttpContext http,
+    Credentials request) =>
+{
+    if (services.GetService<UserManager<YardUser>>() is not { } users)
+    {
+        return Accounts.Unavailable();
+    }
+
+    var user = request.Email is null ? null : await users.FindByEmailAsync(request.Email);
+    // One message for "no such account" and for "wrong password", because two
+    // messages are an endpoint that tells a stranger which email addresses are
+    // registered here.
+    if (user is null
+        || request.Password is null
+        || !await users.CheckPasswordAsync(user, request.Password))
+    {
+        return Results.Problem(
+            detail: "That email address and password do not match an account.",
+            statusCode: 401, title: "Not signed in");
+    }
+
+    http.Response.Cookies.Append(
+        TokenIssuer.CookieName,
+        issuer.Issue(user.Id, user.Email!),
+        TokenIssuer.CookieFor(http, issuer.Lifetime));
+    return Results.Json(Accounts.Describe(user), wireFormat);
+});
+
+app.MapPost("/api/auth/logout", (TokenIssuer issuer, HttpContext http) =>
+{
+    // Deleted with the same attributes it was set with, or the browser keeps a
+    // second cookie of the same name on a different path and stays signed in.
+    http.Response.Cookies.Delete(TokenIssuer.CookieName, TokenIssuer.CookieFor(http, issuer.Lifetime));
+    return Results.Json(Accounts.Anonymous, wireFormat);
+});
+
+app.MapGet("/api/auth/me", async (IServiceProvider services, HttpContext http) =>
+{
+    if (http.UserIdOrNull() is not { } id
+        || services.GetService<UserManager<YardUser>>() is not { } users
+        || await users.FindByIdAsync(id) is not { } user)
+    {
+        return Results.Json(Accounts.Anonymous, wireFormat);
+    }
+    return Results.Json(Accounts.Describe(user), wireFormat);
+});
+#endregion auth-endpoints
 
 app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
 

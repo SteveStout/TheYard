@@ -37,11 +37,17 @@ public class ProblemDetailsTests(WebApplicationFactory<Program> factory)
     {
         long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
         using var page = JsonDocument.Parse(
-            await _client.GetStringAsync($"/api/vehicles?status=live&limit=1&anchor_ms={anchor}"));
+            await _client.GetStringAsync(
+                $"/api/vehicles?status=live&sort=most-bids&limit=1&anchor_ms={anchor}"));
         string id = page.RootElement.GetProperty("vehicles")[0].GetProperty("id").GetString()!;
 
-        // One dollar can never clear the minimum increment, so this is always rejected.
-        var response = await _client.PostAsJsonAsync($"/api/vehicles/{id}/bids",
+        // Bidding needs an account now, and a rejected bid still has to answer
+        // in the same shape as a rejected query (ADR: Accounts and per-user
+        // bids). One dollar can never clear the minimum increment, so this is
+        // always rejected for the reason the test is about rather than for
+        // being anonymous.
+        var buyer = await Buyers.SignedIn(factory);
+        var response = await buyer.PostAsJsonAsync($"/api/vehicles/{id}/bids",
             new { amount = 1, anchor_ms = anchor });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

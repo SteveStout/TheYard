@@ -120,28 +120,34 @@ public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> facto
 public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidStore
 {
     // #region bid-store
-    public IReadOnlyDictionary<string, BidState> Load()
+    public IReadOnlyList<StoredBid> Load()
     {
         using var db = factory.CreateDbContext();
-        return db.Bids.AsNoTracking().ToDictionary(
-            row => row.VehicleId,
-            row => new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs),
-            StringComparer.Ordinal);
+        return
+        [
+            .. db.Bids.AsNoTracking()
+                .Select(row => new StoredBid(
+                    row.UserId,
+                    row.VehicleId,
+                    new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs))),
+        ];
     }
 
     /// <summary>
-    /// One row per vehicle, replaced rather than appended. Called inside
-    /// BidService's lock, which is what makes "read the row, decide, write the
-    /// row" safe here without the database needing an opinion about it.
+    /// One row per buyer per vehicle, replaced rather than appended. Called
+    /// inside BidService's lock, which is what makes "read the row, decide,
+    /// write the row" safe here without the database needing an opinion about
+    /// it.
     /// </summary>
-    public void Save(string vehicleId, BidState state)
+    public void Save(string userId, string vehicleId, BidState state)
     {
         using var db = factory.CreateDbContext();
-        var existing = db.Bids.Find(vehicleId);
+        var existing = db.Bids.Find(userId, vehicleId);
         if (existing is null)
         {
             db.Bids.Add(new BidRow
             {
+                UserId = userId,
                 VehicleId = vehicleId,
                 Amount = state.Amount,
                 BidCount = state.BidCount,

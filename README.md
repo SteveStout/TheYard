@@ -183,11 +183,16 @@ each with its own changelog line and, where it decided something, its own record
 - **Bidding:** live countdowns on a shared clock, tiered minimum increments, validation
   with buyer-facing reasons, a persistent "You're the high bidder" state, Buy Now with a
   distinct sold and purchase-price presentation, and bids that survive refresh.
+- **Accounts:** register or sign in with an address and a password, and the bid is
+  yours. The session is a signed token in a cookie the page cannot read, the bids are
+  keyed on the person as well as the vehicle, and the account view lists what you have
+  bid on and whether you are still winning. Two visitors can now outbid each other and
+  both be told the truth about it.
 - **Navigation:** every view is a GET URL. Filters, sorts, the open vehicle and the Admin
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow and infrastructure diagrams on their own zoomable pages, thirty-six
+  data flow and infrastructure diagrams on their own zoomable pages, thirty-eight
   decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
@@ -336,7 +341,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (193 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
+**API (201 xUnit tests, separate `TheBlock.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -350,23 +355,30 @@ disposes the application, starts a second one against the same database file and
 the bid back, one test that points the connection string at a path which cannot be
 opened to prove the site still serves its inventory when the store does not come up, and
 two that hold the photo manifest and the image directory to the naming that responsive
-images rely on. Run with `npm run test:api`.
+images rely on, and an account suite that registers two people, has them outbid each
+other, restarts the application and signs the first one back in to find their bid where
+they left it, while checking that the token never appears in a response body and that a
+wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (38 Vitest tests):** presentation logic only, since the API owns the rules.
+**Frontend (48 Vitest tests):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
-forced bypass, no caching of failures), and the palette's contrast against WCAG AA,
-including the two pairs a stylesheet composes that nobody had listed. Run with
-`npm test`.
+forced bypass, no caching of failures), the palette's contrast against WCAG AA,
+including the two pairs a stylesheet composes that nobody had listed, and the account
+seam, which translates the wire both ways, shows the server's own sentence when a
+sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (38 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (43 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a
 browser error reaches it, a transient API failure recovers via the retry banner, the
 phone drawer works at 375 pixels, the keyboard path walks from the skip link through
 every view switch, a bid round-trips through the API, survives a reload, and resets,
-and the simulated room answers a bid so the high-bidder badge changes hands. Run with `npm run test:e2e` (launches both servers itself, uses your
+the simulated room answers a bid so the high-bidder badge changes hands, the sign-in
+form creates an account that survives a reload and a bid made under it appears in that
+account's list, and axe holds eight views to WCAG 2.1 AA including both halves of the
+account page. Run with `npm run test:e2e` (launches both servers itself, uses your
 installed Chrome). All three suites run in CI on every push, and a green run on `main`
 deploys.
 

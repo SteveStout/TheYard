@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { signIn } from './signIn';
 
 /**
  * Smokes over the real stack: Vite → proxy → .NET API → 100k synthetic
@@ -7,6 +8,17 @@ import { expect, test } from '@playwright/test';
  */
 
 test.beforeEach(async ({ request }) => {
+  // Clearing bids needs an account now (ADR: Accounts and per-user bids). The
+  // reset still clears the room for everybody, which is the whole reason this
+  // hook exists, so it registers a throwaway account to do it with. The worker
+  // request fixture keeps its cookies between calls, so the register and the
+  // delete are the same caller.
+  await request.post('http://localhost:5210/api/auth/register', {
+    data: {
+      email: `smoke-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}@example.com`,
+      password: 'correct horse',
+    },
+  });
   await request.delete('http://localhost:5210/api/bids');
 });
 
@@ -132,6 +144,7 @@ test('a transient API failure shows the stale banner and Retry recovers', async 
 });
 
 test('a bid round-trips through the API and survives a reload', async ({ page }) => {
+  await signIn(page);
   // Sort by most bids: the top card is live with a window ending hours or
   // days out (the default sort's first card can expire within seconds).
   await page.goto('/?status=live&sort=most-bids');

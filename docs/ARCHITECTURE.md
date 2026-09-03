@@ -42,10 +42,10 @@ flowchart LR
     API["ASP.NET Core minimal API, .NET 10"]
     SPA["React 19 bundle, served as static files"]
     SEED[("data/vehicles.json<br/>200 records, seeds the database on first boot")]
-    DB[("SQLite, /app/state/yard.db<br/>catalogue, photo manifest, bids")]
+    DB[("SQLite, /app/state/yard.db<br/>catalogue, photo manifest, accounts, bids")]
   end
 
-  B -->|HTTPS| TLS
+  B -->|HTTPS, session cookie| TLS
   TLS -->|HTTP 8080| ACI
   ACI --> API
   API --> SPA

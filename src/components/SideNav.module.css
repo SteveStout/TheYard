@@ -263,7 +263,8 @@
   text-overflow: ellipsis;
 }
 
-/* Admin, Reset bids, the resume, and the repository stay pinned below the scroll. */
+/* The account, Admin, Reset bids, the resume, and the repository stay pinned
+   below the scroll. */
 .pinned {
   flex: none;
   border-top: 1px solid var(--color-sheet-divider-strong);

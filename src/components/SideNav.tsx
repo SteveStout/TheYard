@@ -45,6 +45,10 @@ export type SideNavProps = {
   onHome: () => void;
   adminOpen: boolean;
   onOpenAdmin: () => void;
+  accountOpen: boolean;
+  onOpenAccount: () => void;
+  /** The signed-in address, or null. The row's label either way. */
+  accountEmail: string | null;
   bidCount: number;
   onResetBids: () => void;
   build: Build;
@@ -118,16 +122,17 @@ export function SideNav(props: SideNavProps) {
 
 // #region section-shell
 /**
- * A sidebar section. Most are always open. The records index is thirty-five
- * rows, which is a wall at the bottom of the rail, so it is a native details:
- * closed until asked for, and the keyboard and screen-reader behaviour comes
- * from the element rather than from a reimplementation of it.
+ * A sidebar section. Most are always open. The records index is every decision
+ * record there is, which is a wall at the bottom of the rail and grows by one
+ * every time somebody decides something, so it is a native details: closed
+ * until asked for, and the keyboard and screen-reader behaviour comes from the
+ * element rather than from a reimplementation of it.
  *
  * The icons-only rail is the case that nearly went out wrong. Every other
  * section hides its heading there, because the rows underneath are icons and
  * speak for themselves. A closed `details` has no rows, so hiding its summary
- * hid the only way to open it: thirty-five documents behind a control a mouse
- * could not see. On that rail the summary keeps its marker and only the words
+ * hid the only way to open it: every record in the index behind a control a
+ * mouse could not see. On that rail the summary keeps its marker and only the words
  * are hidden, which leaves the accessible name intact and the affordance
  * visible (the staff review, 2026-09-03).
  */
@@ -181,6 +186,9 @@ function NavContent({
   onHome,
   adminOpen,
   onOpenAdmin,
+  accountOpen,
+  onOpenAccount,
+  accountEmail,
   bidCount,
   onResetBids,
   build,
@@ -284,6 +292,28 @@ function NavContent({
         </div>
 
         <div className={styles.pinned}>
+          {/* #region account-row */}
+          {/* First of the pinned rows, because it is the one that changes what
+              the rest of the page can do. Signed in, the label is the address,
+              which is also how a visitor checks who they are without opening
+              anything. .label already truncates, so a long address does not
+              widen the rail. */}
+          <button
+            type="button"
+            className={styles.row}
+            onClick={() => {
+              onCloseDrawer();
+              onOpenAccount();
+            }}
+            aria-current={accountOpen ? 'page' : undefined}
+            title={iconsOnly ? (accountEmail ?? 'Sign in') : undefined}
+          >
+            <RowIcon kind="account" className={styles.icon} />
+            <span className={iconsOnly ? styles.srOnly : styles.label}>
+              {accountEmail ?? 'Sign in'}
+            </span>
+          </button>
+          {/* #endregion account-row */}
           <button
             type="button"
             className={styles.row}

@@ -59,6 +59,8 @@ public static class DocsCatalog
         ["adr-ef"] = "docs/ADR-034-entity-framework-explained.md",
         ["adr-a11y-check"] = "docs/ADR-035-accessibility-check.md",
         ["adr-photos"] = "docs/ADR-036-responsive-photos.md",
+        ["adr-accounts"] = "docs/ADR-037-accounts.md",
+        ["adr-identity"] = "docs/ADR-038-identity-explained.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",

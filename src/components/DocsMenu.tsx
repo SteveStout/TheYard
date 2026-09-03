@@ -65,6 +65,8 @@ export type DocKey =
   | 'adrEf'
   | 'adrA11yCheck'
   | 'adrPhotos'
+  | 'adrAccounts'
+  | 'adrIdentity'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -393,6 +395,20 @@ export const DOCS: Record<
     kind: 'adr',
     number: '036',
   },
+  adrAccounts: {
+    title: 'ADR: Accounts and per-user bids',
+    menuLabel: 'ADR: Accounts and per-user bids',
+    url: '/api/docs/adr-accounts',
+    kind: 'adr',
+    number: '037',
+  },
+  adrIdentity: {
+    title: 'ADR: Identity and the session token, explained',
+    menuLabel: 'ADR: Identity, explained',
+    url: '/api/docs/adr-identity',
+    kind: 'adr',
+    number: '038',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -485,6 +501,8 @@ export const MENUS: Record<
       { key: 'adrEf' },
       { key: 'adrA11yCheck' },
       { key: 'adrPhotos' },
+      { key: 'adrAccounts' },
+      { key: 'adrIdentity' },
     ],
   },
   // #endregion records-menu

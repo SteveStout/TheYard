@@ -1,17 +1,18 @@
 import type { DocKind } from './DocsMenu';
 
 /** Every row kind the sidebar draws: the four doc kinds plus three actions. */
-export type RowKind = DocKind | 'external' | 'admin' | 'reset';
+export type RowKind = DocKind | 'external' | 'admin' | 'reset' | 'account';
 
 /**
- * One stroked path per kind on a 20x20 grid. Seven icons cover every row in
+ * One stroked path per kind on a 20x20 grid. Eight icons cover every row in
  * the sidebar (ADR-011 addendum, ADR-013): a doc is an overview, a decision
  * record, the infrastructure file, or the changelog; the rest are links out,
- * the Admin tab, and Reset bids. Rows reuse these; nothing gets a bespoke icon.
+ * the Admin tab, Reset bids, and the account. Rows reuse these; nothing gets a
+ * bespoke icon.
  */
 // #region icons
 // One stroked path per row kind on a shared 20x20 grid, rather than an icon
-// library: seven paths cover every row in the rail and the drawer, they inherit
+// library: eight paths cover every row in the rail and the drawer, they inherit
 // currentColor so a theme change needs no icon work, and the bundle carries no
 // font or sprite (ADR-011).
 const PATHS: Record<RowKind, string> = {
@@ -24,6 +25,7 @@ const PATHS: Record<RowKind, string> = {
     'M11 4H5.5A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16h9a1.5 1.5 0 0 0 1.5-1.5V9M12.5 3.5h4v4M16.5 3.5l-7 7',
   admin: 'M3 10.5h3.2l2-5.5 3.6 10 2-4.5H17',
   reset: 'M4.5 10a5.5 5.5 0 1 1 1.6 3.9M4.5 15v-4.5H9',
+  account: 'M10 4a2.6 2.6 0 1 1 0 5.2A2.6 2.6 0 0 1 10 4zM4.9 16.4a5.1 5.1 0 0 1 10.2 0',
 };
 // #endregion icons
 
