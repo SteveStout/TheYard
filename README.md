@@ -17,7 +17,7 @@ it has sent and how long the database took.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Fifty-one decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Fifty-two decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -225,7 +225,7 @@ each with its own changelog line and, where it decided something, its own record
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
   data flow, infrastructure and entity relationship diagrams on their own zoomable
-  pages, fifty-one decision records in one numbered index, the Bicep infrastructure, my resume, and
+  pages, fifty-two decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser

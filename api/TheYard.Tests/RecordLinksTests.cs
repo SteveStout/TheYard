@@ -13,7 +13,7 @@ namespace TheYard.Tests;
 /// `docs/ADR-037-accounts-and-per-user-bids.md`, which has never existed; the
 /// file is `docs/ADR-037-accounts.md`. It was caught by eye, which is not a
 /// method. The rename of every project the same day moved 208 files and rewrote
-/// the links in fifty-one records, and nothing checked that they landed.</para>
+/// the links in every record, and nothing checked that they landed.</para>
 /// </summary>
 public class RecordLinksTests
 {
@@ -36,7 +36,7 @@ public class RecordLinksTests
             // GitHub serves a directory under tree and a file under blob, and
             // gets there from the wrong one by redirecting. So the wrong form
             // works, quietly, until it is copied into somewhere that does not
-            // follow redirects. The one instance of this in fifty-one records
+            // follow redirects. The one instance of this across the records
             // was a directory linked as a blob.
             foreach (Match match in Regex.Matches(
                 text, @"https://github\.com/SteveStout/TheYard/(blob|tree)/main/([^\)\s""#]+)"))

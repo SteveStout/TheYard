@@ -81,6 +81,7 @@ export type DocKey =
   | 'adrRoomAccount'
   | 'adrLockout'
   | 'adrCoverage'
+  | 'adrWhereGatesLive'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -520,6 +521,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '051',
   },
+  adrWhereGatesLive: {
+    title: 'ADR: Where a gate lives',
+    menuLabel: 'ADR: Where a gate lives',
+    url: '/api/docs/adr-where-gates-live',
+    kind: 'adr',
+    number: '052',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -627,6 +635,7 @@ export const MENUS: Record<
       { key: 'adrRoomAccount' },
       { key: 'adrLockout' },
       { key: 'adrCoverage' },
+      { key: 'adrWhereGatesLive' },
     ],
   },
   // #endregion records-menu
