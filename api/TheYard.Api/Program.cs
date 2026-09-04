@@ -203,6 +203,14 @@ string signingKey = configuredSigningKey ?? Convert.ToBase64String(RandomNumberG
 var tokens = new TokenIssuer(signingKey, TimeSpan.FromDays(7));
 builder.Services.AddSingleton(tokens);
 
+// The hour's allowance of new accounts, for the whole site (ADR: The one write
+// a stranger can make). Configurable because the tests need to reach it, and
+// because a number that cannot be changed without a deploy is a number nobody
+// tunes.
+builder.Services.AddSingleton(new RegistrationLimit(
+    builder.Configuration.GetValue("Accounts:RegistrationsPerHour", RegistrationLimit.DefaultPerHour),
+    () => DateTimeOffset.UtcNow));
+
 if (database.Ready)
 {
     builder.Services
@@ -1013,6 +1021,7 @@ app.MapGet("/api/admin/selftest/exception", IResult () =>
 app.MapPost("/api/auth/register", async (
     IServiceProvider services,
     TokenIssuer issuer,
+    RegistrationLimit limit,
     HttpContext http,
     Credentials request) =>
 {
@@ -1025,6 +1034,18 @@ app.MapPost("/api/auth/register", async (
         return Results.Problem(
             detail: "An email address and a password, please.",
             statusCode: 400, title: "The registration could not be read");
+    }
+
+    // Checked after the request is read and before the password is hashed, so a
+    // request that was never going to work does not spend the hour's allowance
+    // and a request that is refused does not spend the CPU. The reply says what
+    // happened and how long it lasts, and says nothing about how many accounts
+    // exist or how much of the allowance is left.
+    if (!limit.TryTake())
+    {
+        return Results.Problem(
+            detail: "This demo is not taking new accounts at the moment. Try again in an hour.",
+            statusCode: 429, title: "Too many registrations");
     }
 
     var user = new YardUser

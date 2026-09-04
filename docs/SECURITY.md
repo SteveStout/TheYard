@@ -70,12 +70,27 @@ this project does not pay for. That trade was easy when the origin held nothing.
 It is a smaller trade now that it holds accounts, and ADR-001's addendum says so
 rather than pretending the control is in place.
 
-**There is no rate limiter.** Behind the edge, the origin sees one address for
-every visitor, so an IP-partitioned limit is a global cap rather than a
-per-attacker one, and because the origin is directly reachable an attacker can
-bypass the edge and forge whatever address they like. A limiter here would be
-worth having and would not be the control that mattered, which is why the effort
-went into per-account lockout instead. This is a gap, and it is named as one.
+**There is no per-address rate limiter.** Behind the edge, the origin sees one
+address for every visitor, so an IP-partitioned limit is a global cap rather than
+a per-attacker one, and because the origin is directly reachable an attacker can
+bypass the edge and forge whatever address they like. A limiter of that shape
+would be worth having and would not be the control that mattered, which is why
+the effort went into per-account lockout instead. This is still a gap and is
+named as one.
+
+**Registration has a ceiling, and it is the one limit that argument never
+covered.** The paragraph above is about partitioning: any limit that has to tell
+one visitor from another is either lying to itself behind the edge or being lied
+to in front of it. A limit that does not partition has nothing to forge. Since
+1.0.0.74 this site accepts 120 new accounts per sliding hour, counted across the
+whole site, which matters because registration is the only write an anonymous
+caller can make that persists, and because every request through it pays for a
+deliberately expensive password hash on a container that serves everything else.
+What it costs is stated rather than hidden: while somebody is spending the
+hour's allowance, a real visitor cannot register either, and browsing, signing
+in and bidding are untouched. The window is in memory in one container, so a
+second instance would get its own; a durable bound belongs with the origin lock
+(ADR-054).
 
 **`POST /api/errors/client` is anonymous.** A crash in the page should reach the
 same place a crash in the server does. Its message and stack are bounded, and
@@ -100,6 +115,7 @@ by reading comments whose justification had expired.
 | The same, in the error buffer next to it | The same, for every unhandled exception | ADR-045 addendum |
 | The metrics endpoint returned the whole request ring | A live feed of what every other visitor was doing | ADR-045 |
 | Three scrollable tables with no keyboard access | WCAG 2.1.1, found by CI once CI could say what it found | ADR-042 addendum |
+| Registration had no ceiling | The only anonymous write that persists, unbounded in rows and in a container's CPU, one loop away | ADR-054 |
 
 The pattern in the first three is one thing, and it is the reason this page exists:
 each was a deliberate decision, defended in a comment, correct when it was

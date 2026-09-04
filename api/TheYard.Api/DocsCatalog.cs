@@ -76,6 +76,7 @@ public static class DocsCatalog
         ["adr-coverage"] = "docs/ADR-051-counting-what-the-tests-cover.md",
         ["adr-where-gates-live"] = "docs/ADR-052-where-a-gate-lives.md",
         ["adr-public-face"] = "docs/ADR-053-the-public-face.md",
+        ["adr-one-write"] = "docs/ADR-054-the-one-write-a-stranger-can-make.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",

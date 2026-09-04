@@ -83,6 +83,7 @@ export type DocKey =
   | 'adrCoverage'
   | 'adrWhereGatesLive'
   | 'adrPublicFace'
+  | 'adrOneWrite'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -536,6 +537,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '053',
   },
+  adrOneWrite: {
+    title: 'ADR: The one write a stranger can make',
+    menuLabel: 'ADR: The one write a stranger can',
+    url: '/api/docs/adr-one-write',
+    kind: 'adr',
+    number: '054',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -645,6 +653,7 @@ export const MENUS: Record<
       { key: 'adrCoverage' },
       { key: 'adrWhereGatesLive' },
       { key: 'adrPublicFace' },
+      { key: 'adrOneWrite' },
     ],
   },
   // #endregion records-menu
