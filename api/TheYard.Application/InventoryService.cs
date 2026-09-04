@@ -32,7 +32,7 @@ public sealed class InventoryService(
     /// <summary>
     /// The searchable text for the loaded dataset, built with it. Exposed
     /// because the thing worth asserting about an index is that it covers the
-    /// dataset it was built from (ADR: Search index).
+    /// dataset it was built from (ADR: The search index).
     /// </summary>
     public VehicleSearchIndex SearchIndex => _inventory.Value.Index;
 
@@ -60,7 +60,7 @@ public sealed class InventoryService(
         // Compile the filter once, then run the predicate down the rows. Both
         // halves of the free-text comparison are precomputed by this point: the
         // query's tokens by Compile, each vehicle's searchable text by the index
-        // built at load (ADR: Search index). What is left per row is a
+        // built at load (ADR: The search index). What is left per row is a
         // dictionary lookup and a substring test.
         var matches = filter.Compile(clock, _inventory.Value.Index);
         var matched = source.Where(matches);
@@ -115,7 +115,7 @@ public sealed class InventoryService(
 
         // The index is built here, with the dictionary, for the same reason the
         // dictionary is: the work is identical for every request that follows,
-        // and after this point the vehicles never change (ADR: Search index).
+        // and after this point the vehicles never change (ADR: The search index).
         return (
             vehicles,
             vehicles.ToDictionary(vehicle => vehicle.Id),

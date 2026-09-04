@@ -34,7 +34,7 @@ public sealed record VehicleFilter
     /// on the vehicle. That is the query's tokens: lowercasing and splitting
     /// them inside the loop meant repeating the same two allocations for every
     /// row scanned, which on the synthetic 100,000-row dataset is 100,000
-    /// copies of a string the user typed once (ADR: Search index).
+    /// copies of a string the user typed once (ADR: The search index).
     ///
     /// <paramref name="index"/> is optional so that every existing caller and
     /// test still reads <c>filter.Matches(vehicle, clock)</c>. Without it the

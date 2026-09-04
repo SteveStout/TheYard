@@ -13,11 +13,11 @@ file sealed class BenchSeed(params Vehicle[] vehicles) : IVehicleSource
 }
 
 /// <summary>
-/// What the index actually buys, measured rather than asserted (ADR: Search
-/// index). This compares the two paths directly over the same hundred thousand
-/// rows the site serves, with no HTTP, no sorting and no serialisation in the
-/// way, because a request's wall-clock time is mostly those three and they
-/// drown the difference.
+/// What the index actually buys, measured rather than asserted (ADR: The
+/// search index). This compares the two paths directly over the same hundred
+/// thousand rows the site serves, with no HTTP, no sorting and no serialisation
+/// in the way, because a request's wall-clock time is mostly those three and
+/// they drown the difference.
 ///
 /// The assertion is deliberately loose: best of five runs on each path, and a
 /// quarter of headroom on top. A tight timing assertion on a shared build agent

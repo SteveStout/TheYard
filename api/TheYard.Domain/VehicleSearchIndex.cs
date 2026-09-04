@@ -10,7 +10,7 @@ namespace TheYard.Domain;
 /// the synthetic 100,000-row dataset interpolated nine fields and allocated a
 /// lowercase copy a hundred thousand times for a query the user typed once.
 /// Nothing in the text changes after startup, which makes it exactly the kind
-/// of work that belongs in a table built once (ADR: Search index).
+/// of work that belongs in a table built once (ADR: The search index).
 ///
 /// The auction status is deliberately NOT in here. It is derived from the
 /// clock, so it is the one searchable value that changes without the data

@@ -32,43 +32,8 @@ public class HouseVoiceTests
         ".sql", ".sqlproj", ".csproj", ".slnx", ".mjs", ".svg", ".txt", ".html",
     ];
 
-    /// <summary>
-    /// Directories that hold somebody else's text or this build's output. The
-    /// walk skips them rather than filtering them afterwards, because
-    /// descending into node_modules to throw the result away costs more than
-    /// the rest of this test put together.
-    /// </summary>
-    private static readonly string[] NotOurs =
-    [
-        "node_modules", "bin", "obj", ".git", "dist", "playwright-report",
-        "test-results", "TestResults", "coverage", ".vs", ".idea",
-    ];
+    private static List<string> TextInThisRepository() => Repo.FilesWith(Extensions);
 
-    private static List<string> TextInThisRepository()
-    {
-        var found = new List<string>();
-        Walk(Repo.Root(), found);
-        return found;
-    }
-
-    private static void Walk(string directory, List<string> found)
-    {
-        foreach (string file in Directory.EnumerateFiles(directory))
-        {
-            if (Extensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase))
-            {
-                found.Add(file);
-            }
-        }
-
-        foreach (string child in Directory.EnumerateDirectories(directory))
-        {
-            if (!NotOurs.Contains(Path.GetFileName(child), StringComparer.OrdinalIgnoreCase))
-            {
-                Walk(child, found);
-            }
-        }
-    }
     // #endregion what is scanned
 
     // #region the rule
@@ -116,7 +81,13 @@ public class HouseVoiceTests
             }
         }
 
-        Assert.True(found.Count == 0, string.Join(Environment.NewLine, found));
+        // Capped. A rewrite that reintroduces the character reintroduces it
+        // everywhere at once, and a failure message with four hundred lines in
+        // it is one nobody reads to the end of.
+        Assert.True(
+            found.Count == 0,
+            $"{found.Count} lines break the house rule:{Environment.NewLine}"
+            + string.Join(Environment.NewLine, found.Take(20)));
     }
 
     /// <summary>

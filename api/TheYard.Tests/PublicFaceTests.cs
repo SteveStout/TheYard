@@ -16,25 +16,66 @@ namespace TheYard.Tests;
 public class PublicFaceTests
 {
     // #region counts
+    /// <summary>How many records the site serves, which is the only number any
+    /// of these claims is allowed to be.</summary>
+    private static int Records() =>
+        DocsCatalog.Files.Keys.Count(slug => slug.StartsWith("adr-", StringComparison.Ordinal));
+
+    /// <summary>
+    /// The documents that describe this project as it is now. Records and the
+    /// changelog are left out on purpose: both are dated, both quote counts
+    /// that were true on the day they were written, and a document that says
+    /// what it says forever is the whole point of a decision record.
+    /// </summary>
+    private static IEnumerable<string> LivingDocuments() =>
+        DocsCatalog.Files
+            .Where(entry => !entry.Key.StartsWith("adr-", StringComparison.Ordinal))
+            .Where(entry => entry.Key != "changelog")
+            .Select(entry => entry.Value);
+
     [Fact]
-    public void The_record_count_in_the_readme_is_the_record_count()
+    public void Every_living_document_counts_the_records_correctly()
     {
         string root = Repo.Root();
-        int records = DocsCatalog.Files.Keys.Count(slug => slug.StartsWith("adr-", StringComparison.Ordinal));
-        string readme = File.ReadAllText(Path.Combine(root, "README.md"));
+        int records = Records();
+        var wrong = new List<string>();
+        int counted = 0;
 
-        var claims = Regex.Matches(readme, @"([A-Za-z][a-z]+(?:-[a-z]+)?) decision record")
-            .Select(match => match.Groups[1].Value)
-            .Where(word => Words.Value(word) is not null)
-            .ToArray();
-
-        Assert.True(claims.Length > 0, "the README should say how many decision records there are");
-        foreach (string claim in claims)
+        foreach (string relative in LivingDocuments())
         {
-            Assert.True(
-                Words.Value(claim) == records,
-                $"the README says '{claim} decision records' and there are {records}");
+            // Whitespace collapsed first. This test read the file as written
+            // until 1.0.0.73, and an editor had wrapped one of the README's two
+            // claims so that a newline fell between the number and the noun.
+            // The check never saw that claim, and passed the whole time on the
+            // other one.
+            string document = Regex.Replace(
+                File.ReadAllText(Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar))),
+                @"\s+",
+                " ");
+
+            foreach (Match match in Regex.Matches(document, @"([A-Za-z][a-z]+(?:-[a-z]+)?) decision record"))
+            {
+                int? claimed = Words.Value(match.Groups[1].Value);
+                if (claimed is null)
+                {
+                    // "the decision records" and "and decision records" are
+                    // prose, not claims.
+                    continue;
+                }
+
+                counted++;
+                if (claimed != records)
+                {
+                    wrong.Add($"{relative} says '{match.Groups[1].Value} decision records' and there are {records}");
+                }
+            }
         }
+
+        // The README states it twice and How this was built once. A scan that
+        // reads nothing passes, which is the failure this test exists to catch
+        // in the documents, so it is worth catching here too.
+        Assert.True(counted >= 3, $"only {counted} counted claims were found across the living documents");
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
     // #endregion counts
 
@@ -47,7 +88,7 @@ public class PublicFaceTests
         // that makes an unregenerated card wrong, so the count is asserted here
         // rather than trusted.
         string card = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "images", "og.svg"));
-        int records = DocsCatalog.Files.Keys.Count(slug => slug.StartsWith("adr-", StringComparison.Ordinal));
+        int records = Records();
 
         var claim = Regex.Match(card, @">(\d+)</text>\s*<text[^>]*>decision records<");
         Assert.True(claim.Success, "the preview card should state a record count next to the words 'decision records'");

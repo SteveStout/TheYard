@@ -4,7 +4,7 @@ using TheYard.Domain;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The search index (ADR: Search index) is an optimisation, and the only thing
+/// The search index (ADR: The search index) is an optimisation, and the only thing
 /// that matters about an optimisation is that it did not change the answer.
 /// Every test here compares the indexed path against the path that computes
 /// the searchable text per vehicle, which is the behaviour that shipped before

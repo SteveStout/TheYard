@@ -77,7 +77,7 @@ public sealed class TokenIssuer
     /// Secure when the browser reached us over TLS. Behind the edge this
     /// process is spoken to over plain HTTP, so `IsHttps` is false on a request
     /// that was HTTPS the whole way to the visitor; the forwarded header is
-    /// what carries that fact across the hop (ADR: Edge economics).
+    /// what carries that fact across the hop (ADR: Edge deploy economics).
     /// </summary>
     public static CookieOptions CookieFor(HttpContext context, TimeSpan lifetime) => new()
     {

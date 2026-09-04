@@ -82,6 +82,7 @@ export type DocKey =
   | 'adrLockout'
   | 'adrCoverage'
   | 'adrWhereGatesLive'
+  | 'adrPublicFace'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -528,6 +529,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '052',
   },
+  adrPublicFace: {
+    title: 'ADR: The public face',
+    menuLabel: 'ADR: The public face',
+    url: '/api/docs/adr-public-face',
+    kind: 'adr',
+    number: '053',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -636,6 +644,7 @@ export const MENUS: Record<
       { key: 'adrLockout' },
       { key: 'adrCoverage' },
       { key: 'adrWhereGatesLive' },
+      { key: 'adrPublicFace' },
     ],
   },
   // #endregion records-menu

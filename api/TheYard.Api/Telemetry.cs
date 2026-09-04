@@ -42,7 +42,7 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled)
     /// workspace schema stores a bool; comparing it to a bool is a 400 in one
     /// of the two. Every one of those was learned from the query API's own
     /// error message rather than guessed, after the first version shipped
-    /// broken (ADR: Telemetry, second pass).
+    /// broken (ADR: Telemetry that outlives the container, second pass).
     /// </summary>
     private const string Query = """
         let lookback = 1h;

@@ -762,7 +762,7 @@ var errorLog = new ErrorRingBuffer(50);
 // #region two-rings
 // Browser reports get their own fifty slots rather than sharing the server's.
 //
-// One list was the decision (ADR: Browser errors land where server errors do)
+// One list was the decision (ADR: Error handling, one shape everywhere)
 // and it still is: the Admin tab shows them merged, because one place to look is
 // the point. What changed is where they are kept. POST /api/errors/client is
 // anonymous by design, and while the message and the stack were bounded, the
