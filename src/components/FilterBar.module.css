@@ -94,6 +94,15 @@
   color: var(--color-text-faint);
 }
 
+/* On a phone the fields grid is two tracks of about 150 pixels, which leaves
+   each price box around sixty and clips the word "Max" inside its own input.
+   Below that width the pair takes the row it needs. */
+@media (max-width: 30rem) {
+  .priceField {
+    grid-column: 1 / -1;
+  }
+}
+
 .priceInput {
   width: 100%;
   min-width: 0;

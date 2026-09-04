@@ -84,6 +84,8 @@ export type DocKey =
   | 'adrWhereGatesLive'
   | 'adrPublicFace'
   | 'adrOneWrite'
+  | 'adrBrokenWindows'
+  | 'adrStaleListing'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -544,6 +546,20 @@ export const DOCS: Record<
     kind: 'adr',
     number: '054',
   },
+  adrBrokenWindows: {
+    title: 'ADR: Broken windows, and the rule that answers them',
+    menuLabel: 'ADR: Broken windows',
+    url: '/api/docs/adr-broken-windows',
+    kind: 'adr',
+    number: '055',
+  },
+  adrStaleListing: {
+    title: 'ADR: The listing that went stale while you looked at it',
+    menuLabel: 'ADR: The listing that went stale',
+    url: '/api/docs/adr-stale-listing',
+    kind: 'adr',
+    number: '056',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -654,6 +670,8 @@ export const MENUS: Record<
       { key: 'adrWhereGatesLive' },
       { key: 'adrPublicFace' },
       { key: 'adrOneWrite' },
+      { key: 'adrBrokenWindows' },
+      { key: 'adrStaleListing' },
     ],
   },
   // #endregion records-menu

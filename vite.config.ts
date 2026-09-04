@@ -33,6 +33,14 @@ export default defineConfig({
   test: {
     // Unit tests only; tests/e2e belongs to Playwright.
     include: ['src/**/*.test.ts'],
+    // allowOnly is deliberately not set. Vitest already defaults it to
+    // !process.env.CI, which is the rule this project wants: a committed
+    // `it.only` turns a suite into one test and still reports green, so CI
+    // refuses one while a developer debugging a single test can focus it.
+    // Writing the default out would need @types/node in a project that has
+    // never needed it, for one boolean. What is checked instead is that
+    // nothing here turns it off (ADR: Broken windows, and the rule that
+    // answers them).
     // Vitest blanks CSS imports it is not told to process. tokens.test.ts reads
     // the palette file raw to measure its contrast, so that one goes through.
     css: { include: [/tokens\.css\?raw$/] },

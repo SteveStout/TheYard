@@ -77,6 +77,8 @@ public static class DocsCatalog
         ["adr-where-gates-live"] = "docs/ADR-052-where-a-gate-lives.md",
         ["adr-public-face"] = "docs/ADR-053-the-public-face.md",
         ["adr-one-write"] = "docs/ADR-054-the-one-write-a-stranger-can-make.md",
+        ["adr-broken-windows"] = "docs/ADR-055-broken-windows.md",
+        ["adr-stale-listing"] = "docs/ADR-056-the-listing-that-went-stale.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",

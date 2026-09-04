@@ -106,7 +106,7 @@ is keyed by vehicle id rather than by reference. The explanations are written
 down, which means they can be checked against me in a conversation. A document
 that could not survive that question would be worse than no document.
 
-**"Fifty-four decision records is documentation theatre."**
+**"Fifty-six decision records is documentation theatre."**
 It would be, if they all said yes. Several of them exist to record a rejection,
 a deviation, or a mistake: the Mermaid runtime that was measured and removed,
 the linter that could not run, the naming convention that was not adopted, the

@@ -36,6 +36,36 @@ export function auctionTiming(vehicle: Vehicle, now: number): AuctionTiming {
   };
 }
 
+/**
+ * The next moment a listing on screen changes state by itself: the soonest
+ * auction end or start still in the future, or null when nothing on this page
+ * has a boundary left to cross.
+ *
+ * This exists because of what the front page looked like a minute after it
+ * loaded (ADR: The listing that went stale while you looked at it). The default sort is ending soonest, the server ranks live auctions
+ * ahead of ended ones, and the browser recomputes each card's status as the
+ * clock ticks. So the first row is the closest to ending, those countdowns
+ * reach zero while somebody is reading, and the cards turn into "Ended" chips
+ * and stay exactly where the server put them, at the top. Nothing was wrong
+ * with the ranking; it was answered once and never asked again.
+ *
+ * Asking again on a fixed timer would work and would ask constantly for nothing
+ * on a page where the soonest auction ends tomorrow. The boundary is the moment
+ * the answer can actually have changed, so it is the moment worth asking.
+ */
+export function nextAuctionBoundary(
+  vehicles: readonly Pick<Vehicle, 'auction_starts_at' | 'auction_ends_at'>[],
+  now: number
+): number | null {
+  let soonest: number | null = null;
+  for (const vehicle of vehicles) {
+    for (const moment of [vehicle.auction_starts_at, vehicle.auction_ends_at]) {
+      if (moment > now && (soonest === null || moment < soonest)) soonest = moment;
+    }
+  }
+  return soonest;
+}
+
 // ---------------------------------------------------------------------------
 // Reserve state
 // ---------------------------------------------------------------------------

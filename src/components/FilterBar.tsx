@@ -83,7 +83,7 @@ export function FilterBar({
           <input
             type="search"
             className={styles.searchInput}
-            placeholder="Search make, model, province, title…"
+            placeholder="Search make, model, province…"
             aria-label="Search vehicles"
             value={filters.query}
             onChange={(e) => onFiltersChange({ query: e.target.value })}
@@ -205,7 +205,7 @@ export function FilterBar({
           </select>
         </label>
 
-        <div className={styles.field}>
+        <div className={`${styles.field} ${styles.priceField}`}>
           <span className={styles.fieldLabel} id={`${id}-price`}>
             Price ($)
           </span>

@@ -8,6 +8,7 @@ import {
   type VehiclePage,
 } from './lib/data';
 import type { Vehicle } from './lib/types';
+import { nextAuctionBoundary } from './lib/auction';
 import {
   EMPTY_FILTERS,
   filtersFromSearchParams,
@@ -33,8 +34,14 @@ type LoadState = 'loading' | 'ready' | 'error';
 /** How long to let the user keep typing/clicking before asking the API to filter. */
 const FILTER_DEBOUNCE_MS = 500;
 
-/** A status-filtered list goes stale as auctions cross their boundaries; refresh this often. */
+/** A status-filtered list with nothing left to cross still drifts; refresh this often. */
 const STATUS_REFRESH_MS = 60_000;
+
+/** The most often a listing will re-ask, however fast its auctions are ending. */
+const LISTING_REFRESH_FLOOR_MS = 15_000;
+
+/** Asked a moment after the boundary, so the server has crossed it too. */
+const BOUNDARY_GRACE_MS = 750;
 
 /** `npm start` opens the browser before the API finishes booting, so keep
  *  retrying the first load quietly for a while before declaring an error. */
@@ -268,13 +275,58 @@ export default function App() {
   }, []);
   // #endregion back-forward
 
-  // While a status filter is active, membership drifts as auctions open and
-  // close, so re-ask the server periodically and the list stays honest.
+  // #region listing-goes-stale
+  // A listing is answered once and then watched for minutes
+  // (ADR: The listing that went stale while you looked at it). Auctions cross
+  // their boundaries while it is on screen: a card's countdown reaches zero,
+  // the browser turns it into an "Ended" chip, correctly, and it stays in the
+  // position the server ranked it in while it was live. Under the default
+  // sort, ending soonest, that position is the top of the front page, so a
+  // minute after loading the first thing a visitor sees is dead lots.
+  //
+  // So the list is re-asked at the next moment its answer can have changed,
+  // which is the soonest start or end still ahead of it, floored so that a page
+  // where something ends every few seconds asks a few times a minute rather
+  // than a few times a second. With nothing left to cross and a status filter
+  // on, membership still drifts as auctions elsewhere end, and that keeps the
+  // slower timer it always had.
+  //
+  // Not while the tab is hidden. Nobody is reading a stale card they cannot
+  // see, and a background tab that refetches on a timer for an hour is the kind
+  // of thing that gets noticed in somebody else's battery graph. The refresh
+  // that was skipped happens when the tab comes back.
+  const missedRefresh = useRef(false);
   useEffect(() => {
-    if (!filters.status) return;
-    const id = window.setInterval(() => setReloadNonce((n) => n + 1), STATUS_REFRESH_MS);
-    return () => window.clearInterval(id);
-  }, [filters.status]);
+    const onVisible = () => {
+      if (!document.hidden && missedRefresh.current) {
+        missedRefresh.current = false;
+        setReloadNonce((n) => n + 1);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
+  useEffect(() => {
+    const boundary = nextAuctionBoundary(page.vehicles, Date.now());
+    const delay =
+      boundary === null
+        ? filters.status
+          ? STATUS_REFRESH_MS
+          : null
+        : Math.max(LISTING_REFRESH_FLOOR_MS, boundary - Date.now() + BOUNDARY_GRACE_MS);
+    if (delay === null) return;
+
+    const id = window.setTimeout(() => {
+      if (document.hidden) {
+        missedRefresh.current = true;
+        return;
+      }
+      setReloadNonce((n) => n + 1);
+    }, delay);
+    return () => window.clearTimeout(id);
+  }, [page, filters.status]);
+  // #endregion listing-goes-stale
 
   // Having bid is not the same as leading any more (ADR-027): the room may
   // have answered. The server decides which it is; this only reads the answer.

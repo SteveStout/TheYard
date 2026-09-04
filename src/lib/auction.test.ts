@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { auctionStatus, auctionTiming, currentPrice, reserveState } from './auction';
+import {
+  auctionStatus,
+  auctionTiming,
+  currentPrice,
+  nextAuctionBoundary,
+  reserveState,
+} from './auction';
 import type { Vehicle } from './types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -86,5 +92,47 @@ describe('currentPrice', () => {
   it('is the high bid, or the opening ask before any bids', () => {
     expect(currentPrice(makeVehicle({ current_bid: 22800 }))).toBe(22800);
     expect(currentPrice(makeVehicle({ current_bid: null }))).toBe(14500);
+  });
+});
+
+describe('nextAuctionBoundary', () => {
+  /**
+   * The front page is answered once and then read for minutes. This is the
+   * moment its answer can have changed, and it is the reason a card that ended
+   * while somebody was looking does not sit at the top of the list until they
+   * reload.
+   */
+  const at = (startsAt: number, endsAt: number) =>
+    makeVehicle({ auction_starts_at: startsAt, auction_ends_at: endsAt });
+
+  it('is the soonest moment still ahead of now', () => {
+    const vehicles = [
+      at(NOW - DAY_MS, NOW + 90_000),
+      at(NOW - DAY_MS, NOW + 30_000),
+      at(NOW - DAY_MS, NOW + 60_000),
+    ];
+    expect(nextAuctionBoundary(vehicles, NOW)).toBe(NOW + 30_000);
+  });
+
+  it('counts a start as well as an end, because an upcoming lot going live changes the list too', () => {
+    const vehicles = [at(NOW - DAY_MS, NOW + 60_000), at(NOW + 10_000, NOW + DAY_MS)];
+    expect(nextAuctionBoundary(vehicles, NOW)).toBe(NOW + 10_000);
+  });
+
+  it('ignores moments that have already passed', () => {
+    const vehicles = [at(NOW - DAY_MS, NOW - 1), at(NOW - DAY_MS, NOW + 5_000)];
+    expect(nextAuctionBoundary(vehicles, NOW)).toBe(NOW + 5_000);
+  });
+
+  it('is null when nothing on the page has a boundary left, so nothing is asked for nothing', () => {
+    expect(nextAuctionBoundary([at(NOW - DAY_MS, NOW - 1_000)], NOW)).toBeNull();
+    expect(nextAuctionBoundary([], NOW)).toBeNull();
+  });
+
+  it('treats the boundary as passed at the instant it arrives, the way the status rule does', () => {
+    // auctionStatus is live until endsAt exclusive, so at exactly endsAt the
+    // card has already flipped and there is nothing left to wait for.
+    expect(auctionStatus(NOW - DAY_MS, NOW, NOW)).toBe('ended');
+    expect(nextAuctionBoundary([at(NOW - DAY_MS, NOW)], NOW)).toBeNull();
   });
 });

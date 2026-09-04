@@ -8,6 +8,13 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: 'tests/e2e',
+  // #region forbid-only
+  // A committed `test.only` runs one spec and reports a green suite, which
+  // is the most expensive kind of broken window: the check still passes,
+  // louder than before, while checking almost nothing. Locally it stays
+  // allowed, because focusing one test is how you debug one test.
+  forbidOnly: !!process.env.CI,
+  // #endregion forbid-only
   // #region timeout
   // Sixty, not Playwright's thirty. A spec here is a walk through a real
   // application against a real API, and the first thing every one of them does
