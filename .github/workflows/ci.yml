@@ -124,7 +124,13 @@ jobs:
             | while IFS= read -r line; do
                 printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
               done
-          grep -E '^(Passed!|Failed!)' dotnet-output.txt | head -n 4 | while IFS= read -r line; do
+          # dotnet writes its totals two different ways depending on the
+          # logger: one 'Passed! - Failed: 0, Passed: 281 ...' line, or a
+          # four-line 'Test Run Failed. / Total tests: ...' block. The
+          # console logger this job asks for produces the second, so a
+          # pattern that only knew the first printed nothing at all.
+          grep -E '^[[:space:]]*(Passed!|Failed!|Test Run (Failed|Succeeded)\.|Total tests:|(Passed|Failed|Skipped):[[:space:]]+[0-9]+)' dotnet-output.txt \
+            | head -n 6 | while IFS= read -r line; do
             printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
           done
           {
@@ -205,7 +211,11 @@ jobs:
             echo "::error::the browser suite left no output to report"
             exit 0
           fi
-          grep -E '^[[:space:]]+[0-9]+\) |Error: |Timeout of |Locator: |Expected: |Received' playwright-output.txt \
+          # '[Tt]imeout of' rather than 'Timeout of': a test that runs out
+          # of time says 'Test timeout of 90000ms exceeded.', which the
+          # capital-only spelling missed, and that line is the whole
+          # finding when the failure is a hang.
+          grep -E '^[[:space:]]+[0-9]+\) |Error: |[Tt]imeout of |Timeout: |Locator: |Expected: |Received' playwright-output.txt \
             | head -n 20 \
             | while IFS= read -r line; do
                 # One annotation per line, trimmed: a control character or a

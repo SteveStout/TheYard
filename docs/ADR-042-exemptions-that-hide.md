@@ -238,6 +238,70 @@ question from the real one.
 An easier question is not a smaller version of the real one. It passes when the
 real one would fail, which is the only property that matters in a gate.
 
+## Addendum, 2026-09-03: the annotation that could not have said it
+
+The addendum above ends with annotations working, and the record left it there.
+This one is about the direction they fail in.
+
+An annotation assembled by grepping a suite's output is a check with no check on
+it. If the pattern matches nothing the step still exits zero, the annotation list
+is still empty, and the run page still reads "Process completed with exit code
+1". Nothing anywhere goes red. The reporting is broken in exactly the state where
+it looks identical to reporting that had nothing to report, and you find out on
+the day a job fails and the page is blank again.
+
+Two of the patterns were in that state.
+
+`dotnet test` prints its totals two ways. Left alone it writes a single line:
+
+```
+Passed!  - Failed:     0, Passed:   281, Skipped:     0, Total:   281
+```
+
+Asked for `--logger 'console;verbosity=normal'`, which is what this job asks for
+so that individual test names appear, it writes a block instead:
+
+```
+Test Run Failed.
+Total tests: 252
+     Passed: 251
+     Failed: 1
+```
+
+The pattern knew the first spelling. The job produces the second. The first
+attempt at fixing this only anchored the leading whitespace, which was the wrong
+correction confidently applied: it was aimed at the format the job does not
+produce, and it was checked against a transcript that happened to be the format
+the job does not produce.
+
+Playwright's gap was the same species facing the other way. The pattern matched
+`Timeout of` and Playwright writes `Test timeout of 90000ms exceeded.`, so the
+one line describing a hang was dropped. A hang is the failure shape with no
+locator, no expectation and no received value, which means that line was not the
+best evidence, it was the only evidence.
+
+### What holds it now
+
+The patterns are read back out of `ci.yml` by a test, translated from POSIX to
+.NET (only the two character classes the workflow actually uses, and anything
+else is refused rather than quietly compiled into something that means something
+different), and run over real failing transcripts from both suites kept as
+fixtures. The assertions are written as what a reader needs: the failing test's
+name, the assertion message, the stack trace and the totals for .NET; the spec,
+the locator, the timeout headline and the thrown message for the browser suite.
+A second pair asserts what must stay out, because GitHub shows a handful of
+annotations and forty passing specs would push both failures off the top.
+
+Two of the nine fail against the patterns as they were. The other seven were
+already passing and are held anyway, which is the point: the line that names the
+failing test is one careless edit away from matching nothing, and nothing else in
+this repository would notice.
+
+The general shape, which is the third time this record has arrived at it from a
+different direction: a check that cannot fail is not a check. An exemption made
+one ask an easier question, a report nobody could read made one unusable, and a
+pattern matching nothing makes one silent. All three are green.
+
 ## Consequences
 
 - One serious WCAG 2.1 AA failure is gone from the vehicle page, on the element
@@ -261,4 +325,6 @@ real one would fail, which is the only property that matters in a gate.
 - [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the encoded title, and the apostrophe pinned on its own.
 - [`tests/e2e/warm-up.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/warm-up.ts): the cold start, paid once, somewhere it is allowed to be slow.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts): where that runs from.
+- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the two steps that turn a red suite into something a stranger can read.
+- [`api/TheYard.Tests/CiAnnotationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CiAnnotationTests.cs): the patterns read back out of the workflow and run against real failures.
 - [`docs/ADR-035-accessibility-check.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-035-accessibility-check.md): the first time this exact thing happened, and the sentence that should have prevented this one.

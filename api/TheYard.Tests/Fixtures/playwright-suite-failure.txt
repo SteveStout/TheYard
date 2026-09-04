@@ -1,0 +1,29 @@
+Running 44 tests using 1 worker
+
+  ✓  42 tests\e2e\smoke.spec.ts:110:1 › the sidebar remembers whether it was open (3.1s)
+  ✓  43 tests\e2e\smoke.spec.ts:128:1 › a transient API failure shows the stale banner and Retry recovers (9.2s)
+
+
+  1) tests\e2e\a11y.spec.ts:22:1 › opening a vehicle, and coming back, moves focus to the view that changed
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('article h3 button').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('article h3 button').first()
+
+        at C:\Projects\TheYard\tests\e2e\a11y.spec.ts:27:27
+
+  2) tests\e2e\market.spec.ts:68:1 › a bid is answered by the room, and the lead changes hands
+
+    Test timeout of 90000ms exceeded.
+
+    Error: three bids in a row were refused or unanswered: the room is raising faster than the page can answer
+
+  2 failed
+  42 passed (2.5m)

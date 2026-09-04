@@ -1,0 +1,20 @@
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+e1fe9d9fe9 (64-bit .NET 10.0.0)
+[xUnit.net 00:00:00.63]   Discovering: TheYard.Tests
+[xUnit.net 00:00:00.87]   Starting:    TheYard.Tests
+  Passed TheYard.Tests.SqlServerModelTests.Every_entity_has_a_key [12 ms]
+  Failed TheYard.Tests.AdminObservabilityTests.A_statement_names_the_request_that_caused_it [60 ms]
+  Error Message:
+   Assert.Contains() Failure: Filter not matched in collection
+Collection: []
+  Stack Trace:
+     at TheYard.Tests.AdminObservabilityTests.A_statement_names_the_request_that_caused_it() in C:\Projects\TheYard\api\TheYard.Tests\AdminObservabilityTests.cs:line 78
+--- End of stack trace from previous location ---
+{"EventId":0,"LogLevel":"Information","Category":"Microsoft.Hosting.Lifetime","Message":"Application started."}
+[xUnit.net 00:01:03.59]   Finished:    TheYard.Tests
+  Passed TheYard.Tests.AuthTests.The_history_endpoint_lists_mine_and_names_the_vehicle [3 s]
+
+Test Run Failed.
+Total tests: 252
+     Passed: 251
+     Failed: 1
+ Total time: 1.0830 Minutes
