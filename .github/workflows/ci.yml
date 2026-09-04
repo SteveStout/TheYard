@@ -101,7 +101,39 @@ jobs:
       # something fails here, and it is not set so high that somebody is
       # tempted to write a test that executes a line without asserting on it.
       # A number chased for its own sake buys nothing.
-      - run: dotnet test api --collect:"XPlat Code Coverage" --results-directory TestResults
+      # Output kept, and named on a failure, for the same reason the browser
+      # suite does it: a red job whose only public word is "exit code 1" costs
+      # somebody a session, and the full log needs a sign-in this repository
+      # cannot assume its reader has. This job went red once on a commit that
+      # changed nothing but documentation, and there was no way to say which
+      # test without one.
+      - name: Run the .NET suites
+        run: |
+          set -o pipefail
+          dotnet test api --collect:"XPlat Code Coverage" --results-directory TestResults \
+            --logger 'console;verbosity=normal' 2>&1 | tee dotnet-output.txt
+      - name: Say which test failed, on the run page
+        if: failure()
+        run: |
+          if [ ! -f dotnet-output.txt ]; then
+            echo "::error::the .NET suites left no output to report"
+            exit 0
+          fi
+          grep -E '^[[:space:]]*(Failed|Error Message|Assert\.|Stack Trace)' dotnet-output.txt \
+            | head -n 20 \
+            | while IFS= read -r line; do
+                printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
+              done
+          grep -E '^(Passed!|Failed!)' dotnet-output.txt | head -n 4 | while IFS= read -r line; do
+            printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
+          done
+          {
+            echo '## The .NET suites failed'
+            echo
+            echo '```'
+            grep -E -A 6 '^[[:space:]]*Failed ' dotnet-output.txt | head -n 80
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Count what the tests cover
         if: always()
         run: python3 .github/coverage.py TestResults 85.0 68.0

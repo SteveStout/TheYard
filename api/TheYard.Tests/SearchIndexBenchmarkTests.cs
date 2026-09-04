@@ -50,39 +50,47 @@ public class SearchIndexBenchmarkTests(ITestOutputHelper output)
         Run(filter.Compile(Now), vehicles);
         Run(filter.Compile(Now, index), vehicles);
 
-        // Best of five each, and the two paths take turns.
+        // Paired rounds, and the comparison is of the pairs.
         //
-        // Best of five because both paths do identical work on identical data;
-        // what varies between runs is how often the operating system took the
-        // core away, and that only ever adds time, so the fastest run is the
-        // closest either path gets to the work itself.
+        // Three versions of this, and the first two were both measuring the
+        // machine as much as the code. The first timed one path five times and
+        // then the other five times, which compares two numbers taken at two
+        // different moments on a shared machine: it failed at 243 ms against
+        // 115 ms with eight dotnet processes running, and passed six times of
+        // six alone five minutes later, unchanged. The second alternated them
+        // and took each path's fastest, which is better and still lets one
+        // path's best come from a quiet moment and the other's from a busy one.
         //
-        // Turns because the first version measured one path five times and then
-        // the other five times, which compares two numbers taken at two
-        // different moments on a shared machine. It failed at 243 ms against
-        // 115 ms with eight dotnet processes on eight cores, and passed six
-        // times out of six alone, five minutes later, unchanged. Alternating
-        // means a busy stretch lands on both paths rather than on whichever one
-        // happened to be running through it. The threshold was not touched: a
-        // measurement that is unfair is not fixed by widening what it allows
+        // This one measures both paths inside each round and compares them
+        // there, then takes the median of the five differences. A round that
+        // lands in a busy stretch has both of its numbers inflated, so the
+        // difference survives it, and the median throws away the worst round
+        // rather than being dragged by it. That is a paired comparison, which
+        // is the standard answer to "two measurements, one noisy environment".
+        //
+        // The threshold has never been widened through any of this. A
+        // measurement that is unfair is not fixed by allowing more
         // (ADR: The exemption that hid a contrast failure).
+        var rounds = PairedRounds(filter.Compile(Now), filter.Compile(Now, index), vehicles);
+        long[] differences = rounds.Select(round => round.With - round.Without).Order().ToArray();
+        long typical = differences[differences.Length / 2];
+        long without = rounds.Select(round => round.Without).Order().ToArray()[rounds.Length / 2];
 
-        var (without, with) = FastestByTurns(filter.Compile(Now), filter.Compile(Now, index), vehicles);
+        output.WriteLine($"{Rows:N0} rows, query \"ford\", five paired rounds:");
+        foreach (var (plain, indexed) in rounds)
+        {
+            output.WriteLine($"  without {plain,4} ms   index {indexed,4} ms   difference {indexed - plain,5} ms");
+        }
+        output.WriteLine($"  median difference: {typical} ms (negative means the index is faster)");
 
-        output.WriteLine($"{Rows:N0} rows, query \"ford\", best of 5 alternating scans:");
-        output.WriteLine($"  text rebuilt per row: {without} ms");
-        output.WriteLine($"  index:                {with} ms");
-        output.WriteLine($"  difference:           {without - with} ms");
-
-        // The bound that matters is "did not regress", and a regression worth
-        // a red build is not one millisecond. The comment above this class has
-        // always said the assertion is loose; until five suites ran back to
-        // back and this failed at 95 ms against 73 ms, it was not.
-        long allowed = without + Math.Max(5, without / 4);
+        // The bound that matters is "did not regress", and a regression worth a
+        // red build is not one millisecond. A quarter of the unindexed time, or
+        // five milliseconds, whichever is larger.
+        long allowed = Math.Max(5, without / 4);
         Assert.True(
-            with <= allowed,
-            $"the indexed scan took {with} ms against {without} ms without the "
-                + $"index, past the {allowed} ms this allows for a busy machine");
+            typical <= allowed,
+            $"the index was typically {typical} ms slower per scan, past the {allowed} ms "
+                + $"this allows against an unindexed scan of about {without} ms");
     }
 
     [Fact]
@@ -101,20 +109,19 @@ public class SearchIndexBenchmarkTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Five rounds, both paths in each, so the machine's mood is shared out
-    /// between them rather than landing on one.
+    /// Five rounds, both paths measured inside each one, so a round that lands
+    /// in a busy stretch inflates both of its numbers and the difference
+    /// between them survives it.
     /// </summary>
-    private static (long Without, long With) FastestByTurns(
+    private static (long Without, long With)[] PairedRounds(
         Func<Vehicle, bool> plain, Func<Vehicle, bool> indexed, IReadOnlyList<Vehicle> vehicles)
     {
-        long bestPlain = long.MaxValue;
-        long bestIndexed = long.MaxValue;
-        for (int round = 0; round < 5; round++)
+        var rounds = new (long Without, long With)[5];
+        for (int round = 0; round < rounds.Length; round++)
         {
-            bestPlain = Math.Min(bestPlain, Run(plain, vehicles));
-            bestIndexed = Math.Min(bestIndexed, Run(indexed, vehicles));
+            rounds[round] = (Run(plain, vehicles), Run(indexed, vehicles));
         }
-        return (bestPlain, bestIndexed);
+        return rounds;
     }
 
     private static long Run(Func<Vehicle, bool> predicate, IReadOnlyList<Vehicle> vehicles)

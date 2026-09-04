@@ -20,3 +20,6 @@ docs/images/shots/
 
 # Coverage output, written by the api job and by anybody running the same command.
 TestResults/
+
+# The .NET suite output CI keeps so a red run can name the test that failed.
+dotnet-output.txt
