@@ -258,9 +258,14 @@
 .label {
   flex: 1;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wrapped, not ellipsized. The rail is 270px and the records list is the
+     centre of this project, and a third of its rows were arriving as "008 ADR:
+     Linux over Wind...", "010 ADR: Observability (A...", "014 ADR: Live code
+     sampl...". A row a reader cannot tell from the one under it is not a
+     shorter row, it is a missing one. Rows have a minimum height rather than a
+     fixed one, so a second line costs a few pixels in a list that already
+     scrolls. */
+  overflow-wrap: break-word;
 }
 
 /* The account, Admin, Reset bids, the resume, and the repository stay pinned

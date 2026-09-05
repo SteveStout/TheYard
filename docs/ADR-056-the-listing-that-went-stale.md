@@ -97,6 +97,28 @@ count, the paging and the ranking from what the server believes.
 the wrong one here: a persistent connection per visitor on a single container
 that costs nothing per month, to save three requests a minute.
 
+## Addendum, 2026-09-04: the same camera, pointed at the rail
+
+The same screenshots showed something else, and it is worth recording because
+of why no test had ever seen it.
+
+A third of the decision records index was arriving cut off: `008 ADR: Linux over
+Wind...`, `010 ADR: Observability (A...`, `014 ADR: Live code sampl...`. The
+rail is 270 pixels and the labels are ellipsized when they do not fit.
+
+Eight specs click those rows. Every one of them asks for a row by its full
+accessible name and finds it, because the accessible name is complete. The
+ellipsis is painted, not stored, so a suite that asks the DOM what a row is
+called gets the right answer while a reader gets half of one. There is a whole
+class of defect in that gap, and its shape is "the model is right and the render
+is not", which no assertion about the model can reach.
+
+Two things came out of it. The labels wrap now rather than truncate, since a row
+has a minimum height and not a fixed one, and a second line costs a few pixels
+in a list that already scrolls. And one test asks the browser rather than the
+DOM: for every span in the rail, whether its text is wider than the box it was
+given. That one would have failed before, and it is the only kind that could.
+
 ## Consequences
 
 - The front page stays live-looking for as long as it is open, and a card is

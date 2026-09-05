@@ -9,6 +9,35 @@ import { openTheYard } from './app';
 test.describe('the docked rail', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
+  /**
+   * Nothing in the rail is cut off by its own width.
+   *
+   * A screenshot of the records list showed a third of it arriving as "008
+   * ADR: Linux over Wind..." and "010 ADR: Observability (A...", which no test
+   * could see because every one of them asks for a row by its full accessible
+   * name and gets it: the name is complete, the pixels are not. So this asks
+   * the browser instead, for every span in the rail, whether the text is wider
+   * than the box it was given.
+   */
+  test('no row in the rail is cut off by its own width', async ({ page }) => {
+    await openTheYard(page);
+    const rail = page.getByTestId('side-rail');
+    await rail.getByText('Decision Records', { exact: true }).click();
+    await expect(rail.getByRole('button', { name: 'ADR: Front Door origin' })).toBeVisible();
+
+    const clipped = await rail.evaluate((root) =>
+      Array.from(root.querySelectorAll<HTMLElement>('span'))
+        .filter(
+          (element) =>
+            element.scrollWidth > element.clientWidth + 1 &&
+            getComputedStyle(element).overflow !== 'visible'
+        )
+        .map((element) => element.textContent?.trim() ?? '')
+    );
+
+    expect(clipped).toEqual([]);
+  });
+
   test('a laptop gets the rail, no hamburger, and no dropdowns', async ({ page }) => {
     await openTheYard(page);
     const rail = page.getByTestId('side-rail');
