@@ -830,8 +830,17 @@ export function DocDialog({
           type="button"
           className={styles.copyLink}
           onClick={() => {
-            void navigator.clipboard
-              ?.writeText(window.location.href)
+            // navigator.clipboard is undefined outside a secure context, not a
+            // promise that rejects, so optional chaining here silently did
+            // nothing and left the button saying "Copy link" forever. Absent
+            // and refused are the same answer to the reader.
+            const clipboard = navigator.clipboard;
+            if (!clipboard) {
+              setCopied('refused');
+              return;
+            }
+            void clipboard
+              .writeText(window.location.href)
               .then(() => setCopied('yes'))
               .catch(() => setCopied('refused'));
           }}

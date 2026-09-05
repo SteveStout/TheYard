@@ -519,7 +519,18 @@ export default function App() {
     if (key !== null) {
       const params = filtersToSearchParams(filters, sort);
       params.set('doc', docSlug(key));
-      window.history.pushState({ viaDoc: true }, '', `?${params}`);
+      // One entry for "a record is open", however many records get opened
+      // while it is. Otherwise Escape would walk back through them one at a
+      // time instead of closing, which is not what Escape means. The dialog is
+      // modal, so today the rail cannot be clicked while a record is showing
+      // and this branch is unreachable; it is here because the rule is the
+      // rule and a non-modal dialog would find the bug rather than the rule.
+      const url = `?${params}`;
+      if (openDocKey === null) {
+        window.history.pushState({ viaDoc: true }, '', url);
+      } else {
+        window.history.replaceState({ viaDoc: true }, '', url);
+      }
       setOpenDocKey(key);
       return;
     }
