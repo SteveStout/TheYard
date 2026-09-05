@@ -377,7 +377,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (318 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (319 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory

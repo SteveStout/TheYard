@@ -70,8 +70,8 @@ preview card's count is checked against the same source, which means adding a
 record and forgetting to regenerate the card fails the suite rather than shipping
 a card that undercounts.
 
-Two of those checks were themselves too easy at first, and both are recorded
-because the pattern is the interesting part:
+Three of those checks were themselves too easy at first, and all three are
+recorded because the pattern is the interesting part:
 
 - The claim regex ran over the file as written, and an editor had wrapped one of
   the README's two claims across a line break, so the number and the noun were
@@ -81,6 +81,12 @@ because the pattern is the interesting part:
   same count in a sentence of its own. It reads every living document now, which
   means every served document that is not a record and not the changelog, since
   those two are dated by nature and quote counts that were true when written.
+- Nothing checked the version on the card at all. The generator reads it from
+  the changelog's top line, and on one ship the changelog was momentarily empty
+  when it read: it exited zero and wrote a card with no version on it, and every
+  check passed, because the record count was right and the file was large enough
+  to have rendered. The version is asserted against the changelog now, which is
+  the same line the deploy reads.
 
 ## Alternatives
 

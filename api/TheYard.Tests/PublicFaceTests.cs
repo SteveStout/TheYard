@@ -119,6 +119,32 @@ public class PublicFaceTests
             $"the README says {claim.Groups[1].Value} xUnit tests and there are {counted}");
     }
 
+    /// <summary>
+    /// The card carries the version it was drawn for, and that version is the
+    /// changelog's top line, which is where the deploy reads it from too.
+    ///
+    /// <para>This exists because it went wrong in the obvious way. The card is
+    /// regenerated at the start of a ship, from the changelog, and on one ship
+    /// the changelog was momentarily empty when the generator read it. It
+    /// exited zero, wrote a card with no version on it, and every check passed:
+    /// the record count was right, the file was large enough to have rendered,
+    /// and nothing looked at the one field that had gone missing. A generated
+    /// number is worth nothing without a test, which is the argument this
+    /// project's public-face record already makes about the record count
+    /// (ADR: The public face).</para>
+    /// </summary>
+    [Fact]
+    public void The_preview_card_shows_the_version_it_was_drawn_for()
+    {
+        string card = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "images", "og.svg"));
+        string changelog = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "CHANGELOG.md"));
+
+        var top = Regex.Match(changelog, @"^- \*\*(1\.0\.0\.\d+)\*\*", RegexOptions.Multiline);
+
+        Assert.True(top.Success, "the changelog should carry a version on its top line");
+        Assert.Contains(top.Groups[1].Value, card, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void The_preview_card_counts_the_same_records_the_readme_does()
     {
