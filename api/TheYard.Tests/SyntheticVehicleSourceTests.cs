@@ -42,6 +42,34 @@ public class SyntheticVehicleSourceTests
         Assert.Equal(Seeds, vehicles);
     }
 
+    /// <summary>
+    /// A variant's grade stays inside its seed's band, because everything else
+    /// that describes the vehicle's condition comes from the seed unchanged.
+    ///
+    /// <para>It did not, and the result was visible on the live site: "2.0
+    /// Rough" printed above "Vehicle shows average wear for its age and
+    /// mileage. Mechanically sound." and "No damage reported." The grade was
+    /// drawn from the hash across the whole scale while the report, the damage
+    /// notes and the title came from the seed, so three fields on one page
+    /// disagreed about the same car.</para>
+    /// </summary>
+    [Theory]
+    [InlineData(1.4)]
+    [InlineData(2.0)]
+    [InlineData(3.7)]
+    [InlineData(4.2)]
+    [InlineData(5.0)]
+    public void A_variants_grade_stays_in_its_seeds_band(double seedGrade)
+    {
+        var seed = TestData.Vehicle(id: "seed-graded") with { ConditionGrade = seedGrade };
+        double band = Math.Floor(seedGrade);
+
+        var variants = new SyntheticVehicleSource(new SeedSource(seed), 400).Load().Skip(1);
+
+        Assert.All(variants, vehicle =>
+            Assert.InRange(vehicle.ConditionGrade, band, Math.Min(5.0, band + 0.9)));
+    }
+
     [Fact]
     public void Variants_keep_the_dataset_invariants()
     {

@@ -49,7 +49,24 @@ public sealed class SyntheticVehicleSource(IVehicleSource seedSource, int target
             Vin = MutateVin(seed.Vin, hash),
             Year = Math.Clamp(seed.Year + (int)(hash % 7) - 3, 2016, 2026),
             OdometerKm = 500 + (int)(hash % 260_000),
-            ConditionGrade = Math.Round(1.0 + hash % 41 / 10.0, 1),
+            // #region grade-stays-with-its-words
+            // Inside the seed's own band, not rolled across the whole scale.
+            //
+            // This used to be `1.0 + hash % 41 / 10.0`, a grade drawn with no
+            // reference to anything else about the vehicle, while the condition
+            // report, the damage notes and the title status all came from the
+            // seed unchanged. So a variant could show "2.0 Rough" above
+            // "Vehicle shows average wear for its age and mileage. Mechanically
+            // sound." and "No damage reported.", which is three fields
+            // disagreeing on one page.
+            //
+            // The seed dataset already correlates them: band 1 reads as
+            // salvage, band 2 as rough with damage, band 3 as average, band 4
+            // and 5 as clean, and the damage note counts fall from four to
+            // none across that range. Varying inside the band keeps every one
+            // of those correlations for free and costs one line.
+            ConditionGrade = Math.Round(Math.Min(5.0, Math.Floor(seed.ConditionGrade) + hash % 10 / 10.0), 1),
+            // #endregion grade-stays-with-its-words
             StartingBid = startingBid,
             CurrentBid = currentBid,
             BidCount = hasBids ? 1 + (int)(hash % 24) : 0,
