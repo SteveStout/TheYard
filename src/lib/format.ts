@@ -68,3 +68,18 @@ export function formatCountdown(target: number, now: number): string {
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
 }
+
+/**
+ * Azure's container events quote the image by digest, and a digest is
+ * `sha256:` followed by sixty-four hexadecimal characters. Printed whole in a
+ * card three hundred pixels wide it wraps into three lines of noise, and it
+ * breaks after "sha" so the next line opens with "256:", which reads as a
+ * number rather than as the tail of a name.
+ *
+ * Twelve characters is what every registry and every `docker images` output
+ * shows, and it is enough to tell two builds apart, which is the only reason
+ * the digest is on the page at all.
+ */
+export function shortenDigests(message: string): string {
+  return message.replace(/\b(sha256:)([0-9a-f]{12})[0-9a-f]{52}\b/g, '$1$2\u2026');
+}

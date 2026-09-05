@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCountdown, formatCurrency, formatOdometer } from './format';
+import { formatCountdown, formatCurrency, formatOdometer, shortenDigests } from './format';
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -41,5 +41,25 @@ describe('formatCountdown', () => {
   it('renders "Ended" at and past the target', () => {
     expect(formatCountdown(now, now)).toBe('Ended');
     expect(formatCountdown(now - 1, now)).toBe('Ended');
+  });
+});
+
+describe('shortenDigests', () => {
+  const digest = 'sha256:40b891e5ea6b9a8a60c01942c563f8ea447578b002450cb6bf6ef6050a5f7a1c';
+
+  it('keeps the first twelve characters, which is what every registry shows', () => {
+    expect(shortenDigests(`Successfully pulled image "reg.azurecr.io/theyard@${digest}"`)).toBe(
+      'Successfully pulled image "reg.azurecr.io/theyard@sha256:40b891e5ea6b\u2026"'
+    );
+  });
+
+  it('leaves a message with no digest in it alone', () => {
+    expect(shortenDigests('Killing container theyard (platform initiated).')).toBe(
+      'Killing container theyard (platform initiated).'
+    );
+  });
+
+  it('leaves a digest that is already short alone, rather than half-shortening it', () => {
+    expect(shortenDigests('pulled sha256:40b891e5ea6b')).toBe('pulled sha256:40b891e5ea6b');
   });
 });

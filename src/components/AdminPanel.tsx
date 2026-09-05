@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { shortenDigests } from '../lib/format';
 import styles from './AdminPanel.module.css';
 
 type HealthCheck = { name: string; status: string; detail: string; duration_ms: number };
@@ -222,7 +223,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
                     {event.count > 1 ? `${event.count} times, last ` : ''}
                     {event.last_at ? new Date(event.last_at).toLocaleString() : ''}
                   </span>
-                  <span className={styles.muted}>{event.message}</span>
+                  <span className={styles.muted}>{shortenDigests(event.message)}</span>
                 </li>
               ))}
             </ul>
