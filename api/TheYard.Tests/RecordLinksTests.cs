@@ -248,4 +248,60 @@ public class RecordLinksTests
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong.Distinct()));
     }
     // #endregion the other direction
+
+    // #region numbers a record quotes
+    /// <summary>
+    /// One record explains why the API host is a single 1,244 line file, and it
+    /// quotes the file's own shape to make the case: how much of it is comment,
+    /// how much is code, and how many endpoints that code is spread across.
+    ///
+    /// <para>Those are four numbers in prose about a file that changes every
+    /// week, which is exactly the shape this project has been wrong about twice
+    /// already, in the README's record count and again in its test count. They
+    /// are countable, so they are counted.</para>
+    /// </summary>
+    [Fact]
+    public void The_numbers_the_program_record_quotes_are_that_files_numbers()
+    {
+        string root = Repo.Root();
+        string[] lines = File.ReadAllLines(Path.Combine(root, "api", "TheYard.Api", "Program.cs"));
+
+        int blank = lines.Count(line => line.Trim().Length == 0);
+        int comment = lines.Count(line =>
+        {
+            string trimmed = line.TrimStart();
+            return trimmed.StartsWith("//", StringComparison.Ordinal)
+                || trimmed.StartsWith("/*", StringComparison.Ordinal)
+                || trimmed.StartsWith("*", StringComparison.Ordinal);
+        });
+        int endpoints = lines.Count(line => Regex.IsMatch(line, @"app\.Map(Get|Post|Delete|Put)"));
+
+        string record = File.ReadAllText(
+            Path.Combine(root, "docs", "ADR-018-program-cs-explained.md"));
+        var quoted = Regex.Match(
+            record,
+            @"([\d,]+) total\s+(\d+) comment\s+(\d+) blank\s+(\d+) code, across (\d+) endpoints");
+
+        Assert.True(quoted.Success, "ADR-018 should quote Program.cs's shape");
+
+        // Named, because a bare Equal failure here says "expected 1244, got
+        // 1250" and leaves the reader to work out which of five numbers in
+        // which document is now wrong.
+        var actual = new (string What, int Is, int Says)[]
+        {
+            ("total lines", lines.Length, int.Parse(quoted.Groups[1].Value.Replace(",", ""))),
+            ("comment lines", comment, int.Parse(quoted.Groups[2].Value)),
+            ("blank lines", blank, int.Parse(quoted.Groups[3].Value)),
+            ("code lines", lines.Length - blank - comment, int.Parse(quoted.Groups[4].Value)),
+            ("endpoints", endpoints, int.Parse(quoted.Groups[5].Value)),
+        };
+
+        var wrong = actual
+            .Where(number => number.Is != number.Says)
+            .Select(number => $"ADR-018 says {number.Says} {number.What} and Program.cs has {number.Is}")
+            .ToList();
+
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+    // #endregion numbers a record quotes
 }

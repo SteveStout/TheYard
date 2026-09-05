@@ -184,6 +184,49 @@ the top of this record.
 ```live path=api/TheYard.Api/Program.cs region=records-and-test-hook
 ```
 
+## Why this is one file
+
+It is 1,244 lines, and that is the first thing a reviewer notices, so it is
+worth saying that it is a decision rather than a drift.
+
+What those lines are:
+
+```
+1,244 total
+  444 comment
+   86 blank
+  714 code, across 29 endpoints
+```
+
+Twenty-five lines of code per endpoint, and most endpoints are a route, a
+binding and a delegation. Nothing in here holds a rule; the rules are in Domain
+and Application, and this file's job is to say what is reachable and in what
+order.
+
+**In what order is the reason.** A minimal-API host is two lists: the services
+that get registered and the middleware that wraps every request. The second one
+is ordering-sensitive in a way that does not announce itself, and this project
+has already paid for that once: the timing middleware sat below the exception
+handler, read the status before the handler had written it, and recorded every
+failed request as a 200, including the endpoint whose whole job is to fail
+(ADR: Reviewing my own work). A reader who can see the pipeline from `builder`
+to `app.Run()` without opening another file can see that kind of mistake. A
+reader following `AddYardEndpoints()` into a second file, and `AddYardAuth()`
+into a third, cannot.
+
+**What splitting would buy.** Navigation, mostly. Editors already do that: the
+file is regioned end to end, and the regions are how the served documents quote
+it. What it would cost is the one property worth keeping.
+
+**What would change my mind**, which is the useful half of a decision like this:
+
+- An endpoint that grows a body instead of a delegation. That is a use case
+  trying to be born, and it belongs in Application, not in a new host file.
+- The composition and the routes stopping fitting in a reader's head together.
+  The trigger is a reader, not a number: 1,244 lines of which a third are
+  explanation is not the same as 1,244 lines of logic, and a rule that says
+  "split at a thousand" would have split this one at the wrong seam.
+
 ## What to change when
 
 - **A new endpoint:** one `app.MapGet` or `app.MapPost` beside its
