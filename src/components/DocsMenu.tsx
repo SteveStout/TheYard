@@ -86,6 +86,7 @@ export type DocKey =
   | 'adrOneWrite'
   | 'adrBrokenWindows'
   | 'adrStaleListing'
+  | 'adrRecordAddress'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -560,6 +561,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '056',
   },
+  adrRecordAddress: {
+    title: 'ADR: A record with no address',
+    menuLabel: 'ADR: A record with no address',
+    url: '/api/docs/adr-record-address',
+    kind: 'adr',
+    number: '057',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -672,6 +680,7 @@ export const MENUS: Record<
       { key: 'adrOneWrite' },
       { key: 'adrBrokenWindows' },
       { key: 'adrStaleListing' },
+      { key: 'adrRecordAddress' },
     ],
   },
   // #endregion records-menu
@@ -704,8 +713,37 @@ export const LINKS = {
   repo: { label: 'GitHub repository', href: 'https://github.com/SteveStout/TheYard' },
 } as const;
 
-/** One open request: the nonce lets the same doc be reopened after a close. */
-export type DocRequest = { key: DocKey; nonce: number };
+/**
+ * One open request. It is an object rather than a bare key because reopening
+ * the same document after closing it has to read as a new request, and a fresh
+ * object is exactly that: identity is the whole mechanism, so there is nothing
+ * to increment and nothing to keep in sync.
+ */
+export type DocRequest = { key: DocKey };
+
+// #region doc-addresses
+/**
+ * The slug in a document's API URL, which is also the name it takes in the
+ * address bar. Derived from the one URL rather than written a second time, so
+ * a record cannot become linkable under a name the API does not serve.
+ */
+export function docSlug(key: DocKey): string {
+  return DOCS[key].url.slice('/api/docs/'.length);
+}
+
+const KEY_BY_SLUG: Record<string, DocKey> = Object.fromEntries(
+  (Object.keys(DOCS) as DocKey[]).map((key) => [docSlug(key), key])
+);
+
+/**
+ * The document a `?doc=` value names, or null when it names none. An address
+ * that matches nothing opens nothing: a stale link should land on the
+ * inventory, not on an error.
+ */
+export function docKeyForSlug(slug: string | null): DocKey | null {
+  return slug === null ? null : (KEY_BY_SLUG[slug] ?? null);
+}
+// #endregion doc-addresses
 
 /**
  * The in-app doc viewer: a native modal dialog that fetches the markdown the
@@ -723,23 +761,32 @@ export function DocDialog({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>({});
   // #region derived-error
-  // The nonce that failed, not a boolean saying something did. A boolean has to
-  // be cleared when the next document opens, and clearing it means a setState
-  // inside the effect that opens the dialog, which starts a second render for
-  // no reason. Holding the nonce makes the flag derivable: the next request
-  // carries a new one, so the old failure stops matching by itself.
-  const [failedNonce, setFailedNonce] = useState<number | null>(null);
-  const docError = request !== null && failedNonce === request.nonce;
+  // The request that failed, not a boolean saying something did. A boolean has
+  // to be cleared when the next document opens, and clearing it means a
+  // setState inside the effect that opens the dialog, which starts a second
+  // render for no reason. Holding the request makes the flag derivable: the
+  // next one is a different object, so the old failure stops matching by
+  // itself.
+  const [failedRequest, setFailedRequest] = useState<DocRequest | null>(null);
+  const docError = request !== null && failedRequest === request;
   // #endregion derived-error
   /** Same content as docHtml, readable inside the effect without a stale closure. */
   const cache = useRef<Partial<Record<DocKey, string>>>({});
   const activeDoc: DocKey = request?.key ?? 'readme';
 
   useEffect(() => {
-    if (!request) return;
     const dialog = dialogRef.current;
+    // No request means no record showing, and that has to close a dialog that
+    // is open rather than only decline to open one. Before records had
+    // addresses the only way to close this was the dialog's own X, Escape or
+    // backdrop, so the state always moved dialog-first; now the browser's Back
+    // button moves it the other way and the dialog follows.
+    if (!request) {
+      if (dialog?.open) dialog.close();
+      return;
+    }
     if (dialog && !dialog.open) dialog.showModal();
-    const { key, nonce } = request;
+    const { key } = request;
     if (cache.current[key] !== undefined) return;
     fetch(DOCS[key].url)
       .then(async (response) => {
@@ -750,7 +797,7 @@ export function DocDialog({
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })
-      .catch(() => setFailedNonce(nonce));
+      .catch(() => setFailedRequest(request));
   }, [request]);
 
   return (

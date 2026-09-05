@@ -79,6 +79,7 @@ public static class DocsCatalog
         ["adr-one-write"] = "docs/ADR-054-the-one-write-a-stranger-can-make.md",
         ["adr-broken-windows"] = "docs/ADR-055-broken-windows.md",
         ["adr-stale-listing"] = "docs/ADR-056-the-listing-that-went-stale.md",
+        ["adr-record-address"] = "docs/ADR-057-a-record-with-no-address.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",

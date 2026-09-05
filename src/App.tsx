@@ -22,6 +22,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { AccountPanel } from './components/AccountPanel';
 import { fetchAccount, SIGNED_OUT, type Account } from './lib/auth';
 import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
+import { docKeyForSlug, docSlug, type DocKey } from './components/DocsMenu';
 import { BrandMark } from './components/BrandMark';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { FilterBar } from './components/FilterBar';
@@ -61,6 +62,8 @@ const INITIAL_PARAMS = new URLSearchParams(window.location.search);
 const INITIAL_URL_STATE = filtersFromSearchParams(INITIAL_PARAMS);
 /** A tile click is GET navigation: ?vehicle={id} deep-links the detail view. */
 const INITIAL_VEHICLE_ID = INITIAL_PARAMS.get('vehicle');
+/** ?doc=adr-lockout, resolved once. An address that names nothing opens nothing. */
+const INITIAL_DOC = docKeyForSlug(INITIAL_PARAMS.get('doc'));
 
 export default function App() {
   /** The server-filtered, server-sorted page currently on display. */
@@ -79,6 +82,7 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(INITIAL_PARAMS.get('view') === 'admin');
   /** The account view (ADR: Accounts and per-user bids), ?view=account. */
   const [accountOpen, setAccountOpen] = useState(INITIAL_PARAMS.get('view') === 'account');
+  const [openDocKey, setOpenDocKey] = useState<DocKey | null>(INITIAL_DOC);
   const [account, setAccount] = useState<Account>(SIGNED_OUT);
   const now = useNow();
   /** The running build, reported by the container itself (ADR-005). */
@@ -211,13 +215,14 @@ export default function App() {
     if (selectedVehicle) params.set('vehicle', selectedVehicle.id);
     if (adminOpen) params.set('view', 'admin');
     if (accountOpen) params.set('view', 'account');
+    if (openDocKey) params.set('doc', docSlug(openDocKey));
     const query = params.toString();
     window.history.replaceState(
       window.history.state,
       '',
       query ? `?${query}` : window.location.pathname
     );
-  }, [filters, sort, selectedVehicle, adminOpen, accountOpen]);
+  }, [filters, sort, selectedVehicle, adminOpen, accountOpen, openDocKey]);
   // #endregion url-mirror
 
   // Restore a deep-linked detail view on first load (?vehicle={id}).
@@ -260,6 +265,7 @@ export default function App() {
       setSort(restored.sort);
       setAdminOpen(params.get('view') === 'admin');
       setAccountOpen(params.get('view') === 'account');
+      setOpenDocKey(docKeyForSlug(params.get('doc')));
       const vehicleId = params.get('vehicle');
       if (!vehicleId) {
         setSelectedVehicle(null);
@@ -487,6 +493,33 @@ export default function App() {
     setAdminOpen(true);
   };
 
+  // #region open-document
+  // A record is a view, and every other view here is a GET parameter, so this
+  // is the same shape as Admin and Account (ADR: A record with no address).
+  // Before this, a decision record could only be reached by opening the site,
+  // finding the group and scrolling, which means it could not be sent to
+  // anybody, which for a project whose central artifact is its records is the
+  // wrong way round.
+  const openDocument = (key: DocKey | null) => {
+    if (key !== null) {
+      const params = filtersToSearchParams(filters, sort);
+      params.set('doc', docSlug(key));
+      window.history.pushState({ viaDoc: true }, '', `?${params}`);
+      setOpenDocKey(key);
+      return;
+    }
+    // Closed by Escape, the X, or the backdrop. If we pushed the entry that
+    // opened it, going back keeps history clean and makes Back and Escape
+    // agree; a visitor who arrived on the link has no entry behind it, so the
+    // parameter is swapped out in place instead of leaving the site.
+    if ((window.history.state as { viaDoc?: boolean } | null)?.viaDoc) {
+      window.history.back();
+      return;
+    }
+    setOpenDocKey(null);
+  };
+  // #endregion open-document
+
   // #region open-account
   // The same shape as Admin, because it is the same kind of thing: one more
   // view at its own ?view= value, pushed so Back closes it.
@@ -610,6 +643,8 @@ export default function App() {
         bidCount={bidCount}
         onResetBids={handleResetBids}
         build={build}
+        openDocKey={openDocKey}
+        onDocChange={openDocument}
       />
 
       <div className={styles.page}>

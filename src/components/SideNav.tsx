@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   DocDialog,
   DOCS,
@@ -52,6 +52,18 @@ export type SideNavProps = {
   bidCount: number;
   onResetBids: () => void;
   build: Build;
+  /**
+   * The record showing, or null. App owns it because App owns the address bar
+   * (ADR: A record with no address): a document is a view, and every other
+   * view here is a GET parameter.
+   */
+  openDocKey: DocKey | null;
+  /**
+   * Named for the change rather than for opening, because null is a real value
+   * here: the browser closes a record by taking it out of the address bar. The
+   * row callback inside this component is still an open, and takes a key.
+   */
+  onDocChange: (key: DocKey | null) => void;
 };
 
 /**
@@ -63,10 +75,20 @@ export type SideNavProps = {
  * marked current while its doc is open.
  */
 export function SideNav(props: SideNavProps) {
-  const { docked, collapsed, drawerOpen, onDrawerClose } = props;
+  const { docked, collapsed, drawerOpen, onDrawerClose, openDocKey, onDocChange } = props;
   const drawerRef = useRef<HTMLDialogElement>(null);
-  const [request, setRequest] = useState<DocRequest | null>(null);
-  const [openKey, setOpenKey] = useState<DocKey | null>(null);
+
+  // #region request-from-prop
+  // The dialog is driven by a request rather than a bare key, because reopening
+  // the same document after closing it has to read as a new request. Memoised
+  // on the key, so it is one object per open: closing sets the key to null and
+  // opening the same record again recomputes, which is a different object,
+  // which is all "new request" ever meant.
+  const request = useMemo<DocRequest | null>(
+    () => (openDocKey === null ? null : { key: openDocKey }),
+    [openDocKey]
+  );
+  // #endregion request-from-prop
 
   // #region drawer-dialog
   // The drawer is a native dialog: App flips drawerOpen, this mirrors it.
@@ -79,15 +101,14 @@ export function SideNav(props: SideNavProps) {
 
   const openDoc = (key: DocKey) => {
     drawerRef.current?.close();
-    setOpenKey(key);
-    setRequest((prev) => ({ key, nonce: (prev?.nonce ?? 0) + 1 }));
+    onDocChange(key);
   };
   // #endregion drawer-dialog
 
   const content = (
     <NavContent
       {...props}
-      openKey={openKey}
+      openKey={openDocKey}
       onOpenDoc={openDoc}
       onCloseDrawer={() => drawerRef.current?.close()}
     />
@@ -115,7 +136,7 @@ export function SideNav(props: SideNavProps) {
         </dialog>
       )}
       {/* #endregion shapes */}
-      <DocDialog request={request} onClose={() => setOpenKey(null)} />
+      <DocDialog request={request} onClose={() => onDocChange(null)} />
     </>
   );
 }
