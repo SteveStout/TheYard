@@ -247,6 +247,18 @@ export function FilterBar({
           </button>
         )}
       </div>
+      {/* #region photo-provenance */}
+      {/* Said once, above a hundred cards, rather than on each of them. The
+          catalogue is synthetic and the photographs are vendored stock chosen
+          from the pool for the body style, so two trucks in the same row can
+          carry the same picture, which without this line reads as a rendering
+          fault rather than as fifty photographs doing the work of a hundred
+          thousand. Outside the count's live region, because it never changes
+          and a screen reader should not hear it again on every filter. */}
+      <p className={styles.photoNote}>
+        Photographs are stock, chosen for the body style, and are not of the vehicles listed.
+      </p>
+      {/* #endregion photo-provenance */}
     </section>
   );
 }

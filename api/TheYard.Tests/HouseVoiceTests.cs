@@ -32,7 +32,30 @@ public class HouseVoiceTests
         ".sql", ".sqlproj", ".csproj", ".slnx", ".mjs", ".svg", ".txt", ".html",
     ];
 
-    private static List<string> TextInThisRepository() => Repo.FilesWith(Extensions);
+    /// <summary>
+    /// Transcripts a build writes beside the source. CI keeps these in the
+    /// runner's temp directory now, which is the actual fix, and this is the
+    /// second line of it: the next person to add a `tee` will not remember why
+    /// the first one moved.
+    ///
+    /// <para>The failure was worth the two defences. The console logger CI asks
+    /// for prints each test's name with its parameters, and one of this class's
+    /// own parameters is the em dash it forbids, so the transcript being
+    /// written by the run contained the character, sat in the repository the
+    /// scan reads, and failed the suite on itself. On the runs where the line
+    /// was flushed before the scan reached it, and not on the others, which is
+    /// what made it look like a flake (ADR: Where a gate lives, addendum).</para>
+    /// </summary>
+    private static readonly string[] BuildTranscripts =
+    [
+        "dotnet-output.txt",
+        "playwright-output.txt",
+    ];
+
+    private static List<string> TextInThisRepository() =>
+        Repo.FilesWith(Extensions)
+            .Where(path => !BuildTranscripts.Contains(Path.GetFileName(path), StringComparer.OrdinalIgnoreCase))
+            .ToList();
 
     // #endregion what is scanned
 

@@ -150,3 +150,10 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
+
+/* Under the footer rule, quieter than the count above it. */
+.photoNote {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-faint);
+  font-size: var(--text-xs);
+}

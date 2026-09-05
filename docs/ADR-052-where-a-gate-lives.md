@@ -67,6 +67,50 @@ The scan stays in the ship script as well. It costs nothing there and it answers
 before a commit rather than after one, which is the correct division: the local
 script is a preview, and the suite is the authority.
 
+## Addendum, 2026-09-04: the gate failed on itself
+
+The scan went red on CI, on a commit that changed a caption and a stylesheet,
+and green on the same code locally and on the four runs either side of it. That
+is the shape of a flake, and it was not one.
+
+The annotation added in 1.0.0.71 named it in one line, publicly, which is the
+first time that mechanism has earned itself:
+
+```
+Failed TheYard.Tests.HouseVoiceTests.No_file_in_this_repository_contains_an_em_dash
+```
+
+Here is the chain. The console logger this job asks for, so that individual
+test names appear, prints each test with its parameters spelled out:
+
+```
+Passed TheYard.Tests.PublicFaceTests.The_page_head_says_what_this_is(expected: "name=\"description\"")
+```
+
+One of this class's own parameters is the em dash it forbids, because a rule
+that cannot fail is not a rule and the theory proving it can fail has to contain
+one. The job pipes that output through `tee` into a file in the checkout. So the
+transcript of the running suite contained the character, sat in the repository
+the scan reads, and the scan read it.
+
+Whether it failed depended on whether that line was flushed before the scan
+reached it, which is why four runs passed and one did not.
+
+Two things are wrong there and only one of them is about em dashes.
+
+**A build should not write into the source it is building.** The transcripts go
+to the runner's temp directory now. That fixes this and every future test that
+reads the repository, which is a growing list: the em dash rule, the record
+citations, the workflow's own patterns.
+
+**And the scan skips the two transcript names anyway**, because the next person
+to add a `tee` will not remember why the first one moved.
+
+Worth being precise about the local gate's part in this: it never saw the
+failure and never could, because the ship script writes its transcript outside
+the repository already, into `mentor/logs`. The gate that runs in two places was
+running against two different trees, and only the runner's had the file.
+
 ## Alternatives
 
 **A CI step.** A grep in `ci.yml` would have covered commits and cost less to

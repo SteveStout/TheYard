@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using TheYard.Api;
 
@@ -78,6 +79,45 @@ public class PublicFaceTests
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
     // #endregion counts
+
+    /// <summary>
+    /// The README states how many xUnit tests there are, and until now that was
+    /// a number somebody typed. It said 236 while there were 312, which is the
+    /// same failure the record count had and was found the same way: by reading
+    /// the document rather than by any check.
+    ///
+    /// <para>It is countable, so it is counted. Every test method here is a
+    /// Fact or a Theory whose rows are InlineData, and nothing uses MemberData
+    /// or ClassData, so the runner's total is the number of Facts plus the
+    /// number of InlineData rows. If that stops being true this test will drift
+    /// from the runner and say so by failing.</para>
+    /// </summary>
+    [Fact]
+    public void The_test_count_in_the_readme_is_the_test_count()
+    {
+        int counted = typeof(PublicFaceTests).Assembly
+            .GetTypes()
+            .SelectMany(type => type.GetMethods(
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            .Sum(method =>
+            {
+                int rows = method.GetCustomAttributes<InlineDataAttribute>().Count();
+                if (rows > 0)
+                {
+                    return rows;
+                }
+
+                return method.GetCustomAttribute<FactAttribute>() is null ? 0 : 1;
+            });
+
+        string readme = File.ReadAllText(Path.Combine(Repo.Root(), "README.md"));
+        var claim = Regex.Match(readme, @"\((\d+) xUnit tests");
+
+        Assert.True(claim.Success, "the README should say how many xUnit tests there are");
+        Assert.True(
+            int.Parse(claim.Groups[1].Value) == counted,
+            $"the README says {claim.Groups[1].Value} xUnit tests and there are {counted}");
+    }
 
     [Fact]
     public void The_preview_card_counts_the_same_records_the_readme_does()

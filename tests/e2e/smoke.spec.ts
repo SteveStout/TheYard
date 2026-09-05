@@ -27,6 +27,10 @@ test('landing page shows the top 100 of the full dataset', async ({ page }) => {
   await openTheYard(page);
   await expect(page.getByTestId('result-count')).toHaveText(/Showing 100 of 100,000 vehicles/);
   await expect(page.locator('article')).toHaveCount(100);
+  // Fifty photographs do the work of a hundred thousand, so two cards in the
+  // same row can carry the same picture. Said once, above the grid, because
+  // without it that reads as a rendering fault.
+  await expect(page.getByText('Photographs are stock')).toBeVisible();
 });
 
 test('filtering updates the URL and a filtered URL restores the view', async ({ page }) => {

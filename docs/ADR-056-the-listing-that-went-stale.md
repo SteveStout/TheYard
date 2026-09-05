@@ -157,9 +157,18 @@ what the reorder runs on. Neither one is sufficient: without the refresh the
 page runs out of live auctions, and without the reorder the dead ones sit at the
 top between refreshes.
 
-The claim this time is narrower and it is the one that was measured: under the
-ending-soonest sort, an auction that ends while the page is open moves out of
-the way within a second, without a request.
+The claim this time is narrower, and it was measured on the live site rather
+than reasoned about. The same browser, the same hundred seconds, the top six
+cards:
+
+```
+before   Ended, Ended, Live 8s, Live 8s, Live 20s, Live 20s
+after    at 50s   Live 20s, Live 20s, Live 20s, Live 26s, Live 32s, Live 38s
+         at 100s  Live 0s,  Live 0s,  Live 12s, Live 18s, Live 25s, Live 37s
+```
+
+Six requests in a hundred seconds, unchanged. An auction that ends while the
+page is open moves out of the way within a second, without one.
 
 ## Consequences
 

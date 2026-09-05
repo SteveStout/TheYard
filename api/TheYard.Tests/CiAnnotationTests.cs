@@ -31,16 +31,36 @@ public class CiAnnotationTests
     /// reads. Both are on one line in <c>ci.yml</c>, which is what makes
     /// pairing them safe.
     /// </summary>
-    private sealed record WorkflowGrep(string Pattern, string Reads);
+    /// <summary>
+    /// A grep in the workflow: the pattern it applies, the file it reads, and
+    /// how many lines it keeps after a match. The last one matters because the
+    /// marker is the label and the detail is the line under it.
+    /// </summary>
+    private sealed record WorkflowGrep(string Pattern, string Reads, int After);
 
+    /// <summary>
+    /// The transcripts live in the runner's temp directory rather than in the
+    /// checkout, because a suite that reads every file in the repository will
+    /// otherwise read the transcript of the run it is part of. So the path is
+    /// optional here and only the file's own name is kept.
+    /// </summary>
     private static readonly Regex GrepLine = new(
-        @"grep -E (?:-[A-Za-z] \d+ )*'(?<pattern>[^']*)'\s+(?<file>[a-z-]+\.txt)",
+        @"grep -E (?<flags>(?:-[A-Za-z] \d+ )*)'(?<pattern>[^']*)'\s+""?(?:\$RUNNER_TEMP/)?(?<file>[a-z-]+\.txt)""?",
         RegexOptions.Compiled);
 
     private static IReadOnlyList<WorkflowGrep> GrepsIn(string workflow) =>
         GrepLine.Matches(workflow)
-            .Select(m => new WorkflowGrep(m.Groups["pattern"].Value, m.Groups["file"].Value))
+            .Select(m => new WorkflowGrep(
+                m.Groups["pattern"].Value,
+                m.Groups["file"].Value,
+                After(m.Groups["flags"].Value)))
             .ToList();
+
+    private static int After(string flags)
+    {
+        var trailing = Regex.Match(flags, @"-A (\d+)");
+        return trailing.Success ? int.Parse(trailing.Groups[1].Value) : 0;
+    }
 
     /// <summary>
     /// grep speaks POSIX character classes and .NET does not. Only the two
@@ -69,13 +89,30 @@ public class CiAnnotationTests
     /// </summary>
     private static List<string> Reported(string transcript, string fixtureName)
     {
-        var patterns = GrepsIn(Workflow())
-            .Where(g => g.Reads == transcript)
-            .Select(g => AsDotNet(g.Pattern))
-            .ToList();
+        var greps = GrepsIn(Workflow()).Where(g => g.Reads == transcript).ToList();
+        Assert.NotEmpty(greps);
 
-        Assert.NotEmpty(patterns);
-        return Fixture(fixtureName).Where(line => patterns.Any(p => p.IsMatch(line))).ToList();
+        string[] lines = Fixture(fixtureName);
+        var reported = new List<string>();
+        foreach (var grep in greps)
+        {
+            var pattern = AsDotNet(grep.Pattern);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (!pattern.IsMatch(lines[i]))
+                {
+                    continue;
+                }
+
+                // The match, and the lines grep would keep after it.
+                for (int kept = i; kept <= Math.Min(lines.Length - 1, i + grep.After); kept++)
+                {
+                    reported.Add(lines[kept]);
+                }
+            }
+        }
+
+        return reported;
     }
     // #endregion reading the workflow
 
@@ -91,7 +128,7 @@ public class CiAnnotationTests
     public void Every_grep_over_a_suite_transcript_is_one_this_test_can_read()
     {
         string workflow = Workflow();
-        int present = Regex.Matches(workflow, @"grep -E .*\.txt").Count;
+        int present = Regex.Matches(workflow, @"grep -E .*\.txt""?").Count;
 
         Assert.Equal(present, GrepsIn(workflow).Count);
     }
@@ -103,6 +140,9 @@ public class CiAnnotationTests
     [Theory]
     [InlineData("Failed TheYard.Tests.AdminObservabilityTests.A_statement_names_the_request_that_caused_it")]
     [InlineData("Assert.Contains() Failure")]
+    // The line under the message, which is the one somebody actually needs: the
+    // assertion says which assertion, and this says what was in the collection.
+    [InlineData("Collection: []")]
     [InlineData("Stack Trace:")]
     [InlineData("Test Run Failed.")]
     [InlineData("Failed: 1")]

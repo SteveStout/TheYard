@@ -107,20 +107,33 @@ jobs:
       # cannot assume its reader has. This job went red once on a commit that
       # changed nothing but documentation, and there was no way to say which
       # test without one.
+      # The transcript goes to the runner's temp directory, not into the
+      # checkout. A test in this suite reads every text file in the repository
+      # and holds it to the house rule about em dashes; the console logger this
+      # job asks for prints each test's name with its parameters, one of which
+      # is the em dash that rule forbids, so a transcript written beside the
+      # source made the suite fail on itself, on the runs where the line was
+      # flushed before the scan reached it and not on the others
+      # (ADR: Where a gate lives, addendum).
       - name: Run the .NET suites
         run: |
           set -o pipefail
           dotnet test api --collect:"XPlat Code Coverage" --results-directory TestResults \
-            --logger 'console;verbosity=normal' 2>&1 | tee dotnet-output.txt
+            --logger 'console;verbosity=normal' 2>&1 | tee "$RUNNER_TEMP/dotnet-output.txt"
       - name: Say which test failed, on the run page
         if: failure()
         run: |
-          if [ ! -f dotnet-output.txt ]; then
+          if [ ! -f "$RUNNER_TEMP/dotnet-output.txt" ]; then
             echo "::error::the .NET suites left no output to report"
             exit 0
           fi
-          grep -E '^[[:space:]]*(Failed|Error Message|Assert\.|Stack Trace)' dotnet-output.txt \
-            | head -n 20 \
+          # Three lines after each marker, because the marker is the label and
+          # the detail is underneath it: "Assert.Contains() Failure" says which
+          # assertion and the line below it says what was actually in the
+          # collection, and that second line is the one somebody needs.
+          grep -E -A 3 '^[[:space:]]*(Failed |Error Message:)' "$RUNNER_TEMP/dotnet-output.txt" \
+            | grep -v '^--$' \
+            | head -n 24 \
             | while IFS= read -r line; do
                 printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
               done
@@ -129,7 +142,7 @@ jobs:
           # four-line 'Test Run Failed. / Total tests: ...' block. The
           # console logger this job asks for produces the second, so a
           # pattern that only knew the first printed nothing at all.
-          grep -E '^[[:space:]]*(Passed!|Failed!|Test Run (Failed|Succeeded)\.|Total tests:|(Passed|Failed|Skipped):[[:space:]]+[0-9]+)' dotnet-output.txt \
+          grep -E '^[[:space:]]*(Passed!|Failed!|Test Run (Failed|Succeeded)\.|Total tests:|(Passed|Failed|Skipped):[[:space:]]+[0-9]+)' "$RUNNER_TEMP/dotnet-output.txt" \
             | head -n 6 | while IFS= read -r line; do
             printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
           done
@@ -137,7 +150,7 @@ jobs:
             echo '## The .NET suites failed'
             echo
             echo '```'
-            grep -E -A 6 '^[[:space:]]*Failed ' dotnet-output.txt | head -n 80
+            grep -E -A 6 '^[[:space:]]*Failed ' "$RUNNER_TEMP/dotnet-output.txt" | head -n 80
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Count what the tests cover
@@ -196,7 +209,7 @@ jobs:
       - name: Run the browser suite
         run: |
           set -o pipefail
-          npx playwright test 2>&1 | tee playwright-output.txt
+          npx playwright test 2>&1 | tee "$RUNNER_TEMP/playwright-output.txt"
       - name: Say what failed, on the run page
         if: failure()
         run: |
@@ -207,7 +220,7 @@ jobs:
           # from the public API and show at the top of the run page, which is
           # what a person with no login to this repository can actually read.
           # The first attempt at this wrote only a summary and taught us that.
-          if [ ! -f playwright-output.txt ]; then
+          if [ ! -f "$RUNNER_TEMP/playwright-output.txt" ]; then
             echo "::error::the browser suite left no output to report"
             exit 0
           fi
@@ -215,21 +228,21 @@ jobs:
           # of time says 'Test timeout of 90000ms exceeded.', which the
           # capital-only spelling missed, and that line is the whole
           # finding when the failure is a hang.
-          grep -E '^[[:space:]]+[0-9]+\) |Error: |[Tt]imeout of |Timeout: |Locator: |Expected: |Received' playwright-output.txt \
+          grep -E '^[[:space:]]+[0-9]+\) |Error: |[Tt]imeout of |Timeout: |Locator: |Expected: |Received' "$RUNNER_TEMP/playwright-output.txt" \
             | head -n 20 \
             | while IFS= read -r line; do
                 # One annotation per line, trimmed: a control character or a
                 # newline inside one silently truncates the whole annotation.
                 printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
               done
-          tail -n 4 playwright-output.txt | while IFS= read -r line; do
+          tail -n 4 "$RUNNER_TEMP/playwright-output.txt" | while IFS= read -r line; do
             printf '::error::%s\n' "$(printf '%s' "$line" | tr -d '\r' | cut -c1-400)"
           done
           {
             echo '## The browser suite failed'
             echo
             echo '```'
-            tail -n 150 playwright-output.txt
+            tail -n 150 "$RUNNER_TEMP/playwright-output.txt"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion e2e-evidence
