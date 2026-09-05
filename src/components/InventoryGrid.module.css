@@ -15,13 +15,20 @@
   flex: 1;
 }
 
-@media (min-width: 640px) {
+/* Container queries, not media queries: these numbers are the width of the box
+   the cards are in, which is the window minus whichever rail is showing. A
+   collapsed rail gives the grid 200 more pixels and it uses them. */
+@container (min-width: 560px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (min-width: 1024px) {
+/* 860 and not 900: with the rail collapsed at a 1024 window the grid gets 912
+   pixels, and a classic scrollbar takes fifteen of them. A threshold a card's
+   width away from the case it is meant to catch is a threshold that catches it
+   on one machine. */
+@container (min-width: 860px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);
   }

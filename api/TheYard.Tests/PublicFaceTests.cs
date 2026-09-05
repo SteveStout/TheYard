@@ -120,6 +120,35 @@ public class PublicFaceTests
     }
 
     /// <summary>
+    /// The README states how many browser tests there are, and that one is
+    /// countable: every spec declares its tests with `test(` at the start of a
+    /// line, and Playwright has no row-expanding form in this repository.
+    ///
+    /// <para>Its sibling number is not. The Vitest count includes two
+    /// `it.each(grounds)` rows whose length is only known when the file runs,
+    /// so that one is written with the version it was true at, the way the
+    /// coverage figures are, rather than pinned to a number this test would
+    /// have to guess.</para>
+    /// </summary>
+    [Fact]
+    public void The_browser_test_count_in_the_readme_is_the_browser_test_count()
+    {
+        string root = Repo.Root();
+        int declared = Directory
+            .EnumerateFiles(Path.Combine(root, "tests", "e2e"), "*.spec.ts")
+            .SelectMany(File.ReadAllLines)
+            .Count(line => Regex.IsMatch(line, @"^\s*test\("));
+
+        string readme = File.ReadAllText(Path.Combine(root, "README.md"));
+        var claim = Regex.Match(readme, @"\((\d+) Playwright tests\)");
+
+        Assert.True(claim.Success, "the README should say how many Playwright tests there are");
+        Assert.True(
+            int.Parse(claim.Groups[1].Value) == declared,
+            $"the README says {claim.Groups[1].Value} Playwright tests and the specs declare {declared}");
+    }
+
+    /// <summary>
     /// The card carries the version it was drawn for, and that version is the
     /// changelog's top line, which is where the deploy reads it from too.
     ///

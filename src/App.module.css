@@ -195,6 +195,12 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--space-6);
+  /* The inventory grid asks this box how wide it is, rather than asking the
+     window. The window is the wrong thing to ask: it includes a 270px rail the
+     grid does not get, and that rail collapses to icons, which a media query
+     cannot see. At 1024 the grid was giving three cards about 215 pixels each
+     and wrapping every title, every badge row and every city name. */
+  container-type: inline-size;
 }
 
 .listHeader {
