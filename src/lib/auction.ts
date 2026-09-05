@@ -66,6 +66,52 @@ export function nextAuctionBoundary(
   return soonest;
 }
 
+/**
+ * The same ranking the API applies to an ending-soonest page, re-applied in the
+ * browser to the page it already holds: live first and closest to ending, then
+ * upcoming and closest to starting, then ended and most recently ended.
+ *
+ * Re-applied, not invented. `VehicleOrdering.EndingSoonestRank` on the server
+ * is this function, with these bands, and the reason this one exists is that
+ * the server answered it once with the clock it had. Over a hundred thousand
+ * auctions the soonest one ends within a second, so the top of that page is
+ * expired before it finishes painting, and asking again on a timer cannot fix
+ * it: whatever the interval, the newest answer's first row is also about to
+ * end.
+ *
+ * What the browser has that the response does not is the current time. So it
+ * reorders the vehicles it was given and changes nothing else: no vehicle is
+ * added, none is dropped, the count and the paging stay the server's, and a
+ * page it did not rank this way, sorted by price or by bids, is left exactly as
+ * it arrived.
+ */
+export function byAuctionUrgency<T extends Pick<Vehicle, 'auction_starts_at' | 'auction_ends_at'>>(
+  vehicles: readonly T[],
+  now: number
+): T[] {
+  return [...vehicles].sort((a, b) => urgencyRank(a, now) - urgencyRank(b, now));
+}
+
+/** Live auctions sort by when they end, and everything else sorts after them. */
+function urgencyRank(
+  vehicle: Pick<Vehicle, 'auction_starts_at' | 'auction_ends_at'>,
+  now: number
+): number {
+  // The same two bands the server uses, wide enough that no epoch millisecond
+  // can reach the next one.
+  const upcomingBand = 1_000_000_000_000_000;
+  const endedBand = 2_000_000_000_000_000;
+
+  switch (auctionStatus(vehicle.auction_starts_at, vehicle.auction_ends_at, now)) {
+    case 'live':
+      return vehicle.auction_ends_at;
+    case 'upcoming':
+      return upcomingBand + vehicle.auction_starts_at;
+    default:
+      return endedBand - vehicle.auction_ends_at;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Reserve state
 // ---------------------------------------------------------------------------

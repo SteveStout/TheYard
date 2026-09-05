@@ -119,6 +119,48 @@ in a list that already scrolls. And one test asks the browser rather than the
 DOM: for every span in the rail, whether its text is wider than the box it was
 given. That one would have failed before, and it is the only kind that could.
 
+## Correction, 2026-09-04: the mechanism worked and the front page did not
+
+The decision above says the front page stays live-looking for as long as it is
+open. It was shipped, and then it was measured, and that sentence is wrong.
+
+A browser was pointed at the live site and left there. The refresh fires exactly
+as designed: five requests for `/api/vehicles` in seventy seconds, at 0, 15, 30,
+46 and 61 seconds, on a tab the browser reports as visible. And after seventy
+seconds the top four cards read `Ended Sep 4, 7:50 p.m.`
+
+Both facts are true, which is the whole lesson. The mechanism does what it was
+built to do and the outcome it was built for does not follow, because the
+premise underneath it was never checked: that a fresh answer has a fresh first
+row. Over a hundred thousand auctions the soonest one ends inside a second, so
+the first row of every answer is expiring while it paints. A shorter interval
+asks more often for a page with the same problem, and an interval short enough
+to matter is a request every second or two.
+
+This is the same shape as ADR-042's correction, arrived at from the other side.
+There the explanation was wrong and the measurement was right. Here the
+mechanism is right and the claim made for it was not measured at all.
+
+### What actually fixes it
+
+The browser has the one thing the response does not: the current time.
+
+So the page it already holds gets reordered, by the same ranking the server
+applied, on the browser's clock: live first and closest to ending, then
+upcoming, then ended. `byAuctionUrgency` is `VehicleOrdering.EndingSoonestRank`
+with the same two bands, and it is a reorder rather than a filter, so no vehicle
+is added, none is dropped, the count and the paging stay the server's, and a
+page ranked by price or by bids is left exactly as it arrived.
+
+The refresh stays. It is what brings new lots in as old ones leave, and it is
+what the reorder runs on. Neither one is sufficient: without the refresh the
+page runs out of live auctions, and without the reorder the dead ones sit at the
+top between refreshes.
+
+The claim this time is narrower and it is the one that was measured: under the
+ending-soonest sort, an auction that ends while the page is open moves out of
+the way within a second, without a request.
+
 ## Consequences
 
 - The front page stays live-looking for as long as it is open, and a card is
@@ -131,7 +173,7 @@ given. That one would have failed before, and it is the only kind that could.
 
 ## Files
 
-- [`src/lib/auction.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auction.ts): `nextAuctionBoundary`, and why the boundary is the moment worth asking at.
+- [`src/lib/auction.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auction.ts): `nextAuctionBoundary`, and why the boundary is the moment worth asking at, and `byAuctionUrgency`, which is why asking was not enough.
 - [`src/lib/auction.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auction.test.ts): what it returns, including the two cases that make it stop asking.
 - [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the timer, the floor, and the hidden tab.
 - [`api/TheYard.Domain/VehicleOrdering.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleOrdering.cs): the ranking that was never wrong.

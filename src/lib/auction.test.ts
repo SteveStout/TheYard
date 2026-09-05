@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   auctionStatus,
   auctionTiming,
+  byAuctionUrgency,
   currentPrice,
   nextAuctionBoundary,
   reserveState,
@@ -134,5 +135,66 @@ describe('nextAuctionBoundary', () => {
     // card has already flipped and there is nothing left to wait for.
     expect(auctionStatus(NOW - DAY_MS, NOW, NOW)).toBe('ended');
     expect(nextAuctionBoundary([at(NOW - DAY_MS, NOW)], NOW)).toBeNull();
+  });
+});
+
+describe('byAuctionUrgency', () => {
+  /**
+   * The server ranks an ending-soonest page once, with the clock it had. This
+   * is the same ranking on the browser's clock, over the page it was sent, and
+   * it exists because the first row of that page expires while somebody is
+   * reading it.
+   */
+  const lot = (id: string, startsAt: number, endsAt: number) =>
+    makeVehicle({ id, auction_starts_at: startsAt, auction_ends_at: endsAt });
+
+  it('puts live first, then upcoming, then ended', () => {
+    const ended = lot('ended', NOW - DAY_MS, NOW - 1_000);
+    const upcoming = lot('upcoming', NOW + 60_000, NOW + DAY_MS);
+    const live = lot('live', NOW - DAY_MS, NOW + 30_000);
+
+    expect(byAuctionUrgency([ended, upcoming, live], NOW).map((v) => v.id)).toEqual([
+      'live',
+      'upcoming',
+      'ended',
+    ]);
+  });
+
+  it('orders live by which ends first, and ended by which ended last', () => {
+    const soon = lot('soon', NOW - DAY_MS, NOW + 5_000);
+    const later = lot('later', NOW - DAY_MS, NOW + 50_000);
+    const justEnded = lot('just-ended', NOW - DAY_MS, NOW - 1_000);
+    const longEnded = lot('long-ended', NOW - DAY_MS, NOW - 90_000);
+
+    expect(byAuctionUrgency([later, longEnded, justEnded, soon], NOW).map((v) => v.id)).toEqual([
+      'soon',
+      'later',
+      'just-ended',
+      'long-ended',
+    ]);
+  });
+
+  it('moves a lot that ends without adding or dropping one', () => {
+    const page = [
+      lot('a', NOW - DAY_MS, NOW + 2_000),
+      lot('b', NOW - DAY_MS, NOW + 40_000),
+      lot('c', NOW - DAY_MS, NOW + 80_000),
+    ];
+
+    expect(byAuctionUrgency(page, NOW).map((v) => v.id)).toEqual(['a', 'b', 'c']);
+    // Five seconds later "a" is over. It goes to the back; nothing else moves,
+    // and the page still holds three vehicles, because membership is the
+    // server's and this only decides what order they are read in.
+    const after = byAuctionUrgency(page, NOW + 5_000);
+    expect(after.map((v) => v.id)).toEqual(['b', 'c', 'a']);
+    expect(after).toHaveLength(page.length);
+  });
+
+  it('leaves the page it was given alone', () => {
+    const page = [lot('a', NOW - DAY_MS, NOW + 90_000), lot('b', NOW - DAY_MS, NOW + 2_000)];
+
+    byAuctionUrgency(page, NOW);
+
+    expect(page.map((v) => v.id)).toEqual(['a', 'b']);
   });
 });

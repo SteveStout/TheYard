@@ -8,7 +8,7 @@ import {
   type VehiclePage,
 } from './lib/data';
 import type { Vehicle } from './lib/types';
-import { nextAuctionBoundary } from './lib/auction';
+import { byAuctionUrgency, nextAuctionBoundary } from './lib/auction';
 import {
   EMPTY_FILTERS,
   filtersFromSearchParams,
@@ -106,11 +106,26 @@ export default function App() {
   // out has to fetch a different one rather than keep showing the old badges.
   const { bids, placeBid, buyNow, resetBids } = useBids(refreshList, account.email);
 
-  /** The current page with the buyer's bids layered on for instant feedback. */
-  const visibleVehicles = useMemo(
-    () => page.vehicles.map((vehicle) => applyBidRecord(vehicle, bids[vehicle.id])),
-    [page.vehicles, bids]
-  );
+  // #region visible-order
+  /**
+   * The current page with the buyer's bids layered on for instant feedback,
+   * and, under the ending-soonest sort, reordered on the browser's clock.
+   *
+   * The reorder is the same ranking the API applied, re-applied to the page it
+   * already sent. Re-asking the server on a timer was not enough and could not
+   * be: over a hundred thousand auctions the soonest one ends inside a second,
+   * so every answer's first row is expiring as it paints, and a shorter
+   * interval only means asking more often for a page with the same problem.
+   * The browser holds the one thing the response does not, which is the time
+   * now, so it moves an auction that has ended to where the server would have
+   * put it. Membership, the count and the paging stay the server's, and any
+   * other sort is left exactly as it arrived.
+   */
+  const visibleVehicles = useMemo(() => {
+    const withBids = page.vehicles.map((vehicle) => applyBidRecord(vehicle, bids[vehicle.id]));
+    return sort === 'ending-soonest' ? byAuctionUrgency(withBids, now) : withBids;
+  }, [page.vehicles, bids, sort, now]);
+  // #endregion visible-order
 
   // Dropdown options come from the API (the page only ever holds a slice of
   // the dataset). Missing facets degrade to empty dropdowns, not a crash.
