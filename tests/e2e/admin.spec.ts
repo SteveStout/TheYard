@@ -19,6 +19,10 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   await expect(page.getByTestId('telemetry-card')).toBeVisible();
   await expect(page.getByTestId('telemetry-card')).toContainText('Traffic, last hour');
   await expect(page.getByTestId('timing-card')).toContainText('Path');
+  // The status summary reads as a sentence. It used to render "367 of 200",
+  // which is two numbers and no relationship between them, on the page whose
+  // whole job is being readable by somebody who did not write it.
+  await expect(page.getByTestId('timing-card')).toContainText(/Answers: \d+ with status \d{3}/);
   await expect(page.getByTestId('sql-card')).toBeVisible();
   await expect(page.getByTestId('log-card')).toContainText('Category');
   await page.getByRole('button', { name: 'Back to inventory' }).click();

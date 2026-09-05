@@ -301,7 +301,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
         </article>
         {/* #endregion telemetry-card */}
 
-        <article className={styles.card} data-testid="errors-card">
+        <article className={`${styles.card} ${styles.wideCard}`} data-testid="errors-card">
           <h2 className={styles.cardTitle}>Recent errors</h2>
           {errors === null ? (
             <p className={styles.muted}>Loading…</p>
@@ -355,7 +355,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
                 {metrics.by_status.length === 0
                   ? 'nothing recorded yet'
                   : metrics.by_status
-                      .map((entry) => `${entry.count} of ${entry.status}`)
+                      .map((entry) => `${entry.count} with status ${entry.status}`)
                       .join(', ')}
                 .
               </li>

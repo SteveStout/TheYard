@@ -105,7 +105,7 @@ test('the About section shows the README in-app and links the résumé PDF', asy
   ).toBeVisible();
   await page.keyboard.press('Escape');
 
-  await nav.getByRole('button', { name: 'Coding and commenting style' }).click();
+  await nav.getByRole('button', { name: 'Coding and comments' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Coding and Commenting Style' })
   ).toBeVisible();

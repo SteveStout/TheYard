@@ -49,6 +49,11 @@
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   max-width: 560px;
+  /* Centred. A 560px card pinned to the left of a 1200px canvas reads as a
+     layout that ran out before it finished; the same card in the middle reads
+     as a sign-in page. Nothing else on this view competes with it. */
+  margin-inline: auto;
+  width: 100%;
 }
 
 .identity {

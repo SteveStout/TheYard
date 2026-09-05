@@ -1,6 +1,6 @@
 # ADR: Broken windows, and the rule that answers them
 
-Status: accepted, 2026-09-03. Asked for by name. Written with this repository's
+Status: accepted, 2026-09-04. Asked for by name. Written with this repository's
 own week as the evidence, because a record about discipline that cites nothing
 is the exact thing it is warning about.
 

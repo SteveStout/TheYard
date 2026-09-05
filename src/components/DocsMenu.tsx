@@ -311,7 +311,7 @@ export const DOCS: Record<
   },
   style: {
     title: 'Coding and Commenting Style',
-    menuLabel: 'Coding and commenting style',
+    menuLabel: 'Coding and comments',
     url: '/api/docs/style',
     kind: 'overview',
   },

@@ -1,6 +1,6 @@
 # ADR: The listing that went stale while you looked at it
 
-Status: accepted, 2026-09-03. Found by taking a screenshot of the front page at
+Status: accepted, 2026-09-04. Found by taking a screenshot of the front page at
 three widths and looking at it, which nothing else in this project does.
 
 ## What it looked like

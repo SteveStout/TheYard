@@ -47,6 +47,13 @@
   gap: var(--space-4);
 }
 
+/* Four cards in a three-track grid leave one alone on the second row with two
+   thirds of the width empty, which reads as something failing to load rather
+   than as a layout. The fourth takes the row it is on. */
+.wideCard {
+  grid-column: 1 / -1;
+}
+
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
