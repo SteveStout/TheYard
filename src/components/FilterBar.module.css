@@ -94,13 +94,31 @@
   color: var(--color-text-faint);
 }
 
-/* On a phone the fields grid is two tracks of about 150 pixels, which leaves
-   each price box around sixty and clips the word "Max" inside its own input.
-   Below that width the pair takes the row it needs. */
+/* Two boxes and a dash do not fit in one track of a grid sized for one control.
+   At a laptop width that left about seventy-five pixels an input and the word
+   "Max" came out as "Ma", which is the kind of thing that reads as a broken
+   page rather than as a narrow one. The pair takes two tracks, and the whole
+   row on a phone, where there are only two tracks to take. */
+.priceField {
+  grid-column: span 2;
+}
+
 @media (max-width: 30rem) {
   .priceField {
     grid-column: 1 / -1;
   }
+}
+
+/* Spinners cost about twenty pixels an input and nobody has ever entered a
+   price by clicking one. Typing and the arrow keys are untouched. */
+.priceInput {
+  appearance: textfield;
+}
+
+.priceInput::-webkit-outer-spin-button,
+.priceInput::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
 .priceInput {

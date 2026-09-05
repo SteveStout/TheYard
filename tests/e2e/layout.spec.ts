@@ -31,6 +31,17 @@ test.describe('the inventory grid at a laptop width', () => {
     expect(third).toBeGreaterThan(first);
   });
 
+  test('leaves the price boxes wide enough to hold the word inside them', async ({ page }) => {
+    await openTheYard(page);
+
+    const max = await page.getByLabel('Maximum price').boundingBox();
+
+    // "Max" plus the padding either side. It was seventy-five, and the box
+    // rendered "Ma" with the rest cut off, on the most ordinary laptop width
+    // there is.
+    expect(max?.width ?? 0).toBeGreaterThan(90);
+  });
+
   test('takes the third column back when the rail collapses', async ({ page }) => {
     await openTheYard(page);
     await page.getByRole('button', { name: 'Collapse the sidebar' }).click();
