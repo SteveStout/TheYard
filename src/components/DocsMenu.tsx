@@ -772,6 +772,19 @@ export function DocDialog({
   // #endregion derived-error
   /** Same content as docHtml, readable inside the effect without a stale closure. */
   const cache = useRef<Partial<Record<DocKey, string>>>({});
+  // #region copy-link
+  // Records got addresses in 1.0.0.78 and nothing on the page said so. A
+  // feature nobody can find is a feature nobody has. The label carries the
+  // whole state: idle, copied, or the browser refusing, which happens on an
+  // insecure origin and when the clipboard permission is denied, and in that
+  // case the address bar already holds the link and says so.
+  const [copied, setCopied] = useState<'no' | 'yes' | 'refused'>('no');
+  useEffect(() => {
+    if (copied === 'no') return;
+    const id = window.setTimeout(() => setCopied('no'), 2500);
+    return () => window.clearTimeout(id);
+  }, [copied]);
+  // #endregion copy-link
   const activeDoc: DocKey = request?.key ?? 'readme';
 
   useEffect(() => {
@@ -813,6 +826,22 @@ export function DocDialog({
     >
       <div className={styles.dialogHeader}>
         <h2 className={styles.dialogTitle}>{DOCS[activeDoc].title}</h2>
+        <button
+          type="button"
+          className={styles.copyLink}
+          onClick={() => {
+            void navigator.clipboard
+              ?.writeText(window.location.href)
+              .then(() => setCopied('yes'))
+              .catch(() => setCopied('refused'));
+          }}
+        >
+          {copied === 'yes'
+            ? 'Link copied'
+            : copied === 'refused'
+              ? 'It is in the address bar'
+              : 'Copy link'}
+        </button>
         <button
           type="button"
           className={styles.close}

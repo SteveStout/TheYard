@@ -271,3 +271,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* One quiet line under the gallery, the size of a caption, because it is one. */
+.provenance {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-faint);
+  font-size: var(--text-xs);
+}

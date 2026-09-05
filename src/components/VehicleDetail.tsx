@@ -114,6 +114,18 @@ export function VehicleDetail({
                 ))}
               </ul>
             )}
+            {/* #region photo-provenance */}
+            {/* Said on the page, not only in the README. The catalogue is
+                synthetic and the photographs are vendored stock, chosen from
+                the pool for the body style, so a Tesla listing can carry a
+                photograph of another manufacturer's SUV. A reader who notices
+                that before being told it is deliberate has been given a reason
+                to doubt everything else on the page, and the fix is one
+                sentence rather than fifty thousand photographs. */}
+            <p className={styles.provenance}>
+              Stock photography, chosen for the body style. Not photographs of this vehicle.
+            </p>
+            {/* #endregion photo-provenance */}
           </section>
 
           {vehicle.title_status !== 'clean' && (

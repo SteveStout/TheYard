@@ -60,6 +60,11 @@ test('tile clicks are GET navigation: URL updates, Back works, deep links restor
   await page.locator('article h3 button').first().click();
   await expect(page).toHaveURL(/vehicle=/);
   await expect(page.getByText('Specifications')).toBeVisible();
+  // The catalogue is synthetic and the photographs are vendored stock chosen
+  // for the body style, so the page says so where somebody looking at a Tesla
+  // listing with another manufacturer's SUV in it would otherwise draw their
+  // own conclusion.
+  await expect(page.getByText('Not photographs of this vehicle.')).toBeVisible();
   const detailUrl = page.url();
 
   // The browser's Back button returns to the filtered list.

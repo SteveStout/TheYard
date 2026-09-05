@@ -78,11 +78,16 @@ where you were.
 - A stale link lands on the inventory rather than an error.
 - The sidebar no longer owns which document is showing, which makes it one
   fewer place where the address bar and the page can drift apart.
+- The record says it has a link. Addresses shipped first and nothing on the page
+  mentioned them, which is a feature nobody has: the dialog's header now carries
+  a Copy link button beside Close, and when the browser refuses the clipboard,
+  on an insecure origin or a denied permission, the label says the link is in
+  the address bar, which it is.
 
 ## Files
 
 - [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the slug both directions, and the dialog that now follows the state.
 - [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the address bar, the pushed entry, and the close that knows whether it pushed one.
 - [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx): what is left of it, which is turning a key into a request.
-- [`tests/e2e/records.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/records.spec.ts): the link, the Back button, the keyboard, and the address that names nothing.
+- [`tests/e2e/records.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/records.spec.ts): the link, the Back button, the keyboard, the copy button, and the address that names nothing.
 - [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the slugs the address bar borrows, held to the catalogue.

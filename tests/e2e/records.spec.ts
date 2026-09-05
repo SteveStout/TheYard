@@ -49,6 +49,25 @@ test.describe('a record has an address', () => {
     await expect(page).not.toHaveURL(/[?&]doc=/);
   });
 
+  test('the record offers its own link, because nothing else says it has one', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await openTheYard(page, '/?doc=adr-changelog');
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Copy link' }).click();
+
+    // The label is the whole state. A feature nobody can find is a feature
+    // nobody has, and a record's address is only useful if the page admits it
+    // exists.
+    await expect(dialog.getByRole('button', { name: 'Link copied' })).toBeVisible();
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).toContain('doc=adr-changelog');
+  });
+
   test('an address that names no record opens nothing and breaks nothing', async ({ page }) => {
     await openTheYard(page, '/?doc=not-a-record');
 
