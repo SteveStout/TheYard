@@ -129,26 +129,76 @@ then.
 
 ## The numbers
 
-Measured in ADR: Measuring both stores, on the same day, against the real
-account, with the method from `SearchIndexBenchmarkTests`: paired rounds, the
-median of the per-round differences. Until that record exists, the cells below
-are the estimates from Microsoft's published RU rules and are marked so.
+Measured on 2026-09-08 against the real account, the `catalogue` container
+holding 100,000 documents on one physical partition. Two views of the same
+seven queries: from the container itself, in region, which is what the Admin
+tab's card shows, and from Steve's machine in Missouri through
+`api/TheYard.Experiment`, ten paired rounds, median of each, where the
+network is most of every millisecond and the request charge is the same
+either way because the charge is the store's and not the network's.
 
-| query on `catalogue`, 100,000 documents | partitions | RU | ms |
-| --- | --- | --- | --- |
-| point read: id and make known | 1 logical | estimate 1 | |
-| `make = 'Ford'`, ending soonest, page of 100 | 1 logical | estimate | |
-| `province = 'Ontario'`, ending soonest, page of 100 | all (1 physical) | estimate | |
-| no filter, ending soonest, page of 100 | all (1 physical) | estimate | |
-| `id = @id` without the make | all (1 physical) | estimate 2 to 3 | |
-| free text, `"mazda cx"` | all (1 physical) | estimate | |
+| query on `catalogue`, 100,000 documents | partitions | RU | ms in region | ms from Missouri | documents |
+| --- | --- | --- | --- | --- | --- |
+| point read: id and make known | 1 logical | 1.00 | 6 | 58 | 1 |
+| `make = 'Ford'`, by price, page of 100 | 1 logical | 5.86 | 19 | 192 | 100 |
+| `province = 'Ontario'`, by price, page of 100 | all (1 physical) | 5.98 | 41 | 246 | 100 |
+| no filter, by price, page of 100 | all (1 physical) | 5.70 | 14 | 246 | 100 |
+| SUV, clean title, grade 4 or better, page of 100 | all (1 physical) | 6.53 | 13 | 234 | 100 |
+| count of Ford (an aggregate inside one partition) | 1 logical | 3.00 | 11 | 60 | 8,000 |
+| `id = @id`, make unknown | all (1 physical) | 2.83 | 4 | 59 | 1 |
+| free text, `CONTAINS` on the model | all (1 physical) | 8.12 | 15 | 230 | 100 |
+
+The same seven queries as the Admin tab's card shows them, run by the
+container itself a few minutes later, warm:
+
+![The partition key, live: the seven queries with their partitions, request charge, time and document count](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cosmos-cosmos-experiment.png)
+
+Three things to read out of that.
+
+**The point read is the cheapest thing in the table by a factor of three
+against the same document fetched by a query that does not know the make**:
+1.00 RU against 2.83. That is the cost of a partition key the address does not
+carry, and it is the number behind the trade-off named above. On the parity
+path it never arises; on a site that served pages from this container it
+would be paid on every vehicle page.
+
+**A page of a hundred documents costs about six request units whether the
+query names the make or not.** Pinned and fanned out are within a request unit
+of each other, and the record says why before the table does: with 82 MB on
+one physical partition, a cross-partition query fans out to one place, and the
+charge is the index lookup and the hundred documents loaded, not a gathering
+from several servers. The wall-clock difference in region, 19 ms pinned against
+41 ms for the province query, is the query engine planning and merging a
+fan-out that has nowhere to go. This is the honest shape of the partition key
+question at this size, and the teaching record says what changes at fifty
+gigabytes or ten thousand request units a second.
+
+**The free-text scan is the dearest query and still cheap**, 8.12 RU, because
+`model` is one of the nine indexed paths and `CONTAINS` can use it. The
+in-memory index the site actually uses answers the same question in under a
+millisecond (ADR: The search index), and that comparison is the one that
+decides where a search should run.
 
 And the seed, both ways, which is the headline:
 
-| seed of 100,000 documents | RU | minutes at 1000 RU/s |
-| --- | --- | --- |
-| default indexing policy, every path | estimate 1,000,000 | estimate 17 |
-| minimal policy, the filter and sort paths only | estimate 600,000 | estimate 10 |
+| seed of 100,000 documents | RU | RU per document | minutes | documents per second | failed |
+| --- | --- | --- | --- | --- | --- |
+| tuned policy, nine paths | 884,479 | 8.84 | 12.8 | 130 | 0 |
+| default policy, every path | 1,471,488 for 91,593 | 16.07 | 21.2 | 72 | 8,407 |
+
+The default policy costs 1.8 times as much per write and buys nothing on any
+of the seven queries: the same set against `catalogue-default` came back
+within half a request unit of the tuned container on every row (6.26 against
+5.86 for the pinned page, 6.39 against 5.98 for the province page). The seed
+against the default policy also did not finish: 8,407 documents were refused
+after the SDK's thirty retries over two minutes on a 1000 RU/s database that
+was being asked for twice that, which is what throttling looks like from the
+client, and the record keeps the number rather than re-running it quietly.
+
+Both seeds ran faster than the throughput arithmetic allows. 884,479 RU at
+1000 RU/s is 14.7 minutes and the tuned seed took 12.8; the service lets an
+idle database accumulate burst capacity and spend it, which is worth knowing
+before reading any short measurement against a provisioned account.
 
 ## Files
 

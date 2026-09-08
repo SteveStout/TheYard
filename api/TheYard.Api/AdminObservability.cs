@@ -217,6 +217,8 @@ public sealed class HttpCurrentRequest(IHttpContextAccessor accessor) : ICurrent
         string path = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
         return $"{context.Request.Method} {(path.Length > 200 ? path[..200] + "..." : path)}";
     }
+
+    public string? Identify() => accessor.HttpContext?.TraceIdentifier;
 }
 
 /// <summary>One endpoint's timing, as the Admin tab shows it.</summary>

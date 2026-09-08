@@ -20,7 +20,7 @@ import { applyBidRecord, useBids } from './hooks/useBids';
 import { useNow } from './hooks/useNow';
 import { AdminPanel } from './components/AdminPanel';
 import { AccountPanel } from './components/AccountPanel';
-import { fetchAccount, SIGNED_OUT, type Account } from './lib/auth';
+import { accountQuestion, SIGNED_OUT, type Account } from './lib/auth';
 import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
 import { docKeyForSlug, docSlug, type DocKey } from './components/DocsMenu';
 import { BrandMark } from './components/BrandMark';
@@ -149,11 +149,24 @@ export default function App() {
   // Who is signed in, if anyone. The session is an httpOnly cookie, so the
   // page cannot read it and has to ask (ADR: Accounts and per-user bids). A
   // failure here leaves the visitor signed out, which is the safe answer.
+  //
+  // The answer applies only if nothing has changed the account while the
+  // question was out. A visitor who registers before it comes back would
+  // otherwise be signed out again by a stale "nobody" landing after their
+  // fresh "you" (the addendum on that record has the run that showed it).
+  // Every change the page makes itself goes through changeAccount so the
+  // question can tell.
+  const [whoIsSignedIn] = useState(accountQuestion);
+  const changeAccount = useCallback(
+    (next: Account) => {
+      whoIsSignedIn.changed();
+      setAccount(next);
+    },
+    [whoIsSignedIn]
+  );
   useEffect(() => {
-    fetchAccount()
-      .then(setAccount)
-      .catch(() => {});
-  }, []);
+    whoIsSignedIn.ask(setAccount).catch(() => {});
+  }, [whoIsSignedIn]);
   // #endregion who
 
   // Filtering, sorting, and paging are server-side: every change becomes a
@@ -723,7 +736,7 @@ export default function App() {
           ) : accountOpen ? (
             <AccountPanel
               account={account}
-              onAccountChange={setAccount}
+              onAccountChange={changeAccount}
               onOpenVehicle={openVehicleById}
               onBack={closeAccount}
             />

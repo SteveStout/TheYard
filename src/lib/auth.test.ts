@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  accountQuestion,
   fetchAccount,
   fetchHistory,
   loginRequest,
   logoutRequest,
   registerRequest,
   SIGNED_OUT,
+  type Account,
 } from './auth';
 
 /**
@@ -51,6 +53,49 @@ describe('fetchAccount', () => {
   it('reads signed out as signed out rather than as an error', async () => {
     fetchMock.mockResolvedValue(reply(401, {}));
     await expect(fetchAccount()).resolves.toEqual(SIGNED_OUT);
+  });
+});
+
+describe('accountQuestion', () => {
+  const signedIn: Account = { signedIn: true, email: 'a@example.com', memberSinceMs: 1 };
+
+  it('applies the answer when nothing changed while the question was out', async () => {
+    fetchMock.mockResolvedValue(
+      reply(200, { signed_in: true, email: 'a@example.com', member_since_ms: 1 })
+    );
+    const applied: Account[] = [];
+
+    await accountQuestion().ask((account) => applied.push(account));
+
+    expect(applied).toEqual([signedIn]);
+  });
+
+  it('drops an answer that lands after the page signed somebody in itself', async () => {
+    // The server is slow: the question is out, and the answer waits on us.
+    let answer!: (response: Response) => void;
+    fetchMock.mockReturnValue(new Promise<Response>((resolve) => (answer = resolve)));
+    const question = accountQuestion();
+    const applied: Account[] = [];
+
+    const asked = question.ask((account) => applied.push(account));
+    // Meanwhile the form registers, which is a change the page made itself.
+    question.changed();
+    // Now the stale answer arrives: nobody was signed in when it was asked.
+    answer(reply(401, {}));
+    await asked;
+
+    expect(applied).toEqual([]);
+  });
+
+  it('still applies an answer once a later question is asked after the change', async () => {
+    fetchMock.mockResolvedValue(reply(401, {}));
+    const question = accountQuestion();
+    question.changed();
+    const applied: Account[] = [];
+
+    await question.ask((account) => applied.push(account));
+
+    expect(applied).toEqual([SIGNED_OUT]);
   });
 });
 

@@ -43,6 +43,13 @@ public interface ISqlLog
 public interface ICurrentRequest
 {
     string? Describe();
+
+    /// <summary>
+    /// Something that tells this request apart from the next one to the same
+    /// path, for the store log's per-request arithmetic. The trace identifier,
+    /// on the API; null outside a request. Never shown on a page.
+    /// </summary>
+    string? Identify();
 }
 
 /// <summary>The port wired to nothing, for the tests and the design-time tools.</summary>
@@ -63,5 +70,7 @@ public sealed class NoCurrentRequest : ICurrentRequest
     private NoCurrentRequest() { }
 
     public string? Describe() => null;
+
+    public string? Identify() => null;
 }
 // #endregion sql-log-port

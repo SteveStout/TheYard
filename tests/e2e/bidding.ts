@@ -16,16 +16,58 @@ import { signIn } from './signIn';
 // passing test, and the two of them should not have had two answers to the same
 // problem.
 
-/** Open a live vehicle whose window ends hours out and bid the minimum. */
+// #region room-to-answer
+/** The fields of a listing row that decide whether the room can still answer. */
+interface Candidate {
+  id: string;
+  starting_bid: number;
+  current_bid: number | null;
+  buy_now_price: number | null;
+  auction_ends_at: number;
+}
+
+/** Two increments at the widest tier ($500 from $20,000 up): the bid, and the answer. */
+const TWO_INCREMENTS = 1_000;
+
+/**
+ * Whether the room can still answer a minimum bid on this vehicle.
+ *
+ * The room stops at twice the opening ask and never crosses buy-now (ADR:
+ * Competing bidders), so a vehicle standing at its ceiling takes a human's
+ * bid and gets no answer, which is correct and is not what a test of the
+ * answer wants to open. On a fresh store the first card always qualifies. On
+ * the document store the test containers keep every run's bids for a day, so
+ * the most-bid vehicle climbs a few increments per run until it stands exactly
+ * there: measured at $78,000 against a $73,000 ceiling after a day of runs,
+ * with the room silent and the test waiting forty-five seconds for it (ADR: A
+ * second store on Cosmos DB). Five minutes on the clock is the same margin the
+ * measurement script uses.
+ */
+export function roomCanAnswer(vehicle: Candidate, nowMs: number): boolean {
+  const price = vehicle.current_bid ?? vehicle.starting_bid;
+  const underCeiling = price + TWO_INCREMENTS < vehicle.starting_bid * 2;
+  const underBuyNow =
+    vehicle.buy_now_price === null || price + TWO_INCREMENTS < vehicle.buy_now_price;
+  const timeLeft = vehicle.auction_ends_at - nowMs > 5 * 60_000;
+  return underCeiling && underBuyNow && timeLeft;
+}
+// #endregion room-to-answer
+
+/** Open a live vehicle the room can still answer on, and bid the minimum. */
 export async function bidTheMinimum(page: Page): Promise<void> {
   // Bidding belongs to an account now (ADR: Accounts and per-user bids), and a
   // fresh one per test is also what keeps these two from seeing each other's
   // bids. The room is still shared, which is the point of the second test.
   await signIn(page);
-  // Most bids first: the default sort's top card can expire mid-test.
-  await openTheYard(page, '/?status=live&sort=most-bids');
-  await page.waitForSelector('article');
-  await page.locator('article h3 button').first().click();
+  // Most bids first: the default sort's top card can expire mid-test. And not
+  // the first card regardless: the first the room can still answer on.
+  const listing = await page.request.get('/api/vehicles?status=live&sort=most-bids&limit=25');
+  expect(listing.ok(), await listing.text()).toBe(true);
+  const { vehicles } = (await listing.json()) as { vehicles: Candidate[] };
+  const now = Date.now();
+  const open = vehicles.find((vehicle) => roomCanAnswer(vehicle, now));
+  expect(open, 'none of the 25 most-bid live vehicles has room under the ceiling').toBeDefined();
+  await openTheYard(page, `/?vehicle=${open!.id}`);
   await expect(page.getByText('Specifications')).toBeVisible();
 
   // Read the minimum, bid it, and if the server refuses, read it again.

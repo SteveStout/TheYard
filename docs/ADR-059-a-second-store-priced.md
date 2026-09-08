@@ -309,10 +309,13 @@ SQLite. Three kinds of test cover the new store:
 - **Definition tests**, which open no connection: the conformance test above,
   the port surface test, the document shape tests.
 - **Store tests against the real account**, which run on the runner as Steve's
-  signed-in principal against the `tests-` containers and are skipped, not
-  failed, when `Cosmos:AccountEndpoint` is absent. The same shape as the SQL
-  Server tests that assert the schema without a server, one step further out.
-- **The browser suite, twice.** The 54 specs run against a local API started with
+  signed-in principal against the `tests-` containers. They carry the trait
+  `Store=cosmos` and CI filters them out by it, because a skipped test is a
+  broken window in this repository and CI has no endpoint to run them against;
+  on the runner they fail loudly if the endpoint is missing. The same shape as
+  the SQL Server tests that assert the schema without a server, one step
+  further out.
+- **The browser suite, twice.** The 55 specs run against a local API started with
   the Cosmos configuration as well as without it. Same tests, both stacks, which
   is the sentence the goal asks for.
 
@@ -382,6 +385,33 @@ visitor, so both interview questions have a number behind them.
   ADR: Two providers explained, each get an addendum narrowing them to the
   relational side and pointing here, rather than being left to disagree quietly.
 
+## Addendum, 2026-09-08: the estimates against the measurements
+
+The table in "The arithmetic, on the parity path" was written before the
+account existed. The measured numbers, from ADR: Measuring both stores and the
+container's own store log:
+
+| operation | estimated | measured |
+| --- | --- | --- |
+| seed, 200 vehicles + 50 photos, once | 1,500 to 2,500 RU, two to three seconds | 1,380 RU in 2,154 ms |
+| cold start: read 250 documents | 400 to 700 RU, under one second | 1,190 ms for the catalogue load (charge in the store log) |
+| one accepted bid | 6 to 8 RU | 6.52 RU (a miss and a create); 11.29 RU to raise it |
+| one sign-in | 2 to 8 RU | 2.00 RU, every time |
+| one registration | 10 to 12 RU | 13.04 RU |
+
+The document weighs what the record said it would (5.52 RU to write a vehicle,
+which is the "about five" the rule of thumb gives for a kilobyte with a minimal
+index), and the estimates were within a request unit or two everywhere except
+the seed, which came in under. The 100,000-document experiment came in over:
+8.84 RU a document against the estimated 6, and 12.8 minutes against 10, with
+the reasons in ADR: The partition key.
+
+The fork was taken as recommended: the parity shape for the site, the
+experiment behind an Admin card. The running monthly cost, from the measured
+charges rather than the estimated ones, is $0.00 on the free tier, and the
+whole measurement session, twenty rounds of everything a visitor does, cost
+1,096 request units, which would be a twenty-seventh of a cent on serverless.
+
 ## Addendum, 2026-09-08: the version bump that took the live site to files
 
 1.0.0.90 rolled both containers. The Cosmos DB one came up healthy after a
@@ -419,6 +449,39 @@ Two lessons, both already in this repository's records and both relearned:
 a transitive version bump is a change to every project in the graph, not to
 the one that asked for it; and a number a record reasons from has to be the
 number the deploy actually sets.
+
+## Addendum, 2026-09-08: the store that remembers
+
+The browser suite's run on Cosmos DB went red once late in the day, on the
+test that watches the room answer a bid, after passing on every earlier ship.
+The room was silent for forty-five seconds. The reason was not the store's
+speed and not the room: it was that the store remembers.
+
+On SQLite every run starts from an empty file, so the vehicle with the most
+bids has had a handful of them, all placed that run. The `tests-` containers
+keep every run's bids for a day, and every run's bidding tests open the same
+most-bid vehicle and raise it a few increments. By the evening the 2021 Ram
+1500 at the top of that sort stood at $78,000 against an opening ask of
+$36,500, and the room stops at twice the opening ask (ADR: Competing bidders).
+A human could still bid on it, and did; the room, correctly, would not answer.
+Read off the test store with the API booted against it, not guessed.
+
+The fix is in the helper every bidding spec goes through: it reads the
+listing through the API and opens the first live vehicle the room can still
+answer on, with two increments of room under the ceiling and under buy-now and
+five minutes on the clock, instead of the first card regardless. On a fresh
+store that is the same card it always opened. The test that holds it is the
+market spec itself, run on the store whose top vehicle stands at its ceiling.
+
+```live path=tests/e2e/bidding.ts region=room-to-answer
+```
+
+What this says about the gate is worth keeping: a suite that runs against a
+store with a memory is a different suite from one that runs against a fresh
+file, and any test that assumes a quiet field will find that out on the day
+the field fills up. The one-day time to live keeps the containers from growing
+without bound; it does not make a run start clean, and nothing here pretends
+it does.
 
 ## Files
 

@@ -30,7 +30,8 @@ public sealed record StoreOperation(
     double RequestCharge,
     long DurationMs,
     string Outcome,
-    string? Request);
+    string? Request,
+    string? RequestId);
 
 /// <summary>The kinds of operation the store log distinguishes. Strings, because they are read by a page.</summary>
 public static class StoreOperationKind

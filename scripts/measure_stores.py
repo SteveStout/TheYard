@@ -100,7 +100,14 @@ def one_round(side: Side, round_number: int) -> None:
 
     status, listing = side.timed("listing page", "GET", f"/api/vehicles?limit=100&status=live&anchor_ms={anchor}")
     assert status == 200 and listing, f"{side.name}: listing answered {status}"
-    vehicle = next(v for v in listing["vehicles"] if v["auction_status"] == "live")
+    # The listing is sorted by ending soonest, so its first rows end within
+    # seconds and a bid on one of them arrives at an auction that has ended.
+    # Take a live one with at least five minutes left.
+    now_ms = int(time.time() * 1000)
+    vehicle = next(
+        v for v in listing["vehicles"]
+        if v["auction_status"] == "live" and v["auction_ends_at"] - now_ms > 5 * 60 * 1000
+    )
     vehicle_id = vehicle["id"]
 
     status, opened = side.timed("vehicle page", "GET", f"/api/vehicles/{vehicle_id}?anchor_ms={anchor}")

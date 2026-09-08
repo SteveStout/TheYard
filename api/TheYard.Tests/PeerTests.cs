@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TheYard.Api;
+using TheYard.Application;
 
 namespace TheYard.Tests;
 
@@ -122,6 +123,25 @@ public class PeerTests
     public void A_route_is_a_path_with_its_identifiers_taken_out(string path, string template) =>
         Assert.Equal(template, Routes.TemplateOf(path));
     // #endregion routes
+
+    // #region charges
+    [Fact]
+    public void Two_requests_to_one_path_are_two_samples_not_one_sum()
+    {
+        // The first version grouped by the path string and reported twenty
+        // sign-ins as one request that cost 34 RU. The trace identifier is what
+        // tells them apart; the path is what names the route.
+        StoreOperation Op(string id, double charge) => new(
+            DateTimeOffset.UtcNow, "users", "point read", "ReadItem", [], "pinned to the account", 1, charge, 1, "200", "POST /api/auth/login", id);
+        var charges = Routes.ChargesByRoute([Op("req-1", 1), Op("req-1", 1), Op("req-2", 1), Op("req-2", 1)]);
+
+        var login = Assert.Single(charges);
+        Assert.Equal("POST /api/auth/login", login.Route);
+        Assert.Equal(2, login.Requests);
+        Assert.Equal(2, login.RuP50);
+        Assert.Equal(2, login.OperationsPerRequest);
+    }
+    // #endregion charges
 
     /// <summary>A peer on the loopback that answers /api/admin/metrics with one canned document, after a delay if asked.</summary>
     private sealed class CannedPeer : IDisposable

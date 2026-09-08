@@ -42,6 +42,13 @@ flowchart LR
     SQL[("Azure SQL Database<br/>sqldb-theyard-ss, serverless, free limit<br/>catalogue, photo manifest, accounts, bids")]
   end
 
+  subgraph cosmos["Azure, resource group RG-THEYARD-SS, West US 2, the second container"]
+    ACI2["Container Instances<br/>aci-theyard-cosmos-ss, the same image"]
+    COSMOS[("Azure Cosmos DB<br/>cosmos-theyard-ss, free tier, no keys<br/>the same four things, as documents")]
+    ACI2 -->|managed identity| COSMOS
+    ACI2 <-->|/api/admin/peer, 2.5 s patience| ACI
+  end
+
   subgraph box["Inside the container"]
     API["ASP.NET Core minimal API, .NET 10"]
     SPA["React 19 bundle, served as static files"]
@@ -289,6 +296,8 @@ knows nothing about the ones around it.
 | `api/TheYard.Application` | The use cases: `InventoryService`, `BidService`, and the ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`) they read through. | Domain, Data |
 | `api/TheYard.Database` | The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is. | nothing |
 | `api/TheYard.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator. | Application, Domain, Data |
+| `api/TheYard.Infrastructure.Cosmos` | The same three ports and the account store over Azure Cosmos DB, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). | Application, Infrastructure |
+| `api/TheYard.Experiment` | A console tool: seeds the 100,000-document catalogue and runs the partition key's query set in paired rounds (ADR: The partition key). | Infrastructure, Infrastructure.Cosmos |
 | `api/TheYard.Migrations.Sqlite` | The SQLite schema's history, applied by the process that uses it. | Infrastructure |
 | `api/TheYard.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | all of the above |
 | `src/` | The browser: rendering, formatting, countdowns, URL state, one fetch seam. | the wire only |

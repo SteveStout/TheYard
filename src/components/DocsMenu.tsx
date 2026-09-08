@@ -93,6 +93,8 @@ export type DocKey =
   | 'adrAccountsDocuments'
   | 'adrStoreVisible'
   | 'adrBackends'
+  | 'adrMeasuringStores'
+  | 'adrCosmosExplained'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -616,6 +618,20 @@ export const DOCS: Record<
     kind: 'adr',
     number: '063',
   },
+  adrMeasuringStores: {
+    title: 'ADR: Measuring both stores',
+    menuLabel: 'ADR: Measuring both stores',
+    url: '/api/docs/adr-measuring-stores',
+    kind: 'adr',
+    number: '064',
+  },
+  adrCosmosExplained: {
+    title: 'ADR: Cosmos DB, explained for someone who knows SQL Server',
+    menuLabel: 'ADR: Cosmos DB, explained',
+    url: '/api/docs/adr-cosmos-explained',
+    kind: 'adr',
+    number: '065',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -735,6 +751,8 @@ export const MENUS: Record<
       { key: 'adrAccountsDocuments' },
       { key: 'adrStoreVisible' },
       { key: 'adrBackends' },
+      { key: 'adrMeasuringStores' },
+      { key: 'adrCosmosExplained' },
     ],
   },
   // #endregion records-menu

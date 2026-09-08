@@ -116,17 +116,19 @@ public static partial class Routes
     /// What each route costs the document store, from the operations the store
     /// log attributes to it: how many operations a request runs and the request
     /// units they add up to, as the median over the requests seen. Requests are
-    /// told apart by their path string, so two bids on the same vehicle are one
-    /// sample, which the card says.
+    /// told apart by their trace identifier, so twenty sign-ins are twenty
+    /// samples and not one sum. The first version grouped by the path string
+    /// and reported twenty sign-ins as one 34 RU request, which the first
+    /// measurement caught (ADR: Measuring both stores).
     /// </summary>
     public static IReadOnlyList<RouteCharge> ChargesByRoute(IReadOnlyList<StoreOperation> operations) =>
         operations
             .Where(operation => operation.Request is not null)
-            .GroupBy(operation => operation.Request!, StringComparer.Ordinal)
+            .GroupBy(operation => (operation.RequestId ?? operation.Request!, operation.Request!))
             .Select(perRequest =>
             {
-                var parts = perRequest.Key.Split(' ', 2);
-                string route = parts.Length == 2 ? Of(parts[0], parts[1]) : perRequest.Key;
+                var parts = perRequest.Key.Item2.Split(' ', 2);
+                string route = parts.Length == 2 ? Of(parts[0], parts[1]) : perRequest.Key.Item2;
                 return (Route: route, Operations: perRequest.Count(), Charge: perRequest.Sum(operation => operation.RequestCharge), CrossPartition: perRequest.Count(o => o.Partition.StartsWith("cross", StringComparison.Ordinal)));
             })
             .GroupBy(sample => sample.Route, StringComparer.Ordinal)

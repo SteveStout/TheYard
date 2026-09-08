@@ -60,6 +60,41 @@ export async function fetchAccount(signal?: AbortSignal): Promise<Account> {
   return toAccount((await response.json()) as AccountWire);
 }
 
+// #region late-answer
+/**
+ * The page asks who is signed in once, when it opens, and the answer can land
+ * after the visitor has already signed in through the form. Applied then, it
+ * signs them out again: "nobody" was true when the question went out and is
+ * stale by the time it comes back. The browser suite caught this once, under
+ * load, where the form is filled faster than the server answers, and the
+ * failure said only that the rail did not show the address.
+ *
+ * So the question remembers how many times the page has changed the account
+ * itself, and its answer applies only if that count still stands. The count
+ * is the whole mechanism: no timestamps, no cancelling, nothing to clean up.
+ */
+export interface AccountQuestion {
+  /** The page changed the account itself: a sign-in, a registration, a sign-out. */
+  changed(): void;
+  /** Ask the server, and apply the answer only if nothing changed while it was out. */
+  ask(apply: (account: Account) => void, signal?: AbortSignal): Promise<void>;
+}
+
+export function accountQuestion(): AccountQuestion {
+  let changes = 0;
+  return {
+    changed: () => {
+      changes += 1;
+    },
+    ask: async (apply, signal) => {
+      const asked = changes;
+      const answer = await fetchAccount(signal);
+      if (changes === asked) apply(answer);
+    },
+  };
+}
+// #endregion late-answer
+
 export type AuthResult = { ok: true; account: Account } | { ok: false; message: string };
 
 async function submit(url: string, email: string, password: string): Promise<AuthResult> {

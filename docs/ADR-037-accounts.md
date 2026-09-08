@@ -163,6 +163,45 @@ else on it; the fix is the same one that record already names.
   five runs against a quarter of headroom rather than asserting `with <=
   without` under a doc comment claiming to be loose.
 
+## Addendum, 2026-09-08: the answer that arrived late
+
+The browser suite runs three times before a version ships, and on the second
+run of 1.0.0.92 the account test went red once with nothing to go on but the
+rail not showing the address. The page snapshot Playwright keeps said more:
+the registration had answered 200, the heading with the address had been
+visible, and by the time the test looked at the rail the whole view had gone
+back to "Sign in to bid" with an empty form. Something had signed the new
+account out again, and nothing had asked it to.
+
+The page asks who is signed in once, when it opens, because the session is an
+httpOnly cookie the page cannot read. That question went out to a server that
+was running the whole suite at once, so it answered slowly, and in the gap the
+test filled the form and registered. "Nobody" was the true answer when the
+question was asked and a stale one by the time it landed, and it was applied
+as if it were current. A visitor on a slow connection who types fast can do
+the same thing to themselves; the suite only made it likely.
+
+The fix is that the question remembers how many times the page has changed the
+account itself, and its answer applies only if that count still stands. Every
+sign-in, registration and sign-out goes through one function that bumps the
+count, so the question can tell. There is no timestamp to compare and no
+request to cancel, and the test that holds it is three lines: ask, change,
+answer, and nothing applied.
+
+```live path=src/lib/auth.ts region=late-answer
+```
+
+```live path=src/App.tsx region=who
+```
+
+The first fix considered was to make the form wait for the question before it
+could submit, which would have hidden the defect behind a spinner and made
+every account view a little slower for a race that lasts milliseconds. The
+second was to cancel the question when the form submits, which handles the one
+order of events that had been seen and not the sign-out that follows a
+registration inside the same window. Counting changes handles every order the
+same way.
+
 ## Files
 
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the token, the cookie, and who is asking.
@@ -174,3 +213,6 @@ else on it; the fix is the same one that record already names.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the proof.
 - [`docs/ADR-038-identity-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-038-identity-explained.md): the same setup, walked at a new developer's level.
 - [`docs/ADR-033-relational-store.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-033-relational-store.md): where bids got somewhere to live.
+- [`src/lib/auth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.ts): the account seam in the browser, and the question that ignores a late answer.
+- [`src/lib/auth.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.test.ts): the seam's tests, including the late answer.
+- [`tests/e2e/account.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/account.spec.ts): the form end to end, the run that found the late answer.

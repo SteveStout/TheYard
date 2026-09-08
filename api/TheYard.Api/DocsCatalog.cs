@@ -86,6 +86,8 @@ public static class DocsCatalog
         ["adr-accounts-documents"] = "docs/ADR-061-accounts-on-a-document-store.md",
         ["adr-store-visible"] = "docs/ADR-062-what-the-store-is-actually-doing.md",
         ["adr-backends"] = "docs/ADR-063-backends-side-by-side.md",
+        ["adr-measuring-stores"] = "docs/ADR-064-measuring-both-stores.md",
+        ["adr-cosmos-explained"] = "docs/ADR-065-cosmos-db-explained.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",

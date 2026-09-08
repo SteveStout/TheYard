@@ -419,7 +419,8 @@ public sealed class CosmosStore
                 Math.Round(charge, 2),
                 (long)elapsed.TotalMilliseconds,
                 outcome,
-                CurrentRequest.Describe()));
+                CurrentRequest.Describe(),
+                CurrentRequest.Identify()));
         }
         catch
         {
