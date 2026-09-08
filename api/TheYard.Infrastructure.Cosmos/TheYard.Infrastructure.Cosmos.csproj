@@ -20,8 +20,19 @@
          the version already in this application's dependency graph. -->
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- The container's managed identity, or the developer's signed-in Azure
-         CLI session. No key exists on the account to fall back to. -->
-    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+         CLI session. No key exists on the account to fall back to.
+
+         1.17.1 and not the newest, on purpose. 1.0.0.90 shipped with 1.21.0,
+         which this reference had pulled the whole application up to, and the
+         live container came up on files: SqlClient acquires its managed
+         identity token through the same library, the newer version spent
+         longer than SqlClient's thirty seconds finding the identity endpoint
+         on Container Instances, and the connection was cancelled mid-wait. The
+         Cosmos DB container survived the same wait because the SDK has no such
+         ceiling, and paid for it with a forty-nine second container check. The
+         version the application had before this project existed is the one it
+         keeps (ADR: A second store on Cosmos DB, and what it costs, addendum). -->
+    <PackageReference Include="Azure.Identity" Version="1.17.1" />
   </ItemGroup>
 
   <PropertyGroup>

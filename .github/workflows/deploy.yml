@@ -163,7 +163,14 @@ jobs:
             YARD_SQL="__YARD_SQL_CONNECTION__"
           else
             SQL_FQDN="${SQL_SERVER}.database.windows.net"
-            YARD_SQL="Server=tcp:${SQL_FQDN},1433;Initial Catalog=${SQL_DB};Encrypt=True;TrustServerCertificate=False;Connect Timeout=30;Authentication=Active Directory Managed Identity;User Id=${MI_CLIENT_ID};"
+            # No Connect Timeout in the setting, on purpose. YardConnection widens
+            # a timeout nobody gave to sixty seconds, which is the budget a
+            # serverless resume needs, and a value given here wins over that
+            # (ADR: The SQL Server backend). This line carried thirty for a
+            # week, which meant the record's arithmetic never applied in
+            # production; 1.0.0.90 found that out when a slow identity token
+            # took the whole thirty.
+            YARD_SQL="Server=tcp:${SQL_FQDN},1433;Initial Catalog=${SQL_DB};Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Managed Identity;User Id=${MI_CLIENT_ID};"
           fi
           YARD_SQL="$YARD_SQL" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
           import os, sys

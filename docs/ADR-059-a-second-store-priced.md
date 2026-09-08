@@ -382,6 +382,44 @@ visitor, so both interview questions have a number behind them.
   ADR: Two providers explained, each get an addendum narrowing them to the
   relational side and pointing here, rather than being left to disagree quietly.
 
+## Addendum, 2026-09-08: the version bump that took the live site to files
+
+1.0.0.90 rolled both containers. The Cosmos DB one came up healthy after a
+container check of 48,793 ms, which was forty-seven seconds longer than it
+should have been. The Azure SQL one came up on files, twice, once on the roll
+and once on a restart against a database that was demonstrably online, with
+the same exception each time:
+
+```
+SqlException: A task was canceled.
+ ---> TaskCanceledException at Azure.Core.Pipeline.RetryPolicy.WaitAsync
+      at Azure.Core.Pipeline.HttpPipeline.SendRequestAsync
+```
+
+That is SqlClient acquiring its managed identity token, through Azure.Identity,
+and being cancelled while the library was still retrying its way to the
+identity endpoint. The new Cosmos project referenced Azure.Identity 1.21.0,
+which pulled the whole application up from the 1.17.1 it had run on for a
+week; the newer version spends longer finding the identity endpoint on
+Container Instances than SqlClient's thirty seconds, so the connection was
+cancelled mid-wait. The Cosmos DB SDK has no such ceiling, waited the whole
+forty-nine seconds, and got its token, which is why one container survived and
+the other did not.
+
+Two things changed. The reference is pinned to 1.17.1, with the reason beside
+it in the project file. And the deploy no longer writes `Connect Timeout=30`
+into the connection string: `YardConnection` widens a timeout nobody gave to
+sixty seconds, which is the budget the SQL Server record's arithmetic is built
+on, and a value given by the deploy had been winning over it for a week
+without anybody noticing. The live site ran on 1.0.0.88 for the forty minutes
+between the finding and the fix, rolled back by hand with the same template
+the deploy uses.
+
+Two lessons, both already in this repository's records and both relearned:
+a transitive version bump is a change to every project in the graph, not to
+the one that asked for it; and a number a record reasons from has to be the
+number the deploy actually sets.
+
 ## Files
 
 - [`mentor\TASK-AUTH-2026-09-08-cosmos.md`](https://github.com/SteveStout/TheYard): the written pre-approval, outside the repository because it names principals.
