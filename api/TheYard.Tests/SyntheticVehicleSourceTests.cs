@@ -6,7 +6,7 @@ namespace TheYard.Tests;
 
 file sealed class SeedSource(params Vehicle[] vehicles) : IVehicleSource
 {
-    public IReadOnlyList<Vehicle> Load() => vehicles;
+    public Task<IReadOnlyList<Vehicle>> LoadAsync() => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
 }
 
 public class SyntheticVehicleSourceTests
@@ -18,27 +18,27 @@ public class SyntheticVehicleSourceTests
     ];
 
     [Fact]
-    public void Expands_to_the_target_count_with_unique_ids()
+    public async Task Expands_to_the_target_count_with_unique_ids()
     {
-        var vehicles = new SyntheticVehicleSource(new SeedSource(Seeds), 1_000).Load();
+        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 1_000).LoadAsync();
 
         Assert.Equal(1_000, vehicles.Count);
         Assert.Equal(1_000, vehicles.Select(v => v.Id).Distinct().Count());
     }
 
     [Fact]
-    public void Is_deterministic_across_loads()
+    public async Task Is_deterministic_across_loads()
     {
-        var first = new SyntheticVehicleSource(new SeedSource(Seeds), 500).Load();
-        var second = new SyntheticVehicleSource(new SeedSource(Seeds), 500).Load();
+        var first = await new SyntheticVehicleSource(new SeedSource(Seeds), 500).LoadAsync();
+        var second = await new SyntheticVehicleSource(new SeedSource(Seeds), 500).LoadAsync();
 
         Assert.Equal(first, second);
     }
 
     [Fact]
-    public void Passes_the_seeds_through_untouched_when_the_target_is_not_larger()
+    public async Task Passes_the_seeds_through_untouched_when_the_target_is_not_larger()
     {
-        var vehicles = new SyntheticVehicleSource(new SeedSource(Seeds), 2).Load();
+        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 2).LoadAsync();
         Assert.Equal(Seeds, vehicles);
     }
 
@@ -59,21 +59,21 @@ public class SyntheticVehicleSourceTests
     [InlineData(3.7)]
     [InlineData(4.2)]
     [InlineData(5.0)]
-    public void A_variants_grade_stays_in_its_seeds_band(double seedGrade)
+    public async Task A_variants_grade_stays_in_its_seeds_band(double seedGrade)
     {
         var seed = TestData.Vehicle(id: "seed-graded") with { ConditionGrade = seedGrade };
         double band = Math.Floor(seedGrade);
 
-        var variants = new SyntheticVehicleSource(new SeedSource(seed), 400).Load().Skip(1);
+        var variants = (await new SyntheticVehicleSource(new SeedSource(seed), 400).LoadAsync()).Skip(1);
 
         Assert.All(variants, vehicle =>
             Assert.InRange(vehicle.ConditionGrade, band, Math.Min(5.0, band + 0.9)));
     }
 
     [Fact]
-    public void Variants_keep_the_dataset_invariants()
+    public async Task Variants_keep_the_dataset_invariants()
     {
-        var vehicles = new SyntheticVehicleSource(new SeedSource(Seeds), 2_000).Load();
+        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 2_000).LoadAsync();
 
         Assert.All(vehicles, v =>
         {
@@ -93,9 +93,9 @@ public class SyntheticVehicleSourceTests
     }
 
     [Fact]
-    public void Variants_inherit_the_seed_identity_fields()
+    public async Task Variants_inherit_the_seed_identity_fields()
     {
-        var vehicles = new SyntheticVehicleSource(new SeedSource(Seeds), 100).Load();
+        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 100).LoadAsync();
 
         Assert.All(vehicles, v => Assert.Contains(v.Make, new[] { "Ford", "Kia" }));
     }

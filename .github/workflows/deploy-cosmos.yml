@@ -1,0 +1,159 @@
+# Deploy Cosmos: the second container's own leg (ADR: A second store on Cosmos
+# DB, and what it costs). It runs after Deploy has pushed an image and rolled
+# the first container, takes the same tag, and rolls aci-theyard-cosmos-ss with
+# the Cosmos DB settings in place of the SQL connection string. No second build:
+# one image, two containers, which is what makes the comparison honest. A
+# failure here never touches the first container, and a failure there never
+# reaches here, because Deploy gates on CI and this gates on Deploy.
+name: Deploy Cosmos
+
+# #region deploy-cosmos-trigger
+on:
+  workflow_run:
+    workflows: ["Deploy"]
+    types: [completed]
+    branches: [main]
+  # And by hand, for the two things a comparison container needs that a site
+  # does not: stopping it between comparisons, because Container Instances bill
+  # per second while a group runs, and starting it again before one.
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "roll (redeploy the current image), stop, or start"
+        required: true
+        default: roll
+        type: choice
+        options: [roll, stop, start]
+# #endregion deploy-cosmos-trigger
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-cosmos
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ACR: crtheyardsszmnetj67bn5h2.azurecr.io
+      RG: RG-THEYARD-SS
+      GROUP: aci-theyard-cosmos-ss
+      ORIGIN: http://theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
+      AI_NAME: appi-theyard-ss
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # #region stop-start
+      - name: Stop or start the group
+        if: github.event_name == 'workflow_dispatch' && inputs.action != 'roll'
+        run: |
+          az container ${{ inputs.action }} -g "$RG" -n "$GROUP"
+          az container show -g "$RG" -n "$GROUP" --query "{state:instanceView.state, image:containers[0].image}" -o json
+      # #endregion stop-start
+
+      # #region compute-version
+      # The same rule Deploy uses: the changelog's top line is the version, and
+      # the image Deploy pushed for it is the one this rolls (ADR-031).
+      - name: Compute version
+        if: github.event_name != 'workflow_dispatch' || inputs.action == 'roll'
+        run: |
+          N=$(sed -n 's/^- \*\*1\.0\.0\.\([0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md | sed -n 1p)
+          if [ -z "$N" ]; then
+            echo "::error file=docs/CHANGELOG.md::No 1.0.0.N line at the top of the changelog, so there is no version to roll"
+            exit 1
+          fi
+          {
+            echo "APP_VERSION=1.0.0.$N"
+            echo "IMAGE=$ACR/theyard:v$N"
+          } >> "$GITHUB_ENV"
+          echo "Rolling $GROUP to $ACR/theyard:v$N"
+      # #endregion compute-version
+
+      # #region roll-cosmos
+      - name: Roll the second container group
+        if: github.event_name != 'workflow_dispatch' || inputs.action == 'roll'
+        run: |
+          # The image Deploy pushed should exist before this rolls to it. Asked
+          # as a warning rather than a gate, because listing tags needs a
+          # registry permission this identity may not hold, and the Verify step
+          # below is the real gate: a group that cannot pull never serves the
+          # version and the run fails there, loudly.
+          if ! az acr repository show-tags --name crtheyardsszmnetj67bn5h2 --repository theyard -o tsv 2>/dev/null | grep -qx "v${APP_VERSION##*.}"; then
+            echo "::warning::could not confirm $IMAGE is in the registry; Verify will say"
+          fi
+          sed "s|^\(\s*image: \)__IMAGE__$|\1$IMAGE|" infra/aci-theyard-cosmos.yaml > "$RUNNER_TEMP/aci.yaml"
+          grep -q "^\s*image: $IMAGE$" "$RUNNER_TEMP/aci.yaml"
+          # Application Insights, by the same rule as Deploy: read here, masked,
+          # substituted in python, and a failed read ships with telemetry off.
+          CONN=$(az resource show -g "$RG" -n "$AI_NAME" \
+            --resource-type "Microsoft.Insights/components" \
+            --query "properties.ConnectionString" -o tsv 2>/dev/null || true)
+          if [ -z "$CONN" ]; then
+            echo "::warning::Application Insights was unreadable; this roll ships with telemetry off"
+            CONN="__APPINSIGHTS_CONNECTION_STRING__"
+          else
+            echo "::add-mask::$CONN"
+          fi
+          CONN="$CONN" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
+          import os, sys
+          path = sys.argv[1]
+          text = open(path, encoding="utf-8").read()
+          placeholder = "__APPINSIGHTS_CONNECTION_STRING__"
+          if placeholder not in text:
+              sys.exit("the connection string placeholder is missing from the container spec")
+          open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["CONN"]))
+          PY
+          # No database substitution on this side: the Cosmos DB settings are
+          # plain values in the spec, because none of them is a secret.
+          az container create -g "$RG" -f "$RUNNER_TEMP/aci.yaml" \
+            --query "{state:provisioningState,image:containers[0].image,fqdn:ipAddress.fqdn}" -o json
+      # #endregion roll-cosmos
+
+      # #region verify-cosmos
+      - name: Verify
+        if: github.event_name != 'workflow_dispatch' || inputs.action == 'roll'
+        run: |
+          for i in $(seq 1 30); do
+            sleep 10
+            body=$(curl -fsS --max-time 10 "$ORIGIN/api/version" || true)
+            if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
+              echo "origin serves $APP_VERSION after $((i * 10))s: $body"
+              break
+            fi
+            if [[ "$i" -eq 30 ]]; then
+              echo "origin never served $APP_VERSION (last answer: $body)"
+              exit 1
+            fi
+          done
+          curl -fsS --max-time 20 "$ORIGIN/api/facets" > /dev/null
+          curl -fsS --max-time 20 "$ORIGIN/readyz"
+          echo
+          # Which store it came up on, said out loud. A warning and not a
+          # failure, for the reason Deploy gives: the fallback serving is the
+          # design working, and it must not be silent.
+          store=$(curl -fsS --max-time 30 "$ORIGIN/api/health" || true)
+          case "$store" in
+            *"Azure Cosmos DB"*) echo "the container is on Azure Cosmos DB" ;;
+            *) echo "::warning::this roll is not serving from Azure Cosmos DB: $store" ;;
+          esac
+          curl -sS --max-time 40 "$ORIGIN/api/admin/metrics" | head -c 2000 || true
+          echo
+          {
+            echo "## Rolled $GROUP to $APP_VERSION"
+            echo "- image: $IMAGE"
+            echo "- origin: $ORIGIN"
+          } >> "$GITHUB_STEP_SUMMARY"
+      # #endregion verify-cosmos

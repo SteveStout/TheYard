@@ -31,7 +31,13 @@ public class PersistenceTests : IDisposable
 
     private WebApplicationFactory<Program> Api() =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-            builder.UseSetting("ConnectionStrings:Yard", Connection));
+        {
+            builder.UseSetting("ConnectionStrings:Yard", Connection);
+            // These tests are about a file on disk, so they stay on the
+            // relational path even when the whole suite is pointed at the
+            // document store (ADR: A second store on Cosmos DB, and what it costs).
+            builder.UseSetting("Cosmos:AccountEndpoint", "");
+        });
 
     /// <summary>
     /// A live vehicle with time left on it. Most bids rather than the default
@@ -185,9 +191,9 @@ public class PersistenceTests : IDisposable
     /// 2026-09-03).
     /// </summary>
     [Fact]
-    public void Every_field_survives_the_round_trip_through_a_row()
+    public async Task Every_field_survives_the_round_trip_through_a_row()
     {
-        var source = new JsonFileVehicleSource(SeedPath()).Load();
+        var source = await new JsonFileVehicleSource(SeedPath()).LoadAsync();
 
         var roundTripped = source.Select((vehicle, index) => vehicle.ToRow(index).ToVehicle()).ToList();
 
@@ -226,7 +232,7 @@ public class PersistenceTests : IDisposable
             api.CreateClient().Dispose();
         }
 
-        var fromFile = new JsonFileVehicleSource(SeedPath()).Load().Select(v => v.Id).ToList();
+        var fromFile = (await new JsonFileVehicleSource(SeedPath()).LoadAsync()).Select(v => v.Id).ToList();
         using var db = Context();
         var fromStore = db.Vehicles.AsNoTracking().OrderBy(row => row.Seq).Select(row => row.Id).ToList();
 
@@ -252,7 +258,10 @@ public class PersistenceTests : IDisposable
         try
         {
             await using var api = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-                builder.UseSetting("ConnectionStrings:Yard", $"Data Source={Path.Combine(blocker, "yard.db")}"));
+            {
+                builder.UseSetting("ConnectionStrings:Yard", $"Data Source={Path.Combine(blocker, "yard.db")}");
+                builder.UseSetting("Cosmos:AccountEndpoint", "");
+            });
             var client = api.CreateClient();
 
             using var page = JsonDocument.Parse(await client.GetStringAsync("/api/vehicles?limit=5"));

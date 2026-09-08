@@ -178,6 +178,23 @@ That last paragraph is the one worth remembering. A cloud database on a free tie
 auto-pauses, and a site that falls over when its database naps is worse than the
 file it replaced.
 
+## Addendum, 2026-09-08: three, now
+
+"Two providers and a SQL project" is still exactly what runs on the first
+container and on every developer machine, and this record is still the right
+one for it. As of 1.0.0.89 the same image also runs on a second container
+against Azure Cosmos DB, which is not an Entity Framework provider at all: the
+adapters take the Cosmos DB SDK directly, there is no context and no migrations
+assembly, and the schema is a set of container definitions rather than a SQL
+project. The newcomer's record for that side, written for someone who knows SQL
+Server and not this, is ADR: Cosmos DB, explained for someone who knows SQL
+Server; the decision and the arithmetic are in ADR: A second store on Cosmos DB,
+and what it costs.
+
+"What happens when the container starts" gained a first step: the host reads
+`Cosmos:AccountEndpoint`, and when it is set the store below is the document
+store and none of the relational machinery in this record is constructed.
+
 ## Files
 
 - [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs)

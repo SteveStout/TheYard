@@ -333,6 +333,31 @@ serving is now allowed to say so.
 The test asserts both halves, because asserting only the first would pass if
 every check stopped gating readiness.
 
+## Addendum, 2026-09-08: a second store, and what this record is now about
+
+This record decided to have a relational store, and every sentence in it is
+about that store: the row types, the migrations, the seed, the fallback, the
+measurements of SQLite. As of 1.0.0.89 there is a second, complete store beside
+it, Azure Cosmos DB, running the same image in a second container so the two can
+be compared side by side (ADR: A second store on Cosmos DB, and what it costs).
+
+Read this record as "how the relational backend works", which is what it always
+was. Three things in it stopped being general truths and became relational ones,
+and are named here so the record does not quietly disagree with the one beside it:
+
+- **"Migrations, not `EnsureCreated`."** True of SQLite. The document store has
+  no schema and no migrations; what it has instead is a container definition,
+  held in the repository as JSON and applied by a person (ADR: Data first, and
+  the database in source control, addendum).
+- **"Read once, write through, store first."** Still the shape on both sides, and
+  the ports that carry it changed: every member returns a `Task` now, because
+  the third store has no synchronous driver (ADR: The ports learn to wait). The
+  `Load()` in this record's code samples is `LoadAsync()`.
+- **The fallback.** Unchanged, and now shared: a container that cannot reach
+  either store serves the catalogue from files and says so on the health check,
+  and the Cosmos DB adapter answers the same `DatabaseState` the relational one
+  does.
+
 ## Files
 
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the context, the model, and the design-time factory.

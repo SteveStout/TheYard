@@ -15,6 +15,9 @@
   <ItemGroup>
     <ProjectReference Include="..\TheYard.Application\TheYard.Application.csproj" />
     <ProjectReference Include="..\TheYard.Infrastructure\TheYard.Infrastructure.csproj" />
+    <!-- The second store, chosen at startup by the presence of an account
+         endpoint (ADR: A second store on Cosmos DB, and what it costs). -->
+    <ProjectReference Include="..\TheYard.Infrastructure.Cosmos\TheYard.Infrastructure.Cosmos.csproj" />
     <!-- Referenced so the assembly lands beside the host: EF resolves a
          migrations assembly by name at run time, and a name that is not loaded
          is a migration that does not exist. Only SQLite has migrations; the SQL

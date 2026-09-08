@@ -1,0 +1,16 @@
+{
+  "container": "users",
+  "partitionKeyPath": "/id",
+  "defaultTtlSeconds": null,
+  "why": "One document per account and one claim document per email address (id 'email:<normalized>'), every operation a point read or point write. No path is indexed.",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

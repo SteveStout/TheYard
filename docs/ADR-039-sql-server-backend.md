@@ -636,6 +636,33 @@ anything, which the test caught before it shipped. That is the second time on
 this work that a check answered an easier question than the one it was written
 for, and it is recorded in ADR: The exemption that hid a contrast failure.
 
+## Addendum, 2026-09-08: the connection string that is not a credential, on the other store too
+
+This record's first section, on authenticating as a managed identity with no
+password anywhere, is now the rule for two stores. The Cosmos DB account created
+on 2026-09-08 has local authentication disabled, so it has no keys at all, and
+the same identity `id-theyard-ss` holds a data-plane role on it; the container's
+configuration for that store is an account endpoint, which is a URL. What was a
+property of one connection string is a property of the project
+(ADR: A second store on Cosmos DB, and what it costs).
+
+Two of this record's decisions have a different answer on the document store,
+and the difference is written where it is made rather than here:
+
+- **The concurrency token.** `rowversion` on SQL Server and a store-assigned
+  token on SQLite; on Cosmos DB the document's own `_etag`, sent back as
+  `If-Match` on every replace. The retry loop in the bid store is the same
+  three tries on both sides (ADR: The partition key; ADR: Accounts on a document
+  store).
+- **"The schema does not come from here."** The rule holds, and the artifact is
+  different: a container definition rather than a SQL project, and a data-plane
+  role that cannot create a container rather than a database user without
+  `db_ddladmin` (ADR: Data first, and the database in source control, addendum).
+
+The `YardProvider` enumeration this record introduced has a third member,
+`Cosmos`, chosen by the presence of an endpoint, and `Configure` throws for it
+because there is no Entity Framework provider behind it.
+
 ## Files
 
 - [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the provider choice, the retry policy, and what may be said about the database.

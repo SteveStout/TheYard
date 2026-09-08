@@ -5,7 +5,7 @@ namespace TheYard.Tests;
 public class JsonFileSourceTests
 {
     [Fact]
-    public void Reads_snake_case_json_into_typed_vehicles()
+    public async Task Reads_snake_case_json_into_typed_vehicles()
     {
         string path = Path.Combine(Path.GetTempPath(), $"vehicles-{Guid.NewGuid():N}.json");
         File.WriteAllText(path, """
@@ -24,7 +24,7 @@ public class JsonFileSourceTests
             """);
         try
         {
-            var vehicle = Assert.Single(new JsonFileVehicleSource(path).Load());
+            var vehicle = Assert.Single(await new JsonFileVehicleSource(path).LoadAsync());
 
             Assert.Equal("abc", vehicle.Id);
             Assert.Equal("SUV", vehicle.BodyStyle);
@@ -41,9 +41,9 @@ public class JsonFileSourceTests
     }
 
     [Fact]
-    public void Loads_the_real_repository_dataset()
+    public async Task Loads_the_real_repository_dataset()
     {
-        var vehicles = new JsonFileVehicleSource(Path.Combine(RepoRoot(), "data", "vehicles.json")).Load();
+        var vehicles = await new JsonFileVehicleSource(Path.Combine(RepoRoot(), "data", "vehicles.json")).LoadAsync();
 
         Assert.Equal(200, vehicles.Count);
         Assert.Equal(200, vehicles.Select(v => v.Id).Distinct().Count());
@@ -53,10 +53,10 @@ public class JsonFileSourceTests
     }
 
     [Fact]
-    public void Loads_the_real_photo_manifest()
+    public async Task Loads_the_real_photo_manifest()
     {
-        var manifest = new JsonFilePhotoManifestSource(
-            Path.Combine(RepoRoot(), "api", "TheYard.Api", "photo-manifest.json")).Load();
+        var manifest = await new JsonFilePhotoManifestSource(
+            Path.Combine(RepoRoot(), "api", "TheYard.Api", "photo-manifest.json")).LoadAsync();
 
         Assert.Equal(50, manifest.Count);
         Assert.Equal(5, manifest.Select(photo => photo.Style).Distinct().Count());

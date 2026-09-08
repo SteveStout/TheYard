@@ -22,7 +22,10 @@ the one the records and the pipeline logs carry. The source is
 ## Websites and resources used
 
 - **Azure (portal.azure.com).** Runs the app: Container Instances for the
-  compute, Container Registry for the image. The only place code executes.
+  compute, Container Registry for the image, Azure SQL Database for the store
+  the site is on, and, since 1.0.0.89, a second container group on Azure
+  Cosmos DB beside it so the two stores can be compared from two tabs (ADR: A
+  second store on Cosmos DB, and what it costs). The only place code executes.
 - **Wix (wix.com).** The domain registrar. Holds stevenstout.biz and answers
   DNS; one CNAME record points theyard at the edge.
 - **Netlify (netlify.com).** The free edge. Terminates HTTPS, holds the
@@ -44,7 +47,9 @@ the one the records and the pipeline logs carry. The source is
    GitHub on every push.
 3. **Origin.** Azure Container Instances runs the Docker image in RG-THEYARD-SS
    (westus2), serving HTTP on port 8080. Azure does all the compute. The edge
-   only forwards.
+   only forwards. A second group, `aci-theyard-cosmos-ss`, runs the same image
+   against Azure Cosmos DB on its own Azure address, behind no edge and no
+   domain, because a side-by-side needs a second origin and nothing else.
 
 ## The certificate
 
@@ -76,6 +81,8 @@ public URL would never change in the switch.
 ## Files
 
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the container group that runs today.
+- [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the second group, same image, other store.
+- [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions the second store is built from.
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the production design, deliberately
   undeployed (served above as Infrastructure (Bicep)).
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the HTTPS edge.

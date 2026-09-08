@@ -15,7 +15,7 @@ public class BidServiceTests
 
     // #region composed
     [Fact]
-    public void A_bid_is_measured_against_the_composed_price_not_the_buyers_own()
+    public async Task A_bid_is_measured_against_the_composed_price_not_the_buyers_own()
     {
         // The bug this catches: BidService.Apply overwrote CurrentBid instead
         // of taking the max, so when the endpoint handed it a vehicle the room
@@ -29,7 +29,7 @@ public class BidServiceTests
         var market = new MarketService();
 
         // The buyer takes the lead at the minimum, 22,800 + 500.
-        Assert.Equal(BidOutcomeKind.Accepted, bids.PlaceBid(vehicle, 23_300, clock, Buyer).Kind);
+        Assert.Equal(BidOutcomeKind.Accepted, (await bids.PlaceBidAsync(vehicle, 23_300, clock, Buyer)).Kind);
 
         // The room answers twice, so it stands at 24,300.
         var buyer = bids.SnapshotFor(Buyer);
@@ -40,7 +40,7 @@ public class BidServiceTests
         Assert.Equal(24_300, market.For(vehicle.Id)!.Amount);
 
         // 23,800 is a raise on the buyer's own bid and $500 under the room.
-        var rejected = bids.PlaceBid(market.Apply(vehicle), 23_800, laterStill, Buyer);
+        var rejected = await bids.PlaceBidAsync(market.Apply(vehicle), 23_800, laterStill, Buyer);
 
         Assert.Equal(BidOutcomeKind.Rejected, rejected.Kind);
         Assert.Contains("24,800", rejected.Reason);
@@ -49,7 +49,7 @@ public class BidServiceTests
     }
 
     [Fact]
-    public void Retaking_the_lead_never_lowers_the_bid_count()
+    public async Task Retaking_the_lead_never_lowers_the_bid_count()
     {
         // The count used to come from the buyer's own state, which is behind
         // the room's, so a vehicle went from seven bids to six on being bid on.
@@ -58,7 +58,7 @@ public class BidServiceTests
         var bids = new BidService();
         var market = new MarketService();
 
-        bids.PlaceBid(vehicle, 23_300, clock, Buyer);
+        await bids.PlaceBidAsync(vehicle, 23_300, clock, Buyer);
         int afterMine = market.Apply(bids.Apply(vehicle)).BidCount;
 
         var later = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 1, 0, TimeSpan.FromHours(-4)));
@@ -67,7 +67,7 @@ public class BidServiceTests
         Assert.True(afterTheirs > afterMine);
 
         var composed = market.Apply(bids.Apply(vehicle));
-        bids.PlaceBid(composed, BidRules.MinNextBid(composed), later, Buyer);
+        await bids.PlaceBidAsync(composed, BidRules.MinNextBid(composed), later, Buyer);
 
         Assert.True(market.Apply(bids.Apply(vehicle)).BidCount >= afterTheirs,
             "the bid count fell when the buyer retook the lead");
@@ -104,29 +104,29 @@ public class BidServiceTests
     }
 
     [Fact]
-    public void An_accepted_bid_updates_the_overlay_and_the_next_minimum()
+    public async Task An_accepted_bid_updates_the_overlay_and_the_next_minimum()
     {
         var service = new BidService();
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800); // bid_count 16
 
-        var outcome = service.PlaceBid(vehicle, 23_300, Now, Buyer);
+        var outcome = await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
 
         Assert.Equal(BidOutcomeKind.Accepted, outcome.Kind);
         var merged = service.Apply(vehicle);
         Assert.Equal(23_300, merged.CurrentBid);
         Assert.Equal(17, merged.BidCount);
         // The next bid must clear the new high bid, not the old one.
-        Assert.Equal(BidOutcomeKind.Rejected, service.PlaceBid(vehicle, 23_400, Now, Buyer).Kind);
-        Assert.Equal(BidOutcomeKind.Accepted, service.PlaceBid(vehicle, 23_800, Now, Buyer).Kind);
+        Assert.Equal(BidOutcomeKind.Rejected, (await service.PlaceBidAsync(vehicle, 23_400, Now, Buyer)).Kind);
+        Assert.Equal(BidOutcomeKind.Accepted, (await service.PlaceBidAsync(vehicle, 23_800, Now, Buyer)).Kind);
     }
 
     [Fact]
-    public void Buy_now_marks_the_vehicle_won_without_adding_a_bid()
+    public async Task Buy_now_marks_the_vehicle_won_without_adding_a_bid()
     {
         var service = new BidService();
         var vehicle = TestData.Vehicle(id: LiveId()) with { BuyNowPrice = 28_000 };
 
-        var outcome = service.BuyNow(vehicle, Now, Buyer);
+        var outcome = await service.BuyNowAsync(vehicle, Now, Buyer);
 
         Assert.Equal(BidOutcomeKind.Won, outcome.Kind);
         var state = service.SnapshotFor(Buyer)[vehicle.Id];
@@ -137,13 +137,13 @@ public class BidServiceTests
 
     // #region reset
     [Fact]
-    public void Reset_clears_the_callers_bids_and_names_the_vehicles_it_touched()
+    public async Task Reset_clears_the_callers_bids_and_names_the_vehicles_it_touched()
     {
         var service = new BidService();
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
-        service.PlaceBid(vehicle, 23_300, Now, Buyer);
+        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
 
-        var touched = service.Reset(Buyer);
+        var touched = await service.ResetAsync(Buyer);
 
         Assert.Empty(service.SnapshotFor(Buyer));
         Assert.Equal(22_800, service.Apply(vehicle).CurrentBid);
@@ -152,7 +152,7 @@ public class BidServiceTests
     }
 
     [Fact]
-    public void Reset_leaves_a_stranger_bidding_on_the_same_vehicle_alone()
+    public async Task Reset_leaves_a_stranger_bidding_on_the_same_vehicle_alone()
     {
         // This is the whole point of the change. Before it, this endpoint took
         // no user at all, so either of two visitors could delete the other's
@@ -160,10 +160,10 @@ public class BidServiceTests
         // both be told the truth.
         var service = new BidService();
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
-        service.PlaceBid(vehicle, 23_300, Now, Buyer);
-        service.PlaceBid(vehicle, 24_000, Now, "somebody-else");
+        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
+        await service.PlaceBidAsync(vehicle, 24_000, Now, "somebody-else");
 
-        var orphaned = service.Reset(Buyer);
+        var orphaned = await service.ResetAsync(Buyer);
 
         Assert.Empty(service.SnapshotFor(Buyer));
         Assert.Single(service.SnapshotFor("somebody-else"));
@@ -179,25 +179,25 @@ public class BidServiceTests
     }
 
     [Fact]
-    public void Reset_by_somebody_who_has_not_bid_touches_nothing()
+    public async Task Reset_by_somebody_who_has_not_bid_touches_nothing()
     {
         var service = new BidService();
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
-        service.PlaceBid(vehicle, 23_300, Now, Buyer);
+        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
 
-        Assert.Empty(service.Reset("a-stranger"));
+        Assert.Empty(await service.ResetAsync("a-stranger"));
         Assert.Single(service.SnapshotFor(Buyer));
         Assert.Equal(23_300, service.Apply(vehicle).CurrentBid);
     }
     // #endregion reset
 
     [Fact]
-    public void Rejected_bids_leave_no_state_behind()
+    public async Task Rejected_bids_leave_no_state_behind()
     {
         var service = new BidService();
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
 
-        Assert.Equal(BidOutcomeKind.Rejected, service.PlaceBid(vehicle, 100, Now, Buyer).Kind);
+        Assert.Equal(BidOutcomeKind.Rejected, (await service.PlaceBidAsync(vehicle, 100, Now, Buyer)).Kind);
         Assert.Empty(service.SnapshotFor(Buyer));
     }
 }

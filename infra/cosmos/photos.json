@@ -1,0 +1,16 @@
+{
+  "container": "photos",
+  "partitionKeyPath": "/style",
+  "defaultTtlSeconds": null,
+  "why": "The 50 manifest entries, read whole once at cold start. No path is indexed.",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\TheYard.Application\TheYard.Application.csproj" />
+    <!-- For YardUser and DatabaseState, which the two stores share: an account
+         is the same thing whichever store holds it, and the composition root
+         asks both stores the same question before it registers anything
+         (ADR: A second store on Cosmos DB, and what it costs). -->
+    <ProjectReference Include="..\TheYard.Infrastructure\TheYard.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The SDK directly rather than the EF Core provider, because every
+         response carries the request charge and the diagnostics this lane
+         exists to show, and the provider surfaces neither
+         (ADR: A second store on Cosmos DB, and what it costs). -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.1" />
+    <!-- The SDK insists on an explicit reference to its own serializer even
+         when, as here, the documents go through System.Text.Json. 13.0.4 is
+         the version already in this application's dependency graph. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <!-- The container's managed identity, or the developer's signed-in Azure
+         CLI session. No key exists on the account to fall back to. -->
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

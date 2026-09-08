@@ -119,13 +119,13 @@ public class RelationalConstraintTests : IDisposable
     }
 
     [Fact]
-    public void The_store_moves_the_token_on_every_save()
+    public async Task The_store_moves_the_token_on_every_save()
     {
         var store = new EfBidStore(new PlainFactory(Connection));
 
-        store.Save("buyer-1", "veh-1", new BidState(10_000, 1, false, 1));
+        await store.SaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1));
         byte[] first = TokenOf();
-        store.Save("buyer-1", "veh-1", new BidState(11_000, 2, false, 2));
+        await store.SaveAsync("buyer-1", "veh-1", new BidState(11_000, 2, false, 2));
         byte[] second = TokenOf();
 
         Assert.NotEmpty(first);
@@ -133,10 +133,10 @@ public class RelationalConstraintTests : IDisposable
     }
 
     [Fact]
-    public void The_store_gets_past_a_conflict_it_did_not_cause()
+    public async Task The_store_gets_past_a_conflict_it_did_not_cause()
     {
         var store = new EfBidStore(new PlainFactory(Connection));
-        store.Save("buyer-1", "veh-1", new BidState(10_000, 1, false, 1));
+        await store.SaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1));
 
         // Somebody else moves the row between this store reading it and writing
         // it. The store's retry starts again from what is there now, which is
@@ -150,7 +150,7 @@ public class RelationalConstraintTests : IDisposable
             other.SaveChanges();
         }
 
-        store.Save("buyer-1", "veh-1", new BidState(12_000, 3, false, 3));
+        await store.SaveAsync("buyer-1", "veh-1", new BidState(12_000, 3, false, 3));
 
         using var db = Context();
         Assert.Equal(12_000, db.Bids.Single().Amount);

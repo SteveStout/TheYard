@@ -4,19 +4,24 @@ using Microsoft.EntityFrameworkCore;
 namespace TheYard.Infrastructure;
 
 /// <summary>
-/// Which relational engine this process is talking to. Two, on purpose: Azure
-/// SQL Database is where the deployed site keeps its data, and SQLite is what a
-/// developer and a CI runner get, because neither of them has an Azure
-/// credential and neither should need one
-/// (ADR: The SQL Server backend).
+/// Which store this process is talking to. Two relational engines, on purpose:
+/// Azure SQL Database is where the deployed site keeps its data, and SQLite is
+/// what a developer and a CI runner get, because neither of them has an Azure
+/// credential and neither should need one (ADR: The SQL Server backend). And a
+/// third, a document store, which the second deployed container uses so the two
+/// can be compared side by side (ADR: A second store on Cosmos DB, and what it
+/// costs).
 /// </summary>
 public enum YardProvider
 {
     /// <summary>A file. Local development, every test, and the fallback if the cloud database is unreachable.</summary>
     Sqlite,
 
-    /// <summary>Azure SQL Database, reached as a managed identity. What the deployed container uses.</summary>
+    /// <summary>Azure SQL Database, reached as a managed identity. What the first deployed container uses.</summary>
     SqlServer,
+
+    /// <summary>Azure Cosmos DB, reached as the same managed identity. What the second deployed container uses.</summary>
+    Cosmos,
 }
 
 /// <summary>
@@ -50,6 +55,20 @@ public sealed record YardConnection(YardProvider Provider, string ConnectionStri
         !string.IsNullOrWhiteSpace(sqlServer) && !sqlServer.StartsWith("__", StringComparison.Ordinal)
             ? new YardConnection(YardProvider.SqlServer, sqlServer)
             : new YardConnection(YardProvider.Sqlite, sqlite);
+
+    /// <summary>
+    /// Cosmos DB when there is an account endpoint to talk to, and the two
+    /// relational choices otherwise. The endpoint is a URL and not a credential:
+    /// the account has no keys, and the container authenticates as its managed
+    /// identity. The same placeholder rule applies, so a failed substitution at
+    /// roll time falls through to the next store rather than crash-looping
+    /// against a string that is not an address (ADR: A second store on Cosmos
+    /// DB, and what it costs).
+    /// </summary>
+    public static YardConnection Choose(string? cosmosEndpoint, string? sqlServer, string sqlite) =>
+        !string.IsNullOrWhiteSpace(cosmosEndpoint) && !cosmosEndpoint.StartsWith("__", StringComparison.Ordinal)
+            ? new YardConnection(YardProvider.Cosmos, cosmosEndpoint)
+            : Choose(sqlServer, sqlite);
     // #endregion choose
 
     // #region configure
@@ -85,14 +104,18 @@ public sealed record YardConnection(YardProvider Provider, string ConnectionStri
     /// as well, which is the exact failure the file-backed fallback exists to
     /// prevent (the staff review, 2026-09-03).
     /// </summary>
-    public DbContextOptionsBuilder Configure(DbContextOptionsBuilder builder) =>
-        Provider == YardProvider.SqlServer
-            ? builder.UseSqlServer(WithResumeBudget(ConnectionString), sql =>
-            {
-                sql.EnableRetryOnFailure(maxRetryCount: 2, maxRetryDelay: TimeSpan.FromSeconds(6), errorNumbersToAdd: null);
-                sql.CommandTimeout(120);
-            })
-            : builder.UseSqlite(ConnectionString, sqlite => sqlite.MigrationsAssembly(SqliteMigrations));
+    public DbContextOptionsBuilder Configure(DbContextOptionsBuilder builder) => Provider switch
+    {
+        YardProvider.SqlServer => builder.UseSqlServer(WithResumeBudget(ConnectionString), sql =>
+        {
+            sql.EnableRetryOnFailure(maxRetryCount: 2, maxRetryDelay: TimeSpan.FromSeconds(6), errorNumbersToAdd: null);
+            sql.CommandTimeout(120);
+        }),
+        YardProvider.Sqlite => builder.UseSqlite(ConnectionString, sqlite => sqlite.MigrationsAssembly(SqliteMigrations)),
+        // There is no EF context for the document store; its adapters are in
+        // TheYard.Infrastructure.Cosmos and take the SDK directly.
+        _ => throw new InvalidOperationException($"{Describe()} is not an Entity Framework provider"),
+    };
     // #region resume-budget
     /// <summary>
     /// Give a paused serverless database time to wake up, by widening the
@@ -168,6 +191,7 @@ public sealed record YardConnection(YardProvider Provider, string ConnectionStri
     public string Describe() => Provider switch
     {
         YardProvider.SqlServer => "Azure SQL Database",
+        YardProvider.Cosmos => "Azure Cosmos DB",
         _ => "SQLite",
     };
 }

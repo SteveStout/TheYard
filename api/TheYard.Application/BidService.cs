@@ -47,17 +47,32 @@ public sealed class BidService
 
     // #region store
     /// <summary>
-    /// Read once, here. Every read after this one is a dictionary: Apply runs
-    /// over a hundred thousand vehicles on a listing request, and a per-row
-    /// query would end the feature rather than persist it
-    /// (ADR: The relational store).
+    /// Read once, through <see cref="LoadAsync"/>. Every read after that one is
+    /// a dictionary: Apply runs over a hundred thousand vehicles on a listing
+    /// request, and a per-row query would end the feature rather than persist
+    /// it (ADR: The relational store).
+    ///
+    /// The constructor no longer reads the store, because a constructor cannot
+    /// wait and the store now has to be waited for (ADR: The ports learn to
+    /// wait). The host calls LoadAsync once at startup; the writing methods
+    /// call it too, so a service nobody warmed loads itself on its first bid.
     /// </summary>
     public BidService(IBidStore store)
     {
         _store = store;
         _standing = new ConcurrentDictionary<string, VehicleStanding>(StringComparer.Ordinal);
         _byUser = new ConcurrentDictionary<string, ConcurrentDictionary<string, BidState>>(StringComparer.Ordinal);
-        foreach (var bid in store.Load())
+        _loaded = new Lazy<Task>(LoadFromStoreAsync);
+    }
+
+    private readonly Lazy<Task> _loaded;
+
+    /// <summary>Replay the store into both indexes, once, whoever asks first.</summary>
+    public Task LoadAsync() => _loaded.Value;
+
+    private async Task LoadFromStoreAsync()
+    {
+        foreach (var bid in await _store.LoadAsync())
         {
             Record(bid.UserId, bid.VehicleId, bid.State);
         }
@@ -70,10 +85,15 @@ public sealed class BidService
     /// a lost update: two posts on the same vehicle both read $23,300, both
     /// pass the rules, and the lower one lands second. Worse across the two
     /// methods, where an ordinary bid landing after a buy-now flips WonBuyNow
-    /// back to false on a vehicle that was already sold. The lock is held for
-    /// the length of a dictionary read and some integer comparisons.
+    /// back to false on a vehicle that was already sold. The gate is held for
+    /// the length of a dictionary read, some integer comparisons, and the
+    /// store's answer.
+    ///
+    /// A semaphore rather than a lock, because a lock cannot be held across an
+    /// await and the store is awaited inside it. Same shape, same guarantee,
+    /// one bidder at a time (ADR: The ports learn to wait).
     /// </summary>
-    private readonly object _gate = new();
+    private readonly SemaphoreSlim _gate = new(1, 1);
 
     public bool IsEmpty => _standing.IsEmpty;
 
@@ -126,9 +146,11 @@ public sealed class BidService
     // #endregion apply
 
     // #region place
-    public BidOutcome PlaceBid(Vehicle vehicle, int amount, AuctionClock clock, string userId)
+    public async Task<BidOutcome> PlaceBidAsync(Vehicle vehicle, int amount, AuctionClock clock, string userId)
     {
-        lock (_gate)
+        await LoadAsync();
+        await _gate.WaitAsync();
+        try
         {
             var merged = Apply(vehicle);
             var outcome = BidRules.ResolveBid(merged, amount, clock);
@@ -145,28 +167,38 @@ public sealed class BidService
                 // winning until the next restart deleted it. This way a failed
                 // write means the bid did not happen anywhere, which is the
                 // answer the caller already has.
-                _store.Save(userId, vehicle.Id, state);
+                await _store.SaveAsync(userId, vehicle.Id, state);
                 Record(userId, vehicle.Id, state);
             }
             return outcome;
+        }
+        finally
+        {
+            _gate.Release();
         }
     }
     // #endregion place
 
     /// <summary>Buy Now is a purchase, not a bid, so the bid count stays as-is.</summary>
-    public BidOutcome BuyNow(Vehicle vehicle, AuctionClock clock, string userId)
+    public async Task<BidOutcome> BuyNowAsync(Vehicle vehicle, AuctionClock clock, string userId)
     {
-        lock (_gate)
+        await LoadAsync();
+        await _gate.WaitAsync();
+        try
         {
             var merged = Apply(vehicle);
             var outcome = BidRules.ResolveBuyNow(merged, clock);
             if (outcome.Kind == BidOutcomeKind.Won)
             {
                 var state = new BidState(outcome.Amount, merged.BidCount, WonBuyNow: true, AtMs: clock.NowMs);
-                _store.Save(userId, vehicle.Id, state);
+                await _store.SaveAsync(userId, vehicle.Id, state);
                 Record(userId, vehicle.Id, state);
             }
             return outcome;
+        }
+        finally
+        {
+            _gate.Release();
         }
     }
 
@@ -197,9 +229,11 @@ public sealed class BidService
     /// badge and dropped the price a stranger was competing at. The room is a
     /// separate service and this one does not reach into it.</para>
     /// </summary>
-    public IReadOnlyList<string> Reset(string userId)
+    public async Task<IReadOnlyList<string>> ResetAsync(string userId)
     {
-        lock (_gate)
+        await LoadAsync();
+        await _gate.WaitAsync();
+        try
         {
             if (!_byUser.TryRemove(userId, out var mine))
             {
@@ -208,7 +242,7 @@ public sealed class BidService
 
             string[] touched = mine.Keys.ToArray();
             var orphaned = new List<string>();
-            _store.Clear(userId);
+            await _store.ClearAsync(userId);
 
             foreach (string vehicleId in touched)
             {
@@ -238,6 +272,10 @@ public sealed class BidService
             }
 
             return orphaned;
+        }
+        finally
+        {
+            _gate.Release();
         }
     }
     // #endregion reset

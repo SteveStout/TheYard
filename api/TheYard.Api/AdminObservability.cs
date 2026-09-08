@@ -263,3 +263,120 @@ public static class Percentiles
             .ToArray();
 }
 // #endregion admin-observability
+
+// #region store-ring
+/// <summary>
+/// Fixed-size, thread-safe ring of recent document store operations, the
+/// sibling of <see cref="SqlRingBuffer"/> for the other store (ADR: What the
+/// store is actually doing). Same self-observation rule: the health check's two
+/// point reads every thirty seconds would otherwise fill the ring with the act
+/// of reading it.
+/// </summary>
+public sealed class StoreRingBuffer(int capacity) : IStoreLog
+{
+    private readonly int _capacity = Math.Max(1, capacity);
+    private readonly object _gate = new();
+    private readonly Queue<StoreOperation> _entries = new();
+
+    private static bool SelfObservation(string? request) =>
+        request is not null
+        && (request.EndsWith("/api/health", StringComparison.Ordinal)
+            || request.EndsWith("/readyz", StringComparison.Ordinal)
+            || request.EndsWith("/api/admin/store", StringComparison.Ordinal)
+            || request.EndsWith("/api/admin/sql", StringComparison.Ordinal)
+            || request.EndsWith("/api/admin/logs", StringComparison.Ordinal)
+            || request.EndsWith("/api/admin/metrics", StringComparison.Ordinal)
+            || request.EndsWith("/api/admin/peer", StringComparison.Ordinal));
+
+    public void Record(StoreOperation operation)
+    {
+        if (SelfObservation(operation.Request))
+        {
+            return;
+        }
+
+        lock (_gate)
+        {
+            _entries.Enqueue(operation);
+            while (_entries.Count > _capacity)
+            {
+                _entries.Dequeue();
+            }
+        }
+    }
+
+    public IReadOnlyList<StoreOperation> Snapshot()
+    {
+        lock (_gate)
+        {
+            return _entries.Reverse().ToArray();
+        }
+    }
+}
+
+/// <summary>The store window's numbers, computed on read like the request percentiles.</summary>
+public sealed record StoreMetrics(
+    string Store,
+    int Window,
+    long P50Ms,
+    long P95Ms,
+    long MaxMs,
+    double RuTotal,
+    double RuP50,
+    double RuMax,
+    int CrossPartition,
+    int PointOperations)
+{
+    public static StoreMetrics Of(string store, IReadOnlyList<StoreOperation> operations)
+    {
+        long[] durations = operations.Select(o => o.DurationMs).ToArray();
+        double[] charges = operations.Select(o => o.RequestCharge).OrderBy(c => c).ToArray();
+        return new StoreMetrics(
+            store,
+            operations.Count,
+            Percentiles.Of(durations, 50),
+            Percentiles.Of(durations, 95),
+            durations.Length == 0 ? 0 : durations.Max(),
+            Math.Round(charges.Sum(), 2),
+            charges.Length == 0 ? 0 : charges[(int)Math.Ceiling(charges.Length * 0.5) - 1],
+            charges.Length == 0 ? 0 : charges[^1],
+            operations.Count(o => o.Partition.StartsWith("cross", StringComparison.Ordinal)),
+            operations.Count(o => o.Kind.StartsWith("point", StringComparison.Ordinal)));
+    }
+}
+// #endregion store-ring
+
+// #region startup-timings
+/// <summary>
+/// How long each part of coming up took, and when the container was ready to
+/// serve, measured from the process's own start. The comparison card shows
+/// these for both containers on the same rows (ADR: Backends, side by side).
+/// </summary>
+public sealed class StartupTimings
+{
+    private readonly DateTime _processStart = System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime();
+    private readonly Dictionary<string, long> _steps = new(StringComparer.Ordinal);
+
+    /// <summary>Milliseconds from process start to the point the host finished warming, or null until then.</summary>
+    public long? ReadyMs { get; private set; }
+
+    public async Task<T> Time<T>(string step, Func<Task<T>> work)
+    {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var result = await work();
+        _steps[step] = clock.ElapsedMilliseconds;
+        return result;
+    }
+
+    public async Task Time(string step, Func<Task> work)
+    {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        await work();
+        _steps[step] = clock.ElapsedMilliseconds;
+    }
+
+    public void Ready() => ReadyMs = (long)(DateTime.UtcNow - _processStart).TotalMilliseconds;
+
+    public long? Ms(string step) => _steps.TryGetValue(step, out long ms) ? ms : null;
+}
+// #endregion startup-timings

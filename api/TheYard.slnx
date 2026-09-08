@@ -4,6 +4,7 @@
   <Project Path="TheYard.Data/TheYard.Data.csproj" />
   <Project Path="TheYard.Domain/TheYard.Domain.csproj" />
   <Project Path="TheYard.Infrastructure/TheYard.Infrastructure.csproj" />
+  <Project Path="TheYard.Infrastructure.Cosmos/TheYard.Infrastructure.Cosmos.csproj" />
   <Project Path="TheYard.Database/TheYard.Database.sqlproj" />
   <Project Path="TheYard.Migrations.Sqlite/TheYard.Migrations.Sqlite.csproj" />
   <Project Path="TheYard.Tests/TheYard.Tests.csproj" />

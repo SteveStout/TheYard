@@ -23,7 +23,10 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   // which is two numbers and no relationship between them, on the page whose
   // whole job is being readable by somebody who did not write it.
   await expect(page.getByTestId('timing-card')).toContainText(/Answers: \d+ with status \d{3}/);
-  await expect(page.getByTestId('sql-card')).toBeVisible();
+  // The SQL card on a relational container, the operations card on the
+  // document one: the same page, whichever store it is on (ADR: What the store
+  // is actually doing).
+  await expect(page.getByTestId('sql-card').or(page.getByTestId('store-card'))).toBeVisible();
   await expect(page.getByTestId('log-card')).toContainText('Category');
   await page.getByRole('button', { name: 'Back to inventory' }).click();
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
@@ -55,14 +58,48 @@ test('the SQL section shows statements and never a parameter value', async ({ pa
   });
   expect(registered.status(), await registered.text()).toBe(200);
 
+  // Which store this API is on decides which card the page shows, and the
+  // test holds the same rule against both (ADR: What the store is actually doing).
+  const store = (await (await request.get('http://localhost:5210/api/admin/store')).json()) as {
+    store: string;
+  };
+  const cosmos = store.store === 'Azure Cosmos DB';
+
   await openTheYard(page, '/?view=admin');
-  const card = page.getByTestId('sql-card');
+  const card = page.getByTestId(cosmos ? 'store-card' : 'sql-card');
   await expect(card).toBeVisible();
-  // A statement, with the request that caused it and a parameter described.
-  await expect(card).toContainText('AspNetUsers');
+  // A statement, with the request that caused it and a parameter described;
+  // on the document store, an operation on the users container, pinned to a
+  // partition that is described and never named.
+  await expect(card).toContainText(cosmos ? 'users' : 'AspNetUsers');
   await expect(card).toContainText('POST /api/auth/register');
-  await expect(card).toContainText(/@\w+ \w+/);
+  await expect(card).toContainText(cosmos ? /pinned to the (account|address)/ : /@\w+ \w+/);
   // The address itself is nowhere on the page.
   await expect(page.locator('body')).not.toContainText(email);
   await expect(page.locator('body')).not.toContainText('sql-canary');
 });
+
+// #region backends-card
+test('the comparison card stands when there is no peer to compare with (ADR: Backends, side by side)', async ({
+  page,
+}) => {
+  // A local run has no peer configured, which is the first of the four ways the
+  // peer column can be empty, and the card has to read as a card rather than
+  // as an error: this container's column filled in, the other's saying why not,
+  // and every other card on the page untouched.
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('backends-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Backends, side by side');
+  await expect(card).toContainText('No peer is configured on this container');
+  await expect(card).toContainText(/This site \((SQLite|Azure SQL Database|Azure Cosmos DB)\)/);
+  // The label and the number are neighbouring cells, and a cell boundary is
+  // no whitespace at all in the text Playwright reads, so \s* rather than \s+.
+  await expect(card).toContainText(/Cold start, process start to ready\s*\d+ ms/);
+  await expect(card).toContainText(/Catalogue load\s*\d+ ms/);
+  await expect(card).toContainText('Bid write');
+  await expect(card).toContainText('Sign in');
+  await expect(page.getByTestId('health-card')).toContainText('healthy');
+  await expect(page.getByTestId('sql-card').or(page.getByTestId('store-card'))).toBeVisible();
+});
+// #endregion backends-card

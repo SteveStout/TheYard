@@ -87,6 +87,12 @@ export type DocKey =
   | 'adrBrokenWindows'
   | 'adrStaleListing'
   | 'adrRecordAddress'
+  | 'adrPartitionKey'
+  | 'adrSecondStore'
+  | 'adrPortsWait'
+  | 'adrAccountsDocuments'
+  | 'adrStoreVisible'
+  | 'adrBackends'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -568,6 +574,48 @@ export const DOCS: Record<
     kind: 'adr',
     number: '057',
   },
+  adrPartitionKey: {
+    title: 'ADR: The partition key',
+    menuLabel: 'ADR: The partition key',
+    url: '/api/docs/adr-partition-key',
+    kind: 'adr',
+    number: '058',
+  },
+  adrSecondStore: {
+    title: 'ADR: A second store on Cosmos DB, and what it costs',
+    menuLabel: 'ADR: A second store on Cosmos DB',
+    url: '/api/docs/adr-second-store',
+    kind: 'adr',
+    number: '059',
+  },
+  adrPortsWait: {
+    title: 'ADR: The ports learn to wait',
+    menuLabel: 'ADR: The ports learn to wait',
+    url: '/api/docs/adr-ports-wait',
+    kind: 'adr',
+    number: '060',
+  },
+  adrAccountsDocuments: {
+    title: 'ADR: Accounts on a document store',
+    menuLabel: 'ADR: Accounts on a document store',
+    url: '/api/docs/adr-accounts-documents',
+    kind: 'adr',
+    number: '061',
+  },
+  adrStoreVisible: {
+    title: 'ADR: What the store is actually doing',
+    menuLabel: 'ADR: What the store is actually doing',
+    url: '/api/docs/adr-store-visible',
+    kind: 'adr',
+    number: '062',
+  },
+  adrBackends: {
+    title: 'ADR: Backends, side by side',
+    menuLabel: 'ADR: Backends, side by side',
+    url: '/api/docs/adr-backends',
+    kind: 'adr',
+    number: '063',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -681,6 +729,12 @@ export const MENUS: Record<
       { key: 'adrBrokenWindows' },
       { key: 'adrStaleListing' },
       { key: 'adrRecordAddress' },
+      { key: 'adrPartitionKey' },
+      { key: 'adrSecondStore' },
+      { key: 'adrPortsWait' },
+      { key: 'adrAccountsDocuments' },
+      { key: 'adrStoreVisible' },
+      { key: 'adrBackends' },
     ],
   },
   // #endregion records-menu

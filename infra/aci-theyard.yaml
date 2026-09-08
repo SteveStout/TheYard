@@ -42,6 +42,11 @@ properties:
       # crash-looping.
       - name: ConnectionStrings__YardSql
         secureValue: __YARD_SQL_CONNECTION__
+      # The other container, for the Admin tab's comparison card (ADR: Backends,
+      # side by side). A public origin, read server side with a short patience,
+      # and a plain value because a URL is not a secret.
+      - name: Peer__Url
+        value: http://theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
       image: __IMAGE__
       ports:
       - port: 8080

@@ -89,12 +89,12 @@ public static class VehicleRows
 public sealed class EfVehicleSource(IDbContextFactory<YardDbContext> factory) : IVehicleSource
 {
     // #region ef-sources
-    public IReadOnlyList<Vehicle> Load()
+    public async Task<IReadOnlyList<Vehicle>> LoadAsync()
     {
-        using var db = factory.CreateDbContext();
+        using var db = await factory.CreateDbContextAsync();
         // Read once, in seed order, tracking nothing: these rows are a
         // catalogue this process will never write back.
-        return [.. db.Vehicles.AsNoTracking().OrderBy(row => row.Seq).Select(row => row.ToVehicle())];
+        return await db.Vehicles.AsNoTracking().OrderBy(row => row.Seq).Select(row => row.ToVehicle()).ToListAsync();
     }
     // #endregion ef-sources
 }
@@ -102,14 +102,12 @@ public sealed class EfVehicleSource(IDbContextFactory<YardDbContext> factory) : 
 /// <summary>Adapter: the photo manifest, out of the database.</summary>
 public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> factory) : IPhotoManifestSource
 {
-    public IReadOnlyList<PhotoEntry> Load()
+    public async Task<IReadOnlyList<PhotoEntry>> LoadAsync()
     {
-        using var db = factory.CreateDbContext();
-        return
-        [
-            .. db.Photos.AsNoTracking().OrderBy(row => row.Seq)
-                .Select(row => new PhotoEntry(row.File, row.Style, row.Title)),
-        ];
+        using var db = await factory.CreateDbContextAsync();
+        return await db.Photos.AsNoTracking().OrderBy(row => row.Seq)
+            .Select(row => new PhotoEntry(row.File, row.Style, row.Title))
+            .ToListAsync();
     }
 }
 
@@ -120,17 +118,15 @@ public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> facto
 public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidStore
 {
     // #region bid-store
-    public IReadOnlyList<StoredBid> Load()
+    public async Task<IReadOnlyList<StoredBid>> LoadAsync()
     {
-        using var db = factory.CreateDbContext();
-        return
-        [
-            .. db.Bids.AsNoTracking()
-                .Select(row => new StoredBid(
-                    row.UserId,
-                    row.VehicleId,
-                    new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs))),
-        ];
+        using var db = await factory.CreateDbContextAsync();
+        return await db.Bids.AsNoTracking()
+            .Select(row => new StoredBid(
+                row.UserId,
+                row.VehicleId,
+                new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs)))
+            .ToListAsync();
     }
 
     /// <summary>
@@ -139,7 +135,7 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
     /// write the row" safe here without the database needing an opinion about
     /// it.
     /// </summary>
-    public void Save(string userId, string vehicleId, BidState state)
+    public async Task SaveAsync(string userId, string vehicleId, BidState state)
     {
         // Three tries, then the exception travels. A conflict here means
         // another writer changed this row between this one reading it and
@@ -151,7 +147,7 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
         {
             try
             {
-                Write(userId, vehicleId, state);
+                await WriteAsync(userId, vehicleId, state);
                 return;
             }
             catch (DbUpdateConcurrencyException) when (attempt < 3)
@@ -161,10 +157,10 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
         }
     }
 
-    private void Write(string userId, string vehicleId, BidState state)
+    private async Task WriteAsync(string userId, string vehicleId, BidState state)
     {
-        using var db = factory.CreateDbContext();
-        var existing = db.Bids.Find(userId, vehicleId);
+        using var db = await factory.CreateDbContextAsync();
+        var existing = await db.Bids.FindAsync(userId, vehicleId);
         if (existing is null)
         {
             existing = new BidRow
@@ -195,16 +191,16 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
             existing.RowVersion = Guid.NewGuid().ToByteArray();
         }
 
-        db.SaveChanges();
+        await db.SaveChangesAsync();
     }
 
-    public void Clear(string userId)
+    public async Task ClearAsync(string userId)
     {
-        using var db = factory.CreateDbContext();
+        using var db = await factory.CreateDbContextAsync();
         // One person's rows. ExecuteDelete over the whole table was what this
         // did, which on a site two strangers can be looking at meant either of
         // them could delete the other's (ADR: Reset is one person's start-over).
-        db.Bids.Where(bid => bid.UserId == userId).ExecuteDelete();
+        await db.Bids.Where(bid => bid.UserId == userId).ExecuteDeleteAsync();
     }
     // #endregion bid-store
 }
@@ -217,6 +213,15 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
 /// </summary>
 public sealed record DatabaseState(bool Ready, string Note, Exception? Failure = null)
 {
+    /// <summary>How long bringing the schema up, or checking it was there, took. For the Admin tab's comparison card.</summary>
+    public long SchemaMs { get; init; }
+
+    /// <summary>How long the first-boot seed took, zero when there was nothing to seed.</summary>
+    public long SeedMs { get; init; }
+
+    /// <summary>What the seed cost in request units, which only the document store can say.</summary>
+    public double? SeedRequestUnits { get; init; }
+
     /// <summary>
     /// One sentence safe to put anywhere, including a public page.
     ///
@@ -240,7 +245,7 @@ public sealed record DatabaseState(bool Ready, string Note, Exception? Failure =
 public static class YardDatabase
 {
     // #region prepare
-    public static DatabaseState Prepare(
+    public static async Task<DatabaseState> PrepareAsync(
         YardConnection connection,
         IVehicleSource seedVehicles,
         IPhotoManifestSource seedPhotos)
@@ -253,10 +258,10 @@ public static class YardDatabase
             // start, and a container that takes longer to answer its first
             // request is a cost this change has to be able to state.
             var migrating = System.Diagnostics.Stopwatch.StartNew();
-            string schemaNote = BringSchemaUp(db, connection);
+            string schemaNote = await BringSchemaUpAsync(db, connection);
             migrating.Stop();
             var seeding = System.Diagnostics.Stopwatch.StartNew();
-            var seeded = YardSeed.EnsureSeeded(db, seedVehicles, seedPhotos);
+            var seeded = await YardSeed.EnsureSeededAsync(db, seedVehicles, seedPhotos);
             seeding.Stop();
 
             return new DatabaseState(
@@ -264,7 +269,11 @@ public static class YardDatabase
                 $"{connection.Describe()}, {schemaNote} in {migrating.ElapsedMilliseconds} ms "
                 + $"and seeded in {seeding.ElapsedMilliseconds} ms, "
                 + $"inserting {seeded.VehiclesInserted} vehicles and {seeded.PhotosInserted} photos, "
-                + $"now holding {seeded.VehiclesTotal} and {seeded.PhotosTotal}");
+                + $"now holding {seeded.VehiclesTotal} and {seeded.PhotosTotal}")
+            {
+                SchemaMs = migrating.ElapsedMilliseconds,
+                SeedMs = seeding.ElapsedMilliseconds,
+            };
         }
         catch (Exception ex)
         {
@@ -299,11 +308,11 @@ public static class YardDatabase
     /// per test, and a container-lifetime file in the fallback. Nothing
     /// publishes to it and nothing else reads it.
     /// </summary>
-    private static string BringSchemaUp(YardDbContext db, YardConnection connection)
+    private static async Task<string> BringSchemaUpAsync(YardDbContext db, YardConnection connection)
     {
         if (connection.Provider == YardProvider.Sqlite)
         {
-            db.Database.Migrate();
+            await db.Database.MigrateAsync();
             return "migrated";
         }
 
@@ -311,7 +320,7 @@ public static class YardDatabase
         // and again inside the SQL, which is two lists that can drift, on a
         // check whose whole job is to notice drift.
         string[] required = ["Vehicles", "Photos", "Bids", "AspNetUsers"];
-        var present = db.Database.SqlQuery<string>($"SELECT name AS Value FROM sys.tables").ToList();
+        var present = await db.Database.SqlQuery<string>($"SELECT name AS Value FROM sys.tables").ToListAsync();
         var missing = required.Where(table => !present.Contains(table, StringComparer.OrdinalIgnoreCase)).ToList();
         return missing.Count == 0
             ? "found the published schema"
@@ -334,23 +343,23 @@ public sealed record SeedResult(int VehiclesInserted, int PhotosInserted, int Ve
 public static class YardSeed
 {
     // #region seed
-    public static SeedResult EnsureSeeded(YardDbContext db, IVehicleSource vehicles, IPhotoManifestSource photos)
+    public static async Task<SeedResult> EnsureSeededAsync(YardDbContext db, IVehicleSource vehicles, IPhotoManifestSource photos)
     {
         int vehiclesAdded = 0;
         int photosAdded = 0;
 
         // "Empty" rather than "new", so a database that half-filled because a
         // process died mid-seed is not left half-filled forever.
-        if (!db.Vehicles.Any())
+        if (!await db.Vehicles.AnyAsync())
         {
-            var rows = vehicles.Load().Select((vehicle, index) => vehicle.ToRow(index)).ToList();
+            var rows = (await vehicles.LoadAsync()).Select((vehicle, index) => vehicle.ToRow(index)).ToList();
             db.Vehicles.AddRange(rows);
             vehiclesAdded = rows.Count;
         }
 
-        if (!db.Photos.Any())
+        if (!await db.Photos.AnyAsync())
         {
-            var rows = photos.Load()
+            var rows = (await photos.LoadAsync())
                 .Select((photo, index) => new PhotoRow
                 {
                     Seq = index,
@@ -365,10 +374,10 @@ public static class YardSeed
 
         if (vehiclesAdded > 0 || photosAdded > 0)
         {
-            db.SaveChanges();
+            await db.SaveChangesAsync();
         }
 
-        return new SeedResult(vehiclesAdded, photosAdded, db.Vehicles.Count(), db.Photos.Count());
+        return new SeedResult(vehiclesAdded, photosAdded, await db.Vehicles.CountAsync(), await db.Photos.CountAsync());
     }
     // #endregion seed
 }

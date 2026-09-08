@@ -16,6 +16,25 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
 
+    // #region what-the-store-ran
+    /// <summary>
+    /// Whichever store this container is on, what it ran. The SQL section on a
+    /// relational container, the operations section on a document one, so the
+    /// same test holds the no-values rule against both stores rather than
+    /// against the one it was written for (ADR: What the store is actually
+    /// doing).
+    /// </summary>
+    private async Task<(bool Cosmos, string Body)> WhatTheStoreRan()
+    {
+        string store = await _client.GetStringAsync("/api/admin/store");
+        using var json = JsonDocument.Parse(store);
+        bool cosmos = json.RootElement.GetProperty("store").GetString() == "Azure Cosmos DB";
+        return cosmos
+            ? (true, json.RootElement.GetProperty("operations").GetRawText())
+            : (false, await _client.GetStringAsync("/api/admin/sql"));
+    }
+    // #endregion what-the-store-ran
+
     // #region redaction
     [Fact]
     public async Task No_parameter_value_reaches_the_sql_endpoint_not_even_an_email_address()
@@ -29,10 +48,12 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
             "/api/auth/register", new { email, password = "correct horse battery" });
         Assert.Equal(HttpStatusCode.OK, registered.StatusCode);
 
-        string body = await _client.GetStringAsync("/api/admin/sql");
+        var (cosmos, body) = await WhatTheStoreRan();
 
-        // The statements are there.
-        Assert.Contains("AspNetUsers", body, StringComparison.Ordinal);
+        // The statements are there: the users table on one store, the users
+        // container on the other, and on the document store the claim document
+        // whose id IS the address is the one most worth checking.
+        Assert.Contains(cosmos ? "users" : "AspNetUsers", body, StringComparison.Ordinal);
         // The address is not, in any form. This is the whole point of the
         // section: the type has no field for a parameter value, so there is no
         // rule here that a new column could get past.
@@ -45,7 +66,10 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         // logging is off. This assertion is what holds that switch down: turn it
         // on and this fails here rather than on the live site.
         string logs = await _client.GetStringAsync("/api/admin/logs");
-        Assert.Contains("AspNetUsers", logs, StringComparison.Ordinal);
+        if (!cosmos)
+        {
+            Assert.Contains("AspNetUsers", logs, StringComparison.Ordinal);
+        }
         Assert.DoesNotContain(email, logs, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("leak-canary", logs, StringComparison.OrdinalIgnoreCase);
     }
@@ -54,7 +78,7 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
     public async Task A_statement_describes_its_parameters_without_valuing_them()
     {
         await _client.GetAsync("/api/vehicles?limit=1");
-        string body = await _client.GetStringAsync("/api/admin/sql");
+        var (_, body) = await WhatTheStoreRan();
         using var json = JsonDocument.Parse(body);
 
         Assert.True(json.RootElement.GetArrayLength() > 0, "the application ran some SQL to answer that");
@@ -88,7 +112,7 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         await _client.PostAsJsonAsync(
             "/api/auth/login", new { email = "nobody@example.com", password = "wrong password" });
 
-        string body = await _client.GetStringAsync("/api/admin/sql");
+        var (_, body) = await WhatTheStoreRan();
         using var json = JsonDocument.Parse(body);
 
         var requests = json.RootElement.EnumerateArray()

@@ -23,6 +23,7 @@
     <ProjectReference Include="..\TheYard.Domain\TheYard.Domain.csproj" />
     <ProjectReference Include="..\TheYard.Application\TheYard.Application.csproj" />
     <ProjectReference Include="..\TheYard.Infrastructure\TheYard.Infrastructure.csproj" />
+    <ProjectReference Include="..\TheYard.Infrastructure.Cosmos\TheYard.Infrastructure.Cosmos.csproj" />
     <ProjectReference Include="..\TheYard.Api\TheYard.Api.csproj" />
   </ItemGroup>
 

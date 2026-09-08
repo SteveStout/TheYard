@@ -149,6 +149,55 @@ serves the catalogue from files.
   applies is a second definition of the schema waiting to be believed.
 - Identity's seven tables are now this repository's to maintain across upgrades.
 
+## Addendum, 2026-09-08: what source control means on the second store
+
+A reader who opens this record after 2026-09-08 should learn from it that a
+second store exists and that "the database in source control" means something
+different on that side.
+
+Azure Cosmos DB has no schema and no migrations. Indexes and constraints on any
+model are ignored; what a container has instead is a definition: its partition
+key path, its indexing policy, its unique keys and its time to live. Those four
+things are what goes in the repository, as one JSON file per container under
+`infra/cosmos/`, and they are the authority for that store in exactly the sense
+`api/TheYard.Database` is the authority for this one:
+
+```live path=infra/cosmos/bids.json region=*
+```
+
+**The chain is the same chain.** A person applies the definitions with the Azure
+CLI; the code carries a catalog of the same container names and partition keys;
+a conformance test reads the JSON files and the catalog and fails the build
+when they disagree; and the running application refuses the store when a
+container it maps to is missing or partitioned on a different path, falling
+back to files as it does when a table is missing here:
+
+```live path=api/TheYard.Tests/CosmosDefinitionTests.cs region=conformance
+```
+
+**The application cannot change the schema, for a different reason.** Here the
+managed identity holds `db_datareader` and `db_datawriter` and not
+`db_ddladmin`. There it holds the Cosmos DB Built-in Data Contributor role,
+which is a data-plane role, and creating a database or a container is a
+control-plane operation that a data-plane token is refused for. Same rule, same
+outcome, different mechanism, and the rule is what matters: the running
+application maps to a store a person published.
+
+**What has no counterpart.** A DACPAC's incremental publish, which diffs the
+project against the live database and applies the difference, has no equivalent:
+a partition key cannot be changed after the container exists, and an indexing
+policy change is applied by the service as a background reindex. So a change to
+a definition file is either a new container and a copy, for the key, or a
+policy update the service catches up on, for the index, and the record for the
+change says which. The Identity tables this record transcribed by hand have no
+counterpart either, because Identity on that side is two document shapes
+(ADR: Accounts on a document store).
+
+Steve's reason for this record, that the data structure outlives the framework
+that reads it, held up in the one way it could be tested: the second store was
+built from the same domain records and the same seed files, and the relational
+schema did not move.
+
 ## Files
 
 - [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the schema, and the authority.

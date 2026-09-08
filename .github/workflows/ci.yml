@@ -115,10 +115,17 @@ jobs:
       # source made the suite fail on itself, on the runs where the line was
       # flushed before the scan reached it and not on the others
       # (ADR: Where a gate lives, addendum).
+      # Everything except the tests that need the real Cosmos DB account. This
+      # runner has no Azure credential and is not getting one, so those run on
+      # the ship gate on Steve's machine as the signed-in principal; here they
+      # are filtered out by their trait rather than skipped, because a skipped
+      # test is a green check that checked nothing (ADR: A second store on
+      # Cosmos DB, and what it costs).
       - name: Run the .NET suites
         run: |
           set -o pipefail
           dotnet test api --collect:"XPlat Code Coverage" --results-directory TestResults \
+            --filter "Store!=cosmos" \
             --logger 'console;verbosity=normal' 2>&1 | tee "$RUNNER_TEMP/dotnet-output.txt"
       - name: Say which test failed, on the run page
         if: failure()

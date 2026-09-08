@@ -1,0 +1,16 @@
+{
+  "container": "vehicles",
+  "partitionKeyPath": "/make",
+  "defaultTtlSeconds": null,
+  "why": "The 200 seed vehicles, read whole once at cold start and ordered in memory. No query names a property, so no path is indexed (ADR: The partition key).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

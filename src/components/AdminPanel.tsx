@@ -55,11 +55,85 @@ type EndpointTiming = {
   max_ms: number;
 };
 type StatusCount = { status: number; count: number };
+type RouteTiming = { route: string; count: number; p50_ms: number; p95_ms: number; max_ms: number };
+type StoreSummary = {
+  store: string;
+  window: number;
+  p50_ms: number;
+  p95_ms: number;
+  max_ms: number;
+  ru_total: number;
+  ru_p50: number;
+  ru_max: number;
+  cross_partition: number;
+  point_operations: number;
+};
+type RouteCharge = {
+  route: string;
+  requests: number;
+  operations_per_request: number;
+  ru_p50: number;
+  ru_max: number;
+  cross_partition: number;
+};
+type Startup = {
+  store: string;
+  prepare_ms: number | null;
+  schema_ms: number;
+  seed_ms: number;
+  seed_ru: number | null;
+  catalogue_ms: number | null;
+  bids_ms: number | null;
+  ready_ms: number | null;
+  started_at: string;
+};
 type Metrics = {
-  requests: { window: number; p50_ms: number; p95_ms: number; by_path: EndpointTiming[] };
+  requests: {
+    window: number;
+    p50_ms: number;
+    p95_ms: number;
+    by_path: EndpointTiming[];
+    by_route: RouteTiming[];
+  };
   by_status: StatusCount[];
   sql: { window: number; p50_ms: number; p95_ms: number; max_ms: number };
+  store: StoreSummary;
+  store_by_route: RouteCharge[];
+  startup: Startup;
 };
+type Peer = {
+  configured: boolean;
+  reachable: boolean;
+  reason: string | null;
+  host: string | null;
+  fetched_at: string;
+  metrics: Metrics | null;
+};
+type StoreOperation = {
+  at: string;
+  container: string;
+  kind: string;
+  text: string;
+  parameters: SqlParameterShape[];
+  partition: string;
+  physical_partitions: number;
+  request_charge: number;
+  duration_ms: number;
+  outcome: string;
+  request: string | null;
+};
+type StoreLog = { store: string; operations: StoreOperation[] };
+
+/** The rows the comparison card puts side by side: the paths a visitor actually takes (ADR: Backends, side by side). */
+const COMPARED_ROUTES: { route: string; label: string }[] = [
+  { route: 'GET /api/vehicles', label: 'Listing page' },
+  { route: 'GET /api/vehicles/{id}', label: 'Vehicle page' },
+  { route: 'GET /api/facets', label: 'Filter values' },
+  { route: 'POST /api/vehicles/{id}/bids', label: 'Bid write' },
+  { route: 'POST /api/auth/login', label: 'Sign in' },
+  { route: 'POST /api/auth/register', label: 'Register' },
+  { route: 'POST /api/market/tick', label: 'Room tick' },
+];
 type AzureState = {
   available: boolean;
   reason?: string;
@@ -98,6 +172,8 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
   const [sql, setSql] = useState<Fetched<SqlStatement[]>>(null);
   const [logs, setLogs] = useState<Fetched<LogEntry[]>>(null);
   const [metrics, setMetrics] = useState<Fetched<Metrics>>(null);
+  const [peer, setPeer] = useState<Fetched<Peer>>(null);
+  const [store, setStore] = useState<Fetched<StoreLog>>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -126,6 +202,8 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
     void grab<SqlStatement[]>('/api/admin/sql', setSql);
     void grab<LogEntry[]>('/api/admin/logs', setLogs);
     void grab<Metrics>('/api/admin/metrics', setMetrics);
+    void grab<Peer>('/api/admin/peer', setPeer);
+    void grab<StoreLog>('/api/admin/store', setStore);
     return () => {
       live = false;
     };
@@ -154,6 +232,27 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
         log, and how long both take. Refreshes every 30 seconds. Public on purpose; the reasoning is
         in the Best Practices menu.
       </p>
+      {/* #region backends-card */}
+      <article className={styles.wide} data-testid="backends-card">
+        <h2 className={styles.cardTitle}>Backends, side by side</h2>
+        <p className={styles.muted}>
+          This container and its peer on the same rows: the store each is on, how long each took to
+          come up, what the seed cost, and how long the things a visitor does take on each, with the
+          request charge beside every number the document store can put one on. The peer is read
+          through this container&rsquo;s own API with two and a half seconds of patience, so a peer
+          that is down is a sentence here and not a hang. Cold start and seed are measured on each
+          container at its own start; the rest is the last few hundred requests each has seen.
+        </p>
+        {metrics === null || peer === null ? (
+          <p className={styles.muted}>Loading…</p>
+        ) : metrics === 'failed' ? (
+          failed('the comparison')
+        ) : (
+          <Comparison mine={metrics} peer={peer === 'failed' ? null : peer} />
+        )}
+      </article>
+      {/* #endregion backends-card */}
+
       <div className={styles.grid}>
         {/* #region health-card */}
         <article className={styles.card} data-testid="health-card">
@@ -396,72 +495,66 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
       {/* #endregion timing-section */}
 
       {/* #region sql-section */}
-      <article className={styles.wide} data-testid="sql-card">
-        <h2 className={styles.cardTitle}>The SQL this application ran</h2>
-        <p className={styles.muted}>
-          Every statement Entity Framework sent, newest first, with the request that caused it and
-          how long the database took. Parameters are listed by name, type and size. Their values are
-          not here and never were: the type this table is built from has no field to put one in,
-          because this page is public and a registration&rsquo;s parameters carry an email address.
-          The request is the method and the path, without its query string, for the same reason.
-          Statements caused by this page and by the health check are left out, or watching would be
-          all there was to see. The buffer holds the last 200 in this container&rsquo;s memory and
-          empties on every deploy.
-        </p>
-        {sql === null ? (
-          <p className={styles.muted}>Loading…</p>
-        ) : sql === 'failed' ? (
-          failed('the SQL log')
-        ) : sql.length === 0 ? (
+      {store !== null && store !== 'failed' && store.store === 'Azure Cosmos DB' ? (
+        <StoreCard log={store} />
+      ) : (
+        <article className={styles.wide} data-testid="sql-card">
+          <h2 className={styles.cardTitle}>The SQL this application ran</h2>
           <p className={styles.muted}>
-            Nothing recorded yet. The catalogue is read once at startup and cached, so an idle
-            container runs no SQL at all.
+            Every statement Entity Framework sent, newest first, with the request that caused it and
+            how long the database took. Parameters are listed by name, type and size. Their values
+            are not here and never were: the type this table is built from has no field to put one
+            in, because this page is public and a registration&rsquo;s parameters carry an email
+            address. The request is the method and the path, without its query string, for the same
+            reason. Statements caused by this page and by the health check are left out, or watching
+            would be all there was to see. The buffer holds the last 200 in this container&rsquo;s
+            memory and empties on every deploy.
           </p>
-        ) : (
-          <div
-            className={styles.tableWrap}
-            role="region"
-            aria-label="SQL statements this application ran"
-            tabIndex={0}
-          >
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">At</th>
-                  <th scope="col">Took</th>
-                  <th scope="col">Caused by</th>
-                  <th scope="col">Statement</th>
-                  <th scope="col">Parameters</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sql.slice(0, 60).map((statement, index) => (
-                  <tr key={index}>
-                    <td className={styles.mono}>{new Date(statement.at).toLocaleTimeString()}</td>
-                    <td className={styles.mono}>{statement.duration_ms} ms</td>
-                    <td className={styles.mono}>{statement.request ?? 'startup'}</td>
-                    <td>
-                      <pre className={styles.sql}>{statement.text}</pre>
-                      <span className={styles.muted}>{statement.outcome}</span>
-                    </td>
-                    <td className={styles.mono}>
-                      {statement.parameters.length === 0
-                        ? 'none'
-                        : statement.parameters
-                            .map(
-                              (parameter) =>
-                                `${parameter.name} ${parameter.type}` +
-                                (parameter.size === null ? '' : `(${parameter.size})`)
-                            )
-                            .join(', ')}
-                    </td>
+          {sql === null ? (
+            <p className={styles.muted}>Loading…</p>
+          ) : sql === 'failed' ? (
+            failed('the SQL log')
+          ) : sql.length === 0 ? (
+            <p className={styles.muted}>
+              Nothing recorded yet. The catalogue is read once at startup and cached, so an idle
+              container runs no SQL at all.
+            </p>
+          ) : (
+            <div
+              className={styles.tableWrap}
+              role="region"
+              aria-label="SQL statements this application ran"
+              tabIndex={0}
+            >
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">At</th>
+                    <th scope="col">Took</th>
+                    <th scope="col">Caused by</th>
+                    <th scope="col">Statement</th>
+                    <th scope="col">Parameters</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </article>
+                </thead>
+                <tbody>
+                  {sql.slice(0, 60).map((statement, index) => (
+                    <tr key={index}>
+                      <td className={styles.mono}>{new Date(statement.at).toLocaleTimeString()}</td>
+                      <td className={styles.mono}>{statement.duration_ms} ms</td>
+                      <td className={styles.mono}>{statement.request ?? 'startup'}</td>
+                      <td>
+                        <pre className={styles.sql}>{statement.text}</pre>
+                        <span className={styles.muted}>{statement.outcome}</span>
+                      </td>
+                      <td className={styles.mono}>{describeParameters(statement.parameters)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </article>
+      )}
       {/* #endregion sql-section */}
 
       {/* #region log-section */}
@@ -520,3 +613,210 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
     </section>
   );
 }
+
+function describeParameters(parameters: SqlParameterShape[]): string {
+  return parameters.length === 0
+    ? 'none'
+    : parameters
+        .map(
+          (parameter) =>
+            `${parameter.name} ${parameter.type}` +
+            (parameter.size === null ? '' : `(${parameter.size})`)
+        )
+        .join(', ');
+}
+
+/** A number of milliseconds, or the word for not having one. */
+function ms(value: number | null | undefined): string {
+  return value === null || value === undefined ? 'not measured' : `${value} ms`;
+}
+
+/** Milliseconds with the request charge beside them, when there is one (ADR: Backends, side by side). */
+function msAndRu(value: number | null | undefined, ru: number | null | undefined): string {
+  const time = ms(value);
+  return ru === null || ru === undefined ? time : `${time} · ${ru} RU`;
+}
+
+// #region comparison
+/**
+ * Two columns, this container first, on the same rows. The peer's column is
+ * whatever /api/admin/peer relayed, and when it relayed nothing the column
+ * says why and the rest of the card stands (ADR: Backends, side by side).
+ */
+function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
+  const theirs = peer !== null && peer.reachable ? peer.metrics : null;
+  const peerTitle =
+    peer === null
+      ? 'The peer could not be read'
+      : !peer.configured
+        ? 'No peer is configured on this container'
+        : peer.reachable
+          ? `The other site (${peer.metrics?.store.store ?? 'store unknown'})`
+          : `The other site is not answering`;
+  const peerNote = peer !== null && peer.configured && !peer.reachable ? peer.reason : null;
+  const isCosmos = (m: Metrics | null) => m !== null && m.store.store === 'Azure Cosmos DB';
+
+  const routeCell = (m: Metrics | null, route: string): string => {
+    if (m === null) return '';
+    const timing = m.requests.by_route.find((r) => r.route === route);
+    if (timing === undefined) return 'not seen yet';
+    const charge = isCosmos(m) ? m.store_by_route.find((r) => r.route === route) : undefined;
+    const time = `p50 ${timing.p50_ms} ms, p95 ${timing.p95_ms} ms (${timing.count})`;
+    return charge === undefined ? time : `${time} · ${charge.ru_p50} RU`;
+  };
+
+  const rows: { label: string; mine: string; theirs: string }[] = [
+    { label: 'Store', mine: mine.store.store, theirs: theirs?.store.store ?? '' },
+    {
+      label: 'Cold start, process start to ready',
+      mine: ms(mine.startup.ready_ms),
+      theirs: theirs === null ? '' : ms(theirs.startup.ready_ms),
+    },
+    {
+      label: 'Store check (schema or containers)',
+      mine: ms(mine.startup.schema_ms),
+      theirs: theirs === null ? '' : ms(theirs.startup.schema_ms),
+    },
+    {
+      label: 'Seed, first boot only',
+      mine: msAndRu(mine.startup.seed_ms, mine.startup.seed_ru),
+      theirs: theirs === null ? '' : msAndRu(theirs.startup.seed_ms, theirs.startup.seed_ru),
+    },
+    {
+      label: 'Catalogue load',
+      mine: ms(mine.startup.catalogue_ms),
+      theirs: theirs === null ? '' : ms(theirs.startup.catalogue_ms),
+    },
+    {
+      label: 'Bids load',
+      mine: ms(mine.startup.bids_ms),
+      theirs: theirs === null ? '' : ms(theirs.startup.bids_ms),
+    },
+    {
+      label: 'Requests, all paths',
+      mine: `p50 ${mine.requests.p50_ms} ms, p95 ${mine.requests.p95_ms} ms (${mine.requests.window})`,
+      theirs:
+        theirs === null
+          ? ''
+          : `p50 ${theirs.requests.p50_ms} ms, p95 ${theirs.requests.p95_ms} ms (${theirs.requests.window})`,
+    },
+    ...COMPARED_ROUTES.map((entry) => ({
+      label: entry.label,
+      mine: routeCell(mine, entry.route),
+      theirs: routeCell(theirs, entry.route),
+    })),
+    {
+      label: 'Store operations, this window',
+      mine: isCosmos(mine)
+        ? `p50 ${mine.store.p50_ms} ms, p95 ${mine.store.p95_ms} ms, ${mine.store.ru_total} RU over ${mine.store.window}, ${mine.store.cross_partition} cross-partition`
+        : `p50 ${mine.sql.p50_ms} ms, p95 ${mine.sql.p95_ms} ms over ${mine.sql.window} statements`,
+      theirs:
+        theirs === null
+          ? ''
+          : isCosmos(theirs)
+            ? `p50 ${theirs.store.p50_ms} ms, p95 ${theirs.store.p95_ms} ms, ${theirs.store.ru_total} RU over ${theirs.store.window}, ${theirs.store.cross_partition} cross-partition`
+            : `p50 ${theirs.sql.p50_ms} ms, p95 ${theirs.sql.p95_ms} ms over ${theirs.sql.window} statements`,
+    },
+  ];
+
+  return (
+    <div className={styles.tableWrap} role="region" aria-label="Backends side by side" tabIndex={0}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">Measured</th>
+            <th scope="col">This site ({mine.store.store})</th>
+            <th scope="col">{peerTitle}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label}>
+              <td>{row.label}</td>
+              <td className={styles.mono}>{row.mine}</td>
+              <td className={styles.mono}>{row.theirs}</td>
+            </tr>
+          ))}
+          {peerNote !== null ? (
+            <tr>
+              <td className={styles.muted} colSpan={3} data-testid="peer-note">
+                {peerNote}
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+// #endregion comparison
+
+// #region store-card
+/** The document store's counterpart of the SQL card: every operation with its partition and its charge (ADR: What the store is actually doing). */
+function StoreCard({ log }: { log: StoreLog }) {
+  return (
+    <article className={styles.wide} data-testid="store-card">
+      <h2 className={styles.cardTitle}>What the document store ran</h2>
+      <p className={styles.muted}>
+        Every operation this container sent to {log.store}, newest first: the container, whether it
+        was a point read, a point write, a query or a batch, whether it was pinned to one partition
+        or fanned out across every physical partition, and what it cost in request units beside how
+        long it took. Parameters are listed by name, type and size and never by value, and a
+        partition is described rather than named, because this page is public and the key of an
+        account&rsquo;s partition is the account. Operations caused by this page and by the health
+        check are left out. The buffer holds the last 200 in this container&rsquo;s memory and
+        empties on every deploy.
+      </p>
+      {log.operations.length === 0 ? (
+        <p className={styles.muted}>Nothing recorded yet.</p>
+      ) : (
+        <div
+          className={styles.tableWrap}
+          role="region"
+          aria-label="Operations this application sent to the document store"
+          tabIndex={0}
+        >
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th scope="col">At</th>
+                <th scope="col">Took</th>
+                <th scope="col">Charge</th>
+                <th scope="col">Caused by</th>
+                <th scope="col">Container</th>
+                <th scope="col">Kind</th>
+                <th scope="col">Partition</th>
+                <th scope="col">Operation</th>
+                <th scope="col">Parameters</th>
+              </tr>
+            </thead>
+            <tbody>
+              {log.operations.slice(0, 60).map((operation, index) => (
+                <tr key={index}>
+                  <td className={styles.mono}>{new Date(operation.at).toLocaleTimeString()}</td>
+                  <td className={styles.mono}>{operation.duration_ms} ms</td>
+                  <td className={styles.mono}>{operation.request_charge} RU</td>
+                  <td className={styles.mono}>{operation.request ?? 'startup'}</td>
+                  <td className={styles.mono}>{operation.container}</td>
+                  <td>{operation.kind}</td>
+                  <td>
+                    {operation.partition}
+                    {operation.partition.startsWith('cross')
+                      ? ` (${operation.physical_partitions} physical)`
+                      : ''}
+                  </td>
+                  <td>
+                    <pre className={styles.sql}>{operation.text}</pre>
+                    <span className={styles.muted}>{operation.outcome}</span>
+                  </td>
+                  <td className={styles.mono}>{describeParameters(operation.parameters)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </article>
+  );
+}
+// #endregion store-card

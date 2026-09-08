@@ -1,0 +1,16 @@
+{
+  "container": "bids",
+  "partitionKeyPath": "/user_id",
+  "defaultTtlSeconds": null,
+  "why": "One document per buyer per vehicle: id is the vehicle id, the partition is the buyer. Every write is a point write and a reset is one query inside the buyer's partition, so no path is indexed.",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

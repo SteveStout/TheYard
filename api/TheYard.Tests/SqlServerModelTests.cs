@@ -152,9 +152,9 @@ public class SqlServerModelTests
     }
 
     [Fact]
-    public void The_auction_start_converter_round_trips_every_row_in_the_dataset()
+    public async Task The_auction_start_converter_round_trips_every_row_in_the_dataset()
     {
-        var vehicles = new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).Load();
+        var vehicles = await new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).LoadAsync();
         Assert.True(vehicles.Count > 100, "the seed dataset should have been found and read");
 
         var converter = YardDbContext.AuctionStartToDateTime;

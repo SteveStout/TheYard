@@ -15,9 +15,9 @@ public sealed class SyntheticVehicleSource(IVehicleSource seedSource, int target
 {
     private const string VinChars = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789";
 
-    public IReadOnlyList<Vehicle> Load()
+    public async Task<IReadOnlyList<Vehicle>> LoadAsync()
     {
-        var seeds = seedSource.Load();
+        var seeds = await seedSource.LoadAsync();
         if (targetCount <= seeds.Count)
         {
             return seeds;

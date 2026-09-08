@@ -144,6 +144,17 @@ browser suite repeats the same check against the rendered page.
 - Timing is measured outside the error middleware, so a request that fails is
   still timed. An endpoint that fails slowly is the one worth seeing.
 
+## Addendum, 2026-09-08: the card has a sibling
+
+This record describes a world with one store in it, and as of 1.0.0.89 there are
+two. The SQL card is unchanged and is what the first container shows. The second
+container shows the document store's counterpart, with the request charge and
+the partition beside every operation, fed by a parallel port rather than a
+widening of `ISqlLog`, for reasons given where the sibling is decided
+(ADR: What the store is actually doing). The no-values rule carries over exactly,
+and the canary test in this record now reads whichever card the container it is
+running on has.
+
 ## Files
 
 - [`api/TheYard.Application/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/SqlLog.cs): the types with nowhere to put a value, and the two ports.

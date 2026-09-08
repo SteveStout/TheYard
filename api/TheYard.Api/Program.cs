@@ -12,6 +12,7 @@ using TheYard.Application;
 using TheYard.Data;
 using TheYard.Domain;
 using TheYard.Infrastructure;
+using TheYard.Infrastructure.Cosmos;
 
 // Inventory + bidding API, composed onion-style: Domain (entities, photo
 // selection, auction schedule, filter and bid rules) <- Application
@@ -59,6 +60,12 @@ string? configuredDatabase = builder.Configuration.GetConnectionString("Yard");
 // this at roll time and a failed substitution leaves a placeholder, which
 // YardConnection.Choose reads as "no SQL Server here" and falls back.
 string? configuredSqlServer = builder.Configuration.GetConnectionString("YardSql");
+// Azure Cosmos DB, when there is an account to talk to (ADR: A second store on
+// Cosmos DB, and what it costs). A URL and not a credential: the account has no
+// keys, and the container authenticates as the managed identity it already
+// carries. Set on the second container only, so the first one and every
+// developer machine never see this branch.
+string? configuredCosmos = builder.Configuration["Cosmos:AccountEndpoint"];
 string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
 // Pooling off for a scratch database, which is what makes it deletable
 // without a process-wide ClearAllPools. That call empties the pool for every
@@ -67,7 +74,12 @@ string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Gui
 // pulling connections out from under the others (the staff review, 2026-09-03,
 // confirmed by a test that passed alone and failed in the suite).
 string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase};Pooling=False";
-var yard = YardConnection.Choose(configuredSqlServer, databaseConnection);
+var yard = YardConnection.Choose(configuredCosmos, configuredSqlServer, databaseConnection);
+// The document store's operations, for the Admin tab, created before the store
+// is so the container checks and the seed are the first lines in it: the cold
+// start is the operation the comparison card most wants to show
+// (ADR: What the store is actually doing).
+var storeLog = new StoreRingBuffer(200);
 #endregion persistence
 
 #region migrate-and-seed
@@ -78,10 +90,36 @@ var yard = YardConnection.Choose(configuredSqlServer, databaseConnection);
 // shape it half recognises. The JSON readers are still where a fresh database
 // gets its contents, which keeps `npm run data` the way the dataset is
 // regenerated and means the seed cannot drift from the file it came from.
-var database = YardDatabase.Prepare(
-    yard,
-    new JsonFileVehicleSource(dataPath),
-    new JsonFilePhotoManifestSource(manifestPath));
+var startup = new StartupTimings();
+CosmosStore? cosmos = null;
+DatabaseState database;
+if (yard.Provider == YardProvider.Cosmos)
+{
+    // Same question, same answer shape, other store: are the containers there
+    // with the keys this code was written for, and is the seed in them. A
+    // refusal falls through to the file-backed catalogue exactly as a missing
+    // schema does on SQL Server.
+    cosmos = CosmosStore.Connect(
+        yard.ConnectionString,
+        builder.Configuration["Cosmos:Database"] ?? "theyard",
+        builder.Configuration["Cosmos:ContainerPrefix"] ?? "",
+        // "managed-identity" on the deployed container; anything else, which
+        // is what a developer's machine and the test runner have, means the
+        // signed-in Azure CLI session.
+        builder.Configuration["Cosmos:Credential"] ?? "azure-cli",
+        builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
+        storeLog);
+    database = await startup.Time("prepare", () => cosmos.PrepareAsync(
+        new JsonFileVehicleSource(dataPath),
+        new JsonFilePhotoManifestSource(manifestPath)));
+}
+else
+{
+    database = await startup.Time("prepare", () => YardDatabase.PrepareAsync(
+        yard,
+        new JsonFileVehicleSource(dataPath),
+        new JsonFilePhotoManifestSource(manifestPath)));
+}
 
 #region admin-rings
 // The three rings behind the Admin tab's new sections, registered here because
@@ -93,6 +131,8 @@ var logLog = new LogRingBuffer(300);
 var requestLog = new RequestRingBuffer(500);
 builder.Services.AddSingleton(sqlLog);
 builder.Services.AddSingleton<ISqlLog>(sqlLog);
+builder.Services.AddSingleton(storeLog);
+builder.Services.AddSingleton<IStoreLog>(storeLog);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<ICurrentRequest, HttpCurrentRequest>();
 builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
@@ -107,8 +147,10 @@ builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
 var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
 {
     "/api/admin/sql",
+    "/api/admin/store",
     "/api/admin/logs",
     "/api/admin/metrics",
+    "/api/admin/peer",
     "/api/admin/azure",
     "/api/admin/telemetry",
     "/api/errors",
@@ -145,7 +187,19 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
 }
 #endregion admin-rings
 
-if (database.Ready)
+if (database.Ready && cosmos is not null)
+{
+    // The same three ports, answered out of the document store. The synthetic
+    // scale-up still decorates the vehicle source, and nothing above this line
+    // can tell that the catalogue is two hundred documents in a container
+    // rather than two hundred rows in a table (ADR: A second store on Cosmos
+    // DB, and what it costs).
+    builder.Services.AddSingleton(cosmos);
+    builder.Services.AddSingleton<IVehicleSource>(new SyntheticVehicleSource(new CosmosVehicleSource(cosmos), targetCount));
+    builder.Services.AddSingleton<IPhotoManifestSource>(new CosmosPhotoManifestSource(cosmos));
+    builder.Services.AddSingleton<IBidStore>(new CosmosBidStore(cosmos));
+}
+else if (database.Ready)
 {
     // A factory rather than a scoped context: the two sources and the bid store
     // are singletons that each want a context for the length of one operation,
@@ -213,7 +267,7 @@ builder.Services.AddSingleton(new RegistrationLimit(
 
 if (database.Ready)
 {
-    builder.Services
+    var identity = builder.Services
         .AddIdentityCore<YardUser>(options =>
         {
             // Long over ornate. A length requirement is the only one of these
@@ -244,8 +298,17 @@ if (database.Ready)
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
             options.Lockout.AllowedForNewUsers = true;
             // #endregion lockout
-        })
-        .AddEntityFrameworkStores<YardDbContext>();
+        });
+    if (cosmos is not null)
+    {
+        // One document per account and one per address, and none of Identity's
+        // seven tables (ADR: Accounts on a document store).
+        identity.AddUserStore<CosmosUserStore>();
+    }
+    else
+    {
+        identity.AddEntityFrameworkStores<YardDbContext>();
+    }
 }
 
 builder.Services
@@ -346,6 +409,13 @@ var telemetry = new TelemetryReader(
 var app = builder.Build();
 
 var contexts = app.Services.GetService<IDbContextFactory<YardDbContext>>();
+if (cosmos is not null)
+{
+    // The store was built before DI existed; now that the request describer
+    // does, every operation from here on is filed under the request that
+    // caused it (ADR: What the store is actually doing).
+    cosmos.CurrentRequest = app.Services.GetRequiredService<ICurrentRequest>();
+}
 
 if (database.Ready)
 {
@@ -406,9 +476,15 @@ if (configuredDatabase is null && yard.Provider == YardProvider.Sqlite)
     });
 }
 
-// Materialize the inventory now so a bad dataset fails the process at
-// startup, visibly, and not as a 500 on the first request.
-app.Services.GetRequiredService<InventoryService>().GetAll();
+// Materialize the inventory and replay the bids now, so a bad dataset fails
+// the process at startup, visibly, and not as a 500 on the first request, and
+// so no visitor's request is the one that waits for the store. This is the
+// warm-up the ports record leans on: after these two lines every synchronous
+// read in the application is reading a task that has already finished
+// (ADR: The ports learn to wait).
+await startup.Time("catalogue", () => app.Services.GetRequiredService<InventoryService>().WarmAsync());
+await startup.Time("bids", () => app.Services.GetRequiredService<BidService>().LoadAsync());
+startup.Ready();
 
 // First in the pipeline, because it can only catch what is registered after
 // it: an unhandled exception becomes a 500 ProblemDetails instead of an empty
@@ -539,7 +615,7 @@ app.MapPost("/api/vehicles/{id}/bids", (
         // The room's standing price is what the minimum next bid is measured
         // against (ADR-027). Handing BidRules the dataset's figure instead
         // would let the buyer retake the lead with a bid below the going rate.
-        (vehicle, clock) => bids.PlaceBid(market.Apply(vehicle), request.Amount, clock, http.UserId())))
+        (vehicle, clock) => bids.PlaceBidAsync(market.Apply(vehicle), request.Amount, clock, http.UserId())))
     .RequireAuthorization();
 
 app.MapPost("/api/vehicles/{id}/buy-now", (
@@ -549,7 +625,7 @@ app.MapPost("/api/vehicles/{id}/buy-now", (
     HttpContext http,
     string id,
     BuyNowRequest request) => HandleBid(inventory, bids, market, http.UserId(), id, request.AnchorMs,
-        (vehicle, clock) => bids.BuyNow(market.Apply(vehicle), clock, http.UserId())))
+        (vehicle, clock) => bids.BuyNowAsync(market.Apply(vehicle), clock, http.UserId())))
     .RequireAuthorization();
 
 #region market-endpoints
@@ -649,7 +725,7 @@ app.MapPost("/api/market/tick", (
 }).RequireAuthorization();
 #endregion market-endpoints
 
-app.MapDelete("/api/bids", (BidService bids, MarketService market, HttpContext http) =>
+app.MapDelete("/api/bids", async (BidService bids, MarketService market, HttpContext http) =>
 {
     if (http.UserIdOrNull() is not { } userId)
     {
@@ -662,7 +738,7 @@ app.MapDelete("/api/bids", (BidService bids, MarketService market, HttpContext h
     // not the other one. What it no longer does is clear anybody else's: this
     // endpoint used to take no user at all (ADR: Reset is one person's
     // start-over).
-    market.Forget(bids.Reset(userId));
+    market.Forget(await bids.ResetAsync(userId));
     return Results.NoContent();
 }).RequireAuthorization();
 #endregion bid-endpoints
@@ -721,14 +797,14 @@ app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, comm
 // accept the action. The order matters, because a bad anchor would make the
 // domain's answer meaningless. The status codes are the contract the browser
 // relies on (ADR-023).
-IResult HandleBid(
+async Task<IResult> HandleBid(
     InventoryService inventory,
     BidService bids,
     MarketService market,
     string userId,
     string id,
     long? anchorMs,
-    Func<Vehicle, AuctionClock, BidOutcome> action)
+    Func<Vehicle, AuctionClock, Task<BidOutcome>> action)
 {
     if (!Clocks.TryResolve(anchorMs, out var clock, out var clockError))
     {
@@ -738,7 +814,7 @@ IResult HandleBid(
     {
         return Results.NotFound();
     }
-    var outcome = action(vehicle, clock);
+    var outcome = await action(vehicle, clock);
     if (outcome.Kind == BidOutcomeKind.Rejected)
     {
         return Results.Problem(detail: outcome.Reason, statusCode: 400, title: "The bid was rejected");
@@ -825,11 +901,14 @@ app.Use(async (context, next) =>
 // Each probe is timed and each answer is a value, never an exception: a
 // health endpoint that throws tells an orchestrator nothing. The checks are
 // deliberately about the files this app cannot run without.
-HealthCheckEntry[] RunChecks(bool readinessOnly = false)
+async Task<HealthCheckEntry[]> RunChecksAsync(bool readinessOnly = false)
 {
     // Each probe is timed: the Admin tab shows the milliseconds beside the check,
     // so a slow disk or a slow lookup shows up before it fails (ADR-010, second pass).
-    HealthCheckEntry Check(string name, Func<bool> probe, string detail, bool gatesReadiness = true)
+    // Awaited, because the document store's probe is two point reads over the
+    // network and a health check that blocked a thread on them would be the
+    // defect the ports record describes (ADR: The ports learn to wait).
+    async Task<HealthCheckEntry> Check(string name, Func<Task<bool>> probe, string detail, bool gatesReadiness = true)
     {
         if (readinessOnly && !gatesReadiness)
         {
@@ -839,24 +918,32 @@ HealthCheckEntry[] RunChecks(bool readinessOnly = false)
         }
 
         var clock = Stopwatch.StartNew();
-        try { return new HealthCheckEntry(name, probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds, gatesReadiness); }
+        try { return new HealthCheckEntry(name, await probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds, gatesReadiness); }
         catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name, clock.ElapsedMilliseconds, gatesReadiness); }
     }
     return
     [
-        Check("dataset file", () => File.Exists(dataPath), "data/vehicles.json present"),
-        Check("docs", () => File.Exists(Path.Combine(repoRoot, "docs", "HOSTING.md")), "served documents findable"),
-        Check("photo manifest", () => File.Exists(manifestPath), "image manifest present"),
-        Check(
+        await Check("dataset file", () => Task.FromResult(File.Exists(dataPath)), "data/vehicles.json present"),
+        await Check("docs", () => Task.FromResult(File.Exists(Path.Combine(repoRoot, "docs", "HOSTING.md"))), "served documents findable"),
+        await Check("photo manifest", () => Task.FromResult(File.Exists(manifestPath)), "image manifest present"),
+        await Check(
             "database",
-            () =>
+            async () =>
             {
-                if (!database.Ready || contexts is null)
+                if (!database.Ready)
                 {
                     return false;
                 }
-                using var db = contexts.CreateDbContext();
-                return db.Vehicles.Any() && db.Photos.Any();
+                if (cosmos is not null)
+                {
+                    return await cosmos.ProbeAsync();
+                }
+                if (contexts is null)
+                {
+                    return false;
+                }
+                using var db = await contexts.CreateDbContextAsync();
+                return await db.Vehicles.AnyAsync() && await db.Photos.AnyAsync();
             },
             // The reason is in the log, not in this response. A health endpoint
             // is public on purpose, and an exception message from a storage
@@ -890,14 +977,14 @@ app.MapGet("/healthz", () => Results.Text("ok"));
 // Only the checks that gate it, and only those get run: the database probe is
 // two SQL statements whose answer readiness discards, and this endpoint is
 // polled by the orchestrator and by every deploy.
-app.MapGet("/readyz", () =>
-    RunChecks(readinessOnly: true).Where(check => check.GatesReadiness).All(check => check.Status == "pass")
+app.MapGet("/readyz", async () =>
+    (await RunChecksAsync(readinessOnly: true)).Where(check => check.GatesReadiness).All(check => check.Status == "pass")
         ? Results.Text("ready")
         : Results.StatusCode(503));
 
-app.MapGet("/api/health", () =>
+app.MapGet("/api/health", async () =>
 {
-    var checks = RunChecks();
+    var checks = await RunChecksAsync();
     return Results.Json(new
     {
         status = checks.All(c => c.Status == "pass") ? "healthy" : "degraded",
@@ -923,6 +1010,19 @@ app.MapGet("/api/errors", () => Results.Json(
 // see the comment on SqlStatement for why there is nowhere to put one.
 app.MapGet("/api/admin/sql", () => Results.Json(sqlLog.Snapshot(), wireFormat));
 
+// #region store-endpoint
+// The document store's operations, newest first: container, kind, the query
+// shape, whether it was pinned to one partition or fanned out, and the request
+// charge beside the milliseconds. Empty on a relational container, exactly as
+// the SQL list is empty on the document one; the page shows whichever the
+// container is (ADR: What the store is actually doing).
+app.MapGet("/api/admin/store", () => Results.Json(new
+{
+    store = yard.Describe(),
+    operations = storeLog.Snapshot(),
+}, wireFormat));
+// #endregion store-endpoint
+
 // The raw log lines, newest first, exactly as the console got them.
 app.MapGet("/api/admin/logs", () => Results.Json(logLog.Snapshot(), wireFormat));
 
@@ -942,6 +1042,9 @@ app.MapGet("/api/admin/metrics", () =>
             p50_ms = Percentiles.Of(requestDurations, 50),
             p95_ms = Percentiles.Of(requestDurations, 95),
             by_path = Percentiles.ByPath(requests),
+            // The same window by route, for the comparison card: a bid on one
+            // vehicle and a bid on another are one row (ADR: Backends, side by side).
+            by_route = Routes.ByRoute(requests),
         },
         // Counts by status, which is the aggregate that makes the timing above
         // mean something: a p95 of eight milliseconds reads very differently
@@ -959,6 +1062,31 @@ app.MapGet("/api/admin/metrics", () =>
             p95_ms = Percentiles.Of(sqlDurations, 95),
             max_ms = sqlDurations.Length == 0 ? 0 : sqlDurations.Max(),
         },
+        // #region store-metrics
+        // The same window over the document store, with what the window cost:
+        // total request units, the median charge, the dearest single operation,
+        // and how many of them fanned out across partitions. These are the
+        // numbers the comparison card puts beside the milliseconds
+        // (ADR: Backends, side by side).
+        store = StoreMetrics.Of(yard.Describe(), storeLog.Snapshot()),
+        store_by_route = Routes.ChargesByRoute(storeLog.Snapshot()),
+        // How this container came up: how long the store took to answer, how
+        // long the catalogue and the bids took to load, when it was ready to
+        // serve, and what the seed cost. Measured on this container at this
+        // start, which is the only honest cold start there is.
+        startup = new
+        {
+            store = yard.Describe(),
+            prepare_ms = startup.Ms("prepare"),
+            schema_ms = database.SchemaMs,
+            seed_ms = database.SeedMs,
+            seed_ru = database.SeedRequestUnits,
+            catalogue_ms = startup.Ms("catalogue"),
+            bids_ms = startup.Ms("bids"),
+            ready_ms = startup.ReadyMs,
+            started_at = startedAt,
+        },
+        // #endregion store-metrics
         // No recent_requests list. The first version returned the whole ring,
         // five hundred entries of method, path, status and timing, which is a
         // near-real-time feed of what every other visitor to a public site is
@@ -1145,6 +1273,17 @@ app.MapGet("/api/auth/me", async (IServiceProvider services, HttpContext http) =
 #endregion auth-endpoints
 
 app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
+
+// #region peer-endpoint
+// The other container's metrics, read server side with a short patience, so
+// the comparison card can put both backends on the same rows whichever tab
+// is open. The peer's address is configuration on this container and never
+// reaches the browser (ADR: Backends, side by side).
+var peer = new PeerReader(
+    builder.Configuration["Peer:Url"],
+    new HttpClient { Timeout = PeerReader.Patience + TimeSpan.FromSeconds(1) });
+app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync(), wireFormat));
+// #endregion peer-endpoint
 
 #region telemetry-endpoint
 // The last hour as Application Insights has it, for the Admin tab (ADR-024).

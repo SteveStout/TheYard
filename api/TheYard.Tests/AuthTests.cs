@@ -22,6 +22,14 @@ public class AuthTests : IDisposable
 
     private string Connection => $"Data Source={_file};Pooling=False";
 
+    // Unique per test instance, because xUnit makes a new instance per test
+    // and the store is not always a fresh file: run with every application
+    // booted on the document store, the whole class shares one users container,
+    // and the second test to register "first@example.com" would be registering
+    // a duplicate (ADR: A second store on Cosmos DB, and what it costs).
+    private readonly string _first = $"first-{Guid.NewGuid():N}@example.com";
+    private readonly string _second = $"second-{Guid.NewGuid():N}@example.com";
+
     private WebApplicationFactory<Program> Api() =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -104,11 +112,11 @@ public class AuthTests : IDisposable
         await using var api = Api();
         var client = api.CreateClient();
 
-        var response = await Register(client, "first@example.com");
+        var response = await Register(client, _first);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         string body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("first@example.com", body, StringComparison.Ordinal);
+        Assert.Contains(_first, body, StringComparison.Ordinal);
 
         string cookie = Assert.Single(response.Headers.GetValues("Set-Cookie"));
         // httpOnly is the whole reason the token is in a cookie rather than in
@@ -221,14 +229,14 @@ public class AuthTests : IDisposable
         long anchor = Anchor();
 
         var first = api.CreateClient();
-        await Register(first, "first@example.com");
+        await Register(first, _first);
         var (id, opening) = await ALiveVehicle(first, anchor);
         await Bid(first, id, opening, anchor);
 
         // A different client is a different browser: its own cookie jar, its
         // own account.
         var second = api.CreateClient();
-        await Register(second, "second@example.com");
+        await Register(second, _second);
         using var detail = JsonDocument.Parse(
             await second.GetStringAsync($"/api/vehicles/{id}?anchor_ms={anchor}"));
         int nextUp = detail.RootElement.GetProperty("min_next_bid").GetInt32();
@@ -264,12 +272,12 @@ public class AuthTests : IDisposable
         await using (var api = Api())
         {
             var first = api.CreateClient();
-            await Register(first, "first@example.com");
+            await Register(first, _first);
             (id, firstAmount) = await ALiveVehicle(first, anchor);
             await Bid(first, id, firstAmount, anchor);
 
             var second = api.CreateClient();
-            await Register(second, "second@example.com");
+            await Register(second, _second);
             using var detail = JsonDocument.Parse(
                 await second.GetStringAsync($"/api/vehicles/{id}?anchor_ms={anchor}"));
             secondAmount = detail.RootElement.GetProperty("min_next_bid").GetInt32();
@@ -280,7 +288,7 @@ public class AuthTests : IDisposable
         var backAsFirst = restarted.CreateClient();
         // The account outlived the process, so signing in again is a login and
         // not a registration.
-        Assert.Equal(HttpStatusCode.OK, (await LogIn(backAsFirst, "first@example.com")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LogIn(backAsFirst, _first)).StatusCode);
 
         using var mine = JsonDocument.Parse(await backAsFirst.GetStringAsync("/api/bids"));
         var restoredBid = mine.RootElement.GetProperty(id);
@@ -294,7 +302,7 @@ public class AuthTests : IDisposable
     {
         await using var api = Api();
         var client = api.CreateClient();
-        await Register(client, "first@example.com");
+        await Register(client, _first);
         long anchor = Anchor();
         var (id, amount) = await ALiveVehicle(client, anchor);
         await Bid(client, id, amount, anchor);
@@ -315,13 +323,13 @@ public class AuthTests : IDisposable
     {
         await using var api = Api();
         var client = api.CreateClient();
-        await Register(client, "first@example.com");
+        await Register(client, _first);
 
         var stranger = api.CreateClient();
         var noSuchAccount = await stranger.PostAsJsonAsync(
             "/api/auth/login", new { email = "nobody@example.com", password = "correct horse" });
         var wrongPassword = await stranger.PostAsJsonAsync(
-            "/api/auth/login", new { email = "first@example.com", password = "not the password" });
+            "/api/auth/login", new { email = _first, password = "not the password" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, noSuchAccount.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
@@ -338,8 +346,8 @@ public class AuthTests : IDisposable
     {
         await using var api = Api();
         var client = api.CreateClient();
-        await Register(client, "first@example.com");
-        Assert.Contains("first@example.com", await client.GetStringAsync("/api/auth/me"), StringComparison.Ordinal);
+        await Register(client, _first);
+        Assert.Contains(_first, await client.GetStringAsync("/api/auth/me"), StringComparison.Ordinal);
 
         await client.PostAsync("/api/auth/logout", content: null);
 
@@ -359,7 +367,7 @@ public class AuthTests : IDisposable
         var client = api.CreateClient();
 
         var response = await client.PostAsJsonAsync(
-            "/api/auth/register", new { email = "first@example.com", password = "short" });
+            "/api/auth/register", new { email = _first, password = "short" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);

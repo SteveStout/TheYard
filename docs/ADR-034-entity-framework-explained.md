@@ -177,6 +177,24 @@ And "there is no step for applying it, the application does that on start" is
 true of SQLite only: on SQL Server the application holds `db_datareader` and
 `db_datawriter` and cannot create or alter a table at all.
 
+## Addendum, 2026-09-08: the store this record explains is one of two
+
+Everything above explains Entity Framework, and Entity Framework is the mapper
+for the relational store only. The second store, Azure Cosmos DB, is reached
+through the Cosmos DB SDK directly, with no context, no migrations and no
+mapper beyond a class per document and a method that copies fields
+(ADR: A second store on Cosmos DB, and what it costs). If you are reading this
+to learn how the deployed site on `theyard.stevenstout.biz` keeps its data, it
+is the right record; if you are reading it to learn how the second container
+keeps the same data, the newcomer's record for that side is ADR: Cosmos DB,
+explained for someone who knows SQL Server, and the reason the two are
+different is in the parent record.
+
+One thing in "If you want to change the schema" changed shape: the ports the
+adapters implement are asynchronous now (ADR: The ports learn to wait), so an
+adapter's `Load()` is `LoadAsync()` and the calls inside it are the
+`...Async` forms Entity Framework has always had.
+
 ## Files
 
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs)

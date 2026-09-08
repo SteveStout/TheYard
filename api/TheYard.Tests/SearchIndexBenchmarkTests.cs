@@ -9,7 +9,7 @@ namespace TheYard.Tests;
 
 file sealed class BenchSeed(params Vehicle[] vehicles) : IVehicleSource
 {
-    public IReadOnlyList<Vehicle> Load() => vehicles;
+    public Task<IReadOnlyList<Vehicle>> LoadAsync() => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
 }
 
 /// <summary>
@@ -34,14 +34,14 @@ public class SearchIndexBenchmarkTests(ITestOutputHelper output)
         TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
 
     [Fact]
-    public void The_index_is_not_slower_than_rebuilding_the_text_per_row()
+    public async Task The_index_is_not_slower_than_rebuilding_the_text_per_row()
     {
-        var vehicles = new SyntheticVehicleSource(
+        var vehicles = await new SyntheticVehicleSource(
             new BenchSeed(
                 TestData.Vehicle(id: "seed-1", make: "Ford", bodyStyle: "SUV"),
                 TestData.Vehicle(id: "seed-2", make: "Kia", bodyStyle: "sedan"),
                 TestData.Vehicle(id: "seed-3", make: "Toyota", bodyStyle: "truck")),
-            Rows).Load();
+            Rows).LoadAsync();
         var index = new VehicleSearchIndex(vehicles);
         var filter = new VehicleFilter { Query = "ford" };
 
@@ -94,10 +94,10 @@ public class SearchIndexBenchmarkTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void The_index_covers_every_row_the_dataset_loads()
+    public async Task The_index_covers_every_row_the_dataset_loads()
     {
-        var vehicles = new SyntheticVehicleSource(
-            new BenchSeed(TestData.Vehicle(id: "seed-1")), 5_000).Load();
+        var vehicles = await new SyntheticVehicleSource(
+            new BenchSeed(TestData.Vehicle(id: "seed-1")), 5_000).LoadAsync();
 
         var index = new VehicleSearchIndex(vehicles);
 

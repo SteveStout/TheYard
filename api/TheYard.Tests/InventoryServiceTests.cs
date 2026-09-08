@@ -12,16 +12,16 @@ file sealed class FakeVehicles(params Vehicle[] vehicles) : IVehicleSource
 {
     public int LoadCalls { get; private set; }
 
-    public IReadOnlyList<Vehicle> Load()
+    public Task<IReadOnlyList<Vehicle>> LoadAsync()
     {
         LoadCalls++;
-        return vehicles;
+        return Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
     }
 }
 
 file sealed class FakeManifest(params PhotoEntry[] photos) : IPhotoManifestSource
 {
-    public IReadOnlyList<PhotoEntry> Load() => photos;
+    public Task<IReadOnlyList<PhotoEntry>> LoadAsync() => Task.FromResult<IReadOnlyList<PhotoEntry>>(photos);
 }
 
 public class InventoryServiceTests

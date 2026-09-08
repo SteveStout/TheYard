@@ -5,18 +5,25 @@ namespace TheYard.Application;
 // #region ports
 // The three seams the layers meet at. Application declares what it needs and
 // never learns where the data lives; Infrastructure implements these against
-// EF Core and SQLite, the tests against in-memory arrays, and the 100,000-record
-// scale-up is a decorator over IVehicleSource that nothing above it can see.
+// EF Core and SQLite, against Cosmos DB, the tests against in-memory arrays,
+// and the 100,000-record scale-up is a decorator over IVehicleSource that
+// nothing above it can see.
+//
+// Every member returns a Task. The first store was a file and the ports were
+// synchronous because reading a file is; the second store was a database with
+// a synchronous driver; the third has no synchronous driver at all, and a port
+// that blocks a request thread while a cloud store answers is a performance
+// defect on a one-vCPU container (ADR: The ports learn to wait).
 /// <summary>Port: where the vehicle dataset comes from.</summary>
 public interface IVehicleSource
 {
-    IReadOnlyList<Vehicle> Load();
+    Task<IReadOnlyList<Vehicle>> LoadAsync();
 }
 
 /// <summary>Port: where the photo manifest comes from.</summary>
 public interface IPhotoManifestSource
 {
-    IReadOnlyList<PhotoEntry> Load();
+    Task<IReadOnlyList<PhotoEntry>> LoadAsync();
 }
 
 /// <summary>
@@ -28,16 +35,16 @@ public interface IPhotoManifestSource
 /// </summary>
 public interface IBidStore
 {
-    IReadOnlyList<StoredBid> Load();
+    Task<IReadOnlyList<StoredBid>> LoadAsync();
 
-    void Save(string userId, string vehicleId, BidState state);
+    Task SaveAsync(string userId, string vehicleId, BidState state);
 
     /// <summary>
     /// Forget one person's bids. Not everybody's: this is what the reset button
     /// on a page a stranger can also be looking at is allowed to do
     /// (ADR: Reset is one person's start-over).
     /// </summary>
-    void Clear(string userId);
+    Task ClearAsync(string userId);
 }
 
 /// <summary>
@@ -53,14 +60,10 @@ public sealed class NullBidStore : IBidStore
     {
     }
 
-    public IReadOnlyList<StoredBid> Load() => [];
+    public Task<IReadOnlyList<StoredBid>> LoadAsync() => Task.FromResult<IReadOnlyList<StoredBid>>([]);
 
-    public void Save(string userId, string vehicleId, BidState state)
-    {
-    }
+    public Task SaveAsync(string userId, string vehicleId, BidState state) => Task.CompletedTask;
 
-    public void Clear(string userId)
-    {
-    }
+    public Task ClearAsync(string userId) => Task.CompletedTask;
 }
 // #endregion ports

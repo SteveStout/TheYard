@@ -24,17 +24,39 @@ public sealed class InventoryService(
     IPhotoManifestSource manifestSource,
     string imagePathPrefix = "/api/images")
 {
-    private readonly Lazy<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index)> _inventory =
-        new(() => Build(vehicleSource, manifestSource, imagePathPrefix));
+    // #region warm
+    // One load, shared by every caller, started by whoever asks first. The
+    // task is what is shared rather than the result, so two callers arriving
+    // together wait on the same load instead of running two.
+    //
+    // The host awaits WarmAsync before it serves anything (Program.cs), so on a
+    // running site the accessors below read a task that finished at startup and
+    // never block. A caller that skips the warm-up, which is what a unit test
+    // over an in-memory source does, blocks on a task that a memory source has
+    // already completed, which is a wait of no time. The only way to block a
+    // thread here for real is to skip the warm-up against a store that has to
+    // go over the network, and the host does not (ADR: The ports learn to wait).
+    private readonly Lazy<Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index)>> _inventory =
+        new(() => BuildAsync(vehicleSource, manifestSource, imagePathPrefix));
 
-    public IReadOnlyList<Vehicle> GetAll() => _inventory.Value.All;
+    /// <summary>Load the catalogue now, so the first visitor does not pay for it.</summary>
+    public Task WarmAsync() => _inventory.Value;
+
+    /// <summary>Whether the catalogue has been loaded, which the host asserts before serving.</summary>
+    public bool IsWarm => _inventory.IsValueCreated && _inventory.Value.IsCompletedSuccessfully;
+
+    private (IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index) Inventory =>
+        _inventory.Value.GetAwaiter().GetResult();
+    // #endregion warm
+
+    public IReadOnlyList<Vehicle> GetAll() => Inventory.All;
 
     /// <summary>
     /// The searchable text for the loaded dataset, built with it. Exposed
     /// because the thing worth asserting about an index is that it covers the
     /// dataset it was built from (ADR: The search index).
     /// </summary>
-    public VehicleSearchIndex SearchIndex => _inventory.Value.Index;
+    public VehicleSearchIndex SearchIndex => Inventory.Index;
 
     /// <summary>
     /// Vehicles matching <paramref name="filter"/> (statuses derived from
@@ -62,7 +84,7 @@ public sealed class InventoryService(
         // query's tokens by Compile, each vehicle's searchable text by the index
         // built at load (ADR: The search index). What is left per row is a
         // dictionary lookup and a substring test.
-        var matches = filter.Compile(clock, _inventory.Value.Index);
+        var matches = filter.Compile(clock, Inventory.Index);
         var matched = source.Where(matches);
         // #endregion search
         var ordered = VehicleOrdering.Sort(matched, sort, clock).ToList();
@@ -86,24 +108,22 @@ public sealed class InventoryService(
         vehicles.Select(field).Distinct().OrderBy(v => v, StringComparer.Ordinal).ToList();
 
     public Vehicle? GetById(string id) =>
-        _inventory.Value.ById.TryGetValue(id, out var vehicle) ? vehicle : null;
+        Inventory.ById.TryGetValue(id, out var vehicle) ? vehicle : null;
 
-    private static (IReadOnlyList<Vehicle>, IReadOnlyDictionary<string, Vehicle>, VehicleSearchIndex) Build(
+    private static async Task<(IReadOnlyList<Vehicle>, IReadOnlyDictionary<string, Vehicle>, VehicleSearchIndex)> BuildAsync(
         IVehicleSource vehicleSource,
         IPhotoManifestSource manifestSource,
         string imagePathPrefix)
     {
         // Key pools by lowercase style, because PhotoGallery looks them up lowercased,
         // so a capitalized style in the manifest must not silently miss.
-        var pools = manifestSource
-            .Load()
+        var pools = (await manifestSource.LoadAsync())
             .GroupBy(photo => photo.Style.ToLowerInvariant())
             .ToDictionary(
                 group => group.Key,
                 group => (IReadOnlyList<PhotoEntry>)group.ToList());
 
-        var vehicles = vehicleSource
-            .Load()
+        var vehicles = (await vehicleSource.LoadAsync())
             .Select(vehicle =>
             {
                 var photos = PhotoGallery.SelectPhotos(vehicle.Id, vehicle.Make, vehicle.BodyStyle, pools);
