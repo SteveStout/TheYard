@@ -1,0 +1,20 @@
+{
+  "container": "catalogue-default",
+  "partitionKeyPath": "/make",
+  "defaultTtlSeconds": null,
+  "why": "The same 100,000 documents under the default indexing policy, every path indexed, seeded once so the cost of the default is a measured number rather than a claim (ADR: The partition key).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      {
+        "path": "/*"
+      }
+    ],
+    "excludedPaths": [
+      {
+        "path": "/\"_etag\"/?"
+      }
+    ]
+  }
+}

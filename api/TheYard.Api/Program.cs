@@ -151,6 +151,7 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
     "/api/admin/logs",
     "/api/admin/metrics",
     "/api/admin/peer",
+    "/api/admin/experiment",
     "/api/admin/azure",
     "/api/admin/telemetry",
     "/api/errors",
@@ -1284,6 +1285,17 @@ var peer = new PeerReader(
     new HttpClient { Timeout = PeerReader.Patience + TimeSpan.FromSeconds(1) });
 app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync(), wireFormat));
 // #endregion peer-endpoint
+
+// #region experiment-endpoint
+// The partition key, live: seven queries against the 100,000-document
+// catalogue, with the request charge beside each, run with this container's
+// own identity and cached for a minute (ADR: The partition key). On a
+// relational container it says so and shows nothing, which is the card's
+// fourth empty state.
+app.MapGet("/api/admin/experiment", async () => cosmos is null
+    ? Results.Json(new { available = false, reason = "this container is not on Azure Cosmos DB", rows = Array.Empty<object>() }, wireFormat)
+    : Results.Json(await Experiment.RunAsync(cosmos), wireFormat));
+// #endregion experiment-endpoint
 
 #region telemetry-endpoint
 // The last hour as Application Insights has it, for the Admin tab (ADR-024).

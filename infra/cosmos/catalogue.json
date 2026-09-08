@@ -1,0 +1,44 @@
+{
+  "container": "catalogue",
+  "partitionKeyPath": "/make",
+  "defaultTtlSeconds": null,
+  "why": "The experiment: the 100,000 expanded vehicles, so a filtered page can be served from the store and the partition key measured on the hot path. Only the paths the filters and sorts use are indexed; the seed cost against the default policy is measured in catalogue-default (ADR: The partition key).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      {
+        "path": "/make/?"
+      },
+      {
+        "path": "/body_style/?"
+      },
+      {
+        "path": "/title_status/?"
+      },
+      {
+        "path": "/province/?"
+      },
+      {
+        "path": "/condition_grade/?"
+      },
+      {
+        "path": "/starting_bid/?"
+      },
+      {
+        "path": "/current_bid/?"
+      },
+      {
+        "path": "/model/?"
+      },
+      {
+        "path": "/seq/?"
+      }
+    ],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

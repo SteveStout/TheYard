@@ -103,3 +103,25 @@ test('the comparison card stands when there is no peer to compare with (ADR: Bac
   await expect(page.getByTestId('sql-card').or(page.getByTestId('store-card'))).toBeVisible();
 });
 // #endregion backends-card
+
+// #region experiment-card
+test('the partition key card explains itself when there is no catalogue to query (ADR: The partition key)', async ({
+  page,
+  request,
+}) => {
+  const store = (await (await request.get('http://localhost:5210/api/admin/store')).json()) as {
+    store: string;
+  };
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('experiment-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('The partition key, live');
+  if (store.store === 'Azure Cosmos DB') {
+    // Against the test containers the catalogue is either seeded or not; both
+    // are sentences on the card rather than an empty box.
+    await expect(card).toContainText(/(Not available here|documents on \d+ physical partition)/);
+  } else {
+    await expect(card.getByTestId('experiment-note')).toContainText('not on Azure Cosmos DB');
+  }
+});
+// #endregion experiment-card

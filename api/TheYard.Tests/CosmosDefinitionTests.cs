@@ -52,7 +52,8 @@ public class CosmosDefinitionTests
         // The single biggest cost lever on this workload: the default policy
         // indexes every path in every document and charges for it on every
         // write, and nothing here queries by a property (ADR: The partition key).
-        foreach (var (name, definition) in Definitions())
+        // The experiment containers are the exception and are checked next.
+        foreach (var (name, definition) in Definitions().Where(entry => Containers.Required.Contains(entry.Key)))
         {
             var policy = definition.GetProperty("indexingPolicy");
             Assert.Equal("consistent", policy.GetProperty("indexingMode").GetString());
@@ -60,6 +61,19 @@ public class CosmosDefinitionTests
             var excluded = policy.GetProperty("excludedPaths").EnumerateArray().Select(p => p.GetProperty("path").GetString()).ToArray();
             Assert.Contains("/*", excluded);
         }
+    }
+    [Fact]
+    public void The_experiment_indexes_the_paths_the_queries_use_and_the_control_indexes_everything()
+    {
+        var definitions = Definitions();
+        var tuned = definitions[Containers.Catalogue].GetProperty("indexingPolicy");
+        var included = tuned.GetProperty("includedPaths").EnumerateArray().Select(p => p.GetProperty("path").GetString()).ToArray();
+        foreach (string path in new[] { "/make/?", "/body_style/?", "/title_status/?", "/province/?", "/starting_bid/?", "/condition_grade/?" })
+        {
+            Assert.Contains(path, included);
+        }
+        var control = definitions[Containers.CatalogueDefault].GetProperty("indexingPolicy");
+        Assert.Contains("/*", control.GetProperty("includedPaths").EnumerateArray().Select(p => p.GetProperty("path").GetString()));
     }
     // #endregion conformance
 

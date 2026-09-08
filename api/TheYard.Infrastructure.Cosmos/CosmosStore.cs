@@ -100,6 +100,9 @@ public sealed class CosmosStore
     /// </summary>
     public ICurrentRequest CurrentRequest { get; set; } = NoCurrentRequest.Instance;
 
+    /// <summary>Any container of this database by its catalog name, prefixed like the rest. The experiment reads the catalogue through this.</summary>
+    public Container ContainerNamed(string name) => _database.GetContainer(_prefix + name);
+
     public Container Vehicles => _database.GetContainer(_prefix + Containers.Vehicles);
     public Container Photos => _database.GetContainer(_prefix + Containers.Photos);
     public Container Bids => _database.GetContainer(_prefix + Containers.Bids);
@@ -125,8 +128,9 @@ public sealed class CosmosStore
         try
         {
             var checking = Stopwatch.StartNew();
-            foreach (var (name, expectedKey) in Containers.PartitionKeyPaths)
+            foreach (string name in Containers.Required)
             {
+                string expectedKey = Containers.PartitionKeyPaths[name];
                 var container = _database.GetContainer(_prefix + name);
                 var response = await Timed(container, StoreOperationKind.Metadata, "ReadContainer", [], "n/a", 0,
                     () => container.ReadContainerAsync(), r => r.Cost());
@@ -149,7 +153,7 @@ public sealed class CosmosStore
 
             return new DatabaseState(
                 true,
-                $"{Describe()}, found {Containers.PartitionKeyPaths.Count} containers in {checking.ElapsedMilliseconds} ms "
+                $"{Describe()}, found {Containers.Required.Count} containers in {checking.ElapsedMilliseconds} ms "
                 + $"and seeded in {seeding.ElapsedMilliseconds} ms for {seeded.SeedCharge:0.#} RU, "
                 + $"inserting {seeded.VehiclesInserted} vehicles and {seeded.PhotosInserted} photos, "
                 + $"now holding {seeded.VehiclesTotal} and {seeded.PhotosTotal}")
@@ -258,17 +262,22 @@ public sealed class CosmosStore
 
     // #region operations
     /// <summary>A point read that answers null on 404 rather than throwing, because a missing document is an ordinary answer.</summary>
-    public async Task<T?> ReadAsync<T>(Container container, string id, string partitionKey, string partitionLabel) where T : class
+    public async Task<T?> ReadAsync<T>(Container container, string id, string partitionKey, string partitionLabel) where T : class =>
+        (await ReadMeasuredAsync<T>(container, id, partitionKey, partitionLabel)).Item;
+
+    /// <summary>The same point read, with what it cost handed back to the caller as well as to the log. The experiment card reads through this.</summary>
+    public async Task<MeasuredItem<T>> ReadMeasuredAsync<T>(Container container, string id, string partitionKey, string partitionLabel) where T : class
     {
+        var clock = Stopwatch.StartNew();
         try
         {
             var response = await Timed(container, StoreOperationKind.PointRead, "ReadItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
                 () => container.ReadItemAsync<T>(id, new PartitionKey(partitionKey)), r => r.Cost());
-            return response.Resource;
+            return new MeasuredItem<T>(response.Resource, Math.Round(response.RequestCharge, 2), clock.ElapsedMilliseconds);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            return null;
+            return new MeasuredItem<T>(null, Math.Round(ex.RequestCharge, 2), clock.ElapsedMilliseconds);
         }
     }
 
@@ -292,7 +301,11 @@ public sealed class CosmosStore
     /// physical partition when it cannot, which is the difference the Admin tab
     /// exists to show (ADR: The partition key).
     /// </summary>
-    public async Task<IReadOnlyList<T>> QueryAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel)
+    public async Task<IReadOnlyList<T>> QueryAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel) =>
+        (await QueryMeasuredAsync<T>(container, query, partitionKey, partitionLabel)).Items;
+
+    /// <summary>The same query, with the summed charge, the page count and the time handed back as well as logged.</summary>
+    public async Task<MeasuredQuery<T>> QueryMeasuredAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel)
     {
         var parameters = query.GetQueryParameters()
             .Select(p => new SqlParameterShape(p.Name, p.Value?.GetType().Name ?? "null", p.Value is string s ? s.Length : null))
@@ -329,7 +342,7 @@ public sealed class CosmosStore
             throw;
         }
         Record(container, StoreOperationKind.Query, query.QueryText, parameters, partitionLabel, physical, charge, clock.Elapsed, outcome);
-        return results;
+        return new MeasuredQuery<T>(results, Math.Round(charge, 2), pages, clock.ElapsedMilliseconds);
     }
 
     /// <summary>One partition's deletes, at most a hundred at a time, as one atomic batch.</summary>
@@ -415,6 +428,12 @@ public sealed class CosmosStore
     }
     // #endregion operations
 }
+
+/// <summary>A point read's answer with its cost, for a caller that wants the number and not only the document.</summary>
+public sealed record MeasuredItem<T>(T? Item, double Charge, long DurationMs) where T : class;
+
+/// <summary>A query's answer with its cost: every page's charge added up, the page count, and the wall clock.</summary>
+public sealed record MeasuredQuery<T>(IReadOnlyList<T> Items, double Charge, int Pages, long DurationMs);
 
 /// <summary>What one response cost, in request units and as a status code, read off whichever response type the SDK answered with.</summary>
 public readonly record struct Cost(double Charge, int Status);

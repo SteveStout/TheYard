@@ -182,3 +182,27 @@ public class PeerTests
         }
     }
 }
+
+/// <summary>The experiment card's fourth empty state: a relational container has nothing to run it against (ADR: The partition key).</summary>
+public class ExperimentEndpointTests(WebApplicationFactory<Program> factory)
+    : IClassFixture<WebApplicationFactory<Program>>
+{
+    // #region experiment-empty
+    [Fact]
+    public async Task With_nothing_to_query_the_experiment_says_so_and_shows_nothing()
+    {
+        // Two of the card's empty states, depending on which store the suite
+        // is booted on: a relational container has no document store to ask,
+        // and the test containers on the document store have no catalogue in
+        // them. Both are a sentence and an empty list, never an error.
+        var client = factory.CreateClient();
+        var store = await client.GetFromJsonAsync<JsonElement>("/api/admin/store");
+        bool cosmos = store.GetProperty("store").GetString() == "Azure Cosmos DB";
+
+        var answer = await client.GetFromJsonAsync<JsonElement>("/api/admin/experiment");
+        Assert.False(answer.GetProperty("available").GetBoolean());
+        Assert.Contains(cosmos ? "catalogue container" : "not on Azure Cosmos DB", answer.GetProperty("reason").GetString());
+        Assert.Equal(0, answer.GetProperty("rows").GetArrayLength());
+    }
+    // #endregion experiment-empty
+}

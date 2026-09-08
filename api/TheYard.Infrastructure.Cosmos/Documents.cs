@@ -20,6 +20,12 @@ public static class Containers
     public const string Bids = "bids";
     public const string Users = "users";
 
+    /// <summary>The experiment: the 100,000 expanded vehicles, under the tuned indexing policy.</summary>
+    public const string Catalogue = "catalogue";
+
+    /// <summary>The same 100,000 under the default policy, seeded once so the default's cost is measured.</summary>
+    public const string CatalogueDefault = "catalogue-default";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -27,7 +33,16 @@ public static class Containers
         [Photos] = "/style",
         [Bids] = "/user_id",
         [Users] = "/id",
+        [Catalogue] = "/make",
+        [CatalogueDefault] = "/make",
     };
+
+    /// <summary>
+    /// The four the site cannot come up without. The experiment containers are
+    /// optional: a container that is missing or empty makes the experiment card
+    /// say so, and changes nothing about the site (ADR: The partition key).
+    /// </summary>
+    public static readonly IReadOnlyList<string> Required = [Vehicles, Photos, Bids, Users];
 }
 // #endregion containers
 

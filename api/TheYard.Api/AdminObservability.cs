@@ -286,7 +286,11 @@ public sealed class StoreRingBuffer(int capacity) : IStoreLog
             || request.EndsWith("/api/admin/sql", StringComparison.Ordinal)
             || request.EndsWith("/api/admin/logs", StringComparison.Ordinal)
             || request.EndsWith("/api/admin/metrics", StringComparison.Ordinal)
-            || request.EndsWith("/api/admin/peer", StringComparison.Ordinal));
+            || request.EndsWith("/api/admin/peer", StringComparison.Ordinal)
+            // The experiment's own queries are the point of the experiment card
+            // and are shown there with their charge; kept out of this ring so an
+            // open Admin tab does not push a visitor's bid out of it.
+            || request.EndsWith("/api/admin/experiment", StringComparison.Ordinal));
 
     public void Record(StoreOperation operation)
     {

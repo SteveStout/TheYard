@@ -123,6 +123,22 @@ type StoreOperation = {
   request: string | null;
 };
 type StoreLog = { store: string; operations: StoreOperation[] };
+type ExperimentRow = {
+  query: string;
+  partitions: string;
+  request_charge: number;
+  duration_ms: number;
+  documents: number;
+};
+type Experiment = {
+  available: boolean;
+  reason: string | null;
+  container?: string;
+  physical_partitions?: number;
+  documents?: number;
+  rows: ExperimentRow[];
+  ran_at?: string;
+};
 
 /** The rows the comparison card puts side by side: the paths a visitor actually takes (ADR: Backends, side by side). */
 const COMPARED_ROUTES: { route: string; label: string }[] = [
@@ -174,6 +190,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
   const [metrics, setMetrics] = useState<Fetched<Metrics>>(null);
   const [peer, setPeer] = useState<Fetched<Peer>>(null);
   const [store, setStore] = useState<Fetched<StoreLog>>(null);
+  const [experiment, setExperiment] = useState<Fetched<Experiment>>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -204,6 +221,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
     void grab<Metrics>('/api/admin/metrics', setMetrics);
     void grab<Peer>('/api/admin/peer', setPeer);
     void grab<StoreLog>('/api/admin/store', setStore);
+    void grab<Experiment>('/api/admin/experiment', setExperiment);
     return () => {
       live = false;
     };
@@ -252,6 +270,67 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
         )}
       </article>
       {/* #endregion backends-card */}
+
+      {/* #region experiment-card */}
+      <article className={styles.wide} data-testid="experiment-card">
+        <h2 className={styles.cardTitle}>The partition key, live</h2>
+        <p className={styles.muted}>
+          Seven queries against a container of 100,000 vehicles partitioned on the make, run by this
+          container with its own identity when this page asks, and cached for a minute. A query that
+          names the make runs inside one logical partition; one that cannot fans out across every
+          physical partition, and the request charge beside each is what that costs. The reasoning,
+          the alternatives and the honest caveat about how many physical partitions there are at
+          this size are in the partition key record.
+        </p>
+        {experiment === null ? (
+          <p className={styles.muted}>Loading…</p>
+        ) : experiment === 'failed' ? (
+          failed('the experiment')
+        ) : !experiment.available ? (
+          <p className={styles.muted} data-testid="experiment-note">
+            Not available here: {experiment.reason}
+          </p>
+        ) : (
+          <>
+            <p className={styles.muted}>
+              {experiment.container}: {experiment.documents?.toLocaleString()} documents on{' '}
+              {experiment.physical_partitions} physical partition
+              {experiment.physical_partitions === 1 ? '' : 's'}, measured at{' '}
+              {experiment.ran_at ? new Date(experiment.ran_at).toLocaleTimeString() : ''}.
+            </p>
+            <div
+              className={styles.tableWrap}
+              role="region"
+              aria-label="Queries against the partitioned catalogue"
+              tabIndex={0}
+            >
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">Query</th>
+                    <th scope="col">Partitions</th>
+                    <th scope="col">Charge</th>
+                    <th scope="col">Took</th>
+                    <th scope="col">Documents</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {experiment.rows.map((row) => (
+                    <tr key={row.query}>
+                      <td>{row.query}</td>
+                      <td className={styles.mono}>{row.partitions}</td>
+                      <td className={styles.mono}>{row.request_charge} RU</td>
+                      <td className={styles.mono}>{row.duration_ms} ms</td>
+                      <td className={styles.mono}>{row.documents}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </article>
+      {/* #endregion experiment-card */}
 
       <div className={styles.grid}>
         {/* #region health-card */}

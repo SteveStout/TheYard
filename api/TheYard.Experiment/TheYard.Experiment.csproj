@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The partition key experiment (ADR: The partition key): seeds the
+       100,000 expanded vehicles into the catalogue container in bulk, and runs
+       the query set that shows what the key can and cannot pin, with the
+       request charge beside every timing. A console tool a person runs from the
+       runner as the signed-in principal, on purpose: a seed of a million
+       request units is not something a public endpoint should be able to
+       start. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TheYard.Infrastructure\TheYard.Infrastructure.csproj" />
+    <ProjectReference Include="..\TheYard.Infrastructure.Cosmos\TheYard.Infrastructure.Cosmos.csproj" />
+  </ItemGroup>
+
+</Project>

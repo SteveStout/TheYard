@@ -121,12 +121,23 @@ jobs:
       # are filtered out by their trait rather than skipped, because a skipped
       # test is a green check that checked nothing (ADR: A second store on
       # Cosmos DB, and what it costs).
+      # And the coverage floor measures what this runner runs. The document
+      # store's adapters are exercised by those filtered tests and by the whole
+      # suite booted on the real account on the ship gate, none of which can
+      # happen here, so that one assembly is left out of the number this job
+      # holds to its floor. The first run with it counted went red at 83.2 per
+      # cent of lines for code that was tested an hour earlier on a machine
+      # with a credential. Lowering the floor would have hidden the same gap in
+      # every other project; naming the assembly hides only the one this runner
+      # cannot reach, with the reason beside it.
       - name: Run the .NET suites
         run: |
           set -o pipefail
           dotnet test api --collect:"XPlat Code Coverage" --results-directory TestResults \
             --filter "Store!=cosmos" \
-            --logger 'console;verbosity=normal' 2>&1 | tee "$RUNNER_TEMP/dotnet-output.txt"
+            --logger 'console;verbosity=normal' \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[TheYard.Infrastructure.Cosmos]*" \
+            2>&1 | tee "$RUNNER_TEMP/dotnet-output.txt"
       - name: Say which test failed, on the run page
         if: failure()
         run: |

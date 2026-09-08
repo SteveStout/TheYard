@@ -42,6 +42,7 @@ COPY api/TheYard.Domain/TheYard.Domain.csproj ./api/TheYard.Domain/
 COPY api/TheYard.Application/TheYard.Application.csproj ./api/TheYard.Application/
 COPY api/TheYard.Infrastructure/TheYard.Infrastructure.csproj ./api/TheYard.Infrastructure/
 COPY api/TheYard.Infrastructure.Cosmos/TheYard.Infrastructure.Cosmos.csproj ./api/TheYard.Infrastructure.Cosmos/
+COPY api/TheYard.Experiment/TheYard.Experiment.csproj ./api/TheYard.Experiment/
 COPY api/TheYard.Migrations.Sqlite/TheYard.Migrations.Sqlite.csproj ./api/TheYard.Migrations.Sqlite/
 # The SQL project is in the solution, so restore needs to see it. It is not
 # published into the image: the schema is deployed by SqlPackage, and this
@@ -93,6 +94,7 @@ COPY --chown=app:app api/TheYard.Data/*.cs api/TheYard.Data/*.csproj ./api/TheYa
 COPY --chown=app:app api/TheYard.Domain/*.cs api/TheYard.Domain/*.csproj ./api/TheYard.Domain/
 COPY --chown=app:app api/TheYard.Infrastructure/*.cs api/TheYard.Infrastructure/*.csproj ./api/TheYard.Infrastructure/
 COPY --chown=app:app api/TheYard.Infrastructure.Cosmos/*.cs api/TheYard.Infrastructure.Cosmos/*.csproj ./api/TheYard.Infrastructure.Cosmos/
+COPY --chown=app:app api/TheYard.Experiment/*.cs api/TheYard.Experiment/*.csproj ./api/TheYard.Experiment/
 COPY --chown=app:app api/TheYard.Migrations.Sqlite/*.cs api/TheYard.Migrations.Sqlite/*.csproj ./api/TheYard.Migrations.Sqlite/
 # The DDL, so the records can show the schema they describe (ADR-014).
 COPY --chown=app:app api/TheYard.Database ./api/TheYard.Database
