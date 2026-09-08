@@ -450,6 +450,15 @@ a transitive version bump is a change to every project in the graph, not to
 the one that asked for it; and a number a record reasons from has to be the
 number the deploy actually sets.
 
+A lesson relearned is a check that was missing, so the pin is now held by a
+test as well as by a comment. It reads the version of the one Azure.Identity
+assembly every project resolves, whichever of them asked for it, and fails in
+the gate the day anything in the graph moves it, which is where 1.21.0 should
+have been caught.
+
+```live path=api/TheYard.Tests/PackagePinTests.cs region=pin
+```
+
 ## Addendum, 2026-09-08: the store that remembers
 
 The browser suite's run on Cosmos DB went red once late in the day, on the

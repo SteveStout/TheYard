@@ -51,9 +51,12 @@ column can say what a route costs in request units as well as milliseconds:
 ```live path=api/TheYard.Api/Peer.cs region=routes
 ```
 
-The request-unit figure per route is approximate in one stated way: operations
-are attributed to a request by its method and path, so two bids on the same
-vehicle are one sample. The card says so.
+The request-unit figure per route is exact per request: every operation the
+store log records carries the trace identifier ASP.NET Core gives the request
+that caused it, so twenty sign-ins are twenty samples of 2 RU and not one sum
+of 40. The first version of this card grouped by method and path instead and
+reported twenty sign-ins as a single 34 RU request, which the first
+measurement session caught (ADR: Measuring both stores).
 
 **Cold start is measured on each container, at its own start.** How long the
 store took to answer, how long the catalogue and the bids took to load, and
@@ -71,6 +74,27 @@ actually takes, and the store operations window:
 
 ```live path=src/components/AdminPanel.tsx region=comparison
 ```
+
+## What it looks like
+
+Both cards on 1.0.0.92, taken a minute apart after six paired rounds of the
+measurement script had given every row on both sides something to show. The
+live site first, reading its peer:
+
+![Backends, side by side, on the Azure SQL site: this site's column first, the Cosmos DB peer second, with the request charge beside the peer's sign-in, register and bid rows](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cosmos-sql-backends.png)
+
+And the same card on the Cosmos DB container, where the columns swap and the
+request charge sits in the first column:
+
+![Backends, side by side, on the Cosmos DB site: this site's column first with its request charges, the Azure SQL peer second](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cosmos-cosmos-backends.png)
+
+Read across any row and the two containers agree with each other about the
+other one, which is the property the peer endpoint exists to give: each site
+reads the other's metrics rather than remembering them. The bid write row is
+the one to look at twice. Server side the document store spends 11 ms on a
+bid and the relational one 86, and the measurement record shows what is left
+of that difference by the time it reaches a visitor in Missouri
+(ADR: Measuring both stores).
 
 ## Consequences
 

@@ -83,6 +83,27 @@ its charge. After that, an idle container records nothing, and a visitor's bid
 records a point read and a point write pinned to the buyer, about six request
 units between them.
 
+Here is that card on 1.0.0.92 with one visitor's whole session in it, newest
+first: a reset (a query pinned to the buyer's partition and a transactional
+batch of one delete, 7.78 RU together), a raise (a point read and a
+`ReplaceItem` with `If-Match`, 11.29 RU), a first bid (a point read that finds
+nothing, which costs the same 1 RU as one that does, and a `CreateItem`), a
+sign-in (two point reads, 2 RU), and a registration (two creates and the two
+reads that looked for a claim first, 13.04 RU):
+
+![What the document store ran: one session's reset, raise, bid, sign-in and registration as operations, each with its partition, its request charge and its time](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cosmos-cosmos-store.png)
+
+The same three minutes on the relational container, from its own card, where
+the same reset and raise are a `DELETE` with one parameter and an `UPDATE`
+guarded by `RowVersion`, at 44 and 41 ms against the document store's 6 and 6:
+
+![The SQL this application ran: the same session's reset and raise as statements, with their parameters listed by name and type and never by value](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cosmos-sql-store.png)
+
+The two cards are the same page reading the same ring, and the columns differ
+because the stores do: the relational card has nothing to say about a
+partition or a charge, and the document card has no statement to show, only
+the operation and what it cost.
+
 ## What the tests hold
 
 The same canary as the SQL card, on both stores: register an address, read what
