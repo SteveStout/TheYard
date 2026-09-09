@@ -164,6 +164,21 @@ document store is the one whose performance it would need at a scale it does not
 have. That is the sentence for the interview, and the numbers behind it are
 measured.
 
+## Addendum, 2026-09-09: the proof took the networks out
+
+With both stores in one container (ADR: One container, both stores), the
+container measured itself (ADR: Same performance, proven): the same request,
+the same process, the same request ring, only the store different, and the
+round trip to each store measured on its own. On the pages that never touch a
+store the two are the same. On every path that does, the whole difference is
+the round trip, 39 ms per statement to the relational server one region away
+and 2 ms per operation to the document account in the container's own region;
+take one round trip per operation off each side and the two stores are the
+same on every row. So the sentence above stands and gets sharper: on this
+workload the performance question is where the store is. A relational server
+in the container's region would close the gap the document store currently
+enjoys, and nothing in the rows says the document store would keep it.
+
 ## Files
 
 - [`docs/ADR-059-a-second-store-priced.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md): the decision and the arithmetic.

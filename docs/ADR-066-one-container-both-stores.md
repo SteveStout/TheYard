@@ -93,6 +93,34 @@ relational store record gives: a container with no database still serves the
 catalogue, and the toggle shows that store as unavailable rather than the
 site as down.
 
+## What it looks like
+
+The live site on 1.0.0.94, arriving on its default store. The bar sits above
+the view on every page and says which store served it:
+
+![The Store bar at the top of the live site: SQL selected, Cosmos DB beside it, and the sentence that this page is served from Azure SQL Database and that accounts and bids live in the store they were made in](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-sql-top.png)
+
+The same address after one click on Cosmos DB. The page reloaded itself on
+the other store, `/api/stores` answered `cosmos` for the page's own request,
+and the sentence changed with it:
+
+![The same page after the toggle: Cosmos DB selected, and the sentence now says the page is served from Azure Cosmos DB](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-sql-switched.png)
+
+The second container arrives on the other segment and switches the other
+way; its screenshot on arrival is the switched picture above, byte for byte,
+because both containers run the same image against the same two stores. On a
+phone the bar sits under the header and the sentence wraps beneath the
+segments:
+
+![The bar on a phone: the Store segments under the header, the sentence wrapped beneath them](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-phone.png)
+
+And the comparison card on a container running both, which is where the
+proof record's numbers come from: two stores in one process, one region and
+one request ring, so what differs between the columns is the store and the
+distance to it:
+
+![Backends, side by side, on a container running both stores: cold start, store check, seed and catalogue load per store, then the visitor's paths with the request charge beside the document store's numbers, and the line that both stores run in this container](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/backends-one-process.png)
+
 ## What it costs
 
 Two catalogues. Each store expands its two hundred seed vehicles to a hundred

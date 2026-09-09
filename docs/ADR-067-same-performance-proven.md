@@ -88,8 +88,78 @@ the correction can only understate that store's case, never overstate it.
 
 ## The numbers
 
-Filled in from the live site after this shipped; the card on either site is
-the current version of them.
+Run on both containers on 1.0.0.94 within a quarter of an hour of each coming
+up, eight paired rounds each time, read back from the live sites. The
+sentence both cards arrived at, word for word (the second container's round
+trip to Cosmos DB came out at 1 ms rather than 2):
+
+> On 3 of 8 paths the two stores answer in the same time. On the other 5 the
+> difference is the round trip to the store, 39 ms to Azure SQL Database and
+> 2 ms to Azure Cosmos DB, and taking one round trip per operation off each
+> side leaves them the same.
+
+That is the proof, and it is the honest one: the two stores answer in the
+same time once the distance to each is taken out, and the distance is real.
+The relational server is one region away from the container and every
+statement crosses that gap; the document account is in the container's own
+region. On this workload a bid is two statements or two operations, so the
+relational side pays the gap twice and the card shows exactly that.
+
+The rows from the live site's container. Times are the median over eight
+samples unless marked; the difference is the median of the paired
+differences, negative when Cosmos DB was faster, which is why it is not
+always the difference of the two medians; the last column takes one round
+trip per statement or operation off each side:
+
+| Path | Azure SQL Database | Azure Cosmos DB | Difference | Without the round trips | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Register (one sample) | 233 ms, 3 statements | 133 ms, 4 operations, 13.04 RU | -100 ms | +9 ms | all of it the round trip |
+| Sign in | 122 ms, 1 statement | 82 ms, 2 operations, 2 RU | -39 ms | -4 ms | all of it the round trip |
+| Listing page | 51 ms | 56 ms | -6 ms | -6 ms | the same |
+| Vehicle page | 1 ms | 1 ms | 0 ms | 0 ms | the same |
+| Filter values | 12 ms | 29 ms | +7 ms | +7 ms | the same |
+| Bid write | 84 ms, 2 statements | 10 ms, 2 operations, 6.52 RU | -75 ms | -1 ms | all of it the round trip |
+| Bid raise | 85 ms, 2 statements | 9 ms, 2 operations, 11.29 RU | -77 ms | -3 ms | all of it the round trip |
+| Reset | 44 ms, 1 statement | 10 ms, 2 operations, 7.78 RU | -35 ms | 0 ms | all of it the round trip |
+
+The second container, whose default is the document store, produced the same
+shape to within a few milliseconds on every row: register 197 against 94 with
+10 ms left after the round trips, sign in 117 against 77 with 1 ms left, bid
+write 85 against 11 with 2 ms left, bid raise 86 against 10 with 1 ms left,
+reset 44 against 10 with 3 ms left, and the three pages that never touch a
+store the same on both. Two containers, two runs each, one answer.
+
+The card on the live site after that run, and the same card on the second
+container:
+
+![The proof card on the live site: the sentence, the round trips, and the eight rows with both stores, the difference, the difference without the round trips, and a verdict on each](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/proof-sql.png)
+
+![The proof card on the second container, whose default store is Cosmos DB: the same sentence and the same shape on every row](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/proof-cosmos.png)
+
+Two things the run taught that the card alone would not.
+
+**The first run after a deploy is not the second.** On both containers the
+first run since boot put Register at 578 ms against 194 on the live site and
+483 against 163 on the second, with 275 and 207 ms left after the round
+trips, and the verdict said so. The second run a few minutes later put the
+same row at 233 against 133 and 197 against 94, with 9 and 10 ms left. The
+card registers one account per store per run, so that row has one sample and
+carries whatever a process does only once: the first pass through a code
+path on both sides, and on the relational side the compiling EF Core does the
+first time it meets a query shape and a command shape. This record does not
+prove the cause, only that a second run removes it, and it keeps both numbers
+because the first is the one a visitor gets right after a deploy.
+
+**The relational store's free offer sleeps.** The first health check after a
+quiet stretch took 25,882 ms on the live site and a direct read of the origin
+timed out, because Azure SQL Database's free offer pauses the database when
+nobody has used it for a while and resumes it on the next connection. The
+script that started these runs wakes both stores with a health check first
+and starts a run only when every store answers in under a second and a half,
+so no row here is a store waking up; a visitor who arrives after a pause pays
+it once, on the first request that reaches the database, and the site serves
+the catalogue from memory while it waits. The document store has no such
+state on the free tier.
 
 ## Consequences
 
