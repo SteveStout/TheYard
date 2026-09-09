@@ -59,6 +59,30 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
         }
     }
 
+    /// <summary>
+    /// The sidebar's Diagrams section lists every drawing the server can open
+    /// on a page, and nothing else (ADR: Every diagram opens on its own page,
+    /// the addendum on the section). The same shape as the slugs above: the
+    /// server's catalog is the authority, the sidebar's list is read as
+    /// source, and the two are held equal so a drawing cannot gain a page
+    /// without a row or a row without a page.
+    /// </summary>
+    [Fact]
+    public void The_sidebar_lists_every_diagram_page_and_no_other()
+    {
+        string root = RepoRoot();
+        string menu = File.ReadAllText(Path.Combine(root, "src", "components", "DocsMenu.tsx"));
+        var inMenu = Regex.Matches(menu, @"href: '/api/docs/diagrams/([a-z0-9-]+)'")
+            .Select(m => m.Groups[1].Value)
+            .ToHashSet(StringComparer.Ordinal);
+        var inCatalog = DocsCatalog.Diagrams.Keys.ToHashSet(StringComparer.Ordinal);
+
+        Assert.True(inMenu.Count > 0, "the sidebar should list the diagram pages");
+        Assert.True(inMenu.SetEquals(inCatalog),
+            "sidebar only: [" + string.Join(", ", inMenu.Except(inCatalog)) +
+            "]; catalog only: [" + string.Join(", ", inCatalog.Except(inMenu)) + "]");
+    }
+
     /// <summary>The folder README.md and src/ sit in, found by walking up from the test binaries.</summary>
     private static string RepoRoot()
     {

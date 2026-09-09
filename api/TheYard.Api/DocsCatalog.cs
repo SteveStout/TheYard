@@ -15,6 +15,7 @@ public static class DocsCatalog
     {
         ["readme"] = "README.md",
         ["dataflow"] = "docs/DATAFLOW.md",
+        ["sql-vs-cosmos"] = "docs/SQL-VS-COSMOS.md",
         ["projects"] = "docs/PROJECTS.md",
         ["hosting"] = "docs/HOSTING.md",
         ["adr-origin"] = "docs/ADR-001-front-door-origin.md",
@@ -92,7 +93,6 @@ public static class DocsCatalog
         ["adr-proof"] = "docs/ADR-067-same-performance-proven.md",
         ["adr-five-minute-gate"] = "docs/ADR-068-the-five-minute-gate.md",
         ["adr-second-address"] = "docs/ADR-069-a-permanent-address-for-the-second-site.md",
-        ["adr-side-by-side"] = "docs/ADR-070-sql-server-and-cosmos-db-side-by-side.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",

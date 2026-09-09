@@ -112,3 +112,23 @@ Taken from the domain at 1.0.0.25 by the repository's headless Chrome
 (`mentor` tooling, no sign-in), the phone captures at 375 pixels and twice
 the density; the third one has the SVG widened to 270 percent and scrolled,
 which is what a pinch does on a phone.
+
+## Addendum, 2026-09-09: the section
+
+Five drawings now open on pages of their own, and until this addendum a
+reader reached each one only through the document that carried its preview:
+the infrastructure from four documents, the data flow from three, the two
+sites from three, the database from App Architecture alone, and the SQL
+Server and Cosmos DB comparison from its own page alone. Steve, asked whether
+every diagram was linked on the UI, wanted one place, and the sidebar now
+has a Diagrams section near the top: one row per page, each a link
+that opens in a new tab the way the preview links already do, in the order a
+reader meets the system (the whole, the data, the schema, the two sites, the
+two stores). The list lives beside the menus in `DocsMenu.tsx`, the server's
+`DocsCatalog.Diagrams` stays the authority for which drawings exist, and a
+test holds the two equal, so a drawing cannot gain a page without a row or a
+row without a page; the browser suite reads the section and every row's
+address. The rows are links rather than documents on purpose: a drawing is
+read zoomed, on a page of its own, and the dialog the documents open in is
+the wrong shape for it, which is the decision this record made in the first
+place.

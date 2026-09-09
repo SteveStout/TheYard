@@ -4,17 +4,19 @@ using TheYard.Api;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The side-by-side record (ADR: SQL Server and Cosmos DB, side by side)
-/// promises the same thing from each store next to the other: the same bid at
-/// rest, the same write, the same guarantee, one live sample from the
-/// relational side and one from the document side in every pair, and a link
-/// to every record it draws on. A record that showed one side only, or fell
-/// out of pairs as files moved, would still render; this holds the promise
-/// as a test, the way ADR-018's numbers and the README's counts are held.
+/// The side-by-side page, docs/SQL-VS-COSMOS.md, promises the same thing from
+/// each store next to the other: the same bid at rest, the same write, the
+/// same guarantee, one live sample from the relational side and one from the
+/// document side in every pair, and a link to every record it draws on. A
+/// page that showed one side only, or fell out of pairs as files moved, would
+/// still render; this holds the promise as a test, the way ADR-018's numbers
+/// and the README's counts are held. It is a page and not a record, by the
+/// rule in ADR: The Decision Records index, addendum, so nothing here reads
+/// the records index for it.
 /// </summary>
-public class SideBySideRecordTests
+public class SideBySidePageTests
 {
-    private const string Record = "docs/ADR-070-sql-server-and-cosmos-db-side-by-side.md";
+    private const string Page = "docs/SQL-VS-COSMOS.md";
 
     /// <summary>Where the relational side's code and schema live.</summary>
     private static readonly string[] Relational = ["api/TheYard.Infrastructure/", "api/TheYard.Database/"];
@@ -24,16 +26,16 @@ public class SideBySideRecordTests
 
     // #region pairs
     [Fact]
-    public void Every_live_sample_in_the_record_has_its_twin_from_the_other_store_next_to_it()
+    public void Every_live_sample_on_the_page_has_its_twin_from_the_other_store_next_to_it()
     {
-        string markdown = File.ReadAllText(Path.Combine(Repo.Root(), Record));
+        string markdown = File.ReadAllText(Path.Combine(Repo.Root(), Page));
         // The fence is spelled in two pieces so this file, shown live by a
         // record, does not itself read as a block left unexpanded.
         var paths = Regex.Matches(markdown, "^``" + "`live path=(?<path>\\S+)", RegexOptions.Multiline)
             .Select(match => match.Groups["path"].Value)
             .ToList();
 
-        Assert.True(paths.Count >= 6 && paths.Count % 2 == 0, $"the record shows {paths.Count} samples, and it promises pairs");
+        Assert.True(paths.Count >= 6 && paths.Count % 2 == 0, $"the page shows {paths.Count} samples, and it promises pairs");
         for (int i = 0; i < paths.Count; i += 2)
         {
             Assert.True(
@@ -46,9 +48,9 @@ public class SideBySideRecordTests
     }
 
     [Fact]
-    public void The_record_links_every_store_record_it_compares_and_its_diagram_has_a_page()
+    public void The_page_links_every_store_record_it_compares_and_its_diagram_has_a_page()
     {
-        string markdown = File.ReadAllText(Path.Combine(Repo.Root(), Record));
+        string markdown = File.ReadAllText(Path.Combine(Repo.Root(), Page));
 
         // Every ?doc= address in the record is a slug the catalogue serves
         // (ADR: A record with no address).

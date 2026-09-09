@@ -1,20 +1,22 @@
-# ADR: SQL Server and Cosmos DB, side by side
+# SQL Server and Cosmos DB, side by side
 
-Status: accepted, 2026-09-09. One record puts the two stores this application
-runs on next to each other, Azure SQL Database on the left and Azure Cosmos DB
-on the right, row by row: the same bid at rest in both, the same write in
-both adapters as live code, the numbers the records measured, the record that
-decided each row, and the reading behind it. Parent: ADR: Cosmos DB, explained
-for someone who knows SQL Server, which teaches the vocabulary; this record is
-the comparison a reader makes after learning it.
+One page puts the two stores this application runs on next to each other,
+Azure SQL Database on the left and Azure Cosmos DB on the right, row by row:
+the same bid at rest in both, the same write in both adapters as live code,
+the numbers the records measured, the record that decided each row, and the
+reading behind it. Read ADR: Cosmos DB, explained for someone who knows SQL
+Server first; it teaches the vocabulary, and this page is the comparison a
+reader makes after learning it.
 
-## Context
+## Why this page exists
 
-Steve's words, the morning of 2026-09-09, after the two sites had their names:
-"I'd also like a diagram/analysis of SQL Server vs Cosmos DB where the left
-side is SQL Server and the right side is cosmos DB with research links and
-code samples and ADRs linked in where it draws attention to the two different
-DBs."
+TheYard runs on two stores at once, Azure SQL Database and Azure Cosmos DB,
+each serving one of its two sites, and the question a reader of the records
+asks first is how the two compare on the same work. That comparison deserves
+a page of its own, at the top of the sidebar beside Hosting, rather than a
+place inside the decision records: nothing here was decided, it lays out
+decisions already made, side by side, with the code and the numbers behind
+them.
 
 The material existed and was spread across eleven records. The SQL Server side
 was decided over four days (ADR: The SQL Server backend; ADR: Data first, and
@@ -25,8 +27,9 @@ costs; ADR: The ports learn to wait; ADR: Accounts on a document store; ADR:
 What the store is actually doing), and the comparison itself over the night
 between (ADR: Backends, side by side; ADR: Measuring both stores; ADR: Same
 performance, proven). A reader who wants the two stores next to each other
-had to hold all of them open. This record is that reading, done once, with
-the code pulled in live so it cannot drift from what runs.
+had to hold all of them open. This page is that reading, done once, with
+the code pulled in live so it cannot drift from what runs, and the diagram
+on its own page for a screen or an interview.
 
 Who it is for: a developer who knows one of these stores and not the other,
 which on 2026-09-08 described the author of the application. Every row is a
@@ -38,7 +41,7 @@ question that developer asks first.
 
 *A preview. [Open the side-by-side diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/sql-vs-cosmos)
 to zoom in and read across. It is drawn by `docs/images/sql-vs-cosmos.mjs`
-from the same facts this record cites, and redrawn when a store, a file or a
+from the same facts this page cites, and redrawn when a store, a file or a
 number changes; a picture that disagrees with the records is a bug in the
 picture (ADR: Docs and testing).*
 
@@ -142,7 +145,7 @@ as DDL, and a planner that will sort by anything. The document side buys a
 cost model you can see on every response, point reads at single-digit
 milliseconds in the container's own region, a shape you can change without a
 migration, and the freedom to add regions if the site ever needed them. What
-the document side charges for those is visible in this record: the claim
+the document side charges for those is visible on this page: the claim
 document that stands in for a unique index, the cascade that does not exist,
 the sort that needs an index on the sorted path, and the synchronous port that
 had to learn to wait (ADR: The ports learn to wait).
@@ -154,7 +157,7 @@ out the two are the same, which is the sentence the proof record was written
 to be able to say (ADR: Same performance, proven). The honest choice for a
 used-vehicle auction whose catalogue fits in memory and whose writes are bids
 is the one whose guarantees it uses, and that reasoning is ADR: Cosmos DB,
-explained for someone who knows SQL Server; this record is the evidence laid
+explained for someone who knows SQL Server; this page is the evidence laid
 out beside it.
 
 ## Reading
@@ -191,20 +194,19 @@ Azure Cosmos DB for NoSQL:
 
 Choosing between them:
 
-- [Understanding the differences between NoSQL and relational databases](https://learn.microsoft.com/en-us/azure/cosmos-db/relational-nosql), Microsoft's own framing of the question this record answers for one application.
+- [Understanding the differences between NoSQL and relational databases](https://learn.microsoft.com/en-us/azure/cosmos-db/relational-nosql), Microsoft's own framing of the question this page answers for one application.
 - [Choose a data store](https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/data-store-overview) and [criteria for choosing a data store](https://learn.microsoft.com/en-us/azure/architecture/data-guide/technology-choices/data-storage), from the Azure Architecture Center.
 
-## Consequences
+## Keeping it true
 
 - The comparison has one address on each site, and a picture that is a claim
   about the repository rather than an illustration: the diagram names files,
-  and the record shows those files live.
-- A change to either adapter's bid store changes this record on the next
+  and the page shows those files live.
+- A change to either adapter's bid store changes this page on the next
   request, because the code is read from the build; a change to a number in
   ADR-064 or ADR-067 has to be carried here by hand, and the drawing redrawn.
-- The record is the place to send a reader who asks "why not just one
-  database": the answer is in the last two sections, with the measurements
-  above them.
+- This is the page to send a reader who asks "why not just one database":
+  the answer is in the last two sections, with the measurements above them.
 
 ## Files
 
@@ -219,5 +221,6 @@ Choosing between them:
   [`api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs): the same guarantee.
 - [`api/TheYard.Infrastructure/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SqlLogInterceptor.cs) and
   [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): what each side records for the Admin tab.
-- [`api/TheYard.Tests/SideBySideRecordTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SideBySideRecordTests.cs): holds this
-  record to its promise, a live sample from each side of every pair.
+- [`api/TheYard.Tests/SideBySidePageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SideBySidePageTests.cs): holds this
+  page to its promise, a live sample from each side of every pair and a link
+  to every record it compares.

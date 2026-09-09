@@ -17,7 +17,8 @@ it has sent and how long the database took.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Seventy decision
+App Architecture, SQL vs Cosmos DB, Diagrams, Hosting, CI/CD and Best Practices in the
+sidebar. Sixty-nine decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -231,7 +232,7 @@ each with its own changelog line and, where it decided something, its own record
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
   data flow, infrastructure and entity relationship diagrams on their own zoomable
-  pages, seventy decision records in one numbered index, the Bicep infrastructure, my resume, and
+  pages, sixty-nine decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -383,7 +384,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (386 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (387 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory

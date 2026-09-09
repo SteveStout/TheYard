@@ -194,8 +194,9 @@ choice is now laid out in one place, row by row, with Azure SQL Database on
 the left and Azure Cosmos DB on the right: the same bid at rest in both, the
 same write in both adapters as live code, the same guarantee given by one
 engine and built on the other, the measured numbers and the cost, each row
-naming the record that decided it, and the reading behind each row (ADR: SQL
-Server and Cosmos DB, side by side). Steve asked for it in as many words, "a
-diagram/analysis of SQL Server vs Cosmos DB where the left side is SQL Server
-and the right side is cosmos DB". Read this record first and that one second;
-the drawing on that record's own page is the one to keep open in an interview.
+naming the record that decided it, and the reading behind each row: the page
+SQL Server and Cosmos DB, side by side, in its own section at the top of the
+sidebar (`docs/SQL-VS-COSMOS.md`). It is a page rather than a record because
+it decides nothing; it shows what the records decided. Read this record first
+and that page second; its drawing, on a page of its own, is the one to keep
+open in an interview.

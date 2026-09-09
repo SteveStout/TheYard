@@ -47,6 +47,8 @@ test.describe('the docked rail', () => {
     await expect(page.getByRole('button', { name: 'About', exact: true })).toHaveCount(0);
     for (const section of [
       'App Architecture',
+      'SQL vs Cosmos DB',
+      'Diagrams',
       'Hosting',
       'CI/CD',
       'Best Practices',
@@ -54,6 +56,19 @@ test.describe('the docked rail', () => {
       'About',
     ]) {
       await expect(rail.getByRole('heading', { name: section, exact: true })).toBeVisible();
+    }
+    // Every drawing has a row of its own that opens its page in a new tab
+    // (ADR: Every diagram opens on its own page, the addendum on the section).
+    for (const [name, label] of [
+      ['infrastructure', 'Infrastructure'],
+      ['dataflow', 'Data flow'],
+      ['erd', 'The database'],
+      ['two-sites', 'The two sites'],
+      ['sql-vs-cosmos', 'SQL Server vs Cosmos DB'],
+    ]) {
+      const row = rail.getByRole('link', { name: label, exact: true });
+      await expect(row).toHaveAttribute('href', `/api/docs/diagrams/${name}`);
+      await expect(row).toHaveAttribute('target', '_blank');
     }
     const box = await rail.boundingBox();
     expect(box?.x).toBe(0);

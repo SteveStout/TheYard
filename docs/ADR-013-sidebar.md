@@ -168,3 +168,18 @@ The rows themselves, one loop over the shared record
 
 ```live path=src/components/SideNav.tsx region=rows
 ```
+
+## Addendum, 2026-09-09: two sections, for the stores and for the drawings
+
+Two sections joined the top of the sidebar. **SQL vs Cosmos DB** holds the
+page that puts the two stores side by side (`docs/SQL-VS-COSMOS.md`); it
+stands beside Hosting because the subject is as large as where the site runs,
+and a reader should not have to know which record holds the comparison. The
+records the page draws on stay in the Decision Records index, where they were
+decided. **Diagrams** holds one row per drawing that opens on a page of its
+own, five today, each a link in a new tab rather than a document in the
+dialog, for the reason ADR: Every diagram opens on its own page gives; its
+addendum has the list and the test that holds it to the server's catalogue.
+The order from the top is now App Architecture, SQL vs Cosmos DB, Diagrams,
+Hosting, CI/CD, Best Practices, Decision Records, Changelog, About, and the
+browser suite reads every heading.

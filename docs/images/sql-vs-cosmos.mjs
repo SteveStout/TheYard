@@ -1,5 +1,5 @@
-// Draws sql-vs-cosmos.svg (ADR: SQL Server and Cosmos DB, side by side) in the
-// style of two-sites.svg: the same application on its two stores, Azure SQL
+// Draws sql-vs-cosmos.svg, the picture on the SQL Server and Cosmos DB page
+// (docs/SQL-VS-COSMOS.md), in the style of two-sites.svg: the same application on its two stores, Azure SQL
 // Database on the left and Azure Cosmos DB on the right, one row per question a
 // reader who knows one and not the other asks first. Every box names the file
 // in this repository that holds what it describes, and every number is one the

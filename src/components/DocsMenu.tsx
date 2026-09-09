@@ -24,6 +24,7 @@ export type DocKey =
   | 'readme'
   | 'dataflow'
   | 'projects'
+  | 'sqlVsCosmos'
   | 'hosting'
   | 'adrOrigin'
   | 'adrDocker'
@@ -99,7 +100,6 @@ export type DocKey =
   | 'adrProof'
   | 'adrFiveMinuteGate'
   | 'adrSecondAddress'
-  | 'adrSideBySide'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -137,6 +137,12 @@ export const DOCS: Record<
     title: 'Projects',
     menuLabel: 'Project structure',
     url: '/api/docs/projects',
+    kind: 'overview',
+  },
+  sqlVsCosmos: {
+    title: 'SQL Server and Cosmos DB, side by side',
+    menuLabel: 'Side by side, row by row',
+    url: '/api/docs/sql-vs-cosmos',
     kind: 'overview',
   },
   hosting: {
@@ -665,13 +671,6 @@ export const DOCS: Record<
     kind: 'adr',
     number: '069',
   },
-  adrSideBySide: {
-    title: 'ADR: SQL Server and Cosmos DB, side by side',
-    menuLabel: 'ADR: SQL Server and Cosmos DB, side by side',
-    url: '/api/docs/adr-side-by-side',
-    kind: 'adr',
-    number: '070',
-  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -682,13 +681,49 @@ export const DOCS: Record<
 // #endregion docs-record
 
 export type MenuVariant =
-  'about' | 'architecture' | 'hosting' | 'cicd' | 'practices' | 'records' | 'changelog';
+  | 'about'
+  | 'architecture'
+  | 'stores'
+  | 'diagrams'
+  | 'hosting'
+  | 'cicd'
+  | 'practices'
+  | 'records'
+  | 'changelog';
 
 export type MenuEntry = { key: DocKey; sub?: boolean };
 
+/** A row that leaves the app in a new tab rather than opening a document in the dialog. */
+export type MenuLink = { label: string; href: string };
+
+/** Links that sit beside the docs in the sidebar. */
+export const LINKS = {
+  ciRuns: { label: 'CI runs on GitHub', href: 'https://github.com/SteveStout/TheYard/actions' },
+  resume: { label: "Steven's resume (PDF)", href: '/api/docs/resume' },
+  repo: { label: 'GitHub repository', href: 'https://github.com/SteveStout/TheYard' },
+} as const;
+
+// #region diagrams
+/**
+ * Every drawing in the catalogue, on its own page (ADR: Every diagram opens on
+ * its own page, the addendum on the section). The order is the order a reader
+ * meets the system: the whole, the data, the schema, the two sites, the two
+ * stores. The server's DocsCatalog.Diagrams is the authority for which
+ * drawings exist, and a test holds this list to it, so a drawing cannot have a
+ * page without a row or a row without a page.
+ */
+export const DIAGRAMS: readonly MenuLink[] = [
+  { label: 'Infrastructure', href: '/api/docs/diagrams/infrastructure' },
+  { label: 'Data flow', href: '/api/docs/diagrams/dataflow' },
+  { label: 'The database', href: '/api/docs/diagrams/erd' },
+  { label: 'The two sites', href: '/api/docs/diagrams/two-sites' },
+  { label: 'SQL Server vs Cosmos DB', href: '/api/docs/diagrams/sql-vs-cosmos' },
+];
+// #endregion diagrams
+
 export const MENUS: Record<
   MenuVariant,
-  { label: string; items: MenuEntry[]; collapsible?: boolean }
+  { label: string; items: MenuEntry[]; links?: readonly MenuLink[]; collapsible?: boolean }
 > = {
   about: {
     label: 'About',
@@ -705,6 +740,24 @@ export const MENUS: Record<
     ],
   },
   // #endregion architecture-menu
+  // #region stores-menu
+  /**
+   * The two stores, side by side, as a section of its own beside Hosting: the
+   * subject is as large as where the site runs, and a reader should not have
+   * to know which record holds the comparison (ADR: The sidebar, addendum).
+   * The records the page draws on stay in the Decision Records index.
+   */
+  stores: {
+    label: 'SQL vs Cosmos DB',
+    items: [{ key: 'sqlVsCosmos' }],
+  },
+  // #endregion stores-menu
+  /** The drawings, one row per page; see DIAGRAMS above for why they are links. */
+  diagrams: {
+    label: 'Diagrams',
+    items: [],
+    links: DIAGRAMS,
+  },
   hosting: {
     label: 'Hosting',
     items: [{ key: 'hosting' }, { key: 'bicep', sub: true }],
@@ -712,6 +765,7 @@ export const MENUS: Record<
   cicd: {
     label: 'CI/CD',
     items: [{ key: 'cicd' }],
+    links: [LINKS.ciRuns],
   },
   practices: {
     label: 'Best Practices',
@@ -797,7 +851,6 @@ export const MENUS: Record<
       { key: 'adrProof' },
       { key: 'adrFiveMinuteGate' },
       { key: 'adrSecondAddress' },
-      { key: 'adrSideBySide' },
     ],
   },
   // #endregion records-menu
@@ -814,6 +867,8 @@ export const MENUS: Record<
 /** Section order, top to bottom. The sidebar renders from it in both of its shapes (ADR-013). */
 export const MENU_ORDER: MenuVariant[] = [
   'architecture',
+  'stores',
+  'diagrams',
   'hosting',
   'cicd',
   'practices',
@@ -822,13 +877,6 @@ export const MENU_ORDER: MenuVariant[] = [
   'about',
 ];
 // #endregion MENU_ORDER
-
-/** Links that sit beside the docs in the sidebar. */
-export const LINKS = {
-  ciRuns: { label: 'CI runs on GitHub', href: 'https://github.com/SteveStout/TheYard/actions' },
-  resume: { label: "Steven's resume (PDF)", href: '/api/docs/resume' },
-  repo: { label: 'GitHub repository', href: 'https://github.com/SteveStout/TheYard' },
-} as const;
 
 /**
  * One open request. It is an object rather than a bare key because reopening

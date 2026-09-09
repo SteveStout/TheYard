@@ -306,7 +306,9 @@ function NavContent({
                   </span>
                 </button>
               ))}
-              {variant === 'cicd' && <LinkRow link={LINKS.ciRuns} iconsOnly={iconsOnly} />}
+              {MENUS[variant].links?.map((link) => (
+                <LinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
+              ))}
             </SectionShell>
           ))}
           {/* #endregion rows */}

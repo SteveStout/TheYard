@@ -166,7 +166,7 @@
   <rect x="280" y="696" width="240" height="150" class="box"/>
   <text x="295" y="722" class="title">CI (.github/workflows/ci.yml)</text>
   <text x="295" y="746" class="body">frontend: tsc, vitest, vite build</text>
-  <text x="295" y="762" class="body">api: dotnet test (386 tests)</text>
+  <text x="295" y="762" class="body">api: dotnet test (387 tests)</text>
   <text x="295" y="778" class="body">e2e: Playwright in Chrome (58)</text>
   <text x="295" y="804" class="body">A red job stops everything below.</text>
   <text x="295" y="828" class="muted">read-only token</text>

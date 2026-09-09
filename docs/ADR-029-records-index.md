@@ -70,3 +70,18 @@ One shell for both kinds of section (`src/components/SideNav.tsx`):
 - [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css): the summary's marker and the number's tabular figures.
 - [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the test that still holds the sidebar and the served catalog to the same slugs, unchanged by the move.
 - [`docs/ADR-022-app-architecture-group.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-022-app-architecture-group.md): the grouping this replaces, and why it was right at the time.
+
+## Addendum, 2026-09-09: what is not a record
+
+The SQL Server and Cosmos DB comparison was first filed as a seventieth
+record and moved out the same day, and the rule behind the move is worth
+writing down because the index had nothing that enforced it. A decision
+record holds a decision: something was chosen, something else was declined,
+and the record says why and what it costs. A page that lays decisions already
+made side by side, however much it draws on the records, decides nothing,
+and numbering it would make the index claim a decision that was never made.
+The comparison is a document, `docs/SQL-VS-COSMOS.md`, with a section of its
+own at the top of the sidebar (ADR: The sidebar, addendum); the records it
+cites stay where they were, and the count is sixty-nine. The test that holds
+the index is unchanged, because it counts files, and the guard for this is
+the reader: before a new file gets a number, ask what it decided.
