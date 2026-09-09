@@ -151,3 +151,33 @@ the cheaper shape: the sides in a row would be about six minutes.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the account tests, three classes over one base.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts): the prebuilt server on the gate.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): where `Inventory:TargetCount` is read.
+
+## Addendum, 2026-09-09: the gate on a loaded machine, and the scans declared slow
+
+The morning after this record, the gate ran seven times for four versions
+and went red three times on the browser suite alone, with every xUnit run
+green each time: a sixty-second timeout on the phone scan (queue script 715,
+the gate at 452 s), a Chrome session closed under the practices spec (717,
+493 s), and a sixty-second timeout inside axe on the open records index
+(724, 373 s). The machine was measured before each retake rather than
+blamed: 8,040 MB in total, 1,100 MB free at 09:00 with Chrome at 3,277 MB
+across 51 processes, 1,793 MB free at 09:11 with Chrome at 1,898 MB. The
+gate's two sides share those four cores and that memory with the browser
+the developer is working in, and the two scans that failed are the two that
+read the most nodes.
+
+Two of the three are one defect and it is in the budget, not the scan: the
+accessibility scans measurably take more than sixty seconds on this machine
+under the gate's parallel load, and a budget that a test overruns while
+doing its work correctly is a wrong number. The describe now calls
+`test.slow()`, which triples the budget for those nine tests and nothing
+else; the scans assert exactly what they asserted, zero violations, and a
+scan that hangs still fails. The third, a closed session, is memory, and the
+lever for it is outside the repository: fewer Chrome windows while a gate
+runs, or a wider machine. It is logged in the gate's own numbers so the next
+one is a pattern and not a surprise.
+
+The five minutes stands as the target. A green gate on this machine with
+the developer's browser open measured 302 s and 342 s today, and 372 s on
+the first run after a restart with cold caches; the suites themselves fit,
+and the wall clock is the machine's.

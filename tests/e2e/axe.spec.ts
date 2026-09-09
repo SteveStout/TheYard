@@ -52,6 +52,17 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   //
   // The per-describe override that used to sit here is gone: the whole suite
   // runs at sixty now, for the same reason and one the load wait needs too.
+  //
+  // And since the gate runs its two sides at once (ADR: The five-minute gate),
+  // sixty was not enough here either: on the morning of 2026-09-09 the phone
+  // scan and the open records index each ran past it once, on an 8 GB machine
+  // with a gigabyte free while four Chrome workers shared it with xUnit,
+  // dotnet format and the SQL build, and every other suite was green each
+  // time. Slow is the truth about these scans on that machine, so they are
+  // declared slow, which triples their budget. Nothing asserted changes: a
+  // scan that hangs still fails, later, and one that finishes still has to
+  // find zero violations.
+  test.slow();
 
   test('the inventory', async ({ page }) => {
     await openTheYard(page);

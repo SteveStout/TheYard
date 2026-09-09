@@ -47,6 +47,20 @@ records. This ADR closes that gap.
 - The cost is accepted and known: every new surface carries a doc, a menu
   entry, and a spec, which slows a ship by minutes and is worth it.
 
+## Addendum, 2026-09-09: the drawing carries the two sites
+
+The infrastructure drawing was redrawn by hand again for the morning's
+change (ADR: A permanent address for the second site): the visitor's box
+names both sites, the DNS box carries both CNAME records, the edge box says
+the Host header picks the origin and names the two rules above the
+catch-all, and the "both stores" box says the second group answers behind
+the same edge at its own name and that the Store bar links each site to the
+other rather than setting a cookie. A fourth drawing, TheYard's two sites,
+shows that path on its own at `/api/docs/diagrams/two-sites`, drawn by
+`docs/images/two-sites.mjs` in the same style. The PNG beside each SVG is
+rendered by `docs/images/render.mjs` in the repository's own Chrome, as
+before.
+
 ## Files
 
 Documentation:

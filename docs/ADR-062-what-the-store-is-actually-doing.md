@@ -132,6 +132,33 @@ document store).
 - The relational side did not change. `ISqlLog`, the interceptor and the SQL
   card are as they were, and a container on SQL Server never sees the new type.
 
+## Addendum, 2026-09-09: one console line per operation, like every statement
+
+Steve, looking at both Admin tabs after the two-sites lane: "missing a log on
+the cosmosDB like SQL ... even if it's a log of the API requests". He was
+reading the last card, the log as the console got it. On the relational side
+that card shows every statement, because Entity Framework logs each command
+at Information and the ring captures that one framework category. The
+document store had its own card above with every operation, its charge and
+its partition, and nothing in the console log at all, so the third place the
+page shows a store's traffic showed one store.
+
+From 1.0.0.103 the store writes one line per operation to the application's
+logger, in the shape Entity Framework gives a statement: what ran, on which
+container, what it cost in request units, how long it took, the partition
+described, the outcome and the query with its parameters by name. Never a
+value, for the reason this record already gives. The logger is attached by
+the host after the container is built, the way the relational side attaches
+Entity Framework's, so a startup operation on a developer's machine is
+silent and everything after the application exists is on the console, in
+Application Insights, and on the card. A test asks the container for a
+request served by the document store and reads the line back under the
+store's own category, and checks the address it looked up is nowhere on the
+page.
+
+```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.cs region=record
+```
+
 ## Files
 
 - [`api/TheYard.Application/StoreLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StoreLog.cs): the type with nowhere to put a value, and the port.

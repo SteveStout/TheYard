@@ -162,6 +162,58 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
     }
 
     /// <summary>
+    /// The console log gives the document store one line per operation, the
+    /// shape Entity Framework gives every statement, so the Admin tab's log
+    /// card shows both stores' traffic (ADR: What the store is actually doing,
+    /// addendum). On a container with a document store a request served by it
+    /// leaves a line under the store's own category; on SQLite alone the SQL
+    /// lines are still there and nothing pretends otherwise.
+    /// </summary>
+    [Fact]
+    public async Task The_log_gives_the_document_store_a_line_per_operation_beside_the_sql_ones()
+    {
+        var stores = await _client.GetFromJsonAsync<JsonElement>("/api/stores");
+        bool document = stores.GetProperty("stores").EnumerateArray()
+            .Any(store => store.GetProperty("key").GetString() == "cosmos");
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/facets");
+        request.Headers.Add(Backends.HeaderName, document ? "cosmos" : "sql");
+        (await _client.SendAsync(request)).EnsureSuccessStatusCode();
+        // A sign-in attempt reaches the store on either side: Identity looks
+        // the address up, which is a statement on one store and a point read
+        // on the other.
+        using var login = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
+        {
+            Content = JsonContent.Create(new { email = "nobody-" + Guid.NewGuid().ToString("N") + "@example.com", password = "wrong horse" }),
+        };
+        login.Headers.Add(Backends.HeaderName, document ? "cosmos" : "sql");
+        await _client.SendAsync(login);
+
+        string body = await _client.GetStringAsync("/api/admin/logs");
+        using var json = JsonDocument.Parse(body);
+        var entries = json.RootElement.EnumerateArray().ToList();
+
+        Assert.Contains(entries, entry => entry.GetProperty("category").GetString() == "Microsoft.EntityFrameworkCore.Database.Command"
+            || entry.GetProperty("category").GetString()!.StartsWith("TheYard.", StringComparison.Ordinal));
+        if (document)
+        {
+            var lines = entries
+                .Where(entry => entry.GetProperty("category").GetString() == "TheYard.Infrastructure.Cosmos.CosmosStore")
+                .ToList();
+            Assert.NotEmpty(lines);
+            foreach (var line in lines)
+            {
+                string message = line.GetProperty("message").GetString()!;
+                Assert.StartsWith("Executed Cosmos DB ", message);
+                Assert.Contains(" RU, ", message);
+                Assert.Contains(" ms, ", message);
+            }
+            // Never a value: the address that was looked up is not on the page.
+            Assert.DoesNotContain("@example.com", body);
+        }
+    }
+
+    /// <summary>
     /// Every store a container runs answers a window of its own on the same
     /// rows, which is what the Timing card's two store lines and the
     /// comparison card draw from (ADR: Backends, side by side, the addendum on

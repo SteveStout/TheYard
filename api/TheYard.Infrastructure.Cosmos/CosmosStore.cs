@@ -5,6 +5,8 @@ using System.Text.Json.Serialization;
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Application;
 
 namespace TheYard.Infrastructure.Cosmos;
@@ -99,6 +101,19 @@ public sealed class CosmosStore
     /// what a startup operation records.
     /// </summary>
     public ICurrentRequest CurrentRequest { get; set; } = NoCurrentRequest.Instance;
+
+    /// <summary>
+    /// The application's logger, set by the host once there is an application,
+    /// the way the relational side attaches Entity Framework's command logging
+    /// after the container is built. One line per operation at Information,
+    /// so the console, and the Admin tab's log card that mirrors it, show the
+    /// document store's traffic the way they show every SQL statement
+    /// (ADR: What the store is actually doing, addendum). The line carries the
+    /// kind, the container, the charge, the time, the partition described and
+    /// the query shape; never a value, for the reason the store log gives.
+    /// Silent until attached.
+    /// </summary>
+    public ILogger Logger { get; set; } = NullLogger.Instance;
 
     /// <summary>Any container of this database by its catalog name, prefixed like the rest. The experiment reads the catalogue through this.</summary>
     public Container ContainerNamed(string name) => _database.GetContainer(_prefix + name);
@@ -419,31 +434,42 @@ public sealed class CosmosStore
         }
     }
 
+    // #region record
     private void Record(Container container, string kind, string text, IReadOnlyList<SqlParameterShape> parameters, string partitionLabel, int physical, double charge, TimeSpan elapsed, string outcome)
     {
         // Nothing in here may break the operation it observed
         // (ADR: What the database is actually doing).
         try
         {
+            string name = NameOf(container);
+            double rounded = Math.Round(charge, 2);
+            long ms = (long)elapsed.TotalMilliseconds;
             _log.Record(new StoreOperation(
                 DateTimeOffset.UtcNow,
-                NameOf(container),
+                name,
                 kind,
                 text,
                 parameters,
                 partitionLabel,
                 physical,
-                Math.Round(charge, 2),
-                (long)elapsed.TotalMilliseconds,
+                rounded,
+                ms,
                 outcome,
                 CurrentRequest.Describe(),
                 CurrentRequest.Identify()));
+            // The same operation as one console line, the shape Entity
+            // Framework gives a statement: what ran, what it cost, how long,
+            // and the query with its parameters by name and never by value.
+            Logger.LogInformation(
+                "Executed Cosmos DB {Kind} on {Container} ({Charge} RU, {Ms} ms, {Partition}) {Outcome}: {Text}",
+                kind, name, rounded, ms, partitionLabel, outcome, text);
         }
         catch
         {
             // Deliberately silent, for the reason the SQL interceptor gives.
         }
     }
+    // #endregion record
     // #endregion operations
 }
 

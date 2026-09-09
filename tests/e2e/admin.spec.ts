@@ -46,6 +46,12 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
     page.getByTestId('sql-card').or(page.getByTestId('store-card')).first()
   ).toBeVisible();
   await expect(page.getByTestId('log-card')).toContainText('Category');
+  // The document store gets a console line per operation, the way every SQL
+  // statement gets one (ADR: What the store is actually doing, addendum); on
+  // the two-store shape the log card shows it.
+  if (shape.stores.length > 1) {
+    await expect(page.getByTestId('log-card')).toContainText('Executed Cosmos DB');
+  }
   await page.getByRole('button', { name: 'Back to inventory' }).click();
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
 });

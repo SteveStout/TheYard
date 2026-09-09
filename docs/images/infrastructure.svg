@@ -38,35 +38,37 @@
   <!-- Visitor -->
   <rect x="60" y="170" width="180" height="180" class="box"/>
   <text x="75" y="196" class="title">Visitor's browser</text>
-  <text x="75" y="220" class="mono">https://theyard.</text>
-  <text x="75" y="236" class="mono">stevenstout.biz</text>
-  <text x="75" y="262" class="body">Hashed bundle files are</text>
-  <text x="75" y="279" class="body">cached a year; the page,</text>
-  <text x="75" y="296" class="body">the API and the docs</text>
-  <text x="75" y="313" class="body">say no-cache.</text>
-  <text x="75" y="336" class="muted">ADR-015</text>
+  <text x="75" y="218" class="mono">theyard</text>
+  <text x="75" y="234" class="mono">theyard-cosmos</text>
+  <text x="75" y="250" class="mono">  .stevenstout.biz</text>
+  <text x="75" y="274" class="body">Two sites, one store</text>
+  <text x="75" y="291" class="body">each by default. Bundles</text>
+  <text x="75" y="308" class="body">cached a year; the page,</text>
+  <text x="75" y="325" class="body">API and docs say no-cache.</text>
+  <text x="75" y="343" class="muted">ADR-015, ADR-069</text>
 
   <!-- DNS -->
   <rect x="280" y="170" width="200" height="180" class="box"/>
   <text x="295" y="196" class="title">DNS at Wix</text>
-  <text x="295" y="220" class="mono">theyard  CNAME</text>
-  <text x="295" y="236" class="mono">  theyard-edge.netlify.app</text>
-  <text x="295" y="258" class="mono">stevenstout.biz, www</text>
-  <text x="295" y="274" class="mono">  A records at Netlify</text>
-  <text x="295" y="300" class="body">Registrar-locked to Wix; the</text>
-  <text x="295" y="317" class="body">Cloudflare zone is staged for</text>
-  <text x="295" y="334" class="body">the transfer around Oct 30.</text>
+  <text x="295" y="218" class="mono">theyard          CNAME</text>
+  <text x="295" y="234" class="mono">theyard-cosmos   CNAME</text>
+  <text x="295" y="250" class="mono">  theyard-edge.netlify.app</text>
+  <text x="295" y="270" class="mono">bare A, www CNAME</text>
+  <text x="295" y="296" class="body">Registrar-locked to Wix; the</text>
+  <text x="295" y="313" class="body">Cloudflare zone is staged for</text>
+  <text x="295" y="330" class="body">the transfer around Oct 30.</text>
 
   <!-- Netlify edge -->
   <rect x="520" y="170" width="240" height="180" class="box"/>
   <text x="535" y="196" class="title">HTTPS edge: Netlify (free)</text>
-  <text x="535" y="220" class="body">Let's Encrypt certificate, auto-renewed.</text>
-  <text x="535" y="244" class="mono">edge/_redirects</text>
-  <text x="535" y="260" class="body">bare and www names: 301 to theyard</text>
-  <text x="535" y="276" class="body">everything else: proxy 200 to origin</text>
-  <text x="535" y="300" class="mono">netlify.toml</text>
-  <text x="535" y="316" class="body">rebuilds only when edge/ changes</text>
-  <text x="535" y="338" class="muted">ADR-007; not caching the API (measured)</text>
+  <text x="535" y="218" class="body">One Let's Encrypt cert, four names.</text>
+  <text x="535" y="240" class="mono">edge/_redirects  by Host</text>
+  <text x="535" y="256" class="body">bare and www: 301 to theyard</text>
+  <text x="535" y="272" class="body">theyard-cosmos: proxy to cosmos-ss</text>
+  <text x="535" y="288" class="body">everything else: proxy to theyard-ss</text>
+  <text x="535" y="310" class="mono">netlify.toml</text>
+  <text x="535" y="326" class="body">rebuilds only when edge/ changes</text>
+  <text x="535" y="344" class="muted">ADR-007, ADR-069; API not cached</text>
 
   <!-- Origin container group -->
   <rect x="800" y="150" width="540" height="228" class="box"/>
@@ -126,15 +128,15 @@
   <text x="815" y="752" class="muted">Nothing indexed; the definitions are infra/cosmos/*.json (ADR-040 addendum).</text>
 
   <rect x="180" y="590" width="560" height="176" class="box"/>
-  <text x="195" y="616" class="title">Both stores in one process, since 1.0.0.94</text>
-  <text x="195" y="640" class="body">Every container opens both stores. A cookie set by the Store toggle at the top</text>
-  <text x="195" y="656" class="body">of every page, or a header, picks which one serves a request; the default is</text>
-  <text x="195" y="672" class="body">sql here and cosmos on the second group, aci-theyard-cosmos-ss, which runs the</text>
-  <text x="195" y="688" class="body">same image on its own Azure address. Each Admin tab reads the other's</text>
-  <text x="195" y="704" class="body">numbers through /api/admin/peer, and the proof card sends a visitor's requests</text>
-  <text x="195" y="720" class="body">to the container itself on both stores and says, per path, whether the two</text>
-  <text x="195" y="736" class="body">answer in the same time and whether a difference is the store or its distance.</text>
-  <text x="195" y="760" class="muted">ADR-066 the toggle, ADR-067 the proof, ADR-063 the peer read, ADR-064 the measurement.</text>
+  <text x="195" y="616" class="title">Both stores in one process, two sites since 1.0.0.101</text>
+  <text x="195" y="640" class="body">Every container opens both stores; the default is sql here and cosmos on the</text>
+  <text x="195" y="656" class="body">second group, aci-theyard-cosmos-ss, which runs the same image behind the same</text>
+  <text x="195" y="672" class="body">edge at theyard-cosmos.stevenstout.biz. The Store bar links each site to the</text>
+  <text x="195" y="688" class="body">other at the same page (no cookie); a measurement names a store for one request</text>
+  <text x="195" y="704" class="body">with a header. Each Admin tab reads the other through /api/admin/peer, and the</text>
+  <text x="195" y="720" class="body">proof card sends a visitor's requests to the container itself on both stores and</text>
+  <text x="195" y="736" class="body">says, per path, whether the two answer in the same time and why they differ.</text>
+  <text x="195" y="760" class="muted">ADR-066 the bar, ADR-069 the address, ADR-067 the proof, ADR-063 the peer read.</text>
 
   <path d="M1330 378 L1350 378 L1350 678 L1340 678" class="flow"/>
   <text x="1160" y="586" class="flow-label">the other store, per request</text>

@@ -498,8 +498,14 @@ var telemetry = new TelemetryReader(
 var app = builder.Build();
 
 // Entity Framework's own command log goes where every other log line goes,
-// which the Admin tab's log section and a test both rely on.
+// which the Admin tab's log section and a test both rely on; the document
+// store writes one line per operation to the same place from here on
+// (ADR: What the store is actually doing, addendum).
 contexts?.Attach(app.Services.GetRequiredService<ILoggerFactory>());
+if (cosmos is not null)
+{
+    cosmos.Logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<CosmosStore>();
+}
 
 // The address the proof talks to itself on, read once the server is up.
 // Kestrel reports the wildcard it bound ("http://[::]:8080"), which is not
