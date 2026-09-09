@@ -10,7 +10,7 @@ Changelog, About) plus an Admin button, and on a phone they gave way to a
 drawer. Two navigation surfaces for one site, and the desktop one was the
 weaker: a hiring manager landing on a laptop had to guess which of five
 small words hid the decision records. Steve's words, with a reference
-attached: "I wanted a sidebar instead of drop downs", and "the drop downs
+attached: "I wanted a sidebar instead of dropdowns", and "the dropdowns
 look horrible on mobile". The reference was the Dribbble mobile-sidebar
 pattern: one dark side panel, a brand block at the top, icon-led rows under
 muted headers, everything in one place.
@@ -183,3 +183,7 @@ addendum has the list and the test that holds it to the server's catalogue.
 The order from the top is now App Architecture, SQL vs Cosmos DB, Diagrams,
 Hosting, CI/CD, Best Practices, Decision Records, Changelog, About, and the
 browser suite reads every heading.
+
+![The rail on the live site at 1.0.0.107: App Architecture with its four rows, then SQL vs Cosmos DB with one row, then Diagrams with five link rows, each with the new-tab icon](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/sidebar-sections.png)
+
+![The comparison open from its section: the record dialog over the inventory, the rail row marked current, the page's first paragraphs](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/sidebar-sql-vs-cosmos-open.png)

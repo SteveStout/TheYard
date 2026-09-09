@@ -8,7 +8,16 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
     .getByRole('button', { name: 'Admin', exact: true })
     .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
-  await expect(page.getByTestId('health-card')).toContainText('healthy');
+  // The health card waits on every store the container runs. On the gate's
+  // Cosmos DB pass that is two real stores reached from this machine, each
+  // behind a token acquisition on a cold process, and the relational one is a
+  // serverless database that wakes in tens of seconds after a quiet stretch
+  // (the connection carries a sixty-second resume budget for exactly that,
+  // YardConnection's resume-budget region). Five seconds was the default
+  // assertion budget, and on 2026-09-09 the card was still loading at five on
+  // a pass that was otherwise green; the wait is the application's own, so
+  // the assertion gets most of the test's minute rather than a twelfth of it.
+  await expect(page.getByTestId('health-card')).toContainText('healthy', { timeout: 45_000 });
   // Every check shows how long it took (ADR-010, second pass).
   await expect(page.getByTestId('check-duration').first()).toHaveText(/^\d+ ms$/);
   expect(await page.getByTestId('check-duration').count()).toBeGreaterThanOrEqual(3);

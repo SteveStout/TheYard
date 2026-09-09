@@ -126,8 +126,8 @@ Testing:
 ## Addendum, 2026-09-02: the diagram, the screenshots, and what counts as commented
 
 Steve's words, the evening of the second build day: "Make sure we have a
-diagram of our infrastructure and make sure we have as many screen shots
-and code references as possible and if the code is in the ADR it's good
+diagram of our infrastructure and make sure we have as many screenshots
+and code references as possible, and if the code is in the ADR it's good
 enough to be commented." Three rules follow from it, all in force.
 
 - **The infrastructure has a picture.** [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg)

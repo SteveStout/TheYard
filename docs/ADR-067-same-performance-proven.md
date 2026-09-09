@@ -8,7 +8,7 @@ Parent: ADR: One container, both stores.
 
 ## Context
 
-Steve's ask, in his words: "prove SQL AND Cosmos DB have the same
+Steve's ask, in his words: "prove SQL and Cosmos DB have the same
 performance". The measurement record (ADR: Measuring both stores) had
 already compared the two containers from a laptop in Missouri, twenty
 paired rounds, and found the pages that never touch a store equal to within

@@ -229,8 +229,8 @@ toggle itself.
 ## Addendum, 2026-09-09: the toggle moved to the sites
 
 Steve's words on the morning after the night's work, having opened both
-sites: "the button should toggle between the two sites, not refresh in react
-or at least the URL should change". The in-place switch above was the first
+sites: "the button should toggle between the two sites, not refresh in React;
+at the least, the URL should change". The in-place switch above was the first
 of the two priced options and it worked, and it was not what he wanted: one
 address serving either store, a cookie remembering which, and a page that
 reloads itself to become the other store is a toggle a visitor cannot see in

@@ -1,11 +1,11 @@
 # ADR: Data first, and the database in source control
 
 Status: accepted, 2026-09-03, shipped as 1.0.0.49. Steve's ask, in his words:
-"we are doing data first for entity framework and if needed we'll create a data
-project or a source control of the database, but the database must be source
-controlled", and then, when the two branches were priced: "I like the SQL project
-first and entity as a mapper as that way if you decide to change technologies you
-still keep your data structure."
+"we are doing data first for Entity Framework, and if needed we'll create a
+database project or source control for the database, but the database must be
+source controlled", and then, when the two branches were priced: "I like the SQL
+project first and Entity Framework as a mapper; that way, if you decide to change
+technologies, you still keep your data structure."
 
 ## The decision
 

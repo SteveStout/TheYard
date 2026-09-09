@@ -73,6 +73,17 @@ Four more habits:
   teaching comments for a reader meeting the pattern for the first time
   (ADR: Docs and testing). Code no record shows keeps its own comments.
 
+## Quoting the owner
+
+Records open with the instruction that produced them, in Steve's words, so a
+reader can see what was asked before reading what was built. Those words were
+typed fast, often from a phone, and they are quoted the way a newspaper quotes
+speech: spelling, casing and punctuation regularized for print, product names
+written in full, the meaning and the phrasing his. Never `[sic]`, never a typo
+kept for authenticity, and never the back-and-forth around the instruction;
+the record carries the ask and what it decided, not the exchange. A record
+that names a correction he made frames it as the rule it produced.
+
 ## Tests
 
 - The suite is chosen by what the code depends on: pure rules get xunit

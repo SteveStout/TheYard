@@ -373,7 +373,7 @@ visitor, so both interview questions have a number behind them.
 
 - One more Azure resource, $0.00 per month, with no key in existence. The
   standing rule against new resources was set aside for it by Steve on
-  2026-09-08 ("i GRANT"), recorded in `mentor\TASK-AUTH-2026-09-08-cosmos.md`.
+  2026-09-08 ("I grant"), recorded in `mentor\TASK-AUTH-2026-09-08-cosmos.md`.
 - A second container group, about $34 a month at list price while it runs,
   drawn from the trial credit today, stoppable between comparisons.
 - The ports change shape, and every adapter, the two services and the tests

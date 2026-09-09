@@ -6,8 +6,8 @@ that say so are in this record. Parent: ADR: The tests, explained for a new deve
 
 ## Context
 
-Steve's ask, in his words: "the tests in total should not run more than 5min
-total". The ship gate at 1.0.0.96 took about twenty minutes: xUnit on SQLite,
+Steve's ask, in his words: "the tests in total should not run more than five
+minutes". The ship gate at 1.0.0.96 took about twenty minutes: xUnit on SQLite,
 the six live store tests, the whole xUnit suite booted on Cosmos DB, the
 browser suite twice on SQLite and once on Cosmos DB, and in front of them
 prettier, lint, tsc, dotnet format, the SQL project, vitest and the em dash

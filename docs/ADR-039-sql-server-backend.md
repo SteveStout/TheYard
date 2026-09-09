@@ -1,8 +1,8 @@
 # ADR: The SQL Server backend
 
 Status: accepted, 2026-09-03, shipped as 1.0.0.49. Steve's ask: "make sure we
-have a SQL backend that is implemented correctly in SQL Server with Entity
-Framework with clear diagrams that is ready to expand."
+have a SQL backend implemented correctly in SQL Server with Entity Framework,
+with clear diagrams, that is ready to expand."
 
 ## The connection string that is not a credential
 

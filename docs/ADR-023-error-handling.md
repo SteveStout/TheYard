@@ -1,8 +1,8 @@
 # ADR: Error handling, one shape everywhere
 
 Status: accepted, 2026-09-02, shipped as 1.0.0.29. Steve's ask, in the same
-message as the telemetry: "hook up error handling and log every api call
-and error, and every react error." The README also promised this at the
+message as the telemetry: "hook up error handling and log every API call
+and error, and every React error." The README also promised this at the
 start of the build and it was still open.
 
 ## Context

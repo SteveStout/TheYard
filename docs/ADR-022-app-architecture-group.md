@@ -1,8 +1,8 @@
 # ADR: An App Architecture section in the sidebar
 
 Status: accepted, 2026-09-02, shipped as 1.0.0.28. Steve's ask: "make sure
-everything on the UI is grouped and well organized so we need a new header
-or App Architecture for the code ADR."
+everything on the UI is grouped and well organized; we need a new header,
+App Architecture, for the code ADRs."
 
 ## Context
 

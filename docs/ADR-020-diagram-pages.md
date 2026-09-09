@@ -132,3 +132,5 @@ address. The rows are links rather than documents on purpose: a drawing is
 read zoomed, on a page of its own, and the dialog the documents open in is
 the wrong shape for it, which is the decision this record made in the first
 place.
+
+![The Diagrams section on the live site: five rows, Infrastructure, Data flow, The database, The two sites, SQL Server vs Cosmos DB, each with the new-tab icon, under the SQL vs Cosmos DB section](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/sidebar-sections.png)

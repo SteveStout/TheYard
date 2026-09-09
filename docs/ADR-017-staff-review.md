@@ -9,8 +9,8 @@ Nobody had yet read the day's work as one body of code the way a staff
 engineer reads a pull request: for duplication between files, for the
 seams where one change assumed another, for the small things a fast day
 leaves behind. Steve's instruction, in his words: "play the role of
-Arcitect/Staff engineer and code review your self, and make corrections and
-ADR on improvements." This record is that review. Every finding is listed,
+architect and staff engineer, code review yourself, and make corrections and
+an ADR on improvements." This record is that review. Every finding is listed,
 including the ones deliberately left alone, so the next reviewer starts
 from the same page.
 

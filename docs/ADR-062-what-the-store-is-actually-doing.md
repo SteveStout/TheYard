@@ -135,7 +135,7 @@ document store).
 ## Addendum, 2026-09-09: one console line per operation, like every statement
 
 Steve, looking at both Admin tabs after the two-sites lane: "missing a log on
-the cosmosDB like SQL ... even if it's a log of the API requests". He was
+the Cosmos DB side like SQL has, even if it's a log of the API requests". He was
 reading the last card, the log as the console got it. On the relational side
 that card shows every statement, because Entity Framework logs each command
 at Information and the ring captures that one framework category. The

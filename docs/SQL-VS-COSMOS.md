@@ -31,9 +31,9 @@ had to hold all of them open. This page is that reading, done once, with
 the code pulled in live so it cannot drift from what runs, and the diagram
 on its own page for a screen or an interview.
 
-Who it is for: a developer who knows one of these stores and not the other,
-which on 2026-09-08 described the author of the application. Every row is a
-question that developer asks first.
+Who it is for: a developer who knows one of these stores well and is meeting
+the other, which describes most of the people who will read it. Every row is
+a question that developer asks first.
 
 ## The picture
 

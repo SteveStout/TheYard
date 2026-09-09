@@ -9,7 +9,7 @@ container, both stores.
 ## Context
 
 Steve's words on the morning of 2026-09-09, after his first look at the two
-sites: "we need a permanent url for the cosmos db". What the second site had
+sites: "we need a permanent URL for the Cosmos DB site". What the second site had
 was the container group's Azure hostname on port 8080, plain HTTP:
 `http://theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080`.
 
@@ -38,8 +38,7 @@ Any answer for the second site has to live inside the same two walls.
 
 *A preview. [Open the two-sites diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
 to zoom in and follow it. Steve asked for this one in as many words: "make
-sure we have a diagram of how this DNS maps between these two sites to
-azure". The source is [`docs/images/two-sites.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/two-sites.svg),
+sure we have a diagram of how the DNS maps these two sites to Azure". The source is [`docs/images/two-sites.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/two-sites.svg),
 drawn by [`docs/images/two-sites.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/two-sites.mjs).*
 
 ## The options, priced
