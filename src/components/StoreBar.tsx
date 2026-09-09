@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchStores, note, segments, selectStore, type Stores } from '../lib/stores';
+import { fetchStores, note, otherSite, segments, selectStore, type Stores } from '../lib/stores';
 import styles from './StoreBar.module.css';
 
 /**
@@ -38,6 +38,8 @@ export function StoreBar() {
     window.location.reload();
   };
 
+  const other = otherSite(stores);
+
   return (
     <div className={styles.bar} data-testid="store-bar">
       <div className={styles.inner}>
@@ -66,6 +68,14 @@ export function StoreBar() {
         <span className={styles.note} data-testid="store-bar-note">
           {message ?? note(stores)}
         </span>
+        {other && (
+          <span className={styles.note} data-testid="store-bar-other">
+            The other site, on the other store by default:{' '}
+            <a href={other.href} className={styles.other}>
+              {other.host}
+            </a>
+          </span>
+        )}
       </div>
     </div>
   );

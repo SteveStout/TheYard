@@ -90,6 +90,7 @@ public static class DocsCatalog
         ["adr-cosmos-explained"] = "docs/ADR-065-cosmos-db-explained.md",
         ["adr-one-container"] = "docs/ADR-066-one-container-both-stores.md",
         ["adr-proof"] = "docs/ADR-067-same-performance-proven.md",
+        ["adr-five-minute-gate"] = "docs/ADR-068-the-five-minute-gate.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",

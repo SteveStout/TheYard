@@ -164,7 +164,7 @@
   <rect x="280" y="696" width="240" height="150" class="box"/>
   <text x="295" y="722" class="title">CI (.github/workflows/ci.yml)</text>
   <text x="295" y="746" class="body">frontend: tsc, vitest, vite build</text>
-  <text x="295" y="762" class="body">api: dotnet test (372 tests)</text>
+  <text x="295" y="762" class="body">api: dotnet test (379 tests)</text>
   <text x="295" y="778" class="body">e2e: Playwright in Chrome (58)</text>
   <text x="295" y="804" class="body">A red job stops everything below.</text>
   <text x="295" y="828" class="muted">read-only token</text>
@@ -183,7 +183,7 @@
   <text x="975" y="746" class="mono">crtheyardsszmnetj67bn5h2</text>
   <text x="975" y="762" class="mono">  .azurecr.io</text>
   <text x="975" y="786" class="body">One tag per version,</text>
-  <text x="975" y="802" class="body">theyard:v12 to v94 today.</text>
+  <text x="975" y="802" class="body">theyard:v12 to v97 today.</text>
 
   <path d="M240 770 L280 770" class="flow"/>
   <path d="M520 770 L560 770" class="flow"/>

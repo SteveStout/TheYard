@@ -124,6 +124,19 @@ build, so a type error fails the run before any test does.
   where the URL is the state; reset shared state in `beforeEach`.
 - **A flaky test:** the cause is almost always time or shared state; anchor
   the clock, or give the test its own fixture class.
+- **A slow test:** read the runner's per-test timings before touching
+  anything; the first test in a class carries the class's boot, and a boot
+  is a thousand vehicles here, not the site's hundred thousand, for the
+  reason in ADR: The five-minute gate.
+
+## Addendum, 2026-09-09: the wall runs in under five minutes
+
+Every test application now boots a thousand vehicles instead of the site's
+hundred thousand, the one class about the size asks for the full catalogue
+by name, the accessibility scans run in parallel, and the ship gate runs the
+node side and the .NET side at the same time, each suite once per store.
+The measurements and the reasoning are ADR: The five-minute gate; nothing
+here asserts less.
 
 ## Files
 

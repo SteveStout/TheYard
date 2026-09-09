@@ -21,6 +21,8 @@ export interface Store {
 export interface Stores {
   current: string;
   stores: Store[];
+  /** The other site, the container whose default is the other store, as a visitor reaches it; null where there is none. */
+  other_site?: string | null;
 }
 
 // #region stores-seam
@@ -96,6 +98,23 @@ export function note(stores: Stores): string {
     return `${current.name} did not come up on this container. The catalogue is served from files and there are no accounts on this store until it does.`;
   }
   return `This page is served from ${current.name}. Accounts and bids live in the store they were made in.`;
+}
+
+/**
+ * The other site's link, when the server names one: the address to follow
+ * and the host to show, because a whole address in a slim bar reads as noise
+ * and the host is what tells the two sites apart. An address the browser
+ * cannot parse is not a link.
+ */
+export function otherSite(stores: Stores): { href: string; host: string } | null {
+  if (!stores.other_site) return null;
+  try {
+    const url = new URL(stores.other_site);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return { href: url.origin, host: url.host };
+  } catch {
+    return null;
+  }
 }
 
 /** What each segment of the toggle says and does, from the server's answer. */

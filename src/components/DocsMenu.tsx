@@ -97,6 +97,7 @@ export type DocKey =
   | 'adrCosmosExplained'
   | 'adrOneContainer'
   | 'adrProof'
+  | 'adrFiveMinuteGate'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -648,6 +649,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '067',
   },
+  adrFiveMinuteGate: {
+    title: 'ADR: The five-minute gate',
+    menuLabel: 'ADR: The five-minute gate',
+    url: '/api/docs/adr-five-minute-gate',
+    kind: 'adr',
+    number: '068',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -771,6 +779,7 @@ export const MENUS: Record<
       { key: 'adrCosmosExplained' },
       { key: 'adrOneContainer' },
       { key: 'adrProof' },
+      { key: 'adrFiveMinuteGate' },
     ],
   },
   // #endregion records-menu

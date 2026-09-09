@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchStores, note, segments, selectStore, type Stores } from './stores';
+import { fetchStores, note, otherSite, segments, selectStore, type Stores } from './stores';
 
 /**
  * The store toggle's seam (ADR: One container, both stores). What is worth
@@ -82,6 +82,25 @@ describe('note', () => {
       'Azure Cosmos DB did not come up'
     );
     expect(note({ current: 'nowhere', stores: both.stores })).toBe('');
+  });
+});
+
+describe('otherSite', () => {
+  it('turns the other site into a link with its host as the text, and nothing else into a link', () => {
+    expect(otherSite({ ...both, other_site: 'https://theyard.stevenstout.biz/' })).toEqual({
+      href: 'https://theyard.stevenstout.biz',
+      host: 'theyard.stevenstout.biz',
+    });
+    expect(
+      otherSite({ ...both, other_site: 'http://theyard-cosmos-ss.westus2.azurecontainer.io:8080' })
+    ).toEqual({
+      href: 'http://theyard-cosmos-ss.westus2.azurecontainer.io:8080',
+      host: 'theyard-cosmos-ss.westus2.azurecontainer.io:8080',
+    });
+    expect(otherSite(both)).toBeNull();
+    expect(otherSite({ ...both, other_site: null })).toBeNull();
+    expect(otherSite({ ...both, other_site: 'not an address' })).toBeNull();
+    expect(otherSite({ ...both, other_site: 'javascript:alert(1)' })).toBeNull();
   });
 });
 

@@ -31,6 +31,13 @@ async function violations(page: Page): Promise<string[]> {
   );
 }
 
+// The nine scans run on whichever workers are free rather than one after the
+// other on one worker. Each scan is its own page and its own sign-in, so
+// nothing here depends on the scan before it, and together they were the
+// suite's longest single file by a factor of three, which made them the
+// suite's whole length on four workers (ADR: The five-minute gate).
+test.describe.configure({ mode: 'parallel' });
+
 test.describe('WCAG 2.1 AA, on every view', () => {
   // Sixty seconds rather than the file-wide thirty, and only here.
   //

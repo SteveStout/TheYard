@@ -226,7 +226,13 @@ if (cosmosConfigured)
 
 // Which one a request gets when it names none, and the answer every request
 // reads from its own cookie or header (ADR: One container, both stores).
-var backends = new Backends(backendList, configuredDefaultStore ?? (cosmosConfigured ? "cosmos" : "sql"));
+// Peer:Site is the other container as a visitor reaches it, which behind the
+// edge is the domain and not the origin the peer endpoint reads (ADR: One
+// container, both stores, addendum). Unset everywhere but the deployed groups.
+var backends = new Backends(
+    backendList,
+    configuredDefaultStore ?? (cosmosConfigured ? "cosmos" : "sql"),
+    builder.Configuration["Peer:Site"]);
 builder.Services.AddSingleton(backends);
 builder.Services.AddScoped<CurrentBackend>();
 if (contexts is not null)

@@ -1,17 +1,19 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace TheYard.Tests;
 
 /// <summary>
 /// End-to-end through the real host: DI wiring, the synthetic 100k dataset,
 /// filtering/sorting/paging parameters, endpoint shapes, and static images.
+/// This is the one class that boots the site's full catalogue, because its
+/// subject is the size; every other test application boots a thousand
+/// (ADR: The five-minute gate).
 /// </summary>
-public class ApiIntegrationTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public class ApiIntegrationTests(FullCatalogue factory)
+    : IClassFixture<FullCatalogue>
 {
-    private const int ExpectedTotal = 100_000;
+    private const int ExpectedTotal = FullCatalogue.Vehicles;
     private readonly HttpClient _client = factory.CreateClient();
 
     private async Task<JsonDocument> GetAsync(string url) =>

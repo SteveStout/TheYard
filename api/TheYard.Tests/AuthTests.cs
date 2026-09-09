@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace TheYard.Tests;
 
+// #region auth-tests
 /// <summary>
 /// Accounts, and the bids that belong to them (ADR: Accounts and per-user
 /// bids). The auction was one anonymous buyer until this file existed, which
@@ -14,8 +15,16 @@ namespace TheYard.Tests;
 /// These tests share one database file on purpose: the interesting claims are
 /// about two people and about a restart, and neither can be made by one
 /// process with a scratch database.
+///
+/// <para>Three classes over one base rather than one class, because xUnit
+/// runs a class's tests one after another and the other classes beside it,
+/// and these tests boot a host each: as one class they were the suite's
+/// longest single line on the document store, eighty-six seconds while the
+/// rest of the suite finished around them (ADR: The five-minute gate).
+/// Nothing else changed; the sign-ins, the lockout and the bids are the
+/// same tests under the same names.</para>
 /// </summary>
-public class AuthTests : IDisposable
+public abstract class AuthTestBase : IDisposable
 {
     private readonly string _file =
         Path.Combine(Path.GetTempPath(), $"theyard-auth-{Guid.NewGuid():N}.db");
@@ -27,10 +36,10 @@ public class AuthTests : IDisposable
     // booted on the document store, the whole class shares one users container,
     // and the second test to register "first@example.com" would be registering
     // a duplicate (ADR: A second store on Cosmos DB, and what it costs).
-    private readonly string _first = $"first-{Guid.NewGuid():N}@example.com";
-    private readonly string _second = $"second-{Guid.NewGuid():N}@example.com";
+    protected readonly string _first = $"first-{Guid.NewGuid():N}@example.com";
+    protected readonly string _second = $"second-{Guid.NewGuid():N}@example.com";
 
-    private WebApplicationFactory<Program> Api() =>
+    protected WebApplicationFactory<Program> Api() =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting("ConnectionStrings:Yard", Connection);
@@ -40,13 +49,13 @@ public class AuthTests : IDisposable
             builder.UseSetting("Auth:SigningKey", "a-signing-key-for-tests-only-not-a-secret");
         });
 
-    private static async Task<HttpResponseMessage> Register(HttpClient client, string email) =>
+    protected static async Task<HttpResponseMessage> Register(HttpClient client, string email) =>
         await client.PostAsJsonAsync("/api/auth/register", new { email, password = "correct horse" });
 
-    private static async Task<HttpResponseMessage> LogIn(HttpClient client, string email) =>
+    protected static async Task<HttpResponseMessage> LogIn(HttpClient client, string email) =>
         await client.PostAsJsonAsync("/api/auth/login", new { email, password = "correct horse" });
 
-    private static long Anchor() =>
+    protected static long Anchor() =>
         new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
 
     /// <summary>
@@ -58,9 +67,9 @@ public class AuthTests : IDisposable
     /// account. Everything else has to match, which is a stronger claim than
     /// comparing a chosen few fields would be.
     /// </summary>
-    private static readonly string[] RequestIds = ["trace_id", "traceId"];
+    protected static readonly string[] RequestIds = ["trace_id", "traceId"];
 
-    private static async Task<string> Told(HttpResponseMessage response)
+    protected static async Task<string> Told(HttpResponseMessage response)
     {
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return string.Join(
@@ -75,7 +84,7 @@ public class AuthTests : IDisposable
     /// A bid the server accepted, or a failure that says why it did not. Every
     /// rejection carries its sentence in `detail` (ADR: Error handling).
     /// </summary>
-    private static async Task<HttpResponseMessage> Bid(
+    protected static async Task<HttpResponseMessage> Bid(
         HttpClient client, string vehicleId, int amount, long anchor)
     {
         var placed = await client.PostAsJsonAsync(
@@ -94,7 +103,7 @@ public class AuthTests : IDisposable
     /// is real wall-clock read per request, so that vehicle can close between
     /// the read and the bid, and under the full suite it does.
     /// </summary>
-    private static async Task<(string Id, int MinNext)> ALiveVehicle(HttpClient client, long anchor)
+    protected static async Task<(string Id, int MinNext)> ALiveVehicle(HttpClient client, long anchor)
     {
         using var page = JsonDocument.Parse(
             await client.GetStringAsync(
@@ -105,7 +114,26 @@ public class AuthTests : IDisposable
         return (vehicle.GetProperty("id").GetString()!, vehicle.GetProperty("min_next_bid").GetInt32());
     }
 
-    // #region auth-tests
+    public void Dispose()
+    {
+        foreach (string leftover in new[] { _file, _file + "-wal", _file + "-shm" })
+        {
+            try
+            {
+                File.Delete(leftover);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A test's scratch file that outlives the test is litter, not a failure.
+            }
+        }
+        GC.SuppressFinalize(this);
+    }
+}
+
+/// <summary>Registering, signing in, signing out, and the password rule.</summary>
+public class AuthTests : AuthTestBase
+{
     [Fact]
     public async Task Registering_signs_you_in_and_never_hands_the_page_the_token()
     {
@@ -126,6 +154,70 @@ public class AuthTests : IDisposable
         Assert.DoesNotContain("token", body, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task Wrong_credentials_say_the_same_thing_as_no_account()
+    {
+        await using var api = Api();
+        var client = api.CreateClient();
+        await Register(client, _first);
+
+        var stranger = api.CreateClient();
+        var noSuchAccount = await stranger.PostAsJsonAsync(
+            "/api/auth/login", new { email = "nobody@example.com", password = "correct horse" });
+        var wrongPassword = await stranger.PostAsJsonAsync(
+            "/api/auth/login", new { email = _first, password = "not the password" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, noSuchAccount.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
+        // Two different messages would be an endpoint that tells a stranger
+        // which email addresses have accounts here. Everything the caller is
+        // told is compared, minus the trace id, which is a fresh request id on
+        // every response by design (ADR: Error handling) and says nothing
+        // about whether the account exists.
+        Assert.Equal(await Told(noSuchAccount), await Told(wrongPassword));
+    }
+
+    [Fact]
+    public async Task Signing_out_ends_the_session()
+    {
+        await using var api = Api();
+        var client = api.CreateClient();
+        await Register(client, _first);
+        Assert.Contains(_first, await client.GetStringAsync("/api/auth/me"), StringComparison.Ordinal);
+
+        await client.PostAsync("/api/auth/logout", content: null);
+
+        string me = await client.GetStringAsync("/api/auth/me");
+        Assert.Contains("\"signed_in\":false", me, StringComparison.Ordinal);
+        long anchor = Anchor();
+        var (id, amount) = await ALiveVehicle(client, anchor);
+        var refused = await client.PostAsJsonAsync(
+            $"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
+        Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_short_password_is_refused_with_something_a_person_can_act_on()
+    {
+        await using var api = Api();
+        var client = api.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/register", new { email = _first, password = "short" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Contains(
+            "Eight characters",
+            problem.RootElement.GetProperty("detail").GetString()!,
+            StringComparison.Ordinal);
+    }
+}
+
+/// <summary>The lockout, whose sign-ins are the most round trips of any test here, so it runs beside the others rather than after them.</summary>
+public class AuthLockoutTests : AuthTestBase
+{
     // #region lockout
     [Fact]
     public async Task Five_wrong_passwords_lock_the_account_and_the_right_one_stops_working()
@@ -188,7 +280,11 @@ public class AuthTests : IDisposable
         Assert.Equal(HttpStatusCode.OK, again.StatusCode);
     }
     // #endregion lockout
+}
 
+/// <summary>Bids that belong to accounts, two people in one room, and the restart.</summary>
+public class AuthBidTests : AuthTestBase
+{
     [Fact]
     public async Task Bidding_without_an_account_is_refused()
     {
@@ -317,81 +413,5 @@ public class AuthTests : IDisposable
             "a history nobody can read is a list of identifiers");
         Assert.Equal(amount, entry.GetProperty("bid").GetProperty("amount").GetInt32());
     }
-
-    [Fact]
-    public async Task Wrong_credentials_say_the_same_thing_as_no_account()
-    {
-        await using var api = Api();
-        var client = api.CreateClient();
-        await Register(client, _first);
-
-        var stranger = api.CreateClient();
-        var noSuchAccount = await stranger.PostAsJsonAsync(
-            "/api/auth/login", new { email = "nobody@example.com", password = "correct horse" });
-        var wrongPassword = await stranger.PostAsJsonAsync(
-            "/api/auth/login", new { email = _first, password = "not the password" });
-
-        Assert.Equal(HttpStatusCode.Unauthorized, noSuchAccount.StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
-        // Two different messages would be an endpoint that tells a stranger
-        // which email addresses have accounts here. Everything the caller is
-        // told is compared, minus the trace id, which is a fresh request id on
-        // every response by design (ADR: Error handling) and says nothing
-        // about whether the account exists.
-        Assert.Equal(await Told(noSuchAccount), await Told(wrongPassword));
-    }
-
-    [Fact]
-    public async Task Signing_out_ends_the_session()
-    {
-        await using var api = Api();
-        var client = api.CreateClient();
-        await Register(client, _first);
-        Assert.Contains(_first, await client.GetStringAsync("/api/auth/me"), StringComparison.Ordinal);
-
-        await client.PostAsync("/api/auth/logout", content: null);
-
-        string me = await client.GetStringAsync("/api/auth/me");
-        Assert.Contains("\"signed_in\":false", me, StringComparison.Ordinal);
-        long anchor = Anchor();
-        var (id, amount) = await ALiveVehicle(client, anchor);
-        var refused = await client.PostAsJsonAsync(
-            $"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
-        Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
-    }
-
-    [Fact]
-    public async Task A_short_password_is_refused_with_something_a_person_can_act_on()
-    {
-        await using var api = Api();
-        var client = api.CreateClient();
-
-        var response = await client.PostAsJsonAsync(
-            "/api/auth/register", new { email = _first, password = "short" });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
-        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Contains(
-            "Eight characters",
-            problem.RootElement.GetProperty("detail").GetString()!,
-            StringComparison.Ordinal);
-    }
-    // #endregion auth-tests
-
-    public void Dispose()
-    {
-        foreach (string leftover in new[] { _file, _file + "-wal", _file + "-shm" })
-        {
-            try
-            {
-                File.Delete(leftover);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                // A test's scratch file that outlives the test is litter, not a failure.
-            }
-        }
-        GC.SuppressFinalize(this);
-    }
 }
+// #endregion auth-tests

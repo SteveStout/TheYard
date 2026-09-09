@@ -55,7 +55,12 @@ export default defineConfig({
   // Each server is considered ready when a real URL answers, not after a sleep.
   webServer: [
     {
-      command: 'npm run api',
+      // The ship gate has just built the API, so it says so and the server
+      // starts without building it again, ten seconds twice per gate
+      // (ADR: The five-minute gate). Everywhere else the build is wanted.
+      command: process.env.YARD_API_PREBUILT
+        ? 'dotnet run --no-build --project api/TheYard.Api'
+        : 'npm run api',
       // The simulated room waits twenty seconds before answering a bid
       // (ADR-027). Zero here so the outbid test watches a lead change hands
       // instead of watching a clock. Nothing else sets this.

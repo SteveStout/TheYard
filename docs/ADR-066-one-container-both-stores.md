@@ -203,6 +203,20 @@ what the night added,
   tolerance and the correction were read line by line against the numbers
   the live run produced and they agree.
 
+## Addendum, 2026-09-09: the other site, on every page
+
+Steve's answer to the priced question was the second option as well as the
+first: a link between the two sites. The bar now carries it. `Peer:Site` is
+the other container as a visitor reaches it, which for the live site is the
+domain behind the edge and for the second container is its own origin, and
+`/api/stores` answers it beside the stores as `other_site`, trimmed to an
+http or https origin or left null. The bar shows the host as the link text,
+after the sentence about the store serving the page, so both addresses are on
+every page of both sites and a visitor on either can open the other. The
+peer endpoint keeps reading the other container by its origin; the two
+settings differ on the live site for the same reason a visitor and a
+container reach it by different names.
+
 ## Files
 
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a backend, the backends, the request's choice, and the context factory.

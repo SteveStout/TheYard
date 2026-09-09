@@ -8,7 +8,11 @@ import { signIn } from './signIn';
 // is a switch: the page comes back on the other store, and an account made on
 // one store reads as signed out on the other.
 
-type Stores = { current: string; stores: { key: string; name: string; ready: boolean }[] };
+type Stores = {
+  current: string;
+  stores: { key: string; name: string; ready: boolean }[];
+  other_site: string | null;
+};
 
 async function stores(request: import('@playwright/test').APIRequestContext): Promise<Stores> {
   const response = await request.get('http://localhost:5210/api/stores');
@@ -34,6 +38,18 @@ test('the toggle sits at the top of every view and names the store serving the v
   await expect(bar.getByTestId('store-bar-note')).toContainText(`served from ${current.name}`);
   // Both families are always drawn, so the choice reads as a choice.
   await expect(group.getByRole('radio')).toHaveCount(2);
+  // The other site is a link when the container names one, and nothing when
+  // it does not: a developer's machine has no other site, the deployed
+  // containers do (ADR: One container, both stores, addendum).
+  const other = bar.getByTestId('store-bar-other');
+  if (answer.other_site === null) {
+    await expect(other).toHaveCount(0);
+  } else {
+    await expect(other.getByRole('link')).toHaveAttribute(
+      'href',
+      new URL(answer.other_site).origin
+    );
+  }
 
   // The bar is above the view, so it is there on the Admin tab and the account view too.
   await openTheYard(page, '/?view=admin');

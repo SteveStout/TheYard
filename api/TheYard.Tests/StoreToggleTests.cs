@@ -90,6 +90,26 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
+    public void The_other_site_is_an_http_origin_or_nothing()
+    {
+        var stores = new[] { Fake("sql", "SQLite"), Fake("cosmos", "Azure Cosmos DB") };
+
+        // The address a visitor types, trimmed to its origin: the bar links to
+        // the site, not to whatever path the setting happened to carry.
+        Assert.Equal("https://theyard.stevenstout.biz", new Backends(stores, "sql", "https://theyard.stevenstout.biz/").OtherSite);
+        Assert.Equal("http://theyard-ss.westus2.azurecontainer.io:8080", new Backends(stores, "sql", "http://theyard-ss.westus2.azurecontainer.io:8080/api/stores").OtherSite);
+        Assert.Equal("https://theyard.stevenstout.biz", new Backends(stores, "sql", "https://theyard.stevenstout.biz").Describe(null).OtherSite);
+
+        // No setting, an empty one, a relative path, or a scheme a browser
+        // would not follow to a site: no link, never an error.
+        Assert.Null(new Backends(stores, "sql").OtherSite);
+        Assert.Null(new Backends(stores, "sql", "").OtherSite);
+        Assert.Null(new Backends(stores, "sql", "/somewhere").OtherSite);
+        Assert.Null(new Backends(stores, "sql", "javascript:alert(1)").OtherSite);
+        Assert.Null(new Backends(stores, "sql", "ftp://files.example.com").OtherSite);
+    }
+
+    [Fact]
     public void The_cookie_is_secure_behind_the_edge_and_plain_on_a_developers_machine()
     {
         var plain = Backends.CookieFor(Request());
@@ -130,6 +150,9 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
         // exactly one store is the default.
         var byDefault = Assert.Single(listed, store => store.GetProperty("default").GetBoolean());
         Assert.Equal(byDefault.GetProperty("key").GetString(), stores.GetProperty("current").GetString());
+        // No other site is configured here, and the page is told so rather
+        // than left to guess from a missing field.
+        Assert.Equal(JsonValueKind.Null, stores.GetProperty("other_site").ValueKind);
     }
 
     [Fact]

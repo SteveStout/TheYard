@@ -68,6 +68,10 @@ properties:
       # side by side). The live site's origin, read server side.
       - name: Peer__Url
         value: http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
+      # The live site as a visitor reaches it, behind the edge, for the link in
+      # the Store bar (ADR: One container, both stores, addendum).
+      - name: Peer__Site
+        value: https://theyard.stevenstout.biz
       image: __IMAGE__
       ports:
       - port: 8080

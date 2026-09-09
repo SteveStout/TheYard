@@ -79,7 +79,7 @@ public sealed class Backends
 
     private readonly Backend[] _all;
 
-    public Backends(IEnumerable<Backend> all, string? defaultKey)
+    public Backends(IEnumerable<Backend> all, string? defaultKey, string? otherSite = null)
     {
         _all = all.ToArray();
         if (_all.Length == 0)
@@ -88,9 +88,24 @@ public sealed class Backends
         }
 
         Default = Named(defaultKey) ?? _all[0];
+        OtherSite = Uri.TryCreate(otherSite, UriKind.Absolute, out var site)
+            && (site.Scheme == Uri.UriSchemeHttp || site.Scheme == Uri.UriSchemeHttps)
+            ? site.GetLeftPart(UriPartial.Authority)
+            : null;
     }
 
     public IReadOnlyList<Backend> All => _all;
+
+    /// <summary>
+    /// The other site, the container whose default is the other store, as a
+    /// visitor should reach it (`Peer:Site`), so the bar can put both
+    /// addresses on every page. The peer endpoint reads the other container
+    /// by its origin; this is the address a person types, which behind the
+    /// edge is a different one. Null when there is no other site, and only
+    /// ever an http or https origin, so a setting cannot put anything else in
+    /// a link.
+    /// </summary>
+    public string? OtherSite { get; }
 
     /// <summary>The backend a request gets when it names none.</summary>
     public Backend Default { get; }
@@ -159,7 +174,8 @@ public sealed class Backends
                 backend.Key,
                 backend.Name,
                 backend.Ready,
-                ReferenceEquals(backend, Default))).ToArray());
+                ReferenceEquals(backend, Default))).ToArray(),
+            OtherSite);
     }
 }
 
@@ -214,8 +230,8 @@ public sealed class ContextFactory(DbContextOptions<YardDbContext> options) : ID
 /// <summary>One store on the toggle: its key, its name, whether it came up, and whether it is the container's default.</summary>
 public sealed record StoreView(string Key, string Name, bool Ready, bool Default);
 
-/// <summary>The toggle's answer: which store this request is on, and the stores there are.</summary>
-public sealed record StoresView(string Current, IReadOnlyList<StoreView> Stores);
+/// <summary>The toggle's answer: which store this request is on, the stores there are, and the other site if there is one.</summary>
+public sealed record StoresView(string Current, IReadOnlyList<StoreView> Stores, string? OtherSite);
 
 /// <summary>The toggle's request: the key of the store to switch to.</summary>
 public sealed record StoreChoice(string? Store);

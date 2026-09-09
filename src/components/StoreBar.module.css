@@ -71,6 +71,15 @@
   color: var(--color-text-muted);
 }
 
+/* The other site's address, a link in the note's own size: it is a second
+   door and not a second toggle. */
+.other {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 600px) {
   .inner {
     padding: var(--space-2) var(--space-4);
