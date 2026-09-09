@@ -131,3 +131,17 @@ something checking it.
 - [`api/TheYard.Tests/DockerBuildInputsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DockerBuildInputsTests.cs): the two manifests, compared.
 - [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the catch-all that ruled the edge out in one line.
 - [`docs/ADR-040-database-source-control.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-040-database-source-control.md): the same shape, with a DACPAC.
+
+## Addendum, 2026-09-09: the third instance
+
+The same shape again, in the runtime stage this time. The records show code
+through live blocks that read files from the image, and the image copies an
+explicit list of sources for them; a record named a file under `scripts/`,
+which the list did not carry and the expander's roots did not allow, and
+both live sites rendered a note in its place for a day while every gate
+stayed green (ADR: Live code samples, the coverage addendum).
+`LiveSampleCoverageTests` now holds every path a live block names to the
+runtime stage's COPY lines, glob by glob, the way `DockerBuildInputsTests`
+holds the frontend's inputs to the node stage. Two manifests compared by a
+test each, and the rule behind both stands: an explicit list that describes
+another thing is a test waiting to be written.

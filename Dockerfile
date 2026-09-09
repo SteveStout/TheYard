@@ -104,6 +104,10 @@ COPY --chown=app:app api/TheYard.Tests/*.cs api/TheYard.Tests/*.csproj ./api/The
 COPY --chown=app:app Dockerfile netlify.toml playwright.config.ts vite.config.ts package.json index.html tsconfig.json tsconfig.app.json tsconfig.node.json .editorconfig ./
 COPY --chown=app:app edge ./edge
 COPY --chown=app:app tests ./tests
+# The measuring script and the dataset tooling, shown by the records that used them (ADR-014, the
+# coverage addendum): a live block can only show a file that is in the image, and a test holds this
+# list to every path the documents name.
+COPY --chown=app:app scripts ./scripts
 # The built frontend bundle is copied into wwwroot so the ASP.NET API can serve it and provide SPA fallback routing.
 COPY --chown=app:app --from=frontend-build /src/dist/ /app/wwwroot/
 

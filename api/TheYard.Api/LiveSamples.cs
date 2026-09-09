@@ -20,7 +20,7 @@ public static partial class LiveSamples
 {
     // #region whitelist
     /// <summary>The only roots a live block may read from, relative to the repo root.</summary>
-    public static readonly string[] AllowedRoots = ["src/", "api/", "infra/", ".github/", "tests/", "edge/"];
+    public static readonly string[] AllowedRoots = ["src/", "api/", "infra/", ".github/", "tests/", "edge/", "scripts/"];
 
     /// <summary>The single files at the repo root a live block may read: the ones the records decide (ADR-017).</summary>
     public static readonly string[] AllowedFiles = ["Dockerfile", "netlify.toml", "playwright.config.ts", "vite.config.ts", "package.json", "index.html", "tsconfig.json", "tsconfig.app.json", "tsconfig.node.json", ".editorconfig"];
@@ -119,7 +119,7 @@ public static partial class LiveSamples
     {
         if (!IsAllowedPath(path))
         {
-            return Note($"`{path ?? "(no path)"}` is outside the allowed roots (src/, api/, infra/, .github/, tests/, edge/, or a named root file).");
+            return Note($"`{path ?? "(no path)"}` is outside the allowed roots (src/, api/, infra/, .github/, tests/, edge/, scripts/, or a named root file).");
         }
         if (string.IsNullOrWhiteSpace(region))
         {

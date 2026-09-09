@@ -122,6 +122,9 @@ hour ago.
   it serves through the expander.
 - [`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs): the rejection cases and
   the served-record checks.
+- [`api/TheYard.Tests/LiveSampleCoverageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSampleCoverageTests.cs): every block in
+  the catalogue rendered from the checkout, and every path it names held to
+  the Dockerfile (the coverage addendum below).
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the sources copied into the image so the container
   can read its own code.
 - [`tests/e2e/practices.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/practices.spec.ts): the browser check that a record
@@ -160,3 +163,32 @@ would fail the check that no fence is left in a served document.
 ## The look, from the live site
 
 ![This record open in the app, scrolled to its first sample: the whitelist read from the running build, with the Live from line naming the file, the region and the commit](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-record-live.jpg)
+
+## Addendum, 2026-09-09: coverage, or the note nobody was reading
+
+A live block that cannot be shown renders a one-line note instead of an
+error. That was the right decision for the reader, and it had a cost that
+took a week to surface: nothing was reading the notes. On the morning of
+2026-09-09 a sweep of every served document on both live sites (eighty
+slugs, read as the sidebar reads them) found the measuring record showing
+"Sample unavailable" where its method should have been. The block named
+`scripts/measure_stores.py`, and `scripts/` was not one of the roots, so the
+expander declined it exactly as designed, on every machine, from the day the
+record was written. Every gate had been green the whole time, because a
+sentence is not a failure.
+
+Three things changed. `scripts/` is the seventh root, and the runtime stage
+of the Dockerfile copies it, so the block renders on the live site as it
+does here. And two tests now read what the reader would have read:
+`LiveSampleCoverageTests` expands every served document against the
+checkout and fails on any note, and, separately, parses the runtime stage of
+the Dockerfile and fails on any live block whose path that stage never
+copies, because a glob like `api/TheYard.Api/*.cs` reaches the files beside
+it and none in a folder below, which is a second way for a sample to be
+present on every developer's machine and "not in this build" on the domain.
+That second check is the same class as the second manifest (ADR: The second
+manifest), and this is its third instance in this repository: an explicit
+list that nothing compared with the thing it described.
+
+The tests are not shown live here, for the reason the whole-file addendum
+gives: their source spells out the note and the fence they look for.
