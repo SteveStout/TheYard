@@ -174,7 +174,7 @@ container create`, exactly as the SQL schema is a project a person publishes
 | --- | --- | --- | --- |
 | `vehicles` | `/make` | the 200 seed vehicles, read whole at cold start | nothing beyond the key |
 | `photos` | `/style` | the 50 manifest entries, read whole at cold start | nothing |
-| `bids` | `/userId` | one document per buyer per vehicle, point read and point write | nothing |
+| `bids` | `/user_id` | one document per buyer per vehicle, point read and point write | nothing |
 | `users` | `/id` | one document per account, plus one claim document per email address | nothing |
 | `catalogue` | `/make` | the 100,000 expanded vehicles, for the experiment only | the paths the filters and sorts use |
 
@@ -373,7 +373,7 @@ visitor, so both interview questions have a number behind them.
 
 - One more Azure resource, $0.00 per month, with no key in existence. The
   standing rule against new resources was set aside for it by Steve on
-  2026-09-08 ("I grant"), recorded in `mentor\TASK-AUTH-2026-09-08-cosmos.md`.
+  2026-09-08 ("I grant"), recorded in the lane's notes outside the repository.
 - A second container group, about $34 a month at list price while it runs,
   drawn from the trial credit today, stoppable between comparisons.
 - The ports change shape, and every adapter, the two services and the tests
@@ -518,7 +518,7 @@ them reads a store. Same sentence, five minutes instead of twenty.
 
 ## Files
 
-- [`mentor\TASK-AUTH-2026-09-08-cosmos.md`](https://github.com/SteveStout/TheYard): the written pre-approval, outside the repository because it names principals.
+- The written pre-approval is in the lane's notes outside the repository, because it names principals.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the three seams the second store implements.
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): where the store stops being on the request path.
 - [`api/TheYard.Infrastructure/SyntheticVehicleSource.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SyntheticVehicleSource.cs): 200 documents becoming 100,000 in memory.

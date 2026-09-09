@@ -264,10 +264,15 @@ flowchart RL
   Domain["TheYard.Domain<br/>rules, pure functions"]
   Data["TheYard.Data<br/>records, no logic"]
 
+  Cosmos["TheYard.Infrastructure.Cosmos<br/>the document store's adapters"]
+
   Api --> Infra
+  Api --> Cosmos
   Api --> App
   Api --> Domain
   Api --> Data
+  Cosmos --> Infra
+  Cosmos --> App
   Infra --> App
   Infra --> Domain
   Infra --> Data
@@ -278,7 +283,11 @@ flowchart RL
 
 Every arrow points inward and none points back. `TheYard.Data` has no
 dependencies at all, which is what makes it safe for every other layer to hold
-its records.
+its records. The one arrow between adapters, the Cosmos DB project's reference
+to the relational one, exists for the account entity and the database state
+record it shares (ADR: Accounts on a document store); it is a known cost, not
+a layer, and moving those two types into Application is the change that would
+remove it.
 
 ## One picture in words
 
@@ -343,9 +352,14 @@ vehicle and the Admin tab are all query parameters, mirrored by
 `src/App.tsx` and read back by `src/lib/inventory.ts`. There is no router
 and no state library; Back and Forward work because the URL is the truth.
 
-**One seam to the API.** Every `fetch` in the browser is in
-`src/lib/data.ts`, with its cache, its debounce and its abort signal. A
-component never fetches.
+**One seam to the API for the inventory.** Every `fetch` for vehicles,
+facets and bids is in `src/lib/data.ts`, with its cache, its debounce and its
+abort signal. The seam is per concern rather than one file: accounts fetch
+through `src/lib/auth.ts`, the store list through `src/lib/stores.ts`, and
+the Admin tab, the error boundary, the document viewer and the build stamp
+each read their own endpoint directly, because a cache and a debounce built
+for the listing would be the wrong tool for a health check. No component
+computes an auction fact; that rule is the one that matters, and it holds.
 
 **Nothing ships untested.** Three suites, one per level: pure rules in
 xunit, the browser's logic in Vitest, the real stack in Playwright. CI
@@ -368,19 +382,21 @@ runs all three on every push and the deploy will not fire without them
 
 ## What is deliberately not here
 
-No durable volume: there is a database now (SQLite through EF Core), but the
-file lives in the container's own writable layer, so bids survive a restart
-and not a roll, which ADR: The relational store is explicit about. No
-authentication (one anonymous buyer). No state
-library, router, component library or CSS framework. No server-rendered
-React. Each of those is a decision with a record behind it, not an
-oversight; ADR: Deployment strategy and the Hosting page cover the hosting
-side of the same question.
+No durable volume: the stores are outside the container, Azure SQL Database
+and Azure Cosmos DB, and SQLite in the container's own writable layer is the
+fallback a container serves from when neither is reachable, so nothing a
+visitor does depends on a disk the roll throws away (ADR: The relational
+store; ADR: A second store on Cosmos DB, and what it costs). No password
+store of its own: accounts are ASP.NET Core Identity with a signed cookie
+(ADR: Accounts and per-user bids). No state library, router, component
+library or CSS framework. No server-rendered React. Each of those is a
+decision with a record behind it, not an oversight; ADR: Deployment strategy
+and the Hosting page cover the hosting side of the same question.
 
 ## Files
 
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the naming, layering and commenting rules this page's principles turn into, and the `.editorconfig` that enforces the mechanical half.
-- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the two ports the layers meet at.
+- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the three ports the layers meet at.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composition root, walked line by line in ADR: Program.cs, explained.
 - [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the derived facts that make the browser's job formatting.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts) and [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): the one seam and the URL state.

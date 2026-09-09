@@ -4,12 +4,15 @@
 
 TheYard is my portfolio implementation of a used-vehicle auction platform: browse a large
 inventory, inspect a vehicle in detail, and place bids against a simulated room of other
-bidders. The frontend is a React app backed by a .NET 10 API that owns the data, the
+bidders. It began as my submission to a company's take-home hiring challenge, in a fork
+of their starter repository, and everything described below was built on that start (ADR:
+The name says which, what changed and when). The frontend is a React app backed by a .NET 10 API that owns the data, the
 search, and the auction rules, storing accounts and bids in Azure SQL Database reached
 with a managed identity, so the connection string in the container is a server name and
 an authentication mode and nothing worth stealing.
 
-It runs on a free tier and costs nothing, and it keeps serving when the database does
+The stores run on their free offers and the containers on trial credit, and every piece
+is priced in its record rather than called free; it keeps serving when a database does
 not: the catalogue falls back to files and the health endpoint says which store answered.
 The Admin tab shows the running system reporting on itself, including every SQL statement
 it has sent and how long the database took.
@@ -166,8 +169,8 @@ each with its own changelog line and, where it decided something, its own record
   `api/TheYard.Api/wwwroot/images/CREDITS.md`.
 - **The API owns everything**: data, filtering, sorting, paging, photo mapping, auction
   scheduling, and bid validation. The browser formats, counts down, and relays actions.
-- Out of scope by design: auth, accounts, seller tooling, checkout, payments, a database,
-  real-time multi-user bidding.
+- Out of scope by design: seller tooling, checkout, payments, and real-time push;
+  accounts, a database and per-user bids arrived on 2026-09-03 and are described below.
 
 ## Stack
 
@@ -271,7 +274,10 @@ each with its own changelog line and, where it decided something, its own record
   tokens when the filter compiles. The version before this rebuilt both inside the
   loop, so one search allocated a lowercase copy of nine fields a hundred thousand
   times for a query typed once. The scan went from a 37 ms median to 17 ms across the
-  full dataset, measured by a test in the suite rather than asserted in prose. The
+  full dataset, measured with a stopwatch over three runs and tabled in ADR: The search
+  index; the suite holds the weaker, repeatable claim, that the indexed scan is never
+  slower than the rebuilt one, because a benchmark that asserts a millisecond is a test
+  that fails on a busy machine. The
   auction status stays out of the index on purpose, because the clock decides it, and
   it is computed only for tokens the static text did not already satisfy.
   *Where:* `api/TheYard.Domain/VehicleSearchIndex.cs`, `VehicleFilter.cs`
@@ -326,7 +332,10 @@ each with its own changelog line and, where it decided something, its own record
   (unit-tested without hosting anything), reserve display and status recomputation in
   `src/lib/auction.ts` (unit-tested without rendering anything). Components stay thin.
 - **The reserve amount is never rendered**, only its state (No reserve, Reserve met,
-  Reserve not met), matching how real auction platforms guard seller data.
+  Reserve not met). The number is on the wire because the dataset carries it and the
+  panel derives the state from it, so this is a presentation rule rather than a guard
+  on seller data; hiding it would mean the server deriving one more fact, which is the
+  direction the rest of the design points.
 - **Price filtering and sorting use the competing price**, the high bid or the opening
   ask when there are no bids, so unbid vehicles do not sort as free.
 - **Buy Now is a purchase, not a bid**: it does not inflate the bid count, and the
@@ -361,8 +370,9 @@ each with its own changelog line and, where it decided something, its own record
   `anchor_ms`, and all derived facts moved server-side so the drift class cannot recur.
 - **A passing test suite was proven blind by mutation.** Reordering the buy-now check
   ahead of bid validation left all tests green while breaking the rules, so the test that
-  catches it now exists, along with a guard against `Infinity` instantly winning a
-  buy-now (found by adversarial review).
+  catches it now exists; the companion worry from the same review, a non-numeric amount
+  such as `Infinity` winning a buy-now, is refused by the model binder before the rules
+  see it, and the rules take an integer.
 - **The first end-to-end failure was the rules being smarter than the test.** Bidding the
   minimum on a vehicle whose `min_next_bid` crossed its `buy_now_price` triggered a
   legitimate instant win the test did not expect; the test now documents both outcomes as
@@ -384,7 +394,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (387 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (392 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -471,11 +481,11 @@ What is genuinely still open, in priority order:
   competing bidders use now. The phase-one edge is a Netlify rewrite proxy, which
   buffers a streaming response, and the edge is not mine to change on a free tier;
   the reasoning is in ADR: Competing bidders
-- Auth and per-user bid state; bids are persisted now, but they belong to one anonymous
-  buyer, and the competing bidders are simulated rather than real people
-- Durable storage across a container roll, which is done: the store is Azure SQL Database
-  now rather than a file inside the container, so a bid outlives the deploy that was
-  erasing it twice a day
+- Real people at the other end of a bid: accounts and per-user bids exist, and the
+  competing bidders are still simulated, one room per container
+- One writer per store: both container groups open both stores and each keeps its own
+  standing in memory, so a bid placed through one is not seen by the other until it
+  restarts, which ADR: One container, both stores calls out and nothing yet enforces
 - A virtualized grid once Load More accumulates thousands of rows
 - An audit with a real screen reader, which is a person's job rather than a checklist's;
   the keyboard path is walkable and held by tests, and axe now holds every view to

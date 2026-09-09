@@ -51,13 +51,18 @@ does; a comment earns its line by saying why this way, what breaks
 otherwise, or what a reader could not know from the syntax.
 
 ```csharp
-// Materialize the inventory now so a bad dataset fails the process at
-// startup, visibly, and not as a 500 on the first request.
-app.Services.GetRequiredService<InventoryService>().GetAll();
+// The store first, then memory. The other order looks harmless
+// and is not: a store that throws would leave the dictionaries
+// holding a bid the caller was just told had failed, shown as
+// winning until the next restart deleted it.
+await _store.SaveAsync(userId, vehicle.Id, state);
+Record(userId, vehicle.Id, state);
 ```
 
-That comment is worth keeping: the line is one call, and the reason is a
-deployment decision. A comment reading `// get all vehicles` would not be.
+That comment, from `BidService.PlaceBidAsync`, is worth keeping: the two
+lines could be swapped without a compiler noticing, and the reason they
+cannot is a failure that would reach a visitor. A comment reading
+`// save the bid` would not be.
 
 Four more habits:
 

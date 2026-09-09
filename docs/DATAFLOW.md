@@ -77,9 +77,11 @@ walks that file top to bottom.
 2. `api/TheYard.Domain/BidRules.cs` is the sole authority: live-window check, tiered
    minimum increment, and the buy-now override (a bid at or above `buy_now_price` wins
    outright at that price).
-3. Accepted or won bids land in the in-memory map in
-   `api/TheYard.Application/BidService.cs` (single anonymous buyer, an isolated demo);
-   rejections return 400 with a human-readable reason the panel shows.
+3. Accepted or won bids are written to the store first, Azure SQL Database or Azure
+   Cosmos DB through `IBidStore`, and then to the in-memory standing in
+   `api/TheYard.Application/BidService.cs`, under the signed-in account's id (ADR:
+   Accounts and per-user bids); rejections return 400 with a human-readable reason the
+   panel shows.
 4. The response carries the updated vehicle (fresh `min_next_bid` included); the client
    (`src/hooks/useBids.ts`) clears the query cache and refetches, so lists, filters, and
    totals all reflect the new bid, because the overlay in read-step 4 feeds the same

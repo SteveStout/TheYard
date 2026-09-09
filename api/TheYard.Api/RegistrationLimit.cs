@@ -48,7 +48,7 @@ public sealed class RegistrationLimit(int perHour, Func<DateTimeOffset> now)
     /// hour: a bucket lets an attacker take the whole allowance twice in two
     /// minutes by arriving either side of the reset.
     /// </summary>
-    private readonly Queue<DateTimeOffset> _taken = new();
+    private readonly LinkedList<DateTimeOffset> _taken = new();
 
     private readonly Lock _gate = new();
 
@@ -65,9 +65,9 @@ public sealed class RegistrationLimit(int perHour, Func<DateTimeOffset> now)
         DateTimeOffset moment = now();
         lock (_gate)
         {
-            while (_taken.Count > 0 && moment - _taken.Peek() >= Window)
+            while (_taken.Count > 0 && moment - _taken.First!.Value >= Window)
             {
-                _taken.Dequeue();
+                _taken.RemoveFirst();
             }
 
             if (_taken.Count >= PerHour)
@@ -75,8 +75,26 @@ public sealed class RegistrationLimit(int perHour, Func<DateTimeOffset> now)
                 return false;
             }
 
-            _taken.Enqueue(moment);
+            _taken.AddLast(moment);
             return true;
+        }
+    }
+
+    /// <summary>
+    /// Return the most recent slot, for a registration that was taken and then
+    /// refused by Identity before any account existed: a weak password or an
+    /// address already registered spends nothing, or a stranger could spend the
+    /// hour's allowance with requests that were never going to make an account
+    /// (ADR: The one write a stranger can make, addendum).
+    /// </summary>
+    public void GiveBack()
+    {
+        lock (_gate)
+        {
+            if (_taken.Count > 0)
+            {
+                _taken.RemoveLast();
+            }
         }
     }
 }

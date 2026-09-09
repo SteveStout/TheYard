@@ -7,9 +7,11 @@ suites, how each is built, and why there are three.
 
 ## Context
 
-The repository carries 139 xunit tests under `api/TheYard.Tests`, 36
+The repository carried 139 xunit tests under `api/TheYard.Tests`, 36
 Vitest tests beside the code they test under `src/`, and 25 Playwright
-tests under `tests/e2e`. Every push runs all three in CI, and nothing
+tests under `tests/e2e` when this was written; the README carries the
+counts as they stand, held to the suites by a test, and the addendum below
+says how the wall of them runs today. Every push runs all three in CI, and nothing
 ships to the live site without them (ADR: Docs and testing). A newcomer
 sees three runners, three folders and three vocabularies, and the
 question is which one to reach for when something changes. The short
@@ -105,9 +107,11 @@ state (ADR: The React configuration, explained).
 
 ### The same three, in CI and before every ship
 
-Three CI jobs, one per suite, on every push; the end-to-end job installs
-Chrome first. The frontend job also runs `tsc -b` and the production
-build, so a type error fails the run before any test does.
+Five CI jobs on every push (the live block below shows them as they are):
+the style checks, the frontend suite, the .NET suite with its coverage
+count, the database project's build, and the browser suite, which installs
+Chrome first. The frontend job also runs `tsc -b` and the production build,
+so a type error fails the run before any test does.
 
 ```live path=.github/workflows/ci.yml region=ci-jobs
 ```

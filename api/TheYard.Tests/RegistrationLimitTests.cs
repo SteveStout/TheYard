@@ -81,6 +81,42 @@ public class RegistrationLimitTests
     // #endregion the window itself
 
     // #region the endpoint
+    /// <summary>
+    /// A slot taken for a registration Identity then refuses goes back, so a
+    /// stranger cannot spend the hour's allowance with passwords that were
+    /// never going to make an account (ADR: The one write a stranger can
+    /// make, addendum). Held here on the window itself, and below through the
+    /// endpoint, because the endpoint is where the slot was being lost.
+    /// </summary>
+    [Fact]
+    public void A_slot_given_back_is_a_slot_again()
+    {
+        var clock = new Clock();
+        var limit = new RegistrationLimit(1, clock.Read);
+
+        Assert.True(limit.TryTake());
+        Assert.False(limit.TryTake());
+        limit.GiveBack();
+        Assert.True(limit.TryTake());
+        Assert.False(limit.TryTake());
+    }
+
+    [Fact]
+    public async Task A_registration_identity_refuses_does_not_spend_the_allowance()
+    {
+        await using var api = ApiAllowing(1);
+        var client = api.CreateClient();
+
+        // Too short for Identity's password rules: the request is read, the slot
+        // is taken, Identity says no, and the slot has to come back.
+        var refused = await client.PostAsJsonAsync(
+            "/api/auth/register", new { email = $"limit-{Guid.NewGuid():N}@example.com", password = "no" });
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+
+        Assert.Equal(HttpStatusCode.OK, (await Register(client)).StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await Register(client)).StatusCode);
+    }
+
     private static WebApplicationFactory<Program> ApiAllowing(int perHour) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {

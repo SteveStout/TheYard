@@ -32,8 +32,9 @@ Seven entity types land in a document store as seven document shapes with a
 discriminator; `FindByEmailAsync` becomes a query across every partition on a
 property no index covers unless one is paid for on every write; and two
 registrations of the same address a few milliseconds apart both succeed, because
-the unique index on `NormalizedEmail` that stops them on SQL Server does not
-exist on this side. Nothing fails. The store just has two accounts with one
+the unique index that stops them on SQL Server (`UserNameIndex`, on the
+normalized user name, which is the address here) does not exist on this
+side. Nothing fails. The store just has two accounts with one
 address, and the next sign-in finds whichever it finds.
 
 **A custom `IUserStore` over one document per account.** Chosen.

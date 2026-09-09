@@ -27,7 +27,7 @@ export interface Vehicle {
   title_status: string;
   province: string;
   city: string;
-  /** Synthetic scheduling data; real auction windows are derived in auction.ts. */
+  /** The dataset's own date string, passed through; the real window is the epoch instants below, derived by the server. */
   auction_start: string;
   starting_bid: number;
   /** null means no reserve. Never displayed; the UI shows only the reserve state. */

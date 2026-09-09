@@ -174,6 +174,38 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         Assert.False(string.IsNullOrWhiteSpace(result.Sentence));
     }
 
+    /// <summary>
+    /// The proof's accounts are made once per process and reused, so a loop of
+    /// starts cannot spend the site's hour of registrations (ADR: The one write
+    /// a stranger can make, addendum). The second run signs into the accounts
+    /// the first one made, registers nothing, and still shows what registering
+    /// cost, because the first run's sample is carried into it.
+    /// </summary>
+    [Fact]
+    public async Task A_second_run_signs_into_the_accounts_the_first_one_made_and_registers_nothing()
+    {
+        var yard = new CannedYard();
+        var runner = new ProofRunner(
+            new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
+            new ProofClients(() => new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") }),
+            new SqlRingBuffer(10),
+            new StoreRingBuffer(10));
+
+        var first = await runner.RunAsync(1);
+        int registeredByFirst = yard.Seen.Count(seen => seen.Path == "/api/auth/register");
+        var second = await runner.RunAsync(1);
+
+        Assert.Equal("done", first.Status);
+        Assert.Equal("done", second.Status);
+        Assert.Equal(2, registeredByFirst);
+        Assert.Equal(2, yard.Seen.Count(seen => seen.Path == "/api/auth/register"));
+        // The second run checked each account and then ran its round: two
+        // sign-ins per store where the first run had one.
+        Assert.Equal(4, yard.Seen.Count(seen => seen.Path == "/api/auth/login") - 2);
+        var register = Assert.Single(second.Rows, row => row.Path == "register");
+        Assert.All(register.Cells, cell => Assert.Equal(1, cell.Samples));
+    }
+
     [Fact]
     public async Task A_run_on_a_container_with_one_store_says_it_needs_two()
     {
@@ -246,7 +278,18 @@ public class ProofTests(WebApplicationFactory<Program> factory)
             var idle = await client.GetFromJsonAsync<JsonElement>("/api/admin/proof");
             Assert.Equal("idle", idle.GetProperty("status").GetString());
 
-            var started = await client.PostAsync("/api/admin/proof?rounds=1", null);
+            // Starting is a write and takes a signed-in visitor; a stranger is
+            // told so and nothing runs (ADR: The one write a stranger can make,
+            // addendum). The client keeps no cookies, so the session travels as
+            // a header on the requests that need it.
+            var stranger = await client.PostAsync("/api/admin/proof?rounds=1", null);
+            Assert.Equal(HttpStatusCode.Unauthorized, stranger.StatusCode);
+            Assert.Equal("idle", (await client.GetFromJsonAsync<JsonElement>("/api/admin/proof")).GetProperty("status").GetString());
+
+            string session = await SessionFor(client);
+            using var start = new HttpRequestMessage(HttpMethod.Post, "/api/admin/proof?rounds=1");
+            start.Headers.Add("Cookie", session);
+            var started = await client.SendAsync(start);
             Assert.Equal(HttpStatusCode.Accepted, started.StatusCode);
 
             JsonElement latest = default;
@@ -278,9 +321,22 @@ public class ProofTests(WebApplicationFactory<Program> factory)
             }
 
             // A second start inside the cooldown is refused with a sentence, not a run.
-            var again = await client.PostAsync("/api/admin/proof?rounds=1", null);
+            using var againRequest = new HttpRequestMessage(HttpMethod.Post, "/api/admin/proof?rounds=1");
+            againRequest.Headers.Add("Cookie", session);
+            var again = await client.SendAsync(againRequest);
             Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
         }
+    }
+
+    /// <summary>A fresh account's session cookie, as the browser would carry it.</summary>
+    private static async Task<string> SessionFor(HttpClient client)
+    {
+        var registered = await client.PostAsJsonAsync(
+            "/api/auth/register",
+            new { email = $"proof-test-{Guid.NewGuid():N}@example.com", password = "correct horse battery" });
+        Assert.Equal(HttpStatusCode.OK, registered.StatusCode);
+        string cookie = Assert.Single(registered.Headers.GetValues("Set-Cookie"), value => value.StartsWith(TokenIssuer.CookieName + "=", StringComparison.Ordinal));
+        return cookie.Split(';', 2)[0];
     }
     // #endregion proof-endpoints-tests
 }

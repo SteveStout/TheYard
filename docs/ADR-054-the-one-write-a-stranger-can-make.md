@@ -132,3 +132,22 @@ paid subscription, and those two are one piece of work.
 - [`api/TheYard.Tests/RegistrationLimitTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RegistrationLimitTests.cs): the window, the refusal, and the site that keeps working behind it.
 - [`docs/SECURITY.md`](https://github.com/SteveStout/TheYard/blob/main/docs/SECURITY.md): what is protected, what is not, and what this changes.
 - [`docs/ADR-050-a-password-guess-should-cost-something.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-050-a-password-guess-should-cost-something.md): the other half of making an endpoint cost something.
+
+## Addendum, 2026-09-09: the second write a stranger could make, and the slot that leaked
+
+Two things a review with no context found in this record's own territory,
+both fixed in 1.0.0.109. First, the proof (ADR: Same performance, proven)
+had a second anonymous write: `POST /api/admin/proof` started a run that
+registered two accounts and placed sixteen bids, and a loop of one start a
+minute, which its cooldown allowed, spent exactly this record's 120
+registrations an hour, so a stranger could close registration by asking the
+site to measure itself. Starting a run takes a signed-in visitor now, and the
+proof's accounts are made once per process and reused, so the loop that
+remains costs nothing this record guards. Second, the slot was taken before
+Identity had its say: a request the limiter accepted and Identity then
+refused, a short password or an address already registered, kept its slot,
+so a stranger could spend the hour's allowance with requests that were never
+going to make an account. `RegistrationLimit.GiveBack` returns the slot on
+that path, and two tests hold it, one on the window and one through the
+endpoint. The rule this record stated stands, and is true again: one write a
+stranger can make, and only the ones that happen are counted.

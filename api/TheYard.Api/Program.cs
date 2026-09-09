@@ -21,12 +21,12 @@ using TheYard.Infrastructure.Cosmos;
 // through Vite's /api proxy, so no CORS is needed.
 
 #region composition
-// The composition root: what is wired, not how each piece works. Every
+// The composition root: what is wired, not how each piece works. Nearly every
 // registration is a singleton because the dataset is loaded once and shared;
 // InventoryService holds it in a Lazy, so a scoped registration would expand
-// 100,000 records per request. The source is built by decoration, a synthetic
-// scale-up wrapped around the file reader, which is the onion paying for
-// itself (ADR: Program.cs, explained).
+// 100,000 records per request. Two are scoped, the request's store and the
+// user store over it, because they are decided per request. The source is
+// built by decoration, a scale-up around the reader (ADR: Program.cs, explained).
 var builder = WebApplication.CreateBuilder(args);
 
 string contentRoot = builder.Environment.ContentRootPath;
@@ -506,6 +506,13 @@ if (cosmos is not null)
 {
     cosmos.Logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<CosmosStore>();
 }
+// The promise the accounts record makes: an invented signing key is said out
+// loud, because its consequence is every session ending when this process does
+// (ADR: Accounts and per-user bids). Nothing about the key itself is logged.
+if (configuredSigningKey is null)
+{
+    app.Logger.LogWarning("No Auth:SigningKey is configured; this process signs cookies with a key it invented at startup, so every session ends with it");
+}
 
 // The address the proof talks to itself on, read once the server is up.
 // Kestrel reports the wildcard it bound ("http://[::]:8080"), which is not
@@ -780,8 +787,8 @@ app.MapGet("/api/bids", (CurrentBackend current, HttpContext http) =>
 
 #region history
 // The account page's list, newest first, with the vehicle each bid is on. The
-// only query the bids table serves that is not "load everything at startup",
-// which is why it is the only reason there is an index on the user column.
+// only query the bids table serves that is not "load everything at startup";
+// the primary key leads with the user column, so it needs no index of its own.
 app.MapGet("/api/bids/history", (
     CurrentBackend current,
     HttpContext http) =>
@@ -1382,6 +1389,10 @@ app.MapPost("/api/auth/register", async (
     var created = await users.CreateAsync(user, request.Password);
     if (!created.Succeeded)
     {
+        // Nothing was made, so nothing was spent: the slot goes back, or a
+        // password Identity refuses would count against strangers who never
+        // registered (ADR: The one write a stranger can make, addendum).
+        limit.GiveBack();
         return Results.Problem(
             detail: Accounts.Explain(created),
             statusCode: 400, title: "The account was not created");
@@ -1489,10 +1500,12 @@ app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync(), w
 
 // #region proof-endpoints
 // The performance proof (ADR: Same performance, proven): read the last result
-// or the run in progress, or start one. Starting is public like the rest of
-// the Admin tab, and answers 409 while a run is on or for a minute after one,
-// which with the two accounts a run registers is what keeps a loop of these
-// from spending the hour's registrations on proving the same thing twice.
+// or the run in progress, or start one. Reading is public like the rest of
+// the Admin tab. Starting is a write, sixteen bids in the stores, so it takes
+// a signed-in visitor, the same rule every other write here follows (ADR: The
+// one write a stranger can make, addendum); it answers 409 while a run is on
+// or for a minute after one, so the card is never asked to prove the same
+// thing twice at once.
 var proof = new ProofRunner(backends, app.Services.GetRequiredService<ProofClients>(), sqlLog, storeLog);
 app.MapGet("/api/admin/proof", () => Results.Json(proof.Status, wireFormat));
 app.MapPost("/api/admin/proof", (int? rounds) => proof.TryStart(rounds ?? ProofRunner.DefaultRounds)
@@ -1500,7 +1513,7 @@ app.MapPost("/api/admin/proof", (int? rounds) => proof.TryStart(rounds ?? ProofR
     : Results.Problem(
         detail: "A run is in progress, or the last one finished less than a minute ago. The result is on the card.",
         statusCode: StatusCodes.Status409Conflict,
-        title: "The proof is busy"));
+        title: "The proof is busy")).RequireAuthorization();
 // #endregion proof-endpoints
 
 // #region experiment-endpoint

@@ -42,9 +42,11 @@ one. httpOnly means the page never has it and cannot leak it, and the cost is
 that the client code gets simpler rather than harder.
 
 **The signing key is configuration, and its absence is a random key.** Without
-`Auth:SigningKey` the process invents thirty-two random bytes and logs that it
-did. The consequence is honest and stated in the log: a deploy signs everybody
-out. The alternative that a repository must never take is a committed default,
+`Auth:SigningKey` the process invents thirty-two random bytes and, since
+1.0.0.109, logs a warning that it did; until then the comment promised the log
+and nothing wrote it. The consequence is honest and stated in the log: a deploy
+signs everybody out, which is what the deployed containers have done on every
+roll, because nothing configures the key there yet. The alternative that a repository must never take is a committed default,
 because a signing key in source control is every session forever, for anyone who
 reads the repository.
 

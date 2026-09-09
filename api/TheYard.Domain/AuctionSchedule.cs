@@ -11,10 +11,12 @@ public enum AuctionStatus
 public readonly record struct AuctionWindow(long StartsAtMs, long EndsAtMs);
 
 /// <summary>
-/// Derives each vehicle's auction window from its id, with the same math as the
-/// frontend's src/lib/auction.ts (FNV-1a seed, end times spread across the
-/// two days before through five days after the midnight anchor, 2–4 day
-/// runs), so server-side status filtering agrees with what the client renders.
+/// Derives each vehicle's auction window from its id: an FNV-1a seed, end
+/// times spread across the two days before through five days after the
+/// midnight anchor, two to four day runs. This is the only place the window is
+/// computed; the browser receives the instants on the wire and formats them
+/// (src/lib/auction.ts recomputes the status from those instants and the clock,
+/// never the window), which is the rule that ended the daylight-saving drift.
 /// </summary>
 public static class AuctionSchedule
 {

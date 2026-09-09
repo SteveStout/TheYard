@@ -7,7 +7,8 @@ configuration file is for and why the source is laid out the way it is.
 
 ## Context
 
-The root of the repository holds a package.json with eleven scripts and
+The root of the repository holds a package.json with a page of scripts
+(eleven when this was written, seventeen today) and
 three runtime dependencies, an index.html, a vite.config.ts, three
 tsconfig files, and a playwright.config.ts. Under `src/` there is no
 router, no state library and no CSS framework. A newcomer used to larger
@@ -174,7 +175,11 @@ view, so it lives in `localStorage` (ADR: The sidebar).
 
 ### data.ts: one seam to the API
 
-Every `fetch` in the app is in one file. `fetchVehicles` keys a small
+Every `fetch` for the inventory is in one file; the account calls, the
+store list, the Admin tab, the error boundary, the document viewer and the
+build stamp each read their own endpoint, because a cache and a debounce
+built for the listing would be the wrong tool for a health check or a
+sign-in. `fetchVehicles` keys a small
 cache by the query string (five minutes, thirty entries, the oldest
 evicted first), takes an `AbortSignal` so an effect's cleanup can cancel a
 request the visitor has already typed past, and `forceRefresh` bypasses
@@ -226,8 +231,9 @@ never received.
 
 - **A new component:** `Name.tsx` and `Name.module.css` in
   `src/components`, colors from the tokens, props in and nothing fetched.
-- **A new API call:** one function in `data.ts`; nothing else in the app
-  calls `fetch`.
+- **A new API call for the inventory:** one function in `data.ts`, so it
+  shares the cache, the debounce and the abort signal; a call for another
+  concern lives in that concern's file under `src/lib`, never in a component.
 - **A new piece of view state:** if it describes what the visitor is
   looking at, put it in the URL through `filtersToSearchParams` and its
   reader; if it is the visitor's own setting, `localStorage`.

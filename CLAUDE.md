@@ -10,14 +10,24 @@ which is the worst place in a repository for a sentence to be wrong.
 
 ## Architecture, and it is not negotiable
 
-Five projects, dependencies point INWARD only:
+Nine projects; among the five that form the onion, dependencies point INWARD only:
 
 - `api/TheYard.Data` - pure records, ZERO dependencies, ZERO behavior. If it computes anything it does
   not belong here.
 - `api/TheYard.Domain` - the rules. Depends only on Data.
-- `api/TheYard.Application` - use cases behind ports (interfaces). Depends on Domain.
-- `api/TheYard.Infrastructure` - adapters: file loading, the synthetic scale-up. Implements the ports.
+- `api/TheYard.Application` - use cases behind three ports (`IVehicleSource`, `IPhotoManifestSource`,
+  `IBidStore`). Depends on Domain.
+- `api/TheYard.Infrastructure` - the relational adapters: EF Core over Azure SQL Database or SQLite, the
+  JSON seed readers, the synthetic scale-up decorator, the Identity user entity. Implements the ports.
 - `api/TheYard.Api` - host and endpoints. Composition root. NO business logic in endpoints.
+
+Beside the onion: `api/TheYard.Infrastructure.Cosmos` (the same ports and an Identity user store over
+Azure Cosmos DB on the SDK, referencing Infrastructure for the shared user entity),
+`api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
+`api/TheYard.Migrations.Sqlite` (the SQLite schema's history), `api/TheYard.Experiment` (a console tool
+for the partition key experiment), and `api/TheYard.Tests`. One process runs BOTH stores side by side and
+picks one per request from the `X-Yard-Store` header or the container's default (ADR-066); the two
+container groups default to different stores and each is one site.
 
 Frontend keeps the same discipline: `components` -> `hooks` -> `lib`. **`src/lib` imports nothing from
 React.**
@@ -32,7 +42,11 @@ React.**
   transition.
 - **The wire is snake_case** and matches the dataset exactly. No mapping layer.
 - **Empty is valid, null is the error.** Never return null for a collection.
-- **decimal for money. DateTimeOffset for time, stored UTC.**
+- **Money is whole dollars as `int`**, because the dataset's prices are whole dollars and every rule adds
+  whole-dollar increments; nothing needs cents. **Every derived or recorded instant is milliseconds since
+  the epoch as `long`, UTC** (`anchor_ms`, the window's start and end, a bid's `at_ms`), the same unit the
+  browser's clock uses; the dataset's own `auction_start` date string passes through as the dataset has it
+  and nothing is derived from it.
 - Bid rules live only in `TheYard.Domain/BidRules.cs`. A bid at or above buy-now wins AT the buy-now
   price, and that check runs BEFORE the increment check.
 

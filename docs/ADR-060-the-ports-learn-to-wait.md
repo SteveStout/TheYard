@@ -132,3 +132,18 @@ the bidding tests await their bids. 325 tests, all green, after the change.
 - [`api/TheYard.Infrastructure/JsonFileSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/JsonFileSources.cs): the file readers, the same.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the two awaits before the pipeline, and the bid endpoints.
 - [`api/TheYard.Tests/PortsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PortsTests.cs): the shape and the gate.
+
+## Addendum, 2026-09-09: a failed warm is tried again
+
+The `Lazy<Task>` that shared one load between every caller kept a faulted
+task as faithfully as a finished one, so a store that was unreachable for one
+second at startup would have answered every request until the next roll with
+that second's exception, while the host's log said the store's first visitor
+would try again (a review with no context read both and put them side by
+side). `InventoryService.WarmAsync` and `BidService.LoadAsync` now keep the
+task themselves: a load in flight or finished is shared as before, and a load
+that failed is replaced by the next caller's, under a lock so the start stays
+single. Replaying the bid store twice is safe because `Record` keeps the
+higher standing. Two tests hold it, one per service, each with a source that
+is down for its first call and up for its second. The live blocks above show
+the code as it is.

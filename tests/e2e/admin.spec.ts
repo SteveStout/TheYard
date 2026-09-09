@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
+import { signIn } from './signIn';
 
 test('the Admin tab shows the running system reporting on itself', async ({ page, request }) => {
   await openTheYard(page);
@@ -189,7 +190,13 @@ test('the proof card offers a run and says what it needs (ADR: Same performance,
   const card = page.getByTestId('proof-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Same performance, proven');
+  // Signed out, the button says what it needs and does nothing: starting a
+  // run is a write (ADR: The one write a stranger can make, addendum).
   const run = card.getByTestId('proof-run');
+  await expect(run).toBeDisabled();
+  await expect(run).toHaveText('Sign in to run the proof');
+  await signIn(page);
+  await openTheYard(page, '/?view=admin');
   await expect(run).toBeEnabled();
   await run.click();
   // On one store the run fails at once with its reason; on two it runs for a
@@ -197,6 +204,10 @@ test('the proof card offers a run and says what it needs (ADR: Same performance,
   if (stores.stores.length < 2) {
     await expect(card.getByTestId('proof-note')).toContainText('one store', { timeout: 30_000 });
   } else {
+    // The start is asserted on its own, so a POST that did not land fails
+    // here in seconds with the button's own words, not two minutes later as
+    // a sentence that never came (the 1.0.0.109 gate, take one).
+    await expect(run).toHaveText('Running…', { timeout: 15_000 });
     await expect(card.getByTestId('proof-sentence')).toBeVisible({ timeout: 120_000 });
     await expect(card).toContainText('Bid write');
   }

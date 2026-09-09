@@ -196,7 +196,7 @@ function formatUptime(totalSeconds: number): string {
  * cards fetch independently and degrade independently, so a dead Azure
  * leg never hides app health. Public on purpose; the ADR explains why.
  */
-export function AdminPanel({ onBack }: { onBack: () => void }) {
+export function AdminPanel({ onBack, signedIn }: { onBack: () => void; signedIn: boolean }) {
   const [health, setHealth] = useState<Fetched<Health>>(null);
   const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
   const [azure, setAzure] = useState<Fetched<AzureState>>(null);
@@ -326,7 +326,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
       </article>
       {/* #endregion backends-card */}
 
-      <ProofCard proof={proof} onRun={() => void runProof()} />
+      <ProofCard proof={proof} signedIn={signedIn} onRun={() => void runProof()} />
 
       {/* #region experiment-card */}
       <article className={styles.wide} data-testid="experiment-card">
@@ -823,7 +823,15 @@ type Proof = { status: 'idle' | 'running' | 'done' | 'failed'; result: ProofResu
  * stores with the paired difference and a verdict, and the sentence the
  * whole card adds up to.
  */
-function ProofCard({ proof, onRun }: { proof: Fetched<Proof>; onRun: () => void }) {
+function ProofCard({
+  proof,
+  signedIn,
+  onRun,
+}: {
+  proof: Fetched<Proof>;
+  signedIn: boolean;
+  onRun: () => void;
+}) {
   const running = proof !== null && proof !== 'failed' && proof.status === 'running';
   const result = proof !== null && proof !== 'failed' ? proof.result : null;
   return (
@@ -834,18 +842,30 @@ function ProofCard({ proof, onRun }: { proof: Fetched<Proof>; onRun: () => void 
         rounds that alternate which store goes first: identical process, identical request, only the
         store differs. Each row is one path; the difference is the median of the paired differences,
         and the last column but one takes one round trip per store operation off each side, so the
-        difference the stores make can be told from the difference their distance makes. Two
-        throwaway accounts, one per store, and about half a minute.
+        difference the stores make can be told from the difference their distance makes. The proof
+        bids with two accounts of its own, one per store, made once and kept, and a run takes about
+        half a minute. Reading the result is open to anyone; starting a run is a write, so it takes
+        a signed-in visitor, like every other write here.
       </p>
       <p>
+        {/* Starting a run writes sixteen bids, so the button follows the one
+            rule every write on this site follows (ADR: The one write a
+            stranger can make, addendum): signed out, it says what it needs
+            rather than failing after the click. */}
         <button
           type="button"
           className={styles.back}
           onClick={onRun}
-          disabled={running}
+          disabled={running || !signedIn}
           data-testid="proof-run"
         >
-          {running ? 'Running…' : result === null ? 'Run the proof' : 'Run it again'}
+          {!signedIn
+            ? 'Sign in to run the proof'
+            : running
+              ? 'Running…'
+              : result === null
+                ? 'Run the proof'
+                : 'Run it again'}
         </button>
       </p>
       {proof === null ? (

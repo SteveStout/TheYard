@@ -200,4 +200,43 @@ public class BidServiceTests
         Assert.Equal(BidOutcomeKind.Rejected, (await service.PlaceBidAsync(vehicle, 100, Now, Buyer)).Kind);
         Assert.Empty(service.SnapshotFor(Buyer));
     }
+
+    // #region replay-retry
+    /// <summary>
+    /// A store that is down for the replay at startup and up afterwards: the
+    /// next caller replays it, so the standing arrives the first time the store
+    /// answers rather than never (ADR: The ports learn to wait, addendum). The
+    /// Lazy this replaced kept the first failure for the life of the process.
+    /// </summary>
+    [Fact]
+    public async Task A_replay_that_failed_is_tried_again_by_the_next_caller()
+    {
+        var store = new FlakyStore(new StoredBid(Buyer, "v-held", new BidState(23_300, 1, false, 1)));
+        var service = new BidService(store);
+
+        await Assert.ThrowsAsync<IOException>(() => service.LoadAsync());
+        Assert.Empty(service.SnapshotFor(Buyer));
+
+        await service.LoadAsync();
+        Assert.Single(service.SnapshotFor(Buyer));
+        Assert.Equal(2, store.LoadCalls);
+    }
+
+    private sealed class FlakyStore(params StoredBid[] bids) : IBidStore
+    {
+        public int LoadCalls { get; private set; }
+
+        public Task<IReadOnlyList<StoredBid>> LoadAsync()
+        {
+            LoadCalls++;
+            return LoadCalls == 1
+                ? Task.FromException<IReadOnlyList<StoredBid>>(new IOException("the store is not answering"))
+                : Task.FromResult<IReadOnlyList<StoredBid>>(bids);
+        }
+
+        public Task SaveAsync(string userId, string vehicleId, BidState state) => Task.CompletedTask;
+
+        public Task ClearAsync(string userId) => Task.CompletedTask;
+    }
+    // #endregion replay-retry
 }

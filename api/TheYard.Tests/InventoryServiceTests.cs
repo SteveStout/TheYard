@@ -24,6 +24,20 @@ file sealed class FakeManifest(params PhotoEntry[] photos) : IPhotoManifestSourc
     public Task<IReadOnlyList<PhotoEntry>> LoadAsync() => Task.FromResult<IReadOnlyList<PhotoEntry>>(photos);
 }
 
+/// <summary>A source that is down for its first call and up after: the store at startup, sometimes.</summary>
+file sealed class FlakyVehicles(params Vehicle[] vehicles) : IVehicleSource
+{
+    public int LoadCalls { get; private set; }
+
+    public Task<IReadOnlyList<Vehicle>> LoadAsync()
+    {
+        LoadCalls++;
+        return LoadCalls == 1
+            ? Task.FromException<IReadOnlyList<Vehicle>>(new IOException("the store is not answering"))
+            : Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
+    }
+}
+
 public class InventoryServiceTests
 {
     [Fact]
@@ -39,6 +53,28 @@ public class InventoryServiceTests
         Assert.All(vehicle.Images, url => Assert.StartsWith("/api/images/suv-", url));
     }
     // #endregion fakes
+
+    /// <summary>
+    /// A load that failed is tried again by the next caller (ADR: The ports
+    /// learn to wait, addendum). The Lazy this replaced kept the first failure
+    /// for the life of the process, which is a container that stays broken
+    /// after a one-second outage at startup while its log says the first
+    /// visitor will try again.
+    /// </summary>
+    [Fact]
+    public async Task A_load_that_failed_is_tried_again_by_the_next_caller()
+    {
+        var source = new FlakyVehicles(TestData.Vehicle(id: "v-1"));
+        var service = new InventoryService(source, new FakeManifest(TestData.SuvPool));
+
+        await Assert.ThrowsAsync<IOException>(() => service.WarmAsync());
+        Assert.False(service.IsWarm);
+
+        await service.WarmAsync();
+        Assert.True(service.IsWarm);
+        Assert.Equal("v-1", Assert.Single(service.GetAll()).Id);
+        Assert.Equal(2, source.LoadCalls);
+    }
 
     [Fact]
     public void Keeps_dataset_images_when_the_body_style_has_no_pool()

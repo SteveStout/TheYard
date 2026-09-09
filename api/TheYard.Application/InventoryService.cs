@@ -36,17 +36,37 @@ public sealed class InventoryService(
     // already completed, which is a wait of no time. The only way to block a
     // thread here for real is to skip the warm-up against a store that has to
     // go over the network, and the host does not (ADR: The ports learn to wait).
-    private readonly Lazy<Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index)>> _inventory =
-        new(() => BuildAsync(vehicleSource, manifestSource, imagePathPrefix));
+    //
+    // A load that failed is not kept. This was a Lazy once, and a Lazy keeps a
+    // faulted task forever, so a store that was unreachable for one second at
+    // startup would have answered every request until the next roll with that
+    // second's exception while the host said its first visitor would try again
+    // (ADR: The ports learn to wait, addendum). Now the next caller after a
+    // failure starts a fresh load; a load in flight or finished is shared as
+    // before, and the lock is what makes the start single.
+    private readonly object _warmGate = new();
+    private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index)>? _inventory;
+
+    private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index)> InventoryTask()
+    {
+        lock (_warmGate)
+        {
+            if (_inventory is null || _inventory.IsFaulted || _inventory.IsCanceled)
+            {
+                _inventory = BuildAsync(vehicleSource, manifestSource, imagePathPrefix);
+            }
+            return _inventory;
+        }
+    }
 
     /// <summary>Load the catalogue now, so the first visitor does not pay for it.</summary>
-    public Task WarmAsync() => _inventory.Value;
+    public Task WarmAsync() => InventoryTask();
 
     /// <summary>Whether the catalogue has been loaded, which the host asserts before serving.</summary>
-    public bool IsWarm => _inventory.IsValueCreated && _inventory.Value.IsCompletedSuccessfully;
+    public bool IsWarm => _inventory is { IsCompletedSuccessfully: true };
 
     private (IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index) Inventory =>
-        _inventory.Value.GetAwaiter().GetResult();
+        InventoryTask().GetAwaiter().GetResult();
     // #endregion warm
 
     public IReadOnlyList<Vehicle> GetAll() => Inventory.All;

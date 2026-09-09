@@ -62,13 +62,30 @@ public sealed class BidService
         _store = store;
         _standing = new ConcurrentDictionary<string, VehicleStanding>(StringComparer.Ordinal);
         _byUser = new ConcurrentDictionary<string, ConcurrentDictionary<string, BidState>>(StringComparer.Ordinal);
-        _loaded = new Lazy<Task>(LoadFromStoreAsync);
     }
 
-    private readonly Lazy<Task> _loaded;
+    private readonly object _loadGate = new();
+    private Task? _loaded;
 
-    /// <summary>Replay the store into both indexes, once, whoever asks first.</summary>
-    public Task LoadAsync() => _loaded.Value;
+    /// <summary>
+    /// Replay the store into both indexes, once, whoever asks first. A replay
+    /// that failed is not kept: the next caller starts another, so a store
+    /// that was down at startup is read the first time it is up rather than
+    /// never (ADR: The ports learn to wait, addendum). Replaying twice is safe,
+    /// because Record keeps the higher standing and the same bid twice is the
+    /// same standing.
+    /// </summary>
+    public Task LoadAsync()
+    {
+        lock (_loadGate)
+        {
+            if (_loaded is null || _loaded.IsFaulted || _loaded.IsCanceled)
+            {
+                _loaded = LoadFromStoreAsync();
+            }
+            return _loaded;
+        }
+    }
 
     private async Task LoadFromStoreAsync()
     {

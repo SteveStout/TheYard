@@ -26,8 +26,9 @@ makes possible, and this record is the measurement that runs there.
 
 **The container measures itself.** `POST /api/admin/proof` starts a run in
 the background; `GET /api/admin/proof` reads the run in progress or the last
-result. A run registers one throwaway account per store, then for each of
-eight rounds, alternating which store goes first, sends the requests a
+result. A run signs into one account of its own per store (registered the
+first time this process runs the proof and kept; the addendum on the accounts
+says why), then for each of eight rounds, alternating which store goes first, sends the requests a
 visitor makes to this container's own address with the store named in a
 header: sign in, the listing page, a vehicle page, the filter values, a bid,
 a raise, and a reset. Every request is timed around the whole exchange,
@@ -63,12 +64,14 @@ tolerance, the card says the difference is all round trip.
 how many paths are the same, how many differ by exactly the round trip, and
 how many differ by more, with the round trips stated.
 
-**A run is public and rationed.** The endpoint that starts a run is as
-public as the rest of the Admin tab, and a run registers two accounts and
-places sixteen bids, so a second start while one is running, or within a
-minute of the last, answers 409 and the card shows the result it has. The
-site's hourly allowance of registrations (ADR: The one write a stranger can
-make) is the outer limit.
+**A run is rationed, and starting one takes a signed-in visitor.** Reading
+the result is as public as the rest of the Admin tab. Starting a run writes
+sixteen bids, so since 1.0.0.109 it takes a signed-in visitor, the rule every
+other write on this site follows (ADR: The one write a stranger can make,
+addendum); as first shipped it was anonymous, which with two fresh accounts
+per run made a loop of one start a minute exactly the hour's allowance of
+registrations. A second start while one is running, or within a minute of the
+last, answers 409 and the card shows the result it has.
 
 ## What it measures, and what it does not
 
@@ -173,10 +176,10 @@ state on the free tier.
 - The proof is a card, so it runs on the deployed container and not on a
   laptop, and the numbers it shows are the numbers a visitor to that
   container gets, minus their own network.
-- Two throwaway accounts per run, named `proof-...@example.com`, live in each
-  store until the next reset of that store's test data; on the live stores
-  they accumulate at two per run, which the cooldown bounds at a hundred and
-  twenty a day and the registration allowance bounds harder.
+- Two accounts per process, named `proof-...@example.com`, one per store,
+  made on the first run after a roll and reused after it, so a container
+  adds two accounts to each store per deploy rather than two per run; they
+  live in the store until the next reset of that store's test data.
 - The interview sentence is the card's sentence, and the numbers behind it
   are on the page it is said from.
 
@@ -187,3 +190,24 @@ state on the free tier.
 - [`api/TheYard.Tests/ProofTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProofTests.cs): the arithmetic without a store, and the endpoints with whichever stores the run has.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card.
 - [`docs/ADR-064-measuring-both-stores.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-064-measuring-both-stores.md): the measurement from the visitor's side, which this one completes.
+
+## Addendum, 2026-09-09: the proof's accounts, and who may start it
+
+A reader with no context (the lane's review of 2026-09-09, three readers,
+one an architect) put it plainly: `POST /api/admin/proof` was anonymous, a
+run registered two accounts, and with a one-minute cooldown a loop of one
+request a minute spent exactly the 120 registrations an hour that ADR: The
+one write a stranger can make set as the site's ceiling, so a stranger could
+stop real visitors registering by asking the site to prove itself. Two
+changes, both in 1.0.0.109. Starting a run takes a signed-in visitor now,
+which is the rule every other write here follows; reading stays public, and
+the card says so and disables its button signed out rather than failing
+after the click. And the proof's accounts are made once per process and
+kept: the first run after a roll registers one per store with a password
+that is random per process and lives nowhere but in memory, and every later
+run signs into them, carrying the first run's registration sample into its
+result so the Register row still shows what registering cost. A run that
+finds its account gone, because the store's test data was reset under it,
+registers a fresh one, which is the one case that spends a registration.
+`ProofTests` holds both: a stranger's start is 401 and nothing runs, and a
+second run registers nothing.

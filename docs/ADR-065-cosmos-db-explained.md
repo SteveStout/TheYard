@@ -10,10 +10,12 @@ stores and ADR: The partition key, and say so where they do.
 
 ## What is actually running
 
-Two containers, one image. The first, the site at `theyard.stevenstout.biz`,
+Two containers, one image, and since 1.0.0.94 each opens both stores and
+serves one by default (the addendum at the end and ADR: One container, both
+stores). As first built: the first, the site at `theyard.stevenstout.biz`,
 keeps its catalogue, its bids and its accounts in Azure SQL Database. The
-second, on its own Azure address, keeps the same three things in Azure Cosmos
-DB, in a database called `theyard` with four containers in it. Both authenticate
+second, now at `theyard-cosmos.stevenstout.biz`, keeps the same three things
+in Azure Cosmos DB, in a database called `theyard` with four containers in it. Both authenticate
 as the same managed identity; neither has a password or a key anywhere.
 
 The application above the store is the same code. The three ports in `Ports.cs`

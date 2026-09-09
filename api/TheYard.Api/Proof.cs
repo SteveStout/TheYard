@@ -40,17 +40,36 @@ public sealed class ProofRunner(
     ];
 
     /// <summary>
-    /// How long after one run the next may start. The endpoint that starts a
-    /// run is public, like the rest of the Admin tab, and a run registers two
-    /// accounts and places sixteen bids; a minute between runs keeps a loop of
-    /// requests from spending the site's hourly allowance of accounts on
-    /// proving the same thing twice.
+    /// How long after one run the next may start. Starting a run is a write
+    /// and needs a signed-in visitor (ADR: The one write a stranger can make,
+    /// addendum), and the accounts a run bids with are made once per process
+    /// and reused, so a loop of starts costs the site nothing but sixteen bids
+    /// a minute on vehicles the proof picks; the minute is what keeps the card
+    /// from being asked to prove the same thing twice at once.
     /// </summary>
     public static readonly TimeSpan Cooldown = TimeSpan.FromMinutes(1);
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private ProofResult? _last;
     private volatile bool _running;
+
+    // #region proof-accounts
+    /// <summary>
+    /// The proof's own accounts, one per store, made on the first run this
+    /// process performs and kept for the rest of its life: the address, the
+    /// password it was registered with, and the registration's own sample, so
+    /// later runs still show what registering cost without registering again.
+    /// The first cut registered two fresh accounts per run, which made an
+    /// anonymous loop of one start a minute exactly the hour's allowance of
+    /// registrations (ADR: The one write a stranger can make, addendum). The
+    /// password is random per process and lives nowhere but here.
+    /// </summary>
+    private readonly Dictionary<string, ProofAccount> _accounts = new(StringComparer.Ordinal);
+
+    private readonly string _password = "proof-" + Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(24));
+
+    private sealed record ProofAccount(string Email, Sample Registration);
+    // #endregion proof-accounts
 
     public bool Running => _running;
 
@@ -110,19 +129,29 @@ public sealed class ProofRunner(
         var stores = backends.All.Select(backend => new StoreRun(backend)).ToArray();
         using var client = clients.Create();
 
-        // One account per store for the whole run, so the site's hourly
-        // allowance of new accounts pays two, not sixteen. Timed once each.
+        // One account per store for the life of the process: registered and
+        // timed on the first run, signed into on every run after that. A run
+        // that finds its account gone (the store was reset under it) registers
+        // a fresh one, which is the one case that spends a registration.
         foreach (var store in stores)
         {
+            if (_accounts.TryGetValue(store.Backend.Key, out var account) && await SignsInAsync(client, store, account.Email))
+            {
+                store.Email = account.Email;
+                store.Samples.Add(account.Registration);
+                continue;
+            }
+
             string email = $"proof-{Guid.NewGuid():N}@example.com";
             using var registered = await Timed(client, store, "register", HttpMethod.Post, "/api/auth/register",
-                new { email, password = "correct horse battery" });
+                new { email, password = _password });
             if (!registered.IsSuccessStatusCode)
             {
                 return ProofResult.Failed($"registration on {store.Backend.Name} answered {(int)registered.StatusCode}", backends);
             }
             store.Cookie = SessionCookie(registered);
             store.Email = email;
+            _accounts[store.Backend.Key] = new ProofAccount(email, store.Samples.Last(sample => sample.Path == "register"));
         }
 
         for (int round = 0; round < rounds; round++)
@@ -150,7 +179,7 @@ public sealed class ProofRunner(
     private async Task RoundAsync(HttpClient client, StoreRun store)
     {
         using var signedIn = await Timed(client, store, "sign_in", HttpMethod.Post, "/api/auth/login",
-            new { email = store.Email, password = "correct horse battery" });
+            new { email = store.Email, password = _password });
         if (signedIn.IsSuccessStatusCode)
         {
             store.Cookie = SessionCookie(signedIn) ?? store.Cookie;
@@ -215,6 +244,25 @@ public sealed class ProofRunner(
             : storeLog.Snapshot().Where(operation => operation.At >= at).ToArray();
         store.Samples.Add(new Sample(path, elapsedMs, (int)response.StatusCode, statements + operations.Length, operations.Sum(operation => operation.RequestCharge)));
         return response;
+    }
+
+    /// <summary>
+    /// Whether the proof's remembered account still signs in on this store.
+    /// Not timed and not sampled: it is a check that the account survived,
+    /// and the round's own sign-in is the measurement.
+    /// </summary>
+    private async Task<bool> SignsInAsync(HttpClient client, StoreRun store, string email)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login");
+        request.Headers.Add(Backends.HeaderName, store.Backend.Key);
+        request.Content = JsonContent.Create(new { email, password = _password });
+        using var response = await client.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            return false;
+        }
+        store.Cookie = SessionCookie(response);
+        return true;
     }
 
     private static string? SessionCookie(HttpResponseMessage response)

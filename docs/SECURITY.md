@@ -88,9 +88,10 @@ caller can make that persists, and because every request through it pays for a
 deliberately expensive password hash on a container that serves everything else.
 What it costs is stated rather than hidden: while somebody is spending the
 hour's allowance, a real visitor cannot register either, and browsing, signing
-in and bidding are untouched. The window is in memory in one container, so a
-second instance would get its own; a durable bound belongs with the origin lock
-(ADR-054).
+in and bidding are untouched. The window is in memory per container, and
+there are two containers on the same stores now, so the site's real ceiling
+is two windows, 240 an hour across both; a durable bound belongs with the
+origin lock (ADR-054).
 
 **`POST /api/errors/client` is anonymous.** A crash in the page should reach the
 same place a crash in the server does. Its message and stack are bounded, and

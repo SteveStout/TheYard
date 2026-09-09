@@ -35,13 +35,14 @@ cold start beside it is that store's own.
 ```live path=api/TheYard.Api/Stores.cs region=backend
 ```
 
-**Which store serves a request is decided per request.** The toggle sets a
-cookie for a year; a measurement that has no browser sends a header instead;
-the header wins, then the cookie, then the container's default, which the
-deploy names (`Store:Default`, `sql` on the live site and `cosmos` on the
-second container). A value that names a store this container does not have is
-the default and never an error, because a cookie set by an older build is not
-the visitor's mistake.
+**Which store serves a request is decided per request.** As first shipped,
+the toggle set a cookie for a year and the header won over the cookie over
+the container's default; since 1.0.0.101 there is no cookie (the addendum
+"the toggle moved to the sites" says why), so it is the header, for a
+measurement that has no browser, and otherwise the container's default,
+which the deploy names (`Store:Default`, `sql` on the live site and `cosmos`
+on the second container). A value that names a store this container does not
+have is the default and never an error.
 
 ```live path=api/TheYard.Api/Stores.cs region=backends
 ```
@@ -279,7 +280,8 @@ the query, and a container with no other site gets a segment that is not a
 link. `tests/e2e/store-toggle.spec.ts` walks the bar in a browser, where on
 the gate the other segment is not a link and the old switch endpoint refuses
 the method. `StoreToggleTests` holds the rule and the expiry. The one place the real
-thing is proven is the live check, `shot-night.mjs` in the mentor folder,
+thing is proven is the live check, `shot-night.mjs` in the lane's notes
+outside the repository,
 which opens each site, follows the other segment, and reads the host and the
 server's own answer on arrival, both ways.
 

@@ -37,7 +37,7 @@ Read out of the code, per container, on 2026-09-08.
 | --- | --- | --- | --- | --- |
 | `vehicles` | all 200 documents, once, at cold start | seed, once | `/make` | read whole, so any key serves; `/make` keeps it the same shape as `catalogue`, which is where the choice is tested |
 | `photos` | all 50 documents, once, at cold start | seed, once | `/style` | the loader groups them by style |
-| `bids` | all documents once at cold start; one document by (user, vehicle) before each write | one point write per accepted bid; one delete per bid on reset | `/userId` | every write is pinned; a reset is one query inside one partition plus point deletes; the cold-start read is the only cross-partition operation and it runs once |
+| `bids` | all documents once at cold start; one document by (user, vehicle) before each write | one point write per accepted bid; one delete per bid on reset | `/user_id` | every write is pinned; a reset is one query inside one partition plus point deletes; the cold-start read is the only cross-partition operation and it runs once |
 | `users` | one document by id on "who am I"; one claim document by address, then one user document, on sign-in | two creates on register; one replace on a failed guess or a lockout reset | `/id` | every operation is a point read or a point write; there is no query on this container at all |
 | `catalogue` | a filtered, sorted page, per request, in the experiment | seed of 100,000, once | `/make` | decided below |
 

@@ -7,8 +7,9 @@ the way it is.
 
 ## Context
 
-Program.cs is the one file that starts the API. A newcomer sees four
-hundred lines with no class and no `Main`, a block of `builder.Services`
+Program.cs is the one file that starts the API. A newcomer sees a long
+file (four hundred lines when this was written, 1,625 today) with no class
+and no `Main`, a block of `builder.Services`
 calls, a run of `app.MapGet` calls, two `app.Use` blocks, and helpers after
 `app.Run()`. Every one of those has a reason, and most of the reasons are
 the difference between "works on my machine" and "works in the container,
@@ -50,14 +51,17 @@ walks that used to repeat this work.
 
 Dependency injection means: the endpoints ask for an `InventoryService` or
 a `BidService` as a parameter, and the framework hands them the registered
-instance. Every registration here is `AddSingleton`, one instance for the
-life of the process, because the dataset is loaded once and shared by
-every request, and the buyer's bids live in memory on purpose (this is a
-demo with one anonymous buyer; the Admin tab and ADR: Observability say so
-out loud). `InventoryService` holds the expanded dataset in a `Lazy`, so a
-`Scoped` or `Transient` registration would hand every request a fresh
-service with an empty `Lazy` and expand 100,000 records again each time.
-That is the mistake this block is protecting against.
+instance. Nearly every registration here is `AddSingleton`, one instance
+for the life of the process, because the dataset is loaded once and shared
+by every request and each store's standing bids live in memory beside it
+(ADR: Accounts and per-user bids; ADR: One container, both stores).
+`InventoryService` holds the expanded dataset in a `Lazy`, so a `Scoped` or
+`Transient` registration would hand every request a fresh service with an
+empty `Lazy` and expand 100,000 records again each time. That is the
+mistake this block is protecting against. The exceptions are the two things
+that are decided per request and can only be: `CurrentBackend`, which store
+this request is on, and Identity's user store over it, both `AddScoped` (the
+2026-09-08 addendum).
 
 The source is built by decoration: `new SyntheticVehicleSource(new
 JsonFileVehicleSource(dataPath), targetCount)`. The inner source reads the
@@ -86,12 +90,15 @@ explicit options object, handed to every `Results.Json` call and to
 
 ### Fail at startup, not on the first request
 
-`app.Services.GetRequiredService<InventoryService>().GetAll()` runs right
-after `Build()`. It forces the dataset to load before the first request.
-If the file is missing or malformed the process exits with the real error,
-the container's health check fails, and the deploy's Verify step stops the
-roll. Without this line the same problem would show up as a 500 on the
-first visitor, which is a worse place to learn it.
+The default store's catalogue and bids are loaded right after `Build()`,
+timed, before anything is served (`backends.Default.Inventory.WarmAsync`
+and `Bids.LoadAsync` in the migrate-and-seed region; it was one
+`GetAll()` call when this was written). It forces the dataset to load
+before the first request. If the file is missing or malformed the process
+exits with the real error, the container's health check fails, and the
+deploy's Verify step stops the roll. Without this the same problem would
+show up as a 500 on the first visitor, which is a worse place to learn it.
+A store the container did not warm warms itself on first use.
 
 ### Endpoints: binding, then delegation
 
@@ -186,16 +193,16 @@ the top of this record.
 
 ## Why this is one file
 
-It is 1,612 lines, and that is the first thing a reviewer notices, so it is
+It is 1,625 lines, and that is the first thing a reviewer notices, so it is
 worth saying that it is a decision rather than a drift.
 
 What those lines are:
 
 ```
-1,612 total
-  619 comment
+1,625 total
+  627 comment
    97 blank
-  896 code, across 35 endpoints
+  901 code, across 35 endpoints
 ```
 
 Twenty-five lines of code per endpoint, and most endpoints are a route, a
@@ -223,8 +230,8 @@ it. What it would cost is the one property worth keeping.
 - An endpoint that grows a body instead of a delegation. That is a use case
   trying to be born, and it belongs in Application, not in a new host file.
 - The composition and the routes stopping fitting in a reader's head together.
-  The trigger is a reader, not a number: 1,244 lines of which a third are
-  explanation is not the same as 1,244 lines of logic, and a rule that says
+  The trigger is a reader, not a number: 1,625 lines of which nearly two fifths are
+  explanation is not the same as 1,625 lines of logic, and a rule that says
   "split at a thousand" would have split this one at the wrong seam.
 
 ## What to change when
