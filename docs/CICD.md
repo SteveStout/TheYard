@@ -46,9 +46,12 @@ on purpose: the plan is a deliverable too.
 - It pushes to the registry and rolls the container group from a
   template checked into infra/, the same file every deploy uses.
 - Authentication is OIDC federated credentials: Azure trusts a token
-  GitHub mints for this one repo's main branch. No password, key, or
-  secret exists anywhere in the pipeline, so there is nothing to rotate
-  and nothing to leak.
+  GitHub mints for this one repo's main branch. No password or key gets
+  the pipeline into Azure. One secret exists, the session signing key the
+  roll hands to both containers so a roll does not sign everybody out; it
+  is masked in every log, rotating it is one roll, and a roll without it
+  invents a key at startup and says so (ADR: Three readers with no memory
+  of the project).
 - Roles are scoped to least privilege: push to this one registry,
   manage container groups in this one resource group, assign this one
   identity.

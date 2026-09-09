@@ -12,8 +12,12 @@ CREATE TABLE [dbo].[Bids] (
     -- The optimistic concurrency token. Two containers, or two requests that get
     -- past one container's lock, can both read this row and both decide to write
     -- it. rowversion is maintained by the database, so nothing in the
-    -- application can forget to move it, and the second writer fails instead of
-    -- silently overwriting the first. A lost update on an auction is somebody's
+    -- application can forget to move it, and the second writer fails and reads
+    -- the row again before it writes, rather than writing over a value it never
+    -- saw. It guards one buyer's row; two buyers on one vehicle are two rows,
+    -- and the standing they race for lives in each container's memory until the
+    -- compare-and-set standing the review record decides (ADR: Three readers
+    -- with no memory of the project). A lost update on an auction is somebody's
     -- money.
     [RowVersion] rowversion     NULL,
     CONSTRAINT [PK_Bids] PRIMARY KEY ([UserId], [VehicleId]),

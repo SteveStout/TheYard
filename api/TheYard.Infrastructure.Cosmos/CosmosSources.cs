@@ -61,11 +61,15 @@ public sealed class CosmosBidStore(CosmosStore store) : IBidStore
     /// One document per buyer per vehicle, replaced rather than appended. A
     /// point read, then a create if there was nothing or a replace carrying the
     /// etag the read returned. Three tries, then the exception travels: a 412
-    /// means another writer moved the document between the read and the write,
-    /// a 409 means another writer created it first, and the answer to both is
-    /// to start again from what is there now, which is the same rule the
-    /// relational store follows for a concurrency conflict
-    /// (ADR: The SQL Server backend).
+    /// means another writer moved this buyer's document between the read and
+    /// the write, a 409 means another writer created it first, and both take
+    /// the one account bidding from two containers at once. The retry reads
+    /// again and writes this bid over what it finds, the same as the relational
+    /// store (ADR: The SQL Server backend): the rules ran on this side already,
+    /// and what the document held in between is not re-examined. Two buyers
+    /// racing each other are two documents and never meet here; that race is
+    /// the gap the review record names (ADR: Three readers with no memory of
+    /// the project).
     /// </summary>
     public async Task SaveAsync(string userId, string vehicleId, BidState state)
     {

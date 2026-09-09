@@ -147,3 +147,24 @@ single. Replaying the bid store twice is safe because `Record` keeps the
 higher standing. Two tests hold it, one per service, each with a source that
 is down for its first call and up for its second. The live blocks above show
 the code as it is.
+
+## Addendum, 2026-09-09: the one path the claim did not cover
+
+"A request thread is never blocked on a store" was true of the host this
+record describes, which warmed its one store before it served. Since one
+container runs both stores (ADR: One container, both stores) there is a
+second store, warmed in the background on a deployed group and not at all in
+a test application, and a request that reached it before the warm finished
+read `InventoryService`'s synchronous accessor and blocked its thread on the
+load, for the seconds after a roll on the live site and on every first
+request to the other store under test. A review with no context read the
+accessor and this record together and asked. The pipeline now awaits the
+request's store's warm before any endpoint runs, which after the first time
+is an await on a task that finished at startup; the accessor is unchanged and
+is reached only warm (ADR: Three readers with no memory of the project).
+
+```live path=api/TheYard.Api/Stores.cs region=warm-before-reading
+```
+
+```live path=api/TheYard.Tests/WarmthTests.cs region=warm-before-reading
+```

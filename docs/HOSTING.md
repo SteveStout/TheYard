@@ -95,9 +95,10 @@ Infrastructure (Bicep) in this menu: infra/main.bicep stands up App Service
 behind Azure Front Door with the origin locked, so nothing reaches the app
 except through the edge. Deploying it is one command and two parameter flips.
 
-It stays undeployed on purpose. A public demo carrying no secrets does not
-need a paid stack, and keeping the bill at zero while keeping the design
-reviewable is part of the engineering story. If this were a production
+It stays undeployed on purpose. A public demo whose only secret is a session
+key, and whose accounts and bids are play money, does not need a paid stack,
+and keeping the bill near zero while keeping the design reviewable is part
+of the engineering story. If this were a production
 workload, that file is exactly what would run, and the domain layer means the
 public URL would never change in the switch.
 

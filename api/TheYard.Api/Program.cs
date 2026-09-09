@@ -325,11 +325,15 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
 // worth not writing twice; the session is a JWT this service signs and reads
 // itself, carried in a cookie the page cannot touch.
 //
-// The signing key is configuration. Without one the process invents a random
-// key and says so, which means a deploy signs everybody out and no key is ever
-// committed. A production deployment reads it from a secret store; that is the
-// one line of this that would change.
-string? configuredSigningKey = builder.Configuration["Auth:SigningKey"];
+// The signing key is configuration. The deploy hands both containers the same
+// one from a repository secret (Auth__SigningKey in the container spec, filled
+// at roll time like the connection strings), so a session survives a roll and
+// a token minted by one container reads on the other. Without a usable one,
+// which is what a developer's machine, a test and a roll whose substitution
+// failed all have, the process invents a random key and says so: every session
+// ends with the process, and no key is ever committed (ADR: Three readers with
+// no memory of the project).
+string? configuredSigningKey = TokenIssuer.ConfiguredKey(builder.Configuration["Auth:SigningKey"]);
 string signingKey = configuredSigningKey ?? Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 var tokens = new TokenIssuer(signingKey, TimeSpan.FromDays(7));
 builder.Services.AddSingleton(tokens);
@@ -511,7 +515,10 @@ if (cosmos is not null)
 // (ADR: Accounts and per-user bids). Nothing about the key itself is logged.
 if (configuredSigningKey is null)
 {
-    app.Logger.LogWarning("No Auth:SigningKey is configured; this process signs cookies with a key it invented at startup, so every session ends with it");
+    app.Logger.LogWarning(
+        "No usable Auth:SigningKey is configured (none, a placeholder, or under {Bytes} bytes); "
+        + "this process signs cookies with a key it invented at startup, so every session ends with it",
+        TokenIssuer.MinimumKeyBytes);
 }
 
 // The address the proof talks to itself on, read once the server is up.
@@ -675,6 +682,20 @@ app.UseHttpLogging();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// #region warm-before-reading
+// And before any endpoint reads a store, that store's catalogue is loaded, so
+// no request thread is ever blocked on a load in progress (Warmth, in
+// Stores.cs). Only the API: the page's files do not have a store.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        await Warmth.EnsureAsync(context.RequestServices.GetRequiredService<CurrentBackend>().Backend);
+    }
+    await next();
+});
+// #endregion warm-before-reading
+
 // The dataset is snake_case; keep the wire shape identical to the source file.
 var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 #endregion composition
@@ -759,7 +780,7 @@ app.MapPost("/api/vehicles/{id}/bids", (
     CurrentBackend current,
     HttpContext http,
     string id,
-    BidRequest request) => HandleBid(current, http.UserId(), id, request.AnchorMs,
+    BidRequest request) => HandleBid(current, http, id, request.AnchorMs,
         // The room's standing price is what the minimum next bid is measured
         // against (ADR-027). Handing BidRules the dataset's figure instead
         // would let the buyer retake the lead with a bid below the going rate.
@@ -770,7 +791,7 @@ app.MapPost("/api/vehicles/{id}/buy-now", (
     CurrentBackend current,
     HttpContext http,
     string id,
-    BuyNowRequest request) => HandleBid(current, http.UserId(), id, request.AnchorMs,
+    BuyNowRequest request) => HandleBid(current, http, id, request.AnchorMs,
         (vehicle, clock) => current.Bids.BuyNowAsync(current.Market.Apply(vehicle), clock, http.UserId())))
     .RequireAuthorization();
 
@@ -944,12 +965,27 @@ app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, comm
 // relies on (ADR-023).
 async Task<IResult> HandleBid(
     CurrentBackend current,
-    string userId,
+    HttpContext http,
     string id,
     long? anchorMs,
     Func<Vehicle, AuctionClock, Task<BidOutcome>> action)
 {
     var (inventory, bids, market) = current;
+    string userId = http.UserId();
+    // #region session-per-store
+    // A session bids where its account is. The header can put one request on
+    // the other store, and a bid there would be a row under an id that store
+    // has no account for: the relational store's foreign key answered that
+    // with a 500, the document store with nothing. The token says which store
+    // opened it, so this costs no lookup (ADR: Three readers with no memory of
+    // the project).
+    if (!http.SessionIsOn(current.Backend))
+    {
+        return Results.Problem(
+            detail: $"This session was opened on another store. Sign in on {current.Backend.Name} to bid here.",
+            statusCode: 401, title: "The bid was rejected");
+    }
+    // #endregion session-per-store
     if (!Clocks.TryResolve(anchorMs, out var clock, out var clockError))
     {
         return Results.Problem(detail: clockError, statusCode: 400, title: "The bid was rejected");
@@ -1402,7 +1438,7 @@ app.MapPost("/api/auth/register", async (
 
     http.Response.Cookies.Append(
         TokenIssuer.CookieName,
-        issuer.Issue(user.Id, user.Email!),
+        issuer.Issue(user.Id, user.Email!, current.Backend.Key),
         TokenIssuer.CookieFor(http, issuer.Lifetime));
     return Results.Json(Accounts.Describe(user), wireFormat);
 });
@@ -1458,7 +1494,7 @@ app.MapPost("/api/auth/login", async (
 
     http.Response.Cookies.Append(
         TokenIssuer.CookieName,
-        issuer.Issue(user.Id, user.Email!),
+        issuer.Issue(user.Id, user.Email!, current.Backend.Key),
         TokenIssuer.CookieFor(http, issuer.Lifetime));
     return Results.Json(Accounts.Describe(user), wireFormat);
 });

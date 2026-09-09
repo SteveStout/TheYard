@@ -1,8 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using TheYard.Api;
 using TheYard.Domain;
+using TheYard.Infrastructure;
 
 namespace TheYard.Tests;
 
@@ -444,6 +448,61 @@ public class AuthBidTests : AuthTestBase
             "a history nobody can read is a list of identifiers");
         Assert.Equal(amount, entry.GetProperty("bid").GetProperty("amount").GetInt32());
     }
+
+    // #region session-per-store
+    /// <summary>
+    /// A session bids where its account is. The header can put one request on
+    /// the other store, and until 1.0.0.111 a bid there landed under an id
+    /// that store has no account for: a 500 from the relational store's
+    /// foreign key, silence from the document store (ADR: Three readers with
+    /// no memory of the project). The token names the store that opened it,
+    /// so a token minted for another store is refused with a sentence, and
+    /// the same account's own session on this store still bids.
+    /// </summary>
+    [Fact]
+    public async Task A_session_opened_on_another_store_cannot_bid_here()
+    {
+        await using var api = Api();
+        long anchor = Anchor();
+        var client = api.CreateClient();
+        var registered = await Register(client, _first);
+        Assert.True(registered.IsSuccessStatusCode, await registered.Content.ReadAsStringAsync());
+        string userId;
+        using (var scope = api.Services.CreateScope())
+        {
+            // The account's id, from the store the registration went to: a scope
+            // with no request on it resolves the container's default store.
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<YardUser>>();
+            userId = (await users.FindByEmailAsync(_first))!.Id;
+        }
+        using var stores = JsonDocument.Parse(await client.GetStringAsync("/api/stores"));
+        string thisStore = stores.RootElement.GetProperty("current").GetString()!;
+        string otherStore = thisStore == "sql" ? "cosmos" : "sql";
+        var (id, amount) = await ALiveVehicle(client, anchor);
+
+        // The same key the test host signs with, the same account, the other
+        // store's name in the claim: a valid token that is on the wrong store.
+        var issuer = new TokenIssuer("a-signing-key-for-tests-only-not-a-secret", TimeSpan.FromDays(7));
+        var elsewhere = api.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        string token = issuer.Issue(userId, _first, otherStore);
+        elsewhere.DefaultRequestHeaders.Add("Cookie", $"{TokenIssuer.CookieName}={token}");
+
+        var refused = await elsewhere.PostAsJsonAsync(
+            $"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
+        var refusedPurchase = await elsewhere.PostAsJsonAsync(
+            $"/api/vehicles/{id}/buy-now", new { anchor_ms = anchor });
+
+        foreach (var answer in new[] { refused, refusedPurchase })
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, answer.StatusCode);
+            using var problem = JsonDocument.Parse(await answer.Content.ReadAsStringAsync());
+            Assert.Contains("opened on another store", problem.RootElement.GetProperty("detail").GetString());
+        }
+        Assert.Equal("{}", (await elsewhere.GetStringAsync("/api/bids")).Trim());
+        // And the account's own session, on this store, bids as it always did.
+        await Bid(client, id, amount, anchor);
+    }
+    // #endregion session-per-store
 
     // #region sold
     /// <summary>

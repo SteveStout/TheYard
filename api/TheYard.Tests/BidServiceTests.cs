@@ -254,6 +254,43 @@ public class BidServiceTests
         Assert.Empty(orphaned);
     }
 
+    /// <summary>
+    /// A reset the store refuses leaves everything standing, in memory as in
+    /// the store, so the caller is told the truth and the next start does not
+    /// bring back bids the page had said were gone (ADR: Three readers with no
+    /// memory of the project). Before 1.0.0.111 the dictionaries were cleared
+    /// first and this test's snapshot came back empty.
+    /// </summary>
+    [Fact]
+    public async Task A_reset_the_store_refuses_leaves_the_bids_standing()
+    {
+        var store = new RefusingResetStore();
+        var service = new BidService(store);
+        var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
+        Assert.Equal(BidOutcomeKind.Accepted, (await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer)).Kind);
+
+        await Assert.ThrowsAsync<IOException>(() => service.ResetAsync(Buyer));
+
+        Assert.Equal(23_300, service.SnapshotFor(Buyer)[vehicle.Id].Amount);
+        Assert.Equal(23_300, service.Apply(vehicle).CurrentBid);
+        Assert.Equal(1, store.Clears);
+    }
+
+    private sealed class RefusingResetStore : IBidStore
+    {
+        public int Clears { get; private set; }
+
+        public Task<IReadOnlyList<StoredBid>> LoadAsync() => Task.FromResult<IReadOnlyList<StoredBid>>([]);
+
+        public Task SaveAsync(string userId, string vehicleId, BidState state) => Task.CompletedTask;
+
+        public Task ClearAsync(string userId)
+        {
+            Clears++;
+            return Task.FromException(new IOException("the store is not answering"));
+        }
+    }
+
     [Fact]
     public async Task Reset_by_somebody_who_has_not_bid_touches_nothing()
     {

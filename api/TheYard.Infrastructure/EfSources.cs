@@ -138,11 +138,16 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
     public async Task SaveAsync(string userId, string vehicleId, BidState state)
     {
         // Three tries, then the exception travels. A conflict here means
-        // another writer changed this row between this one reading it and
-        // writing it, and the answer to that is to start again from what is
-        // there now, not to overwrite it. A fresh context per attempt, because
-        // a context that has just thrown a concurrency exception is holding the
-        // values that lost.
+        // another writer moved this same buyer's row between the read and the
+        // write, which takes the one account bidding from two containers at
+        // once. The retry reads the row again and writes this bid over it: the
+        // rules already ran on this side against the standing this container
+        // held, and what the row held in between is not re-examined. Two buyers
+        // racing each other are two rows and never meet here; that race is the
+        // gap the review record names and the compare-and-set standing it
+        // decides (ADR: Three readers with no memory of the project). A fresh
+        // context per attempt, because a context that has just thrown a
+        // concurrency exception is holding the values that lost.
         for (int attempt = 1; ; attempt++)
         {
             try

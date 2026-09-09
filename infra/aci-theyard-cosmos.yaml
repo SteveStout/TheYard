@@ -5,8 +5,9 @@
 # Cosmos DB settings stand where the SQL connection string stands in the other
 # file. The Deploy Cosmos workflow rewrites __IMAGE__ to the tag the Deploy
 # workflow just pushed and rolls this group on its own, so a roll of one never
-# touches the other. No secrets by construction: the registry pull and the
-# store both ride the user-assigned identity, and the account has no keys.
+# touches the other. One secret by construction, the session signing key
+# below; the registry pull and both stores ride the user-assigned identity,
+# and the account has no keys.
 additional_properties: {}
 apiVersion: 2024-05-01-preview
 extended_location: null
@@ -59,6 +60,16 @@ properties:
       # Server here" and this container runs the document store beside SQLite.
       - name: ConnectionStrings__YardSql
         secureValue: __YARD_SQL_CONNECTION__
+      # The session signing key, filled at roll time from the repository secret
+      # of the same name, so both containers sign with one key and a roll does
+      # not end every session (ADR: Three readers with no memory of the
+      # project). The only secret in the pipeline, and it never appears in a
+      # log: GitHub masks it, and the roll substitutes it in python. A
+      # placeholder left by a missing secret reads as "no key": the process
+      # invents one at startup and logs that it did, which was every roll's
+      # behaviour until 1.0.0.111.
+      - name: Auth__SigningKey
+        secureValue: __YARD_AUTH_SIGNING_KEY__
       # This group's own ARM path, so the Admin tab's "Azure's view of the
       # container" card reads this container and not the other one. An
       # identifier, not a secret (ADR-010).

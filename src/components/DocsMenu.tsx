@@ -100,6 +100,7 @@ export type DocKey =
   | 'adrProof'
   | 'adrFiveMinuteGate'
   | 'adrSecondAddress'
+  | 'adrThreeReaders'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -671,6 +672,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '069',
   },
+  adrThreeReaders: {
+    title: 'ADR: Three readers with no memory of the project',
+    menuLabel: 'ADR: Three readers with no memory of the project',
+    url: '/api/docs/adr-three-readers',
+    kind: 'adr',
+    number: '070',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -851,6 +859,7 @@ export const MENUS: Record<
       { key: 'adrProof' },
       { key: 'adrFiveMinuteGate' },
       { key: 'adrSecondAddress' },
+      { key: 'adrThreeReaders' },
     ],
   },
   // #endregion records-menu

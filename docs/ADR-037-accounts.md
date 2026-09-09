@@ -45,10 +45,13 @@ that the client code gets simpler rather than harder.
 `Auth:SigningKey` the process invents thirty-two random bytes and, since
 1.0.0.109, logs a warning that it did; until then the comment promised the log
 and nothing wrote it. The consequence is honest and stated in the log: a deploy
-signs everybody out, which is what the deployed containers have done on every
-roll, because nothing configures the key there yet. The alternative that a repository must never take is a committed default,
-because a signing key in source control is every session forever, for anyone who
-reads the repository.
+signs everybody out, which is what the deployed containers did on every
+roll until 1.0.0.111, when the deploy began handing both containers one key
+from a repository secret, substituted into the container spec at roll time
+like the connection strings (ADR: Three readers with no memory of the
+project). The alternative that a repository must never take is a committed
+default, because a signing key in source control is every session forever,
+for anyone who reads the repository.
 
 **Two indexes over the same bids.** `BidService` keeps them by vehicle and by
 user, because two questions are asked at very different rates. What does this

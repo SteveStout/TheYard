@@ -186,6 +186,36 @@ public sealed class CurrentBackend(Backends backends, IHttpContextAccessor acces
     }
 }
 
+// #region warm-before-reading
+/// <summary>
+/// The request's store, warm before any endpoint reads it.
+///
+/// <para>The host awaits the default store's catalogue before it serves and
+/// warms the others in the background on a deployed group, so a request that
+/// reaches a store between those two moments, a visitor following the toggle
+/// in the seconds after a roll, or any request to the other store in a test
+/// application where the background warm is off, found a catalogue still
+/// loading. <c>InventoryService</c>'s synchronous accessors then blocked the
+/// request thread on the load, on a container with one vCPU and therefore one
+/// thread pool worker to start with: the exact shape ADR: The ports learn to
+/// wait argued against and said the host did not do. Three readers with no
+/// memory of the project read the accessor and asked; it was the one path
+/// the record's claim did not cover.</para>
+///
+/// <para>So the pipeline awaits the warm, once per request, before the
+/// endpoint runs. After the first time it is an await on a task that finished
+/// at startup, which is no wait at all. The bid replay is awaited by the
+/// writing methods already and read by the reads as whatever has loaded, so
+/// it is not gated here; a listing during the seconds a store's bids replay
+/// shows the dataset's prices, the same as before.</para>
+/// </summary>
+public static class Warmth
+{
+    public static Task EnsureAsync(Backend backend) =>
+        backend.Inventory.IsWarm ? Task.CompletedTask : backend.Inventory.WarmAsync();
+}
+// #endregion warm-before-reading
+
 /// <summary>
 /// A context per call, from options fixed at startup. The relational backend
 /// is built before the container is, so it cannot take the factory the

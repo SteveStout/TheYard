@@ -33,7 +33,15 @@ application that cannot change its own schema cannot be made to.
 **Passwords are hashed by ASP.NET Core Identity and never stored.** The session
 is a JWT this service signs and reads itself, carried in an httpOnly cookie, so a
 script on the page cannot read it and cannot be tricked into sending it elsewhere
-(ADR: Accounts and per-user bids).
+(ADR: Accounts and per-user bids). The key it signs with is a repository secret
+the deploy hands both containers at roll time; a container given none invents
+one and logs that it did, and every session ends with it.
+
+**A session bids only where its account is.** The token names the store that
+opened it, and a bid or a purchase sent to the other store, which the store
+header allows in one request, is refused with a sentence rather than written
+under an account that store does not have (ADR: Three readers with no memory
+of the project).
 
 **Five wrong passwords buy five minutes off**, per account, and the refusal says
 exactly what a wrong password says, so the endpoint is not a list of which
@@ -52,9 +60,11 @@ page and the message goes to Application Insights
 caller's data, with one deliberate exception below.
 
 **No secret is in the repository.** Not the connection string, not the
-Application Insights key, not the JWT signing key. The build has no credential in
-it, and CI has no Azure credential at all, which is also why the coverage number
-has the shape it does (ADR: Counting what the tests cover).
+Application Insights key, not the JWT signing key, which lives in GitHub's
+secret store and the container's environment and nowhere else. The build has
+no credential in it, and CI has no Azure credential at all, which is also why
+the coverage number has the shape it does (ADR: Counting what the tests
+cover).
 
 ## What is deliberately not protected, and why
 
@@ -92,6 +102,16 @@ in and bidding are untouched. The window is in memory per container, and
 there are two containers on the same stores now, so the site's real ceiling
 is two windows, 240 an hour across both; a durable bound belongs with the
 origin lock (ADR-054).
+
+**The hop from the edge to the origins is plain HTTP on port 8080.** The
+visitor's connection is TLS to the edge, and the edge reaches each container
+over the same public origin anybody can reach, in clear text, which is where
+the session cookie travels between them. The cookie is marked Secure on the
+visitor's side because the forwarded header says the visitor's leg was TLS;
+the origin's own leg is not. TLS at the origin and the origin lock are the
+same missing subscription named above, and the accounts record admits this
+hop; this page did not until a reader with no context noticed the omission
+(ADR: Three readers with no memory of the project).
 
 **`POST /api/errors/client` is anonymous.** A crash in the page should reach the
 same place a crash in the server does. Its message and stack are bounded, and

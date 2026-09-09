@@ -3,7 +3,8 @@
 # az container create -g RG-THEYARD-SS -f <rendered file>. Sourced from the
 # v11 export with the three families az rejects already removed
 # (provisioningTimeoutInSeconds, isCustomProvisioningTimeout, the fixed ip).
-# No secrets by construction: the registry pull rides the user-assigned identity.
+# One secret by construction, the session signing key below; the registry pull
+# and both stores ride the user-assigned identity.
 additional_properties: {}
 apiVersion: 2024-05-01-preview
 extended_location: null
@@ -42,6 +43,16 @@ properties:
       # crash-looping.
       - name: ConnectionStrings__YardSql
         secureValue: __YARD_SQL_CONNECTION__
+      # The session signing key, filled at roll time from the repository secret
+      # of the same name, so both containers sign with one key and a roll does
+      # not end every session (ADR: Three readers with no memory of the
+      # project). The only secret in the pipeline, and it never appears in a
+      # log: GitHub masks it, and the roll substitutes it in python. A
+      # placeholder left by a missing secret reads as "no key": the process
+      # invents one at startup and logs that it did, which was every roll's
+      # behaviour until 1.0.0.111.
+      - name: Auth__SigningKey
+        secureValue: __YARD_AUTH_SIGNING_KEY__
       # Azure Cosmos DB, beside the SQL setting rather than instead of it: this
       # container runs both stores and a visitor picks one with the toggle at
       # the top of the page (ADR: One container, both stores). An endpoint is a

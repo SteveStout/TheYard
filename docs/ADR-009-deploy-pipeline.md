@@ -126,6 +126,22 @@ against any later export restores that build. Nothing was deleted.
 - [`docs/CICD.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CICD.md): the design written before the build, and the
   screenshots of the runs.
 
+## Addendum, 2026-09-09: one secret, where there were none
+
+"No password, key, or secret exists anywhere in the pipeline" was true until
+1.0.0.111. There is one now: the session signing key, a repository secret
+named `YARD_AUTH_SIGNING_KEY` that the roll step reads through its
+environment and substitutes into the container spec the way it substitutes
+the connection strings, for both container groups, so a roll no longer ends
+every session and a token minted by one container reads on the other. It is
+the only thing the pipeline holds that is worth keeping from a reader, GitHub
+masks it in every log, and the roll writes it into the group's environment as
+a secure value and nowhere else. A roll with no secret keeps the placeholder,
+which the application reads as no key at all, and behaves as every roll did
+before (ADR: Three readers with no memory of the project). Rotating it is
+changing the secret and rolling: every session ends once, which is what
+every roll did until now.
+
 ## More of the code
 
 The Verify step: the origin must serve the new version, then answer

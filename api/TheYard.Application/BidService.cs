@@ -271,14 +271,22 @@ public sealed class BidService
         await _gate.WaitAsync();
         try
         {
-            if (!_byUser.TryRemove(userId, out var mine))
+            if (!_byUser.TryGetValue(userId, out var mine))
             {
                 return [];
             }
 
             string[] touched = mine.Keys.ToArray();
             var orphaned = new List<string>();
+            // The store first, then memory: the bid path's rule, applied to the
+            // one write that broke it. Until 1.0.0.111 the dictionaries were
+            // cleared before the store was asked, so a store that refused left
+            // the caller told their bids were gone while the rows stayed to be
+            // replayed at the next start (ADR: Three readers with no memory of
+            // the project). The gate is held, so nothing of this caller's can
+            // arrive between the two.
             await _store.ClearAsync(userId);
+            _byUser.TryRemove(userId, out _);
 
             foreach (string vehicleId in touched)
             {

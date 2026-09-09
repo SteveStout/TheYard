@@ -2,7 +2,9 @@
 # Fires when CI finishes green on main, builds the image with the two footer
 # build arguments, pushes it to the registry, rewrites infra/aci-theyard.yaml
 # to the new tag and rolls the container group. Auth is OIDC: GitHub holds
-# three identifiers as repository variables and no secret exists anywhere.
+# three identifiers as repository variables and one secret, the session
+# signing key the roll hands to the container (ADR: Three readers with no
+# memory of the project).
 name: Deploy
 
 # #region deploy-trigger
@@ -111,6 +113,8 @@ jobs:
       # A silent no-match would redeploy the previous image and look like a
       # success.
       - name: Roll the container group
+        env:
+          YARD_AUTH_SIGNING_KEY: ${{ secrets.YARD_AUTH_SIGNING_KEY }}
         run: |
           # Only the value line is rewritten; the header comment keeps its placeholder text.
           sed "s|^\(\s*image: \)__IMAGE__$|\1$IMAGE|" infra/aci-theyard.yaml > "$RUNNER_TEMP/aci.yaml"
@@ -181,6 +185,29 @@ jobs:
               sys.exit("the database placeholder is missing from the container spec")
           open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["YARD_SQL"]))
           PY
+          # The session signing key, from the repository secret of the same name,
+          # handed to the step through env so the script never interpolates it.
+          # Absent, the placeholder stays and the container invents a key at
+          # startup and logs that it did, which is what every roll did before
+          # 1.0.0.111 (ADR: Three readers with no memory of the project).
+          if [ -z "$YARD_AUTH_SIGNING_KEY" ]; then
+            echo "::warning::YARD_AUTH_SIGNING_KEY is not set; this roll invents a session signing key at startup"
+            YARD_AUTH_SIGNING_KEY="__YARD_AUTH_SIGNING_KEY__"
+          fi
+          YARD_AUTH_SIGNING_KEY="$YARD_AUTH_SIGNING_KEY" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
+          import os, sys
+          path = sys.argv[1]
+          text = open(path, encoding="utf-8").read()
+          placeholder = "__YARD_AUTH_SIGNING_KEY__"
+          if placeholder not in text:
+              sys.exit("the signing key placeholder is missing from the container spec")
+          open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["YARD_AUTH_SIGNING_KEY"]))
+          PY
+          if [ "$YARD_AUTH_SIGNING_KEY" = "__YARD_AUTH_SIGNING_KEY__" ]; then
+            echo "the container spec keeps its signing key placeholder: this roll invents one at startup"
+          else
+            echo "the container spec carries the session signing key (value masked)"
+          fi
           if [ "$YARD_SQL" = "__YARD_SQL_CONNECTION__" ]; then
             echo "the container spec keeps its database placeholder: this roll uses SQLite"
           else
