@@ -217,6 +217,12 @@ peer endpoint keeps reading the other container by its origin; the two
 settings differ on the live site for the same reason a visitor and a
 container reach it by different names.
 
+The bar on the live site, and on the second container, on 1.0.0.98:
+
+![The Store bar on the live site: SQL selected, and under the sentence a link to the other site, the second container's address](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-sql-linked.png)
+
+![The Store bar on the second container: Cosmos DB selected, and a link to the other site, the domain](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-cosmos-linked.png)
+
 ## Files
 
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a backend, the backends, the request's choice, and the context factory.

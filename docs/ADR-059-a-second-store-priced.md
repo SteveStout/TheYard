@@ -505,6 +505,17 @@ every test as well as the store. The cost arithmetic above is unchanged, and
 so is the free tier; the second container now also opens the SQL Server
 connection the first one opens, with the same identity.
 
+## Addendum, 2026-09-09: what the gate runs on the document store now
+
+"The browser suite, twice" above described the gate at 1.0.0.89. Since
+1.0.0.97 the gate runs every suite once per store and its two sides at the
+same time (ADR: The five-minute gate): the whole xUnit suite booted on the
+document store, the six store tests against the real account in their own
+step, and on the document store the three browser spec files whose
+behaviour depends on the store, the toggle, the accounts and the Admin tab's
+store log; the other ten run on SQLite in the same gate, because nothing in
+them reads a store. Same sentence, five minutes instead of twenty.
+
 ## Files
 
 - [`mentor\TASK-AUTH-2026-09-08-cosmos.md`](https://github.com/SteveStout/TheYard): the written pre-approval, outside the repository because it names principals.
