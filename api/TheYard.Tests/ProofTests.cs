@@ -80,6 +80,139 @@ public class ProofTests(WebApplicationFactory<Program> factory)
     }
     // #endregion verdict-tests
 
+    // #region canned-run
+    /// <summary>
+    /// A whole run against a container that answers from a script, so every
+    /// step of a round is exercised without a store: the session cookie is
+    /// kept per store and sent back, the vehicle is chosen from the listing,
+    /// the bid's answer feeds the raise, and the samples land where the
+    /// verdict reads them. The real run against real stores is the endpoint
+    /// test below, on the ship gate's two-store shape.
+    /// </summary>
+    private sealed class CannedYard : HttpMessageHandler
+    {
+        public List<(string Store, string Method, string Path, string? Cookie)> Seen { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            string store = request.Headers.TryGetValues(Backends.HeaderName, out var named) ? named.First() : "?";
+            string? cookie = request.Headers.TryGetValues("Cookie", out var cookies) ? cookies.First() : null;
+            Seen.Add((store, request.Method.Method, path, cookie));
+
+            static HttpResponseMessage Json(object body) =>
+                new(HttpStatusCode.OK) { Content = JsonContent.Create(body) };
+
+            HttpResponseMessage response = (request.Method.Method, path) switch
+            {
+                ("POST", "/api/auth/register") or ("POST", "/api/auth/login") => WithSession(Json(new { signed_in = true }), store),
+                ("GET", "/api/vehicles") => Json(new
+                {
+                    total = 2,
+                    vehicles = new object[]
+                    {
+                        // Ends in a minute: not this one.
+                        new { id = "soon", starting_bid = 5000, current_bid = (int?)null, buy_now_price = (int?)null, auction_ends_at = DateTimeOffset.UtcNow.AddMinutes(1).ToUnixTimeMilliseconds() },
+                        new { id = "v1", starting_bid = 5000, current_bid = (int?)null, buy_now_price = (int?)null, auction_ends_at = DateTimeOffset.UtcNow.AddHours(2).ToUnixTimeMilliseconds() },
+                    },
+                }),
+                ("GET", "/api/vehicles/v1") => Json(new { id = "v1", min_next_bid = 5100 }),
+                ("GET", "/api/facets") => Json(new { makes = Array.Empty<string>() }),
+                ("POST", "/api/vehicles/v1/bids") => Json(new { kind = "accepted", amount = 5100, vehicle = new { min_next_bid = 5200 } }),
+                ("DELETE", "/api/bids") => new HttpResponseMessage(HttpStatusCode.NoContent),
+                _ => new HttpResponseMessage(HttpStatusCode.NotFound),
+            };
+            return Task.FromResult(response);
+        }
+
+        private static HttpResponseMessage WithSession(HttpResponseMessage response, string store)
+        {
+            response.Headers.Add("Set-Cookie", $"{TokenIssuer.CookieName}=token-{store}; path=/; httponly");
+            return response;
+        }
+    }
+
+    [Fact]
+    public async Task A_run_walks_every_step_of_a_round_on_both_stores_and_keeps_one_session_per_store()
+    {
+        var yard = new CannedYard();
+        var backends = new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql");
+        var runner = new ProofRunner(
+            backends,
+            new ProofClients(() => new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") }),
+            new SqlRingBuffer(10),
+            new StoreRingBuffer(10));
+
+        var result = await runner.RunAsync(2);
+
+        Assert.Equal("done", result.Status);
+        Assert.Equal(2, result.Rounds);
+        Assert.Equal(new[] { "sql", "cosmos" }, result.Stores.Select(store => store.Key));
+        // One registration per store, two of everything else, all answered.
+        var register = Assert.Single(result.Rows, row => row.Path == "register");
+        Assert.All(register.Cells, cell => Assert.Equal(1, cell.Samples));
+        foreach (var path in ProofRunner.Paths)
+        {
+            var row = Assert.Single(result.Rows, candidate => candidate.Path == path.Key);
+            Assert.All(row.Cells, cell => Assert.Equal(2, cell.Samples));
+            Assert.All(row.Cells, cell => Assert.Equal(0, cell.Failures));
+            Assert.NotNull(row.MedianDifferenceMs);
+        }
+        // The raise was placed at the amount the bid's answer named, and the
+        // vehicle with a minute left was passed over.
+        Assert.Contains(yard.Seen, seen => seen.Method == "POST" && seen.Path == "/api/vehicles/v1/bids");
+        Assert.DoesNotContain(yard.Seen, seen => seen.Path.Contains("/soon/", StringComparison.Ordinal));
+        // The session from each store's registration rode on that store's
+        // later requests and never on the other store's.
+        Assert.All(yard.Seen.Where(seen => seen.Path == "/api/bids"), seen =>
+            Assert.Equal($"{TokenIssuer.CookieName}=token-{seen.Store}", seen.Cookie));
+        // Round order alternates: the second round opened on the other store.
+        var signIns = yard.Seen.Where(seen => seen.Path == "/api/auth/login").Select(seen => seen.Store).ToList();
+        Assert.Equal(new[] { "sql", "cosmos", "cosmos", "sql" }, signIns);
+        // Fake backends have no store to round-trip to, which the result says by leaving the hop out.
+        Assert.All(result.Stores, store => Assert.Null(store.HopMs));
+        Assert.False(string.IsNullOrWhiteSpace(result.Sentence));
+    }
+
+    [Fact]
+    public async Task A_run_on_a_container_with_one_store_says_it_needs_two()
+    {
+        var runner = new ProofRunner(
+            new Backends([FakeBackend.Named("sql", "SQLite")], "sql"),
+            new ProofClients(() => throw new InvalidOperationException("no request should be made")),
+            new SqlRingBuffer(10),
+            new StoreRingBuffer(10));
+
+        var result = await runner.RunAsync(3);
+
+        Assert.Equal("failed", result.Status);
+        Assert.Contains("one store", result.Reason);
+        Assert.Empty(result.Rows);
+    }
+
+    [Fact]
+    public async Task A_registration_that_is_refused_ends_the_run_with_the_status_it_got()
+    {
+        var refusing = new RefusingYard();
+        var runner = new ProofRunner(
+            new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
+            new ProofClients(() => new HttpClient(refusing) { BaseAddress = new Uri("http://yard.test") }),
+            new SqlRingBuffer(10),
+            new StoreRingBuffer(10));
+
+        var result = await runner.RunAsync(1);
+
+        Assert.Equal("failed", result.Status);
+        Assert.Contains("429", result.Reason);
+    }
+
+    private sealed class RefusingYard : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests));
+    }
+    // #endregion canned-run
+
     // #region proof-endpoints-tests
     /// <summary>
     /// The application with the proof pointed back at its own in-memory

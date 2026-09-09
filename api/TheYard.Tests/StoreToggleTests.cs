@@ -66,6 +66,21 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
         Assert.Equal("sql", unnamed.Default.Key);
         Assert.Throws<ArgumentException>(() => new Backends([], null));
     }
+
+    [Fact]
+    public void The_cookie_is_secure_behind_the_edge_and_plain_on_a_developers_machine()
+    {
+        var plain = Backends.CookieFor(Request());
+        Assert.False(plain.Secure);
+        Assert.True(plain.HttpOnly);
+        Assert.Equal(TimeSpan.FromDays(365), plain.MaxAge);
+
+        // The edge terminates TLS and says so in the forwarded header, which
+        // is the only way this container can know the visitor came over https.
+        var forwarded = Request();
+        forwarded.Request.Headers["X-Forwarded-Proto"] = "https";
+        Assert.True(Backends.CookieFor(forwarded).Secure);
+    }
     // #endregion rule
 
     // #region endpoints

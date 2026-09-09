@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1170" viewBox="0 0 1400 1170" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1370" viewBox="0 0 1400 1370" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>TheYard infrastructure: what runs today, how a merge becomes a roll, and the designed production target</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
@@ -26,12 +26,12 @@
     </style>
   </defs>
 
-  <rect width="1400" height="1170" fill="#e9e6e7"/>
-  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-09-03</text>
+  <rect width="1400" height="1370" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-09-09</text>
   <text x="40" y="68" class="caption">Everything in the solid boxes is live and measured; the dashed group is the production design, defined in code and deliberately undeployed.</text>
 
   <!-- ===================== Lane 1: the request path ===================== -->
-  <rect x="40" y="92" width="1320" height="510" class="lane"/>
+  <rect x="40" y="92" width="1320" height="710" class="lane"/>
   <text x="60" y="120" class="lane-title">A request, left to right</text>
   <text x="60" y="140" class="lane-sub">HOSTING.md and ADR-004, ADR-007 record the chain; ADR-010 the Admin tab; ADR-015 the cache rules.</text>
 
@@ -114,9 +114,41 @@
   <text x="195" y="560" class="muted">The deploy warns when a roll lands here (ADR-039 addendum).</text>
 
   <path d="M1070 378 L1070 398" class="flow"/>
+  <!-- Azure Cosmos DB, added 2026-09-08 (ADR-059), and both stores in one process, 2026-09-09 (ADR-066) -->
+  <rect x="800" y="590" width="540" height="176" class="box"/>
+  <text x="815" y="616" class="title">Store: Azure Cosmos DB, RG-THEYARD-SS, westus2</text>
+  <text x="815" y="638" class="mono">cosmos-theyard-ss  free tier  1000 RU/s shared  session consistency  no keys</text>
+  <text x="815" y="660" class="body">Local authentication is disabled on the account, so there is no key to leak; the</text>
+  <text x="815" y="676" class="body">container authenticates as id-theyard-ss with a data-plane role that can read and</text>
+  <text x="815" y="692" class="body">write documents and cannot create a container (ADR-059, ADR-061).</text>
+  <text x="815" y="714" class="body">Four containers hold the catalogue, photos, accounts and bids as documents,</text>
+  <text x="815" y="730" class="body">partitioned on the make, the style, the account and the bidder (ADR-058).</text>
+  <text x="815" y="752" class="muted">Nothing indexed; the definitions are infra/cosmos/*.json (ADR-040 addendum).</text>
+
+  <rect x="180" y="590" width="560" height="176" class="box"/>
+  <text x="195" y="616" class="title">Both stores in one process, since 1.0.0.94</text>
+  <text x="195" y="640" class="body">Every container opens both stores. A cookie set by the Store toggle at the top</text>
+  <text x="195" y="656" class="body">of every page, or a header, picks which one serves a request; the default is</text>
+  <text x="195" y="672" class="body">sql here and cosmos on the second group, aci-theyard-cosmos-ss, which runs the</text>
+  <text x="195" y="688" class="body">same image on its own Azure address. Each Admin tab reads the other's</text>
+  <text x="195" y="704" class="body">numbers through /api/admin/peer, and the proof card sends a visitor's requests</text>
+  <text x="195" y="720" class="body">to the container itself on both stores and says, per path, whether the two</text>
+  <text x="195" y="736" class="body">answer in the same time and whether a difference is the store or its distance.</text>
+  <text x="195" y="760" class="muted">ADR-066 the toggle, ADR-067 the proof, ADR-063 the peer read, ADR-064 the measurement.</text>
+
+  <path d="M1330 378 L1350 378 L1350 678 L1340 678" class="flow"/>
+  <text x="1160" y="586" class="flow-label">the other store, per request</text>
+  <path d="M740 678 L800 678" class="flow"/>
+
   <text x="1082" y="392" class="flow-label">read once at startup, written on every bid</text>
   <path d="M800 486 L740 486" class="target-flow"/>
 
+  <!-- from the ship lane up to the origin: the image pull and the roll, routed between the two store boxes -->
+  <path d="M1060 896 L1060 790 L770 790 L770 378" class="flow"/>
+  <text x="778" y="800" class="flow-label">pulled by id-theyard-ss</text>
+  <path d="M740 896 L740 850 L760 850 L760 378" class="flow" style="stroke-dasharray:6 4"/>
+  <text x="560" y="586" class="flow-label">az container create (roll)</text>
+  <g transform="translate(0,200)">
   <!-- ===================== Lane 2: the ship path ===================== -->
   <rect x="40" y="622" width="1320" height="250" class="lane"/>
   <text x="60" y="650" class="lane-title">A merge becomes a roll, no hands on it</text>
@@ -132,8 +164,8 @@
   <rect x="280" y="696" width="240" height="150" class="box"/>
   <text x="295" y="722" class="title">CI (.github/workflows/ci.yml)</text>
   <text x="295" y="746" class="body">frontend: tsc, vitest, vite build</text>
-  <text x="295" y="762" class="body">api: dotnet test (124 tests)</text>
-  <text x="295" y="778" class="body">e2e: Playwright in Chrome (24)</text>
+  <text x="295" y="762" class="body">api: dotnet test (372 tests)</text>
+  <text x="295" y="778" class="body">e2e: Playwright in Chrome (58)</text>
   <text x="295" y="804" class="body">A red job stops everything below.</text>
   <text x="295" y="828" class="muted">read-only token</text>
 
@@ -151,7 +183,7 @@
   <text x="975" y="746" class="mono">crtheyardsszmnetj67bn5h2</text>
   <text x="975" y="762" class="mono">  .azurecr.io</text>
   <text x="975" y="786" class="body">One tag per version,</text>
-  <text x="975" y="802" class="body">theyard:v12 to v22 today.</text>
+  <text x="975" y="802" class="body">theyard:v12 to v94 today.</text>
 
   <path d="M240 770 L280 770" class="flow"/>
   <path d="M520 770 L560 770" class="flow"/>
@@ -161,11 +193,7 @@
   <text x="922" y="760" class="flow-label">image</text>
 
   <!-- registry to container group (up into lane 1) -->
-  <path d="M1060 696 L1060 650 L1100 650 L1100 378" class="flow"/>
-  <text x="1110" y="642" class="flow-label">pulled by id-theyard-ss</text>
   <!-- deploy rolls the group -->
-  <path d="M740 696 L740 610 L800 610 L800 378" class="flow"/>
-  <text x="590" y="396" class="flow-label">az container create (roll)</text>
 
   <!-- ===================== Lane 3: the production target ===================== -->
   <rect x="40" y="892" width="1320" height="238" class="lane"/>
@@ -206,5 +234,6 @@
   <text x="326" y="1026" class="target-label">locked</text>
   <text x="688" y="1026" class="target-label">runs</text>
 
-  <text x="40" y="1156" class="caption">Source: docs/images/infrastructure.svg in the repository. Names, sizes and roles are the ones the records and the pipeline logs carry; the picture is redrawn when they change.</text>
+  </g>
+  <text x="40" y="1356" class="caption">Source: docs/images/infrastructure.svg in the repository. Names, sizes and roles are the ones the records and the pipeline logs carry; the picture is redrawn when they change.</text>
 </svg>

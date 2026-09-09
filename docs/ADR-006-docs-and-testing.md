@@ -123,3 +123,16 @@ The one record of every document the sidebar can open
 
 ```live path=src/components/DocsMenu.tsx region=docs-record
 ```
+
+## Addendum, 2026-09-09: the picture redrawn for two stores
+
+The infrastructure drawing gained a row: the Azure Cosmos DB store beside the
+Azure SQL one, and a box for both stores in one process with the toggle, the
+peer read and the proof (ADR: One container, both stores; ADR: Same
+performance, proven). The ship lane's arrows up to the origin now route
+between the two store boxes, the counts in the CI box were brought up to the
+suites as they run today, and the date in the heading moved. The preview is
+rendered from the SVG at twice its size by
+[`docs/images/render.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/render.mjs),
+in the repository's own Chrome with the site's font, so the picture on the
+README is the drawing and not a second drawing of it.
