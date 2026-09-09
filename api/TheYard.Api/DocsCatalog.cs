@@ -92,6 +92,7 @@ public static class DocsCatalog
         ["adr-proof"] = "docs/ADR-067-same-performance-proven.md",
         ["adr-five-minute-gate"] = "docs/ADR-068-the-five-minute-gate.md",
         ["adr-second-address"] = "docs/ADR-069-a-permanent-address-for-the-second-site.md",
+        ["adr-side-by-side"] = "docs/ADR-070-sql-server-and-cosmos-db-side-by-side.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
@@ -107,6 +108,7 @@ public static class DocsCatalog
         ["dataflow"] = ("docs/images/dataflow.svg", "TheYard data flow"),
         ["erd"] = ("docs/images/erd.svg", "TheYard's database"),
         ["two-sites"] = ("docs/images/two-sites.svg", "TheYard's two sites"),
+        ["sql-vs-cosmos"] = ("docs/images/sql-vs-cosmos.svg", "SQL Server and Cosmos DB, side by side"),
     };
     // #endregion diagrams
 }

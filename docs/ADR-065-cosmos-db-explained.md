@@ -186,3 +186,16 @@ enjoys, and nothing in the rows says the document store would keep it.
 - [`docs/ADR-064-measuring-both-stores.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-064-measuring-both-stores.md): both containers in one session, with the method.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): the one connection, and the wrapper that writes every charge down.
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): what a container is, in six JSON files.
+
+## Addendum, 2026-09-09: the comparison, laid out beside this
+
+This record teaches the vocabulary and gives the choice; the evidence for the
+choice is now laid out in one place, row by row, with Azure SQL Database on
+the left and Azure Cosmos DB on the right: the same bid at rest in both, the
+same write in both adapters as live code, the same guarantee given by one
+engine and built on the other, the measured numbers and the cost, each row
+naming the record that decided it, and the reading behind each row (ADR: SQL
+Server and Cosmos DB, side by side). Steve asked for it in as many words, "a
+diagram/analysis of SQL Server vs Cosmos DB where the left side is SQL Server
+and the right side is cosmos DB". Read this record first and that one second;
+the drawing on that record's own page is the one to keep open in an interview.

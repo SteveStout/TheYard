@@ -99,6 +99,7 @@ export type DocKey =
   | 'adrProof'
   | 'adrFiveMinuteGate'
   | 'adrSecondAddress'
+  | 'adrSideBySide'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -664,6 +665,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '069',
   },
+  adrSideBySide: {
+    title: 'ADR: SQL Server and Cosmos DB, side by side',
+    menuLabel: 'ADR: SQL Server and Cosmos DB, side by side',
+    url: '/api/docs/adr-side-by-side',
+    kind: 'adr',
+    number: '070',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -789,6 +797,7 @@ export const MENUS: Record<
       { key: 'adrProof' },
       { key: 'adrFiveMinuteGate' },
       { key: 'adrSecondAddress' },
+      { key: 'adrSideBySide' },
     ],
   },
   // #endregion records-menu
