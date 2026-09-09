@@ -63,7 +63,13 @@ public class PeerTests
         Assert.True(peer.GetProperty("configured").GetBoolean());
         Assert.False(peer.GetProperty("reachable").GetBoolean());
         Assert.False(string.IsNullOrWhiteSpace(peer.GetProperty("reason").GetString()));
-        Assert.True(clock.Elapsed < PeerReader.Patience + TimeSpan.FromSeconds(2), $"took {clock.Elapsed}");
+        // A refused connection answers in milliseconds on an idle machine. The
+        // margin is for the suite, not the code: with two stores booting in
+        // every application at once, a timer's callback and a refused socket
+        // both wait their turn on the thread pool, and this took 4.6 seconds
+        // once (ADR: One container, both stores). The claim is "not a hang",
+        // which ten seconds still holds against a peer that never answers.
+        Assert.True(clock.Elapsed < PeerReader.Patience + TimeSpan.FromSeconds(8), $"took {clock.Elapsed}");
         // The type of the failure, never its message: a message names a host and a port.
         Assert.DoesNotContain("127.0.0.1:9", peer.GetProperty("reason").GetString());
     }

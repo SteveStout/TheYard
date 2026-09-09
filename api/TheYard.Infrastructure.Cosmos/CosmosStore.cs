@@ -177,9 +177,16 @@ public sealed class CosmosStore
     // #region seed
     /// <summary>
     /// First boot fills the containers from the files that used to be the
-    /// catalogue, exactly as the relational seed does. "Empty" rather than
-    /// "new", so a process that died mid-seed is not left half seeded forever.
-    /// Two hundred and fifty point writes, one at a time, each one's charge
+    /// catalogue, exactly as the relational seed does. "Short" rather than
+    /// "empty": the relational seed is one transaction and is either all there
+    /// or not there, but these are two hundred and fifty point writes one at a
+    /// time, and a process that died after a hundred of them would have left a
+    /// container that was not empty and not seeded either. The first version
+    /// checked for empty, said in its comment that it did not, and the second
+    /// review caught the difference (ADR: Reviewing my own work, the second
+    /// pass). So a container holding fewer documents than the seed file is
+    /// seeded again with upserts, which put back what is missing and rewrite
+    /// what is there at about the cost of a create each. Each one's charge is
     /// added up: the sum is the number the comparison card shows as the seed
     /// cost, and it is measured rather than estimated
     /// (ADR: A second store on Cosmos DB, and what it costs).
@@ -191,14 +198,15 @@ public sealed class CosmosStore
         int photosAdded = 0;
 
         int vehicleCount = await CountAsync(Vehicles);
-        if (vehicleCount == 0)
+        var seedVehicles = await vehicles.LoadAsync();
+        if (vehicleCount < seedVehicles.Count)
         {
             int seq = 0;
-            foreach (var vehicle in await vehicles.LoadAsync())
+            foreach (var vehicle in seedVehicles)
             {
                 var document = vehicle.ToDocument(seq++);
-                var response = await Timed(Vehicles, StoreOperationKind.PointWrite, "CreateItem (seed)", [], "pinned to the make", 1,
-                    () => Vehicles.CreateItemAsync(document, new PartitionKey(document.Make)), r => r.Cost());
+                var response = await Timed(Vehicles, StoreOperationKind.PointWrite, "UpsertItem (seed)", [], "pinned to the make", 1,
+                    () => Vehicles.UpsertItemAsync(document, new PartitionKey(document.Make)), r => r.Cost());
                 charge += response.RequestCharge;
                 vehiclesAdded++;
             }
@@ -206,14 +214,15 @@ public sealed class CosmosStore
         }
 
         int photoCount = await CountAsync(Photos);
-        if (photoCount == 0)
+        var seedPhotos = await photos.LoadAsync();
+        if (photoCount < seedPhotos.Count)
         {
             int seq = 0;
-            foreach (var photo in await photos.LoadAsync())
+            foreach (var photo in seedPhotos)
             {
                 var document = photo.ToDocument(seq++);
-                var response = await Timed(Photos, StoreOperationKind.PointWrite, "CreateItem (seed)", [], "pinned to the style", 1,
-                    () => Photos.CreateItemAsync(document, new PartitionKey(document.Style)), r => r.Cost());
+                var response = await Timed(Photos, StoreOperationKind.PointWrite, "UpsertItem (seed)", [], "pinned to the style", 1,
+                    () => Photos.UpsertItemAsync(document, new PartitionKey(document.Style)), r => r.Cost());
                 charge += response.RequestCharge;
                 photosAdded++;
             }
@@ -398,6 +407,14 @@ public sealed class CosmosStore
         catch (CosmosException ex)
         {
             Record(container, kind, text, parameters, partitionLabel, physical, ex.RequestCharge, clock.Elapsed, "failed: " + (int)ex.StatusCode);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // A refused batch throws its own exception, and the first version
+            // let it pass unrecorded: the one operation that failed was the one
+            // operation the page could not show (the second review).
+            Record(container, kind, text, parameters, partitionLabel, physical, 0, clock.Elapsed, "failed: " + ex.GetType().Name);
             throw;
         }
     }

@@ -17,7 +17,7 @@ namespace TheYard.Infrastructure.Cosmos;
 /// the claim by address and then the account by id; "who am I" is one; a failed
 /// password is one replace. Nothing here queries.</para>
 /// </summary>
-public sealed class CosmosUserStore(CosmosStore store) :
+public sealed class CosmosUserStore(CosmosStore store, TimeSpan? orphanAge = null) :
     IUserStore<YardUser>,
     IUserPasswordStore<YardUser>,
     IUserEmailStore<YardUser>,
@@ -132,8 +132,29 @@ public sealed class CosmosUserStore(CosmosStore store) :
     {
         string claimId = EmailClaimDocument.IdFor(normalizedEmail);
         var claim = await store.ReadAsync<EmailClaimDocument>(store.Users, claimId, claimId, ClaimPartition);
-        return claim is null ? null : await FindByIdAsync(claim.UserId, cancellationToken);
+        if (claim is null)
+        {
+            return null;
+        }
+        var user = await FindByIdAsync(claim.UserId, cancellationToken);
+        if (user is null && IsOrphan(claim))
+        {
+            // A claim with no account behind it is a registration that died
+            // between its two writes, and until this line existed the address
+            // was refused forever. Removed only once it is older than the
+            // longest a registration takes, so a claim written a moment ago by
+            // a registration still in flight is left alone (the second review).
+            await TryDeleteClaimAsync(claimId);
+        }
+        return user;
     }
+
+    /// <summary>How long a claim may stand without its account before a lookup treats it as abandoned.</summary>
+    public TimeSpan OrphanAge { get; } = orphanAge ?? TimeSpan.FromMinutes(1);
+
+    private bool IsOrphan(EmailClaimDocument claim) =>
+        claim.Timestamp is { } written
+        && DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeSeconds(written) >= OrphanAge;
 
     public Task<YardUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken) =>
         FindByEmailAsync(normalizedUserName, cancellationToken);

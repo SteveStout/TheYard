@@ -492,6 +492,19 @@ the field fills up. The one-day time to live keeps the containers from growing
 without bound; it does not make a run start clean, and nothing here pretends
 it does.
 
+## Addendum, 2026-09-08: the second store stopped being instead of the first
+
+Later the same day the two stores moved into one process (ADR: One container,
+both stores). For this record that changes one sentence and one gate. The
+sentence: `YardConnection.Choose` no longer picks Cosmos DB instead of the
+relational store; a container runs every store it is configured for, and the
+endpoint setting adds a backend rather than replacing one. The gate: "the
+whole suite booted on Cosmos DB" now boots every application on both stores
+with Cosmos DB as the default, which exercises the per-request selection on
+every test as well as the store. The cost arithmetic above is unchanged, and
+so is the free tier; the second container now also opens the SQL Server
+connection the first one opens, with the same identity.
+
 ## Files
 
 - [`mentor\TASK-AUTH-2026-09-08-cosmos.md`](https://github.com/SteveStout/TheYard): the written pre-approval, outside the repository because it names principals.

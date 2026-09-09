@@ -88,6 +88,8 @@ public static class DocsCatalog
         ["adr-backends"] = "docs/ADR-063-backends-side-by-side.md",
         ["adr-measuring-stores"] = "docs/ADR-064-measuring-both-stores.md",
         ["adr-cosmos-explained"] = "docs/ADR-065-cosmos-db-explained.md",
+        ["adr-one-container"] = "docs/ADR-066-one-container-both-stores.md",
+        ["adr-proof"] = "docs/ADR-067-same-performance-proven.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",

@@ -35,18 +35,30 @@ properties:
       # clean rather than sending to nowhere.
       - name: APPLICATIONINSIGHTS_CONNECTION_STRING
         secureValue: __APPINSIGHTS_CONNECTION_STRING__
-      # Azure Cosmos DB, in place of the SQL connection string. An account
-      # endpoint is a URL, the database is a name, and the credential is the
-      # container's own managed identity, so all three are plain values: there
-      # is no key on the account to have leaked. No SQL setting at all, so
-      # YardConnection.Choose sees the endpoint first and never looks further
-      # (ADR: A second store on Cosmos DB, and what it costs).
+      # Azure Cosmos DB. An account endpoint is a URL, the database is a name,
+      # and the credential is the container's own managed identity, so all
+      # three are plain values: there is no key on the account to have leaked
+      # (ADR: A second store on Cosmos DB, and what it costs). The default
+      # names the store a request gets when it names none, which on this
+      # container is the document one; the toggle at the top of the page picks
+      # the other (ADR: One container, both stores).
       - name: Cosmos__AccountEndpoint
         value: https://cosmos-theyard-ss.documents.azure.com:443/
       - name: Cosmos__Database
         value: theyard
       - name: Cosmos__Credential
         value: managed-identity
+      - name: Store__Default
+        value: cosmos
+      - name: Store__WarmOthers
+        value: "true"
+      # Azure SQL Database, substituted at roll time by the Deploy Cosmos
+      # workflow with the same composed connection string Deploy writes for the
+      # live site: a server, a database and the managed identity, no password.
+      # The same placeholder rule: a failed substitution reads as "no SQL
+      # Server here" and this container runs the document store beside SQLite.
+      - name: ConnectionStrings__YardSql
+        secureValue: __YARD_SQL_CONNECTION__
       # This group's own ARM path, so the Admin tab's "Azure's view of the
       # container" card reads this container and not the other one. An
       # identifier, not a secret (ADR-010).

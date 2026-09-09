@@ -42,6 +42,26 @@ properties:
       # crash-looping.
       - name: ConnectionStrings__YardSql
         secureValue: __YARD_SQL_CONNECTION__
+      # Azure Cosmos DB, beside the SQL setting rather than instead of it: this
+      # container runs both stores and a visitor picks one with the toggle at
+      # the top of the page (ADR: One container, both stores). An endpoint is a
+      # URL, the database is a name, and the credential is the container's own
+      # managed identity, so all three are plain values: there is no key on the
+      # account to have leaked. The default names the store a request gets when
+      # it names none, which on the live site is the relational one.
+      - name: Cosmos__AccountEndpoint
+        value: https://cosmos-theyard-ss.documents.azure.com:443/
+      - name: Cosmos__Database
+        value: theyard
+      - name: Cosmos__Credential
+        value: managed-identity
+      - name: Store__Default
+        value: sql
+      # Warm the other store right after the default one is serving, so the
+      # first visitor to toggle does not pay for its catalogue. Off outside a
+      # deploy, where ten test applications at once would each warm two.
+      - name: Store__WarmOthers
+        value: "true"
       # The other container, for the Admin tab's comparison card (ADR: Backends,
       # side by side). A public origin, read server side with a short patience,
       # and a plain value because a URL is not a secret.

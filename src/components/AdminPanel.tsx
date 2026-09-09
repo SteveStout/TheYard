@@ -87,6 +87,19 @@ type Startup = {
   ready_ms: number | null;
   started_at: string;
 };
+type SqlSummary = { window: number; p50_ms: number; p95_ms: number; max_ms: number };
+/** One store this container runs, on the rows the comparison card draws (ADR: One container, both stores). */
+type BackendMetrics = {
+  key: string;
+  store: string;
+  ready: boolean;
+  default: boolean;
+  startup: Startup;
+  requests: { window: number; p50_ms: number; p95_ms: number; by_route: RouteTiming[] };
+  store_metrics: StoreSummary | null;
+  store_by_route: RouteCharge[];
+  sql: SqlSummary | null;
+};
 type Metrics = {
   requests: {
     window: number;
@@ -96,10 +109,12 @@ type Metrics = {
     by_route: RouteTiming[];
   };
   by_status: StatusCount[];
-  sql: { window: number; p50_ms: number; p95_ms: number; max_ms: number };
+  sql: SqlSummary;
   store: StoreSummary;
   store_by_route: RouteCharge[];
   startup: Startup;
+  /** Absent from a peer on an older build, so read as optional. */
+  backends?: BackendMetrics[];
 };
 type Peer = {
   configured: boolean;
@@ -191,6 +206,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
   const [peer, setPeer] = useState<Fetched<Peer>>(null);
   const [store, setStore] = useState<Fetched<StoreLog>>(null);
   const [experiment, setExperiment] = useState<Fetched<Experiment>>(null);
+  const [proof, setProof] = useState<Fetched<Proof>>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -222,10 +238,44 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
     void grab<Peer>('/api/admin/peer', setPeer);
     void grab<StoreLog>('/api/admin/store', setStore);
     void grab<Experiment>('/api/admin/experiment', setExperiment);
+    void grab<Proof>('/api/admin/proof', setProof);
     return () => {
       live = false;
     };
   }, [tick]);
+
+  // #region run-proof
+  // Start a run, then read the card every three seconds until it is no longer
+  // running, because the thirty-second refresh above would leave the button
+  // saying "Running" long after the result had landed.
+  const runProof = async () => {
+    const started = await fetch('/api/admin/proof', { method: 'POST' }).catch(() => null);
+    if (started === null || (!started.ok && started.status !== 409)) {
+      setProof('failed');
+      return;
+    }
+    setProof((prior) => ({
+      status: 'running',
+      result: prior !== null && prior !== 'failed' ? prior.result : null,
+    }));
+    const poll = window.setInterval(() => {
+      void fetch('/api/admin/proof')
+        .then((r) =>
+          r.ok ? (r.json() as Promise<Proof>) : Promise.reject(new Error(String(r.status)))
+        )
+        .then((latest) => {
+          if (latest.status !== 'running') {
+            window.clearInterval(poll);
+            setProof(latest);
+          }
+        })
+        .catch(() => {
+          window.clearInterval(poll);
+          setProof('failed');
+        });
+    }, 3000);
+  };
+  // #endregion run-proof
 
   const pill = (ok: boolean) =>
     ok ? `${styles.pill} ${styles.ok}` : `${styles.pill} ${styles.bad}`;
@@ -254,12 +304,14 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
       <article className={styles.wide} data-testid="backends-card">
         <h2 className={styles.cardTitle}>Backends, side by side</h2>
         <p className={styles.muted}>
-          This container and its peer on the same rows: the store each is on, how long each took to
-          come up, what the seed cost, and how long the things a visitor does take on each, with the
-          request charge beside every number the document store can put one on. The peer is read
-          through this container&rsquo;s own API with two and a half seconds of patience, so a peer
-          that is down is a sentence here and not a hang. Cold start and seed are measured on each
-          container at its own start; the rest is the last few hundred requests each has seen.
+          The two stores on the same rows: how long each took to come up, what the seed cost, and
+          how long the things a visitor does take on each, with the request charge beside every
+          number the document store can put one on. A container that runs both stores compares them
+          with each other, in one process, the one serving this visit first; a container that runs
+          one compares itself with its peer, read through its own API with two and a half seconds of
+          patience, so a peer that is down is a sentence here and not a hang. Cold start and seed
+          are measured on each store at its own start; the rest is the last few hundred requests
+          each has served.
         </p>
         {metrics === null || peer === null ? (
           <p className={styles.muted}>Loading…</p>
@@ -270,6 +322,8 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
         )}
       </article>
       {/* #endregion backends-card */}
+
+      <ProofCard proof={proof} onRun={() => void runProof()} />
 
       {/* #region experiment-card */}
       <article className={styles.wide} data-testid="experiment-card">
@@ -574,9 +628,18 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
       {/* #endregion timing-section */}
 
       {/* #region sql-section */}
+      {/* The document store's card when this container has a document store,
+          the SQL card when it has a relational one, and both when it runs both
+          (ADR: One container, both stores). */}
       {store !== null && store !== 'failed' && store.store === 'Azure Cosmos DB' ? (
         <StoreCard log={store} />
-      ) : (
+      ) : null}
+      {store === null ||
+      store === 'failed' ||
+      store.store !== 'Azure Cosmos DB' ||
+      (metrics !== null &&
+        metrics !== 'failed' &&
+        (metrics.backends ?? []).some((backend) => backend.sql !== null)) ? (
         <article className={styles.wide} data-testid="sql-card">
           <h2 className={styles.cardTitle}>The SQL this application ran</h2>
           <p className={styles.muted}>
@@ -633,7 +696,7 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
             </div>
           )}
         </article>
-      )}
+      ) : null}
       {/* #endregion sql-section */}
 
       {/* #region log-section */}
@@ -716,13 +779,214 @@ function msAndRu(value: number | null | undefined, ru: number | null | undefined
   return ru === null || ru === undefined ? time : `${time} · ${ru} RU`;
 }
 
-// #region comparison
+// #region proof-card
+type ProofCell = {
+  store: string;
+  samples: number;
+  p50_ms: number;
+  p95_ms: number;
+  operations_per_request: number;
+  request_units_per_request: number | null;
+  failures: number;
+};
+type ProofRow = {
+  path: string;
+  label: string;
+  cells: ProofCell[];
+  median_difference_ms: number | null;
+  difference_without_hops_ms: number | null;
+  verdict: string;
+};
+type ProofResult = {
+  status: 'done' | 'failed';
+  reason: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  rounds: number;
+  stores: { key: string; name: string; hop_ms: number | null }[];
+  rows: ProofRow[];
+  sentence: string;
+};
+type Proof = { status: 'idle' | 'running' | 'done' | 'failed'; result: ProofResult | null };
+
 /**
- * Two columns, this container first, on the same rows. The peer's column is
- * whatever /api/admin/peer relayed, and when it relayed nothing the column
- * says why and the rest of the card stands (ADR: Backends, side by side).
+ * The performance proof, run on demand and read back every refresh (ADR: Same
+ * performance, proven). The button starts a run in the container; the card
+ * says it is running until the result lands, then shows every path on both
+ * stores with the paired difference and a verdict, and the sentence the
+ * whole card adds up to.
  */
-function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
+function ProofCard({ proof, onRun }: { proof: Fetched<Proof>; onRun: () => void }) {
+  const running = proof !== null && proof !== 'failed' && proof.status === 'running';
+  const result = proof !== null && proof !== 'failed' ? proof.result : null;
+  return (
+    <article className={styles.wide} data-testid="proof-card">
+      <h2 className={styles.cardTitle}>Same performance, proven</h2>
+      <p className={styles.muted}>
+        The same requests a visitor makes, sent by this container to itself on both stores in paired
+        rounds that alternate which store goes first: identical process, identical request, only the
+        store differs. Each row is one path; the difference is the median of the paired differences,
+        and the last column but one takes one round trip per store operation off each side, so the
+        difference the stores make can be told from the difference their distance makes. Two
+        throwaway accounts, one per store, and about half a minute.
+      </p>
+      <p>
+        <button
+          type="button"
+          className={styles.back}
+          onClick={onRun}
+          disabled={running}
+          data-testid="proof-run"
+        >
+          {running ? 'Running…' : result === null ? 'Run the proof' : 'Run it again'}
+        </button>
+      </p>
+      {proof === null ? (
+        <p className={styles.muted}>Loading…</p>
+      ) : proof === 'failed' ? (
+        <p className={styles.muted} data-testid="card-failed">
+          Could not read the proof on the last try; the next try is in 30 seconds.
+        </p>
+      ) : result === null ? (
+        <p className={styles.muted} data-testid="proof-note">
+          {running
+            ? 'Running. The result lands here within a minute.'
+            : 'Not run yet on this container. The button runs it; the result stays until the next deploy.'}
+        </p>
+      ) : result.status === 'failed' ? (
+        <p className={styles.muted} data-testid="proof-note">
+          {result.reason}
+        </p>
+      ) : (
+        <>
+          <p data-testid="proof-sentence">{result.sentence}</p>
+          <p className={styles.muted}>
+            {result.rounds} paired rounds, finished{' '}
+            {result.finished_at ? new Date(result.finished_at).toLocaleTimeString() : ''}. One round
+            trip to the store:{' '}
+            {result.stores.map((s) => `${s.hop_ms ?? '?'} ms to ${s.name}`).join(', ')}.
+          </p>
+          <div className={styles.tableWrap} role="region" aria-label="The proof" tabIndex={0}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Path</th>
+                  {result.stores.map((s) => (
+                    <th scope="col" key={s.key}>
+                      {s.name}
+                    </th>
+                  ))}
+                  <th scope="col">Difference</th>
+                  <th scope="col">Without the round trips</th>
+                  <th scope="col">Verdict</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.rows.map((row) => (
+                  <tr key={row.path}>
+                    <td>{row.label}</td>
+                    {row.cells.map((cell) => (
+                      <td className={styles.mono} key={cell.store}>
+                        {cell.samples === 0
+                          ? 'not measured'
+                          : `p50 ${cell.p50_ms} ms, p95 ${cell.p95_ms} ms (${cell.samples})` +
+                            (cell.request_units_per_request === null
+                              ? ''
+                              : ` · ${cell.request_units_per_request} RU`) +
+                            (cell.operations_per_request > 0
+                              ? `, ${cell.operations_per_request} ops`
+                              : '')}
+                      </td>
+                    ))}
+                    <td className={styles.mono}>
+                      {row.median_difference_ms === null ? '' : signed(row.median_difference_ms)}
+                    </td>
+                    <td className={styles.mono}>
+                      {row.difference_without_hops_ms === null
+                        ? ''
+                        : signed(row.difference_without_hops_ms)}
+                    </td>
+                    <td>{row.verdict}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </article>
+  );
+}
+
+/** A difference with its sign, so a column of them reads as a column. */
+function signed(ms: number): string {
+  return ms > 0 ? `+${ms} ms` : `${ms} ms`;
+}
+// #endregion proof-card
+
+// #region comparison
+/** One column of the comparison: a store, wherever it runs, on the rows the card draws. */
+type Column = {
+  title: string;
+  store: string;
+  startup: Startup;
+  requests: { window: number; p50_ms: number; p95_ms: number; by_route: RouteTiming[] };
+  charges: RouteCharge[];
+  storeOps: string;
+};
+
+function storeOpsLine(store: StoreSummary | null, sql: SqlSummary | null): string {
+  if (store !== null) {
+    return `p50 ${store.p50_ms} ms, p95 ${store.p95_ms} ms, ${store.ru_total} RU over ${store.window}, ${store.cross_partition} cross-partition`;
+  }
+  if (sql !== null) {
+    return `p50 ${sql.p50_ms} ms, p95 ${sql.p95_ms} ms over ${sql.window} statements`;
+  }
+  return '';
+}
+
+/** A whole container's metrics as one column, which is what a peer answers with. */
+function columnOf(title: string, m: Metrics): Column {
+  const cosmos = m.store.store === 'Azure Cosmos DB';
+  return {
+    title,
+    store: m.store.store,
+    startup: m.startup,
+    requests: m.requests,
+    charges: cosmos ? m.store_by_route : [],
+    storeOps: storeOpsLine(cosmos ? m.store : null, cosmos ? null : m.sql),
+  };
+}
+
+/** One store of a container that runs more than one (ADR: One container, both stores). */
+function columnOfBackend(backend: BackendMetrics, current: boolean): Column {
+  return {
+    title: current ? `${backend.store}, serving this visit` : backend.store,
+    store: backend.store,
+    startup: backend.startup,
+    requests: backend.requests,
+    charges: backend.store_by_route,
+    storeOps: storeOpsLine(backend.store_metrics, backend.sql),
+  };
+}
+
+/**
+ * The columns the card compares. A container running both stores compares
+ * them with each other, in one process, the current one first; a container
+ * running one compares itself with its peer, whatever /api/admin/peer relayed,
+ * and when it relayed nothing the column says why and the rest of the card
+ * stands (ADR: Backends, side by side).
+ */
+function columns(mine: Metrics, peer: Peer | null): { columns: Column[]; note: string | null } {
+  const backends = mine.backends ?? [];
+  if (backends.length > 1) {
+    const current = backends.find((b) => b.store === mine.store.store) ?? backends[0];
+    const ordered = [current, ...backends.filter((b) => b !== current)];
+    return {
+      columns: ordered.map((b) => columnOfBackend(b, b === current)),
+      note: 'Both stores run in this container, so the two columns share a process, a region and a request ring; only the store differs.',
+    };
+  }
   const theirs = peer !== null && peer.reachable ? peer.metrics : null;
   const peerTitle =
     peer === null
@@ -733,69 +997,72 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
           ? `The other site (${peer.metrics?.store.store ?? 'store unknown'})`
           : `The other site is not answering`;
   const peerNote = peer !== null && peer.configured && !peer.reachable ? peer.reason : null;
-  const isCosmos = (m: Metrics | null) => m !== null && m.store.store === 'Azure Cosmos DB';
+  const empty: Column = {
+    title: peerTitle,
+    store: '',
+    startup: {
+      ...mine.startup,
+      ready_ms: null,
+      schema_ms: 0,
+      seed_ms: 0,
+      seed_ru: null,
+      catalogue_ms: null,
+      bids_ms: null,
+    },
+    requests: { window: 0, p50_ms: 0, p95_ms: 0, by_route: [] },
+    charges: [],
+    storeOps: '',
+  };
+  return {
+    columns: [
+      columnOf(`This site (${mine.store.store})`, mine),
+      theirs === null ? empty : columnOf(peerTitle, theirs),
+    ],
+    note: peerNote,
+  };
+}
 
-  const routeCell = (m: Metrics | null, route: string): string => {
-    if (m === null) return '';
-    const timing = m.requests.by_route.find((r) => r.route === route);
+function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
+  const { columns: cols, note } = columns(mine, peer);
+  const blank = (column: Column) => column.store === '';
+
+  const routeCell = (column: Column, route: string): string => {
+    if (blank(column)) return '';
+    const timing = column.requests.by_route.find((r) => r.route === route);
     if (timing === undefined) return 'not seen yet';
-    const charge = isCosmos(m) ? m.store_by_route.find((r) => r.route === route) : undefined;
+    const charge = column.charges.find((r) => r.route === route);
     const time = `p50 ${timing.p50_ms} ms, p95 ${timing.p95_ms} ms (${timing.count})`;
     return charge === undefined ? time : `${time} · ${charge.ru_p50} RU`;
   };
 
-  const rows: { label: string; mine: string; theirs: string }[] = [
-    { label: 'Store', mine: mine.store.store, theirs: theirs?.store.store ?? '' },
+  const rows: { label: string; cells: (column: Column) => string }[] = [
+    { label: 'Store', cells: (c) => c.store },
     {
       label: 'Cold start, process start to ready',
-      mine: ms(mine.startup.ready_ms),
-      theirs: theirs === null ? '' : ms(theirs.startup.ready_ms),
+      cells: (c) => (blank(c) ? '' : ms(c.startup.ready_ms)),
     },
     {
       label: 'Store check (schema or containers)',
-      mine: ms(mine.startup.schema_ms),
-      theirs: theirs === null ? '' : ms(theirs.startup.schema_ms),
+      cells: (c) => (blank(c) ? '' : ms(c.startup.schema_ms)),
     },
     {
       label: 'Seed, first boot only',
-      mine: msAndRu(mine.startup.seed_ms, mine.startup.seed_ru),
-      theirs: theirs === null ? '' : msAndRu(theirs.startup.seed_ms, theirs.startup.seed_ru),
+      cells: (c) => (blank(c) ? '' : msAndRu(c.startup.seed_ms, c.startup.seed_ru)),
     },
-    {
-      label: 'Catalogue load',
-      mine: ms(mine.startup.catalogue_ms),
-      theirs: theirs === null ? '' : ms(theirs.startup.catalogue_ms),
-    },
-    {
-      label: 'Bids load',
-      mine: ms(mine.startup.bids_ms),
-      theirs: theirs === null ? '' : ms(theirs.startup.bids_ms),
-    },
+    { label: 'Catalogue load', cells: (c) => (blank(c) ? '' : ms(c.startup.catalogue_ms)) },
+    { label: 'Bids load', cells: (c) => (blank(c) ? '' : ms(c.startup.bids_ms)) },
     {
       label: 'Requests, all paths',
-      mine: `p50 ${mine.requests.p50_ms} ms, p95 ${mine.requests.p95_ms} ms (${mine.requests.window})`,
-      theirs:
-        theirs === null
+      cells: (c) =>
+        blank(c)
           ? ''
-          : `p50 ${theirs.requests.p50_ms} ms, p95 ${theirs.requests.p95_ms} ms (${theirs.requests.window})`,
+          : `p50 ${c.requests.p50_ms} ms, p95 ${c.requests.p95_ms} ms (${c.requests.window})`,
     },
     ...COMPARED_ROUTES.map((entry) => ({
       label: entry.label,
-      mine: routeCell(mine, entry.route),
-      theirs: routeCell(theirs, entry.route),
+      cells: (c: Column) => routeCell(c, entry.route),
     })),
-    {
-      label: 'Store operations, this window',
-      mine: isCosmos(mine)
-        ? `p50 ${mine.store.p50_ms} ms, p95 ${mine.store.p95_ms} ms, ${mine.store.ru_total} RU over ${mine.store.window}, ${mine.store.cross_partition} cross-partition`
-        : `p50 ${mine.sql.p50_ms} ms, p95 ${mine.sql.p95_ms} ms over ${mine.sql.window} statements`,
-      theirs:
-        theirs === null
-          ? ''
-          : isCosmos(theirs)
-            ? `p50 ${theirs.store.p50_ms} ms, p95 ${theirs.store.p95_ms} ms, ${theirs.store.ru_total} RU over ${theirs.store.window}, ${theirs.store.cross_partition} cross-partition`
-            : `p50 ${theirs.sql.p50_ms} ms, p95 ${theirs.sql.p95_ms} ms over ${theirs.sql.window} statements`,
-    },
+    { label: 'Store operations, this window', cells: (c) => c.storeOps },
   ];
 
   return (
@@ -804,22 +1071,28 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
         <thead>
           <tr>
             <th scope="col">Measured</th>
-            <th scope="col">This site ({mine.store.store})</th>
-            <th scope="col">{peerTitle}</th>
+            {cols.map((column) => (
+              <th scope="col" key={column.title}>
+                {column.title}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.label}>
               <td>{row.label}</td>
-              <td className={styles.mono}>{row.mine}</td>
-              <td className={styles.mono}>{row.theirs}</td>
+              {cols.map((column) => (
+                <td className={styles.mono} key={column.title}>
+                  {row.cells(column)}
+                </td>
+              ))}
             </tr>
           ))}
-          {peerNote !== null ? (
+          {note !== null ? (
             <tr>
-              <td className={styles.muted} colSpan={3} data-testid="peer-note">
-                {peerNote}
+              <td className={styles.muted} colSpan={cols.length + 1} data-testid="peer-note">
+                {note}
               </td>
             </tr>
           ) : null}

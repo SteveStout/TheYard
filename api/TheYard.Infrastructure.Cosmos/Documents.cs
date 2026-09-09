@@ -173,6 +173,16 @@ public sealed class EmailClaimDocument
     public string Id { get; set; } = "";
     public string UserId { get; set; } = "";
 
+    /// <summary>
+    /// When the store last wrote it, in seconds since the epoch, set by the
+    /// service and never by this code: null on the way in, so nothing is
+    /// written, and the service's own value on the way back. The account
+    /// store reads it to tell an orphaned claim from one whose account is a
+    /// moment away (ADR: Accounts on a document store, addendum).
+    /// </summary>
+    [JsonPropertyName("_ts")]
+    public long? Timestamp { get; set; }
+
     public static string IdFor(string normalizedEmail) => Prefix + normalizedEmail;
 }
 // #endregion documents

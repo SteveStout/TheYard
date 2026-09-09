@@ -43,9 +43,10 @@ flowchart LR
   end
 
   subgraph cosmos["Azure, resource group RG-THEYARD-SS, West US 2, the second container"]
-    ACI2["Container Instances<br/>aci-theyard-cosmos-ss, the same image"]
+    ACI2["Container Instances<br/>aci-theyard-cosmos-ss, the same image, Cosmos DB by default"]
     COSMOS[("Azure Cosmos DB<br/>cosmos-theyard-ss, free tier, no keys<br/>the same four things, as documents")]
     ACI2 -->|managed identity| COSMOS
+    ACI2 -->|managed identity| SQL
     ACI2 <-->|/api/admin/peer, 2.5 s patience| ACI
   end
 
@@ -61,6 +62,7 @@ flowchart LR
   ACI --> API
   API --> SPA
   API -->|read once at startup, expanded to 100,000| SQL
+  API -->|the other store, chosen per request by the toggle| COSMOS
   API -.->|when SQL is unreachable| FILE
   MI -.->|db_datareader, db_datawriter| SQL
   SEED -.->|first boot only| SQL

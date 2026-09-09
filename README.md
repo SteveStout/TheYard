@@ -17,7 +17,7 @@ it has sent and how long the database took.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Sixty-five decision
+App Architecture, Hosting, CI/CD and Best Practices in the sidebar. Sixty-seven decision
 records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -192,10 +192,12 @@ each with its own changelog line and, where it decided something, its own record
   origin lock), deliberately undeployed and explained on the Hosting page.
 - **Database:** Azure SQL Database through EF Core, behind the same ports the JSON
   readers used to answer, with SQLite for local development and CI because neither has
-  an Azure credential and neither should need one. And, since 1.0.0.91, a second
-  container on Azure Cosmos DB behind the same ports, same image, so the two stores can
-  be compared from two tabs, with the request charge beside every operation on the
-  Admin tab and the numbers in the records. There is no password anywhere: the
+  an Azure credential and neither should need one. And, since 1.0.0.89, Azure Cosmos
+  DB behind the same ports: first as a second container, and since 1.0.0.94 side by
+  side with the relational store in the same container, with a Store toggle at the top
+  of every page that picks which one serves the visit, the request charge beside every
+  operation on the Admin tab, a proof card that runs the same requests against both
+  stores in paired rounds, and the numbers in the records. There is no password anywhere: the
   server was created Entra-only, so it has no SQL login to have one, and the container
   authenticates as the managed identity it already carried. The schema is a SQL project
   of hand-written DDL that compiles to a DACPAC and is the authority; EF maps to it and a
@@ -228,7 +230,7 @@ each with its own changelog line and, where it decided something, its own record
 - **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
   Best Practices, Changelog and About, holding the architecture and style pages, the
   data flow, infrastructure and entity relationship diagrams on their own zoomable
-  pages, sixty-five decision records in one numbered index, the Bicep infrastructure, my resume, and
+  pages, sixty-seven decision records in one numbered index, the Bicep infrastructure, my resume, and
   How this was built, which says plainly that an AI agent wrote most of this and
   points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -380,7 +382,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (355 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (372 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -399,7 +401,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (63 Vitest tests at 1.0.0.92):** presentation logic only, since the API owns the rules.
+**Frontend (70 Vitest tests at 1.0.0.94):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,
@@ -407,7 +409,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (55 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (58 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a

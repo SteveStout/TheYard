@@ -63,9 +63,19 @@ string? configuredSqlServer = builder.Configuration.GetConnectionString("YardSql
 // Azure Cosmos DB, when there is an account to talk to (ADR: A second store on
 // Cosmos DB, and what it costs). A URL and not a credential: the account has no
 // keys, and the container authenticates as the managed identity it already
-// carries. Set on the second container only, so the first one and every
-// developer machine never see this branch.
+// carries. Not instead of the relational store: beside it. A container with
+// both settings runs both stores and a visitor picks one with the toggle at
+// the top of the page (ADR: One container, both stores). The same placeholder
+// rule as the SQL setting: a failed substitution at roll time reads as "no
+// Cosmos DB here", never as an address.
 string? configuredCosmos = builder.Configuration["Cosmos:AccountEndpoint"];
+bool cosmosConfigured = !string.IsNullOrWhiteSpace(configuredCosmos)
+    && !configuredCosmos.StartsWith("__", StringComparison.Ordinal);
+// Which store a request gets when it names none: "sql" or "cosmos". The live
+// site says sql; the second container says cosmos; a developer or a test
+// run that configured the document store and said nothing gets it, which is
+// what "the whole suite booted on Cosmos DB" has meant since 1.0.0.89.
+string? configuredDefaultStore = builder.Configuration["Store:Default"];
 string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
 // Pooling off for a scratch database, which is what makes it deletable
 // without a process-wide ClearAllPools. That call empties the pool for every
@@ -74,12 +84,24 @@ string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Gui
 // pulling connections out from under the others (the staff review, 2026-09-03,
 // confirmed by a test that passed alone and failed in the suite).
 string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase};Pooling=False";
-var yard = YardConnection.Choose(configuredCosmos, configuredSqlServer, databaseConnection);
+// The relational store is always one of the two: SQL Server when the deploy
+// gave one, SQLite otherwise, and "yard" keeps its name because most of this
+// file only ever needs the relational side's answer.
+var yard = YardConnection.Choose(configuredSqlServer, databaseConnection);
 // The document store's operations, for the Admin tab, created before the store
 // is so the container checks and the seed are the first lines in it: the cold
 // start is the operation the comparison card most wants to show
 // (ADR: What the store is actually doing).
 var storeLog = new StoreRingBuffer(200);
+// The SQL ring, its sibling, created here for the same reason: the seed's
+// statements are the first lines in it (ADR: What the database is actually doing).
+var sqlLog = new SqlRingBuffer(200);
+// The request describer, built by hand rather than resolved, because the
+// interceptor that feeds the SQL ring exists before the container does and
+// both stores need it. Registered below so the rest of the application shares
+// this one instance.
+var httpContextAccessor = new HttpContextAccessor();
+var currentRequest = new HttpCurrentRequest(httpContextAccessor);
 #endregion persistence
 
 #region migrate-and-seed
@@ -90,17 +112,80 @@ var storeLog = new StoreRingBuffer(200);
 // shape it half recognises. The JSON readers are still where a fresh database
 // gets its contents, which keeps `npm run data` the way the dataset is
 // regenerated and means the seed cannot drift from the file it came from.
-var startup = new StartupTimings();
-CosmosStore? cosmos = null;
-DatabaseState database;
-if (yard.Provider == YardProvider.Cosmos)
+//
+// Two stores, two of everything below: each store is brought up on its own,
+// timed on its own, and stands behind its own catalogue, bids, room and
+// accounts (ADR: One container, both stores). What a request gets is decided
+// per request, further down; nothing here knows which one a visitor will pick.
+var seedVehicles = new JsonFileVehicleSource(dataPath);
+var seedPhotos = new JsonFilePhotoManifestSource(manifestPath);
+var backendList = new List<Backend>();
+
+// #region sql-backend
+// The relational store, on SQL Server or SQLite. A factory rather than a
+// scoped context: the two sources and the bid store are singletons that each
+// want a context for the length of one operation, and there is no request
+// scope at startup when the catalogue is read. The interceptor is what puts
+// every statement on the Admin tab, and it is attached here rather than inside
+// YardConnection so that the connection type stays a description of where the
+// database is.
+var sqlStartup = new StartupTimings();
+var sqlState = await sqlStartup.Time("prepare", () => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos));
+ContextFactory? contexts = null;
+if (sqlState.Ready)
 {
-    // Same question, same answer shape, other store: are the containers there
-    // with the keys this code was written for, and is the seed in them. A
-    // refusal falls through to the file-backed catalogue exactly as a missing
-    // schema does on SQL Server.
+    var sqlOptions = new DbContextOptionsBuilder<YardDbContext>();
+    yard.Configure(sqlOptions);
+    sqlOptions.AddInterceptors(new SqlLogInterceptor(sqlLog, currentRequest));
+    contexts = new ContextFactory(sqlOptions.Options);
+}
+backendList.Add(new Backend
+{
+    Key = "sql",
+    Name = yard.Describe(),
+    Database = sqlState,
+    Startup = sqlStartup,
+    Contexts = contexts,
+    // The same two ports, answered out of the database, or out of the files
+    // when the store did not come up. The synthetic scale-up still decorates
+    // the vehicle source, and nothing above this line can tell that the
+    // catalogue stopped being a file (ADR: The relational store).
+    Inventory = contexts is not null
+        ? new InventoryService(new SyntheticVehicleSource(new EfVehicleSource(contexts), targetCount), new EfPhotoManifestSource(contexts))
+        : new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
+    Bids = new BidService(contexts is not null ? new EfBidStore(contexts) : NullBidStore.Instance),
+    Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
+    Probe = async () =>
+    {
+        if (contexts is null)
+        {
+            return false;
+        }
+        using var db = contexts.CreateDbContext();
+        return await db.Vehicles.AnyAsync() && await db.Photos.AnyAsync();
+    },
+    // Identity's own store over the accounts tables, given a context from the
+    // request's scope. The type is the one AddEntityFrameworkStores would have
+    // registered for a user type with no roles; naming it here is what lets
+    // the other backend register a different one under the same interface.
+    UserStore = contexts is null
+        ? _ => null
+        : services => new Microsoft.AspNetCore.Identity.EntityFrameworkCore.UserOnlyStore<YardUser, YardDbContext, string>(
+            services.GetRequiredService<YardDbContext>(),
+            services.GetService<IdentityErrorDescriber>()),
+});
+// #endregion sql-backend
+
+// #region cosmos-backend
+// The document store, when there is an account to talk to. Same question, same
+// answer shape, other store: are the containers there with the keys this code
+// was written for, and is the seed in them. A refusal falls through to the
+// file-backed catalogue exactly as a missing schema does on SQL Server.
+CosmosStore? cosmos = null;
+if (cosmosConfigured)
+{
     cosmos = CosmosStore.Connect(
-        yard.ConnectionString,
+        configuredCosmos!,
         builder.Configuration["Cosmos:Database"] ?? "theyard",
         builder.Configuration["Cosmos:ContainerPrefix"] ?? "",
         // "managed-identity" on the deployed container; anything else, which
@@ -109,16 +194,53 @@ if (yard.Provider == YardProvider.Cosmos)
         builder.Configuration["Cosmos:Credential"] ?? "azure-cli",
         builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
         storeLog);
-    database = await startup.Time("prepare", () => cosmos.PrepareAsync(
-        new JsonFileVehicleSource(dataPath),
-        new JsonFilePhotoManifestSource(manifestPath)));
+    // Filed under the request that caused it from the first operation on: the
+    // describer exists before the store does now, so no operation is
+    // attributed to nobody (ADR: What the store is actually doing).
+    cosmos.CurrentRequest = currentRequest;
+    var cosmosStartup = new StartupTimings();
+    var cosmosState = await cosmosStartup.Time("prepare", () => cosmos.PrepareAsync(seedVehicles, seedPhotos));
+    var store = cosmos;
+    backendList.Add(new Backend
+    {
+        Key = "cosmos",
+        Name = "Azure Cosmos DB",
+        Database = cosmosState,
+        Startup = cosmosStartup,
+        Cosmos = cosmos,
+        // The same three ports, answered out of the document store, or out of
+        // the files when it did not come up (ADR: A second store on Cosmos DB,
+        // and what it costs).
+        Inventory = cosmosState.Ready
+            ? new InventoryService(new SyntheticVehicleSource(new CosmosVehicleSource(store), targetCount), new CosmosPhotoManifestSource(store))
+            : new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
+        Bids = new BidService(cosmosState.Ready ? new CosmosBidStore(store) : NullBidStore.Instance),
+        Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
+        Probe = () => cosmosState.Ready ? store.ProbeAsync() : Task.FromResult(false),
+        // One document per account and one per address, and none of Identity's
+        // seven tables (ADR: Accounts on a document store).
+        UserStore = cosmosState.Ready ? _ => new CosmosUserStore(store) : _ => null,
+    });
 }
-else
+// #endregion cosmos-backend
+
+// Which one a request gets when it names none, and the answer every request
+// reads from its own cookie or header (ADR: One container, both stores).
+var backends = new Backends(backendList, configuredDefaultStore ?? (cosmosConfigured ? "cosmos" : "sql"));
+builder.Services.AddSingleton(backends);
+builder.Services.AddScoped<CurrentBackend>();
+if (contexts is not null)
 {
-    database = await startup.Time("prepare", () => YardDatabase.PrepareAsync(
-        yard,
-        new JsonFileVehicleSource(dataPath),
-        new JsonFilePhotoManifestSource(manifestPath)));
+    builder.Services.AddSingleton<IDbContextFactory<YardDbContext>>(contexts);
+    // Identity's stores want a context per request, and the factory hands out
+    // contexts rather than registering one. This is the adapter between the two
+    // and one of the two scoped registrations in the application.
+    builder.Services.AddScoped(services =>
+        services.GetRequiredService<IDbContextFactory<YardDbContext>>().CreateDbContext());
+}
+if (cosmos is not null)
+{
+    builder.Services.AddSingleton(cosmos);
 }
 
 #region admin-rings
@@ -126,15 +248,14 @@ else
 // the SQL one has to exist before the context factory that feeds it. All three
 // are this process's memory and nothing else: they empty on every roll, which
 // the page says out loud (ADR: What the database is actually doing).
-var sqlLog = new SqlRingBuffer(200);
 var logLog = new LogRingBuffer(300);
 var requestLog = new RequestRingBuffer(500);
 builder.Services.AddSingleton(sqlLog);
 builder.Services.AddSingleton<ISqlLog>(sqlLog);
 builder.Services.AddSingleton(storeLog);
 builder.Services.AddSingleton<IStoreLog>(storeLog);
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddSingleton<ICurrentRequest, HttpCurrentRequest>();
+builder.Services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
+builder.Services.AddSingleton<ICurrentRequest>(currentRequest);
 builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
 
 // The endpoints that exist to be read by the Admin tab, which are excluded from
@@ -152,6 +273,7 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
     "/api/admin/metrics",
     "/api/admin/peer",
     "/api/admin/experiment",
+    "/api/admin/proof",
     "/api/admin/azure",
     "/api/admin/telemetry",
     "/api/errors",
@@ -184,65 +306,13 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
         // hundred of those is four megabytes of ring nobody asked for.
         path.Length > 200 ? path[..200] + "..." : path,
         context.Response.StatusCode,
-        (long)elapsed.TotalMilliseconds));
+        (long)elapsed.TotalMilliseconds,
+        // Which store served it, read the same way the request itself was
+        // routed, so the comparison card can split one ring two ways.
+        backends.For(context).Key));
 }
 #endregion admin-rings
 
-if (database.Ready && cosmos is not null)
-{
-    // The same three ports, answered out of the document store. The synthetic
-    // scale-up still decorates the vehicle source, and nothing above this line
-    // can tell that the catalogue is two hundred documents in a container
-    // rather than two hundred rows in a table (ADR: A second store on Cosmos
-    // DB, and what it costs).
-    builder.Services.AddSingleton(cosmos);
-    builder.Services.AddSingleton<IVehicleSource>(new SyntheticVehicleSource(new CosmosVehicleSource(cosmos), targetCount));
-    builder.Services.AddSingleton<IPhotoManifestSource>(new CosmosPhotoManifestSource(cosmos));
-    builder.Services.AddSingleton<IBidStore>(new CosmosBidStore(cosmos));
-}
-else if (database.Ready)
-{
-    // A factory rather than a scoped context: the two sources and the bid store
-    // are singletons that each want a context for the length of one operation,
-    // and there is no request scope at startup when the catalogue is read.
-    // The interceptor is what puts every statement on the Admin tab, and it is
-    // attached here rather than inside YardConnection so that the connection
-    // type stays a description of where the database is.
-    builder.Services.AddDbContextFactory<YardDbContext>((services, options) =>
-    {
-        yard.Configure(options);
-        options.AddInterceptors(new SqlLogInterceptor(sqlLog, services.GetRequiredService<ICurrentRequest>()));
-    });
-    // Identity's stores want a context per request, and the factory hands out
-    // contexts rather than registering one. This is the adapter between the two
-    // and the only scoped registration in the application.
-    builder.Services.AddScoped(services =>
-        services.GetRequiredService<IDbContextFactory<YardDbContext>>().CreateDbContext());
-    // The same two ports, now answered out of the database. The synthetic
-    // scale-up still decorates the vehicle source, and nothing above this line
-    // can tell that the catalogue stopped being a file.
-    builder.Services.AddSingleton<IVehicleSource>(services =>
-        new SyntheticVehicleSource(
-            new EfVehicleSource(services.GetRequiredService<IDbContextFactory<YardDbContext>>()),
-            targetCount));
-    builder.Services.AddSingleton<IPhotoManifestSource>(services =>
-        new EfPhotoManifestSource(services.GetRequiredService<IDbContextFactory<YardDbContext>>()));
-    builder.Services.AddSingleton<IBidStore>(services =>
-        new EfBidStore(services.GetRequiredService<IDbContextFactory<YardDbContext>>()));
-}
-else
-{
-    // The store did not come up. These are the adapters that served this site
-    // until the database existed, so the inventory, the filters, the photos and
-    // the bidding all still work; the only thing lost is that bids stop
-    // outliving the process. A site that serves everything except persistence
-    // beats a site that serves nothing, and the health check says which one
-    // this is (ADR: The relational store).
-    builder.Services.AddSingleton<IVehicleSource>(
-        new SyntheticVehicleSource(new JsonFileVehicleSource(dataPath), targetCount));
-    builder.Services.AddSingleton<IPhotoManifestSource>(new JsonFilePhotoManifestSource(manifestPath));
-    builder.Services.AddSingleton<IBidStore>(NullBidStore.Instance);
-}
 // #region auth
 // Accounts (ADR: Accounts and per-user bids). Identity owns the password
 // hashing, the normalised lookups and the account tables, which is the part
@@ -266,51 +336,52 @@ builder.Services.AddSingleton(new RegistrationLimit(
     builder.Configuration.GetValue("Accounts:RegistrationsPerHour", RegistrationLimit.DefaultPerHour),
     () => DateTimeOffset.UtcNow));
 
-if (database.Ready)
-{
-    var identity = builder.Services
-        .AddIdentityCore<YardUser>(options =>
-        {
-            // Long over ornate. A length requirement is the only one of these
-            // that measurably helps, and the rest mostly teach people to write
-            // the password down (NIST 800-63B says so at more length).
-            options.Password.RequiredLength = 8;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequireUppercase = false;
-            options.Password.RequireDigit = false;
-            options.User.RequireUniqueEmail = true;
-            // #region lockout
-            // Five wrong passwords buys five minutes off.
-            //
-            // Without this, and without it there was nothing, POST /api/auth/login
-            // is an unmetered password oracle against real accounts: the endpoint
-            // is public, there is no throttle in front of it, and every attempt
-            // costs an attacker one request. Five and five is the usual shape and
-            // the reason it works is arithmetic rather than strength: it turns
-            // thousands of guesses a minute into twelve an hour, per account,
-            // which is the difference between a wordlist finishing and not.
-            //
-            // The refusal after a lockout says the same sentence as a wrong
-            // password, deliberately. A distinct "this account is locked" is a
-            // reply that confirms the address is registered here, and the login
-            // endpoint already goes out of its way not to be that
-            // (ADR: A password guess should cost something).
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-            options.Lockout.AllowedForNewUsers = true;
-            // #endregion lockout
-        });
-    if (cosmos is not null)
+// Identity is registered whether or not a store came up, because the store
+// is now a per-request choice: the same UserManager serves the relational
+// accounts on one request and the document accounts on the next, and a
+// request on a backend that has no accounts is refused by the endpoint before
+// it asks for one (ADR: One container, both stores).
+builder.Services
+    .AddIdentityCore<YardUser>(options =>
     {
-        // One document per account and one per address, and none of Identity's
-        // seven tables (ADR: Accounts on a document store).
-        identity.AddUserStore<CosmosUserStore>();
-    }
-    else
-    {
-        identity.AddEntityFrameworkStores<YardDbContext>();
-    }
-}
+        // Long over ornate. A length requirement is the only one of these
+        // that measurably helps, and the rest mostly teach people to write
+        // the password down (NIST 800-63B says so at more length).
+        options.Password.RequiredLength = 8;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireDigit = false;
+        options.User.RequireUniqueEmail = true;
+        // #region lockout
+        // Five wrong passwords buys five minutes off.
+        //
+        // Without this, and without it there was nothing, POST /api/auth/login
+        // is an unmetered password oracle against real accounts: the endpoint
+        // is public, there is no throttle in front of it, and every attempt
+        // costs an attacker one request. Five and five is the usual shape and
+        // the reason it works is arithmetic rather than strength: it turns
+        // thousands of guesses a minute into twelve an hour, per account,
+        // which is the difference between a wordlist finishing and not.
+        //
+        // The refusal after a lockout says the same sentence as a wrong
+        // password, deliberately. A distinct "this account is locked" is a
+        // reply that confirms the address is registered here, and the login
+        // endpoint already goes out of its way not to be that
+        // (ADR: A password guess should cost something).
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+        options.Lockout.AllowedForNewUsers = true;
+        // #endregion lockout
+    });
+// #region user-store-per-request
+// The store behind UserManager, chosen by the request: Identity's own tables
+// on the relational backend, one document per account on the document one
+// (ADR: Accounts on a document store). The second of the two scoped
+// registrations in the application, and the reason the first one exists.
+builder.Services.AddScoped<IUserStore<YardUser>>(services =>
+    services.GetRequiredService<CurrentBackend>().Backend.UserStore(services)
+        ?? throw new InvalidOperationException("this request's store keeps no accounts; the endpoint should have refused it first"));
+// #endregion user-store-per-request
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -335,14 +406,25 @@ builder.Services.AddAuthorization();
 // #endregion auth
 
 #endregion migrate-and-seed
-builder.Services.AddSingleton<InventoryService>();
-builder.Services.AddSingleton<BidService>();
-// The other bidders (ADR-027). A singleton like the buyer's own bids, and for
-// the same reason: one room, held in memory, for the life of the container.
-// The grace period is the one thing about it worth configuring, and the only
-// thing that sets it is the browser suite.
-builder.Services.AddSingleton(new MarketService(
-    builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)));
+// #region proof-clients
+// Where the performance proof sends its requests: this container's own
+// address, with cookies handled by hand because the proof holds one session
+// per store and a cookie jar would merge them (ADR: Same performance,
+// proven). The address is known only once the server is listening, so the
+// factory reads it when a run starts; a test replaces this registration with
+// a client to its own in-memory server.
+string? selfUrl = null;
+builder.Services.AddSingleton(new ProofClients(() => new HttpClient(new HttpClientHandler { UseCookies = false })
+{
+    BaseAddress = new Uri(selfUrl ?? "http://127.0.0.1:8080"),
+    Timeout = TimeSpan.FromSeconds(60),
+}));
+// #endregion proof-clients
+// No InventoryService, BidService or MarketService in the container. Each
+// backend owns its own three (the room too: one room per store, held in
+// memory for the life of the container, ADR-027), and an endpoint reaches
+// them through CurrentBackend, which is scoped to the request that chose the
+// store. A singleton of any of the three would be a singleton of one store.
 
 // Request bodies are snake_case like everything else on this wire.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -409,34 +491,47 @@ var telemetry = new TelemetryReader(
 
 var app = builder.Build();
 
-var contexts = app.Services.GetService<IDbContextFactory<YardDbContext>>();
-if (cosmos is not null)
-{
-    // The store was built before DI existed; now that the request describer
-    // does, every operation from here on is filed under the request that
-    // caused it (ADR: What the store is actually doing).
-    cosmos.CurrentRequest = app.Services.GetRequiredService<ICurrentRequest>();
-}
+// Entity Framework's own command log goes where every other log line goes,
+// which the Admin tab's log section and a test both rely on.
+contexts?.Attach(app.Services.GetRequiredService<ILoggerFactory>());
 
-if (database.Ready)
+// The address the proof talks to itself on, read once the server is up.
+// Kestrel reports the wildcard it bound ("http://[::]:8080"), which is not
+// an address a client can dial, so the host becomes the loopback.
+app.Lifetime.ApplicationStarted.Register(() =>
 {
-    app.Logger.LogInformation("Database ready: {Note}", database.Note);
-}
-else
+    string? bound = app.Urls.FirstOrDefault(url => url.StartsWith("http://", StringComparison.Ordinal)) ?? app.Urls.FirstOrDefault();
+    if (bound is not null)
+    {
+        string dialable = bound.Replace("://+:", "://127.0.0.1:", StringComparison.Ordinal).Replace("://*:", "://127.0.0.1:", StringComparison.Ordinal);
+        selfUrl = Uri.TryCreate(dialable, UriKind.Absolute, out var parsed)
+            ? new UriBuilder(parsed) { Host = parsed.HostNameType == UriHostNameType.Dns && parsed.Host != "localhost" ? parsed.Host : "127.0.0.1" }.Uri.ToString()
+            : null;
+    }
+});
+
+foreach (var backend in backends.All)
 {
-    // "The store" rather than "the database": Prepare also reads the seed
-    // files, so this line covers a missing dataset as well as a database that
-    // will not open, and naming only one of them sends the next person to the
-    // wrong place (the staff review, 2026-09-03).
-    // The exception goes in the exception slot, not into the template. What is
-    // in the template reaches the Admin tab's log section, which is public; what
-    // is in the exception slot reaches the console and Application Insights,
-    // and the Admin tab shows only its type. A SqlException here says the server
-    // name, the login name and this container's IP address.
-    app.Logger.LogError(
-        database.Failure,
-        "The store could not be prepared, which covers both the database and the seed files it fills from. The catalogue is being served from the JSON files and bids will not outlive this process: {Note}",
-        database.Note);
+    if (backend.Database.Ready)
+    {
+        app.Logger.LogInformation("Database ready: {Note}", backend.Database.Note);
+    }
+    else
+    {
+        // "The store" rather than "the database": Prepare also reads the seed
+        // files, so this line covers a missing dataset as well as a database that
+        // will not open, and naming only one of them sends the next person to the
+        // wrong place (the staff review, 2026-09-03).
+        // The exception goes in the exception slot, not into the template. What is
+        // in the template reaches the Admin tab's log section, which is public; what
+        // is in the exception slot reaches the console and Application Insights,
+        // and the Admin tab shows only its type. A SqlException here says the server
+        // name, the login name and this container's IP address.
+        app.Logger.LogError(
+            backend.Database.Failure,
+            "The store could not be prepared, which covers both the database and the seed files it fills from. The catalogue is being served from the JSON files and bids will not outlive this process: {Note}",
+            backend.Database.Note);
+    }
 }
 
 if (configuredDatabase is null && yard.Provider == YardProvider.Sqlite)
@@ -483,9 +578,40 @@ if (configuredDatabase is null && yard.Provider == YardProvider.Sqlite)
 // warm-up the ports record leans on: after these two lines every synchronous
 // read in the application is reading a task that has already finished
 // (ADR: The ports learn to wait).
-await startup.Time("catalogue", () => app.Services.GetRequiredService<InventoryService>().WarmAsync());
-await startup.Time("bids", () => app.Services.GetRequiredService<BidService>().LoadAsync());
-startup.Ready();
+// The default store first, before anything is served, which is the warm-up
+// the ports record leans on. The other store is warmed after the container
+// is ready, in the background, one after the other rather than both at once:
+// the container has one vCPU, and two expansions of a hundred thousand
+// records racing each other would both take longer and neither number would
+// be that store's own. Off by default and on in the deploy, because a test
+// run boots ten applications at once and ten second expansions nobody asks
+// for is memory the machine running the suite does not have to give; a store
+// nobody warmed warms itself on its first request, which is the Lazy the
+// inventory service has always had (ADR: One container, both stores).
+await backends.Default.Startup.Time("catalogue", backends.Default.Inventory.WarmAsync);
+await backends.Default.Startup.Time("bids", backends.Default.Bids.LoadAsync);
+backends.Default.Startup.Ready();
+if (builder.Configuration.GetValue("Store:WarmOthers", false))
+{
+    _ = Task.Run(async () =>
+    {
+        foreach (var backend in backends.All.Where(candidate => !ReferenceEquals(candidate, backends.Default)))
+        {
+            try
+            {
+                await backend.Startup.Time("catalogue", backend.Inventory.WarmAsync);
+                await backend.Startup.Time("bids", backend.Bids.LoadAsync);
+                backend.Startup.Ready();
+            }
+            catch (Exception ex)
+            {
+                // The type only; the message can carry a host name and this
+                // line reaches the public log section.
+                app.Logger.LogError("Warming the {Store} store failed with {Exception}; its first visitor will try again", backend.Name, ex.GetType().Name);
+            }
+        }
+    });
+}
 
 // First in the pipeline, because it can only catch what is registered after
 // it: an unhandled exception becomes a 500 ProblemDetails instead of an empty
@@ -541,11 +667,12 @@ var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPo
 // with each vehicle carrying the server-derived auction facts.
 // e.g. /api/vehicles?make=Ford&status=live&sort=price-asc&limit=100&offset=100
 app.MapGet("/api/vehicles", (
-    InventoryService inventory,
-    BidService bids,
-    MarketService market,
+    CurrentBackend current,
     [AsParameters] VehicleQueryParams query) =>
 {
+    // The store this request chose, and everything that stands on it
+    // (ADR: One container, both stores).
+    var (inventory, bids, market) = current;
     if (!query.TryBuildFilter(out var filter, out var clock, out var sort, out var error))
     {
         // One failure shape for the whole API (ADR-023): the message a person
@@ -579,11 +706,12 @@ app.MapGet("/api/vehicles", (
 #endregion inventory-endpoint
 
 // Dropdown values, computed from the full dataset (the page only ever holds a slice).
-app.MapGet("/api/facets", (InventoryService inventory) =>
-    Results.Json(inventory.Facets(), wireFormat));
+app.MapGet("/api/facets", (CurrentBackend current) =>
+    Results.Json(current.Inventory.Facets(), wireFormat));
 
-app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, MarketService market, string id, long? anchor_ms) =>
+app.MapGet("/api/vehicles/{id}", (CurrentBackend current, string id, long? anchor_ms) =>
 {
+    var (inventory, bids, market) = current;
     if (!Clocks.TryResolve(anchor_ms, out var clock, out var error))
     {
         return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
@@ -607,26 +735,22 @@ app.MapGet("/api/vehicles/{id}", (InventoryService inventory, BidService bids, M
 // ---------------------------------------------------------------------------
 
 app.MapPost("/api/vehicles/{id}/bids", (
-    InventoryService inventory,
-    BidService bids,
-    MarketService market,
+    CurrentBackend current,
     HttpContext http,
     string id,
-    BidRequest request) => HandleBid(inventory, bids, market, http.UserId(), id, request.AnchorMs,
+    BidRequest request) => HandleBid(current, http.UserId(), id, request.AnchorMs,
         // The room's standing price is what the minimum next bid is measured
         // against (ADR-027). Handing BidRules the dataset's figure instead
         // would let the buyer retake the lead with a bid below the going rate.
-        (vehicle, clock) => bids.PlaceBidAsync(market.Apply(vehicle), request.Amount, clock, http.UserId())))
+        (vehicle, clock) => current.Bids.PlaceBidAsync(current.Market.Apply(vehicle), request.Amount, clock, http.UserId())))
     .RequireAuthorization();
 
 app.MapPost("/api/vehicles/{id}/buy-now", (
-    InventoryService inventory,
-    BidService bids,
-    MarketService market,
+    CurrentBackend current,
     HttpContext http,
     string id,
-    BuyNowRequest request) => HandleBid(inventory, bids, market, http.UserId(), id, request.AnchorMs,
-        (vehicle, clock) => bids.BuyNowAsync(market.Apply(vehicle), clock, http.UserId())))
+    BuyNowRequest request) => HandleBid(current, http.UserId(), id, request.AnchorMs,
+        (vehicle, clock) => current.Bids.BuyNowAsync(current.Market.Apply(vehicle), clock, http.UserId())))
     .RequireAuthorization();
 
 #region market-endpoints
@@ -635,10 +759,10 @@ app.MapPost("/api/vehicles/{id}/buy-now", (
 // Signed out, this is an empty map rather than a 401: the page asks for it on
 // every load, and "you have no bids" is the true answer for somebody who has
 // not signed in. The endpoints that change something are the ones that refuse.
-app.MapGet("/api/bids", (BidService bids, MarketService market, HttpContext http) =>
+app.MapGet("/api/bids", (CurrentBackend current, HttpContext http) =>
     Results.Json(
         http.UserIdOrNull() is { } me
-            ? BidViews.For(bids, market, me)
+            ? BidViews.For(current.Bids, current.Market, me)
             : new Dictionary<string, BidView>(StringComparer.Ordinal),
         wireFormat));
 
@@ -647,11 +771,10 @@ app.MapGet("/api/bids", (BidService bids, MarketService market, HttpContext http
 // only query the bids table serves that is not "load everything at startup",
 // which is why it is the only reason there is an index on the user column.
 app.MapGet("/api/bids/history", (
-    InventoryService inventory,
-    BidService bids,
-    MarketService market,
+    CurrentBackend current,
     HttpContext http) =>
 {
+    var (inventory, bids, market) = current;
     var mine = BidViews.For(bids, market, http.UserId());
     var history = mine
         .OrderByDescending(entry => entry.Value.AtMs)
@@ -672,12 +795,11 @@ app.MapGet("/api/bids/history", (
 // auctions are live, and a room bidding on a different set than the visitor
 // can see would be a bug nobody could reproduce.
 app.MapPost("/api/market/tick", (
-    InventoryService inventory,
-    BidService bids,
-    MarketService market,
+    CurrentBackend current,
     HttpContext http,
     MarketTickRequest request) =>
 {
+    var (inventory, bids, market) = current;
     if (!Clocks.TryResolve(request.AnchorMs, out var clock, out var error))
     {
         return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
@@ -726,8 +848,9 @@ app.MapPost("/api/market/tick", (
 }).RequireAuthorization();
 #endregion market-endpoints
 
-app.MapDelete("/api/bids", async (BidService bids, MarketService market, HttpContext http) =>
+app.MapDelete("/api/bids", async (CurrentBackend current, HttpContext http) =>
 {
+    var (_, bids, market) = current;
     if (http.UserIdOrNull() is not { } userId)
     {
         return Results.Unauthorized();
@@ -799,14 +922,13 @@ app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, comm
 // domain's answer meaningless. The status codes are the contract the browser
 // relies on (ADR-023).
 async Task<IResult> HandleBid(
-    InventoryService inventory,
-    BidService bids,
-    MarketService market,
+    CurrentBackend current,
     string userId,
     string id,
     long? anchorMs,
     Func<Vehicle, AuctionClock, Task<BidOutcome>> action)
 {
+    var (inventory, bids, market) = current;
     if (!Clocks.TryResolve(anchorMs, out var clock, out var clockError))
     {
         return Results.Problem(detail: clockError, statusCode: 400, title: "The bid was rejected");
@@ -922,38 +1044,29 @@ async Task<HealthCheckEntry[]> RunChecksAsync(bool readinessOnly = false)
         try { return new HealthCheckEntry(name, await probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds, gatesReadiness); }
         catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name, clock.ElapsedMilliseconds, gatesReadiness); }
     }
-    return
-    [
+    var checks = new List<HealthCheckEntry>
+    {
         await Check("dataset file", () => Task.FromResult(File.Exists(dataPath)), "data/vehicles.json present"),
         await Check("docs", () => Task.FromResult(File.Exists(Path.Combine(repoRoot, "docs", "HOSTING.md"))), "served documents findable"),
         await Check("photo manifest", () => Task.FromResult(File.Exists(manifestPath)), "image manifest present"),
-        await Check(
-            "database",
-            async () =>
-            {
-                if (!database.Ready)
-                {
-                    return false;
-                }
-                if (cosmos is not null)
-                {
-                    return await cosmos.ProbeAsync();
-                }
-                if (contexts is null)
-                {
-                    return false;
-                }
-                using var db = await contexts.CreateDbContextAsync();
-                return await db.Vehicles.AnyAsync() && await db.Photos.AnyAsync();
-            },
+    };
+    // One check per store, named by the store, so a container running both
+    // says which one is unavailable (ADR: One container, both stores). The
+    // first is still called "database" for the deploy's Verify step and the
+    // Admin tab's card, which have read that name since ADR-010.
+    foreach (var backend in backends.All)
+    {
+        checks.Add(await Check(
+            ReferenceEquals(backend, backends.Default) ? "database" : $"database ({backend.Key})",
+            backend.Probe,
             // The reason is in the log, not in this response. A health endpoint
             // is public on purpose, and an exception message from a storage
             // failure is typically a filesystem path: exactly the map of the
             // inside of the process that ProblemHandler refuses to draw
             // (the staff review, 2026-09-03).
-            database.Ready
-                ? $"the seed catalogue is in the store ({yard.Describe()})"
-                : $"{yard.Describe()} is unavailable, serving the catalogue from files; "
+            backend.Database.Ready
+                ? $"the seed catalogue is in the store ({backend.Name})"
+                : $"{backend.Name} is unavailable, serving the catalogue from files; "
                     + "the reason is in the log",
             // The one check that does not gate readiness, which is the whole
             // point of the fallback. A container with no database still serves
@@ -962,8 +1075,9 @@ async Task<HealthCheckEntry[]> RunChecksAsync(bool readinessOnly = false)
             // not ready would take a working site out of service, and it did:
             // the 1.0.0.51 deploy failed on `curl -fsS /readyz` while the site
             // it was checking was serving 100,000 vehicles perfectly well.
-            gatesReadiness: false),
-    ];
+            gatesReadiness: false));
+    }
+    return checks.ToArray();
 }
 #endregion health-checks
 
@@ -1019,7 +1133,7 @@ app.MapGet("/api/admin/sql", () => Results.Json(sqlLog.Snapshot(), wireFormat));
 // container is (ADR: What the store is actually doing).
 app.MapGet("/api/admin/store", () => Results.Json(new
 {
-    store = yard.Describe(),
+    store = backends.Named("cosmos")?.Name ?? backends.Default.Name,
     operations = storeLog.Snapshot(),
 }, wireFormat));
 // #endregion store-endpoint
@@ -1029,12 +1143,18 @@ app.MapGet("/api/admin/logs", () => Results.Json(logLog.Snapshot(), wireFormat))
 
 // Timing, computed on read from the two rings. The window is whatever the
 // rings currently hold, which the page states rather than implying.
-app.MapGet("/api/admin/metrics", () =>
+app.MapGet("/api/admin/metrics", (HttpContext http) =>
 {
     var requests = requestLog.Snapshot();
     var statements = sqlLog.Snapshot();
     long[] requestDurations = requests.Select(entry => entry.DurationMs).ToArray();
     long[] sqlDurations = statements.Select(statement => statement.DurationMs).ToArray();
+    // The store this request is on gets the top-level numbers, which is what
+    // the comparison card on a single-store container and the peer read have
+    // always taken. Every store this container runs is listed below them, each
+    // with its own cold start and its own share of the request ring
+    // (ADR: One container, both stores).
+    var mine = backends.For(http);
     return Results.Json(new
     {
         requests = new
@@ -1069,25 +1189,44 @@ app.MapGet("/api/admin/metrics", () =>
         // and how many of them fanned out across partitions. These are the
         // numbers the comparison card puts beside the milliseconds
         // (ADR: Backends, side by side).
-        store = StoreMetrics.Of(yard.Describe(), storeLog.Snapshot()),
+        store = StoreMetrics.Of(mine.Name, storeLog.Snapshot()),
         store_by_route = Routes.ChargesByRoute(storeLog.Snapshot()),
         // How this container came up: how long the store took to answer, how
         // long the catalogue and the bids took to load, when it was ready to
         // serve, and what the seed cost. Measured on this container at this
         // start, which is the only honest cold start there is.
-        startup = new
-        {
-            store = yard.Describe(),
-            prepare_ms = startup.Ms("prepare"),
-            schema_ms = database.SchemaMs,
-            seed_ms = database.SeedMs,
-            seed_ru = database.SeedRequestUnits,
-            catalogue_ms = startup.Ms("catalogue"),
-            bids_ms = startup.Ms("bids"),
-            ready_ms = startup.ReadyMs,
-            started_at = startedAt,
-        },
+        startup = StartupView(mine),
         // #endregion store-metrics
+        // #region backends-metrics
+        // Every store this container runs, on the same rows the peer answers
+        // with, so the card compares two stores in one process the way it
+        // compared two containers: the cold start each one had, the requests
+        // each one served, and what those cost the one that can say.
+        backends = backends.All.Select(backend => new
+        {
+            key = backend.Key,
+            store = backend.Name,
+            ready = backend.Ready,
+            @default = ReferenceEquals(backend, backends.Default),
+            startup = StartupView(backend),
+            requests = RequestsView(requests.Where(entry => entry.Store == backend.Key).ToArray()),
+            store_metrics = backend.Cosmos is null
+                ? null
+                : StoreMetrics.Of(backend.Name, storeLog.Snapshot()),
+            store_by_route = backend.Cosmos is null
+                ? Array.Empty<RouteCharge>()
+                : Routes.ChargesByRoute(storeLog.Snapshot()),
+            sql = backend.Contexts is null
+                ? null
+                : new
+                {
+                    window = statements.Count,
+                    p50_ms = Percentiles.Of(sqlDurations, 50),
+                    p95_ms = Percentiles.Of(sqlDurations, 95),
+                    max_ms = sqlDurations.Length == 0 ? 0 : sqlDurations.Max(),
+                },
+        }).ToArray(),
+        // #endregion backends-metrics
         // No recent_requests list. The first version returned the whole ring,
         // five hundred entries of method, path, status and timing, which is a
         // near-real-time feed of what every other visitor to a public site is
@@ -1095,7 +1234,57 @@ app.MapGet("/api/admin/metrics", () =>
         // never rendered it. Aggregates answer the question the section is for
         // and name nobody (the staff review, 2026-09-03).
     }, wireFormat);
+
+    static object RequestsView(IReadOnlyList<RequestEntry> served)
+    {
+        long[] durations = served.Select(entry => entry.DurationMs).ToArray();
+        return new
+        {
+            window = served.Count,
+            p50_ms = Percentiles.Of(durations, 50),
+            p95_ms = Percentiles.Of(durations, 95),
+            by_route = Routes.ByRoute(served),
+        };
+    }
+
+    object StartupView(Backend backend) => new
+    {
+        store = backend.Name,
+        prepare_ms = backend.Startup.Ms("prepare"),
+        schema_ms = backend.Database.SchemaMs,
+        seed_ms = backend.Database.SeedMs,
+        seed_ru = backend.Database.SeedRequestUnits,
+        catalogue_ms = backend.Startup.Ms("catalogue"),
+        bids_ms = backend.Startup.Ms("bids"),
+        ready_ms = backend.Startup.ReadyMs,
+        started_at = startedAt,
+    };
 });
+
+// #region stores-endpoints
+// The toggle at the top of the page (ADR: One container, both stores). What
+// stores this container runs and which one this request is on; and the switch,
+// which is a cookie for a year and nothing else. The page reloads itself
+// after switching, because every number it holds was read from the other
+// store and a cache of the wrong store's answers is worse than a cold page.
+app.MapGet("/api/stores", (HttpContext http) => Results.Json(backends.Describe(http), wireFormat));
+
+app.MapPost("/api/stores/select", (HttpContext http, StoreChoice choice) =>
+{
+    if (backends.Named(choice.Store) is not { } chosen)
+    {
+        return Results.Problem(
+            detail: $"This container runs {string.Join(" and ", backends.All.Select(backend => backend.Name))}, and nothing called \"{choice.Store}\".",
+            statusCode: 400,
+            title: "That store is not here");
+    }
+    http.Response.Cookies.Append(Backends.CookieName, chosen.Key, Backends.CookieFor(http));
+    // Describe as the request will read it next time: the cookie is on the
+    // response, not the request, so the header path is what says "chosen".
+    http.Request.Headers[Backends.HeaderName] = chosen.Key;
+    return Results.Json(backends.Describe(http), wireFormat);
+});
+// #endregion stores-endpoints
 #endregion admin-observability-endpoints
 
 #region client-errors
@@ -1149,12 +1338,17 @@ app.MapGet("/api/admin/selftest/exception", IResult () =>
 // sending it somewhere else (ADR: Accounts and per-user bids).
 app.MapPost("/api/auth/register", async (
     IServiceProvider services,
+    CurrentBackend current,
     TokenIssuer issuer,
     RegistrationLimit limit,
     HttpContext http,
     Credentials request) =>
 {
-    if (services.GetService<UserManager<YardUser>>() is not { } users)
+    // The store this request is on keeps no accounts: the relational fallback
+    // (ADR: The relational store) or a document store that did not come up.
+    // Asked before UserManager is, because UserManager's store is built from
+    // this same answer and would throw where this returns a sentence.
+    if (!current.Backend.Ready || services.GetService<UserManager<YardUser>>() is not { } users)
     {
         return Accounts.Unavailable();
     }
@@ -1200,11 +1394,12 @@ app.MapPost("/api/auth/register", async (
 
 app.MapPost("/api/auth/login", async (
     IServiceProvider services,
+    CurrentBackend current,
     TokenIssuer issuer,
     HttpContext http,
     Credentials request) =>
 {
-    if (services.GetService<UserManager<YardUser>>() is not { } users)
+    if (!current.Backend.Ready || services.GetService<UserManager<YardUser>>() is not { } users)
     {
         return Accounts.Unavailable();
     }
@@ -1261,9 +1456,13 @@ app.MapPost("/api/auth/logout", (TokenIssuer issuer, HttpContext http) =>
     return Results.Json(Accounts.Anonymous, wireFormat);
 });
 
-app.MapGet("/api/auth/me", async (IServiceProvider services, HttpContext http) =>
+app.MapGet("/api/auth/me", async (IServiceProvider services, CurrentBackend current, HttpContext http) =>
 {
+    // An account is a row or a document in one store, so a session opened on
+    // the other store reads as signed out here, and signs back in when the
+    // toggle goes back. The page says so beside the toggle.
     if (http.UserIdOrNull() is not { } id
+        || !current.Backend.Ready
         || services.GetService<UserManager<YardUser>>() is not { } users
         || await users.FindByIdAsync(id) is not { } user)
     {
@@ -1285,6 +1484,22 @@ var peer = new PeerReader(
     new HttpClient { Timeout = PeerReader.Patience + TimeSpan.FromSeconds(1) });
 app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync(), wireFormat));
 // #endregion peer-endpoint
+
+// #region proof-endpoints
+// The performance proof (ADR: Same performance, proven): read the last result
+// or the run in progress, or start one. Starting is public like the rest of
+// the Admin tab, and answers 409 while a run is on or for a minute after one,
+// which with the two accounts a run registers is what keeps a loop of these
+// from spending the hour's registrations on proving the same thing twice.
+var proof = new ProofRunner(backends, app.Services.GetRequiredService<ProofClients>(), sqlLog, storeLog);
+app.MapGet("/api/admin/proof", () => Results.Json(proof.Status, wireFormat));
+app.MapPost("/api/admin/proof", (int? rounds) => proof.TryStart(rounds ?? ProofRunner.DefaultRounds)
+    ? Results.Json(new { status = "running" }, wireFormat, statusCode: StatusCodes.Status202Accepted)
+    : Results.Problem(
+        detail: "A run is in progress, or the last one finished less than a minute ago. The result is on the card.",
+        statusCode: StatusCodes.Status409Conflict,
+        title: "The proof is busy"));
+// #endregion proof-endpoints
 
 // #region experiment-endpoint
 // The partition key, live: seven queries against the 100,000-document

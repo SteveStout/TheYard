@@ -23,9 +23,11 @@ the one the records and the pipeline logs carry. The source is
 
 - **Azure (portal.azure.com).** Runs the app: Container Instances for the
   compute, Container Registry for the image, Azure SQL Database for the store
-  the site is on, and, since 1.0.0.89, a second container group on Azure
-  Cosmos DB beside it so the two stores can be compared from two tabs (ADR: A
-  second store on Cosmos DB, and what it costs). The only place code executes.
+  the site is on, Azure Cosmos DB beside it since 1.0.0.89, and since
+  1.0.0.94 both stores in the same container with a toggle at the top of the
+  page, plus a second container group running the same image with the other
+  store as its default (ADR: One container, both stores). The only place code
+  executes.
 - **Wix (wix.com).** The domain registrar. Holds stevenstout.biz and answers
   DNS; one CNAME record points theyard at the edge.
 - **Netlify (netlify.com).** The free edge. Terminates HTTPS, holds the
@@ -47,9 +49,11 @@ the one the records and the pipeline logs carry. The source is
    GitHub on every push.
 3. **Origin.** Azure Container Instances runs the Docker image in RG-THEYARD-SS
    (westus2), serving HTTP on port 8080. Azure does all the compute. The edge
-   only forwards. A second group, `aci-theyard-cosmos-ss`, runs the same image
-   against Azure Cosmos DB on its own Azure address, behind no edge and no
-   domain, because a side-by-side needs a second origin and nothing else.
+   only forwards. Both stores are opened by every container since 1.0.0.94,
+   and a second group, `aci-theyard-cosmos-ss`, runs the same image with
+   Azure Cosmos DB as its default on its own Azure address, behind no edge
+   and no domain, because a two-tab comparison needs a second origin and
+   nothing else (ADR: One container, both stores).
 
 ## The certificate
 

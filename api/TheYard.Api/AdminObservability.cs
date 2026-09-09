@@ -159,8 +159,8 @@ public sealed class RingBufferLoggerProvider(LogRingBuffer buffer) : ILoggerProv
     }
 }
 
-/// <summary>One request, as timed by the middleware.</summary>
-public sealed record RequestEntry(DateTimeOffset At, string Method, string Path, int Status, long DurationMs);
+/// <summary>One request, as timed by the middleware, and the store that served it (ADR: One container, both stores).</summary>
+public sealed record RequestEntry(DateTimeOffset At, string Method, string Path, int Status, long DurationMs, string Store = "sql");
 
 /// <summary>Fixed-size, thread-safe ring of recent requests and their timings.</summary>
 public sealed class RequestRingBuffer(int capacity)

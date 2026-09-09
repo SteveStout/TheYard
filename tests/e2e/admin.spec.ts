@@ -26,7 +26,10 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   // The SQL card on a relational container, the operations card on the
   // document one: the same page, whichever store it is on (ADR: What the store
   // is actually doing).
-  await expect(page.getByTestId('sql-card').or(page.getByTestId('store-card'))).toBeVisible();
+  // One card on a one-store container, both on a container running both; either way the first is visible.
+  await expect(
+    page.getByTestId('sql-card').or(page.getByTestId('store-card')).first()
+  ).toBeVisible();
   await expect(page.getByTestId('log-card')).toContainText('Category');
   await page.getByRole('button', { name: 'Back to inventory' }).click();
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
@@ -82,17 +85,30 @@ test('the SQL section shows statements and never a parameter value', async ({ pa
 // #region backends-card
 test('the comparison card stands when there is no peer to compare with (ADR: Backends, side by side)', async ({
   page,
+  request,
 }) => {
   // A local run has no peer configured, which is the first of the four ways the
   // peer column can be empty, and the card has to read as a card rather than
   // as an error: this container's column filled in, the other's saying why not,
-  // and every other card on the page untouched.
+  // and every other card on the page untouched. A run with both stores in the
+  // one process compares those two instead, and says so (ADR: One container,
+  // both stores).
+  const stores = (await (await request.get('http://localhost:5210/api/stores')).json()) as {
+    stores: { name: string }[];
+  };
   await openTheYard(page, '/?view=admin');
   const card = page.getByTestId('backends-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Backends, side by side');
-  await expect(card).toContainText('No peer is configured on this container');
-  await expect(card).toContainText(/This site \((SQLite|Azure SQL Database|Azure Cosmos DB)\)/);
+  if (stores.stores.length > 1) {
+    await expect(card).toContainText('Both stores run in this container');
+    for (const store of stores.stores) {
+      await expect(card.getByRole('columnheader', { name: new RegExp(store.name) })).toBeVisible();
+    }
+  } else {
+    await expect(card).toContainText('No peer is configured on this container');
+    await expect(card).toContainText(/This site \((SQLite|Azure SQL Database|Azure Cosmos DB)\)/);
+  }
   // The label and the number are neighbouring cells, and a cell boundary is
   // no whitespace at all in the text Playwright reads, so \s* rather than \s+.
   await expect(card).toContainText(/Cold start, process start to ready\s*\d+ ms/);
@@ -100,7 +116,10 @@ test('the comparison card stands when there is no peer to compare with (ADR: Bac
   await expect(card).toContainText('Bid write');
   await expect(card).toContainText('Sign in');
   await expect(page.getByTestId('health-card')).toContainText('healthy');
-  await expect(page.getByTestId('sql-card').or(page.getByTestId('store-card'))).toBeVisible();
+  // One card on a one-store container, both on a container running both; either way the first is visible.
+  await expect(
+    page.getByTestId('sql-card').or(page.getByTestId('store-card')).first()
+  ).toBeVisible();
 });
 // #endregion backends-card
 
@@ -125,3 +144,31 @@ test('the partition key card explains itself when there is no catalogue to query
   }
 });
 // #endregion experiment-card
+
+// #region proof-card
+test('the proof card offers a run and says what it needs (ADR: Same performance, proven)', async ({
+  page,
+  request,
+}) => {
+  // A two-store run takes the proof about a minute; the default budget is one.
+  test.setTimeout(180_000);
+  const stores = (await (await request.get('http://localhost:5210/api/stores')).json()) as {
+    stores: { name: string }[];
+  };
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('proof-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Same performance, proven');
+  const run = card.getByTestId('proof-run');
+  await expect(run).toBeEnabled();
+  await run.click();
+  // On one store the run fails at once with its reason; on two it runs for a
+  // while and lands a sentence. Either is a sentence on the card, never a hang.
+  if (stores.stores.length < 2) {
+    await expect(card.getByTestId('proof-note')).toContainText('one store', { timeout: 30_000 });
+  } else {
+    await expect(card.getByTestId('proof-sentence')).toBeVisible({ timeout: 120_000 });
+    await expect(card).toContainText('Bid write');
+  }
+});
+// #endregion proof-card

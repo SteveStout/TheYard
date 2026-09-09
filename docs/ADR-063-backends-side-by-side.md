@@ -111,6 +111,23 @@ of that difference by the time it reaches a visitor in Missouri
   record runs the same requests against both in one session for that reason
   (ADR: Measuring both stores).
 
+## Addendum, 2026-09-08: the two columns moved into one process
+
+The evening's ask was a toggle at the top of the page, and the answer to it
+(ADR: One container, both stores) changed what this card compares. A
+container that runs both stores now puts them on these same rows with each
+other, the one serving the visit first, and says in a note that the two
+columns share a process, a region and a request ring: only the store
+differs. The request ring records which store served each request, so one
+ring is split two ways rather than two rings being read from two places.
+
+Nothing above is withdrawn. The peer endpoint, its patience and its four
+sentences are what a container running one store still uses, and the second
+container still runs the same image with the other default, so the two-tab
+comparison this record was written for still works. What the in-process
+comparison adds is the one thing the two-container one could not have: a
+measurement with no network in it.
+
 ## Files
 
 - [`api/TheYard.Api/Peer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Peer.cs): the peer reader and the route grouping.

@@ -24,6 +24,7 @@ import { accountQuestion, SIGNED_OUT, type Account } from './lib/auth';
 import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
 import { docKeyForSlug, docSlug, type DocKey } from './components/DocsMenu';
 import { BrandMark } from './components/BrandMark';
+import { StoreBar } from './components/StoreBar';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
@@ -726,6 +727,14 @@ export default function App() {
           </header>
         )}
         {/* #endregion header-below-dock */}
+
+        {/* #region store-bar */}
+        {/* The store toggle, at the top of every view on every width (ADR: One
+            container, both stores). Above main so it is never part of the
+            view that announces itself, and below the phone header so the
+            hamburger keeps its corner. */}
+        <StoreBar />
+        {/* #endregion store-bar */}
 
         <main className={styles.main} id="main-content" ref={mainRef} tabIndex={-1}>
           <p className={styles.srOnly} role="status" data-testid="view-announcement">

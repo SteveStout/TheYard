@@ -80,10 +80,22 @@ public class AdminEndpointTests(WebApplicationFactory<Program> factory)
         var database = checks.Single(check => check.GetProperty("name").GetString() == "database");
         Assert.False(database.GetProperty("gates_readiness").GetBoolean());
 
+        // A container running a second store has a second database check,
+        // named by the store's key, and it holds the same rule: an unavailable
+        // store is a store the toggle shows as unavailable, not a site that is
+        // down (ADR: One container, both stores).
+        static bool IsDatabase(JsonElement check) =>
+            check.GetProperty("name").GetString() is { } name
+            && (name == "database" || name.StartsWith("database (", StringComparison.Ordinal));
+        foreach (var check in checks.Where(check => IsDatabase(check) && check.GetProperty("name").GetString() != "database"))
+        {
+            Assert.False(check.GetProperty("gates_readiness").GetBoolean());
+        }
+
         // And every other check does gate it. A check that reports a missing
         // dataset file while the container claims to be ready would be worse
         // than no check.
-        foreach (var check in checks.Where(check => check.GetProperty("name").GetString() != "database"))
+        foreach (var check in checks.Where(check => !IsDatabase(check)))
         {
             Assert.True(
                 check.GetProperty("gates_readiness").GetBoolean(),

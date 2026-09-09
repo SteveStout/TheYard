@@ -186,16 +186,16 @@ the top of this record.
 
 ## Why this is one file
 
-It is 1,395 lines, and that is the first thing a reviewer notices, so it is
+It is 1,610 lines, and that is the first thing a reviewer notices, so it is
 worth saying that it is a decision rather than a drift.
 
 What those lines are:
 
 ```
-1,395 total
-  510 comment
-   89 blank
-  796 code, across 32 endpoints
+1,610 total
+  614 comment
+   98 blank
+  898 code, across 36 endpoints
 ```
 
 Twenty-five lines of code per endpoint, and most endpoints are a route, a
@@ -240,6 +240,43 @@ it. What it would cost is the one property worth keeping.
 - **A new file the app reads:** locate it once at startup from `repoRoot`,
   and add it to the Dockerfile's COPY lines, or the container will not
   have it.
+
+## Addendum, 2026-09-08: two stores in one file
+
+The walk above still reads top to bottom, and two of its stops changed shape
+when the document store moved in beside the relational one (ADR: One
+container, both stores).
+
+The persistence region no longer chooses a store. It reads both settings, the
+SQL connection string and the Cosmos DB endpoint, and creates the two rings
+and the request describer early, because the interceptor that feeds the SQL
+ring is attached to a context factory built by hand before the container
+exists. The migrate-and-seed region then builds one `Backend` per store: the
+relational one always, the document one when there is an endpoint, each
+brought up and timed on its own, each holding its own `InventoryService`,
+`BidService` and `MarketService`, and each saying how to build Identity's
+store over its accounts. The three services left the container entirely; an
+endpoint takes `CurrentBackend`, which is scoped to the request and resolved
+once from the request's header, cookie or the container's default.
+
+```live path=api/TheYard.Api/Program.cs region=sql-backend
+```
+
+```live path=api/TheYard.Api/Program.cs region=cosmos-backend
+```
+
+Identity is registered once, unconditionally, and its store is the one thing
+about it chosen per request. The health check runs one database probe per
+store. The metrics endpoint answers the store the request is on at the top
+level, as it always did, and lists every store below it. And two endpoints
+were added for the toggle at the top of the page.
+
+```live path=api/TheYard.Api/Program.cs region=stores-endpoints
+```
+
+The numbers in the section above are the file's numbers on the day this
+addendum was written; the test that holds them to the file does not care
+which day that was.
 
 ## Files
 

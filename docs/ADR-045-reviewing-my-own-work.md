@@ -207,6 +207,58 @@ and still is; what changed is that a flood can only push out other floods.
 - Two tests stopped asserting accidents, and one canary now covers both public
   sections rather than one.
 
+## Addendum, 2026-09-09: the second pass, over the document store
+
+Steve's brief for the night ended with "make sure and code review and test
+yourself", so the day's new code, the Cosmos DB adapters, the account store,
+the peer read and the composition root, got the same pass the first review
+gave the rest. What it found, in the order of what it would have cost:
+
+**A store seeded only when empty.** The seed's own comment said it checked
+for empty "so a process that died mid-seed is not left half seeded forever",
+and the check was `count == 0`, which is exactly the half-seeded case it
+claimed to prevent: a container holding a hundred of two hundred documents
+would never be seeded again. The relational seed cannot have this defect,
+because it is one transaction; two hundred and fifty point writes can. The
+seed now runs whenever the container holds fewer documents than the seed
+file, with upserts, and a test deletes one document and watches it come
+back.
+
+**An email claim with no account behind it.** Registration writes the claim
+first and the account second, and a process that dies between them leaves a
+claim that refuses the address forever, which the record listed as the
+honest cost of the shape. It is a cost that need not be paid: a lookup that
+finds the claim and no account now removes the claim, provided it is older
+than the longest a registration takes, so a registration still in flight is
+left alone. The claim document learned to read the service's own write time
+for that, and a test writes an orphan and watches a patient store leave it
+and an impatient one clear it.
+
+**A refused batch that went unrecorded.** The wrapper that puts every
+operation on the Admin tab caught the SDK's exception and nothing else, and
+the one operation that throws something else, a transactional batch refused
+as a whole, was the one operation the page could not show. It records any
+exception now, by type.
+
+**And one the first pass of the toggle made.** Loading both stores' catalogues
+before serving doubled the memory of every test application, and ten of
+them at once turned a two-minute suite into a thirty-minute one that a
+watcher took for a hang. The default store warms before serving, the other
+in the background on the deployed containers and on first use everywhere
+else (ADR: One container, both stores).
+
+Recorded and left: the partition key experiment caches its result in a
+static, which is one cache for the process rather than one per store, and is
+right only while a process has one document store, which it does; and two
+containers on the same stores do not see each other's bids until a restart,
+because bids are replayed into memory at startup, which is the one-container
+assumption the rate limit record already states and which the second
+container inherits.
+
+The pass took an hour, found three defects in code that had passed every
+test written for it, and fixed the tests that had passed: a check that
+cannot fail is not a check, and the seed's own comment was the reminder.
+
 ## Files
 
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): `DatabaseState` carrying the failure as an exception rather than as text.

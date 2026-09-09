@@ -95,6 +95,8 @@ export type DocKey =
   | 'adrBackends'
   | 'adrMeasuringStores'
   | 'adrCosmosExplained'
+  | 'adrOneContainer'
+  | 'adrProof'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -632,6 +634,20 @@ export const DOCS: Record<
     kind: 'adr',
     number: '065',
   },
+  adrOneContainer: {
+    title: 'ADR: One container, both stores',
+    menuLabel: 'ADR: One container, both stores',
+    url: '/api/docs/adr-one-container',
+    kind: 'adr',
+    number: '066',
+  },
+  adrProof: {
+    title: 'ADR: Same performance, proven',
+    menuLabel: 'ADR: Same performance, proven',
+    url: '/api/docs/adr-proof',
+    kind: 'adr',
+    number: '067',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -753,6 +769,8 @@ export const MENUS: Record<
       { key: 'adrBackends' },
       { key: 'adrMeasuringStores' },
       { key: 'adrCosmosExplained' },
+      { key: 'adrOneContainer' },
+      { key: 'adrProof' },
     ],
   },
   // #endregion records-menu

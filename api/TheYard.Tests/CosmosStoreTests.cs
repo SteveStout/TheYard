@@ -213,4 +213,63 @@ public class CosmosStoreTests
         await users.DeleteAsync((await users.FindByEmailAsync(email))!);
     }
     // #endregion accounts
+
+    // #region second-review
+    /// <summary>
+    /// The two defects the second review found in this adapter, held here so
+    /// they stay found (ADR: Reviewing my own work, the second pass).
+    /// </summary>
+    [Fact]
+    public async Task A_claim_whose_account_never_arrived_stops_refusing_the_address_once_it_is_old_enough()
+    {
+        var (store, _) = CosmosLive.Open();
+        string email = $"orphan-{Guid.NewGuid():N}@example.com";
+        string normalized = email.ToUpperInvariant();
+        string claimId = EmailClaimDocument.IdFor(normalized);
+        // A registration that died between its two writes: the claim is there
+        // and points at an account that does not exist.
+        await store.CreateAsync(store.Users, new EmailClaimDocument { Id = claimId, UserId = Guid.NewGuid().ToString() }, claimId, "pinned to the address");
+
+        // A store with the usual patience leaves it alone: it could be a
+        // registration still in flight.
+        var patient = new CosmosUserStore(store);
+        Assert.Null(await patient.FindByEmailAsync(normalized, CancellationToken.None));
+        Assert.NotNull(await store.ReadAsync<EmailClaimDocument>(store.Users, claimId, claimId, "pinned to the address"));
+
+        // A store that treats any age as old removes it, and the address is free.
+        var impatient = new CosmosUserStore(store, TimeSpan.Zero);
+        Assert.Null(await impatient.FindByEmailAsync(normalized, CancellationToken.None));
+        Assert.Null(await store.ReadAsync<EmailClaimDocument>(store.Users, claimId, claimId, "pinned to the address"));
+
+        var user = new YardUser { UserName = email, Email = email, NormalizedUserName = normalized, NormalizedEmail = normalized, CreatedAtMs = 1 };
+        var created = await impatient.CreateAsync(user, CancellationToken.None);
+        Assert.True(created.Succeeded, string.Join("; ", created.Errors.Select(e => e.Description)));
+        await impatient.DeleteAsync(user, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task A_container_that_is_short_of_the_seed_is_seeded_again_not_left_half_full()
+    {
+        var store = await CosmosLive.Prepared();
+        var seedVehicles = new JsonFileVehicleSource(Repo.DataFile("vehicles.json"));
+        var seedPhotos = new JsonFilePhotoManifestSource(Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json"));
+        var before = await new CosmosVehicleSource(store).LoadAsync();
+        Assert.Equal((await seedVehicles.LoadAsync()).Count, before.Count);
+
+        // One document gone, the way a crash mid-seed leaves things: not empty,
+        // not seeded either.
+        var missing = before[0];
+        await store.DeleteAsync<VehicleDocument>(store.Vehicles, missing.Id, missing.Make, "pinned to the make");
+        Assert.Equal(before.Count - 1, (await new CosmosVehicleSource(store).LoadAsync()).Count);
+
+        var seeded = await store.EnsureSeededAsync(seedVehicles, seedPhotos);
+
+        Assert.Equal(before.Count, seeded.VehiclesInserted);
+        Assert.Equal(before.Count, seeded.VehiclesTotal);
+        Assert.Equal(0, seeded.PhotosInserted);
+        var after = await new CosmosVehicleSource(store).LoadAsync();
+        Assert.Equal(before.Count, after.Count);
+        Assert.Contains(after, vehicle => vehicle.Id == missing.Id);
+    }
+    // #endregion second-review
 }
