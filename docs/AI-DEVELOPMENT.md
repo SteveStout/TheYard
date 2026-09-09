@@ -180,5 +180,16 @@ that a justification written for an earlier version of the system was still
 sitting above code the system had outgrown. That is a query you can run against a
 repository, and running it costs less than waiting to be told.
 
+One more was earned on 9 September, from the tooling rather than the code: a
+file that crosses from the assistant's workspace to the developer's machine
+can arrive changed by the tool that carried it. The infrastructure drawing's
+source came across with a signed content credential written into it, eight
+kilobytes of provenance manifest in a metadata element that no editor had
+opened and no diff had shown, because the file was written whole. It was
+found by a size that did not match, removed by checksum against the copy as
+drawn, and a test now reads every SVG for it (ADR: Docs and testing, the
+addendum on the provenance stamp). The rule it leaves behind: a file that was
+copied is verified the way a file that was built is, by reading it back.
+
 That loop is the reason this repository is worth reading. The AI made it
 possible to run it many times in a day. It did not make the loop unnecessary.

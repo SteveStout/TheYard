@@ -66,4 +66,40 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         Assert.DoesNotContain("<title>TheYard's database</title>", page);
     }
     // #endregion page-tests
+
+    // #region as-drawn
+    /// <summary>
+    /// A drawing's source is what its author drew and nothing else (ADR-006,
+    /// the addendum on the provenance stamp). One of the tools that carries a
+    /// file from the assistant's workspace to the developer's machine writes a
+    /// signed content credential into every image it touches: a base64
+    /// manifest in a metadata element and a namespace on the root. In a
+    /// photograph that is a few kilobytes nobody sees; in an SVG it was half
+    /// the file, and the diagram page inlines the whole file into its HTML on
+    /// every visit. Every SVG the repository keeps is read for it here, so the
+    /// next stamped copy is caught by the gate and not by a file size that
+    /// looked wrong.
+    /// </summary>
+    [Fact]
+    public void Every_drawing_is_the_source_as_drawn_with_no_stamp_written_into_it()
+    {
+        string images = Path.Combine(Repo.Root(), "docs", "images");
+        var drawings = Directory.EnumerateFiles(images, "*.svg").OrderBy(path => path).ToList();
+        Assert.NotEmpty(drawings);
+
+        var stamped = drawings
+            .Where(path =>
+            {
+                string source = File.ReadAllText(path);
+                return source.Contains("<metadata", StringComparison.Ordinal)
+                    || source.Contains("c2pa", StringComparison.OrdinalIgnoreCase);
+            })
+            .Select(Path.GetFileName)
+            .ToList();
+
+        Assert.True(
+            stamped.Count == 0,
+            $"stamped on the way in, strip and re-copy: {string.Join(", ", stamped)}");
+    }
+    // #endregion as-drawn
 }

@@ -161,7 +161,7 @@ the gate at 452 s), a Chrome session closed under the practices spec (717,
 493 s), and a sixty-second timeout inside axe on the open records index
 (724, 373 s). The machine was measured before each retake rather than
 blamed: 8,040 MB in total, 1,100 MB free at 09:00 with Chrome at 3,277 MB
-across 51 processes, 1,793 MB free at 09:11 with Chrome at 1,898 MB. The
+across 51 processes, 1,793 MB free at 09:11 with Chrome at 1,898 MB, 1,219 MB free at 10:03 with Chrome at 2,080 MB across 45, read a minute before the take of 1.0.0.103 that went green at 337 s with the scans declared slow. The
 gate's two sides share those four cores and that memory with the browser
 the developer is working in, and the two scans that failed are the two that
 read the most nodes.

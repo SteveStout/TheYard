@@ -61,6 +61,41 @@ shows that path on its own at `/api/docs/diagrams/two-sites`, drawn by
 rendered by `docs/images/render.mjs` in the repository's own Chrome, as
 before.
 
+## Addendum, 2026-09-09: the provenance stamp, and the test that keeps it out of the source
+
+The redrawn infrastructure source reached the developer's machine eight
+kilobytes heavier than it was drawn. One of the tools that carries a file
+from the assistant's workspace to that machine writes a C2PA content
+credential into every image it touches: a base64 manifest inside a
+`<metadata>` element and a namespace on the root element, signed by
+Anthropic and reading "Claude provided this file at the request of a user
+and may have created or modified the file contents". In a photograph that is
+a few kilobytes nobody sees. In this SVG it was half the file, it is not
+part of the drawing, and the diagram page at
+`/api/docs/diagrams/infrastructure` inlines the whole file into its HTML on
+every visit, so every reader would have downloaded a signature block to look
+at a picture.
+
+The stamped copy was replaced before it shipped: with the two insertions
+removed, the file's checksum matched the source as drawn, byte for byte, and
+the PNG was re-rendered from it. `DiagramPageTests` now reads every SVG under
+`docs/images` and fails on a `<metadata>` element or a C2PA mark, which turns
+the next stamped copy into a red gate instead of a file size that looked
+wrong. The mechanism, for whoever meets it next: a drawing written to the
+repository by that route is read back and compared with what was sent, and
+the copy that goes in is the one the repository's own shell wrote. The test,
+read from this build:
+
+```live path=api/TheYard.Tests/DiagramPageTests.cs region=as-drawn
+```
+
+The photographs that arrived the same way carry the same credential, in the
+image's own metadata rather than in markup: at this writing, eighteen of the
+screenshots under `docs/images`. A credential in a photograph changes nothing
+on the page and says nothing false about how the file travelled, so those
+stay as they are unless the author wants them gone; a re-copy through the
+repository's own shell removes it.
+
 ## Files
 
 Documentation:
