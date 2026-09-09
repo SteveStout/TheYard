@@ -135,6 +135,82 @@ public class BidServiceTests
         Assert.Equal(28_000, state.Amount);
     }
 
+    // #region sold
+    /// <summary>
+    /// The sale is everybody's. Before 1.0.0.110 the second account's bid at
+    /// the buy-now price was resolved by the same shortcut that sold it the
+    /// first time, so one vehicle had two buyers and each was told it was
+    /// theirs; the standing already knew it was sold and nobody asked it (ADR:
+    /// Accounts and per-user bids, the addendum on the second buyer).
+    /// </summary>
+    [Fact]
+    public async Task Buy_now_ends_the_auction_for_everybody_else()
+    {
+        var service = new BidService();
+        var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800) with { BuyNowPrice = 28_000 };
+        const string Stranger = "second-account";
+
+        Assert.False(service.IsSold(vehicle.Id));
+        Assert.Equal(BidOutcomeKind.Won, (await service.BuyNowAsync(vehicle, Now, Buyer)).Kind);
+        Assert.True(service.IsSold(vehicle.Id));
+
+        // The three doors a second buyer could try: a bid at the buy-now price,
+        // which used to win; a bid above the minimum, which used to be accepted;
+        // and Buy Now itself.
+        var atBuyNow = await service.PlaceBidAsync(vehicle, 28_000, Now, Stranger);
+        var overMinimum = await service.PlaceBidAsync(vehicle, 28_500, Now, Stranger);
+        var again = await service.BuyNowAsync(vehicle, Now, Stranger);
+        foreach (var outcome in new[] { atBuyNow, overMinimum, again })
+        {
+            Assert.Equal(BidOutcomeKind.Rejected, outcome.Kind);
+            Assert.Equal(BidRules.SoldReason, outcome.Reason);
+        }
+
+        // Nothing of the stranger's was recorded, and the buyer still holds it.
+        Assert.Empty(service.SnapshotFor(Stranger));
+        Assert.True(service.SnapshotFor(Buyer)[vehicle.Id].WonBuyNow);
+        Assert.Equal(Buyer, service.Standing()[vehicle.Id].HighBidderId);
+    }
+
+    /// <summary>
+    /// A bid at the buy-now price is a purchase too (the rule in BidRules), so
+    /// it sells the vehicle the same way, and the buyer's own second bid is
+    /// refused like anybody else's: sold is sold.
+    /// </summary>
+    [Fact]
+    public async Task A_bid_at_the_buy_now_price_sells_it_the_same_way()
+    {
+        var service = new BidService();
+        var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 27_900) with { BuyNowPrice = 28_000 };
+
+        Assert.Equal(BidOutcomeKind.Won, (await service.PlaceBidAsync(vehicle, 30_000, Now, Buyer)).Kind);
+
+        Assert.True(service.IsSold(vehicle.Id));
+        Assert.Equal(BidRules.SoldReason, (await service.BuyNowAsync(vehicle, Now, "second-account")).Reason);
+        Assert.Equal(BidRules.SoldReason, (await service.PlaceBidAsync(vehicle, 29_000, Now, Buyer)).Reason);
+    }
+
+    /// <summary>
+    /// A sale replayed from the store is a sale: the process that restarts
+    /// learns the vehicle is sold from the same row it learns the price from.
+    /// </summary>
+    [Fact]
+    public async Task A_sale_replayed_from_the_store_still_refuses_the_next_buyer()
+    {
+        var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800) with { BuyNowPrice = 28_000 };
+        var sale = new StoredBid(Buyer, vehicle.Id, new BidState(28_000, 16, WonBuyNow: true, AtMs: 1));
+        var store = new FlakyStore(sale);
+        var service = new BidService(store);
+        // The first replay fails by design of the fake; the next caller retries it.
+        await Assert.ThrowsAsync<IOException>(() => service.LoadAsync());
+
+        var outcome = await service.BuyNowAsync(vehicle, Now, "second-account");
+
+        Assert.Equal(BidRules.SoldReason, outcome.Reason);
+        Assert.True(service.IsSold(vehicle.Id));
+    }
+    // #endregion sold
+
     // #region reset
     [Fact]
     public async Task Reset_clears_the_callers_bids_and_names_the_vehicles_it_touched()

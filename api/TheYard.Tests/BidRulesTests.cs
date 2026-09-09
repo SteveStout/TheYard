@@ -50,8 +50,8 @@ public class BidRulesTests
     {
         var vehicle = TestData.Vehicle(id: IdWithStatus(AuctionStatus.Live), currentBid: 22_800);
 
-        Assert.Equal(BidOutcomeKind.Accepted, BidRules.ResolveBid(vehicle, 23_300, Now).Kind);
-        var rejected = BidRules.ResolveBid(vehicle, 23_299, Now);
+        Assert.Equal(BidOutcomeKind.Accepted, BidRules.ResolveBid(vehicle, 23_300, Now, sold: false).Kind);
+        var rejected = BidRules.ResolveBid(vehicle, 23_299, Now, sold: false);
         Assert.Equal(BidOutcomeKind.Rejected, rejected.Kind);
         Assert.Contains("at least", rejected.Reason);
     }
@@ -62,7 +62,7 @@ public class BidRulesTests
     public void Non_live_auctions_reject_every_bid(AuctionStatus status)
     {
         var vehicle = TestData.Vehicle(id: IdWithStatus(status));
-        Assert.Equal(BidOutcomeKind.Rejected, BidRules.ResolveBid(vehicle, 1_000_000, Now).Kind);
+        Assert.Equal(BidOutcomeKind.Rejected, BidRules.ResolveBid(vehicle, 1_000_000, Now, sold: false).Kind);
     }
 
     [Fact]
@@ -72,8 +72,8 @@ public class BidRulesTests
         var vehicle = TestData.Vehicle(id: IdWithStatus(AuctionStatus.Live), currentBid: 27_900);
         vehicle = vehicle with { BuyNowPrice = 28_000 };
 
-        Assert.Equal(BidOutcome.Won(28_000), BidRules.ResolveBid(vehicle, 28_000, Now));
-        Assert.Equal(BidOutcome.Won(28_000), BidRules.ResolveBid(vehicle, 30_000, Now));
+        Assert.Equal(BidOutcome.Won(28_000), BidRules.ResolveBid(vehicle, 28_000, Now, sold: false));
+        Assert.Equal(BidOutcome.Won(28_000), BidRules.ResolveBid(vehicle, 30_000, Now, sold: false));
     }
 
     [Fact]
@@ -83,8 +83,39 @@ public class BidRulesTests
         var ended = TestData.Vehicle(id: IdWithStatus(AuctionStatus.Ended)) with { BuyNowPrice = 28_000 };
         var unpriced = TestData.Vehicle(id: IdWithStatus(AuctionStatus.Live));
 
-        Assert.Equal(BidOutcomeKind.Won, BidRules.ResolveBuyNow(live, Now).Kind);
-        Assert.Equal(BidOutcomeKind.Rejected, BidRules.ResolveBuyNow(ended, Now).Kind);
-        Assert.Equal(BidOutcomeKind.Rejected, BidRules.ResolveBuyNow(unpriced, Now).Kind);
+        Assert.Equal(BidOutcomeKind.Won, BidRules.ResolveBuyNow(live, Now, sold: false).Kind);
+        Assert.Equal(BidOutcomeKind.Rejected, BidRules.ResolveBuyNow(ended, Now, sold: false).Kind);
+        Assert.Equal(BidOutcomeKind.Rejected, BidRules.ResolveBuyNow(unpriced, Now, sold: false).Kind);
     }
+
+    // #region sold
+    /// <summary>
+    /// Sold comes before everything, including the rule that a bid at the
+    /// buy-now price wins. Without this order the second account's bid at that
+    /// price on a vehicle already bought was a second win on the same vehicle,
+    /// and the live site answered exactly that from the day bids got owners
+    /// until 1.0.0.110 (ADR: Accounts and per-user bids, the addendum on the
+    /// second buyer).
+    /// </summary>
+    [Fact]
+    public void A_sold_vehicle_takes_no_bid_and_no_second_purchase()
+    {
+        var priced = TestData.Vehicle(id: IdWithStatus(AuctionStatus.Live), currentBid: 27_900);
+        var live = priced with { BuyNowPrice = 28_000 };
+
+        var atBuyNow = BidRules.ResolveBid(live, 28_000, Now, sold: true);
+        var overBuyNow = BidRules.ResolveBid(live, 40_000, Now, sold: true);
+        var atMinimum = BidRules.ResolveBid(live, 28_400, Now, sold: true);
+        var again = BidRules.ResolveBuyNow(live, Now, sold: true);
+
+        foreach (var outcome in new[] { atBuyNow, overBuyNow, atMinimum, again })
+        {
+            Assert.Equal(BidOutcomeKind.Rejected, outcome.Kind);
+            Assert.Equal(BidRules.SoldReason, outcome.Reason);
+        }
+        // And the same vehicle, unsold, still sells at the buy-now price: the
+        // new check is in front of the old rule, not instead of it.
+        Assert.Equal(BidOutcome.Won(28_000), BidRules.ResolveBid(live, 28_000, Now, sold: false));
+    }
+    // #endregion sold
 }

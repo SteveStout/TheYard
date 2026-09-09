@@ -58,17 +58,22 @@ Parameters: `q` (matches every filterable field, including derived auction statu
 `min_condition`, `price_min`, `price_max`, `sort` (ending-soonest, price-asc,
 price-desc, condition, most-bids), `limit` (default 100, max 500), `offset`. Responses
 are an envelope `{ total, vehicles }`, each vehicle carrying server-derived auction
-facts (`auction_starts_at`, `auction_ends_at`, `auction_status`, `min_next_bid`).
+facts (`auction_starts_at`, `auction_ends_at`, `auction_status`, `min_next_bid`, and
+`sold`, true once anybody has bought it).
 Invalid `status`, `sort` or `anchor_ms` values return 400 as RFC 9457 ProblemDetails
 with the message in `detail`. `GET /api/vehicles/{id}` fetches one vehicle;
 `GET /api/facets` feeds the filter dropdowns from the full dataset.
 
-Bidding is server-side and validated by the domain rules:
+Bidding is server-side, validated by the domain rules, and belongs to a signed-in
+account (`POST /api/auth/register`, `/login`, `/logout`; `GET /api/auth/me`):
 `POST /api/vehicles/{id}/bids` `{ amount, anchor_ms }` answers accepted or won, or 400
 in the same problem shape; `POST /api/vehicles/{id}/buy-now`; `GET /api/bids` (the
-single anonymous buyer's standing); `DELETE /api/bids` (reset). Bid state lives in API
-memory and is overlaid on vehicles before filtering, so price filters see what the UI
-shows. If the API is not running, the app shows a clear error state with a retry.
+signed-in account's standing on every vehicle it has bid on, an empty map signed out);
+`DELETE /api/bids` (that account's start-over, nobody else's). Bids live in the
+request's store, Azure SQL Database or Azure Cosmos DB on the live sites and SQLite
+locally, are read into memory once at startup, and are overlaid on vehicles before
+filtering, so price filters see what the UI shows. If the API is not running, the app
+shows a clear error state with a retry.
 
 The app also serves its own documentation and health:
 `GET /api/docs/{slug}` (every document in the sidebar, live code samples expanded at
@@ -156,10 +161,15 @@ each with its own changelog line and, where it decided something, its own record
   live mix of ended, live, and upcoming auctions.
 - **A bid at or above the Buy Now price wins immediately at the Buy Now price**, even if
   it would fail the minimum-increment check: the instant-win rule takes precedence.
-- **Single anonymous buyer.** Your bids live in the API's memory, mark you high bidder,
-  and survive browser reloads (not API restarts); there are no competing bidders
-  advancing prices. "Reset bids" (in the sidebar, or the header on a phone) clears the
-  slate.
+- **A purchase ends the auction for everybody.** Once anybody has bought a vehicle it is
+  sold: every listing says so, and every further bid and every second Buy Now is refused
+  with "This vehicle has been sold.", whatever the clock says. Until 1.0.0.110 only the
+  buyer saw the sale and a second account could buy the same vehicle again (ADR: Accounts
+  and per-user bids, the addendum on the second buyer).
+- **Bids belong to accounts and persist.** Register or sign in and the bid is yours: it
+  survives reloads and restarts, a simulated room of other bidders advances prices while
+  a tab is open (ADR: Competing bidders), and two visitors can outbid each other. "Reset
+  bids" is one person's start-over and leaves everybody else's bids standing.
 - **Currency is CAD** (`en-CA`) since every listing is Canadian; one constant in
   `src/lib/format.ts` switches it.
 - **Photos are representative, not the actual lot.** 50 free-license photos (10 per body
@@ -232,12 +242,13 @@ each with its own changelog line and, where it decided something, its own record
   both be told the truth about it.
 - **Navigation:** every view is a GET URL. Filters, sorts, the open vehicle and the Admin
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
-- **A sidebar that documents the app from inside it:** App Architecture, Hosting, CI/CD,
-  Best Practices, Changelog and About, holding the architecture and style pages, the
-  data flow, infrastructure and entity relationship diagrams on their own zoomable
-  pages, sixty-nine decision records in one numbered index, the Bicep infrastructure, my resume, and
-  How this was built, which says plainly that an AI agent wrote most of this and
-  points at the evidence for judging what that produced.
+- **A sidebar that documents the app from inside it:** App Architecture, SQL vs Cosmos
+  DB, Diagrams, Hosting, CI/CD, Best Practices, Changelog and About, holding the
+  architecture and style pages, the two stores side by side, the data flow,
+  infrastructure, entity relationship, two-sites and store comparison diagrams on their
+  own zoomable pages, sixty-nine decision records in one numbered index, the Bicep
+  infrastructure, my resume, and How this was built, which says plainly that an AI agent
+  wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
   alike), the container group's own state read from Azure with a managed identity, the
   last hour of traffic as Application Insights recorded it, and every SQL statement the
@@ -338,8 +349,9 @@ each with its own changelog line and, where it decided something, its own record
   direction the rest of the design points.
 - **Price filtering and sorting use the competing price**, the high bid or the opening
   ask when there are no bids, so unbid vehicles do not sort as free.
-- **Buy Now is a purchase, not a bid**: it does not inflate the bid count, and the
-  vehicle presents as "Sold" with a purchase price everywhere.
+- **Buy Now is a purchase, not a bid**: it does not inflate the bid count, the vehicle
+  presents as "Sold" with a purchase price everywhere and to everybody, and it takes no
+  further bid from anyone.
 - **One clock at the app root** (`useNow`) drives every countdown and status, so a card
   and its detail view can never disagree about liveness.
 - **Query requests are debounced (500 ms) and cached (5 min, per query string,
@@ -368,6 +380,12 @@ each with its own changelog line and, where it decided something, its own record
   C#, the server and browser disagreed first across timezones, then on DST transition
   days. The durable fix was not a patch: the client now sends its literal local-midnight
   `anchor_ms`, and all derived facts moved server-side so the drift class cannot recur.
+- **One vehicle had two buyers.** Buy Now recorded the sale on the buyer's own bid and
+  nowhere else, so a second account saw a live auction, bid the Buy Now price and was
+  told it had won the same vehicle; the room already knew better and refused to bid on
+  sold vehicles, and nobody had asked the rules the same question. Found by a fresh-eyes
+  review of the code with no memory of the project, held by tests at the rules, the
+  service and the API, and recorded in ADR: Accounts and per-user bids.
 - **A passing test suite was proven blind by mutation.** Reordering the buy-now check
   ahead of bid validation left all tests green while breaking the rules, so the test that
   catches it now exists; the companion worry from the same review, a non-numeric amount
@@ -394,7 +412,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (392 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (397 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory

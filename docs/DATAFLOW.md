@@ -58,8 +58,9 @@ walks that file top to bottom.
    `InventoryService.Search`.
 5. **Wire.** `api/TheYard.Api/VehicleWire.cs` stamps the server-derived auction facts
    onto each vehicle (`auction_starts_at`, `auction_ends_at`, `auction_status`,
-   `min_next_bid`), and the endpoint (`api/TheYard.Api/Program.cs`) responds with a
-   snake_case envelope `{ total, vehicles }`.
+   `min_next_bid`, and `sold`, from everybody's standing), and the endpoint
+   (`api/TheYard.Api/Program.cs`) responds with a snake_case envelope
+   `{ total, vehicles }`.
 6. **Fetch.** `src/lib/data.ts` is the browser's single seam: it debounces filter
    changes (500 ms), caches responses per query string (5-minute TTL; hits skip the
    debounce), and aborts superseded requests. The query string itself is built by
@@ -74,9 +75,10 @@ walks that file top to bottom.
 
 1. `src/components/BidPanel.tsx` posts `{ amount, anchor_ms }` to
    `POST /api/vehicles/{id}/bids` via `src/lib/data.ts`.
-2. `api/TheYard.Domain/BidRules.cs` is the sole authority: live-window check, tiered
-   minimum increment, and the buy-now override (a bid at or above `buy_now_price` wins
-   outright at that price).
+2. `api/TheYard.Domain/BidRules.cs` is the sole authority: sold first (a vehicle anybody
+   has bought takes no bid and no second purchase, a fact `BidService` supplies from
+   everybody's standing), then the live-window check, the tiered minimum increment, and
+   the buy-now override (a bid at or above `buy_now_price` wins outright at that price).
 3. Accepted or won bids are written to the store first, Azure SQL Database or Azure
    Cosmos DB through `IBidStore`, and then to the in-memory standing in
    `api/TheYard.Application/BidService.cs`, under the signed-in account's id (ADR:

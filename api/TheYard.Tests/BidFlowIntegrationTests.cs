@@ -46,7 +46,11 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
         // Pick a live vehicle sorted by most bids, because its window ends hours or
         // days out, so it cannot flip to ended mid-test.
         using var live = await GetAsync($"/api/vehicles?status=live&sort=most-bids&limit=50&anchor_ms={anchor}");
-        var target = live.RootElement.GetProperty("vehicles")[0];
+        // And not one anybody has bought: a sold vehicle takes no bid (ADR:
+        // Accounts and per-user bids, the addendum on the second buyer), and on
+        // the document store the test containers remember yesterday's runs.
+        var target = live.RootElement.GetProperty("vehicles").EnumerateArray()
+            .First(vehicle => !vehicle.GetProperty("sold").GetBoolean());
         string id = target.GetProperty("id").GetString()!;
         int min = target.GetProperty("min_next_bid").GetInt32();
         int bidCount = target.GetProperty("bid_count").GetInt32();
@@ -75,7 +79,8 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
         string? buyNowId = null;
         foreach (var vehicle in live.RootElement.GetProperty("vehicles").EnumerateArray())
         {
-            if (vehicle.GetProperty("buy_now_price").ValueKind != JsonValueKind.Null)
+            if (vehicle.GetProperty("buy_now_price").ValueKind != JsonValueKind.Null
+                && !vehicle.GetProperty("sold").GetBoolean())
             {
                 buyNowId = vehicle.GetProperty("id").GetString();
                 break;

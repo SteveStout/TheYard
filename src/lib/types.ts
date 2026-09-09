@@ -49,4 +49,10 @@ export interface Vehicle {
   auction_status: 'upcoming' | 'live' | 'ended';
   /** The minimum acceptable bid right now, per the server's rules. */
   min_next_bid: number;
+  /**
+   * Somebody bought this vehicle outright, so it takes no bid from anybody,
+   * whatever the window says (ADR: Accounts and per-user bids, the addendum
+   * on the second buyer). The buyer's own view still comes from their bid map.
+   */
+  sold: boolean;
 }

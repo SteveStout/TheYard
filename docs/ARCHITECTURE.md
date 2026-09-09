@@ -334,8 +334,8 @@ answer. The seed file is never modified.
 else. The browser once mirrored the auction math in TypeScript and the two
 disagreed twice, across time zones and then on a daylight-saving day. The
 derived facts now travel on the wire (`auction_starts_at`,
-`auction_ends_at`, `auction_status`, `min_next_bid`) and the browser only
-formats them.
+`auction_ends_at`, `auction_status`, `min_next_bid`, `sold`) and the browser
+only formats them.
 
 **The wire is the contract.** snake_case in the dataset, snake_case on the
 wire, snake_case in the browser: nothing is renamed in transit. The

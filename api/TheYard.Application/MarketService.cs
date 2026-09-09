@@ -168,7 +168,9 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
         {
             return false;
         }
-        if (BidRules.ResolveBid(standing, next, clock).Kind != BidOutcomeKind.Accepted)
+        // Not sold, by construction: a vehicle anybody bought returned at the
+        // top of this method, before the arithmetic.
+        if (BidRules.ResolveBid(standing, next, clock, sold: false).Kind != BidOutcomeKind.Accepted)
         {
             return false;
         }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using TheYard.Domain;
 
 namespace TheYard.Tests;
 
@@ -107,11 +108,41 @@ public abstract class AuthTestBase : IDisposable
     {
         using var page = JsonDocument.Parse(
             await client.GetStringAsync(
-                $"/api/vehicles?status=live&sort=most-bids&limit=1&anchor_ms={anchor}"));
+                $"/api/vehicles?status=live&sort=most-bids&limit=25&anchor_ms={anchor}"));
         var live = page.RootElement.GetProperty("vehicles");
         Assert.True(live.GetArrayLength() > 0, "the anchored clock should always have a live auction");
-        var vehicle = live[0];
+        // Not one anybody has bought: a sold vehicle takes no bid from anyone
+        // (ADR: Accounts and per-user bids, the addendum on the second buyer),
+        // and on the document store the test containers remember yesterday's
+        // runs.
+        var vehicle = live.EnumerateArray().First(row => !row.GetProperty("sold").GetBoolean());
         return (vehicle.GetProperty("id").GetString()!, vehicle.GetProperty("min_next_bid").GetInt32());
+    }
+
+    /// <summary>
+    /// A live vehicle with a Buy Now price above its standing bid that nobody
+    /// has bought, and not the most-bid one: the bidding tests open that one,
+    /// and a purchase here would refuse their bids for as long as the store
+    /// remembered it. Above its standing bid, because the synthetic catalogue
+    /// holds vehicles already bid past their Buy Now price, and the sale price
+    /// this test asserts is only the price shown when the purchase raised it.
+    /// </summary>
+    protected static async Task<(string Id, int BuyNow)> AVehicleToBuy(HttpClient client, long anchor)
+    {
+        using var page = JsonDocument.Parse(
+            await client.GetStringAsync(
+                $"/api/vehicles?status=live&sort=most-bids&limit=100&anchor_ms={anchor}"));
+        var vehicle = page.RootElement.GetProperty("vehicles").EnumerateArray()
+            .Skip(1)
+            .LastOrDefault(row =>
+                row.GetProperty("buy_now_price").ValueKind == JsonValueKind.Number
+                && !row.GetProperty("sold").GetBoolean()
+                && (row.GetProperty("current_bid").ValueKind != JsonValueKind.Number
+                    || row.GetProperty("current_bid").GetInt32() < row.GetProperty("buy_now_price").GetInt32()));
+        Assert.True(
+            vehicle.ValueKind == JsonValueKind.Object,
+            "the live page should hold a priced vehicle nobody has bought");
+        return (vehicle.GetProperty("id").GetString()!, vehicle.GetProperty("buy_now_price").GetInt32());
     }
 
     public void Dispose()
@@ -413,5 +444,72 @@ public class AuthBidTests : AuthTestBase
             "a history nobody can read is a list of identifiers");
         Assert.Equal(amount, entry.GetProperty("bid").GetProperty("amount").GetInt32());
     }
+
+    // #region sold
+    /// <summary>
+    /// One vehicle, one buyer, and everybody else told so. The second account
+    /// reads `sold` on the vehicle, in the detail and in the listing, and its
+    /// bid at the buy-now price and its own Buy Now are both refused with the
+    /// sentence the rules keep; until 1.0.0.110 both were a second purchase of
+    /// the same vehicle (ADR: Accounts and per-user bids, the addendum on the
+    /// second buyer). The buyer's start-over undoes the sale at the end, which is
+    /// also what keeps the shared containers on the document store from
+    /// carrying a sold vehicle into tomorrow's runs.
+    /// </summary>
+    [Fact]
+    public async Task A_vehicle_bought_outright_is_sold_to_everybody()
+    {
+        await using var api = Api();
+        long anchor = Anchor();
+
+        var first = api.CreateClient();
+        await Register(first, _first);
+        var (id, price) = await AVehicleToBuy(first, anchor);
+        try
+        {
+            var bought = await first.PostAsJsonAsync($"/api/vehicles/{id}/buy-now", new { anchor_ms = anchor });
+            string boughtBody = await bought.Content.ReadAsStringAsync();
+            Assert.True(bought.IsSuccessStatusCode, boughtBody);
+            using var answer = JsonDocument.Parse(boughtBody);
+            Assert.Equal("won", answer.RootElement.GetProperty("kind").GetString());
+            Assert.True(
+                answer.RootElement.GetProperty("vehicle").GetProperty("sold").GetBoolean(),
+                "the buyer's own answer carries the sale");
+
+            var second = api.CreateClient();
+            await Register(second, _second);
+            using var detail = JsonDocument.Parse(
+                await second.GetStringAsync($"/api/vehicles/{id}?anchor_ms={anchor}"));
+            Assert.True(detail.RootElement.GetProperty("sold").GetBoolean(), "a stranger reads sold on the vehicle");
+            Assert.Equal(price, detail.RootElement.GetProperty("current_bid").GetInt32());
+
+            var bid = await second.PostAsJsonAsync(
+                $"/api/vehicles/{id}/bids", new { amount = price, anchor_ms = anchor });
+            var again = await second.PostAsJsonAsync($"/api/vehicles/{id}/buy-now", new { anchor_ms = anchor });
+            foreach (var refused in new[] { bid, again })
+            {
+                Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+                using var problem = JsonDocument.Parse(await refused.Content.ReadAsStringAsync());
+                Assert.Equal(BidRules.SoldReason, problem.RootElement.GetProperty("detail").GetString());
+            }
+            Assert.Equal("{}", (await second.GetStringAsync("/api/bids")).Trim());
+
+            // The listing says so too, to anybody, signed in or not.
+            using var page = JsonDocument.Parse(
+                await api.CreateClient().GetStringAsync(
+                    $"/api/vehicles?status=live&sort=most-bids&limit=100&anchor_ms={anchor}"));
+            var row = page.RootElement.GetProperty("vehicles").EnumerateArray()
+                .Single(vehicle => vehicle.GetProperty("id").GetString() == id);
+            Assert.True(row.GetProperty("sold").GetBoolean(), "the listing row carries the sale");
+        }
+        finally
+        {
+            await first.DeleteAsync("/api/bids");
+        }
+
+        using var after = JsonDocument.Parse(await first.GetStringAsync($"/api/vehicles/{id}?anchor_ms={anchor}"));
+        Assert.False(after.RootElement.GetProperty("sold").GetBoolean(), "the buyer's start-over undoes the sale");
+    }
+    // #endregion sold
 }
 // #endregion auth-tests

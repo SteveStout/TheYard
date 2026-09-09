@@ -46,6 +46,7 @@ const baseVehicle: Vehicle = {
   auction_ends_at: NOW + DAY_MS,
   auction_status: 'live',
   min_next_bid: 23300,
+  sold: false,
 };
 
 const makeVehicle = (overrides: Partial<Vehicle> = {}): Vehicle => ({

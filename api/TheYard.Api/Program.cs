@@ -719,7 +719,7 @@ app.MapGet("/api/vehicles", (
     return Results.Json(new
     {
         total = result.Total,
-        vehicles = result.Vehicles.Select(v => VehicleWire.ToWire(v, clock, wireFormat)).ToList(),
+        vehicles = result.Vehicles.Select(v => VehicleWire.ToWire(v, clock, wireFormat, bids.IsSold(v.Id))).ToList(),
     }, wireFormat);
 });
 #endregion inventory-endpoint
@@ -736,7 +736,9 @@ app.MapGet("/api/vehicles/{id}", (CurrentBackend current, string id, long? ancho
         return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
     }
     return inventory.GetById(id) is { } vehicle
-        ? Results.Json(VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat), wireFormat)
+        ? Results.Json(
+            VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat, bids.IsSold(vehicle.Id)),
+            wireFormat)
         : Results.NotFound();
 });
 
@@ -972,7 +974,7 @@ async Task<IResult> HandleBid(
         // reset, because DELETE /api/bids took no user at all; it is now only
         // this account's, from a second tab, which is rarer and just as real.
         bid = BidViews.For(bids, market, userId).TryGetValue(id, out var view) ? view : null,
-        vehicle = VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat),
+        vehicle = VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat, bids.IsSold(vehicle.Id)),
     }, wireFormat);
 }
 #endregion bid-handling

@@ -48,7 +48,10 @@ React.**
   browser's clock uses; the dataset's own `auction_start` date string passes through as the dataset has it
   and nothing is derived from it.
 - Bid rules live only in `TheYard.Domain/BidRules.cs`. A bid at or above buy-now wins AT the buy-now
-  price, and that check runs BEFORE the increment check.
+  price, and that check runs BEFORE the increment check. A vehicle anybody has bought is SOLD, to
+  everybody: that check runs before all the others, the caller that holds everybody's standing
+  (`BidService.IsSold`) supplies it, and the wire says `sold` on every vehicle. A listing or a rule
+  that forgets it recreates the second buyer (ADR: Accounts and per-user bids, addendum).
 
 ## Testing
 

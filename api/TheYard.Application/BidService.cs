@@ -124,6 +124,19 @@ public sealed class BidService
     public IReadOnlyDictionary<string, VehicleStanding> Standing() =>
         new Dictionary<string, VehicleStanding>(_standing, StringComparer.Ordinal);
 
+    // #region sold
+    /// <summary>
+    /// Whether anybody has bought this vehicle outright. One dictionary read,
+    /// because it is asked once per vehicle on every listing answer, the way
+    /// Apply is. The fact itself has been in the standing since bids got
+    /// owners; what was missing until 1.0.0.110 was anybody asking it before
+    /// taking the next bid (ADR: Accounts and per-user bids, the addendum on
+    /// the second buyer).
+    /// </summary>
+    public bool IsSold(string vehicleId) =>
+        _standing.TryGetValue(vehicleId, out var held) && held.SoldBuyNow;
+    // #endregion sold
+
     // #region standing-as-bids
     /// <summary>
     /// The standing, in the shape the simulated room reads (ADR-027). The room
@@ -170,7 +183,9 @@ public sealed class BidService
         try
         {
             var merged = Apply(vehicle);
-            var outcome = BidRules.ResolveBid(merged, amount, clock);
+            // Sold is read under the same gate as the write that makes it true,
+            // so two buyers cannot both find it false.
+            var outcome = BidRules.ResolveBid(merged, amount, clock, IsSold(vehicle.Id));
             if (outcome.Kind != BidOutcomeKind.Rejected)
             {
                 var state = new BidState(
@@ -196,7 +211,11 @@ public sealed class BidService
     }
     // #endregion place
 
-    /// <summary>Buy Now is a purchase, not a bid, so the bid count stays as-is.</summary>
+    /// <summary>
+    /// Buy Now is a purchase, not a bid, so the bid count stays as-is. It is
+    /// also the end of the auction for everybody: the second buyer is refused
+    /// with the same sentence a bid gets.
+    /// </summary>
     public async Task<BidOutcome> BuyNowAsync(Vehicle vehicle, AuctionClock clock, string userId)
     {
         await LoadAsync();
@@ -204,7 +223,7 @@ public sealed class BidService
         try
         {
             var merged = Apply(vehicle);
-            var outcome = BidRules.ResolveBuyNow(merged, clock);
+            var outcome = BidRules.ResolveBuyNow(merged, clock, IsSold(vehicle.Id));
             if (outcome.Kind == BidOutcomeKind.Won)
             {
                 var state = new BidState(outcome.Amount, merged.BidCount, WonBuyNow: true, AtMs: clock.NowMs);

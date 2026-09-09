@@ -204,6 +204,77 @@ order of events that had been seen and not the sign-out that follows a
 registration inside the same window. Counting changes handles every order the
 same way.
 
+## Addendum, 2026-09-09: the second buyer
+
+Three readers with no memory of the project were handed the checkout on 2026-09-09
+and asked to find fault, and two of them, the interviewer and the junior
+developer, put the same finding at the top of their lists. It is the question
+this record should have asked itself when bids got owners: what happens to the
+auction when somebody buys the vehicle? The answer, read off the code, was
+nothing. Buy Now recorded the sale on the buyer's own bid,
+`WonBuyNow`, and the standing that everybody's overlay reads carried a
+`SoldBuyNow` that the room consulted before bidding and nothing else did. So the
+buyer's page said Sold, everybody else's page showed a live auction standing at
+the Buy Now price, and a second account that bid that price was resolved by the
+same shortcut that had sold it the first time and told it had won. Two buyers,
+one vehicle, each told the truth as their own bids had it.
+
+That is what "two visitors can outbid each other and both be told the truth"
+looks like when one of the truths was never put on the wire. The sale was a
+fact about the vehicle, stored as a fact about a bid.
+
+The fix is one boolean, asked in the right place, three times. The rules take
+it as a parameter and check it before everything else, including the shortcut:
+
+```live path=api/TheYard.Domain/BidRules.cs region=sold
+```
+
+The service supplies it from the standing it already kept, under the same gate
+as the write that makes it true, so two purchases cannot both find it false:
+
+```live path=api/TheYard.Application/BidService.cs region=sold
+```
+
+And the wire carries it on every vehicle, in every listing and every detail, as
+a fact beside the clock's status rather than folded into it, because the browser
+recomputes the status from the window as time passes and would overwrite a
+status that said otherwise. The parameter has no default, so a caller that
+forgets it does not compile:
+
+```live path=api/TheYard.Api/VehicleWire.cs region=sold
+```
+
+The browser treats `sold` the way it already treated the buyer's own purchase:
+the countdown becomes a Sold chip, the price is labelled a purchase price, and
+the panel offers no form. A stranger who had been bidding reads that somebody
+bought it.
+
+Three tests hold it, one per layer. The rules refuse a sold vehicle at the Buy
+Now price, above it, at the minimum and through Buy Now, and still sell the same
+vehicle unsold, so the new check is in front of the old rule and not instead of
+it. The service refuses a second account through every door after the first has
+bought, records nothing of the stranger's and leaves the buyer holding it, sells
+the vehicle the same way when the purchase was a bid at the Buy Now price, and
+learns the sale from the store on a replay. And two accounts against the API:
+
+```live path=api/TheYard.Tests/AuthTests.cs region=sold
+```
+
+The integration test buys a vehicle other than the one the bidding tests open,
+and undoes the purchase at the end with the buyer's own start-over. That is not
+tidiness: the test containers on the document store keep every run's bids for a
+day (ADR: A second store on Cosmos DB, and what it costs), and a sold vehicle
+left there would refuse tomorrow's runs with the sentence this addendum added.
+The helper the bidding tests share now skips sold vehicles for the same reason.
+
+What this does not do, and is recorded as open: the sale is still a row on the
+buyer's bid rather than a state of the vehicle, so a buyer's start-over
+un-sells the vehicle, which is the right answer for a demo and the wrong one for
+an auction house; and the check-and-write is serialised by the process's own
+gate, which two containers running the same store do not share (ADR: One
+container, both stores). Both are the same shape as the retry that overwrites,
+and belong to the record that takes that on.
+
 ## Files
 
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the token, the cookie, and who is asking.
@@ -212,7 +283,8 @@ same way.
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the two indexes.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the store port, now keyed on the pair.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the one field Identity does not already have.
-- [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the proof.
+- [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the proof, and the second buyer refused.
+- [`api/TheYard.Domain/BidRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/BidRules.cs) and [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): sold, asked first and said on every vehicle.
 - [`docs/ADR-038-identity-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-038-identity-explained.md): the same setup, walked at a new developer's level.
 - [`docs/ADR-033-relational-store.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-033-relational-store.md): where bids got somewhere to live.
 - [`src/lib/auth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.ts): the account seam in the browser, and the question that ignores a late answer.

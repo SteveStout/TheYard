@@ -77,7 +77,7 @@ export function VehicleDetail({
             {vehicle.province}
           </p>
         </div>
-        {wonBuyNow ? (
+        {wonBuyNow || vehicle.sold ? (
           <span className={styles.soldChip}>Sold</span>
         ) : (
           <AuctionCountdown timing={timing} now={now} />

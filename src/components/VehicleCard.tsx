@@ -29,6 +29,10 @@ export function VehicleCard({
 }: VehicleCardProps) {
   const timing = auctionTiming(vehicle, now);
   const hasBids = vehicle.current_bid !== null;
+  // Sold to this visitor, or sold to somebody: either way the countdown is
+  // over and the price is what it went for (ADR: Accounts and per-user bids,
+  // the addendum on the second buyer).
+  const sold = isWon || vehicle.sold;
   const alt = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
 
   return (
@@ -36,13 +40,13 @@ export function VehicleCard({
       <div className={styles.media}>
         <VehicleImage src={vehicle.images[0]} alt={alt} fallbackLabel={alt} />
         <div className={styles.mediaOverlay}>
-          {isWon ? (
-            <span className={styles.soldChip}>Sold to you</span>
+          {sold ? (
+            <span className={styles.soldChip}>{isWon ? 'Sold to you' : 'Sold'}</span>
           ) : (
             <AuctionCountdown timing={timing} now={now} variant="overlay" />
           )}
-          {isHighBidder && !isWon && <span className={styles.highBidder}>High bidder</span>}
-          {isOutbid && !isWon && <span className={styles.outbid}>Outbid</span>}
+          {isHighBidder && !sold && <span className={styles.highBidder}>High bidder</span>}
+          {isOutbid && !sold && <span className={styles.outbid}>Outbid</span>}
         </div>
       </div>
 
@@ -61,7 +65,7 @@ export function VehicleCard({
         <div className={styles.priceRow}>
           <div>
             <span className={styles.priceLabel}>
-              {isWon ? 'Purchase price' : hasBids ? 'Current bid' : 'Starting bid'}
+              {sold ? 'Purchase price' : hasBids ? 'Current bid' : 'Starting bid'}
             </span>
             <span className={styles.price}>{formatCurrency(currentPrice(vehicle))}</span>
           </div>

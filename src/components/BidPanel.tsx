@@ -34,8 +34,12 @@ export function BidPanel({
   const [pending, setPending] = useState(false);
 
   const timing = auctionTiming(vehicle, now);
-  // A buy-now purchase ends the auction immediately, whatever the clock says.
-  const status = wonBuyNow ? 'ended' : timing.status;
+  // A buy-now purchase ends the auction immediately, whatever the clock says,
+  // and it ends it for everybody: the server says `sold` on the vehicle and
+  // refuses every bid on it, so the panel offers none (ADR: Accounts and
+  // per-user bids, the addendum on the second buyer).
+  const sold = wonBuyNow || vehicle.sold;
+  const status = sold ? 'ended' : timing.status;
   const hasBids = vehicle.current_bid !== null;
   const min = vehicle.min_next_bid;
   // #region stale-minimum
@@ -83,7 +87,7 @@ export function BidPanel({
   return (
     <section className={styles.panel} aria-label="Auction">
       <div className={styles.statusRow}>
-        {wonBuyNow ? (
+        {sold ? (
           <span className={styles.soldChip}>Sold</span>
         ) : (
           <AuctionCountdown timing={timing} now={now} />
@@ -95,7 +99,7 @@ export function BidPanel({
 
       <div className={styles.priceBlock}>
         <span className={styles.priceLabel}>
-          {wonBuyNow ? 'Purchase price' : hasBids ? 'Current bid' : 'Starting bid'}
+          {sold ? 'Purchase price' : hasBids ? 'Current bid' : 'Starting bid'}
         </span>
         <span className={styles.price}>{formatCurrency(currentPrice(vehicle))}</span>
         <ReserveBadge state={reserve} />
@@ -107,7 +111,13 @@ export function BidPanel({
         </p>
       )}
 
-      {status === 'ended' && !wonBuyNow && (
+      {sold && !wonBuyNow && (
+        <p className={styles.endedBox}>
+          Someone bought this vehicle for {formatCurrency(currentPrice(vehicle))}.
+        </p>
+      )}
+
+      {status === 'ended' && !sold && (
         <p className={wonAtClose ? styles.wonBox : styles.endedBox}>
           {wonAtClose
             ? `You won this auction at ${formatCurrency(currentPrice(vehicle))}.`
