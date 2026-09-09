@@ -65,7 +65,9 @@ number it holds was read from the other store and a cache of the wrong
 store's answers is worse than a cold page. The toggle always shows both
 families, so the choice reads as a choice: a family this container does not
 run is drawn as not here, and a store that did not come up cannot be chosen
-and says why.
+and says why. The server refuses the same choice with the same sentence
+(`Backends.Choose`), so a stale page or a script cannot set a year-long
+cookie for a store with no accounts behind it.
 
 ```live path=src/lib/stores.ts region=stores-seam
 ```
@@ -175,6 +177,31 @@ containers at once.
 - Every test that booted the application on Cosmos DB now boots it on both,
   with Cosmos DB as the default, which is the same suite exercising the
   selection as well.
+
+## Addendum, 2026-09-09: the night's own code, reviewed
+
+The second review of the day's code, the second pass in ADR: Reviewing my
+own work, and what that found, covered the document store. This pass read
+what the night added,
+`Stores.cs`, `Proof.cs`, the bar and the card, after both had run live.
+
+- The bar would not offer a store that did not come up, and the server took
+  the choice anyway. A page loaded before a deploy, or a script, could set a
+  year-long cookie for a store with no accounts behind it. The rule now lives
+  beside the selection rule as `Backends.Choose`, the endpoint asks it, and a
+  test walks a container whose document store did not come up.
+- The bar's sentence said "served from Azure Cosmos DB" for a visitor whose
+  cookie named a store that did not come up, which is true of the catalogue
+  and false of everything else. It now says the store did not come up, that
+  the catalogue is served from files, and that there are no accounts on it
+  until it does (`note` in `src/lib/stores.ts`, with a test).
+- The proof reads the container's two rings for what each of its requests
+  caused, and the rings are the container's, so a visitor bidding during a
+  run adds their statements to a sample's count. The times are the proof's
+  own requests; the counts can carry a visitor's. The proof record says so
+  now. Nothing else in `Proof.cs` needed to change: the pairing, the
+  tolerance and the correction were read line by line against the numbers
+  the live run produced and they agree.
 
 ## Files
 

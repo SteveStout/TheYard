@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchStores, segments, selectStore, type Stores } from '../lib/stores';
+import { fetchStores, note, segments, selectStore, type Stores } from '../lib/stores';
 import styles from './StoreBar.module.css';
 
 /**
@@ -38,8 +38,6 @@ export function StoreBar() {
     window.location.reload();
   };
 
-  const current = stores.stores.find((store) => store.key === stores.current);
-
   return (
     <div className={styles.bar} data-testid="store-bar">
       <div className={styles.inner}>
@@ -66,10 +64,7 @@ export function StoreBar() {
           ))}
         </div>
         <span className={styles.note} data-testid="store-bar-note">
-          {message ??
-            (current
-              ? `This page is served from ${current.name}. Accounts and bids live in the store they were made in.`
-              : '')}
+          {message ?? note(stores)}
         </span>
       </div>
     </div>

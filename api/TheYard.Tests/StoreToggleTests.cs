@@ -68,6 +68,28 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
+    public void A_store_that_did_not_come_up_cannot_be_chosen_and_the_refusal_is_a_sentence()
+    {
+        var both = new Backends([Fake("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB", ready: false)], "sql");
+
+        var (chosen, refusal) = both.Choose("sql");
+        Assert.Same(both.Default, chosen);
+        Assert.Null(refusal);
+
+        // The store is here, so a request naming it is still served by it
+        // (the catalogue comes from files); it is the switch that is refused.
+        Assert.Equal("cosmos", both.For(Request(cookie: "cosmos")).Key);
+        var (down, why) = both.Choose("cosmos");
+        Assert.Null(down);
+        Assert.Contains("Azure Cosmos DB did not come up", why);
+
+        var (missing, where) = both.Choose("nowhere");
+        Assert.Null(missing);
+        Assert.Contains("nothing called \"nowhere\"", where);
+        Assert.Contains("SQLite and Azure Cosmos DB", where);
+    }
+
+    [Fact]
     public void The_cookie_is_secure_behind_the_edge_and_plain_on_a_developers_machine()
     {
         var plain = Backends.CookieFor(Request());

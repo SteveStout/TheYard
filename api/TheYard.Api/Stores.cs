@@ -116,6 +116,28 @@ public sealed class Backends
         return Default;
     }
 
+    /// <summary>
+    /// The toggle's choice: a store this container has, and one that came up.
+    /// A store that did not come up still serves the catalogue from files, but
+    /// it has no accounts and no bids to switch to, so choosing it would set a
+    /// year-long cookie for a store with nothing behind it; the bar does not
+    /// offer it and the server does not take it either, so a stale page or a
+    /// script gets the same answer a visitor would. The refusal is a sentence
+    /// the page can show.
+    /// </summary>
+    public (Backend? Backend, string? Refusal) Choose(string? key)
+    {
+        if (Named(key) is not { } chosen)
+        {
+            return (null, $"This container runs {string.Join(" and ", _all.Select(backend => backend.Name))}, and nothing called \"{key}\".");
+        }
+        if (!chosen.Ready)
+        {
+            return (null, $"{chosen.Name} did not come up on this container, so there are no accounts or bids to switch to; the catalogue it would serve is the same one.");
+        }
+        return (chosen, null);
+    }
+
     /// <summary>The cookie the toggle sets: a year, the whole site, and never readable by a script, which has no reason to read it.</summary>
     public static CookieOptions CookieFor(HttpContext context) => new()
     {

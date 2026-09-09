@@ -84,6 +84,20 @@ export type Segment = {
   available: boolean;
 };
 
+/**
+ * The sentence beside the toggle. A store that did not come up still serves
+ * this page, from files, and the bar says so rather than announcing a store
+ * with no accounts behind it as though it were whole.
+ */
+export function note(stores: Stores): string {
+  const current = stores.stores.find((store) => store.key === stores.current);
+  if (!current) return '';
+  if (!current.ready) {
+    return `${current.name} did not come up on this container. The catalogue is served from files and there are no accounts on this store until it does.`;
+  }
+  return `This page is served from ${current.name}. Accounts and bids live in the store they were made in.`;
+}
+
 /** What each segment of the toggle says and does, from the server's answer. */
 export function segments(stores: Stores): Segment[] {
   return FAMILIES.map((family) => {

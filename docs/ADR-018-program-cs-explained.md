@@ -186,16 +186,16 @@ the top of this record.
 
 ## Why this is one file
 
-It is 1,610 lines, and that is the first thing a reviewer notices, so it is
+It is 1,611 lines, and that is the first thing a reviewer notices, so it is
 worth saying that it is a decision rather than a drift.
 
 What those lines are:
 
 ```
-1,610 total
-  614 comment
+1,611 total
+  617 comment
    98 blank
-  898 code, across 36 endpoints
+  896 code, across 36 endpoints
 ```
 
 Twenty-five lines of code per endpoint, and most endpoints are a route, a

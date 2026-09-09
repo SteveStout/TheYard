@@ -1271,12 +1271,13 @@ app.MapGet("/api/stores", (HttpContext http) => Results.Json(backends.Describe(h
 
 app.MapPost("/api/stores/select", (HttpContext http, StoreChoice choice) =>
 {
-    if (backends.Named(choice.Store) is not { } chosen)
+    // A store this container does not have, or one that did not come up, is
+    // refused with the sentence the bar shows; the rule is beside the
+    // selection rule in Stores.cs so the two cannot drift apart.
+    var (chosen, refusal) = backends.Choose(choice.Store);
+    if (chosen is null)
     {
-        return Results.Problem(
-            detail: $"This container runs {string.Join(" and ", backends.All.Select(backend => backend.Name))}, and nothing called \"{choice.Store}\".",
-            statusCode: 400,
-            title: "That store is not here");
+        return Results.Problem(detail: refusal, statusCode: 400, title: "That store cannot be chosen");
     }
     http.Response.Cookies.Append(Backends.CookieName, chosen.Key, Backends.CookieFor(http));
     // Describe as the request will read it next time: the cookie is on the

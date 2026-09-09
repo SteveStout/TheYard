@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchStores, segments, selectStore, type Stores } from './stores';
+import { fetchStores, note, segments, selectStore, type Stores } from './stores';
 
 /**
  * The store toggle's seam (ADR: One container, both stores). What is worth
@@ -68,6 +68,20 @@ describe('segments', () => {
 
     expect(cosmos.available).toBe(false);
     expect(cosmos.title).toContain('unavailable');
+  });
+});
+
+describe('note', () => {
+  it('names the store serving the page, and tells the truth about one that did not come up', () => {
+    expect(note(both)).toBe(
+      'This page is served from Azure SQL Database. Accounts and bids live in the store they were made in.'
+    );
+
+    const down = { ...both.stores[1], ready: false };
+    expect(note({ current: 'cosmos', stores: [both.stores[0], down] })).toContain(
+      'Azure Cosmos DB did not come up'
+    );
+    expect(note({ current: 'nowhere', stores: both.stores })).toBe('');
   });
 });
 

@@ -80,6 +80,13 @@ does not measure the stores under load, which nothing here does: one request
 at a time, in order, is the shape of a demo with one visitor and it is the
 shape this proof is honest about.
 
+The two rings the proof reads for statements, operations and request charge
+are the container's, so a visitor bidding during a run adds their statements
+to a sample's count on whichever store served them. The times are the
+proof's own requests and unaffected; the operation counts, and with them the
+"without the round trips" column, can carry a visitor's work for the few
+seconds a run takes. Reading the card a second time settles it.
+
 The relational round trip is a whole statement, not the wire alone, so the
 "without the round trips" column on a path with several statements takes off
 a little more than the wire on that side. The direction of the error is
