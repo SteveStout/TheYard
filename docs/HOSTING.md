@@ -19,6 +19,15 @@ production target that waits for a subscription upgrade. Every name in it is
 the one the records and the pipeline logs carry. The source is
 [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg); the records below explain each box.
 
+Since 1.0.0.100 there are two sites behind that edge, and the second
+drawing is how the two names reach the two container groups and how both
+groups reach both stores (ADR: A permanent address for the second site):
+
+[![TheYard's two sites: two names at Wix, one Netlify edge, two container groups on Azure, both stores behind both](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/two-sites.png)](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
+
+*A preview. [Open the two-sites diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
+to zoom in and follow it.*
+
 ## Websites and resources used
 
 - **Azure (portal.azure.com).** Runs the app: Container Instances for the
@@ -29,9 +38,12 @@ the one the records and the pipeline logs carry. The source is
   store as its default (ADR: One container, both stores). The only place code
   executes.
 - **Wix (wix.com).** The domain registrar. Holds stevenstout.biz and answers
-  DNS; one CNAME record points theyard at the edge.
-- **Netlify (netlify.com).** The free edge. Terminates HTTPS, holds the
-  certificate, and forwards every request to Azure unchanged.
+  DNS; two CNAME records, theyard and theyard-cosmos, point the two sites at
+  the same edge.
+- **Netlify (netlify.com).** The free edge. Terminates HTTPS for both names
+  on one certificate, and forwards every request to Azure unchanged: theyard
+  to the first container group, theyard-cosmos to the second (ADR: A
+  permanent address for the second site).
 - **Let's Encrypt (letsencrypt.org).** Issues the certificate at no cost;
   Netlify renews it automatically.
 - **Cloudflare (cloudflare.com).** Configured and dormant; becomes the edge
@@ -41,24 +53,31 @@ the one the records and the pipeline logs carry. The source is
 
 ## The chain, request by request
 
-1. **DNS.** theyard.stevenstout.biz is a CNAME record at the registrar (Wix)
-   pointing at the edge. TTLs sit at 30 minutes while the setup is young so
-   changes propagate fast. They get lengthened once things are boring.
+1. **DNS.** theyard.stevenstout.biz and theyard-cosmos.stevenstout.biz are
+   two CNAME records at the registrar (Wix), both pointing at the same edge.
+   TTLs sit at 30 minutes while the setup is young so changes propagate fast.
+   They get lengthened once things are boring.
 2. **Edge.** Netlify's free tier terminates HTTPS and forwards every request
    unchanged. The entire edge is three files in this repository, deployed from
-   GitHub on every push.
+   GitHub on every push that touches them. The name a request arrived on
+   picks the origin: two rules above the catch-all send theyard-cosmos to the
+   second container group, and everything else goes to the first (ADR: A
+   permanent address for the second site).
 3. **Origin.** Azure Container Instances runs the Docker image in RG-THEYARD-SS
    (westus2), serving HTTP on port 8080. Azure does all the compute. The edge
    only forwards. Both stores are opened by every container since 1.0.0.94,
    and a second group, `aci-theyard-cosmos-ss`, runs the same image with
-   Azure Cosmos DB as its default on its own Azure address, behind no edge
-   and no domain, because a two-tab comparison needs a second origin and
-   nothing else (ADR: One container, both stores).
+   Azure Cosmos DB as its default; since 1.0.0.100 it answers at
+   https://theyard-cosmos.stevenstout.biz through the same edge and the same
+   certificate, and its Azure address on port 8080 still answers beside it.
+   Each site is one store's site, and the Store bar at the top of every page
+   links to the other at the same page (ADR: One container, both stores).
 
 ## The certificate
 
-Let's Encrypt at the edge, issued and renewed automatically. Nothing was
-purchased and nothing expires by surprise. The edge-to-origin hop stays plain
+Let's Encrypt at the edge, issued and renewed automatically, one certificate
+for all four names (the bare domain, www, theyard and theyard-cosmos).
+Nothing was purchased and nothing expires by surprise. The edge-to-origin hop stays plain
 HTTP in phase 1 because the container has no TLS listener; the phase-2 managed
 certificate closes that hop end to end.
 

@@ -194,10 +194,11 @@ each with its own changelog line and, where it decided something, its own record
   readers used to answer, with SQLite for local development and CI because neither has
   an Azure credential and neither should need one. And, since 1.0.0.89, Azure Cosmos
   DB behind the same ports: first as a second container, and since 1.0.0.94 side by
-  side with the relational store in the same container, with a Store toggle at the top
-  of every page that picks which one serves the visit, the request charge beside every
-  operation on the Admin tab, a proof card that runs the same requests against both
-  stores in paired rounds, and the numbers in the records. There is no password anywhere: the
+  side with the relational store in the same container, each site one store's site,
+  with a Store bar at the top of every page that links to the other site at the same
+  page, the request charge beside every operation on the Admin tab, a proof card that
+  runs the same requests against both stores in paired rounds, and the numbers in the
+  records. There is no password anywhere: the
   server was created Entra-only, so it has no SQL login to have one, and the container
   authenticates as the managed identity it already carried. The schema is a SQL project
   of hand-written DDL that compiles to a DACPAC and is the authority; EF maps to it and a
@@ -401,7 +402,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (72 Vitest tests at 1.0.0.97):** presentation logic only, since the API owns the rules.
+**Frontend (77 Vitest tests at 1.0.0.101):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,

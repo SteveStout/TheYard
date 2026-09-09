@@ -161,6 +161,59 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         Assert.True(json.RootElement.GetProperty("sql").GetProperty("window").GetInt32() >= 0);
     }
 
+    /// <summary>
+    /// Every store a container runs answers a window of its own on the same
+    /// rows, which is what the Timing card's two store lines and the
+    /// comparison card draw from (ADR: Backends, side by side, the addendum on
+    /// parity): the relational backend a SQL block, the document backend a
+    /// store_metrics block with the request units and the cross-partition
+    /// count beside the percentiles. The ship gate runs this on both shapes.
+    /// </summary>
+    [Fact]
+    public async Task Every_store_the_container_runs_answers_a_window_of_its_own()
+    {
+        await _client.GetAsync("/api/facets");
+        string body = await _client.GetStringAsync("/api/admin/metrics");
+        using var json = JsonDocument.Parse(body);
+
+        var backends = json.RootElement.GetProperty("backends").EnumerateArray().ToList();
+        Assert.NotEmpty(backends);
+        foreach (var backend in backends)
+        {
+            if (!backend.GetProperty("ready").GetBoolean())
+            {
+                continue;
+            }
+
+            bool relational = backend.GetProperty("sql").ValueKind != JsonValueKind.Null;
+            bool document = backend.GetProperty("store_metrics").ValueKind != JsonValueKind.Null;
+            Assert.True(relational || document, $"{backend.GetProperty("key")} answers no window at all");
+            if (document)
+            {
+                var store = backend.GetProperty("store_metrics");
+                foreach (string field in new[] { "window", "p50_ms", "p95_ms", "max_ms", "ru_total", "cross_partition" })
+                {
+                    Assert.True(store.TryGetProperty(field, out _), $"store_metrics lacks {field}");
+                }
+            }
+            if (relational)
+            {
+                var sql = backend.GetProperty("sql");
+                foreach (string field in new[] { "window", "p50_ms", "p95_ms", "max_ms" })
+                {
+                    Assert.True(sql.TryGetProperty(field, out _), $"sql lacks {field}");
+                }
+            }
+        }
+
+        // On a container running both, both kinds are present at once.
+        if (backends.Count > 1)
+        {
+            Assert.Contains(backends, backend => backend.GetProperty("store_metrics").ValueKind != JsonValueKind.Null);
+            Assert.Contains(backends, backend => backend.GetProperty("sql").ValueKind != JsonValueKind.Null);
+        }
+    }
+
     // #region status
     [Fact]
     public async Task A_request_that_throws_is_counted_as_the_status_its_caller_got()

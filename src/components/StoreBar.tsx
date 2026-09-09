@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react';
-import { fetchStores, note, otherSite, segments, selectStore, type Stores } from '../lib/stores';
+import { fetchStores, note, segments, type Stores } from '../lib/stores';
 import styles from './StoreBar.module.css';
 
 /**
- * The toggle at the top of the page (ADR: One container, both stores): which
- * store is serving this visit, and one click to the other. It reloads the
- * page after switching, because everything on it came from the store it is
- * leaving. Drawn only once the server has answered which stores there are,
- * so a container with one store shows the other family as not here rather
- * than as a button that does nothing.
+ * The bar at the top of the page (ADR: One container, both stores, and its
+ * addendum on the toggle moving to the sites): which site this is, and one
+ * click to the other. The other segment is a link to the other site at this
+ * same path and query, so the address bar changes and the page that arrives
+ * is that site's own. Drawn only once the server has answered, so a
+ * container that names no other site shows the other segment as not here
+ * rather than as a control that does nothing.
  */
 export function StoreBar() {
   const [stores, setStores] = useState<Stores | null>(null);
-  const [switching, setSwitching] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -25,20 +24,7 @@ export function StoreBar() {
 
   if (stores === null) return null;
 
-  const choose = async (key: string) => {
-    setSwitching(key);
-    setMessage(null);
-    const result = await selectStore(key);
-    if (!result.ok) {
-      setSwitching(null);
-      setMessage(result.message);
-      return;
-    }
-    // The cookie is set; the page starts again on the other store.
-    window.location.reload();
-  };
-
-  const other = otherSite(stores);
+  const here = { pathname: window.location.pathname, search: window.location.search };
 
   return (
     <div className={styles.bar} data-testid="store-bar">
@@ -46,36 +32,45 @@ export function StoreBar() {
         <span className={styles.label} id="store-bar-label">
           Store
         </span>
-        <div className={styles.toggle} role="radiogroup" aria-labelledby="store-bar-label">
-          {segments(stores).map((segment) => (
-            <button
-              key={segment.key}
-              type="button"
-              role="radio"
-              aria-checked={segment.current}
-              className={styles.segment}
-              data-store={segment.key}
-              disabled={!segment.available && !segment.current}
-              title={segment.title}
-              onClick={() => {
-                if (segment.available && switching === null) void choose(segment.key);
-              }}
-            >
-              {switching === segment.key ? 'Switching…' : segment.label}
-            </button>
-          ))}
-        </div>
+        <nav className={styles.toggle} aria-labelledby="store-bar-label">
+          {segments(stores, here).map((segment) =>
+            segment.current ? (
+              <span
+                key={segment.key}
+                className={styles.segment}
+                data-store={segment.key}
+                aria-current="page"
+                title={segment.title}
+              >
+                {segment.label}
+              </span>
+            ) : segment.href !== null ? (
+              <a
+                key={segment.key}
+                className={styles.segment}
+                data-store={segment.key}
+                href={segment.href}
+                title={segment.title}
+              >
+                {segment.label}
+              </a>
+            ) : (
+              <span
+                key={segment.key}
+                className={styles.segment}
+                data-store={segment.key}
+                role="link"
+                aria-disabled="true"
+                title={segment.title}
+              >
+                {segment.label}
+              </span>
+            )
+          )}
+        </nav>
         <span className={styles.note} data-testid="store-bar-note">
-          {message ?? note(stores)}
+          {note(stores)}
         </span>
-        {other && (
-          <span className={styles.note} data-testid="store-bar-other">
-            The other site, on the other store by default:{' '}
-            <a href={other.href} className={styles.other}>
-              {other.host}
-            </a>
-          </span>
-        )}
       </div>
     </div>
   );

@@ -186,16 +186,16 @@ the top of this record.
 
 ## Why this is one file
 
-It is 1,617 lines, and that is the first thing a reviewer notices, so it is
+It is 1,606 lines, and that is the first thing a reviewer notices, so it is
 worth saying that it is a decision rather than a drift.
 
 What those lines are:
 
 ```
-1,617 total
-  620 comment
-   98 blank
-  899 code, across 36 endpoints
+1,606 total
+  617 comment
+   97 blank
+  892 code, across 35 endpoints
 ```
 
 Twenty-five lines of code per endpoint, and most endpoints are a route, a
@@ -277,6 +277,15 @@ were added for the toggle at the top of the page.
 The numbers in the section above are the file's numbers on the day this
 addendum was written; the test that holds them to the file does not care
 which day that was.
+
+## Addendum, 2026-09-09: one endpoint for the bar, not two
+
+The toggle moved to the sites the next morning (ADR: One container, both
+stores, the addendum of that name), and the second of the two endpoints
+above went with it. `CurrentBackend` is resolved from the request's header
+or the container's default now, not from a cookie; `POST /api/stores/select`
+is gone, and `GET /api/stores` expires the cookie the old toggle set when a
+request still carries one. The live block above shows what is left.
 
 ## Files
 

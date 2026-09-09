@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
 
-test('the Admin tab shows the running system reporting on itself', async ({ page }) => {
+test('the Admin tab shows the running system reporting on itself', async ({ page, request }) => {
   await openTheYard(page);
   await page
     .getByRole('navigation', { name: 'Project documents' })
@@ -23,6 +23,21 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   // which is two numbers and no relationship between them, on the page whose
   // whole job is being readable by somebody who did not write it.
   await expect(page.getByTestId('timing-card')).toContainText(/Answers: \d+ with status \d{3}/);
+  // The two stores get the same two lines, and a container with no document
+  // store says so in words rather than leaving the line out (ADR: Backends,
+  // side by side, the addendum on parity). The ship gate runs this on both
+  // shapes: SQLite alone, and both stores with the document one the default.
+  await expect(page.getByTestId('timing-sql')).toHaveText(
+    /^SQL: p50 \d+ ms, p95 \d+ ms, slowest \d+ ms\.$/
+  );
+  const shape = (await (await request.get('http://localhost:5210/api/stores')).json()) as {
+    stores: unknown[];
+  };
+  await expect(page.getByTestId('timing-store')).toHaveText(
+    shape.stores.length > 1
+      ? /^Document store: p50 \d+ ms, p95 \d+ ms, slowest \d+ ms, [\d.]+ RU over the window, /
+      : /^Document store: none on this container/
+  );
   // The SQL card on a relational container, the operations card on the
   // document one: the same page, whichever store it is on (ADR: What the store
   // is actually doing).

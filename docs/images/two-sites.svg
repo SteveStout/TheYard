@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="848" viewBox="0 0 1520 848" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>TheYard's two sites: two names at Wix, one Netlify edge, two container groups on Azure, and both stores behind both</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#536786"/>
+    </marker>
+    <marker id="arrow-taupe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#ab978c"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .store { fill: #f8f6f7; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .lane { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 600; }
+      .lane-title { fill: #3f3a37; font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+      .lane-sub { fill: #62666f; font-size: 13px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 10.5px; }
+      .flow { stroke: #536786; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .flow-label { fill: #536786; font-size: 12px; font-weight: 500; }
+      .loop { stroke: #ab978c; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow-taupe); }
+      .loop-label { fill: #8a766b; font-size: 12px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1520" height="848" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">TheYard's two sites: two names, one edge, two container groups, both stores behind both</text>
+  <text x="40" y="68" class="caption">A request reads left to right. The name a visitor typed is the only thing that differs until the edge, the edge picks the origin from it, and each origin opens both stores.</text>
+
+  <!-- ===================== Lane 1: the names ===================== -->
+  <rect x="40" y="92" width="400" height="541" class="lane"/>
+  <text x="60" y="120" class="lane-title">The names, at Wix DNS</text>
+  <text x="60" y="140" class="lane-sub">Three CNAMEs and one A record, all at the same edge.</text>
+
+  <!-- ===================== Lane 2: the edge ===================== -->
+  <rect x="470" y="92" width="460" height="609" class="lane"/>
+  <text x="490" y="120" class="lane-title">One edge: the Netlify site theyard-edge</text>
+  <text x="490" y="140" class="lane-sub">Terminates HTTPS, then proxies by Host. Three files in this repository.</text>
+
+  <!-- ===================== Lane 3: Azure ===================== -->
+  <rect x="960" y="92" width="520" height="656" class="lane"/>
+  <text x="980" y="120" class="lane-title">Azure: RG-THEYARD-SS, westus2</text>
+  <text x="980" y="140" class="lane-sub">Two groups running the same image, and the two stores both open.</text>
+
+  <rect x="60" y="170" width="360" height="118" class="box"/>
+  <text x="75" y="196" class="title">theyard.stevenstout.biz</text>
+  <text x="75" y="218" class="mono">CNAME -&gt; theyard-edge.netlify.app, TTL 30 min</text>
+  <text x="75" y="240" class="body">The live site, the name a resume carries.</text>
+  <text x="75" y="257" class="body">The group behind it serves Azure SQL</text>
+  <text x="75" y="274" class="body">Database by default.</text>
+  <rect x="60" y="324" width="360" height="135" class="box"/>
+  <text x="75" y="350" class="title">theyard-cosmos.stevenstout.biz</text>
+  <text x="75" y="372" class="mono">CNAME -&gt; theyard-edge.netlify.app, TTL 30 min</text>
+  <text x="75" y="394" class="body">The second site, since 1.0.0.100. One</text>
+  <text x="75" y="411" class="body">label, so any DNS form accepts it; the</text>
+  <text x="75" y="428" class="body">container group's own name with the suffix</text>
+  <text x="75" y="445" class="body">dropped.</text>
+  <rect x="60" y="495" width="360" height="118" class="box"/>
+  <text x="75" y="521" class="title">stevenstout.biz and www</text>
+  <text x="75" y="543" class="mono">A 75.2.60.5 and CNAME -&gt; theyard-edge.netlify.app</text>
+  <text x="75" y="565" class="body">Both forward to the live site with a 301,</text>
+  <text x="75" y="582" class="body">so a trimmed or retyped address still</text>
+  <text x="75" y="599" class="body">lands on the app.</text>
+  <rect x="490" y="170" width="420" height="118" class="box"/>
+  <text x="505" y="196" class="title">One certificate</text>
+  <text x="505" y="218" class="mono">Let's Encrypt, issued and renewed by Netlify</text>
+  <text x="505" y="240" class="body">Four names on it: the bare domain, www, theyard</text>
+  <text x="505" y="257" class="body">and theyard-cosmos. Adding the alias reissued it</text>
+  <text x="505" y="274" class="body">within the minute; nothing was bought.</text>
+  <rect x="490" y="324" width="420" height="203" class="box"/>
+  <text x="505" y="350" class="title">edge/_redirects: the name picks the origin</text>
+  <text x="505" y="372" class="mono">the first matching rule wins, top to bottom</text>
+  <text x="505" y="394" class="body">https://theyard-cosmos.stevenstout.biz/* to the</text>
+  <text x="505" y="411" class="body">second group, 200!</text>
+  <text x="505" y="428" class="body">/* to the first group, 200! (the catch-all, last)</text>
+  <text x="505" y="445" class="body">stevenstout.biz and www: 301 to</text>
+  <text x="505" y="462" class="body">theyard.stevenstout.biz</text>
+  <text x="505" y="479" class="body">A domain-level rule only matches a name assigned</text>
+  <text x="505" y="496" class="body">to the site, so the alias is what makes the first</text>
+  <text x="505" y="513" class="body">line eligible.</text>
+  <rect x="490" y="563" width="420" height="118" class="box"/>
+  <text x="505" y="589" class="title">netlify.toml: build only when the edge moves</text>
+  <text x="505" y="611" class="mono">ignore = "git diff --quiet ... -- edge/ netlify.toml"</text>
+  <text x="505" y="633" class="body">An application push costs no credits; an edge</text>
+  <text x="505" y="650" class="body">change is one deploy, 15 of the month's 300. This</text>
+  <text x="505" y="667" class="body">one cost exactly that, read off the meter.</text>
+  <rect x="980" y="170" width="420" height="135" class="box"/>
+  <text x="995" y="196" class="title">aci-theyard-ss</text>
+  <text x="995" y="218" class="mono">theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080</text>
+  <text x="995" y="240" class="body">Store__Default = sql. Peer__Site =</text>
+  <text x="995" y="257" class="body">https://theyard-cosmos.stevenstout.biz. Rolled</text>
+  <text x="995" y="274" class="body">by the Deploy workflow from</text>
+  <text x="995" y="291" class="body">infra/aci-theyard.yaml.</text>
+  <rect x="980" y="365" width="420" height="152" class="box"/>
+  <text x="995" y="391" class="title">aci-theyard-cosmos-ss</text>
+  <text x="995" y="413" class="mono">theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080</text>
+  <text x="995" y="435" class="body">Store__Default = cosmos. Peer__Site =</text>
+  <text x="995" y="452" class="body">https://theyard.stevenstout.biz. Rolled by</text>
+  <text x="995" y="469" class="body">Deploy Cosmos from</text>
+  <text x="995" y="486" class="body">infra/aci-theyard-cosmos.yaml. Same image, same</text>
+  <text x="995" y="503" class="body">1 CPU and 1.5 GB.</text>
+  <rect x="980" y="593" width="200" height="118" class="store"/>
+  <text x="995" y="619" class="title">Azure SQL Database</text>
+  <text x="995" y="641" class="mono">Entra-only, no SQL login</text>
+  <text x="995" y="663" class="body">Reached as the managed</text>
+  <text x="995" y="680" class="body">identity. One region</text>
+  <text x="995" y="697" class="body">away.</text>
+  <rect x="1200" y="593" width="200" height="135" class="store"/>
+  <text x="1215" y="619" class="title">Azure Cosmos DB</text>
+  <text x="1215" y="641" class="mono">no keys on the account</text>
+  <text x="1215" y="663" class="body">Reached as the managed</text>
+  <text x="1215" y="680" class="body">identity. In the</text>
+  <text x="1215" y="697" class="body">containers' own</text>
+  <text x="1215" y="714" class="body">region.</text>
+  <path d="M420 229 L490 399" class="flow"/>
+  <path d="M420 391 L490 425" class="flow"/>
+  <path d="M420 554 L490 451" class="flow"/>
+  <text x="490" y="314" class="flow-label">HTTPS, then the Host header picks the rule</text>
+  <path d="M910 405 L980 237" class="flow"/>
+  <path d="M910 445 L980 441" class="flow"/>
+  <text x="980" y="160" class="flow-label">everything else: plain HTTP to :8080</text>
+  <text x="980" y="355" class="flow-label">theyard-cosmos: plain HTTP to :8080</text>
+  <path d="M1020 305 L1020 365" class="flow" style="marker-end:none"/>
+  <path d="M1020 517 L1020 559 L1300 559" class="flow" style="marker-end:none"/>
+  <path d="M1080 559 L1080 593" class="flow"/>
+  <path d="M1300 559 L1300 593" class="flow"/>
+  <text x="1032" y="551" class="flow-label">both groups open both stores, as their managed identity</text>
+  <path d="M1400 253 L1430 253 L1430 425 L1402 425" class="loop"/>
+  <path d="M1400 457 L1454 457 L1454 277 L1402 277" class="loop"/>
+  <text x="1028" y="335" class="loop-label">the Store bar: each site links to the other, at the same page</text>
+
+  <text x="40" y="782" class="caption">Each site is one store's site: the group's default store serves it; a measurement can name the other store for one request with the X-Yard-Store header.</text>
+  <text x="40" y="802" class="caption">The edge retires at the registrar transfer around the end of October 2026; both names then become two records at Cloudflare pointing at the same two origins.</text>
+  <text x="40" y="822" class="caption">Source: docs/images/two-sites.svg in the repository, drawn by docs/images/two-sites.mjs and redrawn when a name, a rule or a group changes.</text>
+</svg>

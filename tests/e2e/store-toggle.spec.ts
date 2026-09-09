@@ -1,18 +1,21 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
-import { signIn } from './signIn';
 
-// The store toggle at the top of the page (ADR: One container, both stores).
-// A local run on SQLite alone has one store and the toggle says so; the ship
-// gate's run with the document store configured has two, and there the toggle
-// is a switch: the page comes back on the other store, and an account made on
-// one store reads as signed out on the other.
+// The Store bar at the top of the page (ADR: One container, both stores, and
+// its addendum on the toggle moving to the sites). Each site is one store's
+// site: the segment for the site the visitor is on is marked current and is
+// not a control, and the other segment is a link to the other site at the same
+// path and query. A container that names no other site, which is every local
+// run and the ship gate, draws the other segment as not here; the deployed
+// containers name each other, and the live check follows the link there.
 
 type Stores = {
   current: string;
-  stores: { key: string; name: string; ready: boolean }[];
+  stores: { key: string; name: string; ready: boolean; default: boolean }[];
   other_site: string | null;
 };
+
+const label = (key: string) => (key === 'cosmos' ? 'Cosmos DB' : 'SQL');
 
 async function stores(request: import('@playwright/test').APIRequestContext): Promise<Stores> {
   const response = await request.get('http://localhost:5210/api/stores');
@@ -20,36 +23,28 @@ async function stores(request: import('@playwright/test').APIRequestContext): Pr
   return (await response.json()) as Stores;
 }
 
-test('the toggle sits at the top of every view and names the store serving the visit', async ({
+test('the bar sits at the top of every view, marks this site and names the store serving it', async ({
   page,
   request,
 }) => {
   const answer = await stores(request);
-  const current = answer.stores.find((store) => store.key === answer.current)!;
+  const site = answer.stores.find((store) => store.default)!;
+  const serving = answer.stores.find((store) => store.key === answer.current)!;
 
   await openTheYard(page, '/');
   const bar = page.getByTestId('store-bar');
   await expect(bar).toBeVisible();
-  const group = bar.getByRole('radiogroup', { name: 'Store' });
-  await expect(group.getByRole('radio', { checked: true })).toHaveAttribute(
-    'data-store',
-    answer.current
+  const nav = bar.getByRole('navigation', { name: 'Store' });
+  // Both families are always drawn, so the choice reads as a choice, and the
+  // site the visitor is on is the current one whatever store a header may
+  // have put one request on.
+  await expect(nav.locator('[data-store]')).toHaveCount(2);
+  const current = nav.locator('[aria-current="page"]');
+  await expect(current).toHaveAttribute('data-store', site.key);
+  await expect(current).toHaveText(label(site.key));
+  await expect(bar.getByTestId('store-bar-note')).toContainText(
+    `This is the ${label(site.key)} site, served from ${serving.name}`
   );
-  await expect(bar.getByTestId('store-bar-note')).toContainText(`served from ${current.name}`);
-  // Both families are always drawn, so the choice reads as a choice.
-  await expect(group.getByRole('radio')).toHaveCount(2);
-  // The other site is a link when the container names one, and nothing when
-  // it does not: a developer's machine has no other site, the deployed
-  // containers do (ADR: One container, both stores, addendum).
-  const other = bar.getByTestId('store-bar-other');
-  if (answer.other_site === null) {
-    await expect(other).toHaveCount(0);
-  } else {
-    await expect(other.getByRole('link')).toHaveAttribute(
-      'href',
-      new URL(answer.other_site).origin
-    );
-  }
 
   // The bar is above the view, so it is there on the Admin tab and the account view too.
   await openTheYard(page, '/?view=admin');
@@ -58,46 +53,47 @@ test('the toggle sits at the top of every view and names the store serving the v
   await expect(page.getByTestId('store-bar')).toBeVisible();
 });
 
-test('the toggle switches stores where there are two, and says the other is not here where there is one', async ({
+test('the other segment is a link to the other site at this same page, and never a switch in place', async ({
   page,
   request,
 }) => {
   const answer = await stores(request);
-  const from = answer.current;
-  const bar = page.getByTestId('store-bar');
+  const site = answer.stores.find((store) => store.default)!;
+  const otherKey = site.key === 'cosmos' ? 'sql' : 'cosmos';
 
-  if (answer.stores.length < 2) {
-    // One store: the other family is drawn as not here, and cannot be clicked.
-    // Not a skip, because a toggle with one option is exactly the state this
-    // run has to prove reads right (the ship gate runs the two-store shape).
-    await openTheYard(page, '/');
-    const other = bar.getByRole('radio', { checked: false });
-    await expect(other).toBeDisabled();
-    await expect(other).toHaveAttribute('title', /not on this container/);
-    return;
+  await openTheYard(page, '/?view=admin');
+  const nav = page.getByTestId('store-bar').getByRole('navigation', { name: 'Store' });
+  const other = nav.locator(`[data-store="${otherKey}"]`);
+  await expect(other).toHaveText(label(otherKey));
+
+  if (answer.other_site === null) {
+    // No other site is named here, so the other segment is drawn as not here:
+    // a disabled link with nowhere to go, and clicking it changes nothing.
+    // Not a skip, because this is exactly the state every local run has to
+    // prove reads right.
+    await expect(other).toHaveAttribute('aria-disabled', 'true');
+    await expect(other).not.toHaveAttribute('href', /.+/);
+    await expect(other).toHaveAttribute('title', /no .* site here/);
+    const before = page.url();
+    await other.click({ force: true });
+    await page.waitForTimeout(300);
+    expect(page.url()).toBe(before);
+    await expect(nav.locator('[aria-current="page"]')).toHaveAttribute('data-store', site.key);
+  } else {
+    // The deployed shape: the other segment carries the visitor's own path and
+    // query to the other site, so two Admin tabs are one click apart.
+    const origin = new URL(answer.other_site).origin;
+    await expect(other).toHaveAttribute('href', `${origin}/?view=admin`);
+    await expect(other).not.toHaveAttribute('aria-disabled', /.+/);
   }
 
-  const to = answer.stores.find((store) => store.key !== from)!;
-
-  // An account on the store this visit starts on, made through the page's own
-  // cookie jar so the account view shows it.
-  const email = await signIn(page);
-  await openTheYard(page, '/?view=account');
-  await expect(page.getByRole('heading', { name: email })).toBeVisible();
-
-  // Switch. The page reloads itself on the other store.
-  await bar.getByRole('radio', { name: to.key === 'cosmos' ? 'Cosmos DB' : 'SQL' }).click();
-  await expect(bar.getByRole('radio', { checked: true })).toHaveAttribute('data-store', to.key, {
-    timeout: 20_000,
+  // The switch that set a cookie and reloaded the page in place is gone with
+  // the cookie: a stale page that posts to it gets a refusal and no cookie.
+  // 405 rather than 404, because the page's own fallback answers GET on every
+  // path, so the path exists and the method does not.
+  const gone = await request.post('http://localhost:5210/api/stores/select', {
+    data: { store: otherKey },
   });
-  await expect(bar.getByTestId('store-bar-note')).toContainText(`served from ${to.name}`);
-  // The account lives in the other store, so this store does not know it.
-  await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();
-
-  // And back, where the session is still good.
-  await bar.getByRole('radio', { name: from === 'cosmos' ? 'Cosmos DB' : 'SQL' }).click();
-  await expect(bar.getByRole('radio', { checked: true })).toHaveAttribute('data-store', from, {
-    timeout: 20_000,
-  });
-  await expect(page.getByRole('heading', { name: email })).toBeVisible();
+  expect(gone.status()).toBe(405);
+  expect(gone.headers()['set-cookie']).toBeUndefined();
 });

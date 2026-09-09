@@ -32,6 +32,16 @@ around the end of October 2026. So HTTPS is terminated at a free Netlify edge,
 three files in this repository, with one CNAME at Wix pointing the name at it.
 Any answer for the second site has to live inside the same two walls.
 
+## The picture
+
+[![TheYard's two sites: three CNAME records and one A record at Wix pointing at one Netlify edge; the edge's certificate and its rules picking the origin by the name; two container groups on Azure, each with its default store and its Peer__Site, both opening Azure SQL Database and Azure Cosmos DB](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/two-sites.png)](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
+
+*A preview. [Open the two-sites diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
+to zoom in and follow it. Steve asked for this one in as many words: "make
+sure we have a diagram of how this DNS maps between these two sites to
+azure". The source is [`docs/images/two-sites.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/two-sites.svg),
+drawn by [`docs/images/two-sites.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/two-sites.mjs).*
+
 ## The options, priced
 
 | Option | What it takes | What it costs | Verdict |
@@ -129,8 +139,8 @@ edge retires at the registrar transfer around the end of October 2026 (ADR:
 Deployment strategy), and this name retires with it: at Cloudflare the two
 names become two records instead of one, pointing at the same two origins.
 The application touches the edge in two places only, the `Peer:Site`
-setting on each group and the forwarded-protocol header the cookie rule reads,
-so the move is two settings and two DNS records.
+setting on each group and the forwarded-protocol header the session cookie's
+Secure rule reads, so the move is two settings and two DNS records.
 
 ## Consequences
 
@@ -147,6 +157,64 @@ so the move is two settings and two DNS records.
 - The two old addresses keep working. The Azure hostname still answers on
   port 8080, plain HTTP, exactly as before, because nothing about the group
   changed; the domain is a second door, not a replacement.
+
+## Addendum, 2026-09-09: what happened, read live
+
+The rules shipped in 1.0.0.100 at 07:51 CDT, and the Netlify deploys page
+showed the build for it, "Deployed in 10s", above eleven application pushes
+the ignore rule had cancelled since the first of the month, so the cold-cache
+trap did not bite and nothing had to be forced:
+
+![Netlify's deploys page for theyard-edge: main at 4cc62d4 published today at 7:51 AM, deployed in ten seconds, above a column of earlier application pushes marked Canceled by the ignore rule](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/netlify-deploys-edge-build.jpg)
+
+Steve added the CNAME at Wix and then the alias at Netlify, in that order.
+The CNAME resolved from a public resolver within the minute (the same
+canonical name as `theyard`, `theyard-edge.netlify.app`), and the DNS page
+now carries the three names that reach the edge beside the bare domain's A
+record:
+
+![Wix, Manage DNS Records for stevenstout.biz: one A record for the bare domain, and three CNAME records, theyard, theyard-cosmos and www, all pointing at theyard-edge.netlify.app with a TTL of 30 minutes](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/wix-dns-two-sites.jpg)
+
+Netlify listed the alias under the primary domain and reissued the Let's
+Encrypt certificate at 07:57 AM with all four names on it, which the page
+shows and the runner then read off the connection itself:
+
+![Netlify, Domain management for theyard-edge: theyard.stevenstout.biz as the primary domain, stevenstout.biz, www.stevenstout.biz and theyard-cosmos.stevenstout.biz as domain aliases](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/netlify-domain-aliases.jpg)
+
+![Netlify, the SSL/TLS certificate section: Let's Encrypt, four domains including theyard-cosmos.stevenstout.biz, created Sep 1, updated today at 7:57 AM, auto-renews before Dec 8](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/netlify-certificate-four-names.jpg)
+
+At 07:58:40 CDT the runner read the address from the domain (queue script
+701, `mentor\logs\two-sites-701-checks100.log`):
+`https://theyard-cosmos.stevenstout.biz/api/version` answered 1.0.0.99 at
+552f77c, the version the second container was still on while its own roll
+of 1.0.0.100 was queued behind the live site's, healthy, with both stores
+passing their checks; `/api/stores` answered `current=cosmos`, which is the
+proof that the new rule matched rather than the request falling through the
+catch-all to the first origin; and the certificate on the connection was
+issued by Let's Encrypt (`CN=YE1`), valid from 2026-09-09 to 2026-12-08,
+with a subject alternative name list of `stevenstout.biz`,
+`theyard-cosmos.stevenstout.biz`, `theyard.stevenstout.biz` and
+`www.stevenstout.biz`. The live site read the identical certificate a
+second later, because it is one certificate.
+
+The meter, read rather than estimated, from the team's Usage and billing
+page. At 07:55 CDT, four minutes after the build and before it had been
+counted (the page says consumption can take a few minutes to appear): 13
+production deploys, 195 credits, 206.8 consumed in all, 93.2 of 300
+remaining. At 08:01 CDT: 14 production deploys, 210 credits, 78.1 remaining.
+One deploy, fifteen credits, exactly the price in the table above. Against
+the 2026-09-01 reading in ADR: Edge deploy economics (11 deploys, 168.2
+consumed), the deploy count moved by two in eight days: the push of the
+ignore rule itself, and this one.
+
+![Netlify, Usage and billing after the edge build: 78.1 of 300 credits remaining, and the breakdown showing 14 production deploys at 210 credits](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/netlify-credits-after.jpg)
+
+From 1.0.0.101 the live site's `Peer__Site` is
+`https://theyard-cosmos.stevenstout.biz`, so the Store bar's Cosmos DB
+segment on the live site is a link between two HTTPS addresses (ADR: One
+container, both stores, the addendum on the toggle moving to the sites).
+The second site's stays `https://theyard.stevenstout.biz`. The Azure
+hostname on port 8080 still answers, unchanged.
 
 ## Files
 

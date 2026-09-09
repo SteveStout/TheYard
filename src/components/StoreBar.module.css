@@ -1,7 +1,8 @@
-/* The store toggle at the top of the page (ADR: One container, both stores).
-   One slim band under the header, in the surface color so it reads as part of
-   the chrome rather than as content, with a segmented control that looks like
-   the two-state switch it is. */
+/* The Store bar at the top of the page (ADR: One container, both stores, and
+   its addendum on the toggle moving to the sites). One slim band under the
+   header, in the surface color so it reads as part of the chrome rather than
+   as content, with two segments: the site this is, and a link to the other
+   site drawn as the other half of the same control. */
 .bar {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
@@ -34,6 +35,8 @@
 }
 
 .segment {
+  display: inline-flex;
+  align-items: center;
   border: 0;
   background: transparent;
   color: var(--color-text);
@@ -42,42 +45,41 @@
   font-weight: 600;
   padding: 4px 14px;
   border-radius: var(--radius-full);
-  cursor: pointer;
   min-height: 28px;
+  text-decoration: none;
 }
 
-.segment[aria-checked='true'] {
+/* The site the visitor is on. */
+.segment[aria-current='page'] {
   background: var(--color-accent);
   color: var(--color-on-accent);
   cursor: default;
 }
 
-.segment:disabled {
-  color: var(--color-text-faint);
-  cursor: not-allowed;
+/* The other site: a link, and it looks like the other half of the switch
+   until it is pointed at, when it says so. */
+a.segment:hover,
+a.segment:focus-visible {
+  background: var(--color-surface);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.segment[aria-checked='true']:disabled {
-  color: var(--color-on-accent);
-}
-
-.segment:focus-visible {
+a.segment:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* A site this container cannot name: drawn, so the choice still reads as a
+   choice, and not a control. */
+.segment[aria-disabled='true'] {
+  color: var(--color-text-faint);
+  cursor: not-allowed;
 }
 
 .note {
   font-size: 0.8rem;
   color: var(--color-text-muted);
-}
-
-/* The other site's address, a link in the note's own size: it is a second
-   door and not a second toggle. */
-.other {
-  color: var(--color-accent);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  overflow-wrap: anywhere;
 }
 
 @media (max-width: 600px) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { shortenDigests } from '../lib/format';
+import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
 import styles from './AdminPanel.module.css';
 
 type HealthCheck = { name: string; status: string; detail: string; duration_ms: number };
@@ -294,11 +295,13 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
         </button>
       </div>
       <p className={styles.blurb}>
-        The running system reporting on itself: application health, what Azure says about the
-        container, the last hour of traffic as Application Insights recorded it, recent errors from
-        both the server and the browser, and below those, every SQL statement it has sent, its own
-        log, and how long both take. Refreshes every 30 seconds. Public on purpose; the reasoning is
-        in the Best Practices menu.
+        The running system reporting on itself: the two stores side by side, application health,
+        what Azure says about the container, the last hour of traffic as Application Insights
+        recorded it, recent errors from both the server and the browser, and below those, every SQL
+        statement and every document store operation it has sent, its own log, and how long each
+        takes. Every statistic the page shows for one store it shows for the other, and where a
+        number has no meaning on one side the page says so in words. Refreshes every 30 seconds.
+        Public on purpose; the reasoning is in the Best Practices menu.
       </p>
       {/* #region backends-card */}
       <article className={styles.wide} data-testid="backends-card">
@@ -570,19 +573,15 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
           failed('the timing')
         ) : (
           <>
-            <p className={styles.muted}>
-              Measured in this process, over the last {metrics.requests.window} requests and{' '}
-              {metrics.sql.window} statements, with the endpoints this page reads left out so it
-              does not fill with the act of being read.
-            </p>
+            <p className={styles.muted}>{timingWindow(metrics)}</p>
             <ul className={styles.summaryList}>
               <li>
                 Requests: p50 {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms.
               </li>
-              <li>
-                SQL: p50 {metrics.sql.p50_ms} ms, p95 {metrics.sql.p95_ms} ms, slowest{' '}
-                {metrics.sql.max_ms} ms.
-              </li>
+              {/* The two stores on the same two lines, whichever one serves this
+                  visit (ADR: Backends, side by side, the addendum on parity). */}
+              <li data-testid="timing-sql">{sqlLine(metrics)}</li>
+              <li data-testid="timing-store">{documentStoreLine(metrics)}</li>
               <li>
                 Answers:{' '}
                 {metrics.by_status.length === 0
@@ -630,8 +629,14 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
       {/* #region sql-section */}
       {/* The document store's card when this container has a document store,
           the SQL card when it has a relational one, and both when it runs both
-          (ADR: One container, both stores). */}
-      {store !== null && store !== 'failed' && store.store === 'Azure Cosmos DB' ? (
+          (ADR: One container, both stores). Each card's rule reads the
+          backends list first, which names every store the container runs
+          whichever one serves this visit, and falls back on the log's own
+          label for a container on an older build. */}
+      {store !== null &&
+      store !== 'failed' &&
+      (store.store === 'Azure Cosmos DB' ||
+        (metrics !== null && metrics !== 'failed' && documentStore(metrics) !== null)) ? (
         <StoreCard log={store} />
       ) : null}
       {store === null ||

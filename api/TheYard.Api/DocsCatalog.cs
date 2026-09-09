@@ -106,6 +106,7 @@ public static class DocsCatalog
         ["infrastructure"] = ("docs/images/infrastructure.svg", "TheYard infrastructure"),
         ["dataflow"] = ("docs/images/dataflow.svg", "TheYard data flow"),
         ["erd"] = ("docs/images/erd.svg", "TheYard's database"),
+        ["two-sites"] = ("docs/images/two-sites.svg", "TheYard's two sites"),
     };
     // #endregion diagrams
 }

@@ -1268,27 +1268,16 @@ app.MapGet("/api/admin/metrics", (HttpContext http) =>
 });
 
 // #region stores-endpoints
-// The toggle at the top of the page (ADR: One container, both stores). What
-// stores this container runs and which one this request is on; and the switch,
-// which is a cookie for a year and nothing else. The page reloads itself
-// after switching, because every number it holds was read from the other
-// store and a cache of the wrong store's answers is worse than a cold page.
-app.MapGet("/api/stores", (HttpContext http) => Results.Json(backends.Describe(http), wireFormat));
-
-app.MapPost("/api/stores/select", (HttpContext http, StoreChoice choice) =>
+// The Store bar at the top of the page (ADR: One container, both stores, and
+// its addendum on the toggle moving to the sites). What stores this container
+// runs, which one is this site's default, which one this request is on, and
+// the other site's address. There is no switch endpoint any more: the bar's
+// other segment is a link to the other site, so the address bar changes and
+// each site stays one store's site. A cookie the old toggle set is expired
+// here, on the first page load that carries it.
+app.MapGet("/api/stores", (HttpContext http) =>
 {
-    // A store this container does not have, or one that did not come up, is
-    // refused with the sentence the bar shows; the rule is beside the
-    // selection rule in Stores.cs so the two cannot drift apart.
-    var (chosen, refusal) = backends.Choose(choice.Store);
-    if (chosen is null)
-    {
-        return Results.Problem(detail: refusal, statusCode: 400, title: "That store cannot be chosen");
-    }
-    http.Response.Cookies.Append(Backends.CookieName, chosen.Key, Backends.CookieFor(http));
-    // Describe as the request will read it next time: the cookie is on the
-    // response, not the request, so the header path is what says "chosen".
-    http.Request.Headers[Backends.HeaderName] = chosen.Key;
+    Backends.ExpireLegacyCookie(http);
     return Results.Json(backends.Describe(http), wireFormat);
 });
 // #endregion stores-endpoints

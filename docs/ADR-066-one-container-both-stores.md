@@ -223,6 +223,67 @@ The bar on the live site, and on the second container, on 1.0.0.98:
 
 ![The Store bar on the second container: Cosmos DB selected, and a link to the other site, the domain](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-cosmos-linked.png)
 
+Superseded the same morning by the addendum below, where the link becomes the
+toggle itself.
+
+## Addendum, 2026-09-09: the toggle moved to the sites
+
+Steve's words on the morning after the night's work, having opened both
+sites: "the button should toggle between the two sites, not refresh in react
+or at least the URL should change". The in-place switch above was the first
+of the two priced options and it worked, and it was not what he wanted: one
+address serving either store, a cookie remembering which, and a page that
+reloads itself to become the other store is a toggle a visitor cannot see in
+the address bar and cannot send to anyone.
+
+**The segments are the sites.** The Store bar still shows SQL and Cosmos DB
+side by side. The segment for the site the visitor is on is marked current
+and is not a control; the other is a link to the other site at the same path
+and query, so `/?view=admin` on the live site lands on `/?view=admin` on the
+second site. A full navigation: the address bar changes, nothing is cached
+across a store, and the page that arrives is the other site's own, on its
+default store. The other site's address is `other_site` from `/api/stores`,
+which is the container's `Peer:Site`, and since ADR: A permanent address for
+the second site both ends of the link are HTTPS. Where a container names no
+other site, which is a developer's machine, CI and the ship gate, the other
+segment is drawn as not here with a title that says so, the way a family the
+container did not run was drawn before; never a dead button. The sentence
+under the bar names the site, the store serving the page and where accounts
+and bids live; the separate link under the sentence went, because the
+segments are the links now.
+
+```live path=src/lib/stores.ts region=stores-seam
+```
+
+**The cookie retired with the switch.** Each site is one store's site now, so
+a store chosen by cookie would contradict the address bar, and the only thing
+that ever set the cookie was the bar. Left in place it would have done real
+harm to the one visitor most likely to carry it: anyone who toggled on
+1.0.0.94 to 1.0.0.100, Steve included, would have landed on the live site
+served from the document store with no control left to change it.
+`Backends.For` is the header or the default; `GET /api/stores` expires the
+old cookie the first time a request still carries one; `POST /api/stores/select`
+is gone, and its tests went with it, replaced by one that holds the expiry
+and the refusal (a 405, because the page's own fallback answers GET on every
+path, so the path exists and the method does not). The header stays, because the proof (ADR: Same performance,
+proven) and the measurements name a store for one request with it, which is
+a different thing from pretending the site changed.
+
+```live path=api/TheYard.Api/Stores.cs region=backends
+```
+
+**What holds it.** `src/lib/stores.test.ts` holds the segment shape: the
+current site follows the container's default store and not the store a
+header put one request on, the other segment's address carries the path and
+the query, and a container with no other site gets a segment that is not a
+link. `tests/e2e/store-toggle.spec.ts` walks the bar in a browser, where on
+the gate the other segment is not a link and the old switch endpoint refuses
+the method. `StoreToggleTests` holds the rule and the expiry. The one place the real
+thing is proven is the live check, `shot-night.mjs` in the mentor folder,
+which opens each site, follows the other segment, and reads the host and the
+server's own answer on arrival, both ways; its pictures are below once both
+sites carry this version.
+
 ## Files
 
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a backend, the backends, the request's choice, and the context factory.

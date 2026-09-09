@@ -67,11 +67,11 @@ properties:
       # and a plain value because a URL is not a secret.
       - name: Peer__Url
         value: http://theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
-      # The same container as a visitor reaches it, for the link in the Store
-      # bar; it has no edge, so this is its origin (ADR: One container, both
-      # stores, addendum).
+      # The same container as a visitor reaches it, for the Store bar's link
+      # to the other site: its own name under the domain, behind the same edge
+      # since 1.0.0.100 (ADR: A permanent address for the second site).
       - name: Peer__Site
-        value: http://theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
+        value: https://theyard-cosmos.stevenstout.biz
       image: __IMAGE__
       ports:
       - port: 8080

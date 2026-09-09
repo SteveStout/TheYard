@@ -21,7 +21,7 @@ namespace TheYard.Api;
 /// </summary>
 public sealed class Backend
 {
-    /// <summary>The short name a cookie or a header uses: "sql" or "cosmos".</summary>
+    /// <summary>The short name the header and the bar use: "sql" or "cosmos".</summary>
     public required string Key { get; init; }
 
     /// <summary>The store as it describes itself: "Azure SQL Database", "SQLite", "Azure Cosmos DB".</summary>
@@ -66,15 +66,22 @@ public sealed class Backend
 /// <summary>
 /// The stores this container runs, and which one a request gets.
 ///
-/// <para>The choice is a cookie, set by the toggle at the top of the page, or
-/// a header, which is how a measurement asks for a store without a browser.
-/// Neither names a store this container does not have: an unknown value is
-/// the default, never an error, because a cookie set by last week's build is
-/// not the visitor's mistake.</para>
+/// <para>The choice is a header, which is how a measurement asks for a store
+/// without a browser; a request that names none gets the container's default,
+/// which is what makes each site one store's site (ADR: One container, both
+/// stores, the addendum on the toggle moving to the sites). A header naming a
+/// store this container does not have is the default, never an error.</para>
+///
+/// <para>Until 1.0.0.101 the toggle at the top of the page set a cookie
+/// instead, and a visitor from those versions may still carry it for a year.
+/// It no longer chooses anything, and the stores endpoint expires it on
+/// sight, so a browser that toggled last week lands where the address bar
+/// says rather than on a store the page can no longer switch away from.</para>
 /// </summary>
 public sealed class Backends
 {
-    public const string CookieName = "yard-store";
+    /// <summary>The cookie the toggle used to set. Read only to be expired.</summary>
+    public const string LegacyCookieName = "yard-store";
     public const string HeaderName = "X-Yard-Store";
 
     private readonly Backend[] _all;
@@ -113,7 +120,7 @@ public sealed class Backends
     public Backend? Named(string? key) =>
         key is null ? null : Array.Find(_all, backend => string.Equals(backend.Key, key, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The backend a request asked for: the header first, then the cookie, then the default.</summary>
+    /// <summary>The backend a request asked for: the header, or the default.</summary>
     public Backend For(HttpContext? context)
     {
         if (context is null)
@@ -124,45 +131,21 @@ public sealed class Backends
         {
             return byHeader;
         }
-        if (context.Request.Cookies.TryGetValue(CookieName, out string? cookie) && Named(cookie) is { } byCookie)
-        {
-            return byCookie;
-        }
         return Default;
     }
 
     /// <summary>
-    /// The toggle's choice: a store this container has, and one that came up.
-    /// A store that did not come up still serves the catalogue from files, but
-    /// it has no accounts and no bids to switch to, so choosing it would set a
-    /// year-long cookie for a store with nothing behind it; the bar does not
-    /// offer it and the server does not take it either, so a stale page or a
-    /// script gets the same answer a visitor would. The refusal is a sentence
-    /// the page can show.
+    /// Expire the toggle's old cookie if this request carries one. The page
+    /// asks for the stores on every load, so one visit is enough to clean a
+    /// browser that toggled on 1.0.0.94 to 1.0.0.100. Nothing else reads it.
     /// </summary>
-    public (Backend? Backend, string? Refusal) Choose(string? key)
+    public static void ExpireLegacyCookie(HttpContext context)
     {
-        if (Named(key) is not { } chosen)
+        if (context.Request.Cookies.ContainsKey(LegacyCookieName))
         {
-            return (null, $"This container runs {string.Join(" and ", _all.Select(backend => backend.Name))}, and nothing called \"{key}\".");
+            context.Response.Cookies.Delete(LegacyCookieName, new CookieOptions { Path = "/" });
         }
-        if (!chosen.Ready)
-        {
-            return (null, $"{chosen.Name} did not come up on this container, so there are no accounts or bids to switch to; the catalogue it would serve is the same one.");
-        }
-        return (chosen, null);
     }
-
-    /// <summary>The cookie the toggle sets: a year, the whole site, and never readable by a script, which has no reason to read it.</summary>
-    public static CookieOptions CookieFor(HttpContext context) => new()
-    {
-        HttpOnly = true,
-        Secure = context.Request.IsHttps
-            || string.Equals(context.Request.Headers["X-Forwarded-Proto"], "https", StringComparison.OrdinalIgnoreCase),
-        SameSite = SameSiteMode.Lax,
-        Path = "/",
-        MaxAge = TimeSpan.FromDays(365),
-    };
 
     /// <summary>What the page is told about the stores, with the one this request would get marked.</summary>
     public StoresView Describe(HttpContext? context)
@@ -181,8 +164,8 @@ public sealed class Backends
 
 /// <summary>
 /// The backend serving this request, resolved once per request from the
-/// request's own headers and cookies. Endpoints ask this rather than the
-/// container, so the same handler serves whichever store the visitor chose.
+/// request's own headers. Endpoints ask this rather than the
+/// container, so the same handler serves whichever store the request named.
 /// </summary>
 public sealed class CurrentBackend(Backends backends, IHttpContextAccessor accessor)
 {
@@ -230,9 +213,6 @@ public sealed class ContextFactory(DbContextOptions<YardDbContext> options) : ID
 /// <summary>One store on the toggle: its key, its name, whether it came up, and whether it is the container's default.</summary>
 public sealed record StoreView(string Key, string Name, bool Ready, bool Default);
 
-/// <summary>The toggle's answer: which store this request is on, the stores there are, and the other site if there is one.</summary>
+/// <summary>The bar's answer: which store this request is on, the stores there are (one of them this site's default), and the other site if there is one.</summary>
 public sealed record StoresView(string Current, IReadOnlyList<StoreView> Stores, string? OtherSite);
-
-/// <summary>The toggle's request: the key of the store to switch to.</summary>
-public sealed record StoreChoice(string? Store);
 // #endregion backends

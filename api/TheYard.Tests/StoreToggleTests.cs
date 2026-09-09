@@ -8,10 +8,12 @@ using TheYard.Api;
 namespace TheYard.Tests;
 
 /// <summary>
-/// One container, both stores, and the toggle that picks one per request
-/// (ADR: One container, both stores). The rule is small and every branch of
-/// it is a visitor's experience: the header wins, then the cookie, then the
-/// default, and a name this container does not have is never an error.
+/// One container, both stores, and which one a request gets (ADR: One
+/// container, both stores, and its addendum on the toggle moving to the
+/// sites). The rule is small and every branch of it is a visitor's
+/// experience: the header wins, then the default, a name this container does
+/// not have is never an error, and the cookie the old toggle set chooses
+/// nothing any more and is expired on sight.
 /// </summary>
 public class StoreToggleTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
@@ -27,22 +29,25 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
         }
         if (cookie is not null)
         {
-            context.Request.Headers.Cookie = $"{Backends.CookieName}={cookie}";
+            context.Request.Headers.Cookie = $"{Backends.LegacyCookieName}={cookie}";
         }
         return context;
     }
 
     // #region rule
     [Fact]
-    public void The_header_wins_then_the_cookie_then_the_default()
+    public void The_header_wins_then_the_default_and_the_old_cookie_chooses_nothing()
     {
         var both = new Backends([Fake("sql", "SQLite"), Fake("cosmos", "Azure Cosmos DB")], "sql");
 
         Assert.Equal("sql", both.For(null).Key);
         Assert.Equal("sql", both.For(Request()).Key);
-        Assert.Equal("cosmos", both.For(Request(cookie: "cosmos")).Key);
-        Assert.Equal("sql", both.For(Request(header: "sql", cookie: "cosmos")).Key);
         Assert.Equal("cosmos", both.For(Request(header: "COSMOS")).Key);
+        // Until 1.0.0.100 a cookie chose the store. The toggle is a link
+        // between the sites now, so each site is one store's site and a
+        // browser that toggled last week lands where its address bar says.
+        Assert.Equal("sql", both.For(Request(cookie: "cosmos")).Key);
+        Assert.Equal("cosmos", both.For(Request(header: "cosmos", cookie: "sql")).Key);
     }
 
     [Fact]
@@ -51,9 +56,30 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
         var one = new Backends([Fake("sql", "SQLite")], "cosmos");
 
         Assert.Equal("sql", one.Default.Key);
-        Assert.Equal("sql", one.For(Request(cookie: "cosmos")).Key);
+        Assert.Equal("sql", one.For(Request(header: "cosmos")).Key);
         Assert.Equal("sql", one.For(Request(header: "anything")).Key);
         Assert.Null(one.Named("cosmos"));
+    }
+
+    [Fact]
+    public void The_old_cookie_is_expired_when_seen_and_left_alone_when_absent()
+    {
+        // StringValues casts itself to a string when handed to an assertion
+        // that takes one, so the header is read as the array it is.
+        var carrying = Request(cookie: "cosmos");
+        Backends.ExpireLegacyCookie(carrying);
+        string?[] setCookie = carrying.Response.Headers.SetCookie.ToArray();
+        string? expired = Assert.Single(setCookie);
+        Assert.StartsWith(Backends.LegacyCookieName + "=;", expired);
+        Assert.Contains("expires=", expired, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", expired, StringComparison.OrdinalIgnoreCase);
+
+        // A browser that never had the cookie is not handed a Set-Cookie for
+        // every page load.
+        var clean = Request();
+        Backends.ExpireLegacyCookie(clean);
+        string?[] none = clean.Response.Headers.SetCookie.ToArray();
+        Assert.Empty(none);
     }
 
     [Fact]
@@ -65,28 +91,6 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
         Assert.Equal("cosmos", named.Default.Key);
         Assert.Equal("sql", unnamed.Default.Key);
         Assert.Throws<ArgumentException>(() => new Backends([], null));
-    }
-
-    [Fact]
-    public void A_store_that_did_not_come_up_cannot_be_chosen_and_the_refusal_is_a_sentence()
-    {
-        var both = new Backends([Fake("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB", ready: false)], "sql");
-
-        var (chosen, refusal) = both.Choose("sql");
-        Assert.Same(both.Default, chosen);
-        Assert.Null(refusal);
-
-        // The store is here, so a request naming it is still served by it
-        // (the catalogue comes from files); it is the switch that is refused.
-        Assert.Equal("cosmos", both.For(Request(cookie: "cosmos")).Key);
-        var (down, why) = both.Choose("cosmos");
-        Assert.Null(down);
-        Assert.Contains("Azure Cosmos DB did not come up", why);
-
-        var (missing, where) = both.Choose("nowhere");
-        Assert.Null(missing);
-        Assert.Contains("nothing called \"nowhere\"", where);
-        Assert.Contains("SQLite and Azure Cosmos DB", where);
     }
 
     [Fact]
@@ -109,20 +113,6 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
         Assert.Null(new Backends(stores, "sql", "ftp://files.example.com").OtherSite);
     }
 
-    [Fact]
-    public void The_cookie_is_secure_behind_the_edge_and_plain_on_a_developers_machine()
-    {
-        var plain = Backends.CookieFor(Request());
-        Assert.False(plain.Secure);
-        Assert.True(plain.HttpOnly);
-        Assert.Equal(TimeSpan.FromDays(365), plain.MaxAge);
-
-        // The edge terminates TLS and says so in the forwarded header, which
-        // is the only way this container can know the visitor came over https.
-        var forwarded = Request();
-        forwarded.Request.Headers["X-Forwarded-Proto"] = "https";
-        Assert.True(Backends.CookieFor(forwarded).Secure);
-    }
     // #endregion rule
 
     // #region endpoints
@@ -156,25 +146,29 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
-    public async Task Choosing_a_store_sets_the_cookie_and_choosing_one_that_is_not_here_is_a_sentence()
+    public async Task A_visit_carrying_the_old_cookie_lands_on_the_default_and_leaves_without_it()
     {
         var client = factory.CreateClient();
         var stores = await StoresOf(client);
-        string here = stores.GetProperty("stores").EnumerateArray().First().GetProperty("key").GetString()!;
+        string byDefault = stores.GetProperty("stores").EnumerateArray()
+            .Single(store => store.GetProperty("default").GetBoolean()).GetProperty("key").GetString()!;
 
-        var chosen = await client.PostAsJsonAsync("/api/stores/select", new { store = here });
-        Assert.Equal(HttpStatusCode.OK, chosen.StatusCode);
-        string cookie = Assert.Single(chosen.Headers.GetValues("Set-Cookie"), value => value.StartsWith(Backends.CookieName + "=", StringComparison.Ordinal));
-        Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("samesite=lax", cookie, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(here, (await chosen.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("current").GetString());
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/stores");
+        request.Headers.Add("Cookie", $"{Backends.LegacyCookieName}=cosmos");
+        var answered = await client.SendAsync(request);
 
-        var refused = await client.PostAsJsonAsync("/api/stores/select", new { store = "nowhere" });
-        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
-        var problem = await refused.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Contains("SQLite", problem.GetProperty("detail").GetString());
-        Assert.Contains("nowhere", problem.GetProperty("detail").GetString());
-        Assert.DoesNotContain(refused.Headers, header => header.Key == "Set-Cookie");
+        Assert.Equal(HttpStatusCode.OK, answered.StatusCode);
+        Assert.Equal(byDefault, (await answered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("current").GetString());
+        string expired = Assert.Single(answered.Headers.GetValues("Set-Cookie"), value => value.StartsWith(Backends.LegacyCookieName + "=", StringComparison.Ordinal));
+        Assert.Contains("expires=", expired, StringComparison.OrdinalIgnoreCase);
+
+        // The switch endpoint went with the cookie. A stale page that still
+        // posts to it gets a refusal and nothing is set: 405 rather than 404,
+        // because the page's own fallback answers GET on every path, so the
+        // path exists and the method does not.
+        var gone = await client.PostAsJsonAsync("/api/stores/select", new { store = byDefault });
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, gone.StatusCode);
+        Assert.DoesNotContain(gone.Headers, header => header.Key == "Set-Cookie");
     }
 
     [Fact]
