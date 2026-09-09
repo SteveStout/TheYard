@@ -183,8 +183,24 @@ container with no document store and the quiet window;
 container runs answering a window of its own with the fields the lines need,
 both kinds at once on a two-store container; and one assertion in
 `tests/e2e/admin.spec.ts` on the two lines, which the gate runs on SQLite
-alone and again with both stores. The pictures of the Timing card from both
-sites, before and after, are below once both sites carry this version.
+alone and again with both stores.
+
+**Before and after, from both sites.** The Timing card on 1.0.0.100, at
+08:15 CDT on 2026-09-09, on the live site and on the second site: one store's
+line, and on the second site that line is about the store not serving the
+visit:
+
+![The Timing card on the live site before: the window sentence names requests and statements, and the lines are Requests, SQL and Answers](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/timing-sql-before.png)
+
+![The Timing card on the second site before: the same three lines, the SQL line about the other store](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/timing-cosmos-before.png)
+
+The same card on 1.0.0.101, at 08:47 CDT, both sites: the window sentence
+names all three rings, and the document store has its line under the SQL
+line with the request units and the fan-out count beside the percentiles:
+
+![The Timing card on the live site after: requests, SQL statements and document store operations in the window sentence, and a Document store line with p50, p95, slowest, RU over the window and operations fanned out across partitions](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/timing-sql-after.png)
+
+![The Timing card on the second site after: the same two store lines](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/timing-cosmos-after.png)
 
 ## Files
 

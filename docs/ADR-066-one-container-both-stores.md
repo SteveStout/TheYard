@@ -281,8 +281,38 @@ the gate the other segment is not a link and the old switch endpoint refuses
 the method. `StoreToggleTests` holds the rule and the expiry. The one place the real
 thing is proven is the live check, `shot-night.mjs` in the mentor folder,
 which opens each site, follows the other segment, and reads the host and the
-server's own answer on arrival, both ways; its pictures are below once both
-sites carry this version.
+server's own answer on arrival, both ways.
+
+**What the live check read on 1.0.0.101, at 08:47 CDT on 2026-09-09.** On
+`theyard.stevenstout.biz` the bar's current segment was SQL and the other
+segment's address was `https://theyard-cosmos.stevenstout.biz/`; following
+it landed on host `theyard-cosmos.stevenstout.biz`, where the server answered
+`current=cosmos` for a container whose default is `cosmos` and the bar's
+current segment was Cosmos DB; following that bar's SQL segment came back to
+`theyard.stevenstout.biz` on `sql`. The same round trip the other way from
+the second site. On `/?view=admin` the other segment's address on the live
+site was `https://theyard-cosmos.stevenstout.biz/?view=admin`, the path and
+the query carried across. And the old switch endpoint answered 405 on both
+sites.
+
+The live site on arrival, and the page the Cosmos DB segment lands on, which
+is the other site (the second site's own arrival picture and the page its SQL
+segment lands on are these two the other way round, byte for byte, so they
+are not repeated):
+
+![The live site on 1.0.0.101: the Store bar with SQL current, Cosmos DB beside it, and the sentence that this is the SQL site served from Azure SQL Database](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-site-sql.png)
+
+![After following the Cosmos DB segment: the second site, theyard-cosmos.stevenstout.biz, with Cosmos DB current and the sentence that this is the Cosmos DB site served from Azure Cosmos DB](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-site-sql-followed.png)
+
+The two bars on their own, one from each site:
+
+![The Store bar on the live site: SQL current, Cosmos DB a link](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-site-sql-bar.png)
+
+![The Store bar on the second site: Cosmos DB current, SQL a link](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-site-cosmos-bar.png)
+
+And on a phone, where the sentence wraps under the segments as before:
+
+![The bar on a phone on 1.0.0.101](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-site-phone.png)
 
 ## Files
 
