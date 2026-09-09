@@ -3,5 +3,11 @@ https://stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 https://www.stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 http://stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 http://www.stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
+# The second site, the container whose default store is Azure Cosmos DB, under
+# its own name (ADR: A permanent address for the second site). These two sit
+# above the catch-all because the first matching rule wins, top to bottom, and
+# the catch-all matches everything.
+https://theyard-cosmos.stevenstout.biz/* http://theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080/:splat 200!
+http://theyard-cosmos.stevenstout.biz/* https://theyard-cosmos.stevenstout.biz/:splat 301!
 /* http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080/:splat 200!
 # #endregion rules

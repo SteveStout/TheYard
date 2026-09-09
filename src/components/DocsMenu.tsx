@@ -98,6 +98,7 @@ export type DocKey =
   | 'adrOneContainer'
   | 'adrProof'
   | 'adrFiveMinuteGate'
+  | 'adrSecondAddress'
   | 'aiDevelopment'
   | 'architecture'
   | 'style';
@@ -656,6 +657,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '068',
   },
+  adrSecondAddress: {
+    title: 'ADR: A permanent address for the second site',
+    menuLabel: 'ADR: A permanent address for the second site',
+    url: '/api/docs/adr-second-address',
+    kind: 'adr',
+    number: '069',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -780,6 +788,7 @@ export const MENUS: Record<
       { key: 'adrOneContainer' },
       { key: 'adrProof' },
       { key: 'adrFiveMinuteGate' },
+      { key: 'adrSecondAddress' },
     ],
   },
   // #endregion records-menu

@@ -91,6 +91,7 @@ public static class DocsCatalog
         ["adr-one-container"] = "docs/ADR-066-one-container-both-stores.md",
         ["adr-proof"] = "docs/ADR-067-same-performance-proven.md",
         ["adr-five-minute-gate"] = "docs/ADR-068-the-five-minute-gate.md",
+        ["adr-second-address"] = "docs/ADR-069-a-permanent-address-for-the-second-site.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["architecture"] = "docs/ARCHITECTURE.md",

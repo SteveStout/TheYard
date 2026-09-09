@@ -41,12 +41,26 @@ planned registrar transfer around the end of October anyway.
   which line item is really moving, and fix the configuration before
   reaching for a credit card.
 
+## Addendum, 2026-09-09: a second origin behind the one edge
+
+The edge fronts two origins now. Two lines above the catch-all send
+`theyard-cosmos.stevenstout.biz` to the second container group, the one whose
+default store is Azure Cosmos DB, and the rest of the file is as it was (ADR:
+A permanent address for the second site). The economics are the reason the
+second name is an alias on this site and not a site of its own: a second site
+would have had a second deploy meter, and every edge change would have cost
+15 credits twice. This change cost one edge deploy, and the routine above
+applied to it unchanged: push, read the deploys page, force a build if the
+cold-cache trap skipped it. The record it belongs to carries the meter's
+reading before and after.
+
 ## Files
 
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml): the ignore rule that stops app-only pushes from
   redeploying the edge, shown live below.
-- [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the whole edge, five lines, shown live below:
-  the bare and www names redirect, everything else proxies to the origin.
+- [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the whole edge, seven lines, shown live below:
+  the bare and www names redirect, the second site's name proxies to the
+  second origin, everything else proxies to the first.
 - [`edge/README.md`](https://github.com/SteveStout/TheYard/blob/main/edge/README.md): how the edge project is wired to the repo.
 - [`docs/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md): where the edge sits in the chain.
 
