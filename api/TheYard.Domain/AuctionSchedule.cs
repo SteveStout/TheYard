@@ -13,10 +13,12 @@ public readonly record struct AuctionWindow(long StartsAtMs, long EndsAtMs);
 /// <summary>
 /// Derives each vehicle's auction window from its id: an FNV-1a seed, end
 /// times spread across the two days before through five days after the
-/// midnight anchor, two to four day runs. This is the only place the window is
-/// computed; the browser receives the instants on the wire and formats them
-/// (src/lib/auction.ts recomputes the status from those instants and the clock,
-/// never the window), which is the rule that ended the daylight-saving drift.
+/// midnight anchor, two to four day runs. The anchor is the server's UTC
+/// midnight (AuctionClock.Utc), one for every visitor. This is the only place
+/// the window is computed; the browser receives the instants on the wire and
+/// formats them (src/lib/auction.ts recomputes the status from those instants
+/// and the clock, never the window), which is the rule that ended the
+/// daylight-saving drift.
 /// </summary>
 public static class AuctionSchedule
 {
@@ -31,7 +33,7 @@ public static class AuctionSchedule
     private const long MinDurationMs = 2 * DayMs;
     private const long ExtraDurationMs = 2 * DayMs;
 
-    /// <summary>Deterministic per id and anchor (the buyer's local midnight).</summary>
+    /// <summary>Deterministic per id and anchor (the UTC midnight that began the day).</summary>
     public static AuctionWindow Window(string vehicleId, long anchorMs)
     {
         uint hash = Fnv1a.Hash(vehicleId);

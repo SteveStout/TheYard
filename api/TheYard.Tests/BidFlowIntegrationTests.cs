@@ -30,22 +30,17 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
         return Task.CompletedTask;
     }
 
-    private static long Anchor =>
-        new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
-
     private async Task<JsonDocument> GetAsync(string url) =>
         JsonDocument.Parse(await _client.GetStringAsync(url));
 
     [Fact]
     public async Task Bid_lifecycle_place_verify_buy_now_and_reset()
     {
-        // One clock for the whole test: every request carries the same anchor, so
-        // the server and the assertions agree on which auctions are live.
-        long anchor = Anchor;
-
+        // One clock for the whole test, and it is the server's (ADR: Three
+        // readers with no memory of the project, the addendum on the clock).
         // Pick a live vehicle sorted by most bids, because its window ends hours or
         // days out, so it cannot flip to ended mid-test.
-        using var live = await GetAsync($"/api/vehicles?status=live&sort=most-bids&limit=50&anchor_ms={anchor}");
+        using var live = await GetAsync("/api/vehicles?status=live&sort=most-bids&limit=50");
         // And not one anybody has bought: a sold vehicle takes no bid (ADR:
         // Accounts and per-user bids, the addendum on the second buyer), and on
         // the document store the test containers remember yesterday's runs.
@@ -57,7 +52,7 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
 
         // Place a bid at the minimum.
         var placed = await _client.PostAsJsonAsync($"/api/vehicles/{id}/bids",
-            new { amount = min, anchor_ms = anchor });
+            new { amount = min });
         Assert.Equal(HttpStatusCode.OK, placed.StatusCode);
         using var placedJson = JsonDocument.Parse(await placed.Content.ReadAsStringAsync());
         Assert.Equal("accepted", placedJson.RootElement.GetProperty("kind").GetString());
@@ -65,13 +60,13 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
             placedJson.RootElement.GetProperty("bid").GetProperty("bid_count").GetInt32());
 
         // The single-vehicle read reflects the bid and a raised minimum.
-        using var after = await GetAsync($"/api/vehicles/{id}?anchor_ms={anchor}");
+        using var after = await GetAsync($"/api/vehicles/{id}");
         Assert.Equal(min, after.RootElement.GetProperty("current_bid").GetInt32());
         Assert.True(after.RootElement.GetProperty("min_next_bid").GetInt32() > min);
 
         // Rebidding below the new minimum is rejected server-side.
         var tooLow = await _client.PostAsJsonAsync($"/api/vehicles/{id}/bids",
-            new { amount = min, anchor_ms = anchor });
+            new { amount = min });
         Assert.Equal(HttpStatusCode.BadRequest, tooLow.StatusCode);
         // #endregion lifecycle
 
@@ -87,8 +82,7 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
             }
         }
         Assert.NotNull(buyNowId);
-        var bought = await _client.PostAsJsonAsync($"/api/vehicles/{buyNowId}/buy-now",
-            new { anchor_ms = anchor });
+        var bought = await _client.PostAsJsonAsync($"/api/vehicles/{buyNowId}/buy-now", new { });
         Assert.Equal(HttpStatusCode.OK, bought.StatusCode);
         using var boughtJson = JsonDocument.Parse(await bought.Content.ReadAsStringAsync());
         Assert.Equal("won", boughtJson.RootElement.GetProperty("kind").GetString());
@@ -107,12 +101,10 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task Bids_on_ended_auctions_are_rejected_and_leave_no_state()
     {
-        long anchor = Anchor;
-        using var ended = await GetAsync($"/api/vehicles?status=ended&limit=1&anchor_ms={anchor}");
+        using var ended = await GetAsync("/api/vehicles?status=ended&limit=1");
         string id = ended.RootElement.GetProperty("vehicles")[0].GetProperty("id").GetString()!;
 
-        var response = await _client.PostAsJsonAsync($"/api/vehicles/{id}/bids",
-            new { amount = 1_000_000, anchor_ms = anchor });
+        var response = await _client.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount = 1_000_000 });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -123,8 +115,7 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task Bidding_on_an_unknown_vehicle_returns_404()
     {
-        var response = await _client.PostAsJsonAsync("/api/vehicles/nope/bids",
-            new { amount = 1_000, anchor_ms = Anchor });
+        var response = await _client.PostAsJsonAsync("/api/vehicles/nope/bids", new { amount = 1_000 });
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }

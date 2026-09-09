@@ -50,18 +50,34 @@ public class AuctionScheduleTests
         Assert.Equal(AuctionStatus.Ended, AuctionSchedule.Status(window, window.EndsAtMs));
     }
 
+    // #region one-clock
+    /// <summary>
+    /// One clock for everybody: a moment's anchor is the UTC midnight that
+    /// began its day, whatever zone the moment is written in, and two moments
+    /// on the same UTC day share it (ADR: Three readers with no memory of the
+    /// project, the addendum on the clock). Until 1.0.0.112 the host fell
+    /// back to its own zone's midnight and otherwise took the caller's.
+    /// </summary>
     [Fact]
-    public void Server_local_clock_anchors_to_that_zones_midnight()
+    public void The_clock_anchors_to_the_utc_midnight_of_its_day_whatever_zone_it_is_written_in()
     {
-        var utcNow = new DateTimeOffset(2026, 8, 15, 16, 0, 0, TimeSpan.Zero);
-        var toronto = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        var noonInToronto = new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4));
+        var lateInLondon = new DateTimeOffset(2026, 8, 15, 23, 30, 0, TimeSpan.FromHours(1));
+        var utcMidnight = new DateTimeOffset(2026, 8, 15, 0, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds();
 
-        var clock = AuctionClock.ServerLocal(utcNow, toronto);
+        var toronto = AuctionClock.Utc(noonInToronto);
+        var london = AuctionClock.Utc(lateInLondon);
 
-        // 2026-08-15 16:00Z is 12:00 in Toronto (UTC-4, DST); midnight local is 04:00Z.
-        Assert.Equal(utcNow.ToUnixTimeMilliseconds(), clock.NowMs);
+        Assert.Equal(noonInToronto.ToUnixTimeMilliseconds(), toronto.NowMs);
+        Assert.Equal(utcMidnight, toronto.AnchorMs);
+        Assert.Equal(utcMidnight, london.AnchorMs);
         Assert.Equal(
-            new DateTimeOffset(2026, 8, 15, 0, 0, 0, TimeSpan.FromHours(-4)).ToUnixTimeMilliseconds(),
-            clock.AnchorMs);
+            AuctionSchedule.Window("some-id", toronto.AnchorMs),
+            AuctionSchedule.Window("some-id", london.AnchorMs));
+
+        // 20:00 in Toronto on the 15th is already the 16th in UTC: the next day's auction.
+        var eveningInToronto = new DateTimeOffset(2026, 8, 15, 20, 0, 0, TimeSpan.FromHours(-4));
+        Assert.Equal(utcMidnight + DayMs, AuctionClock.Utc(eveningInToronto).AnchorMs);
     }
+    // #endregion one-clock
 }

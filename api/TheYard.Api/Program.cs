@@ -749,13 +749,10 @@ app.MapGet("/api/vehicles", (
 app.MapGet("/api/facets", (CurrentBackend current) =>
     Results.Json(current.Inventory.Facets(), wireFormat));
 
-app.MapGet("/api/vehicles/{id}", (CurrentBackend current, string id, long? anchor_ms) =>
+app.MapGet("/api/vehicles/{id}", (CurrentBackend current, string id) =>
 {
     var (inventory, bids, market) = current;
-    if (!Clocks.TryResolve(anchor_ms, out var clock, out var error))
-    {
-        return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
-    }
+    var clock = Clocks.Now();
     return inventory.GetById(id) is { } vehicle
         ? Results.Json(
             VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat, bids.IsSold(vehicle.Id)),
@@ -780,18 +777,21 @@ app.MapPost("/api/vehicles/{id}/bids", (
     CurrentBackend current,
     HttpContext http,
     string id,
-    BidRequest request) => HandleBid(current, http, id, request.AnchorMs,
+    BidRequest request) => HandleBid(current, http, id,
         // The room's standing price is what the minimum next bid is measured
         // against (ADR-027). Handing BidRules the dataset's figure instead
         // would let the buyer retake the lead with a bid below the going rate.
         (vehicle, clock) => current.Bids.PlaceBidAsync(current.Market.Apply(vehicle), request.Amount, clock, http.UserId())))
     .RequireAuthorization();
 
+// No body: a purchase names the vehicle in its address and nothing else.
+// Until 1.0.0.112 it carried the caller's clock anchor, and a page from then
+// that still sends one is not read (ADR: Three readers with no memory of the
+// project, the addendum on the clock).
 app.MapPost("/api/vehicles/{id}/buy-now", (
     CurrentBackend current,
     HttpContext http,
-    string id,
-    BuyNowRequest request) => HandleBid(current, http, id, request.AnchorMs,
+    string id) => HandleBid(current, http, id,
         (vehicle, clock) => current.Bids.BuyNowAsync(current.Market.Apply(vehicle), clock, http.UserId())))
     .RequireAuthorization();
 
@@ -832,20 +832,17 @@ app.MapGet("/api/bids/history", (
 #endregion history
 
 // One round of bidding by the room, driven by the page rather than a timer
-// (ADR-027). The anchor comes from the caller for the same reason every other
-// schedule-dependent call carries one: the browser's midnight decides which
-// auctions are live, and a room bidding on a different set than the visitor
-// can see would be a bug nobody could reproduce.
+// (ADR-027). The room bids on the server's clock, the same one every visitor
+// is served, so the set it can see is the set the visitor sees; until
+// 1.0.0.112 the page sent its own midnight here, and a round from a page in
+// another zone bid on a different set (ADR: Three readers with no memory of
+// the project, the addendum on the clock).
 app.MapPost("/api/market/tick", (
     CurrentBackend current,
-    HttpContext http,
-    MarketTickRequest request) =>
+    HttpContext http) =>
 {
     var (inventory, bids, market) = current;
-    if (!Clocks.TryResolve(request.AnchorMs, out var clock, out var error))
-    {
-        return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
-    }
+    var clock = Clocks.Now();
     // Everybody's high-water marks, not one account's. The room answers a
     // price rather than a person, and a room that only responded to whoever
     // happened to be looking would stop being a room the moment there were two
@@ -959,15 +956,15 @@ app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, comm
 
 #region bid-handling
 // One local function behind both bid endpoints, answering three questions in
-// order: is the clock anchor valid, does the vehicle exist, does the domain
-// accept the action. The order matters, because a bad anchor would make the
-// domain's answer meaningless. The status codes are the contract the browser
+// order: is this session on this store, does the vehicle exist, does the
+// domain accept the action, on the server's clock. Until 1.0.0.112 the first
+// question was whether the caller's clock anchor was plausible; there is no
+// anchor to ask about now. The status codes are the contract the browser
 // relies on (ADR-023).
 async Task<IResult> HandleBid(
     CurrentBackend current,
     HttpContext http,
     string id,
-    long? anchorMs,
     Func<Vehicle, AuctionClock, Task<BidOutcome>> action)
 {
     var (inventory, bids, market) = current;
@@ -986,10 +983,7 @@ async Task<IResult> HandleBid(
             statusCode: 401, title: "The bid was rejected");
     }
     // #endregion session-per-store
-    if (!Clocks.TryResolve(anchorMs, out var clock, out var clockError))
-    {
-        return Results.Problem(detail: clockError, statusCode: 400, title: "The bid was rejected");
-    }
+    var clock = Clocks.Now();
     if (inventory.GetById(id) is not { } vehicle)
     {
         return Results.NotFound();
@@ -1646,14 +1640,13 @@ static string FindUpward(string startDirectory, string relativePath)
 #endregion find-upward
 
 #region records-and-test-hook
-/// <summary>Bid submission: the amount plus the client's clock anchor.</summary>
-public sealed record BidRequest(int Amount, long? AnchorMs);
-
-/// <summary>Buy-now submission: just the client's clock anchor.</summary>
-public sealed record BuyNowRequest(long? AnchorMs);
-
-/// <summary>One round of bidding by the simulated room (ADR-027).</summary>
-public sealed record MarketTickRequest(long? AnchorMs);
+/// <summary>
+/// Bid submission: the amount, and nothing else. The clock anchor the page sent
+/// until 1.0.0.112 is ignored if a page from then still sends it; the schedule
+/// is the server's (ADR: Three readers with no memory of the project, the
+/// addendum on the clock).
+/// </summary>
+public sealed record BidRequest(int Amount);
 
 /// <summary>What the browser reports when a render crashes or a promise rejects (ADR-023).</summary>
 public sealed record ClientErrorReport(string? Message, string? Stack, string? Path);

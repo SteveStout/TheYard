@@ -1,14 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearVehicleCache, fetchVehicles, peekVehicles, vehicleQueryParams } from './data';
+import { clearVehicleCache, fetchVehicles, peekVehicles, utcDay, vehicleQueryParams } from './data';
 import { EMPTY_FILTERS } from './inventory';
 
 describe('vehicleQueryParams', () => {
-  it('produces only the clock anchor for empty filters and the default sort', () => {
+  it('produces nothing at all for empty filters and the default sort', () => {
+    // No clock anchor, since 1.0.0.112: the schedule is the server's, and a
+    // request that named its own midnight was a request that named its own
+    // auction (ADR: Three readers with no memory of the project, the addendum
+    // on the clock).
     const params = vehicleQueryParams(EMPTY_FILTERS);
-    expect(params.size).toBe(1);
-    const midnight = new Date();
-    midnight.setHours(0, 0, 0, 0);
-    expect(params.get('anchor_ms')).toBe(String(midnight.getTime()));
+    expect(params.size).toBe(0);
+    expect(params.has('anchor_ms')).toBe(false);
+  });
+
+  it('keys the cache by the UTC day, because the server re-seeds the windows at UTC midnight', () => {
+    const lastMomentOfTheDay = Date.UTC(2026, 8, 9, 23, 59, 59, 999);
+    expect(utcDay(lastMomentOfTheDay)).toBe(utcDay(Date.UTC(2026, 8, 9, 0, 0, 0)));
+    expect(utcDay(lastMomentOfTheDay + 1)).toBe(utcDay(lastMomentOfTheDay) + 1);
   });
 
   it('maps every populated filter to its API parameter name', () => {
@@ -97,6 +105,34 @@ describe('fetchVehicles caching', () => {
 
     await fetchVehicles();
     vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+    await fetchVehicles();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('asks the API with the query string and never with the cache key', async () => {
+    // The cache key carries the UTC day in front of the query string, and
+    // the first cut of that sent the key as the URL: every listing request
+    // went out as /api/vehicles?20706:offset=100, the server ignored what it
+    // could not read, and Load more appended the first page again (the
+    // 1.0.0.112 gate, take one).
+    const fetchMock = vi.fn().mockImplementation(async () => okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchVehicles();
+    await fetchVehicles({ ...EMPTY_FILTERS, make: 'Ford' }, { sort: 'price-asc', offset: 100 });
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/vehicles');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/vehicles?make=Ford&sort=price-asc&offset=100');
+  });
+
+  it('forgets everything cached before UTC midnight once the day turns', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    vi.setSystemTime(new Date('2026-08-16T23:59:30Z'));
+    await fetchVehicles();
+    vi.setSystemTime(new Date('2026-08-17T00:00:30Z'));
     await fetchVehicles();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);

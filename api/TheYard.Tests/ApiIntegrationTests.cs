@@ -37,12 +37,13 @@ public class ApiIntegrationTests(FullCatalogue factory)
     [Fact]
     public async Task Default_order_is_auction_time_with_live_vehicles_first()
     {
-        long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
-        // Capture "now" BEFORE the request: anything the server saw as live
-        // cannot have been ended at this earlier instant, however close to
-        // its boundary it is (at 100k scale the soonest end is seconds away).
+        // The server's clock: the UTC midnight that began the day. Capture
+        // "now" BEFORE the request: anything the server saw as live cannot
+        // have been ended at this earlier instant, however close to its
+        // boundary it is (at 100k scale the soonest end is seconds away).
+        long anchor = TheYard.Domain.AuctionClock.Utc(DateTimeOffset.UtcNow).AnchorMs;
         long nowBefore = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        using var json = await GetAsync($"/api/vehicles?anchor_ms={anchor}");
+        using var json = await GetAsync("/api/vehicles");
 
         // With ~43% of 100k live, the whole first page is live auctions
         // ordered by soonest end.
@@ -70,9 +71,8 @@ public class ApiIntegrationTests(FullCatalogue factory)
     [Fact]
     public async Task Offset_parameter_pages_through_the_results()
     {
-        long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
-        using var first = await GetAsync($"/api/vehicles?sort=price-asc&limit=3&anchor_ms={anchor}");
-        using var second = await GetAsync($"/api/vehicles?sort=price-asc&limit=3&offset=3&anchor_ms={anchor}");
+        using var first = await GetAsync("/api/vehicles?sort=price-asc&limit=3");
+        using var second = await GetAsync("/api/vehicles?sort=price-asc&limit=3&offset=3");
 
         var firstIds = first.RootElement.GetProperty("vehicles").EnumerateArray()
             .Select(v => v.GetProperty("id").GetString()).ToList();
@@ -86,8 +86,7 @@ public class ApiIntegrationTests(FullCatalogue factory)
     [Fact]
     public async Task Vehicles_carry_server_derived_auction_facts()
     {
-        long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
-        using var json = await GetAsync($"/api/vehicles?limit=1&anchor_ms={anchor}");
+        using var json = await GetAsync("/api/vehicles?limit=1");
         var vehicle = json.RootElement.GetProperty("vehicles")[0];
 
         long startsAt = vehicle.GetProperty("auction_starts_at").GetInt64();
@@ -211,19 +210,44 @@ public class ApiIntegrationTests(FullCatalogue factory)
     }
 
     [Fact]
-    public async Task Status_filter_honours_the_clients_midnight_anchor()
+    public async Task Status_filter_is_a_mix_on_the_servers_clock()
     {
-        long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
-        using var json = await GetAsync($"/api/vehicles?status=live&anchor_ms={anchor}");
+        using var json = await GetAsync("/api/vehicles?status=live");
         Assert.InRange(json.RootElement.GetProperty("total").GetInt32(), 1, ExpectedTotal - 1);
     }
 
+    // #region one-clock
+    /// <summary>
+    /// The auction is the server's, whoever asks. Until 1.0.0.112 a request
+    /// carried its own local midnight and the server derived every window from
+    /// it, so a visitor in another zone was in a different auction and a client
+    /// that named yesterday's midnight could bid on one that had ended for
+    /// everyone else; an implausible anchor was a 400 and a plausible wrong
+    /// one was accepted. Now the same vehicle has the same window for every
+    /// request, an anchor a request still sends is not read, and the window is
+    /// the one the domain derives from the UTC midnight that began the day
+    /// (ADR: Three readers with no memory of the project, the addendum on the
+    /// clock).
+    /// </summary>
     [Fact]
-    public async Task Implausible_anchor_returns_400()
+    public async Task The_schedule_does_not_depend_on_who_asks()
     {
-        var response = await _client.GetAsync("/api/vehicles?status=live&anchor_ms=12345");
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var page = await GetAsync("/api/vehicles?limit=1");
+        string id = page.RootElement.GetProperty("vehicles")[0].GetProperty("id").GetString()!;
+        long yesterday = TheYard.Domain.AuctionClock.Utc(DateTimeOffset.UtcNow.AddDays(-1)).AnchorMs;
+
+        using var plain = await GetAsync($"/api/vehicles/{id}");
+        using var withYesterday = await GetAsync($"/api/vehicles/{id}?anchor_ms={yesterday}");
+        using var withNonsense = await GetAsync($"/api/vehicles/{id}?anchor_ms=12345");
+
+        long endsAt = plain.RootElement.GetProperty("auction_ends_at").GetInt64();
+        Assert.Equal(endsAt, withYesterday.RootElement.GetProperty("auction_ends_at").GetInt64());
+        Assert.Equal(endsAt, withNonsense.RootElement.GetProperty("auction_ends_at").GetInt64());
+        var expected = TheYard.Domain.AuctionSchedule.Window(
+            id, TheYard.Domain.AuctionClock.Utc(DateTimeOffset.UtcNow).AnchorMs);
+        Assert.Equal(expected.EndsAtMs, endsAt);
     }
+    // #endregion one-clock
 
     [Fact]
     public async Task Decimal_price_bounds_are_accepted_with_integer_semantics()

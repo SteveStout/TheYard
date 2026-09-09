@@ -199,12 +199,12 @@ public sealed class ProofRunner(
         if (minimum is { } first)
         {
             using var bid = await Timed(client, store, "bid", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
-                new { amount = first, anchor_ms = Anchor() });
+                new { amount = first });
             int? next = await NextAsync(bid);
             if (next is { } second)
             {
                 using var raise = await Timed(client, store, "raise", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
-                    new { amount = second, anchor_ms = Anchor() });
+                    new { amount = second });
             }
         }
 
@@ -333,9 +333,6 @@ public sealed class ProofRunner(
             ? minimum.GetInt32()
             : null;
     }
-
-    private static long Anchor() =>
-        new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
 
     /// <summary>The median of five round trips to the store, doing as little work as a round trip can.</summary>
     private static async Task<long?> HopAsync(Backend backend)

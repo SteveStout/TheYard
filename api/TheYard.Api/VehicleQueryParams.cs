@@ -7,7 +7,8 @@ namespace TheYard.Api;
 /// GET-parameter binding for /api/vehicles. The wire names mirror the
 /// payload's snake_case fields. Translates itself into the domain's
 /// VehicleFilter plus the AuctionClock statuses are evaluated against,
-/// rejecting unknown status values and implausible anchors.
+/// rejecting unknown status and sort values. The clock is the server's; an
+/// anchor a request still sends is not read.
 /// </summary>
 public sealed record VehicleQueryParams(
     string? Q,
@@ -19,7 +20,6 @@ public sealed record VehicleQueryParams(
     string? Sort,
     int? Limit,
     int? Offset,
-    [FromQuery(Name = "anchor_ms")] long? AnchorMs,
     [FromQuery(Name = "min_condition")] double? MinCondition,
     [FromQuery(Name = "price_min")] double? PriceMin,
     [FromQuery(Name = "price_max")] double? PriceMax)
@@ -40,11 +40,7 @@ public sealed record VehicleQueryParams(
     {
         filter = new VehicleFilter();
         sort = VehicleSort.EndingSoonest;
-
-        if (!Clocks.TryResolve(AnchorMs, out clock, out error))
-        {
-            return false;
-        }
+        clock = Clocks.Now();
 
         // Explicit name matching, because Enum.TryParse would also accept numeric
         // strings ("9") and comma lists ("live,ended"), which should be 400s.

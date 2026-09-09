@@ -200,11 +200,45 @@ was found to be working.
 - One secret exists in the pipeline where none did. It is a session key, it
   lives in GitHub's secret store and the container's environment and
   nowhere else, and a roll without it degrades to what every roll did before.
-- Two designs are owed and named: the server's clock (finding 2) and the
-  standing the store owns (finding 5). Until they ship, the rules against
-  re-implementing auction math in the browser and against a second writer
-  are what they were, and this record says so plainly rather than the
-  older records pretending otherwise.
+- Two designs were owed and named: the server's clock (finding 2), which
+  shipped the same evening as 1.0.0.112 (the addendum below), and the
+  standing the store owns (finding 5), still owed. Until that one ships, the
+  rule against a second writer is what it was, and this record says so
+  plainly rather than the older records pretending otherwise.
+
+## Addendum, 2026-09-09: the clock, shipped
+
+Finding 2 shipped as 1.0.0.112, the same evening. The anchor is the server's
+now: `AuctionClock.Utc` takes a moment and answers that moment and the UTC
+midnight that began its day, `Clocks.Now()` is the one place the host asks,
+and every endpoint that used to resolve a caller's `anchor_ms` asks that
+instead. The parameter is gone from the listing, the detail, both bid writes
+and the room's tick; the page no longer computes a midnight or sends one, and
+its cache key carries the UTC day instead, because the server re-seeds the
+windows at 00:00 UTC and a page cached a minute before must not be served a
+minute after. A page from before this version that still sends the parameter
+is not read.
+
+```live path=api/TheYard.Domain/AuctionClock.cs region=utc
+```
+
+What changes for a visitor: the day's auctions turn over at 00:00 UTC rather
+than at each visitor's own midnight, which on the live site is seven in the
+evening for its owner, and two visitors anywhere see the same auction end at
+the same instant. What changes for a caller with curl: nothing it sends can
+move an auction's window, so a bid on an ended vehicle is refused whoever
+asks. The tests that held the old contract were rewritten to hold the new
+one: the domain test that anchored the host's own zone now shows Toronto at
+noon and London late in the evening sharing one anchor and Toronto at eight
+in the evening already on the next day's; the API test that expected a 400
+for an implausible anchor now shows the same vehicle answering the same
+window with no anchor, yesterday's, and a nonsense one.
+
+```live path=api/TheYard.Tests/ApiIntegrationTests.cs region=one-clock
+```
+
+The measurement script and the proof stopped sending the anchor too, so the
+next proof run measures the same requests the page makes.
 
 ## Files
 
@@ -214,3 +248,4 @@ was found to be working.
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the reset, store first.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml), [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml), [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml): the one secret, substituted at roll time.
 - [`api/TheYard.Tests/WarmthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/WarmthTests.cs), [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs) and [`api/TheYard.Tests/BidServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidServiceTests.cs): the three holds.
+- [`api/TheYard.Domain/AuctionClock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/AuctionClock.cs), [`api/TheYard.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Clocks.cs) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the clock, the server's, and the page that stopped sending one.

@@ -82,23 +82,16 @@ class Side:
         return status, parsed
 
 
-def anchor_ms() -> int:
-    now = datetime.now(timezone.utc)
-    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    return int(midnight.timestamp() * 1000)
-
-
 def one_round(side: Side, round_number: int) -> None:
     side.fresh_browser()
     email = f"measure-{round_number}-{uuid.uuid4().hex}@example.com"
-    anchor = anchor_ms()
 
     status, _ = side.timed("register", "POST", "/api/auth/register", {"email": email, "password": "correct horse"})
     assert status == 200, f"{side.name}: register answered {status}"
     status, _ = side.timed("sign in", "POST", "/api/auth/login", {"email": email, "password": "correct horse"})
     assert status == 200, f"{side.name}: sign in answered {status}"
 
-    status, listing = side.timed("listing page", "GET", f"/api/vehicles?limit=100&status=live&anchor_ms={anchor}")
+    status, listing = side.timed("listing page", "GET", "/api/vehicles?limit=100&status=live")
     assert status == 200 and listing, f"{side.name}: listing answered {status}"
     # The listing is sorted by ending soonest, so its first rows end within
     # seconds and a bid on one of them arrives at an auction that has ended.
@@ -110,24 +103,24 @@ def one_round(side: Side, round_number: int) -> None:
     )
     vehicle_id = vehicle["id"]
 
-    status, opened = side.timed("vehicle page", "GET", f"/api/vehicles/{vehicle_id}?anchor_ms={anchor}")
+    status, opened = side.timed("vehicle page", "GET", f"/api/vehicles/{vehicle_id}")
     assert status == 200, f"{side.name}: vehicle answered {status}"
     status, _ = side.timed("filter values", "GET", "/api/facets")
     assert status == 200, f"{side.name}: facets answered {status}"
 
     amount = opened["min_next_bid"]
     for attempt in range(3):
-        status, answer = side.timed("bid write", "POST", f"/api/vehicles/{vehicle_id}/bids", {"amount": amount, "anchor_ms": anchor})
+        status, answer = side.timed("bid write", "POST", f"/api/vehicles/{vehicle_id}/bids", {"amount": amount})
         if status == 200:
             break
         # Somebody else moved the price between the read and the bid; read it again.
         side.timings["bid write"].pop()
-        _, opened, _ = side.call("GET", f"/api/vehicles/{vehicle_id}?anchor_ms={anchor}")
+        _, opened, _ = side.call("GET", f"/api/vehicles/{vehicle_id}")
         amount = opened["min_next_bid"]
     assert status == 200, f"{side.name}: bid answered {status}: {answer}"
 
     raised = answer["vehicle"]["min_next_bid"]
-    status, answer = side.timed("bid raise", "POST", f"/api/vehicles/{vehicle_id}/bids", {"amount": raised, "anchor_ms": anchor})
+    status, answer = side.timed("bid raise", "POST", f"/api/vehicles/{vehicle_id}/bids", {"amount": raised})
     assert status == 200, f"{side.name}: raise answered {status}: {answer}"
 
     status, _ = side.timed("reset", "DELETE", "/api/bids")

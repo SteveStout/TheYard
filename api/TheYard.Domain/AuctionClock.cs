@@ -2,17 +2,22 @@ namespace TheYard.Domain;
 
 /// <summary>
 /// The two instants auction scheduling needs: the current moment, and the
-/// buyer's local midnight the schedule anchors to. Carrying the anchor
-/// explicitly (the client sends its own) sidesteps every timezone and DST
-/// disagreement between the browser's clock and the server's.
+/// midnight the schedule anchors to. The anchor is the server's, the current
+/// UTC day's midnight, so every visitor is in the same auction and no request
+/// can name a day. It was the caller's local midnight until 1.0.0.112, which
+/// put two visitors in different zones in different auctions and let a client
+/// that sent yesterday's midnight bid on a vehicle that had ended for everyone
+/// else (ADR: Three readers with no memory of the project, the addendum on
+/// the clock).
 /// </summary>
 public readonly record struct AuctionClock(long NowMs, long AnchorMs)
 {
-    /// <summary>Fallback when no client anchor was provided: midnight in the given zone (DST-correct).</summary>
-    public static AuctionClock ServerLocal(DateTimeOffset utcNow, TimeZoneInfo zone)
+    // #region utc
+    /// <summary>The clock for a moment: that moment, and the UTC midnight that began its day.</summary>
+    public static AuctionClock Utc(DateTimeOffset utcNow)
     {
-        DateTime localDate = TimeZoneInfo.ConvertTime(utcNow, zone).Date;
-        var midnight = new DateTimeOffset(localDate, zone.GetUtcOffset(localDate));
+        var midnight = new DateTimeOffset(utcNow.UtcDateTime.Date, TimeSpan.Zero);
         return new AuctionClock(utcNow.ToUnixTimeMilliseconds(), midnight.ToUnixTimeMilliseconds());
     }
+    // #endregion utc
 }

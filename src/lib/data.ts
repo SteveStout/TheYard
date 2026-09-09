@@ -85,11 +85,20 @@ export function clearVehicleCache(): void {
   queryCache.clear();
 }
 
-/** The buyer's local midnight, the anchor every schedule-dependent request carries. */
-export function localMidnightMs(): number {
-  const midnight = new Date();
-  midnight.setHours(0, 0, 0, 0);
-  return midnight.getTime();
+// #region one-clock
+/**
+ * The UTC day the request is made on, for the cache key only. The auction
+ * clock is the server's: every window derives from the UTC midnight that
+ * began the day, the same instant for every visitor, and nothing about it is
+ * sent from here (ADR: Three readers with no memory of the project, the
+ * addendum on the clock). Until 1.0.0.112 every schedule-dependent request
+ * carried the browser's own local midnight as `anchor_ms`, which put two
+ * visitors in different zones in different auctions. The day still belongs
+ * in the cache key, because the server re-seeds the windows at UTC midnight
+ * and a page cached just before it must not be served just after.
+ */
+export function utcDay(now: number = Date.now()): number {
+  return Math.floor(now / 86_400_000);
 }
 
 /** Maps UI filter/sort state to the API's query parameters. Exported for tests. */
@@ -97,21 +106,21 @@ export function vehicleQueryParams(
   filters: InventoryFilters,
   sort: SortKey = 'ending-soonest'
 ): URLSearchParams {
-  const params = filtersToSearchParams(filters, sort);
-  // Every request carries the clock anchor: the status filter, text search
-  // (tokens like "live"), the default auction-time sort, and the derived
-  // fields on each vehicle all depend on it. Stable within a day, so cache
-  // keys stay stable too. (The URL bar uses filtersToSearchParams directly,
-  // without the anchor, because it's clock plumbing, not user state.)
-  params.set('anchor_ms', String(localMidnightMs()));
-  return params;
+  return filtersToSearchParams(filters, sort);
 }
 
-function cacheKey(filters?: InventoryFilters, sort?: SortKey, offset = 0): string {
+/** The query string a listing request sends, with the page offset when there is one. */
+function queryString(filters?: InventoryFilters, sort?: SortKey, offset = 0): string {
   const params = filters ? vehicleQueryParams(filters, sort) : new URLSearchParams();
   if (offset > 0) params.set('offset', String(offset));
   return params.toString();
 }
+
+/** The cache key: the query string, and the UTC day it was asked on. Never a URL. */
+function cacheKey(query: string): string {
+  return `${utcDay()}:${query}`;
+}
+// #endregion one-clock
 
 function cachedPage(key: string): VehiclePage | null {
   const hit = queryCache.get(key);
@@ -124,15 +133,17 @@ function cachedPage(key: string): VehiclePage | null {
  * result never touches the API.
  */
 export function peekVehicles(filters?: InventoryFilters, sort?: SortKey): VehiclePage | null {
-  return cachedPage(cacheKey(filters, sort));
+  return cachedPage(cacheKey(queryString(filters, sort)));
 }
 
 // #region fetch-vehicles
 // The one function every list view goes through. Three things share this seam:
-// a cache keyed by the exact query string (a filter combination revisited
-// renders instantly), an AbortSignal so an effect's cleanup can cancel a
-// request the visitor has already typed past, and forceRefresh for the paths
-// that must not read a cache (retry buttons, the periodic status refresh).
+// a cache keyed by the exact query string and the UTC day (a filter
+// combination revisited renders instantly, and nothing cached before the
+// server re-seeds at UTC midnight is served after it), an AbortSignal so an
+// effect's cleanup can cancel a request the visitor has already typed past,
+// and forceRefresh for the paths that must not read a cache (retry buttons,
+// the periodic status refresh).
 export interface FetchVehiclesOptions {
   sort?: SortKey;
   offset?: number;
@@ -145,7 +156,8 @@ export async function fetchVehicles(
   filters?: InventoryFilters,
   { sort, offset = 0, signal, forceRefresh = false }: FetchVehiclesOptions = {}
 ): Promise<VehiclePage> {
-  const key = cacheKey(filters, sort, offset);
+  const query = queryString(filters, sort, offset);
+  const key = cacheKey(query);
 
   if (!forceRefresh) {
     const hit = cachedPage(key);
@@ -154,7 +166,7 @@ export async function fetchVehicles(
     }
   }
 
-  const response = await fetch(`/api/vehicles${key ? `?${key}` : ''}`, { signal });
+  const response = await fetch(`/api/vehicles${query ? `?${query}` : ''}`, { signal });
   if (!response.ok) {
     throw new Error(
       await problemDetail(response, `The inventory API responded with ${response.status}`)
@@ -175,10 +187,7 @@ export async function fetchVehicles(
 
 /** One vehicle by id, or null when it doesn't exist. Backs detail deep links. */
 export async function fetchVehicleById(id: string, signal?: AbortSignal): Promise<Vehicle | null> {
-  const response = await fetch(
-    `/api/vehicles/${encodeURIComponent(id)}?anchor_ms=${localMidnightMs()}`,
-    { signal }
-  );
+  const response = await fetch(`/api/vehicles/${encodeURIComponent(id)}`, { signal });
   if (response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`The inventory API responded with ${response.status}`);
@@ -213,7 +222,7 @@ async function postBidAction(url: string, body: Record<string, unknown>): Promis
     response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...body, anchor_ms: localMidnightMs() }),
+      body: JSON.stringify(body),
     });
   } catch {
     return { outcome: { kind: 'rejected', reason: 'Could not reach the auction API.' } };
@@ -246,8 +255,8 @@ async function postBidAction(url: string, body: Record<string, unknown>): Promis
 /**
  * One round of bidding by the simulated room (ADR-027). Driven by the page
  * rather than a timer on the server: the room moves while somebody is
- * watching, which is the only time it matters, and the anchor rides along
- * because the browser's midnight is what decides which auctions are live.
+ * watching, which is the only time it matters. The room bids on the server's
+ * clock, the same one this page is served, so nothing rides along.
  *
  * Returns how many vehicles it raised and the buyer's refreshed map. A failure
  * is not worth surfacing: the room going quiet for eight seconds is invisible.
@@ -257,7 +266,7 @@ export async function tickMarket(): Promise<{ raised: number; bids: BidMap } | n
     const response = await fetch('/api/market/tick', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ anchor_ms: localMidnightMs() }),
+      body: JSON.stringify({}),
     });
     if (!response.ok) {
       return null;

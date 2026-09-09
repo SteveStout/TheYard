@@ -19,7 +19,7 @@ public class ProblemDetailsTests(WebApplicationFactory<Program> factory)
     [Theory]
     [InlineData("/api/vehicles?sort=alphabetical")]
     [InlineData("/api/vehicles?status=sideways")]
-    [InlineData("/api/vehicles?status=live&anchor_ms=12345")]
+    [InlineData("/api/vehicles?status=live,ended")]
     public async Task Every_rejected_query_answers_problem_details_with_a_readable_detail(string url)
     {
         var response = await _client.GetAsync(url);
@@ -35,10 +35,8 @@ public class ProblemDetailsTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task A_rejected_bid_answers_the_same_shape_as_a_rejected_query()
     {
-        long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
         using var page = JsonDocument.Parse(
-            await _client.GetStringAsync(
-                $"/api/vehicles?status=live&sort=most-bids&limit=1&anchor_ms={anchor}"));
+            await _client.GetStringAsync("/api/vehicles?status=live&sort=most-bids&limit=1"));
         string id = page.RootElement.GetProperty("vehicles")[0].GetProperty("id").GetString()!;
 
         // Bidding needs an account now, and a rejected bid still has to answer
@@ -47,8 +45,7 @@ public class ProblemDetailsTests(WebApplicationFactory<Program> factory)
         // always rejected for the reason the test is about rather than for
         // being anonymous.
         var buyer = await Buyers.SignedIn(factory);
-        var response = await buyer.PostAsJsonAsync($"/api/vehicles/{id}/bids",
-            new { amount = 1, anchor_ms = anchor });
+        var response = await buyer.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount = 1 });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);

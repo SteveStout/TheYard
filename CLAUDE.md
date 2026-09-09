@@ -36,15 +36,17 @@ React.**
 
 - **Derive, do not store.** Auction windows derive from the item id via FNV-1a hash. Status derives from
   the window and the clock. Nothing schedule-related is persisted.
-- **The server owns every derived fact.** The client sends `anchor_ms`, its own local midnight, and the
-  server computes windows, status and `min_next_bid`. **Never re-implement auction math in TypeScript.**
-  This rule exists because an earlier version derived it on both sides and drifted on a daylight-saving
-  transition.
+- **The server owns every derived fact, and the clock.** The server computes windows, status and
+  `min_next_bid` on its own clock: now, and the UTC midnight that began the day, one anchor for every
+  visitor (`AuctionClock.Utc`). No request names a day; `anchor_ms` left the API in 1.0.0.112 and is
+  ignored if an old page sends it. **Never re-implement auction math in TypeScript.** This rule exists
+  because an earlier version derived it on both sides and drifted on a daylight-saving transition, and a
+  later one let the caller choose the anchor (ADR: Three readers with no memory of the project).
 - **The wire is snake_case** and matches the dataset exactly. No mapping layer.
 - **Empty is valid, null is the error.** Never return null for a collection.
 - **Money is whole dollars as `int`**, because the dataset's prices are whole dollars and every rule adds
   whole-dollar increments; nothing needs cents. **Every derived or recorded instant is milliseconds since
-  the epoch as `long`, UTC** (`anchor_ms`, the window's start and end, a bid's `at_ms`), the same unit the
+  the epoch as `long`, UTC** (the clock's anchor, the window's start and end, a bid's `at_ms`), the same unit the
   browser's clock uses; the dataset's own `auction_start` date string passes through as the dataset has it
   and nothing is derived from it.
 - Bid rules live only in `TheYard.Domain/BidRules.cs`. A bid at or above buy-now wins AT the buy-now

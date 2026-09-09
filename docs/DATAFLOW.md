@@ -48,10 +48,10 @@ walks that file top to bottom.
    and materializes the list plus an id index, once, eagerly at startup.
 4. **Query.** A request like `GET /api/vehicles?make=Ford&status=live&sort=price-asc`
    binds through `api/TheYard.Api/VehicleQueryParams.cs`, which validates and produces
-   a filter, a sort, and a clock (`api/TheYard.Api/Clocks.cs`). The client sends its
-   local midnight (`anchor_ms`) so schedule math
-   (`api/TheYard.Domain/AuctionSchedule.cs`, `AuctionClock.cs`) agrees with the browser
-   in any timezone. The buyer's bids overlay **before** filtering
+   a filter, a sort, and a clock (`api/TheYard.Api/Clocks.cs`): now, and the UTC
+   midnight that began the day, the same for every caller, so schedule math
+   (`api/TheYard.Domain/AuctionSchedule.cs`, `AuctionClock.cs`) puts every visitor in
+   the same auction. The buyer's bids overlay **before** filtering
    (`api/TheYard.Application/BidService.cs`), so price bounds see the same figures the
    UI shows. Then `Where` → `OrderBy` → `Skip/Take`, all in memory:
    `api/TheYard.Domain/VehicleFilter.cs` and `VehicleOrdering.cs`, applied in
@@ -73,8 +73,8 @@ walks that file top to bottom.
 
 ## The write path (bids)
 
-1. `src/components/BidPanel.tsx` posts `{ amount, anchor_ms }` to
-   `POST /api/vehicles/{id}/bids` via `src/lib/data.ts`.
+1. `src/components/BidPanel.tsx` posts `{ amount }` to
+   `POST /api/vehicles/{id}/bids` via `src/lib/data.ts`; the clock is the server's.
 2. `api/TheYard.Domain/BidRules.cs` is the sole authority: sold first (a vehicle anybody
    has bought takes no bid and no second purchase, a fact `BidService` supplies from
    everybody's standing), then the live-window check, the tiered minimum increment, and

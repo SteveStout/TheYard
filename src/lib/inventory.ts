@@ -46,8 +46,8 @@ export const SORT_OPTIONS: ReadonlyArray<{ value: SortKey; label: string }> = [
 // #region url-state
 /**
  * The browser-facing filter serialization: the same names the API takes, so
- * the address bar mirrors the API request. Used for both the URL bar and
- * (with the clock anchor appended) the actual fetch; see data.ts.
+ * the address bar mirrors the API request. Used for both the URL bar and the
+ * actual fetch; see data.ts.
  */
 export function filtersToSearchParams(
   filters: InventoryFilters,

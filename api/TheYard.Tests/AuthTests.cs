@@ -60,9 +60,6 @@ public abstract class AuthTestBase : IDisposable
     protected static async Task<HttpResponseMessage> LogIn(HttpClient client, string email) =>
         await client.PostAsJsonAsync("/api/auth/login", new { email, password = "correct horse" });
 
-    protected static long Anchor() =>
-        new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
-
     /// <summary>
     /// Everything a rejected sign-in tells the caller, as one comparable
     /// string. Two request identifiers are left out and nothing else is: the
@@ -90,10 +87,10 @@ public abstract class AuthTestBase : IDisposable
     /// rejection carries its sentence in `detail` (ADR: Error handling).
     /// </summary>
     protected static async Task<HttpResponseMessage> Bid(
-        HttpClient client, string vehicleId, int amount, long anchor)
+        HttpClient client, string vehicleId, int amount)
     {
         var placed = await client.PostAsJsonAsync(
-            $"/api/vehicles/{vehicleId}/bids", new { amount, anchor_ms = anchor });
+            $"/api/vehicles/{vehicleId}/bids", new { amount });
         Assert.True(
             placed.IsSuccessStatusCode,
             $"the bid of {amount} on {vehicleId} was refused: "
@@ -108,13 +105,13 @@ public abstract class AuthTestBase : IDisposable
     /// is real wall-clock read per request, so that vehicle can close between
     /// the read and the bid, and under the full suite it does.
     /// </summary>
-    protected static async Task<(string Id, int MinNext)> ALiveVehicle(HttpClient client, long anchor)
+    protected static async Task<(string Id, int MinNext)> ALiveVehicle(HttpClient client)
     {
         using var page = JsonDocument.Parse(
             await client.GetStringAsync(
-                $"/api/vehicles?status=live&sort=most-bids&limit=25&anchor_ms={anchor}"));
+                $"/api/vehicles?status=live&sort=most-bids&limit=25"));
         var live = page.RootElement.GetProperty("vehicles");
-        Assert.True(live.GetArrayLength() > 0, "the anchored clock should always have a live auction");
+        Assert.True(live.GetArrayLength() > 0, "the schedule always has a live auction");
         // Not one anybody has bought: a sold vehicle takes no bid from anyone
         // (ADR: Accounts and per-user bids, the addendum on the second buyer),
         // and on the document store the test containers remember yesterday's
@@ -131,11 +128,11 @@ public abstract class AuthTestBase : IDisposable
     /// holds vehicles already bid past their Buy Now price, and the sale price
     /// this test asserts is only the price shown when the purchase raised it.
     /// </summary>
-    protected static async Task<(string Id, int BuyNow)> AVehicleToBuy(HttpClient client, long anchor)
+    protected static async Task<(string Id, int BuyNow)> AVehicleToBuy(HttpClient client)
     {
         using var page = JsonDocument.Parse(
             await client.GetStringAsync(
-                $"/api/vehicles?status=live&sort=most-bids&limit=100&anchor_ms={anchor}"));
+                $"/api/vehicles?status=live&sort=most-bids&limit=100"));
         var vehicle = page.RootElement.GetProperty("vehicles").EnumerateArray()
             .Skip(1)
             .LastOrDefault(row =>
@@ -224,10 +221,9 @@ public class AuthTests : AuthTestBase
 
         string me = await client.GetStringAsync("/api/auth/me");
         Assert.Contains("\"signed_in\":false", me, StringComparison.Ordinal);
-        long anchor = Anchor();
-        var (id, amount) = await ALiveVehicle(client, anchor);
+        var (id, amount) = await ALiveVehicle(client);
         var refused = await client.PostAsJsonAsync(
-            $"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
+            $"/api/vehicles/{id}/bids", new { amount });
         Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
     }
 
@@ -325,13 +321,12 @@ public class AuthBidTests : AuthTestBase
     {
         await using var api = Api();
         var client = api.CreateClient();
-        long anchor = Anchor();
-        var (id, amount) = await ALiveVehicle(client, anchor);
+        var (id, amount) = await ALiveVehicle(client);
 
         var bid = await client.PostAsJsonAsync(
-            $"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
+            $"/api/vehicles/{id}/bids", new { amount });
         var buyNow = await client.PostAsJsonAsync(
-            $"/api/vehicles/{id}/buy-now", new { anchor_ms = anchor });
+            $"/api/vehicles/{id}/buy-now", new { });
         var reset = await client.DeleteAsync("/api/bids");
         var history = await client.GetAsync("/api/bids/history");
         // The room, too. This one was open, and it is the one that mattered
@@ -339,7 +334,7 @@ public class AuthBidTests : AuthTestBase
         // account, so a stranger with curl and a loop could counter-bid every
         // auction a signed-in visitor was winning, and nothing recorded who
         // (ADR: The room needs an account too).
-        var tick = await client.PostAsJsonAsync("/api/market/tick", new { anchor_ms = anchor });
+        var tick = await client.PostAsJsonAsync("/api/market/tick", new { });
 
         Assert.Equal(HttpStatusCode.Unauthorized, bid.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, buyNow.StatusCode);
@@ -357,22 +352,21 @@ public class AuthBidTests : AuthTestBase
     public async Task A_second_account_outbids_the_first_and_both_are_told_the_truth()
     {
         await using var api = Api();
-        long anchor = Anchor();
 
         var first = api.CreateClient();
         await Register(first, _first);
-        var (id, opening) = await ALiveVehicle(first, anchor);
-        await Bid(first, id, opening, anchor);
+        var (id, opening) = await ALiveVehicle(first);
+        await Bid(first, id, opening);
 
         // A different client is a different browser: its own cookie jar, its
         // own account.
         var second = api.CreateClient();
         await Register(second, _second);
         using var detail = JsonDocument.Parse(
-            await second.GetStringAsync($"/api/vehicles/{id}?anchor_ms={anchor}"));
+            await second.GetStringAsync($"/api/vehicles/{id}"));
         int nextUp = detail.RootElement.GetProperty("min_next_bid").GetInt32();
         Assert.True(nextUp > opening, "the second account has to clear the first");
-        await Bid(second, id, nextUp, anchor);
+        await Bid(second, id, nextUp);
 
         using var mineFirst = JsonDocument.Parse(await first.GetStringAsync("/api/bids"));
         using var mineSecond = JsonDocument.Parse(await second.GetStringAsync("/api/bids"));
@@ -395,7 +389,6 @@ public class AuthBidTests : AuthTestBase
     [Fact]
     public async Task Both_accounts_and_both_bids_survive_a_restart()
     {
-        long anchor = Anchor();
         string id;
         int firstAmount;
         int secondAmount;
@@ -404,15 +397,15 @@ public class AuthBidTests : AuthTestBase
         {
             var first = api.CreateClient();
             await Register(first, _first);
-            (id, firstAmount) = await ALiveVehicle(first, anchor);
-            await Bid(first, id, firstAmount, anchor);
+            (id, firstAmount) = await ALiveVehicle(first);
+            await Bid(first, id, firstAmount);
 
             var second = api.CreateClient();
             await Register(second, _second);
             using var detail = JsonDocument.Parse(
-                await second.GetStringAsync($"/api/vehicles/{id}?anchor_ms={anchor}"));
+                await second.GetStringAsync($"/api/vehicles/{id}"));
             secondAmount = detail.RootElement.GetProperty("min_next_bid").GetInt32();
-            await Bid(second, id, secondAmount, anchor);
+            await Bid(second, id, secondAmount);
         }
 
         await using var restarted = Api();
@@ -434,9 +427,8 @@ public class AuthBidTests : AuthTestBase
         await using var api = Api();
         var client = api.CreateClient();
         await Register(client, _first);
-        long anchor = Anchor();
-        var (id, amount) = await ALiveVehicle(client, anchor);
-        await Bid(client, id, amount, anchor);
+        var (id, amount) = await ALiveVehicle(client);
+        await Bid(client, id, amount);
 
         using var history = JsonDocument.Parse(await client.GetStringAsync("/api/bids/history"));
 
@@ -463,7 +455,6 @@ public class AuthBidTests : AuthTestBase
     public async Task A_session_opened_on_another_store_cannot_bid_here()
     {
         await using var api = Api();
-        long anchor = Anchor();
         var client = api.CreateClient();
         var registered = await Register(client, _first);
         Assert.True(registered.IsSuccessStatusCode, await registered.Content.ReadAsStringAsync());
@@ -478,7 +469,7 @@ public class AuthBidTests : AuthTestBase
         using var stores = JsonDocument.Parse(await client.GetStringAsync("/api/stores"));
         string thisStore = stores.RootElement.GetProperty("current").GetString()!;
         string otherStore = thisStore == "sql" ? "cosmos" : "sql";
-        var (id, amount) = await ALiveVehicle(client, anchor);
+        var (id, amount) = await ALiveVehicle(client);
 
         // The same key the test host signs with, the same account, the other
         // store's name in the claim: a valid token that is on the wrong store.
@@ -488,9 +479,9 @@ public class AuthBidTests : AuthTestBase
         elsewhere.DefaultRequestHeaders.Add("Cookie", $"{TokenIssuer.CookieName}={token}");
 
         var refused = await elsewhere.PostAsJsonAsync(
-            $"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
+            $"/api/vehicles/{id}/bids", new { amount });
         var refusedPurchase = await elsewhere.PostAsJsonAsync(
-            $"/api/vehicles/{id}/buy-now", new { anchor_ms = anchor });
+            $"/api/vehicles/{id}/buy-now", new { });
 
         foreach (var answer in new[] { refused, refusedPurchase })
         {
@@ -500,7 +491,7 @@ public class AuthBidTests : AuthTestBase
         }
         Assert.Equal("{}", (await elsewhere.GetStringAsync("/api/bids")).Trim());
         // And the account's own session, on this store, bids as it always did.
-        await Bid(client, id, amount, anchor);
+        await Bid(client, id, amount);
     }
     // #endregion session-per-store
 
@@ -519,14 +510,13 @@ public class AuthBidTests : AuthTestBase
     public async Task A_vehicle_bought_outright_is_sold_to_everybody()
     {
         await using var api = Api();
-        long anchor = Anchor();
 
         var first = api.CreateClient();
         await Register(first, _first);
-        var (id, price) = await AVehicleToBuy(first, anchor);
+        var (id, price) = await AVehicleToBuy(first);
         try
         {
-            var bought = await first.PostAsJsonAsync($"/api/vehicles/{id}/buy-now", new { anchor_ms = anchor });
+            var bought = await first.PostAsJsonAsync($"/api/vehicles/{id}/buy-now", new { });
             string boughtBody = await bought.Content.ReadAsStringAsync();
             Assert.True(bought.IsSuccessStatusCode, boughtBody);
             using var answer = JsonDocument.Parse(boughtBody);
@@ -538,13 +528,13 @@ public class AuthBidTests : AuthTestBase
             var second = api.CreateClient();
             await Register(second, _second);
             using var detail = JsonDocument.Parse(
-                await second.GetStringAsync($"/api/vehicles/{id}?anchor_ms={anchor}"));
+                await second.GetStringAsync($"/api/vehicles/{id}"));
             Assert.True(detail.RootElement.GetProperty("sold").GetBoolean(), "a stranger reads sold on the vehicle");
             Assert.Equal(price, detail.RootElement.GetProperty("current_bid").GetInt32());
 
             var bid = await second.PostAsJsonAsync(
-                $"/api/vehicles/{id}/bids", new { amount = price, anchor_ms = anchor });
-            var again = await second.PostAsJsonAsync($"/api/vehicles/{id}/buy-now", new { anchor_ms = anchor });
+                $"/api/vehicles/{id}/bids", new { amount = price });
+            var again = await second.PostAsJsonAsync($"/api/vehicles/{id}/buy-now", new { });
             foreach (var refused in new[] { bid, again })
             {
                 Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
@@ -556,7 +546,7 @@ public class AuthBidTests : AuthTestBase
             // The listing says so too, to anybody, signed in or not.
             using var page = JsonDocument.Parse(
                 await api.CreateClient().GetStringAsync(
-                    $"/api/vehicles?status=live&sort=most-bids&limit=100&anchor_ms={anchor}"));
+                    $"/api/vehicles?status=live&sort=most-bids&limit=100"));
             var row = page.RootElement.GetProperty("vehicles").EnumerateArray()
                 .Single(vehicle => vehicle.GetProperty("id").GetString() == id);
             Assert.True(row.GetProperty("sold").GetBoolean(), "the listing row carries the sale");
@@ -566,7 +556,7 @@ public class AuthBidTests : AuthTestBase
             await first.DeleteAsync("/api/bids");
         }
 
-        using var after = JsonDocument.Parse(await first.GetStringAsync($"/api/vehicles/{id}?anchor_ms={anchor}"));
+        using var after = JsonDocument.Parse(await first.GetStringAsync($"/api/vehicles/{id}"));
         Assert.False(after.RootElement.GetProperty("sold").GetBoolean(), "the buyer's start-over undoes the sale");
     }
     // #endregion sold

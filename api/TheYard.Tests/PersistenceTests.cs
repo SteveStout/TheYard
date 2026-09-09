@@ -42,14 +42,12 @@ public class PersistenceTests : IDisposable
     /// <summary>
     /// A live vehicle with time left on it. Most bids rather than the default
     /// sort, which is EndingSoonest and so returns the one auction in the
-    /// dataset with the least time on it. AuctionClock carries two instants
-    /// and only one of them is the anchor these tests pin: NowMs is real
-    /// wall-clock, read per request, and liveness is judged against it. Under
-    /// the full suite that vehicle closes between reading min_next_bid and
-    /// posting the bid, about one run in three.
+    /// dataset with the least time on it. The clock is the server's, read per
+    /// request, and liveness is judged against it. Under the full suite that
+    /// vehicle closes between reading min_next_bid and posting the bid, about
+    /// one run in three.
     /// </summary>
-    private static string ALiveVehicleQuery(long anchor) =>
-        $"/api/vehicles?status=live&sort=most-bids&limit=1&anchor_ms={anchor}";
+    private const string ALiveVehicleQuery = "/api/vehicles?status=live&sort=most-bids&limit=1";
 
     private YardDbContext Context() =>
         new(new DbContextOptionsBuilder<YardDbContext>().UseSqlite(Connection).Options);
@@ -58,7 +56,6 @@ public class PersistenceTests : IDisposable
     [Fact]
     public async Task A_bid_survives_the_api_restarting()
     {
-        long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
         string id;
         int amount;
         string email;
@@ -67,18 +64,18 @@ public class PersistenceTests : IDisposable
         {
             var client = await Buyers.SignedIn(first);
             using var page = JsonDocument.Parse(
-                await client.GetStringAsync(ALiveVehicleQuery(anchor)));
+                await client.GetStringAsync(ALiveVehicleQuery));
             var live = page.RootElement.GetProperty("vehicles");
-            // The auction clock is anchored per request, so a live vehicle is
+            // The schedule always has live auctions, so a live vehicle is
             // always there. Saying so out loud costs nothing and turns a future
             // index-out-of-range into a sentence (the staff review).
-            Assert.True(live.GetArrayLength() > 0, "the anchored clock should always have a live auction");
+            Assert.True(live.GetArrayLength() > 0, "the schedule always has a live auction");
             var vehicle = live[0];
             id = vehicle.GetProperty("id").GetString()!;
             amount = vehicle.GetProperty("min_next_bid").GetInt32();
 
             var placed = await client.PostAsJsonAsync(
-                $"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
+                $"/api/vehicles/{id}/bids", new { amount });
             // The reason, not just the number. Every rejection on this API
             // carries its sentence in `detail` (ADR: Error handling), and a
             // bare "Expected OK, actual BadRequest" is a test that knows
@@ -284,18 +281,17 @@ public class PersistenceTests : IDisposable
     [Fact]
     public async Task Clearing_the_bids_clears_them_in_the_store_too()
     {
-        long anchor = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).ToUnixTimeMilliseconds();
 
         await using (var first = Api())
         {
             var client = await Buyers.SignedIn(first);
             using var page = JsonDocument.Parse(
-                await client.GetStringAsync(ALiveVehicleQuery(anchor)));
+                await client.GetStringAsync(ALiveVehicleQuery));
             var vehicle = page.RootElement.GetProperty("vehicles")[0];
             string id = vehicle.GetProperty("id").GetString()!;
             int amount = vehicle.GetProperty("min_next_bid").GetInt32();
 
-            await client.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount, anchor_ms = anchor });
+            await client.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount });
             (await client.DeleteAsync("/api/bids")).EnsureSuccessStatusCode();
         }
 

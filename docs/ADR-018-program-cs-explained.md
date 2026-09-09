@@ -8,7 +8,7 @@ the way it is.
 ## Context
 
 Program.cs is the one file that starts the API. A newcomer sees a long
-file (four hundred lines when this was written, 1,663 today) with no class
+file (four hundred lines when this was written, 1,656 today) with no class
 and no `Main`, a block of `builder.Services`
 calls, a run of `app.MapGet` calls, two `app.Use` blocks, and helpers after
 `app.Run()`. Every one of those has a reason, and most of the reasons are
@@ -193,16 +193,16 @@ the top of this record.
 
 ## Why this is one file
 
-It is 1,663 lines, and that is the first thing a reviewer notices, so it is
+It is 1,656 lines, and that is the first thing a reviewer notices, so it is
 worth saying that it is a decision rather than a drift.
 
 What those lines are:
 
 ```
-1,663 total
-  644 comment
-   98 blank
-  921 code, across 35 endpoints
+1,656 total
+  653 comment
+   96 blank
+  907 code, across 35 endpoints
 ```
 
 Twenty-six lines of code per endpoint, and most endpoints are a route, a
@@ -230,8 +230,8 @@ it. What it would cost is the one property worth keeping.
 - An endpoint that grows a body instead of a delegation. That is a use case
   trying to be born, and it belongs in Application, not in a new host file.
 - The composition and the routes stopping fitting in a reader's head together.
-  The trigger is a reader, not a number: 1,663 lines of which nearly two fifths are
-  explanation is not the same as 1,663 lines of logic, and a rule that says
+  The trigger is a reader, not a number: 1,656 lines of which nearly two fifths are
+  explanation is not the same as 1,656 lines of logic, and a rule that says
   "split at a thousand" would have split this one at the wrong seam.
 
 ## What to change when

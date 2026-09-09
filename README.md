@@ -54,19 +54,19 @@ GET /api/vehicles?make=Ford&status=live&sort=price-asc&limit=100
 ```
 
 Parameters: `q` (matches every filterable field, including derived auction status),
-`make`, `body_style`, `title_status`, `province`, `status` (+ `anchor_ms`),
+`make`, `body_style`, `title_status`, `province`, `status`,
 `min_condition`, `price_min`, `price_max`, `sort` (ending-soonest, price-asc,
 price-desc, condition, most-bids), `limit` (default 100, max 500), `offset`. Responses
 are an envelope `{ total, vehicles }`, each vehicle carrying server-derived auction
 facts (`auction_starts_at`, `auction_ends_at`, `auction_status`, `min_next_bid`, and
 `sold`, true once anybody has bought it).
-Invalid `status`, `sort` or `anchor_ms` values return 400 as RFC 9457 ProblemDetails
+Invalid `status` or `sort` values return 400 as RFC 9457 ProblemDetails
 with the message in `detail`. `GET /api/vehicles/{id}` fetches one vehicle;
 `GET /api/facets` feeds the filter dropdowns from the full dataset.
 
 Bidding is server-side, validated by the domain rules, and belongs to a signed-in
 account (`POST /api/auth/register`, `/login`, `/logout`; `GET /api/auth/me`):
-`POST /api/vehicles/{id}/bids` `{ amount, anchor_ms }` answers accepted or won, or 400
+`POST /api/vehicles/{id}/bids` `{ amount }` answers accepted or won, or 400
 in the same problem shape; `POST /api/vehicles/{id}/buy-now`; `GET /api/bids` (the
 signed-in account's standing on every vehicle it has bid on, an empty map signed out);
 `DELETE /api/bids` (that account's start-over, nobody else's). Bids live in the
@@ -156,9 +156,13 @@ each with its own changelog line and, where it decided something, its own record
   (no increment), a reserve cannot be met, and the UI labels the price "Starting bid".
 - **Auction windows are derived, not read.** `auction_start` is synthetic, so each
   vehicle's id hashes to an end time spread across two days before to five days after
-  "now" (anchored to local midnight), with a two to four day duration. Windows are stable
-  across reloads within a day and re-seed at midnight, so the inventory always shows a
-  live mix of ended, live, and upcoming auctions.
+  "now", anchored to the UTC midnight that began the day, with a two to four day
+  duration. Windows are stable across reloads within a UTC day and re-seed at 00:00
+  UTC, so the inventory always shows a live mix of ended, live, and upcoming auctions.
+- **One clock for everybody.** The anchor is the server's, so every visitor is in the
+  same auction whatever their zone, and no request can name a day; until 1.0.0.112 the
+  page sent its own local midnight and two visitors in different zones were in different
+  auctions (ADR: Three readers with no memory of the project, the addendum on the clock).
 - **A bid at or above the Buy Now price wins immediately at the Buy Now price**, even if
   it would fail the minimum-increment check: the instant-win rule takes precedence.
 - **A purchase ends the auction for everybody.** Once anybody has bought a vehicle it is
@@ -378,8 +382,10 @@ each with its own changelog line and, where it decided something, its own record
   "Starting bid" labels.
 - **Cross-language rule drift bit twice.** With auction math mirrored in TypeScript and
   C#, the server and browser disagreed first across timezones, then on DST transition
-  days. The durable fix was not a patch: the client now sends its literal local-midnight
-  `anchor_ms`, and all derived facts moved server-side so the drift class cannot recur.
+  days. The durable fix was not a patch: all derived facts moved server-side so the drift
+  class cannot recur. For a while the client still sent its local midnight as the anchor
+  the server derived from, which made the auction a function of who was looking; since
+  1.0.0.112 the clock is the server's alone.
 - **One vehicle had two buyers.** Buy Now recorded the sale on the buyer's own bid and
   nowhere else, so a second account saw a live auction, bid the Buy Now price and was
   told it had won the same vehicle; the room already knew better and refused to bid on

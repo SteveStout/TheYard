@@ -3,34 +3,14 @@ using TheYard.Domain;
 namespace TheYard.Api;
 
 /// <summary>
-/// Resolves the AuctionClock for a request. The client sends its own
-/// local-midnight anchor so server-side scheduling agrees with the browser's
-/// rendering across timezones and DST; without one, the server's local
-/// midnight is the fallback.
+/// The AuctionClock for a request: now, and the UTC midnight that began the
+/// day, the same for every caller. Until 1.0.0.112 the caller sent its own
+/// local midnight as <c>anchor_ms</c> and this resolved it, which made the
+/// auction a function of who was looking; the parameter is gone from the API
+/// and ignored if an old page still sends it (ADR: Three readers with no
+/// memory of the project, the addendum on the clock).
 /// </summary>
 public static class Clocks
 {
-    /// <summary>A real client's midnight anchor is always within a day or two of now.</summary>
-    private const long MaxAnchorDriftMs = 2L * 24 * 60 * 60 * 1000;
-
-    public static bool TryResolve(long? anchorMs, out AuctionClock clock, out string? error)
-    {
-        var utcNow = DateTimeOffset.UtcNow;
-        if (anchorMs is { } anchor)
-        {
-            if (Math.Abs(anchor - utcNow.ToUnixTimeMilliseconds()) > MaxAnchorDriftMs)
-            {
-                clock = default;
-                error = "anchor_ms must be within two days of the current time.";
-                return false;
-            }
-            clock = new AuctionClock(utcNow.ToUnixTimeMilliseconds(), anchor);
-        }
-        else
-        {
-            clock = AuctionClock.ServerLocal(utcNow, TimeZoneInfo.Local);
-        }
-        error = null;
-        return true;
-    }
+    public static AuctionClock Now() => AuctionClock.Utc(DateTimeOffset.UtcNow);
 }
