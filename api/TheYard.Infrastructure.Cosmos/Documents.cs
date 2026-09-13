@@ -26,6 +26,9 @@ public static class Containers
     /// <summary>The same 100,000 under the default policy, seeded once so the default's cost is measured.</summary>
     public const string CatalogueDefault = "catalogue-default";
 
+    /// <summary>Site activity: hour counters and visitor counters, partitioned on the UTC day (ADR: Site activity, and the line an address does not cross).</summary>
+    public const string Activity = "activity";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -35,12 +38,15 @@ public static class Containers
         [Users] = "/id",
         [Catalogue] = "/make",
         [CatalogueDefault] = "/make",
+        [Activity] = "/day",
     };
 
     /// <summary>
     /// The four the site cannot come up without. The experiment containers are
     /// optional: a container that is missing or empty makes the experiment card
-    /// say so, and changes nothing about the site (ADR: The partition key).
+    /// say so, and changes nothing about the site (ADR: The partition key). The
+    /// activity container is optional the same way: missing, the Admin tab's
+    /// activity card says so and nothing is kept.
     /// </summary>
     public static readonly IReadOnlyList<string> Required = [Vehicles, Photos, Bids, Users];
 }
@@ -185,6 +191,55 @@ public sealed class EmailClaimDocument
 
     public static string IdFor(string normalizedEmail) => Prefix + normalizedEmail;
 }
+// #region activity-documents
+/// <summary>
+/// One store's requests in one UTC hour, partitioned on the day. Moved in
+/// place by partial updates, so the counters add under two writers
+/// (ADR: Site activity, and the line an address does not cross).
+/// </summary>
+public sealed class ActivityHourDocument
+{
+    public const string KindName = "hour";
+
+    /// <summary>hour:{store}:{yyyy-MM-ddTHH}, so the same hour on the same store is always the same document.</summary>
+    public string Id { get; set; } = "";
+    public string Kind { get; set; } = KindName;
+    public string Day { get; set; } = "";
+    public string Store { get; set; } = "";
+    public string Hour { get; set; } = "";
+    public int Requests { get; set; }
+    public int Bots { get; set; }
+    public Dictionary<string, int> Paths { get; set; } = new(StringComparer.Ordinal);
+
+    public static string IdFor(string store, DateTimeOffset hour) =>
+        $"hour:{store}:{hour.ToUniversalTime():yyyy-MM-dd'T'HH}";
+}
+
+/// <summary>
+/// One visitor token on one store on one UTC day, partitioned on the day. The
+/// token is a keyed hash that rotates with the day; the network is the address
+/// cut to three octets; nothing here can name a person.
+/// </summary>
+public sealed class ActivityVisitorDocument
+{
+    public const string KindName = "visitor";
+
+    /// <summary>visitor:{store}:{token}. Unique within the day partition, which is what the token is scoped to.</summary>
+    public string Id { get; set; } = "";
+    public string Kind { get; set; } = KindName;
+    public string Day { get; set; } = "";
+    public string Store { get; set; } = "";
+    public string Visitor { get; set; } = "";
+    public string Network { get; set; } = "";
+    public DateTimeOffset FirstSeen { get; set; }
+    public DateTimeOffset LastSeen { get; set; }
+    public int Requests { get; set; }
+    public int Bots { get; set; }
+    public Dictionary<string, int> Paths { get; set; } = new(StringComparer.Ordinal);
+
+    public static string IdFor(string store, string visitor) => $"visitor:{store}:{visitor}";
+}
+// #endregion activity-documents
 // #endregion documents
 
 /// <summary>Document to domain and back, field by field, in one place.</summary>

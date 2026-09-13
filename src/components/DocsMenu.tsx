@@ -101,6 +101,7 @@ export type DocKey =
   | 'adrFiveMinuteGate'
   | 'adrSecondAddress'
   | 'adrThreeReaders'
+  | 'adrActivity'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'performance'
@@ -681,6 +682,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '070',
   },
+  adrActivity: {
+    title: 'ADR: Site activity, and the line an address does not cross',
+    menuLabel: 'ADR: Site activity, and the line an address does not cross',
+    url: '/api/docs/adr-activity',
+    kind: 'adr',
+    number: '071',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -894,6 +902,7 @@ export const MENUS: Record<
       { key: 'adrFiveMinuteGate' },
       { key: 'adrSecondAddress' },
       { key: 'adrThreeReaders' },
+      { key: 'adrActivity' },
     ],
   },
   // #endregion records-menu

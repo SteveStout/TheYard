@@ -43,6 +43,14 @@ public sealed class Backend
     /// <summary>The relational contexts, on the SQL backend only, and only when it came up.</summary>
     public IDbContextFactory<YardDbContext>? Contexts { get; init; }
 
+    /// <summary>
+    /// Where this store keeps the requests it served, for the Admin tab's
+    /// activity card (ADR: Site activity, and the line an address does not
+    /// cross). The null store when the backend did not come up: nothing kept,
+    /// and the card says so.
+    /// </summary>
+    public IActivityStore Activity { get; init; } = NullActivityStore.Instance;
+
     /// <summary>Is the seed catalogue in the store right now. Two reads, timed by the health check.</summary>
     public required Func<Task<bool>> Probe { get; init; }
 

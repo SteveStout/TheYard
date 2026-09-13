@@ -1,4 +1,18 @@
 import { useEffect, useState } from 'react';
+import {
+  ACTIVITY_WINDOWS,
+  CHART,
+  areaPath,
+  ceilingOf,
+  labelFor,
+  labelledIndexes,
+  linePath,
+  sortVisitors,
+  type ActivityReport,
+  type ActivityVisitors,
+  type ActivityWindow,
+  type VisitorSortKey,
+} from '../lib/activity';
 import { shortenDigests } from '../lib/format';
 import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
 import styles from './AdminPanel.module.css';
@@ -303,6 +317,8 @@ export function AdminPanel({ onBack, signedIn }: { onBack: () => void; signedIn:
         number has no meaning on one side the page says so in words. Refreshes every 30 seconds.
         Public on purpose; the reasoning is in the Best Practices menu.
       </p>
+      <ActivityCard />
+
       {/* #region backends-card */}
       <article className={styles.wide} data-testid="backends-card">
         <h2 className={styles.cardTitle}>Backends, side by side</h2>
@@ -823,6 +839,326 @@ type Proof = { status: 'idle' | 'running' | 'done' | 'failed'; result: ProofResu
  * stores with the paired difference and a verdict, and the sentence the
  * whole card adds up to.
  */
+// #region activity-card
+/**
+ * Site activity (ADR: Site activity, and the line an address does not cross).
+ * The graph at the top of the tab: requests over time, the two stores as two
+ * lines on one axis, drawn as an inline SVG in the palette the drawings under
+ * docs/images use, with the totals, the split and the top paths beside it.
+ * It names nobody, so it is as public as the rest of the tab.
+ *
+ * The table under it is not public. It fetches only when the address bar
+ * carries a key, sends the key with the request, and the endpoint answers
+ * 404 to everybody else, so without the key the table does not exist here
+ * any more than it exists on the wire.
+ */
+/**
+ * The operator's key, read from the address bar once, when the module loads.
+ * Once and not per render, because the app mirrors its own view into the
+ * address bar and drops anything it did not put there, which takes the key
+ * out of the URL on the first render; that is welcome, since a key in an
+ * address bar outlives the tab in the history, and it means the key has to be
+ * read before that mirror runs (the 1.0.0.114 gate, take one).
+ */
+const ADMIN_KEY = new URLSearchParams(window.location.search).get('key');
+
+function ActivityCard() {
+  const [window_, setWindow] = useState<ActivityWindow>('24h');
+  const [report, setReport] = useState<Fetched<ActivityReport>>(null);
+  const [visitors, setVisitors] = useState<Fetched<ActivityVisitors>>(null);
+  const [sortKey, setSortKey] = useState<VisitorSortKey>('last_seen');
+  const [descending, setDescending] = useState(true);
+  const key = ADMIN_KEY;
+
+  useEffect(() => {
+    let live = true;
+    void fetch(`/api/admin/activity?window=${window_}`)
+      .then((r) =>
+        r.ok ? (r.json() as Promise<ActivityReport>) : Promise.reject(new Error(String(r.status)))
+      )
+      .then((v) => {
+        if (live) setReport(v);
+      })
+      .catch(() => {
+        if (live) setReport('failed');
+      });
+    if (key !== null) {
+      void fetch(`/api/admin/activity/visitors?window=${window_}`, {
+        headers: { 'X-Admin-Key': key },
+      })
+        .then((r) =>
+          r.ok
+            ? (r.json() as Promise<ActivityVisitors>)
+            : Promise.reject(new Error(String(r.status)))
+        )
+        .then((v) => {
+          if (live) setVisitors(v);
+        })
+        .catch(() => {
+          if (live) setVisitors('failed');
+        });
+    }
+    return () => {
+      live = false;
+    };
+  }, [window_, key]);
+
+  const sortBy = (next: VisitorSortKey) => {
+    if (next === sortKey) {
+      setDescending((d) => !d);
+    } else {
+      setSortKey(next);
+      setDescending(next !== 'network' && next !== 'store');
+    }
+  };
+
+  return (
+    <article className={styles.wide} data-testid="activity-card">
+      <h2 className={styles.cardTitle}>Site activity</h2>
+      <p className={styles.muted}>
+        Requests over time, kept by the store that served each one and read back from both, so the
+        two stores show against each other. Written off the request path in batches; the page's own
+        files, the photos and this tab's reads are not counted. A visitor is a keyed hash of the
+        address that changes daily, so the counts group and nothing joins across days or back to a
+        person; a full address is never stored and no account is ever named. The table of visitors
+        is behind a key only the operator holds.
+      </p>
+      <p className={styles.statusRow} role="group" aria-label="Window">
+        {ACTIVITY_WINDOWS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={styles.back}
+            aria-pressed={option === window_}
+            onClick={() => {
+              // The change of window is the event; the cards go back to
+              // loading here rather than inside the effect that fetches.
+              setWindow(option);
+              setReport(null);
+              setVisitors(null);
+            }}
+            data-testid={`activity-window-${option}`}
+          >
+            {option === '24h' ? 'Last 24 hours' : option === '7d' ? 'Last 7 days' : 'Last 30 days'}
+          </button>
+        ))}
+      </p>
+      {report === null ? (
+        <p className={styles.muted}>Loading…</p>
+      ) : report === 'failed' ? (
+        <p className={styles.muted} data-testid="card-failed">
+          Could not read the activity on the last try; the next try is on the next window change.
+        </p>
+      ) : (
+        <ActivityGraph report={report} />
+      )}
+      {key !== null && (
+        <>
+          <h3 className={styles.cardTitle}>Visitors</h3>
+          {visitors === null ? (
+            <p className={styles.muted}>Loading…</p>
+          ) : visitors === 'failed' ? (
+            <p className={styles.muted} data-testid="visitors-refused">
+              The visitor rows did not answer to this key.
+            </p>
+          ) : (
+            <div
+              className={styles.tableWrap}
+              role="region"
+              aria-label="Visitors in the window"
+              tabIndex={0}
+            >
+              <table className={styles.table} data-testid="activity-visitors">
+                <thead>
+                  <tr>
+                    <th scope="col">Visitor</th>
+                    <SortHeader
+                      label="Network"
+                      column="network"
+                      current={sortKey}
+                      onSort={sortBy}
+                    />
+                    <SortHeader label="Store" column="store" current={sortKey} onSort={sortBy} />
+                    <SortHeader
+                      label="First seen"
+                      column="first_seen"
+                      current={sortKey}
+                      onSort={sortBy}
+                    />
+                    <SortHeader
+                      label="Last seen"
+                      column="last_seen"
+                      current={sortKey}
+                      onSort={sortBy}
+                    />
+                    <SortHeader
+                      label="Requests"
+                      column="requests"
+                      current={sortKey}
+                      onSort={sortBy}
+                    />
+                    <th scope="col">Top paths</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortVisitors(visitors.visitors, sortKey, descending).map((row) => (
+                    <tr key={`${row.store}:${row.day}:${row.visitor}`}>
+                      <td className={styles.mono}>{row.visitor.slice(0, 12)}</td>
+                      <td className={styles.mono}>{row.network}</td>
+                      <td>{row.store}</td>
+                      <td className={styles.mono}>{new Date(row.first_seen).toLocaleString()}</td>
+                      <td className={styles.mono}>{new Date(row.last_seen).toLocaleString()}</td>
+                      <td className={styles.mono}>
+                        {row.requests}
+                        {row.bots > 0 ? ` (${row.bots} bot)` : ''}
+                      </td>
+                      <td className={styles.mono}>
+                        {row.top_paths
+                          .map((entry) => `${entry.path} (${entry.requests})`)
+                          .join(', ')}
+                      </td>
+                    </tr>
+                  ))}
+                  {visitors.visitors.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className={styles.muted}>
+                        Nobody in this window.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+    </article>
+  );
+}
+
+function SortHeader({
+  label,
+  column,
+  current,
+  onSort,
+}: {
+  label: string;
+  column: VisitorSortKey;
+  current: VisitorSortKey;
+  onSort: (column: VisitorSortKey) => void;
+}) {
+  return (
+    <th scope="col" aria-sort={current === column ? 'other' : 'none'}>
+      <button type="button" className={styles.sortButton} onClick={() => onSort(column)}>
+        {label}
+      </button>
+    </th>
+  );
+}
+
+/** The two lines, the axis, the totals and the top paths; the arithmetic is in src/lib/activity.ts. */
+function ActivityGraph({ report }: { report: ActivityReport }) {
+  const ceiling = ceilingOf(report.series);
+  const points = report.series[0]?.points ?? [];
+  const labels = labelledIndexes(points.length);
+  const innerWidth = CHART.width - CHART.left - CHART.right;
+  const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
+  const colour = (store: string) => (store === 'cosmos' ? styles.cosmosLine : styles.sqlLine);
+  return (
+    <>
+      <svg
+        className={styles.chart}
+        viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+        role="img"
+        aria-label={`Requests per ${report.bucket} over the ${report.window} window, one line per store`}
+        data-testid="activity-graph"
+      >
+        <line
+          className={styles.axis}
+          x1={CHART.left}
+          y1={CHART.height - CHART.bottom}
+          x2={CHART.width - CHART.right}
+          y2={CHART.height - CHART.bottom}
+        />
+        <line
+          className={styles.axis}
+          x1={CHART.left}
+          y1={CHART.top}
+          x2={CHART.left}
+          y2={CHART.height - CHART.bottom}
+        />
+        <text className={styles.axisLabel} x={CHART.left - 4} y={CHART.top + 4} textAnchor="end">
+          {ceiling}
+        </text>
+        <text
+          className={styles.axisLabel}
+          x={CHART.left - 4}
+          y={CHART.height - CHART.bottom}
+          textAnchor="end"
+        >
+          0
+        </text>
+        {labels.map((index) => (
+          <text
+            key={index}
+            className={styles.axisLabel}
+            x={CHART.left + index * step}
+            y={CHART.height - 8}
+            textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
+          >
+            {points[index] ? labelFor(points[index].at, report.window) : ''}
+          </text>
+        ))}
+        {report.series.map((line) => (
+          <g
+            key={line.store}
+            className={colour(line.store)}
+            data-testid={`activity-line-${line.store}`}
+          >
+            <path className={styles.area} d={areaPath(line.points, ceiling)} />
+            <path className={styles.line} d={linePath(line.points, ceiling)} />
+          </g>
+        ))}
+      </svg>
+      <ul className={styles.summaryList} data-testid="activity-totals">
+        <li>
+          {report.totals.requests.toLocaleString()} requests in the window, {report.totals.humans}{' '}
+          from what looked like people and {report.totals.bots} from what looked like scanners and
+          crawlers, per {report.bucket}.
+        </li>
+        {report.by_store.map((store) => (
+          <li key={store.store}>
+            <span className={`${styles.swatch} ${colour(store.store)}`} aria-hidden="true" />
+            {report.series.find((line) => line.store === store.store)?.name ?? store.store}:{' '}
+            {store.requests.toLocaleString()} requests, {store.bots} of them bots.
+          </li>
+        ))}
+        {report.stores
+          .filter((store) => !store.available)
+          .map((store) => (
+            <li key={store.store} data-testid="activity-unavailable">
+              {store.name} keeps no activity here: {store.reason}.
+            </li>
+          ))}
+        <li>
+          Top paths:{' '}
+          {report.top_paths.length === 0
+            ? 'none yet'
+            : report.top_paths.map((entry) => `${entry.path} (${entry.requests})`).join(', ')}
+          .
+        </li>
+        <li className={styles.muted}>
+          Collector: {report.collector.offered.toLocaleString()} hits offered since the process
+          started, {report.collector.written.toLocaleString()} written,{' '}
+          {report.collector.failed_batches} batches failed, one batch per store every{' '}
+          {report.collector.interval_seconds} seconds.
+        </li>
+      </ul>
+    </>
+  );
+}
+// #endregion activity-card
+
 function ProofCard({
   proof,
   signedIn,

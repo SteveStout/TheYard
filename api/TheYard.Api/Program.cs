@@ -132,12 +132,20 @@ var backendList = new List<Backend>();
 var sqlStartup = new StartupTimings();
 var sqlState = await sqlStartup.Time("prepare", () => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos));
 ContextFactory? contexts = null;
+ContextFactory? quietContexts = null;
 if (sqlState.Ready)
 {
     var sqlOptions = new DbContextOptionsBuilder<YardDbContext>();
     yard.Configure(sqlOptions);
     sqlOptions.AddInterceptors(new SqlLogInterceptor(sqlLog, currentRequest));
     contexts = new ContextFactory(sqlOptions.Options);
+    // The same database without the interceptor, for the activity counters:
+    // a batch every five seconds would fill the SQL log with the feature that
+    // reads the SQL log, the observer effect the request ring designed out
+    // (ADR: Site activity, and the line an address does not cross).
+    var quietOptions = new DbContextOptionsBuilder<YardDbContext>();
+    yard.Configure(quietOptions);
+    quietContexts = new ContextFactory(quietOptions.Options);
 }
 backendList.Add(new Backend
 {
@@ -154,6 +162,7 @@ backendList.Add(new Backend
         ? new InventoryService(new SyntheticVehicleSource(new EfVehicleSource(contexts), targetCount), new EfPhotoManifestSource(contexts))
         : new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
     Bids = new BidService(contexts is not null ? new EfBidStore(contexts) : NullBidStore.Instance),
+    Activity = quietContexts is not null ? new EfActivityStore(quietContexts) : NullActivityStore.Instance,
     Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
     Probe = async () =>
     {
@@ -215,6 +224,7 @@ if (cosmosConfigured)
             ? new InventoryService(new SyntheticVehicleSource(new CosmosVehicleSource(store), targetCount), new CosmosPhotoManifestSource(store))
             : new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
         Bids = new BidService(cosmosState.Ready ? new CosmosBidStore(store) : NullBidStore.Instance),
+        Activity = cosmosState.Ready ? new CosmosActivityStore(store) : NullActivityStore.Instance,
         Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
         Probe = () => cosmosState.Ready ? store.ProbeAsync() : Task.FromResult(false),
         // One document per account and one per address, and none of Identity's
@@ -282,11 +292,20 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
     "/api/admin/proof",
     "/api/admin/azure",
     "/api/admin/telemetry",
+    "/api/admin/activity",
+    "/api/admin/activity/visitors",
     "/api/errors",
     "/api/health",
     "/readyz",
     "/healthz",
 };
+
+// The activity feature's two pieces, wired below once the signing key exists;
+// the request hook reads them through these so it can be declared here beside
+// the ring it sits next to (ADR: Site activity, and the line an address does
+// not cross).
+ActivityCollector? activityCollector = null;
+VisitorTokens? visitorTokens = null;
 
 // One request, timed and filed, unless it is the Admin tab watching itself.
 //
@@ -316,6 +335,23 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
         // Which store served it, read the same way the request itself was
         // routed, so the comparison card can split one ring two ways.
         backends.For(context).Key));
+
+    // #region activity-hook
+    // And the same request as a hit for the activity card, offered to the
+    // collector and forgotten: nothing here waits on a store. What the hit
+    // carries, and what it cannot, is decided in Activity.cs and in the type.
+    if (activityCollector is not null && visitorTokens is not null && Hits.Counts(path))
+    {
+        var at = DateTimeOffset.UtcNow;
+        activityCollector.Offer(new ActivityHit(
+            at,
+            visitorTokens.TokenFor(VisitorTokens.AddressOf(context), at),
+            VisitorTokens.NetworkOf(VisitorTokens.AddressOf(context)),
+            Hits.PathOf(path),
+            backends.For(context).Key,
+            Hits.LooksLikeABot(context.Request.Headers.UserAgent.FirstOrDefault(), path)));
+    }
+    // #endregion activity-hook
 }
 #endregion admin-rings
 
@@ -337,6 +373,21 @@ string? configuredSigningKey = TokenIssuer.ConfiguredKey(builder.Configuration["
 string signingKey = configuredSigningKey ?? Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 var tokens = new TokenIssuer(signingKey, TimeSpan.FromDays(7));
 builder.Services.AddSingleton(tokens);
+
+// #region activity-wiring
+// Site activity (ADR: Site activity, and the line an address does not cross).
+// The visitor token is keyed with the signing key, so both containers turn one
+// address into one token within a day and nobody outside can turn it back.
+// The collector is a hosted service that writes off the request path, one
+// batch per store every five seconds. The admin key guards the visitor rows;
+// unset, that endpoint is a 404, which is the default and the safe one.
+visitorTokens = new VisitorTokens(signingKey);
+var activityStores = backends.All.ToDictionary(backend => backend.Key, backend => backend.Activity, StringComparer.Ordinal);
+builder.Services.AddSingleton(services => new ActivityCollector(activityStores, services.GetRequiredService<ILogger<ActivityCollector>>()));
+builder.Services.AddHostedService(services => services.GetRequiredService<ActivityCollector>());
+var adminKey = new AdminKey(builder.Configuration["Admin:Key"]);
+builder.Services.AddSingleton(adminKey);
+// #endregion activity-wiring
 
 // The hour's allowance of new accounts, for the whole site (ADR: The one write
 // a stranger can make). Configurable because the tests need to reach it, and
@@ -500,6 +551,7 @@ var telemetry = new TelemetryReader(
 #endregion telemetry
 
 var app = builder.Build();
+activityCollector = app.Services.GetRequiredService<ActivityCollector>();
 
 // Entity Framework's own command log goes where every other log line goes,
 // which the Admin tab's log section and a test both rely on; the document
@@ -1311,6 +1363,38 @@ app.MapGet("/api/admin/metrics", (HttpContext http) =>
         started_at = startedAt,
     };
 });
+
+// #region activity-endpoints
+// Site activity (ADR: Site activity, and the line an address does not cross).
+// The public one: requests over time split by store, the totals, the top
+// paths, the bot and human counts, and what the feature has cost. It names
+// nobody, so it is as public as the rest of this tab. The window is a name
+// and not a number, so a caller cannot ask for a year.
+app.MapGet("/api/admin/activity", async (string? window, ActivityCollector collector, CancellationToken cancellation) =>
+    ActivityWindows.Parse(window) is null
+        ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
+        : Results.Json(await ActivityReport.PublicAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, cancellation), wireFormat));
+
+// The visitor rows, behind the operator's key: a token that rotates daily,
+// the network to three octets, the store, the counts and the top paths. The
+// key is presented as a query parameter or a header and compared in constant
+// time; a wrong key, a missing key and an unconfigured key are all a 404, so
+// a stranger cannot tell the endpoint exists. This is the one Admin read that
+// is not public, because a network range beside a timestamp on a public page
+// can name an employer, and the tab is public by design (ADR-054).
+app.MapGet("/api/admin/activity/visitors", async (string? window, string? key, HttpContext http, ActivityCollector collector, CancellationToken cancellation) =>
+{
+    string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
+    if (!adminKey.Admits(presented))
+    {
+        return Results.NotFound();
+    }
+
+    return ActivityWindows.Parse(window) is null
+        ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
+        : Results.Json(await ActivityReport.VisitorsAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, cancellation), wireFormat);
+});
+// #endregion activity-endpoints
 
 // #region stores-endpoints
 // The Store bar at the top of the page (ADR: One container, both stores, and

@@ -64,7 +64,10 @@ export default defineConfig({
       // The simulated room waits twenty seconds before answering a bid
       // (ADR-027). Zero here so the outbid test watches a lead change hands
       // instead of watching a clock. Nothing else sets this.
-      env: { Market__GraceSeconds: '0' },
+      // And a key for the visitor rows on the Admin tab, so the browser
+      // suite can prove the table exists behind it and nowhere else
+      // (ADR: Site activity, and the line an address does not cross).
+      env: { Market__GraceSeconds: '0', Admin__Key: 'e2e-admin-key' },
       url: 'http://localhost:5210/api/facets',
       reuseExistingServer: true,
       timeout: 120_000,

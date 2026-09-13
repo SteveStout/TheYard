@@ -1,0 +1,32 @@
+{
+  "container": "activity",
+  "partitionKeyPath": "/day",
+  "defaultTtlSeconds": 3024000,
+  "why": "Site activity, two kinds of document in one container partitioned on the UTC day: one per store per hour for the graph, one per visitor token per store per day for the table behind the operator's key. Every write is a partial update that increments counters in place, so two containers adding to the same hour add rather than overwrite. The day, the kind, the store and the hour are indexed because the Admin tab queries a window of days by kind; nothing else is. Documents expire after thirty-five days, which is the graph's longest window and a few days of slack, so the container cleans itself (ADR: Site activity, and the line an address does not cross).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      {
+        "path": "/day/?"
+      },
+      {
+        "path": "/kind/?"
+      },
+      {
+        "path": "/store/?"
+      },
+      {
+        "path": "/hour/?"
+      },
+      {
+        "path": "/last_seen/?"
+      }
+    ],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

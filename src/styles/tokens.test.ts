@@ -60,6 +60,18 @@ describe('the site palette (ADR-016)', () => {
     }
   });
 
+  // The two lines of the activity graph are graphics, not text, so WCAG
+  // 1.4.11 asks 3:1 against what they are drawn on, and they are drawn on
+  // white inside a card on the page ground (ADR: Site activity, and the line
+  // an address does not cross).
+  it('the two store colours clear 3:1 on white and on the page ground, and are told apart', () => {
+    for (const ground of ['color-surface', 'color-bg']) {
+      expect(contrast(token('color-store-sql'), token(ground))).toBeGreaterThanOrEqual(3);
+      expect(contrast(token('color-store-cosmos'), token(ground))).toBeGreaterThanOrEqual(3);
+    }
+    expect(token('color-store-sql')).not.toBe(token('color-store-cosmos'));
+  });
+
   it('actions read both ways: white on the accent, and the accent as link text on white', () => {
     expect(contrast(token('color-on-accent'), token('color-accent'))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(token('color-accent'), token('color-surface'))).toBeGreaterThanOrEqual(4.5);

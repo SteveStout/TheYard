@@ -1,0 +1,142 @@
+// The activity card's arithmetic, kept out of the component so it can be
+// tested without a browser: the wire shapes, the line a series draws, and the
+// order the visitor table sorts into (ADR: Site activity, and the line an
+// address does not cross).
+
+export type ActivityWindow = '24h' | '7d' | '30d';
+export const ACTIVITY_WINDOWS: readonly ActivityWindow[] = ['24h', '7d', '30d'];
+
+export type ActivityPoint = { at: string; requests: number; bots: number };
+export type ActivitySeries = { store: string; name: string; points: ActivityPoint[] };
+export type ActivityStoreState = {
+  store: string;
+  name: string;
+  available: boolean;
+  reason: string;
+};
+export type ActivityPath = { path: string; requests: number };
+export type ActivityReport = {
+  window: ActivityWindow;
+  bucket: string;
+  since: string;
+  until: string;
+  totals: { requests: number; bots: number; humans: number };
+  by_store: { store: string; requests: number; bots: number; humans: number }[];
+  series: ActivitySeries[];
+  top_paths: ActivityPath[];
+  stores: ActivityStoreState[];
+  collector: {
+    offered: number;
+    written: number;
+    failed_batches: number;
+    last_write: string | null;
+    interval_seconds: number;
+  };
+};
+
+export type ActivityVisitor = {
+  visitor: string;
+  network: string;
+  store: string;
+  day: string;
+  first_seen: string;
+  last_seen: string;
+  requests: number;
+  bots: number;
+  top_paths: ActivityPath[];
+};
+export type ActivityVisitors = {
+  window: ActivityWindow;
+  since: string;
+  until: string;
+  count: number;
+  visitors: ActivityVisitor[];
+};
+
+// #region chart-geometry
+/** The drawing area the lines are laid into, in SVG units; the card scales it to its width. */
+export const CHART = { width: 720, height: 200, left: 36, right: 12, top: 12, bottom: 28 } as const;
+
+/** The highest count on any series, or 1, so a flat day still has a y axis. */
+export function ceilingOf(series: ActivitySeries[]): number {
+  let top = 0;
+  for (const line of series) {
+    for (const point of line.points) {
+      if (point.requests > top) top = point.requests;
+    }
+  }
+  return top === 0 ? 1 : top;
+}
+
+/**
+ * One series as the `d` of an SVG path: a polyline through every point, left
+ * to right, scaled to the drawing area. Points sit at equal x steps because
+ * the server hands back a fixed grid with zeros where nothing happened, so
+ * the two stores share an axis without the page having to align them.
+ */
+export function linePath(points: ActivityPoint[], ceiling: number): string {
+  if (points.length === 0) return '';
+  const innerWidth = CHART.width - CHART.left - CHART.right;
+  const innerHeight = CHART.height - CHART.top - CHART.bottom;
+  const step = points.length === 1 ? 0 : innerWidth / (points.length - 1);
+  return points
+    .map((point, index) => {
+      const x = CHART.left + index * step;
+      const y = CHART.top + innerHeight - (point.requests / ceiling) * innerHeight;
+      return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(' ');
+}
+
+/** The same line closed down to the baseline, for the soft fill under it. */
+export function areaPath(points: ActivityPoint[], ceiling: number): string {
+  const line = linePath(points, ceiling);
+  if (line === '') return '';
+  const innerWidth = CHART.width - CHART.left - CHART.right;
+  const baseline = CHART.height - CHART.bottom;
+  const step = points.length === 1 ? 0 : innerWidth / (points.length - 1);
+  const lastX = CHART.left + (points.length - 1) * step;
+  return `${line} L${lastX.toFixed(1)} ${baseline} L${CHART.left} ${baseline} Z`;
+}
+
+/** Which points carry an x label: about six across the width, the first and the last always. */
+export function labelledIndexes(count: number): number[] {
+  if (count <= 1) return count === 1 ? [0] : [];
+  const every = Math.max(1, Math.round((count - 1) / 5));
+  const indexes: number[] = [];
+  for (let index = 0; index < count; index += every) indexes.push(index);
+  if (indexes[indexes.length - 1] !== count - 1) indexes.push(count - 1);
+  return indexes;
+}
+
+/** A point's x label: the hour for a day, the weekday and hour for a week, the date for a month. */
+export function labelFor(at: string, window: ActivityWindow): string {
+  const date = new Date(at);
+  if (window === '24h') {
+    return date.toLocaleTimeString(undefined, { hour: 'numeric' });
+  }
+  if (window === '7d') {
+    return date.toLocaleDateString(undefined, { weekday: 'short', hour: 'numeric' });
+  }
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+// #endregion chart-geometry
+
+// #region visitor-order
+export type VisitorSortKey = 'last_seen' | 'first_seen' | 'requests' | 'network' | 'store';
+
+/** The table's order: newest first by default, and any column either way on a click. */
+export function sortVisitors(
+  rows: ActivityVisitor[],
+  key: VisitorSortKey,
+  descending: boolean
+): ActivityVisitor[] {
+  const sorted = [...rows].sort((a, b) => {
+    const left = a[key];
+    const right = b[key];
+    if (typeof left === 'number' && typeof right === 'number') return left - right;
+    return String(left).localeCompare(String(right));
+  });
+  return descending ? sorted.reverse() : sorted;
+}
+// #endregion visitor-order

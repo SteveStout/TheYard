@@ -213,3 +213,104 @@ test('the proof card offers a run and says what it needs (ADR: Same performance,
   }
 });
 // #endregion proof-card
+
+// #region activity-card
+/**
+ * Site activity (ADR: Site activity, and the line an address does not cross).
+ * The graph draws, one line per store the container runs; the totals read as
+ * a sentence; and the rule the feature is built on is asserted on the wire:
+ * neither response carries an at sign, so no email address can be in it,
+ * whatever a visitor put in a URL.
+ */
+test('the activity graph draws at the top of the tab and its response names nobody', async ({
+  page,
+  request,
+}) => {
+  // A few requests with an address in the path and a query string, so there
+  // is something in the window and the thing that must not appear was offered.
+  await request.get('http://localhost:5210/api/vehicles?limit=1&who=someone@example.com');
+  await request.get('http://localhost:5210/api/vehicles/someone@example.com');
+  const stores = (await (await request.get('http://localhost:5210/api/stores')).json()) as {
+    stores: { key: string }[];
+  };
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('activity-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Site activity');
+  await expect(card.getByTestId('activity-graph')).toBeVisible();
+  for (const store of stores.stores) {
+    await expect(card.getByTestId(`activity-line-${store.key}`)).toHaveCount(1);
+  }
+  await expect(card.getByTestId('activity-totals')).toContainText(/\d+ requests in the window/);
+  await card.getByTestId('activity-window-7d').click();
+  await expect(card.getByTestId('activity-window-7d')).toHaveAttribute('aria-pressed', 'true');
+  await expect(card.getByTestId('activity-graph')).toHaveAttribute('aria-label', /7d window/);
+
+  // The wire, for both windows the page just asked for.
+  for (const window of ['24h', '7d', '30d']) {
+    const response = await request.get(`http://localhost:5210/api/admin/activity?window=${window}`);
+    expect(response.ok()).toBe(true);
+    const body = await response.text();
+    expect(body).not.toContain('@');
+    expect(body).toContain('"series"');
+  }
+  const refused = await request.get('http://localhost:5210/api/admin/activity?window=1y');
+  expect(refused.status()).toBe(400);
+});
+
+test('the visitor table exists only behind the key, and its response names nobody', async ({
+  page,
+  request,
+}) => {
+  await request.get('http://localhost:5210/api/vehicles?limit=1');
+  // Without the key, or with a wrong one, the endpoint does not exist.
+  expect((await request.get('http://localhost:5210/api/admin/activity/visitors')).status()).toBe(
+    404
+  );
+  expect(
+    (
+      await request.get('http://localhost:5210/api/admin/activity/visitors', {
+        headers: { 'X-Admin-Key': 'not-the-key' },
+      })
+    ).status()
+  ).toBe(404);
+  // With it, the rows: a token, a network to three octets and an x, a store,
+  // and never an at sign. The key is the one playwright.config.ts hands the
+  // API for this run and nothing else. The collector writes every five
+  // seconds, so the first row is waited for rather than assumed.
+  const visitorsUrl = 'http://localhost:5210/api/admin/activity/visitors?window=24h';
+  const headers = { 'X-Admin-Key': 'e2e-admin-key' };
+  await expect
+    .poll(
+      async () => {
+        const r = await request.get(visitorsUrl, { headers });
+        return r.ok() ? ((await r.json()) as { count: number }).count : -1;
+      },
+      { timeout: 20_000 }
+    )
+    .toBeGreaterThan(0);
+  const admitted = await request.get(visitorsUrl, { headers });
+  expect(admitted.ok()).toBe(true);
+  const body = await admitted.text();
+  expect(body).not.toContain('@');
+  const rows = JSON.parse(body) as {
+    visitors: { visitor: string; network: string; store: string }[];
+  };
+  expect(rows.visitors.length).toBeGreaterThan(0);
+  for (const row of rows.visitors) {
+    expect(row.visitor).toMatch(/^[0-9a-f]{32}$/);
+    expect(row.network).toMatch(/x$/);
+    expect(row.network).not.toMatch(/^\d+\.\d+\.\d+\.\d+$/);
+  }
+
+  // On the page: no table without the key in the address bar, a table with it.
+  await openTheYard(page, '/?view=admin');
+  await expect(page.getByTestId('activity-visitors')).toHaveCount(0);
+  await openTheYard(page, '/?view=admin&key=e2e-admin-key');
+  const table = page.getByTestId('activity-visitors');
+  await expect(table).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: 'Requests' })).toBeVisible();
+  await table.getByRole('button', { name: 'Requests' }).click();
+  await expect(table.locator('tbody tr').first()).toBeVisible();
+});
+// #endregion activity-card

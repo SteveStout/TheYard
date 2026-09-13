@@ -233,3 +233,77 @@
   gap: var(--space-1);
   font-size: var(--text-sm);
 }
+
+/* #region activity-card */
+/*
+ * The activity graph: an inline SVG scaled to the card, two lines in the two
+ * store colours the drawings under docs/images already use, the accent for
+ * the relational store and the deepened taupe for the document store, with a
+ * soft fill under each so a quiet hour still reads as a line and not a gap.
+ */
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 260px;
+}
+
+.axis {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+}
+
+.axisLabel {
+  fill: var(--color-text-muted);
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.sqlLine {
+  color: var(--color-store-sql);
+}
+
+.cosmosLine {
+  color: var(--color-store-cosmos);
+}
+
+.line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.area {
+  fill: currentColor;
+  opacity: 0.12;
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: currentColor;
+  margin-right: var(--space-2);
+  vertical-align: middle;
+}
+
+/* A column header that sorts on a click: the button is the whole header, so the target is the word. */
+.sortButton {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--color-border-strong);
+}
+
+.sortButton:hover {
+  color: var(--color-accent);
+}
+/* #endregion activity-card */

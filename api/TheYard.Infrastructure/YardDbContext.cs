@@ -36,6 +36,12 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
     /// <summary>One buyer's standing on one vehicle. The only table that changes after startup.</summary>
     public DbSet<BidRow> Bids => Set<BidRow>();
 
+    /// <summary>Requests per store per UTC hour (ADR: Site activity, and the line an address does not cross).</summary>
+    public DbSet<ActivityHourRow> ActivityHours => Set<ActivityHourRow>();
+
+    /// <summary>Requests per visitor token per store per UTC day, behind a key on the way out.</summary>
+    public DbSet<ActivityVisitorRow> ActivityVisitors => Set<ActivityVisitorRow>();
+
     // #region model
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -230,8 +236,49 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
                 version.IsConcurrencyToken();
             }
         });
+
+        // #region activity-model
+        // The activity counters (ADR: Site activity, and the line an address
+        // does not cross). Natural keys again: an hour on a store is one row,
+        // a visitor token on a store on a day is one row. The counters move by
+        // ExecuteUpdate so two containers writing the same Azure SQL row add
+        // rather than overwrite; the paths column is a JSON object the store
+        // reads, merges and writes back, bounded at twenty entries, and the
+        // one place a batch can lose to another batch, which the record says.
+        model.Entity<ActivityHourRow>(hour =>
+        {
+            hour.ToTable("ActivityHours");
+            hour.HasKey(row => new { row.Store, row.Hour });
+            hour.Property(row => row.Store).HasMaxLength(StoreKeyLength);
+            hour.Property(row => row.Paths).HasMaxLength(PathsLength);
+        });
+
+        model.Entity<ActivityVisitorRow>(visitor =>
+        {
+            visitor.ToTable("ActivityVisitors");
+            visitor.HasKey(row => new { row.Store, row.Day, row.Visitor });
+            visitor.Property(row => row.Store).HasMaxLength(StoreKeyLength);
+            // yyyy-MM-dd, and nothing else is ever written here.
+            visitor.Property(row => row.Day).HasMaxLength(10);
+            // The token: the first 16 bytes of a keyed hash, as 32 hex characters.
+            visitor.Property(row => row.Visitor).HasMaxLength(32);
+            // Three octets and an x, or the same shape for an address that
+            // could not be read: never four octets.
+            visitor.Property(row => row.Network).HasMaxLength(NetworkLength);
+            visitor.Property(row => row.Paths).HasMaxLength(PathsLength);
+        });
+        // #endregion activity-model
     }
     // #endregion model
+
+    /// <summary>"sql" and "cosmos" are the keys; the width leaves room for a third store and not for a sentence.</summary>
+    public const int StoreKeyLength = 16;
+
+    /// <summary>An IPv4 network cut to three octets and an x is at most 12 characters; an IPv6 prefix cut the same way fits in 32.</summary>
+    public const int NetworkLength = 40;
+
+    /// <summary>Twenty paths of two hundred characters and their counts, as JSON, fit with room to spare.</summary>
+    public const int PathsLength = 4000;
 
     /// <summary>
     /// Room for a seed vehicle's id (36 characters today) and for the synthetic

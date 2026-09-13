@@ -28,6 +28,13 @@
   --color-accent-soft: #e4e9f1; /* the slate blue, as a pale tint */
   --color-on-accent: #ffffff;
   --color-brand-mark: #ab978c; /* the taupe, as printed: the brand mark only */
+  /* The two stores when they are drawn against each other: the accent for the
+     relational store and the taupe deepened for the document store, the same
+     pair docs/images/sql-vs-cosmos.mjs draws its numbers in. Graphics rather
+     than text, so the floor is 3:1 on white (ADR: Site activity, and the line
+     an address does not cross). */
+  --color-store-sql: #536786;
+  --color-store-cosmos: #8a6a4f;
   /* #endregion palette */
 
   /* Status colors carry meaning (clean, rebuilt, salvage, live) and stay

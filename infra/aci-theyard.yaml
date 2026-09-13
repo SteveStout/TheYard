@@ -53,6 +53,13 @@ properties:
       # behaviour until 1.0.0.111.
       - name: Auth__SigningKey
         secureValue: __YARD_AUTH_SIGNING_KEY__
+      # The operator's key for the Admin tab's visitor rows, filled at roll
+      # time from the repository secret ADMIN_KEY the same way. A placeholder
+      # left by a missing secret reads as "no key", and the endpoint the key
+      # guards answers 404 to everybody until there is one (ADR: Site
+      # activity, and the line an address does not cross).
+      - name: Admin__Key
+        secureValue: __ADMIN_KEY__
       # Azure Cosmos DB, beside the SQL setting rather than instead of it: this
       # container runs both stores and a visitor picks one with the toggle at
       # the top of the page (ADR: One container, both stores). An endpoint is a
