@@ -63,6 +63,8 @@ const INITIAL_PARAMS = new URLSearchParams(window.location.search);
 const INITIAL_URL_STATE = filtersFromSearchParams(INITIAL_PARAMS);
 /** A tile click is GET navigation: ?vehicle={id} deep-links the detail view. */
 const INITIAL_VEHICLE_ID = INITIAL_PARAMS.get('vehicle');
+// A password reset link's token, read once: the address bar loses it on the first render.
+const INITIAL_RESET = INITIAL_PARAMS.get('reset');
 /** ?doc=adr-lockout, resolved once. An address that names nothing opens nothing. */
 const INITIAL_DOC = docKeyForSlug(INITIAL_PARAMS.get('doc'));
 
@@ -752,6 +754,7 @@ export default function App() {
               onAccountChange={changeAccount}
               onOpenVehicle={openVehicleById}
               onBack={closeAccount}
+              resetToken={INITIAL_RESET}
             />
           ) : loadState === 'loading' ? (
             <p className={styles.notice} role="status">

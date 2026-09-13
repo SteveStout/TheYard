@@ -311,9 +311,43 @@ a request and the cookie is held on the wire: a token days into its life is
 re-issued, a fresh one is left alone, and a sign-out sets the empty cookie
 and nothing else.
 
-Password reset is the other half of his ask and waits on one decision that
-is his: a real "Forgot password" email needs an email sender, which is a
-new Azure resource (Azure Communication Services Email), or an
-operator-assisted reset from the Admin tab needs none. Recorded here so the
-next reader knows it is open and why.
+## Addendum, 2026-09-13: a password reset, in two halves
+
+Steve, the same message: "and have password reset." A reset is two halves.
+The second half, choosing a new password from a link, is the same whoever
+hands the link over; the first half, handing it over, is where an email
+sender would go, and a sender is a new Azure resource, which is his to
+authorize. So the second half shipped with an operator in the first half's
+place, and an emailed "Forgot password" is that same second half with a
+sender in front of it.
+
+**The link.** The operator mints it from the Admin tab, behind the key, for
+an account on the site's store: `POST /api/admin/reset-links` with the
+address, answered with a URL for this site as the visitor reaches it. The
+token in it is signed like a session and unlike one: a different audience,
+so the session pipeline refuses it and the reset endpoint refuses a session;
+an hour of life; and a fingerprint of the password hash it was minted
+against, so the link dies the moment the password changes, which is what
+makes it one-use with no table of used tokens to keep. There is no Identity
+token provider behind it, because that provider needs a key ring the
+container does not keep across a roll.
+
+**The reset.** `POST /api/auth/reset` with the token and the new password:
+the token is read, the account is loaded, the fingerprint is checked, the
+new password is validated before the old one is removed (a refused password
+leaves an account with a password rather than none), and the visitor is
+signed in with a fresh session. The account view shows the form when the
+address bar carries `reset=`, read once at load like the other parameters
+the app drops from the address bar on its first render. One sentence for
+every way a link can be wrong.
+
+**Tests.** A link needs the key and an account; a link changes the password
+once and signs the visitor in, the old password stops working, the new one
+works, the same link a second time is refused; a session token is not a
+reset token and a reset token is not a session.
+
+**What waits on him.** "ACS" authorizes Azure Communication Services Email
+(free tier, an Azure-managed sender address, about $0.0003 per email), and
+the first half becomes a "Forgot password" button that mints the same link
+and sends it. Until then the operator sends it by hand.
 

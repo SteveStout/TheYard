@@ -123,6 +123,30 @@ export function loginRequest(email: string, password: string): Promise<AuthResul
   return submit('/api/auth/login', email, password);
 }
 
+/**
+ * A reset link's second half: the token from the link and the password the
+ * visitor chose. The server answers with the account signed in, or one
+ * sentence saying why the link did not work (ADR: Accounts and per-user
+ * bids, addendum).
+ */
+export async function resetRequest(token: string, password: string): Promise<AuthResult> {
+  let response: Response;
+  try {
+    response = await fetch('/api/auth/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ token, password }),
+    });
+  } catch {
+    return { ok: false, message: 'The server could not be reached. Try again in a moment.' };
+  }
+  if (!response.ok) {
+    return { ok: false, message: await reason(response, 'That reset link did not work.') };
+  }
+  return { ok: true, account: toAccount((await response.json()) as AccountWire) };
+}
+
 export async function logoutRequest(): Promise<Account> {
   try {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });

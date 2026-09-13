@@ -6,6 +6,11 @@ namespace TheYard.Api;
 /// <summary>What the register and login forms send.</summary>
 public sealed record Credentials(string? Email, string? Password);
 
+/// <summary>What the operator sends to mint a reset link, and what a visitor sends to use one (ADR: Accounts and per-user bids, addendum).</summary>
+public sealed record ResetLinkRequest(string? Email);
+
+public sealed record ResetRequest(string? Token, string? Password);
+
 /// <summary>
 /// Who the browser is signed in as. Deliberately not the token: the page never
 /// needs to read it, and a shape that carried it would invite somebody to put

@@ -316,6 +316,7 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
     "/api/admin/activity",
     "/api/admin/activity/visitors",
     "/api/admin/logs/kept",
+    "/api/admin/reset-links",
     "/api/errors",
     "/api/health",
     "/readyz",
@@ -1684,6 +1685,134 @@ app.MapPost("/api/auth/login", async (
         TokenIssuer.CookieFor(http, issuer.Lifetime));
     return Results.Json(Accounts.Describe(user), wireFormat);
 });
+
+// #region password-reset
+// A password reset in two halves (ADR: Accounts and per-user bids, addendum).
+// The operator mints a link from the Admin tab, behind the key, for an
+// address on this site's store: an hour of life, one use, because the token
+// carries a fingerprint of the password hash it was minted against and the
+// hash changes when the password does. The visitor opens the link, chooses a
+// new password, and is signed in. The same second half will serve an emailed
+// link when there is a sender to send it; only who hands the link over
+// changes.
+app.MapPost("/api/admin/reset-links", async (
+    ResetLinkRequest request,
+    string? key,
+    HttpContext http,
+    IServiceProvider services,
+    CurrentBackend current,
+    TokenIssuer issuer) =>
+{
+    string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
+    if (!adminKey.Admits(presented))
+    {
+        return Results.NotFound();
+    }
+
+    if (!current.Backend.Ready || services.GetService<UserManager<YardUser>>() is not { } users)
+    {
+        return Accounts.Unavailable();
+    }
+
+    var user = string.IsNullOrWhiteSpace(request.Email) ? null : await users.FindByEmailAsync(request.Email);
+    if (user is null)
+    {
+        return Results.Problem(
+            detail: "No account with that email address on this site's store.",
+            statusCode: 404, title: "No such account");
+    }
+
+    string token = issuer.IssueReset(user.Id, current.Backend.Key, user.PasswordHash);
+    // The link is for the site the request came through, as the visitor
+    // reaches it: behind the edge that is the forwarded host, not the origin.
+    string scheme = http.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? http.Request.Scheme;
+    string host = http.Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? http.Request.Host.Value ?? "";
+    string url = $"{scheme}://{host}/?view=account&reset={Uri.EscapeDataString(token)}";
+    return Results.Json(new
+    {
+        email = user.Email,
+        store = current.Backend.Key,
+        url,
+        expires_at = DateTimeOffset.UtcNow + TokenIssuer.ResetLifetime,
+    }, wireFormat);
+});
+
+app.MapPost("/api/auth/reset", async (
+    ResetRequest request,
+    HttpContext http,
+    IServiceProvider services,
+    CurrentBackend current,
+    TokenIssuer issuer) =>
+{
+    if (!current.Backend.Ready || services.GetService<UserManager<YardUser>>() is not { } users)
+    {
+        return Accounts.Unavailable();
+    }
+
+    // One sentence for every way the link can be wrong: expired, used,
+    // forged, or a session token dressed as one.
+    var refused = Results.Problem(
+        detail: "That reset link is not valid any more. Ask for a new one.",
+        statusCode: 400, title: "The link did not work");
+    var claims = await issuer.ReadResetAsync(request.Token);
+    if (claims is null)
+    {
+        return refused;
+    }
+
+    if (!string.Equals(claims.Value.Store, current.Backend.Key, StringComparison.Ordinal))
+    {
+        return Results.Problem(
+            detail: "That reset link belongs to the other site. Open it there.",
+            statusCode: 400, title: "The link did not work");
+    }
+
+    var user = await users.FindByIdAsync(claims.Value.UserId);
+    if (user is null || TokenIssuer.Fingerprint(user.PasswordHash) != claims.Value.Fingerprint)
+    {
+        return refused;
+    }
+
+    if (string.IsNullOrEmpty(request.Password))
+    {
+        return Results.Problem(detail: "Choose a new password of eight characters or more.", statusCode: 400, title: "The password was not changed");
+    }
+
+    // Validated before anything is removed, so a refused password leaves the
+    // old one in place rather than an account with none.
+    foreach (var validator in users.PasswordValidators)
+    {
+        var verdict = await validator.ValidateAsync(users, user, request.Password);
+        if (!verdict.Succeeded)
+        {
+            return Results.Problem(detail: Accounts.Explain(verdict), statusCode: 400, title: "The password was not changed");
+        }
+    }
+
+    // Removed then added rather than reset through a token provider, because
+    // the provider needs a key ring this container does not keep across a
+    // roll; both calls update the security stamp, and the fingerprint above
+    // is what makes the link one-use.
+    var removed = await users.RemovePasswordAsync(user);
+    if (!removed.Succeeded)
+    {
+        return Results.Problem(detail: Accounts.Explain(removed), statusCode: 400, title: "The password was not changed");
+    }
+
+    var added = await users.AddPasswordAsync(user, request.Password);
+    if (!added.Succeeded)
+    {
+        return Results.Problem(detail: Accounts.Explain(added), statusCode: 400, title: "The password was not changed");
+    }
+
+    await users.ResetAccessFailedCountAsync(user);
+    http.Response.Cookies.Append(
+        TokenIssuer.CookieName,
+        issuer.Issue(user.Id, user.Email!, current.Backend.Key),
+        TokenIssuer.CookieFor(http, issuer.Lifetime));
+    return Results.Json(Accounts.Describe(user), wireFormat);
+});
+// #endregion password-reset
 
 app.MapPost("/api/auth/logout", (TokenIssuer issuer, HttpContext http) =>
 {

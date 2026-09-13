@@ -38,7 +38,9 @@ the deploy hands both containers at roll time; a container given none invents
 one and logs that it did, and every session ends with it. A session is a year
 long and is re-issued once a day while it is in use, so a login lasts a year
 past the last visit and a sign-out still ends it at once (the accounts record's
-addendum of 13 September).
+addendum of 13 September). A password reset link is minted by the operator behind
+the admin key, lives an hour, works once, and carries a fingerprint of the
+password hash so it cannot be replayed after the password changes.
 
 **A session bids only where its account is.** The token names the store that
 opened it, and a bid or a purchase sent to the other store, which the store

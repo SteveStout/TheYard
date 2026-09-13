@@ -431,3 +431,47 @@ test('the browser remembers the key after one keyed visit, and forgets it on req
   await expect(page.getByTestId('activity-visitors')).toBeVisible();
 });
 // #endregion remembered-key
+
+// #region password-reset
+test('a reset link minted behind the key sets a new password and signs the visitor in', async ({
+  page,
+  request,
+}) => {
+  const email = `reset-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}@example.com`;
+  const registered = await request.post('http://localhost:5210/api/auth/register', {
+    data: { email, password: 'first password' },
+  });
+  expect(registered.ok()).toBe(true);
+
+  // Without the key the endpoint does not exist; with it, a link for this site.
+  expect(
+    (
+      await request.post('http://localhost:5210/api/admin/reset-links', { data: { email } })
+    ).status()
+  ).toBe(404);
+  const minted = await request.post('http://localhost:5210/api/admin/reset-links', {
+    data: { email },
+    headers: { 'X-Admin-Key': 'e2e-admin-key' },
+  });
+  expect(minted.ok()).toBe(true);
+  const { url } = (await minted.json()) as { url: string };
+  const link = new URL(url);
+
+  // The link opens the account view on the form; a new password signs the visitor in.
+  await openTheYard(page, `/?view=account&reset=${link.searchParams.get('reset')}`);
+  await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible();
+  await page.getByTestId('reset-password').fill('second password');
+  await page.getByTestId('reset-submit').click();
+  await expect(page.getByRole('heading', { name: email })).toBeVisible();
+
+  // And the new password is the password now.
+  const again = await request.post('http://localhost:5210/api/auth/login', {
+    data: { email, password: 'second password' },
+  });
+  expect(again.ok()).toBe(true);
+  const old = await request.post('http://localhost:5210/api/auth/login', {
+    data: { email, password: 'first password' },
+  });
+  expect(old.status()).toBe(401);
+});
+// #endregion password-reset

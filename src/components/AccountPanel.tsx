@@ -4,6 +4,7 @@ import {
   loginRequest,
   logoutRequest,
   registerRequest,
+  resetRequest,
   type Account,
   type HistoryEntry,
 } from '../lib/auth';
@@ -15,6 +16,8 @@ interface AccountPanelProps {
   onAccountChange: (account: Account) => void;
   onOpenVehicle: (vehicleId: string) => void;
   onBack: () => void;
+  /** A reset link's token, read from the address bar when the page loaded; null when there is none. */
+  resetToken?: string | null;
 }
 
 /**
@@ -29,6 +32,7 @@ export function AccountPanel({
   onAccountChange,
   onOpenVehicle,
   onBack,
+  resetToken = null,
 }: AccountPanelProps) {
   return (
     <section className={styles.wrap} aria-label="Account">
@@ -47,6 +51,8 @@ export function AccountPanel({
           onAccountChange={onAccountChange}
           onOpenVehicle={onOpenVehicle}
         />
+      ) : resetToken !== null ? (
+        <ResetForm token={resetToken} onAccountChange={onAccountChange} />
       ) : (
         <SignInForm onAccountChange={onAccountChange} />
       )}
@@ -139,6 +145,82 @@ function SignInForm({ onAccountChange }: { onAccountChange: (account: Account) =
   );
 }
 // #endregion sign-in
+
+// #region reset
+/**
+ * The second half of a password reset (ADR: Accounts and per-user bids,
+ * addendum): the link carried a token, the visitor chooses a new password,
+ * and the server signs them in. One field, because the link already said
+ * who they are; a wrong or spent link is one sentence from the server.
+ */
+function ResetForm({
+  token,
+  onAccountChange,
+}: {
+  token: string;
+  onAccountChange: (account: Account) => void;
+}) {
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className={styles.panel}>
+      <h2 className={styles.heading}>Choose a new password</h2>
+      <p className={styles.lede}>
+        This link was made for your account and works once, for an hour. Choose a new password and
+        you are signed in.
+      </p>
+      <form
+        className={styles.form}
+        onSubmit={(event) => {
+          event.preventDefault();
+          setBusy(true);
+          setMessage(null);
+          void resetRequest(token, password).then((result) => {
+            setBusy(false);
+            if (result.ok) {
+              onAccountChange(result.account);
+              return;
+            }
+            setMessage(result.message);
+          });
+        }}
+      >
+        <label className={styles.field}>
+          <span className={styles.label}>New password</span>
+          <input
+            className={styles.input}
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            data-testid="reset-password"
+          />
+          <span className={styles.hint}>Eight characters or more.</span>
+        </label>
+        {message && (
+          <p className={styles.error} role="alert">
+            {message}
+          </p>
+        )}
+        <div className={styles.actions}>
+          <button
+            className={styles.primary}
+            type="submit"
+            disabled={busy}
+            data-testid="reset-submit"
+          >
+            Set the password and sign in
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+// #endregion reset
 
 // #region signed-in
 function SignedIn({

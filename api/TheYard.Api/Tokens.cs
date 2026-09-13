@@ -150,6 +150,67 @@ public sealed class TokenIssuer
     /// that was HTTPS the whole way to the visitor; the forwarded header is
     /// what carries that fact across the hop (ADR: Edge deploy economics).
     /// </summary>
+    // #region reset-tokens
+    /// <summary>
+    /// A password reset link's token: the same signature as a session, a
+    /// different audience so the session pipeline refuses it, an hour of
+    /// life, and a fingerprint of the password hash it was minted against so
+    /// it dies the moment the password changes (ADR: Accounts and per-user
+    /// bids, addendum). No table of tokens to keep, no token provider that
+    /// needs a key ring the container does not have.
+    /// </summary>
+    private const string ResetAudience = "theyard-reset";
+    public static readonly TimeSpan ResetLifetime = TimeSpan.FromHours(1);
+
+    public string IssueReset(string userId, string store, string? passwordHash)
+    {
+        var handler = new JsonWebTokenHandler();
+        return handler.CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = Issuer,
+            Audience = ResetAudience,
+            Subject = new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, userId),
+                new Claim(StoreClaim, store),
+                new Claim("fingerprint", Fingerprint(passwordHash)),
+            ]),
+            Expires = DateTime.UtcNow.Add(ResetLifetime),
+            SigningCredentials = _credentials,
+        });
+    }
+
+    /// <summary>The claims of a valid, unexpired reset token, or null for anything else, a session token included.</summary>
+    public async Task<(string UserId, string Store, string Fingerprint)?> ReadResetAsync(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        var handler = new JsonWebTokenHandler();
+        var parameters = Validation.Clone();
+        parameters.ValidAudience = ResetAudience;
+        var result = await handler.ValidateTokenAsync(token, parameters);
+        if (!result.IsValid)
+        {
+            return null;
+        }
+
+        // The handler writes the long claim type as its short name and, on
+        // its own, reads it back short; the bearer pipeline maps it long. Both
+        // spellings are read so this does not depend on which handler minted it.
+        string? id = (result.ClaimsIdentity.FindFirst(ClaimTypes.NameIdentifier) ?? result.ClaimsIdentity.FindFirst("nameid"))?.Value;
+        string? store = result.ClaimsIdentity.FindFirst(StoreClaim)?.Value;
+        string? fingerprint = result.ClaimsIdentity.FindFirst("fingerprint")?.Value;
+        return id is null || store is null || fingerprint is null ? null : (id, store, fingerprint);
+    }
+
+    /// <summary>Sixteen hex characters of the password hash's SHA-256; the hash itself never leaves the store.</summary>
+    public static string Fingerprint(string? passwordHash) =>
+        Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(passwordHash ?? "")).AsSpan(0, 8));
+    // #endregion reset-tokens
+
     public static CookieOptions CookieFor(HttpContext context, TimeSpan lifetime) => new()
     {
         HttpOnly = true,
