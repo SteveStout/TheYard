@@ -395,3 +395,26 @@ test('the kept log is a 404 without the key, carries no at sign with it, and the
   await expect(card).not.toContainText('@');
 });
 // #endregion kept-logs-card
+
+// #region remembered-key
+test('the browser remembers the key after one keyed visit, and forgets it on request', async ({
+  page,
+}) => {
+  // Once with the key in the address bar, then plain: the operator's cards
+  // still show, because the browser kept the key (the operator reads the
+  // site from a phone, and the file the key lives in is on one machine).
+  await openTheYard(page, '/?view=admin&key=e2e-admin-key');
+  await expect(page.getByTestId('activity-visitors')).toBeVisible();
+  await openTheYard(page, '/?view=admin');
+  await expect(page.getByTestId('activity-visitors')).toBeVisible();
+  await expect(page.getByTestId('kept-logs-keyless')).toHaveCount(0);
+
+  // Forgetting takes effect at once and survives a reload.
+  await page.getByTestId('admin-forget-key').click();
+  await expect(page.getByTestId('activity-visitors')).toHaveCount(0);
+  await expect(page.getByTestId('kept-logs-keyless')).toBeVisible();
+  await openTheYard(page, '/?view=admin');
+  await expect(page.getByTestId('activity-visitors')).toHaveCount(0);
+  await expect(page.getByTestId('kept-logs-keyless')).toBeVisible();
+});
+// #endregion remembered-key

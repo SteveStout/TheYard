@@ -287,3 +287,24 @@ visitor document in it to count the day's unique tokens, and a year of those
 is tens of thousands of reads per Admin load, which is a separate decision
 with a separate cost if he wants one.
 
+## Addendum, 2026-09-13: the browser remembers the key
+
+Steve, from his phone, an hour after the retention change: "I can't see the
+kept log on the public site, you should be able to see it there." Measured
+before anything was changed: the runner opened the keyed URL in the repo's
+own headless Chromium and the card rendered with 130 lines, and the same
+page without the key showed the one-line note. The key was in a file on his
+machine, and he was reading the site from his phone.
+
+So the page now remembers the key. The address bar wins and is written to
+this browser's local storage; a visit without it reads what the browser
+kept; a button under the visitor table forgets it, at once and for the next
+visit. The key still never leaves the browser except as the header the two
+keyed endpoints read, the app still drops it from the address bar on the
+first render, and a bookmark saved after the page loaded now works, which it
+did not before. What this costs: anyone with that browser unlocked sees the
+operator's cards, which is the same trust the browser's saved sessions
+already carry, and the forget button is the answer on a shared machine. The
+browser suite opens the keyed URL once, then the plain one, and holds both
+the remembering and the forgetting.
+

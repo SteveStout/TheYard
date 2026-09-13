@@ -15,6 +15,7 @@ import {
   type ActivityWindow,
   type VisitorSortKey,
 } from '../lib/activity';
+import { browserStorage, forgetAdminKey, resolveAdminKey } from '../lib/adminKey';
 import { shortenDigests } from '../lib/format';
 import {
   LOG_KINDS,
@@ -223,7 +224,27 @@ function formatUptime(totalSeconds: number): string {
  * cards fetch independently and degrade independently, so a dead Azure
  * leg never hides app health. Public on purpose; the ADR explains why.
  */
+/**
+ * The operator's key, read from the address bar once, when the module loads,
+ * and otherwise from what this browser remembered (src/lib/adminKey.ts).
+ * Once and not per render, because the app mirrors its own view into the
+ * address bar and drops anything it did not put there, which takes the key
+ * out of the URL on the first render; that is welcome, since a key in an
+ * address bar outlives the tab in the history, and it means the key has to be
+ * read before that mirror runs (the 1.0.0.114 gate, take one). Remembered,
+ * because the file the key lives in is on one machine and the operator
+ * reads the site from his phone (the 1.0.0.120 change).
+ */
+const ADMIN_KEY = resolveAdminKey(window.location.search, browserStorage());
+
 export function AdminPanel({ onBack, signedIn }: { onBack: () => void; signedIn: boolean }) {
+  // The operator's key: state, so forgetting it takes effect on the cards
+  // at once; its first value is the one read when the module loaded.
+  const [adminKey, setAdminKey] = useState<string | null>(ADMIN_KEY);
+  const forgetKey = () => {
+    forgetAdminKey(browserStorage());
+    setAdminKey(null);
+  };
   const [health, setHealth] = useState<Fetched<Health>>(null);
   const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
   const [azure, setAzure] = useState<Fetched<AzureState>>(null);
@@ -330,8 +351,8 @@ export function AdminPanel({ onBack, signedIn }: { onBack: () => void; signedIn:
         number has no meaning on one side the page says so in words. Refreshes every 30 seconds.
         Public on purpose; the reasoning is in the Best Practices menu.
       </p>
-      <ActivityCard />
-      <KeptLogsCard />
+      <ActivityCard adminKey={adminKey} onForget={forgetKey} />
+      <KeptLogsCard adminKey={adminKey} />
 
       {/* #region backends-card */}
       <article className={styles.wide} data-testid="backends-card">
@@ -866,23 +887,13 @@ type Proof = { status: 'idle' | 'running' | 'done' | 'failed'; result: ProofResu
  * 404 to everybody else, so without the key the table does not exist here
  * any more than it exists on the wire.
  */
-/**
- * The operator's key, read from the address bar once, when the module loads.
- * Once and not per render, because the app mirrors its own view into the
- * address bar and drops anything it did not put there, which takes the key
- * out of the URL on the first render; that is welcome, since a key in an
- * address bar outlives the tab in the history, and it means the key has to be
- * read before that mirror runs (the 1.0.0.114 gate, take one).
- */
-const ADMIN_KEY = new URLSearchParams(window.location.search).get('key');
-
-function ActivityCard() {
+function ActivityCard({ adminKey, onForget }: { adminKey: string | null; onForget: () => void }) {
   const [window_, setWindow] = useState<ActivityWindow>('7d');
   const [report, setReport] = useState<Fetched<ActivityReport>>(null);
   const [visitors, setVisitors] = useState<Fetched<ActivityVisitors>>(null);
   const [sortKey, setSortKey] = useState<VisitorSortKey>('last_seen');
   const [descending, setDescending] = useState(true);
-  const key = ADMIN_KEY;
+  const key = adminKey;
 
   useEffect(() => {
     let live = true;
@@ -975,6 +986,18 @@ function ActivityCard() {
       {key !== null && (
         <>
           <h3 className={styles.cardTitle}>Visitors</h3>
+          <p className={styles.muted}>
+            This browser remembers the key, so the operator's cards show without it in the address
+            bar.{' '}
+            <button
+              type="button"
+              className={styles.back}
+              onClick={onForget}
+              data-testid="admin-forget-key"
+            >
+              Forget the key on this browser
+            </button>
+          </p>
           {visitors === null ? (
             <p className={styles.muted}>Loading…</p>
           ) : visitors === 'failed' ? (
@@ -1076,12 +1099,12 @@ function ActivityCard() {
  * card says what it is and shows nothing, which is the same line the visitor
  * table draws and for the same reason.
  */
-function KeptLogsCard() {
+function KeptLogsCard({ adminKey }: { adminKey: string | null }) {
   const [window_, setWindow] = useState<ActivityWindow>('24h');
   const [filter, setFilter] = useState<LogFilter>({ kind: '', status: '', path: '' });
   const [applied, setApplied] = useState<LogFilter>(filter);
   const [logs, setLogs] = useState<Fetched<KeptLogs>>(null);
-  const key = ADMIN_KEY;
+  const key = adminKey;
 
   useEffect(() => {
     if (key === null) return;
