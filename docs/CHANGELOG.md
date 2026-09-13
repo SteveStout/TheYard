@@ -9,6 +9,7 @@ footer cannot disagree (ADR: The version comes from the changelog). One number
 is missing, 1.0.0.39, skipped under the older formula when a red build consumed
 a deploy run number.
 
+- **1.0.0.126** (2026-09-13): The per-visitor rows are off: the visitor table and the kept log answer 404 to everybody until `Admin__VisitorRows` turns them on, the page shows neither, the graph of unique visitors per day stays, and the rows keep being written; the operator's key box moved to an Operator card of its own beside the reset links (ADR-071 sixth addendum).
 - **1.0.0.125** (2026-09-13): A password reset in two halves: the operator mints a reset link from the Admin tab behind the key, an hour of life and one use by fingerprint of the password hash, and the visitor chooses a new password from the link and is signed in; an emailed link is the same second half with a sender in front of it, which waits on a sender (ADR-037 addendum).
 - **1.0.0.124** (2026-09-13): Logins last a year past the last visit: the session token is a year long and the first request on any day a token is more than a day old gets a fresh one, only on the API and never on sign-out; the lifetime is configuration and two tests hold the rule and the cookie on the wire (ADR-037 addendum).
 - **1.0.0.123** (2026-09-13): The operator's key can be typed into the Kept log card and is remembered on that browser, so no link has to carry it to a phone; the keyed URL still works where it arrives whole (ADR-071 fifth addendum).

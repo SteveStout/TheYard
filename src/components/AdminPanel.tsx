@@ -257,6 +257,9 @@ export function AdminPanel({
     const key = rememberAdminKey(entered, browserStorage());
     if (key !== null) setAdminKey(key);
   };
+  // Whether this site serves the per-visitor rows, learned from the activity
+  // report; null until it has answered. Off by default (13 September).
+  const [rowsServed, setRowsServed] = useState<boolean | null>(null);
   const [health, setHealth] = useState<Fetched<Health>>(null);
   const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
   const [azure, setAzure] = useState<Fetched<AzureState>>(null);
@@ -363,8 +366,9 @@ export function AdminPanel({
         number has no meaning on one side the page says so in words. Refreshes every 30 seconds.
         Public on purpose; the reasoning is in the Best Practices menu.
       </p>
-      <ActivityCard adminKey={adminKey} onForget={forgetKey} />
-      <KeptLogsCard adminKey={adminKey} onEnterKey={enterKey} />
+      <ActivityCard adminKey={adminKey} rowsServed={rowsServed} onReport={setRowsServed} />
+      {rowsServed === true && <KeptLogsCard adminKey={adminKey} />}
+      <OperatorCard adminKey={adminKey} onEnterKey={enterKey} onForget={forgetKey} />
       <ResetLinkCard adminKey={adminKey} />
 
       {/* #region backends-card */}
@@ -905,7 +909,15 @@ type Proof = { status: 'idle' | 'running' | 'done' | 'failed'; result: ProofResu
  * 404 to everybody else, so without the key the table does not exist here
  * any more than it exists on the wire.
  */
-function ActivityCard({ adminKey, onForget }: { adminKey: string | null; onForget: () => void }) {
+function ActivityCard({
+  adminKey,
+  rowsServed,
+  onReport,
+}: {
+  adminKey: string | null;
+  rowsServed: boolean | null;
+  onReport: (visitorRows: boolean) => void;
+}) {
   const [window_, setWindow] = useState<ActivityWindow>('7d');
   const [report, setReport] = useState<Fetched<ActivityReport>>(null);
   const [visitors, setVisitors] = useState<Fetched<ActivityVisitors>>(null);
@@ -920,12 +932,15 @@ function ActivityCard({ adminKey, onForget }: { adminKey: string | null; onForge
         r.ok ? (r.json() as Promise<ActivityReport>) : Promise.reject(new Error(String(r.status)))
       )
       .then((v) => {
-        if (live) setReport(v);
+        if (live) {
+          setReport(v);
+          onReport(v.visitor_rows);
+        }
       })
       .catch(() => {
         if (live) setReport('failed');
       });
-    if (key !== null) {
+    if (key !== null && rowsServed === true) {
       void fetch(`/api/admin/activity/visitors?window=${window_}`, {
         headers: { 'X-Admin-Key': key },
       })
@@ -944,7 +959,7 @@ function ActivityCard({ adminKey, onForget }: { adminKey: string | null; onForge
     return () => {
       live = false;
     };
-  }, [window_, key]);
+  }, [window_, key, rowsServed, onReport]);
 
   const sortBy = (next: VisitorSortKey) => {
     if (next === sortKey) {
@@ -1001,21 +1016,9 @@ function ActivityCard({ adminKey, onForget }: { adminKey: string | null; onForge
       ) : (
         <ActivityGraph report={report} />
       )}
-      {key !== null && (
+      {key !== null && rowsServed === true && (
         <>
           <h3 className={styles.cardTitle}>Visitors</h3>
-          <p className={styles.muted}>
-            This browser remembers the key, so the operator's cards show without it in the address
-            bar.{' '}
-            <button
-              type="button"
-              className={styles.back}
-              onClick={onForget}
-              data-testid="admin-forget-key"
-            >
-              Forget the key on this browser
-            </button>
-          </p>
           {visitors === null ? (
             <p className={styles.muted}>Loading…</p>
           ) : visitors === 'failed' ? (
@@ -1117,14 +1120,7 @@ function ActivityCard({ adminKey, onForget }: { adminKey: string | null; onForge
  * card says what it is and shows nothing, which is the same line the visitor
  * table draws and for the same reason.
  */
-function KeptLogsCard({
-  adminKey,
-  onEnterKey,
-}: {
-  adminKey: string | null;
-  onEnterKey: (entered: string) => void;
-}) {
-  const [entered, setEntered] = useState('');
+function KeptLogsCard({ adminKey }: { adminKey: string | null }) {
   const [window_, setWindow] = useState<ActivityWindow>('24h');
   const [filter, setFilter] = useState<LogFilter>({ kind: '', status: '', path: '' });
   const [applied, setApplied] = useState<LogFilter>(filter);
@@ -1162,37 +1158,9 @@ function KeptLogsCard({
         bounded stack, and no field can carry an at sign. Behind a key only the operator holds.
       </p>
       {key === null ? (
-        <>
-          <p className={styles.muted} data-testid="kept-logs-keyless">
-            The kept log answers only to the operator's key.
-          </p>
-          {/* The key can be typed into the page, so no link has to carry it:
-              a link that loses its query string on the way to a phone leaves
-              this box as the way in (Steve, 13 September, from his phone). */}
-          <form
-            className={styles.filterRow}
-            aria-label="Enter the operator's key"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onEnterKey(entered);
-              setEntered('');
-            }}
-          >
-            <label>
-              Operator's key{' '}
-              <input
-                type="password"
-                autoComplete="off"
-                value={entered}
-                onChange={(event) => setEntered(event.target.value)}
-                data-testid="admin-key-entry"
-              />
-            </label>
-            <button type="submit" className={styles.back} data-testid="admin-key-submit">
-              Remember it on this browser
-            </button>
-          </form>
-        </>
+        <p className={styles.muted} data-testid="kept-logs-keyless">
+          The kept log answers only to the operator's key.
+        </p>
       ) : (
         <>
           <p className={styles.statusRow} role="group" aria-label="Window">
@@ -1348,6 +1316,75 @@ function KeptLogsCard({
             </>
           )}
         </>
+      )}
+    </article>
+  );
+}
+
+/**
+ * The operator's key on this browser (ADR: Site activity, and the line an
+ * address does not cross, fifth addendum): typed into the page, because a
+ * link that loses its query string on the way to a phone leaves this box as
+ * the way in; remembered on this browser; forgotten on request for a shared
+ * device. The cards behind the key (the visitor rows when this site serves
+ * them, the reset links) show once it is known.
+ */
+function OperatorCard({
+  adminKey,
+  onEnterKey,
+  onForget,
+}: {
+  adminKey: string | null;
+  onEnterKey: (entered: string) => void;
+  onForget: () => void;
+}) {
+  const [entered, setEntered] = useState('');
+  return (
+    <article className={styles.wide} data-testid="operator-card">
+      <h2 className={styles.cardTitle}>Operator</h2>
+      {adminKey === null ? (
+        <>
+          <p className={styles.muted}>
+            The operator's cards answer only to the operator's key. Type it here once and this
+            browser remembers it.
+          </p>
+          <form
+            className={styles.filterRow}
+            aria-label="Enter the operator's key"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onEnterKey(entered);
+              setEntered('');
+            }}
+          >
+            <label>
+              Operator's key{' '}
+              <input
+                type="password"
+                autoComplete="off"
+                value={entered}
+                onChange={(event) => setEntered(event.target.value)}
+                data-testid="admin-key-entry"
+              />
+            </label>
+            <button type="submit" className={styles.back} data-testid="admin-key-submit">
+              Remember it on this browser
+            </button>
+          </form>
+        </>
+      ) : (
+        <p className={styles.muted}>
+          This browser remembers the key, so the operator's cards show without it in the address
+          bar.{' '}
+          <button
+            type="button"
+            className={styles.back}
+            onClick={onForget}
+            data-testid="admin-forget-key"
+          >
+            Forget the key on this browser
+          </button>
+        </p>
       )}
     </article>
   );

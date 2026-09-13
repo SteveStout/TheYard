@@ -67,7 +67,12 @@ export default defineConfig({
       // And a key for the visitor rows on the Admin tab, so the browser
       // suite can prove the table exists behind it and nowhere else
       // (ADR: Site activity, and the line an address does not cross).
-      env: { Market__GraceSeconds: '0', Admin__Key: 'e2e-admin-key', Logs__DrainSeconds: '2' },
+      env: {
+        Market__GraceSeconds: '0',
+        Admin__Key: 'e2e-admin-key',
+        Admin__VisitorRows: 'true',
+        Logs__DrainSeconds: '2',
+      },
       url: 'http://localhost:5210/api/facets',
       reuseExistingServer: true,
       timeout: 120_000,

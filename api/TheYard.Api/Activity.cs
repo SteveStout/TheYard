@@ -274,7 +274,7 @@ public static class ActivityWindows
 /// </summary>
 public static class ActivityReport
 {
-    public static async Task<object> PublicAsync(ActivityCollector collector, Backends backends, string window, DateTimeOffset now, CancellationToken cancellation)
+    public static async Task<object> PublicAsync(ActivityCollector collector, Backends backends, string window, DateTimeOffset now, bool visitorRows, CancellationToken cancellation)
     {
         var chosen = ActivityWindows.Parse(window)!.Value;
         DateTimeOffset since = ActivityFolding.HourOf(now - chosen.Length);
@@ -323,6 +323,9 @@ public static class ActivityReport
         return new
         {
             window = chosen.Name,
+            // Whether the per-visitor rows are served on this site at all, so
+            // the page knows whether to offer them (off by default).
+            visitor_rows = visitorRows,
             bucket = chosen.Bucket == TimeSpan.FromDays(1) ? "day" : chosen.Bucket == TimeSpan.FromHours(6) ? "six hours" : "hour",
             since,
             until = now,

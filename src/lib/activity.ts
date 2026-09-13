@@ -24,6 +24,8 @@ export type ActivityDay = {
 };
 export type ActivityReport = {
   window: ActivityWindow;
+  /** Whether this site serves the per-visitor rows at all (off by default since 13 September). */
+  visitor_rows: boolean;
   bucket: string;
   since: string;
   until: string;

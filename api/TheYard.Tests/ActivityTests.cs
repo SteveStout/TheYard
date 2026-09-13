@@ -175,8 +175,12 @@ public class ActivityEndpointTests : IClassFixture<ActivityEndpointTests.KeyedHo
     {
         public const string Key = "the-test-key";
 
-        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder) =>
+        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+        {
             builder.UseSetting("Admin:Key", Key);
+            // The rows are off by default (13 September); this host serves them so the endpoint can be held.
+            builder.UseSetting("Admin:VisitorRows", "true");
+        }
     }
 
     private readonly KeyedHost _host;
@@ -210,6 +214,7 @@ public class ActivityEndpointTests : IClassFixture<ActivityEndpointTests.KeyedHo
         using var json = JsonDocument.Parse(body);
         var root = json.RootElement;
         Assert.Equal("24h", root.GetProperty("window").GetString());
+        Assert.True(root.GetProperty("visitor_rows").GetBoolean());
         var stores = _host.Services.GetRequiredService<Backends>().All.Select(backend => backend.Key).ToHashSet();
         var series = root.GetProperty("series").EnumerateArray().Select(line => line.GetProperty("store").GetString()!).ToHashSet();
         Assert.Equal(stores, series);

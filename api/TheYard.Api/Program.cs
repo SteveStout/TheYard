@@ -439,6 +439,13 @@ builder.Services.AddSingleton(services => new ActivityCollector(activityStores, 
 builder.Services.AddHostedService(services => services.GetRequiredService<ActivityCollector>());
 var adminKey = new AdminKey(builder.Configuration["Admin:Key"]);
 builder.Services.AddSingleton(adminKey);
+// Whether the per-visitor rows (the visitor table and the kept log) are
+// served at all. Off by default on Steve's word of 13 September ("disable
+// the per visitor data for now"): the rows keep being written, the two
+// endpoints answer 404 to everybody, key or no key, and the cards do not
+// show. Admin__VisitorRows=true turns it back on (ADR: Site activity, and
+// the line an address does not cross, sixth addendum).
+bool visitorRows = builder.Configuration.GetValue("Admin:VisitorRows", false);
 // #endregion activity-wiring
 
 // The hour's allowance of new accounts, for the whole site (ADR: The one write
@@ -1452,7 +1459,7 @@ app.MapGet("/api/admin/metrics", (HttpContext http) =>
 app.MapGet("/api/admin/activity", async (string? window, ActivityCollector collector, CancellationToken cancellation) =>
     ActivityWindows.Parse(window) is null
         ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-        : Results.Json(await ActivityReport.PublicAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, cancellation), wireFormat));
+        : Results.Json(await ActivityReport.PublicAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, visitorRows, cancellation), wireFormat));
 
 // The visitor rows, behind the operator's key: a token that rotates daily,
 // the network to three octets, the store, the counts and the top paths. The
@@ -1464,7 +1471,7 @@ app.MapGet("/api/admin/activity", async (string? window, ActivityCollector colle
 app.MapGet("/api/admin/activity/visitors", async (string? window, string? key, HttpContext http, ActivityCollector collector, CancellationToken cancellation) =>
 {
     string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
-    if (!adminKey.Admits(presented))
+    if (!visitorRows || !adminKey.Admits(presented))
     {
         return Results.NotFound();
     }
@@ -1485,7 +1492,7 @@ app.MapGet("/api/admin/activity/visitors", async (string? window, string? key, H
 app.MapGet("/api/admin/logs/kept", async (string? window, string? kind, int? status, string? path, string? key, HttpContext http, LogCollector collector, CancellationToken cancellation) =>
 {
     string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
-    if (!adminKey.Admits(presented))
+    if (!visitorRows || !adminKey.Admits(presented))
     {
         return Results.NotFound();
     }

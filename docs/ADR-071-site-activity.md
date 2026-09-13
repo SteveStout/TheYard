@@ -324,3 +324,19 @@ the browser test types the key in after forgetting it and finds both cards
 open on the next plain visit. The keyed URL still works where it arrives
 whole; the operator no longer needs it to.
 
+## Addendum, 2026-09-13: the rows are off
+
+Steve, at the end of the day: "I guess disable the per visitor data for
+now." Done as one setting rather than a removal, because the day's evidence
+is that this decision moves: `Admin:VisitorRows`, off by default. Off, the
+visitor table and the kept log answer 404 to everybody, with the key as
+without it, the public report says `visitor_rows: false`, and the page
+shows neither the table, the kept log card nor anything about them. The
+rows keep being written: the counters the graph is drawn from are the same
+documents, the kept log is the record he asked for an hour earlier, and
+turning the setting on shows what was kept meanwhile. The graph of unique
+visitors per day stays public; it names nobody. The operator's key stays
+for the one card that still needs it, the reset links, and its box moved to
+an Operator card of its own. A test holds the 404 with the key on a host
+with the rows at their default.
+

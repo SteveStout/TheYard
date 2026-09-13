@@ -141,8 +141,11 @@ public class LogEndpointTests : IClassFixture<LogEndpointTests.KeyedHost>
     {
         public const string Key = "the-log-test-key";
 
-        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder) =>
+        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+        {
             builder.UseSetting("Admin:Key", Key);
+            builder.UseSetting("Admin:VisitorRows", "true");
+        }
     }
 
     private readonly KeyedHost _host;
