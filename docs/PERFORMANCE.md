@@ -61,13 +61,16 @@ relational side pays the gap twice and the card shows exactly that.
 faster column and letting a reader assume the engine won. The same run was repeated on the second
 container, whose default store is the document one, and it produced the same shape on every row.
 
-Read again on 13 September, off the second container's own card from a run on 1.0.0.112: 41 ms to Azure
-SQL Database and 2 ms to Azure Cosmos DB, 3 of 8 paths the same, 4 more differing by exactly the round
-trip, and one row, Register, differing by more on a single sample, 950 ms against 153. One sample at that
-size on a serverless database that pauses when idle says nothing about a statement's cost either way, and
-the card says "1 sample" beside it. The table above keeps the 1.0.0.94 run because both stores were warm
-and both containers were measured within a quarter of an hour; the later card is quoted so a reader can
-see the shape hold, and the one row that did not.
+Read again on 13 September, off both containers' own cards from runs on 1.0.0.114 made within a quarter of
+an hour of each other: 39 ms and 38 ms to Azure SQL Database, 2 ms to Azure Cosmos DB, 3 of 8 paths the
+same, 4 more differing by exactly the round trip, and one row, Register, differing by more: 231 ms against
+188 on one container and 453 against 103 on the other, on a single sample each. One sample at that size on
+a serverless database that pauses when idle says nothing about a statement's cost either way, and the card
+says "1 sample" beside it. Bid write read 84 ms against 13 and 84 against 11, bid raise 87 against 11 and 83
+against 11, within a few milliseconds of the table above in both directions. The table keeps the 1.0.0.94
+run because it is the one the record walks through row by row; the later cards are quoted so a reader can
+see the shape hold three versions and twenty days later, with the site activity writer added in between
+([Site activity, and the line an address does not cross](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-071-site-activity.md)).
 
 ## Where the milliseconds actually came from
 

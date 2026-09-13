@@ -211,3 +211,36 @@ and a guess that is right often enough does not need it.
 
 ```live path=api/TheYard.Api/Program.cs region=activity-endpoints
 ```
+
+## Addendum, 2026-09-13: the measurement, read off both live containers on 1.0.0.114
+
+The paired-round proof was run on both containers within a quarter of an
+hour of the roll, each started by a throwaway account made for it, with the
+activity collector writing to both stores the whole time. Read back from the
+cards:
+
+- **The live site's container:** 39 ms to Azure SQL Database and 2 ms to
+  Azure Cosmos DB. "On 3 of 8 paths the two stores answer in the same time;
+  4 more differ by exactly the round trip to the store." Bid write 84 ms
+  against 13, bid raise 87 against 11, sign in 128 against 83, the vehicle
+  page 1 against 1.
+- **The second container:** 38 ms and 2 ms, the same sentence. Bid write 84
+  against 11, bid raise 83 against 11.
+
+Before the change, the second container's card from 1.0.0.112 read 41 ms and
+2 ms with the same sentence, and the 1.0.0.94 run the Performance page quotes
+read 39 ms and 2 ms with bid write at 84 against 10 and raise at 85 against
+9. Every row that differs does so by a few milliseconds in both directions,
+which is the noise the record on the proof already describes. The batch
+writer off the request path costs the request path nothing the card can see.
+
+What the feature itself cost during that read: the collector on the live
+site's container had offered 88 hits and written 77 with no failed batch a
+minute after the run; the second container 254 offered, 121 written, none
+failed. Both containers then read the same rows back, 127 on each store from
+either address, which is the row living where the request was served rather
+than in the container that happened to answer.
+
+Still owed and named here: the visitor rows answer 404 on both sites until
+the repository secret `ADMIN_KEY` exists. The graph does not need it.
+
