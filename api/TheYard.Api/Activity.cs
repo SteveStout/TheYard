@@ -284,6 +284,7 @@ public static class ActivityReport
         int requests = 0;
         int bots = 0;
         var byStore = new List<object>();
+        var visitorDays = new List<(string Day, string Store, string Visitor, bool Bot)>();
 
         foreach (var backend in backends.All)
         {
@@ -294,6 +295,15 @@ public static class ActivityReport
             IReadOnlyList<ActivityHour> hours = availability.Available ? await store.HoursAsync(since, cancellation) : [];
             var points = Bucket(hours.Where(hour => hour.Store == backend.Key), since, now, chosen.Bucket);
             series.Add(new { store = backend.Key, name = backend.Name, points });
+
+            // The visitor rows are read here for one number each and thrown
+            // away: how many distinct tokens each day saw. The rows themselves
+            // leave the server only through the keyed endpoint below.
+            IReadOnlyList<ActivityVisitor> visitors = availability.Available ? await store.VisitorsAsync(since, cancellation) : [];
+            foreach (var visitor in visitors.Where(visitor => visitor.Store == backend.Key && visitor.LastSeen >= since))
+            {
+                visitorDays.Add((visitor.Day, backend.Key, visitor.Visitor, visitor.Bots >= visitor.Requests));
+            }
 
             int storeRequests = hours.Sum(hour => hour.Requests);
             int storeBots = hours.Sum(hour => hour.Bots);
@@ -319,6 +329,7 @@ public static class ActivityReport
             totals = new { requests, bots, humans = requests - bots },
             by_store = byStore,
             series,
+            days = Days(visitorDays, backends.All.Select(backend => backend.Key).ToList(), since, now),
             top_paths = paths.OrderByDescending(entry => entry.Value).ThenBy(entry => entry.Key, StringComparer.Ordinal).Take(12)
                 .Select(entry => new { path = entry.Key, requests = entry.Value }).ToList(),
             stores,
@@ -374,6 +385,43 @@ public static class ActivityReport
             // that is a file, not a page.
             visitors = rows.Take(500).ToList(),
         };
+    }
+
+    /// <summary>
+    /// Unique visitors per UTC day, the graph's series (Steve's ask, 13
+    /// September: "per all unique ips per day"). One row per day in the
+    /// window, zeros where nobody came: the distinct tokens that day across
+    /// every store, the distinct tokens per store, and how many of them
+    /// looked like people. A token is one address for one day, so "unique
+    /// visitors" here is unique addresses, counted without keeping one.
+    /// </summary>
+    private static List<object> Days(List<(string Day, string Store, string Visitor, bool Bot)> rows, IReadOnlyList<string> stores, DateTimeOffset since, DateTimeOffset now)
+    {
+        var days = new List<object>();
+        var first = new DateTimeOffset(since.Year, since.Month, since.Day, 0, 0, 0, TimeSpan.Zero);
+        var last = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
+        for (var at = first; at <= last; at = at.AddDays(1))
+        {
+            string day = ActivityFolding.DayOf(at);
+            var today = rows.Where(row => row.Day == day).ToList();
+            var tokens = today.Select(row => row.Visitor).Distinct(StringComparer.Ordinal).ToList();
+            // A visitor is a person if any store saw a request of theirs that did not look like a bot.
+            int humans = tokens.Count(token => today.Any(row => row.Visitor == token && !row.Bot));
+            days.Add(new
+            {
+                day,
+                visitors = tokens.Count,
+                humans,
+                bots = tokens.Count - humans,
+                by_store = stores.Select(store => new
+                {
+                    store,
+                    visitors = today.Where(row => row.Store == store).Select(row => row.Visitor).Distinct(StringComparer.Ordinal).Count(),
+                }).ToList(),
+            });
+        }
+
+        return days;
     }
 
     /// <summary>The hours of one store laid onto a fixed grid of buckets from since to now, zeros where nothing happened, so the two lines share an x axis.</summary>

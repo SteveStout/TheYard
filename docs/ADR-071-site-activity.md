@@ -244,3 +244,29 @@ than in the container that happened to answer.
 Still owed and named here: the visitor rows answer 404 on both sites until
 the repository secret `ADMIN_KEY` exists. The graph does not need it.
 
+## Addendum, 2026-09-13: unique visitors per day, and the table grouped by day
+
+Steve, on seeing the first version: "on the graph I want it per all unique
+ips per day with a table below of each users interaction, grouped by day on
+the user interaction, so I get a feel for how people are using it, and it
+should be at the top."
+
+The graph now draws unique visitors per UTC day: everybody as one line in the
+heading colour, and one line per store under it in the store colours, on a
+window of a week by default. A "unique visitor" is a distinct visitor token
+for that day, which is a distinct address for that day, counted on the server
+from the visitor rows and thrown away: the public endpoint carries the count
+per day and per store and never a token. The requests-per-bucket series stays
+on the wire for the tests that hold it and for anyone who wants the old view.
+
+The table under the graph groups each visitor's day under a heading row for
+the day, newest day first, with the day's own count of visitors and requests
+in the heading; within a day the columns still sort either way. The rows are
+the same rows as before and travel the same way, behind the operator's key,
+which is the reading this addendum keeps until he says otherwise: the tab is
+public, and a network beside a timestamp is the thing the record above
+decided not to publish. The graph, the day counts and the split need no key.
+
+```live path=src/lib/activity.ts region=days
+```
+

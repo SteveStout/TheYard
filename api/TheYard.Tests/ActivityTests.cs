@@ -220,6 +220,16 @@ public class ActivityEndpointTests : IClassFixture<ActivityEndpointTests.KeyedHo
         // encoding itself is held by the Hits test above, and the at sign's
         // absence is held here, on the body, whatever the top paths are.
         Assert.Equal(25, root.GetProperty("series")[0].GetProperty("points").GetArrayLength());
+
+        // Unique visitors per day: a day window spans today and yesterday, and
+        // today has at least the one visitor this test is.
+        var days = root.GetProperty("days").EnumerateArray().ToList();
+        Assert.Equal(2, days.Count);
+        var today = days[^1];
+        Assert.Equal(DateTime.UtcNow.ToString("yyyy-MM-dd"), today.GetProperty("day").GetString());
+        Assert.True(today.GetProperty("visitors").GetInt32() >= 1);
+        Assert.Equal(stores.Count, today.GetProperty("by_store").GetArrayLength());
+        Assert.Equal(today.GetProperty("visitors").GetInt32(), today.GetProperty("humans").GetInt32() + today.GetProperty("bots").GetInt32());
     }
 
     [Theory]

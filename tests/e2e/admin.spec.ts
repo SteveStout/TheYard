@@ -242,9 +242,14 @@ test('the activity graph draws at the top of the tab and its response names nobo
     await expect(card.getByTestId(`activity-line-${store.key}`)).toHaveCount(1);
   }
   await expect(card.getByTestId('activity-totals')).toContainText(/\d+ requests in the window/);
-  await card.getByTestId('activity-window-7d').click();
+  // A week is the default; a month is a change, and the graph redraws for it.
   await expect(card.getByTestId('activity-window-7d')).toHaveAttribute('aria-pressed', 'true');
-  await expect(card.getByTestId('activity-graph')).toHaveAttribute('aria-label', /7d window/);
+  await card.getByTestId('activity-window-30d').click();
+  await expect(card.getByTestId('activity-window-30d')).toHaveAttribute('aria-pressed', 'true');
+  await expect(card.getByTestId('activity-graph')).toHaveAttribute('aria-label', /30d window/);
+  // And a click on the window already showing changes nothing and blanks nothing.
+  await card.getByTestId('activity-window-30d').click();
+  await expect(card.getByTestId('activity-graph')).toBeVisible();
 
   // The wire, for both windows the page just asked for.
   for (const window of ['24h', '7d', '30d']) {
@@ -310,6 +315,8 @@ test('the visitor table exists only behind the key, and its response names nobod
   const table = page.getByTestId('activity-visitors');
   await expect(table).toBeVisible();
   await expect(table.getByRole('columnheader', { name: 'Requests' })).toBeVisible();
+  // Grouped by day: at least today's heading row sits above its visitors.
+  expect(await table.getByTestId('activity-day').count()).toBeGreaterThanOrEqual(1);
   await table.getByRole('button', { name: 'Requests' }).click();
   await expect(table.locator('tbody tr').first()).toBeVisible();
 });

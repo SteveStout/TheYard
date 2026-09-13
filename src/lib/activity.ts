@@ -15,6 +15,13 @@ export type ActivityStoreState = {
   reason: string;
 };
 export type ActivityPath = { path: string; requests: number };
+export type ActivityDay = {
+  day: string;
+  visitors: number;
+  humans: number;
+  bots: number;
+  by_store: { store: string; visitors: number }[];
+};
 export type ActivityReport = {
   window: ActivityWindow;
   bucket: string;
@@ -23,6 +30,7 @@ export type ActivityReport = {
   totals: { requests: number; bots: number; humans: number };
   by_store: { store: string; requests: number; bots: number; humans: number }[];
   series: ActivitySeries[];
+  days: ActivityDay[];
   top_paths: ActivityPath[];
   stores: ActivityStoreState[];
   collector: {
@@ -52,6 +60,51 @@ export type ActivityVisitors = {
   count: number;
   visitors: ActivityVisitor[];
 };
+
+// #region days
+/**
+ * The graph's series: unique visitors per UTC day (Steve's ask, 13
+ * September, "per all unique ips per day"), one line for everybody and one
+ * per store, on the point shape the line geometry below already draws.
+ */
+export function dayLines(days: ActivityDay[], stores: string[]): ActivitySeries[] {
+  const all: ActivitySeries = {
+    store: 'all',
+    name: 'All visitors',
+    points: days.map((day) => ({ at: day.day, requests: day.visitors, bots: day.bots })),
+  };
+  const perStore = stores.map((store) => ({
+    store,
+    name: store,
+    points: days.map((day) => ({
+      at: day.day,
+      requests: day.by_store.find((entry) => entry.store === store)?.visitors ?? 0,
+      bots: 0,
+    })),
+  }));
+  return [all, ...perStore];
+}
+
+/** The visitor rows grouped by UTC day, newest day first, with the day's own totals for its heading. */
+export function groupByDay(
+  rows: ActivityVisitor[]
+): { day: string; visitors: number; requests: number; rows: ActivityVisitor[] }[] {
+  const byDay = new Map<string, ActivityVisitor[]>();
+  for (const row of rows) {
+    const list = byDay.get(row.day) ?? [];
+    list.push(row);
+    byDay.set(row.day, list);
+  }
+  return [...byDay.entries()]
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([day, dayRows]) => ({
+      day,
+      visitors: new Set(dayRows.map((row) => row.visitor)).size,
+      requests: dayRows.reduce((sum, row) => sum + row.requests, 0),
+      rows: dayRows,
+    }));
+}
+// #endregion days
 
 // #region chart-geometry
 /** The drawing area the lines are laid into, in SVG units; the card scales it to its width. */
@@ -109,16 +162,15 @@ export function labelledIndexes(count: number): number[] {
   return indexes;
 }
 
-/** A point's x label: the hour for a day, the weekday and hour for a week, the date for a month. */
+/** A day's x label: the weekday for a week, the date for a month, and the date for a day too, since a day window is two days. */
 export function labelFor(at: string, window: ActivityWindow): string {
-  const date = new Date(at);
-  if (window === '24h') {
-    return date.toLocaleTimeString(undefined, { hour: 'numeric' });
-  }
+  // A UTC day, `2026-09-13`, read as that calendar day and not as the
+  // instant before it in a western zone.
+  const date = new Date(`${at}T12:00:00Z`);
   if (window === '7d') {
-    return date.toLocaleDateString(undefined, { weekday: 'short', hour: 'numeric' });
+    return date.toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' });
   }
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 // #endregion chart-geometry
 

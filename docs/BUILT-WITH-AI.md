@@ -28,7 +28,7 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every push runs all three suites in CI: 444 xUnit tests, 88 Vitest tests at 1.0.0.114 and 60 Playwright tests. The ship
+**The test gate.** Every push runs all three suites in CI: 444 xUnit tests, 90 Vitest tests at 1.0.0.116 and 60 Playwright tests. The ship
 gate runs the API suite against both stores and was measured at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068). A push that fails the gate does not roll.
 

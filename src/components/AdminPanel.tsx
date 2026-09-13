@@ -4,6 +4,8 @@ import {
   CHART,
   areaPath,
   ceilingOf,
+  dayLines,
+  groupByDay,
   labelFor,
   labelledIndexes,
   linePath,
@@ -863,7 +865,7 @@ type Proof = { status: 'idle' | 'running' | 'done' | 'failed'; result: ProofResu
 const ADMIN_KEY = new URLSearchParams(window.location.search).get('key');
 
 function ActivityCard() {
-  const [window_, setWindow] = useState<ActivityWindow>('24h');
+  const [window_, setWindow] = useState<ActivityWindow>('7d');
   const [report, setReport] = useState<Fetched<ActivityReport>>(null);
   const [visitors, setVisitors] = useState<Fetched<ActivityVisitors>>(null);
   const [sortKey, setSortKey] = useState<VisitorSortKey>('last_seen');
@@ -916,12 +918,14 @@ function ActivityCard() {
     <article className={styles.wide} data-testid="activity-card">
       <h2 className={styles.cardTitle}>Site activity</h2>
       <p className={styles.muted}>
-        Requests over time, kept by the store that served each one and read back from both, so the
-        two stores show against each other. Written off the request path in batches; the page's own
-        files, the photos and this tab's reads are not counted. A visitor is a keyed hash of the
-        address that changes daily, so the counts group and nothing joins across days or back to a
-        person; a full address is never stored and no account is ever named. The table of visitors
-        is behind a key only the operator holds.
+        Unique visitors per day, everybody and each store, from rows kept by the store that served
+        each request and read back from both, so the two stores show against each other. Under it,
+        each visitor's day: when they came, how many requests, which store, and what they asked for.
+        Written off the request path in batches; the page's own files, the photos and this tab's
+        reads are not counted. A visitor is a keyed hash of the address that changes daily, so the
+        counts group and nothing joins across days or back to a person; a full address is never
+        stored and no account is ever named. The table of visitors is behind a key only the operator
+        holds.
       </p>
       <p className={styles.statusRow} role="group" aria-label="Window">
         {ACTIVITY_WINDOWS.map((option) => (
@@ -932,7 +936,11 @@ function ActivityCard() {
             aria-pressed={option === window_}
             onClick={() => {
               // The change of window is the event; the cards go back to
-              // loading here rather than inside the effect that fetches.
+              // loading here rather than inside the effect that fetches. The
+              // window already showing is not a change: the effect would not
+              // run again and the card would stay on "Loading" for good
+              // (the 1.0.0.116 gate, take one).
+              if (option === window_) return;
               setWindow(option);
               setReport(null);
               setVisitors(null);
@@ -1001,24 +1009,37 @@ function ActivityCard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortVisitors(visitors.visitors, sortKey, descending).map((row) => (
-                    <tr key={`${row.store}:${row.day}:${row.visitor}`}>
-                      <td className={styles.mono}>{row.visitor.slice(0, 12)}</td>
-                      <td className={styles.mono}>{row.network}</td>
-                      <td>{row.store}</td>
-                      <td className={styles.mono}>{new Date(row.first_seen).toLocaleString()}</td>
-                      <td className={styles.mono}>{new Date(row.last_seen).toLocaleString()}</td>
-                      <td className={styles.mono}>
-                        {row.requests}
-                        {row.bots > 0 ? ` (${row.bots} bot)` : ''}
-                      </td>
-                      <td className={styles.mono}>
-                        {row.top_paths
-                          .map((entry) => `${entry.path} (${entry.requests})`)
-                          .join(', ')}
-                      </td>
-                    </tr>
-                  ))}
+                  {groupByDay(visitors.visitors).flatMap((group) => [
+                    <tr
+                      key={`day:${group.day}`}
+                      className={styles.dayRow}
+                      data-testid="activity-day"
+                    >
+                      <th scope="rowgroup" colSpan={7}>
+                        {labelFor(group.day, '30d')} ({group.day}): {group.visitors} visitor
+                        {group.visitors === 1 ? '' : 's'}, {group.requests} request
+                        {group.requests === 1 ? '' : 's'}
+                      </th>
+                    </tr>,
+                    ...sortVisitors(group.rows, sortKey, descending).map((row) => (
+                      <tr key={`${row.store}:${row.day}:${row.visitor}`}>
+                        <td className={styles.mono}>{row.visitor.slice(0, 12)}</td>
+                        <td className={styles.mono}>{row.network}</td>
+                        <td>{row.store}</td>
+                        <td className={styles.mono}>{new Date(row.first_seen).toLocaleString()}</td>
+                        <td className={styles.mono}>{new Date(row.last_seen).toLocaleString()}</td>
+                        <td className={styles.mono}>
+                          {row.requests}
+                          {row.bots > 0 ? ` (${row.bots} bot)` : ''}
+                        </td>
+                        <td className={styles.mono}>
+                          {row.top_paths
+                            .map((entry) => `${entry.path} (${entry.requests})`)
+                            .join(', ')}
+                        </td>
+                      </tr>
+                    )),
+                  ])}
                   {visitors.visitors.length === 0 && (
                     <tr>
                       <td colSpan={7} className={styles.muted}>
@@ -1058,19 +1079,28 @@ function SortHeader({
 
 /** The two lines, the axis, the totals and the top paths; the arithmetic is in src/lib/activity.ts. */
 function ActivityGraph({ report }: { report: ActivityReport }) {
-  const ceiling = ceilingOf(report.series);
-  const points = report.series[0]?.points ?? [];
+  // Unique visitors per UTC day: everybody as one line, and one line per
+  // store underneath it, so the split shows against the whole.
+  const lines = dayLines(
+    report.days,
+    report.series.map((line) => line.store)
+  );
+  const ceiling = ceilingOf(lines);
+  const points = lines[0]?.points ?? [];
   const labels = labelledIndexes(points.length);
   const innerWidth = CHART.width - CHART.left - CHART.right;
   const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
-  const colour = (store: string) => (store === 'cosmos' ? styles.cosmosLine : styles.sqlLine);
+  const colour = (store: string) =>
+    store === 'cosmos' ? styles.cosmosLine : store === 'sql' ? styles.sqlLine : styles.allLine;
+  const totalVisitors = report.days.reduce((sum, day) => sum + day.visitors, 0);
+  const humanVisitors = report.days.reduce((sum, day) => sum + day.humans, 0);
   return (
     <>
       <svg
         className={styles.chart}
         viewBox={`0 0 ${CHART.width} ${CHART.height}`}
         role="img"
-        aria-label={`Requests per ${report.bucket} over the ${report.window} window, one line per store`}
+        aria-label={`Unique visitors per day over the ${report.window} window, everybody as one line and one line per store`}
         data-testid="activity-graph"
       >
         <line
@@ -1109,7 +1139,7 @@ function ActivityGraph({ report }: { report: ActivityReport }) {
             {points[index] ? labelFor(points[index].at, report.window) : ''}
           </text>
         ))}
-        {report.series.map((line) => (
+        {lines.map((line) => (
           <g
             key={line.store}
             className={colour(line.store)}
@@ -1122,15 +1152,24 @@ function ActivityGraph({ report }: { report: ActivityReport }) {
       </svg>
       <ul className={styles.summaryList} data-testid="activity-totals">
         <li>
-          {report.totals.requests.toLocaleString()} requests in the window, {report.totals.humans}{' '}
-          from what looked like people and {report.totals.bots} from what looked like scanners and
-          crawlers, per {report.bucket}.
+          <span className={`${styles.swatch} ${styles.allLine}`} aria-hidden="true" />
+          {totalVisitors.toLocaleString()} unique visitors across the days in the window,{' '}
+          {humanVisitors} of them looking like people; {report.totals.requests.toLocaleString()}{' '}
+          requests in the window, {report.totals.bots} of them from what looked like scanners and
+          crawlers.
         </li>
         {report.by_store.map((store) => (
           <li key={store.store}>
             <span className={`${styles.swatch} ${colour(store.store)}`} aria-hidden="true" />
             {report.series.find((line) => line.store === store.store)?.name ?? store.store}:{' '}
-            {store.requests.toLocaleString()} requests, {store.bots} of them bots.
+            {report.days
+              .reduce(
+                (sum, day) =>
+                  sum + (day.by_store.find((entry) => entry.store === store.store)?.visitors ?? 0),
+                0
+              )
+              .toLocaleString()}{' '}
+            visitor-days, {store.requests.toLocaleString()} requests, {store.bots} of them bots.
           </li>
         ))}
         {report.stores

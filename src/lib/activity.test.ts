@@ -3,9 +3,12 @@ import {
   CHART,
   areaPath,
   ceilingOf,
+  dayLines,
+  groupByDay,
   labelledIndexes,
   linePath,
   sortVisitors,
+  type ActivityDay,
   type ActivitySeries,
   type ActivityVisitor,
 } from './activity';
@@ -119,5 +122,58 @@ describe('the visitor table', () => {
     const before = rows.map((row) => row.visitor);
     sortVisitors(rows, 'requests', true);
     expect(rows.map((row) => row.visitor)).toEqual(before);
+  });
+});
+
+describe('unique visitors per day', () => {
+  const days: ActivityDay[] = [
+    {
+      day: '2026-09-12',
+      visitors: 3,
+      humans: 2,
+      bots: 1,
+      by_store: [
+        { store: 'sql', visitors: 2 },
+        { store: 'cosmos', visitors: 1 },
+      ],
+    },
+    { day: '2026-09-13', visitors: 0, humans: 0, bots: 0, by_store: [] },
+  ];
+
+  it('draws one line for everybody and one per store, on the same days', () => {
+    const lines = dayLines(days, ['sql', 'cosmos']);
+    expect(lines.map((line) => line.store)).toEqual(['all', 'sql', 'cosmos']);
+    expect(lines[0].points.map((point) => point.requests)).toEqual([3, 0]);
+    expect(lines[1].points.map((point) => point.requests)).toEqual([2, 0]);
+    expect(lines[2].points.map((point) => point.requests)).toEqual([1, 0]);
+    expect(lines[2].points[0].at).toBe('2026-09-12');
+  });
+
+  it('groups the visitor rows by day, newest first, counting a token once per day', () => {
+    const row = (
+      day: string,
+      visitor: string,
+      store: string,
+      requests: number
+    ): ActivityVisitor => ({
+      visitor,
+      network: '203.0.113.x',
+      store,
+      day,
+      first_seen: `${day}T01:00:00Z`,
+      last_seen: `${day}T02:00:00Z`,
+      requests,
+      bots: 0,
+      top_paths: [],
+    });
+    const grouped = groupByDay([
+      row('2026-09-12', 'a', 'sql', 4),
+      row('2026-09-13', 'b', 'cosmos', 1),
+      row('2026-09-12', 'a', 'cosmos', 2),
+    ]);
+    expect(grouped.map((group) => group.day)).toEqual(['2026-09-13', '2026-09-12']);
+    expect(grouped[1].visitors).toBe(1);
+    expect(grouped[1].requests).toBe(6);
+    expect(grouped[1].rows).toHaveLength(2);
   });
 });
