@@ -35,7 +35,10 @@ is a JWT this service signs and reads itself, carried in an httpOnly cookie, so 
 script on the page cannot read it and cannot be tricked into sending it elsewhere
 (ADR: Accounts and per-user bids). The key it signs with is a repository secret
 the deploy hands both containers at roll time; a container given none invents
-one and logs that it did, and every session ends with it.
+one and logs that it did, and every session ends with it. A session is a year
+long and is re-issued once a day while it is in use, so a login lasts a year
+past the last visit and a sign-out still ends it at once (the accounts record's
+addendum of 13 September).
 
 **A session bids only where its account is.** The token names the store that
 opened it, and a bid or a purchase sent to the other store, which the store

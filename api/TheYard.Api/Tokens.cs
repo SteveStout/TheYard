@@ -49,6 +49,37 @@ public sealed class TokenIssuer
 
     public TimeSpan Lifetime => _lifetime;
 
+    // #region renewal
+    /// <summary>
+    /// How often a session is re-signed while it is in use: once a day. A
+    /// session is a year long (Steve, 13 September: "keep logins permanent"),
+    /// and a year-long token that was never re-issued would end on a day the
+    /// visitor did not choose; a token re-issued on the first request of each
+    /// day it is used lasts a year past the last visit instead. Once a day
+    /// and not every request, because a Set-Cookie on every response is
+    /// bandwidth and a write to the browser for nothing.
+    /// </summary>
+    public static readonly TimeSpan RenewAfter = TimeSpan.FromDays(1);
+
+    /// <summary>
+    /// Whether a token that expires at <paramref name="expiresAtUnixSeconds"/>
+    /// has been in use long enough to re-issue: true once more than a day of
+    /// its lifetime has gone. A token with no readable expiry is left alone;
+    /// the pipeline validated its lifetime already.
+    /// </summary>
+    public bool ShouldRenew(string? expiresAtUnixSeconds, DateTimeOffset now)
+    {
+        if (!long.TryParse(expiresAtUnixSeconds, out long seconds))
+        {
+            return false;
+        }
+
+        var expires = DateTimeOffset.FromUnixTimeSeconds(seconds);
+        var issued = expires - _lifetime;
+        return now - issued >= RenewAfter;
+    }
+    // #endregion renewal
+
     // #region configured-key
     /// <summary>
     /// The fewest bytes HMAC-SHA256 will sign with. A shorter key is refused by
@@ -92,7 +123,10 @@ public sealed class TokenIssuer
     /// both bandwidth and disclosure; everything the application needs beyond
     /// identity it can look up.
     /// </summary>
-    public string Issue(string userId, string email, string store)
+    public string Issue(string userId, string email, string store) => Issue(userId, email, store, _lifetime);
+
+    /// <summary>The same token with a lifetime of the caller's choosing; the tests use it to make a token that is already a few days old.</summary>
+    public string Issue(string userId, string email, string store, TimeSpan lifetime)
     {
         var handler = new JsonWebTokenHandler();
         return handler.CreateToken(new SecurityTokenDescriptor
@@ -105,7 +139,7 @@ public sealed class TokenIssuer
                 new Claim(ClaimTypes.Name, email),
                 new Claim(StoreClaim, store),
             ]),
-            Expires = DateTime.UtcNow.Add(_lifetime),
+            Expires = DateTime.UtcNow.Add(lifetime),
             SigningCredentials = _credentials,
         });
     }

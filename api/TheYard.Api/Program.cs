@@ -418,7 +418,11 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
 // no memory of the project).
 string? configuredSigningKey = TokenIssuer.ConfiguredKey(builder.Configuration["Auth:SigningKey"]);
 string signingKey = configuredSigningKey ?? Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-var tokens = new TokenIssuer(signingKey, TimeSpan.FromDays(7));
+// A year, renewed on every day it is used (Tokens.cs, the renewal region):
+// a login lasts a year past the last visit, which is what "permanent" means
+// for a cookie that has to expire somewhere (ADR: Accounts and per-user
+// bids, addendum). Configuration, so a test can shorten it.
+var tokens = new TokenIssuer(signingKey, TimeSpan.FromDays(builder.Configuration.GetValue("Auth:SessionDays", 365)));
 builder.Services.AddSingleton(tokens);
 
 // #region activity-wiring
@@ -780,6 +784,33 @@ app.UseHttpLogging();
 // which is how the listing knows whose badges to draw.
 app.UseAuthentication();
 app.UseAuthorization();
+
+// #region session-renewal
+// A signed-in request carries its session forward: once a day, the first
+// request that arrives with a token more than a day into its life gets a
+// fresh cookie with the same claims and a fresh year. Before the endpoint
+// runs, because a cookie has to be set before the response starts; only on
+// the API, where the token is read; never on the way out, where the cookie
+// is being deleted.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api")
+        && !context.Request.Path.StartsWithSegments("/api/auth/logout")
+        && context.User.Identity?.IsAuthenticated == true
+        && tokens.ShouldRenew(context.User.FindFirst("exp")?.Value, DateTimeOffset.UtcNow))
+    {
+        string? id = context.UserIdOrNull();
+        string? email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+        string? store = context.User.FindFirst(TokenIssuer.StoreClaim)?.Value;
+        if (id is not null && email is not null && store is not null)
+        {
+            context.Response.Cookies.Append(TokenIssuer.CookieName, tokens.Issue(id, email, store), TokenIssuer.CookieFor(context, tokens.Lifetime));
+        }
+    }
+
+    await next();
+});
+// #endregion session-renewal
 
 // #region warm-before-reading
 // And before any endpoint reads a store, that store's catalogue is loaded, so

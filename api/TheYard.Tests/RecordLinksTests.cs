@@ -280,7 +280,7 @@ public class RecordLinksTests
             Path.Combine(root, "docs", "ADR-018-program-cs-explained.md"));
         var quoted = Regex.Match(
             record,
-            @"([\d,]+) total\s+(\d+) comment\s+(\d+) blank\s+(\d+) code, across (\d+) endpoints");
+            @"([\d,]+) total\s+(\d+) comment\s+(\d+) blank\s+([\d,]+) code, across (\d+) endpoints");
 
         Assert.True(quoted.Success, "ADR-018 should quote Program.cs's shape");
 
@@ -292,7 +292,8 @@ public class RecordLinksTests
             ("total lines", lines.Length, int.Parse(quoted.Groups[1].Value.Replace(",", ""))),
             ("comment lines", comment, int.Parse(quoted.Groups[2].Value)),
             ("blank lines", blank, int.Parse(quoted.Groups[3].Value)),
-            ("code lines", lines.Length - blank - comment, int.Parse(quoted.Groups[4].Value)),
+            // The code count crossed a thousand on 13 September and is written with a comma like the total.
+            ("code lines", lines.Length - blank - comment, int.Parse(quoted.Groups[4].Value.Replace(",", ""))),
             ("endpoints", endpoints, int.Parse(quoted.Groups[5].Value)),
         };
 

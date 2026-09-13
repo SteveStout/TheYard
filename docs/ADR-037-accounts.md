@@ -293,3 +293,27 @@ and belong to the record that takes that on.
 - [`src/lib/auth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.ts): the account seam in the browser, and the question that ignores a late answer.
 - [`src/lib/auth.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.test.ts): the seam's tests, including the late answer.
 - [`tests/e2e/account.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/account.spec.ts): the form end to end, the run that found the late answer.
+
+## Addendum, 2026-09-13: a login lasts a year past the last visit
+
+Steve: "we need to keep logins permanent." A cookie has to expire somewhere,
+so "permanent" is made of two numbers rather than one: the session token is
+a year long, and the first request on any day a token is more than a day
+into its life gets a fresh token with the same claims and a fresh year. A
+visitor who comes back within a year is still signed in and stays signed in
+for a year past that visit; a visitor who stays away a year is not. Once a
+day rather than on every request, because a cookie written on every
+response is bandwidth spent on nothing. The renewal is a middleware between
+authentication and the endpoints, only on the API and never on the way out,
+so signing out still ends the session. The lifetime is configuration
+(`Auth:SessionDays`, 365) so a test can shorten it. The rule is held without
+a request and the cookie is held on the wire: a token days into its life is
+re-issued, a fresh one is left alone, and a sign-out sets the empty cookie
+and nothing else.
+
+Password reset is the other half of his ask and waits on one decision that
+is his: a real "Forgot password" email needs an email sender, which is a
+new Azure resource (Azure Communication Services Email), or an
+operator-assisted reset from the Admin tab needs none. Recorded here so the
+next reader knows it is open and why.
+
