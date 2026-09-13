@@ -308,3 +308,19 @@ already carry, and the forget button is the answer on a shared machine. The
 browser suite opens the keyed URL once, then the plain one, and holds both
 the remembering and the forgetting.
 
+## Addendum, 2026-09-13: the key can be typed in
+
+Steve, from his phone, with a screenshot: the keyed URL opened the Admin
+tab and the kept log card said the log answers only to the operator's key,
+which means the page loaded with no `key=` in its address. The same URL in
+an emulated iPhone from the runner rendered the card with two hundred rows,
+so the page and the key were right and the link's journey to the phone was
+not; how the query string was lost on the way is not measured and is not
+named. What is fixed is the dependence: the Kept log card, when it has no
+key, offers a box to type it into, remembers it on that browser exactly as
+the address bar would have, and opens both keyed cards at once. The box is
+a password field, the entry is trimmed, an empty entry does nothing, and
+the browser test types the key in after forgetting it and finds both cards
+open on the next plain visit. The keyed URL still works where it arrives
+whole; the operator no longer needs it to.
+

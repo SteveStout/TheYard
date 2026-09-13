@@ -420,5 +420,14 @@ test('the browser remembers the key after one keyed visit, and forgets it on req
   await openTheYard(page, '/?view=admin');
   await expect(page.getByTestId('activity-visitors')).toHaveCount(0);
   await expect(page.getByTestId('kept-logs-keyless')).toBeVisible();
+
+  // And the key can be typed into the page, with no link carrying it: the
+  // cards open at once and the key is remembered for the next plain visit.
+  await page.getByTestId('admin-key-entry').fill('e2e-admin-key');
+  await page.getByTestId('admin-key-submit').click();
+  await expect(page.getByTestId('activity-visitors')).toBeVisible();
+  await expect(page.getByTestId('kept-logs')).toBeVisible();
+  await openTheYard(page, '/?view=admin');
+  await expect(page.getByTestId('activity-visitors')).toBeVisible();
 });
 // #endregion remembered-key

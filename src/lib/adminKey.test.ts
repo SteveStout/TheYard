@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ADMIN_KEY_STORAGE, forgetAdminKey, resolveAdminKey, type KeyStorage } from './adminKey';
+import {
+  ADMIN_KEY_STORAGE,
+  forgetAdminKey,
+  rememberAdminKey,
+  resolveAdminKey,
+  type KeyStorage,
+} from './adminKey';
 
 /**
  * Where the operator's key comes from (ADR: Site activity, and the line an
@@ -49,6 +55,14 @@ describe('resolveAdminKey', () => {
     expect(resolveAdminKey('?key=abc', broken)).toBe('abc');
     expect(resolveAdminKey('?view=admin', broken)).toBeNull();
     expect(() => forgetAdminKey(broken)).not.toThrow();
+  });
+
+  it('remembers a key typed into the page, trimmed, and nothing for an empty entry', () => {
+    const storage = memory();
+    expect(rememberAdminKey('  typed  ', storage)).toBe('typed');
+    expect(resolveAdminKey('?view=admin', storage)).toBe('typed');
+    expect(rememberAdminKey('   ', storage)).toBeNull();
+    expect(resolveAdminKey('?view=admin', storage)).toBe('typed');
   });
 
   it('forgets on request', () => {

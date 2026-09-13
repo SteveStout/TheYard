@@ -15,7 +15,7 @@ import {
   type ActivityWindow,
   type VisitorSortKey,
 } from '../lib/activity';
-import { browserStorage, forgetAdminKey, resolveAdminKey } from '../lib/adminKey';
+import { browserStorage, forgetAdminKey, rememberAdminKey, resolveAdminKey } from '../lib/adminKey';
 import { shortenDigests } from '../lib/format';
 import {
   LOG_KINDS,
@@ -253,6 +253,10 @@ export function AdminPanel({
     forgetAdminKey(browserStorage());
     setAdminKey(null);
   };
+  const enterKey = (entered: string) => {
+    const key = rememberAdminKey(entered, browserStorage());
+    if (key !== null) setAdminKey(key);
+  };
   const [health, setHealth] = useState<Fetched<Health>>(null);
   const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
   const [azure, setAzure] = useState<Fetched<AzureState>>(null);
@@ -360,7 +364,7 @@ export function AdminPanel({
         Public on purpose; the reasoning is in the Best Practices menu.
       </p>
       <ActivityCard adminKey={adminKey} onForget={forgetKey} />
-      <KeptLogsCard adminKey={adminKey} />
+      <KeptLogsCard adminKey={adminKey} onEnterKey={enterKey} />
 
       {/* #region backends-card */}
       <article className={styles.wide} data-testid="backends-card">
@@ -1112,7 +1116,14 @@ function ActivityCard({ adminKey, onForget }: { adminKey: string | null; onForge
  * card says what it is and shows nothing, which is the same line the visitor
  * table draws and for the same reason.
  */
-function KeptLogsCard({ adminKey }: { adminKey: string | null }) {
+function KeptLogsCard({
+  adminKey,
+  onEnterKey,
+}: {
+  adminKey: string | null;
+  onEnterKey: (entered: string) => void;
+}) {
+  const [entered, setEntered] = useState('');
   const [window_, setWindow] = useState<ActivityWindow>('24h');
   const [filter, setFilter] = useState<LogFilter>({ kind: '', status: '', path: '' });
   const [applied, setApplied] = useState<LogFilter>(filter);
@@ -1150,9 +1161,37 @@ function KeptLogsCard({ adminKey }: { adminKey: string | null }) {
         bounded stack, and no field can carry an at sign. Behind a key only the operator holds.
       </p>
       {key === null ? (
-        <p className={styles.muted} data-testid="kept-logs-keyless">
-          The kept log answers only to the operator's key.
-        </p>
+        <>
+          <p className={styles.muted} data-testid="kept-logs-keyless">
+            The kept log answers only to the operator's key.
+          </p>
+          {/* The key can be typed into the page, so no link has to carry it:
+              a link that loses its query string on the way to a phone leaves
+              this box as the way in (Steve, 13 September, from his phone). */}
+          <form
+            className={styles.filterRow}
+            aria-label="Enter the operator's key"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onEnterKey(entered);
+              setEntered('');
+            }}
+          >
+            <label>
+              Operator's key{' '}
+              <input
+                type="password"
+                autoComplete="off"
+                value={entered}
+                onChange={(event) => setEntered(event.target.value)}
+                data-testid="admin-key-entry"
+              />
+            </label>
+            <button type="submit" className={styles.back} data-testid="admin-key-submit">
+              Remember it on this browser
+            </button>
+          </form>
+        </>
       ) : (
         <>
           <p className={styles.statusRow} role="group" aria-label="Window">

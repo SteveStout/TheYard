@@ -34,6 +34,18 @@ export function resolveAdminKey(search: string, storage: KeyStorage | null): str
   }
 }
 
+/** Remember a key the operator typed into the page, trimmed; an empty entry remembers nothing. */
+export function rememberAdminKey(entered: string, storage: KeyStorage | null): string | null {
+  const key = entered.trim();
+  if (!key) return null;
+  try {
+    storage?.setItem(ADMIN_KEY_STORAGE, key);
+  } catch {
+    // Private mode, or storage disabled: the key still works for this page.
+  }
+  return key;
+}
+
 /** Forget the key on this browser; the next visit needs the keyed URL again. */
 export function forgetAdminKey(storage: KeyStorage | null): void {
   try {

@@ -9,6 +9,7 @@ footer cannot disagree (ADR: The version comes from the changelog). One number
 is missing, 1.0.0.39, skipped under the older formula when a red build consumed
 a deploy run number.
 
+- **1.0.0.123** (2026-09-13): The operator's key can be typed into the Kept log card and is remembered on that browser, so no link has to carry it to a phone; the keyed URL still works where it arrives whole (ADR-071 fifth addendum).
 - **1.0.0.122** (2026-09-13): The Performance page shows its code: the container definition, the proof's rounds and its verdict arithmetic, the catalogue container's partition key and indexing policy, the warm-before-reading middleware and the cache headers, all read from the running build, with the search index and the cache headers added to the list of where the milliseconds came from; the request hook makes the visitor token once per request instead of twice, from the self review recorded in ADR-073.
 - **1.0.0.121** (2026-09-13): The proof card's "Sign in to run the proof" button opens the account view when the visitor is signed out, where it sat disabled before and read as broken on a phone; signed in, it runs the proof as before (ADR-067 addendum).
 - **1.0.0.120** (2026-09-13): The browser remembers the operator's key after one keyed visit, so the visitor table and the kept log show on a plain Admin URL from a phone that has opened the keyed one once, and a bookmark saved after the page loaded no longer loses it; a button under the visitor table forgets the key on that browser (ADR-071 fourth addendum).
