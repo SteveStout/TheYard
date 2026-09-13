@@ -145,3 +145,17 @@ container.
 
 ```live path=api/TheYard.Api/Program.cs region=kept-logs-endpoints
 ```
+
+## Addendum, 2026-09-13: three years
+
+Steve, an hour after this shipped: "But I want long term logs ... CosmosDB
+for logs." The year above was chosen for the reason given, an old log with no
+reader; his reading is that the log is the record and the record is worth
+keeping, and it is his site. The `logs` container's default time-to-live is
+now three years (94,608,000 seconds), applied to the live account and read
+back, and the card says the number it reads. At today's rate that is under
+a million documents and a few hundred megabytes on the free tier's
+twenty-five gigabytes. The activity counters went to no expiry at the same
+time (ADR: Site activity, and the line an address does not cross, third
+addendum). Reversible in one number on each definition.
+

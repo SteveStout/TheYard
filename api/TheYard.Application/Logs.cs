@@ -4,7 +4,7 @@ namespace TheYard.Application;
 // The Admin tab's rings are this process's memory and empty on every roll;
 // Application Insights keeps thirty days behind a sign-in. This port is the
 // third place: one event per request, per error and per warning, written off
-// the request path and kept for a year where the operator can read it back
+// the request path and kept for three years where the operator can read it back
 // from the site itself.
 
 // #region events

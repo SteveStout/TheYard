@@ -1072,7 +1072,7 @@ function ActivityCard() {
 /**
  * The kept log (ADR: Logs that outlive the container): every request, error
  * and warning, written to the document store off the request path and kept
- * for a year, read back here behind the operator's key. Without the key the
+ * for three years, read back here behind the operator's key. Without the key the
  * card says what it is and shows nothing, which is the same line the visitor
  * table draws and for the same reason.
  */
@@ -1108,10 +1108,10 @@ function KeptLogsCard() {
       <h2 className={styles.cardTitle}>Kept log</h2>
       <p className={styles.muted}>
         Every request, every error and every warning, written to Azure Cosmos DB off the request
-        path in batches and kept for a year, so the log outlives the container and the thirty days
-        Application Insights keeps. The same rule as the visitor table: a request is a token that
-        changes daily and a network to three octets, an error is its type, its message and a bounded
-        stack, and no field can carry an at sign. Behind a key only the operator holds.
+        path in batches and kept for three years, so the log outlives the container and the thirty
+        days Application Insights keeps. The same rule as the visitor table: a request is a token
+        that changes daily and a network to three octets, an error is its type, its message and a
+        bounded stack, and no field can carry an at sign. Behind a key only the operator holds.
       </p>
       {key === null ? (
         <p className={styles.muted} data-testid="kept-logs-keyless">

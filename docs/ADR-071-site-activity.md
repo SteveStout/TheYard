@@ -270,3 +270,20 @@ decided not to publish. The graph, the day counts and the split need no key.
 ```live path=src/lib/activity.ts region=days
 ```
 
+## Addendum, 2026-09-13: the counters are kept for good
+
+Steve, the same afternoon, after the kept log shipped: "But I want long term
+logs. Of site activity for sure." The thirty-five days above were chosen to
+match the graph's longest window and nothing else, and the documents are
+small: one per store per hour and one per visitor per store per day, a few
+hundred a day at today's traffic and a few tens of megabytes a year. So the
+`activity` container's default time-to-live is now none (`-1` in the
+definition, which keeps time-to-live enabled and expires nothing), applied to
+the live account by `az cosmosdb sql container update` and read back, and the
+relational side's two tables were never purged. The card says the retention
+it reads from the container rather than a sentence written here. The graph's
+windows stay at 24 hours, 7 days and 30 days: a longer window reads every
+visitor document in it to count the day's unique tokens, and a year of those
+is tens of thousands of reads per Admin load, which is a separate decision
+with a separate cost if he wants one.
+

@@ -47,8 +47,9 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore
             var response = await _container.ReadContainerAsync(cancellationToken: cancellation);
             Count(response.RequestCharge);
             string key = response.Resource.PartitionKeyPath;
+            int? ttl = response.Resource.DefaultTimeToLive;
             return _availability = key == Containers.PartitionKeyPaths[Containers.Activity]
-                ? new ActivityAvailability(true, "kept in Azure Cosmos DB")
+                ? new ActivityAvailability(true, ttl is > 0 ? $"kept in Azure Cosmos DB for {ttl.Value / 86_400} days" : "kept in Azure Cosmos DB with no expiry")
                 : new ActivityAvailability(false, $"the activity container is partitioned on {key} and the code was written for /day");
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)

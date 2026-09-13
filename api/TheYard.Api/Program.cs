@@ -277,7 +277,7 @@ builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
 // #region kept-logs-wiring
 // The kept log (ADR: Logs that outlive the container): the same three things
 // the rings hold, written to the document store off the request path and
-// kept for a year. One collector, fed by the request hook below and by a
+// kept for three years. One collector, fed by the request hook below and by a
 // logging provider that takes this application's warnings and errors, on a
 // container with no document store configured it is wired to nothing and
 // the card says so. The provider reads the store and the request a line
