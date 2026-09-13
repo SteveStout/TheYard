@@ -96,6 +96,8 @@ public static class DocsCatalog
         ["adr-three-readers"] = "docs/ADR-070-three-readers-with-no-memory.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
+        ["built-with-ai"] = "docs/BUILT-WITH-AI.md",
+        ["performance"] = "docs/PERFORMANCE.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };

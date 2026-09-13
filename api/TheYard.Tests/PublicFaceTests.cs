@@ -32,7 +32,14 @@ public class PublicFaceTests
         DocsCatalog.Files
             .Where(entry => !entry.Key.StartsWith("adr-", StringComparison.Ordinal))
             .Where(entry => entry.Key != "changelog")
-            .Select(entry => entry.Value);
+            .Select(entry => entry.Value)
+            // The head of the page is a living document too, and the one this
+            // scan missed the longest: index.html said forty-five decision
+            // records from 1.0.0.58 to 1.0.0.113, twenty-five records stale by
+            // the end, because it is not in the catalog and nothing read it.
+            // It carries no count now, and if one is ever typed back in, it is
+            // held here (ADR: The public face, the addendum on the head).
+            .Append("index.html");
 
     [Fact]
     public void Every_living_document_counts_the_records_correctly()
@@ -110,13 +117,20 @@ public class PublicFaceTests
                 return method.GetCustomAttribute<FactAttribute>() is null ? 0 : 1;
             });
 
-        string readme = File.ReadAllText(Path.Combine(Repo.Root(), "README.md"));
-        var claim = Regex.Match(readme, @"\((\d+) xUnit tests");
+        // The README states it in its testing section, and the Built with AI
+        // page states it again on the way to saying what governed the build.
+        // Two copies of a number are two places it can go stale, so both are
+        // held here rather than one being trusted to follow the other.
+        foreach (string document in new[] { "README.md", Path.Combine("docs", "BUILT-WITH-AI.md") })
+        {
+            string text = File.ReadAllText(Path.Combine(Repo.Root(), document));
+            var claim = Regex.Match(text, @"(\d+) xUnit tests");
 
-        Assert.True(claim.Success, "the README should say how many xUnit tests there are");
-        Assert.True(
-            int.Parse(claim.Groups[1].Value) == counted,
-            $"the README says {claim.Groups[1].Value} xUnit tests and there are {counted}");
+            Assert.True(claim.Success, $"{document} should say how many xUnit tests there are");
+            Assert.True(
+                int.Parse(claim.Groups[1].Value) == counted,
+                $"{document} says {claim.Groups[1].Value} xUnit tests and there are {counted}");
+        }
     }
 
     /// <summary>
@@ -139,13 +153,16 @@ public class PublicFaceTests
             .SelectMany(File.ReadAllLines)
             .Count(line => Regex.IsMatch(line, @"^\s*test\("));
 
-        string readme = File.ReadAllText(Path.Combine(root, "README.md"));
-        var claim = Regex.Match(readme, @"\((\d+) Playwright tests\)");
+        foreach (string document in new[] { "README.md", Path.Combine("docs", "BUILT-WITH-AI.md") })
+        {
+            string text = File.ReadAllText(Path.Combine(root, document));
+            var claim = Regex.Match(text, @"(\d+) Playwright tests");
 
-        Assert.True(claim.Success, "the README should say how many Playwright tests there are");
-        Assert.True(
-            int.Parse(claim.Groups[1].Value) == declared,
-            $"the README says {claim.Groups[1].Value} Playwright tests and the specs declare {declared}");
+            Assert.True(claim.Success, $"{document} should say how many Playwright tests there are");
+            Assert.True(
+                int.Parse(claim.Groups[1].Value) == declared,
+                $"{document} says {claim.Groups[1].Value} Playwright tests and the specs declare {declared}");
+        }
     }
 
     /// <summary>

@@ -185,3 +185,43 @@ rendered from the SVG at twice its size by
 [`docs/images/render.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/render.mjs),
 in the repository's own Chrome with the site's font, so the picture on the
 README is the drawing and not a second drawing of it.
+
+## Addendum, 2026-09-13: the photographs stripped too, and the test widened to them
+
+The first addendum left the eighteen PNG and JPEG screenshots that had
+arrived by the same route with their credential in place, on the argument
+that a credential in a photograph changes nothing on the page. The owner's
+answer, on 9 September, was that a signed machine-provenance credential on
+his images is exactly the signal he asked to have removed, and the argument
+does not survive that: the rule is about what the repository carries, not
+about what a reader can see.
+
+Measured before the strip, every raster image under `docs/images` read for
+the marks: 64 images, 18 carrying `c2pa`, `jumb`, `jumd` and `urn:c2pa`, the
+four `cosmos-*.png` from 8 September and fourteen captures from 9 September
+(the `netlify-*.jpg`, `timing-*.png`, `toggle-site-*.png` and
+`wix-dns-two-sites.jpg` files). In a PNG the manifest is a JUMBF box inside a
+`caBX` chunk; in a JPEG it is a JUMBF box carried across `APP11` segments.
+Both are ancillary: the pixels are in the `IDAT` chunks and the entropy-coded
+scan, and neither is touched by removing the box.
+
+The strip ran through the repository's own shell rather than through the
+tool that stamps, one script over all eighteen: the `caBX` chunks dropped
+from the PNGs, the `APP11` segments dropped from the JPEGs, and every file
+verified afterwards on two counts, that no mark remains and that the image
+data is byte for byte what it was, the `IDAT` chunks concatenated for a PNG
+and everything outside the removed segments for a JPEG. A copy as drawn does
+not exist for a screenshot the way it does for a drawing, so identical image
+data is the proof that stands in for the checksum.
+
+`DiagramPageTests` now reads every PNG and JPEG under `docs/images` for the
+same marks the SVG check reads for, and the scan is proven able to fail on
+a file that carries one. The test, read from this build:
+
+```live path=api/TheYard.Tests/DiagramPageTests.cs region=as-drawn
+```
+
+The rule, stated once for every image type: a file that crossed from the
+assistant's workspace is read back before it is committed, and the copy that
+goes in is the one the repository's own shell wrote.
+

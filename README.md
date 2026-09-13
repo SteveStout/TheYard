@@ -2,6 +2,14 @@
 
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz)
 
+Built by one engineer with AI as a force multiplier: AI writes the first draft, three suites of tests run
+on every push inside a five-minute gate (the counts are in the testing section below, held to the suites
+by a test), and seventy decision records carry the trade-off and the number behind each choice. What went
+wrong is recorded too. Read how it was governed in
+[Built with AI](https://theyard.stevenstout.biz/api/docs/built-with-ai), and what it all runs on, at
+millisecond speeds on free-tier stores and one small container, in
+[Performance](https://theyard.stevenstout.biz/api/docs/performance).
+
 TheYard is my portfolio implementation of a used-vehicle auction platform: browse a large
 inventory, inspect a vehicle in detail, and place bids against a simulated room of other
 bidders. It began as my submission to a company's take-home hiring challenge, in a fork
@@ -20,9 +28,8 @@ it has sent and how long the database took.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, SQL vs Cosmos DB, Diagrams, Hosting, CI/CD and Best Practices in the
-sidebar. Seventy decision
-records explain each choice, and the code samples in them are read from the running build
+App Architecture, SQL vs Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD
+and Best Practices in the sidebar. Seventy decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
@@ -418,7 +425,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (401 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (406 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory

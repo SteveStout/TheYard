@@ -48,8 +48,10 @@ test.describe('the docked rail', () => {
     for (const section of [
       'App Architecture',
       'SQL vs Cosmos DB',
+      'Performance',
       'Diagrams',
       'Hosting',
+      'Built with AI',
       'CI/CD',
       'Best Practices',
       'Changelog',

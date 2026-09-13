@@ -101,6 +101,32 @@ every day this project is worked on.
 impressively. It would also be false, and a reviewer who checks one claim and
 finds it inflated stops checking the others.
 
+## Addendum, 2026-09-13: the head said forty-five, and the number came out of it
+
+Both live sites served a meta description claiming forty-five decision records
+on 13 September, with seventy in the catalogue. The number was typed into
+`index.html` at 1.0.0.58, the same version that put a generated count on the
+preview card and wrote, two sections up, that a generated number is worth
+nothing without a test. The card had the test. The head did not: the count
+scan reads the living documents in the docs catalog, and `index.html` is not
+in it, so the description drifted for twenty-five records and fifty-five
+versions while every check stayed green. Found by reading the page as a
+recruiter's parser would, from outside.
+
+Two fixes were open. Generating the number into the head at build time is the
+obvious one, and it is the wrong one here: the image builds the frontend from
+an explicit list of inputs that does not include the docs folder (ADR: The
+second manifest), so a build-time count would read an empty directory in the
+one place that matters. The head now makes no claim a count could contradict.
+It says every decision record is served from inside the app, which is true at
+any count, and the preview card, which is generated from the catalogue and
+held by a test, carries the number.
+
+And the scan reads `index.html` now, so a count typed back into the head is
+held to the catalogue like every other. Two lines in `PublicFaceTests`.
+Nothing here decided differently about counts; it decided that the list of
+documents a count can live in was one short.
+
 ## Consequences
 
 - The link unfurls with a real card, and a search result shows a sentence rather

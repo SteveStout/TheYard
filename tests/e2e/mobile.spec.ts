@@ -30,7 +30,9 @@ test('the drawer lists every menu, opens a doc full-screen, and closes on Escape
   await expect(drawer).toBeVisible();
   for (const section of [
     'App Architecture',
+    'Performance',
     'Hosting',
+    'Built with AI',
     'CI/CD',
     'Best Practices',
     'Changelog',

@@ -102,6 +102,8 @@ export type DocKey =
   | 'adrSecondAddress'
   | 'adrThreeReaders'
   | 'aiDevelopment'
+  | 'builtWithAi'
+  | 'performance'
   | 'architecture'
   | 'style';
 
@@ -685,6 +687,18 @@ export const DOCS: Record<
     url: '/api/docs/ai-development',
     kind: 'overview',
   },
+  builtWithAi: {
+    title: 'Built with AI',
+    menuLabel: 'What the AI wrote, what I decided',
+    url: '/api/docs/built-with-ai',
+    kind: 'overview',
+  },
+  performance: {
+    title: 'Performance',
+    menuLabel: 'Performance overview',
+    url: '/api/docs/performance',
+    kind: 'overview',
+  },
 };
 // #endregion docs-record
 
@@ -692,8 +706,10 @@ export type MenuVariant =
   | 'about'
   | 'architecture'
   | 'stores'
+  | 'performance'
   | 'diagrams'
   | 'hosting'
+  | 'builtWithAi'
   | 'cicd'
   | 'practices'
   | 'records'
@@ -760,6 +776,15 @@ export const MENUS: Record<
     items: [{ key: 'sqlVsCosmos' }],
   },
   // #endregion stores-menu
+  /**
+   * The lowest resources and the millisecond speeds, as a section of its own
+   * for the same reason the stores have one: it is the subject a reader asks
+   * about first, and it should not have to be found inside a record.
+   */
+  performance: {
+    label: 'Performance',
+    items: [{ key: 'performance' }],
+  },
   /** The drawings, one row per page; see DIAGRAMS above for why they are links. */
   diagrams: {
     label: 'Diagrams',
@@ -769,6 +794,15 @@ export const MENUS: Record<
   hosting: {
     label: 'Hosting',
     items: [{ key: 'hosting' }, { key: 'bicep', sub: true }],
+  },
+  /**
+   * What the AI wrote, what the owner decided and what governed it, beside
+   * Hosting rather than under About: a comparison or explanation page is not a
+   * decision record, and a subject this size sits at the top level.
+   */
+  builtWithAi: {
+    label: 'Built with AI',
+    items: [{ key: 'builtWithAi' }],
   },
   cicd: {
     label: 'CI/CD',
@@ -877,8 +911,10 @@ export const MENUS: Record<
 export const MENU_ORDER: MenuVariant[] = [
   'architecture',
   'stores',
+  'performance',
   'diagrams',
   'hosting',
+  'builtWithAi',
   'cicd',
   'practices',
   'records',

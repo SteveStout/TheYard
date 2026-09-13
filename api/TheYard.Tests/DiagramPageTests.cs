@@ -101,5 +101,77 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
             stamped.Count == 0,
             $"stamped on the way in, strip and re-copy: {string.Join(", ", stamped)}");
     }
+
+    /// <summary>
+    /// The same rule for the photographs (ADR-006, the second addendum on the
+    /// provenance stamp). The SVG check above shipped on 9 September and the
+    /// eighteen PNG and JPEG screenshots that had arrived by the same route
+    /// were noted and left, on the argument that a credential in a photograph
+    /// changes nothing on the page. The owner's answer was that a signed
+    /// machine-provenance credential on his images is exactly the signal he
+    /// asked to have removed, so they were stripped on 13 September and this
+    /// keeps them that way. In a PNG the manifest is a JUMBF box in a caBX
+    /// chunk; in a JPEG it is a JUMBF box across APP11 segments. Both carry the
+    /// same marks, so one scan reads every raster image for them.
+    /// </summary>
+    [Fact]
+    public void Every_photograph_is_the_capture_as_taken_with_no_stamp_written_into_it()
+    {
+        string images = Path.Combine(Repo.Root(), "docs", "images");
+        var photographs = Directory.EnumerateFiles(images)
+            .Where(path => Path.GetExtension(path).ToLowerInvariant() is ".png" or ".jpg" or ".jpeg")
+            .OrderBy(path => path)
+            .ToList();
+        Assert.NotEmpty(photographs);
+
+        var stamped = photographs
+            .Where(path => CarriesAStamp(File.ReadAllBytes(path)))
+            .Select(Path.GetFileName)
+            .ToList();
+
+        Assert.True(
+            stamped.Count == 0,
+            $"stamped on the way in, strip through the repository's own shell: {string.Join(", ", stamped)}");
+    }
+
+    /// <summary>
+    /// The marks a content credential leaves in a raster file: the JUMBF box
+    /// types, the C2PA manifest label and the PNG chunk that carries them.
+    /// Bytes rather than text, because a JPEG is not text and a credential's
+    /// label is ASCII either way.
+    /// </summary>
+    private static bool CarriesAStamp(byte[] bytes)
+    {
+        ReadOnlySpan<byte> span = bytes;
+        foreach (string mark in new[] { "c2pa", "jumb", "jumd", "caBX", "urn:c2pa" })
+        {
+            if (span.IndexOf(System.Text.Encoding.ASCII.GetBytes(mark)) >= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>The scan has to be able to fail, or a clean folder proves nothing.</summary>
+    [Theory]
+    [InlineData("....caBX....")]
+    [InlineData("jumb")]
+    [InlineData("urn:c2pa:manifest")]
+    public void The_stamp_scan_catches_a_file_that_carries_one(string text) =>
+        Assert.True(CarriesAStamp(System.Text.Encoding.ASCII.GetBytes(text)));
+
+    [Fact]
+    public void The_stamp_scan_passes_a_plain_png_header()
+    {
+        byte[] header =
+        [
+            0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A,
+            0, 0, 0, 13, (byte)'I', (byte)'H', (byte)'D', (byte)'R',
+        ];
+
+        Assert.False(CarriesAStamp(header));
+    }
     // #endregion as-drawn
 }

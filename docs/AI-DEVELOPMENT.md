@@ -1,8 +1,8 @@
 # How this was built
 
-This application was written with heavy AI assistance. That is not a footnote,
-it is the method, and the repository is arranged so you can check what the
-method produced rather than take a claim about it.
+This application was written with heavy AI assistance. That is the method,
+and the repository is arranged so you can check what the method produced
+rather than take a claim about it.
 
 The short version: I set the direction and the constraints, an AI agent did the
 implementation, and every change had to survive a gate before it could reach
@@ -11,8 +11,8 @@ whether that produced engineering or output.
 
 ## What is being claimed
 
-Not that AI wrote a large application quickly. It did, and on its own that is
-worth very little.
+AI wrote a large application quickly. On its own that is worth very little,
+and it is not the claim.
 
 The claim is narrower and easier to falsify: **the work is verified, the
 decisions are recorded with their reasoning, and the record includes the times
@@ -31,9 +31,9 @@ exist because generated configuration is the easiest place for a project to
 carry things nobody can account for.
 
 **Do the documents track the code, or drift from it?**
-Code shown in a record is not pasted. A fence marked `live` names a file and a
-`#region`, and the API expands it from the working tree when you open the
-document (ADR: Live code samples). A sample that goes stale cannot go stale
+Code shown in a record is read from the build, never pasted. A fence marked
+`live` names a file and a `#region`, and the API expands it from the working
+tree when you open the document (ADR: Live code samples). A sample that goes stale cannot go stale
 quietly; it either shows the current code or renders a visible "sample
 unavailable" line. There is a test for both.
 
@@ -98,8 +98,8 @@ API from the repository. Nothing in the app is a screenshot of itself.
 ## Four things a reviewer should be suspicious of
 
 **"Nobody understands code they did not write."**
-Fair, and the honest answer is that understanding is not proven by a document
-saying so. What the repository offers instead is a lot of surface to test: ask
+Fair, and a document saying otherwise proves nothing. What the repository
+offers is a lot of surface to test: ask
 about the bid increment tiers, the FNV-1a hash that makes photo selection
 deterministic, why the auction clock takes an anchor, or why the search index
 is keyed by vehicle id rather than by reference. The explanations are written
@@ -137,8 +137,7 @@ nineties, the host lowest at 78.2 because two of its classes talk to Azure and
 CI has no credential (ADR: Counting what the tests cover).
 
 **"An AI reviewing its own work is theatre."**
-The best objection on this page, and the answer is a list rather than an
-argument.
+The best objection on this page. The answer is a list.
 
 The day's whole diff went to a reviewer with no memory of writing any of it,
 told to be skeptical, to ignore style, and to hunt for privacy, concurrency,
@@ -192,4 +191,4 @@ addendum on the provenance stamp). The rule it leaves behind: a file that was
 copied is verified the way a file that was built is, by reading it back.
 
 That loop is the reason this repository is worth reading. The AI made it
-possible to run it many times in a day. It did not make the loop unnecessary.
+possible to run it many times in a day. The loop still had to run.
