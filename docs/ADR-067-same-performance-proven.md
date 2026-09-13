@@ -211,3 +211,17 @@ finds its account gone, because the store's test data was reset under it,
 registers a fresh one, which is the one case that spends a registration.
 `ProofTests` holds both: a stranger's start is 401 and nothing runs, and a
 second run registers nothing.
+
+## Addendum, 2026-09-13: the sign-in button goes somewhere
+
+Steve, from his phone: "the button sign in to see comparison doesn't work."
+It did not: signed out, the button read "Sign in to run the proof" and sat
+disabled, on the reasoning that a write the visitor cannot make should not
+be a button that fails after the click. That reasoning held for the failure
+and missed the person: a control that reads like a call to action and does
+nothing is a broken control to the one tapping it, and on a phone there is
+no hover state to say otherwise. Now the same button, signed out, opens the
+account view, which is where the site signs a visitor in; signed in, it
+starts the run as before. The browser test holds both halves: the click goes
+to `?view=account`, and after a sign-in the label offers the run.
+

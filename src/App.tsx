@@ -741,7 +741,11 @@ export default function App() {
             {announcement}
           </p>
           {adminOpen ? (
-            <AdminPanel onBack={closeAdmin} signedIn={account.signedIn} />
+            <AdminPanel
+              onBack={closeAdmin}
+              signedIn={account.signedIn}
+              onOpenAccount={openAccount}
+            />
           ) : accountOpen ? (
             <AccountPanel
               account={account}

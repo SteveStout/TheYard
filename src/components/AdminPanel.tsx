@@ -237,7 +237,15 @@ function formatUptime(totalSeconds: number): string {
  */
 const ADMIN_KEY = resolveAdminKey(window.location.search, browserStorage());
 
-export function AdminPanel({ onBack, signedIn }: { onBack: () => void; signedIn: boolean }) {
+export function AdminPanel({
+  onBack,
+  signedIn,
+  onOpenAccount,
+}: {
+  onBack: () => void;
+  signedIn: boolean;
+  onOpenAccount: () => void;
+}) {
   // The operator's key: state, so forgetting it takes effect on the cards
   // at once; its first value is the one read when the module loaded.
   const [adminKey, setAdminKey] = useState<string | null>(ADMIN_KEY);
@@ -377,7 +385,12 @@ export function AdminPanel({ onBack, signedIn }: { onBack: () => void; signedIn:
       </article>
       {/* #endregion backends-card */}
 
-      <ProofCard proof={proof} signedIn={signedIn} onRun={() => void runProof()} />
+      <ProofCard
+        proof={proof}
+        signedIn={signedIn}
+        onRun={() => void runProof()}
+        onOpenAccount={onOpenAccount}
+      />
 
       {/* #region experiment-card */}
       <article className={styles.wide} data-testid="experiment-card">
@@ -1445,10 +1458,12 @@ function ProofCard({
   proof,
   signedIn,
   onRun,
+  onOpenAccount,
 }: {
   proof: Fetched<Proof>;
   signedIn: boolean;
   onRun: () => void;
+  onOpenAccount: () => void;
 }) {
   const running = proof !== null && proof !== 'failed' && proof.status === 'running';
   const result = proof !== null && proof !== 'failed' ? proof.result : null;
@@ -1469,12 +1484,15 @@ function ProofCard({
         {/* Starting a run writes sixteen bids, so the button follows the one
             rule every write on this site follows (ADR: The one write a
             stranger can make, addendum): signed out, it says what it needs
-            rather than failing after the click. */}
+            and takes the visitor there. It sat disabled at first, a button
+            that read like a call to action and did nothing, which on a phone
+            reads as broken (Steve, 13 September; ADR: Same performance,
+            proven, addendum). */}
         <button
           type="button"
           className={styles.back}
-          onClick={onRun}
-          disabled={running || !signedIn}
+          onClick={signedIn ? onRun : onOpenAccount}
+          disabled={running}
           data-testid="proof-run"
         >
           {!signedIn

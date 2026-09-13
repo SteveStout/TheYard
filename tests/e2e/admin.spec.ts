@@ -190,14 +190,18 @@ test('the proof card offers a run and says what it needs (ADR: Same performance,
   const card = page.getByTestId('proof-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Same performance, proven');
-  // Signed out, the button says what it needs and does nothing: starting a
-  // run is a write (ADR: The one write a stranger can make, addendum).
+  // Signed out, the button says what it needs and takes the visitor to the
+  // account view: starting a run is a write (ADR: The one write a stranger
+  // can make, addendum), and a disabled button that reads like a call to
+  // action is a broken button to the person tapping it.
   const run = card.getByTestId('proof-run');
-  await expect(run).toBeDisabled();
+  await expect(run).toBeEnabled();
   await expect(run).toHaveText('Sign in to run the proof');
+  await run.click();
+  await expect(page).toHaveURL(/view=account/);
   await signIn(page);
   await openTheYard(page, '/?view=admin');
-  await expect(run).toBeEnabled();
+  await expect(run).toHaveText(/Run the proof|Run it again/);
   await run.click();
   // On one store the run fails at once with its reason; on two it runs for a
   // while and lands a sentence. Either is a sentence on the card, never a hang.
