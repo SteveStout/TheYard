@@ -1,0 +1,32 @@
+{
+  "container": "logs",
+  "partitionKeyPath": "/day",
+  "defaultTtlSeconds": 31536000,
+  "why": "The kept log: one document per request, per error and per warning, partitioned on the UTC day, written in transactional batches off the request path and never updated. The day, the kind, the timestamp, the status and the store are indexed because the Admin tab asks for a window of days by kind and status ordered by time; the message, the detail and the path are not, because they are read and never queried except by a CONTAINS the operator types. Documents expire a year after they are written, so the container is its own retention policy and nothing has to run to delete a line (ADR: Logs that outlive the container).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      {
+        "path": "/day/?"
+      },
+      {
+        "path": "/kind/?"
+      },
+      {
+        "path": "/at/?"
+      },
+      {
+        "path": "/status/?"
+      },
+      {
+        "path": "/store/?"
+      }
+    ],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

@@ -321,3 +321,77 @@ test('the visitor table exists only behind the key, and its response names nobod
   await expect(table.locator('tbody tr').first()).toBeVisible();
 });
 // #endregion activity-card
+
+// #region kept-logs-card
+test('the kept log is a 404 without the key, carries no at sign with it, and the page shows it grouped by day', async ({
+  page,
+  request,
+}) => {
+  // A request with an address in its path, so the rule has something to hold.
+  await request.get('http://localhost:5210/api/vehicles/someone@example.com');
+  expect((await request.get('http://localhost:5210/api/admin/logs/kept')).status()).toBe(404);
+  expect(
+    (
+      await request.get('http://localhost:5210/api/admin/logs/kept', {
+        headers: { 'X-Admin-Key': 'not-the-key' },
+      })
+    ).status()
+  ).toBe(404);
+
+  const headers = { 'X-Admin-Key': 'e2e-admin-key' };
+  const url = 'http://localhost:5210/api/admin/logs/kept?window=24h&kind=request&path=someone';
+  const first = await request.get(url, { headers });
+  expect(first.ok()).toBe(true);
+  const kept = (
+    (await first.json()) as { kept: { available: boolean }; counts: { kind: string }[] }
+  ).kept.available;
+  // The collector writes once a minute on the live site and every two
+  // seconds here (playwright.config.ts hands the API Logs__DrainSeconds), so
+  // the first line is waited for rather than assumed. The SQLite run keeps
+  // nothing and asserts the honest empty answer instead.
+  if (kept) {
+    await expect
+      .poll(
+        async () => {
+          const r = await request.get(url, { headers });
+          return r.ok() ? ((await r.json()) as { count: number }).count : -1;
+        },
+        { timeout: 20_000 }
+      )
+      .toBeGreaterThan(0);
+  }
+  const admitted = await request.get(url, { headers });
+  const body = await admitted.text();
+  expect(body).not.toContain('@');
+  const parsed = JSON.parse(body) as {
+    counts: { kind: string; count: number }[];
+    events: { kind: string; path: string; network: string }[];
+  };
+  expect(parsed.counts.map((c) => c.kind)).toEqual(['request', 'error', 'app']);
+  if (kept) {
+    expect(parsed.events.some((e) => e.path.includes('someone%40example.com'))).toBe(true);
+    for (const e of parsed.events) expect(e.network).toMatch(/x$/);
+  } else {
+    expect(parsed.events).toEqual([]);
+  }
+
+  // On the page: a keyless note without the key, the card with it, narrowed
+  // to requests whose path contains the marker.
+  await openTheYard(page, '/?view=admin');
+  await expect(page.getByTestId('kept-logs-keyless')).toBeVisible();
+  await expect(page.getByTestId('kept-logs')).toHaveCount(0);
+  await openTheYard(page, '/?view=admin&key=e2e-admin-key');
+  const card = page.getByTestId('kept-logs-card');
+  await expect(card.getByTestId('kept-logs-summary')).toBeVisible();
+  await card.getByTestId('kept-logs-kind').selectOption('request');
+  await card.getByTestId('kept-logs-path').fill('someone');
+  await card.getByTestId('kept-logs-apply').click();
+  const table = card.getByTestId('kept-logs');
+  await expect(table).toBeVisible();
+  if (kept) {
+    expect(await table.getByTestId('kept-logs-day').count()).toBeGreaterThanOrEqual(1);
+    await expect(table.locator('tbody')).toContainText('someone%40example.com');
+  }
+  await expect(card).not.toContainText('@');
+});
+// #endregion kept-logs-card

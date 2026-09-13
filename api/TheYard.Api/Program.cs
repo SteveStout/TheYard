@@ -274,6 +274,27 @@ builder.Services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
 builder.Services.AddSingleton<ICurrentRequest>(currentRequest);
 builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
 
+// #region kept-logs-wiring
+// The kept log (ADR: Logs that outlive the container): the same three things
+// the rings hold, written to the document store off the request path and
+// kept for a year. One collector, fed by the request hook below and by a
+// logging provider that takes this application's warnings and errors, on a
+// container with no document store configured it is wired to nothing and
+// the card says so. The provider reads the store and the request a line
+// belongs to from the current request when there is one.
+ILogStore logStore = cosmos is not null ? new CosmosLogStore(cosmos) : NullLogStore.Instance;
+var logCollector = new LogCollector(logStore, builder.Configuration.GetValue("Logs:DrainSeconds", LogCollector.DefaultIntervalSeconds));
+builder.Services.AddSingleton(logCollector);
+builder.Services.AddHostedService(_ => logCollector);
+builder.Logging.AddProvider(new CollectorLoggerProvider(logCollector, () =>
+{
+    var http = httpContextAccessor.HttpContext;
+    return http is null
+        ? ("", "", "")
+        : (backends.For(http).Key, http.Request.Path.HasValue ? http.Request.Path.Value! : "/", http.TraceIdentifier);
+}));
+// #endregion kept-logs-wiring
+
 // The endpoints that exist to be read by the Admin tab, which are excluded from
 // the Admin tab's own numbers.
 //
@@ -294,6 +315,7 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
     "/api/admin/telemetry",
     "/api/admin/activity",
     "/api/admin/activity/visitors",
+    "/api/admin/logs/kept",
     "/api/errors",
     "/api/health",
     "/readyz",
@@ -352,6 +374,28 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
             Hits.LooksLikeABot(context.Request.Headers.UserAgent.FirstOrDefault(), path)));
     }
     // #endregion activity-hook
+
+    // #region kept-logs-hook
+    // And once more as a kept event: the same request, the same token and
+    // network, with its method, status and duration, offered to the log
+    // collector and forgotten. The page's own files and the photos are left
+    // out for the reason the activity feature leaves them out.
+    if (visitorTokens is not null && Hits.Counts(path))
+    {
+        string address = VisitorTokens.AddressOf(context);
+        var at = DateTimeOffset.UtcNow;
+        logCollector.Offer(LogEvents.Request(
+            at,
+            context.Request.Method,
+            path,
+            context.Response.StatusCode,
+            (long)elapsed.TotalMilliseconds,
+            backends.For(context).Key,
+            visitorTokens.TokenFor(address, at),
+            VisitorTokens.NetworkOf(address),
+            context.TraceIdentifier));
+    }
+    // #endregion kept-logs-hook
 }
 #endregion admin-rings
 
@@ -1396,6 +1440,35 @@ app.MapGet("/api/admin/activity/visitors", async (string? window, string? key, H
 });
 // #endregion activity-endpoints
 
+// #region kept-logs-endpoints
+// The kept log (ADR: Logs that outlive the container), behind the same key
+// as the visitor rows and for the same reason: a request log names a network
+// beside a path and a time. A window, and optionally a kind, a status and a
+// fragment of the path, which travel to the store as parameters and never as
+// syntax. The answer says whether anything is kept at all, so a container
+// with no document store shows an honest card rather than an empty table.
+app.MapGet("/api/admin/logs/kept", async (string? window, string? kind, int? status, string? path, string? key, HttpContext http, LogCollector collector, CancellationToken cancellation) =>
+{
+    string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
+    if (!adminKey.Admits(presented))
+    {
+        return Results.NotFound();
+    }
+
+    if (ActivityWindows.Parse(window) is null)
+    {
+        return Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read");
+    }
+
+    if (!string.IsNullOrEmpty(kind) && !LogEvent.Kinds.Contains(kind, StringComparer.Ordinal))
+    {
+        return Results.Problem(detail: "kind is one of request, error or app.", statusCode: 400, title: "The kind could not be read");
+    }
+
+    return Results.Json(await LogReport.QueryAsync(collector, window ?? "24h", kind, status, path, DateTimeOffset.UtcNow, cancellation), wireFormat);
+});
+// #endregion kept-logs-endpoints
+
 // #region stores-endpoints
 // The Store bar at the top of the page (ADR: One container, both stores, and
 // its addendum on the toggle moving to the sites). What stores this container
@@ -1424,13 +1497,14 @@ app.MapPost("/api/errors/client", (ClientErrorReport report, ILoggerFactory logg
         return Results.Problem(detail: "A client error report needs a message.", statusCode: 400,
             title: "The error report could not be read");
     }
-    // Bounded on the way in: a stack trace from a minified bundle can be long,
-    // and the buffer is a demo's memory, not a log store.
-    string message = report.Message.Length > 500 ? report.Message[..500] : report.Message;
-    // The stack was not bounded here, only the message was. Both come from an
-    // unauthenticated POST and both end up on a public page and in Application
-    // Insights, so both get a ceiling (the staff review, 2026-09-03).
-    string stack = report.Stack is null ? "" : (report.Stack.Length > 2_000 ? report.Stack[..2_000] : report.Stack);
+    // Bounded, and with any at sign encoded: the message and the stack come
+    // from an unauthenticated POST and end up on a public page, in Application
+    // Insights and now in the kept log, and a browser report that quotes an
+    // address must not become a public line that names it (ADR: Logs that
+    // outlive the container). The stack was not bounded here at first, only
+    // the message was (the staff review, 2026-09-03).
+    string message = LogText.Clean(report.Message, LogText.MessageLength);
+    string stack = LogText.Clean(report.Stack, LogText.DetailLength);
     string where = string.IsNullOrWhiteSpace(report.Path) ? "(browser)" : report.Path;
     browserErrors.Record(where, 0, "browser: " + message);
     // The same report goes to Application Insights as a structured log, so a

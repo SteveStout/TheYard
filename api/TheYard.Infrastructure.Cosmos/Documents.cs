@@ -29,6 +29,9 @@ public static class Containers
     /// <summary>Site activity: hour counters and visitor counters, partitioned on the UTC day (ADR: Site activity, and the line an address does not cross).</summary>
     public const string Activity = "activity";
 
+    /// <summary>The kept log: one document per request, error or warning, partitioned on the UTC day, expiring by the container's time-to-live (ADR: Logs that outlive the container).</summary>
+    public const string Logs = "logs";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -39,6 +42,7 @@ public static class Containers
         [Catalogue] = "/make",
         [CatalogueDefault] = "/make",
         [Activity] = "/day",
+        [Logs] = "/day",
     };
 
     /// <summary>
@@ -46,7 +50,7 @@ public static class Containers
     /// optional: a container that is missing or empty makes the experiment card
     /// say so, and changes nothing about the site (ADR: The partition key). The
     /// activity container is optional the same way: missing, the Admin tab's
-    /// activity card says so and nothing is kept.
+    /// activity card says so and nothing is kept. So is the logs container.
     /// </summary>
     public static readonly IReadOnlyList<string> Required = [Vehicles, Photos, Bids, Users];
 }
@@ -240,6 +244,60 @@ public sealed class ActivityVisitorDocument
     public static string IdFor(string store, string visitor) => $"visitor:{store}:{visitor}";
 }
 // #endregion activity-documents
+
+// #region log-documents
+/// <summary>
+/// One kept event, partitioned on the day it happened. Written once and never
+/// updated, which is what makes a transactional batch of a hundred the right
+/// write and the container's time-to-live the right retention (ADR: Logs that
+/// outlive the container). Every string arrived through LogText.Clean, so no
+/// field can carry an at sign.
+/// </summary>
+public sealed class LogDocument
+{
+    /// <summary>{at as ticks}:{random}, so two events in the same tick on two containers are two documents.</summary>
+    public string Id { get; set; } = "";
+    public string Day { get; set; } = "";
+    public string At { get; set; } = "";
+    public string Kind { get; set; } = "";
+    public string Store { get; set; } = "";
+    public string Level { get; set; } = "";
+    public string Category { get; set; } = "";
+    public string Method { get; set; } = "";
+    public string Path { get; set; } = "";
+    public int Status { get; set; }
+    public long DurationMs { get; set; }
+    public string Visitor { get; set; } = "";
+    public string Network { get; set; } = "";
+    public string Message { get; set; } = "";
+    public string Detail { get; set; } = "";
+    public string TraceId { get; set; } = "";
+
+    public static LogDocument From(LogEvent e, string day) => new()
+    {
+        Id = $"{e.At.UtcTicks}:{Guid.NewGuid():N}",
+        Day = day,
+        At = e.At.ToUniversalTime().ToString("O"),
+        Kind = e.Kind,
+        Store = e.Store,
+        Level = e.Level,
+        Category = e.Category,
+        Method = e.Method,
+        Path = e.Path,
+        Status = e.Status,
+        DurationMs = e.DurationMs,
+        Visitor = e.Visitor,
+        Network = e.Network,
+        Message = e.Message,
+        Detail = e.Detail,
+        TraceId = e.TraceId,
+    };
+
+    public LogEvent ToEvent() => new(
+        DateTimeOffset.Parse(At, null, System.Globalization.DateTimeStyles.RoundtripKind),
+        Kind, Store, Level, Category, Method, Path, Status, DurationMs, Visitor, Network, Message, Detail, TraceId);
+}
+// #endregion log-documents
 // #endregion documents
 
 /// <summary>Document to domain and back, field by field, in one place.</summary>

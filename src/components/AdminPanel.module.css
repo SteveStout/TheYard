@@ -322,3 +322,43 @@
   color: var(--color-accent);
 }
 /* #endregion activity-card */
+
+/* The kept log's filter row: the same pills as the window buttons, with two plain fields beside them. */
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: var(--space-2) 0;
+}
+
+.filterRow input,
+.filterRow select {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 6px 12px;
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.filterRow input {
+  width: 16ch;
+}
+
+/* A kept line's tone: a warning or a 4xx in the warning colour, an error or a 5xx in the danger colour. */
+.warnLine td:first-child {
+  border-left: 3px solid var(--color-warning);
+}
+
+.errorLine td:first-child {
+  border-left: 3px solid var(--color-danger);
+}
+
+.detail {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 48ch;
+  font-size: var(--text-xs);
+}

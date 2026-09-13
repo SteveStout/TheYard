@@ -103,6 +103,7 @@ export type DocKey =
   | 'adrThreeReaders'
   | 'adrActivity'
   | 'adrSecrets'
+  | 'adrKeptLogs'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'performance'
@@ -697,6 +698,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '072',
   },
+  adrKeptLogs: {
+    title: 'ADR: Logs that outlive the container',
+    menuLabel: 'ADR: Logs that outlive the container',
+    url: '/api/docs/adr-kept-logs',
+    kind: 'adr',
+    number: '073',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -912,6 +920,7 @@ export const MENUS: Record<
       { key: 'adrThreeReaders' },
       { key: 'adrActivity' },
       { key: 'adrSecrets' },
+      { key: 'adrKeptLogs' },
     ],
   },
   // #endregion records-menu
