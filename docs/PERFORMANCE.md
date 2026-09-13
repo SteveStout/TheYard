@@ -21,6 +21,13 @@ and one small container.**
 The second container, the one serving the document store on its own address, is started for a comparison
 and stopped afterwards, which is the only reason the container line is not also zero.
 
+The container is the whole of the compute, and this is its definition as the pipeline rolls it, read from
+the running build. The two placeholders are filled from repository secrets at roll time
+([The code is public and the secrets are not](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-072-the-code-is-public-the-secrets-are-not.md)).
+
+```live path=infra/aci-theyard.yaml region=container
+```
+
 Sources: [A second store, priced](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md),
 [Edge economics](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-007-edge-economics.md), [The partition key](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-058-the-partition-key.md).
 
@@ -42,6 +49,12 @@ shows the result. These are the medians from the live site's own container at 1.
 
 The pages that never touch a store are the same on both, to the millisecond.
 
+The rounds themselves, from the code that runs them: one account per store for the life of the process,
+the same paths in the same order, and the store that goes first alternating every round.
+
+```live path=api/TheYard.Api/Proof.cs region=rounds
+```
+
 Source: [The same performance, proven](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-067-same-performance-proven.md),
 [Measuring both stores](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-064-measuring-both-stores.md).
 
@@ -60,6 +73,13 @@ relational side pays the gap twice and the card shows exactly that.
 **That is a hosting fact, not a database fact**, and it is worth saying plainly rather than quoting the
 faster column and letting a reader assume the engine won. The same run was repeated on the second
 container, whose default store is the document one, and it produced the same shape on every row.
+
+The verdict is arithmetic, and here it is: the median of the paired differences, one round trip per
+operation taken off each side, and the rule for how far apart two medians may sit and still be called
+the same.
+
+```live path=api/TheYard.Api/Proof.cs region=verdict
+```
 
 Read again on 13 September, off both containers' own cards from runs on 1.0.0.114 made within a quarter of
 an hour of each other: 39 ms and 38 ms to Azure SQL Database, 2 ms to Azure Cosmos DB, 3 of 8 paths the
@@ -87,9 +107,31 @@ largest at nine per cent, so the biggest logical partition at a hundred thousand
 **7 MB against a 20 GB cap** and no partition is hot. `/body_style` would have put 53 per cent of every
 read on one partition. ([The partition key](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-058-the-partition-key.md))
 
+Both decisions are one file, the definition the container was created from, with the reasoning in it:
+
+```live path=infra/cosmos/catalogue.json region=*
+```
+
 **Only the default store warms before serving.** Loading both catalogues at start-up doubled every test
 application's memory and turned a two-minute suite into a thirty-minute crawl that looked like a hang.
 ([One container, both stores](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-066-one-container-both-stores.md))
+
+The other store warms on the first request that names it, and no request thread ever waits on a load
+already in progress:
+
+```live path=api/TheYard.Api/Program.cs region=warm-before-reading
+```
+
+**The search is an index, and the page's files are cached for a year.** A text scan over the hundred
+thousand rows roughly halved through a prebuilt index, 36 to 45 ms down to 14 to 21 ms across three runs,
+measured by a test that ships with it and honest about the rest: the whole request improved by about
+the same twenty milliseconds, since ordering and serialising a page is most of what remains
+([The search index](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-025-search-index.md)). And
+every bundle file is named by a hash of its contents, so a browser keeps it for a year and a returning
+visitor fetches the small HTML page and the data, never the bundle again ([Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-015-cache-headers.md)):
+
+```live path=api/TheYard.Api/Program.cs region=cache-headers
+```
 
 ## What it cost to keep it honest
 
@@ -107,8 +149,9 @@ edge, so they cost **zero credits**. ([Edge economics](https://github.com/SteveS
   the container's recent events, and every store operation the application has made with how long it took.
 - `POST /api/admin/proof` starts a fresh run; `GET /api/admin/proof` reads the one in progress or the last
   one finished.
-- Every figure above links to the record that holds the method, and the code samples inside those records
-  are read from the running build rather than pasted, so a record cannot drift from the code it describes.
+- Every figure above links to the record that holds the method, and the code samples on this page and
+  inside those records are read from the running build rather than pasted, so a page cannot drift from the
+  code it describes.
 
 ## Files
 

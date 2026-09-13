@@ -362,17 +362,25 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
     // And the same request as a hit for the activity card, offered to the
     // collector and forgotten: nothing here waits on a store. What the hit
     // carries, and what it cannot, is decided in Activity.cs and in the type.
-    if (activityCollector is not null && visitorTokens is not null && Hits.Counts(path))
+    // The token and the network are made once here and shared with the kept
+    // log below, so a request pays for one keyed hash and not two.
+    if (visitorTokens is null || !Hits.Counts(path))
     {
-        var at = DateTimeOffset.UtcNow;
-        activityCollector.Offer(new ActivityHit(
-            at,
-            visitorTokens.TokenFor(VisitorTokens.AddressOf(context), at),
-            VisitorTokens.NetworkOf(VisitorTokens.AddressOf(context)),
-            Hits.PathOf(path),
-            backends.For(context).Key,
-            Hits.LooksLikeABot(context.Request.Headers.UserAgent.FirstOrDefault(), path)));
+        return;
     }
+
+    string address = VisitorTokens.AddressOf(context);
+    var at = DateTimeOffset.UtcNow;
+    string token = visitorTokens.TokenFor(address, at);
+    string network = VisitorTokens.NetworkOf(address);
+    string store = backends.For(context).Key;
+    activityCollector?.Offer(new ActivityHit(
+        at,
+        token,
+        network,
+        Hits.PathOf(path),
+        store,
+        Hits.LooksLikeABot(context.Request.Headers.UserAgent.FirstOrDefault(), path)));
     // #endregion activity-hook
 
     // #region kept-logs-hook
@@ -380,21 +388,16 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
     // network, with its method, status and duration, offered to the log
     // collector and forgotten. The page's own files and the photos are left
     // out for the reason the activity feature leaves them out.
-    if (visitorTokens is not null && Hits.Counts(path))
-    {
-        string address = VisitorTokens.AddressOf(context);
-        var at = DateTimeOffset.UtcNow;
-        logCollector.Offer(LogEvents.Request(
-            at,
-            context.Request.Method,
-            path,
-            context.Response.StatusCode,
-            (long)elapsed.TotalMilliseconds,
-            backends.For(context).Key,
-            visitorTokens.TokenFor(address, at),
-            VisitorTokens.NetworkOf(address),
-            context.TraceIdentifier));
-    }
+    logCollector.Offer(LogEvents.Request(
+        at,
+        context.Request.Method,
+        path,
+        context.Response.StatusCode,
+        (long)elapsed.TotalMilliseconds,
+        store,
+        token,
+        network,
+        context.TraceIdentifier));
     // #endregion kept-logs-hook
 }
 #endregion admin-rings

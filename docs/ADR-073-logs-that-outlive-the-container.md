@@ -159,3 +159,44 @@ twenty-five gigabytes. The activity counters went to no expiry at the same
 time (ADR: Site activity, and the line an address does not cross, third
 addendum). Reversible in one number on each definition.
 
+## Addendum, 2026-09-13: the self review
+
+Steve's standing instruction, repeated the same evening: "make sure and code
+review and test your self." What was read again, line by line, after the
+day's four versions had shipped, and what came of it.
+
+**The store.** The batch write is one transactional batch per day partition
+per hundred events with random ids, so a batch cannot fail on a conflict;
+a failed batch is counted and the events are gone, which the card says.
+The query parameterises every value including `TOP`, and the path filter is
+a `CONTAINS` on a value, never text in the query. The count is a `GROUP BY`
+over the same window. All three ran green on the gate's Cosmos DB pass
+against `tests-logs`.
+
+**The collector.** Bounded channel, drop-oldest, one drain in flight at a
+time on its own clock, a manual drain for the tests, no logger inside it.
+The provider takes Warning and above on the ring's allow-list plus the
+framework's unhandled-exception category, reads the store and the path off
+the current request when there is one, and cannot recurse: nothing it
+writes is logged.
+
+**The hook.** One change came out of the review and shipped with this
+addendum: the request hook computed the visitor token twice per request,
+once for the activity hit and once for the kept event. It computes it once
+now and hands both the same token, network and store, which is one keyed
+hash per request instead of two and one place for the address to be read.
+
+**The page.** Forgetting the key sets it to null on both cards at once; the
+rows each card fetched before that stay in state and are not rendered,
+because both cards render their keyed section only while the key is
+present. The filters travel as one object so applying the same filter twice
+refetches, which is the cheaper of the two mistakes.
+
+**The tests.** Eight xUnit tests on the cleaning, the collector, the
+provider and the endpoint; the Cosmos-only query test skips itself on a
+host with no document store rather than passing vacuously; four Vitest
+tests on the key resolution and seven on the card's arithmetic; one browser
+test each for the kept log, the remembered key and the proof button. Every
+one ran in the gate that shipped it, on both stores where a store is
+involved.
+
