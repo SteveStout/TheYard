@@ -95,6 +95,7 @@ public static class DocsCatalog
         ["adr-second-address"] = "docs/ADR-069-a-permanent-address-for-the-second-site.md",
         ["adr-three-readers"] = "docs/ADR-070-three-readers-with-no-memory.md",
         ["adr-activity"] = "docs/ADR-071-site-activity.md",
+        ["adr-secrets"] = "docs/ADR-072-the-code-is-public-the-secrets-are-not.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["built-with-ai"] = "docs/BUILT-WITH-AI.md",

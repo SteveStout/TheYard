@@ -186,6 +186,7 @@ jobs:
               sys.exit("the database placeholder is missing from the container spec")
           open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["YARD_SQL"]))
           PY
+          # #region secrets
           # The session signing key, from the repository secret of the same name,
           # handed to the step through env so the script never interpolates it.
           # Absent, the placeholder stays and the container invents a key at
@@ -226,6 +227,7 @@ jobs:
               sys.exit("the admin key placeholder is missing from the container spec")
           open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["ADMIN_KEY"]))
           PY
+          # #endregion secrets
           if [ "$YARD_SQL" = "__YARD_SQL_CONNECTION__" ]; then
             echo "the container spec keeps its database placeholder: this roll uses SQLite"
           else

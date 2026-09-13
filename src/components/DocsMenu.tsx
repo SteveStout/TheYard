@@ -102,6 +102,7 @@ export type DocKey =
   | 'adrSecondAddress'
   | 'adrThreeReaders'
   | 'adrActivity'
+  | 'adrSecrets'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'performance'
@@ -689,6 +690,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '071',
   },
+  adrSecrets: {
+    title: 'ADR: The code is public and the secrets are not',
+    menuLabel: 'ADR: The code is public and the secrets are not',
+    url: '/api/docs/adr-secrets',
+    kind: 'adr',
+    number: '072',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -903,6 +911,7 @@ export const MENUS: Record<
       { key: 'adrSecondAddress' },
       { key: 'adrThreeReaders' },
       { key: 'adrActivity' },
+      { key: 'adrSecrets' },
     ],
   },
   // #endregion records-menu

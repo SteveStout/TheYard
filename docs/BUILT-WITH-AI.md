@@ -32,7 +32,7 @@ The choices a tool cannot make, each with its record.
 gate runs the API suite against both stores and was measured at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068). A push that fails the gate does not roll.
 
-**The records.** Seventy-one decision records, each carrying the decision, the trade-off and the number behind
+**The records.** Seventy-two decision records, each carrying the decision, the trade-off and the number behind
 it, with a Files section pointing at the code it governs. Code shown in a record is read from the running build, so a
 record cannot drift from the code it describes.
 
