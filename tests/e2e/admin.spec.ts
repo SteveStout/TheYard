@@ -461,7 +461,16 @@ test('a reset link minted behind the key sets a new password and signs the visit
   await openTheYard(page, `/?view=account&reset=${link.searchParams.get('reset')}`);
   await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible();
   await page.getByTestId('reset-password').fill('second password');
+  // Wait on the reset response, as account.spec.ts waits on register and
+  // login: setting the password costs a hash, and on a loaded machine the
+  // round trip has overrun the default five seconds (1.0.0.127, take three).
+  const reset = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/reset') && response.request().method() === 'POST'
+  );
   await page.getByTestId('reset-submit').click();
+  const answered = await reset;
+  expect(answered.status(), await answered.text()).toBe(200);
   await expect(page.getByRole('heading', { name: email })).toBeVisible();
 
   // And the new password is the password now.

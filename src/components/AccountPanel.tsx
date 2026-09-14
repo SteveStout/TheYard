@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   fetchHistory,
+  forgotRequest,
   loginRequest,
   logoutRequest,
   registerRequest,
@@ -66,6 +67,8 @@ function SignInForm({ onAccountChange }: { onAccountChange: (account: Account) =
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // "Forgot password": the same email field, one more button, one sentence back.
+  const [forgotNote, setForgotNote] = useState<string | null>(null);
 
   async function attempt(mode: 'register' | 'login') {
     setBusy(true);
@@ -139,7 +142,28 @@ function SignInForm({ onAccountChange }: { onAccountChange: (account: Account) =
           >
             Create an account
           </button>
+          <button
+            className={styles.secondary}
+            type="button"
+            disabled={busy || email.length === 0}
+            data-testid="forgot-password"
+            onClick={() => {
+              setBusy(true);
+              setForgotNote(null);
+              void forgotRequest(email).then((result) => {
+                setBusy(false);
+                setForgotNote(result.message);
+              });
+            }}
+          >
+            Forgot your password?
+          </button>
         </div>
+        {forgotNote && (
+          <p className={styles.hint} role="status" data-testid="forgot-note">
+            {forgotNote}
+          </p>
+        )}
       </form>
     </div>
   );

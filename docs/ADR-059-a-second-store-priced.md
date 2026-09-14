@@ -516,6 +516,34 @@ behaviour depends on the store, the toggle, the accounts and the Admin tab's
 store log; the other ten run on SQLite in the same gate, because nothing in
 them reads a store. Same sentence, five minutes instead of twenty.
 
+## Addendum, 2026-09-13: the pin caught its first bump
+
+Five days after it was written, the test above went red in the gate, which
+is the only place it was ever meant to go red. The emailed password reset
+(ADR: Accounts and per-user bids, addendum) brought `Azure.Communication.Email`
+1.1.0 into the host project, whose graph resolves an Azure.Core, 1.60, that
+carries its own copy of the credential types: `new DefaultAzureCredential()`
+in the new sender would not compile, because the compiler found the type in
+both that Azure.Core and the pinned Azure.Identity. The first answer was the reflex
+the 1.0.0.90 incident was about, `dotnet add package Azure.Identity` at the
+newest version in both projects, which compiled, and which the pin test
+refused on both xUnit passes of the gate. 1.0.0.127 did not ship that
+evening, and the live containers stayed on 1.17.1, which is what the test
+is for.
+
+The second answer names no credential type in the host project at all. The
+rule this record already had, the container's user-assigned identity when
+`Cosmos:Credential` says so and the signed-in Azure CLI otherwise, is now a
+method of the store, `CosmosStore.CredentialFor`, built in this project
+against the pinned library and handed to the email client as the
+`TokenCredential` it asks for. That is the better shape regardless of the
+compiler: one identity, chosen by one setting, for every Azure client the
+application has, and a sender on a developer's machine that uses the CLI
+session instead of probing for an identity endpoint that is not there,
+which is the failure the store's own connect comment describes. The pin
+stays at 1.17.1, the comment beside it is unchanged, and the test now has
+one catch to its name.
+
 ## Files
 
 - The written pre-approval is in the lane's notes outside the repository, because it names principals.

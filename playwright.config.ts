@@ -23,6 +23,12 @@ export default defineConfig({
   // load failure kept arriving under the name of whatever test went first. The
   // accessibility scans had already been raised to sixty for the same reason.
   timeout: 60_000,
+  // Fifteen seconds for an expect rather than the default five. A green run is
+  // no slower, an assertion returns the moment its element appears; only a
+  // failing one waits longer, under the sixty-second test budget above. Set
+  // 2026-09-14 after three takes went red on six different five-second waits
+  // over hashing round trips on a busy machine (ADR: The five-minute gate).
+  expect: { timeout: 15_000 },
   // #endregion timeout
   fullyParallel: false,
   // #region reporters

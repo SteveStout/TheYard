@@ -1,6 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <!-- The one email this site sends, the password reset link, as the
+         containers' own identity (ADR: Accounts and per-user bids, addendum).
+         The Azure.Core this project resolves carries its own copy of the
+         credential types the pinned Azure.Identity has, and naming one here
+         is ambiguous to the compiler, so the credential is built in the
+         Cosmos DB project against the pinned library and handed over as a
+         TokenCredential; no credential type is named in this project. -->
+    <PackageReference Include="Azure.Communication.Email" Version="1.1.0" />
     <!-- Azure Monitor's OpenTelemetry distro: requests, dependencies and
          exceptions to Application Insights with one call in Program.cs, and
          nothing at all when the connection string is absent (ADR-024). -->

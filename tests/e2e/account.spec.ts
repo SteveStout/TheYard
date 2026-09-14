@@ -71,7 +71,16 @@ test("a wrong password is refused in the server's own words", async ({ page }) =
   await page.getByLabel('Password').fill('not the password');
   // Scoped to the form: the rail's account row also reads "Sign in" when
   // nobody is, which is right for a reader and ambiguous for a locator.
+  // Wait on the login response for the same reason register() waits on its
+  // own: the refusal costs a password hash, and under a loaded machine the
+  // round trip has overrun the default five seconds (1.0.0.127, take two).
+  const refused = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/login') && response.request().method() === 'POST'
+  );
   await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+  const response = await refused;
+  expect(response.status(), await response.text()).toBe(401);
 
   await expect(page.getByRole('alert')).toContainText('do not match an account');
 });
@@ -113,3 +122,21 @@ test('a bid belongs to the account, and signing out takes it off the page', asyn
   await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Reset bids/ })).toHaveCount(0);
 });
+
+// #region forgot-password
+test('forgot password answers one sentence, and says so when the site cannot send', async ({
+  page,
+}) => {
+  // The browser suite's API has no sender configured, so the honest answer
+  // here is the sentence about the operator; the emailed half is held by
+  // the API tests with a recording sender (ADR: Accounts and per-user bids,
+  // addendum).
+  await openTheYard(page, '/?view=account');
+  const forgot = page.getByTestId('forgot-password');
+  await expect(forgot).toBeDisabled();
+  await page.getByLabel('Email').fill(anAddress());
+  await expect(forgot).toBeEnabled();
+  await forgot.click();
+  await expect(page.getByTestId('forgot-note')).toContainText('cannot send email');
+});
+// #endregion forgot-password

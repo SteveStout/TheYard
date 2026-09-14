@@ -119,7 +119,9 @@ checks that against.
 
 - Two repository secrets, `YARD_AUTH_SIGNING_KEY` and `ADMIN_KEY`, are the
   whole secret inventory. Anything added to that list gets an addendum here
-  before it ships.
+  before it ships. The email sender added the same evening added nothing to
+  it: Azure Communication Services is reached as the containers' identity,
+  and its endpoint and sender address are plain values in the manifests.
 - The workflow's identity, the SQL identity and the Cosmos DB identity are all
   federated or managed; there is no password or account key to rotate, leak or
   find in a log.

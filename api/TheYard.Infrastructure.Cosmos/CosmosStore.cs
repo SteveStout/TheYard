@@ -60,9 +60,7 @@ public sealed class CosmosStore
     /// </summary>
     public static CosmosStore Connect(string accountEndpoint, string databaseName, string containerPrefix, string credentialKind, string managedIdentityClientId, IStoreLog log)
     {
-        TokenCredential credential = string.Equals(credentialKind, ManagedIdentity, StringComparison.OrdinalIgnoreCase)
-            ? new ManagedIdentityCredential(ManagedIdentityId.FromUserAssignedClientId(managedIdentityClientId))
-            : new AzureCliCredential();
+        TokenCredential credential = CredentialFor(credentialKind, managedIdentityClientId);
         var options = new CosmosClientOptions
         {
             ApplicationName = "TheYard",
@@ -81,6 +79,21 @@ public sealed class CosmosStore
         var client = new CosmosClient(accountEndpoint, credential, options);
         return new CosmosStore(client, databaseName, containerPrefix, log);
     }
+
+    /// <summary>
+    /// The one rule above, on its own so the other Azure client in this
+    /// application (the email sender, ADR: Accounts and per-user bids,
+    /// addendum) authenticates the same way as the store, as the same identity.
+    /// The credential types are named here and nowhere else on purpose: this
+    /// project's graph holds the one Azure.Identity the container was proven on
+    /// (the pin in the project file, and the test that holds it), while a
+    /// newer Azure.Core elsewhere in the application carries a second copy of
+    /// the same types and naming one there is ambiguous.
+    /// </summary>
+    public static TokenCredential CredentialFor(string credentialKind, string managedIdentityClientId) =>
+        string.Equals(credentialKind, ManagedIdentity, StringComparison.OrdinalIgnoreCase)
+            ? new ManagedIdentityCredential(ManagedIdentityId.FromUserAssignedClientId(managedIdentityClientId))
+            : new AzureCliCredential();
 
     /// <summary>The value of <c>Cosmos:Credential</c> that means the container's own identity. Anything else means the Azure CLI.</summary>
     public const string ManagedIdentity = "managed-identity";

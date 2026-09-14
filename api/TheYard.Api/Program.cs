@@ -446,6 +446,22 @@ builder.Services.AddSingleton(adminKey);
 // show. Admin__VisitorRows=true turns it back on (ADR: Site activity, and
 // the line an address does not cross, sixth addendum).
 bool visitorRows = builder.Configuration.GetValue("Admin:VisitorRows", false);
+
+// #region email-wiring
+// The one email this site sends, the reset link, through Azure Communication
+// Services as the containers' own identity; two plain settings and no key.
+// Unset, the "Forgot password" endpoint says so and the operator's link from
+// the Admin tab is the way (ADR: Accounts and per-user bids, addendum).
+builder.Services.AddSingleton<IEmailSender>(services => AcsEmailSender.FromConfiguration(
+    builder.Configuration["Email:Endpoint"],
+    builder.Configuration["Email:From"],
+    // The same identity the stores use, chosen by the same setting.
+    () => CosmosStore.CredentialFor(
+        builder.Configuration["Cosmos:Credential"] ?? "azure-cli",
+        builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5"),
+    services.GetRequiredService<ILogger<AcsEmailSender>>()));
+builder.Services.AddSingleton(new ForgotLimit(ForgotLimit.DefaultSpacing, () => DateTimeOffset.UtcNow));
+// #endregion email-wiring
 // #endregion activity-wiring
 
 // The hour's allowance of new accounts, for the whole site (ADR: The one write
@@ -1695,6 +1711,18 @@ app.MapPost("/api/auth/login", async (
 
 // #region password-reset
 // A password reset in two halves (ADR: Accounts and per-user bids, addendum).
+//
+// The link, for the site the request came through, as the visitor reaches
+// it: behind the edge that is the forwarded host, not the origin. Minted the
+// same way whoever hands it over.
+static string ResetLinkFor(HttpContext http, TokenIssuer issuer, YardUser user, string store)
+{
+    string token = issuer.IssueReset(user.Id, store, user.PasswordHash);
+    string scheme = http.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? http.Request.Scheme;
+    string host = http.Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? http.Request.Host.Value ?? "";
+    return $"{scheme}://{host}/?view=account&reset={Uri.EscapeDataString(token)}";
+}
+
 // The operator mints a link from the Admin tab, behind the key, for an
 // address on this site's store: an hour of life, one use, because the token
 // carries a fingerprint of the password hash it was minted against and the
@@ -1729,12 +1757,7 @@ app.MapPost("/api/admin/reset-links", async (
             statusCode: 404, title: "No such account");
     }
 
-    string token = issuer.IssueReset(user.Id, current.Backend.Key, user.PasswordHash);
-    // The link is for the site the request came through, as the visitor
-    // reaches it: behind the edge that is the forwarded host, not the origin.
-    string scheme = http.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? http.Request.Scheme;
-    string host = http.Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? http.Request.Host.Value ?? "";
-    string url = $"{scheme}://{host}/?view=account&reset={Uri.EscapeDataString(token)}";
+    string url = ResetLinkFor(http, issuer, user, current.Backend.Key);
     return Results.Json(new
     {
         email = user.Email,
@@ -1742,6 +1765,59 @@ app.MapPost("/api/admin/reset-links", async (
         url,
         expires_at = DateTimeOffset.UtcNow + TokenIssuer.ResetLifetime,
     }, wireFormat);
+});
+
+// "Forgot password": the same link, sent by the site instead of handed over
+// by the operator. Public, so it answers one sentence whether or not the
+// address has an account here, and one email per address per five minutes.
+// Without a sender configured it says so and points at the operator.
+app.MapPost("/api/auth/forgot", async (
+    ResetLinkRequest request,
+    HttpContext http,
+    IServiceProvider services,
+    CurrentBackend current,
+    TokenIssuer issuer,
+    IEmailSender mail,
+    ForgotLimit limit,
+    CancellationToken cancellation) =>
+{
+    if (!mail.Configured)
+    {
+        return Results.Problem(
+            detail: "This site cannot send email: " + mail.Reason + ".",
+            statusCode: StatusCodes.Status503ServiceUnavailable, title: "No email from here");
+    }
+
+    if (!current.Backend.Ready || services.GetService<UserManager<YardUser>>() is not { } users)
+    {
+        return Accounts.Unavailable();
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Email))
+    {
+        return Results.Problem(detail: "An email address is needed.", statusCode: 400, title: "Nothing to send to");
+    }
+
+    var sentence = new { sent = true, message = "If that address has an account here, a reset link is on its way. It works once, for an hour." };
+    if (!limit.TryTake(request.Email))
+    {
+        return Results.Json(sentence, wireFormat);
+    }
+
+    var user = await users.FindByEmailAsync(request.Email);
+    if (user is not null && user.Email is not null)
+    {
+        string url = ResetLinkFor(http, issuer, user, current.Backend.Key);
+        await mail.SendAsync(
+            user.Email,
+            "Your TheYard password reset link",
+            "Somebody asked to reset the password for this address on TheYard. If it was you, open this link within the hour; it works once:\n\n"
+            + url
+            + "\n\nIf it was not you, nothing has changed and you can ignore this message.",
+            cancellation);
+    }
+
+    return Results.Json(sentence, wireFormat);
 });
 
 app.MapPost("/api/auth/reset", async (

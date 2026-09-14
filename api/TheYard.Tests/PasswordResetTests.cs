@@ -2,8 +2,12 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api;
+using TheYard.Application;
+using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
 
@@ -18,12 +22,32 @@ namespace TheYard.Tests;
 /// </summary>
 public class PasswordResetTests : IClassFixture<PasswordResetTests.KeyedHost>
 {
+    /// <summary>A sender made of a list, so the emailed half can be held without a mailbox.</summary>
+    public sealed class RecordingSender : IEmailSender
+    {
+        public readonly List<(string To, string Subject, string Text)> Sent = [];
+
+        public bool Configured => true;
+
+        public string Reason => "recorded";
+
+        public Task<bool> SendAsync(string to, string subject, string text, CancellationToken cancellation)
+        {
+            Sent.Add((to, subject, text));
+            return Task.FromResult(true);
+        }
+    }
+
     public sealed class KeyedHost : WebApplicationFactory<Program>
     {
         public const string Key = "the-reset-test-key";
+        public readonly RecordingSender Sender = new();
 
-        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder) =>
+        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+        {
             builder.UseSetting("Admin:Key", Key);
+            builder.ConfigureTestServices(services => services.AddSingleton<IEmailSender>(Sender));
+        }
     }
 
     private readonly KeyedHost _host;
@@ -126,5 +150,109 @@ public class PasswordResetTests : IClassFixture<PasswordResetTests.KeyedHost>
         Assert.NotNull(read);
         Assert.Equal(("user-1", "sql", TokenIssuer.Fingerprint(null)), read.Value);
     }
+
+    [Fact]
+    public async Task Forgot_password_mails_the_same_link_to_a_known_address_and_the_same_sentence_to_any()
+    {
+        var client = Client();
+        string email = await RegisterAsync(client, $"forgot-{Guid.NewGuid():N}@example.com", "first password");
+        int before = _host.Sender.Sent.Count;
+
+        var known = await client.PostAsJsonAsync("/api/auth/forgot", new { email });
+        Assert.Equal(HttpStatusCode.OK, known.StatusCode);
+        string sentence = await known.Content.ReadAsStringAsync();
+        Assert.Contains("on its way", sentence);
+        var mail = Assert.Single(_host.Sender.Sent.Skip(before));
+        Assert.Equal(email, mail.To);
+        Assert.Contains("?view=account&reset=", mail.Text);
+
+        // A stranger's address gets the same sentence and no mail.
+        var unknown = await client.PostAsJsonAsync("/api/auth/forgot", new { email = $"nobody-{Guid.NewGuid():N}@example.com" });
+        Assert.Equal(HttpStatusCode.OK, unknown.StatusCode);
+        Assert.Equal(sentence, await unknown.Content.ReadAsStringAsync());
+        Assert.Single(_host.Sender.Sent.Skip(before));
+
+        // The same address again inside five minutes: the sentence, no second mail.
+        await client.PostAsJsonAsync("/api/auth/forgot", new { email });
+        Assert.Single(_host.Sender.Sent.Skip(before));
+
+        // The mailed link is the reset link: it sets the password and signs in.
+        string url = mail.Text.Split('\n').First(line => line.Contains("reset=", StringComparison.Ordinal)).Trim();
+        string token = Uri.UnescapeDataString(url[(url.IndexOf("reset=", StringComparison.Ordinal) + 6)..]);
+        var reset = await client.PostAsJsonAsync("/api/auth/reset", new { token, password = "mailed password" });
+        Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/login", new { email, password = "mailed password" })).StatusCode);
+    }
     // #endregion reset
+}
+
+/// <summary>
+/// The sender is built from two plain settings and the store's credential
+/// rule (ADR: A second store on Cosmos DB, and what it costs, the addendum on
+/// the pin's first catch): a placeholder or a blank means no sender and no
+/// credential is asked for; two usable values mean one sender, one credential.
+/// </summary>
+public class EmailSenderTests
+{
+    // #region sender
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", "DoNotReply@example.azurecomm.net")]
+    [InlineData("__EMAIL_ENDPOINT__", "DoNotReply@example.azurecomm.net")]
+    [InlineData("https://acs.example.communication.azure.com", "__EMAIL_FROM__")]
+    [InlineData("not a url", "DoNotReply@example.azurecomm.net")]
+    public void A_missing_or_placeholder_setting_means_no_sender_and_no_credential(string? endpoint, string? from)
+    {
+        int asked = 0;
+        var sender = AcsEmailSender.FromConfiguration(endpoint, from, () => { asked++; return CosmosStore.CredentialFor("azure-cli", ""); }, NullLogger<AcsEmailSender>.Instance);
+
+        Assert.Same(NullEmailSender.Instance, sender);
+        Assert.False(sender.Configured);
+        Assert.Equal(0, asked);
+    }
+
+    [Fact]
+    public void Two_usable_settings_mean_one_sender_with_the_stores_credential()
+    {
+        int asked = 0;
+        var sender = AcsEmailSender.FromConfiguration(
+            " https://acs.example.communication.azure.com ",
+            " DoNotReply@example.azurecomm.net ",
+            () => { asked++; return CosmosStore.CredentialFor("azure-cli", ""); },
+            NullLogger<AcsEmailSender>.Instance);
+
+        Assert.IsType<AcsEmailSender>(sender);
+        Assert.True(sender.Configured);
+        Assert.Equal("sent as DoNotReply@example.azurecomm.net", sender.Reason);
+        Assert.Equal(1, asked);
+    }
+
+    [Fact]
+    public void The_credential_rule_is_the_identity_when_the_setting_says_so_and_the_cli_otherwise()
+    {
+        Assert.Equal("ManagedIdentityCredential", CosmosStore.CredentialFor("managed-identity", "00000000-0000-0000-0000-000000000000").GetType().Name);
+        Assert.Equal("ManagedIdentityCredential", CosmosStore.CredentialFor("Managed-Identity", "00000000-0000-0000-0000-000000000000").GetType().Name);
+        Assert.Equal("AzureCliCredential", CosmosStore.CredentialFor("azure-cli", "").GetType().Name);
+        Assert.Equal("AzureCliCredential", CosmosStore.CredentialFor("", "").GetType().Name);
+    }
+    // #endregion sender
+}
+
+/// <summary>A site with no sender says so, and the operator's link is the way.</summary>
+public class ForgotWithoutASenderTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly HttpClient _client;
+
+    public ForgotWithoutASenderTests(WebApplicationFactory<Program> host)
+    {
+        _client = host.CreateClient();
+    }
+
+    [Fact]
+    public async Task Forgot_password_is_a_503_with_a_sentence_when_nothing_can_send()
+    {
+        var response = await _client.PostAsJsonAsync("/api/auth/forgot", new { email = "someone@example.com" });
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Contains("cannot send email", await response.Content.ReadAsStringAsync());
+    }
 }

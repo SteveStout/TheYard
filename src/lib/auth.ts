@@ -147,6 +147,33 @@ export async function resetRequest(token: string, password: string): Promise<Aut
   return { ok: true, account: toAccount((await response.json()) as AccountWire) };
 }
 
+/**
+ * "Forgot password": ask the site to email a reset link. The answer is one
+ * sentence whether or not the address is known; a site with no sender says
+ * so in the same shape, and the form shows it.
+ */
+export async function forgotRequest(email: string): Promise<{ ok: boolean; message: string }> {
+  let response: Response;
+  try {
+    response = await fetch('/api/auth/forgot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ email }),
+    });
+  } catch {
+    return { ok: false, message: 'The server could not be reached. Try again in a moment.' };
+  }
+  if (!response.ok) {
+    return { ok: false, message: await reason(response, 'That did not work. Try again.') };
+  }
+  const body = (await response.json()) as { message?: string };
+  return {
+    ok: true,
+    message: body.message ?? 'If that address has an account here, a reset link is on its way.',
+  };
+}
+
 export async function logoutRequest(): Promise<Account> {
   try {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });

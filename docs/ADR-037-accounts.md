@@ -346,8 +346,27 @@ once and signs the visitor in, the old password stops working, the new one
 works, the same link a second time is refused; a session token is not a
 reset token and a reset token is not a session.
 
-**What waits on him.** "ACS" authorizes Azure Communication Services Email
-(free tier, an Azure-managed sender address, about $0.0003 per email), and
-the first half becomes a "Forgot password" button that mints the same link
-and sends it. Until then the operator sends it by hand.
+**The emailed half, the same evening.** Steve: "the email on the password
+reset should be simple ish don't over architect." So: one Azure
+Communication Services resource with its Email service and an Azure-managed
+sender domain, created by the runner in the resource group; the containers'
+own identity (the one that already reads both stores) allowed to send
+through it, so there is no key anywhere; two plain settings on each
+container, the endpoint and the sender address; one endpoint,
+`POST /api/auth/forgot`, that answers one sentence whether or not the
+address has an account here and mails the same link the operator would have
+minted; one email per address per five minutes, whoever asks; and one
+button on the sign-in form. A container with no sender configured answers
+503 with a sentence that points at the operator's link, which is what the
+browser suite sees and holds. The emailed half is held by the API tests
+with a sender made of a list: the known address gets the link, a stranger's
+gets the same sentence and no mail, the same address twice gets one mail,
+and the mailed link resets the password. Cost: about $0.0003 an email and
+no fixed charge. The sender's credential is the store's own rule,
+`CosmosStore.CredentialFor`, rather than a second one: the host project's
+Azure.Core duplicates the credential types the pinned Azure.Identity has,
+naming one beside the email client did not compile, and the first fix, a newer
+Azure.Identity, was refused by the pin test the 1.0.0.90 incident left
+behind (ADR: A second store on Cosmos DB, and what it costs, the addendum
+of the same day).
 

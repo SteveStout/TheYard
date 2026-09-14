@@ -181,3 +181,31 @@ The five minutes stands as the target. A green gate on this machine with
 the developer's browser open measured 302 s and 342 s today, and 372 s on
 the first run after a restart with cold caches; the suites themselves fit,
 and the wall clock is the machine's.
+
+## Addendum, 2026-09-14: the five-second expect
+
+Three takes of 1.0.0.127 on 2026-09-14 (queue scripts 840, 844 and 849) went
+red on six different browser tests and on nothing else. Every xUnit pass was
+green all three times, and each failure was Playwright's default five-second
+`expect` waiting on a page element that follows a round trip costing a
+password hash or a store read: a refused sign-in, a reset, a bid, the forgot
+note, and the visitor table twice, on SQLite and on Cosmos DB, under two
+different tests. No test failed twice. The machine was measured before
+it was blamed. The first take shared the four cores with a second runner (a
+terminal and a scheduled task had each started one, and they ran the prep
+script and the gate side by side). The second ran under the scheduled task's
+runner at BelowNormal, the default priority Windows gives a scheduled task,
+beneath the desktop apps at Normal. The third ran at Normal with 8,040 MB in
+total and 1,372 MB free five minutes before it started; xUnit on SQLite took
+140 s against 68 s on the take before it, and the browser suite 4.9 minutes
+against 3.7.
+
+The decision is the one the scans got above: a budget that a test overruns
+while doing its work correctly is a wrong number. `expect` now waits fifteen
+seconds instead of five, for every assertion, in `playwright.config.ts`. A
+green run is no slower, because an assertion returns the moment its element
+appears; only a failing one waits longer, and the sixty-second test budget
+still caps it. The three tests that can name the request they wait on (the
+registration, the refused sign-in and the reset) wait on the response itself,
+which says what the server answered when the answer is wrong. The runner's
+scheduled task runs at Normal from now on.

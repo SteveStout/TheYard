@@ -51,6 +51,15 @@ properties:
         value: managed-identity
       - name: Store__Default
         value: cosmos
+      # The one email this site sends, the password reset link, through Azure
+      # Communication Services as the containers' own identity: an endpoint
+      # and a sender address on its Azure-managed domain, both plain values,
+      # no key (ADR: Accounts and per-user bids, addendum). Unset, the
+      # "Forgot password" button says so and the operator's link is the way.
+      - name: Email__Endpoint
+        value: https://acs-theyard-ss.unitedstates.communication.azure.com
+      - name: Email__From
+        value: DoNotReply@ae4d5c47-28c9-49e2-8d3a-a859abd0f7df.azurecomm.net
       - name: Store__WarmOthers
         value: "true"
       # Azure SQL Database, substituted at roll time by the Deploy Cosmos
