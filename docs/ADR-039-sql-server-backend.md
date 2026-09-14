@@ -712,6 +712,10 @@ fills itself from the seed files on first boot. The paused database is
 left as it is; it resumes on the first of October and nothing points at it.
 The other two options were the portal's one-way "continue with additional
 charges" on the paused database, serverless at about $0.26 an awake hour,
-and leaving the site browse-only until October for nothing. The activity
+and leaving the site browse-only until October for nothing. The second
+site's deploy carries its own copy of the database name, and it was missed
+on the first roll: 1.0.0.128 read `database=pass` on the SQL site and
+`database (sql)=fail` on the Cosmos DB site, whose warm second store still
+named the paused database; 1.0.0.129 is that one line. The activity
 collector no longer writes here at all, which is what keeps a Basic
 database from mattering to the bill in a way the free one could not afford.

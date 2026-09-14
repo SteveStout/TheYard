@@ -48,7 +48,10 @@ jobs:
       # The same database Deploy composes a connection string for, so this
       # container runs both stores too (ADR: One container, both stores).
       SQL_SERVER: sql-theyard-ss-westus3
-      SQL_DB: sqldb-theyard-ss
+      # sqldb-theyard-ss-basic since 1.0.0.129, the same database the SQL site moved to at
+      # 1.0.0.128 (ADR: The SQL Server backend, addendum of 14 September); this site warms
+      # the relational store as its second, and the paused one read as a failed health check.
+      SQL_DB: sqldb-theyard-ss-basic
       MI_CLIENT_ID: 2888a6ca-be1c-46a5-a1de-c666b1d193e5
     steps:
       - uses: actions/checkout@v7
