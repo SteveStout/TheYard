@@ -193,19 +193,19 @@ the top of this record.
 
 ## Why this is one file
 
-It is 2,067 lines, and that is the first thing a reviewer notices, so it is
+It is 2,110 lines, and that is the first thing a reviewer notices, so it is
 worth saying that it is a decision rather than a drift.
 
 What those lines are:
 
 ```
-2,067 total
-  771 comment
-  132 blank
-  1,164 code, across 41 endpoints
+2,110 total
+  789 comment
+  134 blank
+  1,187 code, across 41 endpoints
 ```
 
-Twenty-eight lines of code per endpoint, and most endpoints are a route, a
+Twenty-nine lines of code per endpoint, and most endpoints are a route, a
 binding and a delegation. Nothing in here holds a rule; the rules are in Domain
 and Application, and this file's job is to say what is reachable and in what
 order.

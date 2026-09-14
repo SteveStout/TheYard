@@ -99,6 +99,12 @@ properties:
       # the Store bar (ADR: One container, both stores, addendum).
       - name: Peer__Site
         value: https://theyard.stevenstout.biz
+      # This site as a visitor reaches it, for the links the site writes into an
+      # email: behind the edge the request's own host is the origin, which is
+      # not an address anybody should be sent (ADR: Accounts and per-user
+      # bids, addendum of 14 September).
+      - name: Site__Url
+        value: https://theyard-cosmos.stevenstout.biz
       image: __IMAGE__
       ports:
       - port: 8080

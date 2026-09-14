@@ -283,6 +283,17 @@ builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
 // the card says so. The provider reads the store and the request a line
 // belongs to from the current request when there is one.
 ILogStore logStore = cosmos is not null ? new CosmosLogStore(cosmos) : NullLogStore.Instance;
+// Reset links (ADR: Accounts and per-user bids, addendum of 14 September):
+// the GUID a link carries is kept in the document store for the hour and
+// forgotten on use; without one, in this process's memory, which is what
+// the test host and a developer's machine get.
+IResetLinks resetLinks = cosmos is not null ? new CosmosResetLinks(cosmos) : new MemoryResetLinks();
+builder.Services.AddSingleton(resetLinks);
+// This site as a visitor reaches it, for links written into an email.
+// Behind the edge the request's own host is the origin, which is not an
+// address anybody should be sent; unset, the request's host is used, which
+// is right on a developer's machine and on the test host.
+string? siteUrl = builder.Configuration["Site:Url"];
 var logCollector = new LogCollector(logStore, builder.Configuration.GetValue("Logs:DrainSeconds", LogCollector.DefaultIntervalSeconds));
 builder.Services.AddSingleton(logCollector);
 builder.Services.AddHostedService(_ => logCollector);
@@ -1720,14 +1731,30 @@ app.MapPost("/api/auth/login", async (
 // A password reset in two halves (ADR: Accounts and per-user bids, addendum).
 //
 // The link, for the site the request came through, as the visitor reaches
-// it: behind the edge that is the forwarded host, not the origin. Minted the
-// same way whoever hands it over.
-static string ResetLinkFor(HttpContext http, TokenIssuer issuer, YardUser user, string store)
+// it: the site's own configured address first (Site:Url, the domain behind
+// the edge; the request's host there is the origin, and an origin is not an
+// address anybody should be sent), the forwarded host or the request's host
+// otherwise. What the link carries is a GUID and nothing else: the signed
+// token that names the account, the site and the password's fingerprint is
+// kept under that GUID for the hour and forgotten on use (addendum of 14
+// September). Minted the same way whoever hands it over.
+static async Task<string> ResetLinkFor(HttpContext http, TokenIssuer issuer, IResetLinks links, string? siteUrl, YardUser user, string store, CancellationToken cancellation)
 {
     string token = issuer.IssueReset(user.Id, store, user.PasswordHash);
-    string scheme = http.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? http.Request.Scheme;
-    string host = http.Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? http.Request.Host.Value ?? "";
-    return $"{scheme}://{host}/?view=account&reset={Uri.EscapeDataString(token)}";
+    string id = await links.KeepAsync(token, TokenIssuer.ResetLifetime, cancellation);
+    string origin;
+    if (!string.IsNullOrWhiteSpace(siteUrl))
+    {
+        origin = siteUrl.TrimEnd('/');
+    }
+    else
+    {
+        string scheme = http.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? http.Request.Scheme;
+        string host = http.Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? http.Request.Host.Value ?? "";
+        origin = $"{scheme}://{host}";
+    }
+
+    return $"{origin}/?view=account&reset={id}";
 }
 
 // The operator mints a link from the Admin tab, behind the key, for an
@@ -1743,7 +1770,9 @@ app.MapPost("/api/admin/reset-links", async (
     HttpContext http,
     IServiceProvider services,
     CurrentBackend current,
-    TokenIssuer issuer) =>
+    TokenIssuer issuer,
+    IResetLinks links,
+    CancellationToken cancellation) =>
 {
     string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
     if (!adminKey.Admits(presented))
@@ -1764,7 +1793,7 @@ app.MapPost("/api/admin/reset-links", async (
             statusCode: 404, title: "No such account");
     }
 
-    string url = ResetLinkFor(http, issuer, user, current.Backend.Key);
+    string url = await ResetLinkFor(http, issuer, links, siteUrl, user, current.Backend.Key, cancellation);
     return Results.Json(new
     {
         email = user.Email,
@@ -1786,6 +1815,7 @@ app.MapPost("/api/auth/forgot", async (
     TokenIssuer issuer,
     IEmailSender mail,
     ForgotLimit limit,
+    IResetLinks links,
     CancellationToken cancellation) =>
 {
     if (!mail.Configured)
@@ -1814,7 +1844,7 @@ app.MapPost("/api/auth/forgot", async (
     var user = await users.FindByEmailAsync(request.Email);
     if (user is not null && user.Email is not null)
     {
-        string url = ResetLinkFor(http, issuer, user, current.Backend.Key);
+        string url = await ResetLinkFor(http, issuer, links, siteUrl, user, current.Backend.Key, cancellation);
         await mail.SendAsync(
             user.Email,
             "Your TheYard password reset link",
@@ -1832,7 +1862,9 @@ app.MapPost("/api/auth/reset", async (
     HttpContext http,
     IServiceProvider services,
     CurrentBackend current,
-    TokenIssuer issuer) =>
+    TokenIssuer issuer,
+    IResetLinks links,
+    CancellationToken cancellation) =>
 {
     if (!current.Backend.Ready || services.GetService<UserManager<YardUser>>() is not { } users)
     {
@@ -1840,11 +1872,15 @@ app.MapPost("/api/auth/reset", async (
     }
 
     // One sentence for every way the link can be wrong: expired, used,
-    // forged, or a session token dressed as one.
+    // forged, a GUID that names nothing, or a session token dressed as one.
+    // The link carries a GUID; the token it stands for is read from the
+    // store and checked exactly as before, and the GUID is forgotten right
+    // before the password changes, so two takers get one change.
     var refused = Results.Problem(
         detail: "That reset link is not valid any more. Ask for a new one.",
         statusCode: 400, title: "The link did not work");
-    var claims = await issuer.ReadResetAsync(request.Token);
+    string? kept = string.IsNullOrWhiteSpace(request.Token) ? null : await links.ReadAsync(request.Token, cancellation);
+    var claims = await issuer.ReadResetAsync(kept);
     if (claims is null)
     {
         return refused;
@@ -1879,10 +1915,17 @@ app.MapPost("/api/auth/reset", async (
         }
     }
 
+    // The link is spent here, before the change: a second taker finds
+    // nothing to forget and is refused above the password ever moves.
+    if (!await links.ForgetAsync(request.Token!, cancellation))
+    {
+        return refused;
+    }
+
     // Removed then added rather than reset through a token provider, because
     // the provider needs a key ring this container does not keep across a
     // roll; both calls update the security stamp, and the fingerprint above
-    // is what makes the link one-use.
+    // was what made the link one-use before the store did.
     var removed = await users.RemovePasswordAsync(user);
     if (!removed.Succeeded)
     {

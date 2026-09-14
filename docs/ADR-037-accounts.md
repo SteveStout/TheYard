@@ -370,3 +370,38 @@ Azure.Identity, was refused by the pin test the 1.0.0.90 incident left
 behind (ADR: A second store on Cosmos DB, and what it costs, the addendum
 of the same day).
 
+
+## Addendum, 2026-09-14: what the link looks like
+
+The first emailed link reached Steve's phone as the container's own
+address, `theyard-cosmos-ss-...azurecontainer.io:8080`, followed by the
+whole signed token, three hundred characters of it. His words: "must use
+friendly url and have a clean guid". Both were defects in the shape of the
+link rather than in what it did, and both are gone.
+
+**The address is the site's own.** Behind the edge, the request a container
+sees carries the origin's host, not the domain a visitor typed, and the
+link was built from the request. Each container now carries `Site:Url`, the
+domain it answers on (`https://theyard.stevenstout.biz` and
+`https://theyard-cosmos.stevenstout.biz`), and a link is built from that
+first; the request's host is the fallback, which is right on a developer's
+machine and on the test host, where a test holds that a configured address
+is the one the link starts with.
+
+**The link carries a GUID and nothing else.** The signed token still
+exists, still names the account, the site and the password's fingerprint,
+and still expires in an hour; it just never travels. It is kept under a
+fresh GUID in a `resets` container on the document store, both sites'
+links in the one place, with the container's time-to-live as the hour, so
+an expired link names nothing without anything having to run. Using a link
+reads the token by its GUID, checks it exactly as before, and deletes the
+document right before the password changes: two takers get one change,
+and the second is told the link is not valid any more. A container with no
+document store keeps the GUIDs in memory for its own lifetime, which is the
+test host's shape. The store is a port with two implementations and one
+held contract; the memory one is held with a clock the test moves.
+
+What it costs: three point operations per link, a write, a read and a
+delete, a handful of request units inside the free tier, and one more
+container defined in `infra/cosmos/resets.json` beside the others, indexed
+on nothing because it is only ever read by id.

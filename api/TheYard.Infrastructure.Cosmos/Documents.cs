@@ -32,6 +32,9 @@ public static class Containers
     /// <summary>The kept log: one document per request, error or warning, partitioned on the UTC day, expiring by the container's time-to-live (ADR: Logs that outlive the container).</summary>
     public const string Logs = "logs";
 
+    /// <summary>Password reset links: one document per link under the GUID the link carries, expiring after the hour by the container's time-to-live, deleted on use (ADR: Accounts and per-user bids).</summary>
+    public const string Resets = "resets";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -43,6 +46,7 @@ public static class Containers
         [CatalogueDefault] = "/make",
         [Activity] = "/day",
         [Logs] = "/day",
+        [Resets] = "/id",
     };
 
     /// <summary>
@@ -50,7 +54,9 @@ public static class Containers
     /// optional: a container that is missing or empty makes the experiment card
     /// say so, and changes nothing about the site (ADR: The partition key). The
     /// activity container is optional the same way: missing, the Admin tab's
-    /// activity card says so and nothing is kept. So is the logs container.
+    /// activity card says so and nothing is kept. So is the logs container,
+    /// and so is the resets container: missing, minting a link fails and
+    /// says so, and everything else on the site is untouched.
     /// </summary>
     public static readonly IReadOnlyList<string> Required = [Vehicles, Photos, Bids, Users];
 }
@@ -253,6 +259,19 @@ public sealed class ActivityVisitorDocument
 /// outlive the container). Every string arrived through LogText.Clean, so no
 /// field can carry an at sign.
 /// </summary>
+/// <summary>
+/// One reset link, under the GUID the link carries, partitioned on that id.
+/// <c>ttl</c> is the store's own field: the document expires that many
+/// seconds after it is written, whatever else happens.
+/// </summary>
+public sealed class ResetLinkDocument
+{
+    public string Id { get; set; } = "";
+    public string Token { get; set; } = "";
+    public string Expires { get; set; } = "";
+    public int Ttl { get; set; }
+}
+
 public sealed class LogDocument
 {
     /// <summary>{at as ticks}:{random}, so two events in the same tick on two containers are two documents.</summary>

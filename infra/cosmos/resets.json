@@ -1,0 +1,16 @@
+{
+  "container": "resets",
+  "partitionKeyPath": "/id",
+  "defaultTtlSeconds": 3600,
+  "why": "Password reset links: one document per link under the GUID the link carries, holding the signed token that names the account, the site and the password's fingerprint. The container's time-to-live is the hour a link lives, so an expired link names nothing without anything having to run; the document is deleted when the link is used, which is what makes it one use. Read and deleted by id only, never queried, so nothing is indexed (ADR: Accounts and per-user bids, addendum of 14 September).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

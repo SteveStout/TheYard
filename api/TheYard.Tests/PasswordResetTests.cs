@@ -43,9 +43,13 @@ public class PasswordResetTests : IClassFixture<PasswordResetTests.KeyedHost>
         public const string Key = "the-reset-test-key";
         public readonly RecordingSender Sender = new();
 
+        /// <summary>The site as a visitor reaches it, which is what a link must carry and the test host's own address is not.</summary>
+        public const string SiteUrl = "https://yard.example.test";
+
         protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
         {
             builder.UseSetting("Admin:Key", Key);
+            builder.UseSetting("Site:Url", SiteUrl + "/");
             builder.ConfigureTestServices(services => services.AddSingleton<IEmailSender>(Sender));
         }
     }
@@ -184,6 +188,82 @@ public class PasswordResetTests : IClassFixture<PasswordResetTests.KeyedHost>
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/login", new { email, password = "mailed password" })).StatusCode);
     }
     // #endregion reset
+
+    // #region link-shape
+    /// <summary>
+    /// What a link looks like (14 September, after the first emailed one
+    /// carried the origin's host and the whole signed token): the site's own
+    /// address from Site:Url, and a plain GUID after reset=. The token never
+    /// appears in the link, and the GUID names nothing once it is used.
+    /// </summary>
+    [Fact]
+    public async Task A_link_is_the_sites_own_address_and_a_plain_guid_and_never_the_token()
+    {
+        var client = Client();
+        string email = await RegisterAsync(client, $"shape-{Guid.NewGuid():N}@example.com", "first password");
+        int before = _host.Sender.Sent.Count;
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email }) };
+        request.Headers.Add("X-Admin-Key", KeyedHost.Key);
+        var minted = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, minted.StatusCode);
+        using var json = JsonDocument.Parse(await minted.Content.ReadAsStringAsync());
+        string url = json.RootElement.GetProperty("url").GetString()!;
+        Assert.StartsWith(KeyedHost.SiteUrl + "/?view=account&reset=", url);
+        string id = url[(url.IndexOf("reset=", StringComparison.Ordinal) + 6)..];
+        Assert.True(Guid.TryParseExact(id, "D", out _), $"the link carries {id}, which is not a GUID");
+        Assert.DoesNotContain(".", id);
+
+        // The emailed one is the same shape, and nothing in the mail is a token.
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/forgot", new { email })).StatusCode);
+        var mail = Assert.Single(_host.Sender.Sent.Skip(before));
+        string mailed = mail.Text.Split('\n').First(line => line.Contains("reset=", StringComparison.Ordinal)).Trim();
+        Assert.StartsWith(KeyedHost.SiteUrl + "/?view=account&reset=", mailed);
+        Assert.True(Guid.TryParseExact(mailed[(mailed.IndexOf("reset=", StringComparison.Ordinal) + 6)..], "D", out _));
+        Assert.DoesNotContain("eyJ", mail.Text);
+
+        // Used once, the GUID names nothing; a GUID never minted names nothing either.
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/reset", new { token = id, password = "second password" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/auth/reset", new { token = id, password = "third password" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/auth/reset", new { token = Guid.NewGuid().ToString("D"), password = "third password" })).StatusCode);
+    }
+    // #endregion link-shape
+}
+
+/// <summary>
+/// The port that keeps a link's token under its GUID, in memory: the shape
+/// every implementation has to have, held where a clock can be moved.
+/// </summary>
+public class ResetLinksTests
+{
+    [Fact]
+    public async Task A_kept_token_comes_back_once_by_its_guid_and_expires_on_the_clock()
+    {
+        var clock = new MovableClock { Now = new DateTimeOffset(2026, 9, 14, 15, 0, 0, TimeSpan.Zero) };
+        var links = new MemoryResetLinks(clock);
+
+        string id = await links.KeepAsync("the token", TimeSpan.FromHours(1), CancellationToken.None);
+        Assert.True(ResetLinkIds.IsOne(id));
+        Assert.Equal("the token", await links.ReadAsync(id, CancellationToken.None));
+        Assert.Null(await links.ReadAsync(Guid.NewGuid().ToString("D"), CancellationToken.None));
+        Assert.Null(await links.ReadAsync("not a guid", CancellationToken.None));
+
+        Assert.True(await links.ForgetAsync(id, CancellationToken.None));
+        Assert.False(await links.ForgetAsync(id, CancellationToken.None));
+        Assert.Null(await links.ReadAsync(id, CancellationToken.None));
+
+        string later = await links.KeepAsync("another", TimeSpan.FromHours(1), CancellationToken.None);
+        clock.Now += TimeSpan.FromMinutes(61);
+        Assert.Null(await links.ReadAsync(later, CancellationToken.None));
+    }
+
+    /// <summary>A clock the test moves by hand; no package for a fake one, on the rule that a pinned graph is a decision.</summary>
+    private sealed class MovableClock : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; }
+
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
 }
 
 /// <summary>
