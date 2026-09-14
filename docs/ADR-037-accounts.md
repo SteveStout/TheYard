@@ -375,8 +375,8 @@ of the same day).
 
 The first emailed link reached Steve's phone as the container's own
 address, `theyard-cosmos-ss-...azurecontainer.io:8080`, followed by the
-whole signed token, three hundred characters of it. His words: "must use
-friendly url and have a clean guid". Both were defects in the shape of the
+whole signed token, three hundred characters of it. His words, in substance:
+a friendly address and a clean GUID. Both were defects in the shape of the
 link rather than in what it did, and both are gone.
 
 **The address is the site's own.** Behind the edge, the request a container

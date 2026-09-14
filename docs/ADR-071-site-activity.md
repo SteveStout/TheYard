@@ -357,8 +357,8 @@ answered 500, because the SQL half of the read threw before the Cosmos DB
 half was asked. Measured off `az sql db show` (status Paused, pausedDate
 2026-09-14T06:40:21Z) and off the container's log, not inferred.
 
-Two changes, and Steve named the first: "this should be pulling permanently
-from cosmosDB". The collector now writes every batch to one keeper, Azure
+Two changes, and Steve named the first: the activity should live on Cosmos
+DB, permanently. The collector now writes every batch to one keeper, Azure
 Cosmos DB wherever it is configured, whichever store served the request;
 the row still carries the serving store's key, so the graph keeps its line
 per store and the comparison stands. The report reads the keeper once and
