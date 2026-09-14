@@ -10,8 +10,9 @@ namespace TheYard.Api;
 // the operator's key (ADR: Site activity, and the line an address does not
 // cross). Three pieces: how a request becomes a hit with nothing in it a
 // person could be named by, the collector that takes hits off the request
-// path and writes them in batches to the store that served them, and the
-// report the two endpoints serve.
+// path and writes them in batches to one keeper (Azure Cosmos DB wherever it
+// is configured, since 1.0.0.128; each row still names the store that served
+// it), and the report the two endpoints serve.
 
 // #region visitor-token
 /// <summary>
@@ -162,14 +163,36 @@ public sealed class ActivityCollector : BackgroundService
     private long _failedBatches;
     private DateTimeOffset? _lastWrite;
 
-    public ActivityCollector(IReadOnlyDictionary<string, IActivityStore> stores, ILogger<ActivityCollector> logger)
+    /// <summary>
+    /// The keeper is the one store every batch goes to, whichever store served
+    /// the request; the row keeps the serving store's key as data. Azure
+    /// Cosmos DB wherever it is configured, because it never expires the
+    /// activity rows (ADR: Site activity, and the line an address does not
+    /// cross, addendum of 14 September) and because a serverless relational
+    /// database written every five seconds never pauses, which is what spent
+    /// the free amount in fourteen days. With no Cosmos DB on the container,
+    /// the default store keeps its own rows, which is what the tests run on.
+    /// </summary>
+    public ActivityCollector(IReadOnlyDictionary<string, IActivityStore> stores, string keeperKey, ILogger<ActivityCollector> logger)
     {
         _stores = stores;
+        KeeperKey = keeperKey;
         _logger = logger;
+    }
+
+    public ActivityCollector(IReadOnlyDictionary<string, IActivityStore> stores, ILogger<ActivityCollector> logger)
+        : this(stores, stores.Keys.FirstOrDefault() ?? "none", logger)
+    {
     }
 
     /// <summary>The stores by key, for the report.</summary>
     public IReadOnlyDictionary<string, IActivityStore> Stores => _stores;
+
+    /// <summary>The key of the store every batch is written to and every report is read from.</summary>
+    public string KeeperKey { get; }
+
+    /// <summary>The keeper itself, or the null store when the key names nothing.</summary>
+    public IActivityStore Keeper => _stores.GetValueOrDefault(KeeperKey) ?? NullActivityStore.Instance;
 
     /// <summary>What has passed through: offered, written, batches that failed, and the last time anything was written.</summary>
     public (long Offered, long Written, long FailedBatches, DateTimeOffset? LastWrite) Counters =>
@@ -211,7 +234,7 @@ public sealed class ActivityCollector : BackgroundService
         await DrainAsync(CancellationToken.None);
     }
 
-    /// <summary>One pass: everything queued right now, grouped by the store that served it, one batch per store.</summary>
+    /// <summary>One pass: everything queued right now, one batch, to the keeper; each hit still names the store that served it.</summary>
     public async Task DrainAsync(CancellationToken cancellation)
     {
         var batch = new List<ActivityHit>();
@@ -226,26 +249,17 @@ public sealed class ActivityCollector : BackgroundService
             return;
         }
 
-        foreach (var group in batch.GroupBy(hit => hit.Store, StringComparer.Ordinal))
+        try
         {
-            if (!_stores.TryGetValue(group.Key, out var store))
-            {
-                continue;
-            }
-
-            var hits = group.ToList();
-            try
-            {
-                await store.RecordAsync(hits, cancellation);
-                Interlocked.Add(ref _written, hits.Count);
-                _lastWrite = DateTimeOffset.UtcNow;
-            }
-            catch (Exception ex)
-            {
-                Interlocked.Increment(ref _failedBatches);
-                // The type, never the message: a store's message can name a server.
-                _logger.LogWarning("An activity batch of {Count} hits for {Store} was dropped: {Type}", hits.Count, group.Key, ex.GetType().Name);
-            }
+            await Keeper.RecordAsync(batch, cancellation);
+            Interlocked.Add(ref _written, batch.Count);
+            _lastWrite = DateTimeOffset.UtcNow;
+        }
+        catch (Exception ex)
+        {
+            Interlocked.Increment(ref _failedBatches);
+            // The type, never the message: a store's message can name a server.
+            _logger.LogWarning("An activity batch of {Count} hits was dropped by {Store}: {Type}", batch.Count, KeeperKey, ex.GetType().Name);
         }
     }
 }
@@ -286,21 +300,27 @@ public static class ActivityReport
         var byStore = new List<object>();
         var visitorDays = new List<(string Day, string Store, string Visitor, bool Bot)>();
 
+        // One read, from the keeper: every store's rows live there, each one
+        // naming the store that served it, so the two lines still show against
+        // each other and a paused relational database cannot take the card
+        // down with it (14 September).
+        var keeper = collector.Keeper;
+        var availability = await keeper.AvailabilityAsync(cancellation);
+        IReadOnlyList<ActivityHour> kept = availability.Available ? await keeper.HoursAsync(since, cancellation) : [];
+        // The visitor rows are read here for one number each and thrown
+        // away: how many distinct tokens each day saw. The rows themselves
+        // leave the server only through the keyed endpoint below.
+        IReadOnlyList<ActivityVisitor> keptVisitors = availability.Available ? await keeper.VisitorsAsync(since, cancellation) : [];
+
         foreach (var backend in backends.All)
         {
-            var store = collector.Stores.GetValueOrDefault(backend.Key) ?? NullActivityStore.Instance;
-            var availability = await store.AvailabilityAsync(cancellation);
-            stores.Add(new { store = backend.Key, name = backend.Name, available = availability.Available, reason = availability.Reason });
+            stores.Add(new { store = backend.Key, name = backend.Name, available = availability.Available, reason = availability.Reason, kept_by = collector.KeeperKey });
 
-            IReadOnlyList<ActivityHour> hours = availability.Available ? await store.HoursAsync(since, cancellation) : [];
-            var points = Bucket(hours.Where(hour => hour.Store == backend.Key), since, now, chosen.Bucket);
+            var hours = kept.Where(hour => hour.Store == backend.Key).ToList();
+            var points = Bucket(hours, since, now, chosen.Bucket);
             series.Add(new { store = backend.Key, name = backend.Name, points });
 
-            // The visitor rows are read here for one number each and thrown
-            // away: how many distinct tokens each day saw. The rows themselves
-            // leave the server only through the keyed endpoint below.
-            IReadOnlyList<ActivityVisitor> visitors = availability.Available ? await store.VisitorsAsync(since, cancellation) : [];
-            foreach (var visitor in visitors.Where(visitor => visitor.Store == backend.Key && visitor.LastSeen >= since))
+            foreach (var visitor in keptVisitors.Where(visitor => visitor.Store == backend.Key && visitor.LastSeen >= since))
             {
                 visitorDays.Add((visitor.Day, backend.Key, visitor.Visitor, visitor.Bots >= visitor.Requests));
             }
@@ -336,6 +356,7 @@ public static class ActivityReport
             top_paths = paths.OrderByDescending(entry => entry.Value).ThenBy(entry => entry.Key, StringComparer.Ordinal).Take(12)
                 .Select(entry => new { path = entry.Key, requests = entry.Value }).ToList(),
             stores,
+            kept_by = collector.KeeperKey,
             collector = new
             {
                 offered = counters.Offered,
@@ -352,30 +373,27 @@ public static class ActivityReport
         var chosen = ActivityWindows.Parse(window)!.Value;
         DateTimeOffset since = now - chosen.Length;
         var rows = new List<object>();
-        foreach (var backend in backends.All)
+        var known = backends.All.Select(backend => backend.Key).ToHashSet(StringComparer.Ordinal);
+        foreach (var visitor in await collector.Keeper.VisitorsAsync(since, cancellation))
         {
-            var store = collector.Stores.GetValueOrDefault(backend.Key) ?? NullActivityStore.Instance;
-            foreach (var visitor in await store.VisitorsAsync(since, cancellation))
+            if (visitor.LastSeen < since || !known.Contains(visitor.Store))
             {
-                if (visitor.LastSeen < since)
-                {
-                    continue;
-                }
-
-                rows.Add(new
-                {
-                    visitor = visitor.Visitor,
-                    network = visitor.Network,
-                    store = visitor.Store,
-                    day = visitor.Day,
-                    first_seen = visitor.FirstSeen,
-                    last_seen = visitor.LastSeen,
-                    requests = visitor.Requests,
-                    bots = visitor.Bots,
-                    top_paths = visitor.Paths.OrderByDescending(entry => entry.Value).ThenBy(entry => entry.Key, StringComparer.Ordinal).Take(5)
-                        .Select(entry => new { path = entry.Key, requests = entry.Value }).ToList(),
-                });
+                continue;
             }
+
+            rows.Add(new
+            {
+                visitor = visitor.Visitor,
+                network = visitor.Network,
+                store = visitor.Store,
+                day = visitor.Day,
+                first_seen = visitor.FirstSeen,
+                last_seen = visitor.LastSeen,
+                requests = visitor.Requests,
+                bots = visitor.Bots,
+                top_paths = visitor.Paths.OrderByDescending(entry => entry.Value).ThenBy(entry => entry.Key, StringComparer.Ordinal).Take(5)
+                    .Select(entry => new { path = entry.Key, requests = entry.Value }).ToList(),
+            });
         }
 
         return new

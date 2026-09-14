@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api;
 using TheYard.Application;
 
@@ -166,6 +167,54 @@ public class ActivityTests
         Assert.False(key.Admits("anything"));
     }
     // #endregion key
+
+    // #region keeper
+    /// <summary>
+    /// Every batch goes to the keeper, whichever store served the hit, and the
+    /// row keeps the serving store's key (14 September, after the serverless
+    /// relational database spent its free month being written every five
+    /// seconds). The other store records nothing.
+    /// </summary>
+    [Fact]
+    public async Task Every_hit_goes_to_the_keeper_and_keeps_the_store_that_served_it()
+    {
+        var sql = new RecordingActivityStore();
+        var cosmos = new RecordingActivityStore();
+        var stores = new Dictionary<string, IActivityStore>(StringComparer.Ordinal) { ["sql"] = sql, ["cosmos"] = cosmos };
+        var collector = new ActivityCollector(stores, "cosmos", NullLogger<ActivityCollector>.Instance);
+
+        collector.Offer(Hit("sql", "2026-09-14T13:00:00Z", path: "/one"));
+        collector.Offer(Hit("cosmos", "2026-09-14T13:00:00Z", path: "/two"));
+        await collector.DrainAsync(CancellationToken.None);
+
+        Assert.Equal("cosmos", collector.KeeperKey);
+        Assert.Same(cosmos, collector.Keeper);
+        Assert.Empty(sql.Recorded);
+        Assert.Equal(new[] { "sql", "cosmos" }, cosmos.Recorded.Select(hit => hit.Store).ToList());
+        Assert.Equal(2L, collector.Counters.Written);
+        Assert.Equal(0L, collector.Counters.FailedBatches);
+    }
+
+    private sealed class RecordingActivityStore : IActivityStore
+    {
+        public List<ActivityHit> Recorded { get; } = [];
+
+        public Task<ActivityAvailability> AvailabilityAsync(CancellationToken cancellation) =>
+            Task.FromResult(new ActivityAvailability(true, "recording"));
+
+        public Task RecordAsync(IReadOnlyList<ActivityHit> hits, CancellationToken cancellation)
+        {
+            Recorded.AddRange(hits);
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<ActivityHour>> HoursAsync(DateTimeOffset since, CancellationToken cancellation) =>
+            Task.FromResult<IReadOnlyList<ActivityHour>>([]);
+
+        public Task<IReadOnlyList<ActivityVisitor>> VisitorsAsync(DateTimeOffset since, CancellationToken cancellation) =>
+            Task.FromResult<IReadOnlyList<ActivityVisitor>>([]);
+    }
+    // #endregion keeper
 }
 
 /// <summary>The endpoints on a real host, with a key set and the collector drained by hand.</summary>

@@ -679,3 +679,39 @@ because there is no Entity Framework provider behind it.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): where the setting is built, at roll time, from the resource itself.
 - [`docs/ADR-040-database-source-control.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-040-database-source-control.md): the SQL project, why it is the authority, and what enforces that.
 - [`docs/ADR-041-two-providers-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-041-two-providers-explained.md): the same setup, walked at a new developer's level.
+
+## Addendum, 2026-09-14: the free month ran out on the fourteenth, and the Basic tier beside it
+
+The free limit this record priced, 100,000 vCore-seconds a month with
+`freeLimitExhaustionBehavior: AutoPause`, was reached on 14 September at
+06:40 UTC. Read off the database itself: `status Paused`, `pausedDate
+2026-09-14T06:40:21Z`, `useFreeLimit true`, `exhaustion AutoPause`; and off
+the container's log, error 42119, "This database has reached the monthly
+free amount allowance for the month of September 2026 and is paused for the
+remainder of the month." At 0.5 vCore minimum a database that never pauses
+spends 1,800 vCore-seconds an hour, so the allowance is fifty-five awake
+hours; the site activity collector (ADR: Site activity, and the line an
+address does not cross) had been writing it a batch every five seconds since
+the thirteenth, and an idle hour never came.
+
+The consequences were the ones this record predicted for a store that does
+not come up, and they were visible: the catalogue served from the files,
+bids that would not outlive the process, accounts, sign-in and the password
+reset answering 503, the health card reading `database=fail`. The document
+store's site was untouched.
+
+Steve's pick, from three priced: the Basic tier this record listed at
+$4.90 a month, a new database `sqldb-theyard-ss-basic` on the same
+Entra-only server, 5 DTU, 2 GB, local backup, created and read back
+Online at 09:10 CDT; the container's identity given its contained user from
+its SID and the same two roles, `db_datareader` and `db_datawriter`, read
+back from `sys.database_principals`; the schema published from the SQL
+project by SqlPackage with no warnings, twelve tables read back. The
+deploy's `SQL_DB` names it, so the next roll connects there and the store
+fills itself from the seed files on first boot. The paused database is
+left as it is; it resumes on the first of October and nothing points at it.
+The other two options were the portal's one-way "continue with additional
+charges" on the paused database, serverless at about $0.26 an awake hour,
+and leaving the site browse-only until October for nothing. The activity
+collector no longer writes here at all, which is what keeps a Basic
+database from mattering to the bill in a way the free one could not afford.

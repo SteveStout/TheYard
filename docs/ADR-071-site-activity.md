@@ -340,3 +340,37 @@ for the one card that still needs it, the reset links, and its box moved to
 an Operator card of its own. A test holds the 404 with the key on a host
 with the rows at their default.
 
+
+## Addendum, 2026-09-14: one keeper, and it is the document store
+
+The rule above, each store keeps the rows for the requests it served and the
+report reads both, met the free tier on the fourteenth. Azure SQL Database's
+free amount is 100,000 vCore-seconds a month, and a serverless database
+pauses only after an idle hour; a collector writing a batch every five
+seconds is never idle. The database that had paused between visits since
+the third of September stopped pausing on the thirteenth, when this record
+shipped, and at 06:40 UTC on the fourteenth Azure paused it for the rest of
+the month with its own sentence in the exception (error 42119): the free
+amount will renew on the first of October. The site kept serving, from its
+files, with no accounts and no bids, and the activity card on both sites
+answered 500, because the SQL half of the read threw before the Cosmos DB
+half was asked. Measured off `az sql db show` (status Paused, pausedDate
+2026-09-14T06:40:21Z) and off the container's log, not inferred.
+
+Two changes, and Steve named the first: "this should be pulling permanently
+from cosmosDB". The collector now writes every batch to one keeper, Azure
+Cosmos DB wherever it is configured, whichever store served the request;
+the row still carries the serving store's key, so the graph keeps its line
+per store and the comparison stands. The report reads the keeper once and
+splits the rows by that key, and a store that is down cannot take the card
+with it. Without Cosmos DB on a container the default store keeps its own
+rows, which is what the test host does. The second is in the store's own
+record: the site now points at a Basic database beside the paused one
+(ADR: The SQL Server backend, addendum of 14 September).
+
+What it costs: the activity rows were already on Cosmos DB with no expiry
+(the addendum of the thirteenth); this moves the SQL site's share there
+too, a few hundred request units a day inside the free tier's thousand a
+second. What it stops costing is the whole of the free relational amount.
+A test holds the keeper: two stores, two hits naming each, both rows land
+on the keeper and none on the other.

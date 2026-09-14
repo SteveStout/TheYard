@@ -49,7 +49,10 @@ jobs:
       # server has no SQL login at all, so the container authenticates as the
       # managed identity it already carries and there is no password to hold.
       SQL_SERVER: sql-theyard-ss-westus3
-      SQL_DB: sqldb-theyard-ss
+      # sqldb-theyard-ss-basic since 1.0.0.128: the serverless free database beside it
+      # spent September's allowance on the fourteenth and is paused until October
+      # (ADR: The SQL Server backend, addendum of 14 September).
+      SQL_DB: sqldb-theyard-ss-basic
       MI_CLIENT_ID: 2888a6ca-be1c-46a5-a1de-c666b1d193e5
     steps:
       # #region compute-version

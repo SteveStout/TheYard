@@ -13,7 +13,7 @@ and one small container.**
 | Resource | What it is | What it costs |
 | --- | --- | --- |
 | Azure Cosmos DB | Free tier, 1000 RU/s shared, local auth disabled so no key exists | **$0.00 a month** |
-| Azure SQL Database | Serverless, auto-pause after an idle hour, Entra-only | free-trial credit |
+| Azure SQL Database | Basic, 5 DTU, 2 GB, Entra-only (the serverless free database beside it paused on 14 September, below) | $4.90 a month |
 | Container | One Azure Container Instance, 1 vCPU and 1.5 GB | about $34 a month at list price while it runs |
 | Edge and TLS | Netlify free plan, 300 build credits a month | **$0.00 a month** |
 | Storage, 100,000 vehicles | 82 MB against a 25 GB allowance | **$0.00** |
@@ -142,6 +142,27 @@ serverless pricing.
 On the edge, eleven production deploys had quietly eaten **165 of the 300 free credits in a month at 15
 each**, while actually serving the site cost almost nothing. Application pushes no longer redeploy the
 edge, so they cost **zero credits**. ([Edge economics](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-007-edge-economics.md))
+
+## What the free tier taught on the fourteenth
+
+The relational store started on Azure SQL Database's free offer: 100,000 vCore-seconds of serverless
+compute a month, auto-pause after an idle hour, and when the amount is spent the database pauses until the
+first of the next month. That is fifty-five awake hours at the 0.5 vCore floor, and a database is awake
+whenever anything writes it. The site activity collector, which had written a batch every five seconds
+since 13 September, kept it awake around the clock, and at 06:40 UTC on 14 September Azure paused it with
+its own sentence in the exception (error 42119). The site kept serving from its files, accounts and bids
+went with the database, and the activity card answered 500 on both sites because the SQL half of its
+read threw first.
+
+Two things changed, both measured before they were decided
+([The SQL Server backend](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-039-sql-server-backend.md),
+[Site activity](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-071-site-activity.md)).
+The activity rows are kept in Azure Cosmos DB by both sites, each row naming the store that served it,
+so nothing writes the relational store every five seconds and a paused database cannot take the card
+down. And the site points at a Basic database, 5 DTU, on the same server: a fixed **$4.90 a month**, no
+pause, no allowance to run out. The serverless one resumes on the first of October and nothing points at
+it. The lesson is the one the table above already implied: a free tier is a budget, and a background
+writer spends it whether or not a visitor is there.
 
 ## Check any of it yourself
 

@@ -974,9 +974,10 @@ function ActivityCard({
     <article className={styles.wide} data-testid="activity-card">
       <h2 className={styles.cardTitle}>Site activity</h2>
       <p className={styles.muted}>
-        Unique visitors per day, everybody and each store, from rows kept by the store that served
-        each request and read back from both, so the two stores show against each other. Under it,
-        each visitor's day: when they came, how many requests, which store, and what they asked for.
+        Unique visitors per day, everybody and each store, from rows kept in Azure Cosmos DB by both
+        sites, each row naming the store that served it, so the two stores show against each other
+        and a paused relational database cannot take this card down with it. Under it, each
+        visitor's day: when they came, how many requests, which store, and what they asked for.
         Written off the request path in batches; the page's own files, the photos and this tab's
         reads are not counted. A visitor is a keyed hash of the address that changes daily, so the
         counts group and nothing joins across days or back to a person; a full address is never

@@ -431,11 +431,18 @@ builder.Services.AddSingleton(tokens);
 // The visitor token is keyed with the signing key, so both containers turn one
 // address into one token within a day and nobody outside can turn it back.
 // The collector is a hosted service that writes off the request path, one
-// batch per store every five seconds. The admin key guards the visitor rows;
-// unset, that endpoint is a 404, which is the default and the safe one.
+// batch every five seconds, to one keeper: Azure Cosmos DB wherever it came
+// up, whichever store served the request, because it keeps the rows without
+// expiry and because writing a serverless relational database every five
+// seconds kept it from ever pausing and spent September's free amount on the
+// fourteenth (ADR: Site activity, and the line an address does not cross,
+// addendum). Without Cosmos DB the default store keeps its own rows. The
+// admin key guards the visitor rows; unset, that endpoint is a 404, which is
+// the default and the safe one.
 visitorTokens = new VisitorTokens(signingKey);
 var activityStores = backends.All.ToDictionary(backend => backend.Key, backend => backend.Activity, StringComparer.Ordinal);
-builder.Services.AddSingleton(services => new ActivityCollector(activityStores, services.GetRequiredService<ILogger<ActivityCollector>>()));
+var activityKeeper = backends.All.FirstOrDefault(backend => backend.Key == "cosmos" && backend.Activity is not NullActivityStore)?.Key ?? backends.Default.Key;
+builder.Services.AddSingleton(services => new ActivityCollector(activityStores, activityKeeper, services.GetRequiredService<ILogger<ActivityCollector>>()));
 builder.Services.AddHostedService(services => services.GetRequiredService<ActivityCollector>());
 var adminKey = new AdminKey(builder.Configuration["Admin:Key"]);
 builder.Services.AddSingleton(adminKey);
