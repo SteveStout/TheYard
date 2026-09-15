@@ -1,0 +1,73 @@
+/*
+ * The code theme for every served document (ADR: Code that reads like code).
+ *
+ * highlight.js names the tokens; these rules give them this site's colors
+ * rather than a stock theme, so a C# sample sits in the Urban slate palette
+ * beside the prose instead of arriving from another design. Every color here
+ * is a token in tokens.css and every one of them is held to WCAG AA against
+ * the code ground by tokens.test.ts.
+ */
+
+/* #region code-theme */
+code .hljs-keyword,
+code .hljs-literal,
+code .hljs-selector-tag,
+code .hljs-section,
+code .hljs-doctag,
+code .hljs-template-tag {
+  color: var(--color-code-keyword);
+}
+
+code .hljs-built_in,
+code .hljs-type,
+code .hljs-title,
+code .hljs-class,
+code .hljs-name,
+code .hljs-tag {
+  color: var(--color-code-type);
+}
+
+code .hljs-string,
+code .hljs-regexp,
+code .hljs-symbol,
+code .hljs-bullet,
+code .hljs-quote,
+code .hljs-addition {
+  color: var(--color-code-string);
+}
+
+code .hljs-number,
+code .hljs-deletion {
+  color: var(--color-code-number);
+}
+
+code .hljs-comment {
+  color: var(--color-code-comment);
+  font-style: italic;
+}
+
+/* Attributes and the preprocessor: [Fact] above a test, #region in a sample. */
+code .hljs-meta,
+code .hljs-meta .hljs-keyword,
+code .hljs-meta .hljs-string {
+  color: var(--color-code-meta);
+}
+
+/* The key half of a pair: a JSON property, a YAML key, an XML attribute. */
+code .hljs-attr,
+code .hljs-attribute,
+code .hljs-property,
+code .hljs-variable,
+code .hljs-params,
+code .hljs-template-variable {
+  color: var(--color-code-type);
+}
+
+code .hljs-emphasis {
+  font-style: italic;
+}
+
+code .hljs-strong {
+  font-weight: var(--weight-semibold);
+}
+/* #endregion code-theme */

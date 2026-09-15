@@ -4,7 +4,7 @@
 
 Built by one engineer with AI as a force multiplier: AI writes the first draft, three suites of tests run
 on every push inside a five-minute gate (the counts are in the testing section below, held to the suites
-by a test), and seventy-three decision records carry the trade-off and the number behind each choice. What went
+by a test), and seventy-four decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/api/docs/built-with-ai), and what it all runs on, at
 millisecond speeds on free-tier stores and one small container, in
@@ -29,7 +29,7 @@ it has sent and how long the database took.
 
 Everything about how it is built and hosted is served from inside the running app, under
 App Architecture, SQL vs Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD
-and Best Practices in the sidebar. Seventy-three decision records explain each choice, and the code samples in them are read from the running build
+and Best Practices in the sidebar. Seventy-four decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
@@ -258,7 +258,7 @@ each with its own changelog line and, where it decided something, its own record
   DB, Diagrams, Hosting, CI/CD, Best Practices, Changelog and About, holding the
   architecture and style pages, the two stores side by side, the data flow,
   infrastructure, entity relationship, two-sites and store comparison diagrams on their
-  own zoomable pages, seventy-three decision records in one numbered index, the Bicep
+  own zoomable pages, seventy-four decision records in one numbered index, the Bicep
   infrastructure, my resume, and How this was built, which says plainly that an AI agent
   wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -426,7 +426,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (478 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (486 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -445,7 +445,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (102 Vitest tests at 1.0.0.123):** presentation logic only, since the API owns the rules.
+**Frontend (110 Vitest tests at 1.0.0.133):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
+import { highlight, grammarFor } from '../lib/highlight';
 import styles from './DocsMenu.module.css';
 
 // #region doc-links
@@ -19,6 +20,24 @@ marked.use({
   },
 });
 // #endregion doc-links
+
+// #region code-renderer
+// Every fenced block in a served document goes through the highlighter
+// (ADR: Code that reads like code). marked hands back the code and the name on
+// the fence; the name is checked against the grammars this bundle carries
+// before it reaches a class attribute, so a fence cannot write markup of its
+// own, and the highlighter escapes everything it does not tokenize.
+marked.use({
+  renderer: {
+    code({ text, lang }) {
+      const name = (lang ?? '').trim().split(/\s+/)[0];
+      const grammar = grammarFor(name);
+      const className = grammar ? `hljs language-${grammar}` : 'hljs';
+      return `<pre><code class="${className}">${highlight(text, name)}</code></pre>\n`;
+    },
+  },
+});
+// #endregion code-renderer
 
 export type DocKey =
   | 'readme'
@@ -105,6 +124,7 @@ export type DocKey =
   | 'adrActivity'
   | 'adrSecrets'
   | 'adrKeptLogs'
+  | 'adrHighlighting'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'performance'
@@ -712,6 +732,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '073',
   },
+  adrHighlighting: {
+    title: 'ADR: Code that reads like code',
+    menuLabel: 'ADR: Code that reads like code',
+    url: '/api/docs/adr-highlighting',
+    kind: 'adr',
+    number: '074',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -928,6 +955,7 @@ export const MENUS: Record<
       { key: 'adrActivity' },
       { key: 'adrSecrets' },
       { key: 'adrKeptLogs' },
+      { key: 'adrHighlighting' },
     ],
   },
   // #endregion records-menu

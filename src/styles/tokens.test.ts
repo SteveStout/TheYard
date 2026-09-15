@@ -137,3 +137,38 @@ describe('the sidebar palette', () => {
     expect(contrast('#ffffff', '#000000')).toBeCloseTo(21, 1);
   });
 });
+
+// #region code-palette
+/**
+ * The code theme (ADR: Code that reads like code). Code sits on
+ * --color-surface-muted inside a document, so that is the ground every token
+ * colour is measured against, and 4.5 is the floor because a keyword is normal
+ * text at 0.9em. The second assertion is the one a palette change actually
+ * breaks: six colours that all clear AA and are impossible to tell apart is a
+ * theme that passed a test and failed a reader.
+ */
+describe('the code theme', () => {
+  const codeTokens = [
+    'color-code-keyword',
+    'color-code-type',
+    'color-code-string',
+    'color-code-number',
+    'color-code-comment',
+    'color-code-meta',
+  ];
+
+  it('every code colour clears AA on the ground code sits on', () => {
+    for (const name of codeTokens) {
+      expect(contrast(token(name), token('color-surface-muted'))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('no two code colours are the same, and none of them is the prose colour', () => {
+    const values = codeTokens.map(token);
+    expect(new Set(values).size).toBe(codeTokens.length);
+    for (const value of values) {
+      expect(value).not.toBe(token('color-text'));
+    }
+  });
+});
+// #endregion code-palette

@@ -28,6 +28,19 @@
   --color-accent-soft: #e4e9f1; /* the slate blue, as a pale tint */
   --color-on-accent: #ffffff;
   --color-brand-mark: #ab978c; /* the taupe, as printed: the brand mark only */
+
+  /* #region code-palette */
+  /* The code theme (ADR: Code that reads like code). Six colours, each one
+     deepened until it clears WCAG AA on the ground code sits on, which is
+     --color-surface-muted; tokens.test.ts holds every one of them there, so a
+     prettier shade that fails the ratio fails the build. */
+  --color-code-keyword: #6d4a83; /* the slate blue, turned toward plum */
+  --color-code-type: #2a5d8f; /* the slate blue, deepened */
+  --color-code-string: #8a5a3c; /* the taupe, deepened until it reads as ink */
+  --color-code-number: #2f6b3a; /* the one green here, kept away from the status green */
+  --color-code-comment: #63676e; /* the slate gray */
+  --color-code-meta: #7a5230; /* the taupe again, darker: attributes and the preprocessor */
+  /* #endregion code-palette */
   /* The two stores when they are drawn against each other: the accent for the
      relational store and the taupe deepened for the document store, the same
      pair docs/images/sql-vs-cosmos.mjs draws its numbers in. Graphics rather

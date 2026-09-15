@@ -162,4 +162,37 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
         Assert.Contains("public static string Expand(", live);
         Assert.Contains("*Live from [`api/TheYard.Api/LiveSamples.cs`]", live);
     }
+
+    // #region the language a name implies
+    /// <summary>
+    /// The fence carries a language, and the expander reads it off the file's
+    /// name. Two of the files the records show have no ordinary extension: a
+    /// Dockerfile has none at all and `.editorconfig` is nothing but one, and
+    /// both rendered as plain text on the live site until the code theme
+    /// arrived and made that visible.
+    /// </summary>
+    [Theory]
+    [InlineData("api/TheYard.Api/Program.cs", "csharp")]
+    [InlineData("src/components/DocsMenu.tsx", "tsx")]
+    [InlineData("Dockerfile", "dockerfile")]
+    [InlineData(".editorconfig", "ini")]
+    [InlineData("netlify.toml", "ini")]
+    [InlineData("scripts/measure_stores.py", "python")]
+    [InlineData("scripts/resize_photos.mjs", "javascript")]
+    [InlineData("infra/main.bicep", "bicep")]
+    public void The_fence_names_the_language_the_file_name_implies(string path, string language)
+    {
+        string expanded = LiveSamples.Expand(
+            "```live path=" + path + " region=*\n```",
+            Repo.Root(),
+            "local");
+
+        // Every path here is a real file inside the expander's roots, so the
+        // block expands and carries a fence; the fence's language is what this
+        // test is about. Bicep is on the list because the expander still names
+        // it and the bundle carries no grammar for it, which renders as plain
+        // text rather than as an error.
+        Assert.Contains("```" + language, expanded, StringComparison.Ordinal);
+    }
+    // #endregion the language a name implies
 }

@@ -17,6 +17,10 @@ test('the Best Practices section opens the overview and its decision records', a
   await expect(sealed.getByRole('heading', { level: 1, name: 'Sealed by default' })).toBeVisible();
   await expect(sealed.locator('pre code').first()).toContainText('MemoryResetLinks');
   await expect(sealed.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
+  // The code is coloured by this build's own theme, not by the browser
+  // (ADR: Code that reads like code): a C# keyword is its own element.
+  await expect(sealed.locator('pre code.language-csharp .hljs-keyword').first()).toBeVisible();
+  await expect(sealed.locator('pre code .hljs-comment').first()).toBeVisible();
   await page.keyboard.press('Escape');
 
   // The records live in one collapsed index now (ADR-029); open it first.

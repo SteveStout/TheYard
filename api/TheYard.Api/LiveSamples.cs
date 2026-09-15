@@ -210,18 +210,31 @@ public static partial class LiveSamples
 
     private static string Note(string reason) => $"*Sample unavailable: {reason}*";
 
-    private static string LanguageFor(string path) => Path.GetExtension(path).ToLowerInvariant() switch
+    private static string LanguageFor(string path) => Path.GetFileName(path).ToLowerInvariant() switch
     {
-        ".ts" => "ts",
-        ".tsx" => "tsx",
-        ".cs" => "csharp",
-        ".css" => "css",
-        ".yml" or ".yaml" => "yaml",
-        ".bicep" => "bicep",
-        ".json" => "json",
-        ".md" => "markdown",
-        ".csproj" or ".slnx" or ".sqlproj" => "xml",
-        ".sql" => "sql",
-        _ => "text",
+        // Named files first: a Dockerfile has no extension, and .editorconfig is
+        // all extension. Both were rendering as plain text on the site until the
+        // code theme arrived and made it visible (ADR: Code that reads like code).
+        "dockerfile" => "dockerfile",
+        ".editorconfig" => "ini",
+        _ => Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".ts" => "ts",
+            ".tsx" => "tsx",
+            ".cs" => "csharp",
+            ".css" => "css",
+            ".yml" or ".yaml" => "yaml",
+            ".bicep" => "bicep",
+            ".json" => "json",
+            ".md" => "markdown",
+            ".csproj" or ".slnx" or ".sqlproj" => "xml",
+            ".sql" => "sql",
+            ".py" => "python",
+            ".mjs" or ".js" => "javascript",
+            ".html" => "xml",
+            ".toml" => "ini",
+            ".ps1" => "powershell",
+            _ => "text",
+        },
     };
 }

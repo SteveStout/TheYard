@@ -23,6 +23,7 @@
     "format:api:check": "dotnet format api/TheYard.slnx --verify-no-changes"
   },
   "dependencies": {
+    "highlight.js": "^11.12.0",
     "marked": "^18.0.9",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
