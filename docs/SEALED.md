@@ -1,8 +1,10 @@
 # Sealed by default
 
-A class in this application is sealed unless something in the solution derives from it. That is the
-default rather than a decision taken class by class, and the one class that had slipped past it was
-found by counting, not by review, which is the argument for the test at the bottom of this page.
+TheYard is a used-vehicle auction platform built in the open: a .NET 10 API, a React front end, and
+two databases underneath it. A class in it is sealed unless something in the solution derives from it.
+That is the default rather than a decision taken class by class, and the one class that had slipped
+past it was found by counting, not by review, which is the argument for the test at the bottom of this
+page.
 
 ## What `sealed` says
 
@@ -20,17 +22,60 @@ go looking for a subclass that is not there.
 
 ## Sealed records, and the comparison they give you
 
-This is the part that pays for itself every day. Every data transfer object here is a sealed record,
-and a record's equality is its values: the compiler writes `Equals`, `GetHashCode` and `==` from the
-members, so two instances carrying the same data are the same thing. A test can compare a whole
-vehicle to a whole vehicle in one line, a cache can key on one, and `with` makes a changed copy
-without a constructor call listing thirty fields.
+This is the part worth passing on, and it is the reason every record in this repository is sealed on
+purpose.
 
-Sealing is what makes that total. Record equality compares the runtime type first, through the
-generated `EqualityContract`, so a record and a record derived from it are never equal even when
-every field matches. An open record hands a caller a comparison that is right until somebody
-subclasses it, and then quietly wrong in a way that reads as a data bug rather than a type bug.
-Sealing removes the case from the language instead of from a reviewer's memory.
+**A record is a class the compiler writes equality for.** Two records holding the same field values
+compare as equal; two ordinary classes holding the same field values do not, because a class compares
+references and a record compares members. That difference is the whole reason to reach for a record:
+comparing payloads in a test, using a data transfer object as a dictionary key, or deciding whether
+anything actually changed.
+
+```csharp
+public sealed class PlainBid
+{
+    public required string VehicleId { get; init; }
+    public required int Amount { get; init; }
+}
+
+public sealed record Bid(string VehicleId, int Amount);
+
+var a = new PlainBid { VehicleId = "v-1", Amount = 9_000 };
+var b = new PlainBid { VehicleId = "v-1", Amount = 9_000 };
+Console.WriteLine(a == b); // False. Two references, and they are not the same reference.
+
+Console.WriteLine(new Bid("v-1", 9_000) == new Bid("v-1", 9_000)); // True. Same values, same thing.
+
+// Which is also why one of these works as a key and the other does not.
+var seen = new HashSet<Bid> { new("v-1", 9_000) };
+Console.WriteLine(seen.Contains(new Bid("v-1", 9_000))); // True.
+```
+
+**Leave that record unsealed and the compiler hands it something else as well: a `protected virtual
+EqualityContract`.** That property is how the generated `Equals` decides whether the object it was
+handed is even the same kind of thing, and the C# reference is explicit that it exists for exactly
+that
+([Records, C# reference](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record)).
+Derive from your DTO and the compiler overrides the contract for you. Every comparison made against
+the base type now means something different, no call site changed, and the place that shows up is
+production.
+
+```csharp
+public record Payload(string Id);
+
+public record Audited(string Id, string By) : Payload(Id);
+
+Payload one = new Payload("p-1");
+Payload two = new Audited("p-1", "steve");
+
+// False, and nothing at the call site says why: the derived record overrode
+// EqualityContract, so "same kind of thing" is no longer true.
+Console.WriteLine(one == two);
+Console.WriteLine(one.Equals(two));
+```
+
+Sealing the record removes that case from the language rather than from a reviewer's memory. Same
+values, same thing, and nothing can be derived that changes the answer.
 
 The wire shape of a vehicle, whole, as the site serves it:
 
@@ -44,6 +89,10 @@ which for a list is reference equality. Twenty-seven fields compare by value and
 identity, and a test that needs those two compared by contents has to say so.
 
 Record structs cannot be derived from at all, so they get the same guarantee from the runtime.
+
+**Habits do not carry from one busy month to the next, which is why this is a test rather than a
+rule.** Every build checks it, and anything that has to stay open goes on a named allow-list with the
+reason written beside it. The test is at the bottom of this page, whole.
 
 ## Why this codebase seals by default
 

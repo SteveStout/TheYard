@@ -291,6 +291,17 @@
   border-radius: var(--radius-sm);
 }
 
+/* The heading inside the summary carries the name and none of the styling: the
+   summary already looks like a section title, and an h2 arrives with a browser
+   margin and a size of its own. */
+.sectionHeading {
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+
 .sectionToggle::-webkit-details-marker {
   display: none;
 }
@@ -319,8 +330,9 @@ details[open] > .sectionToggle::after {
   outline-offset: -2px;
 }
 
-/* The same disclosure on the icons-only rail: the words go, the marker stays.
-   Hiding the summary outright would hide the only control that opens it. */
+/* Kept for the icons-only rail's spacing: that rail shows rows rather than
+   sections since 1.0.0.135, so nothing renders this today and it is the one
+   shape to reach for if a disclosure ever returns there. */
 .sectionToggleIcons {
   display: flex;
   align-items: center;

@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openSection } from './app';
 
 test('the Best Practices section opens the overview and its decision records', async ({ page }) => {
   await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
+  await openSection(nav, 'Best Practices');
   await nav.getByRole('button', { name: 'Best practices overview' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Best Practices' })
@@ -23,8 +24,8 @@ test('the Best Practices section opens the overview and its decision records', a
   await expect(sealed.locator('pre code .hljs-comment').first()).toBeVisible();
   await page.keyboard.press('Escape');
 
-  // The records live in one collapsed index now (ADR-029); open it first.
-  await nav.getByText('Decision Records', { exact: true }).click();
+  // Every section is a closed index now (ADR-013 addendum); open this one first.
+  await openSection(nav, 'Decision Records');
   await nav.getByRole('button', { name: 'ADR: Version in the footer' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: Version in the footer' })

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openSection } from './app';
 import { signIn } from './signIn';
 
 /**
@@ -92,6 +92,7 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   test('a document, open', async ({ page }) => {
     await openTheYard(page);
     const nav = page.getByRole('navigation', { name: 'Project documents' });
+    await openSection(nav, 'About');
     await nav.getByRole('button', { name: 'Project README' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     expect(await violations(page)).toEqual([]);
@@ -110,7 +111,7 @@ test.describe('WCAG 2.1 AA, on every view', () => {
     // Closed, the index's rows are not in the accessibility tree at all, so
     // every other test in this file was scanning a rail with a third of its
     // controls hidden.
-    await nav.getByText('Decision Records', { exact: true }).click();
+    await openSection(nav, 'Decision Records');
     await expect(nav.getByRole('button', { name: 'ADR: Front Door origin' })).toBeVisible();
     expect(await violations(page)).toEqual([]);
   });

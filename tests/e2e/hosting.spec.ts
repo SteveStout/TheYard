@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openSection } from './app';
 
 test('the Hosting section opens the hosting overview and the deployment ADRs', async ({ page }) => {
   await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
+  await openSection(nav, 'Hosting');
   await nav.getByRole('button', { name: 'Hosting overview' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Hosting' })
@@ -20,7 +21,7 @@ test('the Hosting section opens the hosting overview and the deployment ADRs', a
   await page.keyboard.press('Escape');
 
   // The records live in one collapsed index now (ADR-029); open it first.
-  await nav.getByText('Decision Records', { exact: true }).click();
+  await openSection(nav, 'Decision Records');
   await nav.getByRole('button', { name: 'ADR: Deployment strategy' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 2, name: 'ADR: Deployment strategy' })

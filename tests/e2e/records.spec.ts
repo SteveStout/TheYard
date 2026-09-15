@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openSection } from './app';
 
 /**
  * A record has an address (ADR: A record with no address).
@@ -25,7 +25,7 @@ test.describe('a record has an address', () => {
   }) => {
     await openTheYard(page);
     const rail = page.getByTestId('side-rail');
-    await rail.getByText('Decision Records', { exact: true }).click();
+    await openSection(rail, 'Decision Records');
     await rail.getByRole('button', { name: 'ADR: The changelog' }).click();
 
     const dialog = page.getByRole('dialog');

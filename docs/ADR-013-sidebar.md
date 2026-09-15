@@ -187,3 +187,30 @@ browser suite reads every heading.
 ![The rail on the live site at 1.0.0.107: App Architecture with its four rows, then SQL vs Cosmos DB with one row, then Diagrams with five link rows, each with the new-tab icon](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/sidebar-sections.png)
 
 ![The comparison open from its section: the record dialog over the inventory, the rail row marked current, the page's first paragraphs](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/sidebar-sql-vs-cosmos-open.png)
+
+
+## Addendum, 2026-09-15: every section is closed on arrival, shipped as 1.0.0.135
+
+The records index has been a closed `details` since it was written, and the other ten sections were
+always open. That was the right call at four sections and the wrong one at eleven: the rail arrived
+holding about a hundred rows, the reader's own section was somewhere inside them, and finding
+anything meant scrolling past everything.
+
+**Every section is a `details` now, and every one of them starts closed.** The sidebar arrives as
+eleven headings, which is what a table of contents is for, and a section opens on a click. The state
+is deliberately not remembered between visits: the reason to collapse is the arrival, not the
+session, and a reader who wants one section open wants it open once.
+
+Three things stay as they were. The element does the work, so the keyboard path, the screen reader
+announcement and the disclosure marker all come from `details` and `summary` rather than from a
+reimplementation with a button and a piece of state. The icons-only rail keeps its rows, because it
+shows no headings to collapse and a closed section there would be a triangle with nothing to read.
+And the current row still reads as current while its document is open.
+
+The browser suite carries the rule: eleven sections, none open on arrival, one open after a click,
+and none open again after a reload. Every spec that opens a document now names the section it lives
+in, through one helper in `tests/e2e/app.ts`, which is the part of this change that touched ten
+files.
+
+```live path=src/components/SideNav.tsx region=section-shell
+```

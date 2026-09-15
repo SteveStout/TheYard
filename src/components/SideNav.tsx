@@ -143,35 +143,36 @@ export function SideNav(props: SideNavProps) {
 
 // #region section-shell
 /**
- * A sidebar section. Most are always open. The records index is every decision
- * record there is, which is a wall at the bottom of the rail and grows by one
- * every time somebody decides something, so it is a native details: closed
- * until asked for, and the keyboard and screen-reader behaviour comes from the
- * element rather than from a reimplementation of it.
+ * A sidebar section: a native `details`, closed until somebody asks for it.
  *
- * The icons-only rail is the case that nearly went out wrong. Every other
- * section hides its heading there, because the rows underneath are icons and
- * speak for themselves. A closed `details` has no rows, so hiding its summary
- * hid the only way to open it: every record in the index behind a control a
- * mouse could not see. On that rail the summary keeps its marker and only the words
- * are hidden, which leaves the accessible name intact and the affordance
- * visible (the staff review, 2026-09-03).
+ * Every section works this way since 1.0.0.135, on the owner's instruction.
+ * Before it, only the records index collapsed and the other ten sections were
+ * always open, which meant the rail opened on about a hundred rows and the
+ * reader's own section was somewhere inside them. Closed by default turns the
+ * sidebar back into a table of contents: eleven headings, and the one you want
+ * is one click away. The keyboard and screen-reader behaviour comes from the
+ * element rather than from a reimplementation of it, which is why this is a
+ * `details` and not a button and a piece of state.
+ *
+ * The icons-only rail is the exception, and it is the case that nearly went out
+ * wrong once before (the staff review, 2026-09-03). There are no headings on
+ * that rail: the rows are icons and the words are hidden, so a closed section
+ * would be a triangle with nothing to read and nothing to aim at. It keeps the
+ * rows.
  */
 function SectionShell({
   label,
-  collapsible,
   iconsOnly,
   children,
 }: {
   label: string;
-  collapsible: boolean;
   iconsOnly: boolean;
   children: React.ReactNode;
 }) {
-  if (!collapsible) {
+  if (iconsOnly) {
     return (
       <section className={styles.section}>
-        <h2 className={iconsOnly ? styles.srOnly : styles.sectionTitle}>{label}</h2>
+        <h2 className={styles.srOnly}>{label}</h2>
         {children}
       </section>
     );
@@ -185,8 +186,12 @@ function SectionShell({
         }
       }}
     >
-      <summary className={iconsOnly ? styles.sectionToggleIcons : styles.sectionToggle}>
-        <span className={iconsOnly ? styles.srOnly : undefined}>{label}</span>
+      <summary className={styles.sectionToggle}>
+        {/* The label stays a heading inside the summary, which HTML allows and
+            which keeps the eleven section names in the document outline where a
+            screen reader's heading list finds them; the summary is what makes
+            it a disclosure. */}
+        <h2 className={styles.sectionHeading}>{label}</h2>
       </summary>
       {children}
     </details>
@@ -280,12 +285,7 @@ function NavContent({
         <div className={styles.scroll}>
           {/* #region rows */}
           {MENU_ORDER.map((variant) => (
-            <SectionShell
-              key={variant}
-              label={MENUS[variant].label}
-              collapsible={MENUS[variant].collapsible === true}
-              iconsOnly={iconsOnly}
-            >
+            <SectionShell key={variant} label={MENUS[variant].label} iconsOnly={iconsOnly}>
               {MENUS[variant].items.map(({ key, sub }) => (
                 <button
                   key={key}

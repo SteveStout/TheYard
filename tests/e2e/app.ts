@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Open a view of TheYard and wait until the application has actually loaded.
@@ -42,3 +42,34 @@ export async function openTheYard(page: Page, path = '/'): Promise<void> {
   // query is in flight, and names the view it arrived at once it is not.
   await expect(announcement).not.toHaveText('Loading inventory', { timeout: 20_000 });
 }
+
+// #region sections
+/**
+ * Open the sidebar section a row lives in.
+ *
+ * Every section is a closed `details` since 1.0.0.135, so a spec that clicks a
+ * document row has to say which section it is in first. Idempotent on purpose:
+ * clicking a summary toggles, so a helper that always clicked would close the
+ * section for the second row in the same test.
+ */
+export async function openSection(scope: Locator, label: string): Promise<void> {
+  const summary = scope.locator('summary').filter({ hasText: label }).first();
+  await expect(summary).toBeVisible();
+  const open = await summary.evaluate((node) => (node.parentElement as HTMLDetailsElement).open);
+  if (!open) {
+    await summary.click();
+  }
+}
+
+/** Open all of them, for the tests that count what the whole menu holds. */
+export async function openAllSections(scope: Locator): Promise<void> {
+  const summaries = scope.locator('summary');
+  for (let index = 0; index < (await summaries.count()); index += 1) {
+    const summary = summaries.nth(index);
+    const open = await summary.evaluate((node) => (node.parentElement as HTMLDetailsElement).open);
+    if (!open) {
+      await summary.click();
+    }
+  }
+}
+// #endregion sections

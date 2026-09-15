@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openSection } from './app';
 
 /**
  * The sidebar's docked shape (ADR-013): at 1024px and up the panel is a
@@ -22,7 +22,7 @@ test.describe('the docked rail', () => {
   test('no row in the rail is cut off by its own width', async ({ page }) => {
     await openTheYard(page);
     const rail = page.getByTestId('side-rail');
-    await rail.getByText('Decision Records', { exact: true }).click();
+    await openSection(rail, 'Decision Records');
     await expect(rail.getByRole('button', { name: 'ADR: Front Door origin' })).toBeVisible();
 
     const clipped = await rail.evaluate((root) =>
@@ -61,6 +61,8 @@ test.describe('the docked rail', () => {
     }
     // Every drawing has a row of its own that opens its page in a new tab
     // (ADR: Every diagram opens on its own page, the addendum on the section).
+    // The section is closed on arrival like every other one since 1.0.0.135.
+    await openSection(rail, 'Diagrams');
     for (const [name, label] of [
       ['infrastructure', 'Infrastructure'],
       ['dataflow', 'Data flow'],
@@ -87,6 +89,7 @@ test.describe('the docked rail', () => {
   }) => {
     await openTheYard(page);
     const rail = page.getByTestId('side-rail');
+    // The icons rail keeps its rows: there are no headings to collapse there.
     await rail.getByRole('button', { name: 'Collapse the sidebar' }).click();
     await expect(rail).toHaveAttribute('data-collapsed', 'true');
     await expect.poll(async () => (await rail.boundingBox())?.width ?? 0).toBeLessThanOrEqual(80);
@@ -104,11 +107,36 @@ test.describe('the docked rail', () => {
       .toBeGreaterThanOrEqual(240);
   });
 
+  test('every section starts closed, and opening one leaves the others closed', async ({
+    page,
+  }) => {
+    await openTheYard(page);
+    const rail = page.getByTestId('side-rail');
+    const sections = rail.locator('details');
+
+    // Eleven headings and nothing else: the rail arrives as a table of contents
+    // rather than as a hundred rows (ADR: The sidebar, the addendum on
+    // collapsing every section).
+    await expect(sections).toHaveCount(11);
+    await expect(rail.locator('details[open]')).toHaveCount(0);
+    await expect(rail.getByRole('button', { name: 'Hosting overview' })).toHaveCount(0);
+
+    await openSection(rail, 'Hosting');
+    await expect(rail.locator('details[open]')).toHaveCount(1);
+    await expect(rail.getByRole('button', { name: 'Hosting overview' })).toBeVisible();
+
+    // A reload starts closed again: the state is deliberately not remembered,
+    // because the reason to collapse is the arrival, not the visit.
+    await page.reload();
+    await expect(page.getByTestId('side-rail').locator('details[open]')).toHaveCount(0);
+  });
+
   test('a doc opens from the rail and its row reads as current while it is open', async ({
     page,
   }) => {
     await openTheYard(page);
     const rail = page.getByTestId('side-rail');
+    await openSection(rail, 'Hosting');
     await rail.getByRole('button', { name: 'Hosting overview' }).click();
     const doc = page.getByRole('dialog', { name: 'Hosting' });
     await expect(doc.getByRole('heading', { level: 1, name: 'Hosting' })).toBeVisible();

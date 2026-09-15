@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openSection } from './app';
 
 /**
  * The Changelog section (ADR-012): one item, one file, one sentence per
@@ -10,6 +10,7 @@ test('the Changelog section opens the version list, newest first, and its record
 }) => {
   await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
+  await openSection(nav, 'Changelog');
   await nav.getByRole('button', { name: 'Version history' }).click();
   const doc = page.getByRole('dialog', { name: 'Changelog' });
   await expect(doc.getByRole('heading', { level: 1, name: 'Changelog' })).toBeVisible();
@@ -22,7 +23,7 @@ test('the Changelog section opens the version list, newest first, and its record
   await expect(doc).toBeHidden();
 
   // The records live in one collapsed index now (ADR-029); open it first.
-  await nav.getByText('Decision Records', { exact: true }).click();
+  await openSection(nav, 'Decision Records');
   await nav.getByRole('button', { name: 'ADR: The changelog' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: The changelog' })

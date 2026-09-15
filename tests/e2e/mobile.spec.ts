@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openAllSections, openSection } from './app';
 
 /**
  * Phone-sized viewport (iPhone-class, 375x812). Below 1024px the sidebar is a
@@ -49,6 +49,7 @@ test('the drawer lists every menu, opens a doc full-screen, and closes on Escape
     'https://github.com/SteveStout/TheYard'
   );
 
+  await openSection(drawer, 'Hosting');
   await drawer.getByRole('button', { name: 'Hosting overview' }).click();
   await expect(drawer).toBeHidden();
   const doc = page.getByRole('dialog', { name: 'Hosting' });
@@ -71,6 +72,9 @@ test('every drawer row leads with an icon, stands at least 44px tall, and the ch
 
   // Every doc, the CI link, Admin, the resume and the repository: each row is
   // a button or a link carrying exactly one decorative (aria-hidden) svg.
+  // Every section is closed on arrival since 1.0.0.135, so open them all: this
+  // test is about what a row looks like, not about how many are showing.
+  await openAllSections(drawer);
   const rows = drawer.locator('button:not([aria-label="Close"]), a');
   const count = await rows.count();
   expect(count).toBeGreaterThanOrEqual(24);
@@ -124,7 +128,9 @@ test('the phone header has its own decision record, reachable from the drawer', 
   // The records live in one collapsed index now (ADR-029); open it first.
   await page
     .getByRole('dialog', { name: 'Menu' })
-    .getByText('Decision Records', { exact: true })
+    .locator('summary')
+    .filter({ hasText: 'Decision Records' })
+    .first()
     .click();
   await page
     .getByRole('dialog', { name: 'Menu' })

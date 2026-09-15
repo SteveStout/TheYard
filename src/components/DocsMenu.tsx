@@ -805,7 +805,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
 
 export const MENUS: Record<
   MenuVariant,
-  { label: string; items: MenuEntry[]; links?: readonly MenuLink[]; collapsible?: boolean }
+  { label: string; items: MenuEntry[]; links?: readonly MenuLink[] }
 > = {
   about: {
     label: 'About',
@@ -877,10 +877,11 @@ export const MENUS: Record<
    * the file each one serves. They used to hang off the four topic sections as
    * sub-rows, which put eighteen under Best Practices alone and turned the
    * sidebar into a wall. Twenty-seven of anything is an index, not a submenu.
+   * Since 1.0.0.135 this index is not special: every section in the sidebar is
+   * a closed details, and SideNav is where that happens.
    */
   records: {
     label: 'Decision Records',
-    collapsible: true,
     items: [
       { key: 'adrOrigin' },
       { key: 'adrDocker' },

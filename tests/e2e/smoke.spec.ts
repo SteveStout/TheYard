@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openSection } from './app';
 import { bidTheMinimum } from './bidding';
 
 /**
@@ -91,11 +91,13 @@ test('tile clicks are GET navigation: URL updates, Back works, deep links restor
 test('the About section shows the README in-app and links the résumé PDF', async ({ page }) => {
   await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
+  await openSection(nav, 'About');
   await nav.getByRole('button', { name: 'Project README' }).click();
   await expect(page.getByRole('dialog').getByRole('heading', { name: /TheYard/ })).toBeVisible();
   await page.getByRole('dialog').getByLabel('Close').click();
   await expect(page.getByRole('dialog')).toBeHidden();
 
+  await openSection(nav, 'App Architecture');
   await nav.getByRole('button', { name: 'Data flow diagram' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'Data Flow' })
@@ -108,6 +110,7 @@ test('the About section shows the README in-app and links the résumé PDF', asy
   await page.keyboard.press('Escape');
 
   // Architecture and style are the App Architecture section's own pages (ADR-022).
+  await openSection(nav, 'App Architecture');
   await nav.getByRole('button', { name: 'Architecture overview' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'App Architecture' })

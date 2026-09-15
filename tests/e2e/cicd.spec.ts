@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { openTheYard } from './app';
+import { openTheYard, openSection } from './app';
 
 test('the CI/CD section opens its overview and Hosting serves the Bicep file', async ({ page }) => {
   await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
+  await openSection(nav, 'CI/CD');
   await nav.getByRole('button', { name: 'CI/CD overview' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'CI/CD' })
@@ -11,7 +12,7 @@ test('the CI/CD section opens its overview and Hosting serves the Bicep file', a
   await page.keyboard.press('Escape');
 
   // The records live in one collapsed index now (ADR-029); open it first.
-  await nav.getByText('Decision Records', { exact: true }).click();
+  await openSection(nav, 'Decision Records');
   await nav.getByRole('button', { name: 'ADR: The deploy pipeline' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'ADR: The deploy pipeline' })
@@ -23,6 +24,7 @@ test('the CI/CD section opens its overview and Hosting serves the Bicep file', a
     'https://github.com/SteveStout/TheYard/actions'
   );
 
+  await openSection(nav, 'Hosting');
   await nav.getByRole('button', { name: 'Infrastructure (Bicep)' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { level: 1, name: 'infra/main.bicep' })
