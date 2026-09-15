@@ -8,6 +8,15 @@ That rename was considered on the first day and deliberately not done, and the f
 tells an agent what it is working on was left describing the version that never happened,
 which is the worst place in a repository for a sentence to be wrong.
 
+## Before you change anything
+
+Read the record that governs it. The decisions are `docs/ADR-*.md`, served from the running app under
+Decision Records, and the ones a test enforces are listed beside their test in
+`docs/ADR-075-the-rules-a-change-has-to-pass.md`. A change that contradicts a record changes the record
+first, as an addendum that says when it stopped being true rather than an edit that makes it look like
+it was always this way. The test goes in the same commit as the change, and the five-minute gate runs
+green before anything rolls (ADR-068). Any build warning is red.
+
 ## Architecture, and it is not negotiable
 
 Nine projects; among the five that form the onion, dependencies point INWARD only:

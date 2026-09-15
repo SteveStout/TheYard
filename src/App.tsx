@@ -231,6 +231,10 @@ export default function App() {
       window.clearTimeout(retryTimer);
       controller.abort();
     };
+    // loadState is read above to decide whether this is a first load, and it
+    // is deliberately not a dependency: this effect sets it to ready itself,
+    // so listing it would run the effect again the moment the load it started
+    // finished.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, sort, reloadNonce]);
 

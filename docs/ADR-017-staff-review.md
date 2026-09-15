@@ -168,3 +168,13 @@ written in prose is a claim with no test behind it. Where a count is
 load-bearing it now reads as a range or points at the thing that counts it;
 where it is decorative it was removed. The audit script is worth keeping in
 the mentor notes and rerunning before any review.
+
+## Files
+
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the host, with one endpoint serving every document instead of twenty routes.
+- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the slug-to-file catalog that endpoint reads.
+- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health and build types this review moved out of the host file.
+- [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the test that holds the catalog and the sidebar to the same list.
+- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the sidebar's copy of that list, and the one brand mark this review deduplicated.
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the timeout and the readiness check this review added to the pipeline.
+- [`docs/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): the record that made this section a rule rather than a habit.

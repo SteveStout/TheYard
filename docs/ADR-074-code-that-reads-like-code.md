@@ -1,6 +1,6 @@
 # ADR: Code that reads like code
 
-**Status.** Accepted, 15 September 2026, shipped in 1.0.0.133.
+Status: accepted, 2026-09-15, shipped as 1.0.0.133.
 
 ## The problem, measured before it was solved
 

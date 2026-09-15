@@ -7,7 +7,8 @@ running the same image in a second container beside the Azure SQL one, so the
 two can be opened in two tabs and compared. The bar: "as fast as SQL Server, on
 a different data structure", at the cheapest cost that still hits it. And the
 personal goal behind it, in his words: "learn cosmos DB and make sure I learn
-how to performance tune it".
+how to performance tune it". Accepted as written and built: the second store
+shipped in 1.0.0.89.
 
 This record is the parent. The partition key, which is the one decision that
 cannot be changed later, has its own record (ADR: The partition key).

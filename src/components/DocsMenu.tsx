@@ -125,6 +125,7 @@ export type DocKey =
   | 'adrSecrets'
   | 'adrKeptLogs'
   | 'adrHighlighting'
+  | 'adrRules'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'performance'
@@ -739,6 +740,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '074',
   },
+  adrRules: {
+    title: 'ADR: The rules a change has to pass',
+    menuLabel: 'ADR: The rules a change has to pass',
+    url: '/api/docs/adr-rules',
+    kind: 'adr',
+    number: '075',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -957,6 +965,7 @@ export const MENUS: Record<
       { key: 'adrSecrets' },
       { key: 'adrKeptLogs' },
       { key: 'adrHighlighting' },
+      { key: 'adrRules' },
     ],
   },
   // #endregion records-menu

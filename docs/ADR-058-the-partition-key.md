@@ -3,7 +3,9 @@
 Status: proposed, 2026-09-08, written before the containers existed, because
 this is the one decision on a Cosmos DB container that cannot be changed
 afterwards. The numbers at the bottom are filled in by measurement (ADR:
-Measuring both stores) and the record says which are estimates until then.
+Measuring both stores) and the record says which are estimates until then. Accepted as built: the
+containers shipped in 1.0.0.89 and the numbers this record owed were
+measured at 1.0.0.92.
 Parent: ADR: A second store on Cosmos DB, and what it costs.
 
 ## What the key is, for a reader who knows SQL Server
