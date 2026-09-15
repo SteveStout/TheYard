@@ -34,12 +34,13 @@
      deepened until it clears WCAG AA on the ground code sits on, which is
      --color-surface-muted; tokens.test.ts holds every one of them there, so a
      prettier shade that fails the ratio fails the build. */
+  --color-code-text: #332f2c; /* the code itself, darker than the prose: the ground it sits on is not white */
   --color-code-keyword: #6d4a83; /* the slate blue, turned toward plum */
-  --color-code-type: #2a5d8f; /* the slate blue, deepened */
+  --color-code-type: #1f5c8b; /* the slate blue, deepened */
   --color-code-string: #8a5a3c; /* the taupe, deepened until it reads as ink */
-  --color-code-number: #2f6b3a; /* the one green here, kept away from the status green */
-  --color-code-comment: #63676e; /* the slate gray */
-  --color-code-meta: #7a5230; /* the taupe again, darker: attributes and the preprocessor */
+  --color-code-comment: #25663a; /* green, which is where a reader looks for a comment */
+  --color-code-number: #96363b; /* brick, so a literal number is not a second green */
+  --color-code-meta: #6b5a1e; /* olive: attributes and the preprocessor */
   /* #endregion code-palette */
   /* The two stores when they are drawn against each other: the accent for the
      relational store and the taupe deepened for the document store, the same

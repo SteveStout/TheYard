@@ -57,12 +57,13 @@ theme arrives from another design and sits next to this one badly.
 
 | Token | Value | Contrast on the code ground |
 | --- | --- | --- |
+| `--color-code-text` | `#332f2c` | 11.90 |
 | `--color-code-keyword` | `#6d4a83` | 6.37 |
-| `--color-code-type` | `#2a5d8f` | 6.16 |
+| `--color-code-type` | `#1f5c8b` | 6.36 |
 | `--color-code-string` | `#8a5a3c` | 5.22 |
-| `--color-code-number` | `#2f6b3a` | 5.74 |
-| `--color-code-comment` | `#63676e` | 5.10 |
-| `--color-code-meta` | `#7a5230` | 6.12 |
+| `--color-code-comment` | `#25663a` | 6.20 |
+| `--color-code-number` | `#96363b` | 6.52 |
+| `--color-code-meta` | `#6b5a1e` | 6.07 |
 
 Code sits on `--color-surface-muted`, so that is the ground each one is measured against, and 4.5 is
 the floor because a keyword is normal text at 0.9em. `tokens.test.ts` reads the real stylesheet and
@@ -72,6 +73,20 @@ told apart is a theme that passed a test and failed a reader.
 
 ```live path=src/styles/code.css region=code-theme
 ```
+
+## Addendum, the same afternoon: what the owner saw
+
+The first version of this theme put comments in slate gray and left the code itself in the prose
+colour. Read on the live page rather than in a swatch, both were wrong. Comments are green in every
+editor this project's reader has ever used, and gray comments on a gray ground read as disabled text
+rather than as commentary. The code itself needed to be darker than the prose, because it sits on
+`--color-surface-muted` rather than on white and 6.4 against that ground reads thin at 0.9em.
+
+So the palette gained `--color-code-text` at 11.9 against the code ground, comments moved to green,
+numbers moved off green to brick so that two token types are not one colour, and attributes moved to
+olive. The table above is the current set and `tokens.test.ts` holds every ratio in it, plus a floor
+of 7 for the code colour itself. **The lesson, and it is the one this project keeps relearning: a
+palette is read on the page it ships to, not in the file it is written in.**
 
 ## What this does not do
 

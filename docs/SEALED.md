@@ -18,13 +18,45 @@ A whole class from this repository, the in-memory half of the password reset por
 Nothing derives from it and nothing was meant to, and the declaration says so before a reader has to
 go looking for a subclass that is not there.
 
+## Sealed records, and the comparison they give you
+
+This is the part that pays for itself every day. Every data transfer object here is a sealed record,
+and a record's equality is its values: the compiler writes `Equals`, `GetHashCode` and `==` from the
+members, so two instances carrying the same data are the same thing. A test can compare a whole
+vehicle to a whole vehicle in one line, a cache can key on one, and `with` makes a changed copy
+without a constructor call listing thirty fields.
+
+Sealing is what makes that total. Record equality compares the runtime type first, through the
+generated `EqualityContract`, so a record and a record derived from it are never equal even when
+every field matches. An open record hands a caller a comparison that is right until somebody
+subclasses it, and then quietly wrong in a way that reads as a data bug rather than a type bug.
+Sealing removes the case from the language instead of from a reviewer's memory.
+
+The wire shape of a vehicle, whole, as the site serves it:
+
+```live path=api/TheYard.Data/Vehicle.cs region=*
+```
+
+Two things in that file are worth the read. The sealing reason is written on the type itself rather
+than left to a page, and the comment is honest about the exception: two of the properties are
+`IReadOnlyList<string>`, and the default comparer for an interface calls the instance's own `Equals`,
+which for a list is reference equality. Twenty-seven fields compare by value and two compare by
+identity, and a test that needs those two compared by contents has to say so.
+
+Record structs cannot be derived from at all, so they get the same guarantee from the runtime.
+
 ## Why this codebase seals by default
 
 Intent comes first. An open class is an invitation: somebody may reasonably derive from it, override
 a method, and expect the rest of the code to keep working. These classes were not written to survive
-that. Most of them do one job behind a port, and a subclass that changed half of one would quietly
-break a rule the application states somewhere else. Sealing is how a class says it is finished, and
-the compiler holds that line instead of a reviewer remembering to.
+that. Most of them do one job behind a port, like the null sender that stands in when a container has
+no mail configured:
+
+```live path=api/TheYard.Application/Email.cs region=email-port
+```
+
+The interface is the extension point, and the class behind it is finished. That is the shape almost
+everything here takes, and sealing is how the class says which of the two it is.
 
 The runtime gets something out of it as well. When the just-in-time compiler knows a type has no
 subclass, it can turn virtual calls into direct ones, and casts, type checks, array assignments and
@@ -47,8 +79,8 @@ attention. CA1852 stops at internal classes, which is why the test below covers 
 The same class open and sealed, and what a caller can do with each:
 
 ```csharp
-// Open. Anything can derive from it, and the override is invisible at the call site:
-// a method that takes an Increment has no idea which one it is holding.
+// Open. Anything can derive from it, and the override is invisible at the call
+// site: a method that takes an Increment has no idea which one it is holding.
 public class Increment
 {
     public virtual int For(int standing) => standing < 10_000 ? 250 : 1_000;
@@ -113,7 +145,7 @@ public abstract class StoreCheck
 ## The test that holds it
 
 One test class reads the five projects that make up the application, counts the shape of every class
-the build actually has, and fails when one of them is open with nothing deriving from it:
+and record the build actually has, and fails when one of them is open with nothing deriving from it:
 
 ```live path=api/TheYard.Tests/SealedByDefaultTests.cs region=*
 ```
@@ -127,17 +159,19 @@ Measured on this build:
 | abstract | 0 |
 | open | 0 |
 | records | 58 |
+| open records | 0 |
 
 77 of the 110 classes in those five projects are sealed, and the 33 that are not are static, which
-cannot be inherited either. The records beside them are value shapes whose equality the compiler
-writes; they are counted here and left to their own question rather than swept into this one. Every
-number in that table is read back out of this page by the test above, so it cannot drift from the
-build the way a number typed once always does.
+cannot be inherited either. All 58 records are sealed or record structs, so value comparison means
+what it says on every one of them. Every number in that table is read back out of this page by the
+test above, so it cannot drift from the build the way a number typed once always does.
 
 ## References
 
 - [`sealed`, C# reference](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/sealed):
   what the keyword does and where it can go.
+- [Records, C# reference](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record):
+  the equality the compiler writes, and the `EqualityContract` an open record compares first.
 - [CA1852: Seal internal types](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1852):
   the analyzer this repository turns on, and the internal classes it covers.
 - [Framework Design Guidelines: Sealing](https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/sealing):

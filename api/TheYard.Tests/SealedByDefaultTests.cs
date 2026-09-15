@@ -131,6 +131,7 @@ public class SealedByDefaultTests
             ["abstract"] = 0,
             ["open"] = 0,
             ["records"] = 0,
+            ["open records"] = 0,
         };
         foreach (Type type in Written())
         {
@@ -138,6 +139,10 @@ public class SealedByDefaultTests
             if (counts.ContainsKey(shape))
             {
                 counts[shape]++;
+            }
+            if (shape == "records" && !type.IsSealed)
+            {
+                counts["open records"]++;
             }
         }
         return counts;
@@ -171,6 +176,31 @@ public class SealedByDefaultTests
         }
 
         Assert.True(unexplained.Count == 0, string.Join(Environment.NewLine, unexplained));
+    }
+
+    /// <summary>
+    /// Records carry the practice further than classes do, and this is the one
+    /// the data transfer objects rest on. A record's equality is its values,
+    /// written by the compiler from its members, which is exactly what a type
+    /// that exists to be carried across a wire wants. It also compares the
+    /// runtime type: a record and a record that derives from it are never equal
+    /// even when every field matches, because the generated equality checks
+    /// EqualityContract first. Sealing the record removes that case from the
+    /// language rather than from a reviewer's memory, so "same values" is the
+    /// whole of "equal" and a caller can rely on it.
+    ///
+    /// <para>A record struct cannot be derived from at all, so it passes for
+    /// free and is counted rather than argued with.</para>
+    /// </summary>
+    [Fact]
+    public void Every_record_is_sealed_so_two_of_them_compare_by_value_alone()
+    {
+        var open = Written()
+            .Where(type => IsRecord(type) && !type.IsSealed)
+            .Select(type => $"{type.FullName} is an open record, so its equality carries the runtime type")
+            .ToList();
+
+        Assert.True(open.Count == 0, string.Join(Environment.NewLine, open));
     }
 
     [Fact]

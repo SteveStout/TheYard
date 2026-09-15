@@ -161,6 +161,13 @@ describe('the code theme', () => {
     for (const name of codeTokens) {
       expect(contrast(token(name), token('color-surface-muted'))).toBeGreaterThanOrEqual(4.5);
     }
+
+    // The code itself is darker than the prose around it, because the ground it
+    // sits on is a light gray rather than white and 4.5 on gray reads thin. AAA
+    // is the floor for the one colour most of a sample is written in.
+    expect(contrast(token('color-code-text'), token('color-surface-muted'))).toBeGreaterThanOrEqual(
+      7
+    );
   });
 
   it('no two code colours are the same, and none of them is the prose colour', () => {
