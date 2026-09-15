@@ -10,6 +10,15 @@ test('the Best Practices section opens the overview and its decision records', a
   ).toBeVisible();
   await page.keyboard.press('Escape');
 
+  // The sealed-by-default page sits between the overview and Security, and its
+  // first sample is a whole class read from the build rather than pasted.
+  await nav.getByRole('button', { name: 'Sealed by default' }).click();
+  const sealed = page.getByRole('dialog', { name: 'Sealed by default' });
+  await expect(sealed.getByRole('heading', { level: 1, name: 'Sealed by default' })).toBeVisible();
+  await expect(sealed.locator('pre code').first()).toContainText('MemoryResetLinks');
+  await expect(sealed.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
   // The records live in one collapsed index now (ADR-029); open it first.
   await nav.getByText('Decision Records', { exact: true }).click();
   await nav.getByRole('button', { name: 'ADR: Version in the footer' }).click();

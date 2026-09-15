@@ -27,6 +27,7 @@ public static class DocsCatalog
         ["cicd"] = "docs/CICD.md",
         ["adr-pipeline"] = "docs/ADR-009-deploy-pipeline.md",
         ["practices"] = "docs/BEST-PRACTICES.md",
+        ["sealed"] = "docs/SEALED.md",
         ["adr-versioning"] = "docs/ADR-005-version-footer.md",
         ["adr-docs"] = "docs/ADR-006-docs-and-testing.md",
         ["adr-observability"] = "docs/ADR-010-observability.md",

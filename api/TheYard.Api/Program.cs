@@ -2106,5 +2106,5 @@ public sealed record BidRequest(int Amount);
 public sealed record ClientErrorReport(string? Message, string? Stack, string? Path);
 
 // Exposes the entry point to WebApplicationFactory for integration tests.
-public partial class Program;
+public sealed partial class Program;
 #endregion records-and-test-hook

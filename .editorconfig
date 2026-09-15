@@ -32,6 +32,15 @@ dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 dotnet_diagnostic.IDE0005.severity = warning
 
+# #region ca1852
+# Sealed by default, the practice written up on the Best Practices page
+# docs/SEALED.md. CA1852 names an internal class that nothing derives from and
+# that could be sealed. It is a warning here, and the gate reads any warning as
+# red, so the analyzer half of the practice is held by the build rather than by
+# review; SealedByDefaultTests holds the public half.
+dotnet_diagnostic.CA1852.severity = warning
+# #endregion ca1852
+
 # var only where the type is obvious from the right-hand side.
 csharp_style_var_for_built_in_types = false:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
