@@ -1,12 +1,15 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Scalar.AspNetCore;
 using TheYard.Api;
 using TheYard.Application;
 using TheYard.Data;
@@ -617,6 +620,14 @@ builder.Services.AddHttpLogging(options =>
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = false);
 #endregion problem-details
 
+#region api-document
+// The API's description of itself (ADR: The API describes itself): one
+// document built from the endpoints below as they are mapped, the operator
+// surface filtered out of it, and the two schemes a session travels by
+// declared. The version is the build's, because that is the honest number.
+builder.Services.AddOpenApi(ApiDocument.Name, options => ApiDocument.Configure(options, buildVersion, buildCommit, siteUrl));
+#endregion api-document
+
 #region telemetry
 // Application Insights (ADR-024). The connection string is an ingestion key,
 // so it is never in the repository: the deploy reads it from Azure at roll
@@ -870,6 +881,26 @@ app.Use(async (context, next) =>
 
 // The dataset is snake_case; keep the wire shape identical to the source file.
 var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+
+// #region api-document-routes
+// The document at /api/openapi/v1.json and the reference page at /api/reference,
+// served by this container like every other document here (ADR: The API
+// describes itself). Under /api rather than at the framework's default
+// /openapi, because /api is the one prefix the development server proxies to
+// this host: at the default address the page's own request for its document
+// came back as index.html on every developer's machine and in the browser
+// suite, and worked only in the container. The page's script comes from the
+// package, not a content delivery network, and the fonts it would fetch from
+// one are turned off, so the reference adds no third-party script to the site.
+app.MapOpenApi("/api/openapi/{documentName}.json");
+app.MapScalarApiReference(ApiDocument.ReferenceRoute, options => options
+    .WithTitle(ApiDocument.Title)
+    .WithFavicon(ApiDocument.Favicon)
+    .WithOpenApiRoutePattern("/api/openapi/{documentName}.json")
+    .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+    .AddPreferredSecuritySchemes(ApiDocument.BearerScheme)
+    .DisableDefaultFonts());
+// #endregion api-document-routes
 #endregion composition
 
 #region inventory-endpoint
@@ -878,7 +909,7 @@ var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPo
 // ending soonest first). Responses are an envelope: { total, vehicles },
 // with each vehicle carrying the server-derived auction facts.
 // e.g. /api/vehicles?make=Ford&status=live&sort=price-asc&limit=100&offset=100
-app.MapGet("/api/vehicles", (
+app.MapGet("/api/vehicles", Results<Ok<VehiclePage>, ProblemHttpResult> (
     CurrentBackend current,
     [AsParameters] VehicleQueryParams query) =>
 {
@@ -889,7 +920,7 @@ app.MapGet("/api/vehicles", (
     {
         // One failure shape for the whole API (ADR-023): the message a person
         // can act on goes in `detail`, never in a key only this endpoint uses.
-        return Results.Problem(detail: error, statusCode: 400, title: "The query could not be read");
+        return TypedResults.Problem(detail: error, statusCode: 400, title: "The query could not be read");
     }
     // #region overlays
     // The buyer's bids first, the room's second, and the room only wins where
@@ -909,28 +940,42 @@ app.MapGet("/api/vehicles", (
     };
     // #endregion overlays
     var result = inventory.Search(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset, overlay);
-    return Results.Json(new
-    {
-        total = result.Total,
-        vehicles = result.Vehicles.Select(v => VehicleWire.ToWire(v, clock, wireFormat, bids.IsSold(v.Id))).ToList(),
-    }, wireFormat);
-});
+    return TypedResults.Ok(
+        new VehiclePage(
+            result.Total,
+            [.. result.Vehicles.Select(v => VehicleWire.ToWire(v, clock, bids.IsSold(v.Id)))]));
+})
+    .WithName("ListVehicles")
+    .WithTags("Vehicles")
+    .WithSummary("Search the catalogue")
+    .WithDescription("Every filter, the sort and the page are optional query parameters, applied on the server. "
+        + "The default page is the top hundred by auction time, live and ending soonest first. Each vehicle "
+        + "carries the server-derived auction facts, so a client formats and counts down and never "
+        + "re-implements the schedule.")
+    .ProducesProblem(StatusCodes.Status400BadRequest);
 #endregion inventory-endpoint
 
 // Dropdown values, computed from the full dataset (the page only ever holds a slice).
 app.MapGet("/api/facets", (CurrentBackend current) =>
-    Results.Json(current.Inventory.Facets(), wireFormat));
+    TypedResults.Ok(current.Inventory.Facets()))
+    .WithName("GetFacets")
+    .WithTags("Vehicles")
+    .WithSummary("The distinct values behind the filters")
+    .WithDescription("Makes, body styles, title statuses and provinces across the whole catalogue, for the dropdowns.");
 
-app.MapGet("/api/vehicles/{id}", (CurrentBackend current, string id) =>
+app.MapGet("/api/vehicles/{id}", Results<Ok<VehicleView>, ProblemHttpResult> (CurrentBackend current, string id) =>
 {
     var (inventory, bids, market) = current;
     var clock = Clocks.Now();
     return inventory.GetById(id) is { } vehicle
-        ? Results.Json(
-            VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat, bids.IsSold(vehicle.Id)),
-            wireFormat)
-        : Results.NotFound();
-});
+        ? TypedResults.Ok(
+            VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, bids.IsSold(vehicle.Id)))
+        : TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
+})
+    .WithName("GetVehicle")
+    .WithTags("Vehicles")
+    .WithSummary("One vehicle, with its auction facts")
+    .ProducesProblem(StatusCodes.Status404NotFound);
 
 #region bid-endpoints
 // ---------------------------------------------------------------------------
@@ -954,7 +999,16 @@ app.MapPost("/api/vehicles/{id}/bids", (
         // against (ADR-027). Handing BidRules the dataset's figure instead
         // would let the buyer retake the lead with a bid below the going rate.
         (vehicle, clock) => current.Bids.PlaceBidAsync(current.Market.Apply(vehicle), request.Amount, clock, http.UserId())))
-    .RequireAuthorization();
+    .RequireAuthorization()
+    .WithName("PlaceBid")
+    .WithTags("Bids")
+    .WithSummary("Bid on a vehicle")
+    .WithDescription("Whole dollars. The rules run on the server: a sold vehicle takes no bid, an amount at or above "
+        + "the buy-now price wins outright at that price, and anything else has to clear the minimum next bid "
+        + "measured against the room's standing price. A session bids on the store it was opened on.")
+    .ProducesProblem(StatusCodes.Status400BadRequest)
+    .ProducesProblem(StatusCodes.Status401Unauthorized)
+    .ProducesProblem(StatusCodes.Status404NotFound);
 
 // No body: a purchase names the vehicle in its address and nothing else.
 // Until 1.0.0.112 it carried the caller's clock anchor, and a page from then
@@ -965,7 +1019,15 @@ app.MapPost("/api/vehicles/{id}/buy-now", (
     HttpContext http,
     string id) => HandleBid(current, http, id,
         (vehicle, clock) => current.Bids.BuyNowAsync(current.Market.Apply(vehicle), clock, http.UserId())))
-    .RequireAuthorization();
+    .RequireAuthorization()
+    .WithName("BuyNow")
+    .WithTags("Bids")
+    .WithSummary("Buy a vehicle outright")
+    .WithDescription("No body: the vehicle is named in the address. Refused when the vehicle has no buy-now price, "
+        + "is already sold, or its auction is not live.")
+    .ProducesProblem(StatusCodes.Status400BadRequest)
+    .ProducesProblem(StatusCodes.Status401Unauthorized)
+    .ProducesProblem(StatusCodes.Status404NotFound);
 
 #region market-endpoints
 // The buyer's bids, each one answering the question the badge asks: am I still
@@ -974,11 +1036,15 @@ app.MapPost("/api/vehicles/{id}/buy-now", (
 // every load, and "you have no bids" is the true answer for somebody who has
 // not signed in. The endpoints that change something are the ones that refuse.
 app.MapGet("/api/bids", (CurrentBackend current, HttpContext http) =>
-    Results.Json(
+    TypedResults.Ok(
         http.UserIdOrNull() is { } me
             ? BidViews.For(current.Bids, current.Market, me)
-            : new Dictionary<string, BidView>(StringComparer.Ordinal),
-        wireFormat));
+            : new Dictionary<string, BidView>(StringComparer.Ordinal)))
+    .WithName("GetMyBids")
+    .WithTags("Bids")
+    .WithSummary("The caller's standing on every vehicle they have bid on")
+    .WithDescription("Keyed by vehicle id. Signed out, this is an empty map rather than a 401: the page asks for it "
+        + "on every load, and no bids is the true answer for a visitor with no session.");
 
 #region history
 // The account page's list, newest first, with the vehicle each bid is on. The
@@ -992,15 +1058,18 @@ app.MapGet("/api/bids/history", (
     var mine = BidViews.For(bids, market, http.UserId());
     var history = mine
         .OrderByDescending(entry => entry.Value.AtMs)
-        .Select(entry => new
-        {
-            vehicle_id = entry.Key,
-            title = inventory.GetById(entry.Key) is { } v ? $"{v.Year} {v.Make} {v.Model}" : "(withdrawn)",
-            bid = entry.Value,
-        })
+        .Select(entry => new BidHistoryEntry(
+            entry.Key,
+            inventory.GetById(entry.Key) is { } v ? $"{v.Year} {v.Make} {v.Model}" : "(withdrawn)",
+            entry.Value))
         .ToList();
-    return Results.Json(new { count = history.Count, bids = history }, wireFormat);
-}).RequireAuthorization();
+    return TypedResults.Ok(new BidHistory(history.Count, history));
+})
+    .RequireAuthorization()
+    .WithName("GetBidHistory")
+    .WithTags("Bids")
+    .WithSummary("The caller's bids, newest first, with the vehicle each is on")
+    .ProducesProblem(StatusCodes.Status401Unauthorized);
 #endregion history
 
 // One round of bidding by the room, driven by the page rather than a timer
@@ -1044,27 +1113,32 @@ app.MapPost("/api/market/tick", (
         .Take(40);
     var candidates = contested.Concat(live).DistinctBy(v => v.Id).ToList();
     var raised = market.Tick(candidates, buyerBids, clock);
-    return Results.Json(
-        new
-        {
-            raised = raised.Count,
+    return TypedResults.Ok(
+        new TickResult(
+            raised.Count,
             // The caller's own badges ride back with the tick, so a page does
             // not need a second request to find out it has been outbid. There
             // is always a caller now: the endpoint requires one.
-            bids = http.UserIdOrNull() is { } me
+            http.UserIdOrNull() is { } me
                 ? BidViews.For(bids, market, me)
-                : new Dictionary<string, BidView>(StringComparer.Ordinal),
-        },
-        wireFormat);
-}).RequireAuthorization();
+                : new Dictionary<string, BidView>(StringComparer.Ordinal)));
+})
+    .RequireAuthorization()
+    .WithName("TickRoom")
+    .WithTags("Bids")
+    .WithSummary("One round of bidding by the room")
+    .WithDescription("The simulated room bids against the caller's auctions and a page of live ones, on the server's "
+        + "clock. Driven by the page rather than a timer, and only by a signed-in visitor, because moving the "
+        + "room moves everybody's prices.")
+    .ProducesProblem(StatusCodes.Status401Unauthorized);
 #endregion market-endpoints
 
-app.MapDelete("/api/bids", async (CurrentBackend current, HttpContext http) =>
+app.MapDelete("/api/bids", async Task<Results<NoContent, ProblemHttpResult>> (CurrentBackend current, HttpContext http) =>
 {
     var (_, bids, market) = current;
     if (http.UserIdOrNull() is not { } userId)
     {
-        return Results.Unauthorized();
+        return TypedResults.Problem(detail: "Sign in to reset your bids.", statusCode: 401, title: "Not signed in");
     }
 
     // The caller's bids, and the room's answers on the vehicles the caller
@@ -1074,8 +1148,14 @@ app.MapDelete("/api/bids", async (CurrentBackend current, HttpContext http) =>
     // endpoint used to take no user at all (ADR: Reset is one person's
     // start-over).
     market.Forget(await bids.ResetAsync(userId));
-    return Results.NoContent();
-}).RequireAuthorization();
+    return TypedResults.NoContent();
+})
+    .RequireAuthorization()
+    .WithName("ResetMyBids")
+    .WithTags("Bids")
+    .WithSummary("Forget the caller's bids, and the room's answers to them")
+    .WithDescription("One person's start-over. Nobody else's bids move.")
+    .ProducesProblem(StatusCodes.Status401Unauthorized);
 #endregion bid-endpoints
 
 // ---------------------------------------------------------------------------
@@ -1089,31 +1169,52 @@ app.MapDelete("/api/bids", async (CurrentBackend current, HttpContext http) =>
 // missing from the catalog is a 404, never a file read. The Bicep file and the
 // resume keep their own routes below because they are not markdown; a literal
 // route wins over the {slug} pattern.
-app.MapGet("/api/docs/{slug}", (string slug) =>
+app.MapGet("/api/docs/{slug}", Results<ContentHttpResult, ProblemHttpResult> (string slug) =>
     DocsCatalog.Files.TryGetValue(slug, out var file)
-        ? Results.Text(
+        ? TypedResults.Text(
             LiveSamples.Expand(File.ReadAllText(Path.Combine(repoRoot, file)), repoRoot, buildCommit),
             "text/markdown")
-        : Results.NotFound());
+        : TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document"))
+    .WithName("GetDocument")
+    .WithTags("Documents")
+    .WithSummary("One of the served documents, as markdown with its code samples expanded")
+    .WithDescription("The slug is one the sidebar offers: readme, architecture, a record such as adr-openapi. "
+        + "Every live block is read from this build at request time.")
+    .Produces<string>(StatusCodes.Status200OK, "text/markdown")
+    .ProducesProblem(StatusCodes.Status404NotFound);
 #endregion docs-endpoint
 
 #region diagram-page
 // A diagram on its own page (ADR-020): the SVG inlined in a small HTML document,
 // so it opens in a new tab, zooms with the browser, and keeps its text
 // selectable. The name is looked up in the catalog; nothing else is read.
-app.MapGet("/api/docs/diagrams/{name}", (string name) =>
+app.MapGet("/api/docs/diagrams/{name}", Results<ContentHttpResult, ProblemHttpResult> (string name) =>
     DocsCatalog.Diagrams.TryGetValue(name, out var diagram)
-        ? Results.Content(
+        ? TypedResults.Content(
             DiagramPage.Render(diagram.Title, File.ReadAllText(Path.Combine(repoRoot, diagram.File)), diagram.File),
             "text/html; charset=utf-8")
-        : Results.NotFound());
+        : TypedResults.Problem(detail: "No diagram has that name.", statusCode: 404, title: "No such diagram"))
+    .WithName("GetDiagram")
+    .WithTags("Documents")
+    .WithSummary("One diagram on its own page")
+    .WithDescription("The SVG inlined in a small HTML document, so it zooms with the browser and keeps its text selectable.")
+    .Produces<string>(StatusCodes.Status200OK, "text/html")
+    .ProducesProblem(StatusCodes.Status404NotFound);
 #endregion diagram-page
 
 app.MapGet("/api/docs/bicep", () =>
-    Results.Text("# infra/main.bicep" + "\n\nThe production design as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. Kept deliberately undeployed; the Hosting overview explains that choice.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "main.bicep")) + "\n```\n", "text/markdown"));
+    TypedResults.Text("# infra/main.bicep" + "\n\nThe production design as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. Kept deliberately undeployed; the Hosting overview explains that choice.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "main.bicep")) + "\n```\n", "text/markdown"))
+    .WithName("GetBicep")
+    .WithTags("Documents")
+    .WithSummary("The infrastructure definition, as a markdown page")
+    .Produces<string>(StatusCodes.Status200OK, "text/markdown");
 
 app.MapGet("/api/docs/resume", () =>
-    Results.File(resumePath, "application/pdf"));
+    TypedResults.PhysicalFile(resumePath, "application/pdf"))
+    .WithName("GetResume")
+    .WithTags("Documents")
+    .WithSummary("The author's resume")
+    .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf");
 
 // ---------------------------------------------------------------------------
 // Build provenance - the version and commit this container was built from,
@@ -1123,7 +1224,10 @@ app.MapGet("/api/docs/resume", () =>
 #region version-endpoint
 // Read once at startup, not per request: these are baked into the image and
 // cannot change while the process lives (ADR-005).
-app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, commit = buildCommit }));
+app.MapGet("/api/version", () => TypedResults.Ok(new BuildInfo(buildVersion, buildCommit)))
+    .WithName("GetVersion")
+    .WithTags("Health")
+    .WithSummary("The build this container was made from");
 #endregion version-endpoint
 
 #region bid-handling
@@ -1133,7 +1237,7 @@ app.MapGet("/api/version", () => Results.Json(new { version = buildVersion, comm
 // question was whether the caller's clock anchor was plausible; there is no
 // anchor to ask about now. The status codes are the contract the browser
 // relies on (ADR-023).
-async Task<IResult> HandleBid(
+async Task<Results<Ok<BidResult>, ProblemHttpResult>> HandleBid(
     CurrentBackend current,
     HttpContext http,
     string id,
@@ -1150,7 +1254,7 @@ async Task<IResult> HandleBid(
     // the project).
     if (!http.SessionIsOn(current.Backend))
     {
-        return Results.Problem(
+        return TypedResults.Problem(
             detail: $"This session was opened on another store. Sign in on {current.Backend.Name} to bid here.",
             statusCode: 401, title: "The bid was rejected");
     }
@@ -1158,26 +1262,25 @@ async Task<IResult> HandleBid(
     var clock = Clocks.Now();
     if (inventory.GetById(id) is not { } vehicle)
     {
-        return Results.NotFound();
+        return TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
     }
     var outcome = await action(vehicle, clock);
     if (outcome.Kind == BidOutcomeKind.Rejected)
     {
-        return Results.Problem(detail: outcome.Reason, statusCode: 400, title: "The bid was rejected");
+        return TypedResults.Problem(detail: outcome.Reason, statusCode: 400, title: "The bid was rejected");
     }
-    return Results.Json(new
-    {
-        kind = outcome.Kind.ToString().ToLowerInvariant(),
-        amount = outcome.Amount,
-        // The room's answer rides back with the bid, so the badge is right
-        // the moment the response lands rather than at the next tick.
-        // TryGetValue, not the indexer: a reset can land between the bid being
-        // recorded and this line reading it back. That used to be any visitor's
-        // reset, because DELETE /api/bids took no user at all; it is now only
-        // this account's, from a second tab, which is rarer and just as real.
-        bid = BidViews.For(bids, market, userId).TryGetValue(id, out var view) ? view : null,
-        vehicle = VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, wireFormat, bids.IsSold(vehicle.Id)),
-    }, wireFormat);
+    return TypedResults.Ok(
+        new BidResult(
+            outcome.Kind.ToString().ToLowerInvariant(),
+            outcome.Amount,
+            // The room's answer rides back with the bid, so the badge is right
+            // the moment the response lands rather than at the next tick.
+            // TryGetValue, not the indexer: a reset can land between the bid being
+            // recorded and this line reading it back. That used to be any visitor's
+            // reset, because DELETE /api/bids took no user at all; it is now only
+            // this account's, from a second tab, which is rarer and just as real.
+            BidViews.For(bids, market, userId).TryGetValue(id, out var view) ? view : null,
+            VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, bids.IsSold(vehicle.Id))));
 }
 #endregion bid-handling
 
@@ -1310,43 +1413,62 @@ async Task<HealthCheckEntry[]> RunChecksAsync(bool readinessOnly = false)
 // and answers 503 until the files are in place. /api/health is the Admin tab
 // and carries the timings. A process can be alive and not yet ready, and the
 // orchestrator treats those differently (ADR-010).
-app.MapGet("/healthz", () => Results.Text("ok"));
+app.MapGet("/healthz", () => TypedResults.Text("ok"))
+    .WithName("Liveness")
+    .WithTags("Health")
+    .WithSummary("Is the process up")
+    .WithDescription("The container's own health check. Answers ok the moment the process is listening and says nothing else.")
+    .Produces<string>(StatusCodes.Status200OK, "text/plain");
 
 // Only the checks that gate it, and only those get run: the database probe is
 // two SQL statements whose answer readiness discards, and this endpoint is
 // polled by the orchestrator and by every deploy.
-app.MapGet("/readyz", async () =>
+app.MapGet("/readyz", async Task<Results<ContentHttpResult, ProblemHttpResult>> () =>
     (await RunChecksAsync(readinessOnly: true)).Where(check => check.GatesReadiness).All(check => check.Status == "pass")
-        ? Results.Text("ready")
-        : Results.StatusCode(503));
+        ? TypedResults.Text("ready")
+        : TypedResults.Problem(detail: "A file this site cannot run without is missing; the health report says which.", statusCode: 503, title: "Not ready"))
+    .WithName("Readiness")
+    .WithTags("Health")
+    .WithSummary("Should traffic be sent here")
+    .WithDescription("The deploy's verify step. Only the checks that gate readiness run, and the database is not one "
+        + "of them: a container whose store is gone still serves the catalogue from files.")
+    .Produces<string>(StatusCodes.Status200OK, "text/plain")
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
 app.MapGet("/api/health", async () =>
 {
     var checks = await RunChecksAsync();
-    return Results.Json(new
-    {
-        status = checks.All(c => c.Status == "pass") ? "healthy" : "degraded",
-        uptime_seconds = (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
-        version = buildVersion,
-        commit = buildCommit,
-        checks,
-    }, wireFormat);
-});
+    return TypedResults.Ok(
+        new HealthReport(
+            checks.All(c => c.Status == "pass") ? "healthy" : "degraded",
+            (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
+            buildVersion,
+            buildCommit,
+            checks));
+})
+    .WithName("GetHealth")
+    .WithTags("Health")
+    .WithSummary("Every check, timed, and the build that answered")
+    .WithDescription("The Admin tab's health card. One check per store, named by the store, so a container running "
+        + "both says which one is unavailable.");
 #endregion probes
 
 // Both rings, merged newest first, so the page is still one list.
-app.MapGet("/api/errors", () => Results.Json(
+app.MapGet("/api/errors", () => TypedResults.Ok(
     errorLog.Snapshot()
         .Concat(browserErrors.Snapshot())
         .OrderByDescending(entry => entry.At)
-        .ToArray(),
-    wireFormat));
+        .ToArray()))
+    .WithName("GetErrors")
+    .WithTags("Errors")
+    .WithSummary("Recent server and browser errors, newest first")
+    .WithDescription("Two in-memory rings of fifty, merged. Exception types only, never messages: this list is public.");
 
 #region admin-observability-endpoints
 // The raw SQL, newest first. Statement text, parameter names and types, how
 // long the database took, and the request that caused it. No parameter values:
 // see the comment on SqlStatement for why there is nowhere to put one.
-app.MapGet("/api/admin/sql", () => Results.Json(sqlLog.Snapshot(), wireFormat));
+app.MapGet("/api/admin/sql", () => Results.Json(sqlLog.Snapshot()));
 
 // #region store-endpoint
 // The document store's operations, newest first: container, kind, the query
@@ -1358,11 +1480,11 @@ app.MapGet("/api/admin/store", () => Results.Json(new
 {
     store = backends.Named("cosmos")?.Name ?? backends.Default.Name,
     operations = storeLog.Snapshot(),
-}, wireFormat));
+}));
 // #endregion store-endpoint
 
 // The raw log lines, newest first, exactly as the console got them.
-app.MapGet("/api/admin/logs", () => Results.Json(logLog.Snapshot(), wireFormat));
+app.MapGet("/api/admin/logs", () => Results.Json(logLog.Snapshot()));
 
 // Timing, computed on read from the two rings. The window is whatever the
 // rings currently hold, which the page states rather than implying.
@@ -1456,7 +1578,7 @@ app.MapGet("/api/admin/metrics", (HttpContext http) =>
         // doing: which vehicles they opened, which filters they typed. The page
         // never rendered it. Aggregates answer the question the section is for
         // and name nobody (the staff review, 2026-09-03).
-    }, wireFormat);
+    });
 
     static object RequestsView(IReadOnlyList<RequestEntry> served)
     {
@@ -1493,7 +1615,7 @@ app.MapGet("/api/admin/metrics", (HttpContext http) =>
 app.MapGet("/api/admin/activity", async (string? window, ActivityCollector collector, CancellationToken cancellation) =>
     ActivityWindows.Parse(window) is null
         ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-        : Results.Json(await ActivityReport.PublicAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, visitorRows, cancellation), wireFormat));
+        : Results.Json(await ActivityReport.PublicAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, visitorRows, cancellation)));
 
 // The visitor rows, behind the operator's key: a token that rotates daily,
 // the network to three octets, the store, the counts and the top paths. The
@@ -1512,7 +1634,7 @@ app.MapGet("/api/admin/activity/visitors", async (string? window, string? key, H
 
     return ActivityWindows.Parse(window) is null
         ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-        : Results.Json(await ActivityReport.VisitorsAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, cancellation), wireFormat);
+        : Results.Json(await ActivityReport.VisitorsAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, cancellation));
 });
 // #endregion activity-endpoints
 
@@ -1541,7 +1663,7 @@ app.MapGet("/api/admin/logs/kept", async (string? window, string? kind, int? sta
         return Results.Problem(detail: "kind is one of request, error or app.", statusCode: 400, title: "The kind could not be read");
     }
 
-    return Results.Json(await LogReport.QueryAsync(collector, window ?? "24h", kind, status, path, DateTimeOffset.UtcNow, cancellation), wireFormat);
+    return Results.Json(await LogReport.QueryAsync(collector, window ?? "24h", kind, status, path, DateTimeOffset.UtcNow, cancellation));
 });
 // #endregion kept-logs-endpoints
 
@@ -1556,8 +1678,13 @@ app.MapGet("/api/admin/logs/kept", async (string? window, string? kind, int? sta
 app.MapGet("/api/stores", (HttpContext http) =>
 {
     Backends.ExpireLegacyCookie(http);
-    return Results.Json(backends.Describe(http), wireFormat);
-});
+    return TypedResults.Ok(backends.Describe(http));
+})
+    .WithName("GetStores")
+    .WithTags("Stores")
+    .WithSummary("Which stores this container runs, and which one this request is on")
+    .WithDescription("A request names a store with the X-Yard-Store header (sql or cosmos) or gets the site's default. "
+        + "The other site, if there is one, is the same code with the other default.");
 // #endregion stores-endpoints
 #endregion admin-observability-endpoints
 
@@ -1566,11 +1693,11 @@ app.MapGet("/api/stores", (HttpContext http) =>
 // crash caught by the boundary, or an unhandled rejection, POSTs here and
 // shows up on the Admin tab's Recent errors card tagged with the page the
 // visitor was on. Status 0 marks the entry as coming from the browser.
-app.MapPost("/api/errors/client", (ClientErrorReport report, ILoggerFactory loggers) =>
+app.MapPost("/api/errors/client", Results<NoContent, ProblemHttpResult> (ClientErrorReport report, ILoggerFactory loggers) =>
 {
     if (string.IsNullOrWhiteSpace(report.Message))
     {
-        return Results.Problem(detail: "A client error report needs a message.", statusCode: 400,
+        return TypedResults.Problem(detail: "A client error report needs a message.", statusCode: 400,
             title: "The error report could not be read");
     }
     // Bounded, and with any at sign encoded: the message and the stack come
@@ -1589,8 +1716,14 @@ app.MapPost("/api/errors/client", (ClientErrorReport report, ILoggerFactory logg
     // external script and keeps the ingestion key server-side.
     loggers.CreateLogger("TheYard.Browser").LogError(
         "Browser error on {Path}: {BrowserMessage} {BrowserStack}", where, message, stack);
-    return Results.NoContent();
-});
+    return TypedResults.NoContent();
+})
+    .WithName("ReportBrowserError")
+    .WithTags("Errors")
+    .WithSummary("Report an error the browser caught")
+    .WithDescription("Anonymous by design, so a crash in the page reaches the same list a crash in the server does. "
+        + "The message and the stack are bounded and any address in them is masked before they are kept.")
+    .ProducesProblem(StatusCodes.Status400BadRequest);
 #endregion client-errors
 
 #region selftest
@@ -1611,7 +1744,7 @@ app.MapGet("/api/admin/selftest/exception", IResult () =>
 // it is set as an httpOnly cookie on the way out and read from the cookie on the
 // way back in, so a script on the page cannot read it and cannot be tricked into
 // sending it somewhere else (ADR: Accounts and per-user bids).
-app.MapPost("/api/auth/register", async (
+app.MapPost("/api/auth/register", async Task<Results<Ok<AccountView>, ProblemHttpResult>> (
     IServiceProvider services,
     CurrentBackend current,
     TokenIssuer issuer,
@@ -1629,7 +1762,7 @@ app.MapPost("/api/auth/register", async (
     }
     if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
     {
-        return Results.Problem(
+        return TypedResults.Problem(
             detail: "An email address and a password, please.",
             statusCode: 400, title: "The registration could not be read");
     }
@@ -1641,7 +1774,7 @@ app.MapPost("/api/auth/register", async (
     // exist or how much of the allowance is left.
     if (!limit.TryTake())
     {
-        return Results.Problem(
+        return TypedResults.Problem(
             detail: "This demo is not taking new accounts at the moment. Try again in an hour.",
             statusCode: 429, title: "Too many registrations");
     }
@@ -1659,7 +1792,7 @@ app.MapPost("/api/auth/register", async (
         // password Identity refuses would count against strangers who never
         // registered (ADR: The one write a stranger can make, addendum).
         limit.GiveBack();
-        return Results.Problem(
+        return TypedResults.Problem(
             detail: Accounts.Explain(created),
             statusCode: 400, title: "The account was not created");
     }
@@ -1668,10 +1801,18 @@ app.MapPost("/api/auth/register", async (
         TokenIssuer.CookieName,
         issuer.Issue(user.Id, user.Email!, current.Backend.Key),
         TokenIssuer.CookieFor(http, issuer.Lifetime));
-    return Results.Json(Accounts.Describe(user), wireFormat);
-});
+    return TypedResults.Ok(Accounts.Describe(user));
+})
+    .WithName("Register")
+    .WithTags("Accounts")
+    .WithSummary("Create an account on this store and sign in")
+    .WithDescription("Answers the account and sets the session cookie. A few dozen registrations an hour are allowed "
+        + "across all strangers, and a refused password gives the slot back.")
+    .ProducesProblem(StatusCodes.Status400BadRequest)
+    .ProducesProblem(StatusCodes.Status429TooManyRequests)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
-app.MapPost("/api/auth/login", async (
+app.MapPost("/api/auth/login", async Task<Results<Ok<AccountView>, ProblemHttpResult>> (
     IServiceProvider services,
     CurrentBackend current,
     TokenIssuer issuer,
@@ -1690,7 +1831,7 @@ app.MapPost("/api/auth/login", async (
     // One sentence for every way this can fail, including a locked account. See
     // the lockout options: a reply that distinguishes them is a reply that tells
     // a stranger which addresses are registered here.
-    var refused = Results.Problem(
+    var refused = TypedResults.Problem(
         detail: "That email address and password do not match an account.",
         statusCode: 401, title: "Not signed in");
 
@@ -1724,8 +1865,16 @@ app.MapPost("/api/auth/login", async (
         TokenIssuer.CookieName,
         issuer.Issue(user.Id, user.Email!, current.Backend.Key),
         TokenIssuer.CookieFor(http, issuer.Lifetime));
-    return Results.Json(Accounts.Describe(user), wireFormat);
-});
+    return TypedResults.Ok(Accounts.Describe(user));
+})
+    .WithName("Login")
+    .WithTags("Accounts")
+    .WithSummary("Sign in and receive the session cookie")
+    .WithDescription("One sentence for every way this can fail, including a locked account, so the reply never says "
+        + "which addresses are registered here. Five wrong passwords lock an account for five minutes.")
+    .ProducesProblem(StatusCodes.Status400BadRequest)
+    .ProducesProblem(StatusCodes.Status401Unauthorized)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
 // #region password-reset
 // A password reset in two halves (ADR: Accounts and per-user bids, addendum).
@@ -1800,14 +1949,14 @@ app.MapPost("/api/admin/reset-links", async (
         store = current.Backend.Key,
         url,
         expires_at = DateTimeOffset.UtcNow + TokenIssuer.ResetLifetime,
-    }, wireFormat);
+    });
 });
 
 // "Forgot password": the same link, sent by the site instead of handed over
 // by the operator. Public, so it answers one sentence whether or not the
 // address has an account here, and one email per address per five minutes.
 // Without a sender configured it says so and points at the operator.
-app.MapPost("/api/auth/forgot", async (
+app.MapPost("/api/auth/forgot", async Task<Results<Ok<ForgotReply>, ProblemHttpResult>> (
     ResetLinkRequest request,
     HttpContext http,
     IServiceProvider services,
@@ -1820,7 +1969,7 @@ app.MapPost("/api/auth/forgot", async (
 {
     if (!mail.Configured)
     {
-        return Results.Problem(
+        return TypedResults.Problem(
             detail: "This site cannot send email: " + mail.Reason + ".",
             statusCode: StatusCodes.Status503ServiceUnavailable, title: "No email from here");
     }
@@ -1832,13 +1981,13 @@ app.MapPost("/api/auth/forgot", async (
 
     if (string.IsNullOrWhiteSpace(request.Email))
     {
-        return Results.Problem(detail: "An email address is needed.", statusCode: 400, title: "Nothing to send to");
+        return TypedResults.Problem(detail: "An email address is needed.", statusCode: 400, title: "Nothing to send to");
     }
 
-    var sentence = new { sent = true, message = "If that address has an account here, a reset link is on its way. It works once, for an hour." };
+    var sentence = new ForgotReply(true, "If that address has an account here, a reset link is on its way. It works once, for an hour.");
     if (!limit.TryTake(request.Email))
     {
-        return Results.Json(sentence, wireFormat);
+        return TypedResults.Ok(sentence);
     }
 
     var user = await users.FindByEmailAsync(request.Email);
@@ -1854,10 +2003,17 @@ app.MapPost("/api/auth/forgot", async (
             cancellation);
     }
 
-    return Results.Json(sentence, wireFormat);
-});
+    return TypedResults.Ok(sentence);
+})
+    .WithName("ForgotPassword")
+    .WithTags("Accounts")
+    .WithSummary("Email a reset link to an address")
+    .WithDescription("One sentence back whether or not the address has an account here, and one email per address "
+        + "per five minutes. A container with no sender configured says so.")
+    .ProducesProblem(StatusCodes.Status400BadRequest)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
-app.MapPost("/api/auth/reset", async (
+app.MapPost("/api/auth/reset", async Task<Results<Ok<AccountView>, ProblemHttpResult>> (
     ResetRequest request,
     HttpContext http,
     IServiceProvider services,
@@ -1876,7 +2032,7 @@ app.MapPost("/api/auth/reset", async (
     // The link carries a GUID; the token it stands for is read from the
     // store and checked exactly as before, and the GUID is forgotten right
     // before the password changes, so two takers get one change.
-    var refused = Results.Problem(
+    var refused = TypedResults.Problem(
         detail: "That reset link is not valid any more. Ask for a new one.",
         statusCode: 400, title: "The link did not work");
     string? kept = string.IsNullOrWhiteSpace(request.Token) ? null : await links.ReadAsync(request.Token, cancellation);
@@ -1888,7 +2044,7 @@ app.MapPost("/api/auth/reset", async (
 
     if (!string.Equals(claims.Value.Store, current.Backend.Key, StringComparison.Ordinal))
     {
-        return Results.Problem(
+        return TypedResults.Problem(
             detail: "That reset link belongs to the other site. Open it there.",
             statusCode: 400, title: "The link did not work");
     }
@@ -1901,7 +2057,7 @@ app.MapPost("/api/auth/reset", async (
 
     if (string.IsNullOrEmpty(request.Password))
     {
-        return Results.Problem(detail: "Choose a new password of eight characters or more.", statusCode: 400, title: "The password was not changed");
+        return TypedResults.Problem(detail: "Choose a new password of eight characters or more.", statusCode: 400, title: "The password was not changed");
     }
 
     // Validated before anything is removed, so a refused password leaves the
@@ -1911,7 +2067,7 @@ app.MapPost("/api/auth/reset", async (
         var verdict = await validator.ValidateAsync(users, user, request.Password);
         if (!verdict.Succeeded)
         {
-            return Results.Problem(detail: Accounts.Explain(verdict), statusCode: 400, title: "The password was not changed");
+            return TypedResults.Problem(detail: Accounts.Explain(verdict), statusCode: 400, title: "The password was not changed");
         }
     }
 
@@ -1929,13 +2085,13 @@ app.MapPost("/api/auth/reset", async (
     var removed = await users.RemovePasswordAsync(user);
     if (!removed.Succeeded)
     {
-        return Results.Problem(detail: Accounts.Explain(removed), statusCode: 400, title: "The password was not changed");
+        return TypedResults.Problem(detail: Accounts.Explain(removed), statusCode: 400, title: "The password was not changed");
     }
 
     var added = await users.AddPasswordAsync(user, request.Password);
     if (!added.Succeeded)
     {
-        return Results.Problem(detail: Accounts.Explain(added), statusCode: 400, title: "The password was not changed");
+        return TypedResults.Problem(detail: Accounts.Explain(added), statusCode: 400, title: "The password was not changed");
     }
 
     await users.ResetAccessFailedCountAsync(user);
@@ -1943,8 +2099,15 @@ app.MapPost("/api/auth/reset", async (
         TokenIssuer.CookieName,
         issuer.Issue(user.Id, user.Email!, current.Backend.Key),
         TokenIssuer.CookieFor(http, issuer.Lifetime));
-    return Results.Json(Accounts.Describe(user), wireFormat);
-});
+    return TypedResults.Ok(Accounts.Describe(user));
+})
+    .WithName("ResetPassword")
+    .WithTags("Accounts")
+    .WithSummary("Use a reset link to choose a new password and sign in")
+    .WithDescription("The link works once, for an hour, on the site it was minted for. A refused password leaves the "
+        + "old one in place.")
+    .ProducesProblem(StatusCodes.Status400BadRequest)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 // #endregion password-reset
 
 app.MapPost("/api/auth/logout", (TokenIssuer issuer, HttpContext http) =>
@@ -1952,8 +2115,12 @@ app.MapPost("/api/auth/logout", (TokenIssuer issuer, HttpContext http) =>
     // Deleted with the same attributes it was set with, or the browser keeps a
     // second cookie of the same name on a different path and stays signed in.
     http.Response.Cookies.Delete(TokenIssuer.CookieName, TokenIssuer.CookieFor(http, issuer.Lifetime));
-    return Results.Json(Accounts.Anonymous, wireFormat);
-});
+    return TypedResults.Ok(Accounts.Anonymous);
+})
+    .WithName("Logout")
+    .WithTags("Accounts")
+    .WithSummary("Sign out")
+    .WithDescription("Deletes the session cookie and answers the anonymous account. Never fails.");
 
 app.MapGet("/api/auth/me", async (IServiceProvider services, CurrentBackend current, HttpContext http) =>
 {
@@ -1965,13 +2132,17 @@ app.MapGet("/api/auth/me", async (IServiceProvider services, CurrentBackend curr
         || services.GetService<UserManager<YardUser>>() is not { } users
         || await users.FindByIdAsync(id) is not { } user)
     {
-        return Results.Json(Accounts.Anonymous, wireFormat);
+        return TypedResults.Ok(Accounts.Anonymous);
     }
-    return Results.Json(Accounts.Describe(user), wireFormat);
-});
+    return TypedResults.Ok(Accounts.Describe(user));
+})
+    .WithName("WhoAmI")
+    .WithTags("Accounts")
+    .WithSummary("Who the session belongs to on this store")
+    .WithDescription("Signed out is an answer, not a 401: a session opened on the other store reads as signed out here.");
 #endregion auth-endpoints
 
-app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync(), wireFormat));
+app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync()));
 
 // #region peer-endpoint
 // The other container's metrics, read server side with a short patience, so
@@ -1981,7 +2152,7 @@ app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetState
 var peer = new PeerReader(
     builder.Configuration["Peer:Url"],
     new HttpClient { Timeout = PeerReader.Patience + TimeSpan.FromSeconds(1) });
-app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync(), wireFormat));
+app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync()));
 // #endregion peer-endpoint
 
 // #region proof-endpoints
@@ -1993,7 +2164,7 @@ app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync(), w
 // or for a minute after one, so the card is never asked to prove the same
 // thing twice at once.
 var proof = new ProofRunner(backends, app.Services.GetRequiredService<ProofClients>(), sqlLog, storeLog);
-app.MapGet("/api/admin/proof", () => Results.Json(proof.Status, wireFormat));
+app.MapGet("/api/admin/proof", () => Results.Json(proof.Status));
 app.MapPost("/api/admin/proof", (int? rounds) => proof.TryStart(rounds ?? ProofRunner.DefaultRounds)
     ? Results.Json(new { status = "running" }, wireFormat, statusCode: StatusCodes.Status202Accepted)
     : Results.Problem(
@@ -2009,8 +2180,8 @@ app.MapPost("/api/admin/proof", (int? rounds) => proof.TryStart(rounds ?? ProofR
 // relational container it says so and shows nothing, which is the card's
 // fourth empty state.
 app.MapGet("/api/admin/experiment", async () => cosmos is null
-    ? Results.Json(new { available = false, reason = "this container is not on Azure Cosmos DB", rows = Array.Empty<object>() }, wireFormat)
-    : Results.Json(await Experiment.RunAsync(cosmos), wireFormat));
+    ? Results.Json(new { available = false, reason = "this container is not on Azure Cosmos DB", rows = Array.Empty<object>() })
+    : Results.Json(await Experiment.RunAsync(cosmos)));
 // #endregion experiment-endpoint
 
 #region telemetry-endpoint
@@ -2018,7 +2189,7 @@ app.MapGet("/api/admin/experiment", async () => cosmos is null
 // Answers a shape the card can render even when telemetry is off or the query
 // fails, because a panel that reports on the system must not be able to break
 // the page it reports from.
-app.MapGet("/api/admin/telemetry", async () => Results.Json(await telemetry.GetRecentAsync(), wireFormat));
+app.MapGet("/api/admin/telemetry", async () => Results.Json(await telemetry.GetRecentAsync()));
 #endregion telemetry-endpoint
 
 #region cache-headers
@@ -2100,10 +2271,13 @@ static string FindUpward(string startDirectory, string relativePath)
 /// is the server's (ADR: Three readers with no memory of the project, the
 /// addendum on the clock).
 /// </summary>
-public sealed record BidRequest(int Amount);
+public sealed record BidRequest([property: Description("Whole dollars, at or above the vehicle's min_next_bid.")] int Amount);
 
 /// <summary>What the browser reports when a render crashes or a promise rejects (ADR-023).</summary>
-public sealed record ClientErrorReport(string? Message, string? Stack, string? Path);
+public sealed record ClientErrorReport(
+    [property: Description("What the browser caught. Required; bounded and masked before it is kept.")] string? Message,
+    [property: Description("The stack, if there was one.")] string? Stack,
+    [property: Description("The page the visitor was on.")] string? Path);
 
 // Exposes the entry point to WebApplicationFactory for integration tests.
 public sealed partial class Program;

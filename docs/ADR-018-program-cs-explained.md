@@ -193,20 +193,22 @@ the top of this record.
 
 ## Why this is one file
 
-It is 2,110 lines, and that is the first thing a reviewer notices, so it is
+It is 2,284 lines, and that is the first thing a reviewer notices, so it is
 worth saying that it is a decision rather than a drift.
 
 What those lines are:
 
 ```
-2,110 total
-  789 comment
-  134 blank
-  1,187 code, across 41 endpoints
+2,284 total
+  804 comment
+  136 blank
+  1,344 code, across 41 endpoints
 ```
 
-Twenty-nine lines of code per endpoint, and most endpoints are a route, a
-binding and a delegation. Nothing in here holds a rule; the rules are in Domain
+Thirty-three lines of code per endpoint, and most endpoints are a route, a
+binding and a delegation; the four lines past twenty-nine are the name, the
+summary, the tags and the declared responses each public endpoint gained
+when the API started describing itself (ADR: The API describes itself). Nothing in here holds a rule; the rules are in Domain
 and Application, and this file's job is to say what is reachable and in what
 order.
 
@@ -293,6 +295,21 @@ above went with it. `CurrentBackend` is resolved from the request's header
 or the container's default now, not from a cookie; `POST /api/stores/select`
 is gone, and `GET /api/stores` expires the cookie the old toggle set when a
 request still carries one. The live block above shows what is left.
+
+## Addendum, 2026-09-15: the wire shape is a record now
+
+The paragraph on `wireFormat` above says `VehicleWire.ToWire` serialises each
+vehicle to a JSON node and appends the auction facts, which is why the host's
+options could not reach it. That stopped being how it works when the API
+started describing itself (ADR: The API describes itself): `ToWire` builds a
+`VehicleView`, a record with the dataset's twenty-nine fields and the five
+derived ones, and the public endpoints answer through `TypedResults.Ok`, which
+serialises with the host's own options, the same snake_case policy that
+`ConfigureHttpJsonOptions` sets for request bodies, and which carries the
+response type into the document where `TypedResults.Json` carries nothing.
+`wireFormat` stays for the `Results.Json` calls the operator endpoints still
+make, and both paths apply the one policy. The names, the values and their
+order on the wire did not change.
 
 ## Files
 

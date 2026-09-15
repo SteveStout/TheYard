@@ -28,11 +28,11 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every push runs all three suites in CI: 493 xUnit tests, 110 Vitest tests at 1.0.0.133 and 65 Playwright tests. The ship
+**The test gate.** Every push runs all three suites in CI: 502 xUnit tests, 110 Vitest tests at 1.0.0.133 and 66 Playwright tests. The ship
 gate runs the API suite against both stores and was measured at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068). A push that fails the gate does not roll.
 
-**The records.** Seventy-five decision records, each carrying the decision, the trade-off and the number behind
+**The records.** Seventy-six decision records, each carrying the decision, the trade-off and the number behind
 it, with a Files section pointing at the code it governs. Code shown in a record is read from the running build, so a
 record cannot drift from the code it describes.
 

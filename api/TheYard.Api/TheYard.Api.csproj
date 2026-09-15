@@ -14,6 +14,13 @@
          nothing at all when the connection string is absent (ADR-024). -->
     <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
+    <!-- The API's description of itself: the framework's own OpenAPI generator,
+         which reads the routing table and the typed results, and Scalar for the
+         page a person opens at /api/reference. Both pinned; the generator to
+         the same servicing line as the rest of ASP.NET Core here, Scalar to the
+         version its bundled assets were read on (ADR: The API describes itself). -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.17.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

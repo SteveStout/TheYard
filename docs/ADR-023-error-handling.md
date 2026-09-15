@@ -36,7 +36,9 @@ same way:
 ```
 
 The 404 for an unknown vehicle stays an empty 404: there is nothing to
-say that the status code does not.
+say that the status code does not. (That sentence stopped being true
+quietly, and the addendum at the end of this record says when and what
+replaced it.)
 
 **The browser reads `detail` first.** `src/lib/data.ts` prefers `detail`,
 falls back to the old `reason` and `error` keys so nothing breaks
@@ -112,6 +114,20 @@ How the browser reads a failure:
 - Reporting is best effort. `keepalive` lets a report survive the
   navigation away, and a failed report is swallowed rather than replacing
   the error the visitor already sees.
+
+## Addendum, 2026-09-15: the empty 404 was not empty
+
+`UseStatusCodePages` was added to the pipeline after this record was written,
+and with the problem-details service registered it fills any bare status code
+with a ProblemDetails body on the way out. So the "empty 404" above had been
+answering `application/problem+json` with a generic title for some time, and
+nothing said so. When the API started describing itself (ADR: The API
+describes itself), every declared response had to match the wire, and a
+declaration of "empty" would have been the one lie in the document. The
+endpoints that answer 404 and 401 now say so themselves, with a title and a
+one-sentence detail in the shape every other failure here uses. The status
+codes did not change; the body names what was not found instead of the
+middleware naming nothing.
 
 ## Files
 

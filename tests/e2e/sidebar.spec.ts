@@ -47,6 +47,7 @@ test.describe('the docked rail', () => {
     await expect(page.getByRole('button', { name: 'About', exact: true })).toHaveCount(0);
     for (const section of [
       'App Architecture',
+      'API Reference',
       'SQL vs Cosmos DB',
       'Performance',
       'Diagrams',
@@ -84,6 +85,35 @@ test.describe('the docked rail', () => {
     await expect(page.getByTestId('build-version')).toBeVisible();
   });
 
+  test('the API Reference section links to the page and the document, and both answer', async ({
+    page,
+  }) => {
+    await openTheYard(page);
+    const rail = page.getByTestId('side-rail');
+    // Its own heading, right under the architecture, so a reader who came to
+    // see the API finds it without opening anything (ADR: The API describes itself).
+    await openSection(rail, 'API Reference');
+    const reference = rail.getByRole('link', { name: 'Browse the API reference', exact: true });
+    await expect(reference).toHaveAttribute('href', '/api/reference');
+    await expect(reference).toHaveAttribute('target', '_blank');
+    const documentRow = rail.getByRole('link', {
+      name: 'The OpenAPI document (JSON)',
+      exact: true,
+    });
+    await expect(documentRow).toHaveAttribute('href', '/api/openapi/v1.json');
+    await expect(documentRow).toHaveAttribute('target', '_blank');
+
+    // Both rows lead somewhere real, served by the same host as the page.
+    const referencePage = await page.request.get('/api/reference');
+    expect(referencePage.ok()).toBe(true);
+    expect(await referencePage.text()).toContain('<title>TheYard API</title>');
+    const json = await page.request.get('/api/openapi/v1.json');
+    expect(json.ok()).toBe(true);
+    const spec = (await json.json()) as { info: { title: string }; paths: Record<string, unknown> };
+    expect(spec.info.title).toBe('TheYard API');
+    expect(Object.keys(spec.paths).some((path) => path.startsWith('/api/admin'))).toBe(false);
+  });
+
   test('the rail collapses to icons, keeps its names, and remembers the choice', async ({
     page,
   }) => {
@@ -114,10 +144,10 @@ test.describe('the docked rail', () => {
     const rail = page.getByTestId('side-rail');
     const sections = rail.locator('details');
 
-    // Eleven headings and nothing else: the rail arrives as a table of contents
+    // Twelve headings and nothing else: the rail arrives as a table of contents
     // rather than as a hundred rows (ADR: The sidebar, the addendum on
-    // collapsing every section).
-    await expect(sections).toHaveCount(11);
+    // collapsing every section; the twelfth is the API reference, 1.0.0.137).
+    await expect(sections).toHaveCount(12);
     await expect(rail.locator('details[open]')).toHaveCount(0);
     await expect(rail.getByRole('button', { name: 'Hosting overview' })).toHaveCount(0);
 

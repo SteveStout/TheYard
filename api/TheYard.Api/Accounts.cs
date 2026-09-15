@@ -1,22 +1,31 @@
+using System.ComponentModel;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 
 /// <summary>What the register and login forms send.</summary>
-public sealed record Credentials(string? Email, string? Password);
+public sealed record Credentials(
+    [property: Description("The address the account is under; one account per address on each store.")] string? Email,
+    [property: Description("Eight characters or more; nothing else is required of it.")] string? Password);
 
 /// <summary>What the operator sends to mint a reset link, and what a visitor sends to use one (ADR: Accounts and per-user bids, addendum).</summary>
 public sealed record ResetLinkRequest(string? Email);
 
-public sealed record ResetRequest(string? Token, string? Password);
+public sealed record ResetRequest(
+    [property: Description("The GUID from the reset link; it works once, for an hour.")] string? Token,
+    [property: Description("The new password, eight characters or more.")] string? Password);
 
 /// <summary>
 /// Who the browser is signed in as. Deliberately not the token: the page never
 /// needs to read it, and a shape that carried it would invite somebody to put
 /// it somewhere a script could reach (ADR: Accounts and per-user bids).
 /// </summary>
-public sealed record AccountView(bool SignedIn, string? Email, long? MemberSinceMs);
+public sealed record AccountView(
+    [property: Description("False for a visitor with no session on this store; the other two fields are null then.")] bool SignedIn,
+    string? Email,
+    [property: Description("When the account was created, in milliseconds since the epoch, UTC.")] long? MemberSinceMs);
 
 public static class Accounts
 {
@@ -28,7 +37,7 @@ public static class Accounts
     /// 500: nothing is broken, a dependency is missing, and the difference
     /// matters to whoever reads it (ADR: The relational store).
     /// </summary>
-    public static IResult Unavailable() => Results.Problem(
+    public static ProblemHttpResult Unavailable() => TypedResults.Problem(
         detail: "Accounts need the database, and it did not come up on this container. "
             + "The inventory is served from files and browsing still works.",
         statusCode: StatusCodes.Status503ServiceUnavailable,

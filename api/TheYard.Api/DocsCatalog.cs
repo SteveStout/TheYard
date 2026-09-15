@@ -100,6 +100,7 @@ public static class DocsCatalog
         ["adr-kept-logs"] = "docs/ADR-073-logs-that-outlive-the-container.md",
         ["adr-highlighting"] = "docs/ADR-074-code-that-reads-like-code.md",
         ["adr-rules"] = "docs/ADR-075-the-rules-a-change-has-to-pass.md",
+        ["adr-openapi"] = "docs/ADR-076-the-api-describes-itself.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["built-with-ai"] = "docs/BUILT-WITH-AI.md",

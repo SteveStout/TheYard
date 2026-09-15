@@ -42,6 +42,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The SQL project in source control is the authority for the relational schema | ADR: Data first, and the database in source control | SchemaConformanceTests |
 | The server owns the clock and every derived fact, and no request names a day | ADR: Three readers with no memory of the project | AuctionScheduleTests |
 | Sold is decided before every other bid rule, for everybody | ADR: Accounts and per-user bids | BidRulesTests |
+| Every public endpoint is in the API document with an operation id, a summary, its responses and its lock, and no operator endpoint is | ADR: The API describes itself | ApiDocumentTests |
 
 ## How the table is read
 

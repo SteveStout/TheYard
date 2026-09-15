@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.AspNetCore.Mvc;
 using TheYard.Domain;
 
@@ -9,20 +10,29 @@ namespace TheYard.Api;
 /// VehicleFilter plus the AuctionClock statuses are evaluated against,
 /// rejecting unknown status and sort values. The clock is the server's; an
 /// anchor a request still sends is not read.
+///
+/// <para>The attributes target the properties, not the constructor
+/// parameters, on purpose. An [AsParameters] record is read through a
+/// parameter wrapper that merges the constructor's attributes with the
+/// property's into a plain Attribute array whenever the constructor has any,
+/// and the document generator then casts that array to a typed one and
+/// throws. With the attributes on the properties the wrapper hands back the
+/// property's own typed array and the document builds (ADR: The API
+/// describes itself).</para>
 /// </summary>
 public sealed record VehicleQueryParams(
-    string? Q,
-    string? Make,
-    [FromQuery(Name = "body_style")] string? BodyStyle,
-    [FromQuery(Name = "title_status")] string? TitleStatus,
-    string? Province,
-    string? Status,
-    string? Sort,
-    int? Limit,
-    int? Offset,
-    [FromQuery(Name = "min_condition")] double? MinCondition,
-    [FromQuery(Name = "price_min")] double? PriceMin,
-    [FromQuery(Name = "price_max")] double? PriceMax)
+    [property: FromQuery(Name = "q"), Description("Free text, matched against every filterable field and the derived auction status.")] string? Q,
+    [property: FromQuery(Name = "make"), Description("One make, exactly as the facets list it.")] string? Make,
+    [property: FromQuery(Name = "body_style"), Description("One body style, exactly as the facets list it.")] string? BodyStyle,
+    [property: FromQuery(Name = "title_status"), Description("One title status, exactly as the facets list it.")] string? TitleStatus,
+    [property: FromQuery(Name = "province"), Description("One province, exactly as the facets list it.")] string? Province,
+    [property: FromQuery(Name = "status"), Description("live, upcoming or ended, on the server's clock. Anything else is a 400.")] string? Status,
+    [property: FromQuery(Name = "sort"), Description("ending-soonest (the default), price-asc, price-desc, condition or most-bids. Anything else is a 400.")] string? Sort,
+    [property: FromQuery(Name = "limit"), Description("Page size, 1 to 500; 100 when absent.")] int? Limit,
+    [property: FromQuery(Name = "offset"), Description("How many matches to skip; 0 when absent.")] int? Offset,
+    [property: FromQuery(Name = "min_condition"), Description("The lowest condition grade to include.")] double? MinCondition,
+    [property: FromQuery(Name = "price_min"), Description("The lowest standing price to include, in whole dollars.")] double? PriceMin,
+    [property: FromQuery(Name = "price_max"), Description("The highest standing price to include, in whole dollars.")] double? PriceMax)
 {
     /// <summary>The landing page shows the top 100; clients may ask for up to 500.</summary>
     public const int DefaultLimit = 100;

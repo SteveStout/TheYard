@@ -137,6 +137,15 @@ Nothing moved: the rows, the icons, the docking line, the collapse and the
 drawer are as this record describes above, and the end-to-end
 checks passed unchanged.
 
+## Addendum, 2026-09-15: a twelfth section, for the API
+
+The API describes itself from this version (ADR: The API describes itself), and the page a person
+reads that description on is not markdown, so it cannot be a document row. It is a section of its
+own, **API Reference**, right under App Architecture, holding two link rows that open in a new tab
+the way the drawings do: the reference page and the OpenAPI document itself. A section rather than
+two rows inside App Architecture because a reader who came to see the API should find it in the
+table of contents without opening anything. The browser suite's count of headings is twelve now.
+
 ## Files
 
 - [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx) and

@@ -126,6 +126,7 @@ export type DocKey =
   | 'adrKeptLogs'
   | 'adrHighlighting'
   | 'adrRules'
+  | 'adrOpenApi'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'performance'
@@ -747,6 +748,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '075',
   },
+  adrOpenApi: {
+    title: 'ADR: The API describes itself',
+    menuLabel: 'ADR: The API describes itself',
+    url: '/api/docs/adr-openapi',
+    kind: 'adr',
+    number: '076',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -771,6 +779,7 @@ export const DOCS: Record<
 export type MenuVariant =
   | 'about'
   | 'architecture'
+  | 'apiReference'
   | 'stores'
   | 'performance'
   | 'diagrams'
@@ -792,6 +801,19 @@ export const LINKS = {
   resume: { label: "Steven's resume (PDF)", href: '/api/docs/resume' },
   repo: { label: 'GitHub repository', href: 'https://github.com/SteveStout/TheYard' },
 } as const;
+
+// #region api-reference
+/**
+ * The API's description of itself, two rows that leave the app in a new tab
+ * (ADR: The API describes itself): the reference page a person reads, and the
+ * document a tool reads. Links rather than documents because neither is
+ * markdown: the page is Scalar's, served by the API, and the document is JSON.
+ */
+export const API_REFERENCE: readonly MenuLink[] = [
+  { label: 'Browse the API reference', href: '/api/reference' },
+  { label: 'The OpenAPI document (JSON)', href: '/api/openapi/v1.json' },
+];
+// #endregion api-reference
 
 // #region diagrams
 /**
@@ -830,6 +852,16 @@ export const MENUS: Record<
     ],
   },
   // #endregion architecture-menu
+  /**
+   * The HTTP surface, as a section of its own right under the architecture,
+   * so a reader who came to see the API finds it without opening anything
+   * (ADR: The API describes itself).
+   */
+  apiReference: {
+    label: 'API Reference',
+    items: [],
+    links: API_REFERENCE,
+  },
   // #region stores-menu
   /**
    * The two stores, side by side, as a section of its own beside Hosting: the
@@ -966,6 +998,7 @@ export const MENUS: Record<
       { key: 'adrKeptLogs' },
       { key: 'adrHighlighting' },
       { key: 'adrRules' },
+      { key: 'adrOpenApi' },
     ],
   },
   // #endregion records-menu
@@ -982,6 +1015,7 @@ export const MENUS: Record<
 /** Section order, top to bottom. The sidebar renders from it in both of its shapes (ADR-013). */
 export const MENU_ORDER: MenuVariant[] = [
   'architecture',
+  'apiReference',
   'stores',
   'performance',
   'diagrams',

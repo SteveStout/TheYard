@@ -17,6 +17,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/reference</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/readme</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

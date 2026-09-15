@@ -4,7 +4,7 @@
 
 Built by one engineer with AI as a force multiplier: AI writes the first draft, three suites of tests run
 on every push inside a five-minute gate (the counts are in the testing section below, held to the suites
-by a test), and seventy-five decision records carry the trade-off and the number behind each choice. What went
+by a test), and seventy-six decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/api/docs/built-with-ai), and what it all runs on, at
 millisecond speeds on free-tier stores and one small container, in
@@ -29,7 +29,7 @@ it has sent and how long the database took.
 
 Everything about how it is built and hosted is served from inside the running app, under
 App Architecture, SQL vs Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD
-and Best Practices in the sidebar. Seventy-five decision records explain each choice, and the code samples in them are read from the running build
+and Best Practices in the sidebar. Seventy-six decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
@@ -89,6 +89,14 @@ request time), `GET /api/docs/diagrams/{name}` (a diagram on its own zoomable pa
 `GET /readyz` (liveness and readiness), `GET /api/health`, `GET /api/errors` and
 `GET /api/admin/azure` (the Admin tab), and `GET /api/admin/activity` (requests over time, split
 by the store that served them, naming nobody; the per-visitor rows sit behind an operator's key).
+
+The API describes itself. `GET /api/openapi/v1.json` is an OpenAPI document built from the endpoints
+as they are mapped, and [`/api/reference`](https://theyard.stevenstout.biz/api/reference) renders
+it as a browsable reference with a request builder. Every public operation carries an operation id,
+a summary and its responses, failures included; the bearer scheme is declared and the operations
+that need a session are marked; the operator endpoints under `/api/admin/` are kept out of it. All
+four rules are held by a test rather than by care, which is the point of ADR: The API describes
+itself.
 
 Other scripts:
 
@@ -254,11 +262,11 @@ each with its own changelog line and, where it decided something, its own record
   both be told the truth about it.
 - **Navigation:** every view is a GET URL. Filters, sorts, the open vehicle and the Admin
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
-- **A sidebar that documents the app from inside it:** App Architecture, SQL vs Cosmos
+- **A sidebar that documents the app from inside it:** App Architecture, API Reference, SQL vs Cosmos
   DB, Diagrams, Hosting, CI/CD, Best Practices, Changelog and About, holding the
   architecture and style pages, the two stores side by side, the data flow,
   infrastructure, entity relationship, two-sites and store comparison diagrams on their
-  own zoomable pages, seventy-five decision records in one numbered index, the Bicep
+  own zoomable pages, seventy-six decision records in one numbered index, the Bicep
   infrastructure, my resume, and How this was built, which says plainly that an AI agent
   wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -426,7 +434,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (493 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (502 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -453,7 +461,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (65 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (66 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a
