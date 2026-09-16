@@ -24,6 +24,7 @@ The choices a tool cannot make, each with its record.
 - The sidebar over dropdowns, the palette, and the rule that every diagram opens on its own page
   (ADR-013, ADR-016, ADR-020).
 - The five-minute ceiling on the whole test wall (ADR-068).
+- Every test, specified before the code it holds was written (test driven development).
 - Every GO. Nothing rolled to Azure without a written go from me.
 
 ## What governed it

@@ -2,8 +2,8 @@
 
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz)
 
-Built by one engineer with AI as a force multiplier: AI writes the first draft, three suites of tests run
-on every push inside a five-minute gate (the counts are in the testing section below, held to the suites
+Built by one engineer with AI as a force multiplier, test driven: I specify every test before the AI writes
+the first draft of the code against it, three suites of tests run on every push inside a five-minute gate (the counts are in the testing section below, held to the suites
 by a test), and seventy-six decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/api/docs/built-with-ai), and what it all runs on, at
@@ -14,10 +14,10 @@ TheYard is my portfolio implementation of a used-vehicle auction platform: brows
 inventory, inspect a vehicle in detail, and place bids against a simulated room of other
 bidders. It began as my submission to a company's take-home hiring challenge, in a fork
 of their starter repository, and everything described below was built on that start (ADR:
-The name says which, what changed and when). The frontend is a React app backed by a .NET 10 API that owns the data, the
-search, and the auction rules, storing accounts and bids in Azure SQL Database reached
-with a managed identity, so the connection string in the container is a server name and
-an authentication mode and nothing worth stealing.
+The name says which, what changed and when). The frontend is a React app backed by a .NET 10 REST API that owns the data, the
+search, and the auction rules, storing accounts and bids in Azure SQL Database or Azure
+Cosmos DB, both reached with the container's managed identity, so what the container holds
+for either store is an address and an authentication mode and nothing worth stealing.
 
 The stores run on their free offers and the containers on trial credit, and every piece
 is priced in its record rather than called free; it keeps serving when a database does
@@ -28,7 +28,7 @@ it has sent and how long the database took.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, SQL vs Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD
+App Architecture, API Reference, SQL vs Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD
 and Best Practices in the sidebar. Seventy-six decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -93,7 +93,7 @@ by the store that served them, naming nobody; the per-visitor rows sit behind an
 The API describes itself. `GET /api/openapi/v1.json` is an OpenAPI document built from the endpoints
 as they are mapped, and [`/api/reference`](https://theyard.stevenstout.biz/api/reference) renders
 it as a browsable reference with a request builder. Every public operation carries an operation id,
-a summary and its responses, failures included; the bearer scheme is declared and the operations
+a summary and its responses, failures included; the bearer and cookie schemes are declared and the operations
 that need a session are marked; the operator endpoints under `/api/admin/` are kept out of it. All
 four rules are held by a test rather than by care, which is the point of ADR: The API describes
 itself.
@@ -136,7 +136,8 @@ To refresh the photo set from Wikimedia Commons, run `node scripts/fetch_photos.
 
 ## How It Was Built
 
-Built domain-first, with tests before any UI. It then grew in deliberate passes into a
+Built test driven and domain-first: every test specified before the code it holds was written, and
+the rules and their tests before any UI. It then grew in deliberate passes into a
 demonstration of how I build production systems: the .NET API in onion architecture,
 server-side filtering, sorting and paging over a 100,000-record synthetic dataset,
 server-owned bidding rules, three test suites, CI, a container, a live host, and a
@@ -149,7 +150,7 @@ behind any line of it.
 ## Workflow
 
 AI-assisted, verification-driven. I directed scope, architecture, and product decisions;
-Claude Code implemented under that direction, and nothing merged on trust: every change
+Claude Code implemented against tests I specified first, and nothing merged on trust: every change
 ran the typechecker and all three suites, UI work was verified against real screenshots
 at desktop, tablet and mobile widths, and features were driven end to end in a headless
 browser before being called done. The build went domain-first (rules and tests before any
@@ -207,8 +208,8 @@ each with its own changelog line and, where it decided something, its own record
 - **Frontend:** React 19 + TypeScript (strict) on Vite 8; plain CSS via CSS Modules over
   a single design-token sheet (`src/styles/tokens.css`); Vitest for tests. No component,
   icon, state or CSS libraries, and no router: icons are small inline SVGs and the
-  address bar is the application state. Three runtime dependencies: react, react-dom, and
-  marked for rendering the served documents. The palette is Figma's Urban slate, gray,
+  address bar is the application state. Four runtime dependencies: react, react-dom,
+  marked for rendering the served documents, and highlight.js for their code samples. The palette is Figma's Urban slate, gray,
   brown and blue, with every text and ground pair measured against WCAG AA by a unit
   test, and Poppins from Google Fonts (the one external asset) with a system fallback.
 - **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheYard.Data`
@@ -220,8 +221,8 @@ each with its own changelog line and, where it decided something, its own record
   auction status; all auction math lives in Domain and travels on the wire, so the
   browser only formats. `src/lib/data.ts` is the frontend's single data seam.
 - **Hosting:** a hand-authored multi-stage Dockerfile, an image in Azure Container
-  Registry, a container group on Azure Container Instances, and Netlify's free tier as
-  the TLS edge in front of it. GitHub Actions builds and rolls it on every green push.
+  Registry, two container groups on Azure Container Instances, one per site, rolled from the
+  container specs in `infra/`, and Netlify's free tier as the TLS edge in front of them. GitHub Actions builds and rolls them on every green push.
   `infra/main.bicep` holds the production design (App Service behind Front Door with an
   origin lock), deliberately undeployed and explained on the Hosting page.
 - **Database:** Azure SQL Database through EF Core, behind the same ports the JSON
@@ -231,10 +232,13 @@ each with its own changelog line and, where it decided something, its own record
   side with the relational store in the same container, each site one store's site,
   with a Store bar at the top of every page that links to the other site at the same
   page, the request charge beside every operation on the Admin tab, a proof card that
-  runs the same requests against both stores in paired rounds, and the numbers in the
-  records. There is no password anywhere: the
+  runs the same requests against both stores in paired rounds that alternate which store
+  goes first, and the numbers in the records. There is no password anywhere: the
   server was created Entra-only, so it has no SQL login to have one, and the container
-  authenticates as the managed identity it already carried. The schema is a SQL project
+  authenticates as the managed identity it already carried. The Cosmos DB account has local
+  auth disabled, so no key exists either, and an account there is one document plus one
+  address document, so an email stays unique without a cross-partition unique index
+  (ADR: Accounts on a document store). The schema is a SQL project
   of hand-written DDL that compiles to a DACPAC and is the authority; EF maps to it and a
   conformance test fails the build when the two disagree, and the running application
   holds read and write and cannot alter a table. The catalogue is read once into memory,
@@ -256,14 +260,16 @@ each with its own changelog line and, where it decided something, its own record
   with buyer-facing reasons, a persistent "You're the high bidder" state, Buy Now with a
   distinct sold and purchase-price presentation, and bids that survive refresh.
 - **Accounts:** register or sign in with an address and a password, and the bid is
-  yours. The session is a signed token in a cookie the page cannot read, the bids are
+  yours. The session is a signed JWT, checked by ASP.NET Core's JWT bearer authentication and
+  carried in a cookie the page cannot read, the bids are
   keyed on the person as well as the vehicle, and the account view lists what you have
   bid on and whether you are still winning. Two visitors can now outbid each other and
   both be told the truth about it.
 - **Navigation:** every view is a GET URL. Filters, sorts, the open vehicle and the Admin
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
-- **A sidebar that documents the app from inside it:** App Architecture, API Reference, SQL vs Cosmos
-  DB, Diagrams, Hosting, CI/CD, Best Practices, Changelog and About, holding the
+- **A sidebar that documents the app from inside it:** About, App Architecture, API Reference, SQL vs
+  Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD, Best Practices, Decision
+  Records and Changelog, holding the
   architecture and style pages, the two stores side by side, the data flow,
   infrastructure, entity relationship, two-sites and store comparison diagrams on their
   own zoomable pages, seventy-six decision records in one numbered index, the Bicep
@@ -340,7 +346,8 @@ each with its own changelog line and, where it decided something, its own record
   `api/TheYard.Tests/SyntheticVehicleSourceTests.cs`.
 - **Onion architecture that earns its layers.** Data (the pure records) has zero
   dependencies; Domain (the rules) depends only on Data; Application talks through ports
-  (`IVehicleSource`, `IPhotoManifestSource`); Infrastructure adapts files; the host only
+  (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`); Infrastructure and its Cosmos DB twin
+  adapt the stores and the files; the host only
   binds and serializes. The proof it is not ceremony: the 100k scale-up is a decorator on
   a port (`SyntheticVehicleSource`) and nothing above it changed, and the test suite
   swaps in-memory fakes at the same seams.
@@ -372,6 +379,10 @@ each with its own changelog line and, where it decided something, its own record
 - **Buy Now is a purchase, not a bid**: it does not inflate the bid count, the vehicle
   presents as "Sold" with a purchase price everywhere and to everybody, and it takes no
   further bid from anyone.
+- **Simultaneous bids are serialized.** Bidding is read, decide, write, and each step being
+  atomic does not make the sequence atomic: two bids on the same vehicle could both pass the
+  rules and the lower one land second. One gate lets one bid through at a time, held across
+  the store's answer (ADR: The ports learn to wait).
 - **One clock at the app root** (`useNow`) drives every countdown and status, so a card
   and its detail view can never disagree about liveness.
 - **Query requests are debounced (500 ms) and cached (5 min, per query string,
@@ -453,7 +464,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (110 Vitest tests at 1.0.0.133):** presentation logic only, since the API owns the rules.
+**Frontend (110 Vitest tests at 1.0.0.138):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,
@@ -470,10 +481,12 @@ phone drawer works at 375 pixels, the keyboard path walks from the skip link thr
 every view switch, a bid round-trips through the API, survives a reload, and resets,
 the simulated room answers a bid so the high-bidder badge changes hands, the sign-in
 form creates an account that survives a reload and a bid made under it appears in that
-account's list, and axe holds eight views to WCAG 2.1 AA including both halves of the
+account's list, and axe holds nine views to WCAG 2.1 AA including both halves of the
 account page. Run with `npm run test:e2e` (launches both servers itself, uses your
 installed Chrome). All three suites run in CI on every push, and a green run on `main`
-deploys.
+deploys. The six tests that need the real Cosmos DB account are filtered out of CI, which has no
+Azure credential, and run in the ship gate before every release, beside the whole API suite
+booted a second time on Cosmos DB.
 
 ADR: The tests, explained walks all three suites for a developer new to the stack.
 
@@ -496,10 +509,10 @@ The four promises this section made when the build started have all shipped:
    on every green push, and the production design (App Service behind Front Door) written
    in Bicep and deliberately undeployed, with the reason recorded.
 
-Two more came off the list afterwards, on time that was no longer the deadline's:
+Four more came off the list afterwards, on time that was no longer the deadline's:
 
 5. **Application Insights.** Every request, dependency and exception the API handles is
-   traced, browser errors included, and the Admin tab reads the last hour back with the
+   traced through Azure Monitor OpenTelemetry, browser errors included, and the Admin tab reads the last hour back with the
    container's own managed identity. The ingestion key is read from Azure at roll time
    and is nowhere in this repository. Recorded in ADR: Telemetry.
 6. **Search indexing.** Each vehicle's searchable text is built once when the dataset
