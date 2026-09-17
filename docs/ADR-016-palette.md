@@ -94,6 +94,8 @@ WCAG AA, so a shade that fails contrast fails the build.
 - [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css) and [`src/components/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BrandMark.tsx):
   the brand mark in the palette's taupe.
 - [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the favicon.
+- [`src/styles/fonts.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/fonts.css) and [`src/assets/fonts`](https://github.com/SteveStout/TheYard/tree/main/src/assets/fonts): the four Poppins faces, served by the site itself since 1.0.0.140, with the font's licence beside them.
+- [`tests/e2e/fonts.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/fonts.spec.ts): no request leaves for a font host, and Poppins is the face the page paints with.
 
 ## The look, from the live site
 
@@ -106,3 +108,49 @@ The measurements that hold the palette to WCAG AA, read from this build
 
 ```live path=src/styles/tokens.test.ts region=site-palette
 ```
+
+## Addendum, 2026-09-17: the type is the site's own
+
+Steve, 9/17: the fastest site at no extra cost. Type stays Poppins; where it
+comes from changed. Until 1.0.0.140 the head of the page held a stylesheet
+link to fonts.googleapis.com and preconnects to it and to fonts.gstatic.com,
+and every cold visit paid for both: a DNS lookup and a TLS handshake to each
+host, and a stylesheet the browser would not paint without. The measurement
+that opened the performance lane (`mentor\logs\lane0917-963-perflane-measure.log`,
+Lighthouse against the live site on 1.0.0.139, throttled phone profile) named
+that stylesheet as the page's one render-blocking resource and put its cost
+at 852 ms of an estimated 1,080 ms of savings; on a desktop Chromium with a
+cold cache the four woff2 files and the stylesheet were five of the thirty
+requests a first visit made.
+
+The four latin woff2 files Google served, one per weight the tokens name,
+are in `src/assets/fonts` now, fetched once as Chrome received them and
+kept with the font's Open Font License beside them. `src/styles/fonts.css`
+declares the four faces with the same `unicode-range` and the same
+`font-display: swap` the Google stylesheet carried, so a glyph outside the
+latin set falls back exactly as it did, and text is readable in the fallback
+face until the file lands. Vite hashes the files under `/assets`, which puts
+them under the year-long cache rule every bundle file already has (ADR: Cache
+headers), and the edge keeps a copy the same way it keeps the script.
+
+What was considered and not done, with the cost of each. A system font
+stack costs nothing on the wire and changes the look of every page, and the
+look was Steve's decision, not a performance budget's. `font-display:
+optional` would stop the swap that shows up as layout shift on a slow first
+visit, at the price of a first visit that never shows Poppins at all. A
+`preload` for the two most used weights would take one hop off the critical
+path, and it needs the hashed file names that only the build knows, which
+means a plugin or a hand-typed name that goes stale on the next build; the
+stylesheet is same-origin and first in the head, so the files are discovered
+early enough without it. Poppins itself covers latin, latin-ext and
+devanagari; the other two subsets were never fetched by an English page and
+are not carried. One place still names the Google stylesheet, and is left on
+purpose: the diagram pages under `/diagrams` are HTML the server writes with
+no build step to hash a file for them (ADR: Every diagram opens on its own page), and they are not
+the page a visitor lands on.
+
+`fonts.spec.ts` holds it: no request leaves the page for a Google host, and
+after `document.fonts.ready` Poppins at the body weight is a loaded face.
+The before and after, measured on the live site, are on the Performance
+page.
+

@@ -1,12 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/code.css';
 import App from './App';
 import { ErrorBoundary, reportClientError } from './components/ErrorBoundary';
 
 // #region bootstrap
-// tokens.css is imported first so the palette exists before any component's
+// fonts.css comes first so the four faces are declared before anything asks
+// for them, then tokens.css so the palette exists before any component's
 // styles are applied, and code.css right after it, because the code theme is
 // written in those tokens. StrictMode costs nothing in production; in development
 // it mounts, unmounts and remounts once, which is how an effect that leaks a

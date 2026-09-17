@@ -133,6 +133,46 @@ visitor fetches the small HTML page and the data, never the bundle again ([Cache
 ```live path=api/TheYard.Api/Program.cs region=cache-headers
 ```
 
+## What the page costs on the wire, measured on 17 September
+
+The table above is the server timing itself. This section is the other half, the page as a browser
+receives it, measured against the live site on 1.0.0.139 before anything was changed, by the runner
+on Steve's machine with the repository's own Playwright Chromium, a cold cache on every round, and
+`Cache-Control: no-cache` on every direct read (the log is `lane0917-963-perflane-measure.log`).
+Every change below shipped as a version of its own, with the number it moved.
+
+**The wire before any change.** The edge serves everything text-shaped as Brotli, which is why
+server-side compression is not on the list below: the script is 430,734 bytes built and 126,267 on the
+wire, the stylesheet 48,924 and 8,256, the listing page of a hundred vehicles 105,385 and 13,684, the
+page itself 4,940 and 1,783. The edge also keeps the hashed bundle files (`Cache-Status: hit` on the
+stylesheet, `stored` on the script the first time after a roll), so a returning visitor's bundle never
+reaches Azure, and it forwards every API request (`fwd=miss`), which is what `no-cache` asks of it.
+
+**A first visit, desktop Chromium, cold cache, 1.0.0.139.** Two rounds on the Azure SQL site after the
+first warmed the edge: first contentful paint 1,092 and 1,016 ms, largest contentful paint 1,792 and
+1,720 ms, the inventory drawn at 1,926 and 1,878 ms, 28 to 29 requests and 568 to 589 KB on the wire.
+The Cosmos DB site read the same shape: 1,012 and 956 ms to first paint, 1,504 and 1,484 ms to the
+largest. Seventeen of the requests were card photographs, 450 KB of the total; five went to Google for
+the font, one stylesheet and four files; one was the script.
+
+**Lighthouse, throttled phone profile, 1.0.0.139:** performance 76, first contentful paint 2.8 s,
+largest contentful paint 2.9 s, total blocking time 290 ms, speed index 2.9 s, layout shift 0.175. One
+render-blocking resource on the page, the Google Fonts stylesheet, at an estimated 852 ms, and 67 KiB
+of script the landing page loads and never runs.
+
+**An idle minute, signed out, 1.0.0.139:** the inventory page asked for the listing and the filter
+values four times each and fetched five photographs it had not shown before, 13 requests and 188 KB;
+a vehicle page, whose listing keeps refreshing behind it, four to eight requests.
+
+| Version | What changed | Before | After, measured live |
+| --- | --- | --- | --- |
+| 1.0.0.140 | The type is the site's own: four Poppins files under `/assets` in place of a Google stylesheet and four files from two third-party hosts ([The palette](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-016-palette.md), addendum) | 5 requests to 2 font hosts on every cold visit; the one render-blocking resource on the page, 852 ms on a throttled phone; Lighthouse 76 | read after the roll, in the next version's copy of this table |
+
+The four faces, declared once and hashed by the build like every other bundle file:
+
+```live path=src/styles/fonts.css region=*
+```
+
 ## What it cost to keep it honest
 
 Measuring is not free either, and the bill is small enough to print: the whole twenty-round measurement
