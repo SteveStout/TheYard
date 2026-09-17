@@ -293,6 +293,7 @@ and belong to the record that takes that on.
 - [`src/lib/auth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.ts): the account seam in the browser, and the question that ignores a late answer.
 - [`src/lib/auth.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.test.ts): the seam's tests, including the late answer.
 - [`tests/e2e/account.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/account.spec.ts): the form end to end, the run that found the late answer.
+- [`src/components/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BidPanel.tsx): the form, rendered only to a signed-in visitor.
 
 ## Addendum, 2026-09-13: a login lasts a year past the last visit
 
@@ -405,3 +406,42 @@ What it costs: three point operations per link, a write, a read and a
 delete, a handful of request units inside the free tier, and one more
 container defined in `infra/cosmos/resets.json` beside the others, indexed
 on nothing because it is only ever read by id.
+
+## Addendum, 2026-09-17: the page asks the server's question first
+
+Steve, 9/17: the vehicle page let a signed-out visitor fill in an amount and
+submit a bid, and the visitor learned from the server's 401 that it needed an
+account. The server was right, in the sense that every write here needs a
+session and `AuthTests` holds the 401; the page was late, in the sense that
+it rendered the form to a visitor it already knew was nobody. `BidPanel`
+took the vehicle, the clock, the visitor's standing on that vehicle and two
+callbacks, and nothing about the account, so it could not have asked.
+
+Now it is told, the way the proof card is told (ADR: Same performance,
+proven, addendum of 13 September). Signed out on a live auction the panel
+renders one control, "Sign in to bid", that opens the account view, which
+is where the site signs a visitor in; the amount field, the Place bid
+button and the Buy now button are not rendered. Signed in, the panel is as
+it was. The precedent decides the shape as much as the rule does: a
+disabled form with an instruction on it reads as broken on a phone, and the
+proof card's button sat that way for four days before Steve, from his phone,
+said so. A
+control that is the instruction, and goes where the instruction points, is
+the shape that survived.
+
+What the page does not do is decide anything. Whether a bid is allowed is
+still the server's, and still answered 401 when a request arrives with no
+session; the panel is reading the same answer the rail reads, from
+`/api/auth/me`, and rendering the form only once it says somebody. A visitor
+whose session lands after the page has drawn sees the control for the
+moment the rail shows "Sign in", and then the form, which is the rail's own
+behaviour and the cost of a page that does not hold the cookie.
+
+```live path=src/components/BidPanel.tsx region=signed-out
+```
+
+`account.spec.ts` holds it on both stores: signed out, the region named
+Auction has no amount field, no Place bid and no Buy now, the one control
+reads "Sign in to bid" and clicking it lands on `?view=account`; after a
+registration through the form the same vehicle offers the amount field and
+the control is gone. Shipped as 1.0.0.139.

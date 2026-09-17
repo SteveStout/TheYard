@@ -19,6 +19,9 @@ interface VehicleDetailProps {
   /** The simulated room has bid past the buyer here (ADR-027). */
   isOutbid: boolean;
   wonBuyNow: boolean;
+  /** Passed through to the bid panel, which offers no form to a signed-out visitor (ADR-037). */
+  signedIn: boolean;
+  onOpenAccount: () => void;
   onPlaceBid: (amount: number) => Promise<BidOutcome>;
   onBuyNow: () => Promise<BidOutcome>;
 }
@@ -30,6 +33,8 @@ export function VehicleDetail({
   isHighBidder,
   isOutbid,
   wonBuyNow,
+  signedIn,
+  onOpenAccount,
   onPlaceBid,
   onBuyNow,
 }: VehicleDetailProps) {
@@ -189,6 +194,8 @@ export function VehicleDetail({
             isHighBidder={isHighBidder}
             isOutbid={isOutbid}
             wonBuyNow={wonBuyNow}
+            signedIn={signedIn}
+            onOpenAccount={onOpenAccount}
             onPlaceBid={onPlaceBid}
             onBuyNow={onBuyNow}
           />

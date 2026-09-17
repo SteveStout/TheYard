@@ -15,6 +15,10 @@ interface BidPanelProps {
   /** The simulated room has bid past the buyer here (ADR-027). */
   isOutbid: boolean;
   wonBuyNow: boolean;
+  /** Whether anybody is signed in: a bid belongs to an account (ADR-037). */
+  signedIn: boolean;
+  /** Where the site signs a visitor in; the panel sends a signed-out one there. */
+  onOpenAccount: () => void;
   /** Bids are validated by the API; these resolve to its verdict. */
   onPlaceBid: (amount: number) => Promise<BidOutcome>;
   onBuyNow: () => Promise<BidOutcome>;
@@ -26,6 +30,8 @@ export function BidPanel({
   isHighBidder,
   isOutbid,
   wonBuyNow,
+  signedIn,
+  onOpenAccount,
   onPlaceBid,
   onBuyNow,
 }: BidPanelProps) {
@@ -135,7 +141,29 @@ export function BidPanel({
         </p>
       )}
 
-      {status === 'live' && (
+      {/* #region signed-out */}
+      {/* A bid belongs to an account, and the server refuses one from nobody
+          with a 401 (ADR-037). Until 1.0.0.139 the panel did not know who was
+          looking, so a signed-out visitor typed an amount, pressed the button
+          and learned from the server's refusal. Now the panel asks the one
+          question the server will ask, and asks it first: signed out, the form
+          and the buy-now button are not rendered at all, and the one control
+          left says what it needs and goes there, the way the proof card's does
+          (ADR: Same performance, proven, addendum). Not a disabled form with an
+          instruction on it: on a phone that reads as broken. */}
+      {status === 'live' && !signedIn && (
+        <button
+          type="button"
+          className={styles.bidButton}
+          onClick={onOpenAccount}
+          data-testid="bid-sign-in"
+        >
+          Sign in to bid
+        </button>
+      )}
+      {/* #endregion signed-out */}
+
+      {status === 'live' && signedIn && (
         <>
           {/* #region outbid */}
           {/* The two halves of the same sentence (ADR-027). role="status" on

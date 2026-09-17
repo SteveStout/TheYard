@@ -791,6 +791,8 @@ export default function App() {
               isHighBidder={highBidderIds.has(selected.id)}
               isOutbid={outbidIds.has(selected.id)}
               wonBuyNow={wonIds.has(selected.id)}
+              signedIn={account.signedIn}
+              onOpenAccount={openAccount}
               onPlaceBid={handlePlaceBid}
               onBuyNow={handleBuyNow}
             />

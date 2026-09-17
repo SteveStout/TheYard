@@ -123,6 +123,46 @@ test('a bid belongs to the account, and signing out takes it off the page', asyn
   await expect(page.getByRole('button', { name: /Reset bids/ })).toHaveCount(0);
 });
 
+// #region signed-out-bid
+test('signed out, the vehicle page offers no bid form, and its one control opens the account view', async ({
+  page,
+}) => {
+  // A bid belongs to an account and the server answers 401 to nobody's
+  // (ADR: Accounts and per-user bids, addendum of 17 September). Until
+  // 1.0.0.139 the page let a signed-out visitor fill the form and learn
+  // that from the refusal. The rule the proof card follows applies here:
+  // the control says what it needs and takes the visitor there.
+  const listing = await page.request.get('/api/vehicles?status=live&sort=most-bids&limit=25');
+  expect(listing.ok(), await listing.text()).toBe(true);
+  const { vehicles } = (await listing.json()) as { vehicles: { id: string; sold: boolean }[] };
+  const open = vehicles.find((vehicle) => !vehicle.sold);
+  expect(open, 'none of the 25 most-bid live vehicles is unsold').toBeDefined();
+
+  await openTheYard(page, `/?vehicle=${open!.id}`);
+  await expect(page.getByText('Specifications')).toBeVisible();
+  const panel = page.getByRole('region', { name: 'Auction' });
+  await expect(panel.locator('#bid-amount')).toHaveCount(0);
+  await expect(panel.getByRole('button', { name: 'Place bid' })).toHaveCount(0);
+  await expect(panel.getByRole('button', { name: /Buy now/ })).toHaveCount(0);
+  const signInToBid = panel.getByTestId('bid-sign-in');
+  await expect(signInToBid).toBeEnabled();
+  await expect(signInToBid).toHaveText('Sign in to bid');
+  await signInToBid.click();
+  await expect(page).toHaveURL(/view=account/);
+  await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();
+
+  // Signed in, the same vehicle offers the form and the control is gone.
+  const email = anAddress();
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill('correct horse');
+  await register(page, email);
+  await openTheYard(page, `/?vehicle=${open!.id}`);
+  await expect(panel.locator('#bid-amount')).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Place bid' })).toBeVisible();
+  await expect(panel.getByTestId('bid-sign-in')).toHaveCount(0);
+});
+// #endregion signed-out-bid
+
 // #region forgot-password
 test('forgot password answers one sentence, and says so when the site cannot send', async ({
   page,
