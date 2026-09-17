@@ -31,18 +31,53 @@ public class PhotoSizeTests
         {
             string file = entry.GetProperty("file").GetString()!;
             counted++;
-            string copy = Path.Combine(Images(), file.Replace(".jpg", "-480.jpg", StringComparison.Ordinal));
-            if (!File.Exists(copy))
+            // The JPEG card copy, and since 1.0.0.143 the WebP pair the picture
+            // element offers first (ADR: Responsive photos, addendum). All three
+            // are derived names, so all three are held here.
+            foreach (string suffix in new[] { "-480.jpg", "-480.webp", ".webp" })
             {
-                missing.Add(Path.GetFileName(copy));
+                string copy = Path.Combine(Images(), file.Replace(".jpg", suffix, StringComparison.Ordinal));
+                if (!File.Exists(copy))
+                {
+                    missing.Add(Path.GetFileName(copy));
+                }
             }
         }
 
         Assert.True(counted > 0, "the manifest should not be empty");
         Assert.True(
             missing.Count == 0,
-            $"{missing.Count} of {counted} photos have no card-sized copy; run npm run images:resize: "
+            $"{missing.Count} derived copies of {counted} photos are missing; run npm run images:resize: "
             + string.Join(", ", missing.Take(5)));
+    }
+
+    /// <summary>
+    /// The WebP pair is offered first because it is smaller, so that is what
+    /// is held, at the margin the set actually measured: 43 per cent under the
+    /// JPEG at 1280, where a dense phone screen reads, and six per cent under
+    /// at 480, where mozjpeg at quality 78 was already tight. A quarter at 1280
+    /// leaves room for a photograph WebP does little for without letting an
+    /// encode that silently wrote JPEG-sized files pass; at 480 the honest
+    /// floor is only that the set is not larger.
+    /// </summary>
+    [Fact]
+    public void The_webp_copies_are_smaller_than_the_jpegs_they_stand_in_for()
+    {
+        long Bytes(string pattern, Func<string, bool> keep) =>
+            Directory.GetFiles(Images(), pattern).Where(keep).Sum(path => new FileInfo(path).Length);
+
+        long jpegLarge = Bytes("*.jpg", path => !path.EndsWith("-480.jpg", StringComparison.Ordinal));
+        long jpegSmall = Bytes("*-480.jpg", _ => true);
+        long webpLarge = Bytes("*.webp", path => !path.EndsWith("-480.webp", StringComparison.Ordinal));
+        long webpSmall = Bytes("*-480.webp", _ => true);
+
+        Assert.True(webpLarge > 0 && webpSmall > 0, "the WebP copies should exist; run npm run images:resize");
+        Assert.True(
+            webpLarge < jpegLarge * 0.75,
+            $"the 1280 WebP set should be at least a quarter under the JPEG set: {webpLarge / 1024} KB against {jpegLarge / 1024} KB");
+        Assert.True(
+            webpSmall < jpegSmall,
+            $"the 480 WebP set should not be larger than the JPEG set: {webpSmall / 1024} KB against {jpegSmall / 1024} KB");
     }
 
     [Fact]

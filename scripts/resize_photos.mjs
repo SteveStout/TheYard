@@ -8,6 +8,14 @@
  * between them with srcset, and a device with a dense screen still gets the
  * 1280 (ADR: Responsive photos).
  *
+ * Since 1.0.0.143 it also writes a WebP copy at both widths, `coupe-01.webp`
+ * and `coupe-01-480.webp`, which the page offers first through a `picture`
+ * element and every current browser takes; the JPEG pair stays as the
+ * fallback and as the file a client without WebP gets (ADR: Responsive
+ * photos, addendum). Quality 75 is where WebP matches the JPEG at 78 to the
+ * eye on these photographs; measured on this set it is 43 per cent under the
+ * JPEG at 1280 and six per cent under at 480, where mozjpeg was already tight.
+ *
  * Run it with `npm run images:resize`. The outputs are committed, like the
  * originals, because they are vendored assets and not a build product: nothing
  * in CI or the Dockerfile should have to own an image pipeline for a set of
@@ -21,6 +29,8 @@ import sharp from 'sharp';
 const DIR = path.join(process.cwd(), 'api', 'TheYard.Api', 'wwwroot', 'images');
 const WIDTH = 480;
 const SUFFIX = '-480.jpg';
+const WEBP_SUFFIX = '-480.webp';
+const WEBP_QUALITY = 75;
 
 const files = (await readdir(DIR))
   .filter((name) => name.endsWith('.jpg') && !name.endsWith(SUFFIX))
@@ -28,6 +38,8 @@ const files = (await readdir(DIR))
 
 let before = 0;
 let after = 0;
+let webpBefore = 0;
+let webpAfter = 0;
 
 const wrongWidth = [];
 
@@ -50,12 +62,28 @@ for (const name of files) {
     .jpeg({ quality: 78, mozjpeg: true })
     .toFile(target);
 
+  // The same two widths as WebP. The 1280 is encoded from the original and the
+  // 480 from the original too, never from the JPEG copy, so the smaller file
+  // does not carry two rounds of lossy encoding.
+  const webpLarge = path.join(DIR, name.replace(/\.jpg$/, '.webp'));
+  const webpSmall = path.join(DIR, name.replace(/\.jpg$/, WEBP_SUFFIX));
+  await sharp(source).webp({ quality: WEBP_QUALITY }).toFile(webpLarge);
+  await sharp(source)
+    .resize({ width: WIDTH, withoutEnlargement: true })
+    .webp({ quality: WEBP_QUALITY })
+    .toFile(webpSmall);
+
   const from = (await stat(source)).size;
   const to = (await stat(target)).size;
+  const webpFrom = (await stat(webpLarge)).size;
+  const webpTo = (await stat(webpSmall)).size;
   before += from;
   after += to;
+  webpBefore += webpFrom;
+  webpAfter += webpTo;
   console.log(
-    `${name}: ${Math.round(from / 1024)} KB -> ${Math.round(to / 1024)} KB (${Math.round((1 - to / from) * 100)}% smaller)`
+    `${name}: ${Math.round(from / 1024)} KB -> ${Math.round(to / 1024)} KB (${Math.round((1 - to / from) * 100)}% smaller); ` +
+      `webp ${Math.round(webpFrom / 1024)} KB and ${Math.round(webpTo / 1024)} KB`
   );
 }
 
@@ -63,6 +91,10 @@ console.log(
   `\n${files.length} photos: ${Math.round(before / 1024)} KB of originals, ` +
     `${Math.round(after / 1024)} KB of card copies, ` +
     `${Math.round((1 - after / before) * 100)}% smaller each`
+);
+console.log(
+  `WebP: ${Math.round(webpBefore / 1024)} KB at 1280 (${Math.round((1 - webpBefore / before) * 100)}% under the JPEG), ` +
+    `${Math.round(webpAfter / 1024)} KB at 480 (${Math.round((1 - webpAfter / after) * 100)}% under the JPEG)`
 );
 
 if (wrongWidth.length > 0) {

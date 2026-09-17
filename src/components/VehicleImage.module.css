@@ -1,3 +1,9 @@
+/* The picture element is only a choice of source; the img inside it is what
+   lays out, so the wrapper contributes no box of its own. */
+.picture {
+  display: contents;
+}
+
 .image {
   width: 100%;
   height: 100%;

@@ -110,3 +110,44 @@ The test that makes the convention safe
 - [`src/components/VehicleDetail.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleDetail.tsx): the two other sizes.
 - [`api/TheYard.Tests/PhotoSizeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PhotoSizeTests.cs): the convention, held.
 - [`docs/ADR-015-cache-headers.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-015-cache-headers.md): why these files are cached the way they are once they arrive.
+
+## Addendum, 2026-09-17: the WebP copy this record said was next
+
+Steve, 9/17: the fastest site at no extra cost. The measurement that opened
+that lane (`mentor\logs\lane0917-963-perflane-measure.log`, 1.0.0.139) put
+the card photographs at seventeen of a first visit's twenty-eight requests
+and about 450 KB of its 570 on a desktop, and Lighthouse's phone profile,
+which asks for the 1280 copies on a dense screen exactly as the `sizes`
+attribute tells it to, weighed the page at 1,628 KiB. The bundle and the
+API were a fifth of that between them. The photographs were the weight.
+
+The section above named the next step, and this is it. `resize_photos.mjs`
+writes a WebP copy at both widths beside the JPEG pair, from the original
+in both cases so the small file is not two rounds of lossy encoding, at
+quality 75, which is where WebP matches the JPEG at 78 to the eye on these
+photographs. `VehicleImage` renders a `picture` element whose first source
+is the WebP pair with the same `srcset` and `sizes` the JPEG pair carries;
+a browser that reads WebP, which is every current one, takes it, and one
+that does not falls through to the `img` and gets exactly what it got
+before.
+
+What the encode measured, and it is not the number the format's reputation
+promises. The fifty 1280 copies came out at 8,131 KB against 14,361 KB of
+JPEG, 43 per cent under, and that is the copy a dense phone screen reads.
+The fifty 480 copies came out at 1,281 KB against 1,362 KB, six per cent
+under: mozjpeg at quality 78 was already tight at that size, and WebP at
+75 has little left to take. So a desktop card moves a few per cent fewer
+bytes and a phone moves a lot fewer, which is the right way round, and
+the test is written to the measured margins rather than to a hope:
+`PhotoSizeTests` holds all three derived names to the manifest, holds the
+1280 WebP set to at least a quarter under the JPEG set, and holds the 480
+set to being no larger. The cost is stated the way the first change's was:
+the repository and the image grow by about 9.6 MB, most of it the 1280
+set, for a page that gets about 40 per cent lighter on a phone.
+
+What was considered and not taken: AVIF, which is smaller again and costs
+seconds a file to encode and a third copy of every photograph for a margin
+the measurement did not ask for yet; and dropping the 1280 candidate for
+phones, which is a change to what a dense screen is offered rather than to
+how it is encoded, and belongs to a measurement of its own.
+
