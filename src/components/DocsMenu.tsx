@@ -1,43 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { marked } from 'marked';
-import { highlight, grammarFor } from '../lib/highlight';
 import styles from './DocsMenu.module.css';
-
-// #region doc-links
-// Links in a served document lead out of the app (GitHub, a diagram page), so
-// they open in a new tab and the dialog stays where the reader was. The docs
-// name the live domain in full, which keeps them right on GitHub; here the same
-// links are made relative, so a checkout on localhost opens its own diagram
-// page and not the live one (ADR-020).
-const SITE = 'https://theyard.stevenstout.biz/';
-marked.use({
-  hooks: {
-    postprocess(html: string) {
-      return html
-        .replaceAll(`href="${SITE}`, 'href="/')
-        .replace(/<a href="(?!#)/g, '<a target="_blank" rel="noopener" href="');
-    },
-  },
-});
-// #endregion doc-links
-
-// #region code-renderer
-// Every fenced block in a served document goes through the highlighter
-// (ADR: Code that reads like code). marked hands back the code and the name on
-// the fence; the name is checked against the grammars this bundle carries
-// before it reaches a class attribute, so a fence cannot write markup of its
-// own, and the highlighter escapes everything it does not tokenize.
-marked.use({
-  renderer: {
-    code({ text, lang }) {
-      const name = (lang ?? '').trim().split(/\s+/)[0];
-      const grammar = grammarFor(name);
-      const className = grammar ? `hljs language-${grammar}` : 'hljs';
-      return `<pre><code class="${className}">${highlight(text, name)}</code></pre>\n`;
-    },
-  },
-});
-// #endregion code-renderer
 
 export type DocKey =
   | 'readme'
@@ -1121,8 +1083,16 @@ export function DocDialog({
       .then(async (response) => {
         if (!response.ok) throw new Error(String(response.status));
         const markdown = await response.text();
-        // Our own docs - trusted, repo-authored content.
-        const html = await marked.parse(markdown);
+        // #region renderer-on-demand
+        // The renderer arrives with the first document a reader opens, not with
+        // the page: marked and the highlighter are the two heaviest things the
+        // frontend carries and the inventory never needs them, so they live in
+        // a chunk of their own that this import fetches once (ADR: Code that
+        // reads like code, addendum). The browser caches the chunk for a year
+        // like every other hashed file, so the second document pays nothing.
+        const { renderDocument } = await import('../lib/markdown');
+        // #endregion renderer-on-demand
+        const html = await renderDocument(markdown);
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })

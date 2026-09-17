@@ -61,10 +61,11 @@ The palette):
 ```live path=api/TheYard.Api/DiagramPage.cs region=page
 ```
 
-The hook in `src/components/DocsMenu.tsx` that makes links leave the dialog
-without leaving the app:
+The hook that makes links leave the dialog without leaving the app, in
+`src/lib/markdown.ts` since 1.0.0.141, when the renderer moved into a chunk
+of its own (ADR: Code that reads like code, addendum):
 
-```live path=src/components/DocsMenu.tsx region=doc-links
+```live path=src/lib/markdown.ts region=doc-links
 ```
 
 The tests, in `api/TheYard.Tests/DiagramPageTests.cs`: every name in the
@@ -93,7 +94,7 @@ and the XML prolog a standalone SVG may carry never reaches the page:
 - [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the diagram catalog beside the documents.
 - [`api/TheYard.Api/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DiagramPage.cs): the HTML page around an SVG.
 - [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the page tests.
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the link hook.
+- [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.ts): the link hook, beside the renderer it belongs to.
 - [`docs/images/dataflow.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/dataflow.svg) and [`docs/images/dataflow.png`](https://github.com/SteveStout/TheYard/blob/main/docs/images/dataflow.png): the new drawing and its preview; [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg) the first one.
 - [`docs/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/DATAFLOW.md), [`docs/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md), [`README.md`](https://github.com/SteveStout/TheYard/blob/main/README.md): the previews and their captions.
 - [`tests/e2e/hosting.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/hosting.spec.ts) and [`tests/e2e/smoke.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/smoke.spec.ts): the browser checks that the captions link to the pages, in a new tab, and that the pages answer.

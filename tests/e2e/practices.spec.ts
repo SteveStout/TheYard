@@ -2,6 +2,14 @@ import { expect, test } from '@playwright/test';
 import { openTheYard, openSection } from './app';
 
 test('the Best Practices section opens the overview and its decision records', async ({ page }) => {
+  // Fourteen documents opened one after another in a single test, each one a
+  // fetch, a render and a live sample read from the build. On a quiet machine
+  // that is under half a minute; on the runner while the .NET half of the gate
+  // was building beside it, it read 25.9 s at 1.0.0.139, 52.5 s at 1.0.0.140
+  // and overran the default sixty at 1.0.0.141, on the last document, with
+  // every earlier assertion green. The budget is the number of documents, the
+  // way admin.spec's proof test carries its own for a run that takes a while.
+  test.setTimeout(120_000);
   await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
   await openSection(nav, 'Best Practices');

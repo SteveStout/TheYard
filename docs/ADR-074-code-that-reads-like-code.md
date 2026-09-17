@@ -42,7 +42,7 @@ expander still names them, no grammar reads them, and a reader sees plain code r
 
 `marked` is handed one renderer, which is the only place a fence becomes markup:
 
-```live path=src/components/DocsMenu.tsx region=code-renderer
+```live path=src/lib/markdown.ts region=code-renderer
 ```
 
 The expander names the language from the file's name, and two of the files the records show had no
@@ -102,7 +102,39 @@ palette is read on the page it ships to, not in the file it is written in.**
 - [`src/styles/code.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/code.css): the theme, in tokens.
 - [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the six colors.
 - [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts): the contrast floor and the told-apart rule.
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the renderer.
+- [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.ts): the renderer, loaded with the first document.
+- [`src/lib/markdown.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.test.ts): the rendered shape of a fence and a link.
+- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the dialog, and the import that fetches the renderer on demand.
 - [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the language a file name implies.
 - [`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs): the theory that holds those answers.
 - [`tests/e2e/practices.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/practices.spec.ts): the browser check that a keyword and a comment are their own elements on the live page.
+
+## Addendum, 2026-09-17: the renderer arrives with the first document
+
+Steve, 9/17: the fastest site at no extra cost. The measurement that opened
+that work (perflane, `mentor\logs\lane0917-963-perflane-measure.log`) put the
+whole frontend in one chunk, and `marked` and the highlighter with its
+sixteen grammars were the largest things in it after React itself. Every
+visitor downloaded and parsed the renderer on the inventory page, where no
+document is ever rendered.
+
+The two libraries now live in `src/lib/markdown.ts`, the one file that
+imports either, and the documents dialog imports that file on demand the
+first time a reader opens a record. Vite turns the dynamic import into a
+chunk of its own, named by its hash like every other bundle file, so the
+inventory page's script no longer carries the renderer and a reader who
+opens a document fetches it once and keeps it for a year (ADR: Cache
+headers). The renderer's two settings, the link hook and the code renderer
+shown above, moved with it unchanged; the live block above reads them from
+their new file. `markdown.test.ts` holds the rendered shape end to end: a
+fenced block comes back highlighted under its grammar's class, a fence in a
+language nobody here reads is escaped, and the links are rewritten the way
+the dialog needs them.
+
+The before and after are on the Performance page, measured on the live
+site: the bytes the inventory page's script carried, and the bytes it
+carries now, with the renderer's chunk beside it.
+
+```live path=src/components/DocsMenu.tsx region=renderer-on-demand
+```
+
