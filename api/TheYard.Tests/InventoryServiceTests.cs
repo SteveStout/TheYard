@@ -151,6 +151,24 @@ public class InventoryServiceTests
         Assert.Equal(["Ford", "Kia"], service.Facets().Makes);
     }
 
+    /// <summary>
+    /// The facets are built once, with the catalogue, and every request reads
+    /// the same instance. Until 1.0.0.140 each call walked the whole catalogue
+    /// four times for an answer that cannot change after load, 12 ms per request
+    /// on the live container (ADR: The search index, addendum). Reference
+    /// equality is the fact worth holding: a rebuild would hand back a new
+    /// object with the same values, and a value comparison would not notice.
+    /// </summary>
+    [Fact]
+    public void Facets_are_built_once_with_the_catalogue()
+    {
+        var service = new InventoryService(
+            new FakeVehicles(TestData.Vehicle(id: "a", make: "Kia"), TestData.Vehicle(id: "b", make: "Ford")),
+            new FakeManifest(TestData.SuvPool));
+
+        Assert.Same(service.Facets(), service.Facets());
+    }
+
     [Fact]
     public void Leaves_non_image_fields_untouched()
     {

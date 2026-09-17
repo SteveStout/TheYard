@@ -45,9 +45,9 @@ public sealed class InventoryService(
     // failure starts a fresh load; a load in flight or finished is shared as
     // before, and the lock is what makes the start single.
     private readonly object _warmGate = new();
-    private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index)>? _inventory;
+    private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index, InventoryFacets Facets)>? _inventory;
 
-    private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index)> InventoryTask()
+    private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index, InventoryFacets Facets)> InventoryTask()
     {
         lock (_warmGate)
         {
@@ -65,7 +65,7 @@ public sealed class InventoryService(
     /// <summary>Whether the catalogue has been loaded, which the host asserts before serving.</summary>
     public bool IsWarm => _inventory is { IsCompletedSuccessfully: true };
 
-    private (IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index) Inventory =>
+    private (IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index, InventoryFacets Facets) Inventory =>
         InventoryTask().GetAwaiter().GetResult();
     // #endregion warm
 
@@ -111,26 +111,33 @@ public sealed class InventoryService(
         return new SearchResult(ordered.Count, ordered.Skip(offset).Take(limit).ToList());
     }
 
-    /// <summary>Distinct values feeding the UI's filter dropdowns, sorted.</summary>
-    public InventoryFacets Facets()
-    {
-        var vehicles = GetAll();
-        return new InventoryFacets(
+    // #region facets
+    /// <summary>
+    /// Distinct values feeding the UI's filter dropdowns, sorted. Built once
+    /// with the catalogue and handed back by reference: until 1.0.0.140 this
+    /// walked all hundred thousand vehicles four times on every request, 12 ms
+    /// on the live container, for an answer that cannot change after load
+    /// (ADR: The search index, addendum).
+    /// </summary>
+    public InventoryFacets Facets() => Inventory.Facets;
+
+    private static InventoryFacets BuildFacets(IReadOnlyList<Vehicle> vehicles) =>
+        new(
             Distinct(vehicles, v => v.Make),
             Distinct(vehicles, v => v.BodyStyle),
             Distinct(vehicles, v => v.TitleStatus),
             Distinct(vehicles, v => v.Province));
-    }
 
     private static IReadOnlyList<string> Distinct(
         IReadOnlyList<Vehicle> vehicles,
         Func<Vehicle, string> field) =>
         vehicles.Select(field).Distinct().OrderBy(v => v, StringComparer.Ordinal).ToList();
+    // #endregion facets
 
     public Vehicle? GetById(string id) =>
         Inventory.ById.TryGetValue(id, out var vehicle) ? vehicle : null;
 
-    private static async Task<(IReadOnlyList<Vehicle>, IReadOnlyDictionary<string, Vehicle>, VehicleSearchIndex)> BuildAsync(
+    private static async Task<(IReadOnlyList<Vehicle>, IReadOnlyDictionary<string, Vehicle>, VehicleSearchIndex, InventoryFacets)> BuildAsync(
         IVehicleSource vehicleSource,
         IPhotoManifestSource manifestSource,
         string imagePathPrefix)
@@ -153,12 +160,14 @@ public sealed class InventoryService(
             })
             .ToList();
 
-        // The index is built here, with the dictionary, for the same reason the
-        // dictionary is: the work is identical for every request that follows,
-        // and after this point the vehicles never change (ADR: The search index).
+        // The index and the facets are built here, with the dictionary, for the
+        // same reason the dictionary is: the work is identical for every request
+        // that follows, and after this point the vehicles never change (ADR: The
+        // search index).
         return (
             vehicles,
             vehicles.ToDictionary(vehicle => vehicle.Id),
-            new VehicleSearchIndex(vehicles));
+            new VehicleSearchIndex(vehicles),
+            BuildFacets(vehicles));
     }
 }

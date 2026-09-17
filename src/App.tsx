@@ -130,15 +130,27 @@ export default function App() {
   }, [page.vehicles, bids, sort, now]);
   // #endregion visible-order
 
+  // #region facets-once
   // Dropdown options come from the API (the page only ever holds a slice of
   // the dataset). Missing facets degrade to empty dropdowns, not a crash.
+  //
+  // Asked until answered, then never again. The values are built once with
+  // the catalogue on the server and cannot change while this page is open,
+  // yet until 1.0.0.142 this effect ran on every listing refresh, which on the
+  // inventory page is four times a minute: four requests an idle minute for
+  // an answer the page already held (ADR: The search index, addendum). The
+  // nonce stays in the list so a first fetch that failed, the API still
+  // booting under `npm start` say, is tried again with the listing; once the
+  // facets have landed the effect returns before it asks.
   useEffect(() => {
+    if (facets !== EMPTY_FACETS) return;
     const controller = new AbortController();
     fetchFacets(controller.signal)
       .then(setFacets)
       .catch(() => {});
     return () => controller.abort();
-  }, [reloadNonce]);
+  }, [reloadNonce, facets]);
+  // #endregion facets-once
 
   // The footer's version line: ask the running API which build it is.
   useEffect(() => {

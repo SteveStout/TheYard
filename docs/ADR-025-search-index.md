@@ -157,3 +157,43 @@ Where the two meet (`api/TheYard.Application/InventoryService.cs`):
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): built with the dataset, used by `Search`.
 - [`api/TheYard.Tests/VehicleSearchIndexTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/VehicleSearchIndexTests.cs): the indexed and unindexed paths must answer identically.
 - [`api/TheYard.Tests/SearchIndexBenchmarkTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SearchIndexBenchmarkTests.cs): the measurement above, and the coverage assertion.
+- [`api/TheYard.Tests/InventoryServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/InventoryServiceTests.cs): the facets are one instance, built with the catalogue (the addendum below).
+- [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the page asks for the facets until it has them, then keeps them.
+
+## Addendum, 2026-09-17: the facets are built with the index
+
+The index exists because a per-request walk over a hundred thousand rows is
+work that never changes its answer, and the same was true of a neighbour it
+left alone. `/api/facets`, the four sorted distinct lists behind the filter
+dropdowns, walked the whole catalogue four times on every call, 12 ms on the
+live container by the proof card's own measurement at 1.0.0.94, for an
+answer fixed the moment the catalogue loads. And the page asked for it more
+than it needed to: the effect that fetched the facets ran on every listing
+refresh, which on the inventory page is four times a minute, so an idle
+minute signed out was four listing reads and four facet reads (the runner's
+measurement on 1.0.0.139, `mentor\logs\lane0917-963-perflane-measure.log`).
+
+Two changes, shipped as 1.0.0.142. The facets are built in `BuildAsync`
+beside the dictionary and the index, for the reason those two are, and
+`Facets()` hands back that one instance; `InventoryServiceTests` holds it by
+reference equality, which is the fact worth holding, since a rebuild would
+return a new object with the same values and a value comparison would not
+notice. On the page the effect asks until the facets have landed and then
+returns before it asks: the reload nonce stays in its dependency list so a
+first fetch that failed, the API still booting under `npm start`, is tried
+again with the listing, and once there is an answer nothing asks again. No
+cache middleware and no memory cache: the catalogue is immutable for the
+life of the process and the facets are a field of it, which is the cheapest
+cache there is and the only one a reader has to trust.
+
+```live path=api/TheYard.Application/InventoryService.cs region=facets
+```
+
+```live path=src/App.tsx region=facets-once
+```
+
+The server-side number is read off the container's own request ring
+(`/api/admin/metrics`, `by_path`) after twenty reads, before and after, and
+the idle minute is counted the same way as before; both are on the
+Performance page.
+
