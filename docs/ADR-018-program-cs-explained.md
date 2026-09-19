@@ -193,19 +193,19 @@ the top of this record.
 
 ## Why this is one file
 
-It is 2,284 lines, and that is the first thing a reviewer notices, so it is
+It is 2,340 lines, and that is the first thing a reviewer notices, so it is
 worth saying that it is a decision rather than a drift.
 
 What those lines are:
 
 ```
-2,284 total
-  804 comment
-  136 blank
-  1,344 code, across 41 endpoints
+2,340 total
+  827 comment
+  141 blank
+  1,372 code, across 43 endpoints
 ```
 
-Thirty-three lines of code per endpoint, and most endpoints are a route, a
+Thirty-two lines of code per endpoint, and most endpoints are a route, a
 binding and a delegation; the four lines past twenty-nine are the name, the
 summary, the tags and the declared responses each public endpoint gained
 when the API started describing itself (ADR: The API describes itself). Nothing in here holds a rule; the rules are in Domain

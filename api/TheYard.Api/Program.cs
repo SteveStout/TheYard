@@ -329,6 +329,7 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
     "/api/admin/telemetry",
     "/api/admin/activity",
     "/api/admin/activity/visitors",
+    "/api/admin/pages",
     "/api/admin/logs/kept",
     "/api/admin/reset-links",
     "/api/errors",
@@ -357,6 +358,16 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
 {
     string path = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
     if (observabilityReads.Contains(path))
+    {
+        return;
+    }
+
+    // The page sweep asks this container for every address it serves, at every
+    // roll (ADR: Every page, checked at every roll). That is this container
+    // talking to itself: left in, ninety self-requests would push a morning of
+    // real traffic out of the ring and add a visitor to the activity card who
+    // is this container.
+    if (context.Request.Headers.ContainsKey(PageStatusRunner.CheckHeader))
     {
         return;
     }
@@ -2164,6 +2175,51 @@ app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync()));
 // or for a minute after one, so the card is never asked to prove the same
 // thing twice at once.
 var proof = new ProofRunner(backends, app.Services.GetRequiredService<ProofClients>(), sqlLog, storeLog);
+
+// #region page-status-wiring
+// The sweep over every address this container serves. It dials the loopback
+// the proof dials, and it is null until the server is listening, which is what
+// keeps it from running under the test host: the suite drives RunAsync with
+// the test server's own client instead (ADR: Every page, checked at every roll).
+var pageStatus = new PageStatusRunner(
+    () => SelfAddress.Of(app.Services) is { } dialable
+        ? new HttpClient(new HttpClientHandler { UseCookies = false })
+        {
+            BaseAddress = new Uri(dialable),
+            Timeout = TimeSpan.FromSeconds(30),
+        }
+        : null,
+    // The frontend is in the image and not in a checkout, so the addresses it
+    // serves are checked where they exist and named nowhere else.
+    () => !string.IsNullOrEmpty(app.Environment.WebRootPath)
+        && File.Exists(Path.Combine(app.Environment.WebRootPath, "index.html")),
+    buildVersion,
+    buildCommit);
+
+// Every roll carries a check of the thing that was just rolled. The address
+// is read from the server when the sweep runs rather than from the variable
+// the proof's callback fills: these callbacks run in the reverse of the order
+// they were registered, so this one runs first, and the first cut of it never
+// swept anything (SelfAddress, and the browser suite that found it).
+app.Lifetime.ApplicationStarted.Register(() => pageStatus.TryStart("roll"));
+
+// The last sweep, whoever asked for it. Public, like every other reading on
+// this tab: it names addresses this site already serves to anybody.
+app.MapGet("/api/admin/pages", () => Results.Json(pageStatus.Status))
+    .WithName("GetPageStatus")
+    .WithTags("Admin")
+    .WithSummary("Every address this container serves, as the last sweep found it");
+
+// And one on demand. 409 rather than an error when a sweep is already running
+// or the last one is inside the cooldown, which is what the proof's start
+// does and what the card's button expects.
+app.MapPost("/api/admin/pages", () => pageStatus.TryStart("asked")
+    ? Results.Accepted("/api/admin/pages")
+    : Results.Conflict(new { status = "a sweep is already running, was run in the last twenty seconds, or this container has no address of its own to dial" }))
+    .WithName("RunPageStatus")
+    .WithTags("Admin")
+    .WithSummary("Check every address this container serves, now");
+// #endregion page-status-wiring
 app.MapGet("/api/admin/proof", () => Results.Json(proof.Status));
 app.MapPost("/api/admin/proof", (int? rounds) => proof.TryStart(rounds ?? ProofRunner.DefaultRounds)
     ? Results.Json(new { status = "running" }, wireFormat, statusCode: StatusCodes.Status202Accepted)

@@ -66,6 +66,47 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
 });
 
+test('every page this container serves is checked, and the card says what is down (ADR: Every page, checked at every roll)', async ({
+  page,
+  request,
+}) => {
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('pages-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Every page, checked');
+
+  // The sweep runs when the container starts, so by the time a browser has
+  // opened the tab it has either finished or is finishing. Eighty-odd
+  // addresses on a cold process, each document expanding its live blocks as
+  // it is served, is a second or two on a quiet machine and longer on a gate
+  // running two suites beside itself; the button below is the fallback when
+  // the cooldown has passed rather than the way in.
+  const summary = card.getByTestId('pages-summary');
+  await expect(summary).toBeVisible({ timeout: 120_000 });
+  await expect(summary).toContainText(/\d+ of \d+ addresses answered/);
+  await expect(card.getByTestId('pages-all-up')).toBeVisible();
+
+  // Every address, and the same numbers on the wire as on the card.
+  await card.getByTestId('pages-show-all').click();
+  await expect(card.getByTestId('pages-table')).toContainText('/api/docs/performance');
+
+  const wire = (await (await request.get('http://localhost:5210/api/admin/pages')).json()) as {
+    status: string;
+    report: {
+      checked: number;
+      up: number;
+      entries: { address: string; kind: string; content_type: string | null }[];
+    } | null;
+  };
+  expect(wire.report).not.toBeNull();
+  expect(wire.report!.up).toBe(wire.report!.checked);
+  expect(wire.report!.checked).toBeGreaterThan(50);
+  const performance = wire.report!.entries.find(
+    (entry) => entry.address === '/api/docs/performance'
+  );
+  expect(performance?.content_type).toBe('text/markdown');
+});
+
 test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }) => {
   const marker = `e2e boundary probe ${Date.now()}`;
   const posted = await request.post('http://localhost:5210/api/errors/client', {

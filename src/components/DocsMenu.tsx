@@ -89,6 +89,7 @@ export type DocKey =
   | 'adrHighlighting'
   | 'adrRules'
   | 'adrOpenApi'
+  | 'adrPageStatus'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'infrastructureOverview'
@@ -719,6 +720,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '076',
   },
+  adrPageStatus: {
+    title: 'ADR: Every page, checked at every roll',
+    menuLabel: 'ADR: Every page, checked at every roll',
+    url: '/api/docs/adr-page-status',
+    kind: 'adr',
+    number: '077',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -977,6 +985,7 @@ export const MENUS: Record<
       { key: 'adrHighlighting' },
       { key: 'adrRules' },
       { key: 'adrOpenApi' },
+      { key: 'adrPageStatus' },
     ],
   },
   // #endregion records-menu
