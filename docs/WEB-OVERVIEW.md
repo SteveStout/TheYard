@@ -110,8 +110,12 @@ for it.
 
 - **The first paint waits on two things, the document and an 8.5 KB stylesheet, both from the
   site's own domain.** Until 1.0.0.140 it also waited on a stylesheet from Google Fonts, 852 ms on a
-  throttled phone by Lighthouse, and that was the one render-blocking resource on the page
-  ([The palette](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-016-palette.md), addendum).
+  throttled phone by Lighthouse, and that was the one render-blocking resource on the page. Serving
+  the four font files from `/assets` was that version's whole change to the page, and on
+  Lighthouse's throttled phone profile against the live site the first contentful paint went from
+  2.8 s to 1.6 s, while a cold visit's requests to third-party hosts went from five to none
+  ([The palette](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-016-palette.md), addendum; the row with both readings is
+  on the [Performance overview](https://github.com/SteveStout/TheYard/blob/main/docs/PERFORMANCE.md)).
 - **The script does not block the paint and the fonts do not block the text.** The script is a
   module, which a browser defers, and the type swaps in when it lands, which is the 0.175 layout
   shift the Performance overview names and leaves alone.
