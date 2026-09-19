@@ -38,7 +38,12 @@ public sealed class SqlRingBuffer(int capacity) : ISqlLog
             || request.EndsWith("/readyz", StringComparison.Ordinal)
             || request.EndsWith("/api/admin/sql", StringComparison.Ordinal)
             || request.EndsWith("/api/admin/logs", StringComparison.Ordinal)
-            || request.EndsWith("/api/admin/metrics", StringComparison.Ordinal));
+            || request.EndsWith("/api/admin/metrics", StringComparison.Ordinal)
+            // And the machines card, which reads the database's own view of
+            // itself every half minute: left in, the newest statement on the
+            // SQL card would always be this page looking at itself
+            // (ADR: What the machines are doing).
+            || request.EndsWith("/api/admin/machines", StringComparison.Ordinal));
 
     public void Record(SqlStatement statement)
     {

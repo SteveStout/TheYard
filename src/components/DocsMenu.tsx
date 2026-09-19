@@ -90,6 +90,7 @@ export type DocKey =
   | 'adrRules'
   | 'adrOpenApi'
   | 'adrPageStatus'
+  | 'adrMachines'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'infrastructureOverview'
@@ -727,6 +728,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '077',
   },
+  adrMachines: {
+    title: 'ADR: What the machines are doing',
+    menuLabel: 'ADR: What the machines are doing',
+    url: '/api/docs/adr-machines',
+    kind: 'adr',
+    number: '078',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -986,6 +994,7 @@ export const MENUS: Record<
       { key: 'adrRules' },
       { key: 'adrOpenApi' },
       { key: 'adrPageStatus' },
+      { key: 'adrMachines' },
     ],
   },
   // #endregion records-menu

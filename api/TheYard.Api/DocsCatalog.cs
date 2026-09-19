@@ -102,6 +102,7 @@ public static class DocsCatalog
         ["adr-rules"] = "docs/ADR-075-the-rules-a-change-has-to-pass.md",
         ["adr-openapi"] = "docs/ADR-076-the-api-describes-itself.md",
         ["adr-page-status"] = "docs/ADR-077-every-page-checked.md",
+        ["adr-machines"] = "docs/ADR-078-what-the-machines-are-doing.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["built-with-ai"] = "docs/BUILT-WITH-AI.md",

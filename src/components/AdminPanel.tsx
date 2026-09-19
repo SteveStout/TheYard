@@ -63,6 +63,51 @@ type PageReport = {
   entries: PageEntry[];
 };
 type PageStatus = { status: string; report: PageReport | null };
+type MachineSample = {
+  at: string;
+  working_set_mb: number;
+  managed_mb: number;
+  heap_mb: number;
+  cpu_percent: number | null;
+  threads: number;
+  gen0_collections: number;
+  gen2_collections: number;
+};
+type ResourceStatRow = {
+  at: string;
+  cpu_percent: number;
+  data_io_percent: number;
+  log_write_percent: number;
+  memory_percent: number;
+  worker_percent: number;
+};
+type DocumentMinute = {
+  at: string;
+  request_units: number;
+  operations: number;
+  share_of_free_percent: number;
+};
+type Machines = {
+  container: {
+    memory_limit_mb: number;
+    processors: number;
+    uptime_seconds: number;
+    every_seconds: number;
+    samples: MachineSample[];
+  };
+  relational: { store: string; available: boolean; note: string | null; rows: ResourceStatRow[] };
+  document: {
+    store: string;
+    available: boolean;
+    note: string | null;
+    request_units: number;
+    operations: number;
+    p50_ms: number | null;
+    p95_ms: number | null;
+    free_request_units_per_second: number;
+    minutes: DocumentMinute[];
+  };
+};
 type AzureEvent = { name: string; count: number; last_at: string; message: string };
 type TelemetrySummary = {
   total: number;
@@ -391,6 +436,7 @@ export function AdminPanel({
       </p>
       <ActivityCard adminKey={adminKey} rowsServed={rowsServed} onReport={setRowsServed} />
       <PagesCard />
+      <MachinesCard />
       {rowsServed === true && <KeptLogsCard adminKey={adminKey} />}
       <OperatorCard adminKey={adminKey} onEnterKey={enterKey} onForget={forgetKey} />
       <ResetLinkCard adminKey={adminKey} />
@@ -1950,6 +1996,247 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
   );
 }
 // #endregion comparison
+
+// #region machines-card
+/**
+ * What the three machines are doing (ADR: What the machines are doing). Three
+ * readings with three different honesties, which is why this is one card with
+ * three blocks rather than one table pretending they are the same: the
+ * container knows its own memory exactly, Azure SQL Database keeps its own
+ * reading of itself, and the document store has no memory reading to give and
+ * says so.
+ */
+function MachinesCard() {
+  const [machines, setMachines] = useState<Fetched<Machines>>(null);
+
+  useEffect(() => {
+    let live = true;
+    const read = () =>
+      fetch('/api/admin/machines')
+        .then((r) =>
+          r.ok ? (r.json() as Promise<Machines>) : Promise.reject(new Error(String(r.status)))
+        )
+        .then((v) => {
+          if (live) setMachines(v);
+        })
+        .catch(() => {
+          if (live) setMachines('failed');
+        });
+    void read();
+    // The sampler takes a reading every fifteen seconds; the card follows at
+    // half a minute, which is the rate the rest of this tab refreshes at.
+    const timer = window.setInterval(() => void read(), 30_000);
+    return () => {
+      live = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  if (machines === null) {
+    return (
+      <article className={styles.wide} data-testid="machines-card">
+        <h2 className={styles.cardTitle}>What the machines are doing</h2>
+        <p className={styles.muted}>Loading…</p>
+      </article>
+    );
+  }
+  if (machines === 'failed') {
+    return (
+      <article className={styles.wide} data-testid="machines-card">
+        <h2 className={styles.cardTitle}>What the machines are doing</h2>
+        <p className={styles.muted} data-testid="machines-failed">
+          Could not read the machines on the last try.
+        </p>
+      </article>
+    );
+  }
+
+  const samples = machines.container.samples;
+  const latest = samples.length > 0 ? samples[samples.length - 1] : null;
+  const peak = samples.reduce((most, sample) => Math.max(most, sample.working_set_mb), 0);
+  const newest = machines.relational.rows.length > 0 ? machines.relational.rows[0] : null;
+  const worst = machines.relational.rows.reduce(
+    (most, row) => Math.max(most, row.cpu_percent, row.data_io_percent, row.log_write_percent),
+    0
+  );
+
+  return (
+    <article className={styles.wide} data-testid="machines-card">
+      <h2 className={styles.cardTitle}>What the machines are doing</h2>
+      <p className={styles.muted}>
+        The three machines under this site, each reporting the way it actually reports. The
+        container knows its own memory and its own processor time; Azure SQL Database keeps a
+        reading of itself for the last hour, fifteen seconds at a time, free on every tier; Azure
+        Cosmos DB has no memory or processor reading to give, because it is sold by request unit, so
+        what it shows is what the operations cost against the free allowance. Everything here is
+        this container&rsquo;s own, kept in its memory, and empties on every roll.
+      </p>
+
+      <h3 className={styles.cardTitle}>The container</h3>
+      {latest === null ? (
+        <p className={styles.muted} data-testid="machines-no-samples">
+          No sample yet. One is taken every {machines.container.every_seconds} seconds.
+        </p>
+      ) : (
+        <>
+          <p data-testid="machines-container-line">
+            <strong>
+              {latest.working_set_mb} MB of {machines.container.memory_limit_mb} MB
+            </strong>{' '}
+            in use, {latest.managed_mb} MB of it managed objects,{' '}
+            {latest.cpu_percent === null
+              ? 'processor share not read yet'
+              : `${latest.cpu_percent}% of ${machines.container.processors} processor${machines.container.processors === 1 ? '' : 's'}`}
+            , {latest.threads} threads, {latest.gen0_collections} quick collections and{' '}
+            {latest.gen2_collections} full ones since this container started. Peak working set in
+            the window: {peak} MB.
+          </p>
+          <div
+            className={styles.tableWrap}
+            role="region"
+            aria-label="The container, sampled"
+            tabIndex={0}
+          >
+            <table className={styles.table} data-testid="machines-container-table">
+              <thead>
+                <tr>
+                  <th scope="col">At</th>
+                  <th scope="col">Working set</th>
+                  <th scope="col">Managed</th>
+                  <th scope="col">Heap</th>
+                  <th scope="col">Processors</th>
+                  <th scope="col">Threads</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...samples]
+                  .reverse()
+                  .slice(0, 20)
+                  .map((sample) => (
+                    <tr key={sample.at}>
+                      <td className={styles.mono}>{new Date(sample.at).toLocaleTimeString()}</td>
+                      <td className={styles.mono}>{sample.working_set_mb} MB</td>
+                      <td className={styles.mono}>{sample.managed_mb} MB</td>
+                      <td className={styles.mono}>{sample.heap_mb} MB</td>
+                      <td className={styles.mono}>
+                        {sample.cpu_percent === null ? 'first' : `${sample.cpu_percent}%`}
+                      </td>
+                      <td className={styles.mono}>{sample.threads}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      <h3 className={styles.cardTitle}>{machines.relational.store}</h3>
+      {!machines.relational.available ? (
+        <p className={styles.muted} data-testid="machines-relational-note">
+          {machines.relational.note}
+        </p>
+      ) : (
+        <>
+          <p data-testid="machines-relational-line">
+            {newest === null ? (
+              'The view answered with no rows yet.'
+            ) : (
+              <>
+                <strong>
+                  {newest.cpu_percent}% processor, {newest.memory_percent}% memory
+                </strong>{' '}
+                in the last fifteen seconds, {newest.data_io_percent}% data and{' '}
+                {newest.log_write_percent}% log, {newest.worker_percent}% of the workers the tier
+                allows. Busiest reading in the window: {worst}%. Every figure is a share of what
+                this tier allows, which on Basic is five DTUs.
+              </>
+            )}
+          </p>
+          <div
+            className={styles.tableWrap}
+            role="region"
+            aria-label="The relational store's own reading"
+            tabIndex={0}
+          >
+            <table className={styles.table} data-testid="machines-relational-table">
+              <thead>
+                <tr>
+                  <th scope="col">At</th>
+                  <th scope="col">Processor</th>
+                  <th scope="col">Memory</th>
+                  <th scope="col">Data</th>
+                  <th scope="col">Log</th>
+                  <th scope="col">Workers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {machines.relational.rows.slice(0, 20).map((row) => (
+                  <tr key={row.at}>
+                    <td className={styles.mono}>{new Date(row.at).toLocaleTimeString()}</td>
+                    <td className={styles.mono}>{row.cpu_percent}%</td>
+                    <td className={styles.mono}>{row.memory_percent}%</td>
+                    <td className={styles.mono}>{row.data_io_percent}%</td>
+                    <td className={styles.mono}>{row.log_write_percent}%</td>
+                    <td className={styles.mono}>{row.worker_percent}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      <h3 className={styles.cardTitle}>{machines.document.store}</h3>
+      {!machines.document.available ? (
+        <p className={styles.muted} data-testid="machines-document-note">
+          {machines.document.note}
+        </p>
+      ) : (
+        <>
+          <p data-testid="machines-document-line">
+            <strong>{machines.document.request_units} request units</strong> across{' '}
+            {machines.document.operations} operations in the ring, {machines.document.p50_ms} ms at
+            the median and {machines.document.p95_ms} ms at the ninety-fifth. The free tier allows{' '}
+            {machines.document.free_request_units_per_second} request units a second, and the share
+            below is what each minute would be of one second of that. There is no memory or
+            processor reading here: the store is sold by request unit and reports neither.
+          </p>
+          <div
+            className={styles.tableWrap}
+            role="region"
+            aria-label="What the document store charged"
+            tabIndex={0}
+          >
+            <table className={styles.table} data-testid="machines-document-table">
+              <thead>
+                <tr>
+                  <th scope="col">Minute</th>
+                  <th scope="col">Request units</th>
+                  <th scope="col">Operations</th>
+                  <th scope="col">Share of a free second</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...machines.document.minutes]
+                  .reverse()
+                  .slice(0, 20)
+                  .map((minute) => (
+                    <tr key={minute.at}>
+                      <td className={styles.mono}>{new Date(minute.at).toLocaleTimeString()}</td>
+                      <td className={styles.mono}>{minute.request_units} RU</td>
+                      <td className={styles.mono}>{minute.operations}</td>
+                      <td className={styles.mono}>{minute.share_of_free_percent}%</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </article>
+  );
+}
+// #endregion machines-card
 
 // #region pages-card
 /**

@@ -107,6 +107,46 @@ test('every page this container serves is checked, and the card says what is dow
   expect(performance?.content_type).toBe('text/markdown');
 });
 
+test('the machines card shows the container, the relational store and the document store (ADR: What the machines are doing)', async ({
+  page,
+  request,
+}) => {
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('machines-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('What the machines are doing');
+
+  // The sampler takes its first reading as the process starts, so there is
+  // always one by the time a browser has opened the tab.
+  await expect(card.getByTestId('machines-container-line')).toContainText(/\d+(\.\d+)? MB of \d+/, {
+    timeout: 60_000,
+  });
+  await expect(card.getByTestId('machines-container-table')).toContainText('MB');
+
+  // The suite runs on SQLite, which keeps no resource view of itself, and the
+  // card says which store it is looking at instead of drawing a zero. On the
+  // Cosmos DB pass the document block carries the charges instead.
+  const wire = (await (await request.get('http://localhost:5210/api/admin/machines')).json()) as {
+    container: {
+      memory_limit_mb: number;
+      processors: number;
+      samples: { working_set_mb: number }[];
+    };
+    relational: { available: boolean; note: string | null };
+    document: { available: boolean; free_request_units_per_second: number };
+  };
+  expect(wire.container.samples.length).toBeGreaterThan(0);
+  expect(wire.container.memory_limit_mb).toBeGreaterThan(0);
+  expect(wire.container.processors).toBeGreaterThan(0);
+  expect(wire.document.free_request_units_per_second).toBe(1000);
+  if (!wire.relational.available) {
+    expect(wire.relational.note).toBeTruthy();
+    await expect(card.getByTestId('machines-relational-note')).toBeVisible();
+  } else {
+    await expect(card.getByTestId('machines-relational-table')).toBeVisible();
+  }
+});
+
 test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }) => {
   const marker = `e2e boundary probe ${Date.now()}`;
   const posted = await request.post('http://localhost:5210/api/errors/client', {

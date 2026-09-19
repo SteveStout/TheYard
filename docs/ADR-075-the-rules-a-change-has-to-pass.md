@@ -31,6 +31,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every link from a document to this site opens a page: a document as `?doc=` with a slug the catalogue serves, a drawing the catalogue draws, and no bare local address in prose | ADR: Docs and testing | RecordLinksTests |
 | Every address this site serves answers with something, and a document is served as markdown | ADR: Every page, checked at every roll | PageStatusTests |
 | The sweep checks every document and every drawing the catalogue serves, and its own requests are not counted as traffic | ADR: Every page, checked at every roll | PageStatusTests |
+| The container samples its own memory and processor share, and each store's reading is the one that store actually keeps | ADR: What the machines are doing | MachinesTests |
 | Every record opens with its title, says what became of it, and ends with its Files section | This record | RecordShapeTests |
 | Every rule in this table names a test that exists, and every record it cites exists | This record | RuleTableTests |
 | Code shown in a document is read from the build at request time, never pasted | ADR: Live code samples | LiveSamplesTests, LiveSampleCoverageTests |

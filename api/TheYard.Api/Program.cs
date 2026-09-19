@@ -44,6 +44,10 @@ string imagesRoot = Path.Combine(contentRoot, "wwwroot", "images");
 // which is the folder README.md sits in, both in the image and in a checkout.
 string repoRoot = Path.GetDirectoryName(readmePath)!;
 // Build provenance (ADR-005), read once: the Docker build bakes both in.
+// An hour of samples at a quarter of a minute each, which is also the number
+// of rows the relational store's own view keeps (ADR: What the machines are doing).
+const int MachineSamples = 240;
+
 string buildVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev";
 string buildCommit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local";
 
@@ -330,6 +334,7 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
     "/api/admin/activity",
     "/api/admin/activity/visitors",
     "/api/admin/pages",
+    "/api/admin/machines",
     "/api/admin/logs/kept",
     "/api/admin/reset-links",
     "/api/errors",
@@ -469,6 +474,14 @@ var activityStores = backends.All.ToDictionary(backend => backend.Key, backend =
 var activityKeeper = backends.All.FirstOrDefault(backend => backend.Key == "cosmos" && backend.Activity is not NullActivityStore)?.Key ?? backends.Default.Key;
 builder.Services.AddSingleton(services => new ActivityCollector(activityStores, activityKeeper, services.GetRequiredService<ILogger<ActivityCollector>>()));
 builder.Services.AddHostedService(services => services.GetRequiredService<ActivityCollector>());
+
+// #region machine-sampler-wiring
+// Memory is not an event, so nothing on the Admin tab could show it until
+// something asked on a clock (ADR: What the machines are doing). Four an
+// hour for an hour, in about twenty kilobytes of this container's memory.
+builder.Services.AddSingleton(new MachineSampler(MachineSamples));
+builder.Services.AddHostedService(services => services.GetRequiredService<MachineSampler>());
+// #endregion machine-sampler-wiring
 var adminKey = new AdminKey(builder.Configuration["Admin:Key"]);
 builder.Services.AddSingleton(adminKey);
 // Whether the per-visitor rows (the visitor table and the kept log) are
@@ -2175,6 +2188,53 @@ app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync()));
 // or for a minute after one, so the card is never asked to prove the same
 // thing twice at once.
 var proof = new ProofRunner(backends, app.Services.GetRequiredService<ProofClients>(), sqlLog, storeLog);
+
+// #region machines-endpoint
+// What the three machines under this site are doing, each reporting the way
+// that machine actually reports: the container from the runtime, the
+// relational store from its own resource view, the document store from what
+// its operations charged, because it has no memory reading to give
+// (ADR: What the machines are doing).
+app.MapGet("/api/admin/machines", async (MachineSampler sampler, CancellationToken cancellation) =>
+{
+    var relational = backends.Named("sql");
+    var load = await ResourceStats.ReadAsync(relational, MachineSamples, cancellation);
+    var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB");
+    return Results.Json(new
+    {
+        container = new
+        {
+            memory_limit_mb = MachineSampler.MemoryLimitMb,
+            processors = MachineSampler.Processors,
+            uptime_seconds = (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
+            every_seconds = (int)MachineSampler.Every.TotalSeconds,
+            samples = sampler.Snapshot(),
+        },
+        relational = new
+        {
+            store = relational?.Name ?? "no relational store on this container",
+            available = load.Available,
+            note = load.Note,
+            rows = load.Rows,
+        },
+        document = new
+        {
+            store = document.Store,
+            available = document.Available,
+            note = document.Note,
+            request_units = document.RequestUnits,
+            operations = document.Operations,
+            p50_ms = document.P50Ms,
+            p95_ms = document.P95Ms,
+            free_request_units_per_second = DocumentLoad.FreeRequestUnitsPerSecond,
+            minutes = document.Minutes,
+        },
+    });
+})
+    .WithName("GetMachines")
+    .WithTags("Admin")
+    .WithSummary("What the container and the two stores are doing, each as that machine reports itself");
+// #endregion machines-endpoint
 
 // #region page-status-wiring
 // The sweep over every address this container serves. It dials the loopback
