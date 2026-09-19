@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application;
 
@@ -163,15 +164,31 @@ public static class ResourceStats
         }
         catch (Exception ex) when (ex is DbException or InvalidOperationException or OperationCanceledException)
         {
-            // The type on the card, never the message: this reading is served
-            // on a public page and a database message carries a server name.
-            // The message goes to the container's log, where an operator can
-            // read it and where the first live read of this needed it: the
-            // view answered with an exception on both sites and the card could
-            // only say that much.
+            // The database's own error number, and a sentence for the ones
+            // worth a sentence. Never the message: this reading is served on a
+            // public page and a message carries a server name. The number does
+            // not, and it is the difference between "it did not answer" and
+            // "it answered, and said this identity may not read it", which is
+            // what the first live read of this card needed and did not have.
             logger?.LogWarning(ex, "The relational store's resource view did not answer");
-            return StoreLoad.Absent($"the resource view did not answer ({ex.GetType().Name}); the container's log carries the reason");
+            return StoreLoad.Absent(ReasonFor((ex as SqlException)?.Number, ex.GetType().Name));
         }
+    }
+
+    /// <summary>What to say on a public card about a reading that did not happen, from the database's own error number.</summary>
+    public static string ReasonFor(int? number, string typeName)
+    {
+        return number switch
+        {
+            // 229 and 300 are the two shapes of "permission denied" this view
+            // answers with. Reading it needs VIEW DATABASE STATE, which
+            // db_datareader and db_datawriter do not carry, and those are the
+            // two roles this container's identity holds (ADR: The SQL Server
+            // backend). One GRANT is the whole difference.
+            229 or 300 => "the store keeps this reading, and this container's identity may not read it: the view needs VIEW DATABASE STATE, which the two roles the identity holds do not carry",
+            null => $"the resource view did not answer ({typeName})",
+            _ => $"the resource view answered with database error {number}",
+        };
     }
 }
 

@@ -94,6 +94,15 @@ this container's identity may not hold; the reason now goes to the container's l
 operator can read it, while the public card still says only the type. A reading that fails politely
 and says where the reason is beats a card that shows a zero.
 
+That last sentence was half wrong when it was written, and 1.0.0.151 is the correction: the log ring
+this site serves keeps an exception's **type** and not its message, so "the container's log carries
+the reason" was true of the container's stdout and not of anything a reader could open. The card now
+carries the database's own error number instead, and for the two numbers this view answers
+permission with, 229 and 300, a sentence with the answer in it: the view needs `VIEW DATABASE STATE`,
+and `db_datareader` and `db_datawriter`, the two roles this container's identity holds
+(ADR: The SQL Server backend), do not carry it. A number names no server, which is why it can be on
+a public page when a message cannot.
+
 ## What it costs
 
 Nothing on the bill. The sampler is a timer in a process that is already running; the resource view

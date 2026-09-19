@@ -87,6 +87,27 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
         Assert.Empty(view.Minutes);
     }
 
+    /// <summary>
+    /// A reading that did not happen says which kind of not-happening it was.
+    /// The permission case is the one that matters: it is the difference
+    /// between a store that keeps no such reading and a store that keeps it
+    /// and will not show this container, and only the second one has an answer
+    /// (ADR: What the machines are doing, and ADR: The SQL Server backend on
+    /// the two roles the identity holds).
+    /// </summary>
+    [Fact]
+    public void A_reading_that_did_not_happen_says_which_kind_of_not_happening_it_was()
+    {
+        // The permission numbers get the sentence with the answer in it.
+        Assert.Contains("VIEW DATABASE STATE", ResourceStats.ReasonFor(229, "SqlException"), StringComparison.Ordinal);
+        Assert.Contains("VIEW DATABASE STATE", ResourceStats.ReasonFor(300, "SqlException"), StringComparison.Ordinal);
+        // Any other number is carried as the number, which is diagnosable and
+        // names nothing: a database message would carry a server name.
+        Assert.Contains("40615", ResourceStats.ReasonFor(40615, "SqlException"), StringComparison.Ordinal);
+        // And something that never reached the database says what it was.
+        Assert.Contains("InvalidOperationException", ResourceStats.ReasonFor(null, "InvalidOperationException"), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task The_resource_view_is_absent_and_says_why_where_there_is_no_azure_sql_to_read_it_from()
     {
