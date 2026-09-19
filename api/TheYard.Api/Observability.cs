@@ -21,8 +21,43 @@ namespace TheYard.Api;
 public sealed record HealthCheckEntry(
     string Name, string Status, string Detail, long DurationMs, bool GatesReadiness = true);
 
-/// <summary>One recorded server error, newest first in snapshots.</summary>
-public sealed record ErrorEntry(DateTimeOffset At, string Path, int Status, string Message);
+/// <summary>
+/// One recorded server error, newest first in snapshots. <c>Frames</c> is the
+/// exception's own stack, trimmed: method names, the file each one is in and
+/// the line it is on, which is the source this repository publishes anyway and
+/// the fastest way from a 500 on the Admin tab to the line that threw. The
+/// exception's message is still not here and still never will be: a message is
+/// where a framework writes a connection detail or the value that broke a
+/// constraint, and this list is public (ADR: Error handling, the addendum on
+/// frames).
+/// </summary>
+public sealed record ErrorEntry(
+    DateTimeOffset At,
+    string Path,
+    int Status,
+    string Message,
+    IReadOnlyList<string> Frames);
+
+/// <summary>An exception's stack as the Admin tab shows it: the frames, trimmed to the ones a reader gets through.</summary>
+public static class StackFrames
+{
+    public const int Most = 12;
+
+    public static IReadOnlyList<string> Of(Exception? exception)
+    {
+        if (exception?.StackTrace is not { Length: > 0 } stack)
+        {
+            return [];
+        }
+
+        return stack
+            .Split('\n')
+            .Select(line => line.Trim().TrimStart('a', 't', ' ').TrimStart())
+            .Where(line => line.Length > 0)
+            .Take(Most)
+            .ToArray();
+    }
+}
 
 /// <summary>
 /// Fixed-size, thread-safe buffer of recent server errors. In-memory on
@@ -33,11 +68,11 @@ public sealed class ErrorRingBuffer(int capacity)
     private readonly object _gate = new();
     private readonly Queue<ErrorEntry> _entries = new();
 
-    public void Record(string path, int status, string message)
+    public void Record(string path, int status, string message, IReadOnlyList<string>? frames = null)
     {
         lock (_gate)
         {
-            _entries.Enqueue(new ErrorEntry(DateTimeOffset.UtcNow, path, status, message));
+            _entries.Enqueue(new ErrorEntry(DateTimeOffset.UtcNow, path, status, message, frames ?? []));
             while (_entries.Count > capacity)
             {
                 _entries.Dequeue();

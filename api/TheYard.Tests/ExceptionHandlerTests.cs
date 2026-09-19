@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -71,6 +72,30 @@ public class ExceptionHandlerTests(ProductionApi factory) : IClassFixture<Produc
 
         string errors = await _client.GetStringAsync("/api/errors");
         Assert.Contains(SelfTest, errors);
+    }
+
+    /// <summary>
+    /// The list carries the exception's frames, which is how a reader gets
+    /// from a 500 on the Admin tab to the line that threw, and still does not
+    /// carry its message, which is where a framework writes a connection
+    /// detail (ADR: Error handling, the addendum on frames).
+    /// </summary>
+    [Fact]
+    public async Task The_list_carries_the_frames_and_still_refuses_the_message()
+    {
+        await _client.GetAsync(SelfTest);
+
+        var entries = await _client.GetFromJsonAsync<JsonElement>("/api/errors");
+        var thrown = entries.EnumerateArray()
+            .First(entry => entry.GetProperty("path").GetString() == SelfTest
+                && entry.GetProperty("status").GetInt32() == 500);
+        var frames = thrown.GetProperty("frames").EnumerateArray().Select(frame => frame.GetString() ?? "").ToList();
+
+        Assert.NotEmpty(frames);
+        Assert.Contains(frames, frame => frame.Contains("TheYard", StringComparison.Ordinal));
+        Assert.True(frames.Count <= StackFrames.Most, $"{frames.Count} frames is more than a reader gets through");
+        // The sentence the self-test throws with is still nowhere in the list.
+        Assert.DoesNotContain("self-test", string.Join(" ", frames), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

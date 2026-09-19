@@ -129,6 +129,22 @@ one-sentence detail in the shape every other failure here uses. The status
 codes did not change; the body names what was not found instead of the
 middleware naming nothing.
 
+## Addendum, 2026-09-19: the frames, and still not the message
+
+Steve, on a 500 he found on his own Admin tab: recent errors should be a table, and they should show
+the stack trace with line numbers. Both, and the second one needs saying carefully, because this
+record's own rule is that the list at `/api/errors` carries an exception's **type** and never its
+message: a message is where a framework writes a filesystem path, a connection detail or the value
+that broke a constraint, and the list is public.
+
+The frames are a different thing from the message. A frame is a method, the file it is in and the
+line it is on, which is source this repository already publishes in full, and it is the whole
+distance between "something threw on `/api/admin/machines`" and "line 160 of Machines.cs reads a
+decimal into a double". So the ring carries up to twelve frames per entry, the endpoint serves them,
+the card shows them behind a disclosure in a table with the time, the status and the path, and the
+message stays out. A test throws on the self-test endpoint and asserts both halves: the frames are
+there, and the sentence the self-test throws with is not.
+
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the handler, the logging, the client-error endpoint, and the 400s.

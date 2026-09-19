@@ -1364,7 +1364,10 @@ app.Use(async (context, next) =>
         // Insights as a structured exception, where it is behind a sign-in
         // (ADR: Reviewing my own work, which caught the same defect in the log
         // buffer and missed this one).
-        errorLog.Record(context.Request.Path, 500, ex.GetType().Name);
+        // The type and the frames, never the message: the frames are source
+        // locations this repository publishes, and the message is not
+        // (ADR: Error handling, the addendum on frames).
+        errorLog.Record(context.Request.Path, 500, ex.GetType().Name, StackFrames.Of(ex));
         throw;
     }
 });
@@ -1486,7 +1489,7 @@ app.MapGet("/api/errors", () => TypedResults.Ok(
     .WithName("GetErrors")
     .WithTags("Errors")
     .WithSummary("Recent server and browser errors, newest first")
-    .WithDescription("Two in-memory rings of fifty, merged. Exception types only, never messages: this list is public.");
+    .WithDescription("Two in-memory rings of fifty, merged. Exception types and stack frames, never messages: this list is public.");
 
 #region admin-observability-endpoints
 // The raw SQL, newest first. Statement text, parameter names and types, how

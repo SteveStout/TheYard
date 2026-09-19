@@ -47,7 +47,13 @@ type Health = {
   commit: string;
   checks: HealthCheck[];
 };
-type ErrorEntry = { at: string; path: string; status: number; message: string };
+type ErrorEntry = {
+  at: string;
+  path: string;
+  status: number;
+  message: string;
+  frames: string[];
+};
 type PageEntry = {
   address: string;
   what: string;
@@ -698,19 +704,46 @@ export function AdminPanel({
             <p className={styles.muted}>
               None recorded since the container started, from the server or the browser. The buffer
               holds the last 50 and resets on every deploy; Application Insights keeps the durable
-              copy (ADR: Telemetry).
+              copy (ADR: Telemetry). A server error carries its stack, file and line beside it; the
+              exception&rsquo;s message is deliberately not here, because a message is where a
+              framework writes a connection detail and this page is public.
             </p>
           ) : (
-            <ul className={styles.errorList}>
-              {errors.map((entry, index) => (
-                <li key={index} className={styles.errorRow}>
-                  <span className={styles.mono}>{new Date(entry.at).toLocaleTimeString()}</span>
-                  <span className={styles.mono}>{entry.status}</span>
-                  <span className={styles.mono}>{entry.path}</span>
-                  <span className={styles.muted}>{entry.message}</span>
-                </li>
-              ))}
-            </ul>
+            <div className={styles.tableWrap} role="region" aria-label="Recent errors" tabIndex={0}>
+              <table className={styles.table} data-testid="errors-table">
+                <thead>
+                  <tr>
+                    <th scope="col">At</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Where</th>
+                    <th scope="col">What</th>
+                    <th scope="col">Stack</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {errors.map((entry, index) => (
+                    <tr key={index}>
+                      <td className={styles.mono}>{new Date(entry.at).toLocaleTimeString()}</td>
+                      <td className={styles.mono}>
+                        {entry.status === 0 ? 'browser' : entry.status}
+                      </td>
+                      <td className={styles.mono}>{entry.path}</td>
+                      <td>{entry.message}</td>
+                      <td>
+                        {entry.frames.length === 0 ? (
+                          <span className={styles.muted}>no stack</span>
+                        ) : (
+                          <details data-testid={`error-frames-${index}`}>
+                            <summary>{entry.frames.length} frames</summary>
+                            <pre className={styles.sql}>{entry.frames.join('\n')}</pre>
+                          </details>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </article>
       </div>
