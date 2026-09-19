@@ -101,6 +101,8 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
         // The permission numbers get the sentence with the answer in it.
         Assert.Contains("VIEW DATABASE STATE", ResourceStats.ReasonFor(229, "SqlException"), StringComparison.Ordinal);
         Assert.Contains("VIEW DATABASE STATE", ResourceStats.ReasonFor(300, "SqlException"), StringComparison.Ordinal);
+        // 262 is the one the live sites answered with on 2026-09-19.
+        Assert.Contains("VIEW DATABASE STATE", ResourceStats.ReasonFor(262, "SqlException"), StringComparison.Ordinal);
         // Any other number is carried as the number, which is diagnosable and
         // names nothing: a database message would carry a server name.
         Assert.Contains("40615", ResourceStats.ReasonFor(40615, "SqlException"), StringComparison.Ordinal);

@@ -180,12 +180,15 @@ public static class ResourceStats
     {
         return number switch
         {
-            // 229 and 300 are the two shapes of "permission denied" this view
-            // answers with. Reading it needs VIEW DATABASE STATE, which
-            // db_datareader and db_datawriter do not carry, and those are the
-            // two roles this container's identity holds (ADR: The SQL Server
-            // backend). One GRANT is the whole difference.
-            229 or 300 => "the store keeps this reading, and this container's identity may not read it: the view needs VIEW DATABASE STATE, which the two roles the identity holds do not carry",
+            // The three shapes of "permission denied" this view answers with,
+            // and 262 is the one the live site actually answered on
+            // 2026-09-19: the generic "<permission> permission denied in
+            // database" that carries the permission's name in a message this
+            // card does not print. Reading the view needs VIEW DATABASE STATE,
+            // which db_datareader and db_datawriter do not carry, and those are
+            // the two roles this container's identity holds (ADR: The SQL
+            // Server backend). One GRANT is the whole difference.
+            229 or 262 or 300 => "the store keeps this reading, and this container's identity may not read it: the view needs VIEW DATABASE STATE, which the two roles the identity holds do not carry",
             null => $"the resource view did not answer ({typeName})",
             _ => $"the resource view answered with database error {number}",
         };

@@ -98,7 +98,8 @@ That last sentence was half wrong when it was written, and 1.0.0.151 is the corr
 this site serves keeps an exception's **type** and not its message, so "the container's log carries
 the reason" was true of the container's stdout and not of anything a reader could open. The card now
 carries the database's own error number instead, and for the two numbers this view answers
-permission with, 229 and 300, a sentence with the answer in it: the view needs `VIEW DATABASE STATE`,
+permission with, and 262, the one both live sites answered with when this shipped, a sentence with
+the answer in it: the view needs `VIEW DATABASE STATE`,
 and `db_datareader` and `db_datawriter`, the two roles this container's identity holds
 (ADR: The SQL Server backend), do not carry it. A number names no server, which is why it can be on
 a public page when a message cannot.
