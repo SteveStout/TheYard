@@ -138,7 +138,7 @@ public static class ResourceStats
         ORDER BY end_time DESC
         """;
 
-    public static async Task<StoreLoad> ReadAsync(Backend? relational, int rows, CancellationToken cancellation)
+    public static async Task<StoreLoad> ReadAsync(Backend? relational, int rows, CancellationToken cancellation, ILogger? logger = null)
     {
         if (relational?.Contexts is null)
         {
@@ -163,8 +163,14 @@ public static class ResourceStats
         }
         catch (Exception ex) when (ex is DbException or InvalidOperationException or OperationCanceledException)
         {
-            // The type, never the message: a message here carries a server name.
-            return StoreLoad.Absent($"the resource view did not answer ({ex.GetType().Name})");
+            // The type on the card, never the message: this reading is served
+            // on a public page and a database message carries a server name.
+            // The message goes to the container's log, where an operator can
+            // read it and where the first live read of this needed it: the
+            // view answered with an exception on both sites and the card could
+            // only say that much.
+            logger?.LogWarning(ex, "The relational store's resource view did not answer");
+            return StoreLoad.Absent($"the resource view did not answer ({ex.GetType().Name}); the container's log carries the reason");
         }
     }
 }

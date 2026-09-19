@@ -28,6 +28,14 @@ import {
   type LogFilter,
   type LogKind,
 } from '../lib/logs';
+import {
+  MACHINE_CHART,
+  ceilingFor,
+  clockLabel,
+  pathFor,
+  ticks,
+  type ChartSeries,
+} from '../lib/machineChart';
 import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
 import styles from './AdminPanel.module.css';
 
@@ -1997,6 +2005,114 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
 }
 // #endregion comparison
 
+// #region machine-chart
+/**
+ * One resource, one chart (ADR: What the machines are doing, the addendum on
+ * drawing them). Up to two lines on one axis, drawn the way the activity graph
+ * is drawn and with the same arithmetic split out into src/lib/machineChart.ts.
+ * A percentage chart keeps a full axis whatever the hour held, so a quiet hour
+ * looks quiet; anything else takes its ceiling from the readings.
+ */
+function MachineChart({
+  testId,
+  label,
+  series,
+  percentage,
+  unit,
+}: {
+  testId: string;
+  label: string;
+  series: ChartSeries[];
+  percentage?: boolean;
+  unit?: string;
+}) {
+  const ceiling = ceilingFor(series, percentage === true ? 100 : 1);
+  const points = series[0]?.points ?? [];
+  const drawn = series.some((line) => line.points.some((point) => point.value !== null));
+  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
+  const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
+  const colour = (index: number) =>
+    index === 0 ? styles.allLine : index === 1 ? styles.sqlLine : styles.cosmosLine;
+
+  if (!drawn) {
+    return (
+      <p className={styles.muted} data-testid={`${testId}-empty`}>
+        Nothing to draw yet.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <svg
+        className={styles.chart}
+        viewBox={`0 0 ${MACHINE_CHART.width} ${MACHINE_CHART.height}`}
+        role="img"
+        aria-label={label}
+        data-testid={testId}
+      >
+        <line
+          className={styles.axis}
+          x1={MACHINE_CHART.left}
+          y1={MACHINE_CHART.height - MACHINE_CHART.bottom}
+          x2={MACHINE_CHART.width - MACHINE_CHART.right}
+          y2={MACHINE_CHART.height - MACHINE_CHART.bottom}
+        />
+        <line
+          className={styles.axis}
+          x1={MACHINE_CHART.left}
+          y1={MACHINE_CHART.top}
+          x2={MACHINE_CHART.left}
+          y2={MACHINE_CHART.height - MACHINE_CHART.bottom}
+        />
+        <text
+          className={styles.axisLabel}
+          x={MACHINE_CHART.left - 4}
+          y={MACHINE_CHART.top + 4}
+          textAnchor="end"
+        >
+          {ceiling}
+          {percentage === true ? '%' : ''}
+        </text>
+        <text
+          className={styles.axisLabel}
+          x={MACHINE_CHART.left - 4}
+          y={MACHINE_CHART.height - MACHINE_CHART.bottom}
+          textAnchor="end"
+        >
+          0
+        </text>
+        {ticks(points.length).map((index) => (
+          <text
+            key={index}
+            className={styles.axisLabel}
+            x={MACHINE_CHART.left + index * step}
+            y={MACHINE_CHART.height - 8}
+            textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
+          >
+            {points[index] ? clockLabel(points[index].at) : ''}
+          </text>
+        ))}
+        {series.map((line, index) => (
+          <g key={line.key} className={colour(index)} data-testid={`${testId}-${line.key}`}>
+            <path className={styles.line} d={pathFor(line.points, ceiling)} />
+          </g>
+        ))}
+      </svg>
+      <ul className={styles.summaryList}>
+        {series.map((line, index) => (
+          <li key={line.key}>
+            <span className={`${styles.swatch} ${colour(index)}`} aria-hidden="true" />
+            {line.name}
+            {unit === undefined ? '' : ` (${unit})`}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+// #endregion machine-chart
+
 // #region machines-card
 /**
  * What the three machines are doing (ADR: What the machines are doing). Three
@@ -2065,11 +2181,14 @@ function MachinesCard() {
       <h2 className={styles.cardTitle}>What the machines are doing</h2>
       <p className={styles.muted}>
         The three machines under this site, each reporting the way it actually reports. The
-        container knows its own memory and its own processor time; Azure SQL Database keeps a
-        reading of itself for the last hour, fifteen seconds at a time, free on every tier; Azure
-        Cosmos DB has no memory or processor reading to give, because it is sold by request unit, so
-        what it shows is what the operations cost against the free allowance. Everything here is
-        this container&rsquo;s own, kept in its memory, and empties on every roll.
+        container knows its own memory and its own processor time, and the limit its share is read
+        against is the runtime&rsquo;s own rather than the container group&rsquo;s: .NET works to
+        about seven tenths of what the group granted, and a process that passes its own limit is the
+        one that gets collected; Azure SQL Database keeps a reading of itself for the last hour,
+        fifteen seconds at a time, free on every tier; Azure Cosmos DB has no memory or processor
+        reading to give, because it is sold by request unit, so what it shows is what the operations
+        cost against the free allowance. Everything here is this container&rsquo;s own, kept in its
+        memory, and empties on every roll.
       </p>
 
       <h3 className={styles.cardTitle}>The container</h3>
@@ -2091,6 +2210,31 @@ function MachinesCard() {
             {latest.gen2_collections} full ones since this container started. Peak working set in
             the window: {peak} MB.
           </p>
+          <MachineChart
+            testId="machine-chart-container"
+            label="The container over the sampled window: memory as a share of its limit, and processor share"
+            percentage
+            series={[
+              {
+                key: 'memory',
+                name: `Memory, share of ${machines.container.memory_limit_mb} MB`,
+                points: samples.map((sample) => ({
+                  at: sample.at,
+                  value:
+                    machines.container.memory_limit_mb > 0
+                      ? Math.round(
+                          (sample.working_set_mb / machines.container.memory_limit_mb) * 1000
+                        ) / 10
+                      : null,
+                })),
+              },
+              {
+                key: 'cpu',
+                name: `Processor, share of ${machines.container.processors}`,
+                points: samples.map((sample) => ({ at: sample.at, value: sample.cpu_percent })),
+              },
+            ]}
+          />
           <div
             className={styles.tableWrap}
             role="region"
@@ -2152,6 +2296,27 @@ function MachinesCard() {
               </>
             )}
           </p>
+          <MachineChart
+            testId="machine-chart-relational"
+            label="The relational store over the last hour, as it reports itself: processor and memory as shares of what the tier allows"
+            percentage
+            series={[
+              {
+                key: 'memory',
+                name: 'Memory, share of the tier',
+                points: [...machines.relational.rows]
+                  .reverse()
+                  .map((row) => ({ at: row.at, value: row.memory_percent })),
+              },
+              {
+                key: 'cpu',
+                name: 'Processor, share of the tier',
+                points: [...machines.relational.rows]
+                  .reverse()
+                  .map((row) => ({ at: row.at, value: row.cpu_percent })),
+              },
+            ]}
+          />
           <div
             className={styles.tableWrap}
             role="region"
@@ -2201,6 +2366,21 @@ function MachinesCard() {
             below is what each minute would be of one second of that. There is no memory or
             processor reading here: the store is sold by request unit and reports neither.
           </p>
+          <MachineChart
+            testId="machine-chart-document"
+            label="What the document store charged, request units a minute"
+            unit="request units a minute"
+            series={[
+              {
+                key: 'ru',
+                name: 'Request units a minute',
+                points: machines.document.minutes.map((minute) => ({
+                  at: minute.at,
+                  value: minute.request_units,
+                })),
+              },
+            ]}
+          />
           <div
             className={styles.tableWrap}
             role="region"

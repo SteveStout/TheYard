@@ -139,6 +139,19 @@ test('the machines card shows the container, the relational store and the docume
   expect(wire.container.memory_limit_mb).toBeGreaterThan(0);
   expect(wire.container.processors).toBeGreaterThan(0);
   expect(wire.document.free_request_units_per_second).toBe(1000);
+
+  // One chart per resource, drawn from the same readings the tables carry
+  // (ADR: What the machines are doing, the addendum on drawing them). The
+  // container always has one; the two stores have one each where the store
+  // had something to say.
+  await expect(card.getByTestId('machine-chart-container')).toBeVisible();
+  await expect(card.getByTestId('machine-chart-container-memory')).toHaveCount(1);
+  await expect(
+    card.getByTestId('machine-chart-relational').or(card.getByTestId('machines-relational-note'))
+  ).toBeVisible();
+  await expect(
+    card.getByTestId('machine-chart-document').or(card.getByTestId('machines-document-note'))
+  ).toBeVisible();
   if (!wire.relational.available) {
     expect(wire.relational.note).toBeTruthy();
     await expect(card.getByTestId('machines-relational-note')).toBeVisible();

@@ -61,6 +61,39 @@ those words rather than leaving a gap a reader has to explain to themselves. Wha
 the operations ring folded into request units a minute, beside the thousand request units a second
 the free tier allows, so the one number that could ever cost money is the one on the card.
 
+## Addendum, 2026-09-19, shipped as 1.0.0.150: the same readings, drawn
+
+Steve, on the card as it first shipped: graphs of the processor and memory of every Azure resource
+this site runs, one chart per resource, the way the site activity is drawn. Three tables of numbers
+are a reading; a line is a shape, and the shape is what says whether a container is climbing.
+
+One chart per resource, and the unit is the resource's own. The container's two lines are
+percentages: memory as a share of the limit the container group granted, and the processor share
+already measured that way, so both sit on one axis. The relational store's two are percentages
+because that is what its own view reports, of what the tier allows. The document store has no
+processor or memory to draw, so its chart is what it does have, request units a minute, on an axis
+of its own, and the sentence beside it still says why the other two lines are missing.
+
+A percentage chart keeps a full axis whatever the hour held: a quiet hour drawn against its own
+maximum looks like a busy one, which is the chart lying with true numbers. The arithmetic lives in
+`src/lib/machineChart.ts` with the activity chart's, and a missing reading breaks the line rather
+than being drawn across, because the first processor share of a process has nothing to compare
+against and a line through it would be a number nobody measured.
+
+### What the first live read found
+
+Two things, and both are in this version rather than in a note. The limit the container's memory is
+read against is the runtime's own, `TotalAvailableMemoryBytes`, which on this container group is
+1,057 MB against the 1,536 MB the group granted: .NET works to about seven tenths of a container's
+memory by default, and a process that passes its own limit is the one that gets collected. The card
+says which limit it is showing rather than letting a reader assume the other one.
+
+And the relational store's resource view answered with a `SqlException` on both sites, so the card
+showed its absent reading exactly as designed. Reading the view needs `VIEW DATABASE STATE`, which
+this container's identity may not hold; the reason now goes to the container's log, where an
+operator can read it, while the public card still says only the type. A reading that fails politely
+and says where the reason is beats a card that shows a zero.
+
 ## What it costs
 
 Nothing on the bill. The sampler is a timer in a process that is already running; the resource view
@@ -72,7 +105,8 @@ reading is arithmetic over a ring the container already keeps. No tier, no resou
 
 - [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the sampler, the resource view, and the document reading.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the sampler registered, the endpoint, and the statement kept off the SQL card.
-- [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card, three readings with their three honesties.
+- [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card, three readings with their three honesties, and the chart each one is drawn in.
+- [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the chart arithmetic, React-free and tested on its own.
 - [`api/TheYard.Tests/MachinesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MachinesTests.cs): the ring, the first sample, the folding, and the shape the endpoint answers with.
 - [`docs/ADR-077-every-page-checked.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-077-every-page-checked.md): the other card this morning added, and the sweep whose requests this one's numbers include.
 - [`docs/PERFORMANCE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/PERFORMANCE.md): the claim about one small container that this card is the running proof of.

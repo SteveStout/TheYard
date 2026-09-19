@@ -2198,7 +2198,7 @@ var proof = new ProofRunner(backends, app.Services.GetRequiredService<ProofClien
 app.MapGet("/api/admin/machines", async (MachineSampler sampler, CancellationToken cancellation) =>
 {
     var relational = backends.Named("sql");
-    var load = await ResourceStats.ReadAsync(relational, MachineSamples, cancellation);
+    var load = await ResourceStats.ReadAsync(relational, MachineSamples, cancellation, app.Logger);
     var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB");
     return Results.Json(new
     {
