@@ -31,6 +31,12 @@ public class PageStatusTests(WebApplicationFactory<Program> factory)
 
         Assert.True(missing.Count == 0, "the sweep does not check: " + string.Join(", ", missing));
         Assert.True(addresses.Contains("/"), "the sweep should check the app itself");
+        // The Admin tab's readings are pages too: an endpoint that throws is a
+        // page that is down, and one of them did while this sweep was green.
+        foreach (string reading in new[] { "/api/admin/machines", "/api/admin/metrics", "/api/admin/pages" })
+        {
+            Assert.Contains(reading, addresses);
+        }
         Assert.Equal(addresses.Count, ServedAddresses.All(true).Count);
     }
 

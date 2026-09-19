@@ -102,6 +102,14 @@ public static class ServedAddresses
             new("/api/vehicles?limit=1", "The listing", "api"),
             new("/api/facets", "The filter values", "api"),
             new("/api/stores", "The stores this container runs", "api"),
+            // The Admin tab's own readings, because an endpoint that throws is
+            // a page that is down: /api/admin/machines answered 500 on both
+            // live sites for four minutes on 2026-09-19 and this sweep, which
+            // had not been asking, did not notice (ADR: What the machines are
+            // doing, the addendum on the cast).
+            new("/api/admin/machines", "What the machines are doing", "api"),
+            new("/api/admin/metrics", "Timing", "api"),
+            new("/api/admin/pages", "This check itself", "api"),
             new("/api/docs/resume", "Steven's resume (PDF)", "file"),
             new("/api/docs/bicep", "Infrastructure (Bicep)", "document"),
         };

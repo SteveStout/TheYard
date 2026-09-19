@@ -104,6 +104,20 @@ and `db_datareader` and `db_datawriter`, the two roles this container's identity
 (ADR: The SQL Server backend), do not carry it. A number names no server, which is why it can be on
 a public page when a message cannot.
 
+### The cast, and the four minutes it took
+
+`sys.dm_db_resource_stats` returns its percentages as `decimal(5,2)`. The record read them into
+doubles, which is an `InvalidCastException`, and the endpoint answered 500 on both live sites from
+the minute the `VIEW DATABASE STATE` grant let the query run at all until the fix rolled. It could
+not have failed earlier: before the grant the query never got as far as a row, so the shape of a
+row was never tested against the real view. That is the class of defect a suite on SQLite cannot
+catch and a live read can, and the live read is what caught it, in Steve's own Admin tab.
+
+Two things changed. The statement casts each percentage to float, in the statement rather than in
+the type, because these are percentages a chart draws and not money. And the page sweep asks for
+the Admin tab's own readings now, so an endpoint that throws shows up as a page that is down at the
+next roll rather than in a card somebody happens to be looking at.
+
 ## What it costs
 
 Nothing on the bill. The sampler is a timer in a process that is already running; the resource view

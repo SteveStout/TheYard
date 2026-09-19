@@ -49,6 +49,11 @@ developer's machine the API runs behind the dev server and those four addresses 
 answer. The sweep checks them where the web root holds them and names them nowhere else, because a
 red reading that means "you are running the API on its own" teaches a reader to ignore the card.
 
+**An endpoint that throws is a page that is down.** The first list left the Admin tab's own readings
+out, on the grounds that they are readings rather than pages. On 19 September
+`/api/admin/machines` answered 500 on both live sites for four minutes and the sweep was green
+through all of it, because nothing was asking. The readings are in the list now.
+
 **An answer is judged, not counted.** An address is up when it answers 200 **with bytes in it**, and
 the report records the content type beside the status, so a document served as anything but markdown
 and a drawing served as anything but a page are visible on the card and fail the gate. That is the

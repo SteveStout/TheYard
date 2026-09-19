@@ -127,14 +127,22 @@ public sealed record MachineSample(
 /// </summary>
 public static class ResourceStats
 {
+    /// <summary>
+    /// Every percentage is cast to float on the way out. The view returns them
+    /// as `decimal(5,2)`, and a decimal read into a double is the
+    /// InvalidCastException both live sites answered this endpoint with for
+    /// four minutes on 2026-09-19, the minute the grant that let the query run
+    /// at all went in. The cast is in the statement rather than in the type
+    /// because the reading is a percentage a chart draws, not money.
+    /// </summary>
     public const string Query = """
         SELECT TOP ({rows})
             end_time AS At,
-            avg_cpu_percent AS CpuPercent,
-            avg_data_io_percent AS DataIoPercent,
-            avg_log_write_percent AS LogWritePercent,
-            avg_memory_usage_percent AS MemoryPercent,
-            max_worker_percent AS WorkerPercent
+            CAST(avg_cpu_percent AS float) AS CpuPercent,
+            CAST(avg_data_io_percent AS float) AS DataIoPercent,
+            CAST(avg_log_write_percent AS float) AS LogWritePercent,
+            CAST(avg_memory_usage_percent AS float) AS MemoryPercent,
+            CAST(max_worker_percent AS float) AS WorkerPercent
         FROM sys.dm_db_resource_stats
         ORDER BY end_time DESC
         """;
