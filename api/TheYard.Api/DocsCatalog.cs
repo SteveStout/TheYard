@@ -104,6 +104,8 @@ public static class DocsCatalog
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["built-with-ai"] = "docs/BUILT-WITH-AI.md",
+        ["infrastructure-overview"] = "docs/INFRASTRUCTURE-OVERVIEW.md",
+        ["web-overview"] = "docs/WEB-OVERVIEW.md",
         ["performance"] = "docs/PERFORMANCE.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",

@@ -91,6 +91,8 @@ export type DocKey =
   | 'adrOpenApi'
   | 'aiDevelopment'
   | 'builtWithAi'
+  | 'infrastructureOverview'
+  | 'webOverview'
   | 'performance'
   | 'architecture'
   | 'style';
@@ -729,6 +731,18 @@ export const DOCS: Record<
     url: '/api/docs/built-with-ai',
     kind: 'overview',
   },
+  infrastructureOverview: {
+    title: 'Infrastructure overview',
+    menuLabel: 'Infrastructure overview',
+    url: '/api/docs/infrastructure-overview',
+    kind: 'overview',
+  },
+  webOverview: {
+    title: 'Web overview',
+    menuLabel: 'Web overview',
+    url: '/api/docs/web-overview',
+    kind: 'overview',
+  },
   performance: {
     title: 'Performance',
     menuLabel: 'Performance overview',
@@ -839,11 +853,13 @@ export const MENUS: Record<
   /**
    * The lowest resources and the millisecond speeds, as a section of its own
    * for the same reason the stores have one: it is the subject a reader asks
-   * about first, and it should not have to be found inside a record.
+   * about first, and it should not have to be found inside a record. Two
+   * overviews open it since 1.0.0.145, the machines and then the page they
+   * serve, ahead of the page that holds what each change moved.
    */
   performance: {
     label: 'Performance',
-    items: [{ key: 'performance' }],
+    items: [{ key: 'infrastructureOverview' }, { key: 'webOverview' }, { key: 'performance' }],
   },
   /** The drawings, one row per page; see DIAGRAMS above for why they are links. */
   diagrams: {
