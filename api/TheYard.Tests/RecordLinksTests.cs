@@ -109,6 +109,76 @@ public class RecordLinksTests
     }
     // #endregion links
 
+    // #region site links
+    /// <summary>
+    /// A link from a document to this site has to open a page. The rule
+    /// exists because the README linked two documents at
+    /// <c>/api/docs/built-with-ai</c> and <c>/api/docs/performance</c>, the
+    /// addresses the dialog fetches markdown from, so a reader who followed
+    /// either one from GitHub or from the README inside the app landed on a
+    /// wall of raw markdown in a new tab. Every link answered 200, which is
+    /// why a check that only asks whether a link is up would never have seen
+    /// it.
+    ///
+    /// <para>So the address is held to its form: a document is linked as
+    /// <c>?doc=slug</c> with a slug the catalogue serves, a drawing as
+    /// <c>/api/docs/diagrams/name</c> with a name the catalogue draws, and a
+    /// bare local address never appears in prose, where markdown turns it
+    /// into a link that is dead for everyone reading it on the live site.
+    /// Whether the pages behind those addresses are up is a question about
+    /// the running site, and the Admin tab answers it there.</para>
+    /// </summary>
+    [Fact]
+    public void Every_link_to_this_site_in_every_document_opens_a_page()
+    {
+        string root = Repo.Root();
+        var wrong = new List<string>();
+        int checkedLinks = 0;
+
+        foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "docs"), "*.md")
+            .Concat([Path.Combine(root, "README.md")]))
+        {
+            string name = Path.GetFileName(path);
+            string text = File.ReadAllText(path);
+
+            foreach (Match match in Regex.Matches(
+                text, @"\]\(https://theyard(?:-cosmos)?\.stevenstout\.biz(?<rest>[^\)\s]*)\)"))
+            {
+                checkedLinks++;
+                string rest = match.Groups["rest"].Value;
+                var document = Regex.Match(rest, @"^/api/docs/(?<slug>[a-z0-9-]+)$");
+                var drawing = Regex.Match(rest, @"^/api/docs/diagrams/(?<name>[a-z0-9-]+)$");
+                var address = Regex.Match(rest, @"[?&]doc=(?<slug>[a-z0-9-]+)");
+
+                if (document.Success && DocsCatalog.Files.ContainsKey(document.Groups["slug"].Value))
+                {
+                    wrong.Add($"{name} links {rest}, which serves raw markdown; link /?doc={document.Groups["slug"].Value}");
+                }
+                else if (drawing.Success && !DocsCatalog.Diagrams.ContainsKey(drawing.Groups["name"].Value))
+                {
+                    wrong.Add($"{name} links the drawing '{drawing.Groups["name"].Value}', which the catalogue does not draw");
+                }
+                else if (address.Success && !DocsCatalog.Files.ContainsKey(address.Groups["slug"].Value))
+                {
+                    wrong.Add($"{name} links ?doc={address.Groups["slug"].Value}, which the catalogue does not serve");
+                }
+            }
+
+            // Fences and inline code first: a local address inside either is an
+            // instruction, and markdown leaves it alone.
+            string prose = Regex.Replace(text, @"```.*?```", "", RegexOptions.Singleline);
+            prose = Regex.Replace(prose, @"`[^`\n]*`", "");
+            foreach (Match match in Regex.Matches(prose, @"https?://localhost[^\s\)]*"))
+            {
+                wrong.Add($"{name} has {match.Value} in prose, where it becomes a link nobody on the live site can follow; put it in backticks");
+            }
+        }
+
+        Assert.True(checkedLinks > 20, $"only {checkedLinks} links to this site found, which suggests this stopped matching");
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+    // #endregion site links
+
     // #region the other direction
     /// <summary>
     /// The links above run from a record to the code it decided about. These

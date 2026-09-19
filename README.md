@@ -6,9 +6,9 @@ Built by one engineer with AI as a force multiplier, test driven: I specify ever
 the first draft of the code against it, three suites of tests run on every push inside a five-minute gate (the counts are in the testing section below, held to the suites
 by a test), and seventy-six decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
-[Built with AI](https://theyard.stevenstout.biz/api/docs/built-with-ai), and what it all runs on, at
+[Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
 millisecond speeds on free-tier stores and one small container, in
-[Performance](https://theyard.stevenstout.biz/api/docs/performance).
+[Performance](https://theyard.stevenstout.biz/?doc=performance).
 
 TheYard is my portfolio implementation of a used-vehicle auction platform: browse a large
 inventory, inspect a vehicle in detail, and place bids against a simulated room of other
@@ -49,7 +49,7 @@ npm start          # API + frontend in one command; opens the browser
 
 (Or separately: `npm run api` and `npm run dev` in two terminals.)
 
-Open http://localhost:5173. The dev server proxies `/api` to the .NET API, which serves
+Open `http://localhost:5173`. The dev server proxies `/api` to the .NET API, which serves
 the inventory and the vehicle photos (`/api/images/...`). The inventory is **100,000
 records**, deterministically synthesized at startup from the 200-record seed dataset
 (`Inventory:TargetCount` in `api/TheYard.Api/appsettings.json`), so there is no giant
@@ -445,7 +445,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (504 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (505 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -572,7 +572,7 @@ Run it:
 docker run --rm -d -p 8080:8080 --name theyard theyard:local
 ```
 
-Then open http://localhost:8080. The API serves the SPA with a fallback route, so deep
+Then open `http://localhost:8080`. The API serves the SPA with a fallback route, so deep
 links to item URLs work. A container HEALTHCHECK probes `/healthz` every 30 seconds;
 `docker ps` shows the container as healthy once the app is accepting traffic.
 
