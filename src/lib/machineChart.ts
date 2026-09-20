@@ -283,6 +283,27 @@ export function keptTraffic(slots: { at: string; bucket: KeptBucket | null }[]):
   );
 }
 
+/**
+ * The lines under the tiles over a kept window (ADR: The Admin tab, as a
+ * product, the addendum on one window for every chart): the same four
+ * readings the hour's lines are drawn from, one value a bucket, and null
+ * where the store holds no bucket, so a day the site was down is a gap under
+ * the tile exactly as it is on the chart.
+ */
+export function keptSparks(slots: { at: string; bucket: KeptBucket | null }[]): {
+  speed: (number | null)[];
+  memory: (number | null)[];
+  charged: (number | null)[];
+  errors: (number | null)[];
+} {
+  return {
+    speed: slots.map(({ bucket }) => bucket?.p95_ms ?? null),
+    memory: slots.map(({ bucket }) => bucket?.working_set_mb ?? null),
+    charged: slots.map(({ bucket }) => bucket?.request_units ?? null),
+    errors: slots.map(({ bucket }) => bucket?.server_errors ?? null),
+  };
+}
+
 /** The sentence over the charts: what the slots add up to, from the slots themselves. */
 export function trafficTotals(slots: TrafficSlot[], minutesPerSlot: number) {
   let requests = 0;

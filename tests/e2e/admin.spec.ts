@@ -755,3 +755,50 @@ test('a public list reads a month back from the store, or says that nothing is k
   await shown.getByTestId(`kept-window-${card}-now`).click();
   await expect(line).toContainText('a roll empties');
 });
+
+test('one window for every chart: the buttons over the tiles, on the traffic card and on the machines card are the same buttons', async ({
+  page,
+  request,
+}) => {
+  const wire = (await (
+    await request.get('http://localhost:5210/api/admin/machines?window=30d')
+  ).json()) as { history: { available: boolean } };
+  await openTheYard(page, '/?view=admin');
+  await expect(
+    page.getByTestId('machines-card').getByTestId('machines-container-line')
+  ).toBeVisible({
+    timeout: 60_000,
+  });
+  await expect(page.getByTestId('strip-caption')).toHaveText(
+    'The line under a tile is the last hour.'
+  );
+  // Every row of buttons offers the hour and the three windows, and a month is one of them.
+  for (const row of ['strip-window', 'machines-window', 'machines-card-window']) {
+    for (const option of ['1h', '24h', '7d', '30d']) {
+      await expect(page.getByTestId(`${row}-${option}`)).toHaveCount(1);
+    }
+  }
+  // Chosen on the machines card, pressed everywhere.
+  await page.getByTestId('machines-card-window-30d').click();
+  for (const row of ['strip-window', 'machines-window', 'machines-card-window']) {
+    await expect(page.getByTestId(`${row}-30d`)).toHaveAttribute('aria-pressed', 'true');
+  }
+  // The tiles do not go back to waiting because a chart was asked for a month.
+  await expect(page.getByTestId('tile-memory')).not.toHaveAttribute('data-tone', 'waiting');
+  await expect(page.getByTestId('strip-caption')).toContainText(
+    wire.history.available
+      ? 'The line under a tile is the last 30 days'
+      : 'The last 30 days is not kept here',
+    { timeout: 30_000 }
+  );
+  await expect(page.getByTestId('traffic-card')).toContainText(
+    wire.history.available ? 'in the last 30 days' : 'Last 30 days is not kept here',
+    { timeout: 30_000 }
+  );
+  // And back, from over the tiles.
+  await page.getByTestId('strip-window-1h').click();
+  await expect(page.getByTestId('machines-card-window-1h')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('strip-caption')).toHaveText(
+    'The line under a tile is the last hour.'
+  );
+});

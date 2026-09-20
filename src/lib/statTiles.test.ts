@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { sparkRuns, tilesFrom, type TileReadings, uptimeWords, visitorsOn } from './statTiles';
+import {
+  sparkCaption,
+  sparkRuns,
+  tilesFrom,
+  type TileReadings,
+  uptimeWords,
+  visitorsOn,
+} from './statTiles';
 
 const nothing: TileReadings = {
   health: null,
@@ -194,5 +201,14 @@ describe('the stat tiles', () => {
       detail: '74 requests in the last hour, slowest at 07:32',
       tone: 'warn',
     });
+  });
+
+  it('says what the lines are lines of, and that the number is still now', () => {
+    expect(sparkCaption('last hour', 'hour')).toBe('The line under a tile is the last hour.');
+    expect(sparkCaption('last 7 days', 'reading')).toContain('still the last hour');
+    expect(sparkCaption('last 7 days', 'not-kept')).toBe(
+      'The last 7 days is not kept here, so the lines are still the last hour.'
+    );
+    expect(sparkCaption('last 30 days', 'kept')).toContain('The number over it is still now.');
   });
 });

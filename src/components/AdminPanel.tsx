@@ -36,6 +36,7 @@ import {
   coverage,
   hourOfTraffic,
   type KeptBucket,
+  keptSparks,
   keptTraffic,
   MACHINE_CHART,
   MACHINE_WINDOWS,
@@ -67,6 +68,7 @@ import {
 import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
 import {
   QUESTIONS,
+  sparkCaption,
   sparkRuns,
   type StatTile,
   tilesFrom,
@@ -411,7 +413,12 @@ export function AdminPanel({
     setRowsServed(report.visitor_rows);
     setVisitorsToday(visitorsOn(report.days, new Date()));
   }, []);
-  const { machines, window: machineWindow, toolbar: windowToolbar } = useMachines();
+  const {
+    machines,
+    latest: latestMachines,
+    window: machineWindow,
+    toolbar: windowToolbar,
+  } = useMachines();
   const [health, setHealth] = useState<Fetched<Health>>(null);
   const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
   const [azure, setAzure] = useState<Fetched<AzureState>>(null);
@@ -551,8 +558,29 @@ export function AdminPanel({
   // The strip is made of what the cards below have already read, by the rules
   // in statTiles.ts; it asks the server for nothing of its own, so a tile and
   // the card it points at cannot disagree.
-  const seen = machines !== null && machines !== 'failed' ? machines : null;
+  const seen = latestMachines;
   const hour = seen === null ? null : hourSlots(seen);
+  // The lines under the tiles follow the window every chart follows, once the
+  // answer for that window has arrived and the store keeps it.
+  const keptHistory =
+    seen !== null &&
+    machineWindow !== '1h' &&
+    seen.history !== undefined &&
+    seen.history.window === machineWindow &&
+    seen.history.available
+      ? seen.history
+      : null;
+  const keptLines =
+    keptHistory === null || machineWindow === '1h'
+      ? null
+      : keptSparks(
+          timeline(
+            keptHistory.buckets,
+            machineWindow,
+            keptHistory.bucket_minutes,
+            new Date(keptHistory.as_of)
+          )
+        );
   const hourTotals = hour === null ? null : trafficTotals(hour, 1);
   const lastSample =
     seen !== null && seen.container.samples.length > 0
@@ -587,14 +615,16 @@ export function AdminPanel({
     sparks:
       seen === null
         ? undefined
-        : {
-            speed: hour?.map((slot) => slot.p95_ms),
-            memory: seen.container.samples.map((sample) => sample.working_set_mb),
-            charged: seen.document.available
-              ? seen.document.minutes.map((minute) => minute.request_units)
-              : undefined,
-            errors: hour?.map((slot) => slot.server_errors),
-          },
+        : keptLines !== null
+          ? { ...keptLines, charged: seen.document.available ? keptLines.charged : undefined }
+          : {
+              speed: hour?.map((slot) => slot.p95_ms),
+              memory: seen.container.samples.map((sample) => sample.working_set_mb),
+              charged: seen.document.available
+                ? seen.document.minutes.map((minute) => minute.request_units)
+                : undefined,
+              errors: hour?.map((slot) => slot.server_errors),
+            },
   });
   // #endregion tiles
 
@@ -636,7 +666,20 @@ export function AdminPanel({
         and where a number has no meaning on one side the page says so in words. Refreshes every 30
         seconds. Public on purpose; the reasoning is in the Best Practices menu.
       </About>
-      <StatStrip tiles={tiles} />
+      <StatStrip
+        tiles={tiles}
+        toolbar={windowToolbar('over the tiles', 'strip-window')}
+        caption={sparkCaption(
+          windowName(machineWindow).toLowerCase(),
+          machineWindow === '1h'
+            ? 'hour'
+            : keptLines !== null
+              ? 'kept'
+              : latestMachines?.history?.window === machineWindow
+                ? 'not-kept'
+                : 'reading'
+        )}
+      />
 
       <section className={styles.question} aria-labelledby="question-up" data-testid="question-up">
         <h2 className={styles.questionTitle} id="question-up">
@@ -780,7 +823,11 @@ export function AdminPanel({
         <h2 className={styles.questionTitle} id="question-fast">
           {QUESTIONS.fast}
         </h2>
-        <TrafficSection machines={machines} window={machineWindow} toolbar={windowToolbar} />
+        <TrafficSection
+          machines={machines}
+          window={machineWindow}
+          toolbar={windowToolbar('on the traffic card', 'machines-window')}
+        />
         <div className={styles.grid}>
           {/* #region telemetry-card */}
           {/* Application Insights, read back through the container's own identity
@@ -954,7 +1001,11 @@ export function AdminPanel({
         <h2 className={styles.questionTitle} id="question-cost">
           {QUESTIONS.cost}
         </h2>
-        <MachinesCard machines={machines} window={machineWindow} />
+        <MachinesCard
+          machines={machines}
+          window={machineWindow}
+          toolbar={windowToolbar('on the machines card', 'machines-card-window')}
+        />
         {/* #region experiment-card */}
         <article className={styles.wide} data-testid="experiment-card">
           <h2 className={styles.cardTitle}>The partition key, live</h2>
@@ -1271,7 +1322,15 @@ const TONE_WORD: Record<StatTile['tone'], string | null> = {
   waiting: 'waiting',
 };
 
-function StatStrip({ tiles }: { tiles: StatTile[] }) {
+function StatStrip({
+  tiles,
+  toolbar,
+  caption,
+}: {
+  tiles: StatTile[];
+  toolbar: ReactNode;
+  caption: string;
+}) {
   const toneClass: Record<StatTile['tone'], string> = {
     good: styles.tileGood,
     warn: styles.tileWarn,
@@ -1283,42 +1342,52 @@ function StatStrip({ tiles }: { tiles: StatTile[] }) {
     tiles.filter((tile) => tile.question === question)
   );
   return (
-    <ul className={styles.strip} aria-label="The site at a glance" data-testid="stat-strip">
-      {ordered.map((tile) => {
-        const runs = tile.spark === undefined ? [] : sparkRuns(tile.spark, 100, 24);
-        const word = TONE_WORD[tile.tone];
-        return (
-          <li key={tile.key} className={styles.stripItem}>
-            <button
-              type="button"
-              className={`${styles.tile} ${toneClass[tile.tone]}`}
-              data-testid={`tile-${tile.key}`}
-              data-tone={tile.tone}
-              onClick={() => document.getElementById(`question-${tile.question}`)?.scrollIntoView()}
-            >
-              <span className={styles.tileQuestion}>{QUESTIONS[tile.question]}</span>
-              <span className={styles.tileLabel}>{tile.label}</span>
-              <span className={styles.tileValue}>{tile.value}</span>
-              <span className={styles.tileDetail}>{tile.detail}</span>
-              {word !== null && <span className={styles.tileTone}>{word}</span>}
-              {runs.length > 0 && (
-                <svg
-                  className={styles.spark}
-                  viewBox="0 0 100 24"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  {runs.map((points) => (
-                    <polyline key={points} points={points} />
-                  ))}
-                </svg>
-              )}
-            </button>
-          </li>
-        );
-      })}
-    </ul>
+    <>
+      <div className={styles.stripHead}>
+        {toolbar}
+        <p className={styles.muted} data-testid="strip-caption">
+          {caption}
+        </p>
+      </div>
+      <ul className={styles.strip} aria-label="The site at a glance" data-testid="stat-strip">
+        {ordered.map((tile) => {
+          const runs = tile.spark === undefined ? [] : sparkRuns(tile.spark, 100, 24);
+          const word = TONE_WORD[tile.tone];
+          return (
+            <li key={tile.key} className={styles.stripItem}>
+              <button
+                type="button"
+                className={`${styles.tile} ${toneClass[tile.tone]}`}
+                data-testid={`tile-${tile.key}`}
+                data-tone={tile.tone}
+                onClick={() =>
+                  document.getElementById(`question-${tile.question}`)?.scrollIntoView()
+                }
+              >
+                <span className={styles.tileQuestion}>{QUESTIONS[tile.question]}</span>
+                <span className={styles.tileLabel}>{tile.label}</span>
+                <span className={styles.tileValue}>{tile.value}</span>
+                <span className={styles.tileDetail}>{tile.detail}</span>
+                {word !== null && <span className={styles.tileTone}>{word}</span>}
+                {runs.length > 0 && (
+                  <svg
+                    className={styles.spark}
+                    viewBox="0 0 100 24"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    {runs.map((points) => (
+                      <polyline key={points} points={points} />
+                    ))}
+                  </svg>
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
 // #endregion stat-strip
@@ -2849,10 +2918,15 @@ function KeptWindow({ machines, window: kept }: { machines: Machines; window: Ma
  */
 function useMachines(): {
   machines: Fetched<Machines>;
+  latest: Machines | null;
   window: MachineWindow;
-  toolbar: ReactNode;
+  toolbar: (where: string, testPrefix: string) => ReactNode;
 } {
   const [machines, setMachines] = useState<Fetched<Machines>>(null);
+  // The last answer that arrived, which a change of window does not take
+  // away: the tiles are made of it, and eight tiles going back to "waiting"
+  // because somebody asked a chart for a week would be the page flinching.
+  const [latest, setLatest] = useState<Machines | null>(null);
   const [window_, setWindow] = useState<MachineWindow>('1h');
 
   useEffect(() => {
@@ -2863,7 +2937,9 @@ function useMachines(): {
           r.ok ? (r.json() as Promise<Machines>) : Promise.reject(new Error(String(r.status)))
         )
         .then((v) => {
-          if (live) setMachines(v);
+          if (!live) return;
+          setMachines(v);
+          setLatest(v);
         })
         .catch(() => {
           if (live) setMachines('failed');
@@ -2878,8 +2954,13 @@ function useMachines(): {
     };
   }, [window_]);
 
-  const toolbar = (
-    <p className={styles.statusRow} role="group" aria-label="Window">
+  // One window, and a row of buttons wherever a chart is: over the tiles, on
+  // the traffic card and on the machines card, which sit under different
+  // questions and a long scroll apart. Every row is the same state, so
+  // pressing one presses all three (ADR: The Admin tab, as a product, the
+  // addendum on one window for every chart).
+  const toolbar = (where: string, testPrefix: string) => (
+    <p className={styles.statusRow} role="group" aria-label={`Window for every chart, ${where}`}>
       {MACHINE_WINDOWS.map((option) => (
         <button
           key={option}
@@ -2894,7 +2975,7 @@ function useMachines(): {
             setWindow(option);
             setMachines(null);
           }}
-          data-testid={`machines-window-${option}`}
+          data-testid={`${testPrefix}-${option}`}
         >
           {windowName(option)}
         </button>
@@ -2902,7 +2983,7 @@ function useMachines(): {
     </p>
   );
 
-  return { machines, window: window_, toolbar };
+  return { machines, latest, window: window_, toolbar };
 }
 // #endregion machines-read
 
@@ -2932,14 +3013,17 @@ function TrafficSection({
 function MachinesCard({
   machines,
   window: window_,
+  toolbar,
 }: {
   machines: Fetched<Machines>;
   window: MachineWindow;
+  toolbar: ReactNode;
 }) {
   if (machines === null || machines === 'failed') {
     return (
       <article className={styles.wide} data-testid="machines-card">
         <h2 className={styles.cardTitle}>What the machines are doing</h2>
+        {toolbar}
         {machines === null ? (
           <p className={styles.muted}>Loading…</p>
         ) : (
@@ -2950,15 +3034,17 @@ function MachinesCard({
       </article>
     );
   }
-  return <MachinesBody machines={machines} window={window_} />;
+  return <MachinesBody machines={machines} window={window_} toolbar={toolbar} />;
 }
 
 function MachinesBody({
   machines,
   window: window_,
+  toolbar,
 }: {
   machines: Machines;
   window: MachineWindow;
+  toolbar: ReactNode;
 }) {
   const samples = machines.container.samples;
   const latest = samples.length > 0 ? samples[samples.length - 1] : null;
@@ -2984,8 +3070,10 @@ function MachinesBody({
         a minute at a time, kept in Azure Cosmos DB by each site for thirty-one days, so they
         survive a roll and show one.
       </About>
+      {toolbar}
       <p className={styles.muted} data-testid="machines-window-line">
-        Showing {windowName(window_).toLowerCase()}, the window chosen on the traffic card above.
+        Showing {windowName(window_).toLowerCase()}. One window for every chart on this tab: the
+        buttons here, on the traffic card and over the tiles are the same buttons.
       </p>
       {window_ !== '1h' && <KeptWindow machines={machines} window={window_} />}
 

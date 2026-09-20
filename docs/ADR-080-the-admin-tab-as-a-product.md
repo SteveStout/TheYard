@@ -166,6 +166,39 @@ threshold did not move. A ninety-fifth over the ten requests of a quiet minute i
 slowest request, which makes the tile quick to go amber after a roll, and that is left as it is on
 purpose: it went amber over something real the first time it was looked at.
 
+## Addendum, 2026-09-20 (1.0.0.165): one window for every chart
+
+Steve, with the tab open: "make sure on all graphs you can choose between 30 day, 7 days and 24 hours,
+we should go back 30 day min on all charts."
+
+Every chart of something over time already could: the three traffic charts and the three machine
+charts read the last hour, 24 hours, 7 days or 30 days from the minutes each site keeps for thirty-one
+days, and the visitors graph reads 24 hours, 7 days or 30 days from counters kept for thirty-five.
+What he found is that the page did not say so where he was looking. 1.0.0.161 had filed the traffic
+card under "is it fast" and the machines card under "is it costing anything", a long scroll apart,
+and left the buttons on the first with a sentence on the second saying to go and find them. And the
+lines under the tiles were the last hour and nothing else.
+
+**One window, and its buttons wherever a chart is:** over the tiles, on the traffic card and on the
+machines card. They are one piece of state, so pressing a row presses all three, and the browser
+suite holds that. The lines under the tiles follow it: over a kept window they are drawn from the
+same buckets the charts are, one value a bucket, with a gap where the store holds nothing, by
+`keptSparks`, which is tested on its own. A sentence beside the buttons says what the lines are lines
+of, and that the number over a line is still now, because a line with no axis says nothing about its
+own width. A change of window no longer sends the tiles back to "waiting": they are made of the last
+answer that arrived.
+
+**The chosen button looks chosen.** Every row of window buttons on the tab marked its choice with
+`aria-pressed` and with nothing a sighted reader could see, which a picture of the new row taken by
+the precheck showed at once. The pressed button is now filled with the accent colour, from the token
+sheet, on every row on the tab.
+
+**What is not on the window, and why.** The proof's bars are one run and not a stretch of time. The
+visitors graph keeps its own three buttons, because its shortest window is a day and its card is the
+operator's desk. And thirty days is what the page offers, not yet what the store holds: the minutes
+began to be kept at 1.0.0.159, this morning, so a month drawn today is a gap with one day at the end
+of it, which is what the charts draw and what the card's sentence counts.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.

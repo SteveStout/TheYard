@@ -248,6 +248,27 @@ export function visitorsOn(days: { day: string; humans: number }[], now: Date): 
   return days.find((entry) => entry.day === today)?.humans ?? 0;
 }
 
+/**
+ * What the lines under the tiles are lines of, in words, because a line with
+ * no axis says nothing about its own width. The number over a line is always
+ * now; only the line follows the window.
+ */
+export function sparkCaption(
+  stretch: string,
+  state: 'hour' | 'reading' | 'kept' | 'not-kept'
+): string {
+  switch (state) {
+    case 'hour':
+      return 'The line under a tile is the last hour.';
+    case 'reading':
+      return `Reading the ${stretch}; the lines are still the last hour.`;
+    case 'not-kept':
+      return `The ${stretch} is not kept here, so the lines are still the last hour.`;
+    case 'kept':
+      return `The line under a tile is the ${stretch}, from the minutes this site keeps. The number over it is still now.`;
+  }
+}
+
 // #region spark
 /**
  * The line under a tile, as the point lists of an SVG polyline: one list per

@@ -6,6 +6,7 @@ import {
   coverage,
   hourOfTraffic,
   type KeptBucket,
+  keptSparks,
   keptTraffic,
   MACHINE_CHART,
   MACHINE_WINDOWS,
@@ -210,6 +211,18 @@ describe('kept windows', () => {
       slowest_p95_ms: 60,
       slowest_at: 'a',
     });
+  });
+
+  it('hands the tiles a kept window as four lines, with a gap where the store holds nothing', () => {
+    const lines = keptSparks([
+      { at: 'a', bucket: bucket('2026-09-20T11:55:00Z', { p95_ms: 60, server_errors: 2 }) },
+      { at: 'b', bucket: null },
+      { at: 'c', bucket: bucket('2026-09-20T12:05:00Z', { p95_ms: null, working_set_mb: 410 }) },
+    ]);
+    expect(lines.speed).toEqual([60, null, null]);
+    expect(lines.memory).toEqual([300, null, 410]);
+    expect(lines.charged).toEqual([10, null, 10]);
+    expect(lines.errors).toEqual([2, null, 0]);
   });
 
   it('draws the proof as pairs of bars against the longest median, and a zero as a sliver', () => {

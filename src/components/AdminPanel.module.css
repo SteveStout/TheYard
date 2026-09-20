@@ -34,6 +34,15 @@
   color: var(--color-accent);
 }
 
+/* The window a row of buttons is on. Until 1.0.0.165 the chosen button was told
+   to a screen reader and to nobody else. */
+.back[aria-pressed='true'],
+.back[aria-pressed='true']:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
 .blurb {
   margin: 0;
   color: var(--color-text-muted);
@@ -431,6 +440,18 @@
 }
 
 /* #region stat-strip */
+/* The window every chart follows, and what the lines under the tiles are of. */
+.stripHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.stripHead > p {
+  margin: 0;
+}
+
 /*
  * The strip of tiles (ADR: The Admin tab, as a product). Everything here is
  * the token sheet's: the surfaces, the three status colours and their soft
