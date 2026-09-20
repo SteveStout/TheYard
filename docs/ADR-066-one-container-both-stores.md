@@ -329,6 +329,15 @@ set below the size of its own managed heap; two fit, with the heaps at about 130
 One process still runs both stores and still picks one per request. What changed is when the
 second one pays for its catalogue: at the first proof run after a roll rather than at the roll.
 
+## Addendum, 2026-09-20, shipped as 1.0.0.158: the second catalogue is given back
+
+"Two catalogues" is still what this costs while both are in use, and no longer what it costs for
+good. A store the site does not serve loads its catalogue on the first request that names it, and
+since 1.0.0.158 gives it back when nothing has asked that store for anything in
+`Store:ReleaseIdleMinutes`, ten on the plan both sites share (ADR: One plan, two sites). The default
+store is never let go, a load in flight is never dropped, and the setting defaults to zero, which is
+never, so a developer's machine and the suite behave as they always have.
+
 ## Files
 
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a backend, the backends, the request's choice, and the context factory.

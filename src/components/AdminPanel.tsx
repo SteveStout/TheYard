@@ -108,6 +108,8 @@ type Machines = {
     uptime_seconds: number;
     every_seconds: number;
     samples: MachineSample[];
+    /** Which catalogues the process is holding; absent on a build older than 1.0.0.158. */
+    catalogues?: { store: string; serves: boolean; loaded: boolean }[];
   };
   relational: { store: string; available: boolean; note: string | null; rows: ResourceStatRow[] };
   document: {
@@ -2296,6 +2298,22 @@ function MachinesCard() {
             {latest.gen2_collections} full ones since this container started. Peak working set in
             the window: {peak} MB.
           </p>
+          {machines.container.catalogues && machines.container.catalogues.length > 0 && (
+            // Most of that memory is catalogues, a hundred thousand vehicles a
+            // store, so the card says which ones the process is holding. The
+            // store this site does not serve is loaded on demand and let go
+            // when nobody has asked for it in a while (ADR: One plan, two sites).
+            <p className={styles.muted} data-testid="machines-catalogues">
+              Catalogues in memory:{' '}
+              {machines.container.catalogues
+                .map(
+                  (catalogue) =>
+                    `${catalogue.store}, ${catalogue.serves ? 'which this site serves' : 'loaded on demand'}, ${catalogue.loaded ? 'held' : 'not held'}`
+                )
+                .join('; ')}
+              .
+            </p>
+          )}
           <MachineChart
             testId="machine-chart-container"
             label="The container over the sampled window: memory as a share of its limit, and processor share"

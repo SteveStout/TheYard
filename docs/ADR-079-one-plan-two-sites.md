@@ -230,6 +230,29 @@ with one command. `az container start` on both groups and the two old lines back
 `edge/_redirects` puts the site exactly where it was on 19 September, inside five minutes, at any
 point in that week. Deleting them afterwards is a separate act, on the owner's word.
 
+## Addendum, 2026-09-20, shipped as 1.0.0.158: a catalogue nobody is using is let go
+
+The proof section above ends on a defect of this move's own making. Turning `Store:WarmOthers` off
+made each site start with one catalogue, and the first proof run after a roll loaded the other and
+kept it until the next roll: managed heaps of 265 to 295 MB a site, on the machine that had measured
+as paging at exactly that. The memory was being held for a card somebody pressed once.
+
+A bigger plan would have hidden it for $12.41 a month. The fix is in the application.
+`InventoryService` can let a loaded catalogue go, and `CatalogueKeeper`, a hosted service, asks it to
+once a minute for every store the site does not serve: let go if nothing has touched it for
+`Store:ReleaseIdleMinutes`, which is ten on the plan and zero, meaning never, everywhere else. The
+store a site serves is never let go. A load in flight is never dropped. And the order inside one
+request is what makes it safe: the pipeline touches the catalogue before it checks for warmth, under
+the same lock the release takes, so a request either finds the catalogue and keeps it from being
+idle, or finds a cold store and awaits the load, the way a cold store's first request always has.
+There is no order in which a request is handed a catalogue that is about to disappear. After a
+release the collector is asked once for a full compacting collection, because memory the runtime
+could reuse is not memory the machine has back, and the machine having it back is the point.
+
+The machines card says which catalogues the process is holding, so the effect is on the page rather
+than in this paragraph: run the proof, watch the second store read "held", and ten quiet minutes
+later watch it read "not held" and the working set come down.
+
 ## Files
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): what runs, with Front Door and the origin lock behind a parameter that stays off.
@@ -237,6 +260,7 @@ point in that week. Deleting them afterwards is a separate act, on the owner's w
 - [`scripts/deploy-infra.ps1`](https://github.com/SteveStout/TheYard/blob/main/scripts/deploy-infra.ps1): describing the infrastructure to Azure again without changing what runs, in incremental mode.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two container groups, stopped and kept, which is the way back.
 - [`api/TheYard.Api/IdentityTokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/IdentityTokens.cs): a managed identity token from whichever door the host has.
+- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs) and [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a catalogue that can be let go, and the keeper that asks.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the site asking Azure about itself, as a container group or as a web app on a shared plan.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml): a roll sets the image and the three values the repository does not hold.
 - [`api/TheYard.Tests/AzureSelfTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AzureSelfTests.cs) and [`api/TheYard.Tests/AppServiceTemplateTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AppServiceTemplateTests.cs): both doors, both shapes, and the template held to the files it took over from.
@@ -246,4 +270,7 @@ point in that week. Deleting them afterwards is a separate act, on the owner's w
 ```
 
 ```live path=api/TheYard.Api/IdentityTokens.cs region=identity-token
+```
+
+```live path=api/TheYard.Application/InventoryService.cs region=let-go
 ```

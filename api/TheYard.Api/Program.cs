@@ -482,6 +482,14 @@ builder.Services.AddHostedService(services => services.GetRequiredService<Activi
 builder.Services.AddSingleton(new MachineSampler(MachineSamples));
 builder.Services.AddHostedService(services => services.GetRequiredService<MachineSampler>());
 // #endregion machine-sampler-wiring
+// The catalogue of the store this site does not serve is given back once
+// nobody has asked for it in a while. Zero minutes, the default, is never;
+// the plan both sites share sets ten (ADR: One plan, two sites).
+builder.Services.AddSingleton(services => new CatalogueKeeper(
+    backends,
+    TimeSpan.FromMinutes(builder.Configuration.GetValue("Store:ReleaseIdleMinutes", 0)),
+    services.GetRequiredService<ILogger<CatalogueKeeper>>()));
+builder.Services.AddHostedService(services => services.GetRequiredService<CatalogueKeeper>());
 var adminKey = new AdminKey(builder.Configuration["Admin:Key"]);
 builder.Services.AddSingleton(adminKey);
 // Whether the per-visitor rows (the visitor table and the kept log) are
@@ -2212,6 +2220,14 @@ app.MapGet("/api/admin/machines", async (MachineSampler sampler, CancellationTok
             uptime_seconds = (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
             every_seconds = (int)MachineSampler.Every.TotalSeconds,
             samples = sampler.Snapshot(),
+            // Which catalogues this process is holding right now, because a
+            // hundred thousand vehicles is most of what the memory above is.
+            catalogues = backends.All.Select(backend => new
+            {
+                store = backend.Name,
+                serves = ReferenceEquals(backend, backends.Default),
+                loaded = backend.Inventory.IsWarm,
+            }),
         },
         relational = new
         {

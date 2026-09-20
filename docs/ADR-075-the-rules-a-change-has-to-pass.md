@@ -34,6 +34,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The container samples its own memory and processor share, and each store's reading is the one that store actually keeps | ADR: What the machines are doing | MachinesTests |
 | An identity token is asked for at whichever door the host has, and a web app's card claims no restart count it was never given | ADR: One plan, two sites | AzureSelfTests |
 | Every setting a container group carried is a setting the two sites carry, and nothing deploys a template in complete mode | ADR: One plan, two sites | AppServiceTemplateTests |
+| A catalogue a site does not serve is let go when nobody has asked for it in a while, never while it is in use or loading, and the one a site serves never | ADR: One plan, two sites | WarmthTests |
 | Every record opens with its title, says what became of it, and ends with its Files section | This record | RecordShapeTests |
 | Every rule in this table names a test that exists, and every record it cites exists | This record | RuleTableTests |
 | Code shown in a document is read from the build at request time, never pasted | ADR: Live code samples | LiveSamplesTests, LiveSampleCoverageTests |
