@@ -253,6 +253,37 @@ The machines card says which catalogues the process is holding, so the effect is
 than in this paragraph: run the proof, watch the second store read "held", and ten quiet minutes
 later watch it read "not held" and the working set come down.
 
+## Addendum, 2026-09-20, shipped as 1.0.0.162: the release, measured on the plan
+
+The addendum above ends by saying where to watch it happen. This is it happening, read off both
+public sites by the machines endpoint, no cache, on 1.0.0.160.
+
+The setting had to reach the sites first. A roll carries the image and the settings the workflow
+writes, and `Store__ReleaseIdleMinutes` is the template's, so after 1.0.0.158 was live
+`scripts/deploy-infra.ps1 -Apply` was run again, in incremental mode as always, and both sites read
+back `Store__ReleaseIdleMinutes 10` beside `Store__WarmOthers false`.
+
+Then the site's own proof was run on each site, which asks both stores for everything and so loads
+the catalogue the site does not serve, and nothing was asked of that store again.
+
+| Read at (CDT) | SQL site: working set, managed heap, catalogues held | Cosmos DB site: working set, managed heap, catalogues held |
+| --- | --- | --- |
+| 07:03:06, before the proof | 353.0 MB, 145.7 MB, its own | 367.5 MB, 138.9 MB, its own |
+| 07:04:15, the proofs ended a second before | 484.7 MB, 274.4 MB, both | 454.8 MB, 274.3 MB, both |
+| 07:15:44, eleven and a half quiet minutes later | 256.2 MB, 114.9 MB, its own | 243.3 MB, 115.0 MB, its own |
+
+Each site gave back between 210 and 230 MB of working set and 160 MB of managed heap without a restart, and
+landed lower than it started, because the compacting collection the keeper asks for after a release
+also collected what each site's own start had left behind. Both sites together now sit near 500 MB of
+a machine that had measured as paging with four catalogues in it.
+
+What it costs is on the same log, and it is paid by whoever asks first after a quiet stretch. The
+proof's first registration against the store a site does not serve took 6.9 s on the SQL site and
+10.9 s on the Cosmos DB site, against about half a second on the store each site serves: that is the
+catalogue being read again. A visitor never pays it, because a visitor is served by the store the
+site serves, and that one is never let go. The proof's other seven paths read as they did in the
+proof section above.
+
 ## Files
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): what runs, with Front Door and the origin lock behind a parameter that stays off.
