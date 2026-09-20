@@ -200,3 +200,77 @@ test each for the kept log, the remembered key and the proof button. Every
 one ran in the gate that shipped it, on both stores where a store is
 involved.
 
+## Addendum, 2026-09-20 (1.0.0.164): the public cards, kept for a month
+
+Steve, looking at the Admin tab the day it got its tiles: "all of these logs should be a minimum of
+30 days even if we have to store them on our side, would SQL or Cosmos DB be better for logs? Due to
+the lack and need of foreign keys for logs, I'm thinking all log data should be in Cosmos DB", and
+then "and we have an option to filter between 7 days, 30 days and 24 hours".
+
+**The question had been answered once, and the answer holds.** The decision above put the log in the
+document store for the reasons he gives: nothing joins to a log line, its kinds have different
+shapes, a write is a create, and retention is a number on the container. What the question found is
+what that decision left out. Requests, errors and warnings were kept, behind the operator's key. The
+four lists a visitor can see, recent errors, the log as the console got it, the SQL the application
+ran and what the document store ran, were still rings in the process's memory, and the tab's own
+words for them were "empties on every deploy". On the day the site rolled nine times, that is what
+they did.
+
+**Decision: every entry a public ring takes is also kept, in the same container, as the entry the
+ring serves.** Four more kinds under the same spine, `ring-errors`, `ring-log`, `ring-sql` and
+`ring-store`. Each document carries the entry as the JSON the ring's own endpoint answers with, and
+nothing else: the spine's private fields, the visitor, the network, the message and the detail, are
+empty on these kinds. The same collector takes them, so there is still one channel, one drain a
+minute and one transactional batch a day partition, and no request waits on the store.
+
+| Option | What it buys | What it costs |
+| --- | --- | --- |
+| Tables in Azure SQL Database | One store for everything | The reasons above, unchanged, and a Basic database is 2 GB and metered; a log is the one kind of data here that only grows |
+| A new container for the public entries | A clean line between the keyed log and the public one | A second definition, a second pair of containers to create, a second writer, for documents with the same partition, the same index and the same life cycle |
+| **The same container, new kinds, the entry kept whole** | No new resource, the writer and its tests as they are, and a card draws a month with the table it already has because the rows are the same shape | The keyed log has to say which kinds are its own, which it now does by naming them |
+| Widening the keyed events to carry a statement or an operation | One shape | A statement has parameters and an operation has a partition and a charge; the spine would grow a nullable column a kind, which is the table the first decision turned down |
+
+**Why this can be public when the kept log is keyed.** Because it is the same thing that was already
+public. An error entry is a type and its frames and never a message. A statement has parameter names
+and types and no field a value could be put in. An operation describes its partition and does not
+name it. Those rules live in the types the rings are made of, and a kept entry is one of those types
+written out. The keyed log keeps more, the message, the token, the network, and stays behind the key.
+The at-sign rule is the keyed log's and does not apply here on purpose: a parameter is called `@p0`,
+and cleaning it would make a kept statement different from the one the ring showed.
+
+**Thirty-five days, by the document.** The container keeps the keyed log for three years. A ring
+entry carries its own `ttl` of thirty-five days, the figure the activity counters use, because the
+widest window a card offers is thirty and a document has to outlive the window that reads it. It is
+one constant, `KeptRings.RetentionSeconds`, and a test holds it at thirty days or more.
+
+**Read back by `GET /api/admin/kept`**, which takes a card, one of errors, logs, sql or store, and a
+window, 24h, 7d or 30d, both picked from a fixed list, and answers with the newest two hundred
+entries, how many the window holds in all, and whether anything is kept here. It is cached for half a
+minute a card and window, because a public endpoint that runs a query in the store on every call is
+an invitation. Each of the four cards has four buttons, Now, Last 24 hours, Last 7 days and Last 30
+days, and a sentence under them that says which of three things an empty table means: nothing is
+kept on this machine, nothing happened in the window, or the answer has not arrived. Now is the ring,
+as it always was. The tiles and the timing card go on reading the rings whatever a card is showing.
+
+**What it costs.** Nothing on the bill: the account is on the free tier's thousand request units a
+second, and a batch of a hundred small creates into a container that indexes five paths is a few
+hundred units once a minute on a busy minute. The log ring takes a line for every statement and every
+operation, so those are kept twice, once as a line and once as what they were, which is what the two
+cards show today and is left alone. Timing has no window of its own because it does not need one: the
+traffic card's day, week and month are drawn from the minutes each site keeps
+(ADR: What the machines are doing).
+
+### Files, this addendum
+
+- [`api/TheYard.Application/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Logs.cs): the four kinds, the retention, and the port's new read.
+- [`api/TheYard.Api/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Logs.cs): the writer the rings hand to, and the reader behind the endpoint.
+- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs) and [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): each ring hands on what it takes.
+- [`api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs): the ring read, and the keyed query naming its own kinds.
+- [`src/lib/keptCards.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/keptCards.ts): the windows, the sentence, and the stamp, React-free.
+- [`api/TheYard.Tests/KeptRingTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/KeptRingTests.cs): the rings, the writer, the reader, the endpoint, and the store on the gate's Cosmos DB pass.
+
+```live path=api/TheYard.Application/Logs.cs region=kept-rings
+```
+
+```live path=api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs region=ring
+```

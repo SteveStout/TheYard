@@ -51,6 +51,19 @@ import {
   trafficTotals,
   windowName,
 } from '../lib/machineChart';
+import {
+  CARD_WINDOWS,
+  type CardWindow,
+  cardUrl,
+  cardWindowName,
+  everyCardOn,
+  type KeptAnswer,
+  type KeptCard,
+  keptLine,
+  type KeptMeta,
+  metaOf,
+  stampFor,
+} from '../lib/keptCards';
 import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
 import {
   QUESTIONS,
@@ -411,6 +424,33 @@ export function AdminPanel({
   const [experiment, setExperiment] = useState<Fetched<Experiment>>(null);
   const [proof, setProof] = useState<Fetched<Proof>>(null);
   const [tick, setTick] = useState(0);
+  // #region kept-cards
+  // The four public lists over a window (ADR: Logs that outlive the container,
+  // the addendum on the cards). The rings above are always read, because the
+  // tiles and the timing are made of them; a card showing a day, a week or a
+  // month reads the same entries back from the store beside them.
+  const [cardWindows, setCardWindows] = useState<Record<KeptCard, CardWindow>>(
+    everyCardOn<CardWindow>('now')
+  );
+  const [keptMeta, setKeptMeta] = useState<Record<KeptCard, KeptMeta | null>>(
+    everyCardOn<KeptMeta | null>(null)
+  );
+  const [keptErrors, setKeptErrors] = useState<Fetched<ErrorEntry[]>>(null);
+  const [keptLogs, setKeptLogs] = useState<Fetched<LogEntry[]>>(null);
+  const [keptSql, setKeptSql] = useState<Fetched<SqlStatement[]>>(null);
+  const [keptStore, setKeptStore] = useState<Fetched<StoreOperation[]>>(null);
+  const chooseWindow = (card: KeptCard, chosen: CardWindow) => {
+    if (chosen === cardWindows[card]) return;
+    // The change of window is the event, so the card goes back to reading
+    // here and not inside the effect, as the machines window does.
+    setCardWindows((held) => ({ ...held, [card]: chosen }));
+    setKeptMeta((held) => ({ ...held, [card]: null }));
+    if (card === 'errors') setKeptErrors(null);
+    if (card === 'logs') setKeptLogs(null);
+    if (card === 'sql') setKeptSql(null);
+    if (card === 'store') setKeptStore(null);
+  };
+  // #endregion kept-cards
 
   useEffect(() => {
     const id = window.setInterval(() => setTick((t) => t + 1), REFRESH_MS);
@@ -446,6 +486,33 @@ export function AdminPanel({
       live = false;
     };
   }, [tick]);
+
+  useEffect(() => {
+    let live = true;
+    const read = <T,>(card: KeptCard, set: (rows: Fetched<T[]>) => void) => {
+      const chosen = cardWindows[card];
+      if (chosen === 'now') return;
+      void fetch(cardUrl(card, chosen, ''))
+        .then((r) =>
+          r.ok ? (r.json() as Promise<KeptAnswer<T>>) : Promise.reject(new Error(String(r.status)))
+        )
+        .then((answer) => {
+          if (!live) return;
+          set(answer.entries);
+          setKeptMeta((held) => ({ ...held, [card]: metaOf(answer, chosen) }));
+        })
+        .catch(() => {
+          if (live) set('failed');
+        });
+    };
+    read<ErrorEntry>('errors', setKeptErrors);
+    read<LogEntry>('logs', setKeptLogs);
+    read<SqlStatement>('sql', setKeptSql);
+    read<StoreOperation>('store', setKeptStore);
+    return () => {
+      live = false;
+    };
+  }, [tick, cardWindows]);
 
   // #region run-proof
   // Start a run, then read the card every three seconds until it is no longer
@@ -530,6 +597,18 @@ export function AdminPanel({
           },
   });
   // #endregion tiles
+
+  const errorRows = cardWindows.errors === 'now' ? errors : keptErrors;
+  const logRows = cardWindows.logs === 'now' ? logs : keptLogs;
+  const sqlRows = cardWindows.sql === 'now' ? sql : keptSql;
+  const picker = (card: KeptCard) => (
+    <CardWindowPicker
+      card={card}
+      value={cardWindows[card]}
+      meta={keptMeta[card]}
+      onChoose={(chosen) => chooseWindow(card, chosen)}
+    />
+  );
 
   const pill = (ok: boolean) =>
     ok ? `${styles.pill} ${styles.ok}` : `${styles.pill} ${styles.bad}`;
@@ -948,7 +1027,12 @@ export function AdminPanel({
         store !== 'failed' &&
         (store.store === 'Azure Cosmos DB' ||
           (metrics !== null && metrics !== 'failed' && documentStore(metrics) !== null)) ? (
-          <StoreCard log={store} />
+          <StoreCard
+            log={store}
+            rows={cardWindows.store === 'now' ? store.operations : keptStore}
+            window={cardWindows.store}
+            picker={picker('store')}
+          />
         ) : null}
         {store === null ||
         store === 'failed' ||
@@ -968,15 +1052,18 @@ export function AdminPanel({
               or watching would be all there was to see. The buffer holds the last 200 in this
               container&rsquo;s memory and empties on every deploy.
             </About>
-            {sql === null ? (
+            {picker('sql')}
+            {sqlRows === null ? (
               <p className={styles.muted}>Loading…</p>
-            ) : sql === 'failed' ? (
+            ) : sqlRows === 'failed' ? (
               failed('the SQL log')
-            ) : sql.length === 0 ? (
-              <p className={styles.muted}>
-                Nothing recorded yet. The catalogue is read once at startup and cached, so an idle
-                container runs no SQL at all.
-              </p>
+            ) : sqlRows.length === 0 ? (
+              cardWindows.sql !== 'now' ? null : (
+                <p className={styles.muted}>
+                  Nothing recorded yet. The catalogue is read once at startup and cached, so an idle
+                  container runs no SQL at all.
+                </p>
+              )
             ) : (
               <div
                 className={styles.tableWrap}
@@ -995,20 +1082,22 @@ export function AdminPanel({
                     </tr>
                   </thead>
                   <tbody>
-                    {sql.slice(0, 60).map((statement, index) => (
-                      <tr key={index}>
-                        <td className={styles.mono}>
-                          {new Date(statement.at).toLocaleTimeString()}
-                        </td>
-                        <td className={styles.mono}>{statement.duration_ms} ms</td>
-                        <td className={styles.mono}>{statement.request ?? 'startup'}</td>
-                        <td>
-                          <pre className={styles.sql}>{statement.text}</pre>
-                          <span className={styles.muted}>{statement.outcome}</span>
-                        </td>
-                        <td className={styles.mono}>{describeParameters(statement.parameters)}</td>
-                      </tr>
-                    ))}
+                    {sqlRows
+                      .slice(0, cardWindows.sql === 'now' ? 60 : 200)
+                      .map((statement, index) => (
+                        <tr key={index}>
+                          <td className={styles.mono}>{stampFor(cardWindows.sql, statement.at)}</td>
+                          <td className={styles.mono}>{statement.duration_ms} ms</td>
+                          <td className={styles.mono}>{statement.request ?? 'startup'}</td>
+                          <td>
+                            <pre className={styles.sql}>{statement.text}</pre>
+                            <span className={styles.muted}>{statement.outcome}</span>
+                          </td>
+                          <td className={styles.mono}>
+                            {describeParameters(statement.parameters)}
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -1029,18 +1118,21 @@ export function AdminPanel({
         <div className={styles.grid}>
           <article className={`${styles.card} ${styles.wideCard}`} data-testid="errors-card">
             <h2 className={styles.cardTitle}>Recent errors</h2>
-            {errors === null ? (
+            {picker('errors')}
+            {errorRows === null ? (
               <p className={styles.muted}>Loading…</p>
-            ) : errors === 'failed' ? (
+            ) : errorRows === 'failed' ? (
               failed('the error list')
-            ) : errors.length === 0 ? (
-              <p className={styles.muted}>
-                None recorded since the container started, from the server or the browser. The
-                buffer holds the last 50 and resets on every deploy; Application Insights keeps the
-                durable copy (ADR: Telemetry). A server error carries its stack, file and line
-                beside it; the exception&rsquo;s message is deliberately not here, because a message
-                is where a framework writes a connection detail and this page is public.
-              </p>
+            ) : errorRows.length === 0 ? (
+              cardWindows.errors !== 'now' ? null : (
+                <p className={styles.muted}>
+                  None recorded since the container started, from the server or the browser. The
+                  buffer holds the last 50 and resets on every deploy; Application Insights keeps
+                  the durable copy (ADR: Telemetry). A server error carries its stack, file and line
+                  beside it; the exception&rsquo;s message is deliberately not here, because a
+                  message is where a framework writes a connection detail and this page is public.
+                </p>
+              )
             ) : (
               <div
                 className={styles.tableWrap}
@@ -1059,9 +1151,9 @@ export function AdminPanel({
                     </tr>
                   </thead>
                   <tbody>
-                    {errors.map((entry, index) => (
+                    {errorRows.map((entry, index) => (
                       <tr key={index}>
-                        <td className={styles.mono}>{new Date(entry.at).toLocaleTimeString()}</td>
+                        <td className={styles.mono}>{stampFor(cardWindows.errors, entry.at)}</td>
                         <td className={styles.mono}>
                           {entry.status === 0 ? 'browser' : entry.status}
                         </td>
@@ -1098,12 +1190,15 @@ export function AdminPanel({
             because a database driver writes the server name, the login name and the caller&rsquo;s
             address into one.
           </About>
-          {logs === null ? (
+          {picker('logs')}
+          {logRows === null ? (
             <p className={styles.muted}>Loading…</p>
-          ) : logs === 'failed' ? (
+          ) : logRows === 'failed' ? (
             failed('the log')
-          ) : logs.length === 0 ? (
-            <p className={styles.muted}>Nothing recorded since the container started.</p>
+          ) : logRows.length === 0 ? (
+            cardWindows.logs !== 'now' ? null : (
+              <p className={styles.muted}>Nothing recorded since the container started.</p>
+            )
           ) : (
             <div
               className={styles.tableWrap}
@@ -1121,9 +1216,9 @@ export function AdminPanel({
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.slice(0, 80).map((entry, index) => (
+                  {logRows.slice(0, cardWindows.logs === 'now' ? 80 : 200).map((entry, index) => (
                     <tr key={index}>
-                      <td className={styles.mono}>{new Date(entry.at).toLocaleTimeString()}</td>
+                      <td className={styles.mono}>{stampFor(cardWindows.logs, entry.at)}</td>
                       <td className={styles.mono}>{entry.level}</td>
                       <td className={styles.mono}>{entry.category}</td>
                       <td>
@@ -1227,6 +1322,47 @@ function StatStrip({ tiles }: { tiles: StatTile[] }) {
   );
 }
 // #endregion stat-strip
+
+// #region card-window-picker
+/**
+ * Now, a day, a week or a month, on one of the four public lists (ADR: Logs
+ * that outlive the container, the addendum on the cards), and the sentence
+ * that says what the table under it is showing.
+ */
+function CardWindowPicker({
+  card,
+  value,
+  meta,
+  onChoose,
+}: {
+  card: KeptCard;
+  value: CardWindow;
+  meta: KeptMeta | null;
+  onChoose: (chosen: CardWindow) => void;
+}) {
+  return (
+    <>
+      <p className={styles.statusRow} role="group" aria-label={`Window for the ${card} card`}>
+        {CARD_WINDOWS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={styles.back}
+            aria-pressed={option === value}
+            onClick={() => onChoose(option)}
+            data-testid={`kept-window-${card}-${option}`}
+          >
+            {cardWindowName(option)}
+          </button>
+        ))}
+      </p>
+      <p className={styles.muted} data-testid={`kept-line-${card}`}>
+        {keptLine(value, meta)}
+      </p>
+    </>
+  );
+}
+// #endregion card-window-picker
 
 /** What a card is and how to read it, folded away: the numbers come first, and the paragraph is one tap off. */
 function About({ children }: { children: ReactNode }) {
@@ -3284,7 +3420,17 @@ function PagesCard({ onReport }: { onReport: (seen: { checked: number; up: numbe
 
 // #region store-card
 /** The document store's counterpart of the SQL card: every operation with its partition and its charge (ADR: What the store is actually doing). */
-function StoreCard({ log }: { log: StoreLog }) {
+function StoreCard({
+  log,
+  rows,
+  window: window_,
+  picker,
+}: {
+  log: StoreLog;
+  rows: Fetched<StoreOperation[]>;
+  window: CardWindow;
+  picker: ReactNode;
+}) {
   return (
     <article className={styles.wide} data-testid="store-card">
       <h2 className={styles.cardTitle}>What the document store ran</h2>
@@ -3298,8 +3444,17 @@ function StoreCard({ log }: { log: StoreLog }) {
         check are left out. The buffer holds the last 200 in this container&rsquo;s memory and
         empties on every deploy.
       </About>
-      {log.operations.length === 0 ? (
-        <p className={styles.muted}>Nothing recorded yet.</p>
+      {picker}
+      {rows === null ? (
+        <p className={styles.muted}>Loading…</p>
+      ) : rows === 'failed' ? (
+        <p className={styles.muted} data-testid="card-failed">
+          Could not read the store log on the last try; the next try is in 30 seconds.
+        </p>
+      ) : rows.length === 0 ? (
+        window_ !== 'now' ? null : (
+          <p className={styles.muted}>Nothing recorded yet.</p>
+        )
       ) : (
         <div
           className={styles.tableWrap}
@@ -3322,9 +3477,9 @@ function StoreCard({ log }: { log: StoreLog }) {
               </tr>
             </thead>
             <tbody>
-              {log.operations.slice(0, 60).map((operation, index) => (
+              {rows.slice(0, window_ === 'now' ? 60 : 200).map((operation, index) => (
                 <tr key={index}>
-                  <td className={styles.mono}>{new Date(operation.at).toLocaleTimeString()}</td>
+                  <td className={styles.mono}>{stampFor(window_, operation.at)}</td>
                   <td className={styles.mono}>{operation.duration_ms} ms</td>
                   <td className={styles.mono}>{operation.request_charge} RU</td>
                   <td className={styles.mono}>{operation.request ?? 'startup'}</td>

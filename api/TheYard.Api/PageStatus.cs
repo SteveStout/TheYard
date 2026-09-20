@@ -109,6 +109,8 @@ public static class ServedAddresses
             // doing, the addendum on the cast).
             new("/api/admin/machines", "What the machines are doing", "api"),
             new("/api/admin/metrics", "Timing", "api"),
+            // A card's window is a query in the store behind a public address, which is two ways to be down.
+            new("/api/admin/kept?card=errors&window=24h", "Recent errors, the last 24 hours as kept", "api"),
             new("/api/admin/pages", "This check itself", "api"),
             new("/api/docs/resume", "Steven's resume (PDF)", "file"),
             new("/api/docs/bicep", "Infrastructure (Bicep)", "document"),

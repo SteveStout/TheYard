@@ -87,6 +87,9 @@ public class LogTests
 
         public Task<IReadOnlyList<LogCount>> CountAsync(DateTimeOffset since, CancellationToken cancellation) =>
             Task.FromResult<IReadOnlyList<LogCount>>(Written.GroupBy(e => e.Kind).Select(g => new LogCount(g.Key, g.Count())).ToList());
+
+        public Task<KeptRingPage> RingAsync(string kind, string site, DateTimeOffset since, int take, CancellationToken cancellation) =>
+            Task.FromResult(new KeptRingPage([], 0));
     }
 
     [Fact]

@@ -305,6 +305,18 @@ string? siteUrl = builder.Configuration["Site:Url"];
 var logCollector = new LogCollector(logStore, builder.Configuration.GetValue("Logs:DrainSeconds", LogCollector.DefaultIntervalSeconds));
 builder.Services.AddSingleton(logCollector);
 builder.Services.AddHostedService(_ => logCollector);
+// #region kept-rings-wiring
+// The four public lists on the Admin tab are rings, and a roll empties them.
+// Each entry a ring takes is also offered to the collector above, as the JSON
+// the ring's own endpoint serves, so the cards can read a day, a week or a
+// month back from the document store (ADR: Logs that outlive the container, the addendum on the cards). The
+// two error rings are made further down and are wired where they are made.
+var keptRings = new KeptRingWriter(logCollector, backends.Default.Key);
+sqlLog.Kept = statement => keptRings.Keep(KeptRings.Sql, statement.At, statement);
+storeLog.Kept = operation => keptRings.Keep(KeptRings.Store, operation.At, operation);
+logLog.Kept = line => keptRings.Keep(KeptRings.Log, line.At, line);
+builder.Services.AddSingleton(new KeptRingReader(logCollector, backends.Default.Key, backends.Named("cosmos")?.Name ?? backends.Default.Name));
+// #endregion kept-rings-wiring
 builder.Logging.AddProvider(new CollectorLoggerProvider(logCollector, () =>
 {
     var http = httpContextAccessor.HttpContext;
@@ -337,6 +349,7 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
     "/api/admin/pages",
     "/api/admin/machines",
     "/api/admin/logs/kept",
+    "/api/admin/kept",
     "/api/admin/reset-links",
     "/api/errors",
     "/api/health",
@@ -1357,6 +1370,8 @@ var errorLog = new ErrorRingBuffer(50);
 // separate ring means a flood of reports can only push out other reports.
 var browserErrors = new ErrorRingBuffer(50);
 // #endregion two-rings
+errorLog.Kept = entry => keptRings.Keep(KeptRings.Errors, entry.At, entry);
+browserErrors.Kept = entry => keptRings.Keep(KeptRings.Errors, entry.At, entry);
 // Identifiers, not secrets: the identity's client id and this group's ARM path.
 var azureSelf = new AzureSelf(
     builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
@@ -1541,6 +1556,18 @@ app.MapGet("/api/admin/store", () => Results.Json(new
 
 // The raw log lines, newest first, exactly as the console got them.
 app.MapGet("/api/admin/logs", () => Results.Json(logLog.Snapshot()));
+
+// #region kept-rings-endpoint
+// The same four lists over a day, a week or a month, read back from the
+// document store (ADR: Logs that outlive the container, the addendum on the cards). card is one of errors,
+// logs, sql or store and window one of 24h, 7d or 30d; both pick from a fixed
+// list and neither reaches the store as anything but a parameter. Public,
+// because every entry is what the ring beside it already serves in public.
+app.MapGet("/api/admin/kept", async (string? card, string? window, KeptRingReader reader, CancellationToken cancellation) =>
+    await reader.ReadAsync(card, window, DateTimeOffset.UtcNow, cancellation) is { } answer
+        ? Results.Json(answer)
+        : Results.Problem(detail: "card is one of errors, logs, sql or store, and window is one of 24h, 7d or 30d.", statusCode: 400, title: "The card or the window could not be read"));
+// #endregion kept-rings-endpoint
 
 // Timing, computed on read from the two rings. The window is whatever the
 // rings currently hold, which the page states rather than implying.

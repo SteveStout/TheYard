@@ -697,3 +697,61 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
   await about.locator('summary').click();
   await expect(about).toContainText('The three machines under this site');
 });
+
+test('a public list reads a month back from the store, or says that nothing is kept here', async ({
+  page,
+  request,
+}) => {
+  // Something to keep: a registration, which is a statement on one store and an operation on the other.
+  const email = `kept-canary-${Date.now()}@example.com`;
+  const registered = await request.post('http://localhost:5210/api/auth/register', {
+    data: { email, password: 'correct horse battery' },
+  });
+  expect(registered.status(), await registered.text()).toBe(200);
+  const store = (await (await request.get('http://localhost:5210/api/admin/store')).json()) as {
+    store: string;
+  };
+  const card = store.store === 'Azure Cosmos DB' ? 'store' : 'sql';
+  const url = `http://localhost:5210/api/admin/kept?card=${card}&window=30d`;
+  const first = (await (await request.get(url)).json()) as { kept: { available: boolean } };
+  // The collector writes every two seconds here, so the entry is waited for
+  // and not assumed. The SQLite run keeps nothing and the card says so.
+  if (first.kept.available) {
+    await expect
+      .poll(
+        async () =>
+          JSON.stringify(
+            ((await (await request.get(url)).json()) as { entries: unknown[] }).entries
+          ),
+        { timeout: 30_000 }
+      )
+      .toContain('POST /api/auth/register');
+  }
+  // No window and no card but the ones it names.
+  expect(
+    (await request.get('http://localhost:5210/api/admin/kept?card=secrets&window=30d')).status()
+  ).toBe(400);
+
+  await openTheYard(page, '/?view=admin');
+  const shown = page.getByTestId(`${card}-card`);
+  const line = shown.getByTestId(`kept-line-${card}`);
+  await expect(line).toContainText('a roll empties');
+  await shown.getByTestId(`kept-window-${card}-30d`).click();
+  await expect(shown.getByTestId(`kept-window-${card}-30d`)).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  if (first.kept.available) {
+    await expect(line).toContainText(
+      /The last 30 days, kept in Azure Cosmos DB for 35 days: (all|the newest) \d+/,
+      { timeout: 30_000 }
+    );
+    await expect(shown).toContainText('POST /api/auth/register');
+  } else {
+    await expect(line).toContainText('Not kept here: no document store is configured');
+  }
+  // What is kept is what the ring serves: the address is nowhere in it.
+  await expect(page.locator('body')).not.toContainText('kept-canary');
+  await shown.getByTestId(`kept-window-${card}-now`).click();
+  await expect(line).toContainText('a roll empties');
+});

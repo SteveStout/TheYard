@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using TheYard.Application;
 using TheYard.Data;
@@ -296,6 +297,12 @@ public sealed class LogDocument
     public string Detail { get; set; } = "";
     public string TraceId { get; set; } = "";
 
+    /// <summary>A kept ring entry, as the ring serves it (ADR: Logs that outlive the container, the addendum on the cards); absent on the three kinds the keyed log reads, which is how its query tells them apart.</summary>
+    public JsonElement? Entry { get; set; }
+
+    /// <summary>The store's own field: seconds this document lives, where that is shorter than the container's three years. Absent, the container decides.</summary>
+    public int? Ttl { get; set; }
+
     public static LogDocument From(LogEvent e, string day) => new()
     {
         Id = $"{e.At.UtcTicks}:{Guid.NewGuid():N}",
@@ -314,7 +321,21 @@ public sealed class LogDocument
         Message = e.Message,
         Detail = e.Detail,
         TraceId = e.TraceId,
+        Entry = Parsed(e.Entry),
+        Ttl = e.TtlSeconds,
     };
+
+    /// <summary>The ring's JSON as a value the serializer writes as it stands; the document it was parsed in is let go.</summary>
+    private static JsonElement? Parsed(string? json)
+    {
+        if (json is null)
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
+    }
 
     public LogEvent ToEvent() => new(
         DateTimeOffset.Parse(At, null, System.Globalization.DateTimeStyles.RoundtripKind),

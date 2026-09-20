@@ -33,6 +33,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The sweep checks every document and every drawing the catalogue serves, and its own requests are not counted as traffic | ADR: Every page, checked at every roll | PageStatusTests |
 | The container samples its own memory and processor share, and each store's reading is the one that store actually keeps | ADR: What the machines are doing | MachinesTests |
 | The request ring folds into minutes, each with its own median and its own errors, and the hour and the month are drawn from the one shape | ADR: The Admin tab, as a product | MachinesTests |
+| A public ring hands on what it takes and not what it refuses, a kept entry is the entry the ring serves with the spine's private fields empty, it outlives the widest window that reads it, and the keyed log shows none of them | ADR: Logs that outlive the container | KeptRingTests |
 | A kept minute leaves out a figure nobody read, a window is folded into the buckets it is drawn in, and the store's grouped query answers what the folding does | ADR: What the machines are doing | MachineHistoryTests |
 | An identity token is asked for at whichever door the host has, and a web app's card claims no restart count it was never given | ADR: One plan, two sites | AzureSelfTests |
 | Every setting a container group carried is a setting the two sites carry, and nothing deploys a template in complete mode | ADR: One plan, two sites | AppServiceTemplateTests |

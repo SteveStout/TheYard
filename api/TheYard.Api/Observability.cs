@@ -68,16 +68,22 @@ public sealed class ErrorRingBuffer(int capacity)
     private readonly object _gate = new();
     private readonly Queue<ErrorEntry> _entries = new();
 
+    /// <summary>Where an entry also goes so a roll does not end it (ADR: Logs that outlive the container, the addendum on the cards); unset, nowhere.</summary>
+    public Action<ErrorEntry>? Kept { get; set; }
+
     public void Record(string path, int status, string message, IReadOnlyList<string>? frames = null)
     {
+        var entry = new ErrorEntry(DateTimeOffset.UtcNow, path, status, message, frames ?? []);
         lock (_gate)
         {
-            _entries.Enqueue(new ErrorEntry(DateTimeOffset.UtcNow, path, status, message, frames ?? []));
+            _entries.Enqueue(entry);
             while (_entries.Count > capacity)
             {
                 _entries.Dequeue();
             }
         }
+
+        Kept?.Invoke(entry);
     }
 
     public IReadOnlyList<ErrorEntry> Snapshot()

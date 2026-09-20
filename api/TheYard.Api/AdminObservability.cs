@@ -45,6 +45,9 @@ public sealed class SqlRingBuffer(int capacity) : ISqlLog
             // (ADR: What the machines are doing).
             || request.EndsWith("/api/admin/machines", StringComparison.Ordinal));
 
+    /// <summary>Where a statement also goes so a roll does not end it (ADR: Logs that outlive the container, the addendum on the cards); unset, nowhere.</summary>
+    public Action<SqlStatement>? Kept { get; set; }
+
     public void Record(SqlStatement statement)
     {
         if (SelfObservation(statement.Request))
@@ -60,6 +63,8 @@ public sealed class SqlRingBuffer(int capacity) : ISqlLog
                 _entries.Dequeue();
             }
         }
+
+        Kept?.Invoke(statement);
     }
 
     public IReadOnlyList<SqlStatement> Snapshot()
@@ -81,6 +86,9 @@ public sealed class LogRingBuffer(int capacity)
     private readonly object _gate = new();
     private readonly Queue<LogEntry> _entries = new();
 
+    /// <summary>Where a line also goes so a roll does not end it (ADR: Logs that outlive the container, the addendum on the cards); unset, nowhere.</summary>
+    public Action<LogEntry>? Kept { get; set; }
+
     public void Record(LogEntry entry)
     {
         lock (_gate)
@@ -91,6 +99,8 @@ public sealed class LogRingBuffer(int capacity)
                 _entries.Dequeue();
             }
         }
+
+        Kept?.Invoke(entry);
     }
 
     public IReadOnlyList<LogEntry> Snapshot()
@@ -299,6 +309,9 @@ public sealed class StoreRingBuffer(int capacity) : IStoreLog
             // open Admin tab does not push a visitor's bid out of it.
             || request.EndsWith("/api/admin/experiment", StringComparison.Ordinal));
 
+    /// <summary>Where an operation also goes so a roll does not end it (ADR: Logs that outlive the container, the addendum on the cards); unset, nowhere.</summary>
+    public Action<StoreOperation>? Kept { get; set; }
+
     public void Record(StoreOperation operation)
     {
         if (SelfObservation(operation.Request))
@@ -314,6 +327,8 @@ public sealed class StoreRingBuffer(int capacity) : IStoreLog
                 _entries.Dequeue();
             }
         }
+
+        Kept?.Invoke(operation);
     }
 
     public IReadOnlyList<StoreOperation> Snapshot()

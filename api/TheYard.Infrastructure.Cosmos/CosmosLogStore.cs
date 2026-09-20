@@ -125,6 +125,15 @@ public sealed class CosmosLogStore(CosmosStore store) : ILogStore
             text += " AND c.kind = @kind";
             definition = definition.WithParameter("@kind", query.Kind);
         }
+        else
+        {
+            // The container also holds the kept rings (ADR: Logs that outlive
+            // the container, the addendum on the cards), which are not this log's to show. The kinds are
+            // constants of this code, never a caller's text, and the kind is
+            // indexed, so naming them costs less than asking which documents
+            // lack an entry.
+            text += " AND c.kind IN ('" + string.Join("', '", LogEvent.Kinds) + "')";
+        }
         if (query.Status is int status)
         {
             text += " AND c.status = @status";
@@ -171,6 +180,61 @@ public sealed class CosmosLogStore(CosmosStore store) : ILogStore
 
         return counts.OrderBy(count => count.Kind, StringComparer.Ordinal).ToList();
     }
+
+    // #region ring
+    /// <summary>
+    /// One kept ring, newest first, and how many the window holds. The kind,
+    /// the site and the two bounds are parameters; the entry comes back as the
+    /// JSON it was written as, so the endpoint hands it to the page untouched.
+    /// </summary>
+    public async Task<KeptRingPage> RingAsync(string kind, string site, DateTimeOffset since, int take, CancellationToken cancellation)
+    {
+        if (!(await AvailabilityAsync(cancellation)).Available)
+        {
+            return new KeptRingPage([], 0);
+        }
+
+        const string Where = " FROM c WHERE c.day >= @day AND c.at >= @at AND c.kind = @kind AND c.store = @site";
+        QueryDefinition With(string text) => new QueryDefinition(text)
+            .WithParameter("@day", ActivityFolding.DayOf(since))
+            .WithParameter("@at", since.ToUniversalTime().ToString("O"))
+            .WithParameter("@kind", kind)
+            .WithParameter("@site", site);
+
+        int most = Math.Clamp(take, 1, 500);
+        var entries = new List<string>();
+        using (var feed = _container.GetItemQueryIterator<RingRow>(
+            With("SELECT TOP @take c.entry, c.at" + Where + " ORDER BY c.at DESC").WithParameter("@take", most),
+            requestOptions: new QueryRequestOptions { MaxItemCount = most }))
+        {
+            while (feed.HasMoreResults && entries.Count < most)
+            {
+                var page = await feed.ReadNextAsync(cancellation);
+                Count(page.RequestCharge);
+                entries.AddRange(page.Where(row => row.Entry is not null).Select(row => row.Entry!.Value.GetRawText()));
+            }
+        }
+
+        int total = 0;
+        using (var feed = _container.GetItemQueryIterator<int>(With("SELECT VALUE COUNT(1)" + Where)))
+        {
+            while (feed.HasMoreResults)
+            {
+                var page = await feed.ReadNextAsync(cancellation);
+                Count(page.RequestCharge);
+                total += page.Sum();
+            }
+        }
+
+        return new KeptRingPage(entries.Take(most).ToList(), total);
+    }
+
+    private sealed class RingRow
+    {
+        public System.Text.Json.JsonElement? Entry { get; set; }
+        public string At { get; set; } = "";
+    }
+    // #endregion ring
 
     /// <summary>The SDK's definition is immutable in its text; the parameters are carried over onto the final text.</summary>
     private static QueryDefinition Rebuild(QueryDefinition built, string text)
