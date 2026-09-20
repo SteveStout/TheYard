@@ -41,6 +41,11 @@ jobs:
       RG: RG-THEYARD-SS
       ORIGIN: http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
       SITE: https://theyard.stevenstout.biz
+      # The web app taking this site over, on the plan both sites share, and its
+      # own address (ADR: One plan, two sites). Rolled beside the container
+      # group until the edge points at it.
+      APP: APP-THEYARD-SS-ZMNETJ67BN5H2
+      APP_ORIGIN: https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net
       # The Application Insights component this deploy reads the connection
       # string from. The name is not a secret; the string it returns is.
       AI_NAME: appi-theyard-ss
@@ -304,3 +309,74 @@ jobs:
             echo "- site: $SITE"
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion verify
+
+      # #region roll-web-app
+      # The same image onto the web app that is taking this site over
+      # (ADR: One plan, two sites). A web app's settings live on the web app, so
+      # a roll is two calls: the three values that are not in the repository,
+      # then the image. Both answer with -o none, because the first would
+      # otherwise print every setting it holds into this log.
+      - name: Roll the web app
+        env:
+          YARD_AUTH_SIGNING_KEY: ${{ secrets.YARD_AUTH_SIGNING_KEY }}
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+        run: |
+          CONN=$(az resource show -g "$RG" -n "$AI_NAME" \
+            --resource-type "Microsoft.Insights/components" \
+            --query "properties.ConnectionString" -o tsv 2>/dev/null || true)
+          if [ -n "$CONN" ]; then
+            echo "::add-mask::$CONN"
+          fi
+          # Written by python from the environment, so no secret is ever part of
+          # a command line. A value this job does not hold is left out, and the
+          # web app keeps whatever it had: the template's placeholder on a new
+          # site, which the app reads as "none", or the last roll's value.
+          CONN="$CONN" python3 - "$RUNNER_TEMP/settings.json" <<'PY'
+          import json, os, sys
+          wanted = {
+              "APPLICATIONINSIGHTS_CONNECTION_STRING": os.environ.get("CONN", ""),
+              "Auth__SigningKey": os.environ.get("YARD_AUTH_SIGNING_KEY", ""),
+              "Admin__Key": os.environ.get("ADMIN_KEY", ""),
+          }
+          held = [{"name": name, "value": value, "slotSetting": False} for name, value in wanted.items() if value]
+          for name, value in wanted.items():
+              if not value:
+                  print(f"::warning::{name} is not held by this job; the web app keeps the value it has")
+          json.dump(held, open(sys.argv[1], "w", encoding="utf-8"))
+          print(f"{len(held)} of {len(wanted)} values go to the web app (values masked)")
+          PY
+          if [ "$(cat "$RUNNER_TEMP/settings.json")" != "[]" ]; then
+            az webapp config appsettings set -g "$RG" -n "$APP" --settings "@$RUNNER_TEMP/settings.json" -o none
+          fi
+          rm -f "$RUNNER_TEMP/settings.json"
+          az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
+          az webapp show -g "$RG" -n "$APP" --query "{state:state, image:siteConfig.linuxFxVersion, host:defaultHostName}" -o json
+
+      # The web app answers on its own azurewebsites.net name before any
+      # visitor is sent to it. Ten minutes rather than five: the plan is one
+      # shared processor, and the process reads a hundred thousand vehicles
+      # into memory before it answers.
+      - name: Verify the web app
+        run: |
+          for i in $(seq 1 60); do
+            sleep 10
+            body=$(curl -fsS --max-time 10 "$APP_ORIGIN/api/version" || true)
+            if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
+              echo "the web app serves $APP_VERSION after $((i * 10))s: $body"
+              break
+            fi
+            if [[ "$i" -eq 60 ]]; then
+              echo "the web app never served $APP_VERSION (last answer: $body)"
+              exit 1
+            fi
+          done
+          curl -fsS --max-time 30 "$APP_ORIGIN/readyz"
+          echo
+          store=$(curl -fsS --max-time 30 "$APP_ORIGIN/api/health" || true)
+          case "$store" in
+            *"Azure SQL Database"*) echo "the web app is on Azure SQL Database" ;;
+            *) echo "::warning::the web app is not serving from Azure SQL Database" ;;
+          esac
+          curl -sS --max-time 40 "$APP_ORIGIN/api/admin/azure" || true
+          echo
+      # #endregion roll-web-app

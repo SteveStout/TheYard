@@ -279,11 +279,20 @@ const COMPARED_ROUTES: { route: string; label: string }[] = [
 type AzureState = {
   available: boolean;
   reason?: string;
+  /** Which kind of machine answered: a container group, or a web app on a shared plan (ADR: One plan, two sites). */
+  host?: 'container-instances' | 'app-service';
   group_state?: string;
   container_state?: string;
   restart_count?: number;
   image?: string;
   events?: AzureEvent[];
+  availability?: string;
+  always_on?: boolean;
+  health_check_path?: string | null;
+  plan_name?: string | null;
+  plan_sku?: string | null;
+  plan_sites?: number | null;
+  region?: string | null;
   fetched_at?: string;
 };
 
@@ -585,6 +594,50 @@ export function AdminPanel({
             <p className={styles.muted}>Loading…</p>
           ) : azure === 'failed' ? (
             failed("Azure's view")
+          ) : azure.available && azure.host === 'app-service' ? (
+            // A web app on a shared plan reports a different set of facts from a
+            // container group, and the card shows the set it has: the site's
+            // state, the image it was told to run, and the plan both sites share
+            // (ADR: One plan, two sites).
+            <>
+              <ul className={styles.checkList}>
+                <li className={styles.checkRow}>
+                  <span className={pill(azure.group_state === 'Running')}>{azure.group_state}</span>
+                  <span>
+                    web app{azure.region ? `, ${azure.region}` : ''}, availability{' '}
+                    {azure.availability?.toLowerCase()}
+                  </span>
+                </li>
+                <li className={styles.checkRow}>
+                  <span className={styles.mono}>{azure.plan_name ?? 'plan unread'}</span>
+                  <span className={styles.muted}>
+                    {azure.plan_sku ?? 'size unread'}
+                    {typeof azure.plan_sites === 'number'
+                      ? `, ${azure.plan_sites} site${azure.plan_sites === 1 ? '' : 's'} sharing it`
+                      : ''}
+                  </span>
+                </li>
+                <li className={styles.checkRow}>
+                  <span className={styles.mono}>{azure.image?.split('/').pop()}</span>
+                  <span className={styles.muted}>image Azure reports</span>
+                </li>
+                <li className={styles.checkRow}>
+                  <span className={pill(azure.always_on === true)}>
+                    {azure.always_on ? 'Always On' : 'Always On is off'}
+                  </span>
+                  <span className={styles.muted}>
+                    {azure.health_check_path
+                      ? `the platform asks ${azure.health_check_path} and replaces an instance that stops answering`
+                      : 'no health check path is set'}
+                  </span>
+                </li>
+              </ul>
+              <p className={styles.muted}>
+                App Service keeps no restart count and no container events where this site's
+                identity can read them, so neither is shown. Uptime on the health card is the
+                restart story here.
+              </p>
+            </>
           ) : azure.available ? (
             <ul className={styles.checkList}>
               <li className={styles.checkRow}>

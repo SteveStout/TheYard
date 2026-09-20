@@ -103,6 +103,7 @@ public static class DocsCatalog
         ["adr-openapi"] = "docs/ADR-076-the-api-describes-itself.md",
         ["adr-page-status"] = "docs/ADR-077-every-page-checked.md",
         ["adr-machines"] = "docs/ADR-078-what-the-machines-are-doing.md",
+        ["adr-one-plan"] = "docs/ADR-079-one-plan-two-sites.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["built-with-ai"] = "docs/BUILT-WITH-AI.md",

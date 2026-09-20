@@ -91,6 +91,7 @@ export type DocKey =
   | 'adrOpenApi'
   | 'adrPageStatus'
   | 'adrMachines'
+  | 'adrOnePlan'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'infrastructureOverview'
@@ -735,6 +736,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '078',
   },
+  adrOnePlan: {
+    title: 'ADR: One plan, two sites',
+    menuLabel: 'ADR: One plan, two sites',
+    url: '/api/docs/adr-one-plan',
+    kind: 'adr',
+    number: '079',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -995,6 +1003,7 @@ export const MENUS: Record<
       { key: 'adrOpenApi' },
       { key: 'adrPageStatus' },
       { key: 'adrMachines' },
+      { key: 'adrOnePlan' },
     ],
   },
   // #endregion records-menu

@@ -105,14 +105,9 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled)
         }
         try
         {
-            using var tokenReq = new HttpRequestMessage(HttpMethod.Get,
-                "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01" +
-                "&resource=https%3A%2F%2Fapi.applicationinsights.io&client_id=" + clientId);
-            tokenReq.Headers.Add("Metadata", "true");
-            using var tokenResp = await Http.SendAsync(tokenReq);
-            tokenResp.EnsureSuccessStatusCode();
-            using var tokenJson = JsonDocument.Parse(await tokenResp.Content.ReadAsStringAsync());
-            string token = tokenJson.RootElement.GetProperty("access_token").GetString()!;
+            // Whichever door this host has: the metadata address on Container
+            // Instances, the named endpoint on App Service (ADR: One plan, two sites).
+            string token = await IdentityTokens.AcquireAsync(Http, "https://api.applicationinsights.io", clientId);
 
             using var req = new HttpRequestMessage(HttpMethod.Post,
                 $"https://api.applicationinsights.io/v1/apps/{appId}/query")
