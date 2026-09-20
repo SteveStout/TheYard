@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  afterColdStart,
+  COLD_START_MINUTES,
   sparkCaption,
   sparkRuns,
   tilesFrom,
@@ -210,5 +212,36 @@ describe('the stat tiles', () => {
       'The last 7 days is not kept here, so the lines are still the last hour.'
     );
     expect(sparkCaption('last 30 days', 'kept')).toContain('The number over it is still now.');
+  });
+
+  it('does not hold the minutes of a cold start against the hour, and says it left them out', () => {
+    const slots = ['12:30', '12:31', '12:32', '12:33', '12:40'].map((time) => ({
+      at: `2026-09-20T${time}:00Z`,
+    }));
+    const { warm, left_out } = afterColdStart(slots, new Date('2026-09-20T12:30:40Z'));
+    expect(left_out.map((slot) => slot.at.slice(11, 16))).toEqual(['12:30', '12:31', '12:32']);
+    expect(warm.map((slot) => slot.at.slice(11, 16))).toEqual(['12:33', '12:40']);
+    expect(COLD_START_MINUTES).toBe(3);
+    // A start nobody knows the time of leaves nothing out.
+    expect(afterColdStart(slots, null).warm).toHaveLength(5);
+    expect(
+      tile(
+        {
+          ...quietDay,
+          traffic: {
+            requests: 74,
+            slowest_p95_ms: 320,
+            server_errors: 0,
+            client_errors: 0,
+            slowest_label: '07:41',
+            cold_start_label: '07:30',
+          },
+        },
+        'speed'
+      )
+    ).toMatchObject({
+      detail: '74 requests in the last hour, slowest at 07:41; the start at 07:30 is left out',
+      tone: 'good',
+    });
   });
 });

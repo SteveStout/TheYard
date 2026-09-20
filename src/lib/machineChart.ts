@@ -199,6 +199,27 @@ export function axisLabel(at: string, window: MachineWindow): string {
 }
 
 /** How much of a window the store actually holds, for the sentence under the buttons. */
+// #region from-first-reading
+/**
+ * Where a kept window's charts start. The window is asked for whole, and what
+ * it holds is counted against the whole of it, but the drawing starts at the
+ * first reading the store has: on the day the minutes began to be kept, a
+ * month drawn whole was one sliver at the right-hand edge of an empty frame,
+ * and read as a chart that was broken (ADR: The Admin tab, as a product, the
+ * addendum on where a window starts). Only the emptiness before the record
+ * began is left off. A gap after the first reading is the site not reporting,
+ * and stays a gap. A record younger than a dozen slots keeps a dozen, so the
+ * first hour is a short line at the right of a small frame and not a dot.
+ */
+export const LEAST_SLOTS = 12;
+
+export function fromFirstReading<T extends { bucket: KeptBucket | null }>(slots: T[]): T[] {
+  const first = slots.findIndex((slot) => slot.bucket !== null);
+  if (first < 0) return slots;
+  return slots.slice(Math.min(first, Math.max(0, slots.length - LEAST_SLOTS)));
+}
+// #endregion from-first-reading
+
 export function coverage(slots: { bucket: KeptBucket | null }[]): { held: number; of: number } {
   return { held: slots.filter((slot) => slot.bucket !== null).length, of: slots.length };
 }

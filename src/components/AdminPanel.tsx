@@ -34,6 +34,7 @@ import {
   clockLabel,
   type ChartSeries,
   coverage,
+  fromFirstReading,
   hourOfTraffic,
   type KeptBucket,
   keptSparks,
@@ -68,6 +69,7 @@ import {
 import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
 import {
   QUESTIONS,
+  afterColdStart,
   sparkCaption,
   sparkRuns,
   type StatTile,
@@ -574,17 +576,41 @@ export function AdminPanel({
     keptHistory === null || machineWindow === '1h'
       ? null
       : keptSparks(
-          timeline(
-            keptHistory.buckets,
-            machineWindow,
-            keptHistory.bucket_minutes,
-            new Date(keptHistory.as_of)
+          fromFirstReading(
+            timeline(
+              keptHistory.buckets,
+              machineWindow,
+              keptHistory.bucket_minutes,
+              new Date(keptHistory.as_of)
+            )
           )
         );
-  const hourTotals = hour === null ? null : trafficTotals(hour, 1);
   const lastSample =
     seen !== null && seen.container.samples.length > 0
       ? seen.container.samples[seen.container.samples.length - 1]
+      : null;
+  // The minutes of a cold start are not held against the hour (statTiles.ts,
+  // the cold-start region). When the process started is its newest sample's
+  // time less its uptime, both from the one answer, so nothing here reads a clock.
+  const startedAt =
+    seen === null || lastSample === null
+      ? null
+      : new Date(new Date(lastSample.at).getTime() - seen.container.uptime_seconds * 1000);
+  const warmed = hour === null ? null : afterColdStart(hour, startedAt);
+  // Every request and every error in the hour is still counted; only the
+  // slowest ninety-fifth is read from the warm minutes.
+  const warmTotals = warmed === null ? null : trafficTotals(warmed.warm, 1);
+  const hourTotals =
+    hour === null || warmTotals === null
+      ? null
+      : {
+          ...trafficTotals(hour, 1),
+          slowest_p95_ms: warmTotals.slowest_p95_ms,
+          slowest_at: warmTotals.slowest_at,
+        };
+  const coldStart =
+    warmed !== null && warmed.left_out.some((slot) => (slot.requests ?? 0) > 0)
+      ? clockLabel(warmed.left_out[0].at)
       : null;
   const tiles = tilesFrom({
     health: health !== null && health !== 'failed' ? health : null,
@@ -596,6 +622,7 @@ export function AdminPanel({
             ...hourTotals,
             slowest_label:
               hourTotals.slowest_at === null ? null : clockLabel(hourTotals.slowest_at),
+            cold_start_label: coldStart,
           },
     memory:
       seen === null || lastSample === null
@@ -2694,6 +2721,16 @@ function MachineChart({
  * every window. A build with no traffic block, or a window nothing is kept
  * for, keeps its sentence and draws nothing, rather than pretending to a line.
  */
+/** The day and the time a kept window's drawing starts at, for the sentence that says so. */
+function startLabel(at: string): string {
+  return new Date(at).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 /** The hour the request ring holds, as slots; the traffic card and the tiles over the page both read this one. */
 function hourSlots(machines: Machines): TrafficSlot[] | null {
   if (machines.traffic === undefined) return null;
@@ -2714,10 +2751,11 @@ function TrafficCard({
   toolbar: ReactNode;
 }) {
   const history = machines.history;
-  const keptSlots =
+  const wholeSlots =
     window_ !== '1h' && history !== undefined && history.window === window_ && history.available
       ? timeline(history.buckets, window_, history.bucket_minutes, new Date(history.as_of))
       : null;
+  const keptSlots = wholeSlots === null ? null : fromFirstReading(wholeSlots);
   const slots: TrafficSlot[] | null =
     window_ === '1h' ? hourSlots(machines) : keptSlots === null ? null : keptTraffic(keptSlots);
   const minutesPerSlot = window_ === '1h' ? 1 : (history?.bucket_minutes ?? 1);
@@ -2753,6 +2791,10 @@ function TrafficCard({
             {totals.slowest_p95_ms === null
               ? '.'
               : `, and the slowest stretch answered its ninety-fifth in ${totals.slowest_p95_ms} ms.`}
+            {keptSlots !== null &&
+              wholeSlots !== null &&
+              keptSlots.length < wholeSlots.length &&
+              ` The record is younger than the window, so the charts start at its first reading, ${startLabel(keptSlots[0].at)}.`}
           </p>
           <MachineChart
             testId="traffic-chart-requests"
@@ -2812,8 +2854,10 @@ function KeptWindow({ machines, window: kept }: { machines: Machines; window: Ma
     );
   }
 
-  const slots = timeline(history.buckets, kept, history.bucket_minutes, new Date(history.as_of));
-  const held = coverage(slots);
+  const whole = timeline(history.buckets, kept, history.bucket_minutes, new Date(history.as_of));
+  const held = coverage(whole);
+  // Counted against the whole window, drawn from the first reading.
+  const slots = fromFirstReading(whole);
   const grain =
     history.bucket_minutes >= 60
       ? `${history.bucket_minutes / 60}-hour`
@@ -2829,7 +2873,10 @@ function KeptWindow({ machines, window: kept }: { machines: Machines; window: Ma
       <p data-testid="machines-history-line">
         <strong>{windowName(kept)}</strong>, in {grain} buckets, from the minutes the{' '}
         {history.site === 'cosmos' ? 'Cosmos DB' : 'SQL'} site has kept: {held.held} of {held.of}{' '}
-        buckets hold a reading, and the rest is drawn as the gap it is.
+        buckets hold a reading.{' '}
+        {slots.length < whole.length
+          ? `The record is younger than the window, so the charts start at its first reading, ${startLabel(slots[0].at)}; a gap after that is drawn as the gap it is.`
+          : 'A stretch with no reading is drawn as the gap it is.'}
         {held.held > 0 &&
           ` Peak working set in the window: ${peak} MB. The document store charged ${Math.round(charged * 100) / 100} request units in it.`}
         {history.note !== null && held.held === 0 && ` ${history.note}.`}

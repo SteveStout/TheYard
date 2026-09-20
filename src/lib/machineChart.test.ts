@@ -5,9 +5,11 @@ import {
   clockLabel,
   coverage,
   hourOfTraffic,
+  fromFirstReading,
   type KeptBucket,
   keptSparks,
   keptTraffic,
+  LEAST_SLOTS,
   MACHINE_CHART,
   MACHINE_WINDOWS,
   pairedBars,
@@ -120,6 +122,28 @@ describe('kept windows', () => {
     expect(slots[285].bucket).toBeNull();
     expect(slots[284].bucket?.at).toBe('2026-09-20T11:45:00Z');
     expect(coverage(slots)).toEqual({ held: 2, of: 288 });
+  });
+
+  it('starts a drawing at the first reading, and leaves every later gap where it is', () => {
+    const now = new Date('2026-09-20T12:03:00Z');
+    const month = timeline(
+      [bucket('2026-09-18T08:00:00Z'), bucket('2026-09-20T08:00:00Z')],
+      '30d',
+      240,
+      now
+    );
+    const drawn = fromFirstReading(month);
+    // Two days and a bit of four-hour buckets, from the first reading to now, the gap between the two still in it.
+    expect(drawn[0].bucket?.at).toBe('2026-09-18T08:00:00Z');
+    expect(drawn).toHaveLength(14);
+    expect(drawn.filter((slot) => slot.bucket === null)).toHaveLength(12);
+    expect(drawn[drawn.length - 1].at).toBe(month[month.length - 1].at);
+    // What the window holds is still counted against the whole window.
+    expect(coverage(month)).toEqual({ held: 2, of: 180 });
+    // A record an hour old keeps a dozen slots, and a window that holds nothing is left whole.
+    const young = timeline([bucket('2026-09-20T12:00:00Z')], '24h', 5, now);
+    expect(fromFirstReading(young)).toHaveLength(LEAST_SLOTS);
+    expect(fromFirstReading(timeline([], '7d', 60, now))).toHaveLength(168);
   });
 
   it('sizes the other two windows to a few hundred points', () => {

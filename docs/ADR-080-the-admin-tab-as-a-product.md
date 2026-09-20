@@ -199,6 +199,32 @@ operator's desk. And thirty days is what the page offers, not yet what the store
 began to be kept at 1.0.0.159, this morning, so a month drawn today is a gap with one day at the end
 of it, which is what the charts draw and what the card's sentence counts.
 
+## Addendum, 2026-09-20 (1.0.0.166): where a window starts, and an alarm that fired on every deploy
+
+Two things the live tab showed an hour after 1.0.0.165, looked at in a headless browser from Steve's
+machine and not asked about.
+
+**A month drawn whole looked broken.** The minutes began to be kept this morning, so Last 30 days
+held two four-hour buckets of 180, and the charts and the lines under the tiles drew them as one
+sliver at the right-hand edge of an empty frame. It was correct, by the rule this record set, a gap
+is a gap, and it read as a chart that had failed to load. The rule was too wide. A gap after the
+first reading is the site not reporting, and that is information. The emptiness before the record
+began is not a gap in anything, and drawing it tells nobody anything for the next twenty-nine days.
+So a kept window is still asked for whole and still counted whole, "2 of 180 buckets hold a
+reading", but the drawing starts at the first reading (`fromFirstReading`), never at fewer than a
+dozen slots, and the sentence over the charts says so and gives the time. Every later gap is drawn.
+
+**The speed tile went amber after every roll.** It went amber over something real the first time
+(the addendum above on the first amber tile), and then again after 1.0.0.164 and 1.0.0.165, each
+time naming the minute the process started: a cold process answers its first request in a second or
+more, and a ninety-fifth over a quiet minute is that minute's slowest request. An alarm that fires
+on every deploy teaches people to look past it, which is worse than no alarm. The tile now reads the
+hour without the first three minutes after a start (`afterColdStart`, and the three is a named
+constant), and says on its face that it did: "slowest at 07:41; the start at 07:30 is left out".
+Nothing is hidden: every request and every error in those minutes is still counted on the tile, the
+line under it still draws them, and so does the traffic card. When the process started is its newest
+sample's time less its uptime, both from the one answer.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.

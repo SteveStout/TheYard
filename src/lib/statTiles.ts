@@ -44,6 +44,8 @@ export type TileReadings = {
     client_errors: number;
     /** The minute the slowest ninety-fifth was read in, already written as a clock time; absent on a quiet hour. */
     slowest_label?: string | null;
+    /** The minute a cold start was left out of the reading above, as a clock time; absent when none was. */
+    cold_start_label?: string | null;
   } | null;
   memory: { working_set_mb: number; limit_mb: number } | null;
   /** What the document store charged in the ring this process holds, and the allowance a second it is charged against. */
@@ -151,11 +153,11 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           label: 'Slowest 95th',
           value: traffic.slowest_p95_ms === null ? 'quiet' : `${traffic.slowest_p95_ms} ms`,
           detail:
-            traffic.slowest_label === undefined ||
-            traffic.slowest_label === null ||
-            traffic.slowest_label === ''
-              ? `${traffic.requests} requests in the last hour`
-              : `${traffic.requests} requests in the last hour, slowest at ${traffic.slowest_label}`,
+            `${traffic.requests} requests in the last hour` +
+            (traffic.slowest_label ? `, slowest at ${traffic.slowest_label}` : '') +
+            (traffic.cold_start_label
+              ? `; the start at ${traffic.cold_start_label} is left out`
+              : ''),
           tone:
             traffic.slowest_p95_ms === null
               ? 'plain'
@@ -247,6 +249,34 @@ export function visitorsOn(days: { day: string; humans: number }[], now: Date): 
   const today = now.toISOString().slice(0, 10);
   return days.find((entry) => entry.day === today)?.humans ?? 0;
 }
+
+// #region cold-start
+/**
+ * The minutes a process has just started in are not held against it. The
+ * first tile to go amber went amber over something real, and then the same
+ * tile went amber after every roll, because the first request a cold process
+ * serves takes a second and a ninety-fifth over a quiet minute is that
+ * minute's slowest request. An alarm that fires on every deploy teaches
+ * people to look past it. So the speed tile reads the hour without the first
+ * three minutes after the start, says on its face that it left them out, and
+ * the traffic card goes on drawing them.
+ */
+export const COLD_START_MINUTES = 3;
+
+export function afterColdStart<T extends { at: string }>(
+  slots: T[],
+  startedAt: Date | null
+): { warm: T[]; left_out: T[] } {
+  if (startedAt === null || Number.isNaN(startedAt.getTime())) return { warm: slots, left_out: [] };
+  const from = Math.floor(startedAt.getTime() / 60_000) * 60_000;
+  const until = from + COLD_START_MINUTES * 60_000;
+  const cold = (slot: T) => {
+    const at = new Date(slot.at).getTime();
+    return at >= from && at < until;
+  };
+  return { warm: slots.filter((slot) => !cold(slot)), left_out: slots.filter(cold) };
+}
+// #endregion cold-start
 
 /**
  * What the lines under the tiles are lines of, in words, because a line with

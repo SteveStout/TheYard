@@ -159,6 +159,15 @@ reading. A process with no document store beside it keeps nothing and says so in
 allowance of a thousand request units a second, and about forty-five thousand small documents a site
 at any one time against 25 GB. The bill does not move.
 
+## Addendum, 2026-09-20 (1.0.0.166): a window is drawn from its first reading
+
+The addendum above draws a kept window whole, "with null wherever the store holds nothing: an hour
+the site was down, or the weeks before anything was kept". The first half of that holds. The second
+was changed the day it shipped: the weeks before anything was kept are no longer drawn, because on
+that day they were all there was to see. The reasoning and the rule are in
+ADR: The Admin tab, as a product, the addendum on where a window starts. What a window holds is still
+counted against the whole of it.
+
 ## What it costs
 
 Nothing on the bill. The sampler is a timer in a process that is already running; the resource view
