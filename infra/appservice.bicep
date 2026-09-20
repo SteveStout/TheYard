@@ -120,6 +120,11 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
     properties: {
       serverFarmId: plan.id
       httpsOnly: true
+      // No affinity cookie. App Service adds one to every response by default,
+      // to pin a visitor to one of several instances; there is one instance, and
+      // a cookie on every response is a cookie the edge has to carry and a
+      // reader of the network tab has to wonder about.
+      clientAffinityEnabled: false
       siteConfig: {
         linuxFxVersion: 'DOCKER|${appImage}'
         alwaysOn: true

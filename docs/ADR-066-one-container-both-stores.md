@@ -316,6 +316,19 @@ And on a phone, where the sentence wraps under the segments as before:
 
 ![The bar on a phone on 1.0.0.101](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-site-phone.png)
 
+## Addendum, 2026-09-20: two sites on one machine, and the second catalogue waits to be asked
+
+Superseded in part on 2026-09-20, as 1.0.0.156. "What it costs" above describes two container
+groups, each warming both stores right after it starts. The two sites are web apps on one App
+Service plan now (ADR: One plan, two sites), and on the plan `Store:WarmOthers` is off: each site
+warms the store it serves, and the other warms on its first request, which is the behaviour this
+record already describes for everywhere that is not a deploy. The reason is measured. Four
+catalogues of a hundred thousand vehicles on one 1.75 GB machine pressed each process's working
+set below the size of its own managed heap; two fit, with the heaps at about 130 and 155 MB.
+
+One process still runs both stores and still picks one per request. What changed is when the
+second one pays for its catalogue: at the first proof run after a roll rather than at the roll.
+
 ## Files
 
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a backend, the backends, the request's choice, and the context factory.

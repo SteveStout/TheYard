@@ -545,6 +545,19 @@ which is the failure the store's own connect comment describes. The pin
 stays at 1.17.1, the comment beside it is unchanged, and the test now has
 one catch to its name.
 
+## Addendum, 2026-09-20: the second site stopped costing a second machine
+
+Superseded in part on 2026-09-20, as 1.0.0.156. This record priced the second container group at
+"about $34 per month at list price if it runs all month", and it did run all month: $34.44, beside
+the first group's $34.44. Both sites now share one Linux B1 App Service plan at $12.41 a month for
+the pair, so the second site's compute costs nothing the first was not already paying
+(ADR: One plan, two sites). The document store itself is unchanged and still $0.00.
+
+The plan is in West US 3, so the distance this record measured changed sides. The sites now sit
+beside the relational server and one region from this account, and the health page's probe of the
+document store, two point reads, went from about 4 ms to about 90 ms. Every catalogue read is
+still served from the process's own memory and never reaches the account at all.
+
 ## Files
 
 - The written pre-approval is in the lane's notes outside the repository, because it names principals.

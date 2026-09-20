@@ -215,6 +215,16 @@ container, both stores, the addendum on the toggle moving to the sites).
 The second site's stays `https://theyard.stevenstout.biz`. The Azure
 hostname on port 8080 still answers, unchanged.
 
+## Addendum, 2026-09-20: the same two names, two new origins
+
+Superseded in part on 2026-09-20, as 1.0.0.156. The two rules above sent the second name to the
+second container group's Azure address on port 8080. Both names now go to web apps on one App
+Service plan, over HTTPS (ADR: One plan, two sites): the two lines in `edge/_redirects` changed
+their right-hand sides and nothing else did. No DNS record, alias or certificate moved, which is
+what the domain layer in front of the origin was for. The container groups' addresses stop
+answering while the groups are stopped, and the rules file carries them in a comment for the week
+they remain the way back.
+
 ## Files
 
 - [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the two new lines, above the catch-all, shown live above.

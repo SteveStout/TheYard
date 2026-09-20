@@ -58,6 +58,40 @@ public class AppServiceTemplateTests
         Assert.Contains("healthCheckPath: '/healthz'", template, StringComparison.Ordinal);
     }
 
+    // #region edge-and-rolls-agree
+    [Theory]
+    [InlineData("deploy.yml", "/* ")]
+    [InlineData("deploy-cosmos.yml", "https://theyard-cosmos.stevenstout.biz/* ")]
+    public void The_edge_sends_each_name_to_the_origin_its_deploy_verifies(string workflow, string rule)
+    {
+        // Three places name an origin: the template creates it, the deploy
+        // verifies it, and the edge sends visitors to it. A site renamed in
+        // one of them is a roll that goes green while the public name serves
+        // something else.
+        var origin = Regex.Match(Read(".github", "workflows", workflow), @"^\s{6}ORIGIN: (\S+)\s*$", RegexOptions.Multiline);
+        Assert.True(origin.Success, $"{workflow} should name the origin it verifies");
+
+        string line = Read("edge", "_redirects")
+            .Split('\n')
+            .Single(candidate => candidate.StartsWith(rule, StringComparison.Ordinal));
+        Assert.Equal($"{rule}{origin.Groups[1].Value}/:splat 200!", line.TrimEnd());
+
+        var app = Regex.Match(Read(".github", "workflows", workflow), @"^\s{6}APP: (\S+)\s*$", RegexOptions.Multiline);
+        Assert.True(app.Success, $"{workflow} should name the web app it rolls");
+        Assert.Equal($"https://{app.Groups[1].Value.ToLowerInvariant()}.azurewebsites.net", origin.Groups[1].Value);
+    }
+
+    [Fact]
+    public void The_template_and_the_deploys_name_the_same_database()
+    {
+        string template = Read("infra", "appservice.bicep");
+        var named = Regex.Match(Read(".github", "workflows", "deploy.yml"), @"^\s{6}SQL_DB: (\S+)\s*$", RegexOptions.Multiline);
+
+        Assert.True(named.Success, "deploy.yml should name the database");
+        Assert.Contains($"param sqlDatabase string = '{named.Groups[1].Value}'", template, StringComparison.Ordinal);
+    }
+    // #endregion edge-and-rolls-agree
+
     // #region never-complete
     [Fact]
     public void Nothing_in_the_repository_deploys_a_template_in_complete_mode()

@@ -115,6 +115,21 @@ keep serving them until their TTL runs out. A renewal attempted inside that
 cache window fails and tells you nothing. Wait out the longest old TTL,
 renew once, and it works on the first try.
 
+## Addendum, 2026-09-20: phase 2's compute arrived, in the region that would take it
+
+Superseded in part on 2026-09-20, as 1.0.0.156. Two things above stopped being true that day. The
+decision update of 1 September called the container group "the permanent hosting"; both sites now
+run as web apps on one App Service plan, which is this record's phase 2 without Front Door. And
+the first day's measurement, App Service refused at a quota of zero, turned out to be a fact about
+regions: asked again at four sizes in seven regions, West US 2 and four others still answer zero
+and West US 3 and Central US validate every size. The plan is in West US 3, beside the relational
+server, which West US 2 had also refused.
+
+Front Door is still refused, so the edge is still Netlify and the origin is still open to the
+internet, now over HTTPS. The container groups are stopped and kept for a week as the way back.
+What was priced, what was measured on the plan, and why it is B1 are in
+ADR: One plan, two sites.
+
 ## Files
 
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): what runs, the container group template

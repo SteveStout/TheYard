@@ -115,6 +115,18 @@ against any later export restores that build. Nothing was deleted.
 - The manual scripts, the export-and-strip step included, are now
   documentation of how it used to work rather than the way it works.
 
+## Addendum, 2026-09-20: a roll is two calls on a web app
+
+Superseded in part on 2026-09-20, as 1.0.0.156. The roll above rendered `infra/aci-theyard.yaml`
+and ran `az container create`. The sites are web apps on an App Service plan now
+(ADR: One plan, two sites), and a web app keeps its settings on itself, so the roll is two calls:
+the four values the template does not hold (the telemetry connection string, the database
+connection string, the session signing key and the operator's key), written to a file by python and
+sent with `-o none` so nothing is printed, and then the image. The live sample above is that step
+as it is today. App Service starts the new container beside the old one and moves traffic when the
+new one answers, so a site serves through its own roll, which a container group never did. The
+deploy identity holds Website Contributor on the two sites and nothing else new.
+
 ## Files
 
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the whole pipeline; its trigger,

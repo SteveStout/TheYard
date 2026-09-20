@@ -1,10 +1,10 @@
 # Deploy: the continuous delivery leg (ADR-009).
 # Fires when CI finishes green on main, builds the image with the two footer
-# build arguments, pushes it to the registry, rewrites infra/aci-theyard.yaml
-# to the new tag and rolls the container group. Auth is OIDC: GitHub holds
-# three identifiers as repository variables and one secret, the session
-# signing key the roll hands to the container (ADR: Three readers with no
-# memory of the project).
+# build arguments, pushes it to the registry and rolls the first site's web app
+# to the new tag (ADR: One plan, two sites). Auth is OIDC: GitHub holds three
+# identifiers as repository variables and two secrets, the session signing key
+# and the operator's key, which the roll hands to the site (ADR: Three readers
+# with no memory of the project).
 name: Deploy
 
 # #region deploy-trigger
@@ -21,7 +21,7 @@ permissions:
   id-token: write
   contents: read
 
-# Two quick merges must not fight over the one container group.
+# Two quick merges must not fight over the one site.
 concurrency:
   group: deploy-production
   cancel-in-progress: false
@@ -39,13 +39,11 @@ jobs:
       REGISTRY_NAME: crtheyardsszmnetj67bn5h2
       ACR: crtheyardsszmnetj67bn5h2.azurecr.io
       RG: RG-THEYARD-SS
-      ORIGIN: http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
-      SITE: https://theyard.stevenstout.biz
-      # The web app taking this site over, on the plan both sites share, and its
-      # own address (ADR: One plan, two sites). Rolled beside the container
-      # group until the edge points at it.
+      # The first site's web app on the plan both sites share, its own address,
+      # and the public name the edge sends to it (ADR: One plan, two sites).
       APP: APP-THEYARD-SS-ZMNETJ67BN5H2
-      APP_ORIGIN: https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net
+      ORIGIN: https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net
+      SITE: https://theyard.stevenstout.biz
       # The Application Insights component this deploy reads the connection
       # string from. The name is not a secret; the string it returns is.
       AI_NAME: appi-theyard-ss
@@ -116,142 +114,80 @@ jobs:
           docker push "$IMAGE"
 
       # #region roll
-      # The image tag is the only thing that changes between rolls, so the
-      # template is rewritten by one sed and then checked before Azure sees it.
-      # A silent no-match would redeploy the previous image and look like a
-      # success.
-      - name: Roll the container group
+      # A web app's settings live on the web app, so a roll is two calls: the
+      # four values the template does not hold, then the image
+      # (ADR: One plan, two sites). Both answer with -o none, because the first
+      # would otherwise print every setting the site holds into this log. The
+      # plan, the sites and every other setting are infra/appservice.bicep, and
+      # a roll changes none of them.
+      - name: Roll the site
         env:
           YARD_AUTH_SIGNING_KEY: ${{ secrets.YARD_AUTH_SIGNING_KEY }}
           ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
         run: |
-          # Only the value line is rewritten; the header comment keeps its placeholder text.
-          sed "s|^\(\s*image: \)__IMAGE__$|\1$IMAGE|" infra/aci-theyard.yaml > "$RUNNER_TEMP/aci.yaml"
-          grep -q "^\s*image: $IMAGE$" "$RUNNER_TEMP/aci.yaml"
           # The Application Insights connection string is an ingestion key, so it
           # lives only in Azure: read it here with the credential this job already
-          # holds, mask it in the log, and substitute it in python rather than sed
-          # because the value carries characters a shell would treat as syntax.
-          # az resource show is core CLI; az monitor app-insights would pull an
-          # extension at run time, which is a second thing that can fail a deploy.
-          # Telemetry is an addition, not a dependency. If the read fails, the
-          # placeholder stays, the app reads anything starting with __ as "no
-          # telemetry", and the site still ships: a deploy pipeline held hostage
-          # to its own observability is worse than a quiet hour of no traces.
+          # holds and mask it in the log. az resource show is core CLI; az monitor
+          # app-insights would pull an extension at run time, which is a second
+          # thing that can fail a deploy. Telemetry is an addition, not a
+          # dependency: if the read fails, the site keeps the value it has and
+          # still ships, because a deploy pipeline held hostage to its own
+          # observability is worse than a quiet hour of no traces.
           CONN=$(az resource show -g "$RG" -n "$AI_NAME" \
             --resource-type "Microsoft.Insights/components" \
             --query "properties.ConnectionString" -o tsv 2>/dev/null || true)
-          if [ -z "$CONN" ]; then
-            echo "::warning::Application Insights was unreadable; this roll ships with telemetry off"
-            CONN="__APPINSIGHTS_CONNECTION_STRING__"
-          else
+          if [ -n "$CONN" ]; then
             echo "::add-mask::$CONN"
           fi
-          CONN="$CONN" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
-          import os, sys
-          path = sys.argv[1]
-          text = open(path, encoding="utf-8").read()
-          placeholder = "__APPINSIGHTS_CONNECTION_STRING__"
-          if placeholder not in text:
-              sys.exit("the connection string placeholder is missing from the container spec")
-          open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["CONN"]))
-          PY
-          # The database, by the same rule and for the same reason. The value
-          # substituted here names a server, a database and an authentication
-          # mode; the credential is the container's managed identity, which
-          # never leaves Azure.
-          #
-          # The name is composed rather than read back from Azure. The first
-          # version of this asked `az sql server show` for the fully qualified
-          # name, which this job's identity is not allowed to do: it holds
-          # Container Instances Contributor, AcrPush and Managed Identity
-          # Operator, and no reader role. The call failed silently under
-          # `|| true`, the placeholder survived, and 1.0.0.49 shipped on SQLite
-          # and said so, which is the fallback working and is also a whole
-          # release spent on a lookup that was never needed. An Azure SQL
-          # logical server's address is its name plus the service suffix. It is
-          # not a secret and it does not need a permission.
-          if [ -z "$SQL_SERVER" ]; then
-            echo "::warning::no SQL server is configured; this roll ships on SQLite"
-            YARD_SQL="__YARD_SQL_CONNECTION__"
-          else
-            SQL_FQDN="${SQL_SERVER}.database.windows.net"
-            # No Connect Timeout in the setting, on purpose. YardConnection widens
-            # a timeout nobody gave to sixty seconds, which is the budget a
-            # serverless resume needs, and a value given here wins over that
-            # (ADR: The SQL Server backend). This line carried thirty for a
-            # week, which meant the record's arithmetic never applied in
-            # production; 1.0.0.90 found that out when a slow identity token
-            # took the whole thirty.
-            YARD_SQL="Server=tcp:${SQL_FQDN},1433;Initial Catalog=${SQL_DB};Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Managed Identity;User Id=${MI_CLIENT_ID};"
+          # The database. The value names a server, a database and an
+          # authentication mode; the credential is the site's managed identity,
+          # which never leaves Azure. The name is composed rather than read back
+          # from Azure: the first version of this asked `az sql server show`,
+          # which this job's identity is not allowed to do, the call failed
+          # silently, and 1.0.0.49 shipped on SQLite and said so. An Azure SQL
+          # logical server's address is its name plus the service suffix. No
+          # Connect Timeout, on purpose: YardConnection widens a timeout nobody
+          # gave to sixty seconds, and a value given here wins over that
+          # (ADR: The SQL Server backend).
+          YARD_SQL=""
+          if [ -n "$SQL_SERVER" ]; then
+            YARD_SQL="Server=tcp:${SQL_SERVER}.database.windows.net,1433;Initial Catalog=${SQL_DB};Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Managed Identity;User Id=${MI_CLIENT_ID};"
           fi
-          YARD_SQL="$YARD_SQL" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
-          import os, sys
-          path = sys.argv[1]
-          text = open(path, encoding="utf-8").read()
-          placeholder = "__YARD_SQL_CONNECTION__"
-          if placeholder not in text:
-              sys.exit("the database placeholder is missing from the container spec")
-          open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["YARD_SQL"]))
-          PY
           # #region secrets
-          # The session signing key, from the repository secret of the same name,
-          # handed to the step through env so the script never interpolates it.
-          # Absent, the placeholder stays and the container invents a key at
-          # startup and logs that it did, which is what every roll did before
-          # 1.0.0.111 (ADR: Three readers with no memory of the project).
-          if [ -z "$YARD_AUTH_SIGNING_KEY" ]; then
-            echo "::warning::YARD_AUTH_SIGNING_KEY is not set; this roll invents a session signing key at startup"
-            YARD_AUTH_SIGNING_KEY="__YARD_AUTH_SIGNING_KEY__"
-          fi
-          YARD_AUTH_SIGNING_KEY="$YARD_AUTH_SIGNING_KEY" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
-          import os, sys
-          path = sys.argv[1]
-          text = open(path, encoding="utf-8").read()
-          placeholder = "__YARD_AUTH_SIGNING_KEY__"
-          if placeholder not in text:
-              sys.exit("the signing key placeholder is missing from the container spec")
-          open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["YARD_AUTH_SIGNING_KEY"]))
-          PY
-          if [ "$YARD_AUTH_SIGNING_KEY" = "__YARD_AUTH_SIGNING_KEY__" ]; then
-            echo "the container spec keeps its signing key placeholder: this roll invents one at startup"
-          else
-            echo "the container spec carries the session signing key (value masked)"
-          fi
-          # The operator's key for the Admin tab's visitor rows, substituted the
-          # same way (ADR: Site activity, and the line an address does not
-          # cross). Absent, the placeholder stays and the endpoint it guards
-          # does not exist on this roll.
-          if [ -z "$ADMIN_KEY" ]; then
-            echo "::warning::ADMIN_KEY is not set; the visitor rows on the Admin tab answer 404 on this roll"
-            ADMIN_KEY="__ADMIN_KEY__"
-          fi
-          ADMIN_KEY="$ADMIN_KEY" python3 - "$RUNNER_TEMP/aci.yaml" <<'PY'
-          import os, sys
-          path = sys.argv[1]
-          text = open(path, encoding="utf-8").read()
-          placeholder = "__ADMIN_KEY__"
-          if placeholder not in text:
-              sys.exit("the admin key placeholder is missing from the container spec")
-          open(path, "w", encoding="utf-8").write(text.replace(placeholder, os.environ["ADMIN_KEY"]))
+          # The session signing key and the operator's key, from the repository
+          # secrets of the same names, handed to the step through env and written
+          # to a file by python, so neither is ever part of a command line and
+          # neither appears in a log: GitHub masks them, and the settings call
+          # prints nothing. A value this job does not hold is left out, and the
+          # site keeps what it has: the template's placeholder on a new site,
+          # which the app reads as "no key", or the last roll's value
+          # (ADR: Three readers with no memory of the project; ADR: Site
+          # activity, and the line an address does not cross).
+          CONN="$CONN" YARD_SQL="$YARD_SQL" python3 - "$RUNNER_TEMP/settings.json" <<'PY'
+          import json, os, sys
+          wanted = {
+              "APPLICATIONINSIGHTS_CONNECTION_STRING": os.environ.get("CONN", ""),
+              "ConnectionStrings__YardSql": os.environ.get("YARD_SQL", ""),
+              "Auth__SigningKey": os.environ.get("YARD_AUTH_SIGNING_KEY", ""),
+              "Admin__Key": os.environ.get("ADMIN_KEY", ""),
+          }
+          held = [{"name": name, "value": value, "slotSetting": False} for name, value in wanted.items() if value]
+          for name, value in wanted.items():
+              if not value:
+                  print(f"::warning::{name} is not held by this job; the site keeps the value it has")
+          json.dump(held, open(sys.argv[1], "w", encoding="utf-8"))
+          print(f"{len(held)} of {len(wanted)} values go to the site (values masked)")
           PY
           # #endregion secrets
-          if [ "$YARD_SQL" = "__YARD_SQL_CONNECTION__" ]; then
-            echo "the container spec keeps its database placeholder: this roll uses SQLite"
-          else
-            echo "the container spec points at $SQL_FQDN as the managed identity"
+          if [ "$(cat "$RUNNER_TEMP/settings.json")" != "[]" ]; then
+            az webapp config appsettings set -g "$RG" -n "$APP" --settings "@$RUNNER_TEMP/settings.json" -o none
           fi
-          if [ "$CONN" = "__APPINSIGHTS_CONNECTION_STRING__" ]; then
-            echo "the container spec keeps its placeholder: telemetry is off for this roll"
-          elif grep -q "__APPINSIGHTS_CONNECTION_STRING__" "$RUNNER_TEMP/aci.yaml"; then
-            echo "the placeholder survived the substitution"
-            exit 1
-          else
-            echo "the container spec carries the connection string (value masked)"
-          fi
-          az container create -g "$RG" -f "$RUNNER_TEMP/aci.yaml" \
-            --query "{state:provisioningState,image:containers[0].image,fqdn:ipAddress.fqdn}" -o json
-
+          rm -f "$RUNNER_TEMP/settings.json"
+          # The image is the only thing that changes between rolls. App Service
+          # starts the new container beside the old one and moves traffic when
+          # the new one answers, so the site serves through its own roll.
+          az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
+          az webapp show -g "$RG" -n "$APP" --query "{state:state, image:siteConfig.linuxFxVersion, host:defaultHostName}" -o json
       # #endregion roll
       # #region verify
       # A deploy is not done when Azure returns; it is done when the new build
@@ -260,15 +196,17 @@ jobs:
       # cannot be reported as a good one.
       - name: Verify
         run: |
-          # The roll restarts the group: wait for the NEW build to answer at the origin.
-          for i in $(seq 1 30); do
+          # Wait for the NEW build to answer at the origin. Ten minutes rather
+          # than five: the plan is one shared processor, and the process reads a
+          # hundred thousand vehicles into memory before it answers.
+          for i in $(seq 1 60); do
             sleep 10
             body=$(curl -fsS --max-time 10 "$ORIGIN/api/version" || true)
             if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
               echo "origin serves $APP_VERSION after $((i * 10))s: $body"
               break
             fi
-            if [[ "$i" -eq 30 ]]; then
+            if [[ "$i" -eq 60 ]]; then
               echo "origin never served $APP_VERSION (last answer: $body)"
               exit 1
             fi
@@ -295,7 +233,7 @@ jobs:
           # somebody read the health endpoint by hand.
           store=$(curl -fsS --max-time 30 "$SITE/api/health" || true)
           case "$store" in
-            *"Azure SQL Database"*) echo "the container is on Azure SQL Database" ;;
+            *"Azure SQL Database"*) echo "the site is on Azure SQL Database" ;;
             *SQLite*) echo "::warning::this roll is serving from SQLite, not Azure SQL Database" ;;
             *) echo "::warning::could not tell which store the container is on" ;;
           esac
@@ -310,73 +248,3 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion verify
 
-      # #region roll-web-app
-      # The same image onto the web app that is taking this site over
-      # (ADR: One plan, two sites). A web app's settings live on the web app, so
-      # a roll is two calls: the three values that are not in the repository,
-      # then the image. Both answer with -o none, because the first would
-      # otherwise print every setting it holds into this log.
-      - name: Roll the web app
-        env:
-          YARD_AUTH_SIGNING_KEY: ${{ secrets.YARD_AUTH_SIGNING_KEY }}
-          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
-        run: |
-          CONN=$(az resource show -g "$RG" -n "$AI_NAME" \
-            --resource-type "Microsoft.Insights/components" \
-            --query "properties.ConnectionString" -o tsv 2>/dev/null || true)
-          if [ -n "$CONN" ]; then
-            echo "::add-mask::$CONN"
-          fi
-          # Written by python from the environment, so no secret is ever part of
-          # a command line. A value this job does not hold is left out, and the
-          # web app keeps whatever it had: the template's placeholder on a new
-          # site, which the app reads as "none", or the last roll's value.
-          CONN="$CONN" python3 - "$RUNNER_TEMP/settings.json" <<'PY'
-          import json, os, sys
-          wanted = {
-              "APPLICATIONINSIGHTS_CONNECTION_STRING": os.environ.get("CONN", ""),
-              "Auth__SigningKey": os.environ.get("YARD_AUTH_SIGNING_KEY", ""),
-              "Admin__Key": os.environ.get("ADMIN_KEY", ""),
-          }
-          held = [{"name": name, "value": value, "slotSetting": False} for name, value in wanted.items() if value]
-          for name, value in wanted.items():
-              if not value:
-                  print(f"::warning::{name} is not held by this job; the web app keeps the value it has")
-          json.dump(held, open(sys.argv[1], "w", encoding="utf-8"))
-          print(f"{len(held)} of {len(wanted)} values go to the web app (values masked)")
-          PY
-          if [ "$(cat "$RUNNER_TEMP/settings.json")" != "[]" ]; then
-            az webapp config appsettings set -g "$RG" -n "$APP" --settings "@$RUNNER_TEMP/settings.json" -o none
-          fi
-          rm -f "$RUNNER_TEMP/settings.json"
-          az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
-          az webapp show -g "$RG" -n "$APP" --query "{state:state, image:siteConfig.linuxFxVersion, host:defaultHostName}" -o json
-
-      # The web app answers on its own azurewebsites.net name before any
-      # visitor is sent to it. Ten minutes rather than five: the plan is one
-      # shared processor, and the process reads a hundred thousand vehicles
-      # into memory before it answers.
-      - name: Verify the web app
-        run: |
-          for i in $(seq 1 60); do
-            sleep 10
-            body=$(curl -fsS --max-time 10 "$APP_ORIGIN/api/version" || true)
-            if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
-              echo "the web app serves $APP_VERSION after $((i * 10))s: $body"
-              break
-            fi
-            if [[ "$i" -eq 60 ]]; then
-              echo "the web app never served $APP_VERSION (last answer: $body)"
-              exit 1
-            fi
-          done
-          curl -fsS --max-time 30 "$APP_ORIGIN/readyz"
-          echo
-          store=$(curl -fsS --max-time 30 "$APP_ORIGIN/api/health" || true)
-          case "$store" in
-            *"Azure SQL Database"*) echo "the web app is on Azure SQL Database" ;;
-            *) echo "::warning::the web app is not serving from Azure SQL Database" ;;
-          esac
-          curl -sS --max-time 40 "$APP_ORIGIN/api/admin/azure" || true
-          echo
-      # #endregion roll-web-app

@@ -40,6 +40,16 @@ Linux containers, everywhere the image runs.
 - Anything Windows-specific can never quietly creep into the runtime; the
   container would refuse it. That constraint is a feature.
 
+## Addendum, 2026-09-20: the same image, on a different host
+
+Superseded in part on 2026-09-20, as 1.0.0.156: the image no longer runs on Container Instances.
+Both sites are web apps for containers on one Linux App Service plan (ADR: One plan, two sites).
+The decision stands and did its job again: the same Linux image moved hosts with no change to the
+Dockerfile, which is the reason the first record gives for having a container at all. One of the
+reasons above moved with it. The registry pull still rides the user-assigned identity, and on App
+Service that is two properties on the site, `acrUseManagedIdentityCreds` and the identity's client
+id, rather than a capability of Linux container groups.
+
 ## Files
 
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): Linux base images in every stage; the runtime stage
