@@ -267,6 +267,73 @@
   color: var(--color-store-cosmos);
 }
 
+/* A line that is good news, one that is worth a look, and one that is bad
+   news, for the charts where a line has a meaning and not only a position
+   (ADR: The Admin tab, as a product). The status colours, which carry meaning
+   everywhere else on the page too. */
+.goodLine {
+  color: var(--color-success);
+}
+
+.warnLine {
+  color: var(--color-warning);
+}
+
+.badLine {
+  color: var(--color-danger);
+}
+
+/* The proof's paired medians, as bars. */
+.pairList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pairRow {
+  display: grid;
+  grid-template-columns: minmax(96px, 14ch) 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  font-size: var(--text-xs);
+}
+
+.pairLabel {
+  color: var(--color-heading);
+  font-weight: var(--weight-medium);
+}
+
+.pairBars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pairBarRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* The track is the longest median on the card; a bar is its share of it. An
+   SVG rather than a styled span, so the width is an attribute and this file
+   stays the only place a style is written. */
+.pairTrack {
+  flex: 0 0 45%;
+  min-width: 0;
+  height: 8px;
+  display: block;
+}
+
+.pairBar {
+  fill: currentColor;
+}
+
 /* Everybody, the line the two stores sit under: the heading colour, darker than either store. */
 .allLine {
   color: var(--color-heading);

@@ -4,14 +4,18 @@ import {
   ceilingFor,
   clockLabel,
   coverage,
+  hourOfTraffic,
   type KeptBucket,
+  keptTraffic,
   MACHINE_CHART,
   MACHINE_WINDOWS,
+  pairedBars,
   pathFor,
   requestUnitsAMinute,
   shareOf,
   ticks,
   timeline,
+  trafficTotals,
   windowName,
 } from './machineChart';
 
@@ -89,6 +93,11 @@ describe('kept windows', () => {
     sql_data_io_percent: 0,
     request_units: 10,
     operations: 4,
+    requests: 20,
+    p50_ms: 8,
+    p95_ms: 60,
+    server_errors: 0,
+    client_errors: 5,
     ...over,
   });
 
@@ -145,5 +154,84 @@ describe('kept windows', () => {
       'Last 7 days',
       'Last 30 days',
     ]);
+  });
+
+  it('draws the hour from the oldest request the ring holds, with true zeros in the quiet minutes', () => {
+    const asOf = new Date('2026-09-20T12:03:30Z');
+    const minute = (at: string, requests: number) => ({
+      at,
+      requests,
+      p50_ms: 4,
+      p95_ms: 30,
+      server_errors: 0,
+      client_errors: 1,
+    });
+    const slots = hourOfTraffic(
+      [minute('2026-09-20T12:00:00Z', 6), minute('2026-09-20T12:02:00Z', 2)],
+      asOf
+    );
+
+    expect(slots.map((slot) => slot.at)).toEqual([
+      '2026-09-20T12:00:00.000Z',
+      '2026-09-20T12:01:00.000Z',
+      '2026-09-20T12:02:00.000Z',
+      '2026-09-20T12:03:00.000Z',
+    ]);
+    // 12:01 was measured and nobody came: zero requests, and no median of nothing.
+    expect(slots[1]).toMatchObject({ requests: 0, p50_ms: null, p95_ms: null });
+    expect(slots[0]).toMatchObject({ requests: 6, p50_ms: 4, client_errors: 1 });
+    // A ring that reaches back further than an hour is drawn as an hour.
+    expect(hourOfTraffic([minute('2026-09-20T09:00:00Z', 1)], asOf)).toHaveLength(60);
+    expect(hourOfTraffic([], asOf)).toHaveLength(1);
+  });
+
+  it('turns a kept bucket into a rate a minute and leaves a bucket nobody kept as a gap', () => {
+    const slots = keptTraffic([
+      {
+        at: 'a',
+        bucket: bucket('2026-09-20T11:55:00Z', { requests: 20, minutes: 4, client_errors: 2 }),
+      },
+      { at: 'b', bucket: null },
+    ]);
+
+    expect(slots[0]).toMatchObject({ requests: 5, client_errors: 0.5, p50_ms: 8, p95_ms: 60 });
+    expect(slots[1]).toEqual({
+      at: 'b',
+      requests: null,
+      p50_ms: null,
+      p95_ms: null,
+      server_errors: null,
+      client_errors: null,
+    });
+    expect(trafficTotals(slots, 4)).toEqual({
+      requests: 20,
+      server_errors: 0,
+      client_errors: 2,
+      slowest_p95_ms: 60,
+    });
+  });
+
+  it('draws the proof as pairs of bars against the longest median, and a zero as a sliver', () => {
+    const bars = pairedBars([
+      {
+        label: 'Bid write',
+        cells: [
+          { store: 'Azure SQL Database', samples: 8, p50_ms: 28 },
+          { store: 'Azure Cosmos DB', samples: 8, p50_ms: 89 },
+        ],
+      },
+      {
+        label: 'Vehicle page',
+        cells: [
+          { store: 'Azure SQL Database', samples: 8, p50_ms: 0 },
+          { store: 'Azure Cosmos DB', samples: 8, p50_ms: 0 },
+        ],
+      },
+      { label: 'Register', cells: [{ store: 'Azure SQL Database', samples: 0, p50_ms: 0 }] },
+    ]);
+
+    expect(bars).toHaveLength(2);
+    expect(bars[0].bars.map((bar) => bar.share)).toEqual([31, 100]);
+    expect(bars[1].bars.map((bar) => bar.share)).toEqual([1, 1]);
   });
 });

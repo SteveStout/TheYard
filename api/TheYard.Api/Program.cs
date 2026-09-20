@@ -47,6 +47,7 @@ string repoRoot = Path.GetDirectoryName(readmePath)!;
 // An hour of samples at a quarter of a minute each, which is also the number
 // of rows the relational store's own view keeps (ADR: What the machines are doing).
 const int MachineSamples = 240;
+const int RequestRing = 500;
 
 string buildVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev";
 string buildCommit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local";
@@ -272,7 +273,7 @@ if (cosmos is not null)
 // are this process's memory and nothing else: they empty on every roll, which
 // the page says out loud (ADR: What the database is actually doing).
 var logLog = new LogRingBuffer(300);
-var requestLog = new RequestRingBuffer(500);
+var requestLog = new RequestRingBuffer(RequestRing);
 builder.Services.AddSingleton(sqlLog);
 builder.Services.AddSingleton<ISqlLog>(sqlLog);
 builder.Services.AddSingleton(storeLog);
@@ -2237,6 +2238,9 @@ app.MapGet("/api/admin/machines", async (string? window, MachineSampler sampler,
         // wider window is read from the store, in buckets sized to it.
         windows = MachineWindows.Names,
         history = await kept.ReadAsync(window, DateTimeOffset.UtcNow, cancellation),
+        // The request ring a minute at a time, in the unit a kept minute is
+        // written in, so the hour and the month are one chart.
+        traffic = new { ring = RequestRing, minutes = TrafficMinutes.From(requestLog.Snapshot()) },
         container = new
         {
             memory_limit_mb = MachineSampler.MemoryLimitMb,

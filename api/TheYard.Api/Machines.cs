@@ -230,6 +230,50 @@ public sealed record StoreLoad(bool Available, string? Note, IReadOnlyList<Resou
 }
 // #endregion resource-stats
 
+// #region traffic-minutes
+/// <summary>
+/// The request ring, a minute at a time: how many requests, their median and
+/// ninety-fifth, and how many answered 4xx and 5xx (ADR: The Admin tab, as a
+/// product). The ring already leaves out the Admin tab watching itself and the
+/// page sweep, so a minute here is a visitor's minute. One function, used
+/// twice: the hour on the card is every minute the ring still holds, and the
+/// minute the recorder keeps is the same arithmetic over one of them, so the
+/// hour and the month are drawn in one unit by construction.
+/// </summary>
+public static class TrafficMinutes
+{
+    public static IReadOnlyList<TrafficMinute> From(IReadOnlyList<RequestEntry> requests) =>
+        requests
+            .GroupBy(request => MachineFolding.MinuteOf(request.At))
+            .OrderBy(group => group.Key)
+            .Select(group =>
+            {
+                long[] durations = group.Select(request => request.DurationMs).ToArray();
+                return new TrafficMinute(
+                    group.Key,
+                    durations.Length,
+                    Percentiles.Of(durations, 50),
+                    Percentiles.Of(durations, 95),
+                    group.Count(request => request.Status >= 500),
+                    group.Count(request => request.Status is >= 400 and < 500),
+                    group.Count(request => request.Status is >= 300 and < 400),
+                    group.Count(request => request.Status < 300));
+            })
+            .ToList();
+}
+
+/// <summary>One minute of answered requests. A minute with none is not in the list: there is no median of nothing.</summary>
+public sealed record TrafficMinute(
+    DateTimeOffset At,
+    int Requests,
+    long P50Ms,
+    long P95Ms,
+    int ServerErrors,
+    int ClientErrors,
+    int Redirects,
+    int Ok);
+// #endregion traffic-minutes
+
 // #region machine-recorder
 /// <summary>
 /// Keeps a minute at a time (ADR: What the machines are doing). The sampler's
@@ -287,10 +331,7 @@ public sealed class MachineRecorder(
             })
             .ToList();
         var charged = operations.Where(operation => operation.At >= start && operation.At < end).ToList();
-        // The request ring already leaves out the Admin tab watching itself
-        // and the page sweep, so this is a visitor's minute and not this page's.
-        var answered = (requests ?? []).Where(request => request.At >= start && request.At < end).ToList();
-        long[] durations = answered.Select(request => request.DurationMs).ToArray();
+        var traffic = TrafficMinutes.From((requests ?? []).Where(request => request.At >= start && request.At < end).ToList()).SingleOrDefault();
 
         return new MachineMinute(
             start,
@@ -306,11 +347,11 @@ public sealed class MachineRecorder(
             MachineFolding.MeanOf(read.Select(row => (double?)row.DataIoPercent)),
             Math.Round(charged.Sum(operation => operation.RequestCharge), 2),
             charged.Count,
-            answered.Count,
-            durations.Length == 0 ? null : (double?)Percentiles.Of(durations, 50),
-            durations.Length == 0 ? null : (double?)Percentiles.Of(durations, 95),
-            answered.Count(request => request.Status >= 500),
-            answered.Count(request => request.Status is >= 400 and < 500));
+            traffic?.Requests ?? 0,
+            traffic?.P50Ms,
+            traffic?.P95Ms,
+            traffic?.ServerErrors ?? 0,
+            traffic?.ClientErrors ?? 0);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stopping)

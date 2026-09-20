@@ -144,10 +144,50 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
         Assert.False(relational.GetProperty("available").GetBoolean());
         Assert.False(string.IsNullOrWhiteSpace(relational.GetProperty("note").GetString()));
 
+        // The request ring a minute at a time, whatever it holds, and how deep the ring is.
+        var traffic = body.RootElement.GetProperty("traffic");
+        Assert.Equal(500, traffic.GetProperty("ring").GetInt32());
+        Assert.Equal(JsonValueKind.Array, traffic.GetProperty("minutes").ValueKind);
+
         var document = body.RootElement.GetProperty("document");
         Assert.True(document.TryGetProperty("free_request_units_per_second", out var allowance));
         Assert.Equal(DocumentLoad.FreeRequestUnitsPerSecond, allowance.GetInt32());
     }
+
+    // #region traffic-minutes
+    [Fact]
+    public void The_request_ring_folds_into_minutes_each_with_its_own_median_and_its_own_errors()
+    {
+        var at = new DateTimeOffset(2026, 9, 20, 11, 30, 0, TimeSpan.Zero);
+        var requests = new List<RequestEntry>
+        {
+            new(at.AddSeconds(59), "GET", "/api/vehicles", 200, 40),
+            new(at.AddSeconds(2), "GET", "/api/facets", 200, 2),
+            new(at.AddSeconds(30), "POST", "/api/vehicles/abc/bids", 409, 30),
+            new(at.AddSeconds(45), "GET", "/api/vehicles/abc", 500, 120),
+            new(at.AddSeconds(50), "GET", "/old", 301, 1),
+            new(at.AddMinutes(2), "GET", "/api/vehicles", 200, 55),
+        };
+
+        var minutes = TrafficMinutes.From(requests);
+
+        // Oldest first, and the quiet minute between them is not in the list:
+        // there is no median of nothing, and the page draws it as a true zero.
+        Assert.Equal(2, minutes.Count);
+        Assert.Equal(at, minutes[0].At);
+        Assert.Equal(5, minutes[0].Requests);
+        // Nearest rank over five: the median is the third, the ninety-fifth the slowest.
+        Assert.Equal(30, minutes[0].P50Ms);
+        Assert.Equal(120, minutes[0].P95Ms);
+        Assert.Equal(1, minutes[0].ServerErrors);
+        Assert.Equal(1, minutes[0].ClientErrors);
+        Assert.Equal(1, minutes[0].Redirects);
+        Assert.Equal(2, minutes[0].Ok);
+        Assert.Equal(at.AddMinutes(2), minutes[1].At);
+        Assert.Equal(55, minutes[1].P50Ms);
+        Assert.Empty(TrafficMinutes.From([]));
+    }
+    // #endregion traffic-minutes
 
     private static StoreOperation Operation(DateTimeOffset at, double charge, long ms) =>
         new(at, "vehicles", StoreOperationKind.PointRead, "read", [], "one", 1, charge, ms, "ok", "/api/vehicles", null);

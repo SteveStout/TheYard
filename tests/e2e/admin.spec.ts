@@ -169,7 +169,8 @@ test('the machines card offers a day, a week and a month beside the hour, and a 
   await expect(card.getByTestId('machines-container-line')).toBeVisible({ timeout: 60_000 });
 
   // The hour is what the card opens on, and it is this process's own memory.
-  await expect(card.getByTestId('machines-window-1h')).toHaveAttribute('aria-pressed', 'true');
+  // The window is chosen on the traffic card, and the machines card follows it.
+  await expect(page.getByTestId('machines-window-1h')).toHaveAttribute('aria-pressed', 'true');
   await expect(card.getByTestId('machines-history')).toHaveCount(0);
 
   const wire = (await (
@@ -183,8 +184,8 @@ test('the machines card offers a day, a week and a month beside the hour, and a 
   expect(wire.history.kept).toBe(true);
   expect(wire.history.bucket_minutes).toBe(5);
 
-  await card.getByTestId('machines-window-24h').click();
-  await expect(card.getByTestId('machines-window-24h')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('machines-window-24h').click();
+  await expect(page.getByTestId('machines-window-24h')).toHaveAttribute('aria-pressed', 'true');
   if (wire.history.available) {
     // The Cosmos DB pass: the window is kept, and the card says how much of it
     // the store holds rather than drawing a full line through a day it was not
@@ -201,6 +202,44 @@ test('the machines card offers a day, a week and a month beside the hour, and a 
   }
   // The hour is still on the card under it, labelled as what it is.
   await expect(card).toContainText('as this process remembers the last hour');
+});
+
+test('the traffic card draws how busy, how fast and how many errors, a minute at a time (ADR: The Admin tab, as a product)', async ({
+  page,
+  request,
+}) => {
+  // Something to draw: a few real requests, which the ring keeps and this tab's own reads do not add to.
+  for (const path of ['/api/vehicles?limit=5', '/api/facets', '/api/vehicles/not-a-vehicle']) {
+    await request.get(`http://localhost:5210${path}`);
+  }
+  const wire = (await (await request.get('http://localhost:5210/api/admin/machines')).json()) as {
+    traffic: {
+      ring: number;
+      minutes: {
+        at: string;
+        requests: number;
+        p50_ms: number;
+        p95_ms: number;
+        client_errors: number;
+      }[];
+    };
+  };
+  expect(wire.traffic.ring).toBe(500);
+  expect(wire.traffic.minutes.length).toBeGreaterThan(0);
+  expect(wire.traffic.minutes.reduce((sum, minute) => sum + minute.requests, 0)).toBeGreaterThan(2);
+  // The vehicle that does not exist is a 404, and a 404 is counted as one.
+  expect(
+    wire.traffic.minutes.reduce((sum, minute) => sum + minute.client_errors, 0)
+  ).toBeGreaterThan(0);
+
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('traffic-card');
+  await expect(card.getByTestId('traffic-line')).toContainText(/\d+ requests in the last hour/, {
+    timeout: 60_000,
+  });
+  await expect(card.getByTestId('traffic-chart-requests')).toBeVisible();
+  await expect(card.getByTestId('traffic-chart-timing-p95')).toHaveCount(1);
+  await expect(card.getByTestId('traffic-chart-errors-4xx')).toHaveCount(1);
 });
 
 test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }) => {

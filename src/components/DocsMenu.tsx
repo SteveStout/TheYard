@@ -92,6 +92,7 @@ export type DocKey =
   | 'adrPageStatus'
   | 'adrMachines'
   | 'adrOnePlan'
+  | 'adrAdminProduct'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'infrastructureOverview'
@@ -743,6 +744,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '079',
   },
+  adrAdminProduct: {
+    title: 'ADR: The Admin tab, as a product',
+    menuLabel: 'ADR: The Admin tab, as a product',
+    url: '/api/docs/adr-admin-product',
+    kind: 'adr',
+    number: '080',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -1004,6 +1012,7 @@ export const MENUS: Record<
       { key: 'adrPageStatus' },
       { key: 'adrMachines' },
       { key: 'adrOnePlan' },
+      { key: 'adrAdminProduct' },
     ],
   },
   // #endregion records-menu

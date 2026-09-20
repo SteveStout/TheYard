@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import {
   ACTIVITY_WINDOWS,
   CHART,
@@ -33,15 +33,21 @@ import {
   ceilingFor,
   type ChartSeries,
   coverage,
+  hourOfTraffic,
   type KeptBucket,
+  keptTraffic,
   MACHINE_CHART,
   MACHINE_WINDOWS,
   type MachineWindow,
+  pairedBars,
   pathFor,
   requestUnitsAMinute,
   shareOf,
   ticks,
   timeline,
+  type TrafficMinute,
+  type TrafficSlot,
+  trafficTotals,
   windowName,
 } from '../lib/machineChart';
 import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
@@ -122,6 +128,8 @@ type Machines = {
     as_of: string;
     buckets: KeptBucket[];
   };
+  /** The request ring a minute at a time; absent on a build older than 1.0.0.160. */
+  traffic?: { ring: number; minutes: TrafficMinute[] };
   container: {
     memory_limit_mb: number;
     processors: number;
@@ -481,7 +489,7 @@ export function AdminPanel({
       </p>
       <ActivityCard adminKey={adminKey} rowsServed={rowsServed} onReport={setRowsServed} />
       <PagesCard />
-      <MachinesCard />
+      <MachinesSection />
       {rowsServed === true && <KeptLogsCard adminKey={adminKey} />}
       <OperatorCard adminKey={adminKey} onEnterKey={enterKey} onForget={forgetKey} />
       <ResetLinkCard adminKey={adminKey} />
@@ -1876,6 +1884,37 @@ function ProofCard({
             trip to the store:{' '}
             {result.stores.map((s) => `${s.hop_ms ?? '?'} ms to ${s.name}`).join(', ')}.
           </p>
+          {/* The paired medians as bars, so the eye reads what the table says:
+              most pairs are the same length, and the ones that are not differ
+              by a round trip (ADR: The Admin tab, as a product). */}
+          <ul
+            className={styles.pairList}
+            aria-label="The paired medians, each bar a share of the longest on the card"
+            data-testid="proof-bars"
+          >
+            {pairedBars(result.rows).map((pair) => (
+              <li key={pair.label} className={styles.pairRow}>
+                <span className={styles.pairLabel}>{pair.label}</span>
+                <span className={styles.pairBars}>
+                  {pair.bars.map((bar, index) => (
+                    <span key={bar.store} className={styles.pairBarRow}>
+                      <svg
+                        className={`${styles.pairTrack} ${index === 0 ? styles.sqlLine : styles.cosmosLine}`}
+                        viewBox="0 0 100 8"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                      >
+                        <rect className={styles.pairBar} width={bar.share} height="8" rx="2" />
+                      </svg>
+                      <span className={styles.mono}>
+                        {bar.ms} ms, {bar.store}
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              </li>
+            ))}
+          </ul>
           <div className={styles.tableWrap} role="region" aria-label="The proof" tabIndex={0}>
             <table className={styles.table}>
               <thead>
@@ -2128,6 +2167,7 @@ function MachineChart({
   percentage,
   unit,
   window: drawnWindow = '1h',
+  tones,
 }: {
   testId: string;
   label: string;
@@ -2135,14 +2175,21 @@ function MachineChart({
   percentage?: boolean;
   unit?: string;
   window?: MachineWindow;
+  /** A colour per line by meaning, for the charts where a line is good news or bad; position decides otherwise. */
+  tones?: ('plain' | 'good' | 'warn' | 'bad')[];
 }) {
   const ceiling = ceilingFor(series, percentage === true ? 100 : 1);
   const points = series[0]?.points ?? [];
   const drawn = series.some((line) => line.points.some((point) => point.value !== null));
   const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
   const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
-  const colour = (index: number) =>
-    index === 0 ? styles.allLine : index === 1 ? styles.sqlLine : styles.cosmosLine;
+  const colour = (index: number) => {
+    const tone = tones?.[index];
+    if (tone === 'good') return styles.goodLine;
+    if (tone === 'warn') return styles.warnLine;
+    if (tone === 'bad') return styles.badLine;
+    return index === 0 ? styles.allLine : index === 1 ? styles.sqlLine : styles.cosmosLine;
+  };
 
   if (!drawn) {
     return (
@@ -2222,6 +2269,116 @@ function MachineChart({
   );
 }
 // #endregion machine-chart
+
+// #region traffic-card
+/**
+ * Traffic, drawn (ADR: The Admin tab, as a product). Four questions a person
+ * opening this tab is asking, one chart each, in the same frame the machine
+ * charts use: how busy is it, how fast is it answering, is anything failing,
+ * and over what stretch. The hour is the request ring a minute at a time; a
+ * wider window is the minutes each site keeps. Both are turned into the same
+ * slots by src/lib/machineChart.ts, so a gap is a gap and a zero is a zero in
+ * every window. A build with no traffic block, or a window nothing is kept
+ * for, keeps its sentence and draws nothing, rather than pretending to a line.
+ */
+function TrafficCard({
+  machines,
+  window: window_,
+  toolbar,
+}: {
+  machines: Machines;
+  window: MachineWindow;
+  toolbar: ReactNode;
+}) {
+  const history = machines.history;
+  const keptSlots =
+    window_ !== '1h' && history !== undefined && history.window === window_ && history.available
+      ? timeline(history.buckets, window_, history.bucket_minutes, new Date(history.as_of))
+      : null;
+  const slots: TrafficSlot[] | null =
+    window_ === '1h'
+      ? machines.traffic === undefined
+        ? null
+        : hourOfTraffic(
+            machines.traffic.minutes,
+            new Date(
+              history?.as_of ??
+                machines.traffic.minutes[machines.traffic.minutes.length - 1]?.at ??
+                0
+            )
+          )
+      : keptSlots === null
+        ? null
+        : keptTraffic(keptSlots);
+  const minutesPerSlot = window_ === '1h' ? 1 : (history?.bucket_minutes ?? 1);
+  const totals = slots === null ? null : trafficTotals(slots, minutesPerSlot);
+  const series = (key: string, name: string, pick: (slot: TrafficSlot) => number | null) => ({
+    key,
+    name,
+    points: (slots ?? []).map((slot) => ({ at: slot.at, value: pick(slot) })),
+  });
+
+  return (
+    <article className={styles.wide} data-testid="traffic-card">
+      <h2 className={styles.cardTitle}>Traffic</h2>
+      <p className={styles.muted}>
+        How busy the site is, how fast it is answering and whether anything is failing, over the
+        window chosen here, which the machines card below follows. The last hour is the request ring
+        this process keeps, {machines.traffic?.ring ?? 500} requests deep, a minute at a time; the
+        wider windows are the minutes each site keeps in Azure Cosmos DB. This tab&rsquo;s own reads
+        and the page sweep are not counted in either.
+      </p>
+      {toolbar}
+      {slots === null || totals === null ? (
+        <p className={styles.muted} data-testid="traffic-note">
+          {window_ === '1h'
+            ? 'This build does not report its traffic a minute at a time.'
+            : `${windowName(window_)} is not kept here: ${history?.note ?? 'the store did not answer'}`}
+        </p>
+      ) : (
+        <>
+          <p data-testid="traffic-line">
+            <strong>{totals.requests} requests</strong> in the {windowName(window_).toLowerCase()},{' '}
+            {totals.server_errors} answered 5xx and {totals.client_errors} answered 4xx
+            {totals.slowest_p95_ms === null
+              ? '.'
+              : `, and the slowest stretch answered its ninety-fifth in ${totals.slowest_p95_ms} ms.`}
+          </p>
+          <MachineChart
+            testId="traffic-chart-requests"
+            label={`Requests a minute over the ${windowName(window_).toLowerCase()}`}
+            unit="a minute"
+            window={window_}
+            series={[series('requests', 'Requests', (slot) => slot.requests)]}
+          />
+          <MachineChart
+            testId="traffic-chart-timing"
+            label={`How fast requests were answered over the ${windowName(window_).toLowerCase()}: the median and the ninety-fifth, in milliseconds`}
+            unit="ms"
+            window={window_}
+            tones={['good', 'warn']}
+            series={[
+              series('p50', 'Median', (slot) => slot.p50_ms),
+              series('p95', 'Ninety-fifth', (slot) => slot.p95_ms),
+            ]}
+          />
+          <MachineChart
+            testId="traffic-chart-errors"
+            label={`Requests answered with an error over the ${windowName(window_).toLowerCase()}, a minute: 5xx is the site failing, 4xx is a request it refused`}
+            unit="a minute"
+            window={window_}
+            tones={['bad', 'warn']}
+            series={[
+              series('5xx', 'Answered 5xx', (slot) => slot.server_errors),
+              series('4xx', 'Answered 4xx', (slot) => slot.client_errors),
+            ]}
+          />
+        </>
+      )}
+    </article>
+  );
+}
+// #endregion traffic-card
 
 // #region kept-window
 /**
@@ -2342,7 +2499,7 @@ function KeptWindow({ machines, window: kept }: { machines: Machines; window: Ma
  * reading of itself, and the document store has no memory reading to give and
  * says so.
  */
-function MachinesCard() {
+function MachinesSection() {
   const [machines, setMachines] = useState<Fetched<Machines>>(null);
   const [window_, setWindow] = useState<MachineWindow>('1h');
 
@@ -2369,25 +2526,71 @@ function MachinesCard() {
     };
   }, [window_]);
 
-  if (machines === null) {
+  // One window for both cards: the traffic and the machines are read in one
+  // request and are only worth looking at side by side over the same stretch.
+  const toolbar = (
+    <p className={styles.statusRow} role="group" aria-label="Window">
+      {MACHINE_WINDOWS.map((option) => (
+        <button
+          key={option}
+          type="button"
+          className={styles.back}
+          aria-pressed={option === window_}
+          onClick={() => {
+            // The change of window is the event, and the cards go back to
+            // loading here rather than inside the effect, as the activity
+            // card's do and for the reason it gives.
+            if (option === window_) return;
+            setWindow(option);
+            setMachines(null);
+          }}
+          data-testid={`machines-window-${option}`}
+        >
+          {windowName(option)}
+        </button>
+      ))}
+    </p>
+  );
+
+  if (machines === null || machines === 'failed') {
     return (
-      <article className={styles.wide} data-testid="machines-card">
-        <h2 className={styles.cardTitle}>What the machines are doing</h2>
-        <p className={styles.muted}>Loading…</p>
-      </article>
-    );
-  }
-  if (machines === 'failed') {
-    return (
-      <article className={styles.wide} data-testid="machines-card">
-        <h2 className={styles.cardTitle}>What the machines are doing</h2>
-        <p className={styles.muted} data-testid="machines-failed">
-          Could not read the machines on the last try.
-        </p>
-      </article>
+      <>
+        <article className={styles.wide} data-testid="traffic-card">
+          <h2 className={styles.cardTitle}>Traffic</h2>
+          {toolbar}
+          <p className={styles.muted}>
+            {machines === null ? 'Loading…' : 'Could not read the traffic on the last try.'}
+          </p>
+        </article>
+        <article className={styles.wide} data-testid="machines-card">
+          <h2 className={styles.cardTitle}>What the machines are doing</h2>
+          {machines === null ? (
+            <p className={styles.muted}>Loading…</p>
+          ) : (
+            <p className={styles.muted} data-testid="machines-failed">
+              Could not read the machines on the last try.
+            </p>
+          )}
+        </article>
+      </>
     );
   }
 
+  return (
+    <>
+      <TrafficCard machines={machines} window={window_} toolbar={toolbar} />
+      <MachinesBody machines={machines} window={window_} />
+    </>
+  );
+}
+
+function MachinesBody({
+  machines,
+  window: window_,
+}: {
+  machines: Machines;
+  window: MachineWindow;
+}) {
   const samples = machines.container.samples;
   const latest = samples.length > 0 ? samples[samples.length - 1] : null;
   const peak = samples.reduce((most, sample) => Math.max(most, sample.working_set_mb), 0);
@@ -2412,26 +2615,8 @@ function MachinesCard() {
         a minute at a time, kept in Azure Cosmos DB by each site for thirty-one days, so they
         survive a roll and show one.
       </p>
-      <p className={styles.statusRow} role="group" aria-label="Window">
-        {MACHINE_WINDOWS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            className={styles.back}
-            aria-pressed={option === window_}
-            onClick={() => {
-              // The change of window is the event, and the card goes back to
-              // loading here rather than inside the effect, as the activity
-              // card's does and for the reason it gives.
-              if (option === window_) return;
-              setWindow(option);
-              setMachines(null);
-            }}
-            data-testid={`machines-window-${option}`}
-          >
-            {windowName(option)}
-          </button>
-        ))}
+      <p className={styles.muted} data-testid="machines-window-line">
+        Showing {windowName(window_).toLowerCase()}, the window chosen on the traffic card above.
       </p>
       {window_ !== '1h' && <KeptWindow machines={machines} window={window_} />}
 
