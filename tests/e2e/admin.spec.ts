@@ -660,3 +660,40 @@ test('a reset link minted behind the key sets a new password and signs the visit
   expect(old.status()).toBe(401);
 });
 // #endregion password-reset
+
+test('the Admin tab opens on tiles that answer four questions and go to the cards behind them', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin');
+  const strip = page.getByTestId('stat-strip');
+  await expect(strip.getByRole('button')).toHaveCount(8);
+  // A tile is made of what a card has read, so it waits as long as the card does and then says the same thing.
+  await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
+    timeout: 45_000,
+  });
+  await expect(strip.getByTestId('tile-health')).toContainText(/\d+ of \d+ checks pass/);
+  // The version is the build's own, "dev" on a developer's machine, and the line under it is how long it has been up.
+  await expect(strip.getByTestId('tile-version')).toContainText(/, up \d+[dhm]/);
+  await expect(strip.getByTestId('tile-memory')).toContainText(/\d+ of \d+ MB/, {
+    timeout: 60_000,
+  });
+  await expect(strip.getByTestId('tile-speed')).toContainText('requests in the last hour');
+  // The tone is a word as well as a colour.
+  await expect(strip.getByTestId('tile-health')).toContainText('fine');
+  // The four questions are headings, in the order somebody asks them, and every card is under one.
+  for (const question of ['Is it up?', 'Is it fast?', 'Is it costing anything?', 'What broke?']) {
+    await expect(page.getByRole('heading', { level: 2, name: question })).toBeVisible();
+  }
+  await expect(page.getByTestId('question-up').getByTestId('health-card')).toBeVisible();
+  await expect(page.getByTestId('question-fast').getByTestId('traffic-card')).toBeVisible();
+  await expect(page.getByTestId('question-cost').getByTestId('machines-card')).toBeVisible();
+  await expect(page.getByTestId('question-broke').getByTestId('errors-card')).toBeVisible();
+  // A tile goes to its question.
+  await strip.getByTestId('tile-errors').click();
+  await expect(page.getByRole('heading', { level: 2, name: 'What broke?' })).toBeInViewport();
+  // What a card is and how to read it is one tap away and out of the way until then.
+  const about = page.getByTestId('machines-card').locator('details').first();
+  await expect(about).not.toHaveAttribute('open', '');
+  await about.locator('summary').click();
+  await expect(about).toContainText('The three machines under this site');
+});

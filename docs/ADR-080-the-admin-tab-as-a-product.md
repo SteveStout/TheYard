@@ -72,10 +72,72 @@ the graph whose shape the rest were matched to.
 
 Nothing on the bill and nothing on the wire that is not this site's own. No dependency was added.
 
+## Addendum, 2026-09-20 (1.0.0.161): the look
+
+The charts were the second ship and this is the third: the page now opens on the four questions this
+record started from, and everything under them is filed under the question it answers.
+
+**A strip of tiles across the top.** Eight tiles, each a label, one number, a line saying what the
+number is a number of, and where there is an hour behind the number, the hour drawn under it as a
+line with no axis. Version, health and pages answer "is it up?"; the slowest ninety-fifth of the last
+hour and today's visitors answer "is it fast?"; memory against its limit and the request units
+charged answer "is it costing anything?"; errors answer "what broke?". A tile is a button, and it
+goes to its question.
+
+**The tiles ask the server for nothing.** They are made of what the cards below have already read, so
+a tile and the card it points at cannot disagree, and the strip added no endpoint and no request. A
+reading that has not arrived is a tile that says "waiting", not a zero.
+
+**What makes a tile amber or red is a rule somebody can read.** `src/lib/statTiles.ts` has no React
+in it, and the thresholds are constants with names:
+
+| Tile | Amber, worth a look | Red, needs attention |
+| --- | --- | --- |
+| Health | the site calls itself healthy while a check fails, which is the fallback serving | the site does not call itself healthy |
+| Pages | the sweep checked nothing | any address is down |
+| Slowest 95th | 1,000 ms or more in any minute of the hour | 3,000 ms or more |
+| Memory | four fifths of the limit | nineteen twentieths of it |
+| Errors | | anything answered 5xx in the hour, or anything reported |
+
+They are this site's own, read off what it measures on a quiet day, and they are there to be argued
+with. The tone is written on the tile as a word, "fine", "worth a look", "needs attention", as well
+as a colour, because a colour alone says nothing to somebody who cannot see it.
+
+**Four questions, as headings, with the cards under them.** Is it up: application health, Azure's
+view, every page checked. Is it fast: traffic, the last hour as Application Insights recorded it,
+timing, the two backends side by side, the proof. Is it costing anything: the machines, the partition
+key, what each store ran. What broke: recent errors, the log, the kept log. The operator's desk,
+which is site activity, the key and the reset link, comes last, because it is where somebody works
+and the rest is where somebody looks. No card was removed and no number moved to a different card.
+
+**The paragraph on each card is one tap away.** Twelve cards opened with a paragraph on what the card
+is and how to read it. They are all still there, word for word, inside a closed "What this shows" on
+the card, so the first thing on a card is its numbers. On a phone that was most of the scrolling.
+
+**All of it is the token sheet.** The tiles, the headings and the soft shadow every card now carries
+are `AdminPanel.module.css` over `src/styles/tokens.css`: the surfaces, the three status colours and
+their soft grounds, the accent, the radius and the two shadows were already there, and no token was
+added or changed. No dependency was added either.
+
+**Checked at 375 px.** The strip is two tiles to a row on a phone and four from 720 px. The browser
+suite opens the tab on a 375 by 812 screen and holds that the first two tiles sit side by side at the
+same size, that the third is under the first, and that nothing on the tab makes the page wider than
+the phone: charts and tables scroll inside their cards.
+
+**What is still small on a phone** is the writing on the charts. A chart is a 720 wide drawing, and in
+a 320 wide card its axis labels are drawn at under half size. The lines read and the labels do not,
+and that is the next thing to fix on this tab, said here so that nobody finds it before the record
+does.
+
+**What it cost on the wire**, from the build's own output: the script went from 101.15 kB compressed
+to 103.30 kB and the stylesheet from 8.74 kB to 9.26 kB.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.
 - [`src/lib/machineChart.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.test.ts): what a gap is, what a zero is, and what a bar is a share of.
+- [`src/lib/statTiles.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.ts): what each tile says and what makes it amber or red, React-free, and the line under a tile as the points of a polyline.
+- [`src/lib/statTiles.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.test.ts): every threshold, a reading that has not arrived, and a gap in the line.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the traffic card, the window both cards share, and the proof's bars.
 - [`src/components/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.module.css): the tab's styles, over the token sheet.
 - [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the request ring folded into minutes, once, for the hour on the card and for the minute that is kept.
@@ -85,4 +147,7 @@ Nothing on the bill and nothing on the wire that is not this site's own. No depe
 ```
 
 ```live path=api/TheYard.Api/Machines.cs region=traffic-minutes
+```
+
+```live path=src/lib/statTiles.ts region=tile-rules
 ```

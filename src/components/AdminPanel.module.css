@@ -429,3 +429,211 @@
   max-width: 48ch;
   font-size: var(--text-xs);
 }
+
+/* #region stat-strip */
+/*
+ * The strip of tiles (ADR: The Admin tab, as a product). Everything here is
+ * the token sheet's: the surfaces, the three status colours and their soft
+ * grounds, the radius, the two shadows. Two columns on a phone and four from
+ * 720px, so eight tiles are four rows of two at 375px and two rows of four on
+ * a desk, and no tile is ever narrower than its own number.
+ */
+.strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (min-width: 720px) {
+  .strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+.stripItem {
+  display: flex;
+  min-width: 0;
+}
+
+.tile {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 4px solid var(--tile-tone, var(--color-border-strong));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-3) var(--space-4) var(--space-3);
+  cursor: pointer;
+  transition:
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.tile:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    transition: none;
+  }
+
+  .tile:hover {
+    transform: none;
+  }
+}
+
+.tileGood {
+  --tile-tone: var(--color-success);
+  --tile-soft: var(--color-success-soft);
+}
+
+.tileWarn {
+  --tile-tone: var(--color-warning);
+  --tile-soft: var(--color-warning-soft);
+}
+
+.tileBad {
+  --tile-tone: var(--color-danger);
+  --tile-soft: var(--color-danger-soft);
+}
+
+.tilePlain {
+  --tile-tone: var(--color-accent);
+  --tile-soft: var(--color-accent-soft);
+}
+
+.tileWaiting {
+  --tile-tone: var(--color-border-strong);
+  --tile-soft: var(--color-neutral-soft);
+}
+
+.tileQuestion {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+
+.tileLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.tileValue {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.15;
+  color: var(--color-heading);
+  overflow-wrap: anywhere;
+}
+
+.tileDetail {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.tileTone {
+  margin-top: var(--space-1);
+  border-radius: var(--radius-full);
+  padding: 1px 10px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+  background: var(--tile-soft);
+}
+
+.spark {
+  display: block;
+  width: 100%;
+  height: 24px;
+  margin-top: auto;
+  padding-top: var(--space-1);
+  box-sizing: content-box;
+  fill: none;
+  stroke: var(--tile-tone);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* The line is stretched to the tile's width, and the stroke must not stretch with it. */
+.spark polyline {
+  vector-effect: non-scaling-stroke;
+}
+
+/* #endregion stat-strip */
+
+/* #region questions */
+/* The four questions the cards sit under, and the desk after them. A heading
+   the tile above scrolls to, clear of the sticky header. */
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.question > .wide {
+  margin-top: 0;
+}
+
+.questionTitle {
+  margin: 0;
+  scroll-margin-top: 88px;
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--color-border);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-heading);
+}
+
+.card,
+.wide {
+  box-shadow: var(--shadow-sm);
+}
+
+.about {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.aboutSummary {
+  cursor: pointer;
+  width: fit-content;
+  font-weight: var(--weight-medium);
+  color: var(--color-accent);
+}
+
+.aboutSummary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.about[open] > .aboutSummary {
+  margin-bottom: var(--space-2);
+}
+
+.about > p {
+  margin: 0;
+  max-width: 80ch;
+}
+/* #endregion questions */

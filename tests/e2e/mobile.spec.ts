@@ -142,3 +142,29 @@ test('the phone header has its own decision record, reachable from the drawer', 
       .getByRole('heading', { level: 1, name: 'ADR: The phone header' })
   ).toBeVisible();
 });
+
+test('the Admin tiles are two to a row on a phone and nothing on the tab is wider than the phone', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin');
+  const strip = page.getByTestId('stat-strip');
+  await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
+    timeout: 45_000,
+  });
+  const first = await strip.getByTestId('tile-version').boundingBox();
+  const second = await strip.getByTestId('tile-health').boundingBox();
+  const third = await strip.getByTestId('tile-pages').boundingBox();
+  // Two on the first row, side by side and the same size, and the third under the first.
+  expect(first?.y).toBe(second?.y);
+  expect(first?.width).toBe(second?.width);
+  expect(first?.height).toBe(second?.height);
+  expect(third?.x).toBe(first?.x);
+  expect(third?.y ?? 0).toBeGreaterThan(first?.y ?? 0);
+  expect((second?.x ?? 0) + (second?.width ?? 0)).toBeLessThanOrEqual(375);
+  // The machines have read by now, so the widest things on the tab are drawn: charts and tables scroll inside their cards.
+  await expect(page.getByTestId('machines-card')).toBeVisible({ timeout: 60_000 });
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(overflow).toBe(0);
+});

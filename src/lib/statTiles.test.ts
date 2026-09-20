@@ -1,0 +1,176 @@
+import { describe, expect, it } from 'vitest';
+import { sparkRuns, tilesFrom, type TileReadings, uptimeWords, visitorsOn } from './statTiles';
+
+const nothing: TileReadings = {
+  health: null,
+  pages: null,
+  traffic: null,
+  memory: null,
+  charged: null,
+  errors: null,
+  visitorsToday: null,
+};
+
+const quietDay: TileReadings = {
+  health: {
+    status: 'healthy',
+    uptime_seconds: 3 * 3_600 + 12 * 60,
+    version: '1.0.0.161',
+    commit: 'abc1234',
+    checks: [{ status: 'pass' }, { status: 'pass' }, { status: 'pass' }],
+  },
+  pages: { checked: 116, up: 116 },
+  traffic: { requests: 240, slowest_p95_ms: 180, server_errors: 0, client_errors: 2 },
+  memory: { working_set_mb: 310.4, limit_mb: 1185.6 },
+  charged: { request_units: 24.49, free_per_second: 1000 },
+  errors: 0,
+  visitorsToday: 7,
+};
+
+const tile = (readings: TileReadings, key: string) => {
+  const found = tilesFrom(readings).find((candidate) => candidate.key === key);
+  if (found === undefined) throw new Error(`no ${key} tile`);
+  return found;
+};
+
+describe('the stat tiles', () => {
+  it('says a reading has not arrived rather than showing a zero', () => {
+    const tiles = tilesFrom(nothing);
+
+    expect(tiles.map((each) => each.key)).toEqual([
+      'version',
+      'health',
+      'pages',
+      'speed',
+      'memory',
+      'charged',
+      'errors',
+      'visitors',
+    ]);
+    expect(tiles.every((each) => each.tone === 'waiting')).toBe(true);
+    expect(tiles.every((each) => each.value === '…')).toBe(true);
+  });
+
+  it('reads a quiet day as good news, in the order the questions are asked', () => {
+    const tiles = tilesFrom(quietDay);
+
+    expect(tiles.map((each) => each.question)).toEqual([
+      'up',
+      'up',
+      'up',
+      'fast',
+      'cost',
+      'cost',
+      'broke',
+      'fast',
+    ]);
+    expect(tile(quietDay, 'version')).toMatchObject({
+      value: '1.0.0.161',
+      detail: 'abc1234, up 3h 12m',
+    });
+    expect(tile(quietDay, 'health')).toMatchObject({
+      value: 'Healthy',
+      detail: '3 of 3 checks pass',
+      tone: 'good',
+    });
+    expect(tile(quietDay, 'pages')).toMatchObject({ value: '116 of 116', tone: 'good' });
+    expect(tile(quietDay, 'speed')).toMatchObject({ value: '180 ms', tone: 'good' });
+    expect(tile(quietDay, 'memory')).toMatchObject({
+      value: '26%',
+      detail: '310 of 1186 MB',
+      tone: 'good',
+    });
+    expect(tile(quietDay, 'charged')).toMatchObject({ value: '24.5', tone: 'plain' });
+    expect(tile(quietDay, 'errors')).toMatchObject({ value: '0', tone: 'good' });
+    expect(tile(quietDay, 'visitors')).toMatchObject({ value: '7' });
+  });
+
+  it('turns amber for worth a look and red for somebody should be looking', () => {
+    expect(tile({ ...quietDay, pages: { checked: 116, up: 115 } }, 'pages')).toMatchObject({
+      detail: '1 down',
+      tone: 'bad',
+    });
+    expect(
+      tile({ ...quietDay, traffic: { ...quietDay.traffic!, slowest_p95_ms: 1_400 } }, 'speed').tone
+    ).toBe('warn');
+    expect(
+      tile({ ...quietDay, traffic: { ...quietDay.traffic!, slowest_p95_ms: 4_100 } }, 'speed').tone
+    ).toBe('bad');
+    expect(
+      tile({ ...quietDay, memory: { working_set_mb: 1000, limit_mb: 1185.6 } }, 'memory').tone
+    ).toBe('warn');
+    expect(
+      tile({ ...quietDay, memory: { working_set_mb: 1150, limit_mb: 1185.6 } }, 'memory').tone
+    ).toBe('bad');
+    expect(
+      tile(
+        { ...quietDay, traffic: { ...quietDay.traffic!, server_errors: 3 }, errors: 1 },
+        'errors'
+      )
+    ).toMatchObject({
+      value: '3',
+      detail: '3 answered 5xx in the last hour, 1 reported',
+      tone: 'bad',
+    });
+    // A check that fails while the site still calls itself healthy is the fallback serving: amber.
+    expect(
+      tile(
+        {
+          ...quietDay,
+          health: { ...quietDay.health!, checks: [{ status: 'pass' }, { status: 'fail' }] },
+        },
+        'health'
+      )
+    ).toMatchObject({ detail: '1 of 2 checks pass', tone: 'warn' });
+  });
+
+  it('says a quiet hour is quiet, and that is not a speed', () => {
+    expect(
+      tile(
+        {
+          ...quietDay,
+          traffic: { requests: 0, slowest_p95_ms: null, server_errors: 0, client_errors: 0 },
+        },
+        'speed'
+      )
+    ).toMatchObject({ value: 'quiet', tone: 'plain' });
+  });
+
+  it('writes an uptime in its two largest units', () => {
+    expect(uptimeWords(59)).toBe('0m');
+    expect(uptimeWords(3_600 + 120)).toBe('1h 2m');
+    expect(uptimeWords(2 * 86_400 + 5 * 3_600 + 60)).toBe('2d 5h');
+  });
+
+  it('draws the hour under a tile as runs, and leaves a gap where nothing was measured', () => {
+    expect(sparkRuns([0, 10, null, 5, 5], 100, 24)).toEqual(['0,23 25,1', '75,12 100,12']);
+    // One reading is not a line, and neither is none.
+    expect(sparkRuns([null, 4, null], 100, 24)).toEqual([]);
+    expect(sparkRuns([], 100, 24)).toEqual([]);
+    // A flat zero is drawn along the floor and not divided by.
+    expect(sparkRuns([0, 0, 0], 100, 24)).toEqual(['0,23 50,23 100,23']);
+  });
+
+  it('hands the hour to the tile it belongs to', () => {
+    const tiles = tilesFrom({ ...quietDay, sparks: { speed: [1, 2], memory: [3, 4] } });
+    expect(tiles.find((t) => t.key === 'speed')?.spark).toEqual([1, 2]);
+    expect(tiles.find((t) => t.key === 'memory')?.spark).toEqual([3, 4]);
+    expect(tiles.find((t) => t.key === 'version')?.spark).toBeUndefined();
+  });
+
+  it('says there is no document store where there is none, and does not wait for one', () => {
+    expect(tile({ ...quietDay, charged: 'none' }, 'charged')).toMatchObject({
+      value: 'none',
+      tone: 'plain',
+    });
+  });
+
+  it('counts today and only today', () => {
+    const days = [
+      { day: '2026-09-19', humans: 7 },
+      { day: '2026-09-20', humans: 3 },
+    ];
+    expect(visitorsOn(days, new Date('2026-09-20T23:59:00Z'))).toBe(3);
+    expect(visitorsOn(days, new Date('2026-09-21T00:01:00Z'))).toBe(0);
+  });
+});

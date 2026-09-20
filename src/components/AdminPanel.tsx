@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   ACTIVITY_WINDOWS,
   CHART,
@@ -51,6 +51,14 @@ import {
   windowName,
 } from '../lib/machineChart';
 import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
+import {
+  QUESTIONS,
+  sparkRuns,
+  type StatTile,
+  tilesFrom,
+  type TileQuestion,
+  visitorsOn,
+} from '../lib/statTiles';
 import styles from './AdminPanel.module.css';
 
 type HealthCheck = { name: string; status: string; detail: string; duration_ms: number };
@@ -381,6 +389,15 @@ export function AdminPanel({
   // Whether this site serves the per-visitor rows, learned from the activity
   // report; null until it has answered. Off by default (13 September).
   const [rowsServed, setRowsServed] = useState<boolean | null>(null);
+  // What the strip of tiles needs from the cards that do their own reading:
+  // today's people from the activity report, and the last page sweep.
+  const [visitorsToday, setVisitorsToday] = useState<number | null>(null);
+  const [pagesSeen, setPagesSeen] = useState<{ checked: number; up: number } | null>(null);
+  const onActivity = useCallback((report: ActivityReport) => {
+    setRowsServed(report.visitor_rows);
+    setVisitorsToday(visitorsOn(report.days, new Date()));
+  }, []);
+  const { machines, window: machineWindow, toolbar: windowToolbar } = useMachines();
   const [health, setHealth] = useState<Fetched<Health>>(null);
   const [errors, setErrors] = useState<Fetched<ErrorEntry[]>>(null);
   const [azure, setAzure] = useState<Fetched<AzureState>>(null);
@@ -462,6 +479,49 @@ export function AdminPanel({
   };
   // #endregion run-proof
 
+  // #region tiles
+  // The strip is made of what the cards below have already read, by the rules
+  // in statTiles.ts; it asks the server for nothing of its own, so a tile and
+  // the card it points at cannot disagree.
+  const seen = machines !== null && machines !== 'failed' ? machines : null;
+  const hour = seen === null ? null : hourSlots(seen);
+  const lastSample =
+    seen !== null && seen.container.samples.length > 0
+      ? seen.container.samples[seen.container.samples.length - 1]
+      : null;
+  const tiles = tilesFrom({
+    health: health !== null && health !== 'failed' ? health : null,
+    pages: pagesSeen,
+    traffic: hour === null ? null : trafficTotals(hour, 1),
+    memory:
+      seen === null || lastSample === null
+        ? null
+        : { working_set_mb: lastSample.working_set_mb, limit_mb: seen.container.memory_limit_mb },
+    charged:
+      seen === null
+        ? null
+        : seen.document.available
+          ? {
+              request_units: seen.document.request_units,
+              free_per_second: seen.document.free_request_units_per_second,
+            }
+          : 'none',
+    errors: errors !== null && errors !== 'failed' ? errors.length : null,
+    visitorsToday,
+    sparks:
+      seen === null
+        ? undefined
+        : {
+            speed: hour?.map((slot) => slot.p95_ms),
+            memory: seen.container.samples.map((sample) => sample.working_set_mb),
+            charged: seen.document.available
+              ? seen.document.minutes.map((minute) => minute.request_units)
+              : undefined,
+            errors: hour?.map((slot) => slot.server_errors),
+          },
+  });
+  // #endregion tiles
+
   const pill = (ok: boolean) =>
     ok ? `${styles.pill} ${styles.ok}` : `${styles.pill} ${styles.bad}`;
   const failed = (what: string) => (
@@ -479,347 +539,588 @@ export function AdminPanel({
         </button>
       </div>
       <p className={styles.blurb}>
-        The running system reporting on itself: the two stores side by side, application health,
-        what Azure says about the container, the last hour of traffic as Application Insights
-        recorded it, recent errors from both the server and the browser, and below those, every SQL
-        statement and every document store operation it has sent, its own log, and how long each
-        takes. Every statistic the page shows for one store it shows for the other, and where a
-        number has no meaning on one side the page says so in words. Refreshes every 30 seconds.
-        Public on purpose; the reasoning is in the Best Practices menu.
+        The running system reporting on itself, in the order somebody asks: is it up, is it fast, is
+        it costing anything, what broke.
       </p>
-      <ActivityCard adminKey={adminKey} rowsServed={rowsServed} onReport={setRowsServed} />
-      <PagesCard />
-      <MachinesSection />
-      {rowsServed === true && <KeptLogsCard adminKey={adminKey} />}
-      <OperatorCard adminKey={adminKey} onEnterKey={enterKey} onForget={forgetKey} />
-      <ResetLinkCard adminKey={adminKey} />
+      <About>
+        The tiles are made of what the cards below have read, and each one goes to the cards that
+        answer its question. Every statistic the page shows for one store it shows for the other,
+        and where a number has no meaning on one side the page says so in words. Refreshes every 30
+        seconds. Public on purpose; the reasoning is in the Best Practices menu.
+      </About>
+      <StatStrip tiles={tiles} />
 
-      {/* #region backends-card */}
-      <article className={styles.wide} data-testid="backends-card">
-        <h2 className={styles.cardTitle}>Backends, side by side</h2>
-        <p className={styles.muted}>
-          The two stores on the same rows: how long each took to come up, what the seed cost, and
-          how long the things a visitor does take on each, with the request charge beside every
-          number the document store can put one on. A container that runs both stores compares them
-          with each other, in one process, the one serving this visit first; a container that runs
-          one compares itself with its peer, read through its own API with two and a half seconds of
-          patience, so a peer that is down is a sentence here and not a hang. Cold start and seed
-          are measured on each store at its own start; the rest is the last few hundred requests
-          each has served.
-        </p>
-        {metrics === null || peer === null ? (
-          <p className={styles.muted}>Loading…</p>
-        ) : metrics === 'failed' ? (
-          failed('the comparison')
-        ) : (
-          <Comparison mine={metrics} peer={peer === 'failed' ? null : peer} />
-        )}
-      </article>
-      {/* #endregion backends-card */}
-
-      <ProofCard
-        proof={proof}
-        signedIn={signedIn}
-        onRun={() => void runProof()}
-        onOpenAccount={onOpenAccount}
-      />
-
-      {/* #region experiment-card */}
-      <article className={styles.wide} data-testid="experiment-card">
-        <h2 className={styles.cardTitle}>The partition key, live</h2>
-        <p className={styles.muted}>
-          Seven queries against a container of 100,000 vehicles partitioned on the make, run by this
-          container with its own identity when this page asks, and cached for a minute. A query that
-          names the make runs inside one logical partition; one that cannot fans out across every
-          physical partition, and the request charge beside each is what that costs. The reasoning,
-          the alternatives and the honest caveat about how many physical partitions there are at
-          this size are in the partition key record.
-        </p>
-        {experiment === null ? (
-          <p className={styles.muted}>Loading…</p>
-        ) : experiment === 'failed' ? (
-          failed('the experiment')
-        ) : !experiment.available ? (
-          <p className={styles.muted} data-testid="experiment-note">
-            Not available here: {experiment.reason}
-          </p>
-        ) : (
-          <>
-            <p className={styles.muted}>
-              {experiment.container}: {experiment.documents?.toLocaleString()} documents on{' '}
-              {experiment.physical_partitions} physical partition
-              {experiment.physical_partitions === 1 ? '' : 's'}, measured at{' '}
-              {experiment.ran_at ? new Date(experiment.ran_at).toLocaleTimeString() : ''}.
-            </p>
-            <div
-              className={styles.tableWrap}
-              role="region"
-              aria-label="Queries against the partitioned catalogue"
-              tabIndex={0}
-            >
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th scope="col">Query</th>
-                    <th scope="col">Partitions</th>
-                    <th scope="col">Charge</th>
-                    <th scope="col">Took</th>
-                    <th scope="col">Documents</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {experiment.rows.map((row) => (
-                    <tr key={row.query}>
-                      <td>{row.query}</td>
-                      <td className={styles.mono}>{row.partitions}</td>
-                      <td className={styles.mono}>{row.request_charge} RU</td>
-                      <td className={styles.mono}>{row.duration_ms} ms</td>
-                      <td className={styles.mono}>{row.documents}</td>
-                    </tr>
+      <section className={styles.question} aria-labelledby="question-up" data-testid="question-up">
+        <h2 className={styles.questionTitle} id="question-up">
+          {QUESTIONS.up}
+        </h2>
+        <div className={styles.grid}>
+          {/* #region health-card */}
+          <article className={styles.card} data-testid="health-card">
+            <h2 className={styles.cardTitle}>Application health</h2>
+            {health === null ? (
+              <p className={styles.muted}>Loading…</p>
+            ) : health === 'failed' ? (
+              failed('the health report')
+            ) : (
+              <>
+                <p className={styles.statusRow}>
+                  <span className={pill(health.status === 'healthy')}>{health.status}</span>
+                  <span className={styles.muted}>
+                    v{health.version} · {health.commit} · up {formatUptime(health.uptime_seconds)}
+                  </span>
+                </p>
+                <ul className={styles.checkList}>
+                  {health.checks.map((check) => (
+                    <li key={check.name} className={styles.checkRow}>
+                      <span className={pill(check.status === 'pass')}>{check.status}</span>
+                      <span>{check.name}</span>
+                      <span className={styles.muted}>{check.detail}</span>
+                      <span className={styles.duration} data-testid="check-duration">
+                        {check.duration_ms} ms
+                      </span>
+                    </li>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </article>
-      {/* #endregion experiment-card */}
+                </ul>
+              </>
+            )}
+          </article>
+          {/* #endregion health-card */}
 
-      <div className={styles.grid}>
-        {/* #region health-card */}
-        <article className={styles.card} data-testid="health-card">
-          <h2 className={styles.cardTitle}>Application health</h2>
-          {health === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : health === 'failed' ? (
-            failed('the health report')
-          ) : (
-            <>
-              <p className={styles.statusRow}>
-                <span className={pill(health.status === 'healthy')}>{health.status}</span>
-                <span className={styles.muted}>
-                  v{health.version} · {health.commit} · up {formatUptime(health.uptime_seconds)}
-                </span>
-              </p>
-              <ul className={styles.checkList}>
-                {health.checks.map((check) => (
-                  <li key={check.name} className={styles.checkRow}>
-                    <span className={pill(check.status === 'pass')}>{check.status}</span>
-                    <span>{check.name}</span>
-                    <span className={styles.muted}>{check.detail}</span>
-                    <span className={styles.duration} data-testid="check-duration">
-                      {check.duration_ms} ms
+          <article className={styles.card} data-testid="azure-card">
+            <h2 className={styles.cardTitle}>Azure's view of the container</h2>
+            {azure === null ? (
+              <p className={styles.muted}>Loading…</p>
+            ) : azure === 'failed' ? (
+              failed("Azure's view")
+            ) : azure.available && azure.host === 'app-service' ? (
+              // A web app on a shared plan reports a different set of facts from a
+              // container group, and the card shows the set it has: the site's
+              // state, the image it was told to run, and the plan both sites share
+              // (ADR: One plan, two sites).
+              <>
+                <ul className={styles.checkList}>
+                  <li className={styles.checkRow}>
+                    <span className={pill(azure.group_state === 'Running')}>
+                      {azure.group_state}
+                    </span>
+                    <span>
+                      web app{azure.region ? `, ${azure.region}` : ''}, availability{' '}
+                      {azure.availability?.toLowerCase()}
                     </span>
                   </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </article>
-        {/* #endregion health-card */}
-
-        <article className={styles.card} data-testid="azure-card">
-          <h2 className={styles.cardTitle}>Azure's view of the container</h2>
-          {azure === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : azure === 'failed' ? (
-            failed("Azure's view")
-          ) : azure.available && azure.host === 'app-service' ? (
-            // A web app on a shared plan reports a different set of facts from a
-            // container group, and the card shows the set it has: the site's
-            // state, the image it was told to run, and the plan both sites share
-            // (ADR: One plan, two sites).
-            <>
+                  <li className={styles.checkRow}>
+                    <span className={styles.mono}>{azure.plan_name ?? 'plan unread'}</span>
+                    <span className={styles.muted}>
+                      {azure.plan_sku ?? 'size unread'}
+                      {typeof azure.plan_sites === 'number'
+                        ? `, ${azure.plan_sites} site${azure.plan_sites === 1 ? '' : 's'} sharing it`
+                        : ''}
+                    </span>
+                  </li>
+                  <li className={styles.checkRow}>
+                    <span className={styles.mono}>{azure.image?.split('/').pop()}</span>
+                    <span className={styles.muted}>image Azure reports</span>
+                  </li>
+                  <li className={styles.checkRow}>
+                    <span className={pill(azure.always_on === true)}>
+                      {azure.always_on ? 'Always On' : 'Always On is off'}
+                    </span>
+                    <span className={styles.muted}>
+                      {azure.health_check_path
+                        ? `the platform asks ${azure.health_check_path} and replaces an instance that stops answering`
+                        : 'no health check path is set'}
+                    </span>
+                  </li>
+                </ul>
+                <p className={styles.muted}>
+                  App Service keeps no restart count and no container events where this site's
+                  identity can read them, so neither is shown. Uptime on the health card is the
+                  restart story here.
+                </p>
+              </>
+            ) : azure.available ? (
               <ul className={styles.checkList}>
                 <li className={styles.checkRow}>
                   <span className={pill(azure.group_state === 'Running')}>{azure.group_state}</span>
-                  <span>
-                    web app{azure.region ? `, ${azure.region}` : ''}, availability{' '}
-                    {azure.availability?.toLowerCase()}
-                  </span>
+                  <span>container group</span>
                 </li>
                 <li className={styles.checkRow}>
-                  <span className={styles.mono}>{azure.plan_name ?? 'plan unread'}</span>
-                  <span className={styles.muted}>
-                    {azure.plan_sku ?? 'size unread'}
-                    {typeof azure.plan_sites === 'number'
-                      ? `, ${azure.plan_sites} site${azure.plan_sites === 1 ? '' : 's'} sharing it`
-                      : ''}
+                  <span className={pill(azure.container_state === 'Running')}>
+                    {azure.container_state}
+                  </span>
+                  <span>
+                    container, {azure.restart_count} restart{azure.restart_count === 1 ? '' : 's'}
                   </span>
                 </li>
                 <li className={styles.checkRow}>
                   <span className={styles.mono}>{azure.image?.split('/').pop()}</span>
                   <span className={styles.muted}>image Azure reports</span>
                 </li>
-                <li className={styles.checkRow}>
-                  <span className={pill(azure.always_on === true)}>
-                    {azure.always_on ? 'Always On' : 'Always On is off'}
-                  </span>
-                  <span className={styles.muted}>
-                    {azure.health_check_path
-                      ? `the platform asks ${azure.health_check_path} and replaces an instance that stops answering`
-                      : 'no health check path is set'}
-                  </span>
-                </li>
-              </ul>
-              <p className={styles.muted}>
-                App Service keeps no restart count and no container events where this site's
-                identity can read them, so neither is shown. Uptime on the health card is the
-                restart story here.
-              </p>
-            </>
-          ) : azure.available ? (
-            <ul className={styles.checkList}>
-              <li className={styles.checkRow}>
-                <span className={pill(azure.group_state === 'Running')}>{azure.group_state}</span>
-                <span>container group</span>
-              </li>
-              <li className={styles.checkRow}>
-                <span className={pill(azure.container_state === 'Running')}>
-                  {azure.container_state}
-                </span>
-                <span>
-                  container, {azure.restart_count} restart{azure.restart_count === 1 ? '' : 's'}
-                </span>
-              </li>
-              <li className={styles.checkRow}>
-                <span className={styles.mono}>{azure.image?.split('/').pop()}</span>
-                <span className={styles.muted}>image Azure reports</span>
-              </li>
-              {azure.events && azure.events.length > 0 && (
-                <li className={styles.checkRow}>
-                  <span className={styles.muted}>recent events, newest first</span>
-                </li>
-              )}
-              {azure.events?.map((event, index) => (
-                <li key={index} className={styles.checkRow} data-testid="azure-event">
-                  <span className={styles.mono}>{event.name}</span>
-                  <span className={styles.muted}>
-                    {event.count > 1 ? `${event.count} times, last ` : ''}
-                    {event.last_at ? new Date(event.last_at).toLocaleString() : ''}
-                  </span>
-                  <span className={styles.muted}>{shortenDigests(event.message)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className={styles.muted}>
-              The Azure view is unavailable from here ({azure.reason}). It works when this page is
-              served by the container on Azure, which asks about itself with its own identity.
-            </p>
-          )}
-        </article>
-
-        {/* #region telemetry-card */}
-        {/* Application Insights, read back through the container's own identity
-            (ADR-024). Every state the reader can answer with is rendered here:
-            not configured (a local run), configured but unreadable, and the
-            happy path. A telemetry panel that can break the page it reports on
-            would be worse than no panel. */}
-        <article className={styles.card} data-testid="telemetry-card">
-          <h2 className={styles.cardTitle}>Traffic, last hour</h2>
-          {telemetry === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : telemetry === 'failed' ? (
-            failed('the telemetry')
-          ) : !telemetry.configured || telemetry.available === false ? (
-            <p className={styles.muted} data-testid="telemetry-note">
-              {telemetry.note}
-            </p>
-          ) : (
-            <>
-              <div className={styles.statusRow}>
-                <span className={pill((telemetry.summary?.failed ?? 0) === 0)}>
-                  {telemetry.summary?.total ?? 0} request
-                  {(telemetry.summary?.total ?? 0) === 1 ? '' : 's'}
-                </span>
-                <span className={styles.muted}>{telemetry.summary?.failed ?? 0} failed</span>
-                <span className={styles.mono}>p50 {telemetry.summary?.p50_ms ?? 0} ms</span>
-                <span className={styles.mono}>p95 {telemetry.summary?.p95_ms ?? 0} ms</span>
-                {/* Steve asked for every React error, so the count of them is
-                    on the card rather than only in the portal. */}
-                <span className={pill((telemetry.browser?.count ?? 0) === 0)}>
-                  {telemetry.browser?.count ?? 0} browser
-                </span>
-              </div>
-              {telemetry.slowest && telemetry.slowest.length > 0 && (
-                <p className={styles.muted}>Slowest routes</p>
-              )}
-              <ul className={styles.checkList}>
-                {telemetry.slowest?.map((route) => (
-                  <li key={route.name} className={styles.checkRow} data-testid="telemetry-route">
-                    <span className={styles.mono}>{route.name}</span>
-                    <span className={styles.duration}>{route.avg_ms} ms</span>
+                {azure.events && azure.events.length > 0 && (
+                  <li className={styles.checkRow}>
+                    <span className={styles.muted}>recent events, newest first</span>
+                  </li>
+                )}
+                {azure.events?.map((event, index) => (
+                  <li key={index} className={styles.checkRow} data-testid="azure-event">
+                    <span className={styles.mono}>{event.name}</span>
                     <span className={styles.muted}>
-                      {route.calls} call{route.calls === 1 ? '' : 's'}
+                      {event.count > 1 ? `${event.count} times, last ` : ''}
+                      {event.last_at ? new Date(event.last_at).toLocaleString() : ''}
                     </span>
+                    <span className={styles.muted}>{shortenDigests(event.message)}</span>
                   </li>
                 ))}
               </ul>
-              {telemetry.exceptions && telemetry.exceptions.length > 0 && (
-                <>
-                  <p className={styles.muted}>Exceptions</p>
-                  <ul className={styles.errorList}>
-                    {telemetry.exceptions.map((entry, index) => (
-                      <li key={index} className={styles.errorRow} data-testid="telemetry-exception">
-                        <span className={styles.mono}>{entry.type}</span>
-                        <span className={styles.muted}>{entry.method}</span>
-                        <span className={styles.muted}>
-                          {entry.count} time{entry.count === 1 ? '' : 's'}
-                        </span>
-                      </li>
+            ) : (
+              <p className={styles.muted}>
+                The Azure view is unavailable from here ({azure.reason}). It works when this page is
+                served by the container on Azure, which asks about itself with its own identity.
+              </p>
+            )}
+          </article>
+        </div>
+        <PagesCard onReport={setPagesSeen} />
+      </section>
+
+      <section
+        className={styles.question}
+        aria-labelledby="question-fast"
+        data-testid="question-fast"
+      >
+        <h2 className={styles.questionTitle} id="question-fast">
+          {QUESTIONS.fast}
+        </h2>
+        <TrafficSection machines={machines} window={machineWindow} toolbar={windowToolbar} />
+        <div className={styles.grid}>
+          {/* #region telemetry-card */}
+          {/* Application Insights, read back through the container's own identity
+              (ADR-024). Every state the reader can answer with is rendered here:
+              not configured (a local run), configured but unreadable, and the
+              happy path. A telemetry panel that can break the page it reports on
+              would be worse than no panel. */}
+          <article className={styles.card} data-testid="telemetry-card">
+            <h2 className={styles.cardTitle}>Traffic, last hour</h2>
+            {telemetry === null ? (
+              <p className={styles.muted}>Loading…</p>
+            ) : telemetry === 'failed' ? (
+              failed('the telemetry')
+            ) : !telemetry.configured || telemetry.available === false ? (
+              <p className={styles.muted} data-testid="telemetry-note">
+                {telemetry.note}
+              </p>
+            ) : (
+              <>
+                <div className={styles.statusRow}>
+                  <span className={pill((telemetry.summary?.failed ?? 0) === 0)}>
+                    {telemetry.summary?.total ?? 0} request
+                    {(telemetry.summary?.total ?? 0) === 1 ? '' : 's'}
+                  </span>
+                  <span className={styles.muted}>{telemetry.summary?.failed ?? 0} failed</span>
+                  <span className={styles.mono}>p50 {telemetry.summary?.p50_ms ?? 0} ms</span>
+                  <span className={styles.mono}>p95 {telemetry.summary?.p95_ms ?? 0} ms</span>
+                  {/* Steve asked for every React error, so the count of them is
+                      on the card rather than only in the portal. */}
+                  <span className={pill((telemetry.browser?.count ?? 0) === 0)}>
+                    {telemetry.browser?.count ?? 0} browser
+                  </span>
+                </div>
+                {telemetry.slowest && telemetry.slowest.length > 0 && (
+                  <p className={styles.muted}>Slowest routes</p>
+                )}
+                <ul className={styles.checkList}>
+                  {telemetry.slowest?.map((route) => (
+                    <li key={route.name} className={styles.checkRow} data-testid="telemetry-route">
+                      <span className={styles.mono}>{route.name}</span>
+                      <span className={styles.duration}>{route.avg_ms} ms</span>
+                      <span className={styles.muted}>
+                        {route.calls} call{route.calls === 1 ? '' : 's'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {telemetry.exceptions && telemetry.exceptions.length > 0 && (
+                  <>
+                    <p className={styles.muted}>Exceptions</p>
+                    <ul className={styles.errorList}>
+                      {telemetry.exceptions.map((entry, index) => (
+                        <li
+                          key={index}
+                          className={styles.errorRow}
+                          data-testid="telemetry-exception"
+                        >
+                          <span className={styles.mono}>{entry.type}</span>
+                          <span className={styles.muted}>{entry.method}</span>
+                          <span className={styles.muted}>
+                            {entry.count} time{entry.count === 1 ? '' : 's'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </>
+            )}
+          </article>
+          {/* #endregion telemetry-card */}
+        </div>
+        {/* #region timing-section */}
+        <article className={styles.wide} data-testid="timing-card">
+          <h2 className={styles.cardTitle}>Timing</h2>
+          {metrics === null ? (
+            <p className={styles.muted}>Loading…</p>
+          ) : metrics === 'failed' ? (
+            failed('the timing')
+          ) : (
+            <>
+              <p className={styles.muted}>{timingWindow(metrics)}</p>
+              <ul className={styles.summaryList}>
+                <li>
+                  Requests: p50 {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms.
+                </li>
+                {/* The two stores on the same two lines, whichever one serves this
+                    visit (ADR: Backends, side by side, the addendum on parity). */}
+                <li data-testid="timing-sql">{sqlLine(metrics)}</li>
+                <li data-testid="timing-store">{documentStoreLine(metrics)}</li>
+                <li>
+                  Answers:{' '}
+                  {metrics.by_status.length === 0
+                    ? 'nothing recorded yet'
+                    : metrics.by_status
+                        .map((entry) => `${entry.count} with status ${entry.status}`)
+                        .join(', ')}
+                  .
+                </li>
+              </ul>
+              <div
+                className={styles.tableWrap}
+                role="region"
+                aria-label="Request timing by endpoint"
+                tabIndex={0}
+              >
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th scope="col">Path</th>
+                      <th scope="col">Calls</th>
+                      <th scope="col">p50</th>
+                      <th scope="col">p95</th>
+                      <th scope="col">Slowest</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics.requests.by_path.slice(0, 15).map((timing) => (
+                      <tr key={timing.path}>
+                        <td className={styles.mono}>{timing.path}</td>
+                        <td>{timing.count}</td>
+                        <td>{timing.p50_ms} ms</td>
+                        <td>{timing.p95_ms} ms</td>
+                        <td>{timing.max_ms} ms</td>
+                      </tr>
                     ))}
-                  </ul>
-                </>
-              )}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </article>
-        {/* #endregion telemetry-card */}
+        {/* #endregion timing-section */}
 
-        <article className={`${styles.card} ${styles.wideCard}`} data-testid="errors-card">
-          <h2 className={styles.cardTitle}>Recent errors</h2>
-          {errors === null ? (
+        {/* #region backends-card */}
+        <article className={styles.wide} data-testid="backends-card">
+          <h2 className={styles.cardTitle}>Backends, side by side</h2>
+          <About>
+            The two stores on the same rows: how long each took to come up, what the seed cost, and
+            how long the things a visitor does take on each, with the request charge beside every
+            number the document store can put one on. A container that runs both stores compares
+            them with each other, in one process, the one serving this visit first; a container that
+            runs one compares itself with its peer, read through its own API with two and a half
+            seconds of patience, so a peer that is down is a sentence here and not a hang. Cold
+            start and seed are measured on each store at its own start; the rest is the last few
+            hundred requests each has served.
+          </About>
+          {metrics === null || peer === null ? (
             <p className={styles.muted}>Loading…</p>
-          ) : errors === 'failed' ? (
-            failed('the error list')
-          ) : errors.length === 0 ? (
-            <p className={styles.muted}>
-              None recorded since the container started, from the server or the browser. The buffer
-              holds the last 50 and resets on every deploy; Application Insights keeps the durable
-              copy (ADR: Telemetry). A server error carries its stack, file and line beside it; the
-              exception&rsquo;s message is deliberately not here, because a message is where a
-              framework writes a connection detail and this page is public.
+          ) : metrics === 'failed' ? (
+            failed('the comparison')
+          ) : (
+            <Comparison mine={metrics} peer={peer === 'failed' ? null : peer} />
+          )}
+        </article>
+        {/* #endregion backends-card */}
+
+        <ProofCard
+          proof={proof}
+          signedIn={signedIn}
+          onRun={() => void runProof()}
+          onOpenAccount={onOpenAccount}
+        />
+      </section>
+
+      <section
+        className={styles.question}
+        aria-labelledby="question-cost"
+        data-testid="question-cost"
+      >
+        <h2 className={styles.questionTitle} id="question-cost">
+          {QUESTIONS.cost}
+        </h2>
+        <MachinesCard machines={machines} window={machineWindow} />
+        {/* #region experiment-card */}
+        <article className={styles.wide} data-testid="experiment-card">
+          <h2 className={styles.cardTitle}>The partition key, live</h2>
+          <About>
+            Seven queries against a container of 100,000 vehicles partitioned on the make, run by
+            this container with its own identity when this page asks, and cached for a minute. A
+            query that names the make runs inside one logical partition; one that cannot fans out
+            across every physical partition, and the request charge beside each is what that costs.
+            The reasoning, the alternatives and the honest caveat about how many physical partitions
+            there are at this size are in the partition key record.
+          </About>
+          {experiment === null ? (
+            <p className={styles.muted}>Loading…</p>
+          ) : experiment === 'failed' ? (
+            failed('the experiment')
+          ) : !experiment.available ? (
+            <p className={styles.muted} data-testid="experiment-note">
+              Not available here: {experiment.reason}
             </p>
           ) : (
-            <div className={styles.tableWrap} role="region" aria-label="Recent errors" tabIndex={0}>
-              <table className={styles.table} data-testid="errors-table">
+            <>
+              <p className={styles.muted}>
+                {experiment.container}: {experiment.documents?.toLocaleString()} documents on{' '}
+                {experiment.physical_partitions} physical partition
+                {experiment.physical_partitions === 1 ? '' : 's'}, measured at{' '}
+                {experiment.ran_at ? new Date(experiment.ran_at).toLocaleTimeString() : ''}.
+              </p>
+              <div
+                className={styles.tableWrap}
+                role="region"
+                aria-label="Queries against the partitioned catalogue"
+                tabIndex={0}
+              >
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th scope="col">Query</th>
+                      <th scope="col">Partitions</th>
+                      <th scope="col">Charge</th>
+                      <th scope="col">Took</th>
+                      <th scope="col">Documents</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {experiment.rows.map((row) => (
+                      <tr key={row.query}>
+                        <td>{row.query}</td>
+                        <td className={styles.mono}>{row.partitions}</td>
+                        <td className={styles.mono}>{row.request_charge} RU</td>
+                        <td className={styles.mono}>{row.duration_ms} ms</td>
+                        <td className={styles.mono}>{row.documents}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </article>
+        {/* #endregion experiment-card */}
+
+        {/* #region sql-section */}
+        {/* The document store's card when this container has a document store,
+            the SQL card when it has a relational one, and both when it runs both
+            (ADR: One container, both stores). Each card's rule reads the
+            backends list first, which names every store the container runs
+            whichever one serves this visit, and falls back on the log's own
+            label for a container on an older build. */}
+        {store !== null &&
+        store !== 'failed' &&
+        (store.store === 'Azure Cosmos DB' ||
+          (metrics !== null && metrics !== 'failed' && documentStore(metrics) !== null)) ? (
+          <StoreCard log={store} />
+        ) : null}
+        {store === null ||
+        store === 'failed' ||
+        store.store !== 'Azure Cosmos DB' ||
+        (metrics !== null &&
+          metrics !== 'failed' &&
+          (metrics.backends ?? []).some((backend) => backend.sql !== null)) ? (
+          <article className={styles.wide} data-testid="sql-card">
+            <h2 className={styles.cardTitle}>The SQL this application ran</h2>
+            <About>
+              Every statement Entity Framework sent, newest first, with the request that caused it
+              and how long the database took. Parameters are listed by name, type and size. Their
+              values are not here and never were: the type this table is built from has no field to
+              put one in, because this page is public and a registration&rsquo;s parameters carry an
+              email address. The request is the method and the path, without its query string, for
+              the same reason. Statements caused by this page and by the health check are left out,
+              or watching would be all there was to see. The buffer holds the last 200 in this
+              container&rsquo;s memory and empties on every deploy.
+            </About>
+            {sql === null ? (
+              <p className={styles.muted}>Loading…</p>
+            ) : sql === 'failed' ? (
+              failed('the SQL log')
+            ) : sql.length === 0 ? (
+              <p className={styles.muted}>
+                Nothing recorded yet. The catalogue is read once at startup and cached, so an idle
+                container runs no SQL at all.
+              </p>
+            ) : (
+              <div
+                className={styles.tableWrap}
+                role="region"
+                aria-label="SQL statements this application ran"
+                tabIndex={0}
+              >
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th scope="col">At</th>
+                      <th scope="col">Took</th>
+                      <th scope="col">Caused by</th>
+                      <th scope="col">Statement</th>
+                      <th scope="col">Parameters</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sql.slice(0, 60).map((statement, index) => (
+                      <tr key={index}>
+                        <td className={styles.mono}>
+                          {new Date(statement.at).toLocaleTimeString()}
+                        </td>
+                        <td className={styles.mono}>{statement.duration_ms} ms</td>
+                        <td className={styles.mono}>{statement.request ?? 'startup'}</td>
+                        <td>
+                          <pre className={styles.sql}>{statement.text}</pre>
+                          <span className={styles.muted}>{statement.outcome}</span>
+                        </td>
+                        <td className={styles.mono}>{describeParameters(statement.parameters)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </article>
+        ) : null}
+        {/* #endregion sql-section */}
+      </section>
+
+      <section
+        className={styles.question}
+        aria-labelledby="question-broke"
+        data-testid="question-broke"
+      >
+        <h2 className={styles.questionTitle} id="question-broke">
+          {QUESTIONS.broke}
+        </h2>
+        <div className={styles.grid}>
+          <article className={`${styles.card} ${styles.wideCard}`} data-testid="errors-card">
+            <h2 className={styles.cardTitle}>Recent errors</h2>
+            {errors === null ? (
+              <p className={styles.muted}>Loading…</p>
+            ) : errors === 'failed' ? (
+              failed('the error list')
+            ) : errors.length === 0 ? (
+              <p className={styles.muted}>
+                None recorded since the container started, from the server or the browser. The
+                buffer holds the last 50 and resets on every deploy; Application Insights keeps the
+                durable copy (ADR: Telemetry). A server error carries its stack, file and line
+                beside it; the exception&rsquo;s message is deliberately not here, because a message
+                is where a framework writes a connection detail and this page is public.
+              </p>
+            ) : (
+              <div
+                className={styles.tableWrap}
+                role="region"
+                aria-label="Recent errors"
+                tabIndex={0}
+              >
+                <table className={styles.table} data-testid="errors-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">At</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Where</th>
+                      <th scope="col">What</th>
+                      <th scope="col">Stack</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {errors.map((entry, index) => (
+                      <tr key={index}>
+                        <td className={styles.mono}>{new Date(entry.at).toLocaleTimeString()}</td>
+                        <td className={styles.mono}>
+                          {entry.status === 0 ? 'browser' : entry.status}
+                        </td>
+                        <td className={styles.mono}>{entry.path}</td>
+                        <td>{entry.message}</td>
+                        <td>
+                          {entry.frames.length === 0 ? (
+                            <span className={styles.muted}>no stack</span>
+                          ) : (
+                            <details data-testid={`error-frames-${index}`}>
+                              <summary>{entry.frames.length} frames</summary>
+                              <pre className={styles.sql}>{entry.frames.join('\n')}</pre>
+                            </details>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </article>
+        </div>
+        {/* #region log-section */}
+        <article className={styles.wide} data-testid="log-card">
+          <h2 className={styles.cardTitle}>The log, as the console got it</h2>
+          <About>
+            This application&rsquo;s own log lines at Information and above, newest first, holding
+            the last 300 in memory. Its own, which since 1.0.0.103 includes one line per document
+            store operation with its charge and its time, and the one framework category that gives
+            every SQL statement a line of its own: the rest of the framework is left out because a
+            healthy container announces its content root and its key directory, and those are server
+            paths on a public page. An exception shows its type. Its message stays server-side,
+            because a database driver writes the server name, the login name and the caller&rsquo;s
+            address into one.
+          </About>
+          {logs === null ? (
+            <p className={styles.muted}>Loading…</p>
+          ) : logs === 'failed' ? (
+            failed('the log')
+          ) : logs.length === 0 ? (
+            <p className={styles.muted}>Nothing recorded since the container started.</p>
+          ) : (
+            <div
+              className={styles.tableWrap}
+              role="region"
+              aria-label="Recent log lines"
+              tabIndex={0}
+            >
+              <table className={styles.table}>
                 <thead>
                   <tr>
                     <th scope="col">At</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Where</th>
-                    <th scope="col">What</th>
-                    <th scope="col">Stack</th>
+                    <th scope="col">Level</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Message</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {errors.map((entry, index) => (
+                  {logs.slice(0, 80).map((entry, index) => (
                     <tr key={index}>
                       <td className={styles.mono}>{new Date(entry.at).toLocaleTimeString()}</td>
-                      <td className={styles.mono}>
-                        {entry.status === 0 ? 'browser' : entry.status}
-                      </td>
-                      <td className={styles.mono}>{entry.path}</td>
-                      <td>{entry.message}</td>
+                      <td className={styles.mono}>{entry.level}</td>
+                      <td className={styles.mono}>{entry.category}</td>
                       <td>
-                        {entry.frames.length === 0 ? (
-                          <span className={styles.muted}>no stack</span>
-                        ) : (
-                          <details data-testid={`error-frames-${index}`}>
-                            <summary>{entry.frames.length} frames</summary>
-                            <pre className={styles.sql}>{entry.frames.join('\n')}</pre>
-                          </details>
+                        {entry.message}
+                        {entry.exception === null ? null : (
+                          <span className={styles.muted}> ({entry.exception})</span>
                         )}
                       </td>
                     </tr>
@@ -829,204 +1130,102 @@ export function AdminPanel({
             </div>
           )}
         </article>
-      </div>
+        {/* #endregion log-section */}
+        {rowsServed === true && <KeptLogsCard adminKey={adminKey} />}
+      </section>
 
-      {/* #region timing-section */}
-      <article className={styles.wide} data-testid="timing-card">
-        <h2 className={styles.cardTitle}>Timing</h2>
-        {metrics === null ? (
-          <p className={styles.muted}>Loading…</p>
-        ) : metrics === 'failed' ? (
-          failed('the timing')
-        ) : (
-          <>
-            <p className={styles.muted}>{timingWindow(metrics)}</p>
-            <ul className={styles.summaryList}>
-              <li>
-                Requests: p50 {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms.
-              </li>
-              {/* The two stores on the same two lines, whichever one serves this
-                  visit (ADR: Backends, side by side, the addendum on parity). */}
-              <li data-testid="timing-sql">{sqlLine(metrics)}</li>
-              <li data-testid="timing-store">{documentStoreLine(metrics)}</li>
-              <li>
-                Answers:{' '}
-                {metrics.by_status.length === 0
-                  ? 'nothing recorded yet'
-                  : metrics.by_status
-                      .map((entry) => `${entry.count} with status ${entry.status}`)
-                      .join(', ')}
-                .
-              </li>
-            </ul>
-            <div
-              className={styles.tableWrap}
-              role="region"
-              aria-label="Request timing by endpoint"
-              tabIndex={0}
-            >
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th scope="col">Path</th>
-                    <th scope="col">Calls</th>
-                    <th scope="col">p50</th>
-                    <th scope="col">p95</th>
-                    <th scope="col">Slowest</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.requests.by_path.slice(0, 15).map((timing) => (
-                    <tr key={timing.path}>
-                      <td className={styles.mono}>{timing.path}</td>
-                      <td>{timing.count}</td>
-                      <td>{timing.p50_ms} ms</td>
-                      <td>{timing.p95_ms} ms</td>
-                      <td>{timing.max_ms} ms</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </article>
-      {/* #endregion timing-section */}
-
-      {/* #region sql-section */}
-      {/* The document store's card when this container has a document store,
-          the SQL card when it has a relational one, and both when it runs both
-          (ADR: One container, both stores). Each card's rule reads the
-          backends list first, which names every store the container runs
-          whichever one serves this visit, and falls back on the log's own
-          label for a container on an older build. */}
-      {store !== null &&
-      store !== 'failed' &&
-      (store.store === 'Azure Cosmos DB' ||
-        (metrics !== null && metrics !== 'failed' && documentStore(metrics) !== null)) ? (
-        <StoreCard log={store} />
-      ) : null}
-      {store === null ||
-      store === 'failed' ||
-      store.store !== 'Azure Cosmos DB' ||
-      (metrics !== null &&
-        metrics !== 'failed' &&
-        (metrics.backends ?? []).some((backend) => backend.sql !== null)) ? (
-        <article className={styles.wide} data-testid="sql-card">
-          <h2 className={styles.cardTitle}>The SQL this application ran</h2>
-          <p className={styles.muted}>
-            Every statement Entity Framework sent, newest first, with the request that caused it and
-            how long the database took. Parameters are listed by name, type and size. Their values
-            are not here and never were: the type this table is built from has no field to put one
-            in, because this page is public and a registration&rsquo;s parameters carry an email
-            address. The request is the method and the path, without its query string, for the same
-            reason. Statements caused by this page and by the health check are left out, or watching
-            would be all there was to see. The buffer holds the last 200 in this container&rsquo;s
-            memory and empties on every deploy.
-          </p>
-          {sql === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : sql === 'failed' ? (
-            failed('the SQL log')
-          ) : sql.length === 0 ? (
-            <p className={styles.muted}>
-              Nothing recorded yet. The catalogue is read once at startup and cached, so an idle
-              container runs no SQL at all.
-            </p>
-          ) : (
-            <div
-              className={styles.tableWrap}
-              role="region"
-              aria-label="SQL statements this application ran"
-              tabIndex={0}
-            >
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th scope="col">At</th>
-                    <th scope="col">Took</th>
-                    <th scope="col">Caused by</th>
-                    <th scope="col">Statement</th>
-                    <th scope="col">Parameters</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sql.slice(0, 60).map((statement, index) => (
-                    <tr key={index}>
-                      <td className={styles.mono}>{new Date(statement.at).toLocaleTimeString()}</td>
-                      <td className={styles.mono}>{statement.duration_ms} ms</td>
-                      <td className={styles.mono}>{statement.request ?? 'startup'}</td>
-                      <td>
-                        <pre className={styles.sql}>{statement.text}</pre>
-                        <span className={styles.muted}>{statement.outcome}</span>
-                      </td>
-                      <td className={styles.mono}>{describeParameters(statement.parameters)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </article>
-      ) : null}
-      {/* #endregion sql-section */}
-
-      {/* #region log-section */}
-      <article className={styles.wide} data-testid="log-card">
-        <h2 className={styles.cardTitle}>The log, as the console got it</h2>
-        <p className={styles.muted}>
-          This application&rsquo;s own log lines at Information and above, newest first, holding the
-          last 300 in memory. Its own, which since 1.0.0.103 includes one line per document store
-          operation with its charge and its time, and the one framework category that gives every
-          SQL statement a line of its own: the rest of the framework is left out because a healthy
-          container announces its content root and its key directory, and those are server paths on
-          a public page. An exception shows its type. Its message stays server-side, because a
-          database driver writes the server name, the login name and the caller&rsquo;s address into
-          one.
-        </p>
-        {logs === null ? (
-          <p className={styles.muted}>Loading…</p>
-        ) : logs === 'failed' ? (
-          failed('the log')
-        ) : logs.length === 0 ? (
-          <p className={styles.muted}>Nothing recorded since the container started.</p>
-        ) : (
-          <div
-            className={styles.tableWrap}
-            role="region"
-            aria-label="Recent log lines"
-            tabIndex={0}
-          >
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">At</th>
-                  <th scope="col">Level</th>
-                  <th scope="col">Category</th>
-                  <th scope="col">Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.slice(0, 80).map((entry, index) => (
-                  <tr key={index}>
-                    <td className={styles.mono}>{new Date(entry.at).toLocaleTimeString()}</td>
-                    <td className={styles.mono}>{entry.level}</td>
-                    <td className={styles.mono}>{entry.category}</td>
-                    <td>
-                      {entry.message}
-                      {entry.exception === null ? null : (
-                        <span className={styles.muted}> ({entry.exception})</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </article>
-      {/* #endregion log-section */}
+      <section
+        className={styles.question}
+        aria-labelledby="question-desk"
+        data-testid="question-desk"
+      >
+        <h2 className={styles.questionTitle} id="question-desk">
+          Who came, and the operator&rsquo;s desk
+        </h2>
+        <ActivityCard adminKey={adminKey} rowsServed={rowsServed} onReport={onActivity} />
+        <OperatorCard adminKey={adminKey} onEnterKey={enterKey} onForget={forgetKey} />
+        <ResetLinkCard adminKey={adminKey} />
+      </section>
     </section>
+  );
+}
+
+// #region stat-strip
+/**
+ * The strip across the top (ADR: The Admin tab, as a product): eight tiles
+ * under four questions, each a button that goes to the cards that answer it.
+ * What a tile says and what colour it is are decided in statTiles.ts, which
+ * has no React in it; this only draws. The tone is a word as well as a
+ * colour, because a colour alone says nothing to somebody who cannot see it.
+ */
+const QUESTION_ORDER: TileQuestion[] = ['up', 'fast', 'cost', 'broke'];
+const TONE_WORD: Record<StatTile['tone'], string | null> = {
+  good: 'fine',
+  warn: 'worth a look',
+  bad: 'needs attention',
+  plain: null,
+  waiting: 'waiting',
+};
+
+function StatStrip({ tiles }: { tiles: StatTile[] }) {
+  const toneClass: Record<StatTile['tone'], string> = {
+    good: styles.tileGood,
+    warn: styles.tileWarn,
+    bad: styles.tileBad,
+    plain: styles.tilePlain,
+    waiting: styles.tileWaiting,
+  };
+  const ordered = QUESTION_ORDER.flatMap((question) =>
+    tiles.filter((tile) => tile.question === question)
+  );
+  return (
+    <ul className={styles.strip} aria-label="The site at a glance" data-testid="stat-strip">
+      {ordered.map((tile) => {
+        const runs = tile.spark === undefined ? [] : sparkRuns(tile.spark, 100, 24);
+        const word = TONE_WORD[tile.tone];
+        return (
+          <li key={tile.key} className={styles.stripItem}>
+            <button
+              type="button"
+              className={`${styles.tile} ${toneClass[tile.tone]}`}
+              data-testid={`tile-${tile.key}`}
+              data-tone={tile.tone}
+              onClick={() => document.getElementById(`question-${tile.question}`)?.scrollIntoView()}
+            >
+              <span className={styles.tileQuestion}>{QUESTIONS[tile.question]}</span>
+              <span className={styles.tileLabel}>{tile.label}</span>
+              <span className={styles.tileValue}>{tile.value}</span>
+              <span className={styles.tileDetail}>{tile.detail}</span>
+              {word !== null && <span className={styles.tileTone}>{word}</span>}
+              {runs.length > 0 && (
+                <svg
+                  className={styles.spark}
+                  viewBox="0 0 100 24"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  {runs.map((points) => (
+                    <polyline key={points} points={points} />
+                  ))}
+                </svg>
+              )}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+// #endregion stat-strip
+
+/** What a card is and how to read it, folded away: the numbers come first, and the paragraph is one tap off. */
+function About({ children }: { children: ReactNode }) {
+  return (
+    <details className={styles.about}>
+      <summary className={styles.aboutSummary}>What this shows</summary>
+      <p className={styles.muted}>{children}</p>
+    </details>
   );
 }
 
@@ -1110,7 +1309,7 @@ function ActivityCard({
 }: {
   adminKey: string | null;
   rowsServed: boolean | null;
-  onReport: (visitorRows: boolean) => void;
+  onReport: (report: ActivityReport) => void;
 }) {
   const [window_, setWindow] = useState<ActivityWindow>('7d');
   const [report, setReport] = useState<Fetched<ActivityReport>>(null);
@@ -1128,7 +1327,7 @@ function ActivityCard({
       .then((v) => {
         if (live) {
           setReport(v);
-          onReport(v.visitor_rows);
+          onReport(v);
         }
       })
       .catch(() => {
@@ -1167,7 +1366,7 @@ function ActivityCard({
   return (
     <article className={styles.wide} data-testid="activity-card">
       <h2 className={styles.cardTitle}>Site activity</h2>
-      <p className={styles.muted}>
+      <About>
         Unique visitors per day, everybody and each store, from rows kept in Azure Cosmos DB by both
         sites, each row naming the store that served it, so the two stores show against each other
         and a paused relational database cannot take this card down with it. Under it, each
@@ -1177,7 +1376,7 @@ function ActivityCard({
         counts group and nothing joins across days or back to a person; a full address is never
         stored and no account is ever named. The table of visitors is behind a key only the operator
         holds.
-      </p>
+      </About>
       <p className={styles.statusRow} role="group" aria-label="Window">
         {ACTIVITY_WINDOWS.map((option) => (
           <button
@@ -1345,13 +1544,13 @@ function KeptLogsCard({ adminKey }: { adminKey: string | null }) {
   return (
     <article className={styles.wide} data-testid="kept-logs-card">
       <h2 className={styles.cardTitle}>Kept log</h2>
-      <p className={styles.muted}>
+      <About>
         Every request, every error and every warning, written to Azure Cosmos DB off the request
         path in batches and kept for three years, so the log outlives the container and the thirty
         days Application Insights keeps. The same rule as the visitor table: a request is a token
         that changes daily and a network to three octets, an error is its type, its message and a
         bounded stack, and no field can carry an at sign. Behind a key only the operator holds.
-      </p>
+      </About>
       {key === null ? (
         <p className={styles.muted} data-testid="kept-logs-keyless">
           The kept log answers only to the operator's key.
@@ -1602,11 +1801,11 @@ function ResetLinkCard({ adminKey }: { adminKey: string | null }) {
   return (
     <article className={styles.wide} data-testid="reset-link-card">
       <h2 className={styles.cardTitle}>Reset a password</h2>
-      <p className={styles.muted}>
+      <About>
         Mint a reset link for an account on this site's store and hand it to the person. The link
         works once, for an hour, and dies the moment the password changes. An emailed link is the
         same mechanism with a sender in front of it.
-      </p>
+      </About>
       <form
         className={styles.filterRow}
         aria-label="Mint a reset link"
@@ -1825,7 +2024,7 @@ function ProofCard({
   return (
     <article className={styles.wide} data-testid="proof-card">
       <h2 className={styles.cardTitle}>Same performance, proven</h2>
-      <p className={styles.muted}>
+      <About>
         The same requests a visitor makes, sent by this container to itself on both stores in paired
         rounds that alternate which store goes first: identical process, identical request, only the
         store differs. Each row is one path; the difference is the median of the paired differences,
@@ -1834,7 +2033,7 @@ function ProofCard({
         bids with two accounts of its own, one per store, made once and kept, and a run takes about
         half a minute. Reading the result is open to anyone; starting a run is a write, so it takes
         a signed-in visitor, like every other write here.
-      </p>
+      </About>
       <p>
         {/* Starting a run writes sixteen bids, so the button follows the one
             rule every write on this site follows (ADR: The one write a
@@ -2281,6 +2480,16 @@ function MachineChart({
  * every window. A build with no traffic block, or a window nothing is kept
  * for, keeps its sentence and draws nothing, rather than pretending to a line.
  */
+/** The hour the request ring holds, as slots; the traffic card and the tiles over the page both read this one. */
+function hourSlots(machines: Machines): TrafficSlot[] | null {
+  if (machines.traffic === undefined) return null;
+  const minutes = machines.traffic.minutes;
+  return hourOfTraffic(
+    minutes,
+    new Date(machines.history?.as_of ?? minutes[minutes.length - 1]?.at ?? 0)
+  );
+}
+
 function TrafficCard({
   machines,
   window: window_,
@@ -2296,20 +2505,7 @@ function TrafficCard({
       ? timeline(history.buckets, window_, history.bucket_minutes, new Date(history.as_of))
       : null;
   const slots: TrafficSlot[] | null =
-    window_ === '1h'
-      ? machines.traffic === undefined
-        ? null
-        : hourOfTraffic(
-            machines.traffic.minutes,
-            new Date(
-              history?.as_of ??
-                machines.traffic.minutes[machines.traffic.minutes.length - 1]?.at ??
-                0
-            )
-          )
-      : keptSlots === null
-        ? null
-        : keptTraffic(keptSlots);
+    window_ === '1h' ? hourSlots(machines) : keptSlots === null ? null : keptTraffic(keptSlots);
   const minutesPerSlot = window_ === '1h' ? 1 : (history?.bucket_minutes ?? 1);
   const totals = slots === null ? null : trafficTotals(slots, minutesPerSlot);
   const series = (key: string, name: string, pick: (slot: TrafficSlot) => number | null) => ({
@@ -2321,13 +2517,13 @@ function TrafficCard({
   return (
     <article className={styles.wide} data-testid="traffic-card">
       <h2 className={styles.cardTitle}>Traffic</h2>
-      <p className={styles.muted}>
+      <About>
         How busy the site is, how fast it is answering and whether anything is failing, over the
         window chosen here, which the machines card below follows. The last hour is the request ring
         this process keeps, {machines.traffic?.ring ?? 500} requests deep, a minute at a time; the
         wider windows are the minutes each site keeps in Azure Cosmos DB. This tab&rsquo;s own reads
         and the page sweep are not counted in either.
-      </p>
+      </About>
       {toolbar}
       {slots === null || totals === null ? (
         <p className={styles.muted} data-testid="traffic-note">
@@ -2499,7 +2695,18 @@ function KeptWindow({ machines, window: kept }: { machines: Machines; window: Ma
  * reading of itself, and the document store has no memory reading to give and
  * says so.
  */
-function MachinesSection() {
+// #region machines-read
+/**
+ * One read for the traffic card, the machines card and the tiles over the
+ * page, and one window for all three: they are only worth looking at side by
+ * side over the same stretch. A hook and not a component since 1.0.0.161,
+ * because the two cards now sit under different questions.
+ */
+function useMachines(): {
+  machines: Fetched<Machines>;
+  window: MachineWindow;
+  toolbar: ReactNode;
+} {
   const [machines, setMachines] = useState<Fetched<Machines>>(null);
   const [window_, setWindow] = useState<MachineWindow>('1h');
 
@@ -2526,8 +2733,6 @@ function MachinesSection() {
     };
   }, [window_]);
 
-  // One window for both cards: the traffic and the machines are read in one
-  // request and are only worth looking at side by side over the same stretch.
   const toolbar = (
     <p className={styles.statusRow} role="group" aria-label="Window">
       {MACHINE_WINDOWS.map((option) => (
@@ -2552,36 +2757,55 @@ function MachinesSection() {
     </p>
   );
 
+  return { machines, window: window_, toolbar };
+}
+// #endregion machines-read
+
+function TrafficSection({
+  machines,
+  window: window_,
+  toolbar,
+}: {
+  machines: Fetched<Machines>;
+  window: MachineWindow;
+  toolbar: ReactNode;
+}) {
   if (machines === null || machines === 'failed') {
     return (
-      <>
-        <article className={styles.wide} data-testid="traffic-card">
-          <h2 className={styles.cardTitle}>Traffic</h2>
-          {toolbar}
-          <p className={styles.muted}>
-            {machines === null ? 'Loading…' : 'Could not read the traffic on the last try.'}
-          </p>
-        </article>
-        <article className={styles.wide} data-testid="machines-card">
-          <h2 className={styles.cardTitle}>What the machines are doing</h2>
-          {machines === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : (
-            <p className={styles.muted} data-testid="machines-failed">
-              Could not read the machines on the last try.
-            </p>
-          )}
-        </article>
-      </>
+      <article className={styles.wide} data-testid="traffic-card">
+        <h2 className={styles.cardTitle}>Traffic</h2>
+        {toolbar}
+        <p className={styles.muted}>
+          {machines === null ? 'Loading…' : 'Could not read the traffic on the last try.'}
+        </p>
+      </article>
     );
   }
+  return <TrafficCard machines={machines} window={window_} toolbar={toolbar} />;
+}
 
-  return (
-    <>
-      <TrafficCard machines={machines} window={window_} toolbar={toolbar} />
-      <MachinesBody machines={machines} window={window_} />
-    </>
-  );
+function MachinesCard({
+  machines,
+  window: window_,
+}: {
+  machines: Fetched<Machines>;
+  window: MachineWindow;
+}) {
+  if (machines === null || machines === 'failed') {
+    return (
+      <article className={styles.wide} data-testid="machines-card">
+        <h2 className={styles.cardTitle}>What the machines are doing</h2>
+        {machines === null ? (
+          <p className={styles.muted}>Loading…</p>
+        ) : (
+          <p className={styles.muted} data-testid="machines-failed">
+            Could not read the machines on the last try.
+          </p>
+        )}
+      </article>
+    );
+  }
+  return <MachinesBody machines={machines} window={window_} />;
 }
 
 function MachinesBody({
@@ -2603,7 +2827,7 @@ function MachinesBody({
   return (
     <article className={styles.wide} data-testid="machines-card">
       <h2 className={styles.cardTitle}>What the machines are doing</h2>
-      <p className={styles.muted}>
+      <About>
         The three machines under this site, each reporting the way it actually reports. The
         container knows its own memory and its own processor time, and the limit its share is read
         against is the runtime&rsquo;s own, which is lower than the memory the machine has, and a
@@ -2614,7 +2838,7 @@ function MachinesBody({
         container&rsquo;s own, kept in its memory, and empties on every roll. The wider windows are
         a minute at a time, kept in Azure Cosmos DB by each site for thirty-one days, so they
         survive a roll and show one.
-      </p>
+      </About>
       <p className={styles.muted} data-testid="machines-window-line">
         Showing {windowName(window_).toLowerCase()}, the window chosen on the traffic card above.
       </p>
@@ -2873,7 +3097,7 @@ function MachinesBody({
  * now. Failures sort to the top because they are the only rows anybody needs
  * to read; the rest is there so the count can be checked rather than believed.
  */
-function PagesCard() {
+function PagesCard({ onReport }: { onReport: (seen: { checked: number; up: number }) => void }) {
   const [pages, setPages] = useState<Fetched<PageStatus>>(null);
   const [asked, setAsked] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -2887,7 +3111,10 @@ function PagesCard() {
           r.ok ? (r.json() as Promise<PageStatus>) : Promise.reject(new Error(String(r.status)))
         )
         .then((v) => {
-          if (live) setPages(v);
+          if (live) {
+            setPages(v);
+            if (v.report !== null) onReport({ checked: v.report.checked, up: v.report.up });
+          }
           return v;
         })
         .catch(() => {
@@ -2910,7 +3137,7 @@ function PagesCard() {
       live = false;
       window.clearInterval(timer);
     };
-  }, [asked]);
+  }, [asked, onReport]);
 
   const report = pages !== null && pages !== 'failed' ? pages.report : null;
   const down = report ? report.entries.filter((entry) => !entry.ok) : [];
@@ -2923,7 +3150,7 @@ function PagesCard() {
   return (
     <article className={styles.wide} data-testid="pages-card">
       <h2 className={styles.cardTitle}>Every page, checked</h2>
-      <p className={styles.muted}>
+      <About>
         This container asks itself for every address it serves and records what came back: the app,
         the API&rsquo;s own front pages, the three files at the root of the domain, every document
         in the catalogue and every drawing. The list is built from the catalogue rather than kept
@@ -2933,7 +3160,7 @@ function PagesCard() {
         markdown is a defect this card would have caught in the README weeks ago. This is the
         container&rsquo;s own view, dialled on its loopback; what the edge is serving the public is
         read from outside after every ship.
-      </p>
+      </About>
       {pages === null ? (
         <p className={styles.muted}>Loading…</p>
       ) : pages === 'failed' ? (
@@ -3052,7 +3279,7 @@ function StoreCard({ log }: { log: StoreLog }) {
   return (
     <article className={styles.wide} data-testid="store-card">
       <h2 className={styles.cardTitle}>What the document store ran</h2>
-      <p className={styles.muted}>
+      <About>
         Every operation this container sent to {log.store}, newest first: the container, whether it
         was a point read, a point write, a query or a batch, whether it was pinned to one partition
         or fanned out across every physical partition, and what it cost in request units beside how
@@ -3061,7 +3288,7 @@ function StoreCard({ log }: { log: StoreLog }) {
         account&rsquo;s partition is the account. Operations caused by this page and by the health
         check are left out. The buffer holds the last 200 in this container&rsquo;s memory and
         empties on every deploy.
-      </p>
+      </About>
       {log.operations.length === 0 ? (
         <p className={styles.muted}>Nothing recorded yet.</p>
       ) : (
