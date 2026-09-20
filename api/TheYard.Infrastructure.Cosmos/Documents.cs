@@ -35,6 +35,9 @@ public static class Containers
     /// <summary>Password reset links: one document per link under the GUID the link carries, expiring after the hour by the container's time-to-live, deleted on use (ADR: Accounts and per-user bids).</summary>
     public const string Resets = "resets";
 
+    /// <summary>What the machines were doing: one document a minute from each site, partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: What the machines are doing).</summary>
+    public const string Machines = "machines";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -47,6 +50,7 @@ public static class Containers
         [Activity] = "/day",
         [Logs] = "/day",
         [Resets] = "/id",
+        [Machines] = "/day",
     };
 
     /// <summary>
@@ -317,6 +321,99 @@ public sealed class LogDocument
         Kind, Store, Level, Category, Method, Path, Status, DurationMs, Visitor, Network, Message, Detail, TraceId);
 }
 // #endregion log-documents
+
+// #region machine-documents
+/// <summary>
+/// One minute of one site (ADR: What the machines are doing). Written once and
+/// never updated, like a log line, and expired by the container. The three
+/// bucket keys are written with the minute so that a day, a week and a month
+/// are each one grouped query over a key the index already holds, rather than
+/// forty thousand documents read back to be averaged here. A figure that was
+/// not read is absent from the document, not null in it: the serializer leaves
+/// nulls out, and an average in the store skips what is absent, which is the
+/// same rule the chart follows when it breaks its line over a gap.
+/// </summary>
+public sealed class MachineMinuteDocument
+{
+    /// <summary>{site}:{minute}, so the two sites' minutes are two documents and a minute written twice is one.</summary>
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+    [JsonPropertyName("day")]
+    public string Day { get; set; } = "";
+    [JsonPropertyName("site")]
+    public string Site { get; set; } = "";
+    [JsonPropertyName("at")]
+    public string At { get; set; } = "";
+    [JsonPropertyName("b5")]
+    public string B5 { get; set; } = "";
+    [JsonPropertyName("h1")]
+    public string H1 { get; set; } = "";
+    [JsonPropertyName("h4")]
+    public string H4 { get; set; } = "";
+    [JsonPropertyName("limit_mb")]
+    public double LimitMb { get; set; }
+    [JsonPropertyName("ws_mb")]
+    public double WsMb { get; set; }
+    [JsonPropertyName("ws_max_mb")]
+    public double WsMaxMb { get; set; }
+    [JsonPropertyName("managed_mb")]
+    public double ManagedMb { get; set; }
+    [JsonPropertyName("cpu")]
+    public double? Cpu { get; set; }
+    [JsonPropertyName("cpu_max")]
+    public double? CpuMax { get; set; }
+    [JsonPropertyName("sql_cpu")]
+    public double? SqlCpu { get; set; }
+    [JsonPropertyName("sql_memory")]
+    public double? SqlMemory { get; set; }
+    [JsonPropertyName("sql_data_io")]
+    public double? SqlDataIo { get; set; }
+    [JsonPropertyName("ru")]
+    public double Ru { get; set; }
+    [JsonPropertyName("operations")]
+    public int Operations { get; set; }
+    [JsonPropertyName("requests")]
+    public int Requests { get; set; }
+    [JsonPropertyName("p50_ms")]
+    public double? P50Ms { get; set; }
+    [JsonPropertyName("p95_ms")]
+    public double? P95Ms { get; set; }
+    [JsonPropertyName("errors_5xx")]
+    public int Errors5xx { get; set; }
+    [JsonPropertyName("errors_4xx")]
+    public int Errors4xx { get; set; }
+
+    public static string IdFor(string site, DateTimeOffset minute) =>
+        $"{site}:{minute.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm", System.Globalization.CultureInfo.InvariantCulture)}";
+
+    public static MachineMinuteDocument From(MachineMinute minute) => new()
+    {
+        Id = IdFor(minute.Site, minute.At),
+        Day = MachineWindows.DayOf(minute.At),
+        Site = minute.Site,
+        At = minute.At.ToUniversalTime().ToString("O"),
+        B5 = MachineWindows.KeyOf(minute.At, MachineGrain.FiveMinutes),
+        H1 = MachineWindows.KeyOf(minute.At, MachineGrain.Hour),
+        H4 = MachineWindows.KeyOf(minute.At, MachineGrain.FourHours),
+        LimitMb = minute.MemoryLimitMb,
+        WsMb = minute.WorkingSetMb,
+        WsMaxMb = minute.WorkingSetMaxMb,
+        ManagedMb = minute.ManagedMb,
+        Cpu = minute.CpuPercent,
+        CpuMax = minute.CpuMaxPercent,
+        SqlCpu = minute.SqlCpuPercent,
+        SqlMemory = minute.SqlMemoryPercent,
+        SqlDataIo = minute.SqlDataIoPercent,
+        Ru = minute.RequestUnits,
+        Operations = minute.Operations,
+        Requests = minute.Requests,
+        P50Ms = minute.P50Ms,
+        P95Ms = minute.P95Ms,
+        Errors5xx = minute.ServerErrors,
+        Errors4xx = minute.ClientErrors,
+    };
+}
+// #endregion machine-documents
 // #endregion documents
 
 /// <summary>Document to domain and back, field by field, in one place.</summary>

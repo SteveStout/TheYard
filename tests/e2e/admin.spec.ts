@@ -160,6 +160,49 @@ test('the machines card shows the container, the relational store and the docume
   }
 });
 
+test('the machines card offers a day, a week and a month beside the hour, and a window with nothing kept says so (ADR: What the machines are doing)', async ({
+  page,
+  request,
+}) => {
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('machines-card');
+  await expect(card.getByTestId('machines-container-line')).toBeVisible({ timeout: 60_000 });
+
+  // The hour is what the card opens on, and it is this process's own memory.
+  await expect(card.getByTestId('machines-window-1h')).toHaveAttribute('aria-pressed', 'true');
+  await expect(card.getByTestId('machines-history')).toHaveCount(0);
+
+  const wire = (await (
+    await request.get('http://localhost:5210/api/admin/machines?window=24h')
+  ).json()) as {
+    windows: string[];
+    history: { window: string; kept: boolean; available: boolean; bucket_minutes: number };
+  };
+  expect(wire.windows).toEqual(['1h', '24h', '7d', '30d']);
+  expect(wire.history.window).toBe('24h');
+  expect(wire.history.kept).toBe(true);
+  expect(wire.history.bucket_minutes).toBe(5);
+
+  await card.getByTestId('machines-window-24h').click();
+  await expect(card.getByTestId('machines-window-24h')).toHaveAttribute('aria-pressed', 'true');
+  if (wire.history.available) {
+    // The Cosmos DB pass: the window is kept, and the card says how much of it
+    // the store holds rather than drawing a full line through a day it was not
+    // running for.
+    await expect(card.getByTestId('machines-history-line')).toContainText('of 288 buckets', {
+      timeout: 30_000,
+    });
+  } else {
+    // SQLite has no document store beside it, so nothing is kept, and the card
+    // says that in words instead of drawing an empty chart.
+    await expect(card.getByTestId('machines-history-note')).toContainText('is not kept here', {
+      timeout: 30_000,
+    });
+  }
+  // The hour is still on the card under it, labelled as what it is.
+  await expect(card).toContainText('as this process remembers the last hour');
+});
+
 test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }) => {
   const marker = `e2e boundary probe ${Date.now()}`;
   const posted = await request.post('http://localhost:5210/api/errors/client', {

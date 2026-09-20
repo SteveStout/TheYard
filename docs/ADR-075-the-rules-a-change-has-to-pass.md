@@ -32,6 +32,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every address this site serves answers with something, and a document is served as markdown | ADR: Every page, checked at every roll | PageStatusTests |
 | The sweep checks every document and every drawing the catalogue serves, and its own requests are not counted as traffic | ADR: Every page, checked at every roll | PageStatusTests |
 | The container samples its own memory and processor share, and each store's reading is the one that store actually keeps | ADR: What the machines are doing | MachinesTests |
+| A kept minute leaves out a figure nobody read, a window is folded into the buckets it is drawn in, and the store's grouped query answers what the folding does | ADR: What the machines are doing | MachineHistoryTests |
 | An identity token is asked for at whichever door the host has, and a web app's card claims no restart count it was never given | ADR: One plan, two sites | AzureSelfTests |
 | Every setting a container group carried is a setting the two sites carry, and nothing deploys a template in complete mode | ADR: One plan, two sites | AppServiceTemplateTests |
 | A catalogue a site does not serve is let go when nobody has asked for it in a while, never while it is in use or loading, and the one a site serves never | ADR: One plan, two sites | WarmthTests |

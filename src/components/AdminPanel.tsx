@@ -29,12 +29,20 @@ import {
   type LogKind,
 } from '../lib/logs';
 import {
-  MACHINE_CHART,
+  axisLabel,
   ceilingFor,
-  clockLabel,
-  pathFor,
-  ticks,
   type ChartSeries,
+  coverage,
+  type KeptBucket,
+  MACHINE_CHART,
+  MACHINE_WINDOWS,
+  type MachineWindow,
+  pathFor,
+  requestUnitsAMinute,
+  shareOf,
+  ticks,
+  timeline,
+  windowName,
 } from '../lib/machineChart';
 import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/metrics';
 import styles from './AdminPanel.module.css';
@@ -102,6 +110,18 @@ type DocumentMinute = {
   share_of_free_percent: number;
 };
 type Machines = {
+  /** The windows the endpoint offers, and the kept one it answered with; absent on a build older than 1.0.0.159. */
+  windows?: string[];
+  history?: {
+    window: string;
+    kept: boolean;
+    available: boolean;
+    note: string | null;
+    site: string;
+    bucket_minutes: number;
+    as_of: string;
+    buckets: KeptBucket[];
+  };
   container: {
     memory_limit_mb: number;
     processors: number;
@@ -2107,12 +2127,14 @@ function MachineChart({
   series,
   percentage,
   unit,
+  window: drawnWindow = '1h',
 }: {
   testId: string;
   label: string;
   series: ChartSeries[];
   percentage?: boolean;
   unit?: string;
+  window?: MachineWindow;
 }) {
   const ceiling = ceilingFor(series, percentage === true ? 100 : 1);
   const points = series[0]?.points ?? [];
@@ -2178,7 +2200,7 @@ function MachineChart({
             y={MACHINE_CHART.height - 8}
             textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
           >
-            {points[index] ? clockLabel(points[index].at) : ''}
+            {points[index] ? axisLabel(points[index].at, drawnWindow) : ''}
           </text>
         ))}
         {series.map((line, index) => (
@@ -2201,6 +2223,116 @@ function MachineChart({
 }
 // #endregion machine-chart
 
+// #region kept-window
+/**
+ * A day, a week or a month of the machines, from the minutes each site keeps in
+ * the document store (ADR: What the machines are doing, the addendum on the
+ * windows). Three charts in the units the hour uses, drawn over the whole
+ * window slot by slot, so a stretch the store holds nothing for is a gap in
+ * the line and not a line drawn across it. A window the store cannot answer
+ * says why instead of drawing an empty chart.
+ */
+function KeptWindow({ machines, window: kept }: { machines: Machines; window: MachineWindow }) {
+  const history = machines.history;
+  if (kept === '1h' || history === undefined || history.window !== kept) {
+    return null;
+  }
+  if (!history.available) {
+    return (
+      <p className={styles.muted} data-testid="machines-history-note">
+        {windowName(kept)} is not kept here: {history.note}
+      </p>
+    );
+  }
+
+  const slots = timeline(history.buckets, kept, history.bucket_minutes, new Date(history.as_of));
+  const held = coverage(slots);
+  const grain =
+    history.bucket_minutes >= 60
+      ? `${history.bucket_minutes / 60}-hour`
+      : `${history.bucket_minutes}-minute`;
+  const peak = history.buckets.reduce(
+    (most, bucket) => Math.max(most, bucket.working_set_max_mb),
+    0
+  );
+  const charged = history.buckets.reduce((sum, bucket) => sum + bucket.request_units, 0);
+
+  return (
+    <div data-testid="machines-history">
+      <p data-testid="machines-history-line">
+        <strong>{windowName(kept)}</strong>, in {grain} buckets, from the minutes the{' '}
+        {history.site === 'cosmos' ? 'Cosmos DB' : 'SQL'} site has kept: {held.held} of {held.of}{' '}
+        buckets hold a reading, and the rest is drawn as the gap it is.
+        {held.held > 0 &&
+          ` Peak working set in the window: ${peak} MB. The document store charged ${Math.round(charged * 100) / 100} request units in it.`}
+        {history.note !== null && held.held === 0 && ` ${history.note}.`}
+      </p>
+      <MachineChart
+        testId="machine-history-container"
+        label={`The container over the ${windowName(kept).toLowerCase()}: memory as a share of its limit, and processor share`}
+        percentage
+        window={kept}
+        series={[
+          {
+            key: 'memory',
+            name: 'Memory, share of the limit',
+            points: slots.map((slot) => ({
+              at: slot.at,
+              value:
+                slot.bucket === null
+                  ? null
+                  : shareOf(slot.bucket.working_set_mb, slot.bucket.memory_limit_mb),
+            })),
+          },
+          {
+            key: 'cpu',
+            name: 'Processor share',
+            points: slots.map((slot) => ({ at: slot.at, value: slot.bucket?.cpu_percent ?? null })),
+          },
+        ]}
+      />
+      <MachineChart
+        testId="machine-history-relational"
+        label={`The relational store over the ${windowName(kept).toLowerCase()}, as it reported itself each minute: processor and memory as shares of what the tier allows`}
+        percentage
+        window={kept}
+        series={[
+          {
+            key: 'memory',
+            name: 'Relational store: memory, share of the tier',
+            points: slots.map((slot) => ({
+              at: slot.at,
+              value: slot.bucket?.sql_memory_percent ?? null,
+            })),
+          },
+          {
+            key: 'cpu',
+            name: 'Relational store: processor, share of the tier',
+            points: slots.map((slot) => ({
+              at: slot.at,
+              value: slot.bucket?.sql_cpu_percent ?? null,
+            })),
+          },
+        ]}
+      />
+      <MachineChart
+        testId="machine-history-document"
+        label={`What the document store charged over the ${windowName(kept).toLowerCase()}, request units a minute`}
+        unit="request units a minute"
+        window={kept}
+        series={[
+          {
+            key: 'ru',
+            name: 'Document store',
+            points: slots.map((slot) => ({ at: slot.at, value: requestUnitsAMinute(slot.bucket) })),
+          },
+        ]}
+      />
+    </div>
+  );
+}
+// #endregion kept-window
+
 // #region machines-card
 /**
  * What the three machines are doing (ADR: What the machines are doing). Three
@@ -2212,11 +2344,12 @@ function MachineChart({
  */
 function MachinesCard() {
   const [machines, setMachines] = useState<Fetched<Machines>>(null);
+  const [window_, setWindow] = useState<MachineWindow>('1h');
 
   useEffect(() => {
     let live = true;
     const read = () =>
-      fetch('/api/admin/machines')
+      fetch(window_ === '1h' ? '/api/admin/machines' : `/api/admin/machines?window=${window_}`)
         .then((r) =>
           r.ok ? (r.json() as Promise<Machines>) : Promise.reject(new Error(String(r.status)))
         )
@@ -2234,7 +2367,7 @@ function MachinesCard() {
       live = false;
       window.clearInterval(timer);
     };
-  }, []);
+  }, [window_]);
 
   if (machines === null) {
     return (
@@ -2270,16 +2403,41 @@ function MachinesCard() {
       <p className={styles.muted}>
         The three machines under this site, each reporting the way it actually reports. The
         container knows its own memory and its own processor time, and the limit its share is read
-        against is the runtime&rsquo;s own rather than the container group&rsquo;s: .NET works to
-        about seven tenths of what the group granted, and a process that passes its own limit is the
-        one that gets collected; Azure SQL Database keeps a reading of itself for the last hour,
-        fifteen seconds at a time, free on every tier; Azure Cosmos DB has no memory or processor
-        reading to give, because it is sold by request unit, so what it shows is what the operations
-        cost against the free allowance. Everything here is this container&rsquo;s own, kept in its
-        memory, and empties on every roll.
+        against is the runtime&rsquo;s own, which is lower than the memory the machine has, and a
+        process that passes its own limit is the one that gets collected; Azure SQL Database keeps a
+        reading of itself for the last hour, fifteen seconds at a time, free on every tier; Azure
+        Cosmos DB has no memory or processor reading to give, because it is sold by request unit, so
+        what it shows is what the operations cost against the free allowance. The last hour is this
+        container&rsquo;s own, kept in its memory, and empties on every roll. The wider windows are
+        a minute at a time, kept in Azure Cosmos DB by each site for thirty-one days, so they
+        survive a roll and show one.
       </p>
+      <p className={styles.statusRow} role="group" aria-label="Window">
+        {MACHINE_WINDOWS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={styles.back}
+            aria-pressed={option === window_}
+            onClick={() => {
+              // The change of window is the event, and the card goes back to
+              // loading here rather than inside the effect, as the activity
+              // card's does and for the reason it gives.
+              if (option === window_) return;
+              setWindow(option);
+              setMachines(null);
+            }}
+            data-testid={`machines-window-${option}`}
+          >
+            {windowName(option)}
+          </button>
+        ))}
+      </p>
+      {window_ !== '1h' && <KeptWindow machines={machines} window={window_} />}
 
-      <h3 className={styles.cardTitle}>The container</h3>
+      <h3 className={styles.cardTitle}>
+        The container{window_ === '1h' ? '' : ', as this process remembers the last hour'}
+      </h3>
       {latest === null ? (
         <p className={styles.muted} data-testid="machines-no-samples">
           No sample yet. One is taken every {machines.container.every_seconds} seconds.

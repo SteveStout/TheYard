@@ -482,6 +482,26 @@ builder.Services.AddHostedService(services => services.GetRequiredService<Activi
 builder.Services.AddSingleton(new MachineSampler(MachineSamples));
 builder.Services.AddHostedService(services => services.GetRequiredService<MachineSampler>());
 // #endregion machine-sampler-wiring
+// #region machine-history-wiring
+// And a minute at a time is kept where a roll cannot empty it, so the card
+// can draw a day, a week and a month beside the hour this process remembers
+// (ADR: What the machines are doing, the addendum on the windows). Both sites
+// write to the one document store, each under its own name; with no document
+// store the port is wired to nothing, the recorder idles, and the card says
+// so. The relational reading goes through the quiet context, so a read a
+// minute is not the newest line on the SQL card for ever.
+IMachineHistory machineHistory = cosmos is not null ? new CosmosMachineHistory(cosmos) : NullMachineHistory.Instance;
+builder.Services.AddSingleton(new MachineHistoryReader(machineHistory, backends.Default.Key));
+builder.Services.AddSingleton(services => new MachineRecorder(
+    services.GetRequiredService<MachineSampler>(),
+    machineHistory,
+    backends.Default.Key,
+    cancellation => ResourceStats.ReadAsync(quietContexts, "the relational store", 8, cancellation),
+    () => storeLog.Snapshot(),
+    () => requestLog.Snapshot(),
+    services.GetRequiredService<ILogger<MachineRecorder>>()));
+builder.Services.AddHostedService(services => services.GetRequiredService<MachineRecorder>());
+// #endregion machine-history-wiring
 // The catalogue of the store this site does not serve is given back once
 // nobody has asked for it in a while. Zero minutes, the default, is never;
 // the plan both sites share sets ten (ADR: One plan, two sites).
@@ -2206,13 +2226,17 @@ var proof = new ProofRunner(backends, app.Services.GetRequiredService<ProofClien
 // relational store from its own resource view, the document store from what
 // its operations charged, because it has no memory reading to give
 // (ADR: What the machines are doing).
-app.MapGet("/api/admin/machines", async (MachineSampler sampler, CancellationToken cancellation) =>
+app.MapGet("/api/admin/machines", async (string? window, MachineSampler sampler, MachineHistoryReader kept, CancellationToken cancellation) =>
 {
     var relational = backends.Named("sql");
     var load = await ResourceStats.ReadAsync(relational, MachineSamples, cancellation, app.Logger);
     var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB");
     return Results.Json(new
     {
+        // The hour below is this process's own memory and is always here. A
+        // wider window is read from the store, in buckets sized to it.
+        windows = MachineWindows.Names,
+        history = await kept.ReadAsync(window, DateTimeOffset.UtcNow, cancellation),
         container = new
         {
             memory_limit_mb = MachineSampler.MemoryLimitMb,
@@ -2252,7 +2276,7 @@ app.MapGet("/api/admin/machines", async (MachineSampler sampler, CancellationTok
 })
     .WithName("GetMachines")
     .WithTags("Admin")
-    .WithSummary("What the container and the two stores are doing, each as that machine reports itself");
+    .WithSummary("What the container and the two stores are doing, each as that machine reports itself, over the last hour or a kept window of 24h, 7d or 30d");
 // #endregion machines-endpoint
 
 // #region page-status-wiring

@@ -1,0 +1,37 @@
+{
+  "container": "machines",
+  "partitionKeyPath": "/day",
+  "defaultTtlSeconds": 2678400,
+  "why": "What the machines were doing, kept: one document a minute from each site, partitioned on the UTC day, written once and never updated. The day, the site, the minute and the three bucket keys are indexed because the Admin tab asks for one site's day, week or month grouped by one of those keys; the figures it averages are indexed too, so a month is a grouped query over the index rather than forty thousand documents read back. Documents expire thirty-one days after they are written, one more than the longest window, so the container is its own retention policy and nothing has to run to delete a minute (ADR: What the machines are doing, the addendum on the windows).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      { "path": "/day/?" },
+      { "path": "/site/?" },
+      { "path": "/at/?" },
+      { "path": "/b5/?" },
+      { "path": "/h1/?" },
+      { "path": "/h4/?" },
+      { "path": "/limit_mb/?" },
+      { "path": "/ws_mb/?" },
+      { "path": "/ws_max_mb/?" },
+      { "path": "/managed_mb/?" },
+      { "path": "/cpu/?" },
+      { "path": "/cpu_max/?" },
+      { "path": "/sql_cpu/?" },
+      { "path": "/sql_memory/?" },
+      { "path": "/sql_data_io/?" },
+      { "path": "/ru/?" },
+      { "path": "/operations/?" },
+      { "path": "/requests/?" },
+      { "path": "/p50_ms/?" },
+      { "path": "/p95_ms/?" },
+      { "path": "/errors_5xx/?" },
+      { "path": "/errors_4xx/?" }
+    ],
+    "excludedPaths": [
+      { "path": "/*" }
+    ]
+  }
+}

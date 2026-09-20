@@ -118,6 +118,47 @@ the type, because these are percentages a chart draws and not money. And the pag
 the Admin tab's own readings now, so an endpoint that throws shows up as a page that is down at the
 next roll rather than in a card somebody happens to be looking at.
 
+## Addendum, 2026-09-20: a day, a week and a month, kept where a roll cannot empty them
+
+Steve, on the card a day after it shipped: twenty-four hours, seven days and thirty days on the
+machine charts, beside the hour. The hour is the sampler's ring, this process's own memory, and the
+first roll after a bad night empties exactly the picture somebody wanted. On the move to one plan
+(ADR: One plan, two sites) every roll that morning emptied the hour, and the memory readings that
+decided the plan's size had to be taken by a script asking from outside every fifteen seconds.
+
+**What is kept.** One document a minute from each site, in a `machines` container in Azure Cosmos DB
+beside the log and the activity rows, partitioned on the UTC day, expiring after thirty-one days by
+the container's own time-to-live, one day more than the longest window. Twenty seconds after a
+minute ends, `MachineRecorder` folds it out of what the process already measures: the working set,
+managed heap and processor share of the four samples the sampler took, the mean and the peak both
+kept; the relational store's own rows for that minute; the request units the operations ring holds
+for it; and the traffic the request ring holds for it, how many requests, their median and
+ninety-fifth, and how many answered 4xx and 5xx, which is what the next charts are drawn from. Nothing new is measured for it except one read of the resource view a minute, on the
+quiet context the activity counters use, so a read a minute outside any request is not the newest
+line on the SQL card for ever.
+
+**A figure nobody read stays absent.** The first processor share of a process, a relational reading
+on a site that has none: these are null in a minute and left out of its document, not written as
+zero and not written as null. The store's average skips a field a document does not carry, which
+is the same rule the chart follows when it breaks its line over a gap, and a test against the real
+account holds the grouped query to the folding this repository does itself.
+
+**How a window is read.** Every minute is written with three bucket keys, five minutes, an hour and
+four hours, so a day is 288 points, a week 168 and a month 180, and each is one `GROUP BY` over a key
+the index holds rather than tens of thousands of documents read back to be averaged in the process. The
+answer is cached for a minute, because a minute is how often it can change and the Admin tab is a
+page somebody leaves open. `/api/admin/machines?window=24h`, `7d` or `30d`; with no window it is the
+hour, as before.
+
+**How a window is drawn.** Slot by slot from the window's start to now, with a gap wherever the store
+holds nothing. Drawing only the buckets that exist would close every gap up and make a site that was
+down for a day look like one that never was; the card says how many of the window's buckets hold a
+reading. A process with no document store beside it keeps nothing and says so in words.
+
+**What it costs.** One upsert a minute a site: 2,880 writes a day between them, against a free
+allowance of a thousand request units a second, and about forty-five thousand small documents a site
+at any one time against 25 GB. The bill does not move.
+
 ## What it costs
 
 Nothing on the bill. The sampler is a timer in a process that is already running; the resource view
@@ -128,9 +169,18 @@ reading is arithmetic over a ring the container already keeps. No tier, no resou
 ## Files
 
 - [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the sampler, the resource view, and the document reading.
+- [`api/TheYard.Application/MachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MachineHistory.cs): a kept minute, a bucket, the windows, the folding and the port.
+- [`api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs) and [`infra/cosmos/machines.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/machines.json): the minutes in the document store, the grouped query, and the container they live in.
+- [`api/TheYard.Tests/MachineHistoryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MachineHistoryTests.cs): the folding, the document, the cache, the endpoint, and the grouped query against the real account.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the sampler registered, the endpoint, and the statement kept off the SQL card.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card, three readings with their three honesties, and the chart each one is drawn in.
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the chart arithmetic, React-free and tested on its own.
 - [`api/TheYard.Tests/MachinesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MachinesTests.cs): the ring, the first sample, the folding, and the shape the endpoint answers with.
 - [`docs/ADR-077-every-page-checked.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-077-every-page-checked.md): the other card this morning added, and the sweep whose requests this one's numbers include.
 - [`docs/PERFORMANCE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/PERFORMANCE.md): the claim about one small container that this card is the running proof of.
+
+```live path=api/TheYard.Api/Machines.cs region=machine-recorder
+```
+
+```live path=api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs region=grouped-query
+```

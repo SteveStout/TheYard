@@ -4,6 +4,7 @@ using System.Globalization;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application;
+using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 
@@ -147,17 +148,27 @@ public static class ResourceStats
         ORDER BY end_time DESC
         """;
 
-    public static async Task<StoreLoad> ReadAsync(Backend? relational, int rows, CancellationToken cancellation, ILogger? logger = null)
+    public static Task<StoreLoad> ReadAsync(Backend? relational, int rows, CancellationToken cancellation, ILogger? logger = null) =>
+        ReadAsync(relational?.Contexts, relational?.Name ?? "absent", rows, cancellation, logger);
+
+    /// <summary>
+    /// The same read over any context factory. The recorder that keeps a
+    /// minute at a time hands in the quiet one, with no interceptor and no
+    /// command logging, for the reason the activity counters use it: a read a
+    /// minute, outside any request, would otherwise be the newest statement on
+    /// the SQL card for ever (ADR: What the machines are doing).
+    /// </summary>
+    public static async Task<StoreLoad> ReadAsync(IDbContextFactory<YardDbContext>? contexts, string storeName, int rows, CancellationToken cancellation, ILogger? logger = null)
     {
-        if (relational?.Contexts is null)
+        if (contexts is null)
         {
             return StoreLoad.Absent("this container has no relational store, or it did not come up");
         }
 
-        await using var db = await relational.Contexts.CreateDbContextAsync(cancellation);
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
         if (!db.Database.IsSqlServer())
         {
-            return StoreLoad.Absent($"the relational store here is {relational.Name}, which keeps no resource view");
+            return StoreLoad.Absent($"the relational store here is {storeName}, which keeps no resource view");
         }
 
         try
@@ -218,6 +229,191 @@ public sealed record StoreLoad(bool Available, string? Note, IReadOnlyList<Resou
     public static StoreLoad Absent(string note) => new(false, note, []);
 }
 // #endregion resource-stats
+
+// #region machine-recorder
+/// <summary>
+/// Keeps a minute at a time (ADR: What the machines are doing). The sampler's
+/// ring is an hour of this process's memory and a roll empties it, so a day,
+/// a week and a month could not be drawn from it.
+/// Twenty seconds after each minute ends, this folds the minute that just
+/// finished, out of what the process already measures, and hands it to the
+/// port: the four samples, the relational store's own rows for that minute,
+/// and what the document store charged in it.
+///
+/// <para>Nothing new is measured for it except one read of the resource view a
+/// minute, on the quiet context. With no store to keep minutes in it does
+/// nothing at all, and asks again every ten minutes whether there is one.</para>
+/// </summary>
+public sealed class MachineRecorder(
+    MachineSampler sampler,
+    IMachineHistory history,
+    string site,
+    Func<CancellationToken, Task<StoreLoad>> relational,
+    Func<IReadOnlyList<StoreOperation>> operations,
+    Func<IReadOnlyList<RequestEntry>> requests,
+    ILogger<MachineRecorder> logger) : BackgroundService
+{
+    /// <summary>How long after a minute ends it is folded: long enough for its last sample and the store's last row to exist.</summary>
+    public static readonly TimeSpan Settle = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    /// One minute out of the rings, or null when the sampler took no sample in
+    /// it, which is a process that was not running: there is nothing to keep,
+    /// and a gap on the chart is the true picture of a gap.
+    /// </summary>
+    public static MachineMinute? Fold(
+        DateTimeOffset minute,
+        string site,
+        double memoryLimitMb,
+        IReadOnlyList<MachineSample> samples,
+        IReadOnlyList<ResourceStatRow> rows,
+        IReadOnlyList<StoreOperation> operations,
+        IReadOnlyList<RequestEntry>? requests = null)
+    {
+        var start = MachineFolding.MinuteOf(minute);
+        var end = start.AddMinutes(1);
+        var taken = samples.Where(sample => sample.At >= start && sample.At < end).ToList();
+        if (taken.Count == 0)
+        {
+            return null;
+        }
+
+        // The view's end_time is UTC with no kind on it.
+        var read = rows
+            .Where(row =>
+            {
+                var at = new DateTimeOffset(DateTime.SpecifyKind(row.At, DateTimeKind.Utc));
+                return at >= start && at < end;
+            })
+            .ToList();
+        var charged = operations.Where(operation => operation.At >= start && operation.At < end).ToList();
+        // The request ring already leaves out the Admin tab watching itself
+        // and the page sweep, so this is a visitor's minute and not this page's.
+        var answered = (requests ?? []).Where(request => request.At >= start && request.At < end).ToList();
+        long[] durations = answered.Select(request => request.DurationMs).ToArray();
+
+        return new MachineMinute(
+            start,
+            site,
+            memoryLimitMb,
+            Math.Round(taken.Average(sample => sample.WorkingSetMb), 1),
+            Math.Round(taken.Max(sample => sample.WorkingSetMb), 1),
+            Math.Round(taken.Average(sample => sample.ManagedMb), 1),
+            MachineFolding.MeanOf(taken.Select(sample => sample.CpuPercent)),
+            MachineFolding.MaxOf(taken.Select(sample => sample.CpuPercent)),
+            MachineFolding.MeanOf(read.Select(row => (double?)row.CpuPercent)),
+            MachineFolding.MeanOf(read.Select(row => (double?)row.MemoryPercent)),
+            MachineFolding.MeanOf(read.Select(row => (double?)row.DataIoPercent)),
+            Math.Round(charged.Sum(operation => operation.RequestCharge), 2),
+            charged.Count,
+            answered.Count,
+            durations.Length == 0 ? null : (double?)Percentiles.Of(durations, 50),
+            durations.Length == 0 ? null : (double?)Percentiles.Of(durations, 95),
+            answered.Count(request => request.Status >= 500),
+            answered.Count(request => request.Status is >= 400 and < 500));
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stopping)
+    {
+        while (!stopping.IsCancellationRequested)
+        {
+            try
+            {
+                if (!(await history.AvailabilityAsync(stopping)).Available)
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(10), stopping);
+                    continue;
+                }
+
+                var now = DateTimeOffset.UtcNow;
+                await Task.Delay(MachineFolding.MinuteOf(now).AddMinutes(1).Add(Settle) - now, stopping);
+
+                var minute = MachineFolding.MinuteOf(DateTimeOffset.UtcNow).AddMinutes(-1);
+                var load = await relational(stopping);
+                var folded = Fold(minute, site, MachineSampler.MemoryLimitMb, sampler.Snapshot(), load.Rows, operations(), requests());
+                if (folded is not null)
+                {
+                    await history.AppendAsync(folded, stopping);
+                }
+            }
+            catch (OperationCanceledException) when (stopping.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                // The type, never the message, and the loop goes on: a minute
+                // that could not be kept is a gap on a chart, not an outage.
+                logger.LogWarning("A minute of the machines could not be kept ({Exception})", ex.GetType().Name);
+                await Task.Delay(TimeSpan.FromMinutes(1), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
+            }
+        }
+    }
+}
+
+/// <summary>
+/// The kept windows, read back for the card, each cached for a minute: the
+/// Admin tab is a page somebody leaves open, a month is a grouped query over
+/// forty thousand documents, and the answer cannot change more often than a
+/// minute is written.
+/// </summary>
+public sealed class MachineHistoryReader(IMachineHistory history, string site)
+{
+    private readonly object _gate = new();
+    private readonly Dictionary<string, (DateTimeOffset At, object View)> _cached = new(StringComparer.Ordinal);
+
+    public async Task<object> ReadAsync(string? window, DateTimeOffset now, CancellationToken cancellation)
+    {
+        var chosen = MachineWindows.Parse(window);
+        if (chosen is null)
+        {
+            return new { window = MachineWindows.Hour, kept = false, available = true, note = (string?)null, site, bucket_minutes = 0, as_of = now, buckets = Array.Empty<MachineBucket>() };
+        }
+
+        var (length, grain, name) = chosen.Value;
+        lock (_gate)
+        {
+            if (_cached.TryGetValue(name, out var hit) && now - hit.At < TimeSpan.FromMinutes(1))
+            {
+                return hit.View;
+            }
+        }
+
+        var availability = await history.AvailabilityAsync(cancellation);
+        int bucketMinutes = grain switch
+        {
+            MachineGrain.FiveMinutes => 5,
+            MachineGrain.Hour => 60,
+            _ => 240,
+        };
+        if (!availability.Available)
+        {
+            return new { window = name, kept = true, available = false, note = (string?)availability.Reason, site, bucket_minutes = bucketMinutes, as_of = now, buckets = Array.Empty<MachineBucket>() };
+        }
+
+        var buckets = await history.QueryAsync(site, now - length, grain, cancellation);
+        var view = new
+        {
+            window = name,
+            kept = true,
+            available = true,
+            note = (string?)(buckets.Count == 0 ? "nothing has been kept for this window yet; a minute is written a minute after it ends" : availability.Reason),
+            site,
+            bucket_minutes = bucketMinutes,
+            // The instant the window ends at, so the page lays its timeline out
+            // from the server's clock and not the browser's.
+            as_of = now,
+            buckets,
+        };
+        lock (_gate)
+        {
+            _cached[name] = (now, view);
+        }
+
+        return view;
+    }
+}
+// #endregion machine-recorder
 
 // #region document-load
 /// <summary>
