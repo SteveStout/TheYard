@@ -139,6 +139,32 @@ public class InventoryServiceTests
     }
 
     [Fact]
+    public void A_page_is_the_rows_a_full_sort_would_have_given_ties_included()
+    {
+        var now = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
+        // Four prices across forty vehicles, so every price sort is mostly ties and only a stable order passes.
+        var seeds = Enumerable.Range(0, 40)
+            .Select(i => TestData.Vehicle(id: $"v-{i}", currentBid: 10_000 + (i % 4 * 1_000)))
+            .ToArray();
+        var service = new InventoryService(new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool));
+        (int Offset, int Limit)[] pages = [(0, 10), (10, 10), (35, 10), (0, 100), (40, 5), (0, int.MaxValue)];
+
+        foreach (VehicleSort sort in Enum.GetValues<VehicleSort>())
+        {
+            List<string> whole = VehicleOrdering.Sort(service.GetAll(), sort, now).Select(v => v.Id).ToList();
+            foreach ((int offset, int limit) in pages)
+            {
+                var page = service.Search(new VehicleFilter(), now, sort, limit, offset);
+                List<string> expected = whole.Skip(offset).Take(limit).ToList();
+                List<string> got = page.Vehicles.Select(v => v.Id).ToList();
+
+                Assert.Equal(40, page.Total);
+                Assert.Equal(expected, got);
+            }
+        }
+    }
+
+    [Fact]
     public void Facets_return_sorted_distinct_values()
     {
         var service = new InventoryService(

@@ -173,4 +173,26 @@ describe('the stat tiles', () => {
     expect(visitorsOn(days, new Date('2026-09-20T23:59:00Z'))).toBe(3);
     expect(visitorsOn(days, new Date('2026-09-21T00:01:00Z'))).toBe(0);
   });
+
+  it('says when the slowest minute was, so the tile is somewhere to start', () => {
+    expect(
+      tile(
+        {
+          ...quietDay,
+          traffic: {
+            requests: 74,
+            slowest_p95_ms: 1212,
+            server_errors: 0,
+            client_errors: 0,
+            slowest_label: '07:32',
+          },
+        },
+        'speed'
+      )
+    ).toMatchObject({
+      value: '1212 ms',
+      detail: '74 requests in the last hour, slowest at 07:32',
+      tone: 'warn',
+    });
+  });
 });

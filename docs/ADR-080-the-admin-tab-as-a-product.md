@@ -132,12 +132,47 @@ does.
 **What it cost on the wire**, from the build's own output: the script went from 101.15 kB compressed
 to 103.30 kB and the stylesheet from 8.74 kB to 9.26 kB.
 
+## Addendum, 2026-09-20 (1.0.0.163): the first amber tile, investigated
+
+The strip had been live for eight minutes when a tile went amber: "Slowest 95th, 1212 ms, worth a
+look". Steve's instruction was that anything the dashboard marks is investigated, which is the
+point of marking it. This is what the tile led to, in the order it was found.
+
+**Where.** The machines endpoint's traffic, a minute at a time, on both sites: the slow minutes were
+12:30 and 12:32 UTC on the SQL site and 12:30, 12:31, 12:36 and 12:37 on the Cosmos DB site. The
+processes had started at 12:30 and 12:32: the roll of 1.0.0.161. The later pair had no roll
+behind them.
+
+**What.** The timing card's rows by path, same read: `/api/vehicles` at a median of 278 ms and a
+ninety-fifth of 779 ms, 1,059 ms at worst, server-side, against 0 to 31 ms for every other API path.
+One `/index.html` at 1,212 ms was the first request a cold process served.
+
+**Why.** `InventoryService.Search` sorted every match and then took the page. An unfiltered listing
+matches all 100,000 vehicles, so every landing page was a full stable sort of 100,000 rows to show
+100. On a container group's own core that read 51 ms and nobody looked again. On the plan it shares
+one core with the other site (ADR: One plan, two sites), it read 122 to 160 ms warm, and in the
+minutes after a roll, with two processes starting on that core, it passed a second.
+
+**The fix** is three lines in one method: count the matches, then `Skip` and `Take` straight off
+the ordering, which lets the runtime sort only as far as the page asked for. The rows and their order
+are the same, ties included, because the ordering is still the stable one, and
+`A_page_is_the_rows_a_full_sort_would_have_given_ties_included` holds that for every sort and six
+pages over forty vehicles at four prices. What it reads on the plan afterwards is measured after the
+roll and goes in the changelog line that follows this one, not guessed at here.
+
+**What the tile learned.** A tile that says "slow" and not "when" sends somebody through an hour of
+rows, so the tile now names the minute: "74 requests in the last hour, slowest at 07:32". The
+threshold did not move. A ninety-fifth over the ten requests of a quiet minute is that minute's
+slowest request, which makes the tile quick to go amber after a roll, and that is left as it is on
+purpose: it went amber over something real the first time it was looked at.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.
 - [`src/lib/machineChart.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.test.ts): what a gap is, what a zero is, and what a bar is a share of.
 - [`src/lib/statTiles.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.ts): what each tile says and what makes it amber or red, React-free, and the line under a tile as the points of a polyline.
 - [`src/lib/statTiles.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.test.ts): every threshold, a reading that has not arrived, and a gap in the line.
+- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the page sorted only as far as the page, which is what the first amber tile found.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the traffic card, the window both cards share, and the proof's bars.
 - [`src/components/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.module.css): the tab's styles, over the token sheet.
 - [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the request ring folded into minutes, once, for the hour on the card and for the minute that is kept.
@@ -150,4 +185,7 @@ to 103.30 kB and the stylesheet from 8.74 kB to 9.26 kB.
 ```
 
 ```live path=src/lib/statTiles.ts region=tile-rules
+```
+
+```live path=api/TheYard.Application/InventoryService.cs region=page
 ```

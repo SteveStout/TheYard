@@ -289,17 +289,23 @@ export function trafficTotals(slots: TrafficSlot[], minutesPerSlot: number) {
   let serverErrors = 0;
   let clientErrors = 0;
   let slowest: number | null = null;
+  let slowestAt: string | null = null;
   for (const slot of slots) {
     requests += (slot.requests ?? 0) * minutesPerSlot;
     serverErrors += (slot.server_errors ?? 0) * minutesPerSlot;
     clientErrors += (slot.client_errors ?? 0) * minutesPerSlot;
-    if (slot.p95_ms !== null && (slowest === null || slot.p95_ms > slowest)) slowest = slot.p95_ms;
+    if (slot.p95_ms !== null && (slowest === null || slot.p95_ms > slowest)) {
+      slowest = slot.p95_ms;
+      slowestAt = slot.at;
+    }
   }
   return {
     requests: Math.round(requests),
     server_errors: Math.round(serverErrors),
     client_errors: Math.round(clientErrors),
     slowest_p95_ms: slowest,
+    // Where to look: a tile that says "slow" and not "when" sends somebody through an hour of rows.
+    slowest_at: slowestAt,
   };
 }
 

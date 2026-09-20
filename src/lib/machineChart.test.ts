@@ -208,6 +208,7 @@ describe('kept windows', () => {
       server_errors: 0,
       client_errors: 2,
       slowest_p95_ms: 60,
+      slowest_at: 'a',
     });
   });
 

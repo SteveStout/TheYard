@@ -42,6 +42,8 @@ export type TileReadings = {
     slowest_p95_ms: number | null;
     server_errors: number;
     client_errors: number;
+    /** The minute the slowest ninety-fifth was read in, already written as a clock time; absent on a quiet hour. */
+    slowest_label?: string | null;
   } | null;
   memory: { working_set_mb: number; limit_mb: number } | null;
   /** What the document store charged in the ring this process holds, and the allowance a second it is charged against. */
@@ -148,7 +150,12 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           question: 'fast',
           label: 'Slowest 95th',
           value: traffic.slowest_p95_ms === null ? 'quiet' : `${traffic.slowest_p95_ms} ms`,
-          detail: `${traffic.requests} requests in the last hour`,
+          detail:
+            traffic.slowest_label === undefined ||
+            traffic.slowest_label === null ||
+            traffic.slowest_label === ''
+              ? `${traffic.requests} requests in the last hour`
+              : `${traffic.requests} requests in the last hour, slowest at ${traffic.slowest_label}`,
           tone:
             traffic.slowest_p95_ms === null
               ? 'plain'

@@ -156,10 +156,20 @@ public sealed class InventoryService(
         // built at load (ADR: The search index). What is left per row is a
         // dictionary lookup and a substring test.
         var matches = filter.Compile(clock, Inventory.Index);
-        var matched = source.Where(matches);
+        var matched = source.Where(matches).ToList();
         // #endregion search
-        var ordered = VehicleOrdering.Sort(matched, sort, clock).ToList();
-        return new SearchResult(ordered.Count, ordered.Skip(offset).Take(limit).ToList());
+        // #region page
+        // The count needs every match and the page needs a hundred of them.
+        // Until 1.0.0.163 this sorted every match and then took the page, a
+        // full sort of a hundred thousand rows on every unfiltered listing,
+        // and on the plan's one shared core that was the slowest thing the
+        // site did (ADR: The Admin tab, as a product, the addendum on the
+        // first amber tile). Skip and Take straight off the ordering let the
+        // runtime sort only as far as the page: the same rows in the same
+        // order, ties included, because the ordering is still the stable one.
+        var page = VehicleOrdering.Sort(matched, sort, clock).Skip(offset).Take(limit).ToList();
+        return new SearchResult(matched.Count, page);
+        // #endregion page
     }
 
     // #region facets

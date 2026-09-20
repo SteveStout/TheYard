@@ -31,6 +31,7 @@ import {
 import {
   axisLabel,
   ceilingFor,
+  clockLabel,
   type ChartSeries,
   coverage,
   hourOfTraffic,
@@ -485,6 +486,7 @@ export function AdminPanel({
   // the card it points at cannot disagree.
   const seen = machines !== null && machines !== 'failed' ? machines : null;
   const hour = seen === null ? null : hourSlots(seen);
+  const hourTotals = hour === null ? null : trafficTotals(hour, 1);
   const lastSample =
     seen !== null && seen.container.samples.length > 0
       ? seen.container.samples[seen.container.samples.length - 1]
@@ -492,7 +494,14 @@ export function AdminPanel({
   const tiles = tilesFrom({
     health: health !== null && health !== 'failed' ? health : null,
     pages: pagesSeen,
-    traffic: hour === null ? null : trafficTotals(hour, 1),
+    traffic:
+      hourTotals === null
+        ? null
+        : {
+            ...hourTotals,
+            slowest_label:
+              hourTotals.slowest_at === null ? null : clockLabel(hourTotals.slowest_at),
+          },
     memory:
       seen === null || lastSample === null
         ? null
