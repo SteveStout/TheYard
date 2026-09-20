@@ -91,7 +91,7 @@ const rows = [
       mono: 'Azure SQL Database, General Purpose serverless, the free limit (ADR-039)',
       body: [
         'Tables, rows, foreign keys and T-SQL. The schema is the contract and the engine enforces it: a row that breaks a constraint is refused before it lands.',
-        'The server sits one region away from the container, which is the fact behind most of the numbers below.',
+        'The server sat one region from the compute when the numbers below were measured, which is the fact behind most of them; since 20 September 2026 the compute is in its region (ADR-079).',
       ],
     },
     cosmos: {
@@ -99,7 +99,7 @@ const rows = [
       mono: 'Azure Cosmos DB for NoSQL, account cosmos-theyard-ss, free tier (ADR-059)',
       body: [
         'JSON documents in containers, each container split by a partition key. The document owns its shape; the engine enforces the key, the id and the etag, and nothing else.',
-        'The account is in the container\'s own region, so a round trip is milliseconds, not tens of them.',
+        'The account was in the compute\'s own region when the numbers below were measured, so a round trip was milliseconds; since 20 September 2026 it is one region away (ADR-079).',
       ],
     },
   },
@@ -266,7 +266,7 @@ const rows = [
       title: 'The free tier',
       mono: '1000 RU/s and 25 GB for the life of the account, ADR-059',
       body: [
-        'Shared across the database\'s containers, never paused, and the site\'s whole month is pennies of it at serverless rates. The store costs $0.00; the second container group that serves it is about $34 a month at list.',
+        'Shared across the database\'s containers, never paused, and the site\'s whole month is pennies of it at serverless rates. The store costs $0.00; the site that serves it shares one $12.41 App Service plan with the other.',
       ],
     },
   },
@@ -288,7 +288,7 @@ const lanesBottom = y - 6;
 const captions = [
   'The records behind the left column: ADR-039 The SQL Server backend, ADR-040 Data first, and the database in source control, ADR-041 Two providers and a SQL project, explained, ADR-043 What the database is actually doing. Behind the right: ADR-058 The partition key, ADR-059 A second store on Cosmos DB, and what it costs, ADR-060 The ports learn to wait, ADR-061 Accounts on a document store, ADR-062 What the store is actually doing.',
   'Across both: ADR-063 Backends, side by side; ADR-064 Measuring both stores; ADR-065 Cosmos DB, explained for someone who knows SQL Server; ADR-066 One container, both stores; ADR-067 Same performance, proven; ADR-069 A permanent address for the second site.',
-  'Both container groups open both stores; each site serves its default and the Store bar links to the other at the same page. A measurement can name the other store for one request with the X-Yard-Store header.',
+  'Both sites open both stores; each site serves its default and the Store bar links to the other at the same page. A measurement can name the other store for one request with the X-Yard-Store header.',
   'Source: docs/images/sql-vs-cosmos.svg in the repository, drawn by docs/images/sql-vs-cosmos.mjs and redrawn when a store, a file or a number changes.',
 ].flatMap((caption) => wrap(caption, 190));
 const H = lanesBottom + 40 + 20 * captions.length + 40;

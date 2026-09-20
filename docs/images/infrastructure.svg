@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1370" viewBox="0 0 1400 1370" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
-  <title>TheYard infrastructure: what runs today, how a merge becomes a roll, and the designed production target</title>
+  <title>TheYard infrastructure: what runs today, how a merge becomes a roll, and the one piece of the production design still refused</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#536786"/>
@@ -27,8 +27,8 @@
   </defs>
 
   <rect width="1400" height="1370" fill="#e9e6e7"/>
-  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-09-09</text>
-  <text x="40" y="68" class="caption">Everything in the solid boxes is live and measured; the dashed group is the production design, defined in code and deliberately undeployed.</text>
+  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-09-20</text>
+  <text x="40" y="68" class="caption">Everything in the solid boxes is live and measured; the dashed group is the one piece of the production design the subscription still refuses.</text>
 
   <!-- ===================== Lane 1: the request path ===================== -->
   <rect x="40" y="92" width="1320" height="710" class="lane"/>
@@ -64,26 +64,26 @@
   <text x="535" y="218" class="body">One Let's Encrypt cert, four names.</text>
   <text x="535" y="240" class="mono">edge/_redirects  by Host</text>
   <text x="535" y="256" class="body">bare and www: 301 to theyard</text>
-  <text x="535" y="272" class="body">theyard-cosmos: proxy to cosmos-ss</text>
-  <text x="535" y="288" class="body">everything else: proxy to theyard-ss</text>
+  <text x="535" y="272" class="body">theyard-cosmos: to the second web app</text>
+  <text x="535" y="288" class="body">everything else: to the first web app</text>
   <text x="535" y="310" class="mono">netlify.toml</text>
   <text x="535" y="326" class="body">rebuilds only when edge/ changes</text>
   <text x="535" y="344" class="muted">ADR-007, ADR-069; API not cached</text>
 
-  <!-- Origin container group -->
+  <!-- Origin: the first web app on the plan both sites share (ADR-079) -->
   <rect x="800" y="150" width="540" height="228" class="box"/>
-  <text x="815" y="176" class="title">Origin: Azure Container Instances, RG-THEYARD-SS, westus2</text>
-  <text x="815" y="198" class="mono">aci-theyard-ss  1 vCPU  1.5 GB  port 8080</text>
-  <text x="815" y="214" class="mono">theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io</text>
+  <text x="815" y="176" class="title">Origin: App Service plan PLAN-THEYARD-SS, Linux B1, westus3</text>
+  <text x="815" y="198" class="mono">APP-THEYARD-SS-ZMNETJ67BN5H2  1 vCPU and 1.75 GB shared by both sites</text>
+  <text x="815" y="214" class="mono">https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net</text>
   <text x="815" y="238" class="body">Runs image theyard:vN from the registry, pulled with the</text>
-  <text x="815" y="254" class="body">user-assigned identity id-theyard-ss (AcrPull; Reader on the group).</text>
+  <text x="815" y="254" class="body">user-assigned identity id-theyard-ss (AcrPull; Reader on the resource group).</text>
 
   <rect x="815" y="268" width="510" height="96" fill="#f4f2f3" stroke="#d8d3d4" rx="8"/>
   <text x="828" y="290" class="title">Inside: one ASP.NET Core 10 process (Dockerfile, ADR-002)</text>
   <text x="828" y="310" class="body">Serves the built React SPA from wwwroot, /api/* over the catalogue it read at startup,</text>
   <text x="828" y="326" class="body">the docs with live code read from its own source (ADR-014), /healthz and /readyz,</text>
   <text x="828" y="342" class="body">and the Admin tab, which trades the identity for a token and reads its own</text>
-  <text x="828" y="358" class="body">container group from management.azure.com (ADR-010).</text>
+  <text x="828" y="358" class="body">site and the plan it shares from management.azure.com (ADR-010, ADR-079).</text>
 
   <!-- request flow arrows -->
   <path d="M240 260 L280 260" class="flow"/>
@@ -91,19 +91,19 @@
   <path d="M760 260 L800 260" class="flow"/>
   <text x="248" y="250" class="flow-label">resolve</text>
   <text x="484" y="250" class="flow-label">TLS</text>
-  <text x="764" y="250" class="flow-label">:8080</text>
+  <text x="764" y="250" class="flow-label">HTTPS</text>
 
 
   <!-- Azure SQL Database, added 2026-09-03 (ADR-039, ADR-040) -->
   <rect x="800" y="398" width="540" height="176" class="box"/>
   <text x="815" y="424" class="title">Store: Azure SQL Database, RG-THEYARD-SS, westus3</text>
-  <text x="815" y="446" class="mono">sqldb-theyard-ss  GP_S_Gen5_2 serverless  free limit  auto-pause 60m</text>
+  <text x="815" y="446" class="mono">sqldb-theyard-ss-basic  Basic  5 DTU  2 GB  $4.90 a month</text>
   <text x="815" y="468" class="body">The server is Entra-only: it has no SQL login and therefore no password. The</text>
-  <text x="815" y="484" class="body">container authenticates as id-theyard-ss, which holds db_datareader and</text>
+  <text x="815" y="484" class="body">site authenticates as id-theyard-ss, which holds db_datareader and</text>
   <text x="815" y="500" class="body">db_datawriter and cannot create or alter a table.</text>
   <text x="815" y="522" class="body">The schema is api/TheYard.Database, hand-written DDL published by SqlPackage.</text>
   <text x="815" y="538" class="body">Entity Framework maps to it; a conformance test fails the build if they differ.</text>
-  <text x="815" y="560" class="muted">West US 3 because West US 2 refused: RegionDoesNotAllowProvisioning.</text>
+  <text x="815" y="560" class="muted">West US 3 because West US 2 refused; the plan is here for the same reason.</text>
 
   <rect x="180" y="398" width="560" height="176" class="target"/>
   <text x="195" y="424" class="title">When the database is not there</text>
@@ -129,8 +129,8 @@
 
   <rect x="180" y="590" width="560" height="176" class="box"/>
   <text x="195" y="616" class="title">Both stores in one process, two sites since 1.0.0.101</text>
-  <text x="195" y="640" class="body">Every container opens both stores; the default is sql here and cosmos on the</text>
-  <text x="195" y="656" class="body">second group, aci-theyard-cosmos-ss, which runs the same image behind the same</text>
+  <text x="195" y="640" class="body">Every site opens both stores; the default is sql here and cosmos on the</text>
+  <text x="195" y="656" class="body">second web app, which runs the same image on the same plan behind the same</text>
   <text x="195" y="672" class="body">edge at theyard-cosmos.stevenstout.biz. The Store bar links each site to the</text>
   <text x="195" y="688" class="body">other at the same page (no cookie); a measurement names a store for one request</text>
   <text x="195" y="704" class="body">with a header. Each Admin tab reads the other through /api/admin/peer, and the</text>
@@ -149,7 +149,7 @@
   <path d="M1060 896 L1060 790 L770 790 L770 378" class="flow"/>
   <text x="778" y="800" class="flow-label">pulled by id-theyard-ss</text>
   <path d="M740 896 L740 850 L760 850 L760 378" class="flow" style="stroke-dasharray:6 4"/>
-  <text x="560" y="586" class="flow-label">az container create (roll)</text>
+  <text x="560" y="586" class="flow-label">az webapp config set (roll)</text>
   <g transform="translate(0,200)">
   <!-- ===================== Lane 2: the ship path ===================== -->
   <rect x="40" y="622" width="1320" height="250" class="lane"/>
@@ -166,26 +166,26 @@
   <rect x="280" y="696" width="240" height="150" class="box"/>
   <text x="295" y="722" class="title">CI (.github/workflows/ci.yml)</text>
   <text x="295" y="746" class="body">frontend: tsc, vitest, vite build</text>
-  <text x="295" y="762" class="body">api: dotnet test (401 tests)</text>
-  <text x="295" y="778" class="body">e2e: Playwright in Chrome (58)</text>
+  <text x="295" y="762" class="body">api: dotnet test, on SQLite</text>
+  <text x="295" y="778" class="body">e2e: Playwright in Chrome</text>
   <text x="295" y="804" class="body">A red job stops everything below.</text>
   <text x="295" y="828" class="muted">read-only token</text>
 
   <rect x="560" y="696" width="360" height="150" class="box"/>
   <text x="575" y="722" class="title">Deploy (.github/workflows/deploy.yml)</text>
-  <text x="575" y="746" class="body">Fires on green CI. OIDC federated credential,</text>
-  <text x="575" y="762" class="body">no secret stored anywhere. Version = 1.0.0.(11 + run).</text>
+  <text x="575" y="746" class="body">Fires on green CI. OIDC federated credential;</text>
+  <text x="575" y="762" class="body">the version is the changelog's top line (ADR-031).</text>
   <text x="575" y="778" class="body">docker build with APP_VERSION and APP_COMMIT,</text>
-  <text x="575" y="794" class="body">push, render infra/aci-theyard.yaml,</text>
-  <text x="575" y="810" class="body">az container create, verify origin and domain.</text>
-  <text x="575" y="830" class="muted">roles: AcrPush, ACI Contributor, Managed Identity Operator</text>
+  <text x="575" y="794" class="body">push, send the site the four settings it keeps,</text>
+  <text x="575" y="810" class="body">set the image, verify origin and domain.</text>
+  <text x="575" y="830" class="muted">roles: AcrPush, Website Contributor on the two sites</text>
 
   <rect x="960" y="696" width="200" height="150" class="box"/>
   <text x="975" y="722" class="title">Registry (ACR)</text>
   <text x="975" y="746" class="mono">crtheyardsszmnetj67bn5h2</text>
   <text x="975" y="762" class="mono">  .azurecr.io</text>
   <text x="975" y="786" class="body">One tag per version,</text>
-  <text x="975" y="802" class="body">theyard:v12 to v97 today.</text>
+  <text x="975" y="802" class="body">from theyard:v12. Basic tier.</text>
 
   <path d="M240 770 L280 770" class="flow"/>
   <path d="M520 770 L560 770" class="flow"/>
@@ -199,8 +199,8 @@
 
   <!-- ===================== Lane 3: the production target ===================== -->
   <rect x="40" y="892" width="1320" height="238" class="lane"/>
-  <text x="60" y="920" class="lane-title">The production target, designed and undeployed</text>
-  <text x="60" y="940" class="lane-sub">infra/main.bicep with enableFrontDoor=true and computeKind=appservice; ADR-001 the decision, ADR-004 why it waits.</text>
+  <text x="60" y="920" class="lane-title">The one piece still refused: Azure Front Door</text>
+  <text x="60" y="940" class="lane-sub">infra/main.bicep with enableFrontDoor=true; ADR-001 the decision, ADR-004 and ADR-079 why it waits.</text>
 
   <rect x="60" y="966" width="260" height="140" class="target"/>
   <text x="75" y="992" class="title">Azure Front Door</text>
@@ -210,26 +210,26 @@
   <text x="75" y="1072" class="mono">fdOriginGroup, fdOrigin, fdRoute</text>
 
   <rect x="380" y="966" width="300" height="140" class="target"/>
-  <text x="395" y="992" class="title">App Service (B1), the locked origin</text>
-  <text x="395" y="1016" class="body">Answers only Azure Front Door's backend</text>
+  <text x="395" y="992" class="title">The two web apps, as locked origins</text>
+  <text x="395" y="1016" class="body">Each answers only Azure Front Door's backend</text>
   <text x="395" y="1032" class="body">range, and only with this profile's ID in</text>
   <text x="395" y="1048" class="body">the X-Azure-FDID header (siteLock).</text>
-  <text x="395" y="1072" class="mono">plan, site, siteLock</text>
+  <text x="395" y="1072" class="mono">siteLock, one per site</text>
 
   <rect x="740" y="966" width="300" height="140" class="target"/>
   <text x="755" y="992" class="title">The same image</text>
-  <text x="755" y="1016" class="body">Nothing about the container changes;</text>
-  <text x="755" y="1032" class="body">only the host does. The pipeline would</text>
-  <text x="755" y="1048" class="body">point at the App Service instead of the</text>
-  <text x="755" y="1064" class="body">container group, and get deployment slots.</text>
+  <text x="755" y="1016" class="body">Nothing about the sites changes. Front</text>
+  <text x="755" y="1032" class="body">Door goes in front of both, each site</text>
+  <text x="755" y="1048" class="body">answers only to it, and the Netlify</text>
+  <text x="755" y="1064" class="body">edge retires.</text>
 
   <rect x="1080" y="966" width="260" height="140" class="target"/>
   <text x="1095" y="992" class="title">Why it waits</text>
-  <text x="1095" y="1016" class="body">The free trial forbids Front Door and</text>
-  <text x="1095" y="1032" class="body">gave no App Service quota (measured</text>
-  <text x="1095" y="1048" class="body">2026-08-31). Flipping two parameters</text>
-  <text x="1095" y="1064" class="body">deploys this after an upgrade.</text>
-  <text x="1095" y="1088" class="muted">ADR-004</text>
+  <text x="1095" y="1016" class="body">The free trial forbids Front Door</text>
+  <text x="1095" y="1032" class="body">(measured 2026-08-31). App Service was</text>
+  <text x="1095" y="1048" class="body">refused too, until 2026-09-20 found the</text>
+  <text x="1095" y="1064" class="body">region that allows it. One parameter.</text>
+  <text x="1095" y="1088" class="muted">ADR-004, ADR-079</text>
 
   <path d="M320 1036 L380 1036" class="target-flow"/>
   <path d="M680 1036 L740 1036" class="target-flow"/>

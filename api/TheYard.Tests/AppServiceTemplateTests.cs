@@ -92,6 +92,28 @@ public class AppServiceTemplateTests
     }
     // #endregion edge-and-rolls-agree
 
+    [Fact]
+    public void The_template_is_what_runs_and_front_door_waits_behind_a_parameter_that_is_off()
+    {
+        string template = Read("infra", "main.bicep");
+
+        // What runs is the module, and the module is given every secret the
+        // template was given, so a deployment of it cannot blank a site.
+        Assert.Contains("module compute 'appservice.bicep'", template, StringComparison.Ordinal);
+        foreach (string parameter in new[] { "appImage", "appInsightsConnectionString", "authSigningKey", "adminKey" })
+        {
+            Assert.Contains($"{parameter}: {parameter}", template, StringComparison.Ordinal);
+        }
+
+        // Front Door is refused by the subscription this runs on, and a
+        // default of true would make the file a description of something
+        // that cannot be deployed, which is what it was until 1.0.0.157.
+        Assert.Contains("param enableFrontDoor bool = false", template, StringComparison.Ordinal);
+        // The platforms nothing runs on any more are gone with their branches.
+        Assert.DoesNotContain("Microsoft.ContainerInstance", template, StringComparison.Ordinal);
+        Assert.DoesNotContain("Microsoft.App/", template, StringComparison.Ordinal);
+    }
+
     // #region never-complete
     [Fact]
     public void Nothing_in_the_repository_deploys_a_template_in_complete_mode()

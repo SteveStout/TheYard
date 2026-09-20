@@ -1,9 +1,29 @@
-// TheYard deployment. Production target (ADR-001): App Service origin behind
-// Azure Front Door with the origin locked to the Front Door ID header.
-// Author decision 2026-08-31: on the trial subscription, run WITHOUT Front
-// Door or any restricted resource; the target stays the documented best
-// practice for production and activates by parameters after an upgrade.
-// computeKind: appservice (target) | containerapp | aci (trial-compatible).
+// TheYard, as it runs (ADR: One plan, two sites). One Linux App Service plan
+// and two web apps for containers, in infra/appservice.bicep, called from here
+// as a module; and Azure Front Door in front of both with each origin locked to
+// it (ADR-001), behind a parameter that defaults off, because the subscription
+// still refuses Front Door: "Free Trial and Student account is forbidden for
+// Azure Frontdoor resources", measured on 2026-08-31 and not yet retried on a
+// paid subscription.
+//
+// Until 1.0.0.157 this file described a design nobody ran. It described App
+// Service while the site ran on Container Instances, and carried a branch each
+// for Container Instances and Container Apps that nothing deployed after day
+// one. It is now the description of what runs, and those two branches are gone
+// with the platforms they described (ADR-004, addendum of 2026-09-20).
+//
+// HOW THIS IS DEPLOYED, AND HOW IT IS NOT. Incremental mode, always:
+//
+//   az deployment group create -g RG-THEYARD-SS --mode Incremental \
+//     -f infra/main.bicep -p appImage=<registry>/theyard:v<N> ...
+//
+// RG-THEYARD-SS also holds the two databases, the document store, the
+// registry, the identity, Application Insights and the mail service, and none
+// of them is in this file on purpose: each was created once, holds state or a
+// name other things depend on, and is named and priced in the record's
+// inventory. A complete-mode deployment deletes whatever a template leaves
+// out, which here is every one of them. The template is the description.
+// Deletion is a separate, named, reversible act, on the owner's word.
 
 @description('Workload token used to derive resource names')
 param baseName string = 'theyard'
@@ -11,28 +31,34 @@ param baseName string = 'theyard'
 @description('Owner tag appended to resource names per ADR-003')
 param ownerTag string = 'SS'
 
-@description('Region for regional resources; Front Door itself is global')
-param location string = resourceGroup().location
+@description('Region for the plan and both sites. westus3: westus2, where the registry and the document store are, answers a quota of zero for App Service on this subscription.')
+param location string = 'westus3'
 
-@description('Container image; the placeholder default is replaced by the ACR image once built')
-param appImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-
-@description('Deploy Front Door and lock the origin to it (production best practice; requires pay-as-you-go)')
-param enableFrontDoor bool = true
-
-@description('App Service plan SKU when computeKind is appservice')
+@description('Plan size: B1 is 1 vCPU and 1.75 GB shared by both sites, measured as enough with each site warming one store; B2 doubles both')
+@allowed([
+  'B1'
+  'B2'
+  'B3'
+])
 param skuName string = 'B1'
 
-@description('Compute platform')
-@allowed([
-  'appservice'
-  'containerapp'
-  'aci'
-])
-param computeKind string = 'appservice'
+@description('The image both sites run, registry/name:tag. A deployment has to be told what is running, so that describing the infrastructure never rolls a site back.')
+param appImage string
 
-@description('Minimum replicas for the container app path')
-param minReplicas int = 1
+@description('Application Insights connection string, an ingestion key, passed in and never written here')
+@secure()
+param appInsightsConnectionString string
+
+@description('The session signing key both sites share')
+@secure()
+param authSigningKey string
+
+@description('The operator key for the Admin tab keyed rows')
+@secure()
+param adminKey string
+
+@description('Deploy Front Door and lock both origins to it (ADR-001). Off: the free trial refuses Front Door, and the free edge in front of the sites today is Netlify.')
+param enableFrontDoor bool = false
 
 // #region naming
 // Steve's naming rule in three lines: UPPERCASE for the things people read in
@@ -43,20 +69,43 @@ var suffix = uniqueString(resourceGroup().id)
 var upperTag = toUpper('${baseName}-${ownerTag}')
 var acrName = toLower('cr${baseName}${ownerTag}${suffix}')
 // #endregion naming
-var useAppService = computeKind == 'appservice'
-var useContainerApp = computeKind == 'containerapp'
-var useAci = computeKind == 'aci'
 
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+// The registry the image is pulled from. Existing, not created here: it holds
+// every image this project has shipped, and it was made on day one.
+resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: acrName
-  location: location
-  sku: {
-    name: 'Basic'
-  }
-  properties: {
-    adminUserEnabled: false
+}
+
+// #region what-runs
+// The plan and the two sites, every setting included, in one module so the
+// file that says what differs between the two sites says nothing else.
+module compute 'appservice.bicep' = {
+  name: 'compute'
+  params: {
+    location: location
+    baseName: baseName
+    ownerTag: ownerTag
+    skuName: skuName
+    appImage: appImage
+    appInsightsConnectionString: appInsightsConnectionString
+    authSigningKey: authSigningKey
+    adminKey: adminKey
   }
 }
+// #endregion what-runs
+
+// The two sites the module made, by the names it gave them, so Front Door can
+// point at them and lock them.
+var siteNames = [
+  'APP-${upperTag}-${toUpper(suffix)}'
+  'APP-${toUpper(baseName)}-COSMOS-${toUpper(ownerTag)}-${toUpper(suffix)}'
+]
+
+resource site 'Microsoft.Web/sites@2023-12-01' existing = [
+  for name in siteNames: {
+    name: name
+  }
+]
 
 resource fdProfile 'Microsoft.Cdn/profiles@2024-02-01' = if (enableFrontDoor) {
   name: 'FD-${upperTag}'
@@ -66,268 +115,116 @@ resource fdProfile 'Microsoft.Cdn/profiles@2024-02-01' = if (enableFrontDoor) {
   }
 }
 
-resource plan 'Microsoft.Web/serverfarms@2023-12-01' = if (useAppService) {
-  name: 'PLAN-${upperTag}'
-  location: location
-  kind: 'linux'
-  sku: {
-    name: skuName
-  }
-  properties: {
-    reserved: true
-  }
-}
-
-resource site 'Microsoft.Web/sites@2023-12-01' = if (useAppService) {
-  name: 'APP-${upperTag}-${toUpper(suffix)}'
-  location: location
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    serverFarmId: plan!.id
-    httpsOnly: true
-    siteConfig: {
-      linuxFxVersion: 'DOCKER|${appImage}'
-      alwaysOn: skuName == 'F1' ? false : true
-      acrUseManagedIdentityCreds: true
-      appSettings: [
+// #region origin-lock
+// With Front Door on, nothing reaches either site except through it: the
+// service tag admits Front Door's address space, and the header admits only
+// this profile, because every Front Door customer shares that address space.
+resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = [
+  for (name, i) in siteNames: if (enableFrontDoor) {
+    parent: site[i]
+    name: 'web'
+    dependsOn: [
+      compute
+    ]
+    properties: {
+      ipSecurityRestrictionsDefaultAction: 'Deny'
+      ipSecurityRestrictions: [
         {
-          name: 'WEBSITES_PORT'
-          value: '8080'
+          name: 'AllowFrontDoorOnly'
+          priority: 100
+          action: 'Allow'
+          tag: 'ServiceTag'
+          ipAddress: 'AzureFrontDoor.Backend'
+          headers: {
+            'x-azure-fdid': [
+              fdProfile!.properties.frontDoorId
+            ]
+          }
         }
       ]
     }
   }
-}
-
-// #region origin-lock
-resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = if (useAppService && enableFrontDoor) {
-  parent: site
-  name: 'web'
-  properties: {
-    ipSecurityRestrictionsDefaultAction: 'Deny'
-    ipSecurityRestrictions: [
-      {
-        name: 'AllowFrontDoorOnly'
-        priority: 100
-        action: 'Allow'
-        tag: 'ServiceTag'
-        ipAddress: 'AzureFrontDoor.Backend'
-        headers: {
-          'x-azure-fdid': [
-            fdProfile!.properties.frontDoorId
-          ]
-        }
-      }
-    ]
-  }
-}
+]
 // #endregion origin-lock
 
-resource acrPullSite 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useAppService) {
-  name: guid(acr.id, 'site', 'acrpull')
-  scope: acr
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
-    principalId: site!.identity.principalId
-    principalType: 'ServicePrincipal'
+// One endpoint, one origin group, one origin and one route per site: each site
+// is its own public name, so each gets its own way in.
+resource fdEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = [
+  for (name, i) in siteNames: if (enableFrontDoor) {
+    parent: fdProfile
+    name: toLower('fde-${i == 0 ? baseName : '${baseName}-cosmos'}-${ownerTag}-${suffix}')
+    location: 'global'
+    properties: {
+      enabledState: 'Enabled'
+    }
   }
-}
+]
 
-resource caEnv 'Microsoft.App/managedEnvironments@2024-03-01' = if (useContainerApp) {
-  name: toLower('cae-${baseName}-${ownerTag}')
-  location: location
-  properties: {}
-}
-
-resource caApp 'Microsoft.App/containerApps@2024-03-01' = if (useContainerApp) {
-  name: toLower('ca-${baseName}-${ownerTag}-${suffix}')
-  location: location
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    managedEnvironmentId: caEnv!.id
-    configuration: {
-      ingress: {
-        external: true
-        targetPort: 8080
-        transport: 'auto'
+resource fdOriginGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = [
+  for (name, i) in siteNames: if (enableFrontDoor) {
+    parent: fdProfile
+    name: 'og-app-${i}'
+    properties: {
+      loadBalancingSettings: {
+        sampleSize: 4
+        successfulSamplesRequired: 3
+        additionalLatencyInMilliseconds: 50
       }
-      registries: [
-        {
-          server: acr.properties.loginServer
-          identity: 'system'
-        }
+      healthProbeSettings: {
+        probePath: '/healthz'
+        probeRequestType: 'GET'
+        probeProtocol: 'Https'
+        probeIntervalInSeconds: 100
+      }
+    }
+  }
+]
+
+resource fdOrigin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = [
+  for (name, i) in siteNames: if (enableFrontDoor) {
+    parent: fdOriginGroup[i]
+    name: 'app-origin'
+    dependsOn: [
+      compute
+    ]
+    properties: {
+      hostName: '${toLower(name)}.azurewebsites.net'
+      originHostHeader: '${toLower(name)}.azurewebsites.net'
+      httpPort: 80
+      httpsPort: 443
+      priority: 1
+      weight: 1000
+      enabledState: 'Enabled'
+      enforceCertificateNameCheck: true
+    }
+  }
+]
+
+resource fdRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = [
+  for (name, i) in siteNames: if (enableFrontDoor) {
+    parent: fdEndpoint[i]
+    name: 'route-all'
+    dependsOn: [
+      fdOrigin[i]
+    ]
+    properties: {
+      originGroup: {
+        id: fdOriginGroup[i].id
+      }
+      supportedProtocols: [
+        'Http'
+        'Https'
       ]
-    }
-    template: {
-      containers: [
-        {
-          name: 'theyard'
-          image: appImage
-          resources: {
-            cpu: json('0.5')
-            memory: '1Gi'
-          }
-        }
+      patternsToMatch: [
+        '/*'
       ]
-      scale: {
-        minReplicas: minReplicas
-        maxReplicas: 1
-      }
+      forwardingProtocol: 'HttpsOnly'
+      httpsRedirect: 'Enabled'
+      linkToDefaultDomain: 'Enabled'
     }
   }
-}
+]
 
-resource acrPullCa 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useContainerApp) {
-  name: guid(acr.id, 'ca', 'acrpull')
-  scope: acr
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
-    principalId: caApp!.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// ACI branch: user-assigned identity because the container group needs a
-// registry credential at creation time, and a system identity cannot grant
-// itself AcrPull before it exists.
-resource uai 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (useAci) {
-  name: toLower('id-${baseName}-${ownerTag}')
-  location: location
-}
-
-resource acrPullUai 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useAci) {
-  name: guid(acr.id, 'uai', 'acrpull')
-  scope: acr
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
-    principalId: uai!.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource aci 'Microsoft.ContainerInstance/containerGroups@2023-05-01' = if (useAci) {
-  name: toLower('aci-${baseName}-${ownerTag}')
-  location: location
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${uai!.id}': {}
-    }
-  }
-  properties: {
-    osType: 'Linux'
-    restartPolicy: 'Always'
-    ipAddress: {
-      type: 'Public'
-      dnsNameLabel: toLower('${baseName}-${ownerTag}-${suffix}')
-      ports: [
-        {
-          protocol: 'TCP'
-          port: 8080
-        }
-      ]
-    }
-    imageRegistryCredentials: [
-      {
-        server: acr.properties.loginServer
-        identity: uai!.id
-      }
-    ]
-    containers: [
-      {
-        name: 'theyard'
-        properties: {
-          image: appImage
-          ports: [
-            {
-              port: 8080
-            }
-          ]
-          resources: {
-            requests: {
-              cpu: 1
-              memoryInGB: json('1.5')
-            }
-          }
-        }
-      }
-    ]
-  }
-  dependsOn: [
-    acrPullUai
-  ]
-}
-
-resource fdEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = if (enableFrontDoor) {
-  parent: fdProfile
-  name: toLower('fde-${baseName}-${ownerTag}-${suffix}')
-  location: 'global'
-  properties: {
-    enabledState: 'Enabled'
-  }
-}
-
-resource fdOriginGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = if (enableFrontDoor) {
-  parent: fdProfile
-  name: 'og-app'
-  properties: {
-    loadBalancingSettings: {
-      sampleSize: 4
-      successfulSamplesRequired: 3
-      additionalLatencyInMilliseconds: 50
-    }
-    healthProbeSettings: {
-      probePath: '/api/facets'
-      probeRequestType: 'GET'
-      probeProtocol: 'Https'
-      probeIntervalInSeconds: 100
-    }
-  }
-}
-
-resource fdOrigin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = if (enableFrontDoor) {
-  parent: fdOriginGroup
-  name: 'app-origin'
-  properties: {
-    hostName: site!.properties.defaultHostName
-    originHostHeader: site!.properties.defaultHostName
-    httpPort: 80
-    httpsPort: 443
-    priority: 1
-    weight: 1000
-    enabledState: 'Enabled'
-    enforceCertificateNameCheck: true
-  }
-}
-
-resource fdRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = if (enableFrontDoor) {
-  parent: fdEndpoint
-  name: 'route-all'
-  dependsOn: [
-    fdOrigin
-  ]
-  properties: {
-    originGroup: {
-      id: fdOriginGroup!.id
-    }
-    supportedProtocols: [
-      'Http'
-      'Https'
-    ]
-    patternsToMatch: [
-      '/*'
-    ]
-    forwardingProtocol: 'HttpsOnly'
-    httpsRedirect: 'Enabled'
-    linkToDefaultDomain: 'Enabled'
-  }
-}
-
-output acrNameOut string = acr.name
 output acrLoginServer string = acr.properties.loginServer
-output appName string = useAci ? aci!.name : (useContainerApp ? caApp!.name : site!.name)
-output appUrl string = useAci ? 'http://${aci!.properties.ipAddress.fqdn}:8080' : (useContainerApp ? 'https://${caApp!.properties.configuration.ingress.fqdn}' : 'https://${site!.properties.defaultHostName}')
+output planId string = compute.outputs.planId
+output origins array = compute.outputs.origins

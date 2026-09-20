@@ -221,10 +221,12 @@ each with its own changelog line and, where it decided something, its own record
   auction status; all auction math lives in Domain and travels on the wire, so the
   browser only formats. `src/lib/data.ts` is the frontend's single data seam.
 - **Hosting:** a hand-authored multi-stage Dockerfile, an image in Azure Container
-  Registry, two container groups on Azure Container Instances, one per site, rolled from the
-  container specs in `infra/`, and Netlify's free tier as the TLS edge in front of them. GitHub Actions builds and rolls them on every green push.
-  `infra/main.bicep` holds the production design (App Service behind Front Door with an
-  origin lock), deliberately undeployed and explained on the Hosting page.
+  Registry, and two web apps for containers, one per site, sharing one Linux B1 App Service
+  plan at $12.41 a month, with Netlify's free tier as the TLS edge in front of them
+  (ADR: One plan, two sites). GitHub Actions builds the image and rolls both sites on every green push.
+  `infra/main.bicep` is what runs, the plan and the two sites with every setting, with Azure
+  Front Door and the origin lock behind a parameter that stays off while the subscription
+  refuses Front Door; the Hosting page explains both.
 - **Database:** Azure SQL Database through EF Core, behind the same ports the JSON
   readers used to answer, with SQLite for local development and CI because neither has
   an Azure credential and neither should need one. And, since 1.0.0.89, Azure Cosmos
@@ -276,7 +278,7 @@ each with its own changelog line and, where it decided something, its own record
   infrastructure, my resume, and How this was built, which says plainly that an AI agent
   wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
-  alike), the container group's own state read from Azure with a managed identity, the
+  alike), the site's own state and the plan it shares read from Azure with a managed identity, the
   last hour of traffic as Application Insights recorded it, and every SQL statement the
   application has sent, with the request that caused it, how long the database took, and
   its parameters listed by name and type. Not their values: the page is public, and the
@@ -445,7 +447,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (543 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (544 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -536,7 +538,7 @@ What is genuinely still open, in priority order:
   the reasoning is in ADR: Competing bidders
 - Real people at the other end of a bid: accounts and per-user bids exist, and the
   competing bidders are still simulated, one room per container
-- One writer per store: both container groups open both stores and each keeps its own
+- One writer per store: both sites open both stores and each keeps its own
   standing in memory, so a bid placed through one is not seen by the other until it
   restarts, which ADR: One container, both stores calls out and nothing yet enforces
 - A virtualized grid once Load More accumulates thousands of rows

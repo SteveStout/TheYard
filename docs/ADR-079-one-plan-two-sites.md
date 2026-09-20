@@ -99,6 +99,91 @@ down to 80 to 85 per cent. That metric counts everything on the machine, the pla
 processes included, and it is the working sets staying above their heaps that says the sites fit.
 B2 is one parameter, `skuName`, and $12.41 a month more, if a busier month says so.
 
+## The move, as it happened
+
+All on 20 September 2026, Central time. 04:07, the plan and both sites created, no public name on them.
+04:43, 1.0.0.155 shipped: both deploy workflows rolled each site onto the plan as well as onto its
+container group, and both sites answered on their own names with every address up and Azure's view
+of the container reading a web app. 05:07, 1.0.0.156 shipped the two lines in `edge/_redirects`, and
+at 05:09 both public names were being answered by the plan, still on 1.0.0.155, before the roll of
+1.0.0.156 had reached them: the edge moved first and the sites served through their own roll. 05:15,
+both domains on 1.0.0.156 with 116 of 116 addresses up on each. 05:16, both container groups stopped,
+behind a guard that would have stopped nothing unless both public names answered 1.0.0.156 from a web
+app on the plan. No visitor-facing address changed, and every read taken of either public name
+through the move answered 200.
+
+## The proof, on the plan
+
+The site's own proof (ADR: The same performance, proven) was run twice on each site within the hour
+of the move. It read 1 to 2 ms a round trip to the relational store from the first site and 9 ms from
+the second, and 38 to 40 ms to the document store from both. A bid reads 28 ms against 89, a raise 19
+against 83, and the card's own verdict on those rows is that the whole difference is the round trip.
+The request units did not move: 6.52 for a bid and 11.29 for a raise, the figures the container
+groups read, because a request unit is what the engine charged.
+
+The processor is where the smaller machine shows. The two paths that are arithmetic and not store
+slowed down: the listing page of 100 of 100,000 read 122 to 160 ms across the warm runs where a
+container group's own core read 51, and a sign-in, which is a password hash made expensive on
+purpose, read 430 to 610 ms where it read 82 to 122. From a desk in Missouri through the edge, ten
+reads each, the listing answered in a median of 418 ms on one site and 439 ms on the other. B2 is
+two of the same core and a request uses one, so it is not the answer to either number.
+
+## What a proof run does to the memory
+
+The proof drives both stores inside one process, so the first run after a roll warms the catalogue of
+the store that site does not serve. After it, both sites held both catalogues again: managed heaps
+of about 265 to 295 MB and working sets of 440 to 480 MB, which is the state measured above as too
+much for this machine at rest, and it stays that way until the next roll. Turning the warm-up off
+moved the second catalogue from every roll to whoever presses Run; it did not make it go away. The
+fix belongs in the application rather than in a bigger plan: a catalogue nobody has asked for in a
+while can be let go and read again on demand, and that is the next change after this one.
+
+## The inventory, priced
+
+`az resource list -g RG-THEYARD-SS`, read on 20 September 2026, every row of it. The template is
+`infra/main.bicep` with its module `infra/appservice.bicep`. List prices from the Azure Retail Prices
+API the same day, over 730 hours or 30.42 days.
+
+| Resource | What it is | In the template | A month |
+| --- | --- | --- | --- |
+| `PLAN-THEYARD-SS` | The App Service plan, Linux B1, West US 3 | yes | $12.41 |
+| `APP-THEYARD-SS-ZMNETJ67BN5H2`, `APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2` | The two sites, web apps for containers | yes | $0.00, the plan is the bill |
+| `sql-theyard-ss-westus3` and its `master` | The relational server, Entra-only | no: it holds data | $0.00 |
+| `sqldb-theyard-ss-basic` | The database the sites run on, Basic, 5 DTU | no: it holds data | $4.90 |
+| `cosmos-theyard-ss` | The document store, free tier, no keys | no: it holds data | $0.00 |
+| `crtheyardsszmnetj67bn5h2` | The registry, Basic, 147 tags, 8.7 GiB of the 10 GiB included | no: it holds every image shipped | $5.07 |
+| `id-theyard-ss` | The identity both sites run as | no: the database user and every role assignment hang off its id | $0.00 |
+| `appi-theyard-ss`, `log-theyard-ss`, the smart detection action group | Telemetry: 1.24 GB ingested in thirty days against 5 GB a month free, and a 0.1 GB daily cap on the component | no | $0.00 |
+| `acs-theyard-ss`, `acsemail-theyard-ss` and its managed domain | The one email this site sends, the password reset | no | $0.00 at this volume; billed by the message |
+| `aci-theyard-ss`, `aci-theyard-cosmos-ss` | The two container groups, **stopped** | no: they are the way back | $0.00 stopped; $34.44 each running |
+| `sqldb-theyard-ss` | The serverless database the sites left on 14 September, paused | no: **unused** | $0.00 paused |
+| `cae-theyard-ss`, `ca-theyard-ss-zmnetj67bn5h2` | A Container Apps environment and an app whose provisioning failed, from the first deployment day, 31 August (ADR-004) | no: **unused** | $0.00, nothing has ever run in them |
+
+**$22.38 a month, where it was $78.85.** The pages quoted $73.78 for the old bill, which left the
+registry out, and against that figure the new one is $17.31; either way the difference is the same
+$56.47, which is the two container groups less the plan. Crossing between West US 2 and West US 3
+is $0.02 a gigabyte either way, and what crosses is an image pull and one catalogue read per roll,
+under a cent. Azure's own record of the plan carries a `freeOfferExpirationTime` of 20 October 2026,
+a month after it was created; every figure here is the list price regardless, because that is the
+price that lasts.
+
+The template was deployed against the account the same morning, in incremental mode, with the running
+image and the three secret values read off the first site and handed back to it. The what-if before
+read three resources to modify, seventeen to ignore, none to create and none to delete, and the one
+real difference was the affinity cookie. The what-if after still lists six `siteConfig` properties on
+each site as additions, because a read of a site never returns them, and nothing else; the plan reads
+no change.
+
+Three things on that list are unused, and none of them was removed by this change. A deployment mode
+is never how a resource gets deleted here: complete mode at resource-group scope removes whatever the
+template leaves out, and what this template leaves out on purpose is the databases, the registry and
+the identity. So the template is deployed in incremental mode, a test refuses the other mode anywhere
+in the repository, and removal is its own act, in the order that cannot bite: named, priced, stopped
+if it can be stopped, and deleted only on the owner's word. The container groups wait a week. The
+paused database and the two Container Apps leftovers wait for the same word. The registry is 1.3 GiB
+from the end of what Basic includes, at about 90 MB a version, after which it is $0.10 a gigabyte a
+month; pruning old tags is a deletion too.
+
 ## What is bought beyond the money
 
 - **Always On**, so the platform keeps the process warm rather than the first visitor of the hour.
@@ -147,7 +232,9 @@ point in that week. Deleting them afterwards is a separate act, on the owner's w
 
 ## Files
 
-- [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites, what differs between them, and every setting the container groups carried.
+- [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): what runs, with Front Door and the origin lock behind a parameter that stays off.
+- [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): its module, the plan and the two sites, what differs between them, and every setting the container groups carried.
+- [`scripts/deploy-infra.ps1`](https://github.com/SteveStout/TheYard/blob/main/scripts/deploy-infra.ps1): describing the infrastructure to Azure again without changing what runs, in incremental mode.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two container groups, stopped and kept, which is the way back.
 - [`api/TheYard.Api/IdentityTokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/IdentityTokens.cs): a managed identity token from whichever door the host has.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the site asking Azure about itself, as a container group or as a web app on a shared plan.

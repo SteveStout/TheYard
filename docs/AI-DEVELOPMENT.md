@@ -81,7 +81,7 @@ Yes, and this is the part I would look at first.
 
 **Can the thing be operated?**
 The Admin tab runs timed health checks, lists recent errors from the server and
-the browser alike, reads the container group's own state from Azure with a
+the browser alike, reads the site's own state from Azure with a
 managed identity, and shows the last hour of traffic from Application Insights.
 There is an endpoint that throws on purpose so the failure path can be
 exercised against the live container instead of assumed (ADR: The exception

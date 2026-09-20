@@ -1,11 +1,12 @@
 // Draws two-sites.svg (ADR: A permanent address for the second site) in the
-// style of infrastructure.svg and dataflow.svg: how two names reach two
-// container groups through one edge, and how both groups reach both stores.
+// style of infrastructure.svg and dataflow.svg: how two names reach two web
+// apps on one App Service plan through one edge, and how both sites reach both
+// stores (ADR: One plan, two sites).
 // Every box carries the file or the resource it stands for. Run from the repo
 // root:
 //   node docs/images/two-sites.mjs          writes docs/images/two-sites.svg
 //   node docs/images/two-sites.mjs --png    also renders two-sites.png at 2x in Chrome
-// Redraw it when a name, a rule or a group changes; the picture is a claim.
+// Redraw it when a name, a rule or a site changes; the picture is a claim.
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,10 +77,10 @@ const L1 = { x: 40, w: 400 };
 const b1 = L1.x + 20;
 const w1 = L1.w - 40;
 const nameLive = box(b1, 170, w1, 'theyard.stevenstout.biz', 'CNAME -> theyard-edge.netlify.app, TTL 30 min', [
-  'The live site, the name a resume carries. The group behind it serves Azure SQL Database by default.',
+  'The live site, the name a resume carries. The web app behind it serves Azure SQL Database by default.',
 ], 42);
 const nameCosmos = box(b1, nameLive.bottom + 36, w1, 'theyard-cosmos.stevenstout.biz', 'CNAME -> theyard-edge.netlify.app, TTL 30 min', [
-  'The second site, since 1.0.0.100. One label, so any DNS form accepts it; the container group\'s own name with the suffix dropped.',
+  'The second site, since 1.0.0.100. One label, so any DNS form accepts it.',
 ], 42);
 const nameBare = box(b1, nameCosmos.bottom + 36, w1, 'stevenstout.biz and www', 'A 75.2.60.5 and CNAME -> theyard-edge.netlify.app', [
   'Both forward to the live site with a 301, so a trimmed or retyped address still lands on the app.',
@@ -94,8 +95,8 @@ const cert = box(b2, 170, w2, 'One certificate', "Let's Encrypt, issued and rene
   'Four names on it: the bare domain, www, theyard and theyard-cosmos. Adding the alias reissued it within the minute; nothing was bought.',
 ], 50);
 const rules = box(b2, cert.bottom + 36, w2, 'edge/_redirects: the name picks the origin', 'the first matching rule wins, top to bottom', [
-  'https://theyard-cosmos.stevenstout.biz/* to the second group, 200!',
-  '/* to the first group, 200! (the catch-all, last)',
+  'https://theyard-cosmos.stevenstout.biz/* to the second web app, 200!',
+  '/* to the first web app, 200! (the catch-all, last)',
   'stevenstout.biz and www: 301 to theyard.stevenstout.biz',
   'A domain-level rule only matches a name assigned to the site, so the alias is what makes the first line eligible.',
 ], 50);
@@ -108,19 +109,19 @@ const lane2Bottom = ignore.bottom + 20;
 const L3 = { x: 960, w: 520 };
 const b3 = L3.x + 20;
 const w3 = L3.w - 100; // a gutter on the right for the Store bar's loop
-const groupSql = box(b3, 170, w3, 'aci-theyard-ss', 'theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080', [
-  'Store__Default = sql. Peer__Site = https://theyard-cosmos.stevenstout.biz. Rolled by the Deploy workflow from infra/aci-theyard.yaml.',
+const groupSql = box(b3, 170, w3, 'APP-THEYARD-SS-ZMNETJ67BN5H2', 'https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net', [
+  'Store__Default = sql. Peer__Site = https://theyard-cosmos.stevenstout.biz. Rolled by the Deploy workflow. A web app for containers on PLAN-THEYARD-SS.',
 ], 48);
-const groupCosmos = box(b3, groupSql.bottom + 60, w3, 'aci-theyard-cosmos-ss', 'theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080', [
-  'Store__Default = cosmos. Peer__Site = https://theyard.stevenstout.biz. Rolled by Deploy Cosmos from infra/aci-theyard-cosmos.yaml. Same image, same 1 CPU and 1.5 GB.',
+const groupCosmos = box(b3, groupSql.bottom + 60, w3, 'APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2', 'https://app-theyard-cosmos-ss-zmnetj67bn5h2.azurewebsites.net', [
+  'Store__Default = cosmos. Peer__Site = https://theyard.stevenstout.biz. Rolled by Deploy Cosmos. Same image, same plan: one Linux B1, 1 vCPU and 1.75 GB shared by both sites, $12.41 a month.',
 ], 48);
 const storesY = groupCosmos.bottom + 76;
 const halfW = Math.floor((w3 - 20) / 2);
 const storeSql = box(b3, storesY, halfW, 'Azure SQL Database', 'Entra-only, no SQL login', [
-  'Reached as the managed identity. One region away.',
+  'Reached as the managed identity. West US 3, the plan\'s own region.',
 ], 22, 'store');
 const storeCosmos = box(b3 + halfW + 20, storesY, halfW, 'Azure Cosmos DB', 'no keys on the account', [
-  'Reached as the managed identity. In the containers\' own region.',
+  'Reached as the managed identity. West US 2, one region from the plan.',
 ], 22, 'store');
 const lane3Bottom = Math.max(storeSql.bottom, storeCosmos.bottom) + 20;
 const H = Math.max(lane1Bottom, lane2Bottom, lane3Bottom) + 100;
@@ -134,8 +135,8 @@ label('HTTPS, then the Host header picks the rule', L2.x + 20, rules.y - 10);
 // Rules to the two groups, labelled above each group.
 arrow(`M${rules.right} ${rules.midY - 20} L${groupSql.x} ${groupSql.midY}`);
 arrow(`M${rules.right} ${rules.midY + 20} L${groupCosmos.x} ${groupCosmos.midY}`);
-label('everything else: plain HTTP to :8080', groupSql.x, groupSql.y - 10);
-label('theyard-cosmos: plain HTTP to :8080', groupCosmos.x, groupCosmos.y - 10);
+label('everything else: HTTPS to the first web app', groupSql.x, groupSql.y - 10);
+label('theyard-cosmos: HTTPS to the second web app', groupCosmos.x, groupCosmos.y - 10);
 // Both groups open both stores: two lines down from each group into a bus, and the bus into both stores.
 const busY = storesY - 34;
 const sqlCx = storeSql.x + Math.floor(storeSql.w / 2);
@@ -144,7 +145,7 @@ out.push(`  <path d="M${groupSql.x + 40} ${groupSql.bottom} L${groupSql.x + 40} 
 out.push(`  <path d="M${groupCosmos.x + 40} ${groupCosmos.bottom} L${groupCosmos.x + 40} ${busY} L${cosCx} ${busY}" class="flow" style="marker-end:none"/>`);
 arrow(`M${sqlCx} ${busY} L${sqlCx} ${storesY}`);
 arrow(`M${cosCx} ${busY} L${cosCx} ${storesY}`);
-label('both groups open both stores, as their managed identity', groupCosmos.x + 52, busY - 8);
+label('both sites open both stores, as their managed identity', groupCosmos.x + 52, busY - 8);
 // The Store bar: each site links to the other at the same page, drawn in the gutter.
 const gx = groupSql.right + 30;
 arrow(`M${groupSql.right} ${groupSql.midY + 16} L${gx} ${groupSql.midY + 16} L${gx} ${groupCosmos.midY - 16} L${groupCosmos.right + 2} ${groupCosmos.midY - 16}`, 'loop');
@@ -152,7 +153,7 @@ arrow(`M${groupCosmos.right} ${groupCosmos.midY + 16} L${gx + 24} ${groupCosmos.
 label('the Store bar: each site links to the other, at the same page', groupSql.right - 372, groupSql.bottom + 30, 'loop-label');
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
-  <title>TheYard's two sites: two names at Wix, one Netlify edge, two container groups on Azure, and both stores behind both</title>
+  <title>TheYard's two sites: two names at Wix, one Netlify edge, two web apps on one App Service plan on Azure, and both stores behind both</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#536786"/>
@@ -164,7 +165,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   </defs>
 
   <rect width="${W}" height="${H}" fill="#e9e6e7"/>
-  <text x="40" y="44" class="heading">TheYard's two sites: two names, one edge, two container groups, both stores behind both</text>
+  <text x="40" y="44" class="heading">TheYard's two sites: two names, one edge, two web apps on one plan, both stores behind both</text>
   <text x="40" y="68" class="caption">A request reads left to right. The name a visitor typed is the only thing that differs until the edge, the edge picks the origin from it, and each origin opens both stores.</text>
 
   <!-- ===================== Lane 1: the names ===================== -->
@@ -179,14 +180,14 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
 
   <!-- ===================== Lane 3: Azure ===================== -->
   <rect x="${L3.x}" y="92" width="${L3.w}" height="${lane3Bottom - 92}" class="lane"/>
-  <text x="${L3.x + 20}" y="120" class="lane-title">Azure: RG-THEYARD-SS, westus2</text>
-  <text x="${L3.x + 20}" y="140" class="lane-sub">Two groups running the same image, and the two stores both open.</text>
+  <text x="${L3.x + 20}" y="120" class="lane-title">Azure: RG-THEYARD-SS, one App Service plan in westus3</text>
+  <text x="${L3.x + 20}" y="140" class="lane-sub">Two web apps running the same image on one machine, and the two stores both open.</text>
 
 ${out.join('\n')}
 
-  <text x="40" y="${H - 66}" class="caption">Each site is one store's site: the group's default store serves it; a measurement can name the other store for one request with the X-Yard-Store header.</text>
+  <text x="40" y="${H - 66}" class="caption">Each site is one store's site: the web app's default store serves it; a measurement can name the other store for one request with the X-Yard-Store header.</text>
   <text x="40" y="${H - 46}" class="caption">The edge retires at the registrar transfer around the end of October 2026; both names then become two records at Cloudflare pointing at the same two origins.</text>
-  <text x="40" y="${H - 26}" class="caption">Source: docs/images/two-sites.svg in the repository, drawn by docs/images/two-sites.mjs and redrawn when a name, a rule or a group changes.</text>
+  <text x="40" y="${H - 26}" class="caption">Source: docs/images/two-sites.svg in the repository, drawn by docs/images/two-sites.mjs and redrawn when a name, a rule or a site changes.</text>
 </svg>
 `;
 

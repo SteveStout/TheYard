@@ -9,40 +9,43 @@ included, is served from these menus; nothing requires opening the repository.
 
 ## The picture
 
-[![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to the container group on Azure; a merge through CI and Deploy to the registry and the roll; and the designed, undeployed Front Door and App Service target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
+[![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to a web app on the App Service plan on Azure; a merge through CI and Deploy to the registry and the roll; and Azure Front Door, designed, parameterized and still refused](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 
 *A preview. [Open the infrastructure diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 to zoom in and follow it; every diagram on this site opens that way (ADR: Diagram pages).*
 
 Three lanes: a request from left to right, a merge becoming a roll, and the
-production target that waits for a subscription upgrade. Every name in it is
+one piece of the production design that still waits for a subscription
+upgrade. Every name in it is
 the one the records and the pipeline logs carry. The source is
 [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg); the records below explain each box.
 
 Since 1.0.0.100 there are two sites behind that edge, and the second
-drawing is how the two names reach the two container groups and how both
-groups reach both stores (ADR: A permanent address for the second site):
+drawing is how the two names reach the two web apps on one plan and how both
+sites reach both stores (ADR: A permanent address for the second site;
+ADR: One plan, two sites):
 
-[![TheYard's two sites: two names at Wix, one Netlify edge, two container groups on Azure, both stores behind both](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/two-sites.png)](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
+[![TheYard's two sites: two names at Wix, one Netlify edge, two web apps on one App Service plan on Azure, both stores behind both](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/two-sites.png)](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
 
 *A preview. [Open the two-sites diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
 to zoom in and follow it.*
 
 ## Websites and resources used
 
-- **Azure (portal.azure.com).** Runs the app: Container Instances for the
-  compute, Container Registry for the image, Azure SQL Database for the store
-  the site is on, Azure Cosmos DB beside it since 1.0.0.89, and since
-  1.0.0.94 both stores in the same container with a toggle at the top of the
-  page, plus a second container group running the same image with the other
-  store as its default (ADR: One container, both stores). The only place code
-  executes.
+- **Azure (portal.azure.com).** Runs the app: one Linux B1 App Service plan
+  for the compute, carrying two web apps for containers, one per site, since
+  1.0.0.156 (ADR: One plan, two sites); Container Registry for the image;
+  Azure SQL Database for the store the first site is on and Azure Cosmos DB
+  for the second's, with both stores opened by both sites since 1.0.0.94
+  (ADR: One container, both stores). The only place code executes. For its
+  first three weeks the compute was Azure Container Instances, one container
+  group per site.
 - **Wix (wix.com).** The domain registrar. Holds stevenstout.biz and answers
   DNS; two CNAME records, theyard and theyard-cosmos, point the two sites at
   the same edge.
 - **Netlify (netlify.com).** The free edge. Terminates HTTPS for both names
-  on one certificate, and forwards every request to Azure unchanged: theyard
-  to the first container group, theyard-cosmos to the second (ADR: A
+  on one certificate, and forwards every request to Azure unchanged, over
+  HTTPS: theyard to the first web app, theyard-cosmos to the second (ADR: A
   permanent address for the second site).
 - **Let's Encrypt (letsencrypt.org).** Issues the certificate at no cost;
   Netlify renews it automatically.
@@ -61,25 +64,28 @@ to zoom in and follow it.*
    unchanged. The entire edge is three files in this repository, deployed from
    GitHub on every push that touches them. The name a request arrived on
    picks the origin: two rules above the catch-all send theyard-cosmos to the
-   second container group, and everything else goes to the first (ADR: A
-   permanent address for the second site).
-3. **Origin.** Azure Container Instances runs the Docker image in RG-THEYARD-SS
-   (westus2), serving HTTP on port 8080. Azure does all the compute. The edge
-   only forwards. Both stores are opened by every container since 1.0.0.94,
-   and a second group, `aci-theyard-cosmos-ss`, runs the same image with
-   Azure Cosmos DB as its default; since 1.0.0.100 it answers at
-   https://theyard-cosmos.stevenstout.biz through the same edge and the same
-   certificate, and its Azure address on port 8080 still answers beside it.
-   Each site is one store's site, and the Store bar at the top of every page
-   links to the other at the same page (ADR: One container, both stores).
+   second web app, and everything else goes to the first (ADR: A permanent
+   address for the second site).
+3. **Origin.** One App Service plan, `PLAN-THEYARD-SS`, Linux B1 in West US 3,
+   runs the Docker image twice in RG-THEYARD-SS: two web apps for containers,
+   each answering HTTPS on its own `azurewebsites.net` name and listening on
+   port 8080 inside. Azure does all the compute. The edge only forwards. Both
+   stores are opened by both sites since 1.0.0.94, and the second site runs
+   the same image with Azure Cosmos DB as its default; since 1.0.0.100 it
+   answers at https://theyard-cosmos.stevenstout.biz through the same edge
+   and the same certificate. Each site is one store's site, and the Store bar
+   at the top of every page links to the other at the same page (ADR: One
+   container, both stores). Why one plan, why B1 and why West US 3 are
+   ADR: One plan, two sites.
 
 ## The certificate
 
 Let's Encrypt at the edge, issued and renewed automatically, one certificate
 for all four names (the bare domain, www, theyard and theyard-cosmos).
-Nothing was purchased and nothing expires by surprise. The edge-to-origin hop stays plain
-HTTP in phase 1 because the container has no TLS listener; the phase-2 managed
-certificate closes that hop end to end.
+Nothing was purchased and nothing expires by surprise. The edge-to-origin hop was plain
+HTTP while the origin was a container group with no TLS listener; since 1.0.0.156 it is
+HTTPS, on the certificate Azure manages for `azurewebsites.net`, so the chain is
+encrypted end to end.
 
 ## Why not Front Door today
 
@@ -88,27 +94,31 @@ The free trial refuses to create it, and that was measured rather than assumed
 Cloudflare's free tier until the domain can transfer, earliest late October
 2026. The pattern survived both walls. Only the vendor is temporary.
 
-## How this would be hosted in production
+## What is left of the production design
 
-The production design exists as code and costs nothing to keep. Open
-Infrastructure (Bicep) in this menu: infra/main.bicep stands up App Service
-behind Azure Front Door with the origin locked, so nothing reaches the app
-except through the edge. Deploying it is one command and two parameter flips.
+Open Infrastructure (Bicep) in this menu. Until 20 September 2026
+infra/main.bicep described a design nobody ran: App Service behind Azure
+Front Door with the origin locked. The App Service half of it runs now, and
+the file is the description of what runs: the plan, the two sites, every
+setting, the identity and the registry pull. It is deployed in incremental
+mode only, because the same resource group holds the databases, the registry
+and the identity, and none of them is in a template on purpose (ADR: One
+plan, two sites).
 
-It stays undeployed on purpose. A public demo whose only secret is a session
-key, and whose accounts and bids are play money, does not need a paid stack,
-and keeping the bill near zero while keeping the design reviewable is part
-of the engineering story. If this were a production
-workload, that file is exactly what would run, and the domain layer means the
-public URL would never change in the switch.
+What is left is Front Door and the origin lock, behind one parameter that
+defaults off. The origins are reachable directly today, as the container
+groups were, and what that does and does not expose is on the Security page.
+When the subscription allows Front Door it is one parameter, and the domain
+layer means the public URL does not change in the switch, as it did not
+change in this one.
 
 ## Files
 
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the container group that runs today.
-- [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the second group, same image, other store.
+- [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep) and [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): what runs, the plan and
+  the two sites (served above as Infrastructure (Bicep)).
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two
+  container groups that ran until 1.0.0.156, stopped and kept as the way back.
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions the second store is built from.
-- [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the production design, deliberately
-  undeployed (served above as Infrastructure (Bicep)).
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the HTTPS edge.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image both of them run.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): how a merge becomes a roll.

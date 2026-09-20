@@ -132,6 +132,17 @@ revisited before this application holds anybody's data but mine.
 Recorded rather than fixed, because pretending an unfunded control is in place is
 the failure this addendum exists to correct.
 
+## Addendum, 2026-09-20: half of the target runs, and the lock is one per site
+
+Superseded in part on 2026-09-20, as 1.0.0.157. The App Service half of this target runs: both sites
+are web apps on one plan (ADR: One plan, two sites), and `infra/main.bicep` is the description of
+what runs rather than of a design nobody deployed. `computeKind` is gone from it, with the Container
+Instances and Container Apps branches it selected. What is left of this record's decision is the part
+the subscription still refuses: Front Door, and the origin lock, which the template now writes once
+per site because there are two origins. `enableFrontDoor` defaults off. The origins are reachable
+directly today, exactly as the addendum of 3 September describes for the container groups, and that
+trade is unchanged by the move.
+
 ## Files
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the target as code. `enableFrontDoor` and

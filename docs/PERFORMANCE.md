@@ -1,12 +1,12 @@
 # Performance on the smallest machine that will hold it
 
-Every number on this page was measured by the running application against itself, on the container that
+Every number on this page was measured by the running application against itself, on the machine that
 serves this site, and every one of them links to the record that holds the method. Nothing here is a
 benchmark run on a laptop and quoted afterwards.
 
 The claim this page makes is narrow and checkable: **a hundred thousand vehicles, two different database
-engines, and page work measured in single-digit to low-double-digit milliseconds, on free-tier data stores
-and one small container.**
+engines, and page work measured in milliseconds, on free-tier data stores and the smallest machine that
+will hold it: since 20 September 2026, one Linux B1 App Service plan carrying both sites for $12.41 a month.**
 
 ## What it runs on
 
@@ -14,21 +14,27 @@ and one small container.**
 | --- | --- | --- |
 | Azure Cosmos DB | Free tier, 1000 RU/s shared, local auth disabled so no key exists | **$0.00 a month** |
 | Azure SQL Database | Basic, 5 DTU, 2 GB, Entra-only (the serverless free database beside it paused on 14 September, below) | $4.90 a month |
-| Container | One Azure Container Instance per site, 1 vCPU and 1.5 GB each | $34.44 a month each at list price in westus2, over 730 hours |
+| Compute | One Linux B1 App Service plan, 1 vCPU and 1.75 GB, shared by both sites as two web apps for containers | **$12.41 a month** for both at list price in westus3, $0.017 an hour over 730 hours |
+| Registry | Azure Container Registry, Basic, one image tag per version, 8.7 GiB of the 10 GiB the tier includes | $5.07 a month ($0.1666 a day) |
 | Edge and TLS | Netlify free plan, 300 build credits a month | **$0.00 a month** |
 | Storage, 100,000 vehicles | 82 MB against a 25 GB allowance | **$0.00** |
 
-Both containers run, one behind each site's address: two are $68.88 a month at list price and the whole
-bill is $73.78, read off the Azure Retail Prices API on 19 September. The
+**The whole bill at list price is $22.38 a month: $12.41 of compute, $4.90 of database and $5.07 of
+registry**, read off the Azure Retail Prices API on 20 September. Until that day the compute was two
+Azure Container Instances, one per site at $34.44 each, and the same bill was $78.85; the move took
+$56.47 a month off it, 72 per cent, and the record prices every option that was on the table
+([One plan, two sites](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-079-one-plan-two-sites.md)). This page quoted
+$73.78 until then, which left the registry out; it has been $5.07 a month all along. The
 [Infrastructure overview](https://github.com/SteveStout/TheYard/blob/main/docs/INFRASTRUCTURE-OVERVIEW.md) prices every hop and says
 what each adds to the clock, and the [Web overview](https://github.com/SteveStout/TheYard/blob/main/docs/WEB-OVERVIEW.md) is the page
 they serve and the order a first visit loads it in.
 
-The container is the whole of the compute, and this is its definition as the pipeline rolls it, read from
-the running build. The two placeholders are filled from repository secrets at roll time
+The plan and its two sites are the whole of the compute, and this is what differs between the two, read
+from the running build. Everything else, every setting included, is one list in the same file, and the
+two keys are filled from repository secrets at roll time
 ([The code is public and the secrets are not](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-072-the-code-is-public-the-secrets-are-not.md)).
 
-```live path=infra/aci-theyard.yaml region=container
+```live path=infra/appservice.bicep region=two-sites
 ```
 
 Sources: [A second store, priced](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md),
@@ -38,7 +44,9 @@ Sources: [A second store, priced](https://github.com/SteveStout/TheYard/blob/mai
 
 The application times itself. `POST /api/admin/proof` runs eight paired rounds of everything a visitor
 does, alternating which store goes first so the ordering cannot flatter either one, and the Admin tab
-shows the result. These are the medians from the live site's own container at 1.0.0.94:
+shows the result. These are the medians from the live site's own container at 1.0.0.94, when each site
+had a container group of its own in West US 2; the same run on the plan is further down, and what it did
+to these columns is the best evidence this page has:
 
 | What a visitor does | Azure SQL Database | Azure Cosmos DB |
 | --- | --- | --- |
@@ -76,6 +84,38 @@ relational side pays the gap twice and the card shows exactly that.
 **That is a hosting fact, not a database fact**, and it is worth saying plainly rather than quoting the
 faster column and letting a reader assume the engine won. The same run was repeated on the second
 container, whose default store is the document one, and it produced the same shape on every row.
+
+### Then the host moved, and the columns swapped
+
+On 20 September both sites moved to one App Service plan in West US 3, the region the relational server
+is in, because West US 2 refuses App Service on this subscription
+([One plan, two sites](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-079-one-plan-two-sites.md)). Nothing about either
+engine changed and no line of data access changed. The same proof, run on both sites at 1.0.0.156 within
+the hour, read **1 to 2 ms to Azure SQL Database and 38 to 40 ms to Azure Cosmos DB**: the two numbers
+above, on the other sides.
+
+| What a visitor does | Azure SQL Database | Azure Cosmos DB |
+| --- | --- | --- |
+| Open a vehicle | **0 ms** | **0 ms** |
+| Load the filter values | **0 ms** | **0 ms** |
+| Place a bid | **28 ms**, 2 statements | 89 ms, 2 operations, 6.52 RU |
+| Raise a bid | **19 ms**, 2 statements | 83 ms, 2 operations, 11.29 RU |
+| Start over | **9 ms**, 1 statement | 91 ms, 2 operations, 7.80 RU |
+
+Every store-bound row flipped, by the round trip and by nothing else: the card's own verdict on those
+three rows is that the whole difference is the round trip to the store. The request units did not move
+at all, 6.52 and 11.29 on both hosts, because a request unit is what the engine charged and the engine
+did not change. A page that had quoted the faster column as a fact about a database would have had to
+be rewritten that day. This one only had to be added to.
+
+What the smaller machine did cost is processor. The plan's one core is shared by both sites and
+measures as a slower core than the one each container group had to itself, and the two paths that are
+processor and not store show it: across two warm runs on each site the listing page of 100 of 100,000
+read 122 to 160 ms where it had read 51, and a sign-in, which is a deliberately expensive password hash,
+read 430 to 610 ms where it had read 82 to 122.
+From a desk in Missouri through the edge the listing answered in a median of 418 ms on one site and
+439 ms on the other over ten reads each, which is what a visitor waits. That is the trade, stated:
+$56 a month against about a tenth of a second on the listing and four tenths on a sign-in.
 
 The verdict is arithmetic, and here it is: the median of the paired differences, one round trip per
 operation taken off each side, and the rule for how far apart two medians may sit and still be called
@@ -223,7 +263,8 @@ writer spends it whether or not a visitor is there.
 ## Check any of it yourself
 
 - Open the **Admin** tab on either site: live health checks per store, the paired-round comparison card,
-  the container's recent events, and every store operation the application has made with how long it took.
+  Azure's own view of the site and the plan it shares, and every store operation the application has made
+  with how long it took.
 - `POST /api/admin/proof` starts a fresh run; `GET /api/admin/proof` reads the one in progress or the last
   one finished.
 - Every figure above links to the record that holds the method, and the code samples on this page and
@@ -235,4 +276,4 @@ writer spends it whether or not a visitor is there.
 - [`api/TheYard.Api/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Proof.cs): the paired rounds, alternating which store goes first.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the comparison card and the proof card the numbers above are read from.
 - [`infra/cosmos`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions, indexing policy and partition key included.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the one container, 1 vCPU and 1.5 GB.
+- [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites, 1 vCPU and 1.75 GB between them.

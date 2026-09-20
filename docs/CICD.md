@@ -14,8 +14,9 @@ ship.
 
 **Continuous deployment.** When CI finishes green on main, a second workflow
 named Deploy builds the container image, pushes it to Azure Container
-Registry, and rolls it onto Azure Container Instances, with no human in the
-loop. The workflow signs in to Azure with a token GitHub mints for this one
+Registry, and rolls it onto the first site's web app, and a third named
+Deploy Cosmos rolls the same image onto the second site's, with no human in
+the loop. Both sites share one App Service plan (ADR: One plan, two sites). The workflow signs in to Azure with a token GitHub mints for this one
 repository's main branch, so no password or key is stored anywhere. The
 version in the page footer is stamped by that build. The full record is
 ADR: The deploy pipeline, below this entry in the menu.
@@ -23,8 +24,10 @@ ADR: The deploy pipeline, below this entry in the menu.
 ![The Deploy workflow's runs on GitHub Actions, one green run per version on the live site](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-deploy-runs.jpg)
 
 One run, step by step: compute the version, sign in to Azure with the
-minted token, build and push the image, roll the container group, verify
-the origin and the domain. Every version on the site has a page like this.
+minted token, build and push the image, roll the site, verify the origin
+and the domain. Every version on the site has a page like this. The picture
+is from the weeks the step was called "Roll the container group"; since
+1.0.0.156 it rolls a web app and is called "Roll the site".
 
 ![One Deploy run's steps: compute the version, sign in to Azure, build and push, roll the container group, verify](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-deploy-steps.jpg)
 
@@ -79,6 +82,10 @@ AcrPush                                     .../registries/crtheyardsszmnetj67bn
 Azure Container Instances Contributor Role  .../resourceGroups/RG-THEYARD-SS
 Managed Identity Operator                   .../userAssignedIdentities/id-theyard-ss
 ```
+
+Since 20 September 2026 the same identity also holds Website Contributor on the two web apps, and on
+nothing wider: setting a site's image and its settings is the whole of a roll
+(ADR: One plan, two sites).
 
 ## What comes next
 

@@ -31,7 +31,7 @@ flowchart LR
   end
 
   subgraph azure["Azure, resource group RG-THEYARD-SS"]
-    ACI["Container Instances<br/>1 vCPU, 1.5 GB, port 8080"]
+    ACI["Web app for containers, the first site<br/>on PLAN-THEYARD-SS, Linux B1, West US 3<br/>1 vCPU and 1.75 GB shared with the second site"]
     ACR[("Container Registry")]
     MI["Managed identity<br/>id-theyard-ss"]
     AI["Application Insights<br/>appi-theyard-ss"]
@@ -39,11 +39,11 @@ flowchart LR
   end
 
   subgraph sql["Azure, resource group RG-THEYARD-SS, West US 3"]
-    SQL[("Azure SQL Database<br/>sqldb-theyard-ss, serverless, free limit<br/>catalogue, photo manifest, accounts, bids")]
+    SQL[("Azure SQL Database<br/>sqldb-theyard-ss-basic, Basic, 5 DTU<br/>catalogue, photo manifest, accounts, bids")]
   end
 
-  subgraph cosmos["Azure, resource group RG-THEYARD-SS, West US 2, the second container"]
-    ACI2["Container Instances<br/>aci-theyard-cosmos-ss, the same image, Cosmos DB by default"]
+  subgraph cosmos["Azure, resource group RG-THEYARD-SS, the second site and its store in West US 2"]
+    ACI2["Web app for containers, the second site<br/>on the same plan, the same image, Cosmos DB by default"]
     COSMOS[("Azure Cosmos DB<br/>cosmos-theyard-ss, free tier, no keys<br/>the same four things, as documents")]
     ACI2 -->|managed identity| COSMOS
     ACI2 -->|managed identity| SQL
@@ -58,7 +58,7 @@ flowchart LR
   end
 
   B -->|HTTPS, session cookie| TLS
-  TLS -->|HTTP 8080| ACI
+  TLS -->|HTTPS| ACI
   ACI --> API
   API --> SPA
   API -->|read once at startup, expanded to 100,000| SQL
@@ -67,7 +67,7 @@ flowchart LR
   MI -.->|db_datareader, db_datawriter| SQL
   SEED -.->|first boot only| SQL
   ACR -.->|image pulled on every roll| ACI
-  ACI -.->|IMDS token| MI
+  ACI -.->|token from the plan's identity endpoint| MI
   MI -.->|Reader, Monitoring Reader| AI
   API -.->|requests, dependencies, exceptions| AI
   AI --> LAW

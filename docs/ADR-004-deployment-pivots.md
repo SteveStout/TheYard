@@ -130,6 +130,11 @@ internet, now over HTTPS. The container groups are stopped and kept for a week a
 What was priced, what was measured on the plan, and why it is B1 are in
 ADR: One plan, two sites.
 
+With 1.0.0.157 the template followed. `infra/main.bicep` carried `computeKind` so that each phase
+was a parameter set, and two of its three branches described platforms nothing runs on: Container
+Instances, stopped that day, and Container Apps, which never got a revision to start. Both branches
+are removed, and the file is the plan, the two sites, and Front Door behind a parameter that is off.
+
 ## Files
 
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): what runs, the container group template

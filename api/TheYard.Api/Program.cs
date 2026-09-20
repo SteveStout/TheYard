@@ -1227,7 +1227,7 @@ app.MapGet("/api/docs/diagrams/{name}", Results<ContentHttpResult, ProblemHttpRe
 #endregion diagram-page
 
 app.MapGet("/api/docs/bicep", () =>
-    TypedResults.Text("# infra/main.bicep" + "\n\nThe production design as code: App Service, Front Door, and the origin lock, deployable by flipping parameters. Kept deliberately undeployed; the Hosting overview explains that choice.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "main.bicep")) + "\n```\n", "text/markdown"))
+    TypedResults.Text("# infra/main.bicep" + "\n\nWhat runs, as code: one App Service plan and two web apps, which are the module below it, with Azure Front Door and the origin lock behind a parameter that stays off while the subscription refuses Front Door. Deployed in incremental mode only; the Hosting overview explains both.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "main.bicep")) + "\n```\n\n## infra/appservice.bicep\n\nThe plan and the two sites, what differs between them, and every setting they carry.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "appservice.bicep")) + "\n```\n", "text/markdown"))
     .WithName("GetBicep")
     .WithTags("Documents")
     .WithSummary("The infrastructure definition, as a markdown page")
