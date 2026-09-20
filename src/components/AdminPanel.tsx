@@ -39,6 +39,7 @@ import {
   type KeptBucket,
   keptSparks,
   keptTraffic,
+  LEAST_SLOTS,
   MACHINE_CHART,
   MACHINE_WINDOWS,
   type MachineWindow,
@@ -2731,6 +2732,19 @@ function startLabel(at: string): string {
   });
 }
 
+/**
+ * Where a trimmed window's drawing starts, in words. The drawing starts at the
+ * first reading unless that would leave fewer than a dozen slots, and then it
+ * starts a dozen back; 1.0.0.166 called both "its first reading" and on its
+ * first day was wrong by two days, on the live page, in its own sentence.
+ */
+function youngRecord(drawn: { at: string; bucket: KeptBucket | null }[]): string {
+  const first = drawn.find((slot) => slot.bucket !== null);
+  return first === undefined || first.at === drawn[0].at
+    ? `The record is younger than the window, so the charts start at its first reading, ${startLabel(drawn[0].at)}`
+    : `The record is younger than the window: its first reading is ${startLabel(first.at)}, and the charts start ${LEAST_SLOTS} buckets back from now, at ${startLabel(drawn[0].at)}`;
+}
+
 /** The hour the request ring holds, as slots; the traffic card and the tiles over the page both read this one. */
 function hourSlots(machines: Machines): TrafficSlot[] | null {
   if (machines.traffic === undefined) return null;
@@ -2794,7 +2808,7 @@ function TrafficCard({
             {keptSlots !== null &&
               wholeSlots !== null &&
               keptSlots.length < wholeSlots.length &&
-              ` The record is younger than the window, so the charts start at its first reading, ${startLabel(keptSlots[0].at)}.`}
+              ` ${youngRecord(keptSlots)}.`}
           </p>
           <MachineChart
             testId="traffic-chart-requests"
@@ -2875,7 +2889,7 @@ function KeptWindow({ machines, window: kept }: { machines: Machines; window: Ma
         {history.site === 'cosmos' ? 'Cosmos DB' : 'SQL'} site has kept: {held.held} of {held.of}{' '}
         buckets hold a reading.{' '}
         {slots.length < whole.length
-          ? `The record is younger than the window, so the charts start at its first reading, ${startLabel(slots[0].at)}; a gap after that is drawn as the gap it is.`
+          ? `${youngRecord(slots)}; a gap after the first reading is drawn as the gap it is.`
           : 'A stretch with no reading is drawn as the gap it is.'}
         {held.held > 0 &&
           ` Peak working set in the window: ${peak} MB. The document store charged ${Math.round(charged * 100) / 100} request units in it.`}

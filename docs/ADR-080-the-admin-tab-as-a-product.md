@@ -225,6 +225,15 @@ Nothing is hidden: every request and every error in those minutes is still count
 line under it still draws them, and so does the traffic card. When the process started is its newest
 sample's time less its uptime, both from the one answer.
 
+**Corrected the same morning, 1.0.0.167.** The look that found these two was run again after the
+roll, and found the fix's own sentence wrong: with a dozen four-hour slots kept, a month's drawing
+starts two days back, and the page called that time "its first reading", two days before anything was
+kept. The sentence now gives the first reading and the start of the drawing as the two things they
+are. The same look found a site whose only requests in the hour were its own cold start reading
+"quiet" beside "67 requests"; it reads "warming". Both were true defects of a fix, live for twenty
+minutes, and both were found by looking at the page and not by a test, which is the argument for
+looking at the page.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.

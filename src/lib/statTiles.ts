@@ -151,7 +151,14 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           key: 'speed',
           question: 'fast',
           label: 'Slowest 95th',
-          value: traffic.slowest_p95_ms === null ? 'quiet' : `${traffic.slowest_p95_ms} ms`,
+          // No ninety-fifth to read is a quiet hour, unless the only requests
+          // there were are the cold start's, and then it is a process warming.
+          value:
+            traffic.slowest_p95_ms !== null
+              ? `${traffic.slowest_p95_ms} ms`
+              : traffic.requests > 0 && traffic.cold_start_label
+                ? 'warming'
+                : 'quiet',
           detail:
             `${traffic.requests} requests in the last hour` +
             (traffic.slowest_label ? `, slowest at ${traffic.slowest_label}` : '') +

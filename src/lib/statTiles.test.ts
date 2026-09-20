@@ -244,4 +244,17 @@ describe('the stat tiles', () => {
       tone: 'good',
     });
   });
+
+  it('calls an hour whose only requests were the cold start warming, not quiet', () => {
+    const traffic = { requests: 67, slowest_p95_ms: null, server_errors: 0, client_errors: 0 };
+    expect(
+      tile({ ...quietDay, traffic: { ...traffic, cold_start_label: '10:20' } }, 'speed')
+    ).toMatchObject({
+      value: 'warming',
+      tone: 'plain',
+    });
+    expect(tile({ ...quietDay, traffic: { ...traffic, requests: 0 } }, 'speed').value).toBe(
+      'quiet'
+    );
+  });
 });
