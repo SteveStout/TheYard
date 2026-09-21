@@ -276,12 +276,21 @@
   color: var(--color-store-cosmos);
 }
 
-/* A line that is good news, one that is worth a look, and one that is bad
-   news, for the charts where a line has a meaning and not only a position
-   (ADR: The Admin tab, as a product). The status colours, which carry meaning
-   everywhere else on the page too. */
-.goodLine {
-  color: var(--color-success);
+/* A line is a series, and a series takes an identity colour: the two series
+   tokens, neither of them a store's and neither of them a status.
+   The status colours are for states. The one state a line can be is a server
+   error, which is something wrong whenever it is above zero, so it alone takes
+   the danger colour. A slow series in the warning colour read as an alarm to
+   somebody scanning the page, and a turned-away request is not the site's
+   fault (ADR: The Admin tab, as a product, the addendum on the traffic card
+   in plain words). .warnLine stays below for the kept log's rows, where a
+   warning is a state. */
+.firstLine {
+  color: var(--color-series-1);
+}
+
+.secondLine {
+  color: var(--color-series-2);
 }
 
 .warnLine {
@@ -599,6 +608,40 @@
 /* The line is stretched to the tile's width, and the stroke must not stretch with it. */
 .spark polyline {
   vector-effect: non-scaling-stroke;
+}
+
+/* The traffic card's four numbers wear the tile's look and are not buttons,
+   so they do not lift under a pointer or invite a press. */
+.statBlock {
+  cursor: default;
+}
+
+.statBlock:hover {
+  box-shadow: var(--shadow-sm);
+  transform: none;
+}
+
+/* A chart as a section: the question it answers, one sentence on how to read it, the chart. */
+.chartSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.chartTitle {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.chartRead {
+  margin: 0;
+  max-width: 80ch;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
 
 /* #endregion stat-strip */

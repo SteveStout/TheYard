@@ -49,6 +49,14 @@
      an address does not cross). */
   --color-store-sql: #536786;
   --color-store-cosmos: #8a6a4f;
+  /* A chart's series when they are not the two stores: a line's identity,
+     first and second, and never a status colour, because a series drawn in
+     the warning colour reads as an alarm (ADR: The Admin tab, as a product,
+     the addendum on the traffic card in plain words). Today they are the
+     accent's value and the heading's; they are their own tokens so a palette
+     changes two values here and touches no chart. Graphics, so 3:1 on white. */
+  --color-series-1: #536786;
+  --color-series-2: #3f3a37;
   /* #endregion palette */
 
   /* Status colors carry meaning (clean, rebuilt, salvage, live) and stay

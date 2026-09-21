@@ -234,6 +234,78 @@ are. The same look found a site whose only requests in the hour were its own col
 minutes, and both were found by looking at the page and not by a test, which is the argument for
 looking at the page.
 
+## Addendum, 2026-09-21 (1.0.0.168): the traffic card in plain words, and a colour that raised an alarm
+
+Steve, reading the tab as the person it is for: "The traffic section of the Admin tab is not clear to
+me, what it is doing." And on the first drawing of a plainer one: "You have red for the slowest
+response on how fast did it answer, and that indicates something is wrong; that colour raises a
+warning while scanning."
+
+**The colour rule, restated, with the defect named.** This record said "colour means something or it
+means position", and then let the traffic card break it: the median was drawn in the success colour
+and the ninety-fifth in the warning colour, as though one were the good line and the other the bad
+one. They are two series. A slow-requests line is slow by definition, on a good day and a bad one,
+so a warning colour on it is an alarm that never stops, and the eye of somebody scanning the page
+lands on it every time. The same chart family had the second half of the defect: a turned-away
+request, a wrong address or a visitor who is not signed in, was drawn in the warning colour, and
+nothing is wrong with the site when it turns one away. So the rule, in the form the code now holds:
+
+- **A series takes an identity colour.** On the traffic card those are two tokens of their own,
+  `--color-series-1` and `--color-series-2`, which today hold the accent's value and the heading's:
+  neither a store's colour nor a status (ADR: The palette, the addendum on the series colours).
+- **The status colours are for states.** A tile, a pill, a row of the kept log: things that are
+  fine, worth a look, or wrong.
+- **The one state a line can be is a server error**, which is something wrong whenever it is above
+  zero, so that line alone takes the danger colour.
+- **The alarm for slow answers lives on the speed tile**, which goes amber at 1,000 ms and red at
+  3,000 and knows about a cold start. The chart draws the series and leaves the judgement there.
+
+`MachineChart` lost its "good" and "warn" tones, so the defect cannot be written again by passing a
+prop, and the browser suite reads the stroke of every line on the card and holds that none of them
+is a status colour except the server errors line, which has to be.
+
+**Every other chart on the tab was checked for the same defect, and none has it.** The three machine
+charts over the hour and the three over a kept window pass no tones and take their colours by
+position. The visitors graph and the proof's bars take the two store colours, which is what they
+are comparing. The line under a tile takes the tile's tone, and a tile's tone is a state. The kept
+log's rows keep the warning and danger colours on their edge, because a warning there is a warning.
+
+**"Did anything fail?" comes first, and zero is said in words.** It was an untitled chart with a
+legend reading "Answered 5xx (a minute)". It is now the first section on the card: the question as
+its title, one sentence saying that a server error is the site's fault and should be zero and that
+a turned-away request is the visitor's, a legend with the plain word first and the term in brackets,
+and "errors / min" on the axis. Most hours that chart is a flat line at zero, and a flat line reads
+as a chart that did not load. So the card says it: "No server errors in the last hour", beside the
+same good pill the health card uses. When there are any, the sentence counts them and the pill says
+so.
+
+**Four numbers in place of one sentence.** "33 requests in the last hour, 0 answered 5xx and 7
+answered 4xx, and the slowest stretch answered its ninety-fifth in 139 ms" was correct and written
+for the person who wrote it. The card now opens on four blocks that wear the tiles' look, two to a
+row on a phone: requests; the typical answer, "half of requests were faster"; slow answers, "19 in
+20 requests beat this"; and server errors, with the turned-away count on its detail line. A block
+takes a tone only for a state: no server errors is good and any is bad, and an answer under the
+speed tile's own amber line is called fast. Over that line the block says nothing, because the
+warning is the tile's to give and this block does not know about a cold start.
+
+**One number is new, and it says what it is.** The slots the charts are drawn from hold a median a
+minute, or a median a bucket over a kept window, and a median of every request in the window cannot
+be made from those. The typical answer is the middle one of the medians the slots hold, by nearest
+rank, and its detail line says "in the typical minute", or "stretch" over a kept window. Requests,
+server errors, turned away and the slowest ninety-fifth are the numbers the sentence carried, from
+the same function. No endpoint changed and no C# did.
+
+**A question a chart, as its title.** "How busy is it?", requests per minute, with the sentence that
+a flat line at zero means the site was up and nobody asked. "How fast does it answer?",
+milliseconds, lower is better, "Typical request (median)" and "Slow requests (95th percentile)",
+and one sentence on what 19 in 20 means. Every axis on the card carries its unit. The sentence that
+a record is younger than its window is still under the blocks, word for word, and the folded "What
+this shows" is unchanged.
+
+**Where the words live.** `src/lib/trafficCard.ts` has no React in it and decides what the four
+blocks say, the three titles and their sentences, and the sentence over the fail chart, and Vitest
+holds them, including that no block's words contain a status code or a percentile.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.
@@ -241,6 +313,8 @@ looking at the page.
 - [`src/lib/statTiles.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.ts): what each tile says and what makes it amber or red, React-free, and the line under a tile as the points of a polyline.
 - [`src/lib/statTiles.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.test.ts): every threshold, a reading that has not arrived, and a gap in the line.
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the page sorted only as far as the page, which is what the first amber tile found.
+- [`src/lib/trafficCard.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/trafficCard.ts): what the traffic card says, React-free: the four blocks, the three questions, and zero said in words.
+- [`src/lib/trafficCard.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/trafficCard.test.ts): the words, the one new number, and what makes a block good or bad.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the traffic card, the window both cards share, and the proof's bars.
 - [`src/components/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.module.css): the tab's styles, over the token sheet.
 - [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the request ring folded into minutes, once, for the hour on the card and for the minute that is kept.
@@ -253,6 +327,9 @@ looking at the page.
 ```
 
 ```live path=src/lib/statTiles.ts region=tile-rules
+```
+
+```live path=src/lib/trafficCard.ts region=traffic-words
 ```
 
 ```live path=api/TheYard.Application/InventoryService.cs region=page

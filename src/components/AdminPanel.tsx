@@ -78,6 +78,7 @@ import {
   type TileQuestion,
   visitorsOn,
 } from '../lib/statTiles';
+import { TRAFFIC_CHARTS, failSentence, trafficBlocks } from '../lib/trafficCard';
 import styles from './AdminPanel.module.css';
 
 type HealthCheck = { name: string; status: string; detail: string; duration_ms: number };
@@ -2609,6 +2610,7 @@ function MachineChart({
   unit,
   window: drawnWindow = '1h',
   tones,
+  axisUnit,
 }: {
   testId: string;
   label: string;
@@ -2616,8 +2618,18 @@ function MachineChart({
   percentage?: boolean;
   unit?: string;
   window?: MachineWindow;
-  /** A colour per line by meaning, for the charts where a line is good news or bad; position decides otherwise. */
-  tones?: ('plain' | 'good' | 'warn' | 'bad')[];
+  /**
+   * A colour per line. A line is a series, and a series takes an identity
+   * colour: 'first' and 'second' are the two that are not a store's and not a
+   * status. 'bad' is the one state a line can be, a server error, which is
+   * something wrong whenever it is above zero. There is no good line and no
+   * warning line: a slow series drawn in the warning colour reads as an alarm
+   * to somebody scanning the page (ADR: The Admin tab, as a product, the
+   * addendum on the traffic card in plain words).
+   */
+  tones?: ('first' | 'second' | 'bad')[];
+  /** The unit, written at the top of the axis, so a number on the axis is a number of something. */
+  axisUnit?: string;
 }) {
   const ceiling = ceilingFor(series, percentage === true ? 100 : 1);
   const points = series[0]?.points ?? [];
@@ -2626,8 +2638,8 @@ function MachineChart({
   const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
   const colour = (index: number) => {
     const tone = tones?.[index];
-    if (tone === 'good') return styles.goodLine;
-    if (tone === 'warn') return styles.warnLine;
+    if (tone === 'first') return styles.firstLine;
+    if (tone === 'second') return styles.secondLine;
     if (tone === 'bad') return styles.badLine;
     return index === 0 ? styles.allLine : index === 1 ? styles.sqlLine : styles.cosmosLine;
   };
@@ -2680,6 +2692,16 @@ function MachineChart({
         >
           0
         </text>
+        {axisUnit !== undefined && (
+          <text
+            className={styles.axisLabel}
+            x={MACHINE_CHART.left + 6}
+            y={MACHINE_CHART.top + 4}
+            data-testid={`${testId}-unit`}
+          >
+            {axisUnit}
+          </text>
+        )}
         {ticks(points.length).map((index) => (
           <text
             key={index}
@@ -2692,7 +2714,12 @@ function MachineChart({
           </text>
         ))}
         {series.map((line, index) => (
-          <g key={line.key} className={colour(index)} data-testid={`${testId}-${line.key}`}>
+          <g
+            key={line.key}
+            className={colour(index)}
+            data-testid={`${testId}-${line.key}`}
+            data-tone={tones?.[index] ?? 'position'}
+          >
             <path className={styles.line} d={pathFor(line.points, ceiling)} />
           </g>
         ))}
@@ -2713,10 +2740,13 @@ function MachineChart({
 
 // #region traffic-card
 /**
- * Traffic, drawn (ADR: The Admin tab, as a product). Four questions a person
- * opening this tab is asking, one chart each, in the same frame the machine
- * charts use: how busy is it, how fast is it answering, is anything failing,
- * and over what stretch. The hour is the request ring a minute at a time; a
+ * Traffic, drawn (ADR: The Admin tab, as a product). Four numbers in plain
+ * words, then the three questions a person opening this tab is asking, each a
+ * section with the question as its title, one sentence on how to read it and
+ * one chart in the frame the machine charts use: did anything fail, which
+ * comes first because it is the one somebody opens the tab to find out, how
+ * busy is it, and how fast is it answering. What the words are is decided in
+ * src/lib/trafficCard.ts, which has no React in it. The hour is the request ring a minute at a time; a
  * wider window is the minutes each site keeps. Both are turned into the same
  * slots by src/lib/machineChart.ts, so a gap is a gap and a zero is a zero in
  * every window. A build with no traffic block, or a window nothing is kept
@@ -2779,6 +2809,10 @@ function TrafficCard({
     name,
     points: (slots ?? []).map((slot) => ({ at: slot.at, value: pick(slot) })),
   });
+  const stretch = windowName(window_).toLowerCase();
+  const failed = totals === null ? null : failSentence(totals, stretch);
+  // A block's tone is a state: good news, bad news, or neither. Never an identity.
+  const blockTone = { good: styles.tileGood, bad: styles.tileBad, plain: styles.tilePlain };
 
   return (
     <article className={styles.wide} data-testid="traffic-card">
@@ -2791,7 +2825,7 @@ function TrafficCard({
         and the page sweep are not counted in either.
       </About>
       {toolbar}
-      {slots === null || totals === null ? (
+      {slots === null || totals === null || failed === null ? (
         <p className={styles.muted} data-testid="traffic-note">
           {window_ === '1h'
             ? 'This build does not report its traffic a minute at a time.'
@@ -2799,46 +2833,81 @@ function TrafficCard({
         </p>
       ) : (
         <>
-          <p data-testid="traffic-line">
-            <strong>{totals.requests} requests</strong> in the {windowName(window_).toLowerCase()},{' '}
-            {totals.server_errors} answered 5xx and {totals.client_errors} answered 4xx
-            {totals.slowest_p95_ms === null
-              ? '.'
-              : `, and the slowest stretch answered its ninety-fifth in ${totals.slowest_p95_ms} ms.`}
-            {keptSlots !== null &&
-              wholeSlots !== null &&
-              keptSlots.length < wholeSlots.length &&
-              ` ${youngRecord(keptSlots)}.`}
-          </p>
-          <MachineChart
-            testId="traffic-chart-requests"
-            label={`Requests a minute over the ${windowName(window_).toLowerCase()}`}
-            unit="a minute"
-            window={window_}
-            series={[series('requests', 'Requests', (slot) => slot.requests)]}
-          />
-          <MachineChart
-            testId="traffic-chart-timing"
-            label={`How fast requests were answered over the ${windowName(window_).toLowerCase()}: the median and the ninety-fifth, in milliseconds`}
-            unit="ms"
-            window={window_}
-            tones={['good', 'warn']}
-            series={[
-              series('p50', 'Median', (slot) => slot.p50_ms),
-              series('p95', 'Ninety-fifth', (slot) => slot.p95_ms),
-            ]}
-          />
-          <MachineChart
-            testId="traffic-chart-errors"
-            label={`Requests answered with an error over the ${windowName(window_).toLowerCase()}, a minute: 5xx is the site failing, 4xx is a request it refused`}
-            unit="a minute"
-            window={window_}
-            tones={['bad', 'warn']}
-            series={[
-              series('5xx', 'Answered 5xx', (slot) => slot.server_errors),
-              series('4xx', 'Answered 4xx', (slot) => slot.client_errors),
-            ]}
-          />
+          <ul
+            className={styles.strip}
+            aria-label={`Traffic over the ${stretch}, in four numbers`}
+            data-testid="traffic-stats"
+          >
+            {trafficBlocks(slots, totals, stretch, window_ === '1h').map((block) => (
+              <li key={block.key} className={styles.stripItem}>
+                <div
+                  className={`${styles.tile} ${styles.statBlock} ${blockTone[block.tone]}`}
+                  data-testid={`traffic-stat-${block.key}`}
+                  data-tone={block.tone}
+                >
+                  <span className={styles.tileLabel}>{block.label}</span>
+                  <span className={styles.tileValue}>{block.value}</span>
+                  <span className={styles.tileDetail}>{block.detail}</span>
+                  {block.word !== null && <span className={styles.tileTone}>{block.word}</span>}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {keptSlots !== null && wholeSlots !== null && keptSlots.length < wholeSlots.length && (
+            <p className={styles.muted} data-testid="traffic-young">
+              {youngRecord(keptSlots)}.
+            </p>
+          )}
+          <section className={styles.chartSection} data-testid="traffic-section-errors">
+            <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.errors.title}</h3>
+            <p className={styles.chartRead}>{TRAFFIC_CHARTS.errors.read}</p>
+            <p className={styles.statusRow} data-testid="traffic-fail-line">
+              <span className={`${styles.pill} ${failed.good ? styles.ok : styles.bad}`}>
+                {failed.good ? 'good' : 'needs attention'}
+              </span>
+              {failed.text}
+            </p>
+            <MachineChart
+              testId="traffic-chart-errors"
+              label={`Requests answered with an error over the ${stretch}, a minute: a server error is the site failing, a turned-away request is one it refused`}
+              axisUnit={TRAFFIC_CHARTS.errors.unit}
+              window={window_}
+              tones={['bad', 'second']}
+              series={[
+                series('5xx', TRAFFIC_CHARTS.errors.server, (slot) => slot.server_errors),
+                series('4xx', TRAFFIC_CHARTS.errors.turnedAway, (slot) => slot.client_errors),
+              ]}
+            />
+          </section>
+          <section className={styles.chartSection} data-testid="traffic-section-requests">
+            <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.requests.title}</h3>
+            <p className={styles.chartRead}>{TRAFFIC_CHARTS.requests.read}</p>
+            <MachineChart
+              testId="traffic-chart-requests"
+              label={`Requests a minute over the ${stretch}`}
+              axisUnit={TRAFFIC_CHARTS.requests.unit}
+              window={window_}
+              tones={['first']}
+              series={[
+                series('requests', TRAFFIC_CHARTS.requests.requests, (slot) => slot.requests),
+              ]}
+            />
+          </section>
+          <section className={styles.chartSection} data-testid="traffic-section-timing">
+            <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.timing.title}</h3>
+            <p className={styles.chartRead}>{TRAFFIC_CHARTS.timing.read}</p>
+            <MachineChart
+              testId="traffic-chart-timing"
+              label={`How fast requests were answered over the ${stretch}: the median and the ninety-fifth, in milliseconds`}
+              axisUnit={TRAFFIC_CHARTS.timing.unit}
+              window={window_}
+              tones={['first', 'second']}
+              series={[
+                series('p50', TRAFFIC_CHARTS.timing.typical, (slot) => slot.p50_ms),
+                series('p95', TRAFFIC_CHARTS.timing.slow, (slot) => slot.p95_ms),
+              ]}
+            />
+          </section>
         </>
       )}
     </article>

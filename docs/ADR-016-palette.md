@@ -154,3 +154,26 @@ after `document.fonts.ready` Poppins at the body weight is a loaded face.
 The before and after, measured on the live site, are on the Performance
 page.
 
+## Addendum, 2026-09-21: the series colours
+
+Two tokens were added, `--color-series-1` and `--color-series-2`, for a chart's lines when the lines
+are not the two stores. The Admin tab's traffic card had drawn its slow-requests line in the warning
+colour and its typical line in the success colour, and Steve read the first as an alarm while
+scanning the page (ADR: The Admin tab, as a product, the addendum on the traffic card in plain
+words). A series is an identity, so it needs a colour that means nothing else on the page: not a
+status colour, and not a store's, because the two store colours mean the two stores on every
+comparison.
+
+No colour came onto the page with them. The first holds the accent's value, `#536786`, and the
+second the heading's, `#3f3a37`, both from the five this record chose. They are tokens of their own
+so that a change of palette changes two values in `src/styles/tokens.css` and touches no chart.
+
+Measured, the way the rest of the sheet is, as graphics against the 3:1 that WCAG 1.4.11 asks:
+
+| Token | Value | On white | On the page ground `#e9e6e7` |
+| --- | --- | --- | --- |
+| `--color-series-1` | `#536786` | 5.75 | 4.64 |
+| `--color-series-2` | `#3f3a37` | 11.22 | 9.05 |
+
+`tokens.test.ts` holds both figures at 3:1 or better on both grounds, that the two are told apart,
+and that neither is the value of a status token.

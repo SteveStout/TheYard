@@ -234,12 +234,101 @@ test('the traffic card draws how busy, how fast and how many errors, a minute at
 
   await openTheYard(page, '/?view=admin');
   const card = page.getByTestId('traffic-card');
-  await expect(card.getByTestId('traffic-line')).toContainText(/\d+ requests in the last hour/, {
-    timeout: 60_000,
-  });
+  // Four numbers in plain words, in place of one sentence in status codes and percentiles.
+  const requests = card.getByTestId('traffic-stat-requests');
+  await expect(requests).toContainText('requests in the last hour', { timeout: 60_000 });
+  await expect(requests).toContainText(/\d/);
+  await expect(card.getByTestId('traffic-stat-typical')).toContainText('Typical answer');
+  await expect(card.getByTestId('traffic-stat-slow')).toContainText('Slow answers');
+  await expect(card.getByTestId('traffic-stat-errors')).toContainText('turned away');
   await expect(card.getByTestId('traffic-chart-requests')).toBeVisible();
   await expect(card.getByTestId('traffic-chart-timing-p95')).toHaveCount(1);
   await expect(card.getByTestId('traffic-chart-errors-4xx')).toHaveCount(1);
+});
+
+test('the traffic card asks its three questions as headings, and says a clean run in words (ADR: The Admin tab, as a product)', async ({
+  page,
+  request,
+}) => {
+  // Something to draw, and one request the site turns away, which is not a failure of the site's.
+  for (const path of ['/api/vehicles?limit=5', '/api/facets', '/api/vehicles/not-a-vehicle']) {
+    await request.get(`http://localhost:5210${path}`);
+  }
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('traffic-card');
+  await expect(card.getByTestId('traffic-stats')).toBeVisible({ timeout: 60_000 });
+  // The one somebody opens the tab to find out comes first.
+  await expect(card.getByRole('heading', { level: 3 })).toHaveText([
+    'Did anything fail?',
+    'How busy is it?',
+    'How fast does it answer?',
+  ]);
+  // A flat line at zero reads as a chart that did not load, so zero is said in words.
+  // The sentence and the block are made of the same count, so they are held to each other and
+  // not to a number read a moment earlier: other tests share this API and its hour, and one of
+  // them drawing a server error between two reads is not this card failing. A run with none,
+  // which is what this suite is unless something else broke, says so in words and as good news.
+  const fail = card.getByTestId('traffic-fail-line');
+  const block = card.getByTestId('traffic-stat-errors');
+  await expect(async () => {
+    const clean = (await block.getAttribute('data-tone')) === 'good';
+    await expect(block.locator('span').nth(1)).toHaveText(clean ? '0' : /^[1-9][\d,]*$/, {
+      timeout: 2_000,
+    });
+    await expect(fail).toHaveText(
+      clean
+        ? 'goodNo server errors in the last hour.'
+        : /^needs attention[\d,]+ server errors? in the last hour\.$/,
+      { timeout: 2_000 }
+    );
+  }).toPass({ timeout: 30_000 });
+  // A number on an axis is a number of something.
+  await expect(card.getByTestId('traffic-chart-errors-unit')).toHaveText('errors / min');
+  await expect(card.getByTestId('traffic-chart-requests-unit')).toHaveText('requests / min');
+  await expect(card.getByTestId('traffic-chart-timing-unit')).toHaveText('ms');
+});
+
+test('no series line on the traffic card wears a status colour it has not earned (ADR: The Admin tab, as a product)', async ({
+  page,
+  request,
+}) => {
+  for (const path of ['/api/vehicles?limit=5', '/api/facets', '/api/vehicles/not-a-vehicle']) {
+    await request.get(`http://localhost:5210${path}`);
+  }
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('traffic-card');
+  await expect(card.getByTestId('traffic-chart-timing')).toBeVisible({ timeout: 60_000 });
+  // The status colours, read off the token sheet the page is running on.
+  const status = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    document.body.append(probe);
+    const colours = ['--color-success', '--color-warning', '--color-danger'].map((token) => {
+      probe.style.color = `var(${token})`;
+      return getComputedStyle(probe).color;
+    });
+    probe.remove();
+    return colours;
+  });
+  expect(new Set(status).size).toBe(3);
+  const stroke = (testId: string) =>
+    card
+      .getByTestId(testId)
+      .locator('path')
+      .evaluate((path) => getComputedStyle(path).stroke);
+  // The typical line and the slow line are two series, not a good one and a bad one.
+  for (const line of ['traffic-chart-timing-p50', 'traffic-chart-timing-p95']) {
+    expect(status).not.toContain(await stroke(line));
+  }
+  expect(await stroke('traffic-chart-timing-p50')).not.toBe(
+    await stroke('traffic-chart-timing-p95')
+  );
+  // How busy is a series too, and a turned-away request is the visitor's, not something wrong with the site.
+  expect(status).not.toContain(await stroke('traffic-chart-requests-requests'));
+  expect(status).not.toContain(await stroke('traffic-chart-errors-4xx'));
+  // A server error is something wrong, so its line is the one that may be the danger colour.
+  expect(await stroke('traffic-chart-errors-5xx')).toBe(status[2]);
+  // And nowhere on the tab is a chart's line a good one or a warning one.
+  await expect(page.locator('svg [data-tone="good"], svg [data-tone="warn"]')).toHaveCount(0);
 });
 
 test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }) => {

@@ -161,6 +161,17 @@ test('the Admin tiles are two to a row on a phone and nothing on the tab is wide
   expect(third?.x).toBe(first?.x);
   expect(third?.y ?? 0).toBeGreaterThan(first?.y ?? 0);
   expect((second?.x ?? 0) + (second?.width ?? 0)).toBeLessThanOrEqual(375);
+  // The traffic card's four numbers wear the same look and keep the same rule: two to a row.
+  const stats = page.getByTestId('traffic-stats');
+  await expect(stats).toBeVisible({ timeout: 60_000 });
+  const requests = await stats.getByTestId('traffic-stat-requests').boundingBox();
+  const typical = await stats.getByTestId('traffic-stat-typical').boundingBox();
+  const slow = await stats.getByTestId('traffic-stat-slow').boundingBox();
+  expect(requests?.y).toBe(typical?.y);
+  expect(requests?.width).toBe(typical?.width);
+  expect(slow?.x).toBe(requests?.x);
+  expect(slow?.y ?? 0).toBeGreaterThan(requests?.y ?? 0);
+  expect((typical?.x ?? 0) + (typical?.width ?? 0)).toBeLessThanOrEqual(375);
   // The machines have read by now, so the widest things on the tab are drawn: charts and tables scroll inside their cards.
   await expect(page.getByTestId('machines-card')).toBeVisible({ timeout: 60_000 });
   const overflow = await page.evaluate(

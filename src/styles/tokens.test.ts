@@ -72,6 +72,22 @@ describe('the site palette (ADR-016)', () => {
     expect(token('color-store-sql')).not.toBe(token('color-store-cosmos'));
   });
 
+  // A chart's series are graphics too, and they are identities: the status
+  // colours are for states, and a series that takes one reads as an alarm
+  // (ADR: The Admin tab, as a product, the addendum on the traffic card in plain words).
+  it('the two series colours clear 3:1 on white and on the page ground, are told apart, and are no status colour', () => {
+    const series = [token('color-series-1'), token('color-series-2')];
+    for (const line of series) {
+      for (const ground of ['color-surface', 'color-bg']) {
+        expect(contrast(line, token(ground))).toBeGreaterThanOrEqual(3);
+      }
+      for (const status of ['color-success', 'color-warning', 'color-danger', 'color-live']) {
+        expect(line.toLowerCase()).not.toBe(token(status).toLowerCase());
+      }
+    }
+    expect(series[0]).not.toBe(series[1]);
+  });
+
   it('actions read both ways: white on the accent, and the accent as link text on white', () => {
     expect(contrast(token('color-on-accent'), token('color-accent'))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(token('color-accent'), token('color-surface'))).toBeGreaterThanOrEqual(4.5);
