@@ -187,3 +187,11 @@ page is open moves out of the way within a second, without one.
 - [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the timer, the floor, and the hidden tab.
 - [`api/TheYard.Domain/VehicleOrdering.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleOrdering.cs): the ranking that was never wrong.
 - [`docs/ADR-055-broken-windows.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-055-broken-windows.md): the shape this belongs to.
+
+## Addendum, 2026-09-21: the grid that would not hold still
+
+Steve saw the inventory flicker. A minute of the live front page, recorded at 1280 px in Chrome, showed why: the grid was re-ranked on the ticking clock, so under ending soonest a card moved about once a second (sixty moves, eight layout shifts totalling 1.16, a dozen pictures fetched again as cards arrived from below the fold), and the listing asked for the whole page four times a minute on every view, the Admin tab included.
+
+- The grid is ranked on the clock of the answer it shows. A card whose auction ends says "Ended" where it stands, and the order catches up when the next answer lands.
+- The floor is a minute, not fifteen seconds. A card can now read "Ended" at the top of the page for up to a minute; that is the price of a page that holds still, and the countdown on the card says so honestly.
+- The listing is asked for only while it is the view. The Admin tab, the account, a vehicle and a document ask for nothing on its behalf, and the skipped refresh happens on the way back.

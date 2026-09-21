@@ -36,14 +36,34 @@ import styles from './App.module.css';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
+/**
+ * When the browser first ranked an answer: the clock the grid is ordered on
+ * (ADR-056, the addendum of 21 September). Held per answer, so a bid layered
+ * on later does not re-rank the page on a newer clock.
+ */
+const answeredAt = new WeakMap<readonly Vehicle[], number>();
+function timeOfAnswer(vehicles: readonly Vehicle[]): number {
+  let at = answeredAt.get(vehicles);
+  if (at === undefined) {
+    at = Date.now();
+    answeredAt.set(vehicles, at);
+  }
+  return at;
+}
+
 /** How long to let the user keep typing/clicking before asking the API to filter. */
 const FILTER_DEBOUNCE_MS = 500;
 
 /** A status-filtered list with nothing left to cross still drifts; refresh this often. */
 const STATUS_REFRESH_MS = 60_000;
 
-/** The most often a listing will re-ask, however fast its auctions are ending. */
-const LISTING_REFRESH_FLOOR_MS = 15_000;
+/**
+ * The most often a listing will re-ask, however fast its auctions are ending.
+ * A minute, not fifteen seconds (pipelane, 2026-09-21): recorded on the live
+ * site, the inventory asked for the whole page four times a minute on every
+ * view, and each answer moved cards under the reader's eye.
+ */
+const LISTING_REFRESH_FLOOR_MS = 60_000;
 
 /** Asked a moment after the boundary, so the server has crossed it too. */
 const BOUNDARY_GRACE_MS = 750;
@@ -115,7 +135,7 @@ export default function App() {
   // #region visible-order
   /**
    * The current page with the buyer's bids layered on for instant feedback,
-   * and, under the ending-soonest sort, reordered on the browser's clock.
+   * and, under the ending-soonest sort, reordered on the clock of the answer.
    *
    * The reorder is the same ranking the API applied, re-applied to the page it
    * already sent. Re-asking the server on a timer was not enough and could not
@@ -127,10 +147,19 @@ export default function App() {
    * put it. Membership, the count and the paging stay the server's, and any
    * other sort is left exactly as it arrived.
    */
+  //
+  // Ranked on the clock of the answer, not the ticking one (pipelane,
+  // 2026-09-21). Re-ranked every second, the grid moved a card about once a
+  // second under ending-soonest: sixty moves, eight layout shifts (a total of
+  // 1.16) and a dozen pictures fetched again in one recorded minute, which is
+  // the flicker Steve saw. A card whose auction ends now says "Ended" where it
+  // stands, and the order catches up when the next answer lands.
   const visibleVehicles = useMemo(() => {
     const withBids = page.vehicles.map((vehicle) => applyBidRecord(vehicle, bids[vehicle.id]));
-    return sort === 'ending-soonest' ? byAuctionUrgency(withBids, now) : withBids;
-  }, [page.vehicles, bids, sort, now]);
+    return sort === 'ending-soonest'
+      ? byAuctionUrgency(withBids, timeOfAnswer(page.vehicles))
+      : withBids;
+  }, [page.vehicles, bids, sort]);
   // #endregion visible-order
 
   // #region facets-once
@@ -352,6 +381,16 @@ export default function App() {
   // of thing that gets noticed in somebody else's battery graph. The refresh
   // that was skipped happens when the tab comes back.
   const missedRefresh = useRef(false);
+  // Nor while the listing is not the view: the Admin tab, the account, a
+  // vehicle or a document asked for the whole page every fifteen seconds and
+  // showed none of it. The skipped refresh happens on the way back.
+  const listShowing = !adminOpen && !accountOpen && !selectedVehicle && !openDocKey;
+  useEffect(() => {
+    if (listShowing && missedRefresh.current) {
+      missedRefresh.current = false;
+      setReloadNonce((n) => n + 1);
+    }
+  }, [listShowing]);
   useEffect(() => {
     const onVisible = () => {
       if (!document.hidden && missedRefresh.current) {
@@ -374,14 +413,14 @@ export default function App() {
     if (delay === null) return;
 
     const id = window.setTimeout(() => {
-      if (document.hidden) {
+      if (document.hidden || !listShowing) {
         missedRefresh.current = true;
         return;
       }
       setReloadNonce((n) => n + 1);
     }, delay);
     return () => window.clearTimeout(id);
-  }, [page, filters.status]);
+  }, [page, filters.status, listShowing]);
   // #endregion listing-goes-stale
 
   // Having bid is not the same as leading any more (ADR-027): the room may

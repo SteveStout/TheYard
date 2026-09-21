@@ -478,7 +478,11 @@ export function AdminPanel({
   // #endregion kept-cards
 
   useEffect(() => {
-    const id = window.setInterval(() => setTick((t) => t + 1), REFRESH_MS);
+    // Not while the tab is hidden: eleven reads every half minute for a page
+    // nobody is looking at (pipelane, 2026-09-21).
+    const id = window.setInterval(() => {
+      if (!document.hidden) setTick((t) => t + 1);
+    }, REFRESH_MS);
     return () => window.clearInterval(id);
   }, []);
 
@@ -3247,7 +3251,9 @@ function useMachines(): {
     void read();
     // The sampler takes a reading every fifteen seconds; the card follows at
     // half a minute, which is the rate the rest of this tab refreshes at.
-    const timer = window.setInterval(() => void read(), 30_000);
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void read();
+    }, 30_000);
     return () => {
       live = false;
       window.clearInterval(timer);

@@ -94,7 +94,13 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'npm run dev',
+      // The ship gate has just run vite build, so it serves that bundle with
+      // vite preview: one script and one sheet per page instead of Vite
+      // compiling and serving the module graph file by file to every page the
+      // suite opens (ADR: The five-minute gate). Everywhere else, the dev server.
+      command: process.env.YARD_WEB_PREVIEW
+        ? 'npx vite preview --port 5173 --strictPort'
+        : 'npm run dev',
       url: 'http://localhost:5173',
       reuseExistingServer: true,
       timeout: 120_000,
