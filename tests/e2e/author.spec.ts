@@ -48,8 +48,9 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   }).toPass({ timeout: 20_000 });
   await expect(doc.locator('a[href^="mailto:"], form, input')).toHaveCount(0);
 
-  // All four photographs are on the page, in the mock's places: the stream beside the words, the
-  // bridge opening the blocks, the two rabbit pictures side by side, and the credit under the panels.
+  // All five pictures are on the page, in their places: the stream beside the words, the bridge
+  // opening the blocks, the game's art under Games, the two rabbit pictures side by side, and the
+  // photographer's credit under the panels.
   await expect(async () => {
     const places = await doc.locator('.author-photo').evaluateAll((figures) =>
       figures.map((figure) => ({
@@ -62,6 +63,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     expect(places).toEqual([
       { name: 'couple-crossing-stream', hero: true, opens: false, paired: false },
       { name: 'couple-on-wooden-bridge-wide', hero: false, opens: true, paired: false },
+      { name: 'mass-effect-legendary-edition', hero: false, opens: false, paired: false },
       { name: 'rabbits-both-lying-on-runner', hero: false, opens: false, paired: true },
       { name: 'rabbits-both-sitting-hallway', hero: false, opens: false, paired: true },
     ]);
@@ -73,7 +75,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   // Every photograph is served from this site, in the one frame, with words for it and its box reserved,
   // and a phone is never handed a file wider than 960.
   const photos = doc.locator('.author-photo img');
-  await expect(photos).toHaveCount(4);
+  await expect(photos).toHaveCount(5);
   const count = await photos.count();
   for (let index = 0; index < count; index++) {
     // Read as one retried step: the drawer that opened this document lets go of it as it closes, and

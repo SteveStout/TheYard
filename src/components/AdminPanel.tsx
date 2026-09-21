@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { Fragment, type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   ACTIVITY_WINDOWS,
   CHART,
@@ -3867,12 +3867,15 @@ function TestsCard() {
         <>
           <TestsSummary results={results} />
           <p className={styles.muted} data-testid="tests-checks">
-            {results.checks
-              .map(
-                (check) =>
-                  `${check.name} ${check.passed ? 'passed' : 'failed'} in ${check.seconds} s`
-              )
-              .join(' · ')}
+            {results.checks.map((check, index) => (
+              <Fragment key={check.name}>
+                {index > 0 ? ' · ' : ''}
+                <span className={styles.checkItem}>
+                  <ResultMark passed={check.passed} />
+                  {` ${check.name} ${check.passed ? 'passed' : 'failed'} in ${check.seconds} s`}
+                </span>
+              </Fragment>
+            ))}
           </p>
           <div className={styles.tableWrap} role="region" aria-label="Every suite" tabIndex={0}>
             <table className={styles.table} data-testid="tests-suites">
@@ -3888,7 +3891,9 @@ function TestsCard() {
               <tbody>
                 {results.suites.map((suite) => (
                   <tr key={suite.id} data-testid={`tests-suite-${suite.id}`}>
-                    <th scope="row">{suite.name}</th>
+                    <th scope="row">
+                      <ResultMark passed={suite.failed === 0} label /> {suite.name}
+                    </th>
                     <td className={styles.mono}>{suite.passed.toLocaleString()}</td>
                     <td className={styles.mono}>{suite.failed}</td>
                     <td className={styles.mono}>{suite.skipped}</td>
@@ -3936,8 +3941,8 @@ function TestsCard() {
                 }}
               >
                 <summary>
-                  {suite.name}: {rows.length.toLocaleString()} of{' '}
-                  {suite.tests.length.toLocaleString()} tests
+                  <ResultMark passed={suite.failed === 0} /> {suite.name}:{' '}
+                  {rows.length.toLocaleString()} of {suite.tests.length.toLocaleString()} tests
                 </summary>
                 {open && rows.length > 0 && (
                   <div
@@ -3960,7 +3965,10 @@ function TestsCard() {
                           <tr key={index}>
                             <td className={styles.mono}>{row[0]}</td>
                             <td>{row[1]}</td>
-                            <td>{outcomeWord(row[2])}</td>
+                            <td>
+                              {row[2] === 's' ? null : <ResultMark passed={row[2] === 'p'} />}{' '}
+                              {outcomeWord(row[2])}
+                            </td>
                             <td className={styles.mono}>{duration(row[3])}</td>
                           </tr>
                         ))}
@@ -3985,14 +3993,49 @@ function TestsSummary({ results }: { results: TestResults }) {
     sums.skipped > 0 ? `${sums.skipped} skipped` : null,
   ].filter(Boolean);
   return (
-    <p data-testid="tests-summary">
-      <strong>
-        {sums.passed.toLocaleString()} of {sums.tests.toLocaleString()} tests passed
-      </strong>
-      {extra.length > 0 ? `, ${extra.join(', ')}` : ''}, for {results.version} in the ship&rsquo;s
-      gate at {new Date(results.ranAt).toLocaleString()}, {results.gateSeconds} s from the first
-      check to the last.
-    </p>
+    <div className={styles.testsHeadline}>
+      <ResultMark passed={sums.failed === 0} big />
+      <p data-testid="tests-summary">
+        <strong>
+          {sums.passed.toLocaleString()} of {sums.tests.toLocaleString()} tests passed
+        </strong>
+        {extra.length > 0 ? `, ${extra.join(', ')}` : ''}, for {results.version} in the ship&rsquo;s
+        gate at {new Date(results.ranAt).toLocaleString()}, {results.gateSeconds} s from the first
+        check to the last.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Passed or failed, as a mark nobody has to read: a tick in a green disc or a cross in a
+ * red one, from the status tokens, big beside the card's sentence and small on every suite,
+ * check and test. It carries its own label only where no word beside it says the same.
+ */
+function ResultMark({
+  passed,
+  big = false,
+  label = false,
+}: {
+  passed: boolean;
+  big?: boolean;
+  label?: boolean;
+}) {
+  const size = big ? 44 : 16;
+  return (
+    <svg
+      className={`${styles.resultMark} ${passed ? styles.resultPass : styles.resultFail}`}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      data-verdict={passed ? 'pass' : 'fail'}
+      {...(label
+        ? { role: 'img', 'aria-label': passed ? 'passed' : 'failed' }
+        : { 'aria-hidden': true })}
+    >
+      <circle cx="12" cy="12" r="10.5" className={styles.resultDisc} />
+      <path d={passed ? 'M7 12.5l3.2 3.2L17 8.8' : 'M8.5 8.5l7 7M15.5 8.5l-7 7'} />
+    </svg>
   );
 }
 // #endregion tests-card

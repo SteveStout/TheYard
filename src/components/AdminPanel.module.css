@@ -851,3 +851,57 @@
   color: var(--color-text);
 }
 /* #endregion questions */
+
+/* #region tests-card */
+/* The tests card's verdict marks: a tick in a green disc, a cross in a red one, from the
+   status tokens, because passed and failed are states (ADR: The five-minute gate, the
+   addendum on every check running once). */
+.testsHeadline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.testsHeadline p {
+  margin: 0;
+}
+
+.checkItem {
+  white-space: nowrap;
+}
+
+.resultMark {
+  flex: none;
+  vertical-align: -3px;
+}
+
+.resultMark path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.resultDisc {
+  stroke-width: 1.5;
+}
+
+.resultPass {
+  color: var(--color-success);
+}
+
+.resultPass .resultDisc {
+  fill: var(--color-success-soft);
+  stroke: var(--color-success);
+}
+
+.resultFail {
+  color: var(--color-danger);
+}
+
+.resultFail .resultDisc {
+  fill: var(--color-danger-soft);
+  stroke: var(--color-danger);
+}
+/* #endregion tests-card */

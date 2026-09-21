@@ -206,7 +206,12 @@ const lines = [
   '  ]',
   '}',
 ];
-writeFileSync(OUT, `${lines.join('\n')}\n`, 'utf8');
+// Every character past ASCII, and every ampersand, is written as its \\u escape: a test's name can hold
+// what the house voice test forbids in a file, as a character or as an HTML entity (its own examples do),
+// and the escaped form is the same JSON.
+const ascii = (text) =>
+  text.replace(/[&\u007f-\uffff]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+writeFileSync(OUT, ascii(`${lines.join('\n')}\n`), 'utf8');
 
 const total = suites.reduce((sum, suite) => sum + suite.tests.length, 0);
 const failed = suites.reduce((sum, suite) => sum + suite.failed, 0);

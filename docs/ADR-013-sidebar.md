@@ -295,6 +295,10 @@ suite's count of headings is fourteen.
 yes to publishing them and the photographer's credit under the panels; a phone is never offered a
 file of any photograph wider than 960.
 
+1.0.0.174 added the Mass Effect Legendary Edition key art under Games, at Steve's word, with
+its credit to Electronic Arts as the picture's caption: it is Electronic Arts' art and not his,
+and the credit says so.
+
 Files this addendum decided about:
 [`docs/AUTHOR.md`](https://github.com/SteveStout/TheYard/blob/main/docs/AUTHOR.md),
 [`src/lib/author.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/author.ts),

@@ -28,6 +28,8 @@ I read a lot about Ancient Rome and European history, which had more to do with 
 
 Mass Effect, Hades and Star Wars: Republic Commando. I will defend all three.
 
+![The Mass Effect crew in front of a glowing blue planet, with ships streaking past](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/mass-effect-legendary-edition-960.jpg "Mass Effect Legendary Edition key art © Electronic Arts.")
+
 ### Food
 
 I am a soft foodie, always looking for a new place to try. Steak, sushi or Mexican and I am in. Recommendations are welcome.

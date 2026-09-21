@@ -937,8 +937,17 @@ test('the tests card shows every suite and every test the gate ran, failures fir
   await expect(card.getByTestId('tests-summary')).toContainText(
     '3 of 4 tests passed, 1 failed, for 1.0.0.999'
   );
-  await expect(card.getByTestId('tests-checks')).toHaveText('Prettier passed in 9 s');
+  await expect(card.getByTestId('tests-checks')).toContainText('Prettier passed in 9 s');
   await expect(card.getByTestId('tests-suite-xunit-sqlite')).toContainText('xUnit on SQLite');
+  // The verdict is a mark nobody has to read: a red cross beside the sentence when anything
+  // failed, and a mark on every suite that says which one it was.
+  await expect(card.locator('[data-verdict]').first()).toHaveAttribute('data-verdict', 'fail');
+  await expect(
+    card.getByTestId('tests-suite-xunit-sqlite').getByRole('img', { name: 'failed' })
+  ).toBeVisible();
+  await expect(
+    card.getByTestId('tests-suite-vitest').getByRole('img', { name: 'passed' })
+  ).toBeVisible();
 
   // A suite with a failure opens by itself, the failure on top; a green one opens on request.
   const failing = card.getByTestId('tests-list-xunit-sqlite');

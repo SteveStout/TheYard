@@ -17,6 +17,14 @@
     "credit": "Photos of Steve and Katie by McKinley Griggs."
   },
   {
+    "name": "mass-effect-legendary-edition",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 1080,
+    "sizes": "(max-width: 720px) 92vw, 960px",
+    "credit": "Mass Effect Legendary Edition key art © Electronic Arts."
+  },
+  {
     "name": "rabbits-both-lying-on-runner",
     "widths": [480, 960, 1600],
     "width": 1600,

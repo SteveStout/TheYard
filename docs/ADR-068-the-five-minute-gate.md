@@ -258,3 +258,25 @@ file of results: 1,487 tests across six suites, and the slowest xUnit tests
 are each class's first, at thirty to forty-five seconds, which is a host
 booting while the browser suite runs beside it. That is the next thing to
 make faster, and the card now shows it test by test.
+
+What 1.0.0.173 measured, from the first gate that wrote the file: 1,487
+tests, the gate at 417 seconds, the push at 12:30:50 CDT and both sites on
+the new version at 12:36:46, and the whole cycle, gate to live look, 907
+seconds with the build cache still empty. The file then named the next two
+things to try, and the first take of 1.0.0.174 tried both: the Admin tab's
+browser spec, one file of twenty-three tests on one worker, declared
+parallel as the scans are, and the six live Cosmos DB tests moved beside
+the xUnit pass on SQLite. Measured, the gate went from 417 seconds to 619,
+the browser pass on SQLite from 211 to 365, three of the live tests timed
+out and one phone test found a real defect of this version's own. On this
+machine, four cores and eight gigabytes shared with the developer's
+browser, more work at once is slower work, which the record's first
+section already said about the two sides of the gate. Both changes are
+taken back; nothing was committed by that take.
+
+Steve, on the card itself: "when we pass or fail lets make sure we have a
+little graphic that is plus sign or red x something that makes it obvious
+and in your face". A tick in a green disc or a cross in a red one, from the
+status tokens because passed and failed are states, 44 pixels beside the
+card's sentence and 16 on every suite, check and test; a mark carries its
+own label only where no word beside it already says the same.
