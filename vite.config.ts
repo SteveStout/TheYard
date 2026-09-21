@@ -42,8 +42,9 @@ export default defineConfig({
     // nothing here turns it off (ADR: Broken windows, and the rule that
     // answers them).
     // Vitest blanks CSS imports it is not told to process. tokens.test.ts reads
-    // the palette file raw to measure its contrast, so that one goes through.
-    css: { include: [/tokens\.css\?raw$/] },
+    // the palette file raw to measure its contrast, and ribbons.test.ts reads
+    // the ribbon sheet raw to hold its performance rules, so those go through.
+    css: { include: [/tokens\.css\?raw$/, /Ribbons\.module\.css\?raw$/] },
   },
   // #endregion unit-tests
 });

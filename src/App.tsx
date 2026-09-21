@@ -25,6 +25,7 @@ import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/Sid
 import { docKeyForSlug, docSlug, LINKS, type DocKey } from './components/DocsMenu';
 import { BrandMark } from './components/BrandMark';
 import { StoreBar } from './components/StoreBar';
+import { Ribbons } from './components/Ribbons';
 import { Watermark } from './components/Watermark';
 import { IntroStrip } from './components/IntroStrip';
 import { useMediaQuery } from './hooks/useMediaQuery';
@@ -708,6 +709,7 @@ export default function App() {
       />
 
       <div className={styles.page}>
+        <Ribbons />
         <Watermark />
         {/* #region header-below-dock */}
         {/* Below the docking line the header carries the brand, Reset bids,

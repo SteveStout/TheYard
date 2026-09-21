@@ -1,0 +1,154 @@
+/* The ribbons (ADR: The glass look, the addendum on the ribbon ground): fixed
+   behind the page, deaf to the pointer, from the rail's edge (its width token,
+   its collapsed width, or nothing when it is the drawer). */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--ribbon-tints);
+}
+
+.drawing {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+  transform-origin: 30% 50%;
+  animation: drift 24s ease-in-out infinite alternate;
+}
+
+:global([data-rail='open']) .drawing {
+  left: var(--rail-width);
+  width: calc(100% - var(--rail-width));
+}
+
+:global([data-rail='collapsed']) .drawing {
+  left: var(--rail-width-collapsed);
+  width: calc(100% - var(--rail-width-collapsed));
+}
+
+/* A phone has the drawer: the ribbons run from the edge and stand back a little. */
+:global([data-rail='drawer']) .drawing {
+  opacity: 0.7;
+}
+
+.ribbons {
+  fill: none;
+  stroke-linecap: round;
+  filter: url(#ribbon-glow);
+}
+
+.shineStrands {
+  fill: none;
+  stroke-linecap: round;
+  filter: url(#ribbon-shine-blur);
+}
+
+.star {
+  stroke: var(--color-ribbon-star);
+}
+
+.flareGroup {
+  animation: pulse 5s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+
+.sparks circle {
+  opacity: 0.25;
+  animation: twinkle 6s ease-in-out infinite;
+  animation-delay: var(--d);
+}
+
+.gold {
+  stop-color: var(--color-ribbon-gold);
+}
+
+.goldSoft {
+  stop-color: var(--color-ribbon-gold-soft);
+}
+
+.teal {
+  stop-color: var(--color-ribbon-teal);
+}
+
+.tealLight {
+  stop-color: var(--color-ribbon-teal-light);
+}
+
+.green {
+  stop-color: var(--color-ribbon-green);
+}
+
+.shine {
+  stop-color: var(--color-ribbon-shine);
+}
+
+.shinePale {
+  stop-color: var(--color-ribbon-shine-pale);
+}
+
+.shineWhite {
+  stop-color: var(--color-ribbon-shine-white);
+}
+
+.flare {
+  stop-color: var(--color-ribbon-flare);
+}
+
+.spark {
+  stop-color: var(--color-ribbon-spark);
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(-10px) rotate(-1deg);
+  }
+  to {
+    transform: translateX(14px) rotate(1deg);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Asked for less motion: nothing moves, and the sparks rest halfway. */
+@media (prefers-reduced-motion: reduce) {
+  .drawing,
+  .flareGroup,
+  .sparks circle {
+    animation: none;
+  }
+
+  .sparks circle {
+    opacity: 0.4;
+  }
+}
+
+/* Asked for no transparency, its own colours, or paper: no ribbons, as the watermark does. */
+@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+  .layer {
+    display: none;
+  }
+}

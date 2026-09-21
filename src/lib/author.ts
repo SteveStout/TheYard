@@ -85,13 +85,13 @@ function pairs(html: string): string {
  */
 function blocks(section: string): string {
   const parts = section.split(/(?=<h3[ >])/);
-  if (parts.length === 1) return section;
+  if (parts.length === 1) return pairs(section);
   const [lead, ...headed] = parts;
   const pictured = headed.map((block) => block.includes('class="author-photo"'));
   const plain = pictured.filter((has) => !has).length;
   const lastPlain = pictured.lastIndexOf(false);
   return (
-    lead +
+    pairs(lead) +
     `<div class="author-blocks">` +
     headed
       .map((block, index) => {

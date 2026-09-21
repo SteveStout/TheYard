@@ -54,6 +54,16 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     channel: 'chrome',
+    // #region reduced-motion
+    // Every page is opened as a reader who asked for less motion, so the
+    // ribbon ground (ADR: The glass look, the addendum on the ribbon ground)
+    // stands still. Measured 2026-09-21: headless Chrome draws the moving
+    // ground in software, the approved drawing took a whole core per open
+    // page, and with the ribbons moving the gate's browser pass went from
+    // 4.4 to 13.9 minutes and timed out. glass.spec.ts turns the motion back
+    // on for the one test that checks it moves.
+    reducedMotion: 'reduce',
+    // #endregion reduced-motion
   },
   // #region web-servers
   // Playwright starts both servers itself, so `npm run test:e2e` needs nothing

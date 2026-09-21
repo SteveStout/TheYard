@@ -18,6 +18,34 @@
      #E9E6E7 light gray, #5E5653 brown-gray, #7B7F8A slate gray,
      #AB978C taupe, #6B7C98 slate blue. */
   --color-bg: #e9e6e7; /* the light gray, as printed: the page ground */
+  /* #region ribbon-ground */
+  /* The page's ground since the ribbons (ADR: The glass look, the addendum on the
+     ribbon ground): green-grey on the left to white on the right, and the
+     ribbons' own colours. The ribbons are code, never an image. */
+  --color-ground-left: #dcebe7;
+  --color-ground-mid: #f3f7f6;
+  --color-ground-right: #ffffff;
+  --color-ribbon-gold: #c9a24a;
+  --color-ribbon-gold-soft: #e8cf8a;
+  --color-ribbon-teal: #2a8c8c;
+  --color-ribbon-teal-light: #5fb3a8;
+  --color-ribbon-green: #1f4d3f;
+  --color-ribbon-shine: #f3d98a;
+  --color-ribbon-shine-pale: #fff4cf;
+  --color-ribbon-shine-white: #fff8e0;
+  --color-ribbon-flare: #fffaf0;
+  --color-ribbon-spark: #f1d27e;
+  --color-ribbon-star: #fff6d8;
+  --gradient-ground: linear-gradient(
+    90deg,
+    var(--color-ground-left) 0%,
+    var(--color-ground-mid) 45%,
+    var(--color-ground-right) 100%
+  );
+  --ribbon-tints:
+    radial-gradient(60% 50% at 18% 30%, rgba(42, 140, 140, 0.1), transparent 70%),
+    radial-gradient(45% 40% at 30% 85%, rgba(243, 217, 138, 0.22), transparent 70%);
+  /* #endregion ribbon-ground */
   --color-surface: #ffffff;
   --color-surface-muted: #f4f2f3; /* the light gray, halfway to white */
   --color-border: #d8d3d4; /* the light gray, one step darker */
@@ -223,7 +251,8 @@ body {
   font-size: var(--text-base);
   line-height: 1.5;
   color: var(--color-text);
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  background-image: var(--gradient-ground);
   -webkit-font-smoothing: antialiased;
 }
 

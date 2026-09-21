@@ -196,6 +196,46 @@ page and not in the drawings would be a half move. They move together, in a ship
   118 pages, memory against its limit. Milliseconds and request units have no whole and get no
   ring.
 
+## Background
+
+Approved on 2026-09-21 ("that is the one") and shipped as 1.0.0.175 (ADR: The glass look, the
+addendum on the ribbon ground). **The background is code, never an image**: a gradient on the page
+and one inline SVG, so it costs no request.
+
+- **The ground** runs left to right from green-grey `#dcebe7` through `#f3f7f6` to white, in place
+  of the flat grey behind the panels. It is one token, `--gradient-ground`, on the body. The page
+  grey stays a token for the few surfaces that are drawn in it, and it is what a page gets where
+  the gradient is not drawn.
+- **The ribbons** sweep in an S-curve down the left of the content, teal and gold, from the right
+  edge of the side rail: the rail's width token when it is docked, its collapsed width when it is
+  collapsed, and the screen's edge on a phone, where the rail is the drawer and the ribbons stand
+  back a little. Highlight strands in pale gold, two soft star flares and seventy twinkling sparks
+  sit on them. The faint watermark stays in front of them.
+- **They cost almost nothing to draw**: the whole drawing drifts on one transform, the sparks and
+  flares change only their opacity, nothing that moves carries a blur, the sparks glow through a
+  gradient, and a reader who asked for less motion gets none. Asked for less transparency, forced
+  colours or a printed page, and there are no ribbons, as there is no watermark.
+- **Panels, words and pictures are untouched** and fully solid. Every word is measured against the
+  ground's darkest stop as well as the page grey.
+
+```swatches
+--gradient-ground | The ground, left to right
+--color-ground-left | Ground, left
+--color-ground-mid | Ground, middle
+--color-ground-right | Ground, right
+--color-ribbon-gold | Ribbon gold
+--color-ribbon-gold-soft | Ribbon gold, soft
+--color-ribbon-teal | Ribbon teal
+--color-ribbon-teal-light | Ribbon teal, light
+--color-ribbon-green | Ribbon dark green
+--color-ribbon-shine | Highlight gold
+--color-ribbon-shine-pale | Highlight, pale end
+--color-ribbon-shine-white | Highlight, white end
+--color-ribbon-flare | Flare and spark centre
+--color-ribbon-spark | Spark gold
+--color-ribbon-star | A flare's arms
+```
+
 ## The sidebar and the code theme
 
 The side rail's own tokens, light since the record on the sidebar, and the colours code is read in
@@ -225,7 +265,8 @@ inside a document (ADR: Code that reads like code). Both are held to AA by the s
 
 ## The rules, short
 
-1. Teal fills, dark green draws, gold trims. Grounds and text colours do not change.
+1. Teal fills, dark green draws, gold trims. Text colours do not change; the ground is the ribbon
+   ground, and it is code, never an image.
 2. Status colours mean a state. Never decoration, never a chart series, server errors excepted.
 3. Gold never on white as text or data, never on a chart or a tile, never beside amber.
 4. A plain tile is deep teal. Only a healthy tile is green.

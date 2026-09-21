@@ -6,13 +6,15 @@
 
 I have spent twelve years building full stack software in C#, SQL Server, React and Azure. I have been the only engineer on a live financial platform, where I shipped more than 200 releases with no downtime, and I have been the lead who built a team of four. I am happy in either seat.
 
-![Steve holding Katie's hand as she steps across a small stream in a garden](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-crossing-stream-960.jpg)
+![Steve and Katie smiling in sunglasses at a table on a vineyard terrace, autumn trees and a hillside behind them](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/steve-and-katie-vineyard-960.jpg)
 
 - [Read my resume](https://theyard.stevenstout.biz/api/docs/resume)
 - [LinkedIn](https://www.linkedin.com/in/stevenwstout)
 - [GitHub](https://github.com/SteveStout/TheYard)
 
 ## Away from the keyboard
+
+![Steve holding Katie's hand as she steps across a small stream in a garden](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-crossing-stream-960.jpg)
 
 ![Steve and Katie standing together on a wooden footbridge over a pond](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-on-wooden-bridge-wide-960.jpg)
 
@@ -57,4 +59,4 @@ If any of this sounds like someone you would want on your team, I would enjoy th
 
 ---
 
-Photos of Steve and Katie by McKinley Griggs.
+Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs.

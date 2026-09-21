@@ -23,7 +23,8 @@ function token(name: string): string {
 // shipping (ADR-016).
 describe('the site palette (ADR-016)', () => {
   it('body, muted and heading text clear AA on white and on the page ground', () => {
-    for (const ground of ['color-surface', 'color-bg']) {
+    // The ground's darkest stop too, since the ribbons (ADR: The glass look, the addendum on the ribbon ground).
+    for (const ground of ['color-surface', 'color-bg', 'color-ground-left']) {
       expect(contrast(token('color-text'), token(ground))).toBeGreaterThanOrEqual(4.5);
       expect(contrast(token('color-text-muted'), token(ground))).toBeGreaterThanOrEqual(4.5);
       expect(contrast(token('color-heading'), token(ground))).toBeGreaterThanOrEqual(4.5);
@@ -39,7 +40,7 @@ describe('the site palette (ADR-016)', () => {
   // puts it on, and if a future label really is large text it can say so with
   // its own assertion rather than by lowering everybody's floor.
   it('faint labels clear AA on white and on the page ground, not 3:1 on either', () => {
-    for (const ground of ['color-surface', 'color-bg']) {
+    for (const ground of ['color-surface', 'color-bg', 'color-ground-left']) {
       expect(contrast(token('color-text-faint'), token(ground))).toBeGreaterThanOrEqual(4.5);
     }
   });

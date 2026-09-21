@@ -30,6 +30,15 @@ describe('the swatches on the Colour and style page', () => {
     expect(html).toContain('top to bottom');
   });
 
+  it('draws every gradient the sheet defines, and says which way each one runs', () => {
+    const two = `${sheet}\n:root { --gradient-ground: linear-gradient(90deg, #dcebe7 0%, #ffffff 100%); }`;
+    const html = swatchSheet('--gradient-ground | The ground\n--gradient-header | The header', two);
+    expect(html).not.toContain('not in the token sheet');
+    expect(html.match(/swatch-wide/g)).toHaveLength(2);
+    expect(html).toContain('left to right');
+    expect(html).toContain('top to bottom');
+  });
+
   it('says so when a token is not in the sheet, rather than skipping it', () => {
     expect(swatchSheet('--color-gone | Left', sheet)).toContain('not in the token sheet');
   });

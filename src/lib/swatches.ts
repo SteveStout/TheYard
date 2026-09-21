@@ -38,15 +38,22 @@ export function swatchSheet(fence: string, sheet: string): string {
     white === undefined || grey === undefined
       ? hex
       : `${hex} · ${contrast(hex, white).toFixed(2)} on white · ${contrast(hex, grey).toFixed(2)} on grey`;
-  const gradient = sheet.match(/(--gradient-[a-z0-9-]+):\s*([^;]+);/);
+  // Every gradient the sheet defines, with the way it runs: the header's top to bottom, the ribbon
+  // ground's left to right (ADR: The glass look, the addendum on the ribbon ground).
+  const gradients = new Map(
+    Array.from(sheet.matchAll(/(--gradient-[a-z0-9-]+):\s*([^;]+);/g), (match) => [
+      match[1],
+      /\b90deg\b/.test(match[2]) ? 'left to right' : 'top to bottom',
+    ])
+  );
 
   const items = swatchLines(fence).map(({ token, label }) => {
     const hex = values.get(token);
-    const isGradient = gradient !== null && gradient[1] === token;
+    const isGradient = gradients.has(token);
     if (hex === undefined && !isGradient) {
       return `<li class="swatch swatch-missing"><span class="swatch-chip"></span><span class="swatch-label">${escape(label)}</span><code>${escape(token)}</code><span class="swatch-figures">not in the token sheet</span></li>`;
     }
-    const figures = hex === undefined ? 'top to bottom' : measured(hex);
+    const figures = hex === undefined ? (gradients.get(token) ?? '') : measured(hex);
     return `<li class="swatch${isGradient ? ' swatch-wide' : ''}"><span class="swatch-chip" style="background: var(${escape(token)})"></span><span class="swatch-label">${escape(label)}</span><code>${escape(token)}</code><span class="swatch-figures">${figures}</span></li>`;
   });
 

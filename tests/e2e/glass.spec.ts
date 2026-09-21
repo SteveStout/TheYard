@@ -67,3 +67,75 @@ test('the watermark is one drawing behind the page, with no words in it and no r
   expect(await watermark.evaluate((svg) => getComputedStyle(svg).position)).toBe('fixed');
   expect(pictures).toEqual([]);
 });
+
+test('the ribbon ground is one drawing behind every view, from the rail edge, with no request behind it (ADR: The glass look)', async ({
+  page,
+}) => {
+  const pictures: string[] = [];
+  page.on('request', (request) => {
+    if (request.resourceType() === 'image' && /ribbon|background|ground/i.test(request.url())) {
+      pictures.push(request.url());
+    }
+  });
+  const read = () =>
+    page.evaluate(() => {
+      const layer = document.querySelector('[data-testid="ribbons"]');
+      const drawing = layer?.querySelector('svg');
+      const rail = document.querySelector('[data-testid="side-rail"]');
+      return {
+        layers: document.querySelectorAll('[data-testid="ribbons"]').length,
+        ground: getComputedStyle(document.body).backgroundImage,
+        hidden: layer?.getAttribute('aria-hidden'),
+        pointer: layer ? getComputedStyle(layer).pointerEvents : '',
+        position: layer ? getComputedStyle(layer).position : '',
+        words: (layer?.textContent ?? '').trim(),
+        left: drawing ? Math.round(drawing.getBoundingClientRect().left) : -1,
+        railRight: rail ? Math.round(rail.getBoundingClientRect().right) : 0,
+        animation: drawing ? getComputedStyle(drawing).animationName : '',
+      };
+    });
+
+  // A desk: the rail is docked, and the ribbons start where it ends, give or take the drift.
+  // The suite opens every page asking for less motion (playwright.config.ts); this test asks for it back.
+  // And every spec opens with the ground hidden (tests/e2e/app.ts); this one keeps it.
+  await page.addInitScript(() => {
+    (window as unknown as { __yardRibbons?: boolean }).__yardRibbons = true;
+  });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page);
+  await expect(async () => {
+    const desk = await read();
+    expect(desk.layers).toBe(1);
+    expect(desk.ground).toContain('linear-gradient');
+    expect(desk.hidden).toBe('true');
+    expect(desk.pointer).toBe('none');
+    expect(desk.position).toBe('fixed');
+    expect(desk.words).toBe('');
+    expect(desk.railRight).toBeGreaterThan(0);
+    expect(Math.abs(desk.left - desk.railRight)).toBeLessThanOrEqual(40);
+    expect(desk.animation).not.toBe('none');
+  }).toPass({ timeout: 20_000 });
+
+  // The Admin tab and a document keep it: it lives in the shell, not in a view.
+  await openTheYard(page, '/?view=admin');
+  await expect(page.getByTestId('ribbons')).toHaveCount(1);
+  await openTheYard(page, '/?doc=color-style');
+  await expect(page.getByTestId('ribbons')).toHaveCount(1);
+
+  // A phone: the rail is the drawer, so the ribbons run from the screen's edge.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openTheYard(page);
+  await expect(async () => {
+    const phone = await read();
+    expect(phone.layers).toBe(1);
+    expect(Math.abs(phone.left)).toBeLessThanOrEqual(40);
+  }).toPass({ timeout: 20_000 });
+
+  // Asked for less motion, nothing moves.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(async () => {
+    expect((await read()).animation).toBe('none');
+  }).toPass({ timeout: 10_000 });
+  expect(pictures).toEqual([]);
+});

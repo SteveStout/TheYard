@@ -33,7 +33,32 @@ import { expect, type Locator, type Page } from '@playwright/test';
  * which view arrived, so this works for the inventory, the admin tab and the
  * account view alike (the staff review, 2026-09-03).
  */
+// #region ribbons-off
+/**
+ * The ribbon ground (ADR: The glass look, the addendum on the ribbon ground) is
+ * hidden on every page a spec opens, and glass.spec.ts's ribbon test asks for it
+ * back with `window.__yardRibbons`. Measured 2026-09-21: with the ground on the
+ * page, headless Chrome draws it and the glass over it in software, and the
+ * browser pass alone (no .NET suite beside it) timed out twelve tests that took
+ * seconds on 1.0.0.174, the landing page's first hundred among them.
+ */
+const groundHidden = new WeakSet<Page>();
+async function hideTheGround(page: Page): Promise<void> {
+  if (groundHidden.has(page)) return;
+  groundHidden.add(page);
+  await page.addInitScript(() => {
+    addEventListener('DOMContentLoaded', () => {
+      if ((window as unknown as { __yardRibbons?: boolean }).__yardRibbons) return;
+      const style = document.createElement('style');
+      style.textContent = '[data-testid="ribbons"] { display: none !important; }';
+      document.head.append(style);
+    });
+  });
+}
+// #endregion ribbons-off
+
 export async function openTheYard(page: Page, path = '/'): Promise<void> {
+  await hideTheGround(page);
   await page.goto(path);
   const announcement = page.getByTestId('view-announcement');
   // Present at all: React has mounted and rendered a view. Thirty-five seconds, not

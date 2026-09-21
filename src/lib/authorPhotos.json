@@ -1,20 +1,28 @@
 [
   {
+    "name": "steve-and-katie-vineyard",
+    "widths": [480, 960, 1600],
+    "width": 1600,
+    "height": 1999,
+    "sizes": "(max-width: 720px) 92vw, 420px",
+    "narrowBecause": "a phone selfie 1671 pixels wide: 1600 is the widest cut it can give"
+  },
+  {
     "name": "couple-crossing-stream",
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 1599,
-    "sizes": "(max-width: 720px) 92vw, 420px",
-    "credit": "Photos of Steve and Katie by McKinley Griggs."
+    "sizes": "(max-width: 720px) 92vw, 480px",
+    "credit": "Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs."
   },
   {
     "name": "couple-on-wooden-bridge-wide",
     "widths": [480, 960, 1920, 2400],
     "width": 2400,
     "height": 1321,
-    "sizes": "(max-width: 720px) 92vw, 960px",
+    "sizes": "(max-width: 720px) 92vw, 480px",
     "phone": { "name": "couple-on-wooden-bridge", "widths": [480, 960], "height": 800 },
-    "credit": "Photos of Steve and Katie by McKinley Griggs."
+    "credit": "Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs."
   },
   {
     "name": "mass-effect-legendary-edition",

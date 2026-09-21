@@ -182,3 +182,33 @@ ground is see-through and the card itself is at full strength.
 
 ```live path=src/lib/statTiles.ts region=tile-rules
 ```
+
+## Addendum, 2026-09-21 (1.0.0.175): the ribbon ground
+
+Steve saw a background injected into the live site in the browser pane and said "that is the
+one": a ground that runs left to right from a soft green-grey to white, and teal and gold ribbons
+sweeping in an S-curve down the left of the content, with pale gold highlight strands, two soft
+star flares and twinkling gold sparks. It replaces the flat grey behind the panels and nothing
+else. The panels, the words, the pictures, the header, the rail and the watermark are unchanged,
+and the watermark stays in front of the ribbons.
+
+**It is code, never an image.** The ground is one token, `--gradient-ground`, on the body. The
+ribbons are one inline SVG in `Ribbons.tsx`, mounted once in the app shell beside the watermark,
+fixed, hidden from assistive technology and deaf to the pointer. Their numbers are the approved
+drawing's, in `src/lib/ribbons.ts`; their colours are eleven tokens, set on the gradients' stops
+by the stylesheet, and with the ground's four they are on the style page under Background. They start at the rail's right edge:
+the rail's width token when it is docked, its collapsed width when it is collapsed, and the
+screen's edge when it is the drawer, read from the shell's own `data-rail` state rather than from
+a second copy of its breakpoint.
+
+**It is cheap to draw, and a test holds each part of that.** The whole drawing drifts on one
+transform with `will-change`; inside it only opacity moves, on the sparks and the two flares.
+Nothing that moves carries a blur: the ribbons and the highlight strands keep their two soft
+glows and never move on their own, the flares pulse on a group whose glow sits on the group
+inside it, and the sparks glow through a radial gradient. A reader who asked for less motion
+gets none. Markup, data and style are under twelve kilobytes of source, about four compressed,
+and they fetch nothing. `ribbons.test.ts` holds those rules against the files, `tokens.test.ts`
+holds every text colour against the ground's darkest stop as well as the page grey, and the
+browser suite finds one drawing behind the inventory, the Admin tab and a document, at the rail's
+edge on a desk and the screen's edge on a phone, still under reduced motion.
+
