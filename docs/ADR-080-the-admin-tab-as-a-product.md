@@ -306,6 +306,31 @@ this shows" is unchanged.
 blocks say, the three titles and their sentences, and the sentence over the fail chart, and Vitest
 holds them, including that no block's words contain a status code or a percentile.
 
+## Addendum, 2026-09-21 (1.0.0.169): the tab in the new look
+
+The Admin tab moved with the rest of the site to teal, dark green and gold, and to glass panels over
+a soft watermark (ADR: The glass look; ADR: The palette, the addendum on teal, dark green and gold).
+What that changed on this tab, and what it did not:
+
+- **The rules this record set did not move.** One question a chart, one frame, a gap is a gap, and
+  colour means something or it means position. The series are dark green, bright teal and a neutral
+  grey, in that order on every chart, and the status colours are still only states. A turned-away
+  request is the third series' grey.
+- **Three tiles carry a ring**: health, pages and memory, because each of those numbers is a share
+  of a known whole. The speed tile and the request units tile carry none, because milliseconds and
+  request units have no whole, and a ring drawn for looks is a gauge that measures nothing. Which
+  tiles have one is decided in `statTiles.ts` with the rest of the tile rules, and tested there.
+- **A plain tile is the deep teal and never the accent teal**, which sits 1.09 from the status
+  green. Plain, fine, worth a look and needs attention read as four different things.
+- **A chart has a fine grid and a readout**: a rule at the slot under the pointer, the slot's time,
+  and each line's reading in the unit of the axis, or "not measured" where a gap is. The arithmetic
+  and the words are in `machineChart.ts` and tested there. On a phone the writing on a chart is
+  still small, as the addendum on the look said it was, and the readout is a desk feature in
+  practice.
+- **The unit on an axis keeps a halo of the card's ground** and is drawn over the lines, because the
+  live look after 1.0.0.168 showed a line that starts at the top of the axis passing through the
+  word.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.

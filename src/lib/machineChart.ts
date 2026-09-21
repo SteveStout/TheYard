@@ -64,6 +64,41 @@ export function pathFor(points: ChartPoint[], ceiling: number): string {
   return path.trim();
 }
 
+// #region readout
+/**
+ * Which reading a pointer is over (ADR: The glass look, the readout on a
+ * chart): the nearest slot to an x in the drawing's own units, clamped to the
+ * plot, so a finger at the edge of the card reads the first or the last slot
+ * and never nothing.
+ */
+export function nearestIndex(x: number, count: number): number | null {
+  if (count <= 0 || Number.isNaN(x)) return null;
+  if (count === 1) return 0;
+  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
+  const step = innerWidth / (count - 1);
+  return Math.min(count - 1, Math.max(0, Math.round((x - MACHINE_CHART.left) / step)));
+}
+
+/** Where a slot is drawn, across: the same arithmetic the line uses. */
+export function xOf(index: number, count: number): number {
+  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
+  return MACHINE_CHART.left + (count <= 1 ? 0 : (index * innerWidth) / (count - 1));
+}
+
+/** One line of the readout: a reading in the axis's unit, or the words for a slot nobody measured. */
+export function readoutLine(name: string, value: number | null, unit?: string): string {
+  if (value === null) return `${name}: not measured`;
+  const shown = value.toLocaleString('en-US');
+  return `${name}: ${shown}${unit === undefined ? '' : unit === '%' ? '%' : ` ${unit}`}`;
+}
+
+/** The quarter lines of the fine grid behind a chart, as heights in the drawing. */
+export function gridHeights(): number[] {
+  const innerHeight = MACHINE_CHART.height - MACHINE_CHART.top - MACHINE_CHART.bottom;
+  return [0.25, 0.5, 0.75].map((share) => MACHINE_CHART.top + innerHeight * share);
+}
+// #endregion readout
+
 /** Up to three evenly spaced indexes to label, first and last always. */
 export function ticks(count: number): number[] {
   if (count <= 1) return count === 1 ? [0] : [];

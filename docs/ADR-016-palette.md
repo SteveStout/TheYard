@@ -177,3 +177,75 @@ Measured, the way the rest of the sheet is, as graphics against the 3:1 that WCA
 
 `tokens.test.ts` holds both figures at 3:1 or better on both grounds, that the two are told apart,
 and that neither is the value of a status token.
+
+## Addendum, 2026-09-21 (1.0.0.169): teal, dark green and gold
+
+Steve, of the five colours this record chose: "I like the color scheme we have but it feels a little
+bland." He gave two reference pictures and one condition, "I loved the background of white and light
+grey", and the palette that came out of them is an accent and not a repaint: **teal fills, dark green
+draws, gold trims, and the grounds and the text colours are exactly as they were.**
+
+Every value was read off the pixels of his pictures and not off their captions, because the first
+picture's printed codes do not match its own swatches: the box labelled `#68875A` is `#0A3021`. One
+value is not from a picture. The sampled deep teal was too close to the dark green for a gradient
+between them to be seen on a bar fifty pixels tall, so the bottom of the header gradient is one step
+bluer, `#03505a`.
+
+| Token | Was | Is | Measured |
+| --- | --- | --- | --- |
+| `--color-accent` | `#536786` | `#006360` | white on it 7.11; as text 7.11 on white, 5.73 on the page ground |
+| `--color-accent-hover` | `#465a78` | `#004f4d` | white on it 9.44 |
+| `--color-accent-soft` | `#e4e9f1` | `#e0ecee` | the accent on it 5.89; heading text on it 9.30 |
+| `--color-green-dark` | new | `#0a3021` | 14.41 on white, 11.62 on the page ground; white on it 14.41 |
+| `--color-teal-deep` | new | `#024345` | 11.10 on white; white on it 11.10; 1.70 from the status green |
+| `--color-teal-header` | new | `#03505a` | white on it 9.13; gold light on it 5.06 |
+| `--color-gold` | new | `#d4aa3a` | 2.19 on white, so never text and never data |
+| `--color-gold-light` | new | `#dcbf57` | 7.98 on the dark green, 5.06 on the header teal; 1.81 on white |
+| `--color-brand-mark` | `#ab978c` | `#dcbf57` | the gold light, on the header gradient only |
+| `--color-header` | `#ffffff` | `#03505a` | the lighter end of the gradient, which is the worse of the two for white text |
+| `--color-header-text` | `#3f3a37` | `#ffffff` | 9.13 on the header teal, 14.41 on the dark green |
+| `--color-header-text-muted` | `#62666f` | `#cfe3e6` | 6.87 on the header teal, 10.83 on the dark green |
+| `--color-series-1` | `#536786` | `#0a3021` | 14.41 on white |
+| `--color-series-2` | `#3f3a37` | `#188f8d` | 3.92 on white, 3.16 on the page ground, 3.67 against series 1; never text |
+| `--color-series-3` | new | `#7b7f8a` | 4.00 on white, 3.23 on the page ground |
+| `--color-sheet-bg-raised` | `#e4e9f1` | `#e0ecee` | sheet text on it 5.94, muted sheet text 4.77 |
+| `--color-sheet-icon-active`, `--color-sheet-focus` | `#536786` | `#006360` | 7.11 on white, 5.89 on the raised row |
+
+**What each is for, and where it must not go.**
+
+- **Teal** is the accent everywhere the slate blue was: pressed buttons, links, toggles, focus rings,
+  the store switch, the chosen row of the rail. It is never a tile's top, because it sits 1.09 from
+  the status green and would read as "fine". A plain tile wears the deep teal, and only a healthy
+  tile is green.
+- **Dark green draws**: a card's left edge where the edge is deliberate, the rule under a section
+  heading, the first series on a chart, the top of the header gradient. Not every hairline, which
+  stay the neutral border.
+- **Gold is trim**: the lightning mark, the rule under the header, the site name on the header, the
+  underline of a page's title, a short tick at the start of a section's rule, a ring round the
+  chosen button. On white it reads about 2 to 1, so it is never text and never data, never a tile's
+  top and never a line on a chart, and beside the amber "worth a look" it would read as a warning.
+- **The header is one gradient**, `--gradient-header`, top to bottom from the dark green to the
+  header teal, because left to right could not be seen. It is the phone's header and the rail's
+  brand block. White text is 14.41 at its top and 9.13 at its bottom.
+- **The series order is fixed**: dark green, bright teal, neutral grey, so a colour means the same
+  place on every chart. 1.0.0.168 gave the series tokens of their own for exactly this, and this
+  ship changed their values and touched no chart.
+
+**The status colours did not change and are reserved.** They mean a state, always with a word beside
+them, and a series never takes one (ADR: The Admin tab, as a product, the addendum on the traffic
+card in plain words).
+
+**The two store colours stay for now**, slate blue and the deepened taupe, on the comparison cards,
+the proof's bars and the visitors graph. They mean the two stores in five drawings under
+`docs/images` and in the records that show them, and moving them on the page and not in the
+drawings would be a half move. They move together with the drawings, in a ship of their own. The
+link preview, `docs/images/og.mjs`, moved in this one, because it is seen before the site is.
+
+**Raw colours that left the components on the way**: the countdown chip over a photograph was three
+hex codes on a see-through brown and is now solid, in the colour of what it says (live the status
+green, to come the deep teal, ended the heading colour), and the grey gradient behind a photograph
+that has not loaded is the muted surface token.
+
+`tokens.test.ts` holds every figure in the table that is a floor: white on each teal and on the dark
+green, the gold light and the muted header text on both ends of the gradient, the three series on
+both grounds and apart from each other, and that neither gold could pass as text on white.

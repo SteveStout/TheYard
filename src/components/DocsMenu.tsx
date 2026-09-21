@@ -93,6 +93,7 @@ export type DocKey =
   | 'adrMachines'
   | 'adrOnePlan'
   | 'adrAdminProduct'
+  | 'adrGlassLook'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'infrastructureOverview'
@@ -751,6 +752,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '080',
   },
+  adrGlassLook: {
+    title: 'ADR: The glass look',
+    menuLabel: 'ADR: The glass look',
+    url: '/api/docs/adr-glass-look',
+    kind: 'adr',
+    number: '081',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -1013,6 +1021,7 @@ export const MENUS: Record<
       { key: 'adrMachines' },
       { key: 'adrOnePlan' },
       { key: 'adrAdminProduct' },
+      { key: 'adrGlassLook' },
     ],
   },
   // #endregion records-menu

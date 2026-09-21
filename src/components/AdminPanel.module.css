@@ -11,17 +11,23 @@
   gap: var(--space-4);
 }
 
+/* The page's title, with the gold underline: trim under a heading that is
+   read in the heading colour. */
 .title {
   margin: 0;
+  padding-bottom: var(--space-1);
+  border-bottom: 3px solid var(--color-gold);
   color: var(--color-heading);
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
 }
 
 .back {
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
-  background: var(--color-surface);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   color: var(--color-text);
   padding: 6px 14px;
   font-size: var(--text-sm);
@@ -36,16 +42,21 @@
 
 /* The window a row of buttons is on. Until 1.0.0.165 the chosen button was told
    to a screen reader and to nobody else. */
+/* The chosen one is filled with the accent and ringed in gold: the ring is
+   trim, and the fill and the white words are what say it is chosen. */
 .back[aria-pressed='true'],
 .back[aria-pressed='true']:hover {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-on-accent);
+  box-shadow: 0 0 0 2px var(--color-gold);
 }
 
+/* On the bare ground, so the body colour and not the muted one: a quiet colour
+   is only ever read inside a panel (ADR: The glass look). */
 .blurb {
   margin: 0;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-size: var(--text-sm);
   max-width: 70ch;
 }
@@ -63,10 +74,14 @@
   grid-column: 1 / -1;
 }
 
+/* A card is a glass panel (ADR: The glass look): the see-through is in the
+   background colour, so nothing the card holds is ever faded. */
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
   padding: var(--space-5);
   display: flex;
   flex-direction: column;
@@ -164,10 +179,13 @@
  * column is a column of ellipses. These sit below the grid at full width and
  * scroll sideways inside themselves, so the page body never does.
  */
+/* The wide cards are the large ones, so they are see-through without the
+   blur: a blur is paid for by the pixel on a phone, and the tiles, the small
+   cards and the buttons are where it is spent (ADR: The glass look). */
 .wide {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
   padding: var(--space-5);
   margin-top: var(--space-4);
   display: flex;
@@ -262,6 +280,53 @@
   stroke-width: 1;
 }
 
+/* The unit at the top of an axis keeps a halo of the card's ground, so a line
+   that starts at the top of the axis passes behind the word and not through it. */
+.axisUnit {
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+/* The fine grid behind a chart, at the quarters: quieter than the axis. */
+.gridLine {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
+}
+
+/* The readout under a pointer: a rule at the slot and a box that says the
+   slot's time and each line's reading. Solid, because words are never
+   see-through, and deaf to the pointer it is following. */
+.readout {
+  pointer-events: none;
+}
+
+.readoutRule {
+  stroke: var(--color-teal-deep);
+  stroke-width: 1;
+}
+
+.readoutBox {
+  fill: var(--color-surface);
+  stroke: var(--color-teal-deep);
+  stroke-width: 1;
+}
+
+.readoutWhen {
+  fill: var(--color-heading);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+.readoutText {
+  fill: var(--color-text);
+  font-size: 11px;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
 .axisLabel {
   fill: var(--color-text-muted);
   font-size: 11px;
@@ -291,6 +356,12 @@
 
 .secondLine {
   color: var(--color-series-2);
+}
+
+/* The neutral grey: a third series, or a request the site turned away, which
+   is the visitor's and says nothing about the site. */
+.thirdLine {
+  color: var(--color-series-3);
 }
 
 .warnLine {
@@ -459,6 +530,7 @@
 
 .stripHead > p {
   margin: 0;
+  color: var(--color-text);
 }
 
 /*
@@ -499,11 +571,13 @@
   text-align: left;
   font-family: inherit;
   color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-top: 4px solid var(--tile-tone, var(--color-border-strong));
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border);
+  border-top: 3px solid var(--tile-tone, var(--color-border-strong));
+  border-radius: var(--radius-glass);
+  box-shadow: var(--glass-shadow);
   padding: var(--space-3) var(--space-4) var(--space-3);
   cursor: pointer;
   transition:
@@ -546,8 +620,10 @@
   --tile-soft: var(--color-danger-soft);
 }
 
+/* A plain tile is the deep teal and never the accent teal, which sits 1.09
+   from the status green: only a healthy tile is green. */
 .tilePlain {
-  --tile-tone: var(--color-accent);
+  --tile-tone: var(--color-teal-deep);
   --tile-soft: var(--color-accent-soft);
 }
 
@@ -556,10 +632,57 @@
   --tile-soft: var(--color-neutral-soft);
 }
 
+/* The question over a tile, in small spaced capitals: a label on an
+   instrument, read after the number and not before it. */
 .tileQuestion {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--color-text-muted);
+}
+
+.tileHead {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.tileHeadText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* The ring beside a number that is a share of a known whole. It is drawn in
+   the tile's tone, which is a state, over a neutral track. */
+.ring {
+  flex: none;
+  display: block;
+}
+
+.ringTrack {
+  fill: none;
+  stroke: var(--color-border);
+  stroke-width: 5;
+}
+
+.ringHeld {
+  fill: none;
+  stroke: var(--tile-tone);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.ringLabel {
+  fill: var(--color-heading);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  font-family: inherit;
 }
 
 .tileLabel {
@@ -617,7 +740,7 @@
 }
 
 .statBlock:hover {
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow);
   transform: none;
 }
 
@@ -628,6 +751,25 @@
   gap: var(--space-2);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
+}
+
+/* A chart's place on its card, as a chip before its title: the dark green,
+   which draws, with white figures. */
+.chartHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.indexChip {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--color-green-dark);
+  color: var(--color-on-accent);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
 }
 
 .chartTitle {
@@ -660,11 +802,18 @@
   margin-top: 0;
 }
 
+/* The rule under a section heading is the dark green, which draws, with a
+   short gold tick at its start: two pixels is too thin for a gradient to show. */
 .questionTitle {
   margin: 0;
   scroll-margin-top: 88px;
   padding-bottom: var(--space-2);
-  border-bottom: 2px solid var(--color-border);
+  border-bottom: 2px solid transparent;
+  background:
+    linear-gradient(var(--color-gold), var(--color-gold)) left bottom / 48px 2px no-repeat,
+    linear-gradient(var(--color-green-dark), var(--color-green-dark)) left bottom / 100% 2px
+      no-repeat;
+  background-origin: border-box;
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
   color: var(--color-heading);
@@ -672,7 +821,7 @@
 
 .card,
 .wide {
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow);
 }
 
 .about {
@@ -699,5 +848,6 @@
 .about > p {
   margin: 0;
   max-width: 80ch;
+  color: var(--color-text);
 }
 /* #endregion questions */

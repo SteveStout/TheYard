@@ -75,8 +75,8 @@ describe('the site palette (ADR-016)', () => {
   // A chart's series are graphics too, and they are identities: the status
   // colours are for states, and a series that takes one reads as an alarm
   // (ADR: The Admin tab, as a product, the addendum on the traffic card in plain words).
-  it('the two series colours clear 3:1 on white and on the page ground, are told apart, and are no status colour', () => {
-    const series = [token('color-series-1'), token('color-series-2')];
+  it('the series colours clear 3:1 on white and on the page ground, are told apart, and are no status colour', () => {
+    const series = [token('color-series-1'), token('color-series-2'), token('color-series-3')];
     for (const line of series) {
       for (const ground of ['color-surface', 'color-bg']) {
         expect(contrast(line, token(ground))).toBeGreaterThanOrEqual(3);
@@ -85,8 +85,119 @@ describe('the site palette (ADR-016)', () => {
         expect(line.toLowerCase()).not.toBe(token(status).toLowerCase());
       }
     }
-    expect(series[0]).not.toBe(series[1]);
+    expect(new Set(series).size).toBe(3);
+    // Dark green beside bright teal is one family told apart by light and dark, so the gap is held too.
+    expect(contrast(series[0], series[1])).toBeGreaterThanOrEqual(3);
   });
+
+  // #region teal-and-gold
+  // Teal fills, dark green draws, gold trims (ADR-016, the addendum on teal,
+  // dark green and gold). Every pairing the site makes with them, measured.
+  it('white reads on every teal and on the dark green, which is what the header and the chips put it on', () => {
+    for (const ground of [
+      'color-accent',
+      'color-accent-hover',
+      'color-teal-deep',
+      'color-teal-header',
+      'color-green-dark',
+    ]) {
+      expect(contrast(token('color-on-accent'), token(ground))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('the deep teal reads as a title on white, and the accent as a link on the page ground', () => {
+    expect(contrast(token('color-teal-deep'), token('color-surface'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token('color-accent'), token('color-bg'))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('gold light is safe as text on both ends of the header gradient, and the brand mark is that gold', () => {
+    for (const end of ['color-green-dark', 'color-teal-header']) {
+      expect(contrast(token('color-gold-light'), token(end))).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(token('color-header-text-muted'), token(end))).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(token('color-brand-mark')).toBe(token('color-gold-light'));
+    expect(token('color-header')).toBe(token('color-teal-header'));
+  });
+
+  it('gold is never text on white: it is under 3:1 there, which is why it is only ever trim', () => {
+    // Not a floor to clear. A record of why the rule exists, held so that a
+    // gold deepened until it could be text is noticed, because beside the
+    // amber warning that gold reads as a warning.
+    for (const gold of ['color-gold', 'color-gold-light']) {
+      expect(contrast(token(gold), token('color-surface'))).toBeLessThan(3);
+      expect(token(gold)).not.toBe(token('color-warning'));
+    }
+  });
+
+  it('a plain tile is not the status green: the deep teal is told apart from it, and the accent is not', () => {
+    // The accent teal sits 1.09 from the status green, so a plain tile wears the deep teal.
+    expect(contrast(token('color-accent'), token('color-success'))).toBeLessThan(1.2);
+    expect(contrast(token('color-teal-deep'), token('color-success'))).toBeGreaterThan(1.5);
+  });
+  // #endregion teal-and-gold
+
+  // #region glass
+  // Words are read against the WORST thing behind them, not against plain
+  // white (ADR: The glass look): the darkest stroke of the watermark at its
+  // strength, seen bare on the page ground, and seen through a glass panel.
+  it('every text colour clears AA over the watermark at its worst, bare and through a panel', () => {
+    const number = (name: string) => {
+      const match = tokens.match(new RegExp(`--${name}:\\s*([0-9.]+)\\s*;`));
+      if (!match) throw new Error(`tokens.css has no number for --${name}`);
+      return Number(match[1]);
+    };
+    const glass = tokens.match(/--glass-bg:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
+    if (!glass) throw new Error('tokens.css should state --glass-bg as white at a share');
+    const rgb = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
+    const hex = (parts: number[]) =>
+      `#${parts.map((part) => Math.round(part).toString(16).padStart(2, '0')).join('')}`;
+    const over = (top: string, bottom: string, share: number) =>
+      hex(rgb(top).map((part, index) => part * share + rgb(bottom)[index] * (1 - share)));
+
+    // The watermark's darkest ink is the teal of its rings: the rows are the lighter teal and the mark is gold.
+    const stroke = over(token('color-accent'), token('color-bg'), number('watermark-opacity'));
+    const throughPanel = over('#ffffff', stroke, Number(glass[1]));
+
+    // On the bare ground the quiet colours are not used: muted and faint
+    // words always sit inside a panel, and glass.spec.ts holds that against
+    // the rendered page. Everything else that is ever a word on the ground is here.
+    for (const name of [
+      'color-heading',
+      'color-text',
+      'color-accent',
+      'color-teal-deep',
+      'color-success',
+      'color-danger',
+    ]) {
+      expect(contrast(token(name), stroke)).toBeGreaterThanOrEqual(4.5);
+    }
+    for (const name of [
+      'color-heading',
+      'color-text',
+      'color-text-muted',
+      'color-text-faint',
+      'color-accent',
+      'color-teal-deep',
+    ]) {
+      expect(contrast(token(name), throughPanel)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('a panel turns solid where a blur is not available or not wanted', () => {
+    // Three fallbacks, each turning the panel's ground solid: no backdrop-filter,
+    // a reader who asked for less transparency, and forced colours.
+    const solid = (condition: RegExp) => {
+      const at = tokens.search(condition);
+      expect(at).toBeGreaterThan(-1);
+      return tokens.slice(at, at + 220);
+    };
+    expect(solid(/@supports not \(\(backdrop-filter/)).toContain('--glass-bg: #ffffff;');
+    expect(solid(/@media \(prefers-reduced-transparency: reduce\)/)).toContain(
+      '--glass-bg: #ffffff;'
+    );
+    expect(solid(/@media \(forced-colors: active\)/)).toContain('--glass-bg: Canvas;');
+  });
+  // #endregion glass
 
   it('actions read both ways: white on the accent, and the accent as link text on white', () => {
     expect(contrast(token('color-on-accent'), token('color-accent'))).toBeGreaterThanOrEqual(4.5);

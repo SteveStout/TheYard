@@ -20,7 +20,7 @@
   height: 100%;
   color: var(--color-text-faint);
   font-size: var(--text-sm);
-  background: linear-gradient(160deg, #e9e6e7, #f8f6f7);
+  background: var(--color-surface-muted);
 }
 
 .fallbackLabel {

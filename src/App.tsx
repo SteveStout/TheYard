@@ -22,9 +22,11 @@ import { AdminPanel } from './components/AdminPanel';
 import { AccountPanel } from './components/AccountPanel';
 import { accountQuestion, SIGNED_OUT, type Account } from './lib/auth';
 import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
-import { docKeyForSlug, docSlug, type DocKey } from './components/DocsMenu';
+import { docKeyForSlug, docSlug, LINKS, type DocKey } from './components/DocsMenu';
 import { BrandMark } from './components/BrandMark';
 import { StoreBar } from './components/StoreBar';
+import { Watermark } from './components/Watermark';
+import { IntroStrip } from './components/IntroStrip';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
@@ -706,6 +708,7 @@ export default function App() {
       />
 
       <div className={styles.page}>
+        <Watermark />
         {/* #region header-below-dock */}
         {/* Below the docking line the header carries the brand, Reset bids,
             and the hamburger; the docked rail makes it redundant above it. */}
@@ -810,6 +813,11 @@ export default function App() {
             />
           ) : (
             <section aria-label="Vehicle inventory">
+              <IntroStrip
+                resumeHref={LINKS.resume.href}
+                onOpenBuilt={() => openDocument('architecture')}
+                onOpenAdmin={openAdmin}
+              />
               <div className={styles.listHeader}>
                 <h1 className={styles.listTitle}>Inventory</h1>
               </div>

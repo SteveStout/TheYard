@@ -1,0 +1,39 @@
+/* Fixed behind the page's content, never in front of it, and deaf to the
+   pointer. The strength is one token, and tokens.test.ts holds every text
+   colour against the darkest stroke of this drawing at that strength, which
+   is the worst thing a word can find behind it (ADR: The glass look). */
+.watermark {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  opacity: var(--watermark-opacity);
+  pointer-events: none;
+}
+
+.rings {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.2;
+}
+
+/* The rows are the lighter teal, so the rings' teal is the darkest ink in the
+   drawing: that is the ink every text colour is measured against. */
+.rows {
+  fill: none;
+  stroke: var(--color-series-2);
+  stroke-width: 1;
+}
+
+.mark {
+  fill: var(--color-gold);
+}
+
+/* A page that asked for no transparency, or for its own colours, gets no
+   watermark at all: it is decoration and nothing is lost with it. */
+@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+  .watermark {
+    display: none;
+  }
+}

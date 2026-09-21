@@ -179,3 +179,47 @@ test('the Admin tiles are two to a row on a phone and nothing on the tab is wide
   );
   expect(overflow).toBe(0);
 });
+
+test('the first screen on a phone says what this is, who built it and where the resume is (ADR: The glass look)', async ({
+  page,
+}) => {
+  await openTheYard(page);
+  const strip = page.getByTestId('intro-strip');
+  await expect(strip).toBeVisible();
+  await expect(strip).toContainText('Steven Stout');
+  // Brand, purpose and a way to the resume, all inside the first 812 pixels, without a scroll.
+  const brand = await page
+    .getByRole('button', { name: /The Yard/ })
+    .first()
+    .boundingBox();
+  const sentence = await strip.locator('p').boundingBox();
+  const resume = page.getByTestId('intro-resume');
+  const resumeBox = await resume.boundingBox();
+  expect(brand?.y ?? 9999).toBeLessThan(812);
+  expect((sentence?.y ?? 9999) + (sentence?.height ?? 0)).toBeLessThanOrEqual(812);
+  expect((resumeBox?.y ?? 9999) + (resumeBox?.height ?? 0)).toBeLessThanOrEqual(812);
+  await expect(resume).toHaveAttribute('href', '/api/docs/resume');
+  // Everything pressable in the strip, and the hamburger over it, is a full 44 pixel target.
+  for (const target of [
+    resume,
+    page.getByTestId('intro-built'),
+    page.getByTestId('intro-admin'),
+    page.getByTestId('intro-dismiss'),
+    page.getByRole('button', { name: 'Menu' }),
+  ]) {
+    const box = await target.boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+  }
+  // It never covers the inventory: the title is under it, not behind it.
+  const title = await page.getByRole('heading', { level: 1, name: 'Inventory' }).boundingBox();
+  const stripBox = await strip.boundingBox();
+  expect(title?.y ?? 0).toBeGreaterThanOrEqual((stripBox?.y ?? 0) + (stripBox?.height ?? 0));
+  // Dismissed, it stays dismissed in this browser.
+  await page.getByTestId('intro-dismiss').click();
+  await expect(strip).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: 'Inventory' })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByTestId('intro-strip')).toHaveCount(0);
+});

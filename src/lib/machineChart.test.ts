@@ -16,10 +16,14 @@ import {
   pathFor,
   requestUnitsAMinute,
   shareOf,
+  gridHeights,
+  nearestIndex,
+  readoutLine,
   ticks,
   timeline,
   trafficTotals,
   windowName,
+  xOf,
 } from './machineChart';
 
 const points = (values: (number | null)[]) =>
@@ -271,5 +275,46 @@ describe('kept windows', () => {
     expect(bars).toHaveLength(2);
     expect(bars[0].bars.map((bar) => bar.share)).toEqual([31, 100]);
     expect(bars[1].bars.map((bar) => bar.share)).toEqual([1, 1]);
+  });
+});
+
+describe('the readout on a chart', () => {
+  it("reads the slot nearest the pointer, in the drawing's own units", () => {
+    // 61 slots across 664 units from 44: a slot every 11.07.
+    expect(nearestIndex(44, 61)).toBe(0);
+    expect(nearestIndex(44 + 11.07 * 30, 61)).toBe(30);
+    expect(nearestIndex(44 + 11.07 * 30 + 5, 61)).toBe(30);
+    expect(nearestIndex(44 + 11.07 * 30 + 6, 61)).toBe(31);
+  });
+
+  it('clamps to the plot, so the edge of the card reads the first or the last slot', () => {
+    expect(nearestIndex(0, 61)).toBe(0);
+    expect(nearestIndex(720, 61)).toBe(60);
+  });
+
+  it('has nothing to read on an empty chart, and one thing on a chart of one', () => {
+    expect(nearestIndex(100, 0)).toBeNull();
+    expect(nearestIndex(100, 1)).toBe(0);
+  });
+
+  it('puts the rule where the line puts the point', () => {
+    expect(xOf(0, 61)).toBe(MACHINE_CHART.left);
+    expect(xOf(60, 61)).toBe(MACHINE_CHART.width - MACHINE_CHART.right);
+    expect(xOf(0, 1)).toBe(MACHINE_CHART.left);
+  });
+
+  it('draws the fine grid at the quarters of the plot', () => {
+    expect(gridHeights()).toEqual([45.5, 79, 112.5]);
+  });
+
+  it('says a reading in the unit the axis is in, and says a gap is a gap', () => {
+    expect(readoutLine('Slow requests (95th percentile)', 1310, 'ms')).toBe(
+      'Slow requests (95th percentile): 1,310 ms'
+    );
+    expect(readoutLine('Memory, share of the limit', 33, '%')).toBe(
+      'Memory, share of the limit: 33%'
+    );
+    expect(readoutLine('Requests', 4)).toBe('Requests: 4');
+    expect(readoutLine('Requests', null, 'requests / min')).toBe('Requests: not measured');
   });
 });

@@ -4,7 +4,7 @@
 
 Built by one engineer with AI as a force multiplier, test driven: I specify every test before the AI writes
 the first draft of the code against it, three suites of tests run on every push inside a five-minute gate (the counts are in the testing section below, held to the suites
-by a test), and eighty decision records carry the trade-off and the number behind each choice. What went
+by a test), and eighty-one decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
 millisecond speeds on free-tier stores and one small container, in
@@ -29,7 +29,7 @@ it has sent and how long the database took.
 
 Everything about how it is built and hosted is served from inside the running app, under
 App Architecture, API Reference, SQL vs Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD
-and Best Practices in the sidebar. Eighty decision records explain each choice, and the code samples in them are read from the running build
+and Best Practices in the sidebar. Eighty-one decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
@@ -209,9 +209,10 @@ each with its own changelog line and, where it decided something, its own record
   a single design-token sheet (`src/styles/tokens.css`); Vitest for tests. No component,
   icon, state or CSS libraries, and no router: icons are small inline SVGs and the
   address bar is the application state. Four runtime dependencies: react, react-dom,
-  marked for rendering the served documents, and highlight.js for their code samples. The palette is Figma's Urban slate, gray,
-  brown and blue, with every text and ground pair measured against WCAG AA by a unit
-  test, and Poppins from Google Fonts (the one external asset) with a system fallback.
+  marked for rendering the served documents, and highlight.js for their code samples. The grounds and the text are Figma's Urban slate, gray
+  and brown, under an accent of teal, dark green and gold, on glass panels over one soft
+  watermark, with every text and ground pair measured against WCAG AA by a unit
+  test, the watermark at its worst included, and Poppins from Google Fonts (the one external asset) with a system fallback.
 - **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheYard.Data`
   (the pure data records, no dependencies), `TheYard.Domain` (photo selection, auction
   schedule, filter and bid rules), `TheYard.Application` (the `InventoryService` and
@@ -274,7 +275,7 @@ each with its own changelog line and, where it decided something, its own record
   Records and Changelog, holding the
   architecture and style pages, the two stores side by side, the data flow,
   infrastructure, entity relationship, two-sites and store comparison diagrams on their
-  own zoomable pages, eighty decision records in one numbered index, the Bicep
+  own zoomable pages, eighty-one decision records in one numbered index, the Bicep
   infrastructure, my resume, and How this was built, which says plainly that an AI agent
   wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -474,7 +475,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (78 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (82 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a

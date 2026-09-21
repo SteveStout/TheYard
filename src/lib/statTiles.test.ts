@@ -6,6 +6,8 @@ import {
   sparkRuns,
   tilesFrom,
   type TileReadings,
+  ringOf,
+  ringStroke,
   uptimeWords,
   visitorsOn,
 } from './statTiles';
@@ -256,5 +258,35 @@ describe('the stat tiles', () => {
     expect(tile({ ...quietDay, traffic: { ...traffic, requests: 0 } }, 'speed').value).toBe(
       'quiet'
     );
+  });
+});
+
+describe('the ring beside a number', () => {
+  it('is a share of a known whole, and only the three tiles that have one carry it', () => {
+    const tiles = tilesFrom(quietDay);
+    expect(tiles.filter((each) => each.ring !== undefined).map((each) => each.key)).toEqual([
+      'health',
+      'pages',
+      'memory',
+    ]);
+    expect(tiles.find((each) => each.key === 'health')?.ring).toEqual({ share: 1, label: '3/3' });
+    expect(tiles.find((each) => each.key === 'pages')?.ring).toEqual({ share: 1, label: '100%' });
+  });
+
+  it('never rounds a page that is down up to a full ring', () => {
+    const tiles = tilesFrom({ ...quietDay, pages: { checked: 1000, up: 999 } });
+    expect(tiles.find((each) => each.key === 'pages')?.ring?.label).toBe('99%');
+  });
+
+  it('draws nothing where there is no whole, and clamps a share that overruns it', () => {
+    expect(ringOf(3, 0, '3/0')).toBeUndefined();
+    expect(ringOf(12, 10, '120%')).toEqual({ share: 1, label: '120%' });
+    expect(ringOf(-1, 10, '0')).toEqual({ share: 0, label: '0' });
+  });
+
+  it('turns a share into a stroke: the whole circle, and the part of it left undrawn', () => {
+    expect(ringStroke(1, 10)).toEqual({ length: 62.8, gap: 0 });
+    expect(ringStroke(0.5, 10)).toEqual({ length: 62.8, gap: 31.4 });
+    expect(ringStroke(0, 10)).toEqual({ length: 62.8, gap: 62.8 });
   });
 });

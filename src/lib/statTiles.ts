@@ -25,7 +25,34 @@ export type StatTile = {
   tone: TileTone;
   /** The last hour behind the number, oldest first, null where nothing was measured; absent where a line would say nothing. */
   spark?: (number | null)[];
+  /**
+   * A ring beside the number, only where the number is a share of a known
+   * whole: checks passing, pages up, memory against its limit. A number with
+   * no whole, milliseconds or request units, gets none: a ring drawn for looks
+   * is a gauge that measures nothing (ADR: The glass look).
+   */
+  ring?: TileRing;
 };
+
+export type TileRing = {
+  /** From 0 to 1, clamped. */
+  share: number;
+  /** What the ring's middle says, short enough to fit inside it. */
+  label: string;
+};
+
+/** A share of a whole as a ring's reading; nothing to draw when there is no whole. */
+export function ringOf(part: number, whole: number, label: string): TileRing | undefined {
+  if (!(whole > 0) || Number.isNaN(part)) return undefined;
+  return { share: Math.min(1, Math.max(0, part / whole)), label };
+}
+
+/** The ring as an SVG stroke: the circle's length and how much of it is left undrawn. */
+export function ringStroke(share: number, radius: number): { length: number; gap: number } {
+  const length = 2 * Math.PI * radius;
+  const held = Math.min(1, Math.max(0, share));
+  return { length: Math.round(length * 10) / 10, gap: Math.round(length * (1 - held) * 10) / 10 };
+}
 
 export type TileReadings = {
   health: {
@@ -125,6 +152,7 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
       detail: `${passing} of ${health.checks.length} checks pass`,
       tone:
         passing === health.checks.length ? 'good' : health.status === 'healthy' ? 'warn' : 'bad',
+      ring: ringOf(passing, health.checks.length, `${passing}/${health.checks.length}`),
     });
   }
 
@@ -141,6 +169,11 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
               ? 'every address it serves is up'
               : `${pages.checked - pages.up} down`,
           tone: pages.checked === 0 ? 'warn' : pages.up === pages.checked ? 'good' : 'bad',
+          ring: ringOf(
+            pages.up,
+            pages.checked,
+            `${Math.floor((pages.up / Math.max(1, pages.checked)) * 100)}%`
+          ),
         }
   );
 
@@ -189,6 +222,7 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
       detail: `${Math.round(memory.working_set_mb)} of ${Math.round(memory.limit_mb)} MB`,
       tone: share >= MEMORY_BAD_SHARE ? 'bad' : share >= MEMORY_WARN_SHARE ? 'warn' : 'good',
       spark: sparks?.memory,
+      ring: ringOf(memory.working_set_mb, memory.limit_mb, `${Math.round(share * 100)}%`),
     });
   }
 

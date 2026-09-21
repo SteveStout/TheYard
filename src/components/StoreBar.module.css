@@ -87,6 +87,11 @@ a.segment:focus-visible {
     padding: var(--space-2) var(--space-4);
   }
 
+  /* In the first screen of a phone, so a full 44 pixel target. */
+  .segment {
+    min-height: 44px;
+  }
+
   .note {
     flex-basis: 100%;
   }

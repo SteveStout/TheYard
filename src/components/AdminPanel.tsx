@@ -35,6 +35,7 @@ import {
   type ChartSeries,
   coverage,
   fromFirstReading,
+  gridHeights,
   hourOfTraffic,
   type KeptBucket,
   keptSparks,
@@ -43,8 +44,10 @@ import {
   MACHINE_CHART,
   MACHINE_WINDOWS,
   type MachineWindow,
+  nearestIndex,
   pairedBars,
   pathFor,
+  readoutLine,
   requestUnitsAMinute,
   shareOf,
   ticks,
@@ -53,6 +56,7 @@ import {
   type TrafficSlot,
   trafficTotals,
   windowName,
+  xOf,
 } from '../lib/machineChart';
 import {
   CARD_WINDOWS,
@@ -71,11 +75,13 @@ import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/
 import {
   QUESTIONS,
   afterColdStart,
+  ringStroke,
   sparkCaption,
   sparkRuns,
   type StatTile,
   tilesFrom,
   type TileQuestion,
+  type TileRing,
   visitorsOn,
 } from '../lib/statTiles';
 import { TRAFFIC_CHARTS, failSentence, trafficBlocks } from '../lib/trafficCard';
@@ -1351,6 +1357,43 @@ const TONE_WORD: Record<StatTile['tone'], string | null> = {
   waiting: 'waiting',
 };
 
+/**
+ * The ring beside a tile's number (ADR: The glass look): a share of a known
+ * whole, drawn in the tile's own tone, which is a state. Hidden from a screen
+ * reader, because the tile already says the number in words.
+ */
+const RING = { size: 44, radius: 18, width: 5 } as const;
+
+function TileRingMark({ ring }: { ring: TileRing }) {
+  const stroke = ringStroke(ring.share, RING.radius);
+  const middle = RING.size / 2;
+  return (
+    <svg
+      className={styles.ring}
+      viewBox={`0 0 ${RING.size} ${RING.size}`}
+      width={RING.size}
+      height={RING.size}
+      aria-hidden="true"
+      focusable="false"
+      data-testid="tile-ring"
+    >
+      <circle className={styles.ringTrack} cx={middle} cy={middle} r={RING.radius} />
+      <circle
+        className={styles.ringHeld}
+        cx={middle}
+        cy={middle}
+        r={RING.radius}
+        strokeDasharray={stroke.length}
+        strokeDashoffset={stroke.gap}
+        transform={`rotate(-90 ${middle} ${middle})`}
+      />
+      <text className={styles.ringLabel} x={middle} y={middle + 4} textAnchor="middle">
+        {ring.label}
+      </text>
+    </svg>
+  );
+}
+
 function StatStrip({
   tiles,
   toolbar,
@@ -1393,8 +1436,13 @@ function StatStrip({
                   document.getElementById(`question-${tile.question}`)?.scrollIntoView()
                 }
               >
-                <span className={styles.tileQuestion}>{QUESTIONS[tile.question]}</span>
-                <span className={styles.tileLabel}>{tile.label}</span>
+                <span className={styles.tileHead}>
+                  <span className={styles.tileHeadText}>
+                    <span className={styles.tileQuestion}>{QUESTIONS[tile.question]}</span>
+                    <span className={styles.tileLabel}>{tile.label}</span>
+                  </span>
+                  {tile.ring !== undefined && <TileRingMark ring={tile.ring} />}
+                </span>
                 <span className={styles.tileValue}>{tile.value}</span>
                 <span className={styles.tileDetail}>{tile.detail}</span>
                 {word !== null && <span className={styles.tileTone}>{word}</span>}
@@ -2594,6 +2642,66 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
 }
 // #endregion comparison
 
+// #region chart-readout
+/**
+ * What a chart says under a pointer or a finger (ADR: The glass look): a rule
+ * at the slot, the slot's time, and each line's reading there in the unit the
+ * axis is in. A slot nobody measured says so, because a gap is a gap. The box
+ * sits to the right of the rule until it would leave the drawing, then to the
+ * left. It takes no pointer events, so it never steals the hover it is showing.
+ */
+/** Under the unit at the top of the axis, so the box never covers the word that says what it is counting. */
+const READOUT_DROP = 14;
+
+function ChartReadout({
+  testId,
+  x,
+  when,
+  rows,
+  unit,
+}: {
+  testId: string;
+  x: number;
+  when: string;
+  rows: { name: string; value: number | null }[];
+  unit?: string;
+}) {
+  const lines = [when, ...rows.map((row) => readoutLine(row.name, row.value, unit))];
+  const width = Math.min(360, Math.max(...lines.map((line) => line.length)) * 6.2 + 16);
+  const height = lines.length * 14 + 10;
+  const left = x + 8 + width > MACHINE_CHART.width - MACHINE_CHART.right ? x - 8 - width : x + 8;
+  return (
+    <g className={styles.readout} data-testid={`${testId}-readout`} aria-hidden="true">
+      <line
+        className={styles.readoutRule}
+        x1={x}
+        y1={MACHINE_CHART.top}
+        x2={x}
+        y2={MACHINE_CHART.height - MACHINE_CHART.bottom}
+      />
+      <rect
+        className={styles.readoutBox}
+        x={left}
+        y={MACHINE_CHART.top + READOUT_DROP}
+        width={width}
+        height={height}
+        rx="4"
+      />
+      {lines.map((line, index) => (
+        <text
+          key={line}
+          className={index === 0 ? styles.readoutWhen : styles.readoutText}
+          x={left + 8}
+          y={MACHINE_CHART.top + READOUT_DROP + 15 + index * 14}
+        >
+          {line}
+        </text>
+      ))}
+    </g>
+  );
+}
+// #endregion chart-readout
+
 // #region machine-chart
 /**
  * One resource, one chart (ADR: What the machines are doing, the addendum on
@@ -2620,17 +2728,21 @@ function MachineChart({
   window?: MachineWindow;
   /**
    * A colour per line. A line is a series, and a series takes an identity
-   * colour: 'first' and 'second' are the two that are not a store's and not a
-   * status. 'bad' is the one state a line can be, a server error, which is
-   * something wrong whenever it is above zero. There is no good line and no
+   * colour: 'first', 'second' and 'third' are the series tokens, in their fixed
+   * order, which are not a store's and not a status; the third is the neutral
+   * grey, and it is what a turned-away request is drawn in. 'bad' is the one
+   * state a line can be, a server error, which is something wrong whenever it
+   * is above zero. There is no good line and no
    * warning line: a slow series drawn in the warning colour reads as an alarm
    * to somebody scanning the page (ADR: The Admin tab, as a product, the
    * addendum on the traffic card in plain words).
    */
-  tones?: ('first' | 'second' | 'bad')[];
+  tones?: ('first' | 'second' | 'third' | 'bad')[];
   /** The unit, written at the top of the axis, so a number on the axis is a number of something. */
   axisUnit?: string;
 }) {
+  // The slot a pointer or a finger is over, for the readout; none until one is.
+  const [over, setOver] = useState<number | null>(null);
   const ceiling = ceilingFor(series, percentage === true ? 100 : 1);
   const points = series[0]?.points ?? [];
   const drawn = series.some((line) => line.points.some((point) => point.value !== null));
@@ -2640,6 +2752,7 @@ function MachineChart({
     const tone = tones?.[index];
     if (tone === 'first') return styles.firstLine;
     if (tone === 'second') return styles.secondLine;
+    if (tone === 'third') return styles.thirdLine;
     if (tone === 'bad') return styles.badLine;
     return index === 0 ? styles.allLine : index === 1 ? styles.sqlLine : styles.cosmosLine;
   };
@@ -2660,7 +2773,28 @@ function MachineChart({
         role="img"
         aria-label={label}
         data-testid={testId}
+        onPointerMove={(event) => {
+          const box = event.currentTarget.getBoundingClientRect();
+          if (box.width <= 0) return;
+          setOver(
+            nearestIndex(
+              ((event.clientX - box.left) / box.width) * MACHINE_CHART.width,
+              points.length
+            )
+          );
+        }}
+        onPointerLeave={() => setOver(null)}
       >
+        {gridHeights().map((y) => (
+          <line
+            key={y}
+            className={styles.gridLine}
+            x1={MACHINE_CHART.left}
+            y1={y}
+            x2={MACHINE_CHART.width - MACHINE_CHART.right}
+            y2={y}
+          />
+        ))}
         <line
           className={styles.axis}
           x1={MACHINE_CHART.left}
@@ -2692,16 +2826,6 @@ function MachineChart({
         >
           0
         </text>
-        {axisUnit !== undefined && (
-          <text
-            className={styles.axisLabel}
-            x={MACHINE_CHART.left + 6}
-            y={MACHINE_CHART.top + 4}
-            data-testid={`${testId}-unit`}
-          >
-            {axisUnit}
-          </text>
-        )}
         {ticks(points.length).map((index) => (
           <text
             key={index}
@@ -2723,6 +2847,28 @@ function MachineChart({
             <path className={styles.line} d={pathFor(line.points, ceiling)} />
           </g>
         ))}
+        {axisUnit !== undefined && (
+          <text
+            className={`${styles.axisLabel} ${styles.axisUnit}`}
+            x={MACHINE_CHART.left + 6}
+            y={MACHINE_CHART.top + 4}
+            data-testid={`${testId}-unit`}
+          >
+            {axisUnit}
+          </text>
+        )}
+        {over !== null && points[over] !== undefined && (
+          <ChartReadout
+            testId={testId}
+            x={xOf(over, points.length)}
+            when={axisLabel(points[over].at, drawnWindow)}
+            rows={series.map((line) => ({
+              name: line.name,
+              value: line.points[over]?.value ?? null,
+            }))}
+            unit={axisUnit ?? (percentage === true ? '%' : unit)}
+          />
+        )}
       </svg>
       <ul className={styles.summaryList}>
         {series.map((line, index) => (
@@ -2859,7 +3005,12 @@ function TrafficCard({
             </p>
           )}
           <section className={styles.chartSection} data-testid="traffic-section-errors">
-            <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.errors.title}</h3>
+            <div className={styles.chartHead}>
+              <span className={styles.indexChip} aria-hidden="true">
+                01
+              </span>
+              <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.errors.title}</h3>
+            </div>
             <p className={styles.chartRead}>{TRAFFIC_CHARTS.errors.read}</p>
             <p className={styles.statusRow} data-testid="traffic-fail-line">
               <span className={`${styles.pill} ${failed.good ? styles.ok : styles.bad}`}>
@@ -2872,7 +3023,7 @@ function TrafficCard({
               label={`Requests answered with an error over the ${stretch}, a minute: a server error is the site failing, a turned-away request is one it refused`}
               axisUnit={TRAFFIC_CHARTS.errors.unit}
               window={window_}
-              tones={['bad', 'second']}
+              tones={['bad', 'third']}
               series={[
                 series('5xx', TRAFFIC_CHARTS.errors.server, (slot) => slot.server_errors),
                 series('4xx', TRAFFIC_CHARTS.errors.turnedAway, (slot) => slot.client_errors),
@@ -2880,7 +3031,12 @@ function TrafficCard({
             />
           </section>
           <section className={styles.chartSection} data-testid="traffic-section-requests">
-            <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.requests.title}</h3>
+            <div className={styles.chartHead}>
+              <span className={styles.indexChip} aria-hidden="true">
+                02
+              </span>
+              <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.requests.title}</h3>
+            </div>
             <p className={styles.chartRead}>{TRAFFIC_CHARTS.requests.read}</p>
             <MachineChart
               testId="traffic-chart-requests"
@@ -2894,7 +3050,12 @@ function TrafficCard({
             />
           </section>
           <section className={styles.chartSection} data-testid="traffic-section-timing">
-            <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.timing.title}</h3>
+            <div className={styles.chartHead}>
+              <span className={styles.indexChip} aria-hidden="true">
+                03
+              </span>
+              <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.timing.title}</h3>
+            </div>
             <p className={styles.chartRead}>{TRAFFIC_CHARTS.timing.read}</p>
             <MachineChart
               testId="traffic-chart-timing"

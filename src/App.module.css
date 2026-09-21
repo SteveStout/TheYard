@@ -19,7 +19,11 @@
 /* #endregion rail-grid */
 
 /* Header (below the docking line), main, and footer: one column beside the rail. */
+/* Its own stacking context, so the watermark can sit behind everything in
+   it and in front of nothing outside it. */
 .page {
+  position: relative;
+  isolation: isolate;
   flex: 1;
   min-height: 100vh;
   min-width: 0;
@@ -27,10 +31,14 @@
   flex-direction: column;
 }
 
+/* The header bar: the one gradient, top to bottom, with the gold rule under it
+   (ADR: The palette, the addendum on teal, dark green and gold). The flat
+   colour under the gradient is what a forced-colours page falls back to. */
 .header {
   background: var(--color-header);
+  background-image: var(--gradient-header);
   color: var(--color-header-text);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 3px solid var(--color-gold-light);
   box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
@@ -55,7 +63,7 @@
   display: inline-flex;
   align-items: baseline;
   gap: var(--space-2);
-  color: var(--color-header-text);
+  color: var(--color-gold-light);
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
   letter-spacing: -0.01em;
@@ -70,7 +78,7 @@
 }
 
 .brand:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-gold-light);
   outline-offset: 4px;
   border-radius: var(--radius-sm);
 }
@@ -98,12 +106,12 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-header-text);
+  color: var(--color-heading);
   cursor: pointer;
 }
 
@@ -114,7 +122,7 @@
 }
 
 .hamburger:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-gold-light);
   outline-offset: 2px;
 }
 
@@ -210,14 +218,19 @@
   margin-bottom: var(--space-5);
 }
 
+/* A page's title, with the gold underline: trim, on a heading that is read
+   in the heading colour, so the gold carries no meaning of its own. */
 .listTitle {
+  margin: 0;
+  padding-bottom: var(--space-1);
+  border-bottom: 3px solid var(--color-gold);
   font-size: var(--text-2xl);
   font-weight: var(--weight-semibold);
   color: var(--color-heading);
 }
 
 .listCount {
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .notice {
@@ -298,10 +311,12 @@
 }
 
 .loadMore {
+  min-height: 44px;
   padding: var(--space-2) var(--space-6);
-  background: var(--color-surface);
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   border: 1.5px solid var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-gold);
   border-radius: var(--radius-full);
   font-weight: var(--weight-semibold);
   cursor: pointer;
@@ -311,12 +326,17 @@
 }
 
 .loadMore:hover:not(:disabled) {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
 }
 
+/* Waiting is said with the colours of a thing that is not pressable, never
+   with an opacity: an opacity fades the words with the button. */
 .loadMore:disabled {
-  opacity: 0.6;
+  background: var(--color-neutral-soft);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-muted);
+  box-shadow: none;
   cursor: default;
 }
 
@@ -337,8 +357,8 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-4);
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  border-top: 2px solid var(--color-green-dark);
+  color: var(--color-text);
   font-size: var(--text-xs);
 }
 

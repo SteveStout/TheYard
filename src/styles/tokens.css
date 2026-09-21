@@ -7,6 +7,10 @@
  * and blue, from foggy cityscapes. Where a shade had to be deepened so text
  * clears WCAG AA, the note beside it says which of the five it came from.
  * Type stays Poppins, buttons stay pills.
+ *
+ * Since 1.0.0.169 the accent family is teal, dark green and gold, on the same
+ * grounds and with the same text colours (ADR-016, the addendum on teal, dark
+ * green and gold); the region teal-and-gold below holds them.
  */
 :root {
   /* #region palette */
@@ -23,11 +27,26 @@
   --color-text-faint: #61656e; /* the slate gray; deepened again in ADR-042, where axe found it at 3.82 as an ended countdown on the page ground */
   --color-heading: #3f3a37; /* the brown-gray, deepened for weight */
 
-  --color-accent: #536786; /* the slate blue, deepened so white text clears AA */
-  --color-accent-hover: #465a78;
-  --color-accent-soft: #e4e9f1; /* the slate blue, as a pale tint */
+  /* #region teal-and-gold */
+  /* The accent family since 1.0.0.169 (ADR: The palette, the addendum on teal,
+     dark green and gold): teal fills, dark green draws, gold trims, and the
+     grounds and the text colours above are as they were. Every value was read
+     off the pixels of the two pictures Steve gave, and every figure beside one
+     is a measured WCAG ratio that tokens.test.ts holds. */
+  --color-accent: #006360; /* teal: white on it 7.11; as text 7.11 on white, 5.73 on the page ground */
+  --color-accent-hover: #004f4d; /* white on it 9.44 */
+  --color-accent-soft: #e0ecee; /* the teal, as a pale tint: the accent on it 5.89 */
   --color-on-accent: #ffffff;
-  --color-brand-mark: #ab978c; /* the taupe, as printed: the brand mark only */
+  --color-green-dark: #0a3021; /* it draws: a card's left edge, a heading's rule, the first series; 14.41 on white */
+  --color-teal-deep: #024345; /* a plain tile's top, a vehicle's title, an upcoming auction's chip; white on it 11.1 */
+  --color-teal-header: #03505a; /* the bottom of the header gradient and nothing else; white on it 9.13 */
+  --color-gold: #d4aa3a; /* trim on white, as decoration only: 2.19 on white, so never text and never data */
+  --color-gold-light: #dcbf57; /* trim on the header: 7.98 on the dark green, 5.06 on the header teal */
+  --color-brand-mark: #dcbf57; /* the lightning mark, which only ever sits on the header gradient */
+  /* One gradient, top to bottom, for every header bar: the site header on a
+     phone, and the side rail's brand block. */
+  --gradient-header: linear-gradient(180deg, var(--color-green-dark), var(--color-teal-header));
+  /* #endregion teal-and-gold */
 
   /* #region code-palette */
   /* The code theme (ADR: Code that reads like code). Six colours, each one
@@ -54,9 +73,11 @@
      the warning colour reads as an alarm (ADR: The Admin tab, as a product,
      the addendum on the traffic card in plain words). Today they are the
      accent's value and the heading's; they are their own tokens so a palette
-     changes two values here and touches no chart. Graphics, so 3:1 on white. */
-  --color-series-1: #536786;
-  --color-series-2: #3f3a37;
+     changes values here and touches no chart. Graphics, so 3:1 on white. The
+     order is fixed and never shuffled: dark green, bright teal, neutral grey. */
+  --color-series-1: #0a3021;
+  --color-series-2: #188f8d; /* 3.92 on white, 3.67 against the dark green; never text */
+  --color-series-3: #7b7f8a; /* a third series, or a request the site turned away; 4.0 on white */
   /* #endregion palette */
 
   /* Status colors carry meaning (clean, rebuilt, salvage, live) and stay
@@ -70,9 +91,11 @@
   --color-neutral-soft: #e4e0e1;
 
   --color-live: #16a34a;
-  --color-header: #ffffff;
-  --color-header-text: #3f3a37;
-  --color-header-text-muted: #62666f;
+  /* The header's text is measured against the lighter end of the gradient,
+     which is the worse of the two for white. */
+  --color-header: #03505a;
+  --color-header-text: #ffffff;
+  --color-header-text-muted: #cfe3e6;
 
   /* #region sheet-tokens */
   /* The sidebar (ADR-013, light addendum), in Urban slate since ADR-016: a
@@ -81,12 +104,12 @@
      both grounds, measured before it was chosen and asserted by
      tokens.test.ts beside this file. */
   --color-sheet-bg: #ffffff;
-  --color-sheet-bg-raised: #e4e9f1;
+  --color-sheet-bg-raised: #e0ecee;
   --color-sheet-text: #5e5653;
   --color-sheet-text-muted: #62666f;
   --color-sheet-icon: #7b7f8a;
-  --color-sheet-icon-active: #536786;
-  --color-sheet-focus: #536786;
+  --color-sheet-icon-active: #006360;
+  --color-sheet-focus: #006360;
   --color-sheet-divider: #e9e6e7;
   --color-sheet-divider-strong: #d8d3d4;
   /* #endregion sheet-tokens */
@@ -133,9 +156,45 @@
   --shadow-md: 0 4px 12px rgba(94, 86, 83, 0.12), 0 2px 4px rgba(94, 86, 83, 0.06);
   --shadow-lg: 0 12px 32px rgba(94, 86, 83, 0.18);
 
+  /* #region glass */
+  /* Panels are slightly see-through over a soft watermark (ADR: The glass
+     look). The translucency is in the BACKGROUND COLOUR only, never an opacity
+     on a container, so a panel's words, numbers and photographs are always
+     fully solid. The three fallbacks under this block turn a panel solid
+     white where a blur is not available or not wanted. */
+  --glass-bg: rgba(255, 255, 255, 0.66);
+  --glass-filter: blur(7px) saturate(1.2);
+  --glass-border: rgba(2, 67, 69, 0.18);
+  --glass-shadow: 0 8px 24px rgba(2, 67, 69, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --watermark-opacity: 0.1;
+  --radius-glass: 10px;
+  /* #endregion glass */
+
   /* Motion */
   --transition-fast: 150ms ease;
 }
+
+/* #region glass-fallbacks */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-bg: #ffffff;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: #ffffff;
+    --glass-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --glass-bg: Canvas;
+    --glass-filter: none;
+  }
+}
+/* #endregion glass-fallbacks */
 
 /* Minimal base styles; everything else lives in component modules. */
 *,

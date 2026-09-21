@@ -105,6 +105,7 @@ public static class DocsCatalog
         ["adr-machines"] = "docs/ADR-078-what-the-machines-are-doing.md",
         ["adr-one-plan"] = "docs/ADR-079-one-plan-two-sites.md",
         ["adr-admin-product"] = "docs/ADR-080-the-admin-tab-as-a-product.md",
+        ["adr-glass-look"] = "docs/ADR-081-the-glass-look.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
         ["built-with-ai"] = "docs/BUILT-WITH-AI.md",

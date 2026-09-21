@@ -1,29 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="TheYard, a used-vehicle auction platform, by Steven Stout">
-  <rect width="1200" height="630" fill="#e9e6e7"/>
-  <rect x="56" y="56" width="1088" height="518" rx="24" fill="#ffffff"/>
-  <rect x="56" y="56" width="1088" height="10" rx="5" fill="#536786"/>
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a3021"/>
+      <stop offset="1" stop-color="#03505a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#ground)"/>
+  <g fill="none" stroke="#cfe3e6" stroke-opacity="0.12" stroke-width="2">
+    <circle cx="1010" cy="170" r="120"/><circle cx="1010" cy="170" r="210"/><circle cx="1010" cy="170" r="300"/><circle cx="1010" cy="170" r="390"/>
+  </g>
+  <rect x="0" y="618" width="1200" height="12" fill="#dcbf57"/>
 
-  <g transform="translate(112, 150)">
-    <rect x="0" y="-46" width="64" height="64" rx="14" fill="#5e5653"/>
-    <path d="M26 -36 L16 -10 h10 l-4 18 l20 -28 h-12 l8 -16 z" fill="#ab978c"/>
-    <text x="88" y="6" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="58" font-weight="700" fill="#5e5653">TheYard</text>
+  <g transform="translate(96, 176)">
+    <path d="M44 -84 L8 -8 h34 l-14 60 l70 -96 h-42 l28 -40 z" fill="#dcbf57"/>
+    <text x="124" y="16" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="104" font-weight="700" fill="#dcbf57">TheYard</text>
   </g>
 
-  <text x="112" y="264" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="40" font-weight="500" fill="#5e5653">A used-vehicle auction platform,</text>
-  <text x="112" y="316" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="40" font-weight="500" fill="#5e5653">with its reasoning served from inside it.</text>
+  <text x="96" y="296" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="44" font-weight="600" fill="#ffffff">A working used-vehicle auction site,</text>
+  <text x="96" y="352" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="44" font-weight="600" fill="#ffffff">built and explained by Steven Stout.</text>
 
   <g font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif">
-    <rect x="112" y="374" width="304" height="108" rx="16" fill="#e4e9f1"/>
-    <text x="140" y="424" font-size="38" font-weight="700" fill="#536786">100,000</text>
-    <text x="140" y="458" font-size="22" font-weight="500" fill="#5f636c">listings</text>
-    <rect x="448" y="374" width="304" height="108" rx="16" fill="#e4e9f1"/>
-    <text x="476" y="424" font-size="38" font-weight="700" fill="#536786">80</text>
-    <text x="476" y="458" font-size="22" font-weight="500" fill="#5f636c">decision records</text>
-    <rect x="784" y="374" width="304" height="108" rx="16" fill="#e4e9f1"/>
-    <text x="812" y="424" font-size="38" font-weight="700" fill="#536786">.NET 10</text>
-    <text x="812" y="458" font-size="22" font-weight="500" fill="#5f636c">and React 19</text>
+    <rect x="96" y="404" width="320" height="112" rx="14" fill="#024345" stroke="#cfe3e6" stroke-opacity="0.35"/>
+    <text x="124" y="456" font-size="40" font-weight="700" fill="#ffffff">100,000</text>
+    <text x="124" y="492" font-size="24" font-weight="500" fill="#cfe3e6">listings</text>
+    <rect x="440" y="404" width="320" height="112" rx="14" fill="#024345" stroke="#cfe3e6" stroke-opacity="0.35"/>
+    <text x="468" y="456" font-size="40" font-weight="700" fill="#ffffff">81</text>
+    <text x="468" y="492" font-size="24" font-weight="500" fill="#cfe3e6">decision records</text>
+    <rect x="784" y="404" width="320" height="112" rx="14" fill="#024345" stroke="#cfe3e6" stroke-opacity="0.35"/>
+    <text x="812" y="456" font-size="40" font-weight="700" fill="#ffffff">.NET 10</text>
+    <text x="812" y="492" font-size="24" font-weight="500" fill="#cfe3e6">and React 19</text>
   </g>
 
-  <text x="112" y="534" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="24" font-weight="500" fill="#5f636c">theyard.stevenstout.biz</text>
-  <text x="1088" y="534" text-anchor="end" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="24" font-weight="500" fill="#5f636c">Steven Stout · 1.0.0.168</text>
+  <text x="96" y="580" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="#cfe3e6">theyard.stevenstout.biz</text>
+  <text x="1104" y="580" text-anchor="end" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="#cfe3e6">Steven Stout · 1.0.0.169</text>
 </svg>

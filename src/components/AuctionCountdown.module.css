@@ -24,39 +24,59 @@
 }
 
 .upcoming {
-  color: var(--color-accent);
+  color: var(--color-teal-deep);
 }
 
 .upcoming .dot {
-  background: var(--color-accent);
+  background: var(--color-teal-deep);
 }
 
+/* The body colour and not the faint one: an ended auction's words sit on the
+   bare ground on a vehicle's page, where a quiet colour is not used (ADR: The
+   glass look). The grey dot is what says it is over. */
 .ended {
-  color: var(--color-text-faint);
+  color: var(--color-text);
 }
 
 .ended .dot {
   background: var(--color-border-strong);
 }
 
-/* Dark translucent chip for use on top of images: the palette's brown-gray. */
+/* A solid chip for use on top of a photograph, in the colour of what it says
+   (ADR: The palette, the addendum on teal, dark green and gold): live is the
+   status green, an auction still to come is the deep teal, and one that has
+   ended is the heading colour. White text on each, and nothing see-through
+   over a photograph. */
 .overlay {
-  background: rgba(63, 58, 55, 0.82);
+  background: var(--color-heading);
+  color: var(--color-on-accent);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
 }
 
 .overlay.live {
-  color: #4ade80;
+  background: var(--color-success);
+  color: var(--color-on-accent);
+}
+
+.overlay.live .dot {
+  background: var(--color-on-accent);
 }
 
 .overlay.upcoming {
-  color: #c9d3e3;
+  background: var(--color-teal-deep);
+  color: var(--color-on-accent);
+}
+
+.overlay.upcoming .dot,
+.overlay.ended .dot {
+  background: var(--color-on-accent);
 }
 
 .overlay.ended {
-  color: #e9e6e7;
+  background: var(--color-heading);
+  color: var(--color-on-accent);
 }
 
 @keyframes pulse {

@@ -21,6 +21,9 @@
   border-right: 1px solid var(--color-border);
   overflow: hidden;
   transition: width var(--transition-fast);
+  /* Over the page beside it, whose watermark is fixed to the whole window:
+     the rail is solid and is never seen through. */
+  z-index: 1;
 }
 
 .rail[data-collapsed='true'] {
@@ -82,7 +85,10 @@
   gap: var(--space-2);
   min-height: 64px;
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-sheet-divider-strong);
+  /* The same header bar as the phone's: the one gradient and the gold rule. */
+  background: var(--color-header);
+  background-image: var(--gradient-header);
+  border-bottom: 3px solid var(--color-gold-light);
 }
 
 .rail[data-collapsed='true'] .brandBlock {
@@ -100,7 +106,7 @@
   gap: var(--space-2);
   min-height: 44px;
   padding: 0 var(--space-1);
-  color: var(--color-heading);
+  color: var(--color-gold-light);
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   letter-spacing: -0.01em;
@@ -111,7 +117,7 @@
 
 .brand:focus-visible,
 .toggle:focus-visible {
-  outline: 2px solid var(--color-sheet-focus);
+  outline: 2px solid var(--color-gold-light);
   outline-offset: 2px;
 }
 
@@ -129,7 +135,7 @@
 .brandSub {
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
-  color: var(--color-sheet-text-muted);
+  color: var(--color-header-text-muted);
   letter-spacing: 0;
 }
 
@@ -137,7 +143,7 @@
 .toggle {
   appearance: none;
   background: none;
-  border: 1px solid var(--color-sheet-divider-strong);
+  border: 1px solid var(--color-header-text-muted);
   border-radius: var(--radius-full);
   width: 44px;
   height: 44px;
@@ -145,13 +151,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-sheet-text);
+  color: var(--color-header-text);
   cursor: pointer;
 }
 
 .toggle:hover {
-  background: var(--color-sheet-bg-raised);
-  color: var(--color-heading);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 /* ---- sections and rows ---- */
