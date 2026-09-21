@@ -15,7 +15,7 @@
  * page's photographs is that photograph, a rule opens the closing panel, and
  * a second rule opens the small print under the panels.
  */
-import { photoFigure, photoNamed } from './authorPhotos';
+import { AUTHOR_PHOTOS, photoFigure, photoNamed } from './authorPhotos';
 
 // #region buttons
 /** A list in which every item is a single link, drawn as a row of buttons with finger-sized targets. */
@@ -77,6 +77,20 @@ function pairs(html: string): string {
   );
 }
 
+/** The photographs marked `between` in the list: each stands alone, full width, after the block it closes. */
+const BETWEEN = new Set(AUTHOR_PHOTOS.filter((photo) => photo.between).map((photo) => photo.name));
+
+function standAlone(block: string): [string, string[]] {
+  const between: string[] = [];
+  const kept = block.replace(FIGURE, (figure) => {
+    const name = /data-photo="([^"]+)"/.exec(figure)?.[1] ?? '';
+    if (!BETWEEN.has(name)) return figure;
+    between.push(figure);
+    return '';
+  });
+  return [kept, between];
+}
+
 /**
  * Everything from one third-level heading to the next, as a block of its own.
  * A block that holds photographs takes the whole row, and so does the last
@@ -87,7 +101,7 @@ function blocks(section: string): string {
   const parts = section.split(/(?=<h3[ >])/);
   if (parts.length === 1) return pairs(section);
   const [lead, ...headed] = parts;
-  const pictured = headed.map((block) => block.includes('class="author-photo"'));
+  const pictured = headed.map((block) => standAlone(block)[0].includes('class="author-photo"'));
   const plain = pictured.filter((has) => !has).length;
   const lastPlain = pictured.lastIndexOf(false);
   return (
@@ -96,7 +110,11 @@ function blocks(section: string): string {
     headed
       .map((block, index) => {
         const wide = pictured[index] || (plain % 2 === 1 && index === lastPlain);
-        return `<section class="author-block${wide ? ' author-block-wide' : ''}">${pairs(block)}</section>`;
+        const [kept, between] = standAlone(block);
+        return (
+          `<section class="author-block${wide ? ' author-block-wide' : ''}">${pairs(kept)}</section>` +
+          between.map((figure) => `<div class="author-between">${figure}</div>`).join('')
+        );
       })
       .join('') +
     `</div>`

@@ -407,17 +407,31 @@
   min-width: 0;
 }
 
-.prose :global(.author-block:nth-child(odd)) {
+.prose :global(.author-block:nth-of-type(odd)) {
   border-top-color: var(--color-gold);
 }
 
-.prose :global(.author-block:nth-child(even)) {
+.prose :global(.author-block:nth-of-type(even)) {
   border-top-color: var(--color-accent);
 }
 /* #endregion author-alternation */
 
 .prose :global(.author-block-wide) {
   grid-column: 1 / -1;
+}
+
+/* A photograph between two blocks takes the row, drawn narrower than it and set off to one side, the next to the other. */
+.prose :global(.author-between) {
+  grid-column: 1 / -1;
+}
+
+.prose :global(.author-between) :global(.author-photo) {
+  width: min(100%, 640px);
+  margin: 0 0 0 6%;
+}
+
+.prose :global(.author-between:nth-of-type(even)) :global(.author-photo) {
+  margin: 0 6% 0 auto;
 }
 
 .prose :global(.author-block) h3 {

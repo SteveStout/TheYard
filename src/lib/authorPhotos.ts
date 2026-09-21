@@ -39,6 +39,8 @@ export type AuthorPhoto = {
    * this, so a photograph cannot be served small by forgetting.
    */
   narrowBecause?: string;
+  /** Stands alone, full width, between the block it closes and the next, instead of inside it. */
+  between?: boolean;
 };
 
 // #region photos

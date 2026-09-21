@@ -14,17 +14,19 @@ I have spent twelve years building full stack software in C#, SQL Server, React 
 
 ## Away from the keyboard
 
-![Steve holding Katie's hand as she steps across a small stream in a garden](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-crossing-stream-960.jpg)
-
-![Steve and Katie standing together on a wooden footbridge over a pond](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-on-wooden-bridge-wide-960.jpg)
-
 ### The lake, and no boat
 
 I grew up at Lake of the Ozarks, Missouri, and neither my parents nor I have ever owned a boat. My dad always said BOAT stands for "Break Out Another Thousand." Ha ha.
 
+![Ha Ha Tonka from the air in autumn: the castle ruins on a limestone bluff over the turquoise water of Lake of the Ozarks](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/ha-ha-tonka-castle-aerial-960.jpg "Ha Ha Tonka photograph from 417mag.com.")
+
 ### History
 
 I read a lot about Ancient Rome and European history, which had more to do with the American Revolution and the Louisiana Purchase than most people expect. Fun fact: Lewis and Clark set out from St. Charles, Missouri, which is my part of the world.
+
+![The Pantheon in Rome at dusk, its columned portico lit gold beside the obelisk fountain of the Piazza della Rotonda](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/pantheon-at-dusk-480.jpg "Pantheon photograph from fullsuitcase.com.")
+
+![Steve holding Katie's hand as she steps across a small stream in a garden](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-crossing-stream-960.jpg)
 
 ### Games
 
@@ -32,13 +34,19 @@ Mass Effect, Hades and Star Wars: Republic Commando. I will defend all three.
 
 ![The Mass Effect crew in front of a glowing blue planet, with ships streaking past](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/mass-effect-legendary-edition-960.jpg "Mass Effect Legendary Edition key art © Electronic Arts.")
 
+![Steve and Katie standing together on a wooden footbridge over a pond](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-on-wooden-bridge-wide-960.jpg)
+
 ### Food
 
 I am a soft foodie, always looking for a new place to try. Steak, sushi or Mexican and I am in. Recommendations are welcome.
 
+![A sliced steak, pink inside, in a cast iron pan with a pat of herb butter](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/steak-in-cast-iron-960.jpg "Steak photograph from southerndiscourse.com.")
+
 ### The doors
 
 My most ambitious home project so far was replacing every interior door in the house, with a lot of help from my father-in-law. We went two months without bathroom doors. Katie was very happy when they went back on.
+
+![Two white shaker-style interior doors with brass lever handles in a hallway](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/interior-doors-480.jpg "Doors photograph from apartmenttherapy.com, a placeholder.")
 
 ### Freya and Vincent
 

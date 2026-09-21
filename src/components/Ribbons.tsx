@@ -4,7 +4,7 @@ import styles from './Ribbons.module.css';
 
 /**
  * The teal and gold ribbons behind the page (ADR: The glass look, the addendum
- * on the ribbon ground): ONE inline SVG, fixed behind everything, starting at
+ * on the ribbon ground): one layer of inline SVG, fixed behind everything, from
  * the rail's edge. It is code and not a picture, so it costs no request. The
  * whole drawing drifts on a transform, the sparks twinkle and the two flares
  * pulse on their opacity; the two soft glows sit on the ribbons and the
@@ -22,8 +22,8 @@ export function Ribbons() {
     <div className={styles.layer} aria-hidden="true" data-testid="ribbons">
       <svg
         className={styles.drawing}
-        viewBox="0 0 1440 900"
-        preserveAspectRatio="xMinYMid slice"
+        viewBox="-370 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
         focusable="false"
       >
         <defs>
@@ -83,6 +83,14 @@ export function Ribbons() {
             <path key={d} d={d} stroke="url(#ribbon-highlight)" strokeWidth={width} />
           ))}
         </g>
+      </svg>
+      {/* What moves inside the drawing is drawn apart from the blurred ribbons: a change inside one SVG repaints all of it. */}
+      <svg
+        className={styles.drawing}
+        viewBox="-370 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+        focusable="false"
+      >
         <g>
           {FLARES.map(([x, y, r, across, down, width, delay]) => (
             <g

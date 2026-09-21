@@ -115,7 +115,10 @@ describe('a photograph as markup', () => {
       expect(phoneSources).toHaveLength(2);
       for (const source of phoneSources) {
         expect(source).not.toMatch(/-(1[0-9]{3}|[2-9][0-9]{3})\.(webp|jpg) /);
-        expect(source).toMatch(/ width="960" height="\d+"/);
+        // The box is the widest phone cut: 960, or less for a picture that has no more to give.
+        const box = / width="(\d+)" height="\d+"/.exec(source);
+        expect(box).not.toBeNull();
+        expect(Number(box?.[1])).toBeLessThanOrEqual(960);
       }
     }
   });

@@ -80,9 +80,15 @@ test('every drawer row leads with an icon, stands at least 44px tall, and the ch
   const rows = drawer.locator('button:not([aria-label="Close"]), a');
   const count = await rows.count();
   expect(count).toBeGreaterThanOrEqual(24);
-  for (let i = 0; i < count; i += 1) {
-    await expect(rows.nth(i).locator('svg[aria-hidden="true"]')).toHaveCount(1);
-  }
+  // Read as one step over every row, not one round trip per row: seventy-odd sequential reads overran
+  // the test's minute on a loaded machine (1.0.0.176's takes), with every row correct.
+  await expect(async () => {
+    const icons = await rows.evaluateAll((list) =>
+      list.map((row) => row.querySelectorAll('svg[aria-hidden="true"]').length)
+    );
+    expect(icons).toHaveLength(count);
+    expect(icons.filter((n) => n !== 1)).toEqual([]);
+  }).toPass({ timeout: 20_000 });
 
   const changelogRow = drawer.getByRole('button', { name: 'Version history' });
   await changelogRow.scrollIntoViewIfNeeded();

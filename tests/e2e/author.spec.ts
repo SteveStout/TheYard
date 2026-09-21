@@ -48,8 +48,9 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   }).toPass({ timeout: 20_000 });
   await expect(doc.locator('a[href^="mailto:"], form, input')).toHaveCount(0);
 
-  // All six pictures are on the page, in their places: the vineyard beside the words, the stream and
-  // the bridge side by side opening the blocks, the game's art under Games, the two rabbit pictures
+  // All ten pictures are on the page, in their places: the vineyard beside the words, the lake and the
+  // Pantheon in their blocks, the stream after History and the bridge after Games each on its own row,
+  // the game's art, the steak and the doors in their blocks, the two rabbit pictures
   // side by side, and the photographer's credit under the panels.
   await expect(async () => {
     const places = await doc.locator('.author-photo').evaluateAll((figures) =>
@@ -62,9 +63,13 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     );
     expect(places).toEqual([
       { name: 'steve-and-katie-vineyard', hero: true, opens: false, paired: false },
-      { name: 'couple-crossing-stream', hero: false, opens: false, paired: true },
-      { name: 'couple-on-wooden-bridge-wide', hero: false, opens: false, paired: true },
+      { name: 'ha-ha-tonka-castle-aerial', hero: false, opens: false, paired: false },
+      { name: 'pantheon-at-dusk', hero: false, opens: false, paired: false },
+      { name: 'couple-crossing-stream', hero: false, opens: false, paired: false },
       { name: 'mass-effect-legendary-edition', hero: false, opens: false, paired: false },
+      { name: 'couple-on-wooden-bridge-wide', hero: false, opens: false, paired: false },
+      { name: 'steak-in-cast-iron', hero: false, opens: false, paired: false },
+      { name: 'interior-doors', hero: false, opens: false, paired: false },
       { name: 'rabbits-both-lying-on-runner', hero: false, opens: false, paired: true },
       { name: 'rabbits-both-sitting-hallway', hero: false, opens: false, paired: true },
     ]);
@@ -76,7 +81,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   // Every photograph is served from this site, in the one frame, with words for it and its box reserved,
   // and a phone is never handed a file wider than 960.
   const photos = doc.locator('.author-photo img');
-  await expect(photos).toHaveCount(6);
+  await expect(photos).toHaveCount(10);
   const count = await photos.count();
   for (let index = 0; index < count; index++) {
     // Read as one retried step: the drawer that opened this document lets go of it as it closes, and
@@ -95,7 +100,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       expect(read.framed).toBe(true);
       expect(read.alt.length).toBeGreaterThan(15);
       expect(read.natural).toBeGreaterThan(0);
-      expect(read.path).toMatch(/^\/api\/images\/author\/[a-z-]+-(480|960)\.(webp|jpg)$/);
+      expect(read.path).toMatch(/^\/api\/images\/author\/[a-z-]+-\d+\.(webp|jpg)$/);
       expect(read.natural).toBeLessThanOrEqual(960);
     }).toPass({ timeout: 20_000 });
   }

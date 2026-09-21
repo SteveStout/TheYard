@@ -12,17 +12,36 @@
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 1599,
-    "sizes": "(max-width: 720px) 92vw, 480px",
-    "credit": "Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs."
+    "sizes": "(max-width: 720px) 92vw, 960px",
+    "credit": "Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs.",
+    "between": true
   },
   {
     "name": "couple-on-wooden-bridge-wide",
     "widths": [480, 960, 1920, 2400],
     "width": 2400,
     "height": 1321,
-    "sizes": "(max-width: 720px) 92vw, 480px",
+    "sizes": "(max-width: 720px) 92vw, 960px",
     "phone": { "name": "couple-on-wooden-bridge", "widths": [480, 960], "height": 800 },
-    "credit": "Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs."
+    "credit": "Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs.",
+    "between": true
+  },
+  {
+    "name": "ha-ha-tonka-castle-aerial",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 960,
+    "sizes": "(max-width: 720px) 92vw, 960px",
+    "credit": "Ha Ha Tonka photograph from 417mag.com."
+  },
+  {
+    "name": "pantheon-at-dusk",
+    "widths": [480, 678],
+    "width": 678,
+    "height": 452,
+    "sizes": "(max-width: 720px) 92vw, 678px",
+    "narrowBecause": "the source picture is 678 pixels wide: 678 is every pixel it has",
+    "credit": "Pantheon photograph from fullsuitcase.com."
   },
   {
     "name": "mass-effect-legendary-edition",
@@ -31,6 +50,24 @@
     "height": 1080,
     "sizes": "(max-width: 720px) 92vw, 960px",
     "credit": "Mass Effect Legendary Edition key art © Electronic Arts."
+  },
+  {
+    "name": "steak-in-cast-iron",
+    "widths": [480, 960, 1200],
+    "width": 1200,
+    "height": 1500,
+    "sizes": "(max-width: 720px) 92vw, 480px",
+    "narrowBecause": "the source picture is 1200 pixels wide: 1200 is every pixel it has",
+    "credit": "Steak photograph from southerndiscourse.com."
+  },
+  {
+    "name": "interior-doors",
+    "widths": [480, 600],
+    "width": 600,
+    "height": 853,
+    "sizes": "(max-width: 720px) 92vw, 480px",
+    "narrowBecause": "a placeholder cropped to the doors: 600 is every pixel the crop has",
+    "credit": "Doors photograph from apartmenttherapy.com, a placeholder."
   },
   {
     "name": "rabbits-both-lying-on-runner",

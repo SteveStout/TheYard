@@ -382,10 +382,10 @@ public class AuthorPageTests
         }
 
         // Alternation: gold on the odd blocks, teal on the even ones, by order, and no block carries a colour of its own.
-        if (!Regex.IsMatch(sheet, @"\.author-block:nth-child\(odd\)\)\s*\{\s*border-top-color:\s*var\(--color-gold\);")
-            || !Regex.IsMatch(sheet, @"\.author-block:nth-child\(even\)\)\s*\{\s*border-top-color:\s*var\(--color-accent\);"))
+        if (!Regex.IsMatch(sheet, @"\.author-block:nth-of-type\(odd\)\)\s*\{\s*border-top-color:\s*var\(--color-gold\);")
+            || !Regex.IsMatch(sheet, @"\.author-block:nth-of-type\(even\)\)\s*\{\s*border-top-color:\s*var\(--color-accent\);"))
         {
-            wrong.Add("the headed blocks alternate gold then teal by their order: .author-block:nth-child(odd) is --color-gold and :nth-child(even) is --color-accent");
+            wrong.Add("the headed blocks alternate gold then teal by their order: .author-block:nth-of-type(odd) is --color-gold and :nth-of-type(even) is --color-accent");
         }
 
         string layout = File.ReadAllText(Path.Combine(Root, "src", "lib", "author.ts"));
