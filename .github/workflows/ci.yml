@@ -1,8 +1,13 @@
 name: CI
 
+# On a pull request, and by hand. Not on a push to main: the only thing that
+# pushes to main is the ship's gate, which has just run every one of these
+# suites on both stores, and Steve's rule is that every check runs once
+# (ADR: The five-minute gate, addendum of 21 September). A pull request from
+# anybody else has had no gate, so it gets all of them here.
 on:
-  push:
   pull_request:
+  workflow_dispatch:
 
 # Read-only token for every job: CI checks out and tests, nothing more (ADR-017).
 permissions:

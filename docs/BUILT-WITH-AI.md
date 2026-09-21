@@ -31,7 +31,7 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every push runs all three suites in CI: 586 xUnit tests, 118 Vitest tests at 1.0.0.150 and 84 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 588 xUnit tests, 118 Vitest tests at 1.0.0.150 and 85 Playwright tests. The ship
 gate runs the API suite against both stores and was measured at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068). A push that fails the gate does not roll.
 
@@ -88,7 +88,7 @@ default cost 16.07 request units a document on the bulk seed against 8.84 tuned,
 ## Files
 
 - [`CLAUDE.md`](https://github.com/SteveStout/TheYard/blob/main/CLAUDE.md): the standing instructions the AI worked under, kept in the repository rather than hidden.
-- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the three suites on every push, and the coverage annotation. The jobs, read from this build:
+- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the three suites on a pull request, and the coverage annotation. The jobs, read from this build:
 
 ```live path=.github/workflows/ci.yml region=ci-jobs
 ```

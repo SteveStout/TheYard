@@ -1,5 +1,7 @@
 # Deploy: the continuous delivery leg (ADR-009).
-# Fires when CI finishes green on main, builds the image with the two footer
+# Fires on a push to main, which only the ship's gate makes once every suite
+# has passed on both stores (ADR: The five-minute gate, addendum of 21
+# September: every check runs once). It builds the image with the two footer
 # build arguments, pushes it to the registry and rolls the first site's web app
 # to the new tag (ADR: One plan, two sites). Auth is OIDC: GitHub holds three
 # identifiers as repository variables and two secrets, the session signing key
@@ -8,13 +10,14 @@
 name: Deploy
 
 # #region deploy-trigger
-# Deploy fires only when CI has already gone green on main, never on a push
-# directly. workflow_run gives that ordering for free, and the job below checks
-# the conclusion, because the event fires on failure too.
+# Deploy fires on the push itself. Until 1.0.0.173 it waited for CI to run
+# every suite again on GitHub's runners, four and a half minutes spent proving
+# what the gate had proven a minute earlier on both stores; Steve's rule is
+# that every check runs once, and the one run is the gate, which is the only
+# thing that pushes to main (ADR: The five-minute gate, addendum of 21
+# September). CI still runs every suite on a pull request.
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
     branches: [main]
 
 permissions:
@@ -28,9 +31,6 @@ concurrency:
 
 jobs:
   deploy:
-    # workflow_run fires on red CI too; this gate is what keeps a red run from
-    # shipping. The run counter still ticks, so displayed versions may skip.
-    if: github.event.workflow_run.conclusion == 'success'
     # #endregion deploy-trigger
     runs-on: ubuntu-latest
     # A hung roll must not hold the deploy-production group for the default six hours (ADR-017).
@@ -59,14 +59,14 @@ jobs:
       MI_CLIENT_ID: 2888a6ca-be1c-46a5-a1de-c666b1d193e5
     steps:
       # #region compute-version
-      # Pin to the exact commit CI tested, not wherever main has moved since.
+      # Pin to the exact commit the gate tested and pushed, not wherever main has moved since.
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.sha }}
 
       - name: Compute version
         env:
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
           # The changelog's top line is the version (ADR-031). Not a run
           # counter: a counter ticks on runs that are gated off and never ship,
@@ -104,14 +104,29 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      # #region build-cache
+      # The image's slow layers (npm ci, dotnet restore, the publish) are kept
+      # in GitHub's own build cache between runs, not in the registry, so a
+      # version whose packages did not change skips them and the registry holds
+      # nothing but the images themselves (ADR-009, addendum of 21 September).
+      - name: Sign in to the registry
+        run: az acr login --name "$REGISTRY_NAME"
+
+      - uses: docker/setup-buildx-action@v4
+
       - name: Build and push
-        run: |
-          az acr login --name "$REGISTRY_NAME"
-          docker build \
-            --build-arg APP_VERSION="$APP_VERSION" \
-            --build-arg APP_COMMIT="$APP_COMMIT" \
-            -t "$IMAGE" .
-          docker push "$IMAGE"
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE }}
+          build-args: |
+            APP_VERSION=${{ env.APP_VERSION }}
+            APP_COMMIT=${{ env.APP_COMMIT }}
+          cache-from: type=gha,scope=theyard
+          cache-to: type=gha,scope=theyard,mode=max
+          provenance: false
+      # #endregion build-cache
 
       # #region roll
       # A web app's settings live on the web app, so a roll is two calls: the

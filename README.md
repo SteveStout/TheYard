@@ -3,7 +3,7 @@
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz)
 
 Built by one engineer with AI as a force multiplier, test driven: I specify every test before the AI writes
-the first draft of the code against it, three suites of tests run on every push inside a five-minute gate (the counts are in the testing section below, held to the suites
+the first draft of the code against it, three suites of tests run once per version inside a five-minute gate (the counts are in the testing section below, held to the suites
 by a test), and eighty-one decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
@@ -108,9 +108,11 @@ npm run build      # typecheck + production bundle to dist/
 npm run preview    # serve the production build
 ```
 
-CI (GitHub Actions, `.github/workflows/ci.yml`) runs all three suites on every push, and
-a green run on `main` builds the image and rolls the live container with no human step
-(`.github/workflows/deploy.yml`).
+The ship's gate runs all three suites once per version, on both stores, and only a green
+gate pushes to `main`; the push builds the image and rolls both sites with no human step
+(`.github/workflows/deploy.yml`, `.github/workflows/deploy-cosmos.yml`). Every result, test by
+test, ships with the version and is on the Admin tab. CI (`.github/workflows/ci.yml`) runs
+the same suites on a pull request.
 
 The .NET suite is measured as well as run, and published as an annotation on every run so
 it can be read without a GitHub sign-in. At 1.0.0.65 it was **89.6% of lines and 71.7% of
@@ -450,7 +452,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (586 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (588 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -477,7 +479,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (84 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (85 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a
@@ -488,10 +490,10 @@ the simulated room answers a bid so the high-bidder badge changes hands, the sig
 form creates an account that survives a reload and a bid made under it appears in that
 account's list, and axe holds nine views to WCAG 2.1 AA including both halves of the
 account page. Run with `npm run test:e2e` (launches both servers itself, uses your
-installed Chrome). All three suites run in CI on every push, and a green run on `main`
-deploys. The six tests that need the real Cosmos DB account are filtered out of CI, which has no
-Azure credential, and run in the ship gate before every release, beside the whole API suite
-booted a second time on Cosmos DB.
+installed Chrome). All three suites run once per version in the ship gate, and only a green gate
+pushes to `main`, which deploys. The six tests that need the real Cosmos DB account run in the
+same gate, beside the whole API suite booted a second time on Cosmos DB; CI, which runs the
+suites on a pull request and has no Azure credential, filters those six out.
 
 ADR: The tests, explained walks all three suites for a developer new to the stack.
 

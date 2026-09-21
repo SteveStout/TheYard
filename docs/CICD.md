@@ -5,18 +5,21 @@ hiring manager or anyone learning how small projects ship safely.
 
 ## What runs today
 
-**Continuous integration.** Every push to GitHub runs the full test wall: the
-API suite, the frontend suite, and a browser suite that clicks through the
-running app the way a person would. A change that fails any of them does not
-ship.
+**Continuous integration.** Every test runs once per version, in the ship's
+gate on the machine that ships: the API suite on both stores, the frontend
+suite, and a browser suite that clicks through the running app the way a
+person would. A change that fails any of them is not committed, so it never
+reaches GitHub. Every result, test by test, ships with the version and is on
+the Admin tab. A pull request from anybody else runs the same suites on
+GitHub's runners, because it has had no gate.
 
 ![The CI workflow runs on GitHub Actions, every one green, forty-one of them by the end of the second day](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-ci-runs.jpg)
 
-**Continuous deployment.** When CI finishes green on main, a second workflow
-named Deploy builds the container image, pushes it to Azure Container
-Registry, and rolls it onto the first site's web app, and a third named
-Deploy Cosmos rolls the same image onto the second site's, with no human in
-the loop. Both sites share one App Service plan (ADR: One plan, two sites). The workflow signs in to Azure with a token GitHub mints for this one
+**Continuous deployment.** When the gate pushes to main, a workflow named
+Deploy builds the container image, pushes it to Azure Container Registry,
+and rolls it onto the first site's web app, and on the same push a second
+named Deploy Cosmos waits for that image and rolls it onto the second site's,
+the two rolls side by side, with no human in the loop. Both sites share one App Service plan (ADR: One plan, two sites). The workflow signs in to Azure with a token GitHub mints for this one
 repository's main branch, so no password or key is stored anywhere. The
 version in the page footer is stamped by that build. The full record is
 ADR: The deploy pipeline, below this entry in the menu.

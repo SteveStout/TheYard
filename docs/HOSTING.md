@@ -51,8 +51,9 @@ to zoom in and follow it.*
   Netlify renews it automatically.
 - **Cloudflare (cloudflare.com).** Configured and dormant; becomes the edge
   after the domain transfers registrars, around late October 2026.
-- **GitHub (github.com/SteveStout/TheYard).** Holds the code, runs the test
-  wall on every push, and feeds the edge deploys.
+- **GitHub (github.com/SteveStout/TheYard).** Holds the code, runs the deploys
+  when the ship's gate pushes, runs the test wall on a pull request, and feeds the edge
+  deploys.
 
 ## The chain, request by request
 

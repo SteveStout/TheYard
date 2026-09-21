@@ -1,18 +1,18 @@
 # Deploy Cosmos: the second site's own leg (ADR: A second store on Cosmos DB,
-# and what it costs). It runs after Deploy has pushed an image and rolled the
-# first site, takes the same tag, and rolls the second site's web app on the
-# same plan (ADR: One plan, two sites). No second build: one image, two sites,
-# which is what makes the comparison honest. A failure here never touches the
-# first site, and a failure there never reaches here, because Deploy gates on
-# CI and this gates on Deploy. One after the other also means the plan's one
-# machine starts one new container at a time.
+# and what it costs). It starts on the same push as Deploy, waits until
+# Deploy's build has put the image in the registry, takes the same tag, and
+# rolls the second site's web app on the same plan (ADR: One plan, two sites).
+# No second build: one image, two sites, which is what makes the comparison
+# honest. A failure here never touches the first site. Until 1.0.0.173 it
+# waited for Deploy to finish, so the two rolls ran one after the other; now
+# they run side by side and the plan's one machine starts both new containers
+# at once, which costs each a little and saves the whole of one roll
+# (ADR-009, addendum of 21 September).
 name: Deploy Cosmos
 
 # #region deploy-cosmos-trigger
 on:
-  workflow_run:
-    workflows: ["Deploy"]
-    types: [completed]
+  push:
     branches: [main]
   # And by hand: a roll of the current image, or stopping and starting the
   # second site. Stopping it saves nothing now, because the plan bills for the
@@ -38,10 +38,10 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      REGISTRY_NAME: crtheyardsszmnetj67bn5h2
       ACR: crtheyardsszmnetj67bn5h2.azurecr.io
       RG: RG-THEYARD-SS
       # The second site's web app on the plan both sites share, and its own
@@ -60,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - uses: azure/login@v3
         with:
@@ -101,6 +101,24 @@ jobs:
       # would otherwise print every setting the site holds into this log. The
       # plan, the sites and every other setting are infra/appservice.bicep, and
       # a roll changes none of them.
+      # #region wait-for-image
+      # Deploy builds the image this site rolls to, on the same push. Wait for
+      # the tag to be in the registry, ten minutes at most, rather than for
+      # Deploy to finish: the build is the only thing this leg needs from it.
+      - name: Wait for the image
+        if: github.event_name == 'push'
+        run: |
+          for i in $(seq 1 60); do
+            if az acr repository show-tags -n "$REGISTRY_NAME" --repository theyard -o tsv 2>/dev/null | grep -qx "v${APP_VERSION##*.}"; then
+              echo "$IMAGE is in the registry after $((i * 10 - 10))s"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$IMAGE never reached the registry; Deploy's build did not finish"
+          exit 1
+      # #endregion wait-for-image
+
       - name: Roll the second site
         if: github.event_name != 'workflow_dispatch' || inputs.action == 'roll'
         env:

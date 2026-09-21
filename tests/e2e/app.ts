@@ -36,8 +36,12 @@ import { expect, type Locator, type Page } from '@playwright/test';
 export async function openTheYard(page: Page, path = '/'): Promise<void> {
   await page.goto(path);
   const announcement = page.getByTestId('view-announcement');
-  // Present at all: React has mounted and rendered a view.
-  await expect(announcement).toHaveCount(1, { timeout: 20_000 });
+  // Present at all: React has mounted and rendered a view. Thirty-five seconds, not
+  // twenty: the gate for 1.0.0.173 had one test on each store still unmounted at twenty,
+  // with the machine at 1.5 GB free and both sides of the gate running, and the page
+  // mounted for every other test of the same run (ADR: The five-minute gate, the addendum
+  // on every check running once).
+  await expect(announcement).toHaveCount(1, { timeout: 35_000 });
   // And settled: the announcement says "Loading inventory" only while the first
   // query is in flight, and names the view it arrived at once it is not.
   await expect(announcement).not.toHaveText('Loading inventory', { timeout: 20_000 });

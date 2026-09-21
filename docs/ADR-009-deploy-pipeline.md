@@ -161,3 +161,28 @@ readiness, then the domain must agree ([`.github/workflows/deploy.yml`](https://
 
 ```live path=.github/workflows/deploy.yml region=verify
 ```
+
+## Addendum, 2026-09-21: the deploy starts on the push, and the two sites roll together
+
+Deploy fired when CI finished green on main, and Deploy Cosmos fired when
+Deploy finished, so a version waited four and a half minutes for CI to prove
+again what the gate had proven on both stores a minute earlier, and the
+second site waited for the whole of the first site's roll. From 1.0.0.173
+both workflows start on the push to main, which only a green gate makes (ADR:
+The five-minute gate, the addendum on every check running once). Deploy
+builds and pushes the image and rolls the first site; Deploy Cosmos waits for
+that image's tag to be in the registry, ten minutes at most, and rolls the
+second site beside it. The plan's one machine starts both new containers at
+once, which costs each a little and saves the whole of one roll.
+
+```live path=.github/workflows/deploy-cosmos.yml region=wait-for-image
+```
+
+The image's slow layers, `npm ci`, the restore and the publish, are kept in
+GitHub's own build cache between runs through Buildx, so a version whose
+packages did not change skips them. The cache is GitHub's and not the
+registry's: the registry holds the images and nothing else, and its size is
+Steve's to prune.
+
+```live path=.github/workflows/deploy.yml region=build-cache
+```

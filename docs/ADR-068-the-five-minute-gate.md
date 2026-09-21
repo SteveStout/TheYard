@@ -209,3 +209,52 @@ still caps it. The three tests that can name the request they wait on (the
 registration, the refused sign-in and the reset) wait on the response itself,
 which says what the server answered when the answer is wrong. The runner's
 scheduled task runs at Normal from now on.
+
+## Addendum, 2026-09-21: every check runs once, and every result is on the Admin tab
+
+Steve, on the time a version took to reach the live site: "Each check should
+only run once" and "every test should run and you should focus on optimizing
+the tests that do run". Measured on 1.0.0.172 before anything changed, one
+version cost about twenty-four minutes: a precheck of about five minutes on
+the machine that ships, the gate at 417 seconds on the same tree, CI at 4
+minutes 37 seconds on GitHub's runners, Deploy at 3 minutes 49, Deploy
+Cosmos at 1 minute 49 after it, and about two minutes of reading the roll.
+The suites ran three times: in the precheck, in the gate and in CI.
+
+**The gate is the one run.** A separate precheck of the same suites on the
+same tree no longer runs before it; the gate commits nothing when it is red,
+so a red gate costs what a red precheck cost and a green one is not paid for
+twice. CI no longer runs on a push to main, because the only thing that
+pushes to main is a green gate, and the gate runs more than CI does: every
+xUnit test on both stores, the live Cosmos DB tests CI has no credential for,
+and the browser suite's store specs on Cosmos DB. CI keeps every suite for a
+pull request, which has had no gate.
+
+**Every result ships with the version.** Each runner in the gate writes its
+own report into the gate's raw folder (Vitest and Playwright as JSON, a TRX
+file for each xUnit pass), and when every suite is green
+`scripts/test_results.mjs` reads them into `data/test-results.json`: every
+suite with its counts and its seconds, every test with its group, its name,
+its outcome and its milliseconds, one per line so a diff reads test by test,
+and the checks that are not tests. It is committed with the version, the
+image carries it beside the dataset, `/api/admin/tests` serves it, and the
+Admin tab's card "Every test, for this build" shows it, a suite opening to
+its tests with failures first and then the slowest. The slowest list is
+where the next speed-up is chosen from, which is the point of keeping the
+milliseconds. `TestResultsTests` holds the endpoint and holds a committed
+file to the only kind a green gate writes: every suite, counts equal to rows,
+nothing failed and nothing skipped.
+
+```live path=scripts/test_results.mjs region=trx
+```
+
+The first take of this version went red on load and not on the change. With
+1,548 MB free of 8,040 when it started and both sides running, one browser
+test on each store waited twenty seconds for the page to mount and it had
+not, while every other test of the run mounted it; `openTheYard` gives the
+mount thirty-five seconds now, inside the same sixty-second test budget, by
+the rule the scans and the expect got above. The same take read the first
+file of results: 1,487 tests across six suites, and the slowest xUnit tests
+are each class's first, at thirty to forty-five seconds, which is a host
+booting while the browser suite runs beside it. That is the next thing to
+make faster, and the card now shows it test by test.

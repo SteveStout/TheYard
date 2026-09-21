@@ -84,6 +84,14 @@ import {
   type TileRing,
   visitorsOn,
 } from '../lib/statTiles';
+import {
+  duration,
+  outcomeWord,
+  rowsOf,
+  type TestOrder,
+  type TestResults,
+  totals,
+} from '../lib/testResults';
 import { TRAFFIC_CHARTS, failSentence, trafficBlocks } from '../lib/trafficCard';
 import styles from './AdminPanel.module.css';
 
@@ -848,6 +856,7 @@ export function AdminPanel({
           </article>
         </div>
         <PagesCard onReport={setPagesSeen} />
+        <TestsCard />
       </section>
 
       <section
@@ -3796,6 +3805,197 @@ function PagesCard({ onReport }: { onReport: (seen: { checked: number; up: numbe
   );
 }
 // #endregion pages-card
+
+// #region tests-card
+/**
+ * Every test the ship's gate ran for the build in the footer (ADR: The
+ * five-minute gate, the addendum on every check running once). The gate runs
+ * each suite once and ships what every test did; this reads it. A suite opens
+ * to its tests, failures first and then the slowest, which is the list the
+ * next speed-up is chosen from.
+ */
+function TestsCard() {
+  const [results, setResults] = useState<Fetched<TestResults | 'none'>>(null);
+  const [filter, setFilter] = useState('');
+  const [order, setOrder] = useState<TestOrder>('slowest');
+  // A suite's rows are drawn only while it is open: a closed list of a thousand rows is a
+  // thousand rows the page and its accessibility scan would read for nothing.
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let live = true;
+    const read = async (): Promise<TestResults | 'none'> => {
+      const r = await fetch('/api/admin/tests');
+      if (r.status === 404) return 'none';
+      if (!r.ok) throw new Error(String(r.status));
+      return (await r.json()) as TestResults;
+    };
+    read()
+      .then((v) => {
+        if (live) setResults(v);
+      })
+      .catch(() => {
+        if (live) setResults('failed');
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  return (
+    <article className={styles.wide} data-testid="tests-card">
+      <h2 className={styles.cardTitle}>Every test, for this build</h2>
+      <About>
+        The ship&rsquo;s gate runs every suite once, on the machine that ships: xUnit on SQLite and
+        again booted on Cosmos DB, the live Cosmos DB tests, Vitest, and the browser suite on both
+        stores, with prettier, lint, TypeScript, dotnet format and the SQL project beside them.
+        Nothing is committed unless all of it passes, so nothing reaches this site untested, and
+        what every test did ships with the version and is read here. Open a suite for its tests,
+        failures first and then the slowest.
+      </About>
+      {results === null ? (
+        <p className={styles.muted}>Loading…</p>
+      ) : results === 'failed' ? (
+        <p className={styles.muted} data-testid="tests-failed">
+          Could not read the test results on the last try.
+        </p>
+      ) : results === 'none' ? (
+        <p className={styles.muted} data-testid="tests-none">
+          No test results shipped with this build. The ship&rsquo;s gate writes them.
+        </p>
+      ) : (
+        <>
+          <TestsSummary results={results} />
+          <p className={styles.muted} data-testid="tests-checks">
+            {results.checks
+              .map(
+                (check) =>
+                  `${check.name} ${check.passed ? 'passed' : 'failed'} in ${check.seconds} s`
+              )
+              .join(' · ')}
+          </p>
+          <div className={styles.tableWrap} role="region" aria-label="Every suite" tabIndex={0}>
+            <table className={styles.table} data-testid="tests-suites">
+              <thead>
+                <tr>
+                  <th scope="col">Suite</th>
+                  <th scope="col">Passed</th>
+                  <th scope="col">Failed</th>
+                  <th scope="col">Skipped</th>
+                  <th scope="col">Took</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.suites.map((suite) => (
+                  <tr key={suite.id} data-testid={`tests-suite-${suite.id}`}>
+                    <th scope="row">{suite.name}</th>
+                    <td className={styles.mono}>{suite.passed.toLocaleString()}</td>
+                    <td className={styles.mono}>{suite.failed}</td>
+                    <td className={styles.mono}>{suite.skipped}</td>
+                    <td className={styles.mono}>{suite.seconds} s</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <form
+            className={styles.filterRow}
+            aria-label="Find a test"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <label>
+              Test name contains{' '}
+              <input
+                placeholder="any"
+                value={filter}
+                onChange={(event) => setFilter(event.target.value)}
+                data-testid="tests-filter"
+              />
+            </label>
+            <button
+              type="button"
+              className={styles.back}
+              aria-pressed={order === 'name'}
+              onClick={() => setOrder((o) => (o === 'slowest' ? 'name' : 'slowest'))}
+              data-testid="tests-order"
+            >
+              {order === 'slowest' ? 'Sort by name' : 'Sort slowest first'}
+            </button>
+          </form>
+          {results.suites.map((suite) => {
+            const rows = rowsOf(suite, filter, order);
+            const open = opened[suite.id] ?? suite.failed > 0;
+            return (
+              <details
+                key={suite.id}
+                data-testid={`tests-list-${suite.id}`}
+                open={open}
+                onToggle={(event) => {
+                  const now = event.currentTarget.open;
+                  setOpened((was) => ({ ...was, [suite.id]: now }));
+                }}
+              >
+                <summary>
+                  {suite.name}: {rows.length.toLocaleString()} of{' '}
+                  {suite.tests.length.toLocaleString()} tests
+                </summary>
+                {open && rows.length > 0 && (
+                  <div
+                    className={styles.tableWrap}
+                    role="region"
+                    aria-label={`${suite.name}, every test`}
+                    tabIndex={0}
+                  >
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th scope="col">Group</th>
+                          <th scope="col">Test</th>
+                          <th scope="col">Result</th>
+                          <th scope="col">Took</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row, index) => (
+                          <tr key={index}>
+                            <td className={styles.mono}>{row[0]}</td>
+                            <td>{row[1]}</td>
+                            <td>{outcomeWord(row[2])}</td>
+                            <td className={styles.mono}>{duration(row[3])}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </details>
+            );
+          })}
+        </>
+      )}
+    </article>
+  );
+}
+
+/** The card's one sentence: how many passed, of how many, for which build, and how long the gate took. */
+function TestsSummary({ results }: { results: TestResults }) {
+  const sums = totals(results);
+  const extra = [
+    sums.failed > 0 ? `${sums.failed} failed` : null,
+    sums.skipped > 0 ? `${sums.skipped} skipped` : null,
+  ].filter(Boolean);
+  return (
+    <p data-testid="tests-summary">
+      <strong>
+        {sums.passed.toLocaleString()} of {sums.tests.toLocaleString()} tests passed
+      </strong>
+      {extra.length > 0 ? `, ${extra.join(', ')}` : ''}, for {results.version} in the ship&rsquo;s
+      gate at {new Date(results.ranAt).toLocaleString()}, {results.gateSeconds} s from the first
+      check to the last.
+    </p>
+  );
+}
+// #endregion tests-card
 
 // #region store-card
 /** The document store's counterpart of the SQL card: every operation with its partition and its charge (ADR: What the store is actually doing). */

@@ -891,3 +891,67 @@ test('one window for every chart: the buttons over the tiles, on the traffic car
     'The line under a tile is the last hour.'
   );
 });
+
+test('the tests card shows every suite and every test the gate ran, failures first (ADR: The five-minute gate)', async ({
+  page,
+}) => {
+  // The gate writes the real file after the suites pass, so this run cannot read its own; the
+  // card is held to a fixed file in the gate's shape, one failure in it so the order shows.
+  await page.route('**/api/admin/tests', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        version: '1.0.0.999',
+        ranAt: '2026-09-21T17:40:00Z',
+        gateSeconds: 400,
+        checks: [{ name: 'Prettier', passed: true, seconds: 9 }],
+        suites: [
+          {
+            id: 'xunit-sqlite',
+            name: 'xUnit on SQLite',
+            seconds: 12,
+            passed: 2,
+            failed: 1,
+            skipped: 0,
+            tests: [
+              ['AuthTests', 'Sign in', 'p', 40],
+              ['BidRulesTests', 'A bid under the reserve', 'p', 900],
+              ['AuthTests', 'Lockout', 'f', 5],
+            ],
+          },
+          {
+            id: 'vitest',
+            name: 'Vitest',
+            seconds: 4,
+            passed: 1,
+            failed: 0,
+            skipped: 0,
+            tests: [['format.test.ts', 'a price in dollars', 'p', 3]],
+          },
+        ],
+      }),
+    })
+  );
+  await openTheYard(page, '/?view=admin');
+  const card = page.getByTestId('tests-card');
+  await expect(card.getByTestId('tests-summary')).toContainText(
+    '3 of 4 tests passed, 1 failed, for 1.0.0.999'
+  );
+  await expect(card.getByTestId('tests-checks')).toHaveText('Prettier passed in 9 s');
+  await expect(card.getByTestId('tests-suite-xunit-sqlite')).toContainText('xUnit on SQLite');
+
+  // A suite with a failure opens by itself, the failure on top; a green one opens on request.
+  const failing = card.getByTestId('tests-list-xunit-sqlite');
+  await expect(failing.locator('tbody tr').first()).toContainText('Lockout');
+  await expect(failing.locator('tbody tr').first()).toContainText('failed');
+  await expect(failing.locator('tbody tr').nth(1)).toContainText('A bid under the reserve');
+  const green = card.getByTestId('tests-list-vitest');
+  await expect(green.locator('tbody tr')).toHaveCount(0);
+  await green.locator('summary').click();
+  await expect(green.locator('tbody tr')).toHaveCount(1);
+
+  // The filter narrows every suite by the words in a test's group or name.
+  await card.getByTestId('tests-filter').fill('auth sign');
+  await expect(failing.locator('tbody tr')).toHaveCount(1);
+  await expect(failing.locator('summary')).toContainText('1 of 3 tests');
+});

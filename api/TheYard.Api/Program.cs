@@ -37,6 +37,9 @@ string contentRoot = builder.Environment.ContentRootPath;
 // `dotnet run`, tests, and published output all working from one line.
 string dataPath = FindUpward(contentRoot, Path.Combine("data", "vehicles.json"));
 string readmePath = FindUpward(contentRoot, "README.md");
+// Every test result from the gate that shipped this build, beside the dataset
+// (ADR: The five-minute gate, the addendum on every check running once).
+string testResultsPath = Path.Combine(Path.GetDirectoryName(dataPath)!, "test-results.json");
 string resumePath = Path.Combine(contentRoot, "wwwroot", "docs", "resume.pdf");
 string manifestPath = Path.Combine(contentRoot, "photo-manifest.json");
 string imagesRoot = Path.Combine(contentRoot, "wwwroot", "images");
@@ -2354,6 +2357,23 @@ app.MapPost("/api/admin/pages", () => pageStatus.TryStart("asked")
     .WithTags("Admin")
     .WithSummary("Check every address this container serves, now");
 // #endregion page-status-wiring
+// #region test-results
+// Every test the ship's gate ran for this build, as the gate wrote it: the
+// suites, their counts and times, and each test with its outcome and its
+// milliseconds. The file ships in the image beside the dataset and is read on
+// each request, because it is small and never changes inside a container.
+// Public like every reading on this tab; the tests are in the public
+// repository already. A build with no file says so rather than inventing one.
+app.MapGet("/api/admin/tests", IResult () => File.Exists(testResultsPath)
+    ? Results.Text(File.ReadAllText(testResultsPath), "application/json")
+    : Results.Problem(
+        detail: "No test results shipped with this build. The ship's gate writes them.",
+        statusCode: StatusCodes.Status404NotFound,
+        title: "No test results"))
+    .WithName("GetTestResults")
+    .WithTags("Admin")
+    .WithSummary("Every test the ship's gate ran for this build, and its result");
+// #endregion test-results
 app.MapGet("/api/admin/proof", () => Results.Json(proof.Status));
 app.MapPost("/api/admin/proof", (int? rounds) => proof.TryStart(rounds ?? ProofRunner.DefaultRounds)
     ? Results.Json(new { status = "running" }, wireFormat, statusCode: StatusCodes.Status202Accepted)

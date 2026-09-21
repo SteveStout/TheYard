@@ -362,9 +362,9 @@ for the listing would be the wrong tool for a health check. No component
 computes an auction fact; that rule is the one that matters, and it holds.
 
 **Nothing ships untested.** Three suites, one per level: pure rules in
-xunit, the browser's logic in Vitest, the real stack in Playwright. CI
-runs all three on every push and the deploy will not fire without them
-(ADR: The tests, explained).
+xunit, the browser's logic in Vitest, the real stack in Playwright. The
+ship's gate runs all three once per version and nothing reaches the
+deploy without them (ADR: The tests, explained).
 
 ## Where a change goes
 
