@@ -425,13 +425,25 @@
   grid-column: 1 / -1;
 }
 
+/* Set off to one side, and never past the column's edge: the offset comes out
+   of the width (Steve's phone, 21 September: at 100% plus a 6% offset the
+   stream photograph ran past the blocks on the right). */
 .prose :global(.author-between) :global(.author-photo) {
-  width: min(100%, 640px);
+  width: min(94%, 640px);
   margin: 0 0 0 6%;
 }
 
 .prose :global(.author-between:nth-of-type(even)) :global(.author-photo) {
   margin: 0 6% 0 auto;
+}
+
+/* On a phone there is no room to set it off: it takes the blocks' width. */
+@media (max-width: 639px) {
+  .prose :global(.author-between) :global(.author-photo),
+  .prose :global(.author-between:nth-of-type(even)) :global(.author-photo) {
+    width: 100%;
+    margin: 0;
+  }
 }
 
 .prose :global(.author-block) h3 {

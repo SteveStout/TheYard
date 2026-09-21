@@ -117,6 +117,29 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     }
   }).toPass({ timeout: 20_000 });
 
+  // A photograph standing between the blocks keeps inside their edges on a phone (Steve's phone,
+  // 2026-09-21: the stream photograph ran past the blocks on the right).
+  await expect(async () => {
+    const edges = await doc.evaluate((dialog) => {
+      const blocks = Array.from(dialog.querySelectorAll('.author-block')).map((block) =>
+        block.getBoundingClientRect()
+      );
+      const between = Array.from(dialog.querySelectorAll('.author-between .author-photo')).map(
+        (photo) => photo.getBoundingClientRect()
+      );
+      return {
+        left: Math.min(...blocks.map((box) => box.left)),
+        right: Math.max(...blocks.map((box) => box.right)),
+        photos: between.map((box) => [box.left, box.right]),
+      };
+    });
+    expect(edges.photos.length).toBeGreaterThanOrEqual(1);
+    for (const [left, right] of edges.photos) {
+      expect(left).toBeGreaterThanOrEqual(edges.left - 1);
+      expect(right).toBeLessThanOrEqual(edges.right + 1);
+    }
+  }).toPass({ timeout: 20_000 });
+
   // Nothing on the page is wider than the phone.
   await expect(async () => {
     const overflow = await doc.evaluate((dialog) => {
