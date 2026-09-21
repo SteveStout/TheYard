@@ -488,6 +488,22 @@
   justify-content: center;
 }
 
+/* The photograph that opens a panel of blocks takes the panel's whole width, as the mock has it. */
+.prose :global(.author-panel) > :global(.author-photo) {
+  margin: var(--space-4) 0 0;
+}
+
+/* The photographer's credit, small print under the panels and outside them. */
+.prose :global(.author-credit) {
+  text-align: center;
+}
+
+.prose :global(.author-credit) p {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
 @media (max-width: 720px) {
   .prose :global(.author-hero),
   .prose :global(.author-blocks),

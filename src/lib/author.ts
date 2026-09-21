@@ -12,7 +12,8 @@
  * What it relies on in the document, and nothing else: second-level headings
  * open the panels, third-level headings open the blocks, a list whose every
  * item is one link is a row of buttons, an image that names one of the
- * page's photographs is that photograph, and a rule opens the closing panel.
+ * page's photographs is that photograph, a rule opens the closing panel, and
+ * a second rule opens the small print under the panels.
  */
 import { photoFigure, photoNamed } from './authorPhotos';
 
@@ -133,7 +134,10 @@ export function layoutAuthor(html: string): string {
   const close =
     closing.length === 0
       ? ''
-      : `<section class="author-panel author-close">${closing.join('')}</section>`;
-  return `<div class="author-page" data-testid="author-page">${top}${panels.join('')}${close}</div>`;
+      : `<section class="author-panel author-close">${closing[0]}</section>`;
+  // A second rule opens the small print under the panels: the photographer's credit.
+  const credit =
+    closing.length < 2 ? '' : `<footer class="author-credit">${closing.slice(1).join('')}</footer>`;
+  return `<div class="author-page" data-testid="author-page">${top}${panels.join('')}${close}${credit}</div>`;
 }
 // #endregion panels

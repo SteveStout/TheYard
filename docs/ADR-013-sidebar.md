@@ -291,6 +291,10 @@ buttons and their 44 pixels, loads every photograph from this site in its frame,
 top edges for the alternation, and holds that nothing on the page is wider than a phone. The
 suite's count of headings is fourteen.
 
+1.0.0.172 added the two photographs of him and Katie that were in the approved mock-up, with his
+yes to publishing them and the photographer's credit under the panels; a phone is never offered a
+file of any photograph wider than 960.
+
 Files this addendum decided about:
 [`docs/AUTHOR.md`](https://github.com/SteveStout/TheYard/blob/main/docs/AUTHOR.md),
 [`src/lib/author.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/author.ts),

@@ -330,6 +330,36 @@ public class AuthorPageTests
             }
         }
 
+        // Every photograph in the list is on the page, so none is cut and served to nobody, and the
+        // credit a photograph carries is on the page while it is.
+        var shown = images.Select(image => Regex.Match(image.Groups[2].Value, @"/images/author/([a-z0-9-]+?)-\d+\.jpg$").Groups[1].Value)
+            .ToHashSet(StringComparer.Ordinal);
+        using (var list = JsonDocument.Parse(PhotoList()))
+        {
+            foreach (JsonElement entry in list.RootElement.EnumerateArray())
+            {
+                string name = entry.GetProperty("name").GetString()!;
+                if (!shown.Contains(name))
+                {
+                    wrong.Add($"{name} is in src/lib/authorPhotos.json and docs/AUTHOR.md does not show it");
+                }
+                if (entry.TryGetProperty("credit", out JsonElement credit) && !Words().Contains(credit.GetString()!, StringComparison.Ordinal))
+                {
+                    wrong.Add($"{name} is on the page and its credit, \"{credit.GetString()}\", is not");
+                }
+                // A phone is never offered a file wider than 960 (PHONE_WIDEST in src/lib/authorPhotos.ts, which
+                // offers a photograph with no tighter crop its own cuts up to that width).
+                if (entry.TryGetProperty("phone", out JsonElement phone)
+                    && phone.GetProperty("widths").EnumerateArray().Any(width => width.GetInt32() > 960))
+                {
+                    wrong.Add($"{name}: its phone cut offers a file wider than 960");
+                }
+            }
+        }
+        if (!Regex.IsMatch(File.ReadAllText(Path.Combine(Root, "src", "lib", "authorPhotos.ts")), @"export const PHONE_WIDEST = 960;"))
+        {
+            wrong.Add("PHONE_WIDEST in src/lib/authorPhotos.ts is not 960: a phone is never offered a file wider than that");
+        }
         // One frame: the markup gives every photograph the class, and the class takes the frame's two tokens.
         string markup = File.ReadAllText(Path.Combine(Root, "src", "lib", "authorPhotos.ts"));
         string sheet = File.ReadAllText(Path.Combine(Root, "src", "components", "DocsMenu.module.css"));

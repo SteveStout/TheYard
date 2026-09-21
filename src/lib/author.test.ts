@@ -65,6 +65,15 @@ describe('the Author page in its shape', () => {
     expect(html).not.toContain('raw.githubusercontent.com');
   });
 
+  it('sets what follows a second rule under the panels, as the small print', () => {
+    const credited = layoutAuthor(`${page}\n<hr>\n<p>Photos by somebody.</p>`);
+    expect(credited.match(/class="author-panel/g)).toHaveLength(3);
+    expect(credited).toContain(
+      '</section><footer class="author-credit">\n<p>Photos by somebody.</p></footer></div>'
+    );
+    expect(html).not.toContain('author-credit');
+  });
+
   it('leaves out a picture that is not one of the page’s photographs', () => {
     const smuggled = layoutAuthor(
       '<h2>Hi</h2><p><img src="https://example.com/somebody.jpg" alt="Somebody"></p>'
@@ -93,7 +102,22 @@ describe('a photograph as markup', () => {
     expect(tight).toBeGreaterThan(-1);
     expect(tight).toBeLessThan(figure.indexOf(`${photo.name}-480.webp`));
     expect(figure).toContain('/api/images/author/tight-cut-960.jpg 960w');
-    expect(photoFigure(photo, 'Alt', null)).not.toContain('media=');
+    const plain = photoFigure({ ...photo, phone: undefined }, 'Alt', null);
+    expect(plain).toContain(
+      `media="(max-width: 720px)" type="image/webp" srcset="/api/images/author/${photo.name}-480.webp 480w`
+    );
+  });
+
+  it('never offers a phone a file wider than 960, and reserves the phone cut its own box', () => {
+    for (const each of AUTHOR_PHOTOS) {
+      const figure = photoFigure(each, 'Alt', null);
+      const phoneSources = figure.match(/<source media="[^"]*"[^>]*>/g) ?? [];
+      expect(phoneSources).toHaveLength(2);
+      for (const source of phoneSources) {
+        expect(source).not.toMatch(/-(1[0-9]{3}|[2-9][0-9]{3})\.(webp|jpg) /);
+        expect(source).toMatch(/ width="960" height="\d+"/);
+      }
+    }
   });
 
   it('reserves the box, waits below the fold, and has no caption it was not given', () => {

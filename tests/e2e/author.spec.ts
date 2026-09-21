@@ -48,9 +48,32 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   }).toPass({ timeout: 20_000 });
   await expect(doc.locator('a[href^="mailto:"], form, input')).toHaveCount(0);
 
-  // Every photograph is served from this site, in the one frame, with words for it and its box reserved.
+  // All four photographs are on the page, in the mock's places: the stream beside the words, the
+  // bridge opening the blocks, the two rabbit pictures side by side, and the credit under the panels.
+  await expect(async () => {
+    const places = await doc.locator('.author-photo').evaluateAll((figures) =>
+      figures.map((figure) => ({
+        name: figure.getAttribute('data-photo'),
+        hero: figure.parentElement?.classList.contains('author-hero') ?? false,
+        opens: figure.parentElement?.classList.contains('author-panel') ?? false,
+        paired: figure.parentElement?.classList.contains('author-pair') ?? false,
+      }))
+    );
+    expect(places).toEqual([
+      { name: 'couple-crossing-stream', hero: true, opens: false, paired: false },
+      { name: 'couple-on-wooden-bridge-wide', hero: false, opens: true, paired: false },
+      { name: 'rabbits-both-lying-on-runner', hero: false, opens: false, paired: true },
+      { name: 'rabbits-both-sitting-hallway', hero: false, opens: false, paired: true },
+    ]);
+  }).toPass({ timeout: 20_000 });
+  await expect(doc.locator('.author-credit')).toHaveText(
+    'Photos of Steve and Katie by McKinley Griggs.'
+  );
+
+  // Every photograph is served from this site, in the one frame, with words for it and its box reserved,
+  // and a phone is never handed a file wider than 960.
   const photos = doc.locator('.author-photo img');
-  expect(await photos.count()).toBeGreaterThan(0);
+  await expect(photos).toHaveCount(4);
   const count = await photos.count();
   for (let index = 0; index < count; index++) {
     // Read as one retried step: the drawer that opened this document lets go of it as it closes, and
@@ -69,31 +92,38 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       expect(read.framed).toBe(true);
       expect(read.alt.length).toBeGreaterThan(15);
       expect(read.natural).toBeGreaterThan(0);
-      expect(read.path).toMatch(/^\/api\/images\/author\//);
+      expect(read.path).toMatch(/^\/api\/images\/author\/[a-z-]+-(480|960)\.(webp|jpg)$/);
+      expect(read.natural).toBeLessThanOrEqual(960);
     }).toPass({ timeout: 20_000 });
   }
 
   // The headed blocks alternate by their order: no two neighbours wear the same top edge.
-  const tops = await doc
-    .locator('.author-block')
-    .evaluateAll((blocks) => blocks.map((block) => getComputedStyle(block).borderTopColor));
-  for (let index = 1; index < tops.length; index++) {
-    expect(tops[index]).not.toBe(tops[index - 1]);
-  }
+  // Read as retried steps, like every read inside a document: it is drawn again a moment after it opens.
+  await expect(async () => {
+    const tops = await doc
+      .locator('.author-block')
+      .evaluateAll((blocks) => blocks.map((block) => getComputedStyle(block).borderTopColor));
+    expect(tops.length).toBeGreaterThanOrEqual(4);
+    for (let index = 1; index < tops.length; index++) {
+      expect(tops[index]).not.toBe(tops[index - 1]);
+    }
+  }).toPass({ timeout: 20_000 });
 
   // Nothing on the page is wider than the phone.
-  const overflow = await doc.evaluate((dialog) => {
-    const wide = Array.from(dialog.querySelectorAll('*')).filter(
-      (element) => element.getBoundingClientRect().right > window.innerWidth + 0.5
-    ).length;
-    return {
-      wide,
-      scroll: dialog.scrollWidth - dialog.clientWidth,
-      width: Math.round(dialog.getBoundingClientRect().width),
-    };
-  });
-  expect(overflow.wide).toBe(0);
-  expect(overflow.scroll).toBeLessThanOrEqual(0);
-  // And the page has the whole phone, as every document does.
-  expect(overflow.width).toBe(375);
+  await expect(async () => {
+    const overflow = await doc.evaluate((dialog) => {
+      const wide = Array.from(dialog.querySelectorAll('*')).filter(
+        (element) => element.getBoundingClientRect().right > window.innerWidth + 0.5
+      ).length;
+      return {
+        wide,
+        scroll: dialog.scrollWidth - dialog.clientWidth,
+        width: Math.round(dialog.getBoundingClientRect().width),
+      };
+    });
+    expect(overflow.wide).toBe(0);
+    expect(overflow.scroll).toBeLessThanOrEqual(0);
+    // And the page has the whole phone, as every document does.
+    expect(overflow.width).toBe(375);
+  }).toPass({ timeout: 20_000 });
 });

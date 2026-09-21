@@ -25,9 +25,14 @@ export type AuthorPhoto = {
   /**
    * A tighter cut of the same photograph for a phone, where a wide picture
    * would draw its people an inch tall. Offered below the phone line and
-   * nowhere else, WebP first like the rest.
+   * nowhere else, WebP first like the rest. `height` is the cut's height at
+   * its widest, so the box is reserved for the shape a phone is actually
+   * drawn. A photograph with no tighter crop is offered to a phone from its
+   * own cuts up to PHONE_WIDEST.
    */
-  phone?: { name: string; widths: number[] };
+  phone?: { name: string; widths: number[]; height?: number };
+  /** The credit line the page must carry while this photograph is on it. */
+  credit?: string;
   /**
    * Why the largest cut is under 1920 wide, for the one kind of picture that
    * may be: a snapshot whose original has no more to give. The gate reads
@@ -51,6 +56,13 @@ export const AUTHOR_PHOTOS: AuthorPhoto[] = manifest.map(({ width, height, ...ph
 
 /** Under the address the API already serves the vehicle photos from, with the same day of caching. */
 const BASE = '/api/images/author';
+
+/**
+ * The widest file a phone is ever offered: its column is under 400 pixels, so
+ * 960 is sharp at more than twice its pixels, and a phone's download for the
+ * whole page stays inside its budget.
+ */
+export const PHONE_WIDEST = 960;
 
 /** The width a phone stops at and a wider layout begins, the same line the page's stylesheet draws. */
 export const PHONE_LINE = '(max-width: 720px)';
@@ -84,15 +96,25 @@ export function photoFigure(
   const setOf = (name: string, widths: number[], format: 'webp' | 'jpg') =>
     widths.map((width) => `${cut(name, width, format)} ${width}w`).join(', ');
   const set = (format: 'webp' | 'jpg') => setOf(photo.name, photo.widths, format);
-  const tight = photo.phone;
+  // A phone takes its tighter cut when there is one, and otherwise this photograph's own cuts up to PHONE_WIDEST.
+  const own = photo.widths.filter((width) => width <= PHONE_WIDEST);
+  const tight = photo.phone ?? {
+    name: photo.name,
+    widths: own,
+    height: Math.round(own[own.length - 1] * photo.ratio),
+  };
+  const phoneBox =
+    tight.height === undefined
+      ? ''
+      : ` width="${tight.widths[tight.widths.length - 1]}" height="${tight.height}"`;
   const phone =
-    tight === undefined
+    tight.widths.length === 0
       ? ''
       : (['webp', 'jpg'] as const)
           .map(
             (format) =>
               `<source media="${PHONE_LINE}" type="image/${format === 'jpg' ? 'jpeg' : format}" ` +
-              `srcset="${setOf(tight.name, tight.widths, format)}" sizes="92vw">`
+              `srcset="${setOf(tight.name, tight.widths, format)}" sizes="92vw"${phoneBox}>`
           )
           .join('');
   const largest = photo.widths[photo.widths.length - 1];

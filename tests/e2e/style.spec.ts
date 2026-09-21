@@ -45,12 +45,15 @@ test('the Style section opens Colour and style, and its swatches are the tokens 
   // And the figures beside it are measured, in the shape the page promises.
   await expect(accent).toContainText(/#[0-9a-f]{6} · \d+\.\d{2} on white · \d+\.\d{2} on grey/);
   // The gradient is a sample of the one token, top to bottom.
+  // Retried like the chip above: the precheck for 1.0.0.172 read this one as the empty string once.
   const gradient = swatches.filter({ hasText: '--gradient-header' });
-  expect(
-    await gradient
-      .locator('.swatch-chip')
-      .evaluate((chip) => getComputedStyle(chip).backgroundImage)
-  ).toContain('linear-gradient');
+  await expect(async () => {
+    expect(
+      await gradient
+        .locator('.swatch-chip')
+        .evaluate((chip) => getComputedStyle(chip).backgroundImage)
+    ).toContain('linear-gradient');
+  }).toPass({ timeout: 20_000 });
   // No picture of swatches anywhere on the page.
   await expect(doc.locator('img')).toHaveCount(0);
 });
