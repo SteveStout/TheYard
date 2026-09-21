@@ -15,6 +15,16 @@ test('every word and every photograph on the inventory is fully solid', async ({
   await expect(page.locator('article img').first()).toBeVisible({ timeout: 30_000 });
   expect(await fadedContent(page)).toEqual([]);
   expect(await quietWordsOnTheBareGround(page)).toEqual([]);
+  // A vehicle card is glass like every other surface: see-through in its ground, itself at full strength.
+  const card = await page
+    .locator('article')
+    .first()
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { colour: style.backgroundColor, opacity: style.opacity };
+    });
+  expect(card.opacity).toBe('1');
+  expect(card.colour).toMatch(/^rgba\(255, 255, 255, 0\.\d+\)$/);
   // And on a vehicle's own page, which puts the most words on the bare ground.
   await page.locator('article button').first().click();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

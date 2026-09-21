@@ -100,7 +100,8 @@ export type DocKey =
   | 'webOverview'
   | 'performance'
   | 'architecture'
-  | 'style';
+  | 'style'
+  | 'colorStyle';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
@@ -331,6 +332,12 @@ export const DOCS: Record<
     title: 'App Architecture',
     menuLabel: 'Architecture overview',
     url: '/api/docs/architecture',
+    kind: 'overview',
+  },
+  colorStyle: {
+    title: 'Colour and style',
+    menuLabel: 'Colour and style',
+    url: '/api/docs/color-style',
     kind: 'overview',
   },
   style: {
@@ -799,6 +806,7 @@ export type MenuVariant =
   | 'stores'
   | 'performance'
   | 'diagrams'
+  | 'look'
   | 'hosting'
   | 'builtWithAi'
   | 'cicd'
@@ -906,6 +914,17 @@ export const MENUS: Record<
     label: 'Diagrams',
     items: [],
     links: DIAGRAMS,
+  },
+  /**
+   * How the site looks, and the rules that keep it looking that way, as a
+   * section of its own (ADR-016, the addendum on the style section): the
+   * colours, where each must not go, the glass look, and swatches drawn from
+   * the token sheet when the page is opened. The rules on it are held by the
+   * gate, so the page describes what the tests enforce.
+   */
+  look: {
+    label: 'Style',
+    items: [{ key: 'colorStyle' }],
   },
   hosting: {
     label: 'Hosting',
@@ -1042,6 +1061,7 @@ export const MENU_ORDER: MenuVariant[] = [
   'stores',
   'performance',
   'diagrams',
+  'look',
   'hosting',
   'builtWithAi',
   'cicd',

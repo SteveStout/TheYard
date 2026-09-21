@@ -12,7 +12,7 @@
 }
 
 .dialog::backdrop {
-  background: rgba(94, 86, 83, 0.45);
+  background: var(--scrim);
 }
 
 /* #region phone-dialog */
@@ -219,3 +219,57 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* #region swatches */
+/* The swatches on the Colour and style page (ADR-016, the addendum on the
+   style section). The markup is written by src/lib/swatches.ts into a served
+   document, so these names are global; every colour on a chip is the token
+   itself, painted by the chip's own style. */
+.prose :global(.swatches) {
+  list-style: none;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.prose :global(.swatch) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--text-xs);
+}
+
+.prose :global(.swatch-wide) {
+  grid-column: 1 / -1;
+}
+
+.prose :global(.swatch-chip) {
+  display: block;
+  height: 56px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.prose :global(.swatch-label) {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.prose :global(.swatch-figures) {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.prose :global(.swatch-missing) :global(.swatch-chip) {
+  border-style: dashed;
+}
+/* #endregion swatches */

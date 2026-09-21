@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { contrast } from '../lib/contrast';
 import tokens from './tokens.css?raw';
 
 /**
@@ -13,23 +14,6 @@ function token(name: string): string {
   const match = tokens.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`));
   if (!match) throw new Error(`tokens.css has no six-digit hex value for --${name}`);
   return match[1];
-}
-
-function channel(hex: string, offset: number): number {
-  const value = parseInt(hex.slice(offset, offset + 2), 16) / 255;
-  return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-}
-
-/** Relative luminance, per WCAG 2.x. */
-function luminance(hex: string): number {
-  const h = hex.replace('#', '');
-  return 0.2126 * channel(h, 0) + 0.7152 * channel(h, 2) + 0.0722 * channel(h, 4);
-}
-
-/** The WCAG contrast ratio between two hex colors, 1:1 up to 21:1. */
-export function contrast(a: string, b: string): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
 }
 
 // #region site-palette

@@ -53,6 +53,12 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The server owns the clock and every derived fact, and no request names a day | ADR: Three readers with no memory of the project | AuctionScheduleTests |
 | Sold is decided before every other bid rule, for everybody | ADR: Accounts and per-user bids | BidRulesTests |
 | Every public endpoint is in the API document with an operation id, a summary, its responses and its lock, and no operator endpoint is | ADR: The API describes itself | ApiDocumentTests |
+| No stylesheet or component carries a raw colour; every colour is a token in the one sheet | ADR: The palette | StyleRulesTests |
+| Every hex on the Colour and style page is a token's value, every colour token is on the page, and every contrast figure it states is the figure the tokens give and clears its bar | ADR: The palette | StyleRulesTests |
+| A chart series is never a status colour, and a line takes a status tone only for server errors | ADR: The Admin tab, as a product | StyleRulesTests |
+| Gold is trim: only the header, the brand mark and the named trim use it, never a chart's line, a tile or a ring | ADR: The palette | StyleRulesTests |
+| There is one header gradient, defined once, and every header bar uses it | ADR: The palette | StyleRulesTests |
+| Nothing that holds a word or an image is faded, a quiet word is never on the bare ground, and the browser suite and the token test that hold those are still there | ADR: The glass look | StyleRulesTests |
 
 ## How the table is read
 

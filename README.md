@@ -212,7 +212,9 @@ each with its own changelog line and, where it decided something, its own record
   marked for rendering the served documents, and highlight.js for their code samples. The grounds and the text are Figma's Urban slate, gray
   and brown, under an accent of teal, dark green and gold, on glass panels over one soft
   watermark, with every text and ground pair measured against WCAG AA by a unit
-  test, the watermark at its worst included, and Poppins from Google Fonts (the one external asset) with a system fallback.
+  test, the watermark at its worst included. How it looks, and the rules that keep it
+  looking that way, are the Style section in the sidebar (`docs/COLOR-STYLE.md`), with
+  swatches drawn from the token sheet and the rules held by `StyleRulesTests` in the gate, and Poppins from Google Fonts (the one external asset) with a system fallback.
 - **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheYard.Data`
   (the pure data records, no dependencies), `TheYard.Domain` (photo selection, auction
   schedule, filter and bid rules), `TheYard.Application` (the `InventoryService` and
@@ -448,7 +450,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (570 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (577 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -475,7 +477,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (82 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (83 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a

@@ -86,6 +86,7 @@
   --color-success-soft: #dcfce7;
   --color-warning: #b45309;
   --color-warning-soft: #fef3c7;
+  --color-warning-border: #f5d48a; /* the hairline round a notice on the warning's soft ground; a mark, not text */
   --color-danger: #b91c1c;
   --color-danger-soft: #fee2e2;
   --color-neutral-soft: #e4e0e1;
@@ -169,6 +170,9 @@
   --watermark-opacity: 0.1;
   --radius-glass: 10px;
   /* #endregion glass */
+
+  /* What dims the page behind a dialog or the drawer: the brown-gray, see-through. */
+  --scrim: rgba(94, 86, 83, 0.45);
 
   /* Motion */
   --transition-fast: 150ms ease;

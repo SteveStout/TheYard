@@ -3,9 +3,12 @@
    header, in the surface color so it reads as part of the chrome rather than
    as content, with two segments: the site this is, and a link to the other
    site drawn as the other half of the same control. */
+/* A glass band, like every other surface: the watermark is behind it too. */
 .bar {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .inner {

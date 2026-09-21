@@ -17,15 +17,19 @@
 
 .title {
   margin: 0;
+  padding-bottom: var(--space-1);
+  border-bottom: 3px solid var(--color-gold);
   color: var(--color-heading);
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
 }
 
 .back {
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
-  background: var(--color-surface);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   color: var(--color-text);
   padding: 6px 14px;
   font-size: var(--text-sm);
@@ -44,9 +48,12 @@
 }
 
 .panel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--glass-shadow);
   padding: var(--space-5);
   max-width: 560px;
   /* Centred. A 560px card pinned to the left of a 1200px canvas reads as a

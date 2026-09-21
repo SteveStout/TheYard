@@ -12,6 +12,8 @@
  */
 import { marked } from 'marked';
 import { highlight, grammarFor } from './highlight';
+import { swatchSheet } from './swatches';
+import tokenSheet from '../styles/tokens.css?raw';
 
 // #region doc-links
 // Links in a served document lead out of the app (GitHub, a diagram page), so
@@ -41,6 +43,10 @@ marked.use({
   renderer: {
     code({ text, lang }) {
       const name = (lang ?? '').trim().split(/\s+/)[0];
+      // A `swatches` fence is not code: it is a list of tokens, drawn as a
+      // sheet of swatches from the token sheet itself (ADR-016, the addendum on
+      // the style section).
+      if (name === 'swatches') return swatchSheet(text, tokenSheet);
       const grammar = grammarFor(name);
       const className = grammar ? `hljs language-${grammar}` : 'hljs';
       return `<pre><code class="${className}">${highlight(text, name)}</code></pre>\n`;

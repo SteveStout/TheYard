@@ -51,6 +51,7 @@ test.describe('the docked rail', () => {
       'SQL vs Cosmos DB',
       'Performance',
       'Diagrams',
+      'Style',
       'Hosting',
       'Built with AI',
       'CI/CD',
@@ -144,10 +145,11 @@ test.describe('the docked rail', () => {
     const rail = page.getByTestId('side-rail');
     const sections = rail.locator('details');
 
-    // Twelve headings and nothing else: the rail arrives as a table of contents
+    // Thirteen headings and nothing else: the rail arrives as a table of contents
     // rather than as a hundred rows (ADR: The sidebar, the addendum on
-    // collapsing every section; the twelfth is the API reference, 1.0.0.137).
-    await expect(sections).toHaveCount(12);
+    // collapsing every section; the twelfth is the API reference, 1.0.0.137,
+    // and the thirteenth is Style, 1.0.0.170).
+    await expect(sections).toHaveCount(13);
     await expect(rail.locator('details[open]')).toHaveCount(0);
     await expect(rail.getByRole('button', { name: 'Hosting overview' })).toHaveCount(0);
 

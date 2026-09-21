@@ -190,5 +190,11 @@ drawn, and a test now reads every SVG for it (ADR: Docs and testing, the
 addendum on the provenance stamp). The rule it leaves behind: a file that was
 copied is verified the way a file that was built is, by reading it back.
 
+One more was earned on 21 September, from a colour: a rule on a page is followed until the first
+session that does not read the page. Any session that touches a colour or a surface here reads the
+Style section first, [Colour and style](https://theyard.stevenstout.biz/?doc=color-style), and a
+session that does not still cannot ship a violation, because `StyleRulesTests` holds the page's
+rules in the gate and fails with a sentence that says what to do.
+
 That loop is the reason this repository is worth reading. The AI made it
 possible to run it many times in a day. The loop still had to run.

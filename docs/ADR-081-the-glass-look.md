@@ -136,6 +136,31 @@ document store", in five pictures and the records that quote them. Moving the st
 page and not in the drawings would be the half move the palette's record rules out. They move
 together, in their own ship.
 
+## Addendum, 2026-09-21 (1.0.0.170): every surface, not only the Admin tab's
+
+Steve, an hour after 1.0.0.169 went live, looking at the inventory: "Don't forget to style the
+inventory and the tabs the same way as Admin. I think the background and the transparency are
+missing." He was right, and the cause was a decision in this record. To save a phone the cost of a
+blur, 1.0.0.169 left the hundred vehicle cards solid white, and with them the panels of a vehicle's
+page, the account tab's card and the store bar, which nobody had decided at all. A page of solid
+white cards over a watermark is a page with no watermark: the drawing was only visible in the
+gutters, and the inventory read as the old site with a new header.
+
+The cost that mattered was the blur, not the see-through. So the see-through went everywhere and the
+blur stayed where it is cheap:
+
+- **A vehicle card is glass without the blur**, the way the Admin tab's wide cards are. Its ground
+  is white at two thirds, its border the hairline teal, its photograph solid.
+- **A vehicle's page, the bid panel, the account tab's card, the store bar** and the two notices an
+  empty or failed inventory shows are glass with the blur: there are few of them on a page.
+- **The Account tab's title takes the gold underline** and its Back button is glass, as the Admin
+  tab's are, because two tabs that look different are two applications.
+- The side rail stays solid, and the documents' dialog stays solid white: it is for reading.
+
+The worst-case arithmetic does not change. A word inside a card without a blur has the same colour
+behind it at worst as one inside a card with one, and `glass.spec.ts` now holds that a vehicle card's
+ground is see-through and the card itself is at full strength.
+
 ## Files
 
 - [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the glass tokens and their three fallbacks, beside the palette.

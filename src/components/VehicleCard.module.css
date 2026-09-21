@@ -1,12 +1,16 @@
+/* A glass panel without the blur (ADR: The glass look, the addendum on every
+   surface): there are a hundred of these on a page and a blur is paid for by
+   the pixel, so the card is see-through in its ground only. The photograph in
+   it is solid, as every photograph is. */
 .card {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow);
   transition:
     box-shadow var(--transition-fast),
     transform var(--transition-fast),
@@ -95,7 +99,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-glass);
 }
 
 .titleLink:focus-visible {

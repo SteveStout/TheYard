@@ -31,6 +31,7 @@ test('the drawer lists every menu, opens a doc full-screen, and closes on Escape
   for (const section of [
     'App Architecture',
     'Performance',
+    'Style',
     'Hosting',
     'Built with AI',
     'CI/CD',

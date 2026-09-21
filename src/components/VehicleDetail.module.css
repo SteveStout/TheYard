@@ -142,7 +142,7 @@
   align-items: center;
   gap: var(--space-4);
   background: var(--color-warning-soft);
-  border: 1px solid #f5d48a;
+  border: 1px solid var(--color-warning-border);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   color: var(--color-warning);
@@ -150,11 +150,13 @@
 }
 
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
   padding: var(--space-5);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow);
 }
 
 .sectionTitle {
