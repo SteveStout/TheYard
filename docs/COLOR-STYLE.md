@@ -209,11 +209,11 @@ and one inline SVG, so it costs no request.
 - **The ribbons** sweep in an S-curve down the left of the content, teal and gold, from the right
   edge of the side rail: the rail's width token when it is docked, its collapsed width when it is
   collapsed, and the screen's edge on a phone, where the rail is the drawer and the ribbons stand
-  back a little. Highlight strands in pale gold, two soft star flares and seventy twinkling sparks
-  sit on them. The faint watermark stays in front of them.
-- **They cost almost nothing to draw**: the whole drawing drifts on one transform, the sparks and
-  flares change only their opacity, nothing that moves carries a blur, the sparks glow through a
-  gradient, and a reader who asked for less motion gets none. Asked for less transparency, forced
+  back a little. Highlight strands in pale gold, two soft star flares and seventy sparks sit on
+  them. The faint watermark stays in front of them.
+- **Nothing moves** (Steve, 21 September: a minimal site that looks good): the drawing is painted
+  once, placed and centred by the stylesheet alone, and costs nothing after the first paint.
+  Asked for less transparency, forced
   colours or a printed page, and there are no ribbons, as there is no watermark.
 - **Panels, words and pictures are untouched** and fully solid. Every word is measured against the
   ground's darkest stop as well as the page grey.

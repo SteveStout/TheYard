@@ -19,10 +19,6 @@ function rules(css: string): [string, string][] {
   ]);
 }
 
-const animated = rules(sheet).filter(
-  ([selector, body]) => /animation:(?!\s*none)/.test(body) && !/^(from|to|\d)/.test(selector)
-);
-
 describe('the ribbon ground', () => {
   it('is the approved drawing, whole', () => {
     expect(RIBBONS).toHaveLength(13);
@@ -36,40 +32,17 @@ describe('the ribbon ground', () => {
     expect(bytes).toBeLessThan(12_000);
   });
 
-  it('moves the whole drawing on a transform, and nothing inside it moves on anything but opacity', () => {
-    expect(animated.map(([selector]) => selector).sort()).toEqual(
-      ['.drawing', '.flareGroup', '.sparks circle'].sort()
-    );
-    expect(rules(sheet).find(([selector]) => selector === '.drawing')?.[1]).toMatch(
-      /will-change:\s*transform/
-    );
-    const frames = Array.from(sheet.matchAll(/@keyframes\s+(\w+)\s*\{([\s\S]*?\}\s*)\}/g));
-    for (const [, name, body] of frames) {
-      if (name === 'drift') expect(body).toMatch(/transform/);
-      else expect(body).not.toMatch(/transform/);
+  it('does not move: no animation, no transition, no keyframes, painted once', () => {
+    for (const [selector, body] of rules(sheet)) {
+      expect(body, selector).not.toMatch(/animation|transition|will-change/);
     }
+    expect(sheet).not.toMatch(/@keyframes/);
+    expect(component).not.toMatch(/<animate|requestAnimationFrame|setInterval/);
   });
 
-  it('puts no blur on anything that moves: the sparks glow through their gradient', () => {
-    for (const [selector, body] of animated) {
-      expect(body, selector).not.toMatch(/filter/);
-    }
-    expect(component).not.toMatch(/className=\{styles\.flareGroup\}[^>]*filter=/);
-    expect(component).toMatch(/fill="url\(#ribbon-spark\)"/);
-    const sparks = component.slice(component.indexOf('SPARKS.map'));
-    expect(sparks.slice(0, sparks.indexOf('))}'))).not.toMatch(/filter/);
-  });
-
-  it('stops every motion when the visitor asks for less', () => {
-    const reduced = sheet.slice(sheet.indexOf('prefers-reduced-motion'));
-    const block = reduced.slice(
-      0,
-      reduced.indexOf('@media', 10) > 0 ? reduced.indexOf('@media', 10) : undefined
-    );
-    for (const [selector] of animated) {
-      expect(block, selector).toContain(selector);
-    }
-    expect(block).toMatch(/animation:\s*none/);
+  it('is one drawing, centred by the stylesheet alone', () => {
+    expect(component.match(/<svg/g)).toHaveLength(1);
+    expect(sheet).toMatch(/\[data-rail='open'\]\) \.drawing \{[^}]*left: var\(--rail-width\)/);
   });
 
   it('fetches nothing: every url in it is one of its own gradients or filters', () => {

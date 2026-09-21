@@ -49,7 +49,7 @@ export const FLARES: Flare[] = [
   [212, 748, 30, 44, 26, 1, 3],
 ];
 
-/** A spark: centre, radius, twinkle delay in seconds. */
+/** A spark: centre, radius, and the twinkle delay it kept from when the ground moved (unused). */
 export const SPARKS: [cx: number, cy: number, r: number, delay: number][] = [
   [474, 65, 5.3, 0.6],
   [530, 819, 2.4, 0.2],

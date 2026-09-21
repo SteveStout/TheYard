@@ -95,9 +95,9 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
       };
     });
 
-  // A desk: the rail is docked, and the ribbons start where it ends, give or take the drift.
-  // The suite opens every page asking for less motion (playwright.config.ts); this test asks for it back.
-  // And every spec opens with the ground hidden (tests/e2e/app.ts); this one keeps it.
+  // A desk: the rail is docked, and the ribbons start where it ends.
+  // Every spec opens with the ground hidden (tests/e2e/app.ts); this one keeps it. It stands
+  // still for every reader, not only one who asked for less motion, so the page asks for none.
   await page.addInitScript(() => {
     (window as unknown as { __yardRibbons?: boolean }).__yardRibbons = true;
   });
@@ -114,7 +114,7 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
     expect(desk.words).toBe('');
     expect(desk.railRight).toBeGreaterThan(0);
     expect(Math.abs(desk.left - desk.railRight)).toBeLessThanOrEqual(40);
-    expect(desk.animation).not.toBe('none');
+    expect(desk.animation).toBe('none');
   }).toPass({ timeout: 20_000 });
 
   // The Admin tab and a document keep it: it lives in the shell, not in a view.
@@ -132,10 +132,7 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
     expect(Math.abs(phone.left)).toBeLessThanOrEqual(40);
   }).toPass({ timeout: 20_000 });
 
-  // Asked for less motion, nothing moves.
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(async () => {
-    expect((await read()).animation).toBe('none');
-  }).toPass({ timeout: 10_000 });
+  // Nothing moves on a phone either.
+  expect((await read()).animation).toBe('none');
   expect(pictures).toEqual([]);
 });

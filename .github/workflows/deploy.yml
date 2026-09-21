@@ -124,7 +124,6 @@ jobs:
             APP_VERSION=${{ env.APP_VERSION }}
             APP_COMMIT=${{ env.APP_COMMIT }}
           cache-from: type=gha,scope=theyard
-          cache-to: type=gha,scope=theyard,mode=max
           provenance: false
       # #endregion build-cache
 
@@ -263,3 +262,23 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion verify
 
+      # #region cache-export
+      # The build cache is written after the site answers, not inside the build:
+      # exporting every layer (mode=max) took about a minute between the image
+      # reaching the registry and the roll starting (measured on f5b81c4: the
+      # second site found the tag 59 s before this site began to roll). The same
+      # build again is all cache hits on this runner, so this step only uploads.
+      - name: Keep the build cache
+        if: always()
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          outputs: type=cacheonly
+          build-args: |
+            APP_VERSION=${{ env.APP_VERSION }}
+            APP_COMMIT=${{ env.APP_COMMIT }}
+          cache-from: type=gha,scope=theyard
+          cache-to: type=gha,scope=theyard,mode=max
+          provenance: false
+      # #endregion cache-export

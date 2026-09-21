@@ -1,14 +1,13 @@
-import type { CSSProperties } from 'react';
 import { FLARES, RIBBONS, SHINE, SPARKS } from '../lib/ribbons';
 import styles from './Ribbons.module.css';
 
 /**
  * The teal and gold ribbons behind the page (ADR: The glass look, the addendum
  * on the ribbon ground): one layer of inline SVG, fixed behind everything, from
- * the rail's edge. It is code and not a picture, so it costs no request. The
- * whole drawing drifts on a transform, the sparks twinkle and the two flares
- * pulse on their opacity; the two soft glows sit on the ribbons and the
- * highlight strands, which never move on their own. Every colour is a token,
+ * the rail's edge. It is code and not a picture, so it costs no request.
+ * Nothing in it moves (Steve, 2026-09-21: "No ribbon movement at all it should
+ * center only with CSS, we want a minimal website"): it is painted once and
+ * centred in the content area by the stylesheet alone. Every colour is a token,
  * set on a gradient's stops by the stylesheet. It holds no words.
  */
 const GRADIENT = {
@@ -83,44 +82,25 @@ export function Ribbons() {
             <path key={d} d={d} stroke="url(#ribbon-highlight)" strokeWidth={width} />
           ))}
         </g>
-      </svg>
-      {/* What moves inside the drawing is drawn apart from the blurred ribbons: a change inside one SVG repaints all of it. */}
-      <svg
-        className={styles.drawing}
-        viewBox="-370 0 1440 900"
-        preserveAspectRatio="xMidYMid slice"
-        focusable="false"
-      >
         <g>
-          {FLARES.map(([x, y, r, across, down, width, delay]) => (
+          {FLARES.map(([x, y, r, across, down, width]) => (
             <g
               key={`${x},${y}`}
-              className={styles.flareGroup}
               transform={`translate(${x},${y})`}
-              style={{ '--d': `${delay}s` } as CSSProperties}
+              filter="url(#ribbon-shine-blur)"
             >
-              {/* The pulse is on this group and the glow on the one inside it, so nothing that moves carries a blur. */}
-              <g filter="url(#ribbon-shine-blur)">
-                <circle r={r} fill="url(#ribbon-flare)" />
-                <path
-                  className={styles.star}
-                  d={`M${-across},0 L${across},0 M0,${-down} L0,${down}`}
-                  strokeWidth={width}
-                />
-              </g>
+              <circle r={r} fill="url(#ribbon-flare)" />
+              <path
+                className={styles.star}
+                d={`M${-across},0 L${across},0 M0,${-down} L0,${down}`}
+                strokeWidth={width}
+              />
             </g>
           ))}
         </g>
         <g className={styles.sparks}>
-          {SPARKS.map(([cx, cy, r, delay]) => (
-            <circle
-              key={`${cx},${cy}`}
-              cx={cx}
-              cy={cy}
-              r={r}
-              fill="url(#ribbon-spark)"
-              style={{ '--d': `${delay}s` } as CSSProperties}
-            />
+          {SPARKS.map(([cx, cy, r]) => (
+            <circle key={`${cx},${cy}`} cx={cx} cy={cy} r={r} fill="url(#ribbon-spark)" />
           ))}
         </g>
       </svg>

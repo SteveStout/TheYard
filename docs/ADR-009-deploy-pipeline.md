@@ -186,3 +186,10 @@ Steve's to prune.
 
 ```live path=.github/workflows/deploy.yml region=build-cache
 ```
+
+## Addendum, 2026-09-21: the cache is written after the roll
+
+The build step used to write every layer to the build cache (mode=max) before it returned, and the roll waited on it. On f5b81c4 the second site found the new tag in the registry 59 s before this site began to roll: that minute was the cache upload. The build now reads the cache and pushes the image, the site rolls and answers, and a last step builds the same thing again, all cache hits on the same runner, and writes the cache for the next version. A failed roll still writes it.
+
+```live path=.github/workflows/deploy.yml region=cache-export
+```
