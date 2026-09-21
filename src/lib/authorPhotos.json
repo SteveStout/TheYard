@@ -1,0 +1,18 @@
+[
+  {
+    "name": "rabbits-both-lying-on-runner",
+    "widths": [480, 960, 1600],
+    "width": 1600,
+    "height": 1288,
+    "sizes": "(max-width: 720px) 92vw, 480px",
+    "narrowBecause": "a phone snapshot cropped tight to the two rabbits: 1600 is every pixel the crop has"
+  },
+  {
+    "name": "rabbits-both-sitting-hallway",
+    "widths": [480, 960, 1600],
+    "width": 1600,
+    "height": 1470,
+    "sizes": "(max-width: 720px) 92vw, 480px",
+    "narrowBecause": "a phone snapshot cropped tight to the two rabbits: 1600 is every pixel the crop has"
+  }
+]

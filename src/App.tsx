@@ -815,6 +815,7 @@ export default function App() {
             <section aria-label="Vehicle inventory">
               <IntroStrip
                 resumeHref={LINKS.resume.href}
+                onOpenAuthor={() => openDocument('author')}
                 onOpenBuilt={() => openDocument('architecture')}
                 onOpenAdmin={openAdmin}
               />

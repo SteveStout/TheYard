@@ -59,6 +59,8 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Gold is trim: only the header, the brand mark and the named trim use it, never a chart's line, a tile or a ring | ADR: The palette | StyleRulesTests |
 | There is one header gradient, defined once, and every header bar uses it | ADR: The palette | StyleRulesTests |
 | Nothing that holds a word or an image is faded, a quiet word is never on the bare ground, and the browser suite and the token test that hold those are still there | ADR: The glass look | StyleRulesTests |
+| The Author page holds no address, phone number, email address, age, wedding or engagement, and none of the private names and dates kept off it, which are held as digests so the test does not publish them | ADR: The sidebar | AuthorPageTests |
+| Every photograph the Author page serves is a file with no metadata, of the width its `srcset` claims, 1920 wide or with its reason written down, with an alt text, in the one frame; the headed blocks alternate by order; nothing else is in the folder | ADR: The sidebar | AuthorPageTests |
 
 ## How the table is read
 

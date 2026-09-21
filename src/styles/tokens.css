@@ -169,6 +169,12 @@
   --glass-shadow: 0 8px 24px rgba(2, 67, 69, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
   --watermark-opacity: 0.1;
   --radius-glass: 10px;
+  /* The one frame every photograph on the Author page wears: a gold hairline
+     outside a deep teal border, and a soft teal shadow. One token, so every
+     picture changes together (ADR: The sidebar, the addendum on the author's
+     section). */
+  --frame-photo-border: 3px solid var(--color-teal-deep);
+  --frame-photo-shadow: 0 0 0 1.5px var(--color-gold), 0 8px 22px rgba(2, 67, 69, 0.22);
   /* #endregion glass */
 
   /* What dims the page behind a dialog or the drawer: the brown-gray, see-through. */

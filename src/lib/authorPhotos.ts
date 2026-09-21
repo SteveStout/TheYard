@@ -1,0 +1,112 @@
+/**
+ * The photographs on the Author page (ADR: The sidebar, the addendum on the
+ * author's section). Each is
+ * served as a responsive set, the way the inventory's photos are (ADR:
+ * Responsive photos): several widths of one cut, WebP first and JPEG behind
+ * it, so a phone takes a small file and a dense or large screen takes a sharp
+ * one, and a picture is never drawn larger than its file. The files are cut
+ * by scripts/author_photos.mjs, which strips every photograph's metadata, and
+ * the originals never enter the repository.
+ *
+ * No React in here: what each picture is, how wide its cuts are, and the
+ * markup that serves them.
+ */
+import manifest from './authorPhotos.json';
+
+export type AuthorPhoto = {
+  /** The file's stem under /images/author, and the name a document uses for it. */
+  name: string;
+  /** Every width a cut exists at, narrowest first. The largest is the file's real width. */
+  widths: number[];
+  /** Height over width, so the box is reserved before the file arrives and nothing jumps. */
+  ratio: number;
+  /** How wide the picture is drawn, for the browser to choose a cut by. */
+  sizes: string;
+  /**
+   * A tighter cut of the same photograph for a phone, where a wide picture
+   * would draw its people an inch tall. Offered below the phone line and
+   * nowhere else, WebP first like the rest.
+   */
+  phone?: { name: string; widths: number[] };
+  /**
+   * Why the largest cut is under 1920 wide, for the one kind of picture that
+   * may be: a snapshot whose original has no more to give. The gate reads
+   * this, so a photograph cannot be served small by forgetting.
+   */
+  narrowBecause?: string;
+};
+
+// #region photos
+/**
+ * The list is a JSON file and not a literal here because three things read
+ * it: this page, the script that cuts the files, and the gate's test that
+ * holds the files to it. One list, so a width the page offers is a file the
+ * script wrote and the test opened.
+ */
+export const AUTHOR_PHOTOS: AuthorPhoto[] = manifest.map(({ width, height, ...photo }) => ({
+  ...photo,
+  ratio: height / width,
+}));
+// #endregion photos
+
+/** Under the address the API already serves the vehicle photos from, with the same day of caching. */
+const BASE = '/api/images/author';
+
+/** The width a phone stops at and a wider layout begins, the same line the page's stylesheet draws. */
+export const PHONE_LINE = '(max-width: 720px)';
+
+const escape = (text: string) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/** A cut's address: the stem, its width, its format. */
+export function cut(name: string, width: number, format: 'webp' | 'jpg'): string {
+  return `${BASE}/${name}-${width}.${format}`;
+}
+
+/** The stem a document's image address names, or null when it is not one of these photographs. */
+export function photoNamed(address: string): AuthorPhoto | null {
+  const stem = address.match(/\/images\/author\/([a-z0-9-]+?)-\d+\.(?:jpg|webp)$/)?.[1];
+  return AUTHOR_PHOTOS.find((photo) => photo.name === stem) ?? null;
+}
+
+/**
+ * One photograph as markup: a figure in the one quiet frame every picture on
+ * the page wears, a picture element offering WebP before JPEG at every width,
+ * the box's size set, and the caption under it when there is one. Below the
+ * fold unless told otherwise, so it loads when it is scrolled to.
+ */
+export function photoFigure(
+  photo: AuthorPhoto,
+  alt: string,
+  caption: string | null,
+  eager = false
+): string {
+  const setOf = (name: string, widths: number[], format: 'webp' | 'jpg') =>
+    widths.map((width) => `${cut(name, width, format)} ${width}w`).join(', ');
+  const set = (format: 'webp' | 'jpg') => setOf(photo.name, photo.widths, format);
+  const tight = photo.phone;
+  const phone =
+    tight === undefined
+      ? ''
+      : (['webp', 'jpg'] as const)
+          .map(
+            (format) =>
+              `<source media="${PHONE_LINE}" type="image/${format === 'jpg' ? 'jpeg' : format}" ` +
+              `srcset="${setOf(tight.name, tight.widths, format)}" sizes="92vw">`
+          )
+          .join('');
+  const largest = photo.widths[photo.widths.length - 1];
+  const middle = photo.widths[Math.min(1, photo.widths.length - 1)];
+  return (
+    `<figure class="author-photo" data-photo="${escape(photo.name)}">` +
+    `<picture>` +
+    phone +
+    `<source type="image/webp" srcset="${set('webp')}" sizes="${escape(photo.sizes)}">` +
+    `<img class="author-frame" src="${cut(photo.name, middle, 'jpg')}" srcset="${set('jpg')}" sizes="${escape(photo.sizes)}" ` +
+    `alt="${escape(alt)}" width="${largest}" height="${Math.round(largest * photo.ratio)}" ` +
+    `loading="${eager ? 'eager' : 'lazy'}" decoding="async">` +
+    `</picture>` +
+    (caption === null || caption === '' ? '' : `<figcaption>${escape(caption)}</figcaption>`) +
+    `</figure>`
+  );
+}

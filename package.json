@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "images:resize": "node scripts/resize_photos.mjs",
+    "images:author": "node scripts/author_photos.mjs",
     "lint": "oxlint --deny-warnings",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"*.ts\" \"scripts/**/*.mjs\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"*.ts\" \"scripts/**/*.mjs\"",

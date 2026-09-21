@@ -223,3 +223,79 @@ files.
 
 ```live path=src/components/SideNav.tsx region=section-shell
 ```
+
+
+## Addendum, 2026-09-21: a fourteenth section, for the author, shipped as 1.0.0.171
+
+Everything in the sidebar was about the site, and nothing was about the person who built it. The
+reader this site is for is a recruiter or a hiring manager deciding whether to start a
+conversation, and a conversation is with somebody. So the last section, right under About, is
+**Author**, with one page in it, **About Steven**: who he is at work in three sentences, three ways
+to reach him, the rest of his life in small headed blocks, a closing line. The intro strip over the
+inventory gained a fourth link, "Who built this", which opens it.
+
+**The words are his.** They live in `docs/AUTHOR.md`, a served document like every other, so the
+catalogue test, the page sweep and the house voice read it. He edits a draft and approves the
+text. 1.0.0.171 carries the draft, shipped at his word so that he could review it on the live
+page, and his edits follow it. Nothing about him or his family reaches the page any other way: an
+image the document names is shown only if it is one of the photographs in
+`src/lib/authorPhotos.json`, and any other is left out by the layout.
+
+**It is a page and not a letter, and the document stays a document.** A panel with buttons, blocks
+two to a row and photographs side by side are not things markdown can say. A component with the
+words typed into it would take the words out of the documents, where the tests read them and where
+he edits them. So the layout is a function, `src/lib/author.ts`, over the HTML the one renderer
+already wrote: second-level headings open the panels, third-level headings open the blocks, a list
+in which every item is one link is a row of buttons, a rule opens the closing panel. It arrives on
+demand with the renderer, so the inventory's first load pays nothing for it. The dialog is wider for
+this one page and stays solid, as every document's is.
+
+```live path=src/lib/author.ts region=panels
+```
+
+**What is deliberately not on it, and why.** The page grew from an introduction he once wrote to a
+new team, which was private and is dated. Left out because they go stale: an age, and anything that
+was true on one date. Left out because they are somebody else's: the names of private people other
+than the one he approved, and anybody from a former employer. Left out because they place his home:
+a street, a neighbourhood, a phone number, any email address. There is no contact form and no
+address to harvest: the resume, LinkedIn and GitHub are the three ways to reach him. `AuthorPageTests`
+holds all of it, each rule with its reason. The few exact words that must never appear are held as
+salted digests and not as text, because the test is as public as the page, and a list of what to
+keep off the page, written out, would publish it.
+
+**The photographs.** Served the way the inventory's are (ADR: Responsive photos): several widths of
+one cut, WebP before JPEG, the real width of every file in the `srcset`, the box reserved so
+nothing jumps, lazy below the fold, from `/api/images/author` with the same day of caching.
+`scripts/author_photos.mjs` cuts them from originals that stay outside the repository, refuses to
+scale one up, and reads every file back to prove it holds no EXIF, XMP, IPTC or colour profile: a
+phone's photograph knows where it was taken, and this page must not. The same test opens every
+file in the gate, checks its real width against the list, and fails on any file in the folder that
+the list does not name. The floor for a photograph's largest cut is 1920 pixels. The two snapshots
+of the rabbits are 1600, and the list says why: they are cropped tight so the room is not the
+subject, and 1600 is every pixel the crop has.
+
+**The frame and the blocks.** Every photograph wears one frame, from two tokens,
+`--frame-photo-border` and `--frame-photo-shadow`: a 3 pixel deep teal border, a gold hairline
+outside it, 8 pixel corners, a soft teal shadow. All gold on the pictures was tried and was too
+much. The gold went to the headed blocks instead: each has a 3 pixel top edge, gold then teal then
+gold, by the block's place on the page. No block carries a colour class, so an edit to the
+document cannot leave two neighbours the same. Gold there is trim on a white card with no amber
+near it, which is the job the style page gives it; the panels keep the dark green left edge and the
+dark green rule with its gold tick.
+
+```live path=src/components/DocsMenu.module.css region=author-alternation
+```
+
+The browser suite opens the page from the rail and from the phone's drawer, counts the three
+buttons and their 44 pixels, loads every photograph from this site in its frame, reads the blocks'
+top edges for the alternation, and holds that nothing on the page is wider than a phone. The
+suite's count of headings is fourteen.
+
+Files this addendum decided about:
+[`docs/AUTHOR.md`](https://github.com/SteveStout/TheYard/blob/main/docs/AUTHOR.md),
+[`src/lib/author.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/author.ts),
+[`src/lib/authorPhotos.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/authorPhotos.ts) and
+[`src/lib/authorPhotos.json`](https://github.com/SteveStout/TheYard/blob/main/src/lib/authorPhotos.json),
+[`scripts/author_photos.mjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/author_photos.mjs),
+[`api/TheYard.Tests/AuthorPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthorPageTests.cs) and
+[`tests/e2e/author.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/author.spec.ts).

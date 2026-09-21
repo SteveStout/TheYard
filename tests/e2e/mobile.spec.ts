@@ -38,6 +38,7 @@ test('the drawer lists every menu, opens a doc full-screen, and closes on Escape
     'Best Practices',
     'Changelog',
     'About',
+    'Author',
   ]) {
     await expect(drawer.getByRole('heading', { name: section, exact: true })).toBeVisible();
   }
@@ -203,6 +204,7 @@ test('the first screen on a phone says what this is, who built it and where the 
   // Everything pressable in the strip, and the hamburger over it, is a full 44 pixel target.
   for (const target of [
     resume,
+    page.getByTestId('intro-author'),
     page.getByTestId('intro-built'),
     page.getByTestId('intro-admin'),
     page.getByTestId('intro-dismiss'),

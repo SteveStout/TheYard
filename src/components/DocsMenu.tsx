@@ -101,7 +101,8 @@ export type DocKey =
   | 'performance'
   | 'architecture'
   | 'style'
-  | 'colorStyle';
+  | 'colorStyle'
+  | 'author';
 
 /** What a doc is. The phone drawer picks each row's icon from this (ADR-011 addendum). */
 export type DocKind = 'overview' | 'adr' | 'infra' | 'changelog';
@@ -766,6 +767,12 @@ export const DOCS: Record<
     kind: 'adr',
     number: '081',
   },
+  author: {
+    title: 'About Steven',
+    menuLabel: 'About Steven',
+    url: '/api/docs/author',
+    kind: 'overview',
+  },
   aiDevelopment: {
     title: 'How this was built',
     menuLabel: 'How this was built',
@@ -812,7 +819,8 @@ export type MenuVariant =
   | 'cicd'
   | 'practices'
   | 'records'
-  | 'changelog';
+  | 'changelog'
+  | 'author';
 
 export type MenuEntry = { key: DocKey; sub?: boolean };
 
@@ -864,6 +872,17 @@ export const MENUS: Record<
   about: {
     label: 'About',
     items: [{ key: 'readme' }, { key: 'aiDevelopment' }],
+  },
+  /**
+   * The person behind the site, as the last section, right under About (ADR:
+   * The sidebar, the addendum on the author's section). One page, and it is
+   * a served document like every other, so the page sweep checks it and the
+   * house tests read it; what makes it a page rather than a letter is
+   * src/lib/author.ts, which gives the rendered words their shape.
+   */
+  author: {
+    label: 'Author',
+    items: [{ key: 'author' }],
   },
   // #region architecture-menu
   architecture: {
@@ -1069,6 +1088,7 @@ export const MENU_ORDER: MenuVariant[] = [
   'records',
   'changelog',
   'about',
+  'author',
 ];
 // #endregion MENU_ORDER
 
@@ -1173,7 +1193,11 @@ export function DocDialog({
         // like every other hashed file, so the second document pays nothing.
         const { renderDocument } = await import('../lib/markdown');
         // #endregion renderer-on-demand
-        const html = await renderDocument(markdown);
+        const rendered = await renderDocument(markdown);
+        // The Author page is the one document with a shape of its own: panels,
+        // blocks, buttons and photographs, laid over the same rendered words.
+        const html =
+          key === 'author' ? (await import('../lib/author')).layoutAuthor(rendered) : rendered;
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })
@@ -1183,7 +1207,7 @@ export function DocDialog({
   return (
     <dialog
       ref={dialogRef}
-      className={styles.dialog}
+      className={activeDoc === 'author' ? `${styles.dialog} ${styles.dialogWide}` : styles.dialog}
       aria-label={DOCS[activeDoc].title}
       onClose={onClose}
       onClick={(event) => {

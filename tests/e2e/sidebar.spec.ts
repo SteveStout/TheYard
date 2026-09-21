@@ -58,6 +58,7 @@ test.describe('the docked rail', () => {
       'Best Practices',
       'Changelog',
       'About',
+      'Author',
     ]) {
       await expect(rail.getByRole('heading', { name: section, exact: true })).toBeVisible();
     }
@@ -145,11 +146,12 @@ test.describe('the docked rail', () => {
     const rail = page.getByTestId('side-rail');
     const sections = rail.locator('details');
 
-    // Thirteen headings and nothing else: the rail arrives as a table of contents
+    // Fourteen headings and nothing else: the rail arrives as a table of contents
     // rather than as a hundred rows (ADR: The sidebar, the addendum on
     // collapsing every section; the twelfth is the API reference, 1.0.0.137,
-    // and the thirteenth is Style, 1.0.0.170).
-    await expect(sections).toHaveCount(13);
+    // the thirteenth is Style, 1.0.0.170, and the fourteenth is Author,
+    // 1.0.0.171).
+    await expect(sections).toHaveCount(14);
     await expect(rail.locator('details[open]')).toHaveCount(0);
     await expect(rail.getByRole('button', { name: 'Hosting overview' })).toHaveCount(0);
 

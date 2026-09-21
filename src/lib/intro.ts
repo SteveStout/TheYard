@@ -3,10 +3,12 @@
  * who the first screen is for). Somebody who tapped a link in a post lands on
  * a phone with about ten seconds, and the first screen was a store switch and
  * a column of filters: nothing said what this is, who built it or where the
- * resume is. One sentence and three links say it, and the strip goes away for
- * good when it is dismissed.
+ * resume is. One sentence and its links say it, and the strip goes away for
+ * good when it is dismissed. The second link, to the person who built it,
+ * came with the Author page (ADR: The sidebar, the addendum on the author's
+ * section).
  *
- * No React in here: the words, the three places the links go, and the one
+ * No React in here: the words, the places the links go, and the one
  * remembered fact, behind a storage that may be missing or blocked.
  */
 export const INTRO = {
@@ -14,6 +16,7 @@ export const INTRO = {
     'Steven Stout’s working demo: a used-vehicle auction site on .NET and React, 100,000 vehicles, live on Azure, with its decisions written down.',
   links: [
     { key: 'resume', label: 'Resume (PDF)' },
+    { key: 'author', label: 'Who built this' },
     { key: 'built', label: 'How it is built' },
     { key: 'admin', label: 'Live Admin tab' },
   ],

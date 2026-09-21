@@ -3,7 +3,7 @@ import { INTRO, dismissIntro, introDismissed, type IntroLink } from '../lib/intr
 import styles from './IntroStrip.module.css';
 
 /**
- * One sentence and three links over the inventory (ADR: The glass look, the
+ * One sentence and four links over the inventory (ADR: The glass look, the
  * addendum on who the first screen is for), for somebody who arrived from a
  * post with no idea what this is. It never covers the inventory, it is a
  * region with a name so a screen reader can skip it, and once dismissed it
@@ -19,10 +19,12 @@ function browserStore(): Storage | undefined {
 
 export function IntroStrip({
   resumeHref,
+  onOpenAuthor,
   onOpenBuilt,
   onOpenAdmin,
 }: {
   resumeHref: string;
+  onOpenAuthor: () => void;
   onOpenBuilt: () => void;
   onOpenAdmin: () => void;
 }) {
@@ -30,6 +32,7 @@ export function IntroStrip({
   if (dismissed) return null;
 
   const act: Record<Exclude<IntroLink, 'resume'>, () => void> = {
+    author: onOpenAuthor,
     built: onOpenBuilt,
     admin: onOpenAdmin,
   };

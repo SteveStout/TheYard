@@ -10,11 +10,11 @@ const memory = () => {
 };
 
 describe('the intro strip', () => {
-  it('says what this is and who built it in one sentence, and offers three ways on', () => {
+  it('says what this is and who built it in one sentence, and offers four ways on', () => {
     expect(INTRO.sentence).toContain('Steven Stout');
     expect(INTRO.sentence).toMatch(/auction site/);
     expect(INTRO.sentence.split('. ').length).toBe(1);
-    expect(INTRO.links.map((link) => link.key)).toEqual(['resume', 'built', 'admin']);
+    expect(INTRO.links.map((link) => link.key)).toEqual(['resume', 'author', 'built', 'admin']);
   });
 
   it('stays dismissed in a browser that remembers', () => {

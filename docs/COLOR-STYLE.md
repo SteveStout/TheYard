@@ -78,8 +78,10 @@ a scroll, and every target in it is at least 44 pixels tall.
 
 - **Job:** trim. The lightning mark, the rule under the header, the site name on the header, the
   underline of a page's title, a short tick at the start of a section's rule, a ring round the
-  chosen button. Gold light reads 7.98 on the dark green and 5.06 on the header teal, so it is safe
-  as text anywhere on the header.
+  chosen button, the hairline outside a photograph's frame on the Author page, and the top edge
+  of every other headed block there, where the card is white and no amber is near. Gold light
+  reads 7.98 on the dark green and 5.06 on the header teal, so it is safe as text anywhere on the
+  header.
 - **Not for:** anything on white that carries meaning. On white the two read 2.19 and 1.81, under
   3.0: never text, never a line on a chart, never the top of a tile, and never beside the amber
   "worth a look", where gold reads as a warning.
