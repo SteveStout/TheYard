@@ -60,8 +60,9 @@ export default defineConfig({
     // stands still. Measured 2026-09-21: headless Chrome draws the moving
     // ground in software, the approved drawing took a whole core per open
     // page, and with the ribbons moving the gate's browser pass went from
-    // 4.4 to 13.9 minutes and timed out. glass.spec.ts turns the motion back
-    // on for the one test that checks it moves.
+    // 4.4 to 13.9 minutes and timed out. Since 1.0.0.180 the
+    // ribbons do not move for anybody, and glass.spec.ts checks that they
+    // stand still for every reader.
     reducedMotion: 'reduce',
     // #endregion reduced-motion
   },

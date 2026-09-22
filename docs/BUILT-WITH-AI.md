@@ -18,7 +18,7 @@ The choices a tool cannot make, each with its record.
 - The hosting path under a free-trial subscription: Container Instances behind an edge for TLS for the
   first three weeks, then both sites on one App Service plan once the memory and the bill were on the same
   page and the quota wall turned out to be a region, with Front Door still designed and still refused
-  (HOSTING.md, ADR-006, ADR-007, ADR-079).
+  (HOSTING.md, ADR-004, ADR-007, ADR-079).
 - A second store on Cosmos DB beside Azure SQL, the same image on both, and the bar it had to clear: as
   fast as SQL Server on a different data structure at the lowest cost (ADR-058, ADR-059).
 - One container running both stores with a store toggle at the top of every page, then a permanent address
@@ -31,9 +31,9 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 588 xUnit tests, 118 Vitest tests at 1.0.0.150 and 86 Playwright tests. The ship
-gate runs the API suite against both stores and was measured at 275 seconds green on a quiet machine, 302
-to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068). A push that fails the gate does not roll.
+**The test gate.** Every version runs all three suites once, in the ship's gate: 588 xUnit tests, 212 Vitest tests at 1.0.0.182 and 86 Playwright tests. The ship
+gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
+to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the latest gate, on 1.0.0.182, took 493 seconds. A push that fails the gate does not roll.
 
 **The records.** Eighty-one decision records, each carrying the decision, the trade-off and the number behind
 it, with a Files section pointing at the code it governs. Code shown in a record is read from the running build, so a
@@ -74,7 +74,7 @@ default cost 16.07 request units a document on the bulk seed against 8.84 tuned,
 - **Warming both catalogues before serving turned a two-minute suite into a thirty-minute crawl** that
   looked like a hang. Only the default store warms before serving now (ADR-066).
 - **A per-commit changelog line once invented a version that never shipped**, because two commits pushed
-  together are one deploy. The ship gate reads the live run number now (ADR-012 addendum).
+  together are one deploy. The version is read from the changelog's top line now (ADR-031).
 
 ## How to check any of this yourself
 

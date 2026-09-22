@@ -20,7 +20,7 @@ Deploy builds the container image, pushes it to Azure Container Registry,
 and rolls it onto the first site's web app, and on the same push a second
 named Deploy Cosmos waits for that image and rolls it onto the second site's,
 the two rolls side by side, with no human in the loop. Both sites share one App Service plan (ADR: One plan, two sites). The workflow signs in to Azure with a token GitHub mints for this one
-repository's main branch, so no password or key is stored anywhere. The
+repository's main branch, so no Azure password or key is stored anywhere. The
 version in the page footer is stamped by that build. The full record is
 ADR: The deploy pipeline, below this entry in the menu.
 
@@ -105,8 +105,8 @@ URL, and every deploy so far has been gated on it.
 
 ## Files
 
-- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the three suites as jobs.
+- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the three suites and the SQL project build as four jobs behind it, on a pull request.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Deploy workflow, step by step.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the template Deploy renders and rolls.
+- [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites Deploy rolls (the roll sets the image and four settings).
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image Deploy builds.
 - [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): the line every version writes for itself.

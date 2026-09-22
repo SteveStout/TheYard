@@ -107,8 +107,9 @@ that names a correction he made frames it as the rule it produced.
 - Four spaces in C#, two in TypeScript, CSS and JSON. UTF-8 everywhere;
   the files that carry a byte-order mark or CRLF keep them, because
   rewriting a file's encoding is a diff nobody asked for.
-- Lines wrap around 100 characters in C# and 100 in TypeScript. Prose in
-  the documents wraps at about 76 so a diff of a paragraph is readable.
+- Lines wrap around 120 characters in C# and 100 in TypeScript. Prose in
+  the documents wraps at 100 (`max_line_length = 100` for Markdown in
+  `.editorconfig`) so a diff of a paragraph is readable.
 - One statement per line; no single-line `if` bodies without braces.
 - Prose in this repository, including these documents and every commit
   message, uses no em dashes. That is the house voice, not a style

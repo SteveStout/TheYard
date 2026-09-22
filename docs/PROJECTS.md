@@ -1,6 +1,6 @@
 # Projects
 
-Seven pieces, listed inside-out. Each may only depend on the ones above it.
+Eleven pieces, listed inside-out. Each may only depend on the ones above it.
 
 ## TheYard.Data
 
@@ -8,6 +8,10 @@ The innermost ring and the language every other layer speaks: the pure data reco
 `Vehicle` exactly as it appears in `data/vehicles.json`, and `PhotoEntry` from the photo
 manifest. Sealed records, value equality, zero dependencies, zero behavior. If it
 computes anything, it doesn't belong here.
+
+## TheYard.Database
+
+The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is.
 
 ## TheYard.Domain
 
@@ -24,22 +28,35 @@ The use cases, and the seams. `InventoryService` loads the dataset once and answ
 search/facet/by-id queries by composing Domain rules; `BidService` holds the buyer's
 bid state, read from the database at startup and written through on every accepted
 bid, and applies it *before* filtering so prices never disagree with the
-UI. Both consume data through ports (`IVehicleSource`, `IPhotoManifestSource`): the
+UI. Both consume data through ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`): the
 interfaces that make Infrastructure swappable and the tests trivial to fake.
 
 ## TheYard.Infrastructure
 
-The adapters behind those ports: `JsonFileVehicleSource` and
-`JsonFilePhotoManifestSource` deserialize the files on disk, and
+The adapters behind those ports: EF Core over Azure SQL Database or SQLite for the
+catalogue, the photo manifest, accounts and bids; `JsonFileVehicleSource` and
+`JsonFilePhotoManifestSource`, which deserialize the files on disk that seed a fresh database; and
 `SyntheticVehicleSource` decorates a source to expand 200 seeds into 100,000
 deterministic records, proof the port design works, since nothing above it changed when
 the dataset grew 500×.
+
+## TheYard.Infrastructure.Cosmos
+
+The same three ports and the account store over Azure Cosmos DB, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs).
+
+## TheYard.Migrations.Sqlite
+
+The SQLite schema's history, applied by the process that uses it.
+
+## TheYard.Experiment
+
+A console tool: seeds the 100,000-document catalogue and runs the partition key's query set in paired rounds (ADR: The partition key).
 
 ## TheYard.Api
 
 The composition root and nothing more: `Program.cs` wires the dependency graph and
 declares every HTTP route, `VehicleQueryParams` binds and validates GET parameters,
-`Clocks` resolves the client's midnight anchor, and `VehicleWire` stamps server-derived
+`Clocks` builds the request's clock (now, and the UTC midnight that began the day, the same for every caller), and `VehicleWire` stamps server-derived
 auction facts onto each outgoing vehicle. Endpoints contain no logic, only binding and
 delegation.
 
@@ -48,7 +65,7 @@ delegation.
 One suite per ring: Domain rules with fixed clocks, Application services with in-memory
 fakes at the ports, Infrastructure against both fixtures and the real dataset, and
 integration tests that boot the actual host in-memory (`WebApplicationFactory`) to
-verify routes, parameters, error paths, and the full bid lifecycle: 139 tests, no
+verify routes, parameters, error paths, and the full bid lifecycle: 588 tests, no
 running server required.
 
 ## Frontend (src/)
@@ -74,7 +91,7 @@ React + TypeScript, deliberately thin. No business math runs in the browser:
     CURRENCY/LOCALE constant).
 - `styles/tokens.css`: every color, space, radius, type, and shadow token. The
   Urban slate palette lives here (ADR-016): a light gray ground, brown-gray
-  text, a slate-blue accent, every text and ground pair measured against WCAG
+  text, a teal accent with dark green and gold (ADR-016, addendum), every text and ground pair measured against WCAG
   AA by a unit test. A reskin is one file.
 - `tests/e2e/` (repo root): Playwright smokes that prove the whole stack end to end.
 

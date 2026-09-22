@@ -115,15 +115,16 @@ there are two containers on the same stores now, so the site's real ceiling
 is two windows, 240 an hour across both; a durable bound belongs with the
 origin lock (ADR-054).
 
-**The hop from the edge to the origins is plain HTTP on port 8080.** The
-visitor's connection is TLS to the edge, and the edge reaches each container
-over the same public origin anybody can reach, in clear text, which is where
-the session cookie travels between them. The cookie is marked Secure on the
-visitor's side because the forwarded header says the visitor's leg was TLS;
-the origin's own leg is not. TLS at the origin and the origin lock are the
-same missing subscription named above, and the accounts record admits this
-hop; this page did not until a reader with no context noticed the omission
-(ADR: Three readers with no memory of the project).
+**The hop from the edge to the origins is HTTPS, and the origins are still
+open.** The visitor's connection is TLS to the edge, and since 1.0.0.156 the
+edge reaches each site over HTTPS as well, at its own `azurewebsites.net` name
+on the certificate Azure manages for that domain, so the session cookie is
+encrypted on both legs. Until then the origin was a container group with no
+TLS listener and this hop was plain HTTP on port 8080, which the accounts
+record admitted and this page did not until a reader with no context noticed
+the omission (ADR: Three readers with no memory of the project). What is still
+missing is the origin lock: anybody can reach those names directly, which is
+the same missing subscription named above.
 
 **`POST /api/errors/client` is anonymous.** A crash in the page should reach the
 same place a crash in the server does. Its message and stack are bounded, and

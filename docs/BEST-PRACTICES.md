@@ -27,7 +27,7 @@ footer displays exactly that.
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
   walk the code.
-- **Decisions get written down.** Twenty-nine ADRs record why the architecture is
+- **Decisions get written down.** Eighty-one ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.
@@ -69,10 +69,11 @@ footer displays exactly that.
 - **The system reports on itself.** The Admin tab in the sidebar shows live
   health checks, Azure's own view of the container, and recent server
   errors, public on purpose. Recorded in ADR: Observability.
-- **Merges deploy themselves.** A green CI run on main builds the image,
-  pushes it, and rolls the container with no human step and no stored
-  secret, signed in through OIDC with least-privilege roles. Recorded in
-  ADR: The deploy pipeline, under the CI/CD menu.
+- **Merges deploy themselves.** A green gate's push to main builds the
+  image, pushes it, and rolls both sites with no human step, signed in
+  through OIDC with least-privilege roles; the only stored secrets are the
+  session signing key and the operator's key the roll hands the sites.
+  Recorded in ADR: The deploy pipeline, under the CI/CD menu.
 - **Every version gets its sentence.** One file, one line per shipped
   version, newest first, written by the commit that ships it and checked by
   the deploy that mints the number. Served as the Changelog menu; recorded in
@@ -115,7 +116,7 @@ footer displays exactly that.
   test holds the manifest and the image directory to the naming the browser
   relies on. Recorded in ADR: Responsive photos.
 - **The accessibility rules a machine can check are checked on every run.**
-  axe holds six views to WCAG 2.1 AA inside the browser suite. Its first run
+  axe holds nine views to WCAG 2.1 AA inside the browser suite. Its first run
   found two serious contrast failures on the busiest elements on the page, in
   a repository that already had a passing contrast test, because that test
   holds the colour pairs somebody listed and a stylesheet composes whatever it

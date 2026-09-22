@@ -22,9 +22,9 @@ walks that file top to bottom.
 | `GET /api/vehicles` (filter/sort/page params) | `InventoryService.Search` |
 | `GET /api/vehicles/{id}` | `InventoryService.GetById` |
 | `GET /api/facets` | `InventoryService.Facets` |
-| `POST /api/vehicles/{id}/bids` | `BidService.PlaceBid` → `BidRules` |
-| `POST /api/vehicles/{id}/buy-now` | `BidService.BuyNow` → `BidRules` |
-| `GET` / `DELETE /api/bids` | `BidService.Snapshot` / `Reset` |
+| `POST /api/vehicles/{id}/bids` | `BidService.PlaceBidAsync` → `BidRules` |
+| `POST /api/vehicles/{id}/buy-now` | `BidService.BuyNowAsync` → `BidRules` |
+| `GET` / `DELETE /api/bids` | `BidService.SnapshotFor` / `ResetAsync` |
 | `GET /api/docs/{slug}` · `/api/docs/diagrams/{name}` | the documents catalog and the diagram pages (ADR-017, ADR-020) |
 | `GET /api/docs/bicep` · `/api/docs/resume` | files on disk |
 | `GET /api/images/{file}` | static files (day-long `Cache-Control`) |
@@ -34,9 +34,10 @@ walks that file top to bottom.
 
 ## The read path
 
-1. **Seed.** `data/vehicles.json` (the challenge's 200 records, untouched) is read once
-   at startup by `JsonFileVehicleSource` (`api/TheYard.Infrastructure/JsonFileSources.cs`),
-   deserializing into the `Vehicle` record, which lives with the other pure data shapes
+1. **Seed.** The catalogue is read once at startup from the store, Azure SQL Database,
+   Azure Cosmos DB or SQLite; `data/vehicles.json` (the challenge's 200 records, untouched)
+   seeds a fresh store on first boot through `JsonFileVehicleSource`
+   (`api/TheYard.Infrastructure/JsonFileSources.cs`), deserializing into the `Vehicle` record, which lives with the other pure data shapes
    in `api/TheYard.Data/`.
 2. **Scale.** `SyntheticVehicleSource` (`api/TheYard.Infrastructure/SyntheticVehicleSource.cs`)
    expands it to 100,000 deterministic variants: each new id is hashed (FNV-1a,
@@ -84,7 +85,7 @@ walks that file top to bottom.
    `api/TheYard.Application/BidService.cs`, under the signed-in account's id (ADR:
    Accounts and per-user bids); rejections return 400 with a human-readable reason the
    panel shows.
-4. The response carries the updated vehicle (fresh `min_next_bid` included); the client
-   (`src/hooks/useBids.ts`) clears the query cache and refetches, so lists, filters, and
+4. The response carries the updated vehicle (fresh `min_next_bid` included); `src/lib/data.ts`
+   clears the query cache and the client (`src/hooks/useBids.ts`) refetches, so lists, filters, and
    totals all reflect the new bid, because the overlay in read-step 4 feeds the same
    pipeline every read uses.

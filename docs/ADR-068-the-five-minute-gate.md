@@ -265,7 +265,7 @@ the new version at 12:36:46, and the whole cycle, gate to live look, 907
 seconds with the build cache still empty. The file then named the next two
 things to try, and the first take of 1.0.0.174 tried both: the Admin tab's
 browser spec, one file of twenty-three tests on one worker, declared
-parallel as the scans are, and the six live Cosmos DB tests moved beside
+parallel as the scans are, and the seven live Cosmos DB tests moved beside
 the xUnit pass on SQLite. Measured, the gate went from 417 seconds to 619,
 the browser pass on SQLite from 211 to 365, three of the live tests timed
 out and one phone test found a real defect of this version's own. On this

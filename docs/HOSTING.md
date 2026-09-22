@@ -9,7 +9,7 @@ included, is served from these menus; nothing requires opening the repository.
 
 ## The picture
 
-[![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to a web app on the App Service plan on Azure; a merge through CI and Deploy to the registry and the roll; and Azure Front Door, designed, parameterized and still refused](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
+[![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to a web app on the App Service plan on Azure; a green gate's push through Deploy to the registry and the roll; and Azure Front Door, designed, parameterized and still refused](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 
 *A preview. [Open the infrastructure diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 to zoom in and follow it; every diagram on this site opens that way (ADR: Diagram pages).*

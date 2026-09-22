@@ -36,19 +36,20 @@ flowchart LR
     MI["Managed identity<br/>id-theyard-ss"]
     AI["Application Insights<br/>appi-theyard-ss"]
     LAW[("Log Analytics<br/>log-theyard-ss, 0.1 GB cap")]
+    ACI2["Web app for containers, the second site<br/>on the same plan, the same image, Cosmos DB by default"]
   end
 
   subgraph sql["Azure, resource group RG-THEYARD-SS, West US 3"]
     SQL[("Azure SQL Database<br/>sqldb-theyard-ss-basic, Basic, 5 DTU<br/>catalogue, photo manifest, accounts, bids")]
   end
 
-  subgraph cosmos["Azure, resource group RG-THEYARD-SS, the second site and its store in West US 2"]
-    ACI2["Web app for containers, the second site<br/>on the same plan, the same image, Cosmos DB by default"]
+  subgraph cosmos["Azure Cosmos DB, the second site's store, West US 2"]
     COSMOS[("Azure Cosmos DB<br/>cosmos-theyard-ss, free tier, no keys<br/>the same four things, as documents")]
-    ACI2 -->|managed identity| COSMOS
-    ACI2 -->|managed identity| SQL
-    ACI2 <-->|/api/admin/peer, 2.5 s patience| ACI
   end
+
+  ACI2 -->|managed identity| COSMOS
+  ACI2 -->|managed identity| SQL
+  ACI2 <-->|/api/admin/peer, 2.5 s patience| ACI
 
   subgraph box["Inside the container"]
     API["ASP.NET Core minimal API, .NET 10"]
@@ -310,7 +311,7 @@ knows nothing about the ones around it.
 | `api/TheYard.Infrastructure.Cosmos` | The same three ports and the account store over Azure Cosmos DB, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). | Application, Infrastructure |
 | `api/TheYard.Experiment` | A console tool: seeds the 100,000-document catalogue and runs the partition key's query set in paired rounds (ADR: The partition key). | Infrastructure, Infrastructure.Cosmos |
 | `api/TheYard.Migrations.Sqlite` | The SQLite schema's history, applied by the process that uses it. | Infrastructure |
-| `api/TheYard.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | all of the above |
+| `api/TheYard.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | Application, Infrastructure, Infrastructure.Cosmos, Migrations.Sqlite (Domain and Data through them) |
 | `src/` | The browser: rendering, formatting, countdowns, URL state, one fetch seam. | the wire only |
 
 The test for whether a layer is earning its place is whether something can

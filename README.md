@@ -28,7 +28,7 @@ it has sent and how long the database took.
 ![The Yard inventory on a laptop: the docked sidebar of documents and decision records beside the vehicle grid](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg)
 
 Everything about how it is built and hosted is served from inside the running app, under
-App Architecture, API Reference, SQL vs Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD
+App Architecture, API Reference, SQL vs Cosmos DB, Performance, Diagrams, Style, Hosting, Built with AI, CI/CD
 and Best Practices in the sidebar. Eighty-one decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
@@ -216,7 +216,7 @@ each with its own changelog line and, where it decided something, its own record
   watermark, with every text and ground pair measured against WCAG AA by a unit
   test, the watermark at its worst included. How it looks, and the rules that keep it
   looking that way, are the Style section in the sidebar (`docs/COLOR-STYLE.md`), with
-  swatches drawn from the token sheet and the rules held by `StyleRulesTests` in the gate, and Poppins from Google Fonts (the one external asset) with a system fallback.
+  swatches drawn from the token sheet and the rules held by `StyleRulesTests` in the gate, and Poppins, served from the site's own `/assets`, with a system fallback; no external asset.
 - **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheYard.Data`
   (the pure data records, no dependencies), `TheYard.Domain` (photo selection, auction
   schedule, filter and bid rules), `TheYard.Application` (the `InventoryService` and
@@ -274,9 +274,9 @@ each with its own changelog line and, where it decided something, its own record
   both be told the truth about it.
 - **Navigation:** every view is a GET URL. Filters, sorts, the open vehicle and the Admin
   tab are all shareable, deep-linkable and browser-Back friendly, with no router.
-- **A sidebar that documents the app from inside it:** About, App Architecture, API Reference, SQL vs
-  Cosmos DB, Performance, Diagrams, Hosting, Built with AI, CI/CD, Best Practices, Decision
-  Records and Changelog, holding the
+- **A sidebar that documents the app from inside it:** App Architecture, API Reference, SQL vs
+  Cosmos DB, Performance, Diagrams, Style, Hosting, Built with AI, CI/CD, Best Practices, Decision
+  Records, Changelog, About and Author, holding the
   architecture and style pages, the two stores side by side, the data flow,
   infrastructure, entity relationship, two-sites and store comparison diagrams on their
   own zoomable pages, eighty-one decision records in one numbered index, the Bicep
@@ -471,7 +471,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (118 Vitest tests at 1.0.0.150):** presentation logic only, since the API owns the rules.
+**Frontend (212 Vitest tests at 1.0.0.182):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,
@@ -491,9 +491,9 @@ form creates an account that survives a reload and a bid made under it appears i
 account's list, and axe holds nine views to WCAG 2.1 AA including both halves of the
 account page. Run with `npm run test:e2e` (launches both servers itself, uses your
 installed Chrome). All three suites run once per version in the ship gate, and only a green gate
-pushes to `main`, which deploys. The six tests that need the real Cosmos DB account run in the
+pushes to `main`, which deploys. The seven tests that need the real Cosmos DB account run in the
 same gate, beside the whole API suite booted a second time on Cosmos DB; CI, which runs the
-suites on a pull request and has no Azure credential, filters those six out.
+suites on a pull request and has no Azure credential, filters those seven out.
 
 ADR: The tests, explained walks all three suites for a developer new to the stack.
 
@@ -513,8 +513,9 @@ The four promises this section made when the build started have all shipped:
    finding written down as kept, fixed or deferred, and the fixes shipped with tests.
    Recorded in ADR: The staff review.
 4. **Hosting.** Live on Azure with HTTPS, a container built and rolled by GitHub Actions
-   on every green push, and the production design (App Service behind Front Door) written
-   in Bicep and deliberately undeployed, with the reason recorded.
+   on every green push, and the App Service plan and both sites described in Bicep, with
+   Azure Front Door behind a parameter that stays off while the subscription refuses it,
+   the reason recorded.
 
 Four more came off the list afterwards, on time that was no longer the deadline's:
 
@@ -550,7 +551,7 @@ What is genuinely still open, in priority order:
 - An audit with a real screen reader, which is a person's job rather than a checklist's;
   the keyboard path is walkable and held by tests, and axe now holds every view to
   WCAG 2.1 AA on every run, which is the mechanical half of the same question
-- A real image pipeline (srcset, blur-up placeholders) once photography replaces the
+- A real image pipeline (blur-up placeholders) once real photography replaces the
   representative stock photos
 
 ## Running with Docker
