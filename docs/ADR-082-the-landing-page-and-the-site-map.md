@@ -27,6 +27,10 @@ Every address shared before 1.0.1.0 opened the inventory, so the rule is that an
 - The rail's pinned block is one row taller with Inventory in it, so on a screen 900 px tall the section list scrolls sooner. The list already scrolled on shorter screens, and Author is the large tile on the landing page.
 - Admin's "Back to inventory" goes back in history, which is the landing page when Admin was opened from it. The label is Admin's own and is left for a later change.
 
+## Addendum, 2026-09-22 (1.0.1.1): a Home row
+
+Steve: "you also need the dashboard on the navigation". The site map's first action is Home, a sidebar row and not a tile, which opens the landing page and is the current row while it shows, so the rail says where the reader is on the landing page as it does everywhere else. The brand still goes home too. He chose the label Home over Dashboard, which could read as the Admin tab's figures.
+
 ## Files
 
 - [`src/lib/siteMap.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/siteMap.ts): the one structure.

@@ -58,6 +58,7 @@ export function RowIcon({ kind, className }: { kind: RowKind; className?: string
  * drawn in one hand. Five reuse a row icon's path; the rest are new.
  */
 const NAV_PATHS: Record<NavIcon, string> = {
+  home: 'M3.5 9.5 10 4l6.5 5.5M5.5 8v7.5a1 1 0 0 0 1 1h2.5v-4.5h2v4.5h2.5a1 1 0 0 0 1-1V8',
   inventory:
     'M3.5 12.5v-2l1.8-4a1.5 1.5 0 0 1 1.4-1h6.6a1.5 1.5 0 0 1 1.4 1l1.8 4v2a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM3.5 10.5h13M6 15.5v-2M14 15.5v-2',
   architecture: 'M3.5 3.5h5v5h-5zM11.5 3.5h5v5h-5zM3.5 11.5h5v5h-5zM11.5 11.5h5v5h-5z',

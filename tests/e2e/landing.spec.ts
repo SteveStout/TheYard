@@ -87,8 +87,15 @@ test.describe('the docked rail', () => {
     const rail = page.getByTestId('side-rail');
     const headings = await rail.locator('summary h2').allTextContents();
     expect(headings.length).toBe(MENU_ORDER.length);
+    // The landing page's own row is the first one, current while it shows (Steve: "you also need the dashboard on the navigation").
+    await expect(rail.locator('[aria-current="page"]')).toHaveText('Home');
     await rail.getByRole('button', { name: 'Inventory', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Inventory' })).toBeVisible();
     await expect(rail.locator('[aria-current="page"]')).toHaveText('Inventory');
+    await rail.getByRole('button', { name: 'Home', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })
+    ).toBeVisible();
+    await expect(rail.locator('[aria-current="page"]')).toHaveText('Home');
   });
 });

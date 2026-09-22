@@ -775,6 +775,7 @@ export default function App() {
         drawerOpen={drawerOpen}
         onDrawerClose={() => setDrawerOpen(false)}
         onHome={goHome}
+        homeOpen={!inventoryOpen && !adminOpen && !accountOpen && !selectedVehicle && !openDocKey}
         inventoryOpen={
           inventoryOpen && !adminOpen && !accountOpen && !selectedVehicle && !openDocKey
         }

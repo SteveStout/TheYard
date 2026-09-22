@@ -34,6 +34,7 @@ export type MenuVariant =
 
 /** The tile and row icons, drawn in SheetIcons.tsx on the same 20 by 20 grid as the row icons. */
 export type NavIcon =
+  | 'home'
   | 'inventory'
   | 'architecture'
   | 'api'
@@ -68,7 +69,7 @@ export type SiteSection = {
  * is opened by App (it owns the address bar); a link is one of LINKS.
  */
 export type SiteAction = {
-  key: 'inventory' | 'account' | 'admin' | 'resume' | 'repo';
+  key: 'home' | 'inventory' | 'account' | 'admin' | 'resume' | 'repo';
   /** The label when nobody is signed in; the account row shows the address instead. */
   label: string;
   icon: NavIcon;
@@ -114,6 +115,14 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
     { menu: 'author', icon: 'author', blurb: 'Steven Stout, who built it.', featured: true },
   ],
   actions: [
+    {
+      key: 'home',
+      label: 'Home',
+      icon: 'home',
+      blurb: 'The front page, with every part of the site on it.',
+      inRail: true,
+      onLanding: false,
+    },
     {
       key: 'inventory',
       label: 'Inventory',

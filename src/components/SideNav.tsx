@@ -45,6 +45,8 @@ export type SideNavProps = {
   onDrawerClose: () => void;
   onHome: () => void;
   /** The inventory list is the view (the landing page is home since 1.0.1.0). */
+  /** The landing page is what shows: the Home row reads as current. */
+  homeOpen: boolean;
   inventoryOpen: boolean;
   onOpenInventory: () => void;
   adminOpen: boolean;
@@ -216,6 +218,7 @@ function NavContent({
   collapsed,
   onToggleCollapsed,
   onHome,
+  homeOpen,
   inventoryOpen,
   onOpenInventory,
   adminOpen,
@@ -338,17 +341,20 @@ function NavContent({
                 action={action}
                 iconsOnly={iconsOnly}
                 current={
-                  action.key === 'inventory'
-                    ? inventoryOpen
-                    : action.key === 'account'
-                      ? accountOpen
-                      : action.key === 'admin'
-                        ? adminOpen
-                        : false
+                  action.key === 'home'
+                    ? homeOpen
+                    : action.key === 'inventory'
+                      ? inventoryOpen
+                      : action.key === 'account'
+                        ? accountOpen
+                        : action.key === 'admin'
+                          ? adminOpen
+                          : false
                 }
                 label={action.key === 'account' ? (accountEmail ?? action.label) : action.label}
                 onOpen={() => {
                   onCloseDrawer();
+                  if (action.key === 'home') onHome();
                   if (action.key === 'inventory') onOpenInventory();
                   if (action.key === 'account') onOpenAccount();
                   if (action.key === 'admin') onOpenAdmin();

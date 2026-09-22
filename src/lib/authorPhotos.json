@@ -52,13 +52,11 @@
     "credit": "Mass Effect Legendary Edition key art © Electronic Arts."
   },
   {
-    "name": "steak-in-cast-iron",
-    "widths": [480, 960, 1200],
-    "width": 1200,
-    "height": 1500,
-    "sizes": "(max-width: 720px) 92vw, 480px",
-    "narrowBecause": "the source picture is 1200 pixels wide: 1200 is every pixel it has",
-    "credit": "Steak photograph from southerndiscourse.com."
+    "name": "grill-flames-on-driveway",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 2560,
+    "sizes": "(max-width: 720px) 92vw, 480px"
   },
   {
     "name": "interior-doors",
@@ -70,6 +68,15 @@
     "credit": "Doors photograph from apartmenttherapy.com, a placeholder."
   },
   {
+    "name": "couple-under-willow",
+    "widths": [480, 960, 1600],
+    "width": 1600,
+    "height": 1067,
+    "sizes": "(max-width: 720px) 92vw, 960px",
+    "narrowBecause": "the photograph was sent 1600 pixels wide: 1600 is every pixel it has",
+    "between": true
+  },
+  {
     "name": "rabbits-both-lying-on-runner",
     "widths": [480, 960, 1600],
     "width": 1600,
@@ -78,11 +85,20 @@
     "narrowBecause": "a phone snapshot cropped tight to the two rabbits: 1600 is every pixel the crop has"
   },
   {
-    "name": "rabbits-both-sitting-hallway",
-    "widths": [480, 960, 1600],
-    "width": 1600,
-    "height": 1470,
+    "name": "rabbits-lop-on-blue-rug",
+    "widths": [480, 960, 1067],
+    "width": 1067,
+    "height": 1600,
     "sizes": "(max-width: 720px) 92vw, 480px",
-    "narrowBecause": "a phone snapshot cropped tight to the two rabbits: 1600 is every pixel the crop has"
+    "narrowBecause": "the photograph was sent 1067 pixels wide: 1067 is every pixel it has"
+  },
+  {
+    "name": "st-charles-main-street-christmas",
+    "widths": [480, 960, 1500],
+    "width": 1500,
+    "height": 1233,
+    "sizes": "(max-width: 720px) 92vw, 960px",
+    "narrowBecause": "the source picture is 1500 pixels wide: 1500 is every pixel it has",
+    "credit": "St. Charles photograph from midwestliving.com."
   }
 ]

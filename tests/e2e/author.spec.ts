@@ -50,7 +50,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
 
   // All ten pictures are on the page, in their places: the vineyard beside the words, the lake and the
   // Pantheon in their blocks, the stream after History and the bridge after Games each on its own row,
-  // the game's art, the steak and the doors in their blocks, the two rabbit pictures
+  // the game's art, the grill and the doors in their blocks, the two rabbit pictures
   // side by side, and the photographer's credit under the panels.
   await expect(async () => {
     const places = await doc.locator('.author-photo').evaluateAll((figures) =>
@@ -68,10 +68,12 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       { name: 'couple-crossing-stream', hero: false, opens: false, paired: false },
       { name: 'mass-effect-legendary-edition', hero: false, opens: false, paired: false },
       { name: 'couple-on-wooden-bridge-wide', hero: false, opens: false, paired: false },
-      { name: 'steak-in-cast-iron', hero: false, opens: false, paired: false },
+      { name: 'grill-flames-on-driveway', hero: false, opens: false, paired: false },
       { name: 'interior-doors', hero: false, opens: false, paired: false },
+      { name: 'couple-under-willow', hero: false, opens: false, paired: false },
       { name: 'rabbits-both-lying-on-runner', hero: false, opens: false, paired: true },
-      { name: 'rabbits-both-sitting-hallway', hero: false, opens: false, paired: true },
+      { name: 'rabbits-lop-on-blue-rug', hero: false, opens: false, paired: true },
+      { name: 'st-charles-main-street-christmas', hero: false, opens: false, paired: false },
     ]);
   }).toPass({ timeout: 20_000 });
   await expect(doc.locator('.author-credit')).toHaveText(
@@ -81,7 +83,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   // Every photograph is served from this site, in the one frame, with words for it and its box reserved,
   // and a phone is never handed a file wider than 960.
   const photos = doc.locator('.author-photo img');
-  await expect(photos).toHaveCount(10);
+  await expect(photos).toHaveCount(12);
   const count = await photos.count();
   for (let index = 0; index < count; index++) {
     // Read as one retried step: the drawer that opened this document lets go of it as it closes, and

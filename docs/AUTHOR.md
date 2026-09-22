@@ -40,13 +40,15 @@ Mass Effect, Hades and Star Wars: Republic Commando. I will defend all three.
 
 I am a soft foodie, always looking for a new place to try. Steak, sushi or Mexican and I am in. Recommendations are welcome.
 
-![A sliced steak, pink inside, in a cast iron pan with a pat of herb butter](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/steak-in-cast-iron-960.jpg "Steak photograph from southerndiscourse.com.")
+![A charcoal grill on a driveway with flames rising off the coals, its lid and a chimney starter beside it](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/grill-flames-on-driveway-960.jpg)
 
 ### The doors
 
 My most ambitious home project so far was replacing every interior door in the house, with a lot of help from my father-in-law. We went two months without bathroom doors. Katie was very happy when they went back on.
 
 ![Two white shaker-style interior doors with brass lever handles in a hallway](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/interior-doors-480.jpg "Doors photograph from apartmenttherapy.com, a placeholder.")
+
+![Steve in a navy suit and Katie in a white dress smiling at each other under a weeping willow, sunlight through the leaves](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-under-willow-960.jpg)
 
 ### Freya and Vincent
 
@@ -56,7 +58,13 @@ Katie and I have two rabbits, Freya and Vincent, our little white snowballs. Thi
 
 ![Two white rabbits asleep side by side on a grey rug](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/rabbits-both-lying-on-runner-960.jpg "Fun fact: a rabbit in deep sleep looks alarmingly like this. They are fine.")
 
-![Two white rabbits sitting on a rug, one with upright ears and one with lop ears](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/rabbits-both-sitting-hallway-960.jpg "Rabbits see almost all the way around them, with one small blind spot right in front of the nose.")
+![A white lop-eared rabbit sitting on a blue rug, a white rabbit with upright ears behind](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/rabbits-lop-on-blue-rug-960.jpg "Rabbits see almost all the way around them, with one small blind spot right in front of the nose.")
+
+### St. Charles
+
+I live in St. Charles, Missouri. It was the first state capital of Missouri and is now a glorified suburb of St. Louis. Main Street is still brick, and from the day after Thanksgiving to Christmas Eve it turns into Christmas Traditions: carolers in Victorian dress and Santas from around the world. In 2024 the Today Show called it the Merriest Main Street in America. I have no plans to argue.
+
+![Main Street in St. Charles at night at Christmas: a brick building hung with wreaths and garlands, bicycles with red bows, and trees wrapped in white lights along a brick walk](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/st-charles-main-street-christmas-960.jpg "St. Charles photograph from midwestliving.com.")
 
 ---
 
