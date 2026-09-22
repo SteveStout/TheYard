@@ -55,6 +55,8 @@ Two things in that reading were work nobody asked for. The landing page's slowes
 
 So the catalogue and the filter options are asked for when a view that shows them opens, and the Admin tab is a chunk of its own, fetched on `?view=admin` and cached for a year like every other hashed file. `landing.spec.ts` holds the first of those: the landing page asks for neither, and opening the inventory asks for both.
 
+**1.0.3.1, the type.** The four Poppins files are named in `src/styles/fonts.css`, so a cold browser only learns about them after it has fetched the stylesheet: measured on the live sites, they started about 150 ms behind the CSS and took 140 to 165 ms each. The build now writes a preload link for each into the head, named from its own hashed output, so they start with the stylesheet. All four paint on the first screen, body, medium, semibold and bold, so nothing there is speculative, and they are 32 KB in all.
+
 The Author page's weight is photographs, and they are already cut per width and served as WebP: a phone is handed the 480 cuts and never a file wider than 960. They load eagerly on purpose (ADR: The sidebar, the addendum on the author's section): lazy loading them made them flash on a phone while the dialog scrolled.
 
 ## What that buys, measured

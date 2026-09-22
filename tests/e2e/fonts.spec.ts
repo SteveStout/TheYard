@@ -25,6 +25,23 @@ test('the page loads its type from its own origin, and Poppins is the face it pa
 
   await openTheYard(page);
 
+  // The head starts the four files with the stylesheet rather than after it
+  // (1.0.3.1): every one of them paints on the first screen, and a preload of
+  // a font is a CORS fetch whatever the origin, so each link carries crossorigin.
+  const preloads = await page.evaluate(() =>
+    [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((link) => ({
+      href: new URL(link.getAttribute('href')!, location.href).pathname,
+      type: link.getAttribute('type'),
+      crossorigin: link.getAttribute('crossorigin'),
+    }))
+  );
+  expect(preloads).toHaveLength(4);
+  for (const preload of preloads) {
+    expect(preload.href).toMatch(/poppins-latin-\d00[^/]*\.woff2$/);
+    expect(preload.type).toBe('font/woff2');
+    expect(preload.crossorigin).toBe('');
+  }
+
   // document.fonts.ready resolves once every face the page asked for has
   // either loaded or failed; check() then says whether Poppins at the body
   // weight is usable, which is false when the file 404s or the face is not
