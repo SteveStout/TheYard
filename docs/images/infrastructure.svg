@@ -27,7 +27,7 @@
   </defs>
 
   <rect width="1400" height="1370" fill="#e9e6e7"/>
-  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-09-20</text>
+  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-09-22</text>
   <text x="40" y="68" class="caption">Everything in the solid boxes is live and measured; the dashed group is the one piece of the production design the subscription still refuses.</text>
 
   <!-- ===================== Lane 1: the request path ===================== -->
@@ -146,9 +146,9 @@
   <path d="M800 486 L740 486" class="target-flow"/>
 
   <!-- from the ship lane up to the origin: the image pull and the roll, routed between the two store boxes -->
-  <path d="M1060 896 L1060 790 L770 790 L770 378" class="flow"/>
+  <path d="M1030 896 L1030 790 L770 790 L770 378" class="flow"/>
   <text x="778" y="800" class="flow-label">pulled by id-theyard-ss</text>
-  <path d="M740 896 L740 850 L760 850 L760 378" class="flow" style="stroke-dasharray:6 4"/>
+  <path d="M715 896 L715 850 L760 850 L760 378" class="flow" style="stroke-dasharray:6 4"/>
   <text x="560" y="586" class="flow-label">az webapp config set (roll)</text>
   <g transform="translate(0,200)">
   <!-- ===================== Lane 2: the ship path ===================== -->
@@ -156,43 +156,55 @@
   <text x="60" y="650" class="lane-title">A merge becomes a roll, no hands on it</text>
   <text x="60" y="670" class="lane-sub">ADR-009 records the pipeline, ADR-005 the version, ADR-012 the changelog line each version writes.</text>
 
-  <rect x="60" y="696" width="180" height="150" class="box"/>
-  <text x="75" y="722" class="title">GitHub: push to main</text>
-  <text x="75" y="746" class="body">The commit carries its</text>
-  <text x="75" y="762" class="body">own changelog line, one</text>
-  <text x="75" y="778" class="body">past the footer's number.</text>
-  <text x="75" y="804" class="mono">SteveStout/TheYard</text>
+  <rect x="60" y="696" width="220" height="160" class="box"/>
+  <text x="75" y="722" class="title">The gate, on the laptop</text>
+  <text x="75" y="746" class="body">Every check once a version:</text>
+  <text x="75" y="762" class="body">build, format, SQL project,</text>
+  <text x="75" y="778" class="body">xUnit on both stores, live,</text>
+  <text x="75" y="794" class="body">vitest and Playwright.</text>
+  <text x="75" y="810" class="body">Red commits nothing.</text>
+  <text x="75" y="838" class="muted">ADR-068, ADR-075</text>
 
-  <rect x="280" y="696" width="240" height="150" class="box"/>
-  <text x="295" y="722" class="title">CI (.github/workflows/ci.yml)</text>
-  <text x="295" y="746" class="body">frontend: tsc, vitest, vite build</text>
-  <text x="295" y="762" class="body">api: dotnet test, on SQLite</text>
-  <text x="295" y="778" class="body">e2e: Playwright in Chrome</text>
-  <text x="295" y="804" class="body">A red job stops everything below.</text>
-  <text x="295" y="828" class="muted">read-only token</text>
+  <rect x="320" y="696" width="180" height="160" class="box"/>
+  <text x="335" y="722" class="title">GitHub: push to main</text>
+  <text x="335" y="746" class="body">The commit carries its</text>
+  <text x="335" y="762" class="body">own changelog line, one</text>
+  <text x="335" y="778" class="body">past the footer's number.</text>
+  <text x="335" y="804" class="mono">SteveStout/TheYard</text>
 
-  <rect x="560" y="696" width="360" height="150" class="box"/>
-  <text x="575" y="722" class="title">Deploy (.github/workflows/deploy.yml)</text>
-  <text x="575" y="746" class="body">Fires on green CI. OIDC federated credential;</text>
-  <text x="575" y="762" class="body">the version is the changelog's top line (ADR-031).</text>
-  <text x="575" y="778" class="body">docker build with APP_VERSION and APP_COMMIT,</text>
-  <text x="575" y="794" class="body">push, send the site the four settings it keeps,</text>
-  <text x="575" y="810" class="body">set the image, verify origin and domain.</text>
-  <text x="575" y="830" class="muted">roles: AcrPush, Website Contributor on the two sites</text>
+  <rect x="540" y="696" width="350" height="160" class="box"/>
+  <text x="555" y="722" class="title">Deploy and Deploy Cosmos</text>
+  <text x="555" y="746" class="body">Both fire on the push, deploy.yml and</text>
+  <text x="555" y="762" class="body">deploy-cosmos.yml. OIDC federated credential;</text>
+  <text x="555" y="778" class="body">the version is the changelog's top line</text>
+  <text x="555" y="794" class="body">(ADR-031). docker build with APP_VERSION and</text>
+  <text x="555" y="810" class="body">APP_COMMIT, push, each site's settings,</text>
+  <text x="555" y="826" class="body">set the image, verify origin and domain.</text>
+  <text x="555" y="846" class="muted">roles: AcrPush, Website Contributor, two sites</text>
 
-  <rect x="960" y="696" width="200" height="150" class="box"/>
-  <text x="975" y="722" class="title">Registry (ACR)</text>
-  <text x="975" y="746" class="mono">crtheyardsszmnetj67bn5h2</text>
-  <text x="975" y="762" class="mono">  .azurecr.io</text>
-  <text x="975" y="786" class="body">One tag per version,</text>
-  <text x="975" y="802" class="body">from theyard:v12. Basic tier.</text>
+  <rect x="930" y="696" width="200" height="160" class="box"/>
+  <text x="945" y="722" class="title">Registry (ACR)</text>
+  <text x="945" y="746" class="mono">crtheyardsszmnetj67bn5h2</text>
+  <text x="945" y="762" class="mono">  .azurecr.io</text>
+  <text x="945" y="786" class="body">One tag per version,</text>
+  <text x="945" y="802" class="body">from theyard:v12. Basic tier.</text>
 
-  <path d="M240 770 L280 770" class="flow"/>
-  <path d="M520 770 L560 770" class="flow"/>
-  <path d="M920 770 L960 770" class="flow"/>
-  <text x="244" y="760" class="flow-label">push</text>
-  <text x="522" y="760" class="flow-label">green</text>
-  <text x="922" y="760" class="flow-label">image</text>
+  <rect x="1160" y="696" width="180" height="160" class="box"/>
+  <text x="1175" y="722" class="title">CI (ci.yml)</text>
+  <text x="1175" y="746" class="body">On a pull request</text>
+  <text x="1175" y="762" class="body">only, not the push:</text>
+  <text x="1175" y="778" class="body">style, then the three</text>
+  <text x="1175" y="794" class="body">suites and the SQL</text>
+  <text x="1175" y="810" class="body">project. Read-only</text>
+  <text x="1175" y="826" class="body">token.</text>
+  <text x="1175" y="846" class="muted">ADR-009 addendum</text>
+
+  <path d="M280 770 L320 770" class="flow"/>
+  <path d="M500 770 L540 770" class="flow"/>
+  <path d="M890 770 L930 770" class="flow"/>
+  <text x="284" y="760" class="flow-label">green</text>
+  <text x="504" y="760" class="flow-label">push</text>
+  <text x="892" y="760" class="flow-label">image</text>
 
   <!-- registry to container group (up into lane 1) -->
   <!-- deploy rolls the group -->

@@ -3,7 +3,7 @@
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz)
 
 Built by one engineer with AI as a force multiplier, test driven: I specify every test before the AI writes
-the first draft of the code against it, three suites of tests run once per version inside a five-minute gate (the counts are in the testing section below, held to the suites
+the first draft of the code against it, three suites of tests run once per version inside the one gate before anything rolls (the counts are in the testing section below, held to the suites
 by a test), and eighty-one decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
@@ -479,7 +479,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (86 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (87 Playwright tests):** the real stack. The landing page shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a

@@ -188,6 +188,30 @@ test('the Admin tiles are two to a row on a phone and nothing on the tab is wide
   expect(overflow).toBe(0);
 });
 
+test('the Admin and Account pills are a thumb tall on a phone', async ({ page }) => {
+  // 44 px is the touch target the intro strip's pills already meet; on the desk
+  // the same pills stay at 34 so the Admin rows stay dense (Steve, 2026-09-22).
+  await openTheYard(page, '/?view=admin');
+  const strip = page.getByTestId('stat-strip');
+  await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
+    timeout: 45_000,
+  });
+  for (const pill of [
+    page.getByRole('button', { name: 'Back to inventory' }),
+    page.getByTestId('strip-window-1h'),
+  ]) {
+    await expect(async () => {
+      const box = await pill.boundingBox();
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }).toPass();
+  }
+  await openTheYard(page, '/?view=account');
+  await expect(async () => {
+    const box = await page.getByRole('button', { name: 'Back to inventory' }).boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+  }).toPass();
+});
+
 test('the first screen on a phone says what this is, who built it and where the resume is (ADR: The glass look)', async ({
   page,
 }) => {

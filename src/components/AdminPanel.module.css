@@ -40,6 +40,14 @@
   color: var(--color-accent);
 }
 
+/* A phone's thumb: the pills reach 44 px on a phone (Steve, 2026-09-22); the desk
+   keeps them at 34 so the rows stay dense. After the rule it narrows (R86). */
+@media (max-width: 639px) {
+  .back {
+    min-height: 44px;
+  }
+}
+
 /* The window a row of buttons is on. Until 1.0.0.165 the chosen button was told
    to a screen reader and to nobody else. */
 /* The chosen one is filled with the accent and ringed in gold: the ring is

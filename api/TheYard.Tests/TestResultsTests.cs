@@ -78,6 +78,19 @@ public class TestResultsTests(WebApplicationFactory<Program> factory)
             {
                 wrong.Add($"{id}: {failed} failed and {skipped} skipped; a red gate commits nothing and the house forbids a skipped test");
             }
+            if (suite.TryGetProperty("carried", out JsonElement carried))
+            {
+                // Only the two passes on Cosmos DB may be carried, and only from a named earlier version
+                // (ADR: The five-minute gate, the addendum on the two cuts).
+                if (id is not ("xunit-cosmos" or "browser-cosmos"))
+                {
+                    wrong.Add($"{id}: only the two passes on Cosmos DB may be carried forward");
+                }
+                if (!Regex.IsMatch(carried.GetString() ?? "", @"^1\.0\.0\.\d+$"))
+                {
+                    wrong.Add($"{id}: carried should name the version whose gate ran it");
+                }
+            }
             foreach (JsonElement row in rows)
             {
                 if (row.GetArrayLength() != 4 || row[2].GetString() is not ("p" or "f" or "s") || row[3].GetInt32() < 0)

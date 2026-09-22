@@ -42,6 +42,14 @@
   color: var(--color-accent);
 }
 
+/* A phone's thumb: the pills reach 44 px on a phone (Steve, 2026-09-22); the desk
+   keeps them at 34 so the rows stay dense. After the rule it narrows (R86). */
+@media (max-width: 639px) {
+  .back {
+    min-height: 44px;
+  }
+}
+
 .back:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;

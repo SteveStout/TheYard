@@ -3899,6 +3899,12 @@ function TestsCard() {
                   <tr key={suite.id} data-testid={`tests-suite-${suite.id}`}>
                     <th scope="row">
                       <ResultMark passed={suite.failed === 0} label /> {suite.name}
+                      {suite.carried && (
+                        <span className={styles.muted} data-testid={`tests-carried-${suite.id}`}>
+                          {' '}
+                          (carried from {suite.carried}: nothing this pass covers changed)
+                        </span>
+                      )}
                     </th>
                     <td className={styles.mono}>{suite.passed.toLocaleString()}</td>
                     <td className={styles.mono}>{suite.failed}</td>

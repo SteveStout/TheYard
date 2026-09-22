@@ -280,3 +280,37 @@ and in your face". A tick in a green disc or a cross in a red one, from the
 status tokens because passed and failed are states, 44 pixels beside the
 card's sentence and 16 on every suite, check and test; a mark carries its
 own label only where no word beside it already says the same.
+
+## Addendum, 2026-09-22: the two cuts, and the name
+
+The gate measured 487 to 745 seconds on the nights of 21 and 22 September,
+every check once on both stores, on the same four-core laptop; Steve's
+ceiling is five to ten minutes for the whole wall. Two cuts, each with the
+files that decide it spelled out, and neither runs on every ship:
+
+- `dotnet format` (39 to 53 seconds) runs only when a file the formatter
+  reads changed since the last green commit: anything ending in `.cs`,
+  `.csproj`, `.slnx` or `.editorconfig`. A ship that touches none of them
+  cannot change what the formatter would say.
+- The two passes on Cosmos DB, xUnit on Cosmos DB (61 to 106 seconds) and
+  the three store specs in the browser (93 to 128 seconds), run only when
+  something under `api/`, under `infra/cosmos/`, or one of
+  `tests/e2e/store-toggle.spec.ts`, `tests/e2e/account.spec.ts` and
+  `tests/e2e/admin.spec.ts` changed. The seven live tests against the real
+  account still run on every ship, and so does every other suite.
+
+When the two passes are skipped, the gate says so to
+`scripts/test_results.mjs` (`YARD_CARRY_COSMOS=1`) and the results file
+carries those two suites forward from the previous version, row for row,
+each marked `carried` with the version whose gate ran them. The Admin tab's
+card says so beside the suite's name, and `TestResultsTests` holds the rule:
+only those two suites may be carried, and only from a named version. Every
+suite is still in every file, so a reader is never shown a build with a
+pass missing and no word about it.
+
+The name. This record keeps its title as the record of the target; the
+living documents call it the one gate, because what it holds to is every
+check once before anything rolls, and the minutes are measured, not named.
+Together the two cuts take a frontend-only ship's gate from about 480
+seconds to about 270 to 300; a ship that touches `api/` runs everything.
+Steve chose both on 2026-09-22, and the 44 px pills that ship beside them.

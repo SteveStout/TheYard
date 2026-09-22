@@ -18,6 +18,9 @@ export type TestSuite = {
   passed: number;
   failed: number;
   skipped: number;
+  /** Set when this build's gate did not run the suite and carried the rows
+   * forward from the version named here, whose gate did. */
+  carried?: string;
   tests: TestRow[];
 };
 

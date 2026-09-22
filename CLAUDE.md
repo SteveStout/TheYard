@@ -14,7 +14,7 @@ Read the record that governs it. The decisions are `docs/ADR-*.md`, served from 
 Decision Records, and the ones a test enforces are listed beside their test in
 `docs/ADR-075-the-rules-a-change-has-to-pass.md`. A change that contradicts a record changes the record
 first, as an addendum that says when it stopped being true rather than an edit that makes it look like
-it was always this way. The test goes in the same commit as the change, and the five-minute gate runs
+it was always this way. The test goes in the same commit as the change, and the one gate runs
 green before anything rolls (ADR-068). Any build warning is red.
 
 ## Architecture, and it is not negotiable

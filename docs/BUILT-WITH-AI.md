@@ -25,13 +25,13 @@ The choices a tool cannot make, each with its record.
   for the second site (ADR-066, ADR-069).
 - The sidebar over dropdowns, the palette, and the rule that every diagram opens on its own page
   (ADR-013, ADR-016, ADR-020).
-- The five-minute ceiling on the whole test wall (ADR-068).
+- The one gate: every check once per version, on both stores, before anything rolls (ADR-068 and its addendum).
 - Every test, specified before the code it holds was written (test driven development).
 - Every GO. Nothing rolled to Azure without a written go from me.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 588 xUnit tests, 212 Vitest tests at 1.0.0.182 and 86 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 588 xUnit tests, 212 Vitest tests at 1.0.0.182 and 87 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the latest gate, on 1.0.0.182, took 493 seconds. A push that fails the gate does not roll.
 

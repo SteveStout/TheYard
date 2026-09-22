@@ -15,6 +15,15 @@
  * Run by the gate after every suite is green and before the commit:
  * `node scripts/test_results.mjs <raw folder> <version> <gate seconds>`.
  * No dependencies: the three formats are read with the standard library.
+ *
+ * Since 1.0.0.187 the gate skips the two passes on Cosmos DB (xUnit on
+ * Cosmos DB, Browser on Cosmos DB) when nothing under api/, infra/cosmos/
+ * or the three store specs changed, and says so with YARD_CARRY_COSMOS=1.
+ * Then those two suites are carried forward from the previous file, row
+ * for row, each marked with the version whose gate ran them (`carried`),
+ * so the file still holds every suite and the Admin tab says which ones
+ * this build did not run (ADR: The five-minute gate, the addendum on the
+ * two cuts).
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -171,6 +180,33 @@ add(
   seconds(node, 'browser_cosmos')
 );
 
+// #region carried
+const CARRIED = ['xunit-cosmos', 'browser-cosmos'];
+if (process.env.YARD_CARRY_COSMOS === '1' && existsSync(OUT)) {
+  const previous = JSON.parse(readFileSync(OUT, 'utf8'));
+  for (const id of CARRIED) {
+    // A pass that did not run leaves no report, and a reader of a missing report answers with no rows.
+    const at = suites.findIndex((suite) => suite.id === id);
+    if (at >= 0 && suites[at].tests.length > 0) continue;
+    const before = previous.suites.find((suite) => suite.id === id);
+    if (!before) continue;
+    const carried = { ...before, carried: before.carried ?? previous.version };
+    if (at >= 0) suites[at] = carried;
+    else suites.push(carried);
+  }
+}
+// The file lists the suites in the gate's own order whether a pass ran or was carried.
+const ORDER = [
+  'vitest',
+  'xunit-sqlite',
+  'xunit-live',
+  'xunit-cosmos',
+  'browser-sqlite',
+  'browser-cosmos',
+];
+suites.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
+// #endregion carried
+
 const checks = [
   ['Prettier', node, 'prettier'],
   ['oxlint', node, 'lint'],
@@ -178,7 +214,8 @@ const checks = [
   ['dotnet format', dotnet, 'format'],
   ['The SQL project', dotnet, 'sqlproj'],
 ]
-  .filter(([, side, key]) => side[key] !== undefined)
+  // A check the gate did not run (dotnet format, when no C# or project file changed) is not in the file.
+  .filter(([, side, key]) => side[key] !== undefined && side[key] !== 'skipped')
   .map(([name, side, key]) => ({ name, passed: side[key] === '0', seconds: seconds(side, key) }));
 
 const empty = suites.filter((suite) => suite.tests.length === 0).map((suite) => suite.id);
