@@ -14,6 +14,7 @@ public static class DocsCatalog
     public static readonly IReadOnlyDictionary<string, string> Files = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["readme"] = "README.md",
+        ["start-here"] = "docs/START-HERE.md",
         ["dataflow"] = "docs/DATAFLOW.md",
         ["sql-vs-cosmos"] = "docs/SQL-VS-COSMOS.md",
         ["projects"] = "docs/PROJECTS.md",

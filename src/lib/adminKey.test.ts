@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   ADMIN_KEY_STORAGE,
+  adminKey,
+  captureAdminKey,
+  clearCapturedAdminKey,
   forgetAdminKey,
   rememberAdminKey,
   resolveAdminKey,
@@ -69,5 +72,21 @@ describe('resolveAdminKey', () => {
     const storage = memory({ [ADMIN_KEY_STORAGE]: 'kept' });
     forgetAdminKey(storage);
     expect(resolveAdminKey('?view=admin', storage)).toBeNull();
+  });
+});
+
+describe('the key captured at startup', () => {
+  it('survives the first render taking it out of the address bar', () => {
+    // The Admin tab is a chunk of its own since 1.0.3.0 and mounts after that render.
+    clearCapturedAdminKey();
+    const storage = memory();
+    // Startup reads the keyed address; the first render then drops the key from it.
+    expect(captureAdminKey(storage, '?view=admin&key=from-the-link')).toBe('from-the-link');
+    expect(adminKey()).toBe('from-the-link');
+    expect(storage.map.get(ADMIN_KEY_STORAGE)).toBe('from-the-link');
+    // Nothing in the address bar and nothing captured is nothing claimed.
+    clearCapturedAdminKey();
+    expect(captureAdminKey(memory(), '?view=admin')).toBeNull();
+    clearCapturedAdminKey();
   });
 });

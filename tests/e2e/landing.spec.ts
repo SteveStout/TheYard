@@ -135,3 +135,29 @@ test.describe('the docked rail', () => {
     await expect(rail.locator('[aria-current="page"]')).toHaveText('Home');
   });
 });
+
+// #region landing-asks-for-less
+/**
+ * The landing page does not pay for the inventory (1.0.3.0). Measured on the live
+ * sites at 1.0.2.2: /api/vehicles was the slowest request the landing page made,
+ * 450 ms on the SQL site and 897 ms on the Cosmos DB one, for a page that shows no
+ * vehicle, and the filter options went with it. Opening the inventory asks for both,
+ * because that is the view that shows them.
+ */
+test('asks for no catalogue until the inventory opens', async ({ page }) => {
+  const asked: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/vehicles' || url.pathname === '/api/facets')
+      asked.push(url.pathname);
+  });
+
+  await openTheYard(page, '/');
+  await expect(page.getByTestId('landing-proof')).toBeVisible();
+  expect(asked, 'the landing page asked for the inventory it does not show').toEqual([]);
+
+  await page.getByTestId('landing-tile-inventory').click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Inventory' })).toBeVisible();
+  await expect.poll(() => asked.includes('/api/vehicles')).toBe(true);
+});
+// #endregion landing-asks-for-less

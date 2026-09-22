@@ -34,6 +34,37 @@ export function resolveAdminKey(search: string, storage: KeyStorage | null): str
   }
 }
 
+// #region capture-at-startup
+// The key is read before React draws anything (main.tsx), and not by the Admin
+// tab itself. Since 1.0.3.0 the Admin tab arrives in a chunk of its own, which
+// means it mounts a moment after the first render, and the first render is what
+// takes `key` out of the address bar: a keyed link would have handed its key to
+// a module that loaded after the key was gone.
+let captured: string | null = null;
+
+/** Reads the key out of the address bar and the browser's storage, once, at startup. */
+export function captureAdminKey(
+  storage: KeyStorage | null = browserStorage(),
+  search: string = typeof window === 'undefined' ? '' : window.location.search
+): string | null {
+  captured = resolveAdminKey(search, storage);
+  return captured;
+}
+
+/** The key this page has, as captured at startup; a later read of the address bar is the fallback. */
+export function adminKey(): string | null {
+  if (captured !== null) return captured;
+  return typeof window === 'undefined'
+    ? null
+    : resolveAdminKey(window.location.search, browserStorage());
+}
+
+/** Test seam: forget what startup captured. */
+export function clearCapturedAdminKey(): void {
+  captured = null;
+}
+// #endregion capture-at-startup
+
 /** Remember a key the operator typed into the page, trimmed; an empty entry remembers nothing. */
 export function rememberAdminKey(entered: string, storage: KeyStorage | null): string | null {
   const key = entered.trim();

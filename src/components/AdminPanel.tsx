@@ -15,7 +15,7 @@ import {
   type ActivityWindow,
   type VisitorSortKey,
 } from '../lib/activity';
-import { browserStorage, forgetAdminKey, rememberAdminKey, resolveAdminKey } from '../lib/adminKey';
+import { adminKey, browserStorage, forgetAdminKey, rememberAdminKey } from '../lib/adminKey';
 import { shortenDigests } from '../lib/format';
 import {
   LOG_KINDS,
@@ -399,7 +399,7 @@ function formatUptime(totalSeconds: number): string {
  * because the file the key lives in is on one machine and the operator
  * reads the site from his phone (the 1.0.0.120 change).
  */
-const ADMIN_KEY = resolveAdminKey(window.location.search, browserStorage());
+const ADMIN_KEY = adminKey();
 
 export function AdminPanel({
   onBack,

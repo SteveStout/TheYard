@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   fetchFacets,
   fetchVehicleById,
@@ -19,7 +19,16 @@ import {
 } from './lib/inventory';
 import { applyBidRecord, useBids } from './hooks/useBids';
 import { useNow } from './hooks/useNow';
-import { AdminPanel } from './components/AdminPanel';
+// #region admin-on-demand
+// The Admin tab is the biggest thing this app draws, about four thousand lines
+// of cards and charts, and it is the one view a reader opens on purpose.
+// Loading it with the landing page made every first visit pay for it: it is a
+// chunk of its own since 1.0.3.0, fetched when ?view=admin opens, and the
+// browser caches it for a year like every other hashed file.
+const AdminPanel = lazy(() =>
+  import('./components/AdminPanel').then((module) => ({ default: module.AdminPanel }))
+);
+// #endregion admin-on-demand
 import { AccountPanel } from './components/AccountPanel';
 import { accountQuestion, SIGNED_OUT, type Account } from './lib/auth';
 import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
@@ -119,6 +128,15 @@ export default function App() {
   /** The inventory list, rather than the landing page, is what shows under no other view. */
   const [inventoryOpen, setInventoryOpen] = useState(INITIAL_INVENTORY);
   const [openDocKey, setOpenDocKey] = useState<DocKey | null>(INITIAL_DOC);
+  // #region listing-when-shown
+  // The catalogue belongs to the inventory, not to the landing page (1.0.3.0).
+  // Measured on the live sites: /api/vehicles was the slowest request the
+  // landing page made, 450 ms on the SQL site and 897 ms on the Cosmos DB one,
+  // for a page that shows no vehicle. It is asked for when a view that needs
+  // it opens: the listing, a vehicle, or an address that carries a filter.
+  const needsListing = inventoryOpen || selectedVehicle !== null || INITIAL_VEHICLE_ID !== null;
+  // #endregion listing-when-shown
+
   const [account, setAccount] = useState<Account>(SIGNED_OUT);
   const now = useNow();
   /** The running build, reported by the container itself (ADR-005). */
@@ -185,13 +203,14 @@ export default function App() {
   // booting under `npm start` say, is tried again with the listing; once the
   // facets have landed the effect returns before it asks.
   useEffect(() => {
-    if (facets !== EMPTY_FACETS) return;
+    // The dropdowns are the inventory's too, so the landing page does not ask (1.0.3.0).
+    if (!needsListing || facets !== EMPTY_FACETS) return;
     const controller = new AbortController();
     fetchFacets(controller.signal)
       .then(setFacets)
       .catch(() => {});
     return () => controller.abort();
-  }, [reloadNonce, facets]);
+  }, [reloadNonce, facets, needsListing]);
   // #endregion facets-once
 
   // The footer's version line: ask the running API which build it is.
@@ -234,6 +253,7 @@ export default function App() {
   const lastNonce = useRef(reloadNonce);
   const initialAttempts = useRef(0);
   useEffect(() => {
+    if (!needsListing) return;
     const controller = new AbortController();
     let retryTimer: number | undefined;
     const isRefresh = reloadNonce !== lastNonce.current;
@@ -290,7 +310,7 @@ export default function App() {
     // so listing it would run the effect again the moment the load it started
     // finished.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, sort, reloadNonce]);
+  }, [filters, sort, reloadNonce, needsListing]);
 
   // #region url-mirror
   // Mirror the current view into the address bar: the filter GET parameters
@@ -860,11 +880,13 @@ export default function App() {
             {announcement}
           </p>
           {adminOpen ? (
-            <AdminPanel
-              onBack={closeAdmin}
-              signedIn={account.signedIn}
-              onOpenAccount={openAccount}
-            />
+            <Suspense fallback={<p className={styles.adminLoading}>Reading the machines...</p>}>
+              <AdminPanel
+                onBack={closeAdmin}
+                signedIn={account.signedIn}
+                onOpenAccount={openAccount}
+              />
+            </Suspense>
           ) : accountOpen ? (
             <AccountPanel
               account={account}

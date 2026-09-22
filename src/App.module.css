@@ -397,3 +397,10 @@
   color: var(--color-accent);
   text-decoration: underline;
 }
+
+/* The Admin tab arrives in a chunk of its own (1.0.3.0); this is the one frame
+   between the click and the cards, in the muted voice a waiting reading uses. */
+.adminLoading {
+  padding: var(--space-6) 0;
+  color: var(--color-text-muted);
+}

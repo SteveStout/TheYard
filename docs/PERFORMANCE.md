@@ -40,6 +40,23 @@ two keys are filled from repository secrets at roll time
 Sources: [A second store, priced](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md),
 [Edge economics](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-007-edge-economics.md), [The partition key](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-058-the-partition-key.md).
 
+## What a first visit costs, and what 1.0.3.0 took off it
+
+Measured on both live sites on 2026-09-22 with a cold cache, a phone at 375 on a throttled connection and a desk at 1280:
+
+| View | Requests | Over the wire | Load event |
+| --- | --- | --- | --- |
+| Landing, phone | 17 | 185 KB | 1.0 s |
+| Inventory, phone | 15 | 212 KB | 0.6 s |
+| Author, phone | 33 | 794 KB | 0.5 s |
+| Author, desk | 33 | 1,574 KB | 0.4 s |
+
+Two things in that reading were work nobody asked for. The landing page's slowest request was `/api/vehicles`, 450 ms on the SQL site and 897 ms on the Cosmos DB one, for a page that shows no vehicle; the filter options were fetched beside it. And the Admin tab, about four thousand lines of cards and charts and the largest view in the app, was in the first bundle every visitor downloaded, whether or not they ever opened it.
+
+So the catalogue and the filter options are asked for when a view that shows them opens, and the Admin tab is a chunk of its own, fetched on `?view=admin` and cached for a year like every other hashed file. `landing.spec.ts` holds the first of those: the landing page asks for neither, and opening the inventory asks for both.
+
+The Author page's weight is photographs, and they are already cut per width and served as WebP: a phone is handed the 480 cuts and never a file wider than 960. They load eagerly on purpose (ADR: The sidebar, the addendum on the author's section): lazy loading them made them flash on a phone while the dialog scrolled.
+
 ## What that buys, measured
 
 The application times itself. `POST /api/admin/proof` runs eight paired rounds of everything a visitor

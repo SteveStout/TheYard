@@ -5,6 +5,7 @@ import './styles/tokens.css';
 import './styles/code.css';
 import App from './App';
 import { ErrorBoundary, reportClientError } from './components/ErrorBoundary';
+import { captureAdminKey } from './lib/adminKey';
 
 // #region bootstrap
 // fonts.css comes first so the four faces are declared before anything asks
@@ -15,6 +16,11 @@ import { ErrorBoundary, reportClientError } from './components/ErrorBoundary';
 // timer or a listener gets caught early.
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
+
+// The operator's key is read here, before the first render takes it out of the
+// address bar, because the Admin tab that uses it now arrives in a chunk of its
+// own and mounts after that (1.0.3.0).
+captureAdminKey();
 
 // A boundary catches a crash during render. These two catch what a boundary
 // never sees: a throw inside an event handler, and a promise nobody awaited.

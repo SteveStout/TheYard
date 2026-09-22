@@ -5,6 +5,7 @@ import type { MenuVariant } from '../lib/siteMap';
 import { layoutDocument } from '../lib/docLayout';
 
 export type DocKey =
+  | 'startHere'
   | 'readme'
   | 'dataflow'
   | 'projects'
@@ -332,6 +333,12 @@ export const DOCS: Record<
     url: '/api/docs/adr-tests',
     kind: 'adr',
     number: '021',
+  },
+  startHere: {
+    title: 'Start here',
+    menuLabel: 'Start here (new developer)',
+    url: '/api/docs/start-here',
+    kind: 'overview',
   },
   architecture: {
     title: 'App Architecture',
@@ -887,6 +894,7 @@ export const MENUS: Record<
   architecture: {
     label: 'App Architecture',
     items: [
+      { key: 'startHere' },
       { key: 'architecture' },
       { key: 'style', sub: true },
       { key: 'dataflow', sub: true },
