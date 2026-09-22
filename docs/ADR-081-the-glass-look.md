@@ -169,6 +169,8 @@ Steve, on reading the library after the Author page was rebuilt: "our documentat
 
 What it does not do: it does not reflow a document, rename a heading or move a word. A document with no second-level heading is one panel, and a heading inside a code sample is escaped markup by the time this sees it, so it opens nothing.
 
+**1.0.2.2, measured after it shipped:** a phone could still slide a document sideways, and the panels were not the cause. At 375 the README's dialog body was 375 wide and scrolled to 460, pushed by the long unbroken tokens inline code carries in prose and in lists, a file path 396 px wide in a 306 px column; code blocks were innocent, because a block keeps its sideways scroll inside its own box. A word that cannot fit now breaks (`overflow-wrap: anywhere`, which also shrinks the minimum a grid column measures), a table too wide for a phone scrolls inside itself, and `mobile.spec.ts` holds four documents to a dialog that never scrolls sideways.
+
 ## Files
 
 - [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the glass tokens and their three fallbacks, beside the palette.

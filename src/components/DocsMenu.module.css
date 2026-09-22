@@ -162,6 +162,36 @@
   margin-bottom: var(--space-1);
 }
 
+/* #region no-sideways-scroll */
+/* A document never scrolls sideways (Steve, 2026-09-22: "the readme has this weird
+   left to right scrolling ... it shouldn't scroll left right on mobile"). Measured at
+   375 on the live site: the README's body was 375 wide and scrolled to 460, and what
+   pushed it was not a code block, which scrolls inside itself, but the long unbroken
+   tokens inline code carries in prose and in lists, a file path like
+   api/TheYard.Infrastructure/SyntheticVehicleSource.cs at 396 px in a 306 px column.
+   A word that cannot fit now breaks instead of widening the document; a table too
+   wide for a phone scrolls inside its own box rather than taking the page with it.
+   `anywhere` rather than `break-word` so the break also shrinks the box's own
+   minimum, which is what a grid column measures. */
+.prose,
+.prose p,
+.prose li,
+.prose td,
+.prose th,
+.prose a,
+.prose code {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .prose table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}
+/* #endregion no-sideways-scroll */
+
 .prose code {
   font-family: Consolas, 'SF Mono', Menlo, monospace;
   font-size: 0.9em;

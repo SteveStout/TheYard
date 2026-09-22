@@ -257,3 +257,39 @@ test('the first screen on a phone says what this is, who built it and where the 
   });
   await expect(page.getByTestId('intro-strip')).toHaveCount(0);
 });
+
+// #region no-sideways-scroll
+/**
+ * A document does not scroll sideways on a phone (Steve, 2026-09-22: "the readme has
+ * this weird left to right scrolling ... it shouldn't scroll left right on mobile").
+ * The README's dialog was 375 wide and scrolled to 460, pushed by the long file paths
+ * its lists carry in inline code. A code block is allowed its own sideways scroll,
+ * because breaking a command in half is worse than sliding it, and the block keeps
+ * that scroll inside its own box.
+ */
+test.describe('a document on a phone', () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+
+  test('never scrolls sideways, whatever its longest word is', async ({ page }) => {
+    for (const doc of ['readme', 'performance', 'adr-landing-page', 'changelog']) {
+      await openTheYard(page, `/?doc=${doc}`);
+      const dialog = page.getByRole('dialog').first();
+      await expect(dialog).toBeVisible();
+      await expect
+        .poll(
+          async () =>
+            dialog.evaluate((open) => {
+              const body = open.querySelector('[class*="dialogBody"]') ?? open;
+              return body.scrollWidth - body.clientWidth;
+            }),
+          { message: `${doc} scrolls sideways inside its dialog` }
+        )
+        .toBeLessThanOrEqual(1);
+      const page_overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(page_overflow, `${doc} widens the page itself`).toBe(0);
+    }
+  });
+});
+// #endregion no-sideways-scroll
