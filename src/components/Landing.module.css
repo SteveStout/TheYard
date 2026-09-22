@@ -93,15 +93,6 @@
   .grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-
-  /* Inventory, Author and the resume across the top (1.0.2.0). */
-  .featured {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .proof {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 .tile,
@@ -177,6 +168,15 @@
   background: var(--color-danger);
 }
 
+/* Inventory and Author across the top, the resume a banner under them at every
+   width (1.0.2.1: three across put the Author's line in a 300 px column and
+   broke the resume's own title over three lines). */
+@container (min-width: 640px) {
+  .featured > li:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
 /* The evidence strip under the title (1.0.2.0): four figures the build itself
    produced, on the same glass as the title so the ribbons stay behind them. */
 .proof {
@@ -219,6 +219,14 @@
 .proofDetail {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+}
+
+/* Four across once the page is wide enough, after the two-column rule above so
+   it wins on source order (1.0.2.1: it lost to it and read two by two at 1280). */
+@container (min-width: 860px) {
+  .proof {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* A group of sections under its heading, as the sidebar groups them (1.0.1.4). */
