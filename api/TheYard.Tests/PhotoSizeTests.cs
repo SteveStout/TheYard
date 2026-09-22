@@ -34,7 +34,7 @@ public class PhotoSizeTests
             // The JPEG card copy, and since 1.0.0.143 the WebP pair the picture
             // element offers first (ADR: Responsive photos, addendum). All three
             // are derived names, so all three are held here.
-            foreach (string suffix in new[] { "-480.jpg", "-480.webp", ".webp" })
+            foreach (string suffix in new[] { "-480.jpg", "-480.webp", ".webp", "-480.avif", ".avif" })
             {
                 string copy = Path.Combine(Images(), file.Replace(".jpg", suffix, StringComparison.Ordinal));
                 if (!File.Exists(copy))
@@ -61,7 +61,7 @@ public class PhotoSizeTests
     /// floor is only that the set is not larger.
     /// </summary>
     [Fact]
-    public void The_webp_copies_are_smaller_than_the_jpegs_they_stand_in_for()
+    public void The_smaller_formats_are_smaller_than_the_ones_they_stand_in_for()
     {
         long Bytes(string pattern, Func<string, bool> keep) =>
             Directory.GetFiles(Images(), pattern).Where(keep).Sum(path => new FileInfo(path).Length);
@@ -78,6 +78,22 @@ public class PhotoSizeTests
         Assert.True(
             webpSmall < jpegSmall,
             $"the 480 WebP set should not be larger than the JPEG set: {webpSmall / 1024} KB against {jpegSmall / 1024} KB");
+
+        // #region avif-smaller
+        // AVIF is offered before the WebP since 1.0.3.3, so it has to be worth
+        // the extra file: measured on this set at about half the WebP at both
+        // widths, and a third is the floor an encode that did nothing fails.
+        long avifLarge = Bytes("*.avif", path => !path.EndsWith("-480.avif", StringComparison.Ordinal));
+        long avifSmall = Bytes("*-480.avif", _ => true);
+
+        Assert.True(avifLarge > 0 && avifSmall > 0, "the AVIF copies should exist; run npm run images:resize");
+        Assert.True(
+            avifLarge < webpLarge * 0.67,
+            $"the 1280 AVIF set should be at least a third under the WebP set: {avifLarge / 1024} KB against {webpLarge / 1024} KB");
+        Assert.True(
+            avifSmall < webpSmall * 0.67,
+            $"the 480 AVIF set should be at least a third under the WebP set: {avifSmall / 1024} KB against {webpSmall / 1024} KB");
+        // #endregion avif-smaller
     }
 
     [Fact]

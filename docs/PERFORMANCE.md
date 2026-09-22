@@ -59,6 +59,8 @@ So the catalogue and the filter options are asked for when a view that shows the
 
 The Author page's weight is photographs, and they are cut per width: a phone is handed the 480 cuts and never a file wider than 960. They load eagerly on purpose (ADR: The sidebar, the addendum on the author's section): lazy loading them made them flash on a phone while the dialog scrolled.
 
+**1.0.3.3, the vehicle photographs.** The same change on the inventory's fifty pictures: the card's 480 set went from 1,281 KB to 711 and the 1280 set from 8,131 KB to 4,500, each AVIF encoded from the original rather than from a copy.
+
 **1.0.3.2, the photographs.** They are cut to AVIF as well now and offered before the WebP (ADR: Responsive photos, the addendum on AVIF), which halves the set: 1,962 KB to 992 at 960 wide, 586 KB to 296 at 480. The originals were not touched, and a browser too old for AVIF still gets the WebP and then the JPEG.
 
 ## What that buys, measured

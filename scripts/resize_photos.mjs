@@ -9,8 +9,9 @@
  * 1280 (ADR: Responsive photos).
  *
  * Since 1.0.0.143 it also writes a WebP copy at both widths, `coupe-01.webp`
- * and `coupe-01-480.webp`, which the page offers first through a `picture`
- * element and every current browser takes; the JPEG pair stays as the
+ * and `coupe-01-480.webp`, and since 1.0.3.3 an AVIF pair beside them, which
+ * the page offers first through a `picture` element and a current browser
+ * takes; the JPEG pair stays as the
  * fallback and as the file a client without WebP gets (ADR: Responsive
  * photos, addendum). Quality 75 is where WebP matches the JPEG at 78 to the
  * eye on these photographs; measured on this set it is 43 per cent under the
@@ -31,6 +32,13 @@ const WIDTH = 480;
 const SUFFIX = '-480.jpg';
 const WEBP_SUFFIX = '-480.webp';
 const WEBP_QUALITY = 75;
+// AVIF, added 1.0.3.2 on the Author page and 1.0.3.3 here: quality 50 came out
+// at about half the WebP on those photographs with no loss worth the bytes in a
+// crop at full size, and the card paints at about 358 pixels, which is kinder
+// still. effort 4 is sharp's default.
+const AVIF_SUFFIX = '-480.avif';
+const AVIF_QUALITY = 50;
+const AVIF_EFFORT = 4;
 
 const files = (await readdir(DIR))
   .filter((name) => name.endsWith('.jpg') && !name.endsWith(SUFFIX))
@@ -40,6 +48,8 @@ let before = 0;
 let after = 0;
 let webpBefore = 0;
 let webpAfter = 0;
+let avifBefore = 0;
+let avifAfter = 0;
 
 const wrongWidth = [];
 
@@ -73,17 +83,32 @@ for (const name of files) {
     .webp({ quality: WEBP_QUALITY })
     .toFile(webpSmall);
 
+  // The same two widths again as AVIF, each encoded from the original.
+  const avifLarge = path.join(DIR, name.replace(/\.jpg$/, '.avif'));
+  const avifSmall = path.join(DIR, name.replace(/\.jpg$/, AVIF_SUFFIX));
+  const avif = { quality: AVIF_QUALITY, effort: AVIF_EFFORT, chromaSubsampling: '4:2:0' };
+  await sharp(source).avif(avif).toFile(avifLarge);
+  await sharp(source)
+    .resize({ width: WIDTH, withoutEnlargement: true })
+    .avif(avif)
+    .toFile(avifSmall);
+
   const from = (await stat(source)).size;
   const to = (await stat(target)).size;
   const webpFrom = (await stat(webpLarge)).size;
   const webpTo = (await stat(webpSmall)).size;
+  const avifFrom = (await stat(avifLarge)).size;
+  const avifTo = (await stat(avifSmall)).size;
   before += from;
   after += to;
   webpBefore += webpFrom;
   webpAfter += webpTo;
+  avifBefore += avifFrom;
+  avifAfter += avifTo;
   console.log(
     `${name}: ${Math.round(from / 1024)} KB -> ${Math.round(to / 1024)} KB (${Math.round((1 - to / from) * 100)}% smaller); ` +
-      `webp ${Math.round(webpFrom / 1024)} KB and ${Math.round(webpTo / 1024)} KB`
+      `webp ${Math.round(webpFrom / 1024)} KB and ${Math.round(webpTo / 1024)} KB; ` +
+      `avif ${Math.round(avifFrom / 1024)} KB and ${Math.round(avifTo / 1024)} KB`
   );
 }
 
@@ -95,6 +120,11 @@ console.log(
 console.log(
   `WebP: ${Math.round(webpBefore / 1024)} KB at 1280 (${Math.round((1 - webpBefore / before) * 100)}% under the JPEG), ` +
     `${Math.round(webpAfter / 1024)} KB at 480 (${Math.round((1 - webpAfter / after) * 100)}% under the JPEG)`
+);
+
+console.log(
+  `AVIF: ${Math.round(avifBefore / 1024)} KB at 1280 (${Math.round((1 - avifBefore / webpBefore) * 100)}% under the WebP), ` +
+    `${Math.round(avifAfter / 1024)} KB at 480 (${Math.round((1 - avifAfter / webpAfter) * 100)}% under the WebP)`
 );
 
 if (wrongWidth.length > 0) {

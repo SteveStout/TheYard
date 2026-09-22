@@ -31,17 +31,23 @@ function cardCopy(src: string): string | undefined {
 }
 
 /**
- * The WebP pair the same script writes beside the JPEG pair since 1.0.0.143,
- * `coupe-01.webp` and `coupe-01-480.webp`, offered first through a `picture`
- * element: a browser that reads WebP, which is every current one, takes it,
- * 43 per cent fewer bytes at 1280 and six per cent at 480 on this set, and
- * one that does not falls through to the `img` and the JPEGs exactly as
- * before. The same test holds this pair to the manifest, so a missing file
- * fails the build rather than a card (ADR: Responsive photos, addendum).
+ * The AVIF and WebP pairs the same script writes beside the JPEG pair,
+ * `coupe-01.avif` and `coupe-01-480.avif` since 1.0.3.3, `coupe-01.webp` and
+ * `coupe-01-480.webp` since 1.0.0.143. They are offered in that order through
+ * a `picture` element: a browser takes the first it can read, and one that
+ * reads neither falls through to the `img` and the JPEGs exactly as before.
+ * The same test holds every pair to the manifest, so a missing file fails the
+ * build rather than a card (ADR: Responsive photos, addendum).
  */
-function webpPair(src: string): { small: string; large: string } | undefined {
+function pairOf(
+  src: string,
+  format: 'avif' | 'webp'
+): { small: string; large: string } | undefined {
   return src.endsWith('.jpg')
-    ? { small: src.replace(/\.jpg$/, '-480.webp'), large: src.replace(/\.jpg$/, '.webp') }
+    ? {
+        small: src.replace(/\.jpg$/, `-480.${format}`),
+        large: src.replace(/\.jpg$/, `.${format}`),
+      }
     : undefined;
 }
 // #endregion srcset
@@ -75,17 +81,21 @@ export function VehicleImage({
   }
 
   const small = cardCopy(src);
-  const webp = webpPair(src);
 
   return (
     <picture className={styles.picture}>
-      {webp && (
-        <source
-          type="image/webp"
-          srcSet={`${webp.small} 480w, ${webp.large} 1280w`}
-          sizes={sizes}
-        />
-      )}
+      {/* Best first: a browser takes the first source it can read (1.0.3.3). */}
+      {(['avif', 'webp'] as const).map((format) => {
+        const pair = pairOf(src, format);
+        return pair === undefined ? null : (
+          <source
+            key={format}
+            type={`image/${format}`}
+            srcSet={`${pair.small} 480w, ${pair.large} 1280w`}
+            sizes={sizes}
+          />
+        );
+      })}
       <img
         className={styles.image}
         src={src}
