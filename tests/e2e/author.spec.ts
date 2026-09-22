@@ -103,7 +103,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       expect(read.framed).toBe(true);
       expect(read.alt.length).toBeGreaterThan(15);
       expect(read.natural).toBeGreaterThan(0);
-      expect(read.path).toMatch(/^\/api\/images\/author\/[a-z-]+-\d+\.(webp|jpg)$/);
+      expect(read.path).toMatch(/^\/api\/images\/author\/[a-z-]+-\d+\.(avif|webp|jpg)$/);
       expect(read.natural).toBeLessThanOrEqual(960);
     }).toPass({ timeout: 20_000 });
   }

@@ -57,7 +57,9 @@ So the catalogue and the filter options are asked for when a view that shows the
 
 **1.0.3.1, the type.** The four Poppins files are named in `src/styles/fonts.css`, so a cold browser only learns about them after it has fetched the stylesheet: measured on the live sites, they started about 150 ms behind the CSS and took 140 to 165 ms each. The build now writes a preload link for each into the head, named from its own hashed output, so they start with the stylesheet. All four paint on the first screen, body, medium, semibold and bold, so nothing there is speculative, and they are 32 KB in all.
 
-The Author page's weight is photographs, and they are already cut per width and served as WebP: a phone is handed the 480 cuts and never a file wider than 960. They load eagerly on purpose (ADR: The sidebar, the addendum on the author's section): lazy loading them made them flash on a phone while the dialog scrolled.
+The Author page's weight is photographs, and they are cut per width: a phone is handed the 480 cuts and never a file wider than 960. They load eagerly on purpose (ADR: The sidebar, the addendum on the author's section): lazy loading them made them flash on a phone while the dialog scrolled.
+
+**1.0.3.2, the photographs.** They are cut to AVIF as well now and offered before the WebP (ADR: Responsive photos, the addendum on AVIF), which halves the set: 1,962 KB to 992 at 960 wide, 586 KB to 296 at 480. The originals were not touched, and a browser too old for AVIF still gets the WebP and then the JPEG.
 
 ## What that buys, measured
 

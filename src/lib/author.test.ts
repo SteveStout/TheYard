@@ -95,12 +95,16 @@ describe('the Author page in its shape', () => {
 });
 
 describe('a photograph as markup', () => {
-  it('offers WebP before JPEG at every width, and states each file’s real width', () => {
+  it('offers AVIF, then WebP, then JPEG at every width, and states each file’s real width', () => {
     const figure = photoFigure(photo, 'Alt', null);
+    const avif = figure.indexOf('type="image/avif"');
     const webp = figure.indexOf('type="image/webp"');
-    expect(webp).toBeGreaterThan(-1);
+    expect(avif).toBeGreaterThan(-1);
+    // Best first: a browser takes the first source it can read, so the order is the rule (1.0.3.2).
+    expect(avif).toBeLessThan(webp);
     expect(webp).toBeLessThan(figure.indexOf('<img'));
     for (const width of photo.widths) {
+      expect(figure).toContain(`/images/author/${photo.name}-${width}.avif ${width}w`);
       expect(figure).toContain(`/images/author/${photo.name}-${width}.webp ${width}w`);
       expect(figure).toContain(`/images/author/${photo.name}-${width}.jpg ${width}w`);
     }
@@ -109,13 +113,13 @@ describe('a photograph as markup', () => {
   it('offers a phone its own tighter cut first, when the photograph has one', () => {
     const wide = { ...photo, phone: { name: 'tight-cut', widths: [480, 960] } };
     const figure = photoFigure(wide, 'Alt', null);
-    const tight = figure.indexOf('media="(max-width: 720px)" type="image/webp"');
+    const tight = figure.indexOf('media="(max-width: 720px)" type="image/avif"');
     expect(tight).toBeGreaterThan(-1);
-    expect(tight).toBeLessThan(figure.indexOf(`${photo.name}-480.webp`));
+    expect(tight).toBeLessThan(figure.indexOf(`${photo.name}-480.avif`));
     expect(figure).toContain('/api/images/author/tight-cut-960.jpg 960w');
     const plain = photoFigure({ ...photo, phone: undefined }, 'Alt', null);
     expect(plain).toContain(
-      `media="(max-width: 720px)" type="image/webp" srcset="/api/images/author/${photo.name}-480.webp 480w`
+      `media="(max-width: 720px)" type="image/avif" srcset="/api/images/author/${photo.name}-480.avif 480w`
     );
   });
 
@@ -123,9 +127,10 @@ describe('a photograph as markup', () => {
     for (const each of AUTHOR_PHOTOS) {
       const figure = photoFigure(each, 'Alt', null);
       const phoneSources = figure.match(/<source media="[^"]*"[^>]*>/g) ?? [];
-      expect(phoneSources).toHaveLength(2);
+      // Three since 1.0.3.2: AVIF, WebP and the JPEG, because the phone's sources replace the img's set too.
+      expect(phoneSources).toHaveLength(3);
       for (const source of phoneSources) {
-        expect(source).not.toMatch(/-(1[0-9]{3}|[2-9][0-9]{3})\.(webp|jpg) /);
+        expect(source).not.toMatch(/-(1[0-9]{3}|[2-9][0-9]{3})\.(avif|webp|jpg) /);
         // The box is the widest phone cut: 960, or less for a picture that has no more to give.
         const box = / width="(\d+)" height="\d+"/.exec(source);
         expect(box).not.toBeNull();

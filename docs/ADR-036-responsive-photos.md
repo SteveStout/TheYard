@@ -103,6 +103,16 @@ The test that makes the convention safe
   paints at about 640 and one eager image is not the problem this record was
   written about.
 
+## Addendum, 2026-09-22 (1.0.3.2): AVIF first, on the Author page
+
+Steve, on the page's weight: "Keep the originals but you can compress the originals". The originals are untouched; the cuts are what changed.
+
+The Author page was 755 KB on a phone and 1,535 KB on a desk, all of it photographs already cut per width and served as WebP before JPEG. Lowering the WebP quality was not worth it: measured on the originals at 960 wide, quality 78 to 58 took the Christmas photograph from 243 KB only to 189, and the loss was visible in the sky. AVIF at quality 50 took the same picture to 122 KB, the willow from 226 to 116 and the grill from 379 to 183, and a crop at full size was if anything cleaner, because the format holds a night sky's gradient where WebP bands it.
+
+**Decision: every Author photograph is cut to AVIF as well, and the picture element offers AVIF, then WebP, then JPEG.** Across all the cuts, the 960 set went from 1,962 KB to 992 and the 480 set from 586 KB to 296, which is about half in both. WebP stays for a browser too old for AVIF (Safari before 16), and the JPEG stays because an `img` needs a `src` that anything can read; a reader on an old browser gets what they got before. `scripts/author_photos.mjs` writes all three, strips metadata from each and reads every file back; `AuthorPageTests` checks the AVIF set the way it checks the other two, with an ISO base media reader for the width and a scan for any Exif, XMP or GPS marker anywhere in the file.
+
+What is not done: the vehicle photographs, fifty of them, are still WebP and JPEG. The inventory page is 190 to 390 KB, an eighth of what the Author page was, so the same change there buys much less and touches the card everything else in the app is built from.
+
 ## Files
 
 - [`scripts/resize_photos.mjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/resize_photos.mjs): the resizer.

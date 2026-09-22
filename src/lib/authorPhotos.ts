@@ -72,20 +72,44 @@ export const PHONE_LINE = '(max-width: 720px)';
 const escape = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// #region formats
+/**
+ * The three formats every photograph is cut to, best first. AVIF was added in
+ * 1.0.3.2 and halved the page: measured on the originals at 960 wide, the
+ * Christmas photograph went from 241 KB to 122, the willow from 226 to 116 and
+ * the grill from 379 to 183, with no loss anybody could point at in a crop at
+ * full size. WebP stays as the fallback for a browser too old for AVIF (Safari
+ * before 16), and the JPEG stays because an `img` needs a `src` that any
+ * browser can read.
+ */
+export type PhotoFormat = 'avif' | 'webp' | 'jpg';
+
+/** The sources offered before the img, best first; the img itself carries the JPEG. */
+export const SOURCES = ['avif', 'webp'] as const;
+
+/** The same, for the phone's tighter cut: it offers all three, because it replaces the img's set too. */
+export const OFFERED = ['avif', 'webp', 'jpg'] as const;
+
+/** The type a source declares, which is the format's media type and not its extension. */
+export function mediaType(format: PhotoFormat): string {
+  return format === 'jpg' ? 'image/jpeg' : `image/${format}`;
+}
+// #endregion formats
+
 /** A cut's address: the stem, its width, its format. */
-export function cut(name: string, width: number, format: 'webp' | 'jpg'): string {
+export function cut(name: string, width: number, format: PhotoFormat): string {
   return `${BASE}/${name}-${width}.${format}`;
 }
 
 /** The stem a document's image address names, or null when it is not one of these photographs. */
 export function photoNamed(address: string): AuthorPhoto | null {
-  const stem = address.match(/\/images\/author\/([a-z0-9-]+?)-\d+\.(?:jpg|webp)$/)?.[1];
+  const stem = address.match(/\/images\/author\/([a-z0-9-]+?)-\d+\.(?:jpg|webp|avif)$/)?.[1];
   return AUTHOR_PHOTOS.find((photo) => photo.name === stem) ?? null;
 }
 
 /**
  * One photograph as markup: a figure in the one quiet frame every picture on
- * the page wears, a picture element offering WebP before JPEG at every width,
+ * the page wears, a picture element offering AVIF, then WebP, then JPEG at every width,
  * the box's size set, and the caption under it when there is one. Below the
  * fold unless told otherwise, so it loads when it is scrolled to.
  */
@@ -95,9 +119,9 @@ export function photoFigure(
   caption: string | null,
   eager = false
 ): string {
-  const setOf = (name: string, widths: number[], format: 'webp' | 'jpg') =>
+  const setOf = (name: string, widths: number[], format: PhotoFormat) =>
     widths.map((width) => `${cut(name, width, format)} ${width}w`).join(', ');
-  const set = (format: 'webp' | 'jpg') => setOf(photo.name, photo.widths, format);
+  const set = (format: PhotoFormat) => setOf(photo.name, photo.widths, format);
   // A phone takes its tighter cut when there is one, and otherwise this photograph's own cuts up to PHONE_WIDEST.
   const own = photo.widths.filter((width) => width <= PHONE_WIDEST);
   const tight = photo.phone ?? {
@@ -112,20 +136,21 @@ export function photoFigure(
   const phone =
     tight.widths.length === 0
       ? ''
-      : (['webp', 'jpg'] as const)
-          .map(
-            (format) =>
-              `<source media="${PHONE_LINE}" type="image/${format === 'jpg' ? 'jpeg' : format}" ` +
-              `srcset="${setOf(tight.name, tight.widths, format)}" sizes="92vw"${phoneBox}>`
-          )
-          .join('');
+      : OFFERED.map(
+          (format) =>
+            `<source media="${PHONE_LINE}" type="${mediaType(format)}" ` +
+            `srcset="${setOf(tight.name, tight.widths, format)}" sizes="92vw"${phoneBox}>`
+        ).join('');
   const largest = photo.widths[photo.widths.length - 1];
   const middle = photo.widths[Math.min(1, photo.widths.length - 1)];
   return (
     `<figure class="author-photo" data-photo="${escape(photo.name)}">` +
     `<picture>` +
     phone +
-    `<source type="image/webp" srcset="${set('webp')}" sizes="${escape(photo.sizes)}">` +
+    SOURCES.map(
+      (format) =>
+        `<source type="${mediaType(format)}" srcset="${set(format)}" sizes="${escape(photo.sizes)}">`
+    ).join('') +
     `<img class="author-frame" src="${cut(photo.name, middle, 'jpg')}" srcset="${set('jpg')}" sizes="${escape(photo.sizes)}" ` +
     `alt="${escape(alt)}" width="${largest}" height="${Math.round(largest * photo.ratio)}" ` +
     // decoding="sync": a phone throws a decoded picture away once it scrolls off and decodes it

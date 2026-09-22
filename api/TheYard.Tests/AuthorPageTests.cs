@@ -237,6 +237,40 @@ public class AuthorPageTests
         return (blocks, width);
     }
 
+    /// <summary>The same for an AVIF, which is an ISO base media file: a run of
+    /// named boxes. The width is in the first <c>ispe</c> box, four bytes past
+    /// its version and flags. Metadata is not parsed box by box the way the
+    /// other two are, because an AVIF can carry it in several places at once
+    /// (an <c>Exif</c> item, an <c>mime</c> item holding XMP, a <c>colr</c>
+    /// profile); what this holds is the rule that matters, that none of those
+    /// names appears anywhere in the file at all.</summary>
+    private static (List<string> Blocks, int Width) ReadAvif(byte[] file)
+    {
+        var blocks = new List<string>();
+        var text = Encoding.ASCII.GetString(file);
+        foreach ((string marker, string called) in new[]
+        {
+            ("Exif", "an Exif item"),
+            ("http://ns.adobe.com/xap/", "an XMP packet"),
+            ("GPS", "a GPS tag"),
+        })
+        {
+            if (text.Contains(marker, StringComparison.Ordinal))
+            {
+                blocks.Add(called);
+            }
+        }
+
+        int width = 0;
+        int at = text.IndexOf("ispe", StringComparison.Ordinal);
+        if (at >= 0 && at + 12 <= file.Length)
+        {
+            width = (int)BinaryPrimitives.ReadUInt32BigEndian(file.AsSpan(at + 8));
+        }
+
+        return (blocks, width);
+    }
+
     [Fact]
     public void Every_photograph_the_Author_page_serves_is_a_clean_file_of_the_width_it_claims()
     {
@@ -264,7 +298,7 @@ public class AuthorPageTests
 
             foreach (int width in photo.Widths)
             {
-                foreach (string format in new[] { "webp", "jpg" })
+                foreach (string format in new[] { "avif", "webp", "jpg" })
                 {
                     string name = $"{photo.Name}-{width}.{format}";
                     expected.Add(name);
@@ -276,7 +310,12 @@ public class AuthorPageTests
                     }
 
                     byte[] file = File.ReadAllBytes(path);
-                    (List<string> blocks, int real) = format == "jpg" ? ReadJpeg(file) : ReadWebp(file);
+                    (List<string> blocks, int real) = format switch
+                    {
+                        "jpg" => ReadJpeg(file),
+                        "webp" => ReadWebp(file),
+                        _ => ReadAvif(file),
+                    };
                     if (blocks.Count > 0)
                     {
                         wrong.Add($"{name} holds {string.Join(", ", blocks)}. A photograph knows where and when it was taken and this page must not: cut it with scripts/author_photos.mjs, which strips it");

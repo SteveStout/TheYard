@@ -7,7 +7,7 @@
  * the command line, and writes only the cuts. Each photograph in
  * src/lib/authorPhotos.json is looked for there as `<name>-hd.jpg`, then
  * `<name>.jpg`, then `<name>.png`, and written at every width the list gives
- * it, as WebP and as JPEG, into api/TheYard.Api/wwwroot/images/author.
+ * it, as AVIF, WebP and JPEG, into api/TheYard.Api/wwwroot/images/author.
  *
  * Two things are checked here because this is the only place that can:
  *
@@ -38,6 +38,13 @@ const OUT = path.join(process.cwd(), 'api', 'TheYard.Api', 'wwwroot', 'images', 
 const LIST = path.join(process.cwd(), 'src', 'lib', 'authorPhotos.json');
 const JPEG_QUALITY = 80;
 const WEBP_QUALITY = 78;
+// AVIF, added 1.0.3.2, is what a current browser actually takes: measured on
+// these originals at 960 wide, quality 50 came out at about half the WebP and
+// a crop at full size showed no loss worth the bytes (the Christmas
+// photograph 241 KB to 122, the willow 226 to 116, the grill 379 to 183).
+// effort 4 is sharp's default and cuts a 960 file in about a second.
+const AVIF_QUALITY = 50;
+const AVIF_EFFORT = 4;
 
 const exists = (file) =>
   stat(file).then(
@@ -80,13 +87,15 @@ for (const { name, widths } of cuts) {
   }
 
   for (const width of widths) {
-    for (const format of ['webp', 'jpg']) {
+    for (const format of ['avif', 'webp', 'jpg']) {
       const target = path.join(OUT, `${name}-${width}.${format}`);
       const resized = sharp(upright.data).resize({ width, withoutEnlargement: true });
       await (
-        format === 'webp'
-          ? resized.webp({ quality: WEBP_QUALITY })
-          : resized.jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
+        format === 'avif'
+          ? resized.avif({ quality: AVIF_QUALITY, effort: AVIF_EFFORT, chromaSubsampling: '4:2:0' })
+          : format === 'webp'
+            ? resized.webp({ quality: WEBP_QUALITY })
+            : resized.jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
       ).toFile(target);
 
       const written = await sharp(target).metadata();
