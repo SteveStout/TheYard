@@ -93,7 +93,6 @@ export function VehicleImage({
         sizes={small ? sizes : undefined}
         alt={alt}
         loading={loading}
-        decoding="async"
         onError={() => setFailed(true)}
       />
     </picture>

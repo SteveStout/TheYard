@@ -128,7 +128,12 @@ export function photoFigure(
     `<source type="image/webp" srcset="${set('webp')}" sizes="${escape(photo.sizes)}">` +
     `<img class="author-frame" src="${cut(photo.name, middle, 'jpg')}" srcset="${set('jpg')}" sizes="${escape(photo.sizes)}" ` +
     `alt="${escape(alt)}" width="${largest}" height="${Math.round(largest * photo.ratio)}" ` +
-    `loading="${eager ? 'eager' : 'lazy'}" decoding="async">` +
+    // decoding="sync": a phone throws a decoded picture away once it scrolls off and decodes it
+    // again on the way back; with "async" the frame paints empty until that decode lands, which
+    // is the flash Steve saw on the lower half of the page (2026-09-22). "sync" holds the old
+    // frame instead. Measured the same day at 390 px: 31 decodes for a dozen pictures in one
+    // scroll down and back.
+    `loading="${eager ? 'eager' : 'lazy'}" decoding="sync">` +
     `</picture>` +
     (caption === null || caption === '' ? '' : `<figcaption>${escape(caption)}</figcaption>`) +
     `</figure>`
