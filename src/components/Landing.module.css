@@ -16,6 +16,18 @@
   gap: var(--space-3);
   text-align: center;
   margin-bottom: var(--space-2);
+  /* The title and its sentence sit on the glass the large tiles wear, so the
+     ribbons behind them do not cross the words (Steve, 2026-09-22: "needs a
+     faint background to make this more readable"). */
+  align-self: center;
+  max-width: 760px;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-shadow);
 }
 
 /* A page's title, with the gold underline, as Admin, Account and Inventory. */

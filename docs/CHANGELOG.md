@@ -10,6 +10,7 @@ footer cannot disagree (ADR: The version comes from the changelog). One number
 is missing, 1.0.0.39, skipped under the older formula when a red build consumed
 a deploy run number.
 
+- **1.0.1.3** (2026-09-22): The landing page's title and its sentence sit on the same faint glass panel as the large tiles, so the ribbons behind them no longer cross the words.
 - **1.0.1.2** (2026-09-22): The doors block on the Author page shows Steve's own door, hung in its new frame before the trim went on, in place of the placeholder photograph and its credit.
 - **1.0.1.1** (2026-09-22): The Author page shows Steve and Katie under the willow just before Freya and Vincent, the two rabbits on the blue rug as the second rabbit photograph, and Steve's own grill in place of the stock steak under Food, each cut on this machine like every photograph on the page; the page ends with St. Charles, where Steve lives; and the sidebar has a Home row first, which opens the landing page and reads as current while it shows.
 - **1.0.1.0** (2026-09-22): The first polished release: the address opens a landing page drawn from the same site map as the sidebar, and the version is read as four numbers.
