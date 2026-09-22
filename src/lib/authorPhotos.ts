@@ -42,9 +42,11 @@ export type AuthorPhoto = {
   /** Stands alone, full width, between the block it closes and the next, instead of inside it. */
   between?: boolean;
   /**
-   * Sits beneath the photograph before it, in its own shape, never paired and
-   * never cut: 480 px wide and centred on a desk, the column's width on a
-   * phone (Steve, 2026-09-22: "make sure this image goes beneath St Charles").
+   * Keeps its own shape, never paired and never cut: 480 px wide and centred
+   * on a desk, the column's width on a phone (Steve, 2026-09-22: "make sure
+   * this image goes beneath St Charles"). With `between` it stands on its own
+   * after the block, no heading (1.0.1.6: "the rabbits should be their own
+   * section not included in the st charles").
    */
   beneath?: boolean;
 };

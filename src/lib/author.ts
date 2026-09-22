@@ -81,19 +81,25 @@ const nameOf = (figure: string) => /data-photo="([^"]+)"/.exec(figure)?.[1] ?? '
  * under the photograph before it, in its own shape (1.0.1.4).
  */
 function pairs(html: string): string {
-  return html
-    .replace(
-      /(<figure class="author-photo"[\s\S]*?<\/figure>)\s*(<figure class="author-photo"[\s\S]*?<\/figure>)/g,
-      (both: string, first: string, second: string) =>
-        BENEATH.has(nameOf(first)) || BENEATH.has(nameOf(second))
-          ? both
-          : `<div class="author-pair">${first}${second}</div>`
-    )
-    .replace(/<figure class="author-photo" data-photo="([^"]+)">/g, (figure, name: string) =>
+  const paired = html.replace(
+    /(<figure class="author-photo"[\s\S]*?<\/figure>)\s*(<figure class="author-photo"[\s\S]*?<\/figure>)/g,
+    (both: string, first: string, second: string) =>
+      BENEATH.has(nameOf(first)) || BENEATH.has(nameOf(second))
+        ? both
+        : `<div class="author-pair">${first}${second}</div>`
+  );
+  return markBeneath(paired);
+}
+
+/** A photograph marked `beneath` wears the class that keeps it in its own shape, inside a block or between two. */
+function markBeneath(html: string): string {
+  return html.replace(
+    /<figure class="author-photo" data-photo="([^"]+)">/g,
+    (figure, name: string) =>
       BENEATH.has(name)
         ? `<figure class="author-photo author-beneath" data-photo="${name}">`
         : figure
-    );
+  );
 }
 
 /** The photographs marked `between` in the list: each stands alone, full width, after the block it closes. */
@@ -147,7 +153,9 @@ function blocks(section: string): string {
         const shape = half[index] ? ' author-block-half' : wide ? ' author-block-wide' : '';
         return (
           `<section class="author-block${shape}">${pairs(kept)}</section>` +
-          between.map((figure) => `<div class="author-between">${figure}</div>`).join('')
+          between
+            .map((figure) => `<div class="author-between">${markBeneath(figure)}</div>`)
+            .join('')
         );
       })
       .join('') +

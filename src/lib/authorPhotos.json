@@ -106,6 +106,7 @@
     "width": 1920,
     "height": 2560,
     "sizes": "(max-width: 720px) 92vw, 480px",
-    "beneath": true
+    "beneath": true,
+    "between": true
   }
 ]
