@@ -69,7 +69,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       { name: 'mass-effect-legendary-edition', hero: false, opens: false, paired: false },
       { name: 'couple-on-wooden-bridge-wide', hero: false, opens: false, paired: false },
       { name: 'grill-flames-on-driveway', hero: false, opens: false, paired: false },
-      { name: 'interior-doors', hero: false, opens: false, paired: false },
+      { name: 'interior-door-in-new-frame', hero: false, opens: false, paired: false },
       { name: 'couple-under-willow', hero: false, opens: false, paired: false },
       { name: 'rabbits-both-lying-on-runner', hero: false, opens: false, paired: true },
       { name: 'rabbits-lop-on-blue-rug', hero: false, opens: false, paired: true },

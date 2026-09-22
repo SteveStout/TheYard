@@ -59,13 +59,11 @@
     "sizes": "(max-width: 720px) 92vw, 480px"
   },
   {
-    "name": "interior-doors",
-    "widths": [480, 600],
-    "width": 600,
-    "height": 853,
-    "sizes": "(max-width: 720px) 92vw, 480px",
-    "narrowBecause": "a placeholder cropped to the doors: 600 is every pixel the crop has",
-    "credit": "Doors photograph from apartmenttherapy.com, a placeholder."
+    "name": "interior-door-in-new-frame",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 2560,
+    "sizes": "(max-width: 720px) 92vw, 480px"
   },
   {
     "name": "couple-under-willow",

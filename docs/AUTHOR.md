@@ -46,7 +46,7 @@ I am a soft foodie, always looking for a new place to try. Steak, sushi or Mexic
 
 My most ambitious home project so far was replacing every interior door in the house, with a lot of help from my father-in-law. We went two months without bathroom doors. Katie was very happy when they went back on.
 
-![Two white shaker-style interior doors with brass lever handles in a hallway](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/interior-doors-480.jpg "Doors photograph from apartmenttherapy.com, a placeholder.")
+![A white six-panel interior door hung in its new frame, the trim not yet on and the wall around it still rough](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/interior-door-in-new-frame-960.jpg)
 
 ![Steve in a navy suit and Katie in a white dress smiling at each other under a weeping willow, sunlight through the leaves](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-under-willow-960.jpg)
 
