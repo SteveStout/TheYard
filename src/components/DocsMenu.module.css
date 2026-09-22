@@ -117,7 +117,13 @@
 }
 
 /* A document's title wears the page title's gold underline, as Inventory, Admin and
-   Account do, and its sections the Admin tab's trim: one look, 2026-09-21. */
+   Account do, and its sections the Admin tab's trim: one look, 2026-09-21. Bold, as those
+   titles and the Admin tab's section headings are (measured 2026-09-22: 700 there, 600 here). */
+.prose h1,
+.prose h2 {
+  font-weight: var(--weight-bold);
+}
+
 .prose h1 {
   display: inline-block;
   font-size: var(--text-2xl);
