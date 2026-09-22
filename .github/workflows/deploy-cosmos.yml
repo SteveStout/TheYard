@@ -108,12 +108,12 @@ jobs:
       - name: Wait for the image
         if: github.event_name == 'push'
         run: |
-          for i in $(seq 1 60); do
+          for i in $(seq 1 120); do
             if az acr repository show-tags -n "$REGISTRY_NAME" --repository theyard -o tsv 2>/dev/null | grep -qx "v${APP_VERSION##*.}"; then
-              echo "$IMAGE is in the registry after $((i * 10 - 10))s"
+              echo "$IMAGE is in the registry after $((i * 5 - 5))s"
               exit 0
             fi
-            sleep 10
+            sleep 5
           done
           echo "::error::$IMAGE never reached the registry; Deploy's build did not finish"
           exit 1
@@ -194,14 +194,14 @@ jobs:
       - name: Verify
         if: github.event_name != 'workflow_dispatch' || inputs.action == 'roll'
         run: |
-          for i in $(seq 1 60); do
-            sleep 10
+          for i in $(seq 1 120); do
+            sleep 5
             body=$(curl -fsS --max-time 10 "$ORIGIN/api/version" || true)
             if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
-              echo "origin serves $APP_VERSION after $((i * 10))s: $body"
+              echo "origin serves $APP_VERSION after $((i * 5))s: $body"
               break
             fi
-            if [[ "$i" -eq 60 ]]; then
+            if [[ "$i" -eq 120 ]]; then
               echo "origin never served $APP_VERSION (last answer: $body)"
               exit 1
             fi

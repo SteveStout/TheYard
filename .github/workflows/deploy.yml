@@ -213,14 +213,14 @@ jobs:
           # Wait for the NEW build to answer at the origin. Ten minutes rather
           # than five: the plan is one shared processor, and the process reads a
           # hundred thousand vehicles into memory before it answers.
-          for i in $(seq 1 60); do
-            sleep 10
+          for i in $(seq 1 120); do
+            sleep 5
             body=$(curl -fsS --max-time 10 "$ORIGIN/api/version" || true)
             if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
-              echo "origin serves $APP_VERSION after $((i * 10))s: $body"
+              echo "origin serves $APP_VERSION after $((i * 5))s: $body"
               break
             fi
-            if [[ "$i" -eq 60 ]]; then
+            if [[ "$i" -eq 120 ]]; then
               echo "origin never served $APP_VERSION (last answer: $body)"
               exit 1
             fi
