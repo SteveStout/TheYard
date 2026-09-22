@@ -508,6 +508,18 @@
   object-fit: cover;
 }
 
+/* A photograph marked beneath (1.0.1.4, the rabbits under St. Charles): under the one
+   before it, in its own shape and never cut, 480 px wide and centred on a desk. */
+.prose :global(.author-beneath) {
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.prose :global(.author-block-wide) > :global(.author-beneath) :global(.author-frame) {
+  aspect-ratio: auto;
+  object-fit: fill;
+}
+
 .prose :global(.author-block) h3 {
   margin: 0 0 var(--space-1);
   font-size: var(--text-md);

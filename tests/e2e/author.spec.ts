@@ -74,16 +74,17 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       { name: 'rabbits-both-lying-on-runner', hero: false, opens: false, paired: true },
       { name: 'rabbits-lop-on-blue-rug', hero: false, opens: false, paired: true },
       { name: 'st-charles-main-street-christmas', hero: false, opens: false, paired: false },
+      { name: 'rabbits-under-hay-rack', hero: false, opens: false, paired: false },
     ]);
   }).toPass({ timeout: 20_000 });
   await expect(doc.locator('.author-credit')).toHaveText(
-    'Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs.'
+    'Photos of Steve and Katie at the stream, on the bridge and under the willow by McKinley Griggs.'
   );
 
   // Every photograph is served from this site, in the one frame, with words for it and its box reserved,
   // and a phone is never handed a file wider than 960.
   const photos = doc.locator('.author-photo img');
-  await expect(photos).toHaveCount(12);
+  await expect(photos).toHaveCount(13);
   const count = await photos.count();
   for (let index = 0; index < count; index++) {
     // Read as one retried step: the drawer that opened this document lets go of it as it closes, and

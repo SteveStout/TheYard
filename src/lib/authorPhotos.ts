@@ -41,6 +41,12 @@ export type AuthorPhoto = {
   narrowBecause?: string;
   /** Stands alone, full width, between the block it closes and the next, instead of inside it. */
   between?: boolean;
+  /**
+   * Sits beneath the photograph before it, in its own shape, never paired and
+   * never cut: 480 px wide and centred on a desk, the column's width on a
+   * phone (Steve, 2026-09-22: "make sure this image goes beneath St Charles").
+   */
+  beneath?: boolean;
 };
 
 // #region photos

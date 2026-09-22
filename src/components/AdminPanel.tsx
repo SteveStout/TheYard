@@ -75,6 +75,7 @@ import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/
 import {
   QUESTIONS,
   afterColdStart,
+  quietMinutes,
   ringStroke,
   sparkCaption,
   sparkRuns,
@@ -627,6 +628,8 @@ export function AdminPanel({
           ...trafficTotals(hour, 1),
           slowest_p95_ms: warmTotals.slowest_p95_ms,
           slowest_at: warmTotals.slowest_at,
+          // Red needs a busy minute (statTiles.ts, RED_NEEDS_REQUESTS).
+          ...(warmed === null ? {} : quietMinutes(warmed.warm)),
         };
   const coldStart =
     warmed !== null && warmed.left_out.some((slot) => (slot.requests ?? 0) > 0)

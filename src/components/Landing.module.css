@@ -1,6 +1,7 @@
 /* The landing page (1.0.1.0), Example A as Steve approved it on 2026-09-22:
    glass tiles with a round teal icon on a gold ring, the two featured tiles
-   large at the top. Every value is a token. Tiles are glass without the blur
+   large at the top, the sections under their group headings below them
+   (1.0.1.4). Every value is a token. Tiles are glass without the blur
    (VehicleCard's reason: a blur is paid for by the pixel, and there are
    eighteen); the two large tiles take the blur, as the intro strip does. */
 .landing {
@@ -122,10 +123,72 @@
   text-align: center;
 }
 
-/* Only a healthy thing is green: the Admin tab, as its own healthy tiles. */
+/* Only a healthy thing is green: the Admin tile while /api/health says
+   healthy, as the Admin tab's own tiles (1.0.1.4: read, no longer assumed). */
 .tile[data-tone='good'],
 .big {
   border-top-color: var(--color-success);
+}
+
+.tile[data-tone='warn'] {
+  border-top-color: var(--color-warning);
+}
+
+.tile[data-tone='bad'] {
+  border-top-color: var(--color-danger);
+}
+
+/* The health dot and its word, under the Admin tile's line. */
+.health {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
+}
+
+.health[data-state='healthy'] .dot {
+  background: var(--color-success);
+}
+
+.health[data-state='degraded'] .dot {
+  background: var(--color-warning);
+}
+
+.health[data-state='unreachable'] .dot {
+  background: var(--color-danger);
+}
+
+/* A group of sections under its heading, as the sidebar groups them (1.0.1.4). */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* On the same glass as the title, so the ribbons do not cross the words. */
+.groupHeading {
+  align-self: flex-start;
+  margin: 0;
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.25;
+  color: var(--color-heading);
 }
 
 .big {
@@ -169,6 +232,21 @@
   width: 88px;
   height: 88px;
   box-shadow: 0 0 0 2px var(--color-gold);
+}
+
+/* A photograph in the badge, in place of the icon: the same round gold ring,
+   the picture filling the circle (Steve, 2026-09-22). */
+.badgePhoto {
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.badgeImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-full);
 }
 
 .text {

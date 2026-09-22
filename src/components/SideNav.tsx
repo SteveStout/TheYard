@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
-import {
-  DocDialog,
-  DOCS,
-  LINKS,
-  MENU_ORDER,
-  MENUS,
-  type DocKey,
-  type DocRequest,
-} from './DocsMenu';
+import { DocDialog, DOCS, LINKS, MENUS, type DocKey, type DocRequest } from './DocsMenu';
 import { NavGlyph, RowIcon } from './SheetIcons';
-import { SITE_MAP, type SiteAction } from '../lib/siteMap';
+import { SITE_GROUPS, SITE_MAP, sectionsIn, type SiteAction } from '../lib/siteMap';
 import { BrandMark } from './BrandMark';
 import styles from './SideNav.module.css';
 
@@ -295,32 +287,39 @@ function NavContent({
       <nav className={styles.sections} aria-label="Project documents">
         <div className={styles.scroll}>
           {/* #region rows */}
-          {MENU_ORDER.map((variant) => (
-            <SectionShell key={variant} label={MENUS[variant].label} iconsOnly={iconsOnly}>
-              {MENUS[variant].items.map(({ key, sub }) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={sub ? `${styles.row} ${styles.subRow}` : styles.row}
-                  onClick={() => onOpenDoc(key)}
-                  aria-current={openKey === key ? 'page' : undefined}
-                  title={iconsOnly ? DOCS[key].menuLabel : undefined}
-                >
-                  <RowIcon kind={DOCS[key].kind} className={styles.icon} />
-                  <span className={iconsOnly ? styles.srOnly : styles.label}>
-                    {DOCS[key].number ? (
-                      <>
-                        <span className={styles.recordNumber}>{DOCS[key].number}</span>{' '}
-                      </>
-                    ) : null}
-                    {DOCS[key].menuLabel}
-                  </span>
-                </button>
+          {/* The site map's groups, each heading above its sections (1.0.1.4);
+              the sections inside a group keep MENU_ORDER's order. */}
+          {SITE_GROUPS.map((group) => (
+            <div key={group.key} className={styles.group} data-testid={`rail-group-${group.key}`}>
+              <p className={iconsOnly ? styles.srOnly : styles.groupTitle}>{group.label}</p>
+              {sectionsIn(group.key).map(({ menu: variant }) => (
+                <SectionShell key={variant} label={MENUS[variant].label} iconsOnly={iconsOnly}>
+                  {MENUS[variant].items.map(({ key, sub }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={sub ? `${styles.row} ${styles.subRow}` : styles.row}
+                      onClick={() => onOpenDoc(key)}
+                      aria-current={openKey === key ? 'page' : undefined}
+                      title={iconsOnly ? DOCS[key].menuLabel : undefined}
+                    >
+                      <RowIcon kind={DOCS[key].kind} className={styles.icon} />
+                      <span className={iconsOnly ? styles.srOnly : styles.label}>
+                        {DOCS[key].number ? (
+                          <>
+                            <span className={styles.recordNumber}>{DOCS[key].number}</span>{' '}
+                          </>
+                        ) : null}
+                        {DOCS[key].menuLabel}
+                      </span>
+                    </button>
+                  ))}
+                  {MENUS[variant].links?.map((link) => (
+                    <LinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
+                  ))}
+                </SectionShell>
               ))}
-              {MENUS[variant].links?.map((link) => (
-                <LinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
-              ))}
-            </SectionShell>
+            </div>
           ))}
           {/* #endregion rows */}
         </div>

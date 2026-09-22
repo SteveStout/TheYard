@@ -331,6 +331,12 @@ What that changed on this tab, and what it did not:
   live look after 1.0.0.168 showed a line that starts at the top of the axis passing through the
   word.
 
+## Addendum, 2026-09-22 (1.0.1.4): red needs a busy minute
+
+Steve saw "Slowest 95th: 6355 ms" and "needs attention" on a morning nothing was wrong, and asked for it to be checked against the last 30 days: "it maybe a deployment or wake up blip but we need to make sure those blips don't raise a alarm". The kept minutes only reach back to 2026-09-20, about 50 hours, so that is what was read, on both sites, at five-minute grain for the last 24 hours. Nine readings were red. None was a restart: the sampler kept every minute and the uptime never reset. Seven were quiet stretches after an idle spell, 10 to 28 requests in five minutes and no database work at all, and the 6355 ms was one of them. Two came within a minute of a ship commit, under a couple of hundred requests; their cause was not found.
+
+The tile's number is the worst minute's ninety-fifth, and over a handful of requests a ninety-fifth is that minute's one slowest request. So **red now needs a minute of at least 20 requests (`RED_NEEDS_REQUESTS`)**; a slower minute with fewer is amber at most, the number still shows, and the line under it says the minute had too few requests to call red. Over the same 24 hours that leaves 2 of the 9 red. The three minutes after a start are still left out (the cold-start region), and every request and error in the hour is still counted.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.
@@ -352,6 +358,9 @@ What that changed on this tab, and what it did not:
 ```
 
 ```live path=src/lib/statTiles.ts region=tile-rules
+```
+
+```live path=src/lib/statTiles.ts region=quiet-minutes
 ```
 
 ```live path=src/lib/trafficCard.ts region=traffic-words

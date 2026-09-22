@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
-import { landingTiles, MENU_ORDER } from '../../src/lib/siteMap';
+import { landingTiles, MENU_ORDER, SITE_GROUPS } from '../../src/lib/siteMap';
 
 /**
  * The landing page (1.0.1.0): a bare address opens it, and it is drawn from the
@@ -35,6 +35,23 @@ for (const viewport of [
           tiles.map((tile) => tile.getAttribute('data-testid')!.replace('landing-tile-', ''))
         );
       expect(names).toEqual(EXPECTED);
+
+      // The sections under their three group headings, in the sidebar's groups (1.0.1.4).
+      await expect(page.getByTestId('landing').getByRole('heading', { level: 2 })).toHaveText(
+        SITE_GROUPS.map((group) => group.label)
+      );
+
+      // The two large tiles wear a photograph in the badge, and it has loaded.
+      for (const name of ['inventory', 'author']) {
+        const photo = page.getByTestId(`landing-tile-${name}`).locator('img');
+        await expect(photo).toHaveCount(1);
+        await expect
+          .poll(() => photo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth))
+          .toBeGreaterThan(0);
+      }
+
+      // The one live reading: the Admin tile's health dot, read from /api/health.
+      await expect(page.getByTestId('landing-admin-health')).toHaveText(/^(Healthy|Degraded)$/);
 
       // Every tile a full touch target, and nothing wider than the screen.
       await expect(async () => {
@@ -87,6 +104,12 @@ test.describe('the docked rail', () => {
     const rail = page.getByTestId('side-rail');
     const headings = await rail.locator('summary h2').allTextContents();
     expect(headings.length).toBe(MENU_ORDER.length);
+    // The same three groups as the landing page, each heading above its sections.
+    for (const group of SITE_GROUPS) {
+      await expect(rail.getByTestId(`rail-group-${group.key}`).locator('p').first()).toHaveText(
+        group.label
+      );
+    }
     // The landing page's own row is the first one, current while it shows (Steve: "you also need the dashboard on the navigation").
     await expect(rail.locator('[aria-current="page"]')).toHaveText('Home');
     await rail.getByRole('button', { name: 'Inventory', exact: true }).click();

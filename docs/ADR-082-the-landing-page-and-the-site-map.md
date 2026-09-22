@@ -31,9 +31,19 @@ Every address shared before 1.0.1.0 opened the inventory, so the rule is that an
 
 Steve: "you also need the dashboard on the navigation". The site map's first action is Home, a sidebar row and not a tile, which opens the landing page and is the current row while it shows, so the rail says where the reader is on the landing page as it does everywhere else. The brand still goes home too. He chose the label Home over Dashboard, which could read as the Admin tab's figures.
 
+## Addendum, 2026-09-22 (1.0.1.4): three groups, two photographs and one live reading
+
+Steve answered eight questions on the landing page that morning, and four of them change this record.
+
+- **The sections are grouped, in both places, from the one map.** Each section in `SITE_MAP` names its group, and `SITE_GROUPS` holds the three headings in order: How it is built (App Architecture, API Reference, SQL vs Cosmos DB, Diagrams, Style, Built with AI), How it is run (Performance, Hosting, CI/CD, Best Practices), and Who and why (Decision Records, Changelog, About, and Author, which the landing page still shows large at the top). The map lists a group's sections together, so `MENU_ORDER` is still the one order, and the sidebar and the landing page draw each heading above its group's first section. Sign in, Admin and GitHub stay last on the landing page, and the sidebar's pinned rows are unchanged. `siteMap.test.ts` holds the order he gave and that no group is split.
+- **The two large tiles wear a photograph in the badge.** The Author tile shows the vineyard selfie of Steve and Katie (option A of his mock), and the Inventory tile one of the inventory's own photographs, the yellow Nissan Fairlady Z (option B, "maybe a car for the inventory?"), each a square crop in the same 88 px round gold ring, cut on the machine and served from `/api/images/badges/`. The car's photographer and licence are its line in `credits.json`, carried on the picture as its title.
+- **One live reading, on the Admin tile only.** The landing page reads `/api/health` once when it opens and puts a dot and a word under the Admin tile: Healthy is green, Degraded amber, and no answer red. Before this the tile was drawn green whatever the site said, which was a claim the page had not checked. He said no to an auction count on Inventory and no to a live line under the title.
+- **What it costs:** the grid is no longer four even rows of four on a desk; the first group is six tiles, a row and a half. The groups are the order he asked for, and a group is easier to scan than an even grid.
+
 ## Files
 
-- [`src/lib/siteMap.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/siteMap.ts): the one structure.
+- [`src/lib/siteMap.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/siteMap.ts): the one structure, its groups and the two badge photographs.
+- [`src/lib/landingHealth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/landingHealth.ts): the Admin tile's health dot, as a word and a tone.
 - [`src/components/Landing.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Landing.tsx): the landing page drawn from it.
 - [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx): the sidebar's pinned rows drawn from it.
 - [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): `opensInventory()`, which keeps every older address on the inventory.

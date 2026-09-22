@@ -181,6 +181,23 @@
   margin-top: var(--space-2);
 }
 
+/* The site map's three groups (1.0.1.4): a heading above each group's
+   sections, a step stronger than a section title, and a rule between groups. */
+.group + .group {
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--color-sheet-divider-strong);
+  padding-top: var(--space-1);
+}
+
+.groupTitle {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-sheet-text);
+  white-space: nowrap;
+}
+
 .rail[data-collapsed='true'] .section + .section {
   border-top: 1px solid var(--color-sheet-divider-strong);
   padding-top: var(--space-2);

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   afterColdStart,
   COLD_START_MINUTES,
+  quietMinutes,
+  RED_NEEDS_REQUESTS,
   sparkCaption,
   sparkRuns,
   tilesFrom,
@@ -244,6 +246,55 @@ describe('the stat tiles', () => {
     ).toMatchObject({
       detail: '74 requests in the last hour, slowest at 07:41; the start at 07:30 is left out',
       tone: 'good',
+    });
+  });
+
+  it("keeps red for a busy minute: a quiet minute's one slow request is amber at most", () => {
+    expect(RED_NEEDS_REQUESTS).toBe(20);
+    // The reading that started it: 6355 ms in a minute of ten requests after an idle stretch.
+    const minutes = [
+      { requests: 1, p95_ms: 0 },
+      { requests: 10, p95_ms: 6355 },
+      { requests: 118, p95_ms: 1254 },
+      { requests: null, p95_ms: null },
+    ];
+    expect(quietMinutes(minutes)).toEqual({ busy_slowest_p95_ms: 1254, slowest_requests: 10 });
+    const quiet = tile(
+      {
+        ...quietDay,
+        traffic: {
+          ...quietDay.traffic!,
+          slowest_p95_ms: 6355,
+          slowest_label: '06:20',
+          ...quietMinutes(minutes),
+        },
+      },
+      'speed'
+    );
+    expect(quiet).toMatchObject({
+      value: '6355 ms',
+      tone: 'warn',
+      detail:
+        '240 requests in the last hour, slowest at 06:20; that minute had 10 requests, too few to call red',
+    });
+    // The same number in a busy minute is still somebody should be looking.
+    expect(
+      tile(
+        {
+          ...quietDay,
+          traffic: {
+            ...quietDay.traffic!,
+            slowest_p95_ms: 5998,
+            ...quietMinutes([{ requests: 40, p95_ms: 5998 }]),
+          },
+        },
+        'speed'
+      ).tone
+    ).toBe('bad');
+    // An hour with no busy minute at all is amber too, never red.
+    expect(quietMinutes([{ requests: 3, p95_ms: 4100 }])).toEqual({
+      busy_slowest_p95_ms: null,
+      slowest_requests: 3,
     });
   });
 

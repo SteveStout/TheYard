@@ -13,7 +13,7 @@
     "width": 1920,
     "height": 1599,
     "sizes": "(max-width: 720px) 92vw, 960px",
-    "credit": "Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs.",
+    "credit": "Photos of Steve and Katie at the stream, on the bridge and under the willow by McKinley Griggs.",
     "between": true
   },
   {
@@ -23,7 +23,7 @@
     "height": 1321,
     "sizes": "(max-width: 720px) 92vw, 960px",
     "phone": { "name": "couple-on-wooden-bridge", "widths": [480, 960], "height": 800 },
-    "credit": "Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs.",
+    "credit": "Photos of Steve and Katie at the stream, on the bridge and under the willow by McKinley Griggs.",
     "between": true
   },
   {
@@ -72,6 +72,7 @@
     "height": 1067,
     "sizes": "(max-width: 720px) 92vw, 960px",
     "narrowBecause": "the photograph was sent 1600 pixels wide: 1600 is every pixel it has",
+    "credit": "Photos of Steve and Katie at the stream, on the bridge and under the willow by McKinley Griggs.",
     "between": true
   },
   {
@@ -98,5 +99,13 @@
     "sizes": "(max-width: 720px) 92vw, 960px",
     "narrowBecause": "the source picture is 1500 pixels wide: 1500 is every pixel it has",
     "credit": "St. Charles photograph from midwestliving.com."
+  },
+  {
+    "name": "rabbits-under-hay-rack",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 2560,
+    "sizes": "(max-width: 720px) 92vw, 480px",
+    "beneath": true
   }
 ]

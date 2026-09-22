@@ -66,6 +66,8 @@ I live in St. Charles, Missouri. It was the first state capital of Missouri and 
 
 ![Main Street in St. Charles at night at Christmas: a brick building hung with wreaths and garlands, bicycles with red bows, and trees wrapped in white lights along a brick walk](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/st-charles-main-street-christmas-960.jpg "St. Charles photograph from midwestliving.com.")
 
+![Two white rabbits, one lop-eared and one with upright ears, on a wooden board under a hay rack, on a green and white rug](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/rabbits-under-hay-rack-960.jpg)
+
 ---
 
 If any of this sounds like someone you would want on your team, I would enjoy the conversation.
@@ -75,4 +77,4 @@ If any of this sounds like someone you would want on your team, I would enjoy th
 
 ---
 
-Photos of Steve and Katie at the stream and on the bridge by McKinley Griggs.
+Photos of Steve and Katie at the stream, on the bridge and under the willow by McKinley Griggs.

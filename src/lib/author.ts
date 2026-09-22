@@ -71,12 +71,29 @@ function photographs(html: string): string {
 // #region panels
 const FIGURE = /<figure class="author-photo"[\s\S]*?<\/figure>/g;
 
-/** Two photographs with nothing between them sit side by side, and one under the other on a phone. */
+/** The photographs marked `beneath` in the list: never paired, never cut, under the one before. */
+const BENEATH = new Set(AUTHOR_PHOTOS.filter((photo) => photo.beneath).map((photo) => photo.name));
+const nameOf = (figure: string) => /data-photo="([^"]+)"/.exec(figure)?.[1] ?? '';
+
+/**
+ * Two photographs with nothing between them sit side by side, and one under
+ * the other on a phone, unless either is marked `beneath`: that one stays
+ * under the photograph before it, in its own shape (1.0.1.4).
+ */
 function pairs(html: string): string {
-  return html.replace(
-    /(<figure class="author-photo"[\s\S]*?<\/figure>)\s*(<figure class="author-photo"[\s\S]*?<\/figure>)/g,
-    '<div class="author-pair">$1$2</div>'
-  );
+  return html
+    .replace(
+      /(<figure class="author-photo"[\s\S]*?<\/figure>)\s*(<figure class="author-photo"[\s\S]*?<\/figure>)/g,
+      (both: string, first: string, second: string) =>
+        BENEATH.has(nameOf(first)) || BENEATH.has(nameOf(second))
+          ? both
+          : `<div class="author-pair">${first}${second}</div>`
+    )
+    .replace(/<figure class="author-photo" data-photo="([^"]+)">/g, (figure, name: string) =>
+      BENEATH.has(name)
+        ? `<figure class="author-photo author-beneath" data-photo="${name}">`
+        : figure
+    );
 }
 
 /** The photographs marked `between` in the list: each stands alone, full width, after the block it closes. */

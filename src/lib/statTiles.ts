@@ -73,6 +73,13 @@ export type TileReadings = {
     slowest_label?: string | null;
     /** The minute a cold start was left out of the reading above, as a clock time; absent when none was. */
     cold_start_label?: string | null;
+    /**
+     * The slowest ninety-fifth among the minutes busy enough to be called red
+     * (RED_NEEDS_REQUESTS or more), and how many requests the slowest minute
+     * had. Both from quietMinutes(); absent, red is read as it always was.
+     */
+    busy_slowest_p95_ms?: number | null;
+    slowest_requests?: number | null;
   } | null;
   memory: { working_set_mb: number; limit_mb: number } | null;
   /** What the document store charged in the ring this process holds, and the allowance a second it is charged against. */
@@ -125,6 +132,17 @@ const waiting = (key: string, question: TileQuestion, label: string): StatTile =
  */
 export const SLOW_P95_MS = 1_000;
 export const VERY_SLOW_P95_MS = 3_000;
+/**
+ * Red needs a busy minute (Steve, 2026-09-22: "we need to make sure those
+ * blips don't raise a alarm"). A minute's ninety-fifth over a handful of
+ * requests is that minute's one slowest request. Measured over the 24 hours to
+ * 09:46 CDT that day, 7 of the 9 red readings on the two sites were minutes
+ * like that, after an idle stretch, with no restart and no database work, and
+ * the 6355 ms that started the question was one of them (10 requests in five
+ * minutes). So a slow minute with fewer requests than this is amber at most,
+ * and the tile still shows its number.
+ */
+export const RED_NEEDS_REQUESTS = 20;
 export const MEMORY_WARN_SHARE = 0.8;
 export const MEMORY_BAD_SHARE = 0.95;
 
@@ -177,6 +195,13 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
         }
   );
 
+  // Slow enough for red, but only in a minute too quiet to be called red.
+  const quietRed =
+    traffic !== null &&
+    traffic.slowest_p95_ms !== null &&
+    traffic.slowest_p95_ms >= VERY_SLOW_P95_MS &&
+    traffic.busy_slowest_p95_ms !== undefined &&
+    (traffic.busy_slowest_p95_ms === null || traffic.busy_slowest_p95_ms < VERY_SLOW_P95_MS);
   tiles.push(
     traffic === null
       ? waiting('speed', 'fast', 'Slowest 95th')
@@ -197,11 +222,14 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
             (traffic.slowest_label ? `, slowest at ${traffic.slowest_label}` : '') +
             (traffic.cold_start_label
               ? `; the start at ${traffic.cold_start_label} is left out`
+              : '') +
+            (quietRed
+              ? `; that minute had ${traffic.slowest_requests} requests, too few to call red`
               : ''),
           tone:
             traffic.slowest_p95_ms === null
               ? 'plain'
-              : traffic.slowest_p95_ms >= VERY_SLOW_P95_MS
+              : traffic.slowest_p95_ms >= VERY_SLOW_P95_MS && !quietRed
                 ? 'bad'
                 : traffic.slowest_p95_ms >= SLOW_P95_MS
                   ? 'warn'
@@ -318,6 +346,32 @@ export function afterColdStart<T extends { at: string }>(
   return { warm: slots.filter((slot) => !cold(slot)), left_out: slots.filter(cold) };
 }
 // #endregion cold-start
+
+// #region quiet-minutes
+/**
+ * The two readings the red rule needs (RED_NEEDS_REQUESTS): the slowest
+ * ninety-fifth among the busy minutes only, and the request count of the
+ * slowest minute overall, so the tile can say why it stayed amber.
+ */
+export function quietMinutes(slots: { requests?: number | null; p95_ms: number | null }[]): {
+  busy_slowest_p95_ms: number | null;
+  slowest_requests: number | null;
+} {
+  let busy: number | null = null;
+  let slowest: number | null = null;
+  let slowestRequests: number | null = null;
+  for (const slot of slots) {
+    if (slot.p95_ms === null) continue;
+    const requests = slot.requests ?? 0;
+    if (slowest === null || slot.p95_ms > slowest) {
+      slowest = slot.p95_ms;
+      slowestRequests = requests;
+    }
+    if (requests >= RED_NEEDS_REQUESTS && (busy === null || slot.p95_ms > busy)) busy = slot.p95_ms;
+  }
+  return { busy_slowest_p95_ms: busy, slowest_requests: slowestRequests };
+}
+// #endregion quiet-minutes
 
 /**
  * What the lines under the tiles are lines of, in words, because a line with
