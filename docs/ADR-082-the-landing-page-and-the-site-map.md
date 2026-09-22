@@ -40,10 +40,20 @@ Steve answered eight questions on the landing page that morning, and four of the
 - **One live reading, on the Admin tile only.** The landing page reads `/api/health` once when it opens and puts a dot and a word under the Admin tile: Healthy is green, Degraded amber, and no answer red. Before this the tile was drawn green whatever the site said, which was a claim the page had not checked. He said no to an auction count on Inventory and no to a live line under the title.
 - **What it costs:** the grid is no longer four even rows of four on a desk; the first group is six tiles, a row and a half. The groups are the order he asked for, and a group is easier to scan than an even grid.
 
+## Addendum, 2026-09-22 (1.0.2.0): the recruiter's first minute
+
+The landing page was drawn for a reader who explores. The reader it actually gets is a recruiter or a hiring manager with a minute, and three things were in their way.
+
+- **The resume was a sidebar row.** The one file that reader came for opened from the rail, which on a phone is behind the menu button. It is a large tile now, third across the top after Inventory and Author, and it still opens the PDF this site serves. Large tiles take an explicit `featuredRank`, because their order is a judgement about a reader and not the map's own order.
+- **The Author tile said that he exists, not what he is.** "Steven Stout, who built it." It now carries his resume's own opening line: a staff-level .NET engineer who owns platform architecture end to end, twelve years full stack and seven fully remote. The words are the resume's so the two cannot say different things.
+- **The site's argument was behind the tiles.** Every version runs three suites in one gate and rolls only if they are green, and the only way to learn that was to open Built with AI or CI/CD. The evidence strip under the title now says it in four figures: the tests the gate ran, how long the gate took, how many decision records the site holds, and that one codebase serves two stores. The counts come from `/api/tests/summary`, the gate's own results file added up, and the record count is the site map's own list, so neither can drift from what the site actually has. A test is counted once rather than once per store, a suite the gate carried forward from an earlier version says so, and a red gate is reported as failures rather than drawn as green.
+
 ## Files
 
 - [`src/lib/siteMap.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/siteMap.ts): the one structure, its groups and the two badge photographs.
 - [`src/lib/landingHealth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/landingHealth.ts): the Admin tile's health dot, as a word and a tone.
+- [`src/lib/landingProof.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/landingProof.ts): the evidence strip's four figures, from the gate's own counts.
+- [`api/TheYard.Api/TestSummary.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TestSummary.cs): those counts, read out of the results file the gate wrote.
 - [`src/components/Landing.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Landing.tsx): the landing page drawn from it.
 - [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx): the sidebar's pinned rows drawn from it.
 - [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): `opensInventory()`, which keeps every older address on the inventory.

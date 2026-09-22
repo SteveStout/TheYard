@@ -2364,6 +2364,31 @@ app.MapPost("/api/admin/pages", () => pageStatus.TryStart("asked")
 // each request, because it is small and never changes inside a container.
 // Public like every reading on this tab; the tests are in the public
 // repository already. A build with no file says so rather than inventing one.
+// #region test-summary
+// The same file, added up: what the landing page shows a reader in its first
+// screen (1.0.2.0). The whole results file is 160 KB and the strip needs six
+// numbers, so this reads the counts and nothing else, and the answer is cached
+// until the file changes, which inside a container it never does.
+app.MapGet("/api/tests/summary", IResult () =>
+{
+    if (!File.Exists(testResultsPath))
+    {
+        return Results.Problem(
+            detail: "No test results shipped with this build. The ship's gate writes them.",
+            statusCode: StatusCodes.Status404NotFound,
+            title: "No test results");
+    }
+
+    return Results.Json(TestSummary.Of(testResultsPath), wireFormat);
+})
+    .WithName("GetTestSummary")
+    .WithTags("Admin")
+    .WithSummary("The gate's counts for this build, without the tests themselves")
+    .WithDescription("The landing page's evidence strip: the suites and their totals, read from the same file the Admin tab's tests card reads.")
+    .Produces<TestSummaryReport>(StatusCodes.Status200OK)
+    .ProducesProblem(StatusCodes.Status404NotFound);
+// #endregion test-summary
+
 app.MapGet("/api/admin/tests", IResult () => File.Exists(testResultsPath)
     ? Results.Text(File.ReadAllText(testResultsPath), "application/json")
     : Results.Problem(

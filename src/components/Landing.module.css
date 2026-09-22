@@ -93,6 +93,15 @@
   .grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  /* Inventory, Author and the resume across the top (1.0.2.0). */
+  .featured {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .proof {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .tile,
@@ -166,6 +175,50 @@
 
 .health[data-state='unreachable'] .dot {
   background: var(--color-danger);
+}
+
+/* The evidence strip under the title (1.0.2.0): four figures the build itself
+   produced, on the same glass as the title so the ribbons stay behind them. */
+.proof {
+  list-style: none;
+  margin: calc(-1 * var(--space-2)) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.proofItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--color-gold);
+  border-radius: var(--radius-glass);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-shadow);
+  min-width: 0;
+}
+
+.proofFigure {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  color: var(--color-heading);
+}
+
+.proofLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.proofDetail {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }
 
 /* A group of sections under its heading, as the sidebar groups them (1.0.1.4). */
@@ -312,6 +365,10 @@
   .badgeBig {
     width: 64px;
     height: 64px;
+  }
+
+  .proofFigure {
+    font-size: var(--text-xl);
   }
 
   .big .title {

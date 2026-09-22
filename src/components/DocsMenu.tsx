@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import styles from './DocsMenu.module.css';
 import { Ribbons } from './Ribbons';
 import type { MenuVariant } from '../lib/siteMap';
+import { layoutDocument } from '../lib/docLayout';
 
 export type DocKey =
   | 'readme'
@@ -1180,10 +1181,13 @@ export function DocDialog({
         const { renderDocument } = await import('../lib/markdown');
         // #endregion renderer-on-demand
         const rendered = await renderDocument(markdown);
-        // The Author page is the one document with a shape of its own: panels,
-        // blocks, buttons and photographs, laid over the same rendered words.
+        // The Author page has a shape of its own: panels, blocks, buttons and
+        // photographs. Every other document takes the same panels by its
+        // headings (1.0.2.0), so one look covers the whole library.
         const html =
-          key === 'author' ? (await import('../lib/author')).layoutAuthor(rendered) : rendered;
+          key === 'author'
+            ? (await import('../lib/author')).layoutAuthor(rendered)
+            : layoutDocument(rendered);
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })
@@ -1193,7 +1197,11 @@ export function DocDialog({
   return (
     <dialog
       ref={dialogRef}
-      className={activeDoc === 'author' ? `${styles.dialog} ${styles.dialogWide}` : styles.dialog}
+      className={
+        activeDoc === 'author'
+          ? `${styles.dialog} ${styles.dialogGround} ${styles.dialogWide}`
+          : `${styles.dialog} ${styles.dialogGround}`
+      }
       aria-label={DOCS[activeDoc].title}
       onClose={onClose}
       onClick={(event) => {
@@ -1201,8 +1209,8 @@ export function DocDialog({
         if (event.target === dialogRef.current) dialogRef.current?.close();
       }}
     >
-      {/* The Author page stands on the ribbon ground, its own copy fixed to this dialog. */}
-      {activeDoc === 'author' && <Ribbons contained />}
+      {/* Every document stands on the ribbon ground (1.0.2.0), its own copy fixed to this dialog. */}
+      <Ribbons contained />
       <div className={styles.dialogHeader}>
         <h2 className={styles.dialogTitle}>{DOCS[activeDoc].title}</h2>
         <button

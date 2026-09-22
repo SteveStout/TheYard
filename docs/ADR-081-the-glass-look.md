@@ -161,6 +161,14 @@ The worst-case arithmetic does not change. A word inside a card without a blur h
 behind it at worst as one inside a card with one, and `glass.spec.ts` now holds that a vehicle card's
 ground is see-through and the card itself is at full strength.
 
+## Addendum, 2026-09-22 (1.0.2.0): every document on the Author page's panels
+
+Steve, on reading the library after the Author page was rebuilt: "our documentation isn't formatted like the author section with the nice background and formatting". He was right, and the difference was not a style anybody chose. The Author page had a layout of its own, `layoutAuthor()`, that put its words on glass panels over the ribbon ground; every other document, the decision records among them, was a single column of markdown on the dialog's white.
+
+**Decision: every document takes the same panels, and the same ground.** `src/lib/docLayout.ts` is twenty lines: the title and whatever comes before the first second-level heading open the page, and each second-level heading after it starts a panel that runs to the next one, which is the shape every document in this repository already has. The dialog carries its own copy of the ribbons for every document, not only for the author's, and the panels carry the words so nothing is ever read off the drawing. The panel rule itself is now one rule for both, so a change to the Author page's panels is a change to the library's.
+
+What it does not do: it does not reflow a document, rename a heading or move a word. A document with no second-level heading is one panel, and a heading inside a code sample is escaped markup by the time this sees it, so it opens nothing.
+
 ## Files
 
 - [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the glass tokens and their three fallbacks, beside the palette.

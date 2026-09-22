@@ -105,8 +105,7 @@
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 2560,
-    "sizes": "(max-width: 720px) 92vw, 480px",
-    "beneath": true,
+    "sizes": "(max-width: 720px) 92vw, 960px",
     "between": true
   }
 ]

@@ -37,6 +37,9 @@ describe('the site map', () => {
       const dash = String.fromCharCode(0x2014);
       expect(item.blurb.includes(dash)).toBe(false);
     }
+    // The Author tile says what he is, in his resume's own words (1.0.2.0).
+    const author = SITE_MAP.sections.find((section) => section.menu === 'author')!;
+    expect(author.blurb).toContain('Staff-level .NET engineer');
     const keys = SITE_MAP.actions.map((action) => action.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
@@ -75,7 +78,8 @@ describe('the site map', () => {
     const { featured, groups, rest, grid } = landingTiles();
     const name = (tile: (typeof grid)[number]) =>
       tile.kind === 'section' ? tile.section.menu : tile.action.key;
-    expect(featured.map(name)).toEqual(['inventory', 'author']);
+    // Inventory, Author, then the resume: the order a recruiter reads them in (1.0.2.0).
+    expect(featured.map(name)).toEqual(['inventory', 'author', 'resume']);
     expect(groups.map((group) => [group.label, group.tiles.map(name)])).toEqual([
       [
         'How it is built',
@@ -86,6 +90,9 @@ describe('the site map', () => {
     ]);
     // Sign in, Admin and GitHub last.
     expect(rest.map(name)).toEqual(['account', 'admin', 'repo']);
+    // The resume is a large tile now, not a sidebar row only (Steve, 2026-09-22).
+    const resume = SITE_MAP.actions.find((action) => action.key === 'resume')!;
+    expect([resume.featured, resume.onLanding, resume.inRail]).toEqual([true, true, true]);
     expect(grid.map(name)).toEqual([
       ...MENU_ORDER.filter((menu) => menu !== 'author'),
       'account',
@@ -98,14 +105,18 @@ describe('the site map', () => {
       featured.map(
         (tile) => (tile.kind === 'section' ? tile.section.badgePhoto : tile.action.badgePhoto)?.src
       )
-    ).toEqual(['/api/images/badges/inventory-176.jpg', '/api/images/badges/author-176.jpg']);
+    ).toEqual([
+      '/api/images/badges/inventory-176.jpg',
+      '/api/images/badges/author-176.jpg',
+      undefined,
+    ]);
   });
 
   it('follows the map when the map changes, which is the point of it', () => {
     const moved = {
       sections: [...SITE_MAP.sections].reverse(),
       actions: SITE_MAP.actions.map((action) =>
-        action.key === 'resume' ? { ...action, onLanding: true } : action
+        action.key === 'repo' ? { ...action, featured: true, featuredRank: 9 } : action
       ),
     };
     const { grid } = landingTiles(moved);
@@ -113,6 +124,9 @@ describe('the site map', () => {
       kind: 'section',
       section: moved.sections.find((section) => !section.featured && section.group === 'built'),
     });
-    expect(grid.some((tile) => tile.kind === 'action' && tile.action.key === 'resume')).toBe(true);
+    // A tile the map makes large leaves the grid and joins the top row, last by its rank.
+    const { featured } = landingTiles(moved);
+    expect(grid.some((tile) => tile.kind === 'action' && tile.action.key === 'repo')).toBe(false);
+    expect(featured[featured.length - 1]).toMatchObject({ kind: 'action' });
   });
 });

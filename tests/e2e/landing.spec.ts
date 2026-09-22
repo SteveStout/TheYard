@@ -53,6 +53,19 @@ for (const viewport of [
       // The one live reading: the Admin tile's health dot, read from /api/health.
       await expect(page.getByTestId('landing-admin-health')).toHaveText(/^(Healthy|Degraded)$/);
 
+      // The evidence strip: four figures this build's own gate produced (1.0.2.0).
+      const strip = page.getByTestId('landing-proof');
+      await expect(strip).toBeVisible();
+      await expect(strip.locator('li')).toHaveCount(4);
+      await expect(page.getByTestId('landing-proof-tests')).toContainText(/\d[\d,]* *tests/);
+      await expect(page.getByTestId('landing-proof-gate')).toContainText('one gate');
+      await expect(page.getByTestId('landing-proof-records')).toContainText('decision records');
+
+      // The resume is a large tile, and it opens the PDF this site serves.
+      const resume = page.getByTestId('landing-tile-resume');
+      await expect(resume).toHaveAttribute('href', /resume/);
+      await expect(resume).toHaveAttribute('target', '_blank');
+
       // Every tile a full touch target, and nothing wider than the screen.
       await expect(async () => {
         const heights = await page

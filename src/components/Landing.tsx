@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { INTRO } from '../lib/intro';
 import { HEALTH_WORDS, landingHealth, type LandingHealth } from '../lib/landingHealth';
+import { proofFigures, type TestSummary } from '../lib/landingProof';
 import { landingTiles, type LandingTile } from '../lib/siteMap';
 import { LINKS, MENUS, type DocKey } from './DocsMenu';
 import { NavGlyph } from './SheetIcons';
@@ -14,7 +15,8 @@ import styles from './Landing.module.css';
  * a photograph in its badge; below them every other section under its group's
  * heading, as the sidebar groups them, then Sign in, Admin and GitHub (1.0.1.4).
  * The Admin tile carries the one live reading, a health dot from /api/health,
- * read once when the page opens.
+ * read once when the page opens, and under the title the evidence strip reads
+ * the gate's own counts from /api/tests/summary (1.0.2.0).
  *
  * A section's tile opens what its sidebar section opens first: its first
  * document in the dialog, or its first link in a new tab when it has no
@@ -35,6 +37,7 @@ export function Landing({
 }) {
   const { featured, groups, rest } = landingTiles();
   const [health, setHealth] = useState<LandingHealth>('reading');
+  const [summary, setSummary] = useState<TestSummary | null>(null);
   useEffect(() => {
     let live = true;
     fetch('/api/health')
@@ -43,10 +46,18 @@ export function Landing({
       .then((answer) => {
         if (live) setHealth(landingHealth(answer));
       });
+    fetch('/api/tests/summary')
+      .then((r) => (r.ok ? (r.json() as Promise<TestSummary>) : null))
+      .catch(() => null)
+      .then((answer) => {
+        if (live && answer) setSummary(answer);
+      });
     return () => {
       live = false;
     };
   }, []);
+  // The record count is the sidebar's own list, so the strip cannot claim records the site does not open.
+  const proof = proofFigures(summary, MENUS.records.items.length);
 
   const tile = (entry: LandingTile, large: boolean) => {
     const className = large ? styles.big : styles.tile;
@@ -158,6 +169,25 @@ export function Landing({
       <ul className={styles.featured} aria-label="Start here">
         {featured.map((entry) => tile(entry, true))}
       </ul>
+      {proof !== null && (
+        <ul
+          className={styles.proof}
+          aria-label="What this build's gate measured"
+          data-testid="landing-proof"
+        >
+          {proof.map((figure) => (
+            <li
+              key={figure.key}
+              className={styles.proofItem}
+              data-testid={`landing-proof-${figure.key}`}
+            >
+              <span className={styles.proofFigure}>{figure.figure}</span>
+              <span className={styles.proofLabel}>{figure.label}</span>
+              <span className={styles.proofDetail}>{figure.detail}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {groups.map((group) => (
         <section
           key={group.key}

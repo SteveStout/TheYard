@@ -86,6 +86,8 @@ export type SiteSection = {
   blurb: string;
   /** Drawn as one of the large tiles at the top of the landing page. */
   featured?: boolean;
+  /** Where it sits among the large tiles, low first; the map's own order breaks a tie. */
+  featuredRank?: number;
   badgePhoto?: BadgePhoto;
 };
 
@@ -100,9 +102,11 @@ export type SiteAction = {
   icon: NavIcon;
   blurb: string;
   featured?: boolean;
+  /** Where it sits among the large tiles, low first; the map's own order breaks a tie. */
+  featuredRank?: number;
   /** A pinned row at the foot of the sidebar. */
   inRail: boolean;
-  /** A tile on the landing page. The resume is the header's icon instead. */
+  /** A tile on the landing page. */
   onLanding: boolean;
   badgePhoto?: BadgePhoto;
 };
@@ -190,8 +194,11 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       menu: 'author',
       icon: 'author',
       group: 'who',
-      blurb: 'Steven Stout, who built it.',
+      // His resume's own words (1.0.2.0), so the tile says what he is rather than that he exists.
+      blurb:
+        'Staff-level .NET engineer who owns platform architecture end to end, twelve years full stack and seven fully remote.',
       featured: true,
+      featuredRank: 2,
       // The vineyard selfie of Steve and Katie (Steve, 2026-09-22: option A).
       badgePhoto: {
         src: '/api/images/badges/author-176.jpg',
@@ -214,6 +221,7 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       icon: 'inventory',
       blurb: 'Browse and bid on 100,000 vehicles in live auctions.',
       featured: true,
+      featuredRank: 1,
       // One of the inventory's own photographs, the yellow coupe (Steve, 2026-09-22: B).
       badgePhoto: {
         src: '/api/images/badges/inventory-176.jpg',
@@ -243,11 +251,15 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
     },
     {
       key: 'resume',
+      // A large tile since 1.0.2.0: the first thing a recruiter looks for, and it was
+      // a sidebar row only, which on a phone is behind the menu button.
       label: "Steven's resume (PDF)",
       icon: 'resume',
-      blurb: "Steven's resume, as a PDF.",
+      blurb: 'Twelve years of full stack .NET on one page, opens as a PDF.',
+      featured: true,
+      featuredRank: 3,
       inRail: true,
-      onLanding: false,
+      onLanding: true,
     },
     {
       key: 'repo',
@@ -268,6 +280,12 @@ export const MENU_ORDER: readonly MenuVariant[] = SITE_MAP.sections.map((section
 /** A landing tile: a section or an action, in the order the page draws them. */
 export type LandingTile =
   { kind: 'section'; section: SiteSection } | { kind: 'action'; action: SiteAction };
+
+/** A large tile's place in the top row: Inventory, Author, then the resume (1.0.2.0). */
+function rankOf(tile: LandingTile): number {
+  const rank = tile.kind === 'section' ? tile.section.featuredRank : tile.action.featuredRank;
+  return rank ?? Number.MAX_SAFE_INTEGER;
+}
 
 /** The sections of one group, in map order. */
 export function sectionsIn(group: SiteGroupKey, map = SITE_MAP): SiteSection[] {
@@ -300,7 +318,7 @@ export function landingTiles(map = SITE_MAP): {
     featured: [
       ...actions.filter((a) => a.featured).map(asAction),
       ...map.sections.filter((s) => s.featured).map(asSection),
-    ],
+    ].sort((a, b) => rankOf(a) - rankOf(b)),
     groups,
     rest,
     grid: [...groups.flatMap((group) => group.tiles), ...rest],

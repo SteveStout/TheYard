@@ -320,11 +320,13 @@
   }
 }
 
-/* The Author page stands on the ribbon ground like every page (Steve, 2026-09-22: "the
-   background isn't showing behind the about the author page"). The dialog holds its own
-   copy of the drawing; contain: paint makes the dialog the box that copy is fixed to,
-   so it fills the dialog, stays put while the body scrolls, and never spills onto the scrim. */
-.dialogWide {
+/* Every document stands on the ribbon ground like every page (Steve, 2026-09-22: "the
+   background isn't showing behind the about the author page", and on the rest of the
+   library: "our documentation isn't formatted like the author section"). The dialog holds
+   its own copy of the drawing; contain: paint makes the dialog the box that copy is fixed
+   to, so it fills the dialog, stays put while the body scrolls, and never spills onto the
+   scrim. The panels inside carry the words, so nothing is read off the drawing. */
+.dialogGround {
   contain: paint;
   /* The body scrolls and the dialog does not, so the copy of the ribbons fixed to the dialog
      stays behind every screen of the page instead of scrolling away with the first. Flex
@@ -333,11 +335,11 @@
   overflow: hidden;
 }
 
-.dialogWide[open] {
+.dialogGround[open] {
   display: flex;
 }
 
-.dialogWide .dialogBody {
+.dialogGround .dialogBody {
   flex: 1 1 auto;
   min-height: 0;
   background: transparent;
@@ -359,6 +361,24 @@
   white-space: nowrap;
 }
 
+/* Every document on the Author page's panels (1.0.2.0): the same glass, the
+   same green edge, the same trim on the headings, so the library reads as one
+   thing whichever document is open. */
+.prose :global(.doc-page) {
+  display: grid;
+  gap: var(--space-4);
+  margin: calc(-1 * var(--space-2)) 0 0;
+}
+
+.prose :global(.doc-panel) > :first-child {
+  margin-top: 0;
+}
+
+.prose :global(.doc-panel) > :last-child {
+  margin-bottom: 0;
+}
+
+.prose :global(.doc-panel),
 .prose :global(.author-panel) {
   background: var(--color-surface);
   border: 1px solid var(--glass-border);
@@ -506,19 +526,6 @@
 .prose :global(.author-block-wide) > :global(.author-photo) :global(.author-frame) {
   aspect-ratio: 16 / 9;
   object-fit: cover;
-}
-
-/* A photograph marked beneath (1.0.1.4, the rabbits under St. Charles): under the one
-   before it, in its own shape and never cut, 480 px wide and centred on a desk. Two
-   classes, so it outranks the plain .author-photo margin that follows (1.0.1.5). */
-.prose :global(.author-photo):global(.author-beneath) {
-  max-width: 480px;
-  margin: var(--space-3) auto 0;
-}
-
-.prose :global(.author-block-wide) > :global(.author-beneath) :global(.author-frame) {
-  aspect-ratio: auto;
-  object-fit: fill;
 }
 
 .prose :global(.author-block) h3 {

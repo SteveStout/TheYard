@@ -122,6 +122,9 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
   await expect(page.getByTestId('ribbons')).toHaveCount(1);
   await openTheYard(page, '/?doc=color-style');
   await expect(page.getByTestId('ribbons')).toHaveCount(1);
+  // Every document carries the ground and stands its words on panels over it (1.0.2.0).
+  await expect(page.getByTestId('ribbons-dialog')).toHaveCount(1);
+  await expect(page.getByTestId('doc-page').locator('.doc-panel').first()).toBeVisible();
   // The Author page carries its own copy, fixed to its dialog, so the ground shows behind it too.
   await openTheYard(page, '/?doc=author');
   await expect(page.getByTestId('ribbons-dialog')).toHaveCount(1);
