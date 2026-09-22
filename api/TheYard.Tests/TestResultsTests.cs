@@ -56,7 +56,7 @@ public class TestResultsTests(WebApplicationFactory<Program> factory)
         var wrong = new List<string>();
         using var results = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = results.RootElement;
-        if (!Regex.IsMatch(root.GetProperty("version").GetString() ?? "", @"^1\.0\.0\.\d+$"))
+        if (!Regex.IsMatch(root.GetProperty("version").GetString() ?? "", @"^\d+\.\d+\.\d+\.\d+$"))
         {
             wrong.Add("version should be 1.0.0.N, the changelog's number for the build the gate tested");
         }
@@ -86,7 +86,7 @@ public class TestResultsTests(WebApplicationFactory<Program> factory)
                 {
                     wrong.Add($"{id}: only the two passes on Cosmos DB may be carried forward");
                 }
-                if (!Regex.IsMatch(carried.GetString() ?? "", @"^1\.0\.0\.\d+$"))
+                if (!Regex.IsMatch(carried.GetString() ?? "", @"^\d+\.\d+\.\d+\.\d+$"))
                 {
                     wrong.Add($"{id}: carried should name the version whose gate ran it");
                 }

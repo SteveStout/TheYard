@@ -185,7 +185,7 @@ public class PublicFaceTests
         string card = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "images", "og.svg"));
         string changelog = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "CHANGELOG.md"));
 
-        var top = Regex.Match(changelog, @"^- \*\*(1\.0\.0\.\d+)\*\*", RegexOptions.Multiline);
+        var top = Regex.Match(changelog, @"^- \*\*(\d+\.\d+\.\d+\.\d+)\*\*", RegexOptions.Multiline);
 
         Assert.True(top.Success, "the changelog should carry a version on its top line");
         Assert.Contains(top.Groups[1].Value, card, StringComparison.Ordinal);

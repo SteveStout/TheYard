@@ -34,7 +34,8 @@ async function warmUp(config: FullConfig) {
     // the ordering question entirely.
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        await page.goto(baseURL, { timeout: 30_000 });
+        // The inventory, not the landing page: the point is to warm the API's listing.
+        await page.goto(new URL('/?view=inventory', baseURL).toString(), { timeout: 30_000 });
         break;
       } catch (error) {
         if (attempt === 5) throw error;

@@ -153,7 +153,8 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     {
         string phone = await _client.GetStringAsync("/api/docs/adr-phone");
         Assert.DoesNotContain("```live", phone);
-        Assert.Contains("```tsx\n", phone);
+        // MENU_ORDER lives in src/lib/siteMap.ts since 1.0.1.0 (ADR: The landing page and the site map).
+        Assert.Contains("```ts\n", phone);
         Assert.Contains("export const MENU_ORDER", phone);
 
         string live = await _client.GetStringAsync("/api/docs/adr-live-samples");

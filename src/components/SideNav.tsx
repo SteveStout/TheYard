@@ -8,7 +8,8 @@ import {
   type DocKey,
   type DocRequest,
 } from './DocsMenu';
-import { RowIcon } from './SheetIcons';
+import { NavGlyph, RowIcon } from './SheetIcons';
+import { SITE_MAP, type SiteAction } from '../lib/siteMap';
 import { BrandMark } from './BrandMark';
 import styles from './SideNav.module.css';
 
@@ -43,6 +44,9 @@ export type SideNavProps = {
   drawerOpen: boolean;
   onDrawerClose: () => void;
   onHome: () => void;
+  /** The inventory list is the view (the landing page is home since 1.0.1.0). */
+  inventoryOpen: boolean;
+  onOpenInventory: () => void;
   adminOpen: boolean;
   onOpenAdmin: () => void;
   accountOpen: boolean;
@@ -68,8 +72,10 @@ export type SideNavProps = {
 
 /**
  * The one navigation surface (ADR-013): every header menu as a headed section
- * of icon rows, then Admin, Reset bids, the resume, and the repository,
- * pinned. Built from the same MENUS record for both shapes it takes: a
+ * of icon rows, then the site map's actions pinned at the foot (the inventory,
+ * the account, Admin, Reset bids, the resume and the repository). The sections'
+ * order and the pinned rows both come from SITE_MAP (src/lib/siteMap.ts), the
+ * structure the landing page is drawn from too. Built from the same MENUS record for both shapes it takes: a
  * docked left rail that collapses to icons on wide screens, or the slide-out
  * drawer on phones and narrow windows. Owns the one doc dialog; a row stays
  * marked current while its doc is open.
@@ -210,6 +216,8 @@ function NavContent({
   collapsed,
   onToggleCollapsed,
   onHome,
+  inventoryOpen,
+  onOpenInventory,
   adminOpen,
   onOpenAdmin,
   accountOpen,
@@ -235,7 +243,7 @@ function NavContent({
             onCloseDrawer();
             onHome();
           }}
-          title="The Yard: back to the inventory"
+          title="The Yard: home"
         >
           <BrandMark size={22} className={styles.brandMark} />
           <span className={iconsOnly ? styles.srOnly : styles.brandText}>
@@ -315,59 +323,57 @@ function NavContent({
         </div>
 
         <div className={styles.pinned}>
-          {/* #region account-row */}
-          {/* First of the pinned rows, because it is the one that changes what
-              the rest of the page can do. Signed in, the label is the address,
-              which is also how a visitor checks who they are without opening
-              anything. .label already truncates, so a long address does not
-              widen the rail. */}
-          <button
-            type="button"
-            className={styles.row}
-            onClick={() => {
-              onCloseDrawer();
-              onOpenAccount();
-            }}
-            aria-current={accountOpen ? 'page' : undefined}
-            title={iconsOnly ? (accountEmail ?? 'Sign in') : undefined}
-          >
-            <RowIcon kind="account" className={styles.icon} />
-            <span className={iconsOnly ? styles.srOnly : styles.label}>
-              {accountEmail ?? 'Sign in'}
-            </span>
-          </button>
-          {/* #endregion account-row */}
-          <button
-            type="button"
-            className={styles.row}
-            onClick={() => {
-              onCloseDrawer();
-              onOpenAdmin();
-            }}
-            aria-current={adminOpen ? 'page' : undefined}
-            title={iconsOnly ? 'Admin' : undefined}
-          >
-            <RowIcon kind="admin" className={styles.icon} />
-            <span className={iconsOnly ? styles.srOnly : styles.label}>Admin</span>
-          </button>
-          {bidCount > 0 && (
-            <button
-              type="button"
-              className={styles.row}
-              onClick={() => {
-                onCloseDrawer();
-                onResetBids();
-              }}
-              title={iconsOnly ? `Reset bids (${bidCount})` : undefined}
-            >
-              <RowIcon kind="reset" className={styles.icon} />
-              <span className={iconsOnly ? styles.srOnly : styles.label}>
-                Reset bids ({bidCount})
-              </span>
-            </button>
-          )}
-          <LinkRow link={LINKS.resume} iconsOnly={iconsOnly} />
-          <LinkRow link={LINKS.repo} iconsOnly={iconsOnly} />
+          {/* #region pinned-rows */}
+          {/* The site map's actions, in its order. The account row's label is
+              the signed-in address when there is one, which is also how a
+              visitor checks who they are without opening anything; .label
+              already truncates, so a long address does not widen the rail.
+              Reset bids is not in the map, because it is not a place: it
+              appears after Admin only while there are bids to reset. */}
+          {SITE_MAP.actions
+            .filter((action) => action.inRail)
+            .map((action) => (
+              <PinnedRow
+                key={action.key}
+                action={action}
+                iconsOnly={iconsOnly}
+                current={
+                  action.key === 'inventory'
+                    ? inventoryOpen
+                    : action.key === 'account'
+                      ? accountOpen
+                      : action.key === 'admin'
+                        ? adminOpen
+                        : false
+                }
+                label={action.key === 'account' ? (accountEmail ?? action.label) : action.label}
+                onOpen={() => {
+                  onCloseDrawer();
+                  if (action.key === 'inventory') onOpenInventory();
+                  if (action.key === 'account') onOpenAccount();
+                  if (action.key === 'admin') onOpenAdmin();
+                }}
+                after={
+                  action.key === 'admin' && bidCount > 0 ? (
+                    <button
+                      type="button"
+                      className={styles.row}
+                      onClick={() => {
+                        onCloseDrawer();
+                        onResetBids();
+                      }}
+                      title={iconsOnly ? `Reset bids (${bidCount})` : undefined}
+                    >
+                      <RowIcon kind="reset" className={styles.icon} />
+                      <span className={iconsOnly ? styles.srOnly : styles.label}>
+                        Reset bids ({bidCount})
+                      </span>
+                    </button>
+                  ) : null
+                }
+              />
+            ))}
+          {/* #endregion pinned-rows */}
         </div>
       </nav>
     </>
@@ -393,5 +399,60 @@ function LinkRow({
       <RowIcon kind="external" className={styles.icon} />
       <span className={iconsOnly ? styles.srOnly : styles.label}>{link.label}</span>
     </a>
+  );
+}
+
+/**
+ * One of the site map's actions as a pinned row: a view App opens, or a link
+ * out (the resume and the repository) in a new tab.
+ */
+function PinnedRow({
+  action,
+  iconsOnly,
+  current,
+  label,
+  onOpen,
+  after,
+}: {
+  action: SiteAction;
+  iconsOnly: boolean;
+  current: boolean;
+  label: string;
+  onOpen: () => void;
+  after: React.ReactNode;
+}) {
+  const inner = (
+    <>
+      <NavGlyph icon={action.icon} className={styles.icon} />
+      <span className={iconsOnly ? styles.srOnly : styles.label}>{label}</span>
+    </>
+  );
+  const row =
+    action.key === 'resume' || action.key === 'repo' ? (
+      <a
+        className={styles.row}
+        href={LINKS[action.key].href}
+        target="_blank"
+        rel="noreferrer"
+        title={iconsOnly ? label : undefined}
+      >
+        {inner}
+      </a>
+    ) : (
+      <button
+        type="button"
+        className={styles.row}
+        onClick={onOpen}
+        aria-current={current ? 'page' : undefined}
+        title={iconsOnly ? label : undefined}
+      >
+        {inner}
+      </button>
+    );
+  return (
+    <>
+      {row}
+      {after}
+    </>
   );
 }

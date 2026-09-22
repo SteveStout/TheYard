@@ -57,7 +57,9 @@ async function hideTheGround(page: Page): Promise<void> {
 }
 // #endregion ribbons-off
 
-export async function openTheYard(page: Page, path = '/'): Promise<void> {
+// The inventory by default: since 1.0.1.0 a bare address opens the landing page,
+// and nearly every spec here is about the inventory. landing.spec.ts opens '/'.
+export async function openTheYard(page: Page, path = '/?view=inventory'): Promise<void> {
   await hideTheGround(page);
   await page.goto(path);
   const announcement = page.getByTestId('view-announcement');

@@ -1,7 +1,8 @@
 # Changelog
 
-One line per shipped version, newest first. The number is the one the page
-footer shows, and 1.0.0.N is the Nth build that reached the live site. How a
+One line per shipped version, newest first. The number is the one the page footer shows. Versions are four numbers read
+as a version, not as one counter: 1.0.0.1 to 1.0.0.187 counted the builds that
+reached the live site, and 1.0.1.0 is the first release Steve called polished. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Decision Records index. From 1.0.0.41 the top
 line here is where the deploy reads the version from, so this file and the page
@@ -9,6 +10,7 @@ footer cannot disagree (ADR: The version comes from the changelog). One number
 is missing, 1.0.0.39, skipped under the older formula when a red build consumed
 a deploy run number.
 
+- **1.0.1.0** (2026-09-22): The first polished release: the address opens a landing page drawn from the same site map as the sidebar, and the version is read as four numbers.
 - **1.0.0.187** (2026-09-22): The deploy drawing says what the pipeline does (the gate on the laptop, the push, Deploy and Deploy Cosmos side by side, CI on a pull request only), the living documents call the gate the one gate and leave the minutes to the measurement (ADR: The five-minute gate, the addendum on the two cuts), the Admin and Account pills stand 44 px tall on a phone and 34 on the desk, and two cuts in the gate that Steve chose: `dotnet format` runs only when a C# or project file changed, and the two passes on Cosmos DB run only when something under `api/`, `infra/cosmos/` or the three store specs changed, the results file carrying those two suites forward from the version whose gate ran them, marked so on the Admin tab and held by `TestResultsTests`.
 - **1.0.0.186** (2026-09-22): One weight for titles and section headings. Measured on every view at 375, 1280 and 1440 px, the Inventory, Admin and Account titles and the Admin tab's section headings were bold while a document's title and sections, the Author page's included, were semibold; they are all bold now. The differences left are by role and are written in the review handoff: the Author page's call-to-action buttons are larger than the Admin tab's window pills, a diagram's frame is the thin grey one and a photograph's the green and gold one, and a vehicle's name is a semibold heading inside a panel, not a page title.
 - **1.0.0.185** (2026-09-22): Every photograph on the Author page loads eagerly. On Steve's iPhone, in Chrome and in Safari, the lazily loaded photographs flickered while the page scrolled inside its dialog, and the first photograph, the only eager one, never did; nor do the vehicle photographs, which scroll with the page rather than inside a dialog. The page is a dozen cuts no wider than 960 on a phone. A frame still waiting on its picture shows the muted grey a vehicle card shows, not white.

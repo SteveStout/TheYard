@@ -66,7 +66,7 @@ order (`src/components/DocsMenu.tsx`):
 ```live path=src/components/DocsMenu.tsx region=architecture-menu
 ```
 
-```live path=src/components/DocsMenu.tsx region=MENU_ORDER
+```live path=src/lib/siteMap.ts region=MENU_ORDER
 ```
 
 The mechanical style rules (`.editorconfig`):

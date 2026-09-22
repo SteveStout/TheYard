@@ -100,6 +100,29 @@
   gap: var(--space-3);
 }
 
+/* The resume, as an icon beside the hamburger (1.0.1.0): a 44 px round target
+   in the header's gold, which reads on the gradient (7.98 on the dark green). */
+.headerIcon {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-gold-light);
+  border-radius: var(--radius-full);
+  color: var(--color-gold-light);
+  text-decoration: none;
+}
+
+.headerIcon:hover {
+  background: var(--color-teal-deep);
+}
+
+.headerIcon:focus-visible {
+  outline: 2px solid var(--color-gold-light);
+  outline-offset: 2px;
+}
+
 /* The hamburger that opens the sidebar's drawer shape (ADR-013). */
 .hamburger {
   appearance: none;

@@ -72,6 +72,9 @@ test.describe('a record has an address', () => {
     await openTheYard(page, '/?doc=not-a-record');
 
     await expect(page.getByRole('dialog')).toBeHidden();
-    await expect(page.getByRole('heading', { level: 1, name: 'Inventory' })).toBeVisible();
+    // No inventory parameter, so the landing page, as a bare address.
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })
+    ).toBeVisible();
   });
 });

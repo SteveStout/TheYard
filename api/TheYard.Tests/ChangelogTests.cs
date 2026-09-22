@@ -11,9 +11,13 @@ namespace TheYard.Tests;
 public class ChangelogTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {
-    /// <summary>- **1.0.0.N** (YYYY-MM-DD): one sentence.</summary>
+    /// <summary>
+    /// - **1.0.1.0** (YYYY-MM-DD): one sentence. Four numbers, compared as a
+    /// version: every line began 1.0.0 until 1.0.1.0, the first release Steve
+    /// called polished, and the last number alone was the order until then.
+    /// </summary>
     private static readonly Regex EntryLine =
-        new(@"^- \*\*1\.0\.0\.(\d+)\*\* \(\d{4}-\d{2}-\d{2}\): (.+)$", RegexOptions.Compiled);
+        new(@"^- \*\*(\d+\.\d+\.\d+\.\d+)\*\* \(\d{4}-\d{2}-\d{2}\): (.+)$", RegexOptions.Compiled);
 
     private readonly HttpClient _client = factory.CreateClient();
 
@@ -36,7 +40,7 @@ public class ChangelogTests(WebApplicationFactory<Program> factory)
         string markdown = await _client.GetStringAsync("/api/docs/changelog");
         Assert.DoesNotContain("\u2014", markdown); // the house rule: no em dash in anything served
 
-        var versions = new List<int>();
+        var versions = new List<Version>();
         foreach (string raw in markdown.Split('\n'))
         {
             string line = raw.TrimEnd('\r');
@@ -47,14 +51,14 @@ public class ChangelogTests(WebApplicationFactory<Program> factory)
 
             var match = EntryLine.Match(line);
             Assert.True(match.Success, $"changelog line does not fit the one-line shape: {line}");
-            versions.Add(int.Parse(match.Groups[1].Value));
+            versions.Add(Version.Parse(match.Groups[1].Value));
             Assert.EndsWith(".", match.Groups[2].Value);
         }
 
         Assert.True(versions.Count >= 14, "1.0.0.1 through 1.0.0.14 are the floor");
         Assert.Equal(versions.OrderByDescending(v => v).ToList(), versions);
         Assert.Equal(versions.Count, versions.Distinct().Count());
-        Assert.Equal(1, versions[^1]);
+        Assert.Equal(new Version(1, 0, 0, 1), versions[^1]);
     }
 
     // #region version-order
@@ -73,13 +77,13 @@ public class ChangelogTests(WebApplicationFactory<Program> factory)
         var versions = markdown.Split('\n')
             .Select(line => EntryLine.Match(line.TrimEnd('\r')))
             .Where(match => match.Success)
-            .Select(match => int.Parse(match.Groups[1].Value))
+            .Select(match => Version.Parse(match.Groups[1].Value))
             .ToList();
 
         Assert.True(versions.Count >= 2, "two versions are needed before this rule means anything");
         Assert.True(
             versions[0] > versions[1],
-            $"the top line is 1.0.0.{versions[0]} and the line below it is 1.0.0.{versions[1]}, "
+            $"the top line is {versions[0]} and the line below it is {versions[1]}, "
             + "so this ship has no changelog line of its own and the deploy will refuse it");
     }
     // #endregion version-order

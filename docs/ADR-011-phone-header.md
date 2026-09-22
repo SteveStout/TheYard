@@ -44,7 +44,7 @@ that still stands, shown as it is today.
 The sidebar renders its sections from the same record the dropdowns once
 used ([`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx)):
 
-```live path=src/components/DocsMenu.tsx region=MENU_ORDER
+```live path=src/lib/siteMap.ts region=MENU_ORDER
 ```
 
 Opening a doc from the drawer closes the drawer and hands the request to

@@ -327,6 +327,7 @@ public class StyleRulesTests
         ["src/components/AdminPanel.module.css"] = "the Admin title's underline, the ring round the chosen window button, the tick on a section's rule",
         ["src/components/DocsMenu.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
         ["src/components/Watermark.module.css"] = "the lightning mark in the watermark, at a tenth of its strength",
+        ["src/components/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
     };
 
     [Fact]

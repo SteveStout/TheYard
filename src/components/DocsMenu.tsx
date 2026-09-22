@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './DocsMenu.module.css';
 import { Ribbons } from './Ribbons';
+import type { MenuVariant } from '../lib/siteMap';
 
 export type DocKey =
   | 'readme'
@@ -95,6 +96,7 @@ export type DocKey =
   | 'adrOnePlan'
   | 'adrAdminProduct'
   | 'adrGlassLook'
+  | 'adrLandingPage'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'infrastructureOverview'
@@ -768,6 +770,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '081',
   },
+  adrLandingPage: {
+    title: 'ADR: The landing page and the site map',
+    menuLabel: 'ADR: The landing page and the site map',
+    url: '/api/docs/adr-landing-page',
+    kind: 'adr',
+    number: '082',
+  },
   author: {
     title: 'About Steven',
     menuLabel: 'About Steven',
@@ -807,21 +816,9 @@ export const DOCS: Record<
 };
 // #endregion docs-record
 
-export type MenuVariant =
-  | 'about'
-  | 'architecture'
-  | 'apiReference'
-  | 'stores'
-  | 'performance'
-  | 'diagrams'
-  | 'look'
-  | 'hosting'
-  | 'builtWithAi'
-  | 'cicd'
-  | 'practices'
-  | 'records'
-  | 'changelog'
-  | 'author';
+// The section names, and their order, live in the site map (src/lib/siteMap.ts),
+// which the sidebar and the landing page are both drawn from.
+export type { MenuVariant };
 
 export type MenuEntry = { key: DocKey; sub?: boolean };
 
@@ -1061,6 +1058,7 @@ export const MENUS: Record<
       { key: 'adrOnePlan' },
       { key: 'adrAdminProduct' },
       { key: 'adrGlassLook' },
+      { key: 'adrLandingPage' },
     ],
   },
   // #endregion records-menu
@@ -1073,25 +1071,12 @@ export const MENUS: Record<
   // #endregion menu-changelog
 };
 
-// #region MENU_ORDER
-/** Section order, top to bottom. The sidebar renders from it in both of its shapes (ADR-013). */
-export const MENU_ORDER: MenuVariant[] = [
-  'architecture',
-  'apiReference',
-  'stores',
-  'performance',
-  'diagrams',
-  'look',
-  'hosting',
-  'builtWithAi',
-  'cicd',
-  'practices',
-  'records',
-  'changelog',
-  'about',
-  'author',
-];
-// #endregion MENU_ORDER
+/**
+ * Section order, top to bottom. The sidebar renders from it in both of its
+ * shapes (ADR-013), and the landing page's grid follows it. It is read off the
+ * site map, which is where the order is changed.
+ */
+export { MENU_ORDER } from '../lib/siteMap';
 
 /**
  * One open request. It is an object rather than a bare key because reopening

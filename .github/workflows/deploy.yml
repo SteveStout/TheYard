@@ -72,7 +72,9 @@ jobs:
           # counter: a counter ticks on runs that are gated off and never ship,
           # which is how 1.0.0.39 became a number the changelog named and
           # nothing ever displayed.
-          VERSIONS=$(sed -n 's/^- \*\*1\.0\.0\.\([0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md)
+          # Four numbers since 1.0.1.0, compared as a version (sort -V), not as
+          # the one counter it was while every version began 1.0.0.
+          VERSIONS=$(sed -n 's/^- \*\*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md)
           N=$(echo "$VERSIONS" | sed -n 1p)
           PREV=$(echo "$VERSIONS" | sed -n 2p)
           # #region changelog-check
@@ -81,21 +83,21 @@ jobs:
           # from: shipping past either one means shipping a number with no
           # sentence attached to it (ADR-031).
           if [ -z "$N" ]; then
-            echo "::error file=docs/CHANGELOG.md::No 1.0.0.N line at the top of the changelog, so there is no version to ship"
+            echo "::error file=docs/CHANGELOG.md::No version line at the top of the changelog, so there is no version to ship"
             exit 1
           fi
-          if [ -n "$PREV" ] && [ "$N" -le "$PREV" ]; then
-            echo "::error file=docs/CHANGELOG.md::The top line is 1.0.0.$N and 1.0.0.$PREV is already below it, so this ship has no changelog line of its own"
+          if [ -n "$PREV" ] && { [ "$N" = "$PREV" ] || [ "$(printf '%s\n%s\n' "$PREV" "$N" | sort -V | tail -1)" != "$N" ]; }; then
+            echo "::error file=docs/CHANGELOG.md::The top line is $N and $PREV is already below it, so this ship has no changelog line of its own"
             exit 1
           fi
           # #endregion changelog-check
           {
             echo "N=$N"
-            echo "APP_VERSION=1.0.0.$N"
+            echo "APP_VERSION=$N"
             echo "APP_COMMIT=${HEAD_SHA:0:7}"
             echo "IMAGE=$ACR/theyard:v$N"
           } >> "$GITHUB_ENV"
-          echo "Deploying 1.0.0.$N from ${HEAD_SHA:0:7} as $ACR/theyard:v$N"
+          echo "Deploying $N from ${HEAD_SHA:0:7} as $ACR/theyard:v$N"
       # #endregion compute-version
 
       - uses: azure/login@v3
@@ -255,7 +257,7 @@ jobs:
           curl -sS --max-time 40 "$SITE/api/admin/azure" || true
           echo
           {
-            echo "## Deployed 1.0.0.$N"
+            echo "## Deployed $N"
             echo "- commit: $APP_COMMIT"
             echo "- image: $IMAGE"
             echo "- site: $SITE"

@@ -13,6 +13,7 @@ import {
   EMPTY_FILTERS,
   filtersFromSearchParams,
   filtersToSearchParams,
+  opensInventory,
   type InventoryFilters,
   type SortKey,
 } from './lib/inventory';
@@ -28,6 +29,8 @@ import { StoreBar } from './components/StoreBar';
 import { Ribbons } from './components/Ribbons';
 import { Watermark } from './components/Watermark';
 import { IntroStrip } from './components/IntroStrip';
+import { Landing } from './components/Landing';
+import { NavGlyph } from './components/SheetIcons';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
@@ -90,6 +93,11 @@ const INITIAL_VEHICLE_ID = INITIAL_PARAMS.get('vehicle');
 const INITIAL_RESET = INITIAL_PARAMS.get('reset');
 /** ?doc=adr-lockout, resolved once. An address that names nothing opens nothing. */
 const INITIAL_DOC = docKeyForSlug(INITIAL_PARAMS.get('doc'));
+/**
+ * The landing page is home since 1.0.1.0; the inventory is ?view=inventory,
+ * and every address that already meant the inventory still opens it.
+ */
+const INITIAL_INVENTORY = opensInventory(INITIAL_PARAMS);
 
 export default function App() {
   /** The server-filtered, server-sorted page currently on display. */
@@ -108,6 +116,8 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(INITIAL_PARAMS.get('view') === 'admin');
   /** The account view (ADR: Accounts and per-user bids), ?view=account. */
   const [accountOpen, setAccountOpen] = useState(INITIAL_PARAMS.get('view') === 'account');
+  /** The inventory list, rather than the landing page, is what shows under no other view. */
+  const [inventoryOpen, setInventoryOpen] = useState(INITIAL_INVENTORY);
   const [openDocKey, setOpenDocKey] = useState<DocKey | null>(INITIAL_DOC);
   const [account, setAccount] = useState<Account>(SIGNED_OUT);
   const now = useNow();
@@ -290,8 +300,13 @@ export default function App() {
   const deepLinkPending = useRef(INITIAL_VEHICLE_ID !== null);
   useEffect(() => {
     if (deepLinkPending.current) return;
-    const params = filtersToSearchParams(filters, sort);
+    // The landing page carries no filters: they belong to the inventory, and an
+    // address with one in it opens the inventory (opensInventory).
+    const onLanding = !inventoryOpen && !selectedVehicle && !adminOpen && !accountOpen;
+    const params = onLanding ? new URLSearchParams() : filtersToSearchParams(filters, sort);
     if (selectedVehicle) params.set('vehicle', selectedVehicle.id);
+    const listOnly = inventoryOpen && !selectedVehicle && !adminOpen && !accountOpen;
+    if (listOnly && !opensInventory(params)) params.set('view', 'inventory');
     if (adminOpen) params.set('view', 'admin');
     if (accountOpen) params.set('view', 'account');
     if (openDocKey) params.set('doc', docSlug(openDocKey));
@@ -301,7 +316,7 @@ export default function App() {
       '',
       query ? `?${query}` : window.location.pathname
     );
-  }, [filters, sort, selectedVehicle, adminOpen, accountOpen, openDocKey]);
+  }, [filters, sort, selectedVehicle, adminOpen, accountOpen, openDocKey, inventoryOpen]);
   // #endregion url-mirror
 
   // Restore a deep-linked detail view on first load (?vehicle={id}).
@@ -344,6 +359,7 @@ export default function App() {
       setSort(restored.sort);
       setAdminOpen(params.get('view') === 'admin');
       setAccountOpen(params.get('view') === 'account');
+      setInventoryOpen(opensInventory(params));
       setOpenDocKey(docKeyForSlug(params.get('doc')));
       const vehicleId = params.get('vehicle');
       if (!vehicleId) {
@@ -384,7 +400,8 @@ export default function App() {
   // Nor while the listing is not the view: the Admin tab, the account, a
   // vehicle or a document asked for the whole page every fifteen seconds and
   // showed none of it. The skipped refresh happens on the way back.
-  const listShowing = !adminOpen && !accountOpen && !selectedVehicle && !openDocKey;
+  const listShowing =
+    inventoryOpen && !adminOpen && !accountOpen && !selectedVehicle && !openDocKey;
   useEffect(() => {
     if (listShowing && missedRefresh.current) {
       missedRefresh.current = false;
@@ -543,6 +560,7 @@ export default function App() {
     const params = filtersToSearchParams(filters, sort);
     params.set('vehicle', vehicle.id);
     window.history.pushState({ viaTile: true }, '', `?${params}`);
+    setInventoryOpen(true);
     setSelectedVehicle(vehicle);
   };
   /** From the account page's bid list: open that vehicle's detail view. */
@@ -561,6 +579,7 @@ export default function App() {
       return;
     }
     setSelectedVehicle(null);
+    setInventoryOpen(true);
     const query = filtersToSearchParams(filters, sort).toString();
     window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
   };
@@ -570,8 +589,25 @@ export default function App() {
     // Admin is a view switch the same as a vehicle is. Left out of this, it
     // opened at the list's scroll offset with its heading above the fold and
     // focus on something the visitor could not see.
-    window.scrollTo(0, selectedVehicle || adminOpen || accountOpen ? 0 : listScrollY.current);
-  }, [selectedVehicle, adminOpen, accountOpen]);
+    window.scrollTo(
+      0,
+      selectedVehicle || adminOpen || accountOpen || !inventoryOpen ? 0 : listScrollY.current
+    );
+  }, [selectedVehicle, adminOpen, accountOpen, inventoryOpen]);
+
+  // #region open-inventory
+  // The same shape as Admin and Account: a view at its own address, pushed so
+  // Back returns to the landing page it was opened from.
+  const openInventory = () => {
+    const params = filtersToSearchParams(filters, sort);
+    if (!opensInventory(params)) params.set('view', 'inventory');
+    window.history.pushState({ viaInventory: true }, '', `?${params}`);
+    setSelectedVehicle(null);
+    setAdminOpen(false);
+    setAccountOpen(false);
+    setInventoryOpen(true);
+  };
+  // #endregion open-inventory
 
   const openAdmin = () => {
     const params = filtersToSearchParams(filters, sort);
@@ -637,6 +673,7 @@ export default function App() {
       return;
     }
     setAccountOpen(false);
+    setInventoryOpen(true);
     const query = filtersToSearchParams(filters, sort).toString();
     window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
   };
@@ -647,21 +684,22 @@ export default function App() {
       return;
     }
     setAdminOpen(false);
+    setInventoryOpen(true);
     const query = filtersToSearchParams(filters, sort).toString();
     window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
   };
 
-  /** The sidebar's brand block: home is the inventory list, whatever is showing. */
+  /**
+   * The brand, in the rail and in the phone header: home is the landing page
+   * since 1.0.1.0, whatever is showing. Pushed, so Back returns to the view it
+   * left.
+   */
   const goHome = () => {
-    if (adminOpen) {
-      closeAdmin();
-      return;
-    }
-    if (accountOpen) {
-      closeAccount();
-      return;
-    }
-    backToInventory();
+    window.history.pushState({ viaHome: true }, '', window.location.pathname);
+    setSelectedVehicle(null);
+    setAdminOpen(false);
+    setAccountOpen(false);
+    setInventoryOpen(false);
   };
 
   const patchFilters = (patch: Partial<InventoryFilters>) =>
@@ -706,11 +744,13 @@ export default function App() {
       ? 'Account'
       : selectedVehicle
         ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}, vehicle detail`
-        : loadState === 'loading'
-          ? 'Loading inventory'
-          : loadState === 'error'
-            ? 'The inventory API could not be reached'
-            : 'Vehicle inventory';
+        : !inventoryOpen
+          ? 'The Yard, home'
+          : loadState === 'loading'
+            ? 'Loading inventory'
+            : loadState === 'error'
+              ? 'The inventory API could not be reached'
+              : 'Vehicle inventory';
   // #endregion announcement
 
   return (
@@ -735,6 +775,10 @@ export default function App() {
         drawerOpen={drawerOpen}
         onDrawerClose={() => setDrawerOpen(false)}
         onHome={goHome}
+        inventoryOpen={
+          inventoryOpen && !adminOpen && !accountOpen && !selectedVehicle && !openDocKey
+        }
+        onOpenInventory={openInventory}
         adminOpen={adminOpen}
         onOpenAdmin={openAdmin}
         accountOpen={accountOpen}
@@ -767,6 +811,18 @@ export default function App() {
                     Reset bids ({bidCount})
                   </button>
                 )}
+                {/* The resume as an icon (Steve, 2026-09-22); the rail has its row. */}
+                <a
+                  className={styles.headerIcon}
+                  href={LINKS.resume.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={LINKS.resume.label}
+                  title={LINKS.resume.label}
+                  data-testid="header-resume"
+                >
+                  <NavGlyph icon="resume" size={22} />
+                </a>
                 <button
                   type="button"
                   className={styles.hamburger}
@@ -815,6 +871,14 @@ export default function App() {
               onOpenVehicle={openVehicleById}
               onBack={closeAccount}
               resetToken={INITIAL_RESET}
+            />
+          ) : !inventoryOpen ? (
+            <Landing
+              accountLabel={account.email ?? 'Sign in'}
+              onOpenInventory={openInventory}
+              onOpenAccount={openAccount}
+              onOpenAdmin={openAdmin}
+              onOpenDoc={openDocument}
             />
           ) : loadState === 'loading' ? (
             <p className={styles.notice} role="status">

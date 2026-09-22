@@ -1,0 +1,246 @@
+/* The landing page (1.0.1.0), Example A as Steve approved it on 2026-09-22:
+   glass tiles with a round teal icon on a gold ring, the two featured tiles
+   large at the top. Every value is a token. Tiles are glass without the blur
+   (VehicleCard's reason: a blur is paid for by the pixel, and there are
+   eighteen); the two large tiles take the blur, as the intro strip does. */
+.landing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  margin-bottom: var(--space-2);
+}
+
+/* A page's title, with the gold underline, as Admin, Account and Inventory. */
+.heading {
+  padding-bottom: var(--space-1);
+  border-bottom: 3px solid var(--color-gold);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  color: var(--color-heading);
+}
+
+.lede {
+  max-width: 640px;
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+.featured,
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-5);
+}
+
+.featured > li,
+.grid > li {
+  display: flex;
+}
+
+.featured > li > *,
+.grid > li > * {
+  flex: 1;
+}
+
+.featured {
+  grid-template-columns: 1fr;
+}
+
+.grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+/* Container queries, as the inventory grid: the box is the page minus
+   whichever rail is showing, which a media query cannot see. */
+@container (min-width: 640px) {
+  .featured {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+}
+
+@container (min-width: 860px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.tile,
+.big {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-top: 3px solid var(--color-teal-deep);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--glass-shadow);
+  transition:
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+/* Only a healthy thing is green: the Admin tab, as its own healthy tiles. */
+.tile[data-tone='good'],
+.big {
+  border-top-color: var(--color-success);
+}
+
+.big {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-height: 168px;
+  padding: var(--space-6) var(--space-7);
+  text-align: left;
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+
+.tile:hover,
+.big:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--color-accent);
+}
+
+.tile:focus-visible,
+.big:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.badge {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  box-shadow: 0 0 0 1.5px var(--color-gold);
+}
+
+.badgeBig {
+  width: 88px;
+  height: 88px;
+  box-shadow: 0 0 0 2px var(--color-gold);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.tile .text {
+  align-items: center;
+  margin-top: var(--space-2);
+}
+
+.title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  line-height: 1.25;
+  color: var(--color-heading);
+}
+
+.big .title {
+  font-size: var(--text-2xl);
+}
+
+.blurb {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.big .blurb {
+  font-size: var(--text-md);
+}
+
+@media (max-width: 639px) {
+  .heading {
+    font-size: var(--text-2xl);
+  }
+
+  .tile {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .tile .title {
+    font-size: var(--text-md);
+  }
+
+  .tile .blurb {
+    font-size: var(--text-xs);
+  }
+
+  .badge {
+    width: 52px;
+    height: 52px;
+  }
+
+  .big {
+    min-height: 120px;
+    padding: var(--space-5);
+    gap: var(--space-4);
+  }
+
+  .badgeBig {
+    width: 64px;
+    height: 64px;
+  }
+
+  .big .title {
+    font-size: var(--text-xl);
+  }
+
+  .big .blurb {
+    font-size: var(--text-sm);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .big {
+    transition: none;
+  }
+
+  .tile:hover,
+  .big:hover {
+    transform: none;
+  }
+}

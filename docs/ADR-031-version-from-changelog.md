@@ -103,3 +103,7 @@ The same rule from the other side (`api/TheYard.Tests/ChangelogTests.cs`):
 - [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): now an input to the build.
 - [`docs/ADR-012-changelog.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-012-changelog.md): the record that predicted this failure and chose the procedural guard.
 - [`docs/ADR-005-version-footer.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-005-version-footer.md), [`docs/ADR-009-deploy-pipeline.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-009-deploy-pipeline.md): where the old formula was written down.
+
+## Addendum, 2026-09-22 (1.0.1.0): four numbers, compared as a version
+
+Steve: "the first release will be 1.0.1.0 this feels like the first polished version". Until then every version began 1.0.0, so the deploy read only the last number and compared it with `-le`. From 1.0.1.0 the deploy reads all four numbers off the changelog's top line and compares it with the line below using `sort -V`, so 1.0.1.0 ships over 1.0.0.187, and a repeated or lower version is refused as before. `APP_VERSION` is the version itself, and the image is tagged `v<version>` (`v1.0.1.0`), which the second site's deploy waits for by the same name. `ChangelogTests` parses each line with `System.Version`, so the test and the workflow still enforce one rule. The Consequences above describe the tags as they were through 1.0.0.187 (`v41` for 1.0.0.41) and are kept as the record.

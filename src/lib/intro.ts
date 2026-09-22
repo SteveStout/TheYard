@@ -13,7 +13,7 @@
  */
 export const INTRO = {
   sentence:
-    'Steven Stout’s working demo: a used-vehicle auction site on .NET and React, 100,000 vehicles, live on Azure, with its decisions written down.',
+    'Steven Stout’s showcase: a used-vehicle auction site on .NET and React, 100,000 vehicles, live on Azure, with its decisions written down.',
   links: [
     { key: 'resume', label: 'Resume (PDF)' },
     { key: 'author', label: 'Who built this' },

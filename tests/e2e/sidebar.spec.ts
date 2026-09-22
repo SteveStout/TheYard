@@ -181,7 +181,8 @@ test.describe('the docked rail', () => {
     );
     await page.keyboard.press('Escape');
     await expect(doc).toBeHidden();
-    await expect(page.locator('[data-testid="side-rail"] [aria-current]')).toHaveCount(0);
+    // Back on the inventory, its own row is the one current row (ADR: The landing page and the site map).
+    await expect(page.locator('[data-testid="side-rail"] [aria-current]')).toHaveText('Inventory');
   });
 
   test('Admin opens from the rail, reads as the current page, and the brand goes home', async ({
@@ -196,7 +197,10 @@ test.describe('the docked rail', () => {
       'Admin'
     );
     await rail.getByRole('button', { name: 'The Yard' }).click();
-    await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
+    // Home is the landing page since 1.0.1.0.
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })
+    ).toBeVisible();
     await expect(page).not.toHaveURL(/view=admin/);
   });
 });

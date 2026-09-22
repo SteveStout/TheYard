@@ -82,13 +82,13 @@ jobs:
       - name: Compute version
         if: github.event_name != 'workflow_dispatch' || inputs.action == 'roll'
         run: |
-          N=$(sed -n 's/^- \*\*1\.0\.0\.\([0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md | sed -n 1p)
+          N=$(sed -n 's/^- \*\*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md | sed -n 1p)
           if [ -z "$N" ]; then
-            echo "::error file=docs/CHANGELOG.md::No 1.0.0.N line at the top of the changelog, so there is no version to roll"
+            echo "::error file=docs/CHANGELOG.md::No version line at the top of the changelog, so there is no version to roll"
             exit 1
           fi
           {
-            echo "APP_VERSION=1.0.0.$N"
+            echo "APP_VERSION=$N"
             echo "IMAGE=$ACR/theyard:v$N"
           } >> "$GITHUB_ENV"
           echo "Rolling $APP to $ACR/theyard:v$N"
@@ -109,7 +109,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           for i in $(seq 1 120); do
-            if az acr repository show-tags -n "$REGISTRY_NAME" --repository theyard -o tsv 2>/dev/null | grep -qx "v${APP_VERSION##*.}"; then
+            if az acr repository show-tags -n "$REGISTRY_NAME" --repository theyard -o tsv 2>/dev/null | grep -qx "v$APP_VERSION"; then
               echo "$IMAGE is in the registry after $((i * 5 - 5))s"
               exit 0
             fi

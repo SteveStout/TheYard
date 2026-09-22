@@ -1,4 +1,5 @@
 import type { DocKind } from './DocsMenu';
+import type { NavIcon } from '../lib/siteMap';
 
 /** Every row kind the sidebar draws: the four doc kinds plus three actions. */
 export type RowKind = DocKind | 'external' | 'admin' | 'reset' | 'account';
@@ -48,3 +49,67 @@ export function RowIcon({ kind, className }: { kind: RowKind; className?: string
     </svg>
   );
 }
+
+// #region nav-icons
+/**
+ * The site map's icons (src/lib/siteMap.ts): one per section and action, on the
+ * same 20 by 20 grid, the same stroke and the same currentColor as the row
+ * icons above, so a tile on the landing page and a row in the sidebar are
+ * drawn in one hand. Five reuse a row icon's path; the rest are new.
+ */
+const NAV_PATHS: Record<NavIcon, string> = {
+  inventory:
+    'M3.5 12.5v-2l1.8-4a1.5 1.5 0 0 1 1.4-1h6.6a1.5 1.5 0 0 1 1.4 1l1.8 4v2a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM3.5 10.5h13M6 15.5v-2M14 15.5v-2',
+  architecture: 'M3.5 3.5h5v5h-5zM11.5 3.5h5v5h-5zM3.5 11.5h5v5h-5zM11.5 11.5h5v5h-5z',
+  api: 'M7 6.5 3.5 10 7 13.5M13 6.5l3.5 3.5-3.5 3.5M11.2 4.5l-2.4 11',
+  stores:
+    'M4 5c0-1.1 2.7-2 6-2s6 .9 6 2-2.7 2-6 2-6-.9-6-2zM4 5v10c0 1.1 2.7 2 6 2s6-.9 6-2V5M4 10c0 1.1 2.7 2 6 2s6-.9 6-2',
+  performance: 'M3.5 14a6.5 6.5 0 1 1 13 0M10 14l3-4.5',
+  diagrams: 'M3.5 3.5h5v5h-5zM11.5 11.5h5v5h-5zM6 8.5v4a1.5 1.5 0 0 0 1.5 1.5h4',
+  style:
+    'M10 3.5c3.6 0 6.5 2.6 6.5 5.8 0 1.9-1.5 3.2-3.3 3.2h-1.5a1.3 1.3 0 0 0-.9 2.2 1.3 1.3 0 0 1-.9 2.2c-3.6 0-6.4-2.9-6.4-6.7s2.9-6.7 6.5-6.7zM6.8 9.5h.01M9 6.7h.01M12.6 7h.01',
+  hosting: 'M6 15.5a3.5 3.5 0 0 1-.4-7 4.5 4.5 0 0 1 8.7-.9A3.8 3.8 0 0 1 14 15.5z',
+  ai: 'M10 3.5l1.6 4.9 4.9 1.6-4.9 1.6-1.6 4.9-1.6-4.9-4.9-1.6 4.9-1.6z',
+  cicd: 'M4.5 10a5.5 5.5 0 0 1 9.6-3.6M15.5 10a5.5 5.5 0 0 1-9.6 3.6M14.5 3.5v3h-3M5.5 16.5v-3h3',
+  practices: 'M10 3l6 2.2v4.3c0 3.7-2.6 6.3-6 7.5-3.4-1.2-6-3.8-6-7.5V5.2zM7.5 10l1.8 1.8 3.2-3.3',
+  records: PATHS.adr,
+  changelog: PATHS.changelog,
+  about: 'M10 3.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM10 9.5v4M10 6.8h.01',
+  author: PATHS.account,
+  admin: PATHS.admin,
+  signin: 'M11 3.5h4.5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H11M3.5 10h8M8.5 7l3 3-3 3',
+  resume: PATHS.overview,
+  repo: 'M6 4v12M14 4.5a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6zM14 8.1c0 3.4-8 2.6-8 6',
+};
+
+/** A site-map icon at any size. Decorative: the tile or row it sits in carries the name. */
+export function NavGlyph({
+  icon,
+  size = 20,
+  className,
+}: {
+  icon: NavIcon;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      className={className}
+      data-icon={icon}
+    >
+      <path
+        d={NAV_PATHS[icon]}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+// #endregion nav-icons

@@ -74,7 +74,7 @@ appeared on every screen from this one entry:
 ```live path=src/components/DocsMenu.tsx region=menu-changelog
 ```
 
-```live path=src/components/DocsMenu.tsx region=MENU_ORDER
+```live path=src/lib/siteMap.ts region=MENU_ORDER
 ```
 
 The refusal in the Deploy workflow's version step,

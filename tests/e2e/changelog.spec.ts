@@ -16,7 +16,7 @@ test('the Changelog section opens the version list, newest first, and its record
   await expect(doc.getByRole('heading', { level: 1, name: 'Changelog' })).toBeVisible();
 
   const entries = doc.getByRole('listitem');
-  await expect(entries.first()).toContainText(/^1\.0\.0\.\d+ \(\d{4}-\d{2}-\d{2}\): /);
+  await expect(entries.first()).toContainText(/^\d+\.\d+\.\d+\.\d+ \(\d{4}-\d{2}-\d{2}\): /);
   expect(await entries.count()).toBeGreaterThanOrEqual(15);
   await expect(entries.last()).toContainText(/^1\.0\.0\.1 \(2026-08-31\): /);
   await page.keyboard.press('Escape');

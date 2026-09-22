@@ -216,3 +216,7 @@ edge on a desk and the screen's edge on a phone, still under reduced motion.
 ## Addendum, 2026-09-21: the ribbons stand still
 
 Steve: "No ribbon movement at all it should center only with CSS, we want a minimal website that looks good." Measured the evening before in Chrome with its GPU, a minute of the front page spent 6.9 s of main-thread work in every 20 s with the ribbons moving and 0.6 s with them still. The drift, the twinkle and the pulse are gone, with their keyframes and `will-change`; the flares and sparks are drawn in the one SVG with the ribbons, since nothing in it changes; the sparks keep the opacity they had for a reader who asked for less motion. The drawing is placed and centred in the content area by the stylesheet alone, from the shell's `data-rail` state. `ribbons.test.ts` now holds that nothing in the sheet or the component moves, and the browser suite finds no animation on a desk or a phone. The paragraph above on what moves describes the drawing as it was approved on 21 September and is kept as the record.
+
+## Addendum, 2026-09-22 (1.0.1.0): showcase
+
+The intro sentence in `src/lib/intro.ts` now reads "showcase" where it read "working demo" (Steve: "it should be showcase"). The quotations above keep the words of the day they were written.
