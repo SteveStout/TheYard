@@ -122,6 +122,10 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
   await expect(page.getByTestId('ribbons')).toHaveCount(1);
   await openTheYard(page, '/?doc=color-style');
   await expect(page.getByTestId('ribbons')).toHaveCount(1);
+  // The Author page carries its own copy, fixed to its dialog, so the ground shows behind it too.
+  await openTheYard(page, '/?doc=author');
+  await expect(page.getByTestId('ribbons-dialog')).toHaveCount(1);
+  await expect(page.getByTestId('ribbons-dialog')).toBeVisible();
 
   // A phone: the rail is the drawer, so the ribbons run from the screen's edge.
   await page.setViewportSize({ width: 375, height: 812 });

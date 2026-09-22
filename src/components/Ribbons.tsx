@@ -16,9 +16,14 @@ const GRADIENT = {
   mixed: 'url(#ribbon-mixed)',
 };
 
-export function Ribbons() {
+export function Ribbons({ contained = false }: { contained?: boolean }) {
+  // contained: the copy inside a dialog (the Author page), filling that dialog rather than the screen.
   return (
-    <div className={styles.layer} aria-hidden="true" data-testid="ribbons">
+    <div
+      className={contained ? `${styles.layer} ${styles.contained}` : styles.layer}
+      aria-hidden="true"
+      data-testid={contained ? 'ribbons-dialog' : 'ribbons'}
+    >
       <svg
         className={styles.drawing}
         viewBox="-370 0 1440 900"

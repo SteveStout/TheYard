@@ -26,14 +26,6 @@
     margin: 0;
     border-radius: 0;
   }
-
-  .dialogHeader {
-    padding: var(--space-3) var(--space-4);
-  }
-
-  .dialogBody {
-    padding: var(--space-4) var(--space-4) var(--space-7);
-  }
 }
 /* #endregion phone-dialog */
 
@@ -79,6 +71,19 @@
   overflow-y: auto;
 }
 
+/* The phone's padding, after the rules it replaces: written above them, as it was
+   until 2026-09-22, it lost to them on source order and a phone kept the desk's
+   24 px a side (Steve: "remove the extra padding on the left"). */
+@media (max-width: 639px) {
+  .dialogHeader {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .dialogBody {
+    padding: var(--space-3) var(--space-3) var(--space-7);
+  }
+}
+
 .docLoading,
 .docError {
   color: var(--color-text-muted);
@@ -99,15 +104,25 @@
   line-height: 1.25;
 }
 
+/* A document's title wears the page title's gold underline, as Inventory, Admin and
+   Account do, and its sections the Admin tab's trim: one look, 2026-09-21. */
 .prose h1 {
+  display: inline-block;
   font-size: var(--text-2xl);
   margin-top: 0;
+  padding-bottom: var(--space-1);
+  border-bottom: 3px solid var(--color-gold);
 }
 
 .prose h2 {
   font-size: var(--text-xl);
-  border-bottom: 1px solid var(--color-border);
   padding-bottom: var(--space-2);
+  border-bottom: 2px solid transparent;
+  background:
+    linear-gradient(var(--color-gold), var(--color-gold)) left bottom / 34px 2px no-repeat,
+    linear-gradient(var(--color-green-dark), var(--color-green-dark)) left bottom / 100% 2px
+      no-repeat;
+  background-origin: border-box;
 }
 
 .prose h3 {
@@ -287,8 +302,16 @@
   }
 }
 
+/* The Author page stands on the ribbon ground like every page (Steve, 2026-09-22: "the
+   background isn't showing behind the about the author page"). The dialog holds its own
+   copy of the drawing; contain: paint makes the dialog the box that copy is fixed to,
+   so it fills the dialog, stays put while the body scrolls, and never spills onto the scrim. */
+.dialogWide {
+  contain: paint;
+}
+
 .dialogWide .dialogBody {
-  background: var(--color-bg);
+  background: transparent;
 }
 
 .prose :global(.author-page) {
@@ -537,8 +560,11 @@
     grid-template-columns: 1fr;
   }
 
-  .prose :global(.author-panel) {
-    padding: var(--space-4);
+  /* A phone's width goes to the words: measured at 390 px on 2026-09-22, a block's text
+     started 61 px from the screen's edge; it starts at 41 now. */
+  .prose :global(.author-panel),
+  .prose :global(.author-block) {
+    padding: var(--space-3);
   }
 
   .prose :global(.author-button) {

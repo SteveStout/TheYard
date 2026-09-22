@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './DocsMenu.module.css';
+import { Ribbons } from './Ribbons';
 
 export type DocKey =
   | 'readme'
@@ -1215,6 +1216,8 @@ export function DocDialog({
         if (event.target === dialogRef.current) dialogRef.current?.close();
       }}
     >
+      {/* The Author page stands on the ribbon ground, its own copy fixed to this dialog. */}
+      {activeDoc === 'author' && <Ribbons contained />}
       <div className={styles.dialogHeader}>
         <h2 className={styles.dialogTitle}>{DOCS[activeDoc].title}</h2>
         <button

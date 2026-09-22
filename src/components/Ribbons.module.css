@@ -3,11 +3,37 @@
    its collapsed width, or nothing when it is the drawer). */
 .layer {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  /* The large viewport, not the screen as it is this moment. On a phone the address
+     bar comes and goes as the reader scrolls; with inset: 0 the layer's height followed
+     it (664 px to 750 px, measured 2026-09-22 at 390 px wide), and a drawing that fills
+     its box by slicing was scaled by 13% every time: the ribbons danced with nothing
+     animated. 100vh first for a browser without lvh, which on a phone is the same
+     large height. */
+  height: 100vh;
+  height: 100lvh;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
   background: var(--ribbon-tints);
+  /* Its own layer, painted once: scrolling the page moves nothing over it that makes
+     the browser draw the blurred ribbons again. */
+  contain: strict;
+  transform: translateZ(0);
+}
+
+/* The copy inside a dialog fills the dialog, from its own left edge, whatever the rail. */
+.contained {
+  height: 100%;
+  bottom: 0;
+}
+
+.contained .drawing,
+:global([data-rail]) .contained .drawing {
+  left: 0;
+  width: 100%;
 }
 
 .drawing {

@@ -45,6 +45,13 @@ describe('the ribbon ground', () => {
     expect(sheet).toMatch(/\[data-rail='open'\]\) \.drawing \{[^}]*left: var\(--rail-width\)/);
   });
 
+  it('is as tall as the large viewport, so the address bar on a phone cannot rescale it', () => {
+    const layer = rules(sheet).find(([selector]) => selector === '.layer')?.[1] ?? '';
+    expect(layer).toMatch(/height:\s*100lvh/);
+    expect(layer).not.toMatch(/inset:\s*0/);
+    expect(layer).toMatch(/contain:\s*strict/);
+  });
+
   it('fetches nothing: every url in it is one of its own gradients or filters', () => {
     for (const url of (component + sheet).matchAll(/url\(([^)]*)\)/g)) {
       expect(url[1]).toMatch(/^#ribbon-/);

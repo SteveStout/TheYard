@@ -147,7 +147,8 @@
 .secondary {
   appearance: none;
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
+  /* Pills, as every other button on the site is (one look, 2026-09-21). */
+  border-radius: var(--radius-full);
   font: inherit;
   font-weight: var(--weight-medium);
   cursor: pointer;

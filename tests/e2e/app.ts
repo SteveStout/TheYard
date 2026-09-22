@@ -50,7 +50,7 @@ async function hideTheGround(page: Page): Promise<void> {
     addEventListener('DOMContentLoaded', () => {
       if ((window as unknown as { __yardRibbons?: boolean }).__yardRibbons) return;
       const style = document.createElement('style');
-      style.textContent = '[data-testid="ribbons"] { display: none !important; }';
+      style.textContent = '[data-testid^="ribbons"] { display: none !important; }';
       document.head.append(style);
     });
   });
