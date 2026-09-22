@@ -39,6 +39,17 @@ describe('the Author page in its shape', () => {
     expect(odd).toContain('<section class="author-block author-block-wide"><h3>Three</h3>');
   });
 
+  it('sets two neighbouring blocks of one photograph each side by side, unless a photograph stands between them', () => {
+    const image = `<p><img src="${address}" alt="Rabbits"></p>`;
+    const halves = layoutAuthor(
+      `<h2>Hi</h2><h2>Away</h2><h3>Lake</h3>${image}<h3>History</h3>${image}<h3>Games</h3>${image}`
+    );
+    expect(halves.match(/author-block-half/g)).toHaveLength(2);
+    expect(halves).toContain('<section class="author-block author-block-half"><h3>Lake</h3>');
+    expect(halves).toContain('<section class="author-block author-block-half"><h3>History</h3>');
+    expect(halves).toContain('<section class="author-block author-block-wide"><h3>Games</h3>');
+  });
+
   it('sets two photographs in a row side by side, and the first panel’s beside its words', () => {
     const image = `<p><img src="${address}" alt="Rabbits"></p>`;
     const paired = layoutAuthor(`<h2>Hi</h2><h2>Away</h2><h3>Rabbits</h3>${image}\n${image}`);

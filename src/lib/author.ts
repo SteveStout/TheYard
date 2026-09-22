@@ -104,15 +104,30 @@ function blocks(section: string): string {
   const pictured = headed.map((block) => standAlone(block)[0].includes('class="author-photo"'));
   const plain = pictured.filter((has) => !has).length;
   const lastPlain = pictured.lastIndexOf(false);
+  // Two neighbouring blocks with one photograph each, and no photograph standing between
+  // them, share a row as halves, their photographs cut to one size (Steve, 2026-09-22:
+  // the lake beside History, the food beside the doors).
+  const photos = headed.map((block) => (standAlone(block)[0].match(FIGURE) ?? []).length);
+  const betweenAfter = headed.map((block) => standAlone(block)[1].length > 0);
+  const half = headed.map(() => false);
+  for (let index = 0; index + 1 < headed.length; index++) {
+    if (half[index]) continue;
+    if (photos[index] === 1 && photos[index + 1] === 1 && !betweenAfter[index]) {
+      half[index] = true;
+      half[index + 1] = true;
+      index++;
+    }
+  }
   return (
     pairs(lead) +
     `<div class="author-blocks">` +
     headed
       .map((block, index) => {
-        const wide = pictured[index] || (plain % 2 === 1 && index === lastPlain);
+        const wide = !half[index] && (pictured[index] || (plain % 2 === 1 && index === lastPlain));
         const [kept, between] = standAlone(block);
+        const shape = half[index] ? ' author-block-half' : wide ? ' author-block-wide' : '';
         return (
-          `<section class="author-block${wide ? ' author-block-wide' : ''}">${pairs(kept)}</section>` +
+          `<section class="author-block${shape}">${pairs(kept)}</section>` +
           between.map((figure) => `<div class="author-between">${figure}</div>`).join('')
         );
       })

@@ -15,6 +15,18 @@
   background: var(--scrim);
 }
 
+/* One scroll at a time (Steve, 2026-09-22: "a scroll inside the scroll"). A document
+   scrolls inside itself and never hands the gesture on to the page behind it when it
+   reaches its end, and the page behind stands still while a document is open. */
+.dialog,
+.dialogBody {
+  overscroll-behavior: contain;
+}
+
+:global(html:has(dialog[open])) {
+  overflow: hidden;
+}
+
 /* #region phone-dialog */
 /* Phones: the doc takes the whole screen; code blocks already scroll sideways. */
 @media (max-width: 639px) {
@@ -308,9 +320,20 @@
    so it fills the dialog, stays put while the body scrolls, and never spills onto the scrim. */
 .dialogWide {
   contain: paint;
+  /* The body scrolls and the dialog does not, so the copy of the ribbons fixed to the dialog
+     stays behind every screen of the page instead of scrolling away with the first. Flex
+     only while open: a closed dialog keeps the browser's display: none. */
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dialogWide[open] {
+  display: flex;
 }
 
 .dialogWide .dialogBody {
+  flex: 1 1 auto;
+  min-height: 0;
   background: transparent;
 }
 
@@ -443,30 +466,40 @@
   grid-column: 1 / -1;
 }
 
-/* A photograph between two blocks takes the row, drawn narrower than it and set off to one side, the next to the other. */
+/* A photograph between two blocks takes the whole row, at every width (Steve, 2026-09-22:
+   "my engagement photos should always be width 100%"). */
 .prose :global(.author-between) {
   grid-column: 1 / -1;
 }
 
-/* Set off to one side, and never past the column's edge: the offset comes out
-   of the width (Steve's phone, 21 September: at 100% plus a 6% offset the
-   stream photograph ran past the blocks on the right). */
 .prose :global(.author-between) :global(.author-photo) {
-  width: min(94%, 640px);
-  margin: 0 0 0 6%;
+  width: 100%;
+  margin: 0;
 }
 
-.prose :global(.author-between:nth-of-type(even)) :global(.author-photo) {
-  margin: 0 6% 0 auto;
+/* Two blocks side by side: the words at the top, the photograph at the foot, and both
+   photographs cut to one shape, so the two sit on one line at one size whatever the
+   words above them. The cut is the page's; the source files are untouched. */
+.prose :global(.author-block-half) {
+  display: flex;
+  flex-direction: column;
 }
 
-/* On a phone there is no room to set it off: it takes the blocks' width. */
-@media (max-width: 639px) {
-  .prose :global(.author-between) :global(.author-photo),
-  .prose :global(.author-between:nth-of-type(even)) :global(.author-photo) {
-    width: 100%;
-    margin: 0;
-  }
+.prose :global(.author-block-half) > :global(.author-photo) {
+  margin-top: auto;
+  padding-top: var(--space-3);
+}
+
+.prose :global(.author-block-half) :global(.author-frame) {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+/* A block that has the row to itself keeps its photograph to the halves' height, near
+   enough: a wide cut, so no one picture towers over the rest. */
+.prose :global(.author-block-wide) > :global(.author-photo) :global(.author-frame) {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
 }
 
 .prose :global(.author-block) h3 {
