@@ -134,6 +134,15 @@ describe('a photograph as markup', () => {
     }
   });
 
+  it('loads every photograph of the page eagerly: lazy ones flickered in the dialog on an iPhone', () => {
+    const image = `<p><img src="${address}" alt="Rabbits"></p>`;
+    const html = layoutAuthor(
+      `<h2>Hi</h2>${image}<h2>Away</h2><h3>One</h3>${image}<h3>Two</h3>${image}`
+    );
+    expect(html).not.toContain('loading="lazy"');
+    expect(html.match(/loading="eager"/g)).toHaveLength(3);
+  });
+
   it('reserves the box, waits below the fold, and has no caption it was not given', () => {
     const figure = photoFigure(photo, 'Alt', null);
     expect(figure).toMatch(/width="\d+" height="\d+"/);

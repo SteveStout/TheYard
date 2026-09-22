@@ -40,7 +40,6 @@ function buttons(html: string): string {
  * picture of a person does not reach this page by being typed into a document.
  */
 function photographs(html: string): string {
-  let first = true;
   return html.replace(
     /(?:<p>)?<img src="([^"]*)" alt="([^"]*)"(?: title="([^"]*)")?\s*\/?>(?:<\/p>)?/g,
     (_image, address: string, alt: string, title: string | undefined) => {
@@ -53,13 +52,16 @@ function photographs(html: string): string {
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
           .replace(/&amp;/g, '&');
+      // Every photograph on this page loads eagerly (Steve, 2026-09-22, iPhone Chrome and
+      // Safari: the lazy ones flickered while the page scrolled, and the first, the only eager
+      // one, never did; nor do the vehicle photographs, which scroll the page, not a scroller
+      // inside a dialog). The page is a dozen cuts no wider than 960 on a phone.
       const figure = photoFigure(
         photo,
         unescape(alt),
         title === undefined ? null : unescape(title),
-        first
+        true
       );
-      first = false;
       return figure;
     }
   );

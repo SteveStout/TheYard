@@ -548,6 +548,8 @@
   border: var(--frame-photo-border);
   border-radius: var(--radius-md);
   box-shadow: var(--frame-photo-shadow);
+  /* A frame waiting on its picture shows the muted grey, as a vehicle card does, not white. */
+  background: var(--color-surface-muted);
 }
 /* #endregion author-frame */
 
