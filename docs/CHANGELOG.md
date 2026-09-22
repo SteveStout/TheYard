@@ -10,6 +10,7 @@ footer cannot disagree (ADR: The version comes from the changelog). One number
 is missing, 1.0.0.39, skipped under the older formula when a red build consumed
 a deploy run number.
 
+- **1.0.1.5** (2026-09-22): The photograph of Freya and Vincent under the hay rack sits centred beneath St. Charles on a desk, as it was meant to in 1.0.1.4, where the page's plain photograph margin outranked it and left it at the left edge.
 - **1.0.1.4** (2026-09-22): The landing page and the sidebar gather the sections under three headings, How it is built, How it is run, and Who and why, in the order Steve set; the Author and Inventory tiles wear a photograph in their gold ring, the vineyard selfie and the yellow coupe; the Admin tile reads the site's health once and shows it as a dot; the Admin tab's speed tile calls a slow minute red only when it served 20 requests or more; the willow photograph carries McKinley Griggs's credit; and a photograph of Freya and Vincent under the hay rack sits beneath St. Charles on the Author page.
 - **1.0.1.3** (2026-09-22): The landing page's title and its sentence sit on the same faint glass panel as the large tiles, so the ribbons behind them no longer cross the words.
 - **1.0.1.2** (2026-09-22): The doors block on the Author page shows Steve's own door, hung in its new frame before the trim went on, in place of the placeholder photograph and its credit.

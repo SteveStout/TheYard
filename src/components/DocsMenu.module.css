@@ -509,10 +509,11 @@
 }
 
 /* A photograph marked beneath (1.0.1.4, the rabbits under St. Charles): under the one
-   before it, in its own shape and never cut, 480 px wide and centred on a desk. */
-.prose :global(.author-beneath) {
+   before it, in its own shape and never cut, 480 px wide and centred on a desk. Two
+   classes, so it outranks the plain .author-photo margin that follows (1.0.1.5). */
+.prose :global(.author-photo):global(.author-beneath) {
   max-width: 480px;
-  margin-inline: auto;
+  margin: var(--space-3) auto 0;
 }
 
 .prose :global(.author-block-wide) > :global(.author-beneath) :global(.author-frame) {
