@@ -85,6 +85,12 @@ different from outside, which is why the after-ship reader still reads both publ
 machine that is not this one. The card says which of the two it is showing. Nothing in this record
 adds a resource, a tier or an edge feature to the bill.
 
+## Addendum, 2026-09-23 (1.0.3.8): a second look, and a second sweep
+
+Steve, 12:0x CDT: "we have 3 reported pages down, focus on that ASAP." The roll onto 1.0.3.6 had swept 121 of 123 on the SQL site and 120 of 123 on the Cosmos DB site: `/api/health`, `/api/admin/machines` and `/api/admin/kept?card=errors&window=24h` each past the client's thirty seconds with `TaskCanceledException`, on both containers, in the same minute, and the Pages tile said "3 down, needs attention" until the next roll. Every one of the three answered when asked again a minute later. The roll's sweep runs in the busiest second the process has: `ApplicationStarted`, four addresses at once, while both containers warm a hundred thousand vehicles on the one core they share and ask the same Basic database for its resource view.
+
+Two things, both mechanical. **A second look:** an address that did not answer on the first pass is asked again, alone, once the pass is over, and an address that answers then is up, with "answered on a second look" as its reason, so the card still says it was slow the first time. **A second sweep:** three minutes after the roll's sweep the settled process sweeps itself again (`PageStatusRunner.SecondSweep`, trigger "settled"), and that is the reading the tile shows until somebody asks for another. `PageStatusTests` holds both: a handler that times out once is up on the second look with its reason, one that times out twice is down with its reason, and the second sweep's delay. The ship script reads the Admin section on both sites after every roll now (`staging\polishlane\admin-after-roll.py`): health, pages, machines, kept, metrics, and it asks for a sweep itself when the roll's reading has anything down, so the after-ship log carries the settled reading and not the start's.
+
 ## Files
 
 - [`api/TheYard.Api/PageStatus.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PageStatus.cs): the derived list, the sweep, and what it reports.

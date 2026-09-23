@@ -165,6 +165,9 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
     /// <summary>How long after one sweep the next may start, so a card left open cannot ask for one a second.</summary>
     public static readonly TimeSpan Cooldown = TimeSpan.FromSeconds(20);
 
+    /// <summary>How long after a roll's sweep the settled process sweeps itself again (1.0.3.8): the first sweep runs in the busiest second the process has.</summary>
+    public static readonly TimeSpan SecondSweep = TimeSpan.FromMinutes(3);
+
     private readonly SemaphoreSlim _gate = new(1, 1);
     private PageStatusReport? _last;
     private volatile bool _running;
@@ -243,6 +246,25 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
                 atOnce.Release();
             }
         }));
+
+        // #region second-look
+        // An address that did not answer gets a second look, alone, once the
+        // first pass is over (1.0.3.8). The roll's sweep runs in the busiest
+        // second a process has, four addresses at once while both containers
+        // warm their catalogues on the one core they share, and on 2026-09-23
+        // /api/health, /api/admin/machines and /api/admin/kept each took past
+        // the thirty seconds and were reported down on both sites, on a tile
+        // that then said "3 down, needs attention" until the next roll. An
+        // address that answers on its own a moment later was never down.
+        for (int index = 0; index < entries.Length; index++)
+        {
+            if (!entries[index].Ok)
+            {
+                var again = await CheckAsync(client, addresses[index], cancellation);
+                entries[index] = again.Ok ? again with { Reason = "answered on a second look" } : again;
+            }
+        }
+        // #endregion second-look
 
         return new PageStatusReport(
             DateTimeOffset.UtcNow,

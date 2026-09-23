@@ -167,4 +167,77 @@ public class PageStatusTests(WebApplicationFactory<Program> factory)
         using var document = System.Text.Json.JsonDocument.Parse(metrics);
         return document.RootElement.GetProperty("requests").GetProperty("window").GetInt32();
     }
+    // #region second-look
+    /// <summary>
+    /// An address that did not answer on the first pass gets a second look
+    /// before it is called down (1.0.3.8). On 2026-09-23 the roll's sweep, run
+    /// in the busiest second of the process, reported /api/health and two
+    /// Admin readings down on both sites for taking past thirty seconds, and
+    /// the tile said "3 down" until the next roll. A server that answers the
+    /// second time was never down, and the entry says the second look is why.
+    /// </summary>
+    [Fact]
+    public async Task An_address_that_times_out_once_is_looked_at_again_before_it_is_called_down()
+    {
+        var handler = new FlakyOnce("/api/health");
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("http://sweep.test/") };
+        var runner = new PageStatusRunner(() => null, () => false, "test", "test");
+
+        var report = await runner.RunAsync(client, "test", CancellationToken.None);
+
+        var health = Assert.Single(report.Entries, entry => entry.Address == "/api/health");
+        Assert.True(health.Ok);
+        Assert.Equal("answered on a second look", health.Reason);
+        Assert.Equal(2, handler.Asked["/api/health"]);
+        // Every other address was asked once, and the report counts the second look as up.
+        Assert.All(handler.Asked.Where(pair => pair.Key != "/api/health"), pair => Assert.Equal(1, pair.Value));
+        Assert.Equal(report.Checked, report.Up);
+    }
+
+    [Fact]
+    public async Task An_address_that_fails_twice_is_down_with_its_reason()
+    {
+        var handler = new FlakyOnce("/api/health", always: true);
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("http://sweep.test/") };
+        var runner = new PageStatusRunner(() => null, () => false, "test", "test");
+
+        var report = await runner.RunAsync(client, "test", CancellationToken.None);
+
+        var health = Assert.Single(report.Entries, entry => entry.Address == "/api/health");
+        Assert.False(health.Ok);
+        Assert.Equal(nameof(TaskCanceledException), health.Reason);
+        Assert.Equal(2, handler.Asked["/api/health"]);
+        Assert.Equal(report.Checked - 1, report.Up);
+    }
+
+    [Fact]
+    public void The_settled_sweep_runs_three_minutes_after_the_roll()
+    {
+        Assert.Equal(TimeSpan.FromMinutes(3), PageStatusRunner.SecondSweep);
+    }
+
+    /// <summary>Answers every address with a byte, except one, which times out the first time it is asked (or every time).</summary>
+    private sealed class FlakyOnce(string flaky, bool always = false) : HttpMessageHandler
+    {
+        public Dictionary<string, int> Asked { get; } = new(StringComparer.Ordinal);
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            string address = request.RequestUri!.PathAndQuery;
+            lock (Asked)
+            {
+                Asked[address] = Asked.TryGetValue(address, out int n) ? n + 1 : 1;
+                if (address == flaky && (always || Asked[address] == 1))
+                {
+                    throw new TaskCanceledException("the request timed out");
+                }
+            }
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent([1]) { Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain") } },
+            });
+        }
+    }
+    // #endregion second-look
 }
