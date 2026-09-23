@@ -17,6 +17,16 @@ describe('renderDocument', () => {
     expect(html).not.toContain('<script>');
   });
 
+  it("marks a document's pictures lazy, and keeps their words", async () => {
+    const html = await renderDocument(
+      '![The app on a laptop](/api/docs/images/app-home.jpg "The Yard")\n'
+    );
+
+    expect(html).toContain(
+      '<img src="/api/docs/images/app-home.jpg" alt="The app on a laptop" title="The Yard" loading="lazy" decoding="async">'
+    );
+  });
+
   it('makes the live domain relative and opens every other link in a new tab', async () => {
     const html = await renderDocument(
       '[here](https://theyard.stevenstout.biz/diagrams/x) and [there](https://github.com/x) and [top](#top)'

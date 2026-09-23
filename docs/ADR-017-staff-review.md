@@ -169,6 +169,12 @@ load-bearing it now reads as a range or points at the thing that counts it;
 where it is decorative it was removed. The audit script is worth keeping in
 the mentor notes and rerunning before any review.
 
+## Addendum, 2026-09-23 (1.0.3.5): a document's pictures come from this site
+
+Every markdown file names its pictures on GitHub's raw host, so the files read on GitHub as they are. Read here, through the sidebar, that meant every document's pictures came from a third host, and the README on a phone was 1,402 KB by the responses' own headers, 985 KB of it `infrastructure.png`, a render of the `infrastructure.svg` this site already serves at 17 KB (measured at 390 in Chrome on 1.0.3.4, three runs). Four of the drawings have an SVG source beside their PNG, and twenty served documents name a picture on that host.
+
+So the served markdown names them here instead (`DocImages` in DocsCatalog.cs): the raw address becomes `/api/docs/images/{name}`, a PNG whose SVG source stands beside it is served as that SVG, and the new route reads a name held to one shape from `docs/images` and nowhere else, cached for a day like the photographs. The markdown files are untouched, which is what keeps them right on GitHub. The renderer marks every picture in a document lazy, so a document's text is not sharing the connection with a screenshot below its first screen. `DocsCatalogTests` holds the rewrite, the route, and that every picture a served document names is in the repository.
+
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the host, with one endpoint serving every document instead of twenty routes.

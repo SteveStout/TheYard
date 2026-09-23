@@ -41,7 +41,10 @@ function buttons(html: string): string {
  */
 function photographs(html: string): string {
   return html.replace(
-    /(?:<p>)?<img src="([^"]*)" alt="([^"]*)"(?: title="([^"]*)")?\s*\/?>(?:<\/p>)?/g,
+    // The renderer adds loading and decoding attributes after the title (1.0.3.5,
+    // src/lib/markdown.ts), and this reads past whatever follows the title to the
+    // tag's end: the photographs went missing from the page when it did not.
+    /(?:<p>)?<img src="([^"]*)" alt="([^"]*)"(?: title="([^"]*)")?[^>]*>(?:<\/p>)?/g,
     (_image, address: string, alt: string, title: string | undefined) => {
       const photo = photoNamed(address);
       if (photo === null) return '<!-- a picture this page does not serve was left out -->';

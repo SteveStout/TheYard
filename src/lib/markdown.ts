@@ -33,6 +33,22 @@ marked.use({
 });
 // #endregion doc-links
 
+// #region doc-images
+// A document's pictures load when the reader reaches them (1.0.3.5): the
+// README carries a screenshot and a drawing below its first screen, and the
+// text should not be sharing the connection with them. The address they carry
+// is this site's own since the same version (DocsCatalog.cs, DocImages).
+marked.use({
+  renderer: {
+    image({ href, title, text }) {
+      const alt = text.replace(/"/g, '&quot;');
+      const caption = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
+      return `<img src="${href}" alt="${alt}"${caption} loading="lazy" decoding="async">`;
+    },
+  },
+});
+// #endregion doc-images
+
 // #region code-renderer
 // Every fenced block in a served document goes through the highlighter
 // (ADR: Code that reads like code). marked hands back the code and the name on

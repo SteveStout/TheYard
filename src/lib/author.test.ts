@@ -12,7 +12,7 @@ const page = [
   '<h2>Away from the keyboard</h2>',
   '<h3>The lake</h3><p>No boat.</p>',
   '<h3>History</h3><p>Rome.</p>',
-  `<h3>Rabbits</h3><p><img src="${address}" alt="Two white rabbits asleep on a grey rug" title="They are fine."></p>`,
+  `<h3>Rabbits</h3><p><img src="${address}" alt="Two white rabbits asleep on a grey rug" title="They are fine." loading="lazy" decoding="async"></p>`,
   '<hr>',
   '<p>A closing line.</p>',
 ].join('\n');

@@ -67,6 +67,76 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
     /// source, and the two are held equal so a drawing cannot gain a page
     /// without a row or a row without a page.
     /// </summary>
+    // #region docs-images
+    /// <summary>
+    /// A document's pictures come from this site (1.0.3.5): the raw-host address
+    /// every markdown file carries for GitHub's sake is pointed at
+    /// /api/docs/images here, and a PNG with an SVG source beside it is served as
+    /// the SVG, which is what took the README from 1.4 MB to a tenth of that.
+    /// </summary>
+    [Fact]
+    public void A_documents_pictures_are_pointed_at_this_site_and_a_drawn_png_at_its_svg()
+    {
+        string root = Repo.Root();
+        string markdown = "![The app](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-home.jpg) and "
+            + "![The drawing](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png) and "
+            + "![A shot](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/toggle-phone.png) and "
+            + "[a file](https://raw.githubusercontent.com/SteveStout/TheYard/main/README.md) and "
+            + "![elsewhere](https://example.com/docs/images/app-home.jpg)";
+
+        string served = DocImages.Rewrite(markdown, root);
+
+        Assert.Contains("](/api/docs/images/app-home.jpg)", served);
+        // infrastructure.svg is beside the PNG; toggle-phone has no SVG and stays a PNG.
+        Assert.Contains("](/api/docs/images/infrastructure.svg)", served);
+        Assert.Contains("](/api/docs/images/toggle-phone.png)", served);
+        // A raw-host address that is not a picture, and a picture on another host, are left alone.
+        Assert.Contains("(https://raw.githubusercontent.com/SteveStout/TheYard/main/README.md)", served);
+        Assert.Contains("(https://example.com/docs/images/app-home.jpg)", served);
+    }
+
+    [Fact]
+    public async Task Every_picture_a_served_document_names_is_in_the_repository_and_served()
+    {
+        string root = Repo.Root();
+        var named = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (string file in DocsCatalog.Files.Values.Distinct())
+        {
+            string served = DocImages.Rewrite(File.ReadAllText(Path.Combine(root, file)), root);
+            foreach (Match match in Regex.Matches(served, @"/api/docs/images/([A-Za-z0-9-]+\.(?:png|jpg|jpeg|svg|webp))"))
+            {
+                named.Add(match.Groups[1].Value);
+            }
+
+            Assert.DoesNotContain(DocImages.RawHost, served);
+        }
+
+        Assert.True(named.Count >= 20, $"only {named.Count} pictures are named across the served documents");
+        var missing = named.Where(name => !File.Exists(Path.Combine(root, "docs", "images", name))).ToList();
+        Assert.True(missing.Count == 0, "these pictures are named by a served document and are not in docs/images: " + string.Join(", ", missing));
+
+        // One of each kind answers with its type and a day's cache.
+        foreach (string name in new[] { "app-home.jpg", "infrastructure.svg", "toggle-phone.png" })
+        {
+            var response = await _client.GetAsync("/api/docs/images/" + name);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(DocImages.ContentType(name), response.Content.Headers.ContentType?.MediaType);
+            Assert.Equal("public, max-age=86400", response.Headers.CacheControl?.ToString());
+        }
+    }
+
+    [Theory]
+    [InlineData("/api/docs/images/nope.png")]
+    [InlineData("/api/docs/images/..%2F..%2FREADME.md")]
+    [InlineData("/api/docs/images/infrastructure.svg.bak")]
+    [InlineData("/api/docs/images/README.md")]
+    public async Task A_picture_that_is_not_there_or_not_a_picture_name_is_a_404_not_a_file_read(string path)
+    {
+        var response = await _client.GetAsync(path);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    // #endregion docs-images
+
     [Fact]
     public void The_sidebar_lists_every_diagram_page_and_no_other()
     {

@@ -1241,7 +1241,8 @@ app.MapDelete("/api/bids", async Task<Results<NoContent, ProblemHttpResult>> (Cu
 app.MapGet("/api/docs/{slug}", Results<ContentHttpResult, ProblemHttpResult> (string slug) =>
     DocsCatalog.Files.TryGetValue(slug, out var file)
         ? TypedResults.Text(
-            LiveSamples.Expand(File.ReadAllText(Path.Combine(repoRoot, file)), repoRoot, buildCommit),
+            // The pictures are named here rather than on GitHub's raw host (DocsCatalog.cs, DocImages).
+            DocImages.Rewrite(LiveSamples.Expand(File.ReadAllText(Path.Combine(repoRoot, file)), repoRoot, buildCommit), repoRoot),
             "text/markdown")
         : TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document"))
     .WithName("GetDocument")
@@ -1252,6 +1253,31 @@ app.MapGet("/api/docs/{slug}", Results<ContentHttpResult, ProblemHttpResult> (st
     .Produces<string>(StatusCodes.Status200OK, "text/markdown")
     .ProducesProblem(StatusCodes.Status404NotFound);
 #endregion docs-endpoint
+
+#region docs-images-endpoint
+// A document's picture, from the repository (DocsCatalog.cs, DocImages). The
+// name is held to one shape, so an address cannot climb out of docs/images, and
+// a name that is not there is a 404 with nothing read. Cached for a day, the
+// same as the photographs: a drawing changes with a commit, and a day is the
+// most a reader would see the old one.
+app.MapGet("/api/docs/images/{name}", Results<PhysicalFileHttpResult, ProblemHttpResult> (string name, HttpContext http) =>
+{
+    string? path = DocImages.PathOf(repoRoot, name);
+    if (path is null || !File.Exists(path))
+    {
+        return TypedResults.Problem(detail: "No served document carries a picture by that name.", statusCode: 404, title: "No such picture");
+    }
+
+    http.Response.Headers.CacheControl = "public, max-age=86400";
+    return TypedResults.PhysicalFile(path, DocImages.ContentType(name));
+})
+    .WithName("GetDocumentImage")
+    .WithTags("Documents")
+    .WithSummary("A picture one of the served documents carries")
+    .WithDescription("The name is one a served document names, such as app-home.jpg or infrastructure.svg; the file is read from docs/images and nowhere else.")
+    .Produces<byte[]>(StatusCodes.Status200OK, "image/png", "image/jpeg", "image/svg+xml", "image/webp")
+    .ProducesProblem(StatusCodes.Status404NotFound);
+#endregion docs-images-endpoint
 
 #region diagram-page
 // A diagram on its own page (ADR-020): the SVG inlined in a small HTML document,

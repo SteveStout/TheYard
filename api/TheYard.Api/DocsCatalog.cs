@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace TheYard.Api;
 
 /// <summary>
@@ -133,3 +135,53 @@ public static class DocsCatalog
     };
     // #endregion diagrams
 }
+
+// #region docs-images
+/// <summary>
+/// The pictures a document carries (1.0.3.5). The markdown names them on
+/// GitHub's raw host so the files read on GitHub as they are; read here, that
+/// meant every document's pictures came from a third host, and the README on a
+/// phone was 1.4 MB, 985 KB of it a PNG rendered from an SVG this repository
+/// already serves at 17 KB. So the served markdown names them here instead:
+/// the raw address becomes /api/docs/images/{name}, and a PNG whose SVG source
+/// stands beside it is served as that SVG. The markdown files themselves are
+/// untouched, which is what keeps them right on GitHub.
+/// </summary>
+public static partial class DocImages
+{
+    public const string RawHost = "https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/";
+    public const string Route = "/api/docs/images/";
+
+    /// <summary>A picture's name: letters, digits and hyphens, one of four extensions. Anything else is not a file read.</summary>
+    [GeneratedRegex(@"^[a-z0-9][a-z0-9-]*\.(png|jpg|jpeg|svg|webp)$", RegexOptions.IgnoreCase)]
+    private static partial Regex NameShape();
+
+    [GeneratedRegex(@"https://raw\.githubusercontent\.com/SteveStout/TheYard/main/docs/images/([a-z0-9][a-z0-9-]*)\.(png|jpg|jpeg|svg|webp)", RegexOptions.IgnoreCase)]
+    private static partial Regex RawAddress();
+
+    public static bool IsName(string name) => NameShape().IsMatch(name);
+
+    public static string ContentType(string name) => Path.GetExtension(name).ToLowerInvariant() switch
+    {
+        ".png" => "image/png",
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".svg" => "image/svg+xml",
+        ".webp" => "image/webp",
+        _ => "application/octet-stream",
+    };
+
+    /// <summary>The file a name points at, under docs/images only, or null for a name the shape refuses.</summary>
+    public static string? PathOf(string repoRoot, string name) =>
+        IsName(name) ? Path.Combine(repoRoot, "docs", "images", name) : null;
+
+    /// <summary>Every raw-host picture address in a served document, pointed here; a PNG with an SVG source beside it points at the SVG.</summary>
+    public static string Rewrite(string markdown, string repoRoot) =>
+        RawAddress().Replace(markdown, match =>
+        {
+            string stem = match.Groups[1].Value;
+            string extension = match.Groups[2].Value.ToLowerInvariant();
+            bool drawn = extension == "png" && File.Exists(Path.Combine(repoRoot, "docs", "images", stem + ".svg"));
+            return Route + stem + (drawn ? ".svg" : "." + extension);
+        });
+}
+// #endregion docs-images
