@@ -1,7 +1,12 @@
 /* The doc viewer (DocDialog): the dialog every sidebar row opens. */
 
+/* The height is fixed rather than a maximum (1.0.3.7): with a maximum the dialog
+   opened at the height of its Loading line and grew to the viewport when the
+   document arrived, a layout shift of 0.19 measured at 1280 on 1.0.3.4. Every
+   served document is taller than a screen, so nothing is lost by holding it. */
 .dialog {
   width: min(760px, calc(100vw - 2 * var(--space-4)));
+  height: calc(100vh - 2 * var(--space-6));
   max-height: calc(100vh - 2 * var(--space-6));
   padding: 0;
   border: 0;

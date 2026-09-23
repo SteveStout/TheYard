@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { INTRO } from '../lib/intro';
 import { HEALTH_WORDS, landingHealth, type LandingHealth } from '../lib/landingHealth';
-import { proofFigures, type TestSummary } from '../lib/landingProof';
+import { proofFigures, type ProofFigure, type TestSummary } from '../lib/landingProof';
 import { landingTiles, type LandingTile } from '../lib/siteMap';
 import { LINKS, MENUS, type DocKey } from './DocsMenu';
 import { NavGlyph } from './SheetIcons';
@@ -22,6 +22,14 @@ import styles from './Landing.module.css';
  * document in the dialog, or its first link in a new tab when it has no
  * documents (API Reference, Diagrams).
  */
+/** The strip's four places before the gate's counts arrive: the same boxes, blank, so nothing moves when they fill. */
+const PROOF_PLACEHOLDER: ProofFigure[] = ['tests', 'gate', 'records', 'stores'].map((key) => ({
+  key,
+  figure: '',
+  label: '',
+  detail: '',
+}));
+
 export function Landing({
   accountLabel,
   onOpenInventory,
@@ -169,25 +177,29 @@ export function Landing({
       <ul className={styles.featured} aria-label="Start here">
         {featured.map((entry) => tile(entry, true))}
       </ul>
-      {proof !== null && (
-        <ul
-          className={styles.proof}
-          aria-label="What this build's gate measured"
-          data-testid="landing-proof"
-        >
-          {proof.map((figure) => (
-            <li
-              key={figure.key}
-              className={styles.proofItem}
-              data-testid={`landing-proof-${figure.key}`}
-            >
-              <span className={styles.proofFigure}>{figure.figure}</span>
-              <span className={styles.proofLabel}>{figure.label}</span>
-              <span className={styles.proofDetail}>{figure.detail}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* The strip stands at its full height from the first paint, four blank
+          figures until the gate's counts arrive (1.0.3.7): drawn only once they
+          had, it pushed every group below it down 124 px on a desk, the last
+          layout shift the landing page had. */}
+      <ul
+        className={styles.proof}
+        aria-label="What this build's gate measured"
+        aria-busy={proof === null}
+        data-testid="landing-proof"
+        data-state={proof === null ? 'loading' : 'ready'}
+      >
+        {(proof ?? PROOF_PLACEHOLDER).map((figure) => (
+          <li
+            key={figure.key}
+            className={styles.proofItem}
+            data-testid={`landing-proof-${figure.key}`}
+          >
+            <span className={styles.proofFigure}>{figure.figure || '\u00a0'}</span>
+            <span className={styles.proofLabel}>{figure.label || '\u00a0'}</span>
+            <span className={styles.proofDetail}>{figure.detail || '\u00a0'}</span>
+          </li>
+        ))}
+      </ul>
       {groups.map((group) => (
         <section
           key={group.key}

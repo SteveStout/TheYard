@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { openTheYard } from './app';
 import { landingTiles, MENU_ORDER, SITE_GROUPS } from '../../src/lib/siteMap';
 
@@ -144,6 +144,83 @@ test.describe('the docked rail', () => {
  * vehicle, and the filter options went with it. Opening the inventory asks for both,
  * because that is the view that shows them.
  */
+// #region no-shift
+/**
+ * Nothing moves after the first paint (1.0.3.7). The store bar, the version
+ * line, a document's dialog and the loading inventory each reserve their
+ * height before their answer arrives; this reads the page's own layout-shift
+ * entries after it has settled and holds the sum near zero. Chromium only:
+ * WebKit reports no layout-shift entries, and a test that always passes there
+ * would prove nothing, so the number is held where the entries exist. Three
+ * tests rather than a loop, because the README's count of browser tests is
+ * counted by the `test(` lines.
+ */
+type Shifts = { supported: boolean; total: number; moved: string[] };
+
+/** The layout shifts a view had after its first paint, with what moved, so a failure names the element. */
+async function shiftAfterFirstPaint(page: Page, path: string): Promise<Shifts> {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.addInitScript(() => {
+    const shifts: Shifts = {
+      supported: PerformanceObserver.supportedEntryTypes.includes('layout-shift'),
+      total: 0,
+      moved: [],
+    };
+    (window as unknown as { __shifts: Shifts }).__shifts = shifts;
+    type Source = {
+      node: Element | null;
+      previousRect: DOMRectReadOnly;
+      currentRect: DOMRectReadOnly;
+    };
+    type Shift = PerformanceEntry & { hadRecentInput: boolean; value: number; sources?: Source[] };
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as Shift[]) {
+        if (entry.hadRecentInput) continue;
+        shifts.total += entry.value;
+        for (const source of entry.sources ?? []) {
+          const node = source.node;
+          const name = node
+            ? `${node.tagName.toLowerCase()}${node.id ? '#' + node.id : ''}.${String(node.className).split(' ')[0]}`
+            : '?';
+          shifts.moved.push(
+            `${entry.value.toFixed(3)} ${name} y ${Math.round(source.previousRect.y)}->${Math.round(source.currentRect.y)} h ${Math.round(source.previousRect.height)}->${Math.round(source.currentRect.height)}`
+          );
+        }
+      }
+    }).observe({ type: 'layout-shift', buffered: true });
+  });
+  await openTheYard(page, path);
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1500);
+  return page.evaluate(() => (window as unknown as { __shifts: Shifts }).__shifts);
+}
+
+/**
+ * Chromium reports layout-shift entries and WebKit does not, so on WebKit the
+ * reading is that nothing was reported, which is not a proof and is not
+ * claimed as one: the number is held where the entries exist.
+ */
+function holdStill(shifts: Shifts): void {
+  if (!shifts.supported) {
+    expect(shifts.total).toBe(0);
+    return;
+  }
+  expect(shifts.total, `moved: ${shifts.moved.join(' | ')}`).toBeLessThan(0.02);
+}
+
+test('nothing on the landing page moves after its first paint', async ({ page }) => {
+  holdStill(await shiftAfterFirstPaint(page, '/'));
+});
+
+test('nothing on the inventory moves after its first paint', async ({ page }) => {
+  holdStill(await shiftAfterFirstPaint(page, '/?view=inventory'));
+});
+
+test('nothing on a document moves after its first paint', async ({ page }) => {
+  holdStill(await shiftAfterFirstPaint(page, '/?doc=readme'));
+});
+// #endregion no-shift
+
 test('asks for no catalogue until the inventory opens', async ({ page }) => {
   const asked: string[] = [];
   page.on('request', (request) => {

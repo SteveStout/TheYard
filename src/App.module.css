@@ -257,6 +257,15 @@
   color: var(--color-text);
 }
 
+/* While the inventory loads the notice holds the height the grid will take
+   (1.0.3.7): with a one-line notice the footer sat on the first screen and fell
+   off it when the cards arrived, a layout shift of 0.10 to 0.81 measured at
+   1280 and 1440 on 1.0.3.4. */
+.loadingInventory {
+  min-height: var(--inventory-loading-height);
+  justify-content: center;
+}
+
 .notice {
   display: flex;
   flex-direction: column;

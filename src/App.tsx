@@ -904,7 +904,7 @@ export default function App() {
               onOpenDoc={openDocument}
             />
           ) : loadState === 'loading' ? (
-            <p className={styles.notice} role="status">
+            <p className={`${styles.notice} ${styles.loadingInventory}`} role="status">
               Loading inventory…
             </p>
           ) : loadState === 'error' ? (

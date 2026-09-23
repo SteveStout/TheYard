@@ -155,6 +155,14 @@
 
   /* #region rail-widths */
   /* The sidebar's docked rail (ADR-013): open, and collapsed to icons. */
+  /* #region reserved-heights */
+  /* Heights the page reserves before an answer arrives (1.0.3.7), so nothing
+     the visitor has already read moves: the store bar's segment, a phone's
+     touch target, and the space the inventory holds while it loads. */
+  --store-segment-height: 28px;
+  --touch-target: 44px;
+  --inventory-loading-height: 100vh;
+  /* #endregion reserved-heights */
   --rail-width: 272px;
   --rail-width-collapsed: 64px;
   /* #endregion rail-widths */

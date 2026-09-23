@@ -243,7 +243,7 @@ function NavContent({
           <BrandMark size={22} className={styles.brandMark} />
           <span className={iconsOnly ? styles.srOnly : styles.brandText}>
             The Yard
-            {versionLabel && <small className={styles.brandSub}>{versionLabel}</small>}
+            <small className={styles.brandSub}>{versionLabel || '\u00a0'}</small>
           </span>
         </button>
         {docked ? (
