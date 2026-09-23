@@ -4,6 +4,7 @@ import { NavGlyph, RowIcon } from './SheetIcons';
 import { SITE_GROUPS, SITE_MAP, sectionsIn, type SiteAction } from '../lib/siteMap';
 import { BrandMark } from './BrandMark';
 import styles from './SideNav.module.css';
+import { ICON } from '../lib/icons';
 
 /** The rail's collapsed state survives reloads per browser; a missing or blocked store means open. */
 const RAIL_KEY = 'theyard.rail';
@@ -254,12 +255,12 @@ function NavContent({
             aria-label={collapsed ? 'Expand the sidebar' : 'Collapse the sidebar'}
             aria-expanded={!collapsed}
           >
-            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width={ICON.md} height={ICON.md} aria-hidden="true">
               <path
                 d={collapsed ? 'M6 4l6 6-6 6M11 4l6 6-6 6' : 'M14 4l-6 6 6 6M9 4l-6 6 6 6'}
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.8"
+                strokeWidth={ICON.stroke}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -272,11 +273,11 @@ function NavContent({
             onClick={onCloseDrawer}
             aria-label="Close"
           >
-            <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
+            <svg viewBox="0 0 14 14" width={ICON.sm} height={ICON.sm} aria-hidden="true">
               <path
                 d="M2 2l10 10M12 2 2 12"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth={ICON.stroke}
                 strokeLinecap="round"
               />
             </svg>

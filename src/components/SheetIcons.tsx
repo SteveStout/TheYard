@@ -1,5 +1,6 @@
 import type { DocKind } from './DocsMenu';
 import type { NavIcon } from '../lib/siteMap';
+import { ICON } from '../lib/icons';
 
 /** Every row kind the sidebar draws: the four doc kinds plus three actions. */
 export type RowKind = DocKind | 'external' | 'admin' | 'reset' | 'account';
@@ -37,12 +38,18 @@ const PATHS: Record<RowKind, string> = {
  */
 export function RowIcon({ kind, className }: { kind: RowKind; className?: string }) {
   return (
-    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" className={className}>
+    <svg
+      viewBox="0 0 20 20"
+      width={ICON.md}
+      height={ICON.md}
+      aria-hidden="true"
+      className={className}
+    >
       <path
         d={PATHS[kind]}
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth={ICON.stroke}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -106,7 +113,7 @@ export function NavGlyph({
         d={NAV_PATHS[icon]}
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth={ICON.stroke}
         strokeLinecap="round"
         strokeLinejoin="round"
       />

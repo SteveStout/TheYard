@@ -403,10 +403,13 @@ const ADMIN_KEY = adminKey();
 
 export function AdminPanel({
   onBack,
+  backTo = 'inventory',
   signedIn,
   onOpenAccount,
 }: {
   onBack: () => void;
+  /** Where the back button goes, as its label says (1.0.3.9). */
+  backTo?: 'home' | 'inventory';
   signedIn: boolean;
   onOpenAccount: () => void;
 }) {
@@ -704,7 +707,7 @@ export function AdminPanel({
       <div className={styles.head}>
         <h1 className={styles.title}>Admin</h1>
         <button type="button" className={styles.back} onClick={onBack}>
-          Back to inventory
+          {backTo === 'home' ? 'Back to home' : 'Back to inventory'}
         </button>
       </div>
       <p className={styles.blurb}>

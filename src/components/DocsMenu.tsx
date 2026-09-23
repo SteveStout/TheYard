@@ -3,6 +3,7 @@ import styles from './DocsMenu.module.css';
 import { Ribbons } from './Ribbons';
 import type { MenuVariant } from '../lib/siteMap';
 import { layoutDocument } from '../lib/docLayout';
+import { ICON } from '../lib/icons';
 
 export type DocKey =
   | 'startHere'
@@ -1252,11 +1253,11 @@ export function DocDialog({
           onClick={() => dialogRef.current?.close()}
           aria-label="Close"
         >
-          <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
+          <svg viewBox="0 0 14 14" width={ICON.sm} height={ICON.sm} aria-hidden="true">
             <path
               d="M2 2l10 10M12 2 2 12"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth={ICON.stroke}
               strokeLinecap="round"
             />
           </svg>

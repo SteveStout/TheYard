@@ -144,6 +144,19 @@ test.describe('the docked rail', () => {
  * vehicle, and the filter options went with it. Opening the inventory asks for both,
  * because that is the view that shows them.
  */
+test('Admin opened from the landing page says it goes back home, and does', async ({ page }) => {
+  await openTheYard(page, '/');
+  await page.getByTestId('landing-tile-admin').click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
+  const back = page.getByRole('button', { name: 'Back to home' });
+  await expect(back).toBeVisible();
+  await back.click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })).toBeVisible();
+  // By its address there is nothing behind it, and the button says where it goes instead.
+  await openTheYard(page, '/?view=admin');
+  await expect(page.getByRole('button', { name: 'Back to inventory' })).toBeVisible();
+});
+
 // #region no-shift
 /**
  * Nothing moves after the first paint (1.0.3.7). The store bar, the version

@@ -8,6 +8,7 @@ import {
 import type { AuctionStatus } from '../lib/auction';
 import { capitalize, formatInteger } from '../lib/format';
 import styles from './FilterBar.module.css';
+import { ICON } from '../lib/icons';
 
 interface FilterBarProps {
   filters: InventoryFilters;
@@ -71,8 +72,8 @@ export function FilterBar({
           <svg
             className={styles.searchIcon}
             viewBox="0 0 20 20"
-            width="16"
-            height="16"
+            width={ICON.sm}
+            height={ICON.sm}
             aria-hidden="true"
           >
             <path

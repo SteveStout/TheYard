@@ -163,6 +163,34 @@
   --touch-target: 44px;
   --inventory-loading-height: 100vh;
   /* #endregion reserved-heights */
+  /* #region controls */
+  /* One height per kind of control (1.0.3.9): a pill is a chooser, a back
+     button or a copy link, dense on a desk and a thumb's target on a phone; a
+     control is an input and the button beside it; the large one is the
+     author page's calls to action. One weight per kind, one border and one
+     radius for every input, one weight for every page title, one focus ring
+     with one offset (and an inset one for a control clipped by its box), and
+     two icon sizes with one stroke. The phone values are under the media
+     query at the end of this block. */
+  --pill-height: 34px;
+  --control-height: 40px;
+  --control-height-lg: 48px;
+  --pill-weight: var(--weight-medium);
+  --control-weight: var(--weight-semibold);
+  --badge-weight: var(--weight-medium);
+  --input-border: 1px solid var(--color-border-strong);
+  --input-radius: var(--radius-md);
+  --title-weight: var(--weight-bold);
+  --title-line: 1.25;
+  --focus-ring: 2px solid var(--color-accent);
+  --focus-ring-on-dark: 2px solid var(--color-gold-light);
+  --focus-ring-warning: 2px solid var(--color-warning);
+  --focus-ring-offset: 2px;
+  --focus-ring-inset: -2px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-stroke: 1.6;
+  /* #endregion controls */
   --rail-width: 272px;
   --rail-width-collapsed: 64px;
   /* #endregion rail-widths */
@@ -241,6 +269,17 @@
   }
 }
 /* #endregion glass-fallbacks */
+
+/* #region controls-phone */
+/* A phone's thumb: every pill and control reaches the touch target (Steve,
+   2026-09-22: "the pills reach 44 px on a phone"); the desk keeps them dense. */
+@media (max-width: 639px) {
+  :root {
+    --pill-height: var(--touch-target);
+    --control-height: var(--touch-target);
+  }
+}
+/* #endregion controls-phone */
 
 /* Minimal base styles; everything else lives in component modules. */
 *,

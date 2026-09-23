@@ -104,7 +104,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--touch-target);
   padding: 0 var(--space-1);
   color: var(--color-gold-light);
   font-size: var(--text-lg);
@@ -117,8 +117,8 @@
 
 .brand:focus-visible,
 .toggle:focus-visible {
-  outline: 2px solid var(--color-gold-light);
-  outline-offset: 2px;
+  outline: var(--focus-ring-on-dark);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .brandMark {
@@ -226,7 +226,7 @@
   gap: var(--space-3);
   width: calc(100% - 2 * var(--space-2));
   margin: 1px var(--space-2);
-  min-height: 48px;
+  min-height: var(--control-height-lg);
   padding: var(--space-2) var(--space-3);
   color: var(--color-sheet-text);
   font-size: var(--text-md);
@@ -244,8 +244,8 @@
 }
 
 .row:focus-visible {
-  outline: 2px solid var(--color-sheet-focus);
-  outline-offset: -2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-inset);
 }
 
 /* The row whose doc is open, or Admin while the tab is showing. */
@@ -349,8 +349,8 @@ details[open] > .sectionToggle::after {
 }
 
 .sectionToggle:focus-visible {
-  outline: 2px solid var(--color-sheet-focus);
-  outline-offset: -2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-inset);
 }
 
 /* Kept for the icons-only rail's spacing: that rail shows rows rather than
@@ -391,8 +391,8 @@ details[open] > .sectionToggleIcons::after {
 }
 
 .sectionToggleIcons:focus-visible {
-  outline: 2px solid var(--color-sheet-focus);
-  outline-offset: -2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-inset);
 }
 
 /* The record's file number, in the index section. Tabular figures so the

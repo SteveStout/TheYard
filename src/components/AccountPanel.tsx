@@ -17,6 +17,8 @@ interface AccountPanelProps {
   onAccountChange: (account: Account) => void;
   onOpenVehicle: (vehicleId: string) => void;
   onBack: () => void;
+  /** Where the back button goes, as its label says (1.0.3.9). */
+  backTo?: 'home' | 'inventory';
   /** A reset link's token, read from the address bar when the page loaded; null when there is none. */
   resetToken?: string | null;
 }
@@ -33,6 +35,7 @@ export function AccountPanel({
   onAccountChange,
   onOpenVehicle,
   onBack,
+  backTo = 'inventory',
   resetToken = null,
 }: AccountPanelProps) {
   return (
@@ -43,7 +46,7 @@ export function AccountPanel({
       <div className={styles.head}>
         <h1 className={styles.title}>Account</h1>
         <button type="button" className={styles.back} onClick={onBack}>
-          Back to inventory
+          {backTo === 'home' ? 'Back to home' : 'Back to inventory'}
         </button>
       </div>
       {account.signedIn ? (

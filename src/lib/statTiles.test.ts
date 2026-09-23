@@ -305,6 +305,12 @@ describe('the stat tiles', () => {
     expect(hourTiming([{ at: 'a', requests: 12 }]).requests).toBe(0);
   });
 
+  it('says under a millisecond rather than zero, because the ring keeps whole milliseconds', () => {
+    expect(
+      tile({ ...quietDay, traffic: { ...quietDay.traffic!, p50_ms: 0, p95_ms: 62 } }, 'speed')
+    ).toMatchObject({ value: 'under 1 ms', tone: 'good' });
+  });
+
   it('reads quiet under twenty requests, with the numbers, and colours only a busy hour', () => {
     expect(QUIET_BELOW_REQUESTS).toBe(20);
     // Ten requests, one of them 6355 ms: too few to colour, and the tile says so and shows both numbers.

@@ -66,9 +66,14 @@
 
 .close {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: 0;
   padding: var(--space-2);
+  min-height: var(--pill-height);
+  min-width: var(--pill-height);
   color: var(--color-text-muted);
   cursor: pointer;
   border-radius: var(--radius-full);
@@ -80,7 +85,8 @@
 }
 
 .close:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .dialogBody {
@@ -272,8 +278,9 @@
   background: var(--color-surface);
   color: var(--color-text);
   padding: 4px 12px;
+  min-height: var(--pill-height);
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--pill-weight);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -284,8 +291,8 @@
 }
 
 .copyLink:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* #region swatches */
@@ -467,7 +474,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
+  min-height: var(--control-height-lg);
   padding: 0 var(--space-5);
   border: 2px solid var(--color-accent);
   border-radius: var(--radius-full);
@@ -490,8 +497,8 @@
 }
 
 .prose :global(.author-button:focus-visible) {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .prose :global(.author-blocks) {

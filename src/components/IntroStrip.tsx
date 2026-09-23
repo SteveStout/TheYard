@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { INTRO, dismissIntro, introDismissed, type IntroLink } from '../lib/intro';
 import styles from './IntroStrip.module.css';
+import { ICON } from '../lib/icons';
 
 /**
  * One sentence and four links over the inventory (ADR: The glass look, the
@@ -75,11 +76,11 @@ export function IntroStrip({
           }}
           data-testid="intro-dismiss"
         >
-          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+          <svg viewBox="0 0 20 20" width={ICON.sm} height={ICON.sm} aria-hidden="true">
             <path
               d="M5 5l10 10M15 5 5 15"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth={ICON.stroke}
               strokeLinecap="round"
             />
           </svg>

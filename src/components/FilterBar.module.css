@@ -39,16 +39,17 @@
 
 .searchInput {
   width: 100%;
-  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) * 2 + 16px);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) * 2 + var(--icon-sm));
+  min-height: var(--control-height);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
   background: var(--color-surface);
   font-size: var(--text-md);
 }
 
 .searchInput:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -1px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-inset);
 }
 
 .sort {
@@ -81,15 +82,16 @@
 .select {
   width: 100%;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
+  min-height: var(--control-height);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
   background: var(--color-surface);
   cursor: pointer;
 }
 
 .select:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -1px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-inset);
 }
 
 .priceInputs {
@@ -135,8 +137,8 @@
 }
 
 .priceInput:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -1px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-inset);
 }
 
 .footer {
@@ -170,8 +172,8 @@
 }
 
 .clear:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Under the footer rule, quieter than the count above it. */

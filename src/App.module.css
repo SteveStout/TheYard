@@ -78,8 +78,8 @@
 }
 
 .brand:focus-visible {
-  outline: 2px solid var(--color-gold-light);
-  outline-offset: 4px;
+  outline: var(--focus-ring-on-dark);
+  outline-offset: var(--focus-ring-offset);
   border-radius: var(--radius-sm);
 }
 
@@ -119,8 +119,8 @@
 }
 
 .headerIcon:focus-visible {
-  outline: 2px solid var(--color-gold-light);
-  outline-offset: 2px;
+  outline: var(--focus-ring-on-dark);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* The hamburger that opens the sidebar's drawer shape (ADR-013). */
@@ -145,8 +145,8 @@
 }
 
 .hamburger:focus-visible {
-  outline: 2px solid var(--color-gold-light);
-  outline-offset: 2px;
+  outline: var(--focus-ring-on-dark);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .resetBids {
@@ -170,8 +170,8 @@
 }
 
 .resetBids:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* #region a11y */
@@ -197,6 +197,8 @@
 
 .skipLink:focus-visible {
   top: var(--space-3);
+  outline: var(--focus-ring-on-dark);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Visually hidden, still announced. Not display:none, which removes it from
@@ -302,8 +304,8 @@
 }
 
 .retry:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .staleBanner {
@@ -333,8 +335,8 @@
 }
 
 .staleRetry:focus-visible {
-  outline: 2px solid var(--color-warning);
-  outline-offset: 2px;
+  outline: var(--focus-ring-warning);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .loadMoreRow {
@@ -344,7 +346,7 @@
 }
 
 .loadMore {
-  min-height: 44px;
+  min-height: var(--touch-target);
   padding: var(--space-2) var(--space-6);
   background: var(--color-accent);
   color: var(--color-on-accent);
@@ -374,8 +376,8 @@
 }
 
 .loadMore:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 @media (max-width: 639px) {

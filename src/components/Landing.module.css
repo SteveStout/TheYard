@@ -36,8 +36,8 @@
   padding-bottom: var(--space-1);
   border-bottom: 3px solid var(--color-gold);
   font-size: var(--text-3xl);
-  font-weight: var(--weight-bold);
-  line-height: 1.2;
+  font-weight: var(--title-weight);
+  line-height: var(--title-line);
   color: var(--color-heading);
 }
 
@@ -118,7 +118,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--touch-target);
   padding: var(--space-6) var(--space-4);
   text-align: center;
 }
@@ -219,6 +219,10 @@
 .proofDetail {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+  /* Two lines reserved: a detail that wraps at 1280 with the rail open grew the
+     strip by one line when the counts arrived, the last 19 px the landing page
+     moved after first paint (1.0.3.9). */
+  min-height: calc(2 * 1.5em);
 }
 
 /* Four across once the page is wide enough, after the two-column rule above so
@@ -272,8 +276,8 @@
 
 .tile:focus-visible,
 .big:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .badge {

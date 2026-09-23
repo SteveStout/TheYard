@@ -4,29 +4,35 @@
   gap: var(--space-4);
 }
 
+/* The same pill Admin and Account go back with (1.0.3.9); until then this was a
+   text link, the one back button on the site that was not a pill. */
 .back {
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   appearance: none;
-  background: none;
-  border: 0;
-  padding: var(--space-1) 0;
-  color: var(--color-accent);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  color: var(--color-text);
+  padding: 6px 14px;
+  min-height: var(--pill-height);
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--pill-weight);
   cursor: pointer;
-  border-radius: var(--radius-sm);
 }
 
 .back:hover {
-  text-decoration: underline;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .back:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .header {
@@ -39,8 +45,8 @@
 
 .title {
   font-size: var(--text-2xl);
-  font-weight: var(--weight-semibold);
-  line-height: 1.2;
+  font-weight: var(--title-weight);
+  line-height: var(--title-line);
   color: var(--color-heading);
 }
 
@@ -134,8 +140,8 @@
 }
 
 .thumb:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .titleWarning {

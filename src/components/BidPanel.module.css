@@ -140,17 +140,18 @@
 }
 
 .amountInput:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -1px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-inset);
 }
 
 .bidButton {
   padding: var(--space-2) var(--space-5);
+  min-height: var(--control-height);
   background: var(--color-accent);
   color: var(--color-on-accent);
   border: 0;
   border-radius: var(--radius-full);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--control-weight);
   cursor: pointer;
   transition: background var(--transition-fast);
   white-space: nowrap;
@@ -161,8 +162,8 @@
 }
 
 .bidButton:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .error {
@@ -208,6 +209,6 @@
 }
 
 .buyNowButton:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }

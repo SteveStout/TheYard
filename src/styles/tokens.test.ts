@@ -231,6 +231,35 @@ describe('the site palette (ADR-016)', () => {
 });
 // #endregion site-palette
 
+describe('the controls (1.0.3.9)', () => {
+  it('have one height per kind on a desk, and every kind is a thumb on a phone', () => {
+    expect(tokens).toContain('--pill-height: 34px;');
+    expect(tokens).toContain('--control-height: 40px;');
+    expect(tokens).toContain('--control-height-lg: 48px;');
+    expect(tokens).toContain('--touch-target: 44px;');
+    const phone = tokens.slice(
+      tokens.indexOf('#region controls-phone'),
+      tokens.indexOf('#endregion controls-phone')
+    );
+    expect(phone).toContain('--pill-height: var(--touch-target);');
+    expect(phone).toContain('--control-height: var(--touch-target);');
+  });
+
+  it('have one focus ring, one offset, and one inset for a control clipped by its box', () => {
+    expect(tokens).toContain('--focus-ring: 2px solid var(--color-accent);');
+    expect(tokens).toContain('--focus-ring-on-dark: 2px solid var(--color-gold-light);');
+    expect(tokens).toContain('--focus-ring-offset: 2px;');
+    expect(tokens).toContain('--focus-ring-inset: -2px;');
+  });
+
+  it('have one weight for a title, one for a badge, and one border and radius for an input', () => {
+    expect(tokens).toContain('--title-weight: var(--weight-bold);');
+    expect(tokens).toContain('--badge-weight: var(--weight-medium);');
+    expect(tokens).toContain('--input-border: 1px solid var(--color-border-strong);');
+    expect(tokens).toContain('--input-radius: var(--radius-md);');
+  });
+});
+
 describe('the sidebar palette', () => {
   const grounds = ['color-sheet-bg', 'color-sheet-bg-raised'];
 

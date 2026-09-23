@@ -210,9 +210,13 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           label: 'Typical answer',
           // No median to read is a quiet hour, unless the only requests there
           // were are the cold start's, and then it is a process warming.
+          // The ring keeps whole milliseconds, so a median of 0 is a median
+          // under a millisecond, which is what the tile says (1.0.3.9).
           value:
             busy && traffic.p50_ms !== null
-              ? `${traffic.p50_ms} ms`
+              ? traffic.p50_ms === 0
+                ? 'under 1 ms'
+                : `${traffic.p50_ms} ms`
               : traffic.warm_requests === 0 && traffic.requests > 0 && traffic.cold_start_label
                 ? 'warming'
                 : 'quiet',

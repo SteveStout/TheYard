@@ -423,4 +423,123 @@ public class StyleRulesTests
             "src/styles/tokens.test.ts should still measure the teal and gold pairings and the watermark at its worst");
     }
     // #endregion rule seven
+
+    // #region rule eight
+    /// <summary>
+    /// One consistent experience, from tokens (1.0.3.9). The sweep of every
+    /// view at three widths in two engines found three focus rings, eight
+    /// button heights for the same kinds of control, two input borders and
+    /// radii, and one heading at the wrong weight. Each is a token now, and
+    /// this holds every sheet to them: an outline is one of the three ring
+    /// tokens and is followed by an offset token; every control named below
+    /// takes its height from a height token; every page title takes its weight
+    /// from the title token.
+    /// </summary>
+    [Fact]
+    public void Every_focus_ring_control_height_and_title_weight_comes_from_the_token_sheet()
+    {
+        var wrong = new List<string>();
+        var ring = new Regex(@"outline:\s*([^;]+);", RegexOptions.Compiled);
+        var offset = new Regex(@"outline-offset:\s*([^;]+);", RegexOptions.Compiled);
+        int rings = 0;
+
+        foreach (string path in StyledSource().Where(path => path.EndsWith(".css", StringComparison.Ordinal)))
+        {
+            string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
+            string css = WithoutComments(File.ReadAllText(path));
+            foreach (Match match in ring.Matches(css))
+            {
+                string value = match.Groups[1].Value.Trim();
+                if (value == "none" || value == "0")
+                {
+                    continue;
+                }
+                rings++;
+                if (value is not ("var(--focus-ring)" or "var(--focus-ring-on-dark)" or "var(--focus-ring-warning)"))
+                {
+                    wrong.Add($"{relative} draws a focus ring as '{value}': use var(--focus-ring), var(--focus-ring-on-dark) or var(--focus-ring-warning)");
+                    continue;
+                }
+                string after = css[(match.Index + match.Length)..];
+                var next = offset.Match(after);
+                if (!next.Success || next.Index > 80)
+                {
+                    wrong.Add($"{relative} draws a focus ring with no outline-offset token after it");
+                }
+                else if (next.Groups[1].Value.Trim() is not ("var(--focus-ring-offset)" or "var(--focus-ring-inset)"))
+                {
+                    wrong.Add($"{relative} sets an outline-offset of '{next.Groups[1].Value.Trim()}': use var(--focus-ring-offset) or var(--focus-ring-inset)");
+                }
+            }
+        }
+        Assert.True(rings > 25, $"only {rings} focus rings were read, so this scan is reading the wrong files");
+
+        // The controls, by sheet and selector, and the height token each takes.
+        var controls = new (string Sheet, string Selector, string Token)[]
+        {
+            ("src/components/AdminPanel.module.css", ".back", "--pill-height"),
+            ("src/components/AccountPanel.module.css", ".back", "--pill-height"),
+            ("src/components/VehicleDetail.module.css", ".back", "--pill-height"),
+            ("src/components/DocsMenu.module.css", ".copyLink", "--pill-height"),
+            ("src/components/DocsMenu.module.css", ".close", "--pill-height"),
+            ("src/components/AccountPanel.module.css", ".input", "--control-height"),
+            ("src/components/AccountPanel.module.css", ".primary,\n.secondary", "--control-height"),
+            ("src/components/BidPanel.module.css", ".bidButton", "--control-height"),
+            ("src/components/FilterBar.module.css", ".searchInput", "--control-height"),
+            ("src/components/FilterBar.module.css", ".select", "--control-height"),
+            ("src/components/DocsMenu.module.css", ".prose :global(.author-button)", "--control-height-lg"),
+        };
+        foreach (var (sheet, selector, token) in controls)
+        {
+            string block = RuleBlock(sheet, selector);
+            if (!block.Contains($"min-height: var({token});", StringComparison.Ordinal))
+            {
+                wrong.Add($"{sheet} {selector.Replace("\n", " ")} should take its height from var({token})");
+            }
+        }
+        var titles = new (string Sheet, string Selector)[]
+        {
+            ("src/components/Landing.module.css", ".heading"),
+            ("src/components/AdminPanel.module.css", ".title"),
+            ("src/components/AccountPanel.module.css", ".title"),
+            ("src/components/VehicleDetail.module.css", ".title"),
+        };
+        foreach (var (sheet, selector) in titles)
+        {
+            if (!RuleBlock(sheet, selector).Contains("font-weight: var(--title-weight);", StringComparison.Ordinal))
+            {
+                wrong.Add($"{sheet} {selector} should take its weight from var(--title-weight)");
+            }
+        }
+        // A pixel height on a control belongs in the sheet, not in a component's module.
+        foreach (string path in StyledSource().Where(path => path.EndsWith(".module.css", StringComparison.Ordinal)))
+        {
+            string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
+            foreach (Match match in Regex.Matches(WithoutComments(File.ReadAllText(path)), @"min-height:\s*(34|40|44|48)px;"))
+            {
+                wrong.Add($"{relative} writes 'min-height: {match.Groups[1].Value}px' where a height token belongs");
+            }
+        }
+
+        foreach (string token in new[] { "--pill-height", "--control-height", "--control-height-lg", "--focus-ring", "--focus-ring-on-dark", "--focus-ring-offset", "--focus-ring-inset", "--title-weight", "--badge-weight", "--input-border", "--input-radius", "--icon-sm", "--icon-md", "--icon-stroke" })
+        {
+            if (!TokenSheet().Contains(token + ":", StringComparison.Ordinal))
+            {
+                wrong.Add($"src/styles/tokens.css should define {token}");
+            }
+        }
+
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+
+    /// <summary>The declarations of one rule, from its selector to the closing brace, without comments.</summary>
+    private static string RuleBlock(string sheet, string selector)
+    {
+        string css = WithoutComments(File.ReadAllText(Path.Combine(Root, sheet.Replace('/', Path.DirectorySeparatorChar))));
+        int at = css.IndexOf(selector + " {", StringComparison.Ordinal);
+        Assert.True(at >= 0, $"{sheet} has no rule '{selector.Replace("\n", " ")}'");
+        int end = css.IndexOf('}', at);
+        return css[at..end];
+    }
+    // #endregion rule eight
 }

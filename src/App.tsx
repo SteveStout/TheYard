@@ -108,6 +108,9 @@ const INITIAL_DOC = docKeyForSlug(INITIAL_PARAMS.get('doc'));
  */
 const INITIAL_INVENTORY = opensInventory(INITIAL_PARAMS);
 
+/** Where a view's back button goes, as its label says (1.0.3.9). */
+export type BackTo = 'home' | 'inventory';
+
 export default function App() {
   /** The server-filtered, server-sorted page currently on display. */
   const [page, setPage] = useState<VehiclePage>(EMPTY_PAGE);
@@ -591,6 +594,9 @@ export default function App() {
       openVehicle(vehicle);
     });
   };
+  /** What the entry that opened this view recorded, read when the view draws its back button. */
+  const backTo = (): BackTo =>
+    (window.history.state as { from?: BackTo } | null)?.from === 'home' ? 'home' : 'inventory';
   const backToInventory = () => {
     // If we pushed this entry, going back keeps history clean; a deep-linked
     // visit has no list entry behind it, so just swap the URL in place.
@@ -629,10 +635,14 @@ export default function App() {
   };
   // #endregion open-inventory
 
+  // Where Back goes is remembered with the entry (1.0.3.9): opened from the
+  // landing page the button says "Back to home", because that is where Back
+  // takes it; opened from the inventory, or by its address, it says inventory.
+  const openedFrom = (): BackTo => (inventoryOpen ? 'inventory' : 'home');
   const openAdmin = () => {
     const params = filtersToSearchParams(filters, sort);
     params.set('view', 'admin');
-    window.history.pushState({ viaAdmin: true }, '', `?${params}`);
+    window.history.pushState({ viaAdmin: true, from: openedFrom() }, '', `?${params}`);
     setSelectedVehicle(null);
     setAccountOpen(false);
     setAdminOpen(true);
@@ -682,7 +692,7 @@ export default function App() {
   const openAccount = () => {
     const params = filtersToSearchParams(filters, sort);
     params.set('view', 'account');
-    window.history.pushState({ viaAccount: true }, '', `?${params}`);
+    window.history.pushState({ viaAccount: true, from: openedFrom() }, '', `?${params}`);
     setSelectedVehicle(null);
     setAdminOpen(false);
     setAccountOpen(true);
@@ -883,6 +893,7 @@ export default function App() {
             <Suspense fallback={<p className={styles.adminLoading}>Reading the machines...</p>}>
               <AdminPanel
                 onBack={closeAdmin}
+                backTo={backTo()}
                 signedIn={account.signedIn}
                 onOpenAccount={openAccount}
               />
@@ -893,6 +904,7 @@ export default function App() {
               onAccountChange={changeAccount}
               onOpenVehicle={openVehicleById}
               onBack={closeAccount}
+              backTo={backTo()}
               resetToken={INITIAL_RESET}
             />
           ) : !inventoryOpen ? (
