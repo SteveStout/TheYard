@@ -358,6 +358,14 @@ and are named here so the record does not quietly disagree with the one beside i
   and the Cosmos DB adapter answers the same `DatabaseState` the relational one
   does.
 
+## Addendum, 2026-09-23 (1.0.3.6): the second chance
+
+The fallback had a hole this record did not name: the store was tried once, before the container was built, and never again. On 2026-09-23 at 09:53 CDT both containers rolled onto 1.0.3.4 and both asked Azure SQL Database in the same second; both got `SqlException: A connection was successfully established with the server, but then an error occurred during the login process (provider: TCP Provider, error: 35)`, which is a login-phase transient that `EnableRetryOnFailure` does not retry. Both came up on the files, the health check said so, and for the rest of that process's life sign-in and bids on the SQL site went nowhere while the database sat there answering. The kept log holds both lines, one per container, at 14:53:07 UTC.
+
+So a store is asked five times at startup before it is written off (`StorePrepare` in Stores.cs; Steve, the same morning: "we should always retry 5 times with SQL and Cosmos, can we add some retry logic before we log it as a error?"), the waits doubling from two seconds, about thirty seconds in all, and the error is logged only after the fifth refusal, with the count in it. And a store that refused all five is asked again (`StoreSecondChance`): every thirty seconds for an hour, and when it answers, everything that stands on it, the catalogue, the bids, the activity store, the probe and the accounts, is built against it, the catalogue is warmed and the bids are loaded, and the backend is attached to it in one call (`Backend.Attach`). A request in flight during that second sees the files or the store for each member, both of which answer correctly, and the swap happens at most once in a process's life. The window is an hour so that a database that is genuinely gone is not a query every thirty seconds for ever; after it the fallback is what this record always said it was, until the next roll. `StoreSecondChanceTests` holds both: the five asks with their doubling waits and the count in the note, and the loop, where a store that answers on the third ask is attached once and the asking stops, a ready store is never asked, an attach that throws is asked again, and the window closes.
+
+**Not proven live.** A roll onto 1.0.3.6 whose store comes up at once never runs the loop, and there is no honest way to make Azure SQL refuse a login on purpose; the loop is held by its tests, and the next transient at the wrong second is what proves it, in a log line that reads "came up on the second chance".
+
 ## Files
 
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the context, the model, and the design-time factory.

@@ -141,59 +141,72 @@ var backendList = new List<Backend>();
 // YardConnection so that the connection type stays a description of where the
 // database is.
 var sqlStartup = new StartupTimings();
-var sqlState = await sqlStartup.Time("prepare", () => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos));
-ContextFactory? contexts = null;
-ContextFactory? quietContexts = null;
-if (sqlState.Ready)
+var sqlState = await sqlStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos)));
+// The backend stands on the files until its store is attached: the same two
+// ports answered out of the JSON, the null bid store, no accounts. The
+// synthetic scale-up still decorates the vehicle source, and nothing above
+// this line can tell that the catalogue stopped being a file (ADR: The
+// relational store). Attached at once below when the store came up, or by the
+// second chance when it comes up later (ADR: The relational store, the
+// addendum on the second chance).
+var sqlBackend = new Backend
+{
+    Key = "sql",
+    Name = yard.Describe(),
+    Database = sqlState,
+    Startup = sqlStartup,
+    Inventory = new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
+    Bids = new BidService(NullBidStore.Instance),
+    Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
+    Probe = () => Task.FromResult(false),
+    UserStore = _ => null,
+};
+// Everything that stands on the relational store, built from a state that
+// says it came up. The loggers are attached the moment the host exists (the
+// factory is read at call time, so an attach after startup gets them too).
+ILoggerFactory? hostLoggers = null;
+StoreAttachment SqlAttachment(DatabaseState state)
 {
     var sqlOptions = new DbContextOptionsBuilder<YardDbContext>();
     yard.Configure(sqlOptions);
     sqlOptions.AddInterceptors(new SqlLogInterceptor(sqlLog, currentRequest));
-    contexts = new ContextFactory(sqlOptions.Options);
+    var contexts = new ContextFactory(sqlOptions.Options);
     // The same database without the interceptor, for the activity counters:
     // a batch every five seconds would fill the SQL log with the feature that
     // reads the SQL log, the observer effect the request ring designed out
     // (ADR: Site activity, and the line an address does not cross).
     var quietOptions = new DbContextOptionsBuilder<YardDbContext>();
     yard.Configure(quietOptions);
-    quietContexts = new ContextFactory(quietOptions.Options);
-}
-backendList.Add(new Backend
-{
-    Key = "sql",
-    Name = yard.Describe(),
-    Database = sqlState,
-    Startup = sqlStartup,
-    Contexts = contexts,
-    // The same two ports, answered out of the database, or out of the files
-    // when the store did not come up. The synthetic scale-up still decorates
-    // the vehicle source, and nothing above this line can tell that the
-    // catalogue stopped being a file (ADR: The relational store).
-    Inventory = contexts is not null
-        ? new InventoryService(new SyntheticVehicleSource(new EfVehicleSource(contexts), targetCount), new EfPhotoManifestSource(contexts))
-        : new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
-    Bids = new BidService(contexts is not null ? new EfBidStore(contexts) : NullBidStore.Instance),
-    Activity = quietContexts is not null ? new EfActivityStore(quietContexts) : NullActivityStore.Instance,
-    Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
-    Probe = async () =>
+    var quietContexts = new ContextFactory(quietOptions.Options);
+    if (hostLoggers is not null)
     {
-        if (contexts is null)
+        contexts.Attach(hostLoggers);
+    }
+    return new StoreAttachment(
+        state,
+        contexts,
+        quietContexts,
+        new InventoryService(new SyntheticVehicleSource(new EfVehicleSource(contexts), targetCount), new EfPhotoManifestSource(contexts)),
+        new BidService(new EfBidStore(contexts)),
+        new EfActivityStore(quietContexts),
+        async () =>
         {
-            return false;
-        }
-        using var db = contexts.CreateDbContext();
-        return await db.Vehicles.AnyAsync() && await db.Photos.AnyAsync();
-    },
-    // Identity's own store over the accounts tables, given a context from the
-    // request's scope. The type is the one AddEntityFrameworkStores would have
-    // registered for a user type with no roles; naming it here is what lets
-    // the other backend register a different one under the same interface.
-    UserStore = contexts is null
-        ? _ => null
-        : services => new Microsoft.AspNetCore.Identity.EntityFrameworkCore.UserOnlyStore<YardUser, YardDbContext, string>(
+            using var db = contexts.CreateDbContext();
+            return await db.Vehicles.AnyAsync() && await db.Photos.AnyAsync();
+        },
+        // Identity's own store over the accounts tables, given a context from the
+        // request's scope. The type is the one AddEntityFrameworkStores would have
+        // registered for a user type with no roles; naming it here is what lets
+        // the other backend register a different one under the same interface.
+        services => new Microsoft.AspNetCore.Identity.EntityFrameworkCore.UserOnlyStore<YardUser, YardDbContext, string>(
             services.GetRequiredService<YardDbContext>(),
-            services.GetService<IdentityErrorDescriber>()),
-});
+            services.GetService<IdentityErrorDescriber>()));
+}
+if (sqlState.Ready)
+{
+    sqlBackend.Attach(SqlAttachment(sqlState));
+}
+backendList.Add(sqlBackend);
 // #endregion sql-backend
 
 // #region cosmos-backend
@@ -202,6 +215,7 @@ backendList.Add(new Backend
 // was written for, and is the seed in them. A refusal falls through to the
 // file-backed catalogue exactly as a missing schema does on SQL Server.
 CosmosStore? cosmos = null;
+StoreSecondChance.Plan? cosmosSecondChance = null;
 if (cosmosConfigured)
 {
     cosmos = CosmosStore.Connect(
@@ -219,29 +233,51 @@ if (cosmosConfigured)
     // attributed to nobody (ADR: What the store is actually doing).
     cosmos.CurrentRequest = currentRequest;
     var cosmosStartup = new StartupTimings();
-    var cosmosState = await cosmosStartup.Time("prepare", () => cosmos.PrepareAsync(seedVehicles, seedPhotos));
+    var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.PrepareAsync(seedVehicles, seedPhotos)));
     var store = cosmos;
-    backendList.Add(new Backend
+    // The same shape as the relational backend: the files until the store is
+    // attached, at once when it came up, by the second chance when it did not
+    // (ADR: A second store on Cosmos DB, and what it costs).
+    var cosmosBackend = new Backend
     {
         Key = "cosmos",
         Name = "Azure Cosmos DB",
         Database = cosmosState,
         Startup = cosmosStartup,
         Cosmos = cosmos,
-        // The same three ports, answered out of the document store, or out of
-        // the files when it did not come up (ADR: A second store on Cosmos DB,
-        // and what it costs).
-        Inventory = cosmosState.Ready
-            ? new InventoryService(new SyntheticVehicleSource(new CosmosVehicleSource(store), targetCount), new CosmosPhotoManifestSource(store))
-            : new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
-        Bids = new BidService(cosmosState.Ready ? new CosmosBidStore(store) : NullBidStore.Instance),
-        Activity = cosmosState.Ready ? new CosmosActivityStore(store) : NullActivityStore.Instance,
+        Inventory = new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
+        Bids = new BidService(NullBidStore.Instance),
         Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
-        Probe = () => cosmosState.Ready ? store.ProbeAsync() : Task.FromResult(false),
+        Probe = () => Task.FromResult(false),
+        UserStore = _ => null,
+    };
+    StoreAttachment CosmosAttachment(DatabaseState state) => new(
+        state,
+        null,
+        null,
+        // The same three ports, answered out of the document store.
+        new InventoryService(new SyntheticVehicleSource(new CosmosVehicleSource(store), targetCount), new CosmosPhotoManifestSource(store)),
+        new BidService(new CosmosBidStore(store)),
+        new CosmosActivityStore(store),
+        store.ProbeAsync,
         // One document per account and one per address, and none of Identity's
         // seven tables (ADR: Accounts on a document store).
-        UserStore = cosmosState.Ready ? _ => new CosmosUserStore(store) : _ => null,
-    });
+        _ => new CosmosUserStore(store));
+    if (cosmosState.Ready)
+    {
+        cosmosBackend.Attach(CosmosAttachment(cosmosState));
+    }
+    backendList.Add(cosmosBackend);
+    cosmosSecondChance = new StoreSecondChance.Plan(
+        cosmosBackend,
+        () => store.PrepareAsync(seedVehicles, seedPhotos),
+        async state =>
+        {
+            var attachment = CosmosAttachment(state);
+            await attachment.Inventory.WarmAsync();
+            await attachment.Bids.LoadAsync();
+            cosmosBackend.Attach(attachment);
+        });
 }
 // #endregion cosmos-backend
 
@@ -256,15 +292,39 @@ var backends = new Backends(
     builder.Configuration["Peer:Site"]);
 builder.Services.AddSingleton(backends);
 builder.Services.AddScoped<CurrentBackend>();
-if (contexts is not null)
+// Identity's stores want a context per request, and the factory hands out
+// contexts rather than registering one. This is the adapter between the two
+// and one of the two scoped registrations in the application. The factory is
+// the backend's at call time, so a store attached after startup serves the
+// accounts too; nothing asks for a context while the store is on the files,
+// because the user store is null until then.
+builder.Services.AddScoped(_ =>
+    (sqlBackend.Contexts ?? throw new InvalidOperationException("the relational store is not attached"))
+        .CreateDbContext());
+// #region second-chance-wiring
+// A store that refused at startup is asked again after it (ADR: The relational
+// store, the addendum on the second chance): every thirty seconds for an hour,
+// attached warm when it answers. Only the backends that are not ready are
+// planned, so a site whose stores came up runs nothing here.
+var secondChances = new List<StoreSecondChance.Plan>
 {
-    builder.Services.AddSingleton<IDbContextFactory<YardDbContext>>(contexts);
-    // Identity's stores want a context per request, and the factory hands out
-    // contexts rather than registering one. This is the adapter between the two
-    // and one of the two scoped registrations in the application.
-    builder.Services.AddScoped(services =>
-        services.GetRequiredService<IDbContextFactory<YardDbContext>>().CreateDbContext());
+    new(
+        sqlBackend,
+        () => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos),
+        async state =>
+        {
+            var attachment = SqlAttachment(state);
+            await attachment.Inventory.WarmAsync();
+            await attachment.Bids.LoadAsync();
+            sqlBackend.Attach(attachment);
+        }),
+};
+if (cosmosSecondChance is not null)
+{
+    secondChances.Add(cosmosSecondChance);
 }
+builder.Services.AddHostedService(services => new StoreSecondChance(secondChances, services.GetRequiredService<ILogger<StoreSecondChance>>()));
+// #endregion second-chance-wiring
 if (cosmos is not null)
 {
     builder.Services.AddSingleton(cosmos);
@@ -513,7 +573,7 @@ builder.Services.AddSingleton(services => new MachineRecorder(
     services.GetRequiredService<MachineSampler>(),
     machineHistory,
     backends.Default.Key,
-    cancellation => ResourceStats.ReadAsync(quietContexts, "the relational store", 8, cancellation),
+    cancellation => ResourceStats.ReadAsync(sqlBackend.QuietContexts, "the relational store", 8, cancellation),
     () => storeLog.Snapshot(),
     () => requestLog.Snapshot(),
     services.GetRequiredService<ILogger<MachineRecorder>>()));
@@ -730,7 +790,8 @@ activityCollector = app.Services.GetRequiredService<ActivityCollector>();
 // which the Admin tab's log section and a test both rely on; the document
 // store writes one line per operation to the same place from here on
 // (ADR: What the store is actually doing, addendum).
-contexts?.Attach(app.Services.GetRequiredService<ILoggerFactory>());
+hostLoggers = app.Services.GetRequiredService<ILoggerFactory>();
+(sqlBackend.Contexts as ContextFactory)?.Attach(hostLoggers);
 if (cosmos is not null)
 {
     cosmos.Logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<CosmosStore>();

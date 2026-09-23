@@ -8,7 +8,7 @@ the way it is.
 ## Context
 
 Program.cs is the one file that starts the API. A newcomer sees a long
-file (four hundred lines when this was written, 2,545 today) with no class
+file (four hundred lines when this was written, 2,606 today) with no class
 and no `Main`, a block of `builder.Services`
 calls, a run of `app.MapGet` calls, two `app.Use` blocks, and helpers after
 `app.Run()`. Every one of those has a reason, and most of the reasons are
@@ -199,10 +199,10 @@ worth saying that it is a decision rather than a drift.
 What those lines are:
 
 ```
-2,545 total
-  898 comment
+2,606 total
+  914 comment
   149 blank
-  1,498 code, across 48 endpoints
+  1,543 code, across 48 endpoints
 ```
 
 Thirty-two lines of code per endpoint, and most endpoints are a route, a
