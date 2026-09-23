@@ -95,7 +95,7 @@ in it, and the thresholds are constants with names:
 | --- | --- | --- |
 | Health | the site calls itself healthy while a check fails, which is the fallback serving | the site does not call itself healthy |
 | Pages | the sweep checked nothing | any address is down |
-| Slowest 95th | 1,000 ms or more in any minute of the hour | 3,000 ms or more |
+| Typical answer | the hour's ninety-fifth is 1,000 ms or more, over twenty requests at least | 3,000 ms or more |
 | Memory | four fifths of the limit | nineteen twentieths of it |
 | Errors | | anything answered 5xx in the hour, or anything reported |
 
@@ -337,6 +337,14 @@ Steve saw "Slowest 95th: 6355 ms" and "needs attention" on a morning nothing was
 
 The tile's number is the worst minute's ninety-fifth, and over a handful of requests a ninety-fifth is that minute's one slowest request. So **red now needs a minute of at least 20 requests (`RED_NEEDS_REQUESTS`)**; a slower minute with fewer is amber at most, the number still shows, and the line under it says the minute had too few requests to call red. Over the same 24 hours that leaves 2 of the 9 red. The three minutes after a start are still left out (the cold-start region), and every request and error in the hour is still counted.
 
+## Addendum, 2026-09-23 (1.0.3.4): the typical answer, and the ninety-fifth beside it
+
+Steve, the next morning: "is it fast keeps showing it's slow and either the snippet is off or something, should we be going off the average instead of the 95th?" Measured before anything changed, over the plan's first three days (2026-09-20 to 09-23): every request the two sites answered from Application Insights, about 30,000; the kept minutes, which are what the tile reads; and 48 process starts read off the after-ship logs plus one platform restart on the 23rd. The tile was sampling wrong in three ways, and the site has a small real tail.
+
+**The tile headlined the slowest minute of the hour.** Its number was the largest of sixty minutes' ninety-fifths, so one slow request coloured the tile for the sixty minutes that minute stayed in the hour. On the SQL site 1.5 per cent of minutes had a ninety-fifth of a second or more, and the tile read amber 45 per cent of the time (Cosmos DB: 1.1 against 35). **Starts were most of the slow requests.** Of the 131 visitor requests over a second on the SQL site, 98 fell in the first three minutes of a process and 15 in minutes three to ten; a roll is a cold catalogue. **And the Admin tab's own reads were the slowest routes on the site**: 751 of the 882 requests over a second were `/api/admin/azure`, `experiment`, `activity`, `telemetry` and `/api/health`, which the ring already leaves out but the request log does not, and which no visitor makes. The real tail is `/api/vehicles` when warm: 19 of 808 calls over a second on SQL (median 70 ms, ninety-fifth 594), 16 of 123 on Cosmos DB; none of them waited on a database, and each coincided with other requests on the one B1 core the two sites share.
+
+So the tile reads the hour the way a visitor felt it. **The number is the hour's median over every request in its warm minutes, and the ninety-fifth stands beside it**, both from the durations each traffic minute now carries sorted (`hourTiming`), because a percentile of an hour cannot be had from sixty minutes' percentiles. **Under twenty requests the hour reads "quiet" and shows the count with both numbers** (`QUIET_BELOW_REQUESTS`, which replaces the busy-minute rule above: over fewer, a ninety-fifth is one request's time). Amber is an hour whose ninety-fifth is a second or more, red three seconds or more, and neither needs the extra rule now, because the floor is on the hour rather than the minute. The three minutes after a start are still left out and still said. Replayed over the same three days the tile reads good 48 per cent of the time on the SQL site and quiet the rest, amber under 1 per cent on either site, red never. The line under the tile is the median a minute, the same reading as the number over it; the traffic card keeps drawing every request, the slow line included.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.
@@ -360,7 +368,7 @@ The tile's number is the worst minute's ninety-fifth, and over a handful of requ
 ```live path=src/lib/statTiles.ts region=tile-rules
 ```
 
-```live path=src/lib/statTiles.ts region=quiet-minutes
+```live path=src/lib/statTiles.ts region=hour-timing
 ```
 
 ```live path=src/lib/trafficCard.ts region=traffic-words

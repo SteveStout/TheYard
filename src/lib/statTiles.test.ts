@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   afterColdStart,
   COLD_START_MINUTES,
-  quietMinutes,
-  RED_NEEDS_REQUESTS,
+  hourTiming,
+  QUIET_BELOW_REQUESTS,
   sparkCaption,
   sparkRuns,
   tilesFrom,
@@ -33,7 +33,14 @@ const quietDay: TileReadings = {
     checks: [{ status: 'pass' }, { status: 'pass' }, { status: 'pass' }],
   },
   pages: { checked: 116, up: 116 },
-  traffic: { requests: 240, slowest_p95_ms: 180, server_errors: 0, client_errors: 2 },
+  traffic: {
+    requests: 240,
+    server_errors: 0,
+    client_errors: 2,
+    warm_requests: 240,
+    p50_ms: 12,
+    p95_ms: 180,
+  },
   memory: { working_set_mb: 310.4, limit_mb: 1185.6 },
   charged: { request_units: 24.49, free_per_second: 1000 },
   errors: 0,
@@ -87,7 +94,12 @@ describe('the stat tiles', () => {
       tone: 'good',
     });
     expect(tile(quietDay, 'pages')).toMatchObject({ value: '116 of 116', tone: 'good' });
-    expect(tile(quietDay, 'speed')).toMatchObject({ value: '180 ms', tone: 'good' });
+    expect(tile(quietDay, 'speed')).toMatchObject({
+      label: 'Typical answer',
+      value: '12 ms',
+      detail: '95th 180 ms over 240 requests in the last hour',
+      tone: 'good',
+    });
     expect(tile(quietDay, 'memory')).toMatchObject({
       value: '26%',
       detail: '310 of 1186 MB',
@@ -104,10 +116,10 @@ describe('the stat tiles', () => {
       tone: 'bad',
     });
     expect(
-      tile({ ...quietDay, traffic: { ...quietDay.traffic!, slowest_p95_ms: 1_400 } }, 'speed').tone
+      tile({ ...quietDay, traffic: { ...quietDay.traffic!, p95_ms: 1_400 } }, 'speed').tone
     ).toBe('warn');
     expect(
-      tile({ ...quietDay, traffic: { ...quietDay.traffic!, slowest_p95_ms: 4_100 } }, 'speed').tone
+      tile({ ...quietDay, traffic: { ...quietDay.traffic!, p95_ms: 4_100 } }, 'speed').tone
     ).toBe('bad');
     expect(
       tile({ ...quietDay, memory: { working_set_mb: 1000, limit_mb: 1185.6 } }, 'memory').tone
@@ -142,7 +154,14 @@ describe('the stat tiles', () => {
       tile(
         {
           ...quietDay,
-          traffic: { requests: 0, slowest_p95_ms: null, server_errors: 0, client_errors: 0 },
+          traffic: {
+            requests: 0,
+            server_errors: 0,
+            client_errors: 0,
+            warm_requests: 0,
+            p50_ms: null,
+            p95_ms: null,
+          },
         },
         'speed'
       )
@@ -194,17 +213,19 @@ describe('the stat tiles', () => {
           ...quietDay,
           traffic: {
             requests: 74,
-            slowest_p95_ms: 1212,
             server_errors: 0,
             client_errors: 0,
+            warm_requests: 74,
+            p50_ms: 8,
+            p95_ms: 1212,
             slowest_label: '07:32',
           },
         },
         'speed'
       )
     ).toMatchObject({
-      value: '1212 ms',
-      detail: '74 requests in the last hour, slowest at 07:32',
+      value: '8 ms',
+      detail: '95th 1212 ms over 74 requests in the last hour, slowest at 07:32',
       tone: 'warn',
     });
   });
@@ -234,9 +255,11 @@ describe('the stat tiles', () => {
           ...quietDay,
           traffic: {
             requests: 74,
-            slowest_p95_ms: 320,
             server_errors: 0,
             client_errors: 0,
+            warm_requests: 60,
+            p50_ms: 5,
+            p95_ms: 320,
             slowest_label: '07:41',
             cold_start_label: '07:30',
           },
@@ -244,62 +267,97 @@ describe('the stat tiles', () => {
         'speed'
       )
     ).toMatchObject({
-      detail: '74 requests in the last hour, slowest at 07:41; the start at 07:30 is left out',
+      value: '5 ms',
+      detail:
+        '95th 320 ms over 60 requests in the last hour, slowest at 07:41; the start at 07:30 is left out',
       tone: 'good',
     });
   });
 
-  it("keeps red for a busy minute: a quiet minute's one slow request is amber at most", () => {
-    expect(RED_NEEDS_REQUESTS).toBe(20);
-    // The reading that started it: 6355 ms in a minute of ten requests after an idle stretch.
-    const minutes = [
-      { requests: 1, p95_ms: 0 },
-      { requests: 10, p95_ms: 6355 },
-      { requests: 118, p95_ms: 1254 },
-      { requests: null, p95_ms: null },
+  it("reads the hour's own median and ninety-fifth over every request in it, nearest rank", () => {
+    // Three minutes: the 6355 ms that started the question (2026-09-22) sits
+    // in one of them, and the hour's ninety-fifth over 40 requests is not it.
+    const slots = [
+      { at: '2026-09-22T11:22:00Z', requests: 3, durations_ms: [1, 2, 3] },
+      { at: '2026-09-22T11:23:00Z', requests: 8, durations_ms: [4, 5, 6, 7, 8, 9, 10, 6355] },
+      { at: '2026-09-22T11:24:00Z', requests: 0, durations_ms: [] },
+      {
+        at: '2026-09-22T11:30:00Z',
+        requests: 29,
+        durations_ms: Array.from({ length: 29 }, (_, i) => 20 + i),
+      },
     ];
-    expect(quietMinutes(minutes)).toEqual({ busy_slowest_p95_ms: 1254, slowest_requests: 10 });
+    expect(hourTiming(slots)).toEqual({
+      requests: 40,
+      p50_ms: 29,
+      p95_ms: 47,
+      slowest_at: '2026-09-22T11:23:00Z',
+    });
+    // One minute of one request: its median, its ninety-fifth and its slowest are that request.
+    expect(hourTiming([{ at: 'a', durations_ms: [6355] }])).toEqual({
+      requests: 1,
+      p50_ms: 6355,
+      p95_ms: 6355,
+      slowest_at: 'a',
+    });
+    expect(hourTiming([])).toEqual({ requests: 0, p50_ms: null, p95_ms: null, slowest_at: null });
+    // A kept slot carries no durations and counts for nothing here.
+    expect(hourTiming([{ at: 'a', requests: 12 }]).requests).toBe(0);
+  });
+
+  it('reads quiet under twenty requests, with the numbers, and colours only a busy hour', () => {
+    expect(QUIET_BELOW_REQUESTS).toBe(20);
+    // Ten requests, one of them 6355 ms: too few to colour, and the tile says so and shows both numbers.
     const quiet = tile(
       {
         ...quietDay,
         traffic: {
           ...quietDay.traffic!,
-          slowest_p95_ms: 6355,
+          warm_requests: 10,
+          p50_ms: 4,
+          p95_ms: 6355,
           slowest_label: '06:20',
-          ...quietMinutes(minutes),
         },
       },
       'speed'
     );
     expect(quiet).toMatchObject({
-      value: '6355 ms',
-      tone: 'warn',
+      value: 'quiet',
+      tone: 'plain',
       detail:
-        '240 requests in the last hour, slowest at 06:20; that minute had 10 requests, too few to call red',
+        '10 requests in the last hour, too few to judge; typical 4 ms, 95th 6355 ms, slowest at 06:20',
     });
-    // The same number in a busy minute is still somebody should be looking.
+    // The same ninety-fifth over forty requests is somebody should be looking.
     expect(
       tile(
-        {
-          ...quietDay,
-          traffic: {
-            ...quietDay.traffic!,
-            slowest_p95_ms: 5998,
-            ...quietMinutes([{ requests: 40, p95_ms: 5998 }]),
-          },
-        },
+        { ...quietDay, traffic: { ...quietDay.traffic!, warm_requests: 40, p95_ms: 5998 } },
         'speed'
       ).tone
     ).toBe('bad');
-    // An hour with no busy minute at all is amber too, never red.
-    expect(quietMinutes([{ requests: 3, p95_ms: 4100 }])).toEqual({
-      busy_slowest_p95_ms: null,
-      slowest_requests: 3,
-    });
+    // Exactly the floor is enough for a colour.
+    expect(
+      tile(
+        { ...quietDay, traffic: { ...quietDay.traffic!, warm_requests: 20, p95_ms: 1254 } },
+        'speed'
+      ).tone
+    ).toBe('warn');
+    expect(
+      tile(
+        { ...quietDay, traffic: { ...quietDay.traffic!, warm_requests: 19, p95_ms: 1254 } },
+        'speed'
+      ).tone
+    ).toBe('plain');
   });
 
   it('calls an hour whose only requests were the cold start warming, not quiet', () => {
-    const traffic = { requests: 67, slowest_p95_ms: null, server_errors: 0, client_errors: 0 };
+    const traffic = {
+      requests: 67,
+      server_errors: 0,
+      client_errors: 0,
+      warm_requests: 0,
+      p50_ms: null,
+      p95_ms: null,
+    };
     expect(
       tile({ ...quietDay, traffic: { ...traffic, cold_start_label: '10:20' } }, 'speed')
     ).toMatchObject({

@@ -75,7 +75,7 @@ import { documentStore, documentStoreLine, sqlLine, timingWindow } from '../lib/
 import {
   QUESTIONS,
   afterColdStart,
-  quietMinutes,
+  hourTiming,
   ringStroke,
   sparkCaption,
   sparkRuns,
@@ -618,18 +618,19 @@ export function AdminPanel({
       ? null
       : new Date(new Date(lastSample.at).getTime() - seen.container.uptime_seconds * 1000);
   const warmed = hour === null ? null : afterColdStart(hour, startedAt);
-  // Every request and every error in the hour is still counted; only the
-  // slowest ninety-fifth is read from the warm minutes.
-  const warmTotals = warmed === null ? null : trafficTotals(warmed.warm, 1);
+  // Every request and every error in the hour is still counted; the median
+  // and the ninety-fifth are the warm minutes' own, over every request in
+  // them (statTiles.ts, hourTiming).
+  const warmTiming = warmed === null ? null : hourTiming(warmed.warm);
   const hourTotals =
-    hour === null || warmTotals === null
+    hour === null || warmTiming === null
       ? null
       : {
           ...trafficTotals(hour, 1),
-          slowest_p95_ms: warmTotals.slowest_p95_ms,
-          slowest_at: warmTotals.slowest_at,
-          // Red needs a busy minute (statTiles.ts, RED_NEEDS_REQUESTS).
-          ...(warmed === null ? {} : quietMinutes(warmed.warm)),
+          warm_requests: warmTiming.requests,
+          p50_ms: warmTiming.p50_ms,
+          p95_ms: warmTiming.p95_ms,
+          slowest_at: warmTiming.slowest_at,
         };
   const coldStart =
     warmed !== null && warmed.left_out.some((slot) => (slot.requests ?? 0) > 0)
@@ -668,7 +669,7 @@ export function AdminPanel({
         : keptLines !== null
           ? { ...keptLines, charged: seen.document.available ? keptLines.charged : undefined }
           : {
-              speed: hour?.map((slot) => slot.p95_ms),
+              speed: hour?.map((slot) => slot.p50_ms),
               memory: seen.container.samples.map((sample) => sample.working_set_mb),
               charged: seen.document.available
                 ? seen.document.minutes.map((minute) => minute.request_units)

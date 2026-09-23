@@ -277,6 +277,8 @@ export type TrafficMinute = {
   p95_ms: number;
   server_errors: number;
   client_errors: number;
+  /** Every request's time in the minute, sorted, for the hour's own percentiles (statTiles.ts, hourTiming). */
+  durations_ms?: number[];
 };
 
 export type TrafficSlot = {
@@ -287,6 +289,8 @@ export type TrafficSlot = {
   p95_ms: number | null;
   server_errors: number | null;
   client_errors: number | null;
+  /** The minute's request times, sorted; absent on a kept bucket, which holds only its percentiles. */
+  durations_ms?: number[];
 };
 
 /**
@@ -316,6 +320,7 @@ export function hourOfTraffic(minutes: TrafficMinute[], asOf: Date): TrafficSlot
       p95_ms: minute?.p95_ms ?? null,
       server_errors: minute?.server_errors ?? 0,
       client_errors: minute?.client_errors ?? 0,
+      durations_ms: minute?.durations_ms ?? [],
     });
   }
   return slots;
@@ -353,7 +358,8 @@ export function keptSparks(slots: { at: string; bucket: KeptBucket | null }[]): 
   errors: (number | null)[];
 } {
   return {
-    speed: slots.map(({ bucket }) => bucket?.p95_ms ?? null),
+    // The line under the speed tile is the typical answer, the same reading as the number over it.
+    speed: slots.map(({ bucket }) => bucket?.p50_ms ?? null),
     memory: slots.map(({ bucket }) => bucket?.working_set_mb ?? null),
     charged: slots.map(({ bucket }) => bucket?.request_units ?? null),
     errors: slots.map(({ bucket }) => bucket?.server_errors ?? null),

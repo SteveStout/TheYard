@@ -183,8 +183,12 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
         Assert.Equal(1, minutes[0].ClientErrors);
         Assert.Equal(1, minutes[0].Redirects);
         Assert.Equal(2, minutes[0].Ok);
+        // The durations ride along sorted, so the page can read the hour's own
+        // percentiles over every request rather than the worst minute's.
+        Assert.Equal(new long[] { 1, 2, 30, 40, 120 }, minutes[0].DurationsMs);
         Assert.Equal(at.AddMinutes(2), minutes[1].At);
         Assert.Equal(55, minutes[1].P50Ms);
+        Assert.Equal(new long[] { 55 }, minutes[1].DurationsMs);
         Assert.Empty(TrafficMinutes.From([]));
     }
     // #endregion traffic-minutes

@@ -249,6 +249,9 @@ public static class TrafficMinutes
             .Select(group =>
             {
                 long[] durations = group.Select(request => request.DurationMs).ToArray();
+                // Sorted once here, so the page can take any percentile of the
+                // hour without sorting five hundred numbers on every refresh.
+                Array.Sort(durations);
                 return new TrafficMinute(
                     group.Key,
                     durations.Length,
@@ -257,12 +260,21 @@ public static class TrafficMinutes
                     group.Count(request => request.Status >= 500),
                     group.Count(request => request.Status is >= 400 and < 500),
                     group.Count(request => request.Status is >= 300 and < 400),
-                    group.Count(request => request.Status < 300));
+                    group.Count(request => request.Status < 300),
+                    durations);
             })
             .ToList();
 }
 
-/// <summary>One minute of answered requests. A minute with none is not in the list: there is no median of nothing.</summary>
+/// <summary>
+/// One minute of answered requests. A minute with none is not in the list: there is no median of nothing.
+/// The durations ride along, sorted, because the speed tile reads the hour's own median and ninety-fifth
+/// over every request in its warm minutes (ADR: The Admin tab, as a product, the addendum on the
+/// typical answer): a percentile of an hour cannot be had from sixty minutes' percentiles, and the worst
+/// minute's ninety-fifth, which the tile used to headline, kept one slow request on the tile for an hour.
+/// The ring holds five hundred requests, so this is at most five hundred numbers on an answer the tab
+/// reads every thirty seconds.
+/// </summary>
 public sealed record TrafficMinute(
     DateTimeOffset At,
     int Requests,
@@ -271,7 +283,8 @@ public sealed record TrafficMinute(
     int ServerErrors,
     int ClientErrors,
     int Redirects,
-    int Ok);
+    int Ok,
+    IReadOnlyList<long> DurationsMs);
 // #endregion traffic-minutes
 
 // #region machine-recorder
