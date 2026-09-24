@@ -1,6 +1,18 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { openTheYard } from './app';
 import { signIn } from './signIn';
+
+// #region open-card
+/**
+ * Open a card on the workbench from its rail, the way a visitor does (ADR: The
+ * Admin tab, as a product, the addendum on the workbench): one card at a time,
+ * so a test that reads three cards opens three.
+ */
+async function openCard(page: Page, slug: string): Promise<void> {
+  await page.getByTestId(`bench-link-${slug}`).click();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', slug);
+}
+// #endregion open-card
 
 test('the Admin tab shows the running system reporting on itself', async ({ page, request }) => {
   await openTheYard(page);
@@ -22,12 +34,17 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   // Every check shows how long it took (ADR-010, second pass).
   await expect(page.getByTestId('check-duration').first()).toHaveText(/^\d+ ms$/);
   expect(await page.getByTestId('check-duration').count()).toBeGreaterThanOrEqual(3);
+  // One card at a time since the workbench: each one below is opened from the rail.
+  await openCard(page, 'errors');
   await expect(page.getByTestId('errors-card')).toBeVisible();
+  await openCard(page, 'azure');
   await expect(page.getByTestId('azure-card')).toBeVisible();
   // Telemetry is wired at deploy time, so a local run must render the card's
   // "not configured" state rather than an empty box or a crash (ADR-024).
+  await openCard(page, 'telemetry');
   await expect(page.getByTestId('telemetry-card')).toBeVisible();
   await expect(page.getByTestId('telemetry-card')).toContainText('Traffic, last hour');
+  await openCard(page, 'timing');
   await expect(page.getByTestId('timing-card')).toContainText('Path');
   // The status summary reads as a sentence. It used to render "367 of 200",
   // which is two numbers and no relationship between them, on the page whose
@@ -51,10 +68,10 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   // The SQL card on a relational container, the operations card on the
   // document one: the same page, whichever store it is on (ADR: What the store
   // is actually doing).
-  // One card on a one-store container, both on a container running both; either way the first is visible.
-  await expect(
-    page.getByTestId('sql-card').or(page.getByTestId('store-card')).first()
-  ).toBeVisible();
+  // Every shape the gate runs has a relational store, so the SQL card is there.
+  await openCard(page, 'sql');
+  await expect(page.getByTestId('sql-card')).toBeVisible();
+  await openCard(page, 'log');
   await expect(page.getByTestId('log-card')).toContainText('Category');
   // The document store gets a console line per operation, the way every SQL
   // statement gets one (ADR: What the store is actually doing, addendum); on
@@ -70,7 +87,7 @@ test('every page this container serves is checked, and the card says what is dow
   page,
   request,
 }) => {
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=pages');
   const card = page.getByTestId('pages-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Every page, checked');
@@ -111,7 +128,7 @@ test('the machines card shows the container, the relational store and the docume
   page,
   request,
 }) => {
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=machines');
   const card = page.getByTestId('machines-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('What the machines are doing');
@@ -164,7 +181,7 @@ test('the machines card offers a day, a week and a month beside the hour, and a 
   page,
   request,
 }) => {
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=machines&pin=traffic');
   const card = page.getByTestId('machines-card');
   await expect(card.getByTestId('machines-container-line')).toBeVisible({ timeout: 60_000 });
 
@@ -232,7 +249,7 @@ test('the traffic card draws how busy, how fast and how many errors, a minute at
     wire.traffic.minutes.reduce((sum, minute) => sum + minute.client_errors, 0)
   ).toBeGreaterThan(0);
 
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=traffic');
   const card = page.getByTestId('traffic-card');
   // Four numbers in plain words, in place of one sentence in status codes and percentiles.
   const requests = card.getByTestId('traffic-stat-requests');
@@ -254,7 +271,7 @@ test('the traffic card asks its three questions as headings, and says a clean ru
   for (const path of ['/api/vehicles?limit=5', '/api/facets', '/api/vehicles/not-a-vehicle']) {
     await request.get(`http://localhost:5210${path}`);
   }
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=traffic');
   const card = page.getByTestId('traffic-card');
   await expect(card.getByTestId('traffic-stats')).toBeVisible({ timeout: 60_000 });
   // The one somebody opens the tab to find out comes first.
@@ -295,7 +312,7 @@ test('no series line on the traffic card wears a status colour it has not earned
   for (const path of ['/api/vehicles?limit=5', '/api/facets', '/api/vehicles/not-a-vehicle']) {
     await request.get(`http://localhost:5210${path}`);
   }
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=traffic');
   const card = page.getByTestId('traffic-card');
   await expect(card.getByTestId('traffic-chart-timing')).toBeVisible({ timeout: 60_000 });
   // The status colours, read off the token sheet the page is running on.
@@ -338,14 +355,110 @@ test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }
   });
   expect(posted.status()).toBe(204);
 
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=errors');
   await expect(page.getByTestId('errors-card')).toContainText(marker);
 });
 
-test('?view=admin deep-links straight to the Admin tab', async ({ page }) => {
+test('?view=admin deep-links straight to the Admin tab, on its first card', async ({ page }) => {
   await openTheYard(page, '/?view=admin');
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'health');
+  await expect(page.getByTestId('health-card')).toBeVisible();
 });
+
+// #region workbench
+test('an address naming a card opens that card, and the rail marks it (the workbench)', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=timing');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
+  await expect(page.getByTestId('timing-card')).toBeVisible();
+  // One card at a time: the others are not on the page at all.
+  await expect(page.getByTestId('health-card')).toHaveCount(0);
+  await expect(page.getByTestId('bench-link-timing')).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId('bench-crumb')).toContainText('Is it fast?');
+  await expect(page).toHaveURL(/[?&]card=timing(&|$)/);
+});
+
+test('a name that is no card opens health, and the rail says so (the workbench)', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=nothing-by-this-name');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'health');
+  await expect(page.getByTestId('health-card')).toBeVisible();
+  await expect(page.getByTestId('bench-unknown')).toContainText('nothing-by-this-name');
+  // The address stops naming what is not there.
+  await expect(page).not.toHaveURL(/card=/);
+});
+
+test('Back after two cards returns to the first, and the back button leaves the tab in one step (the workbench)', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin');
+  await openCard(page, 'timing');
+  await openCard(page, 'errors');
+  await page.goBack();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
+  await page.goBack();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'health');
+  await page.goForward();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
+  // Two cards deep, the view's own back button still goes where it says.
+  await openTheYard(page);
+  await page
+    .getByRole('navigation', { name: 'Project documents' })
+    .getByRole('button', { name: 'Admin', exact: true })
+    .click();
+  await openCard(page, 'timing');
+  await openCard(page, 'errors');
+  await page.getByRole('button', { name: 'Back to inventory' }).click();
+  await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
+});
+
+test("the strip's Health tile opens the health card (the workbench)", async ({ page }) => {
+  await openTheYard(page, '/?view=admin&card=timing');
+  await expect(page.getByTestId('tile-health')).toHaveAttribute('href', '?view=admin&card=health');
+  await page.getByTestId('tile-health').click();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'health');
+  await expect(page.getByTestId('health-card')).toBeVisible();
+});
+
+test('j walks the rail forward and k walks it back, and neither is heard in a field (the workbench)', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=timing');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
+  await page.keyboard.press('j');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'backends');
+  await page.keyboard.press('k');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
+  // Typing in the rail's search is typing, not walking.
+  await page.getByTestId('bench-find').fill('jk');
+  await page.getByTestId('bench-find').press('j');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
+});
+
+test('a pin keeps a second card beside the open one, by address, and unpinning drops it (the workbench)', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=timing&pin=errors');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
+  await expect(page.getByTestId('bench-pinned')).toHaveAttribute('data-card', 'errors');
+  await expect(page.getByTestId('timing-card')).toBeVisible();
+  await expect(page.getByTestId('errors-card')).toBeVisible();
+  // The pin stays while the rail opens another card beside it.
+  await openCard(page, 'health');
+  await expect(page.getByTestId('bench-pinned')).toHaveAttribute('data-card', 'errors');
+  await expect(page).toHaveURL(/[?&]pin=errors(&|$)/);
+  await page.getByTestId('bench-unpin').click();
+  await expect(page.getByTestId('bench-pinned')).toHaveCount(0);
+  await expect(page).not.toHaveURL(/pin=/);
+  // And a card pinned from its own column stays when the next one opens.
+  await page.getByTestId('bench-pin').click();
+  await openCard(page, 'errors');
+  await expect(page.getByTestId('bench-pinned')).toHaveAttribute('data-card', 'health');
+});
+// #endregion workbench
 
 test('the SQL section shows statements and never a parameter value', async ({ page, request }) => {
   // Register through the API so the browser is not the thing under test here.
@@ -364,7 +477,7 @@ test('the SQL section shows statements and never a parameter value', async ({ pa
   };
   const cosmos = store.store === 'Azure Cosmos DB';
 
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, `/?view=admin&card=${cosmos ? 'store' : 'sql'}`);
   const card = page.getByTestId(cosmos ? 'store-card' : 'sql-card');
   await expect(card).toBeVisible();
   // A statement, with the request that caused it and a parameter described;
@@ -392,7 +505,7 @@ test('the comparison card stands when there is no peer to compare with (ADR: Bac
   const stores = (await (await request.get('http://localhost:5210/api/stores')).json()) as {
     stores: { name: string }[];
   };
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=backends&pin=health');
   const card = page.getByTestId('backends-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Backends, side by side');
@@ -411,11 +524,10 @@ test('the comparison card stands when there is no peer to compare with (ADR: Bac
   await expect(card).toContainText(/Catalogue load\s*\d+ ms/);
   await expect(card).toContainText('Bid write');
   await expect(card).toContainText('Sign in');
-  await expect(page.getByTestId('health-card')).toContainText('healthy');
-  // One card on a one-store container, both on a container running both; either way the first is visible.
-  await expect(
-    page.getByTestId('sql-card').or(page.getByTestId('store-card')).first()
-  ).toBeVisible();
+  // And the card pinned beside it is untouched by the empty peer column.
+  await expect(page.getByTestId('bench-pinned').getByTestId('health-card')).toContainText(
+    'healthy'
+  );
 });
 // #endregion backends-card
 
@@ -427,7 +539,7 @@ test('the partition key card explains itself when there is no catalogue to query
   const store = (await (await request.get('http://localhost:5210/api/admin/store')).json()) as {
     store: string;
   };
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=experiment');
   const card = page.getByTestId('experiment-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('The partition key, live');
@@ -451,7 +563,7 @@ test('the proof card offers a run and says what it needs (ADR: Same performance,
   const stores = (await (await request.get('http://localhost:5210/api/stores')).json()) as {
     stores: { name: string }[];
   };
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=proof');
   const card = page.getByTestId('proof-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Same performance, proven');
@@ -465,7 +577,7 @@ test('the proof card offers a run and says what it needs (ADR: Same performance,
   await run.click();
   await expect(page).toHaveURL(/view=account/);
   await signIn(page);
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=proof');
   await expect(run).toHaveText(/Run the proof|Run it again/);
   await run.click();
   // On one store the run fails at once with its reason; on two it runs for a
@@ -502,7 +614,7 @@ test('the activity graph draws at the top of the tab and its response names nobo
   const stores = (await (await request.get('http://localhost:5210/api/stores')).json()) as {
     stores: { key: string }[];
   };
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=activity');
   const card = page.getByTestId('activity-card');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Site activity');
@@ -634,9 +746,9 @@ test('the visitor table exists only behind the key, and its response names nobod
   }
 
   // On the page: no table without the key in the address bar, a table with it.
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=activity');
   await expect(page.getByTestId('activity-visitors')).toHaveCount(0);
-  await openTheYard(page, '/?view=admin&key=e2e-admin-key');
+  await openTheYard(page, '/?view=admin&card=activity&key=e2e-admin-key');
   const table = page.getByTestId('activity-visitors');
   await expect(table).toBeVisible();
   await expect(table.getByRole('columnheader', { name: 'Requests' })).toBeVisible();
@@ -702,10 +814,10 @@ test('the kept log is a 404 without the key, carries no at sign with it, and the
 
   // On the page: a keyless note without the key, the card with it, narrowed
   // to requests whose path contains the marker.
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=kept');
   await expect(page.getByTestId('kept-logs-keyless')).toBeVisible();
   await expect(page.getByTestId('kept-logs')).toHaveCount(0);
-  await openTheYard(page, '/?view=admin&key=e2e-admin-key');
+  await openTheYard(page, '/?view=admin&card=kept&key=e2e-admin-key');
   const card = page.getByTestId('kept-logs-card');
   await expect(card.getByTestId('kept-logs-summary')).toBeVisible();
   await card.getByTestId('kept-logs-kind').selectOption('request');
@@ -728,27 +840,32 @@ test('the browser remembers the key after one keyed visit, and forgets it on req
   // Once with the key in the address bar, then plain: the operator's cards
   // still show, because the browser kept the key (the operator reads the
   // site from a phone, and the file the key lives in is on one machine).
-  await openTheYard(page, '/?view=admin&key=e2e-admin-key');
+  // Three cards take part, so the activity card is pinned beside the one open.
+  await openTheYard(page, '/?view=admin&card=activity&key=e2e-admin-key');
   await expect(page.getByTestId('activity-visitors')).toBeVisible();
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=kept&pin=activity');
   await expect(page.getByTestId('activity-visitors')).toBeVisible();
   await expect(page.getByTestId('kept-logs-keyless')).toHaveCount(0);
 
   // Forgetting takes effect at once and survives a reload.
+  await openCard(page, 'operator');
   await page.getByTestId('admin-forget-key').click();
   await expect(page.getByTestId('activity-visitors')).toHaveCount(0);
+  await openCard(page, 'kept');
   await expect(page.getByTestId('kept-logs-keyless')).toBeVisible();
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=kept&pin=activity');
   await expect(page.getByTestId('activity-visitors')).toHaveCount(0);
   await expect(page.getByTestId('kept-logs-keyless')).toBeVisible();
 
   // And the key can be typed into the page, with no link carrying it: the
   // cards open at once and the key is remembered for the next plain visit.
+  await openCard(page, 'operator');
   await page.getByTestId('admin-key-entry').fill('e2e-admin-key');
   await page.getByTestId('admin-key-submit').click();
   await expect(page.getByTestId('activity-visitors')).toBeVisible();
+  await openCard(page, 'kept');
   await expect(page.getByTestId('kept-logs')).toBeVisible();
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=activity');
   await expect(page.getByTestId('activity-visitors')).toBeVisible();
 });
 // #endregion remembered-key
@@ -806,12 +923,13 @@ test('a reset link minted behind the key sets a new password and signs the visit
 });
 // #endregion password-reset
 
-test('the Admin tab opens on tiles that answer four questions and go to the cards behind them', async ({
+test('the Admin tab opens on tiles that answer four questions and go to the cards behind them, on the workbench', async ({
   page,
 }) => {
   await openTheYard(page, '/?view=admin');
   const strip = page.getByTestId('stat-strip');
-  await expect(strip.getByRole('button')).toHaveCount(8);
+  // Each tile is a link to the card that answers it.
+  await expect(strip.getByRole('link')).toHaveCount(8);
   // A tile is made of what a card has read, so it waits as long as the card does and then says the same thing.
   await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
     timeout: 45_000,
@@ -825,18 +943,20 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
   await expect(strip.getByTestId('tile-speed')).toContainText('requests in the last hour');
   // The tone is a word as well as a colour.
   await expect(strip.getByTestId('tile-health')).toContainText('fine');
-  // The four questions are headings, in the order somebody asks them, and every card is under one.
+  // The questions are the rail's headings, in the order somebody asks them, and every card is under one.
   for (const question of ['Is it up?', 'Is it fast?', 'Is it costing anything?', 'What broke?']) {
     await expect(page.getByRole('heading', { level: 2, name: question })).toBeVisible();
   }
-  await expect(page.getByTestId('question-up').getByTestId('health-card')).toBeVisible();
-  await expect(page.getByTestId('question-fast').getByTestId('traffic-card')).toBeVisible();
-  await expect(page.getByTestId('question-cost').getByTestId('machines-card')).toBeVisible();
-  await expect(page.getByTestId('question-broke').getByTestId('errors-card')).toBeVisible();
-  // A tile goes to its question.
+  await expect(page.getByTestId('question-up').getByTestId('bench-link-health')).toBeVisible();
+  await expect(page.getByTestId('question-fast').getByTestId('bench-link-traffic')).toBeVisible();
+  await expect(page.getByTestId('question-cost').getByTestId('bench-link-machines')).toBeVisible();
+  await expect(page.getByTestId('question-broke').getByTestId('bench-link-errors')).toBeVisible();
+  // A tile goes to its card.
   await strip.getByTestId('tile-errors').click();
-  await expect(page.getByRole('heading', { level: 2, name: 'What broke?' })).toBeInViewport();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'errors');
+  await expect(page.getByTestId('errors-card')).toBeVisible();
   // What a card is and how to read it is one tap away and out of the way until then.
+  await openCard(page, 'machines');
   const about = page.getByTestId('machines-card').locator('details').first();
   await expect(about).not.toHaveAttribute('open', '');
   await about.locator('summary').click();
@@ -877,7 +997,7 @@ test('a public list reads a month back from the store, or says that nothing is k
     (await request.get('http://localhost:5210/api/admin/kept?card=secrets&window=30d')).status()
   ).toBe(400);
 
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, `/?view=admin&card=${card}`);
   const shown = page.getByTestId(`${card}-card`);
   const line = shown.getByTestId(`kept-line-${card}`);
   await expect(line).toContainText('a roll empties');
@@ -908,7 +1028,7 @@ test('one window for every chart: the buttons over the tiles, on the traffic car
   const wire = (await (
     await request.get('http://localhost:5210/api/admin/machines?window=30d')
   ).json()) as { history: { available: boolean } };
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=machines&pin=traffic');
   await expect(
     page.getByTestId('machines-card').getByTestId('machines-container-line')
   ).toBeVisible({
@@ -988,7 +1108,7 @@ test('the tests card shows every suite and every test the gate ran, failures fir
       }),
     })
   );
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=tests');
   const card = page.getByTestId('tests-card');
   await expect(card.getByTestId('tests-summary')).toContainText(
     '3 of 4 tests passed, 1 failed, for 1.0.0.999'

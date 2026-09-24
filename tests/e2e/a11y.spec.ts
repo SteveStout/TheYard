@@ -47,6 +47,25 @@ test('the Admin tab takes focus too', async ({ page }) => {
   await expect(page.locator('#main-content')).toBeFocused();
 });
 
+test('the workbench marks the open card in its rail and the keyboard reaches both', async ({
+  page,
+}) => {
+  // Health, timing and activity: the first card, a chart card and the busiest one.
+  for (const slug of ['health', 'timing', 'activity']) {
+    await openTheYard(page, `/?view=admin&card=${slug}`);
+    const link = page.getByTestId(`bench-link-${slug}`);
+    await expect(link).toHaveAttribute('aria-current', 'page');
+    // The rail is a landmark with a name, and its link is a real link a Tab reaches.
+    await expect(page.getByRole('navigation', { name: 'Admin cards' })).toBeVisible();
+    await link.focus();
+    await expect(link).toBeFocused();
+    // Enter on the Next button opens the card after it, the way a click does.
+    await page.getByTestId('bench-next').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('bench-open')).not.toHaveAttribute('data-card', slug);
+  }
+});
+
 test('the live region names the view, and the filter bar keeps the count', async ({ page }) => {
   await openTheYard(page);
   await expect(page.getByTestId('view-announcement')).toHaveText('Vehicle inventory');

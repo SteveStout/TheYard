@@ -155,7 +155,8 @@ test('the phone header has its own decision record, reachable from the drawer', 
 test('the Admin tiles are two to a row on a phone and nothing on the tab is wider than the phone', async ({
   page,
 }) => {
-  await openTheYard(page, '/?view=admin');
+  // The traffic card open and the machines card pinned under it: the two widest cards on the tab.
+  await openTheYard(page, '/?view=admin&card=traffic&pin=machines');
   const strip = page.getByTestId('stat-strip');
   await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
     timeout: 45_000,

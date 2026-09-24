@@ -83,9 +83,25 @@ test.describe('WCAG 2.1 AA, on every view', () => {
     expect(await violations(page)).toEqual([]);
   });
 
-  test('the admin tab', async ({ page }) => {
+  // The workbench shows one card at a time (ADR: The Admin tab, as a product,
+  // the addendum on the workbench), so the scan reads three of them: the first
+  // card, a chart card with a table, and the card with the most controls.
+  test('the admin tab, on the health card', async ({ page }) => {
     await openTheYard(page, '/?view=admin');
     await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
+    await expect(page.getByTestId('health-card')).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+  });
+
+  test('the admin tab, on the timing card', async ({ page }) => {
+    await openTheYard(page, '/?view=admin&card=timing');
+    await expect(page.getByTestId('timing-card')).toContainText('Path', { timeout: 30_000 });
+    expect(await violations(page)).toEqual([]);
+  });
+
+  test('the admin tab, on the activity card', async ({ page }) => {
+    await openTheYard(page, '/?view=admin&card=activity');
+    await expect(page.getByTestId('activity-graph')).toBeVisible({ timeout: 30_000 });
     expect(await violations(page)).toEqual([]);
   });
 

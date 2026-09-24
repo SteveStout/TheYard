@@ -1,9 +1,11 @@
 import {
   Fragment,
+  type MouseEvent,
   type PointerEvent,
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useState,
 } from 'react';
 import {
@@ -122,6 +124,14 @@ import {
   totals,
 } from '../lib/testResults';
 import { TRAFFIC_CHARTS, failSentence, trafficBlocks } from '../lib/trafficCard';
+import {
+  BENCH_QUESTIONS,
+  benchCard,
+  cardForTile,
+  findCards,
+  neighbours,
+  type CardSlug,
+} from '../lib/workbench';
 import styles from './AdminPanel.module.css';
 
 type HealthCheck = { name: string; status: string; detail: string; duration_ms: number };
@@ -434,12 +444,24 @@ export function AdminPanel({
   backTo = 'inventory',
   signedIn,
   onOpenAccount,
+  card = 'health',
+  pin = null,
+  cardAsked = null,
+  onOpenCard = () => {},
+  onPin = () => {},
 }: {
   onBack: () => void;
   /** Where the back button goes, as its label says (1.0.3.9). */
   backTo?: 'home' | 'inventory';
   signedIn: boolean;
   onOpenAccount: () => void;
+  /** The card the address names, and the one pinned beside it (the workbench). */
+  card?: CardSlug;
+  pin?: CardSlug | null;
+  /** A name the address gave that is no card, said in the rail; null when there was none. */
+  cardAsked?: string | null;
+  onOpenCard?: (slug: CardSlug) => void;
+  onPin?: (slug: CardSlug | null) => void;
 }) {
   // The operator's key: state, so forgetting it takes effect on the cards
   // at once; its first value is the one read when the module loaded.
@@ -543,10 +565,35 @@ export function AdminPanel({
     void grab<StoreLog>('/api/admin/store', setStore);
     void grab<Experiment>('/api/admin/experiment', setExperiment);
     void grab<Proof>('/api/admin/proof', setProof);
+    // The strip keeps its own read of the page sweep (the workbench): the pages
+    // card that shows it in full is not on the page unless it is the open card.
+    void grab<PageStatus>('/api/admin/pages', (answer) => {
+      if (answer !== null && answer !== 'failed' && answer.report !== null) {
+        setPagesSeen({ checked: answer.report.checked, up: answer.report.up });
+      }
+    });
     return () => {
       live = false;
     };
   }, [tick]);
+
+  // Today's people, for the strip and for whether this site serves its kept
+  // rows, read once when the tab opens; the activity card reads its own window
+  // when it is open, and says what it read back through onActivity.
+  useEffect(() => {
+    let live = true;
+    void fetch('/api/admin/activity?window=7d')
+      .then((r) =>
+        r.ok ? (r.json() as Promise<ActivityReport>) : Promise.reject(new Error(String(r.status)))
+      )
+      .then((report) => {
+        if (live) onActivity(report);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [onActivity]);
 
   useEffect(() => {
     let live = true;
@@ -730,76 +777,75 @@ export function AdminPanel({
     </p>
   );
 
-  return (
-    <section className={styles.wrap} aria-label="Admin">
-      <div className={styles.head}>
-        <h1 className={styles.title}>Admin</h1>
-        <button type="button" className={styles.back} onClick={onBack}>
-          {backTo === 'home' ? 'Back to home' : 'Back to inventory'}
-        </button>
-      </div>
-      <p className={styles.blurb}>
-        The running system reporting on itself, in the order somebody asks: is it up, is it fast, is
-        it costing anything, what broke.
-      </p>
-      <About>
-        The tiles are made of what the cards below have read, and each one goes to the cards that
-        answer its question. Every statistic the page shows for one store it shows for the other,
-        and where a number has no meaning on one side the page says so in words. Refreshes every 30
-        seconds. Public on purpose; the reasoning is in the Best Practices menu.
-      </About>
-      <StatStrip
-        tiles={tiles}
-        toolbar={windowToolbar('over the tiles', 'strip-window')}
-        caption={sparkCaption(
-          windowName(machineWindow).toLowerCase(),
-          machineWindow === '1h'
-            ? 'hour'
-            : keptLines !== null
-              ? 'kept'
-              : latestMachines?.history?.window === machineWindow
-                ? 'not-kept'
-                : 'reading'
-        )}
-      />
-
-      <section className={styles.question} aria-labelledby="question-up" data-testid="question-up">
-        <h2 className={styles.questionTitle} id="question-up">
-          {QUESTIONS.up}
-        </h2>
-        <div className={styles.grid}>
-          {/* #region health-card */}
-          <article className={styles.card} data-testid="health-card">
-            <h2 className={styles.cardTitle}>Application health</h2>
-            {health === null ? (
-              <p className={styles.muted}>Loading…</p>
-            ) : health === 'failed' ? (
-              failed('the health report')
-            ) : (
-              <>
-                <p className={styles.statusRow}>
-                  <span className={pill(health.status === 'healthy')}>{health.status}</span>
-                  <span className={styles.muted}>
-                    v{health.version} · {health.commit} · up {formatUptime(health.uptime_seconds)}
-                  </span>
-                </p>
-                <ul className={styles.checkList}>
-                  {health.checks.map((check) => (
-                    <li key={check.name} className={styles.checkRow}>
-                      <span className={pill(check.status === 'pass')}>{check.status}</span>
-                      <span>{check.name}</span>
-                      <span className={styles.muted}>{check.detail}</span>
-                      <span className={styles.duration} data-testid="check-duration">
-                        {check.duration_ms} ms
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </article>
-          {/* #endregion health-card */}
-
+  // #region bench-cards
+  // Every card by its slug, drawn only when the workbench opens it or pins it
+  // (ADR: The Admin tab, as a product, the addendum on the workbench). Each
+  // card's own markup is what it was on the one long page; what moved is which
+  // of them is on the page at a time.
+  // The document store's card when this container has a document store, the SQL
+  // card when it has a relational one, and both when it runs both (ADR: One
+  // container, both stores). Each card's rule reads the backends list first,
+  // which names every store the container runs whichever one serves this visit,
+  // and falls back on the log's own label for a container on an older build.
+  // On the workbench a card the container has no store for says so.
+  const storeCardShown =
+    store !== null &&
+    store !== 'failed' &&
+    (store.store === 'Azure Cosmos DB' ||
+      (metrics !== null && metrics !== 'failed' && documentStore(metrics) !== null));
+  const sqlCardShown =
+    store === null ||
+    store === 'failed' ||
+    store.store !== 'Azure Cosmos DB' ||
+    (metrics !== null &&
+      metrics !== 'failed' &&
+      (metrics.backends ?? []).some((backend) => backend.sql !== null));
+  const absent = (slug: CardSlug, note: string | null) => (
+    <article className={styles.wide} data-testid="bench-absent">
+      <h2 className={styles.cardTitle}>{benchCard(slug).name}</h2>
+      <p className={styles.muted}>{note ?? 'Loading…'}</p>
+    </article>
+  );
+  const renderCard = (slug: CardSlug): ReactNode => {
+    switch (slug) {
+      case 'health':
+        return (
+          <>
+            {/* #region health-card */}
+            <article className={styles.card} data-testid="health-card">
+              <h2 className={styles.cardTitle}>Application health</h2>
+              {health === null ? (
+                <p className={styles.muted}>Loading…</p>
+              ) : health === 'failed' ? (
+                failed('the health report')
+              ) : (
+                <>
+                  <p className={styles.statusRow}>
+                    <span className={pill(health.status === 'healthy')}>{health.status}</span>
+                    <span className={styles.muted}>
+                      v{health.version} · {health.commit} · up {formatUptime(health.uptime_seconds)}
+                    </span>
+                  </p>
+                  <ul className={styles.checkList}>
+                    {health.checks.map((check) => (
+                      <li key={check.name} className={styles.checkRow}>
+                        <span className={pill(check.status === 'pass')}>{check.status}</span>
+                        <span>{check.name}</span>
+                        <span className={styles.muted}>{check.detail}</span>
+                        <span className={styles.duration} data-testid="check-duration">
+                          {check.duration_ms} ms
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </article>
+            {/* #endregion health-card */}
+          </>
+        );
+      case 'azure':
+        return (
           <article className={styles.card} data-testid="azure-card">
             <h2 className={styles.cardTitle}>Azure's view of the container</h2>
             {azure === null ? (
@@ -893,287 +939,291 @@ export function AdminPanel({
               </p>
             )}
           </article>
-        </div>
-        <PagesCard onReport={setPagesSeen} />
-        <TestsCard />
-      </section>
-
-      <section
-        className={styles.question}
-        aria-labelledby="question-fast"
-        data-testid="question-fast"
-      >
-        <h2 className={styles.questionTitle} id="question-fast">
-          {QUESTIONS.fast}
-        </h2>
-        <TrafficSection
-          machines={machines}
-          window={machineWindow}
-          toolbar={windowToolbar('on the traffic card', 'machines-window')}
-        />
-        <div className={styles.grid}>
-          {/* #region telemetry-card */}
-          {/* Application Insights, read back through the container's own identity
+        );
+      case 'pages':
+        return <PagesCard onReport={setPagesSeen} />;
+      case 'tests':
+        return <TestsCard />;
+      case 'traffic':
+        return (
+          <TrafficSection
+            machines={machines}
+            window={machineWindow}
+            toolbar={windowToolbar('on the traffic card', 'machines-window')}
+          />
+        );
+      case 'telemetry':
+        return (
+          <>
+            {/* #region telemetry-card */}
+            {/* Application Insights, read back through the container's own identity
               (ADR-024). Every state the reader can answer with is rendered here:
               not configured (a local run), configured but unreadable, and the
               happy path. A telemetry panel that can break the page it reports on
               would be worse than no panel. */}
-          <article className={styles.card} data-testid="telemetry-card">
-            <h2 className={styles.cardTitle}>Traffic, last hour</h2>
-            {telemetry === null ? (
-              <p className={styles.muted}>Loading…</p>
-            ) : telemetry === 'failed' ? (
-              failed('the telemetry')
-            ) : !telemetry.configured || telemetry.available === false ? (
-              <p className={styles.muted} data-testid="telemetry-note">
-                {telemetry.note}
-              </p>
-            ) : (
-              <>
-                <div className={styles.statusRow}>
-                  <span className={pill((telemetry.summary?.failed ?? 0) === 0)}>
-                    {telemetry.summary?.total ?? 0} request
-                    {(telemetry.summary?.total ?? 0) === 1 ? '' : 's'}
-                  </span>
-                  <span className={styles.muted}>{telemetry.summary?.failed ?? 0} failed</span>
-                  <span className={styles.mono}>p50 {telemetry.summary?.p50_ms ?? 0} ms</span>
-                  <span className={styles.mono}>p95 {telemetry.summary?.p95_ms ?? 0} ms</span>
-                  {/* Steve asked for every React error, so the count of them is
+            <article className={styles.card} data-testid="telemetry-card">
+              <h2 className={styles.cardTitle}>Traffic, last hour</h2>
+              {telemetry === null ? (
+                <p className={styles.muted}>Loading…</p>
+              ) : telemetry === 'failed' ? (
+                failed('the telemetry')
+              ) : !telemetry.configured || telemetry.available === false ? (
+                <p className={styles.muted} data-testid="telemetry-note">
+                  {telemetry.note}
+                </p>
+              ) : (
+                <>
+                  <div className={styles.statusRow}>
+                    <span className={pill((telemetry.summary?.failed ?? 0) === 0)}>
+                      {telemetry.summary?.total ?? 0} request
+                      {(telemetry.summary?.total ?? 0) === 1 ? '' : 's'}
+                    </span>
+                    <span className={styles.muted}>{telemetry.summary?.failed ?? 0} failed</span>
+                    <span className={styles.mono}>p50 {telemetry.summary?.p50_ms ?? 0} ms</span>
+                    <span className={styles.mono}>p95 {telemetry.summary?.p95_ms ?? 0} ms</span>
+                    {/* Steve asked for every React error, so the count of them is
                       on the card rather than only in the portal. */}
-                  <span className={pill((telemetry.browser?.count ?? 0) === 0)}>
-                    {telemetry.browser?.count ?? 0} browser
-                  </span>
-                </div>
-                {telemetry.slowest && telemetry.slowest.length > 0 && (
-                  <p className={styles.muted}>Slowest routes</p>
-                )}
-                <ul className={styles.checkList}>
-                  {telemetry.slowest?.map((route) => (
-                    <li key={route.name} className={styles.checkRow} data-testid="telemetry-route">
-                      <span className={styles.mono}>{route.name}</span>
-                      <span className={styles.duration}>{route.avg_ms} ms</span>
-                      <span className={styles.muted}>
-                        {route.calls} call{route.calls === 1 ? '' : 's'}
-                      </span>
+                    <span className={pill((telemetry.browser?.count ?? 0) === 0)}>
+                      {telemetry.browser?.count ?? 0} browser
+                    </span>
+                  </div>
+                  {telemetry.slowest && telemetry.slowest.length > 0 && (
+                    <p className={styles.muted}>Slowest routes</p>
+                  )}
+                  <ul className={styles.checkList}>
+                    {telemetry.slowest?.map((route) => (
+                      <li
+                        key={route.name}
+                        className={styles.checkRow}
+                        data-testid="telemetry-route"
+                      >
+                        <span className={styles.mono}>{route.name}</span>
+                        <span className={styles.duration}>{route.avg_ms} ms</span>
+                        <span className={styles.muted}>
+                          {route.calls} call{route.calls === 1 ? '' : 's'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {telemetry.exceptions && telemetry.exceptions.length > 0 && (
+                    <>
+                      <p className={styles.muted}>Exceptions</p>
+                      <ul className={styles.errorList}>
+                        {telemetry.exceptions.map((entry, index) => (
+                          <li
+                            key={index}
+                            className={styles.errorRow}
+                            data-testid="telemetry-exception"
+                          >
+                            <span className={styles.mono}>{entry.type}</span>
+                            <span className={styles.muted}>{entry.method}</span>
+                            <span className={styles.muted}>
+                              {entry.count} time{entry.count === 1 ? '' : 's'}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </>
+              )}
+            </article>
+            {/* #endregion telemetry-card */}
+          </>
+        );
+      case 'timing':
+        return (
+          <>
+            {/* #region timing-section */}
+            <article className={styles.wide} data-testid="timing-card">
+              <h2 className={styles.cardTitle}>Timing</h2>
+              {metrics === null ? (
+                <p className={styles.muted}>Loading…</p>
+              ) : metrics === 'failed' ? (
+                failed('the timing')
+              ) : (
+                <>
+                  <p className={styles.muted}>{timingWindow(metrics)}</p>
+                  <ul className={styles.summaryList}>
+                    <li>
+                      Requests: p50 {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms.
                     </li>
-                  ))}
-                </ul>
-                {telemetry.exceptions && telemetry.exceptions.length > 0 && (
-                  <>
-                    <p className={styles.muted}>Exceptions</p>
-                    <ul className={styles.errorList}>
-                      {telemetry.exceptions.map((entry, index) => (
-                        <li
-                          key={index}
-                          className={styles.errorRow}
-                          data-testid="telemetry-exception"
-                        >
-                          <span className={styles.mono}>{entry.type}</span>
-                          <span className={styles.muted}>{entry.method}</span>
-                          <span className={styles.muted}>
-                            {entry.count} time{entry.count === 1 ? '' : 's'}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </>
-            )}
-          </article>
-          {/* #endregion telemetry-card */}
-        </div>
-        {/* #region timing-section */}
-        <article className={styles.wide} data-testid="timing-card">
-          <h2 className={styles.cardTitle}>Timing</h2>
-          {metrics === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : metrics === 'failed' ? (
-            failed('the timing')
-          ) : (
-            <>
-              <p className={styles.muted}>{timingWindow(metrics)}</p>
-              <ul className={styles.summaryList}>
-                <li>
-                  Requests: p50 {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms.
-                </li>
-                {/* The two stores on the same two lines, whichever one serves this
+                    {/* The two stores on the same two lines, whichever one serves this
                     visit (ADR: Backends, side by side, the addendum on parity). */}
-                <li data-testid="timing-sql">{sqlLine(metrics)}</li>
-                <li data-testid="timing-store">{documentStoreLine(metrics)}</li>
-                <li>
-                  Answers:{' '}
-                  {metrics.by_status.length === 0
-                    ? 'nothing recorded yet'
-                    : metrics.by_status
-                        .map((entry) => `${entry.count} with status ${entry.status}`)
-                        .join(', ')}
-                  .
-                </li>
-              </ul>
-              <div
-                className={styles.tableWrap}
-                role="region"
-                aria-label="Request timing by endpoint"
-                tabIndex={0}
-              >
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th scope="col">Path</th>
-                      <th scope="col">Calls</th>
-                      <th scope="col">p50</th>
-                      <th scope="col">p95</th>
-                      <th scope="col">Slowest</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {metrics.requests.by_path.slice(0, 15).map((timing) => (
-                      <tr key={timing.path}>
-                        <td className={styles.mono}>{timing.path}</td>
-                        <td>{timing.count}</td>
-                        <td>{timing.p50_ms} ms</td>
-                        <td>{timing.p95_ms} ms</td>
-                        <td>{timing.max_ms} ms</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </article>
-        {/* #endregion timing-section */}
-
-        {/* #region backends-card */}
-        <article className={styles.wide} data-testid="backends-card">
-          <h2 className={styles.cardTitle}>Backends, side by side</h2>
-          <About>
-            The two stores on the same rows: how long each took to come up, what the seed cost, and
-            how long the things a visitor does take on each, with the request charge beside every
-            number the document store can put one on. A container that runs both stores compares
-            them with each other, in one process, the one serving this visit first; a container that
-            runs one compares itself with its peer, read through its own API with two and a half
-            seconds of patience, so a peer that is down is a sentence here and not a hang. Cold
-            start and seed are measured on each store at its own start; the rest is the last few
-            hundred requests each has served.
-          </About>
-          {metrics === null || peer === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : metrics === 'failed' ? (
-            failed('the comparison')
-          ) : (
-            <Comparison mine={metrics} peer={peer === 'failed' ? null : peer} />
-          )}
-        </article>
-        {/* #endregion backends-card */}
-
-        <ProofCard
-          proof={proof}
-          signedIn={signedIn}
-          onRun={() => void runProof()}
-          onOpenAccount={onOpenAccount}
-        />
-      </section>
-
-      <section
-        className={styles.question}
-        aria-labelledby="question-cost"
-        data-testid="question-cost"
-      >
-        <h2 className={styles.questionTitle} id="question-cost">
-          {QUESTIONS.cost}
-        </h2>
-        <MachinesCard
-          machines={machines}
-          window={machineWindow}
-          toolbar={windowToolbar('on the machines card', 'machines-card-window')}
-        />
-        {/* #region experiment-card */}
-        <article className={styles.wide} data-testid="experiment-card">
-          <h2 className={styles.cardTitle}>The partition key, live</h2>
-          <About>
-            Seven queries against a container of 100,000 vehicles partitioned on the make, run by
-            this container with its own identity when this page asks, and cached for a minute. A
-            query that names the make runs inside one logical partition; one that cannot fans out
-            across every physical partition, and the request charge beside each is what that costs.
-            The reasoning, the alternatives and the honest caveat about how many physical partitions
-            there are at this size are in the partition key record.
-          </About>
-          {experiment === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : experiment === 'failed' ? (
-            failed('the experiment')
-          ) : !experiment.available ? (
-            <p className={styles.muted} data-testid="experiment-note">
-              Not available here: {experiment.reason}
-            </p>
-          ) : (
-            <>
-              <p className={styles.muted}>
-                {experiment.container}: {experiment.documents?.toLocaleString()} documents on{' '}
-                {experiment.physical_partitions} physical partition
-                {experiment.physical_partitions === 1 ? '' : 's'}, measured at{' '}
-                {experiment.ran_at ? new Date(experiment.ran_at).toLocaleTimeString() : ''}.
-              </p>
-              <div
-                className={styles.tableWrap}
-                role="region"
-                aria-label="Queries against the partitioned catalogue"
-                tabIndex={0}
-              >
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th scope="col">Query</th>
-                      <th scope="col">Partitions</th>
-                      <th scope="col">Charge</th>
-                      <th scope="col">Took</th>
-                      <th scope="col">Documents</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {experiment.rows.map((row) => (
-                      <tr key={row.query}>
-                        <td>{row.query}</td>
-                        <td className={styles.mono}>{row.partitions}</td>
-                        <td className={styles.mono}>{row.request_charge} RU</td>
-                        <td className={styles.mono}>{row.duration_ms} ms</td>
-                        <td className={styles.mono}>{row.documents}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </article>
-        {/* #endregion experiment-card */}
-
-        {/* #region sql-section */}
-        {/* The document store's card when this container has a document store,
-            the SQL card when it has a relational one, and both when it runs both
-            (ADR: One container, both stores). Each card's rule reads the
-            backends list first, which names every store the container runs
-            whichever one serves this visit, and falls back on the log's own
-            label for a container on an older build. */}
-        {store !== null &&
-        store !== 'failed' &&
-        (store.store === 'Azure Cosmos DB' ||
-          (metrics !== null && metrics !== 'failed' && documentStore(metrics) !== null)) ? (
+                    <li data-testid="timing-sql">{sqlLine(metrics)}</li>
+                    <li data-testid="timing-store">{documentStoreLine(metrics)}</li>
+                    <li>
+                      Answers:{' '}
+                      {metrics.by_status.length === 0
+                        ? 'nothing recorded yet'
+                        : metrics.by_status
+                            .map((entry) => `${entry.count} with status ${entry.status}`)
+                            .join(', ')}
+                      .
+                    </li>
+                  </ul>
+                  <div
+                    className={styles.tableWrap}
+                    role="region"
+                    aria-label="Request timing by endpoint"
+                    tabIndex={0}
+                  >
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th scope="col">Path</th>
+                          <th scope="col">Calls</th>
+                          <th scope="col">p50</th>
+                          <th scope="col">p95</th>
+                          <th scope="col">Slowest</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metrics.requests.by_path.slice(0, 15).map((timing) => (
+                          <tr key={timing.path}>
+                            <td className={styles.mono}>{timing.path}</td>
+                            <td>{timing.count}</td>
+                            <td>{timing.p50_ms} ms</td>
+                            <td>{timing.p95_ms} ms</td>
+                            <td>{timing.max_ms} ms</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </article>
+            {/* #endregion timing-section */}
+          </>
+        );
+      case 'backends':
+        return (
+          <>
+            {/* #region backends-card */}
+            <article className={styles.wide} data-testid="backends-card">
+              <h2 className={styles.cardTitle}>Backends, side by side</h2>
+              <About>
+                The two stores on the same rows: how long each took to come up, what the seed cost,
+                and how long the things a visitor does take on each, with the request charge beside
+                every number the document store can put one on. A container that runs both stores
+                compares them with each other, in one process, the one serving this visit first; a
+                container that runs one compares itself with its peer, read through its own API with
+                two and a half seconds of patience, so a peer that is down is a sentence here and
+                not a hang. Cold start and seed are measured on each store at its own start; the
+                rest is the last few hundred requests each has served.
+              </About>
+              {metrics === null || peer === null ? (
+                <p className={styles.muted}>Loading…</p>
+              ) : metrics === 'failed' ? (
+                failed('the comparison')
+              ) : (
+                <Comparison mine={metrics} peer={peer === 'failed' ? null : peer} />
+              )}
+            </article>
+            {/* #endregion backends-card */}
+          </>
+        );
+      case 'proof':
+        return (
+          <ProofCard
+            proof={proof}
+            signedIn={signedIn}
+            onRun={() => void runProof()}
+            onOpenAccount={onOpenAccount}
+          />
+        );
+      case 'machines':
+        return (
+          <MachinesCard
+            machines={machines}
+            window={machineWindow}
+            toolbar={windowToolbar('on the machines card', 'machines-card-window')}
+          />
+        );
+      case 'experiment':
+        return (
+          <>
+            {/* #region experiment-card */}
+            <article className={styles.wide} data-testid="experiment-card">
+              <h2 className={styles.cardTitle}>The partition key, live</h2>
+              <About>
+                Seven queries against a container of 100,000 vehicles partitioned on the make, run
+                by this container with its own identity when this page asks, and cached for a
+                minute. A query that names the make runs inside one logical partition; one that
+                cannot fans out across every physical partition, and the request charge beside each
+                is what that costs. The reasoning, the alternatives and the honest caveat about how
+                many physical partitions there are at this size are in the partition key record.
+              </About>
+              {experiment === null ? (
+                <p className={styles.muted}>Loading…</p>
+              ) : experiment === 'failed' ? (
+                failed('the experiment')
+              ) : !experiment.available ? (
+                <p className={styles.muted} data-testid="experiment-note">
+                  Not available here: {experiment.reason}
+                </p>
+              ) : (
+                <>
+                  <p className={styles.muted}>
+                    {experiment.container}: {experiment.documents?.toLocaleString()} documents on{' '}
+                    {experiment.physical_partitions} physical partition
+                    {experiment.physical_partitions === 1 ? '' : 's'}, measured at{' '}
+                    {experiment.ran_at ? new Date(experiment.ran_at).toLocaleTimeString() : ''}.
+                  </p>
+                  <div
+                    className={styles.tableWrap}
+                    role="region"
+                    aria-label="Queries against the partitioned catalogue"
+                    tabIndex={0}
+                  >
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th scope="col">Query</th>
+                          <th scope="col">Partitions</th>
+                          <th scope="col">Charge</th>
+                          <th scope="col">Took</th>
+                          <th scope="col">Documents</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {experiment.rows.map((row) => (
+                          <tr key={row.query}>
+                            <td>{row.query}</td>
+                            <td className={styles.mono}>{row.partitions}</td>
+                            <td className={styles.mono}>{row.request_charge} RU</td>
+                            <td className={styles.mono}>{row.duration_ms} ms</td>
+                            <td className={styles.mono}>{row.documents}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </article>
+            {/* #endregion experiment-card */}
+          </>
+        );
+      case 'store':
+        return storeCardShown ? (
           <StoreCard
             log={store}
             rows={cardWindows.store === 'now' ? store.operations : keptStore}
             window={cardWindows.store}
             picker={picker('store')}
           />
-        ) : null}
-        {store === null ||
-        store === 'failed' ||
-        store.store !== 'Azure Cosmos DB' ||
-        (metrics !== null &&
-          metrics !== 'failed' &&
-          (metrics.backends ?? []).some((backend) => backend.sql !== null)) ? (
+        ) : (
+          absent(
+            'store',
+            store === null
+              ? null
+              : 'This container runs no document store, so it sent no operations to one.'
+          )
+        );
+      case 'sql':
+        return sqlCardShown ? (
           <article className={styles.wide} data-testid="sql-card">
             <h2 className={styles.cardTitle}>The SQL this application ran</h2>
             <About>
@@ -1237,19 +1287,11 @@ export function AdminPanel({
               </div>
             )}
           </article>
-        ) : null}
-        {/* #endregion sql-section */}
-      </section>
-
-      <section
-        className={styles.question}
-        aria-labelledby="question-broke"
-        data-testid="question-broke"
-      >
-        <h2 className={styles.questionTitle} id="question-broke">
-          {QUESTIONS.broke}
-        </h2>
-        <div className={styles.grid}>
+        ) : (
+          absent('sql', 'This container runs no relational store, so it ran no SQL.')
+        );
+      case 'errors':
+        return (
           <article className={`${styles.card} ${styles.wideCard}`} data-testid="errors-card">
             <h2 className={styles.cardTitle}>Recent errors</h2>
             {picker('errors')}
@@ -1310,83 +1352,320 @@ export function AdminPanel({
               </div>
             )}
           </article>
-        </div>
-        {/* #region log-section */}
-        <article className={styles.wide} data-testid="log-card">
-          <h2 className={styles.cardTitle}>The log, as the console got it</h2>
-          <About>
-            This application&rsquo;s own log lines at Information and above, newest first, holding
-            the last 300 in memory. Its own, which since 1.0.0.103 includes one line per document
-            store operation with its charge and its time, and the one framework category that gives
-            every SQL statement a line of its own: the rest of the framework is left out because a
-            healthy container announces its content root and its key directory, and those are server
-            paths on a public page. An exception shows its type. Its message stays server-side,
-            because a database driver writes the server name, the login name and the caller&rsquo;s
-            address into one.
-          </About>
-          {picker('logs')}
-          {logRows === null ? (
-            <p className={styles.muted}>Loading…</p>
-          ) : logRows === 'failed' ? (
-            failed('the log')
-          ) : logRows.length === 0 ? (
-            cardWindows.logs !== 'now' ? null : (
-              <p className={styles.muted}>Nothing recorded since the container started.</p>
-            )
-          ) : (
-            <div
-              className={styles.tableWrap}
-              role="region"
-              aria-label="Recent log lines"
-              tabIndex={0}
-            >
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th scope="col">At</th>
-                    <th scope="col">Level</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Message</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logRows.slice(0, cardWindows.logs === 'now' ? 80 : 200).map((entry, index) => (
-                    <tr key={index}>
-                      <td className={styles.mono}>{stampFor(cardWindows.logs, entry.at)}</td>
-                      <td className={styles.mono}>{entry.level}</td>
-                      <td className={styles.mono}>{entry.category}</td>
-                      <td>
-                        {entry.message}
-                        {entry.exception === null ? null : (
-                          <span className={styles.muted}> ({entry.exception})</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </article>
-        {/* #endregion log-section */}
-        {rowsServed === true && <KeptLogsCard adminKey={adminKey} />}
-      </section>
+        );
+      case 'log':
+        return (
+          <>
+            {/* #region log-section */}
+            <article className={styles.wide} data-testid="log-card">
+              <h2 className={styles.cardTitle}>The log, as the console got it</h2>
+              <About>
+                This application&rsquo;s own log lines at Information and above, newest first,
+                holding the last 300 in memory. Its own, which since 1.0.0.103 includes one line per
+                document store operation with its charge and its time, and the one framework
+                category that gives every SQL statement a line of its own: the rest of the framework
+                is left out because a healthy container announces its content root and its key
+                directory, and those are server paths on a public page. An exception shows its type.
+                Its message stays server-side, because a database driver writes the server name, the
+                login name and the caller&rsquo;s address into one.
+              </About>
+              {picker('logs')}
+              {logRows === null ? (
+                <p className={styles.muted}>Loading…</p>
+              ) : logRows === 'failed' ? (
+                failed('the log')
+              ) : logRows.length === 0 ? (
+                cardWindows.logs !== 'now' ? null : (
+                  <p className={styles.muted}>Nothing recorded since the container started.</p>
+                )
+              ) : (
+                <div
+                  className={styles.tableWrap}
+                  role="region"
+                  aria-label="Recent log lines"
+                  tabIndex={0}
+                >
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th scope="col">At</th>
+                        <th scope="col">Level</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Message</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {logRows
+                        .slice(0, cardWindows.logs === 'now' ? 80 : 200)
+                        .map((entry, index) => (
+                          <tr key={index}>
+                            <td className={styles.mono}>{stampFor(cardWindows.logs, entry.at)}</td>
+                            <td className={styles.mono}>{entry.level}</td>
+                            <td className={styles.mono}>{entry.category}</td>
+                            <td>
+                              {entry.message}
+                              {entry.exception === null ? null : (
+                                <span className={styles.muted}> ({entry.exception})</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </article>
+            {/* #endregion log-section */}
+          </>
+        );
+      case 'kept':
+        return rowsServed === true ? (
+          <KeptLogsCard adminKey={adminKey} />
+        ) : (
+          absent(
+            'kept',
+            rowsServed === null
+              ? null
+              : 'This site does not serve its kept rows, so there is no kept log to read here.'
+          )
+        );
+      case 'activity':
+        return <ActivityCard adminKey={adminKey} rowsServed={rowsServed} onReport={onActivity} />;
+      case 'operator':
+        return <OperatorCard adminKey={adminKey} onEnterKey={enterKey} onForget={forgetKey} />;
+      case 'reset':
+        return <ResetLinkCard adminKey={adminKey} />;
+    }
+  };
+  // #endregion bench-cards
 
-      <section
-        className={styles.question}
-        aria-labelledby="question-desk"
-        data-testid="question-desk"
-      >
-        <h2 className={styles.questionTitle} id="question-desk">
-          Who came, and the operator&rsquo;s desk
-        </h2>
-        <ActivityCard adminKey={adminKey} rowsServed={rowsServed} onReport={onActivity} />
-        <OperatorCard adminKey={adminKey} onEnterKey={enterKey} onForget={forgetKey} />
-        <ResetLinkCard adminKey={adminKey} />
-      </section>
+  return (
+    <section className={styles.wrap} aria-label="Admin">
+      <div className={styles.head}>
+        <h1 className={styles.title}>Admin</h1>
+        <button type="button" className={styles.back} onClick={onBack}>
+          {backTo === 'home' ? 'Back to home' : 'Back to inventory'}
+        </button>
+      </div>
+      <p className={styles.blurb}>
+        The running system reporting on itself, in the order somebody asks: is it up, is it fast, is
+        it costing anything, what broke.
+      </p>
+      <About>
+        One card at a time, the one the address names: the rail lists every card under the question
+        it answers, a tile opens the card behind its number, j and k walk the rail, and a pinned
+        card stays beside whichever one is open. Every statistic the page shows for one store it
+        shows for the other, and where a number has no meaning on one side the page says so in
+        words. Refreshes every 30 seconds. Public on purpose; the reasoning is in the Best Practices
+        menu.
+      </About>
+      <StatStrip
+        tiles={tiles}
+        onOpenCard={onOpenCard}
+        toolbar={windowToolbar('over the tiles', 'strip-window')}
+        caption={sparkCaption(
+          windowName(machineWindow).toLowerCase(),
+          machineWindow === '1h'
+            ? 'hour'
+            : keptLines !== null
+              ? 'kept'
+              : latestMachines?.history?.window === machineWindow
+                ? 'not-kept'
+                : 'reading'
+        )}
+      />
+
+      <Workbench
+        open={card}
+        pin={pin}
+        asked={cardAsked}
+        onOpen={onOpenCard}
+        onPin={onPin}
+        render={renderCard}
+      />
     </section>
   );
 }
+
+// #region workbench
+/**
+ * A click on a link the workbench handles itself: a plain click opens the card
+ * in place, and a click that asks for a new tab or window (a modifier key, the
+ * middle button) is left to the browser, which follows the address.
+ */
+function follow(event: MouseEvent<HTMLElement>, open: () => void) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    return;
+  }
+  event.preventDefault();
+  open();
+}
+
+/**
+ * The workbench (ADR: The Admin tab, as a product, the addendum on the
+ * workbench): the rail of the five questions down the left, one card large
+ * beside it, and a second column for the card that is pinned. The keys j and
+ * k walk the rail's order wherever focus is, except in a field being typed in.
+ */
+function Workbench({
+  open,
+  pin,
+  asked,
+  onOpen,
+  onPin,
+  render,
+}: {
+  open: CardSlug;
+  pin: CardSlug | null;
+  asked: string | null;
+  onOpen: (slug: CardSlug) => void;
+  onPin: (slug: CardSlug | null) => void;
+  render: (slug: CardSlug) => ReactNode;
+}) {
+  const [query, setQuery] = useState('');
+  const found = findCards(query);
+  const { previous, next } = neighbours(open);
+  const openCard = benchCard(open);
+  const question = BENCH_QUESTIONS.find((entry) => entry.key === openCard.question);
+  const pinShown = pin !== null && pin !== open;
+
+  // A layout effect, so the keys are listened for in the same commit that draws the card: a j pressed the
+  // moment the card is on the page walks the rail rather than falling between the paint and a passive effect.
+  useLayoutEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (event.key === 'j') onOpen(neighbours(open).next);
+      else if (event.key === 'k') onOpen(neighbours(open).previous);
+      else return;
+      event.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onOpen]);
+
+  return (
+    <div className={styles.bench} data-testid="workbench">
+      <nav className={styles.rail} aria-label="Admin cards" data-testid="bench-rail">
+        <label className={styles.railFind}>
+          <span className={styles.railFindLabel}>Find a card</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="timing, errors, sql"
+            data-testid="bench-find"
+          />
+        </label>
+        {asked !== null && (
+          <p className={styles.railNote} role="status" data-testid="bench-unknown">
+            No card is called &lsquo;{asked}&rsquo;, so this is {openCard.name}.
+          </p>
+        )}
+        {BENCH_QUESTIONS.map((entry, index) => {
+          const cards = found.filter((candidate) => candidate.question === entry.key);
+          if (cards.length === 0) return null;
+          return (
+            <section
+              key={entry.key}
+              className={styles.railGroup}
+              aria-labelledby={`question-${entry.key}`}
+              data-testid={`question-${entry.key}`}
+            >
+              <h2 className={styles.railTitle} id={`question-${entry.key}`}>
+                <span>
+                  {String(index + 1).padStart(2, '0')} {entry.title}
+                </span>
+                <span className={styles.railCount}>{cards.length}</span>
+              </h2>
+              <ul className={styles.railList}>
+                {cards.map((candidate) => (
+                  <li key={candidate.slug}>
+                    <a
+                      href={`?view=admin&card=${candidate.slug}`}
+                      className={styles.railLink}
+                      aria-current={candidate.slug === open ? 'page' : undefined}
+                      data-testid={`bench-link-${candidate.slug}`}
+                      onClick={(event) => follow(event, () => onOpen(candidate.slug))}
+                    >
+                      {candidate.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+        {found.length === 0 && (
+          <p className={styles.railNote} data-testid="bench-none">
+            No card matches &lsquo;{query}&rsquo;.
+          </p>
+        )}
+      </nav>
+      <div className={styles.benchMain}>
+        <div className={styles.benchBar}>
+          <p className={styles.crumb} data-testid="bench-crumb">
+            {question?.title} <span aria-hidden="true">/</span> {openCard.name}
+          </p>
+          <p className={styles.stepper} role="group" aria-label="The card before and after">
+            <button
+              type="button"
+              className={styles.back}
+              onClick={() => onOpen(previous)}
+              aria-label={`Previous card, ${benchCard(previous).name}`}
+              data-testid="bench-previous"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              className={styles.back}
+              onClick={() => onOpen(next)}
+              aria-label={`Next card, ${benchCard(next).name}`}
+              data-testid="bench-next"
+            >
+              Next
+            </button>
+          </p>
+        </div>
+        <div className={styles.benchColumns} data-pinned={pinShown ? 'true' : 'false'}>
+          <div className={styles.benchColumn} data-testid="bench-open" data-card={open}>
+            <p className={styles.columnBar}>
+              <button
+                type="button"
+                className={styles.back}
+                aria-pressed={pin === open}
+                onClick={() => onPin(pin === open ? null : open)}
+                data-testid="bench-pin"
+              >
+                {pin === open ? 'Pinned' : 'Pin'}
+              </button>
+            </p>
+            {render(open)}
+          </div>
+          {pinShown && (
+            <div className={styles.benchColumn} data-testid="bench-pinned" data-card={pin}>
+              <p className={styles.columnBar}>
+                <span className={styles.pinnedLabel}>Pinned beside it</span>
+                <button
+                  type="button"
+                  className={styles.back}
+                  onClick={() => onPin(null)}
+                  data-testid="bench-unpin"
+                >
+                  Unpin
+                </button>
+              </p>
+              {render(pin)}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+// #endregion workbench
 
 // #region stat-strip
 /**
@@ -1444,10 +1723,13 @@ function TileRingMark({ ring }: { ring: TileRing }) {
 
 function StatStrip({
   tiles,
+  onOpenCard,
   toolbar,
   caption,
 }: {
   tiles: StatTile[];
+  /** A tile is a link to the card that answers it (the workbench). */
+  onOpenCard: (slug: CardSlug) => void;
   toolbar: ReactNode;
   caption: string;
 }) {
@@ -1475,14 +1757,12 @@ function StatStrip({
           const word = TONE_WORD[tile.tone];
           return (
             <li key={tile.key} className={styles.stripItem}>
-              <button
-                type="button"
+              <a
+                href={`?view=admin&card=${cardForTile(tile.key)}`}
                 className={`${styles.tile} ${toneClass[tile.tone]}`}
                 data-testid={`tile-${tile.key}`}
                 data-tone={tile.tone}
-                onClick={() =>
-                  document.getElementById(`question-${tile.question}`)?.scrollIntoView()
-                }
+                onClick={(event) => follow(event, () => onOpenCard(cardForTile(tile.key)))}
               >
                 <span className={styles.tileHead}>
                   <span className={styles.tileHeadText}>
@@ -1507,7 +1787,7 @@ function StatStrip({
                     ))}
                   </svg>
                 )}
-              </button>
+              </a>
             </li>
           );
         })}

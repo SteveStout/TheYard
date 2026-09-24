@@ -730,6 +730,7 @@
 .tile {
   flex: 1;
   min-width: 0;
+  text-decoration: none;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -954,37 +955,206 @@
 
 /* #endregion stat-strip */
 
-/* #region questions */
-/* The four questions the cards sit under, and the desk after them. A heading
-   the tile above scrolls to, clear of the sticky header. */
-.question {
+/* #region workbench */
+/* The workbench (ADR: The Admin tab, as a product, the addendum on the
+   workbench): the rail of the five questions on the left and one card large
+   beside it, a pinned card as a second column. On a phone the card comes first
+   and the rail after it; from 900px the rail is its own column and scrolls on
+   its own when the window is shorter than it. */
+.bench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.rail {
+  order: 2;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  margin-top: var(--space-4);
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--glass-shadow);
 }
 
-.question > .wide {
-  margin-top: 0;
+@media (min-width: 900px) {
+  .bench {
+    grid-template-columns: var(--bench-rail-width) minmax(0, 1fr);
+  }
+
+  .rail {
+    order: 0;
+    position: sticky;
+    top: var(--space-4);
+    max-height: calc(100vh - 2 * var(--space-4));
+    overflow-y: auto;
+  }
 }
 
-/* The rule under a section heading is the dark green, which draws, with a
-   short gold tick at its start: two pixels is too thin for a gradient to show. */
-.questionTitle {
-  margin: 0;
-  scroll-margin-top: 88px;
-  padding-bottom: var(--space-2);
-  border-bottom: 2px solid transparent;
-  background:
-    linear-gradient(var(--color-gold), var(--color-gold)) left bottom / 48px 2px no-repeat,
-    linear-gradient(var(--color-green-dark), var(--color-green-dark)) left bottom / 100% 2px
-      no-repeat;
-  background-origin: border-box;
-  font-size: var(--text-xl);
-  font-weight: var(--weight-bold);
+.railFind {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.railFindLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   color: var(--color-heading);
 }
 
+.railFind input {
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: var(--input-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.railFind input:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.railNote {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.railGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.railTitle {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.railCount {
+  font-variant-numeric: tabular-nums;
+}
+
+.railList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.railLink {
+  display: block;
+  padding: var(--space-1) var(--space-2);
+  border-left: 3px solid transparent;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.railLink:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.railLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-inset);
+}
+
+.railLink[aria-current='page'] {
+  border-left-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.benchMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.benchBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.crumb {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stepper,
+.columnBar {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.columnBar {
+  justify-content: flex-end;
+}
+
+.pinnedLabel {
+  margin-right: auto;
+  color: var(--color-heading);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.benchColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 1280px) {
+  .benchColumns[data-pinned='true'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.benchColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+/* #endregion workbench */
+
+/* #region questions */
 .card,
 .wide {
   box-shadow: var(--glass-shadow);

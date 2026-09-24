@@ -206,6 +206,8 @@
   /* #endregion controls */
   --rail-width: 272px;
   --rail-width-collapsed: 64px;
+  /* The Admin workbench's own rail of cards, beside the site's (1.0.3.18). */
+  --bench-rail-width: 260px;
   /* #endregion rail-widths */
 
   /* Radius: cards 16px, controls 8px, buttons pill */

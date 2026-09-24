@@ -35,7 +35,7 @@ test('every word and every photograph on the inventory is fully solid', async ({
 test('every word on the Admin tab is fully solid, and a tile is see-through in its ground only', async ({
   page,
 }) => {
-  await openTheYard(page, '/?view=admin');
+  await openTheYard(page, '/?view=admin&card=traffic');
   const tile = page.getByTestId('tile-health');
   await expect(tile).toHaveAttribute('data-tone', 'good', { timeout: 45_000 });
   await expect(page.getByTestId('traffic-stats')).toBeVisible({ timeout: 60_000 });

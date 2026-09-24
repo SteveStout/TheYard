@@ -19,6 +19,7 @@ import {
   type SortKey,
 } from './lib/inventory';
 import { applyBidRecord, useBids } from './hooks/useBids';
+import { cardFromAddress, pinFromAddress, type CardSlug } from './lib/workbench';
 import { useNow } from './hooks/useNow';
 // #region admin-on-demand
 // The Admin tab is the biggest thing this app draws, about four thousand lines
@@ -108,6 +109,8 @@ const INITIAL_DOC = docKeyForSlug(INITIAL_PARAMS.get('doc'));
  * and every address that already meant the inventory still opens it.
  */
 const INITIAL_INVENTORY = opensInventory(INITIAL_PARAMS);
+/** The Admin card an address names (?view=admin&card=timing&pin=errors), resolved once. */
+const INITIAL_CARD = cardFromAddress(INITIAL_PARAMS.get('card'));
 
 /** Where a view's back button goes, as its label says (1.0.3.9). */
 export type BackTo = 'home' | 'inventory';
@@ -127,6 +130,19 @@ export default function App() {
   const [loadingMore, setLoadingMore] = useState(false);
   /** The Admin tab (ADR-010): health, errors, and Azure's view, ?view=admin. */
   const [adminOpen, setAdminOpen] = useState(INITIAL_PARAMS.get('view') === 'admin');
+  // #region admin-card
+  // The workbench's open card and its pin (ADR: The Admin tab, as a product, the
+  // addendum on the workbench): state here, beside the view, because the address
+  // mirror below is the one writer of the address bar. A name the address gave
+  // that is no card is kept only to be said in the rail; the card is health.
+  const [adminCard, setAdminCard] = useState<CardSlug>(INITIAL_CARD.slug);
+  const [adminPin, setAdminPin] = useState<CardSlug | null>(
+    pinFromAddress(INITIAL_PARAMS.get('pin'))
+  );
+  const [cardAsked, setCardAsked] = useState<string | null>(
+    INITIAL_CARD.known ? null : INITIAL_CARD.asked
+  );
+  // #endregion admin-card
   /** The account view (ADR: Accounts and per-user bids), ?view=account. */
   const [accountOpen, setAccountOpen] = useState(INITIAL_PARAMS.get('view') === 'account');
   /** The inventory list, rather than the landing page, is what shows under no other view. */
@@ -331,7 +347,12 @@ export default function App() {
     if (selectedVehicle) params.set('vehicle', selectedVehicle.id);
     const listOnly = inventoryOpen && !selectedVehicle && !adminOpen && !accountOpen;
     if (listOnly && !opensInventory(params)) params.set('view', 'inventory');
-    if (adminOpen) params.set('view', 'admin');
+    if (adminOpen) {
+      params.set('view', 'admin');
+      // Health is the card ?view=admin opens, so it is the one card the address leaves unnamed.
+      if (adminCard !== 'health') params.set('card', adminCard);
+      if (adminPin !== null) params.set('pin', adminPin);
+    }
     if (accountOpen) params.set('view', 'account');
     if (openDocKey) params.set('doc', docSlug(openDocKey));
     const query = params.toString();
@@ -340,7 +361,17 @@ export default function App() {
       '',
       query ? `?${query}` : window.location.pathname
     );
-  }, [filters, sort, selectedVehicle, adminOpen, accountOpen, openDocKey, inventoryOpen]);
+  }, [
+    filters,
+    sort,
+    selectedVehicle,
+    adminOpen,
+    adminCard,
+    adminPin,
+    accountOpen,
+    openDocKey,
+    inventoryOpen,
+  ]);
   // #endregion url-mirror
 
   // Restore a deep-linked detail view on first load (?vehicle={id}).
@@ -382,6 +413,10 @@ export default function App() {
       setFilters(restored.filters);
       setSort(restored.sort);
       setAdminOpen(params.get('view') === 'admin');
+      const card = cardFromAddress(params.get('card'));
+      setAdminCard(card.slug);
+      setAdminPin(pinFromAddress(params.get('pin')));
+      setCardAsked(card.known ? null : card.asked);
       setAccountOpen(params.get('view') === 'account');
       setInventoryOpen(opensInventory(params));
       setOpenDocKey(docKeyForSlug(params.get('doc')));
@@ -646,7 +681,35 @@ export default function App() {
     window.history.pushState({ viaAdmin: true, from: openedFrom() }, '', `?${params}`);
     setSelectedVehicle(null);
     setAccountOpen(false);
+    setAdminCard('health');
+    setAdminPin(null);
+    setCardAsked(null);
     setAdminOpen(true);
+  };
+  /**
+   * A card on the workbench is a place, so opening one pushes an entry and Back
+   * returns to the card before it. The entry carries how deep into the bench it
+   * is, so the view's own back button leaves the Admin tab in one step however
+   * many cards were opened on the way.
+   */
+  const openAdminCard = (slug: CardSlug) => {
+    if (slug === adminCard && cardAsked === null) return;
+    const params = filtersToSearchParams(filters, sort);
+    params.set('view', 'admin');
+    if (slug !== 'health') params.set('card', slug);
+    if (adminPin !== null) params.set('pin', adminPin);
+    const held = (window.history.state ?? {}) as {
+      viaAdmin?: boolean;
+      from?: BackTo;
+      benchDepth?: number;
+    };
+    window.history.pushState(
+      { viaAdmin: held.viaAdmin === true, from: held.from, benchDepth: (held.benchDepth ?? 0) + 1 },
+      '',
+      `?${params}`
+    );
+    setAdminCard(slug);
+    setCardAsked(null);
   };
 
   // #region open-document
@@ -710,8 +773,9 @@ export default function App() {
   };
   // #endregion open-account
   const closeAdmin = () => {
-    if ((window.history.state as { viaAdmin?: boolean } | null)?.viaAdmin) {
-      window.history.back();
+    const held = window.history.state as { viaAdmin?: boolean; benchDepth?: number } | null;
+    if (held?.viaAdmin) {
+      window.history.go(-((held.benchDepth ?? 0) + 1));
       return;
     }
     setAdminOpen(false);
@@ -895,6 +959,11 @@ export default function App() {
               <AdminPanel
                 onBack={closeAdmin}
                 backTo={backTo()}
+                card={adminCard}
+                pin={adminPin}
+                cardAsked={cardAsked}
+                onOpenCard={openAdminCard}
+                onPin={setAdminPin}
                 signedIn={account.signedIn}
                 onOpenAccount={openAccount}
               />
