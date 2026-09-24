@@ -7,6 +7,7 @@ import {
   countFor,
   dayLines,
   labelSpot,
+  pathShares,
   stackBands,
   stackCeiling,
   groupByDay,
@@ -201,6 +202,18 @@ describe('unique visitors per day', () => {
     expect(spot).not.toBeNull();
     expect(spot?.anchor).toBe('start');
     expect(labelSpot(scanners, 3, 1000)).toBeNull();
+  });
+
+  it("draws each step of the recruiter's path as a share of the widest, never thinner than a sliver once reached", () => {
+    expect(
+      pathShares([
+        { visitor_days: 400 },
+        { visitor_days: 100 },
+        { visitor_days: 1 },
+        { visitor_days: 0 },
+      ])
+    ).toEqual([1, 0.25, 0.02, 0]);
+    expect(pathShares([{ visitor_days: 0 }, { visitor_days: 0 }])).toEqual([0, 0]);
   });
 
   it('adds the three kinds under All traffic, and only people under Visitors only', () => {

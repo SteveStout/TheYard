@@ -29,11 +29,33 @@ export type ActivityDay = ActivityKinds & {
   bots: number;
   by_store: ({ store: string; visitors: number } & ActivityKinds)[];
 };
+/** The recruiter's path (1.0.3.13): the four steps the site exists for, in the order they are walked. */
+export type ActivityStep = 'site' | 'inventory' | 'author' | 'resume';
+export const STEP_NAMES: Readonly<Record<ActivityStep, string>> = {
+  site: 'Opened the site',
+  inventory: 'The inventory',
+  author: 'About Steven',
+  resume: 'The resume',
+};
+
+/**
+ * Each step's bar as a share of the widest, which is the first step when the
+ * steps are walked in order; a step anybody reached is never drawn thinner
+ * than a sliver, so one resume opened among a thousand visits still shows.
+ */
+export function pathShares(path: { visitor_days: number }[]): number[] {
+  const most = Math.max(0, ...path.map((step) => step.visitor_days));
+  return path.map((step) =>
+    most === 0 || step.visitor_days === 0 ? 0 : Math.max(0.02, step.visitor_days / most)
+  );
+}
+
 /** One kind of traffic over the window: visitor-days summed over the days, requests, what it asked for, per store. */
 export type ActivityWhoEntry = {
   visitor_days: number;
   requests: number;
   top_paths: ActivityPath[];
+  path: { step: ActivityStep; visitor_days: number }[];
   by_store: { store: string; visitor_days: number; requests: number }[];
 };
 /** The card's toggle: visitors only (the people) or all traffic (the three kinds together). */

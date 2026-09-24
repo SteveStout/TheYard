@@ -535,6 +535,10 @@ test('the activity graph draws at the top of the tab and its response names nobo
   }
   await expect(card.getByTestId('activity-legend')).toContainText('Scanners and crawlers');
   await expect(card.getByTestId('activity-days-table')).toHaveCount(1);
+  // The recruiter's path: four steps, in the order they are walked.
+  for (const step of ['site', 'inventory', 'author', 'resume']) {
+    await expect(card.getByTestId(`activity-path-${step}`)).toHaveCount(1);
+  }
   await expect(card.getByTestId('activity-graph')).toHaveAttribute('aria-label', /all traffic/);
   await card.getByTestId('activity-who-people').click();
   // A week is the default; a month is a change, and the graph redraws for it.

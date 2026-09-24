@@ -497,6 +497,39 @@
   stroke-linejoin: round;
 }
 
+/* The recruiter's path (1.0.3.13): four bars on a track one step off the ground, the counts in the text colour. */
+.pathTile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pathChart {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  display: block;
+}
+
+.pathTrack {
+  fill: var(--color-bg);
+}
+
+.pathBar {
+  fill: currentColor;
+}
+
+.pathLabel,
+.pathCount {
+  fill: var(--color-text);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.pathCount {
+  font-weight: var(--weight-semibold);
+}
+
 .legend {
   list-style: none;
   margin: 0;

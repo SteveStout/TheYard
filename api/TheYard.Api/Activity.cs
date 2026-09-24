@@ -668,6 +668,7 @@ public static class ActivityWho
                 visitor_days = theirs.Select(NameOf).Distinct(StringComparer.Ordinal).Count(),
                 requests = theirs.Sum(row => row.Requests),
                 top_paths = TopPaths(theirs),
+                path = Path(theirs),
                 by_store = stores.Select(store =>
                 {
                     var here = theirs.Where(row => row.Store == store).ToList();
@@ -689,6 +690,33 @@ public static class ActivityWho
             all = Entry(_ => true),
         };
     }
+
+    /// <summary>
+    /// The recruiter's path (1.0.3.13), the four steps the site exists for, and
+    /// the paths each is asked for by: the page itself (every address the site
+    /// serves is the one document, kept as /index.html), the inventory's
+    /// listing, About Steven, and the resume, which the page links as
+    /// /api/docs/resume and the repository serves as /docs/resume.pdf.
+    /// </summary>
+    public static readonly (string Step, string[] Paths)[] Steps =
+    [
+        ("site", ["/", "/index.html"]),
+        ("inventory", ["/api/vehicles"]),
+        ("author", ["/api/docs/author"]),
+        ("resume", ["/api/docs/resume", "/docs/resume.pdf", "/resume.pdf"]),
+    ];
+
+    /// <summary>How many of these visitor-days asked for each step, in the order the steps are walked.</summary>
+    public static List<object> Path(IReadOnlyList<ActivityVisitor> rows) =>
+        Steps.Select(step => (object)new
+        {
+            step = step.Step,
+            visitor_days = rows
+                .Where(row => step.Paths.Any(row.Paths.ContainsKey))
+                .Select(NameOf)
+                .Distinct(StringComparer.Ordinal)
+                .Count(),
+        }).ToList();
 
     private static List<object> TopPaths(IEnumerable<ActivityVisitor> rows)
     {

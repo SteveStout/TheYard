@@ -5,6 +5,7 @@ import {
   ACTIVITY_WINDOWS,
   CHART,
   KIND_NAMES,
+  STEP_NAMES,
   areaPath,
   bandPath,
   ceilingOf,
@@ -16,6 +17,7 @@ import {
   labelSpot,
   labelledIndexes,
   linePath,
+  pathShares,
   sortVisitors,
   stackBands,
   stackCeiling,
@@ -2230,6 +2232,9 @@ function SortHeader({
   );
 }
 
+/** The recruiter's path drawn as four bars: a label column, the bar, the count, in SVG units the card scales. */
+const PATH_CHART = { width: 360, row: 26, bar: 120, count: 44 } as const;
+
 /**
  * The chart, the totals and the top paths; the arithmetic is in src/lib/activity.ts.
  * By kind (the default from 1.0.3.12): visitor-days per day stacked by who
@@ -2427,6 +2432,52 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           {report.collector.interval_seconds} seconds.
         </li>
       </ul>
+      <section className={styles.pathTile} data-testid="activity-path">
+        <h3 className={styles.cardTitle}>The recruiter's path</h3>
+        <svg
+          className={styles.pathChart}
+          viewBox={`0 0 ${PATH_CHART.width} ${PATH_CHART.row * shown.path.length}`}
+          role="img"
+          aria-label={`The recruiter's path over the ${report.window} window: ${shown.path
+            .map((step) => `${STEP_NAMES[step.step]} ${step.visitor_days}`)
+            .join(', ')}`}
+        >
+          {shown.path.map((step, index) => {
+            const y = index * PATH_CHART.row;
+            const share = pathShares(shown.path)[index];
+            return (
+              <g key={step.step} data-testid={`activity-path-${step.step}`}>
+                <text className={styles.pathLabel} x={0} y={y + 17}>
+                  {STEP_NAMES[step.step]}
+                </text>
+                <rect
+                  className={`${styles.pathTrack}`}
+                  x={PATH_CHART.bar}
+                  y={y + 5}
+                  width={PATH_CHART.width - PATH_CHART.bar - PATH_CHART.count}
+                  height={16}
+                  rx={4}
+                />
+                <rect
+                  className={`${styles.pathBar} ${who === 'people' ? styles.whoPeople : styles.allLine}`}
+                  x={PATH_CHART.bar}
+                  y={y + 5}
+                  width={share * (PATH_CHART.width - PATH_CHART.bar - PATH_CHART.count)}
+                  height={16}
+                  rx={4}
+                />
+                <text className={styles.pathCount} x={PATH_CHART.width} y={y + 17} textAnchor="end">
+                  {step.visitor_days.toLocaleString()}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+        <p className={styles.muted}>
+          Visitor-days that asked for each step in the window: the page itself, the inventory's
+          listing, About Steven, and the resume, which is the number this site exists for.
+        </p>
+      </section>
       <details className={styles.about}>
         <summary className={styles.aboutSummary}>Day by day</summary>
         <div

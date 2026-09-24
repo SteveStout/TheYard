@@ -254,6 +254,32 @@ public class ActivityTests
     }
 
     [Fact]
+    public void The_recruiters_path_counts_the_visitor_days_that_reached_each_step()
+    {
+        var rows = new List<ActivityVisitor>
+        {
+            // Opened the site, looked at the inventory and at About Steven, and opened the resume.
+            Row("p1", "107.138.48.x", 4, 0, path: "/index.html") with
+            {
+                Paths = new Dictionary<string, int>(StringComparer.Ordinal) { ["/index.html"] = 1, ["/api/vehicles"] = 1, ["/api/docs/author"] = 1, ["/api/docs/resume"] = 1 },
+            },
+            // Opened the site and went no further.
+            Row("p2", "198.51.100.x", 1, 0, path: "/index.html"),
+            // The same person on the other store, the next step there: still one visitor-day for the site.
+            Row("p2", "198.51.100.x", 1, 0, store: "cosmos", path: "/api/vehicles"),
+        };
+
+        var steps = JsonSerializer.SerializeToElement(ActivityWho.Path(rows)).EnumerateArray()
+            .ToDictionary(entry => entry.GetProperty("step").GetString()!, entry => entry.GetProperty("visitor_days").GetInt32());
+
+        Assert.Equal(new[] { "site", "inventory", "author", "resume" }, steps.Keys.ToArray());
+        Assert.Equal(2, steps["site"]);
+        Assert.Equal(2, steps["inventory"]);
+        Assert.Equal(1, steps["author"]);
+        Assert.Equal(1, steps["resume"]);
+    }
+
+    [Fact]
     public void A_visitor_day_is_counted_once_per_day_so_the_window_sums_the_days()
     {
         var rows = new List<ActivityVisitor>
