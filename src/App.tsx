@@ -9,6 +9,7 @@ import {
 } from './lib/data';
 import type { Vehicle } from './lib/types';
 import { byAuctionUrgency, nextAuctionBoundary } from './lib/auction';
+import { ICON } from './lib/icons';
 import {
   EMPTY_FILTERS,
   filtersFromSearchParams,
@@ -862,11 +863,11 @@ export default function App() {
                   aria-expanded={drawerOpen}
                   onClick={() => setDrawerOpen(true)}
                 >
-                  <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width={ICON.md} height={ICON.md} aria-hidden="true">
                     <path
                       d="M3 5h14M3 10h14M3 15h14"
                       stroke="currentColor"
-                      strokeWidth="2"
+                      strokeWidth={ICON.stroke}
                       strokeLinecap="round"
                     />
                   </svg>

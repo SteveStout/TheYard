@@ -88,8 +88,16 @@ export default defineConfig({
     // answers them).
     // Vitest blanks CSS imports it is not told to process. tokens.test.ts reads
     // the palette file raw to measure its contrast, and ribbons.test.ts reads
-    // the ribbon sheet raw to hold its performance rules, so those go through.
-    css: { include: [/tokens\.css\?raw$/, /Ribbons\.module\.css\?raw$/] },
+    // the ribbon sheet raw to hold its performance rules, so those go through,
+    // and from 1.0.3.10 icons.test.ts reads every component sheet raw for a
+    // stroke written in a number of its own, so those go through as well.
+    css: {
+      include: [
+        /tokens\.css\?raw$/,
+        /Ribbons\.module\.css\?raw$/,
+        /components\/[^/]+\.module\.css\?raw$/,
+      ],
+    },
   },
   // #endregion unit-tests
 });

@@ -162,6 +162,10 @@
   --store-segment-height: 28px;
   --touch-target: 44px;
   --inventory-loading-height: 100vh;
+  /* The store bar's note on a phone (1.0.3.10): two lines of 0.8rem at the
+     body's 1.5 line height, held from the first paint, because the row
+     arrived with /api/stores and moved the page 38 px in half the runs. */
+  --store-note-height: 38px;
   /* #endregion reserved-heights */
   /* #region controls */
   /* One height per kind of control (1.0.3.9): a pill is a chooser, a back

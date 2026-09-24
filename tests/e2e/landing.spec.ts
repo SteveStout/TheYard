@@ -164,15 +164,21 @@ test('Admin opened from the landing page says it goes back home, and does', asyn
  * height before their answer arrives; this reads the page's own layout-shift
  * entries after it has settled and holds the sum near zero. Chromium only:
  * WebKit reports no layout-shift entries, and a test that always passes there
- * would prove nothing, so the number is held where the entries exist. Three
+ * would prove nothing, so the number is held where the entries exist. Four
  * tests rather than a loop, because the README's count of browser tests is
- * counted by the `test(` lines.
+ * counted by the `test(` lines. The fourth is the landing page on a phone
+ * (1.0.3.10): the store bar's note row arrived with /api/stores and moved the
+ * page 38 px at 390 in half the runs, which the desk widths never showed.
  */
 type Shifts = { supported: boolean; total: number; moved: string[] };
 
 /** The layout shifts a view had after its first paint, with what moved, so a failure names the element. */
-async function shiftAfterFirstPaint(page: Page, path: string): Promise<Shifts> {
-  await page.setViewportSize({ width: 1280, height: 900 });
+async function shiftAfterFirstPaint(
+  page: Page,
+  path: string,
+  viewport: { width: number; height: number } = { width: 1280, height: 900 }
+): Promise<Shifts> {
+  await page.setViewportSize(viewport);
   await page.addInitScript(() => {
     const shifts: Shifts = {
       supported: PerformanceObserver.supportedEntryTypes.includes('layout-shift'),
@@ -231,6 +237,10 @@ test('nothing on the inventory moves after its first paint', async ({ page }) =>
 
 test('nothing on a document moves after its first paint', async ({ page }) => {
   holdStill(await shiftAfterFirstPaint(page, '/?doc=readme'));
+});
+
+test('nothing on the landing page moves after its first paint on a phone', async ({ page }) => {
+  holdStill(await shiftAfterFirstPaint(page, '/', { width: 390, height: 664 }));
 });
 // #endregion no-shift
 

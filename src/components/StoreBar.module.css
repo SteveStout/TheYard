@@ -104,7 +104,10 @@ a.segment:focus-visible {
     min-height: var(--touch-target);
   }
 
+  /* Its own row, at the height it will have once /api/stores answers, so
+     the page below does not move when the sentence arrives (1.0.3.10). */
   .note {
     flex-basis: 100%;
+    min-height: var(--store-note-height);
   }
 }
