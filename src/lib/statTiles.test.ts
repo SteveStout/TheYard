@@ -206,6 +206,11 @@ describe('the stat tiles', () => {
     expect(visitorsOn(days, new Date('2026-09-21T00:01:00Z'))).toBe(0);
   });
 
+  it('counts the people, not every token that was not a bot, once the report says who', () => {
+    const days = [{ day: '2026-09-23', humans: 757, people: 90 }];
+    expect(visitorsOn(days, new Date('2026-09-23T12:00:00Z'))).toBe(90);
+  });
+
   it('says when the slowest minute was, so the tile is somewhere to start', () => {
     expect(
       tile(

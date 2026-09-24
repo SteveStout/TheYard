@@ -511,6 +511,18 @@ test('the activity graph draws at the top of the tab and its response names nobo
     await expect(card.getByTestId(`activity-line-${store.key}`)).toHaveCount(1);
   }
   await expect(card.getByTestId('activity-totals')).toContainText(/\d+ requests in the window/);
+  // Visitors only is the default (1.0.3.11), and says what it left out; All
+  // traffic counts the three kinds together, and the toggle fetches nothing.
+  await expect(card.getByTestId('activity-who-people')).toHaveAttribute('aria-pressed', 'true');
+  await expect(card.getByTestId('activity-left-out')).toContainText("the site's own reads");
+  await card.getByTestId('activity-who-all').click();
+  await expect(card.getByTestId('activity-who-all')).toHaveAttribute('aria-pressed', 'true');
+  await expect(card.getByTestId('activity-totals')).toContainText(
+    /\d+ people, \d+ scanners and crawlers/
+  );
+  await expect(card.getByTestId('activity-left-out')).toHaveCount(0);
+  await expect(card.getByTestId('activity-graph')).toHaveAttribute('aria-label', /all traffic/);
+  await card.getByTestId('activity-who-people').click();
   // A week is the default; a month is a change, and the graph redraws for it.
   await expect(card.getByTestId('activity-window-7d')).toHaveAttribute('aria-pressed', 'true');
   await card.getByTestId('activity-window-30d').click();

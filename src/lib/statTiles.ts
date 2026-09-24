@@ -317,10 +317,19 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
 }
 // #endregion tile-rules
 
-/** Today's people, from the days an activity report carries; a report with no row for today is a zero, which is what it means. */
-export function visitorsOn(days: { day: string; humans: number }[], now: Date): number {
+/**
+ * Today's people, from the days an activity report carries; a report with no
+ * row for today is a zero, which is what it means. People, and not humans,
+ * from 1.0.3.11: humans counted App Service's own requests from the loopback
+ * address, most of every day since 20 September.
+ */
+export function visitorsOn(
+  days: { day: string; humans: number; people?: number }[],
+  now: Date
+): number {
   const today = now.toISOString().slice(0, 10);
-  return days.find((entry) => entry.day === today)?.humans ?? 0;
+  const entry = days.find((candidate) => candidate.day === today);
+  return entry ? (entry.people ?? entry.humans) : 0;
 }
 
 // #region cold-start

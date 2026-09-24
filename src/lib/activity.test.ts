@@ -3,6 +3,7 @@ import {
   CHART,
   areaPath,
   ceilingOf,
+  countFor,
   dayLines,
   groupByDay,
   labelledIndexes,
@@ -132,21 +133,47 @@ describe('unique visitors per day', () => {
       visitors: 3,
       humans: 2,
       bots: 1,
+      people: 1,
+      scanners: 1,
+      self: 1,
       by_store: [
-        { store: 'sql', visitors: 2 },
-        { store: 'cosmos', visitors: 1 },
+        { store: 'sql', visitors: 2, people: 1, scanners: 0, self: 1 },
+        { store: 'cosmos', visitors: 1, people: 0, scanners: 1, self: 0 },
       ],
     },
-    { day: '2026-09-13', visitors: 0, humans: 0, bots: 0, by_store: [] },
+    {
+      day: '2026-09-13',
+      visitors: 0,
+      humans: 0,
+      bots: 0,
+      people: 0,
+      scanners: 0,
+      self: 0,
+      by_store: [],
+    },
   ];
 
   it('draws one line for everybody and one per store, on the same days', () => {
-    const lines = dayLines(days, ['sql', 'cosmos']);
+    const lines = dayLines(days, ['sql', 'cosmos'], 'all');
     expect(lines.map((line) => line.store)).toEqual(['all', 'sql', 'cosmos']);
     expect(lines[0].points.map((point) => point.requests)).toEqual([3, 0]);
     expect(lines[1].points.map((point) => point.requests)).toEqual([2, 0]);
     expect(lines[2].points.map((point) => point.requests)).toEqual([1, 0]);
     expect(lines[2].points[0].at).toBe('2026-09-12');
+  });
+
+  it('counts people only under Visitors only, on every line', () => {
+    const lines = dayLines(days, ['sql', 'cosmos'], 'people');
+    expect(lines[0].name).toBe('People');
+    expect(lines[0].points.map((point) => point.requests)).toEqual([1, 0]);
+    expect(lines[1].points.map((point) => point.requests)).toEqual([1, 0]);
+    expect(lines[2].points.map((point) => point.requests)).toEqual([0, 0]);
+  });
+
+  it('adds the three kinds under All traffic, and only people under Visitors only', () => {
+    const kinds = { people: 4, scanners: 7, self: 2 };
+    expect(countFor(kinds, 'all')).toBe(13);
+    expect(countFor(kinds, 'people')).toBe(4);
   });
 
   it('groups the visitor rows by day, newest first, counting a token once per day', () => {

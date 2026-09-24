@@ -194,9 +194,11 @@ jobs:
       - name: Verify
         if: github.event_name != 'workflow_dispatch' || inputs.action == 'roll'
         run: |
+          # Every read here carries the self mark on its agent, so the Site
+          # activity card counts it as the site's own (ADR: Site activity, 24 September).
           for i in $(seq 1 120); do
             sleep 5
-            body=$(curl -fsS --max-time 10 "$ORIGIN/api/version" || true)
+            body=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 10 "$ORIGIN/api/version" || true)
             if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
               echo "origin serves $APP_VERSION after $((i * 5))s: $body"
               break
@@ -206,13 +208,13 @@ jobs:
               exit 1
             fi
           done
-          curl -fsS --max-time 20 "$ORIGIN/api/facets" > /dev/null
-          curl -fsS --max-time 20 "$ORIGIN/readyz"
+          curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/api/facets" > /dev/null
+          curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/readyz"
           echo
           # Which store it came up on, said out loud. A warning and not a
           # failure, for the reason Deploy gives: the fallback serving is the
           # design working, and it must not be silent.
-          store=$(curl -fsS --max-time 30 "$ORIGIN/api/health" || true)
+          store=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$ORIGIN/api/health" || true)
           case "$store" in
             *"Azure Cosmos DB"*) echo "the site is on Azure Cosmos DB" ;;
             *) echo "::warning::this roll is not serving from Azure Cosmos DB: $store" ;;

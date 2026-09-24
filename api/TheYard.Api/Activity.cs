@@ -73,16 +73,39 @@ public sealed class VisitorTokens(string key)
         string? netlify = context.Request.Headers["X-Nf-Client-Connection-Ip"].FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(netlify))
         {
-            return netlify.Trim();
+            return WithoutPort(netlify.Trim());
         }
 
         string? forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(forwarded))
         {
-            return forwarded.Split(',')[0].Trim();
+            return WithoutPort(forwarded.Split(',')[0].Trim());
         }
 
         return context.Connection.RemoteIpAddress?.ToString() ?? "";
+    }
+
+    /// <summary>
+    /// The address without the port a forwarding hop may have written after
+    /// it. App Service's own requests reach the container as 127.0.0.1 with a
+    /// port, and until 1.0.3.11 that port went into the token and the
+    /// network: every one of them was a new visitor, 375 to 643 a day from
+    /// 20 September (activitylane, 2026-09-24), and the network showed the
+    /// whole address. 203.0.113.7:443 is 203.0.113.7; [2001:db8::1]:443 is
+    /// 2001:db8::1; an address with no port is itself.
+    /// </summary>
+    public static string WithoutPort(string address)
+    {
+        if (address.StartsWith('['))
+        {
+            int close = address.IndexOf(']', StringComparison.Ordinal);
+            return close > 1 ? address[1..close] : address;
+        }
+
+        int colon = address.IndexOf(':', StringComparison.Ordinal);
+        return colon > 0 && colon == address.LastIndexOf(':') && address[..colon].Count(c => c == '.') == 3
+            ? address[..colon]
+            : address;
     }
 }
 // #endregion visitor-token
@@ -127,6 +150,67 @@ public static class Hits
 
     public static bool LooksLikeABot(string? userAgent, string path) =>
         string.IsNullOrWhiteSpace(userAgent) || BotAgent.IsMatch(userAgent) || BotPath.IsMatch(path);
+
+    /// <summary>
+    /// The mark every tool that reads this site on its operator's behalf
+    /// carries on its user agent: the page sweep, the ship's readers, the
+    /// card's own pictures. One string, so one rule finds them all.
+    /// </summary>
+    public const string SelfTag = "TheYard-SelfRead";
+
+    /// <summary>
+    /// The network a request from the site's own tools is kept under, in
+    /// place of its three octets: the card counts it as the site reading
+    /// itself, and the row says so rather than naming the operator's network.
+    /// It ends in x like every other network.
+    /// </summary>
+    public const string SelfNetwork = "self:x";
+
+    private static readonly Regex PlatformAgent = new(
+        @"^AlwaysOn|HealthCheck|ReadyForRequest",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Whether a request is the site reading itself: one of its own tools, or
+    /// App Service keeping the container warm or asking whether it is up.
+    /// The user agent is what the sender says it is, so a stranger can hide
+    /// from the card by claiming the mark; that costs a count of visitors,
+    /// never anything a request can reach.
+    /// </summary>
+    public static bool IsSelf(string? userAgent) =>
+        !string.IsNullOrWhiteSpace(userAgent)
+        && (userAgent.Contains(SelfTag, StringComparison.OrdinalIgnoreCase) || PlatformAgent.IsMatch(userAgent));
+
+    /// <summary>
+    /// Whether a kept network is the site's own: the mark above, or the
+    /// loopback address, which is this machine talking to itself by
+    /// definition. Read at report time, so the rows written before 1.0.3.11,
+    /// when App Service's own requests were counted as people, read the same
+    /// way as the rows written after.
+    /// </summary>
+    public static bool IsSelfNetwork(string network) =>
+        network == SelfNetwork
+        || network.StartsWith("127.", StringComparison.Ordinal)
+        || network.StartsWith("::1:", StringComparison.Ordinal)
+        || network.StartsWith("::ffff:127.", StringComparison.Ordinal);
+
+    /// <summary>Is this network the loopback address, the one machine every such row is.</summary>
+    public static bool IsLoopbackNetwork(string network) => network != SelfNetwork && IsSelfNetwork(network);
+
+    /// <summary>
+    /// The hit a request becomes. The token and the network are the ones the
+    /// caller made for the kept log. A read by the site's own tools is kept
+    /// under a token of its own, the keyed hash of the mark and the address,
+    /// so it is its own row and never folds into the row of a person at the
+    /// same address (a row keeps the network of its first hit); its network
+    /// is the mark, and it is flagged as not a person, so an hour's human
+    /// count leaves it out as well. That is the one request that pays for a
+    /// second keyed hash.
+    /// </summary>
+    public static ActivityHit For(VisitorTokens tokens, string address, DateTimeOffset at, string token, string network, string path, string store, string? userAgent) =>
+        IsSelf(userAgent)
+            ? new ActivityHit(at, tokens.TokenFor(SelfNetwork + "|" + address, at), SelfNetwork, PathOf(path), store, true)
+            : new ActivityHit(at, token, network, PathOf(path), store, LooksLikeABot(userAgent, path));
 
     /// <summary>The path a row keeps: no query string, bounded, and with no at sign in it.</summary>
     public static string PathOf(string path)
@@ -298,7 +382,7 @@ public static class ActivityReport
         int requests = 0;
         int bots = 0;
         var byStore = new List<object>();
-        var visitorDays = new List<(string Day, string Store, string Visitor, bool Bot)>();
+        var keptRows = new List<ActivityVisitor>();
 
         // One read, from the keeper: every store's rows live there, each one
         // naming the store that served it, so the two lines still show against
@@ -307,9 +391,10 @@ public static class ActivityReport
         var keeper = collector.Keeper;
         var availability = await keeper.AvailabilityAsync(cancellation);
         IReadOnlyList<ActivityHour> kept = availability.Available ? await keeper.HoursAsync(since, cancellation) : [];
-        // The visitor rows are read here for one number each and thrown
-        // away: how many distinct tokens each day saw. The rows themselves
-        // leave the server only through the keyed endpoint below.
+        // The visitor rows are read here for counts and thrown away: how many
+        // distinct tokens each day saw, of which kind, and what each kind
+        // asked for. The rows themselves leave the server only through the
+        // keyed endpoint below.
         IReadOnlyList<ActivityVisitor> keptVisitors = availability.Available ? await keeper.VisitorsAsync(since, cancellation) : [];
 
         foreach (var backend in backends.All)
@@ -320,10 +405,7 @@ public static class ActivityReport
             var points = Bucket(hours, since, now, chosen.Bucket);
             series.Add(new { store = backend.Key, name = backend.Name, points });
 
-            foreach (var visitor in keptVisitors.Where(visitor => visitor.Store == backend.Key && visitor.LastSeen >= since))
-            {
-                visitorDays.Add((visitor.Day, backend.Key, visitor.Visitor, visitor.Bots >= visitor.Requests));
-            }
+            keptRows.AddRange(keptVisitors.Where(visitor => visitor.Store == backend.Key && visitor.LastSeen >= since));
 
             int storeRequests = hours.Sum(hour => hour.Requests);
             int storeBots = hours.Sum(hour => hour.Bots);
@@ -352,7 +434,11 @@ public static class ActivityReport
             totals = new { requests, bots, humans = requests - bots },
             by_store = byStore,
             series,
-            days = Days(visitorDays, backends.All.Select(backend => backend.Key).ToList(), since, now),
+            days = Days(keptRows, backends.All.Select(backend => backend.Key).ToList(), since, now),
+            // Who the traffic was, from the same visitor rows the days are:
+            // people, scanners and crawlers, and the site reading itself, so
+            // the card can show visitors only or everything (1.0.3.11).
+            who = ActivityWho.Summary(keptRows, backends.All.Select(backend => backend.Key).ToList()),
             top_paths = paths.OrderByDescending(entry => entry.Value).ThenBy(entry => entry.Key, StringComparer.Ordinal).Take(12)
                 .Select(entry => new { path = entry.Key, requests = entry.Value }).ToList(),
             stores,
@@ -415,8 +501,11 @@ public static class ActivityReport
     /// every store, the distinct tokens per store, and how many of them
     /// looked like people. A token is one address for one day, so "unique
     /// visitors" here is unique addresses, counted without keeping one.
+    /// From 1.0.3.11 each day also says who: people, scanners and crawlers,
+    /// and the site's own reads, the three adding up to the day's visitor-days
+    /// (ActivityWho has the rule).
     /// </summary>
-    private static List<object> Days(List<(string Day, string Store, string Visitor, bool Bot)> rows, IReadOnlyList<string> stores, DateTimeOffset since, DateTimeOffset now)
+    private static List<object> Days(List<ActivityVisitor> rows, IReadOnlyList<string> stores, DateTimeOffset since, DateTimeOffset now)
     {
         var days = new List<object>();
         var first = new DateTimeOffset(since.Year, since.Month, since.Day, 0, 0, 0, TimeSpan.Zero);
@@ -427,17 +516,29 @@ public static class ActivityReport
             var today = rows.Where(row => row.Day == day).ToList();
             var tokens = today.Select(row => row.Visitor).Distinct(StringComparer.Ordinal).ToList();
             // A visitor is a person if any store saw a request of theirs that did not look like a bot.
-            int humans = tokens.Count(token => today.Any(row => row.Visitor == token && !row.Bot));
+            int humans = tokens.Count(token => today.Any(row => row.Visitor == token && row.Bots < row.Requests));
+            var who = ActivityWho.Count(today);
             days.Add(new
             {
                 day,
                 visitors = tokens.Count,
                 humans,
                 bots = tokens.Count - humans,
-                by_store = stores.Select(store => new
+                people = who.People,
+                scanners = who.Scanners,
+                self = who.Self,
+                by_store = stores.Select(store =>
                 {
-                    store,
-                    visitors = today.Where(row => row.Store == store).Select(row => row.Visitor).Distinct(StringComparer.Ordinal).Count(),
+                    var theirs = today.Where(row => row.Store == store).ToList();
+                    var split = ActivityWho.Count(theirs);
+                    return new
+                    {
+                        store,
+                        visitors = theirs.Select(row => row.Visitor).Distinct(StringComparer.Ordinal).Count(),
+                        people = split.People,
+                        scanners = split.Scanners,
+                        self = split.Self,
+                    };
                 }).ToList(),
             });
         }
@@ -471,6 +572,137 @@ public static class ActivityReport
         }
 
         return counts.Select(entry => (object)new { at = entry.Key, requests = entry.Value.Requests, bots = entry.Value.Bots }).ToList();
+    }
+}
+
+/// <summary>
+/// Who a visitor-day was (1.0.3.11). Three kinds, each visitor-day exactly one
+/// of them, so the three add up to the day's total:
+///
+/// <para>The site's own reads: a row kept under the self mark (one of the
+/// site's tools, or App Service asking after the container), or a row from
+/// the loopback address, which is this machine talking to itself. Every
+/// loopback row on a day is one visitor-day, the machine, because until
+/// 1.0.3.11 the port each of App Service's requests came from went into the
+/// token and made every one of them a new visitor (activitylane,
+/// 2026-09-24: 375 to 643 a day from 20 September, one request each, all of
+/// /index.html). Read from the network the row already keeps, so the rows
+/// written before this version read the same way as the rows written
+/// after.</para>
+///
+/// <para>Scanners and crawlers: a token whose every request looked like a
+/// bot, by its agent or by what it asked for (Hits.LooksLikeABot).</para>
+///
+/// <para>People: everybody else. A token is the site's own if any of its
+/// rows is, and a person if any store saw a request of theirs that did not
+/// look like a bot, the rule the day's humans have always used.</para>
+/// </summary>
+public static class ActivityWho
+{
+    public enum Kind
+    {
+        People,
+        Scanners,
+        Self,
+    }
+
+    /// <summary>The name every loopback row on a day is counted under: one machine, one visitor-day.</summary>
+    public const string Loopback = "loopback";
+
+    public static (int People, int Scanners, int Self) Count(IEnumerable<ActivityVisitor> rows)
+    {
+        var kinds = Tokens(rows);
+        return (
+            kinds.Count(entry => entry.Value == Kind.People),
+            kinds.Count(entry => entry.Value == Kind.Scanners),
+            kinds.Count(entry => entry.Value == Kind.Self));
+    }
+
+    /// <summary>Each visitor-day's name and kind, within one day's rows: the loopback rows folded into one name.</summary>
+    public static Dictionary<string, Kind> Tokens(IEnumerable<ActivityVisitor> rows)
+    {
+        var kinds = new Dictionary<string, Kind>(StringComparer.Ordinal);
+        foreach (var row in rows)
+        {
+            string name = NameOf(row);
+            var kind = KindOf(row);
+            kinds[name] = kinds.TryGetValue(name, out var seen) ? Stronger(seen, kind) : kind;
+        }
+
+        return kinds;
+    }
+
+    /// <summary>The day and name a row is counted under: the loopback rows on a day are one name.</summary>
+    public static string NameOf(ActivityVisitor row) =>
+        row.Day + "|" + (Hits.IsLoopbackNetwork(row.Network) ? Loopback : row.Visitor);
+
+    public static Kind KindOf(ActivityVisitor row) =>
+        Hits.IsSelfNetwork(row.Network) ? Kind.Self : row.Bots >= row.Requests ? Kind.Scanners : Kind.People;
+
+    // The site's own over everything, then a person over a scanner.
+    private static Kind Stronger(Kind a, Kind b) =>
+        a == Kind.Self || b == Kind.Self ? Kind.Self : a == Kind.People || b == Kind.People ? Kind.People : Kind.Scanners;
+
+    /// <summary>
+    /// The window, by kind and all together: visitor-days (summed over the
+    /// days, as the graph sums them), requests, the paths asked for most, and
+    /// the same per store. What the card shows under Visitors only is the
+    /// people entry; under All traffic, the all entry.
+    /// </summary>
+    public static object Summary(IReadOnlyList<ActivityVisitor> rows, IReadOnlyList<string> stores)
+    {
+        var kinds = new Dictionary<string, Kind>(StringComparer.Ordinal);
+        foreach (var day in rows.GroupBy(row => row.Day, StringComparer.Ordinal))
+        {
+            foreach (var (name, kind) in Tokens(day))
+            {
+                kinds[name] = kind;
+            }
+        }
+
+        object Entry(Func<Kind, bool> chosen)
+        {
+            var theirs = rows.Where(row => chosen(kinds[NameOf(row)])).ToList();
+            return new
+            {
+                visitor_days = theirs.Select(NameOf).Distinct(StringComparer.Ordinal).Count(),
+                requests = theirs.Sum(row => row.Requests),
+                top_paths = TopPaths(theirs),
+                by_store = stores.Select(store =>
+                {
+                    var here = theirs.Where(row => row.Store == store).ToList();
+                    return new
+                    {
+                        store,
+                        visitor_days = here.Select(NameOf).Distinct(StringComparer.Ordinal).Count(),
+                        requests = here.Sum(row => row.Requests),
+                    };
+                }).ToList(),
+            };
+        }
+
+        return new
+        {
+            people = Entry(kind => kind == Kind.People),
+            scanners = Entry(kind => kind == Kind.Scanners),
+            self = Entry(kind => kind == Kind.Self),
+            all = Entry(_ => true),
+        };
+    }
+
+    private static List<object> TopPaths(IEnumerable<ActivityVisitor> rows)
+    {
+        var paths = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var row in rows)
+        {
+            foreach (var (path, count) in row.Paths)
+            {
+                paths[path] = paths.GetValueOrDefault(path) + count;
+            }
+        }
+
+        return paths.OrderByDescending(entry => entry.Value).ThenBy(entry => entry.Key, StringComparer.Ordinal).Take(12)
+            .Select(entry => (object)new { path = entry.Key, requests = entry.Value }).ToList();
     }
 }
 

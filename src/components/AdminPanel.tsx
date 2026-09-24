@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
+  ACTIVITY_WHO,
   ACTIVITY_WINDOWS,
   CHART,
   areaPath,
@@ -12,6 +13,7 @@ import {
   sortVisitors,
   type ActivityReport,
   type ActivityVisitors,
+  type ActivityWho,
   type ActivityWindow,
   type VisitorSortKey,
 } from '../lib/activity';
@@ -1623,6 +1625,10 @@ function ActivityCard({
   onReport: (report: ActivityReport) => void;
 }) {
   const [window_, setWindow] = useState<ActivityWindow>('7d');
+  // Visitors only is the default (1.0.3.11): the card is read for who came,
+  // and the site's own reads and the scanners are a click away. The report
+  // carries both, so the toggle redraws and never fetches.
+  const [who, setWho] = useState<ActivityWho>('people');
   const [report, setReport] = useState<Fetched<ActivityReport>>(null);
   const [visitors, setVisitors] = useState<Fetched<ActivityVisitors>>(null);
   const [sortKey, setSortKey] = useState<VisitorSortKey>('last_seen');
@@ -1680,13 +1686,16 @@ function ActivityCard({
       <About>
         Unique visitors per day, everybody and each store, from rows kept in Azure Cosmos DB by both
         sites, each row naming the store that served it, so the two stores show against each other
-        and a paused relational database cannot take this card down with it. Under it, each
-        visitor's day: when they came, how many requests, which store, and what they asked for.
-        Written off the request path in batches; the page's own files, the photos and this tab's
-        reads are not counted. A visitor is a keyed hash of the address that changes daily, so the
-        counts group and nothing joins across days or back to a person; a full address is never
-        stored and no account is ever named. The table of visitors is behind a key only the operator
-        holds.
+        and a paused relational database cannot take this card down with it. Visitors only counts
+        the people; All traffic adds the scanners and crawlers (every request looked like a bot, by
+        its agent or by what it asked for) and the site's own reads (App Service asking after the
+        container from its own loopback address, and the site's tools, which carry a mark on their
+        agent). Under it, each visitor's day: when they came, how many requests, which store, and
+        what they asked for. Written off the request path in batches; the page's own files, the
+        photos and this tab's reads are not counted. A visitor is a keyed hash of the address that
+        changes daily, so the counts group and nothing joins across days or back to a person; a full
+        address is never stored and no account is ever named. The table of visitors is behind a key
+        only the operator holds.
       </About>
       <p className={styles.statusRow} role="group" aria-label="Window">
         {ACTIVITY_WINDOWS.map((option) => (
@@ -1712,6 +1721,20 @@ function ActivityCard({
           </button>
         ))}
       </p>
+      <p className={styles.statusRow} role="group" aria-label="Whose traffic">
+        {ACTIVITY_WHO.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={styles.back}
+            aria-pressed={option === who}
+            onClick={() => setWho(option)}
+            data-testid={`activity-who-${option}`}
+          >
+            {option === 'people' ? 'Visitors only' : 'All traffic'}
+          </button>
+        ))}
+      </p>
       {report === null ? (
         <p className={styles.muted}>Loading…</p>
       ) : report === 'failed' ? (
@@ -1719,7 +1742,7 @@ function ActivityCard({
           Could not read the activity on the last try; the next try is on the next window change.
         </p>
       ) : (
-        <ActivityGraph report={report} />
+        <ActivityGraph report={report} who={who} />
       )}
       {key !== null && rowsServed === true && (
         <>
@@ -2199,12 +2222,14 @@ function SortHeader({
 }
 
 /** The two lines, the axis, the totals and the top paths; the arithmetic is in src/lib/activity.ts. */
-function ActivityGraph({ report }: { report: ActivityReport }) {
+function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityWho }) {
   // Unique visitors per UTC day: everybody as one line, and one line per
-  // store underneath it, so the split shows against the whole.
+  // store underneath it, so the split shows against the whole; people only
+  // under Visitors only, all three kinds under All traffic.
   const lines = dayLines(
     report.days,
-    report.series.map((line) => line.store)
+    report.series.map((line) => line.store),
+    who
   );
   const ceiling = ceilingOf(lines);
   const points = lines[0]?.points ?? [];
@@ -2213,15 +2238,19 @@ function ActivityGraph({ report }: { report: ActivityReport }) {
   const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
   const colour = (store: string) =>
     store === 'cosmos' ? styles.cosmosLine : store === 'sql' ? styles.sqlLine : styles.allLine;
-  const totalVisitors = report.days.reduce((sum, day) => sum + day.visitors, 0);
-  const humanVisitors = report.days.reduce((sum, day) => sum + day.humans, 0);
+  const shown = who === 'people' ? report.who.people : report.who.all;
+  const { people, scanners, self } = report.who;
+  const nameOf = (store: string) =>
+    report.series.find((line) => line.store === store)?.name ?? store;
   return (
     <>
       <svg
         className={styles.chart}
         viewBox={`0 0 ${CHART.width} ${CHART.height}`}
         role="img"
-        aria-label={`Unique visitors per day over the ${report.window} window, everybody as one line and one line per store`}
+        aria-label={`Unique visitors per day over the ${report.window} window, ${
+          who === 'people' ? 'people only' : 'all traffic'
+        }, everybody as one line and one line per store`}
         data-testid="activity-graph"
       >
         <line
@@ -2274,23 +2303,15 @@ function ActivityGraph({ report }: { report: ActivityReport }) {
       <ul className={styles.summaryList} data-testid="activity-totals">
         <li>
           <span className={`${styles.swatch} ${styles.allLine}`} aria-hidden="true" />
-          {totalVisitors.toLocaleString()} unique visitors across the days in the window,{' '}
-          {humanVisitors} of them looking like people; {report.totals.requests.toLocaleString()}{' '}
-          requests in the window, {report.totals.bots} of them from what looked like scanners and
-          crawlers.
+          {who === 'people'
+            ? `${people.visitor_days.toLocaleString()} visitor-days that looked like people across the days in the window, ${people.requests.toLocaleString()} requests in the window.`
+            : `${shown.visitor_days.toLocaleString()} visitor-days across the days in the window: ${people.visitor_days.toLocaleString()} people, ${scanners.visitor_days.toLocaleString()} scanners and crawlers, ${self.visitor_days.toLocaleString()} the site's own reads; ${shown.requests.toLocaleString()} requests in the window.`}
         </li>
-        {report.by_store.map((store) => (
+        {shown.by_store.map((store) => (
           <li key={store.store}>
             <span className={`${styles.swatch} ${colour(store.store)}`} aria-hidden="true" />
-            {report.series.find((line) => line.store === store.store)?.name ?? store.store}:{' '}
-            {report.days
-              .reduce(
-                (sum, day) =>
-                  sum + (day.by_store.find((entry) => entry.store === store.store)?.visitors ?? 0),
-                0
-              )
-              .toLocaleString()}{' '}
-            visitor-days, {store.requests.toLocaleString()} requests, {store.bots} of them bots.
+            {nameOf(store.store)}: {store.visitor_days.toLocaleString()} visitor-days,{' '}
+            {store.requests.toLocaleString()} requests.
           </li>
         ))}
         {report.stores
@@ -2302,11 +2323,19 @@ function ActivityGraph({ report }: { report: ActivityReport }) {
           ))}
         <li>
           Top paths:{' '}
-          {report.top_paths.length === 0
+          {shown.top_paths.length === 0
             ? 'none yet'
-            : report.top_paths.map((entry) => `${entry.path} (${entry.requests})`).join(', ')}
+            : shown.top_paths.map((entry) => `${entry.path} (${entry.requests})`).join(', ')}
           .
         </li>
+        {who === 'people' && (
+          <li className={styles.muted} data-testid="activity-left-out">
+            Left out: {scanners.visitor_days.toLocaleString()} visitor-days of scanners and crawlers
+            ({scanners.requests.toLocaleString()} requests) and {self.visitor_days.toLocaleString()}{' '}
+            of the site's own reads ({self.requests.toLocaleString()} requests: App Service keeping
+            the container warm, the page sweep and the ship's readers).
+          </li>
+        )}
         <li className={styles.muted}>
           Collector: {report.collector.offered.toLocaleString()} hits offered since the process
           started, {report.collector.written.toLocaleString()} written,{' '}

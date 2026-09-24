@@ -214,10 +214,12 @@ jobs:
         run: |
           # Wait for the NEW build to answer at the origin. Ten minutes rather
           # than five: the plan is one shared processor, and the process reads a
-          # hundred thousand vehicles into memory before it answers.
+          # hundred thousand vehicles into memory before it answers. Every read
+          # here carries the self mark on its agent, so the Site activity card
+          # counts it as the site's own (ADR: Site activity, 24 September).
           for i in $(seq 1 120); do
             sleep 5
-            body=$(curl -fsS --max-time 10 "$ORIGIN/api/version" || true)
+            body=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 10 "$ORIGIN/api/version" || true)
             if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
               echo "origin serves $APP_VERSION after $((i * 5))s: $body"
               break
@@ -227,18 +229,18 @@ jobs:
               exit 1
             fi
           done
-          curl -fsS --max-time 20 "$ORIGIN/api/facets" > /dev/null
+          curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/api/facets" > /dev/null
           # Readiness is the container's own word that its files are in place (ADR-010).
-          curl -fsS --max-time 20 "$ORIGIN/readyz"
+          curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/readyz"
           echo
           # The domain is the edge in front of the same origin: what a visitor sees.
-          site=$(curl -fsS --max-time 30 "$SITE/api/version")
+          site=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$SITE/api/version")
           echo "domain: $site"
           if [[ "$site" != *"\"$APP_VERSION\""* || "$site" != *"\"$APP_COMMIT\""* ]]; then
             echo "domain does not report $APP_VERSION at $APP_COMMIT"
             exit 1
           fi
-          curl -fsS --max-time 30 "$SITE/api/facets" > /dev/null
+          curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$SITE/api/facets" > /dev/null
           # Which store the container actually came up on, said out loud.
           #
           # A warning and not a failure, on purpose. The whole point of the
@@ -247,7 +249,7 @@ jobs:
           # the design working and must not fail a deploy. What it must not be
           # is silent: 1.0.0.49 shipped that way and nothing said so until
           # somebody read the health endpoint by hand.
-          store=$(curl -fsS --max-time 30 "$SITE/api/health" || true)
+          store=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$SITE/api/health" || true)
           case "$store" in
             *"Azure SQL Database"*) echo "the site is on Azure SQL Database" ;;
             *SQLite*) echo "::warning::this roll is serving from SQLite, not Azure SQL Database" ;;

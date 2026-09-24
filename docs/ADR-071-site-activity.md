@@ -374,3 +374,50 @@ too, a few hundred request units a day inside the free tier's thousand a
 second. What it stops costing is the whole of the free relational amount.
 A test holds the keeper: two stores, two hits naming each, both rows land
 on the keeper and none on the other.
+
+## Addendum, 2026-09-24: people, scanners, and the site reading itself
+
+The card said 710 people in a day. Read off the kept rows for the eight days
+to 24 September before anything changed (activitylane, queue 1347): from 20
+September, the day both sites moved to App Service, 375 to 643 of each day's
+"people" were tokens with one request each, all of them `/index.html`, all
+from the loopback address with a port after it (`127.0.0.1:8069`, one port
+per request), 643 of 757 on the twenty-third. Requests from the machine
+itself: the port went into the token, so every one was a new visitor, and
+into the network, which showed the whole address. What sent them is not
+attributed here, because a row keeps no user agent; the shape (loopback, one
+request, the landing page, a few hundred a day on each site) is what was
+measured. The session key
+compounded it until 24 September: with the placeholder key each process
+invented its own, so one address was a new token after every roll and on
+each site.
+
+Three kinds now, each visitor-day exactly one of them, adding up to the
+day's total, and a toggle on the card, Visitors only by default:
+
+- **The site's own reads.** A row from the loopback address, which is this
+  machine by definition, read from the network the row already keeps, so the
+  rows written before this addendum read the same way as the rows after; all
+  of a day's loopback rows are one visitor-day, the machine. And a row kept
+  under the self mark: the tools that read the site on its operator's behalf
+  (the page sweep, the ship's readers, the card's own pictures) carry
+  `TheYard-SelfRead` on their user agent, as do App Service's own agents
+  (AlwaysOn, the health check), and such a request is kept under a token of
+  its own (the keyed hash of the mark and the address) and the network
+  `self:x`, so it never folds into the row of a person at the same address
+  and names no network. A stranger can claim the mark and hide from the
+  card; that costs a count of visitors and reaches nothing else.
+- **Scanners and crawlers.** A token whose every request looked like a bot,
+  by its agent or by what it asked for, the rule this record started with.
+- **People.** Everybody else: a token any store saw make a request that did
+  not look like a bot.
+
+A port after an address is dropped before the token and the network are
+made, so one machine is one visitor whatever port it came from. What a hit
+carries is unchanged: no user agent is kept, the agent is read on the
+request and forgotten, as it always was for the bot guess. The kinds and
+what each asked for are counted from the visitor rows the days already
+came from, one read, and returned beside the days (`who` in the report);
+the rows still leave the server only through the keyed endpoint. Tests hold
+the mark, the port, the loopback networks, the one-machine rule and the
+three kinds adding up.

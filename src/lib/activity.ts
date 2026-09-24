@@ -15,13 +15,30 @@ export type ActivityStoreState = {
   reason: string;
 };
 export type ActivityPath = { path: string; requests: number };
-export type ActivityDay = {
+/**
+ * Who a visitor-day was (1.0.3.11): people, scanners and crawlers, and the
+ * site's own reads (its tools under the self mark, and App Service asking
+ * after the container from the loopback address). The three add up to the
+ * day's visitor-days.
+ */
+export type ActivityKinds = { people: number; scanners: number; self: number };
+export type ActivityDay = ActivityKinds & {
   day: string;
   visitors: number;
   humans: number;
   bots: number;
-  by_store: { store: string; visitors: number }[];
+  by_store: ({ store: string; visitors: number } & ActivityKinds)[];
 };
+/** One kind of traffic over the window: visitor-days summed over the days, requests, what it asked for, per store. */
+export type ActivityWhoEntry = {
+  visitor_days: number;
+  requests: number;
+  top_paths: ActivityPath[];
+  by_store: { store: string; visitor_days: number; requests: number }[];
+};
+/** The card's toggle: visitors only (the people) or all traffic (the three kinds together). */
+export type ActivityWho = 'people' | 'all';
+export const ACTIVITY_WHO: readonly ActivityWho[] = ['people', 'all'];
 export type ActivityReport = {
   window: ActivityWindow;
   /** Whether this site serves the per-visitor rows at all (off by default since 13 September). */
@@ -33,6 +50,12 @@ export type ActivityReport = {
   by_store: { store: string; requests: number; bots: number; humans: number }[];
   series: ActivitySeries[];
   days: ActivityDay[];
+  who: {
+    people: ActivityWhoEntry;
+    scanners: ActivityWhoEntry;
+    self: ActivityWhoEntry;
+    all: ActivityWhoEntry;
+  };
   top_paths: ActivityPath[];
   stores: ActivityStoreState[];
   collector: {
@@ -64,25 +87,35 @@ export type ActivityVisitors = {
 };
 
 // #region days
+/** A day's visitor-days under the toggle: the people only, or the three kinds together. */
+export function countFor(kinds: ActivityKinds, who: ActivityWho): number {
+  return who === 'people' ? kinds.people : kinds.people + kinds.scanners + kinds.self;
+}
+
 /**
  * The graph's series: unique visitors per UTC day (Steve's ask, 13
  * September, "per all unique ips per day"), one line for everybody and one
  * per store, on the point shape the line geometry below already draws.
+ * Under Visitors only every line counts people; under All traffic, all
+ * three kinds (1.0.3.11).
  */
-export function dayLines(days: ActivityDay[], stores: string[]): ActivitySeries[] {
+export function dayLines(
+  days: ActivityDay[],
+  stores: string[],
+  who: ActivityWho = 'all'
+): ActivitySeries[] {
   const all: ActivitySeries = {
     store: 'all',
-    name: 'All visitors',
-    points: days.map((day) => ({ at: day.day, requests: day.visitors, bots: day.bots })),
+    name: who === 'people' ? 'People' : 'All traffic',
+    points: days.map((day) => ({ at: day.day, requests: countFor(day, who), bots: day.scanners })),
   };
   const perStore = stores.map((store) => ({
     store,
     name: store,
-    points: days.map((day) => ({
-      at: day.day,
-      requests: day.by_store.find((entry) => entry.store === store)?.visitors ?? 0,
-      bots: 0,
-    })),
+    points: days.map((day) => {
+      const entry = day.by_store.find((candidate) => candidate.store === store);
+      return { at: day.day, requests: entry ? countFor(entry, who) : 0, bots: 0 };
+    }),
   }));
   return [all, ...perStore];
 }
