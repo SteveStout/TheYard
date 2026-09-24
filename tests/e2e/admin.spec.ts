@@ -537,6 +537,20 @@ test('the activity graph draws at the top of the tab and its response names nobo
   await expect(card.getByTestId('activity-days-table')).toHaveCount(1);
   // The axis is named, and a pointer over the chart reads the day out (1.0.3.14).
   await expect(card.getByTestId('activity-axis-name')).toContainText('Visitor-days per day');
+  // No day label runs into the next, and a part-day says so above the drawing
+  // rather than on the axis, where at a week it ran into the day before (1.0.3.15).
+  const axis = await card.getByTestId('activity-x-label').evaluateAll((labels) => {
+    const boxes = labels.map((label) => label.getBoundingClientRect());
+    return {
+      count: boxes.length,
+      overlaps: boxes.filter(
+        (box, index) => index > 0 && box.left < (boxes[index - 1]?.right ?? -Infinity)
+      ).length,
+    };
+  });
+  expect(axis.count).toBeGreaterThan(1);
+  expect(axis.overlaps).toBe(0);
+  await expect(card.getByTestId('activity-today-note')).toContainText(/today, \d+ h in/);
   await card.getByTestId('activity-graph').hover();
   await expect(card.getByTestId('activity-crosshair')).toHaveCount(1);
   await expect(card.getByTestId('activity-tooltip')).toContainText('People');

@@ -9,6 +9,7 @@ import {
   dayAt,
   labelSpot,
   partialDay,
+  todayNote,
   pathShares,
   stackBands,
   stackCeiling,
@@ -223,6 +224,7 @@ describe('unique visitors per day', () => {
     expect(partialDay(days, now)).toEqual({ index: 1, hours: 16 });
     expect(partialDay(days, new Date('2026-09-14T01:00:00Z'))).toBeNull();
     expect(partialDay([], now)).toBeNull();
+    expect(todayNote(16)).toBe('today, 16 h in');
   });
 
   it('reads the day under a pointer, the nearest point, never off either end', () => {

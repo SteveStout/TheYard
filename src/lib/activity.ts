@@ -323,6 +323,15 @@ export function partialDay(
     : null;
 }
 
+/**
+ * What a part-day says of itself (1.0.3.15): above the drawing at its right
+ * end, and in the crosshair's box, never on the axis, where at a week it ran
+ * into the day before it.
+ */
+export function todayNote(hours: number): string {
+  return `today, ${hours} h in`;
+}
+
 /** The day nearest a point along the drawing, in the drawing's own units, never off either end. */
 export function dayAt(x: number, count: number): number {
   if (count <= 1) return 0;

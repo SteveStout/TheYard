@@ -30,6 +30,7 @@ import {
   sortVisitors,
   stackBands,
   stackCeiling,
+  todayNote,
   xAt,
   yAt,
   type ActivityKind,
@@ -2405,15 +2406,22 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
               x={CHART.left + index * step}
               y={CHART.height - 8}
               textAnchor={index === 0 ? 'start' : index === count - 1 ? 'end' : 'middle'}
+              data-testid="activity-x-label"
             >
-              {report.days[index]
-                ? labelFor(report.days[index].day, report.window) +
-                  (partial !== null && index === partial.index
-                    ? `, today ${partial.hours} h in`
-                    : '')
-                : ''}
+              {report.days[index] ? labelFor(report.days[index].day, report.window) : ''}
             </text>
           ))}
+          {partial !== null && (
+            <text
+              className={styles.axisLabel}
+              x={CHART.width - CHART.right}
+              y={CHART.top - 2}
+              textAnchor="end"
+              data-testid="activity-today-note"
+            >
+              {todayNote(partial.hours)}
+            </text>
+          )}
           {partial !== null && count > 1 && (
             <rect
               className={styles.todayBand}
@@ -2491,9 +2499,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           >
             <strong>
               {labelFor(report.days[hovered].day, '30d')}
-              {partial !== null && partial.index === hovered
-                ? `, today, ${partial.hours} h in`
-                : ''}
+              {partial !== null && partial.index === hovered ? `, ${todayNote(partial.hours)}` : ''}
               : {readingTotal.toLocaleString()}
             </strong>
             {readings.map((reading) => (
