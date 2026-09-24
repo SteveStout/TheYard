@@ -894,7 +894,7 @@ export default function App() {
         {/* Below the docking line the header carries the brand, Reset bids,
             and the hamburger; the docked rail makes it redundant above it. */}
         {!docked && (
-          <header className={styles.header}>
+          <header className={styles.header} data-frame="header">
             <div className={styles.headerInner}>
               <button type="button" className={styles.brand} onClick={goHome}>
                 <BrandMark size={18} className={styles.brandMark} />
@@ -1084,7 +1084,7 @@ export default function App() {
 
         {/* #region footer-version */}
         {build && (
-          <footer className={styles.footer}>
+          <footer className={styles.footer} data-frame="footer">
             <span data-testid="build-version">
               {build.version === 'dev' ? 'dev build' : `v${build.version}`}
             </span>

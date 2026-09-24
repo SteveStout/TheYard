@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   BENCH_CARDS,
   BENCH_QUESTIONS,
-  CARD_SLUGS,
   cardForTile,
-  cardFromAddress,
   findCards,
+  HOUR_RING_MS,
+  hourGlance,
+  msWords,
   neighbours,
-  pinFromAddress,
   TILE_CARD,
-} from './workbench';
+} from './bench';
+import { CARD_SLUGS, cardFromAddress, pinFromAddress } from './workbench';
 
 describe('the workbench (ADR: The Admin tab, as a product, the addendum on the workbench)', () => {
   it('has every card once, under one of the five questions, in the order the slugs are listed', () => {
@@ -70,5 +71,35 @@ describe('the workbench (ADR: The Admin tab, as a product, the addendum on the w
     expect(cardForTile('speed')).toBe('timing');
     expect(cardForTile('visitors')).toBe('activity');
     expect(cardForTile('something new')).toBe('health');
+  });
+});
+
+describe('the hour at a glance, beside the open card', () => {
+  it('reads the hour the strip read, as two rings against ten milliseconds and a readout', () => {
+    const glance = hourGlance({
+      requests: 1234,
+      server_errors: 0,
+      client_errors: 3,
+      p50_ms: 0.6,
+      p95_ms: 5.9,
+    });
+    expect(glance.ring).toEqual({ p95: 5.9, p50: 0.6, max: HOUR_RING_MS });
+    expect(glance.inside).toBe('< 1 ms');
+    expect(glance.rows).toEqual([
+      ['Typical answer', 'under 1 ms'],
+      ['Ninety-fifth', '6 ms'],
+      ['Requests', '1,234'],
+      ['Server errors', '0'],
+      ['Turned away', '3'],
+    ]);
+    expect(glance.label).toContain('against 10 ms');
+  });
+
+  it('says what it has not read rather than drawing a zero', () => {
+    const glance = hourGlance(null);
+    expect(glance.ring).toBeNull();
+    expect(glance.rows.every(([, value]) => value === 'not read yet')).toBe(true);
+    expect(msWords(null)).toBe('none');
+    expect(msWords(12.4)).toBe('12 ms');
   });
 });

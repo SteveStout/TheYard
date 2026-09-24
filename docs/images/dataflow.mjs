@@ -71,7 +71,7 @@ const WRITE_LABELS = { 0: 'POST', 1: 'the domain decides', 2: 'accepted, won, or
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** Greedy word wrap at a character budget; the budget leaves room for Poppins' width. */
+/** Greedy word wrap at a character budget; the budget was set for Poppins' width, which IBM Plex Sans sits inside. */
 function wrap(paragraph, width) {
   const lines = [];
   let line = '';
@@ -129,7 +129,7 @@ const midY = fsY + Math.floor(fsH / 2);
 body.push(`  <path d="M${startX} ${startY} L${startX} ${startY + 20} L855 ${startY + 20} L855 ${midY} L822 ${midY}" class="loop"/>`);
 body.push(`  <text x="${startX + 10}" y="${startY + 16}" class="loop-label">refetch, through the same read path</text>`);
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>TheYard data flow: a vehicle from a JSON file on disk to a card in the browser, and a bid back</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">

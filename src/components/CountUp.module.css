@@ -1,0 +1,15 @@
+/* The finished figure holds the box, unseen, in the same cell as the moving
+   one, so the width never changes while it counts (1.0.3.7's rule). */
+.count {
+  display: inline-grid;
+}
+
+.count > span,
+.count::after {
+  grid-area: 1 / 1;
+}
+
+.count::after {
+  content: attr(data-value);
+  visibility: hidden;
+}

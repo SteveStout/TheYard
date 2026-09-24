@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { INTRO } from '../lib/intro';
-import { HEALTH_WORDS, landingHealth, type LandingHealth } from '../lib/landingHealth';
+import { HEALTH_WORDS, landingHealth, storesUp, type LandingHealth } from '../lib/landingHealth';
 import { proofFigures, type ProofFigure, type TestSummary } from '../lib/landingProof';
 import { landingTiles, type LandingTile } from '../lib/siteMap';
 import { LINKS, MENUS, type DocKey } from './DocsMenu';
+import { CountUp } from './CountUp';
+import { Ring } from './Ring';
 import { NavGlyph } from './SheetIcons';
 import styles from './Landing.module.css';
 
@@ -22,6 +24,9 @@ import styles from './Landing.module.css';
  * document in the dialog, or its first link in a new tab when it has no
  * documents (API Reference, Diagrams).
  */
+/** The two figures that are a share of a whole, and so carry a ring (the operator's look). */
+const RINGED = ['tests', 'stores'];
+
 /** The strip's four places before the gate's counts arrive: the same boxes, blank, so nothing moves when they fill. */
 const PROOF_PLACEHOLDER: ProofFigure[] = ['tests', 'gate', 'records', 'stores'].map((key) => ({
   key,
@@ -45,14 +50,17 @@ export function Landing({
 }) {
   const { featured, groups, rest } = landingTiles();
   const [health, setHealth] = useState<LandingHealth>('reading');
+  const [stores, setStores] = useState<{ up: number; of: number } | null>(null);
   const [summary, setSummary] = useState<TestSummary | null>(null);
   useEffect(() => {
     let live = true;
     fetch('/api/health')
-      .then((r) => (r.ok ? (r.json() as Promise<{ status?: unknown }>) : null))
+      .then((r) => (r.ok ? (r.json() as Promise<{ status?: unknown; checks?: unknown }>) : null))
       .catch(() => null)
       .then((answer) => {
-        if (live) setHealth(landingHealth(answer));
+        if (!live) return;
+        setHealth(landingHealth(answer));
+        setStores(storesUp(answer));
       });
     fetch('/api/tests/summary')
       .then((r) => (r.ok ? (r.json() as Promise<TestSummary>) : null))
@@ -68,7 +76,8 @@ export function Landing({
   const proof = proofFigures(summary, MENUS.records.items.length);
 
   const tile = (entry: LandingTile, large: boolean) => {
-    const className = large ? styles.big : styles.tile;
+    // Every tile is the shared glass with the dark green rule and its brackets (the operator's look).
+    const className = large ? `${styles.big} op-glass` : `${styles.tile} op-glass`;
     const badge = large ? `${styles.badge} ${styles.badgeBig}` : styles.badge;
     const name = entry.kind === 'section' ? entry.section.menu : entry.action.key;
     const icon = entry.kind === 'section' ? entry.section.icon : entry.action.icon;
@@ -168,7 +177,7 @@ export function Landing({
 
   return (
     <section className={styles.landing} aria-labelledby="landing-title" data-testid="landing">
-      <header className={styles.hero}>
+      <header className={`${styles.hero} op-glass`}>
         <h1 id="landing-title" className={styles.heading}>
           Welcome to The Yard
         </h1>
@@ -188,17 +197,43 @@ export function Landing({
         data-testid="landing-proof"
         data-state={proof === null ? 'loading' : 'ready'}
       >
-        {(proof ?? PROOF_PLACEHOLDER).map((figure) => (
-          <li
-            key={figure.key}
-            className={styles.proofItem}
-            data-testid={`landing-proof-${figure.key}`}
-          >
-            <span className={styles.proofFigure}>{figure.figure || '\u00a0'}</span>
-            <span className={styles.proofLabel}>{figure.label || '\u00a0'}</span>
-            <span className={styles.proofDetail}>{figure.detail || '\u00a0'}</span>
-          </li>
-        ))}
+        {(proof ?? PROOF_PLACEHOLDER).map((figure) => {
+          // The stores are read live from the health answer: how many answered, of how many run.
+          const ring =
+            figure.key === 'stores' && stores !== null
+              ? {
+                  value: stores.up,
+                  max: stores.of,
+                  words: `${stores.up} of ${stores.of} stores up`,
+                }
+              : figure.ring;
+          return (
+            <li
+              key={figure.key}
+              className={`${styles.proofItem} op-glass op-tile`}
+              data-testid={`landing-proof-${figure.key}`}
+            >
+              <span className={styles.proofFigure}>
+                <CountUp text={figure.figure || '\u00a0'} />
+              </span>
+              <span className={styles.proofLabel}>{figure.label || '\u00a0'}</span>
+              <span className={styles.proofDetail}>{figure.detail || '\u00a0'}</span>
+              {RINGED.includes(figure.key) && (
+                // Drawn from the first paint, an empty track until its reading
+                // arrives, so the figure's row is its full height from the start.
+                <span className={styles.proofRing}>
+                  <Ring
+                    value={ring?.value ?? 0}
+                    max={ring?.max ?? 1}
+                    size="tile"
+                    label={ring?.words ?? null}
+                    testId={`landing-proof-ring-${figure.key}`}
+                  />
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ul>
       {groups.map((group) => (
         <section

@@ -62,13 +62,13 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" v
 
   <g transform="translate(96, 176)">
     <path d="M44 -84 L8 -8 h34 l-14 60 l70 -96 h-42 l28 -40 z" fill="${palette.goldLight}"/>
-    <text x="124" y="16" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="104" font-weight="700" fill="${palette.goldLight}">TheYard</text>
+    <text x="124" y="16" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="104" font-weight="700" fill="${palette.goldLight}">TheYard</text>
   </g>
 
-  <text x="96" y="296" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="44" font-weight="600" fill="${palette.white}">A working used-vehicle auction site,</text>
-  <text x="96" y="352" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="44" font-weight="600" fill="${palette.white}">built and explained by Steven Stout.</text>
+  <text x="96" y="296" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="44" font-weight="600" fill="${palette.white}">A working used-vehicle auction site,</text>
+  <text x="96" y="352" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="44" font-weight="600" fill="${palette.white}">built and explained by Steven Stout.</text>
 
-  <g font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif">
+  <g font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif">
 ${facts
   .map(([value, label], index) => {
     const x = 96 + index * 344;
@@ -79,22 +79,22 @@ ${facts
   .join('\n')}
   </g>
 
-  <text x="96" y="580" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="${palette.soft}">theyard.stevenstout.biz</text>
-  <text x="1104" y="580" text-anchor="end" font-family="Poppins, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="${palette.soft}">Steven Stout${version ? ` · ${version}` : ''}</text>
+  <text x="96" y="580" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="${palette.soft}">theyard.stevenstout.biz</text>
+  <text x="1104" y="580" text-anchor="end" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="${palette.soft}">Steven Stout${version ? ` · ${version}` : ''}</text>
 </svg>
 `;
 
 writeFileSync('docs/images/og.svg', svg);
 
 // The PNG is what a link preview actually fetches: an SVG og:image is ignored by
-// most unfurlers. Rendered rather than converted, so the Poppins the site uses
-// is the Poppins in the card.
+// most unfurlers. Rendered rather than converted, so the IBM Plex Sans the site uses
+// is the IBM Plex Sans in the card.
 const browser = await chromium.launch({ channel: 'chrome' });
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
 await page.setContent(
   `<!doctype html><html><head><meta charset="utf-8">
    <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
    <style>html,body{margin:0;padding:0;width:1200px;height:630px;overflow:hidden}</style>
    </head><body>${svg}</body></html>`,
   { waitUntil: 'networkidle' }

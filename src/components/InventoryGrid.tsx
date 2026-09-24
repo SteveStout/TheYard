@@ -25,7 +25,7 @@ export function InventoryGrid({
 }: InventoryGridProps) {
   if (vehicles.length === 0) {
     return (
-      <div className={styles.empty}>
+      <div className={`${styles.empty} op-glass`}>
         <p className={styles.emptyTitle}>No vehicles match your filters</p>
         <p className={styles.emptyHint}>Try widening the price range or clearing a filter.</p>
         {onClearFilters && (

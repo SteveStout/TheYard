@@ -86,13 +86,29 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
 
         string served = DocImages.Rewrite(markdown, root);
 
-        Assert.Contains("](/api/docs/images/app-home.jpg)", served);
+        // Each carries its own size after a hash, read from the file, which the request never sends.
+        Assert.Contains("](/api/docs/images/app-home.jpg#1280x800)", served);
         // infrastructure.svg is beside the PNG; toggle-phone has no SVG and stays a PNG.
-        Assert.Contains("](/api/docs/images/infrastructure.svg)", served);
-        Assert.Contains("](/api/docs/images/toggle-phone.png)", served);
+        Assert.Matches(@"\]\(/api/docs/images/infrastructure\.svg#\d+x\d+\)", served);
+        Assert.Matches(@"\]\(/api/docs/images/toggle-phone\.png#\d+x\d+\)", served);
         // A raw-host address that is not a picture, and a picture on another host, are left alone.
         Assert.Contains("(https://raw.githubusercontent.com/SteveStout/TheYard/main/README.md)", served);
         Assert.Contains("(https://example.com/docs/images/app-home.jpg)", served);
+    }
+
+    /// <summary>
+    /// A picture's size comes from its own header, so the page can hold the room
+    /// for it before it arrives (the operator's look: the README's lead picture
+    /// pushed a paragraph off the screen after the first paint).
+    /// </summary>
+    [Fact]
+    public void A_pictures_size_is_read_from_its_own_header()
+    {
+        string images = Path.Combine(Repo.Root(), "docs", "images");
+
+        Assert.Equal((1280, 800), DocImages.SizeOf(Path.Combine(images, "app-home.jpg")));
+        Assert.Equal((1400, 1370), DocImages.SizeOf(Path.Combine(images, "infrastructure.svg")));
+        Assert.Null(DocImages.SizeOf(Path.Combine(images, "nothing-by-this-name.png")));
     }
 
     [Fact]

@@ -49,13 +49,8 @@
   outline-offset: var(--focus-ring-offset);
 }
 
+/* The shared glass with its dark green rule and brackets (the operator's look). */
 .panel {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-glass);
-  box-shadow: var(--glass-shadow);
   padding: var(--space-5);
   max-width: 560px;
   /* Centred. A 560px card pinned to the left of a 1200px canvas reads as a
@@ -109,7 +104,7 @@
   font-weight: var(--weight-medium);
   font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--readout-tracking);
 }
 
 .hint {

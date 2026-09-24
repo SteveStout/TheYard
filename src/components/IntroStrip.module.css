@@ -1,6 +1,7 @@
-/* A slim glass panel with the dark green left edge, over the inventory and
-   never on top of it. Every target in it is 44 pixels tall, because it is in
-   the first screen of a phone (ADR: The glass look). */
+/* A slim glass panel over the inventory and never on top of it, the shared
+   glass with its dark green rule and brackets (the operator's look; the dark
+   green left edge before it). Every target in it is 44 pixels tall, because
+   it is in the first screen of a phone (ADR: The glass look). */
 .strip {
   display: flex;
   flex-wrap: wrap;
@@ -9,13 +10,6 @@
   gap: var(--space-2) var(--space-4);
   margin-bottom: var(--space-5);
   padding: var(--space-3) var(--space-4);
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  border: 1px solid var(--glass-border);
-  border-left: 4px solid var(--color-green-dark);
-  border-radius: var(--radius-glass);
-  box-shadow: var(--glass-shadow);
 }
 
 .sentence {

@@ -88,7 +88,7 @@ function SignInForm({ onAccountChange }: { onAccountChange: (account: Account) =
   }
 
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} op-glass`}>
       <h2 className={styles.heading}>Sign in to bid</h2>
       <p className={styles.lede}>
         Bids belong to an account, so the auction can tell two people apart. Nothing is emailed and
@@ -192,7 +192,7 @@ function ResetForm({
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} op-glass`}>
       <h2 className={styles.heading}>Choose a new password</h2>
       <p className={styles.lede}>
         This link was made for your account and works once, for an hour. Choose a new password and
@@ -270,7 +270,7 @@ function SignedIn({
   }, [account.email]);
 
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} op-glass`}>
       <div className={styles.identity}>
         <div>
           <h2 className={styles.heading}>{account.email}</h2>

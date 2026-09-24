@@ -458,6 +458,34 @@ test('a pin keeps a second card beside the open one, by address, and unpinning d
   await openCard(page, 'errors');
   await expect(page.getByTestId('bench-pinned')).toHaveAttribute('data-card', 'health');
 });
+
+test('the tab reads what the strip and the open card need, and a card is fetched when it is opened (the workbench)', async ({
+  page,
+}) => {
+  const asked: string[] = [];
+  page.on('request', (request) => asked.push(new URL(request.url()).pathname));
+  await openTheYard(page, '/?view=admin&card=health');
+  await expect(page.getByTestId('health-card')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  // Before the workbench every card read on the tab's first paint, which is how
+  // the tab's own reads became most of the slow requests on the site.
+  for (const unread of [
+    '/api/admin/sql',
+    '/api/admin/logs',
+    '/api/admin/store',
+    '/api/admin/experiment',
+    '/api/admin/proof',
+    '/api/admin/telemetry',
+    '/api/admin/azure',
+  ]) {
+    expect(asked, `${unread} read with only health open`).not.toContain(unread);
+  }
+  expect(asked.filter((path) => path.includes('SqlCard'))).toEqual([]);
+  await openCard(page, 'sql');
+  await expect(page.getByTestId('sql-card')).toBeVisible();
+  expect(asked).toContain('/api/admin/sql');
+  expect(asked.filter((path) => path.includes('SqlCard')).length).toBeGreaterThan(0);
+});
 // #endregion workbench
 
 test('the SQL section shows statements and never a parameter value', async ({ page, request }) => {

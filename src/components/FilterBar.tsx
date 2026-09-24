@@ -66,7 +66,7 @@ export function FilterBar({
   const activeCount = countActiveFilters(filters);
 
   return (
-    <section className={styles.bar} aria-label="Search and filters">
+    <section className={`${styles.bar} op-glass`} aria-label="Search and filters">
       <div className={styles.topRow}>
         <div className={styles.search}>
           <svg

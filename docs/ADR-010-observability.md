@@ -100,7 +100,7 @@ Azure can ask about itself.
   and the middleware that records server errors.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health record, the error
   ring buffer and the Azure reader (region azure-events).
-- [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx) and
+- [`src/components/admin/HealthCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/HealthCard.tsx), [`src/components/admin/ErrorsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ErrorsCard.tsx) and
   [`src/components/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.module.css): the three cards.
 - [`api/TheYard.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminEndpointTests.cs): the API proof;
   [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts) and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts):
@@ -114,7 +114,7 @@ Azure can ask about itself.
 ![The Admin tab at 1.0.0.22: three passing health checks with their durations, Azure reporting the container group Running with its last three events, and no server errors recorded](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-admin.jpg)
 
 The health card, from the fetch to the rows
-([`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx)):
+([`src/components/admin/HealthCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/HealthCard.tsx), a chunk of its own since the workbench):
 
-```live path=src/components/AdminPanel.tsx region=health-card
+```live path=src/components/admin/HealthCard.tsx region=health-card
 ```

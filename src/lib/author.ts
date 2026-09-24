@@ -132,7 +132,7 @@ function blocks(section: string): string {
         const [kept, between] = standAlone(block);
         const shape = half[index] ? ' author-block-half' : wide ? ' author-block-wide' : '';
         return (
-          `<section class="author-block${shape}">${pairs(kept)}</section>` +
+          `<section class="author-block${shape} op-glass">${pairs(kept)}</section>` +
           between.map((figure) => `<div class="author-between">${figure}</div>`).join('')
         );
       })
@@ -166,13 +166,13 @@ export function layoutAuthor(html: string): string {
   const sections = top === '' ? parts : parts.slice(1);
   const panels = sections.map((section, index) =>
     index === 0
-      ? `<section class="author-panel author-intro">${intro(section)}</section>`
-      : `<section class="author-panel">${blocks(section)}</section>`
+      ? `<section class="author-panel author-intro op-glass">${intro(section)}</section>`
+      : `<section class="author-panel op-glass">${blocks(section)}</section>`
   );
   const close =
     closing.length === 0
       ? ''
-      : `<section class="author-panel author-close">${closing[0]}</section>`;
+      : `<section class="author-panel author-close op-glass">${closing[0]}</section>`;
   // A second rule opens the small print under the panels: the photographer's credit.
   const credit =
     closing.length < 2 ? '' : `<footer class="author-credit">${closing.slice(1).join('')}</footer>`;

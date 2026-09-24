@@ -22,24 +22,26 @@
 }
 
 .label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: var(--readout-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
 
+.ready {
+  display: inline-flex;
+  align-items: center;
+}
+
 /* The control's height is reserved before the segments exist (1.0.3.7), so the
    band is as tall on the first paint as it is once the server has answered:
-   a segment's minimum plus the two pixels of padding either side. */
+   a segment's minimum plus the two pixels of padding either side. Its border,
+   radius and ground are the site's pill group (.op-seg, the operator's look),
+   which was lifted from this control. */
 .toggle {
-  display: inline-flex;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-full);
-  padding: 2px;
   min-height: calc(var(--store-segment-height) + 6px);
   min-width: 120px;
-  background: var(--color-surface-muted);
 }
 
 .segment {
@@ -85,8 +87,13 @@ a.segment:focus-visible {
   cursor: not-allowed;
 }
 
+/* The note is a reading on a desk (the operator's look): small spaced
+   capitals, the sentence word for word. A phone keeps it a sentence, below. */
 .note {
-  font-size: 0.8rem;
+  font-size: var(--readout-size);
+  font-weight: var(--readout-weight);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
   color: var(--color-text-muted);
 }
 
@@ -109,5 +116,9 @@ a.segment:focus-visible {
   .note {
     flex-basis: 100%;
     min-height: var(--store-note-height);
+    font-size: 0.8rem;
+    font-weight: var(--weight-regular);
+    letter-spacing: normal;
+    text-transform: none;
   }
 }

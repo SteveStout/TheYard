@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchStores, note, segments, type Stores } from '../lib/stores';
+import { Ring } from './Ring';
 import styles from './StoreBar.module.css';
 
 /**
@@ -38,7 +39,7 @@ export function StoreBar() {
           Store
         </span>
         <nav
-          className={styles.toggle}
+          className={`${styles.toggle} op-seg`}
           aria-labelledby="store-bar-label"
           aria-busy={stores === null}
         >
@@ -77,6 +78,22 @@ export function StoreBar() {
             )
           )}
         </nav>
+        {/* The stores that came up, of those this container runs (the
+            operator's look): an empty track until the answer, at its size from
+            the first paint, so the band does not move when it fills. */}
+        <span className={styles.ready}>
+          <Ring
+            value={stores === null ? 0 : stores.stores.filter((store) => store.ready).length}
+            max={stores === null ? 1 : stores.stores.length}
+            size="tiny"
+            label={
+              stores === null
+                ? null
+                : `${stores.stores.filter((store) => store.ready).length} of ${stores.stores.length} stores ready`
+            }
+            testId="store-bar-ready"
+          />
+        </span>
         <span className={styles.note} data-testid="store-bar-note">
           {stores === null ? '' : note(stores)}
         </span>

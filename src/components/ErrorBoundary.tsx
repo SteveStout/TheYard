@@ -32,7 +32,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
       return this.props.children;
     }
     return (
-      <div className={styles.wrap} role="alert" data-testid="render-error">
+      <div className={`${styles.wrap} op-glass op-solid`} role="alert" data-testid="render-error">
         <h1 className={styles.title}>Something went wrong on this page.</h1>
         <p className={styles.body}>
           The inventory is still running. Reload, or go back to the full list and try again.

@@ -1,16 +1,14 @@
 /* A glass panel without the blur (ADR: The glass look, the addendum on every
    surface): there are a hundred of these on a page and a blur is paid for by
-   the pixel, so the card is see-through in its ground only. The photograph in
-   it is solid, as every photograph is. */
+   the pixel, so the card is see-through in its ground only (.op-card). The
+   ground, the rule and the brackets are the shared glass; the photograph's
+   own corners are rounded rather than the card clipping, so the brackets on
+   the card's edge are never cut off. The photograph is solid, as every
+   photograph is. */
 .card {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-glass);
-  overflow: hidden;
-  box-shadow: var(--glass-shadow);
   transition:
     box-shadow var(--transition-fast),
     transform var(--transition-fast),
@@ -27,7 +25,23 @@
   position: relative;
   aspect-ratio: 4 / 3;
   background: var(--color-surface-muted);
+  border-radius: calc(var(--radius-glass) - 1px) calc(var(--radius-glass) - 1px) 0 0;
   overflow: hidden;
+}
+
+/* The countdown's words and its ring, side by side over the photograph. */
+.timing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The ring sits on a white disc so its arc reads over any photograph. */
+.timeRing {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 50%;
+  background: var(--color-surface);
 }
 
 .soldChip {
@@ -126,10 +140,11 @@
 
 .priceLabel {
   display: block;
-  font-size: var(--text-xs);
+  font-size: var(--readout-size);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-faint);
+  letter-spacing: var(--readout-tracking);
+  font-weight: var(--readout-weight);
+  color: var(--color-accent);
 }
 
 .price {

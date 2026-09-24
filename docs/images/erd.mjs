@@ -232,7 +232,7 @@ const relationships = [
 // opens on its own page and empty space at the bottom just means more scrolling
 // before a phone reaches anything (ADR-020).
 const canvasHeight = 880;
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="${canvasHeight}" viewBox="0 0 1400 ${canvasHeight}" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif">
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="${canvasHeight}" viewBox="0 0 1400 ${canvasHeight}" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif">
   <title>TheYard's database: four tables this application owns, seven ASP.NET Core Identity brings, and the two relationships deliberately left unenforced</title>
   <defs>
     <marker id="rel-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">

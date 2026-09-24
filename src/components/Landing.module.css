@@ -23,12 +23,6 @@
   align-self: center;
   max-width: 760px;
   padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-glass);
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  box-shadow: var(--glass-shadow);
 }
 
 /* A page's title, with the gold underline, as Admin, Account and Inventory. */
@@ -102,11 +96,6 @@
   color: inherit;
   text-decoration: none;
   cursor: pointer;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-top: 3px solid var(--color-teal-deep);
-  border-radius: var(--radius-glass);
-  box-shadow: var(--glass-shadow);
   transition:
     box-shadow var(--transition-fast),
     transform var(--transition-fast),
@@ -124,18 +113,21 @@
 }
 
 /* Only a healthy thing is green: the Admin tile while /api/health says
-   healthy, as the Admin tab's own tiles (1.0.1.4: read, no longer assumed). */
-.tile[data-tone='good'],
-.big {
+   healthy, as the Admin tab's own tiles (1.0.1.4: read, no longer assumed).
+   The shared glass draws the rule and the brackets; a tone moves both. */
+.tile[data-tone='good'] {
   border-top-color: var(--color-success);
+  --op-bracket-color: var(--color-success);
 }
 
 .tile[data-tone='warn'] {
   border-top-color: var(--color-warning);
+  --op-bracket-color: var(--color-warning);
 }
 
 .tile[data-tone='bad'] {
   border-top-color: var(--color-danger);
+  --op-bracket-color: var(--color-danger);
 }
 
 /* The health dot and its word, under the Admin tile's line. */
@@ -189,18 +181,35 @@
 }
 
 .proofItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'label label'
+    'figure ring'
+    'detail detail';
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: 2px;
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--glass-border);
-  border-left: 3px solid var(--color-gold);
-  border-radius: var(--radius-glass);
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  box-shadow: var(--glass-shadow);
   min-width: 0;
+}
+
+/* A reading: the label in small spaced capitals over the figure. */
+.proofLabel {
+  grid-area: label;
+}
+
+.proofFigure {
+  grid-area: figure;
+}
+
+.proofDetail {
+  grid-area: detail;
+}
+
+.proofRing {
+  grid-area: ring;
+  display: block;
 }
 
 .proofFigure {
@@ -211,8 +220,10 @@
 }
 
 .proofLabel {
-  font-size: var(--text-sm);
+  font-size: var(--readout-size);
   font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
   color: var(--color-heading);
 }
 

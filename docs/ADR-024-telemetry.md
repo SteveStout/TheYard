@@ -88,9 +88,9 @@ every value silently:
 ```
 
 The card, which renders every state the reader can answer with
-(`src/components/AdminPanel.tsx`):
+(`src/components/admin/TelemetryCard.tsx`, a chunk of its own since the workbench):
 
-```live path=src/components/AdminPanel.tsx region=telemetry-card
+```live path=src/components/admin/TelemetryCard.tsx region=telemetry-card
 ```
 
 The container spec's placeholder, and the roll step that fills it in
@@ -136,7 +136,7 @@ the connection string.
 - [`api/TheYard.Api/Telemetry.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Telemetry.cs): the reader, its query and its shaping.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the registration, the browser-error log, and the Admin endpoint.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the one package this added.
-- [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card and its three states.
+- [`src/components/admin/TelemetryCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TelemetryCard.tsx): the card and its three states.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the placeholder and the roll-time substitution.
 - [`api/TheYard.Tests/TelemetryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TelemetryTests.cs): the off path, the shape of every answer, and the endpoint.
 - [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the card rendering its not-configured state in a browser.

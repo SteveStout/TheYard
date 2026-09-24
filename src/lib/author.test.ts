@@ -22,8 +22,8 @@ describe('the Author page in its shape', () => {
 
   it('opens a panel at every second-level heading, and the first is who he is', () => {
     expect(html.match(/class="author-panel/g)).toHaveLength(3);
-    expect(html).toContain('<section class="author-panel author-intro"><h2>Hi</h2>');
-    expect(html).toContain('<section class="author-panel author-close">');
+    expect(html).toContain('<section class="author-panel author-intro op-glass"><h2>Hi</h2>');
+    expect(html).toContain('<section class="author-panel author-close op-glass">');
   });
 
   it('makes a block of every third-level heading, with no colour of its own to get wrong', () => {
@@ -33,10 +33,14 @@ describe('the Author page in its shape', () => {
 
   it('gives a block with photographs the whole row, and the odd plain one out too', () => {
     expect(html.match(/author-block-wide/g)).toHaveLength(1);
-    expect(html).toMatch(/<section class="author-block author-block-wide"><h3>Rabbits<\/h3>/);
+    expect(html).toMatch(
+      /<section class="author-block author-block-wide op-glass"><h3>Rabbits<\/h3>/
+    );
     const odd = layoutAuthor('<h2>Hi</h2><h2>Away</h2><h3>One</h3><h3>Two</h3><h3>Three</h3>');
     expect(odd.match(/author-block-wide/g)).toHaveLength(1);
-    expect(odd).toContain('<section class="author-block author-block-wide"><h3>Three</h3>');
+    expect(odd).toContain(
+      '<section class="author-block author-block-wide op-glass"><h3>Three</h3>'
+    );
   });
 
   it('sets two neighbouring blocks of one photograph each side by side, unless a photograph stands between them', () => {
@@ -45,9 +49,15 @@ describe('the Author page in its shape', () => {
       `<h2>Hi</h2><h2>Away</h2><h3>Lake</h3>${image}<h3>History</h3>${image}<h3>Games</h3>${image}`
     );
     expect(halves.match(/author-block-half/g)).toHaveLength(2);
-    expect(halves).toContain('<section class="author-block author-block-half"><h3>Lake</h3>');
-    expect(halves).toContain('<section class="author-block author-block-half"><h3>History</h3>');
-    expect(halves).toContain('<section class="author-block author-block-wide"><h3>Games</h3>');
+    expect(halves).toContain(
+      '<section class="author-block author-block-half op-glass"><h3>Lake</h3>'
+    );
+    expect(halves).toContain(
+      '<section class="author-block author-block-half op-glass"><h3>History</h3>'
+    );
+    expect(halves).toContain(
+      '<section class="author-block author-block-wide op-glass"><h3>Games</h3>'
+    );
   });
 
   it('sets two photographs in a row side by side, and the first panel’s beside its words', () => {

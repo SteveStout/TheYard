@@ -27,6 +27,14 @@ describe('renderDocument', () => {
     );
   });
 
+  it("holds a picture's room from the size its address carries, and asks for the picture without it", async () => {
+    const html = await renderDocument('![The app](/api/docs/images/app-home.jpg#1280x800)\n');
+
+    expect(html).toContain(
+      '<img src="/api/docs/images/app-home.jpg" alt="The app" width="1280" height="800" loading="lazy" decoding="async">'
+    );
+  });
+
   it('makes the live domain relative and opens every other link in a new tab', async () => {
     const html = await renderDocument(
       '[here](https://theyard.stevenstout.biz/diagrams/x) and [there](https://github.com/x) and [top](#top)'

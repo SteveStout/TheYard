@@ -2,9 +2,11 @@ import { useState } from 'react';
 import type { Vehicle } from '../lib/types';
 import { auctionTiming, currentPrice, reserveState } from '../lib/auction';
 import type { BidOutcome } from '../lib/data';
-import { formatCountdown, formatCurrency } from '../lib/format';
+import { formatAuctionDateTime, formatCountdown, formatCurrency } from '../lib/format';
 import { AuctionCountdown } from './AuctionCountdown';
+import { Readout } from './Readout';
 import { ReserveBadge } from './ReserveBadge';
+import { Ring } from './Ring';
 import styles from './BidPanel.module.css';
 
 interface BidPanelProps {
@@ -91,7 +93,7 @@ export function BidPanel({
   };
 
   return (
-    <section className={styles.panel} aria-label="Auction">
+    <section className={`${styles.panel} op-glass`} aria-label="Auction">
       <div className={styles.statusRow}>
         {sold ? (
           <span className={styles.soldChip}>Sold</span>
@@ -103,13 +105,57 @@ export function BidPanel({
         </span>
       </div>
 
-      <div className={styles.priceBlock}>
-        <span className={styles.priceLabel}>
-          {sold ? 'Purchase price' : hasBids ? 'Current bid' : 'Starting bid'}
-        </span>
-        <span className={styles.price}>{formatCurrency(currentPrice(vehicle))}</span>
-        <ReserveBadge state={reserve} />
+      <div className={styles.priceRow}>
+        {/* The auction's time as a ring (the operator's look): how much of its
+            window is left, its words inside, gold because it is one series of
+            its own; full and ended once it is over. */}
+        <Ring
+          value={status === 'live' ? timing.endsAt - now : status === 'ended' || sold ? 1 : 0}
+          max={status === 'live' ? timing.endsAt - timing.startsAt : 1}
+          size="page"
+          tone="second"
+          inside={
+            sold
+              ? 'Sold'
+              : status === 'live'
+                ? formatCountdown(timing.endsAt, now)
+                : status === 'ended'
+                  ? 'Ended'
+                  : 'Soon'
+          }
+          label={
+            sold
+              ? 'Sold'
+              : status === 'live'
+                ? `${formatCountdown(timing.endsAt, now)} left of the auction`
+                : status === 'ended'
+                  ? 'The auction has ended'
+                  : `Bidding opens in ${formatCountdown(timing.startsAt, now)}`
+          }
+          testId="bid-ring"
+        />
+        <div className={styles.priceBlock}>
+          <span className={styles.priceLabel}>
+            {sold ? 'Purchase price' : hasBids ? 'Current bid' : 'Starting bid'}
+          </span>
+          <span className={styles.price}>{formatCurrency(currentPrice(vehicle))}</span>
+          <ReserveBadge state={reserve} />
+        </div>
       </div>
+      <Readout
+        rows={[
+          ['Bids', String(vehicle.bid_count)],
+          [status === 'upcoming' ? 'Opens' : 'Opened', formatAuctionDateTime(timing.startsAt)],
+          [
+            status === 'live' || status === 'upcoming' ? 'Ends' : 'Ended',
+            formatAuctionDateTime(timing.endsAt),
+          ],
+          ...(status === 'live' && !sold && !minIsStale
+            ? [['Minimum next', formatCurrency(min)] as const]
+            : []),
+        ]}
+        testId="bid-readout"
+      />
 
       {wonBuyNow && (
         <p className={styles.wonBox}>

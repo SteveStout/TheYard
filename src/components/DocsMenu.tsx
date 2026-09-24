@@ -1208,8 +1208,8 @@ export function DocDialog({
       ref={dialogRef}
       className={
         activeDoc === 'author'
-          ? `${styles.dialog} ${styles.dialogGround} ${styles.dialogWide}`
-          : `${styles.dialog} ${styles.dialogGround}`
+          ? `${styles.dialog} ${styles.dialogGround} ${styles.dialogWide} op-glass op-solid op-inset`
+          : `${styles.dialog} ${styles.dialogGround} op-glass op-solid op-inset`
       }
       aria-label={DOCS[activeDoc].title}
       onClose={onClose}

@@ -96,6 +96,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  padding: var(--space-3);
 }
 
 .mainImage {
@@ -116,14 +117,17 @@
   overflow-x: auto;
 }
 
+/* A photograph's thumbnail is a control, so it is round like every other
+   control (the operator's look: nothing square), a circle cut from the
+   middle of the photograph, as the landing page's badges are. */
 .thumb {
   appearance: none;
   padding: 0;
   border: 2px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   overflow: hidden;
-  width: 88px;
-  aspect-ratio: 4 / 3;
+  width: 64px;
+  aspect-ratio: 1 / 1;
   cursor: pointer;
   background: var(--color-surface-muted);
   flex-shrink: 0;
@@ -156,14 +160,9 @@
   font-size: var(--text-sm);
 }
 
+/* The shared glass with its dark green rule and brackets (the operator's look). */
 .card {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-glass);
   padding: var(--space-5);
-  box-shadow: var(--glass-shadow);
 }
 
 .sectionTitle {
@@ -182,30 +181,36 @@
   gap: var(--space-3) var(--space-6);
 }
 
+/* The specifications are a reading (the operator's look): small spaced
+   capitals with tabular figures, the label in the accent, a hairline under
+   each row, as the Readout block draws them. */
 .specRow {
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: var(--space-1);
+  font-size: var(--readout-size);
+  font-weight: var(--readout-weight);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
 }
 
 .specLabel {
-  color: var(--color-text-faint);
-  font-size: var(--text-sm);
+  color: var(--color-accent);
 }
 
 .specValue {
   margin: 0;
-  font-weight: var(--weight-medium);
+  color: var(--color-heading);
   text-align: right;
 }
 
 .specValueMono {
   margin: 0;
-  font-family: Consolas, 'SF Mono', Menlo, monospace;
-  font-size: var(--text-sm);
+  color: var(--color-heading);
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .conditionHeader {

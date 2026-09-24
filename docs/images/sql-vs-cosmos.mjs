@@ -35,7 +35,7 @@ const STYLE = `
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** Greedy word wrap at a character budget; the budget leaves room for Poppins' width. */
+/** Greedy word wrap at a character budget; the budget was set for Poppins' width, which IBM Plex Sans sits inside. */
 function wrap(paragraph, width) {
   const lines = [];
   let line = '';
@@ -296,7 +296,7 @@ const footer = captions
   .map((line, j) => `  <text x="40" y="${lanesBottom + 46 + 20 * j}" class="caption">${esc(line)}</text>`)
   .join('\n');
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>SQL Server and Cosmos DB, side by side: the same application on Azure SQL Database (left) and Azure Cosmos DB (right), row by row</title>
   <defs>
     <style>${STYLE}    </style>
@@ -331,7 +331,7 @@ if (process.argv.includes('--png')) {
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 2 });
   await page.setContent(
     `<!doctype html><html><head>
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
       <style>html,body{margin:0;background:#e9e6e7}</style>
     </head><body>${svg}</body></html>`,
     { waitUntil: 'networkidle' }

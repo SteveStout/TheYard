@@ -1,0 +1,44 @@
+/* The readout block (ADR: The glass look, the addendum on the operator's look):
+   every size, spacing and weight is a token from the operator-look region. */
+.readout {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--readout-size);
+  font-weight: var(--readout-weight);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.row dt {
+  margin: 0;
+  color: var(--color-accent);
+}
+
+.row dd {
+  margin: 0;
+  color: var(--color-heading);
+  text-align: right;
+}
+
+.across {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
+
+.across .row {
+  border-bottom: 0;
+  padding-bottom: 0;
+  gap: var(--space-2);
+}

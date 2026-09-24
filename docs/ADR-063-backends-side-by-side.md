@@ -72,7 +72,7 @@ the store, the cold start, the store check, the seed with its charge, the
 catalogue and bid loads, the requests window, the seven routes a visitor
 actually takes, and the store operations window:
 
-```live path=src/components/AdminPanel.tsx region=comparison
+```live path=src/components/admin/BackendsCard.tsx region=comparison
 ```
 
 ## What it looks like
@@ -207,7 +207,7 @@ line with the request units and the fan-out count beside the percentiles:
 - [`api/TheYard.Api/Peer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Peer.cs): the peer reader and the route grouping.
 - [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the startup timings and the store window.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the endpoint and the metrics it relays.
-- [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card, and the Timing card's two store lines.
+- [`src/components/admin/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard.tsx) and [`src/components/admin/TimingCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TimingCard.tsx): the card, and the Timing card's two store lines.
 - [`src/lib/metrics.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.ts): the Timing card's words, with [`src/lib/metrics.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.test.ts) beside it.
 - [`api/TheYard.Tests/PeerTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PeerTests.cs): down first, up last.
 - [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the second container group, with its peer setting.

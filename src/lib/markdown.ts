@@ -43,7 +43,12 @@ marked.use({
     image({ href, title, text }) {
       const alt = text.replace(/"/g, '&quot;');
       const caption = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
-      return `<img src="${href}" alt="${alt}"${caption} loading="lazy" decoding="async">`;
+      // The served address carries the picture's size after a hash (DocImages.Rewrite): it becomes the
+      // width and height, so the room is held before the picture arrives and nothing under it moves.
+      const sized = /^(.*)#(\d+)x(\d+)$/.exec(href);
+      const src = sized ? sized[1] : href;
+      const size = sized ? ` width="${sized[2]}" height="${sized[3]}"` : '';
+      return `<img src="${src}" alt="${alt}"${caption}${size} loading="lazy" decoding="async">`;
     },
   },
 });

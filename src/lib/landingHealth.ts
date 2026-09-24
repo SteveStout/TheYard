@@ -19,3 +19,19 @@ export const HEALTH_WORDS: Record<LandingHealth, { word: string; tone?: 'good' |
     degraded: { word: 'Degraded', tone: 'warn' },
     unreachable: { word: 'Unreachable', tone: 'bad' },
   };
+
+/**
+ * The stores the site runs and how many answered, from the same health answer:
+ * one check per store, named "database" and "database (the store)" (ADR: One
+ * container, both stores). Null when there is no answer to read.
+ */
+export function storesUp(
+  answer: { status?: unknown; checks?: unknown } | null
+): { up: number; of: number } | null {
+  if (answer === null || !Array.isArray(answer.checks)) return null;
+  const stores = (answer.checks as { name?: unknown; status?: unknown }[]).filter(
+    (check) => typeof check.name === 'string' && check.name.startsWith('database')
+  );
+  if (stores.length === 0) return null;
+  return { up: stores.filter((check) => check.status === 'pass').length, of: stores.length };
+}

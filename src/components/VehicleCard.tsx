@@ -1,7 +1,8 @@
 import type { Vehicle } from '../lib/types';
 import { auctionTiming, currentPrice, reserveState } from '../lib/auction';
-import { capitalize, formatCurrency, formatOdometer } from '../lib/format';
+import { capitalize, formatCountdown, formatCurrency, formatOdometer } from '../lib/format';
 import { AuctionCountdown } from './AuctionCountdown';
+import { Ring } from './Ring';
 import { ConditionBadge } from './ConditionBadge';
 import { ReserveBadge } from './ReserveBadge';
 import { TitleStatusBadge } from './TitleStatusBadge';
@@ -36,14 +37,28 @@ export function VehicleCard({
   const alt = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
 
   return (
-    <article className={styles.card}>
+    <article className={`${styles.card} op-glass op-card`}>
       <div className={styles.media}>
         <VehicleImage src={vehicle.images[0]} alt={alt} fallbackLabel={alt} />
         <div className={styles.mediaOverlay}>
           {sold ? (
             <span className={styles.soldChip}>{isWon ? 'Sold to you' : 'Sold'}</span>
           ) : (
-            <AuctionCountdown timing={timing} now={now} variant="overlay" />
+            <span className={styles.timing}>
+              <AuctionCountdown timing={timing} now={now} variant="overlay" />
+              {timing.status === 'live' && (
+                // The time left as a share of the auction's length, beside the words that say it (the operator's look).
+                <span className={styles.timeRing}>
+                  <Ring
+                    value={timing.endsAt - now}
+                    max={timing.endsAt - timing.startsAt}
+                    size="small"
+                    tone="second"
+                    label={`${formatCountdown(timing.endsAt, now)} left of the auction`}
+                  />
+                </span>
+              )}
+            </span>
           )}
           {isHighBidder && !sold && <span className={styles.highBidder}>High bidder</span>}
           {isOutbid && !sold && <span className={styles.outbid}>Outbid</span>}

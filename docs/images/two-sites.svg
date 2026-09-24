@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="848" viewBox="0 0 1520 848" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="848" viewBox="0 0 1520 848" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>TheYard's two sites: two names at Wix, one Netlify edge, two web apps on one App Service plan on Azure, and both stores behind both</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">

@@ -137,7 +137,7 @@ container.
 - [`api/TheYard.Api/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Logs.cs): how a request or a log line becomes an event, the collector, the logging provider and the report.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the wiring beside the rings, the hook beside the request ring, and the keyed endpoint.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs) and [`infra/cosmos/logs.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/logs.json): the adapter and the container it needs.
-- [`src/lib/logs.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/logs.ts) and [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card.
+- [`src/lib/logs.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/logs.ts) and [`src/components/admin/KeptLogsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/KeptLogsCard.tsx): the card.
 - [`api/TheYard.Tests/LogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LogTests.cs) and [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the cleaning, the collector, the provider, the endpoint, and the at sign that is never there.
 
 ```live path=api/TheYard.Api/Logs.cs region=collector

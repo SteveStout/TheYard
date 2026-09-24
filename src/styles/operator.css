@@ -1,0 +1,157 @@
+/*
+ * The operator's look (ADR: The glass look, the addendum on the operator's
+ * look): one shared class per shape, drawn from the tokens' operator-look
+ * region and applied by name, so no component draws its own bracket, rule,
+ * radius or segment. Imported once, from main.tsx, after tokens.css.
+ *
+ * .op-glass   a panel or a card: the glass, the dark green top rule, and two
+ *             corner brackets in the rule's colour that follow the radius (an
+ *             arc, never an L), top left and bottom right.
+ * .op-tile    a stat tile: the same, with the gold rule and smaller brackets.
+ * .op-rail    a rail down the side: the top left bracket only.
+ * .op-seg     a pill group: a rounded border round the segments, the chosen
+ *             one filled with the accent and written in white.
+ */
+
+/* #region op-glass */
+.op-glass {
+  position: relative;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border);
+  border-top: var(--rule-panel);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--glass-shadow);
+}
+
+.op-glass::before,
+.op-glass::after {
+  content: '';
+  position: absolute;
+  width: var(--bracket-size);
+  height: var(--bracket-size);
+  border-color: var(--op-bracket-color, var(--rule-panel-color));
+  border-style: solid;
+  pointer-events: none;
+}
+
+.op-glass::before {
+  left: -1px;
+  top: calc(-1 * var(--rule-width));
+  border-width: var(--rule-width) 0 0 var(--bracket-stroke);
+  border-top-left-radius: var(--radius-glass);
+}
+
+.op-glass::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 var(--bracket-stroke) var(--bracket-stroke) 0;
+  border-bottom-right-radius: var(--radius-glass);
+}
+
+.op-tile {
+  --bracket-size: var(--bracket-size-tile);
+  --op-bracket-color: var(--rule-tile-color);
+  border-top: var(--rule-tile);
+}
+
+.op-rail {
+  --bracket-size: var(--bracket-size-rail);
+}
+
+/* A panel read on white rather than over the page: a document's dialog. */
+.op-solid {
+  background: var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* A panel that clips what it holds (a dialog that contains its own ground):
+   the brackets stand just inside its edge, where they are not cut off. */
+.op-inset::before {
+  top: 0;
+  left: 0;
+  border-width: 0 0 0 var(--bracket-stroke);
+  border-top-left-radius: calc(var(--radius-glass) - 1px);
+}
+
+.op-inset::after {
+  right: 0;
+  bottom: 0;
+  border-bottom-right-radius: calc(var(--radius-glass) - 1px);
+}
+
+/* A card that is one of a hundred on a page is glass in its ground only: a blur
+   is paid for by the pixel (VehicleCard's reason, ADR: The glass look). */
+.op-card {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.op-rail::after {
+  display: none;
+}
+
+/* A phone's smaller type sits on a touch more fill. */
+@media (max-width: 600px) {
+  .op-glass {
+    background: var(--glass-bg-phone);
+  }
+}
+/* #endregion op-glass */
+
+/* #region op-seg */
+.op-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.op-seg > button,
+.op-seg > a {
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.op-seg > [aria-pressed='true'],
+.op-seg > [aria-current='page'] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* A group with more words than a phone's width holds (the Admin tab's windows,
+   .op-seg-wrap) lets its segments go to a second line as pills of their own,
+   rather than one pill stretched round two lines. */
+@media (max-width: 599px) {
+  .op-seg.op-seg-wrap {
+    gap: var(--space-2);
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .op-seg.op-seg-wrap > button,
+  .op-seg.op-seg-wrap > a {
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-surface);
+  }
+
+  .op-seg.op-seg-wrap > [aria-pressed='true'],
+  .op-seg.op-seg-wrap > [aria-current='page'] {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+  }
+}
+/* #endregion op-seg */

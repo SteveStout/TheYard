@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="2429" viewBox="0 0 1520 2429" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="2429" viewBox="0 0 1520 2429" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>SQL Server and Cosmos DB, side by side: the same application on Azure SQL Database (left) and Azure Cosmos DB (right), row by row</title>
   <defs>
     <style>

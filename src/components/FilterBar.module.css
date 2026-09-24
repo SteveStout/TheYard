@@ -1,17 +1,10 @@
-/* A glass panel with the dark green left edge: a deliberate border, the one
-   place on this page the dark green draws (ADR: The glass look). */
+/* The shared glass with its dark green rule and brackets (the operator's look;
+   a dark green left edge before it, ADR: The glass look). */
 .bar {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  border: 1px solid var(--glass-border);
-  border-left: 4px solid var(--color-green-dark);
-  border-radius: var(--radius-glass);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  box-shadow: var(--glass-shadow);
   margin-bottom: var(--space-5);
 }
 
@@ -75,7 +68,7 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--readout-tracking);
   color: var(--color-text-faint);
 }
 
@@ -150,9 +143,14 @@
   padding-top: var(--space-3);
 }
 
+/* The count is a reading (the operator's look): small spaced capitals with
+   tabular figures, in the heading colour. */
 .count {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  color: var(--color-heading);
+  font-size: var(--readout-size);
+  font-weight: var(--readout-weight);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
 }
 
 .clear {
@@ -164,7 +162,7 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
 }
 
 .clear:hover {

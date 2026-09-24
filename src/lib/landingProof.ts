@@ -32,7 +32,17 @@ export type TestSummary = {
   suites: TestSuiteCount[];
 };
 
-export type ProofFigure = { key: string; figure: string; label: string; detail: string };
+export type ProofFigure = {
+  key: string;
+  figure: string;
+  label: string;
+  detail: string;
+  /** A ring beside the figure where it is a share of a whole (the operator's look). */
+  ring?: ProofRing;
+};
+
+/** A share of a whole for a ring, and the words a screen reader hears for it. */
+export type ProofRing = { value: number; max: number; words: string };
 
 /** The store passes rerun the same tests on the other store, so the headline count is the gate's own once. */
 const COUNTED_ONCE = ['vitest', 'xunit-sqlite', 'xunit-live', 'browser-sqlite'];
@@ -53,6 +63,7 @@ export function proofFigures(summary: TestSummary | null, records: number): Proo
   const counted = summary.suites.filter((suite) => COUNTED_ONCE.includes(suite.id));
   const tests = counted.reduce((total, suite) => total + suite.passed, 0);
   const failed = summary.suites.reduce((total, suite) => total + suite.failed, 0);
+  const countedFailed = counted.reduce((total, suite) => total + suite.failed, 0);
   const carried = summary.suites.filter((suite) => suite.carried);
   const stores = summary.suites.filter(
     (suite) => suite.id === 'xunit-cosmos' || suite.id === 'browser-cosmos'
@@ -63,6 +74,11 @@ export function proofFigures(summary: TestSummary | null, records: number): Proo
       figure: figures(tests),
       label: failed === 0 ? 'tests green' : `tests, ${plural(failed, 'failure')}`,
       detail: 'xUnit, Vitest and Playwright, every version',
+      ring: {
+        value: tests,
+        max: tests + countedFailed,
+        words: `${figures(tests)} of ${figures(tests + countedFailed)} tests passed`,
+      },
     },
     {
       key: 'gate',

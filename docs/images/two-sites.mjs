@@ -33,7 +33,7 @@ const STYLE = `
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** Greedy word wrap at a character budget; the budget leaves room for Poppins' width. */
+/** Greedy word wrap at a character budget; the budget was set for Poppins' width, which IBM Plex Sans sits inside. */
 function wrap(paragraph, width) {
   const lines = [];
   let line = '';
@@ -152,7 +152,7 @@ arrow(`M${groupSql.right} ${groupSql.midY + 16} L${gx} ${groupSql.midY + 16} L${
 arrow(`M${groupCosmos.right} ${groupCosmos.midY + 16} L${gx + 24} ${groupCosmos.midY + 16} L${gx + 24} ${groupSql.midY + 40} L${groupSql.right + 2} ${groupSql.midY + 40}`, 'loop');
 label('the Store bar: each site links to the other, at the same page', groupSql.right - 372, groupSql.bottom + 30, 'loop-label');
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Poppins, 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>TheYard's two sites: two names at Wix, one Netlify edge, two web apps on one App Service plan on Azure, and both stores behind both</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
@@ -201,7 +201,7 @@ if (process.argv.includes('--png')) {
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 2 });
   await page.setContent(
     `<!doctype html><html><head>
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
       <style>html,body{margin:0;background:#e9e6e7}</style>
     </head><body>${svg}</body></html>`,
     { waitUntil: 'networkidle' }

@@ -1023,7 +1023,8 @@ app.MapScalarApiReference(ApiDocument.ReferenceRoute, options => options
     .WithOpenApiRoutePattern("/api/openapi/{documentName}.json")
     .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
     .AddPreferredSecuritySchemes(ApiDocument.BearerScheme)
-    .DisableDefaultFonts());
+    .DisableDefaultFonts()
+    .WithCustomCss(ApiDocument.ReferenceCss));
 // #endregion api-document-routes
 #endregion composition
 

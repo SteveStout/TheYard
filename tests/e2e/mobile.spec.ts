@@ -152,7 +152,7 @@ test('the phone header has its own decision record, reachable from the drawer', 
   ).toBeVisible();
 });
 
-test('the Admin tiles are two to a row on a phone and nothing on the tab is wider than the phone', async ({
+test('the Admin tiles are four to a row on a phone and nothing on the tab is wider than the phone', async ({
   page,
 }) => {
   // The traffic card open and the machines card pinned under it: the two widest cards on the tab.
@@ -161,16 +161,18 @@ test('the Admin tiles are two to a row on a phone and nothing on the tab is wide
   await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
     timeout: 45_000,
   });
-  const first = await strip.getByTestId('tile-version').boundingBox();
-  const second = await strip.getByTestId('tile-health').boundingBox();
-  const third = await strip.getByTestId('tile-pages').boundingBox();
-  // Two on the first row, side by side and the same size, and the third under the first.
-  expect(first?.y).toBe(second?.y);
-  expect(first?.width).toBe(second?.width);
-  expect(first?.height).toBe(second?.height);
-  expect(third?.x).toBe(first?.x);
-  expect(third?.y ?? 0).toBeGreaterThan(first?.y ?? 0);
-  expect((second?.x ?? 0) + (second?.width ?? 0)).toBeLessThanOrEqual(375);
+  // Two rows of four (the workbench): the first four side by side and the same size, the fifth under the first,
+  // in the strip's own order (version, health, pages, speed, then visitors to start the second row).
+  const tiles = strip.locator('li > [data-testid^="tile-"]');
+  await expect(tiles).toHaveCount(8);
+  const boxes = await Promise.all([0, 1, 2, 3, 4].map((index) => tiles.nth(index).boundingBox()));
+  for (const box of boxes.slice(1, 4)) {
+    expect(box?.y).toBe(boxes[0]?.y);
+    expect(box?.width).toBe(boxes[0]?.width);
+  }
+  expect(boxes[4]?.x).toBe(boxes[0]?.x);
+  expect(boxes[4]?.y ?? 0).toBeGreaterThan(boxes[0]?.y ?? 0);
+  expect((boxes[3]?.x ?? 0) + (boxes[3]?.width ?? 0)).toBeLessThanOrEqual(375);
   // The traffic card's four numbers wear the same look and keep the same rule: two to a row.
   const stats = page.getByTestId('traffic-stats');
   await expect(stats).toBeVisible({ timeout: 60_000 });
@@ -182,8 +184,36 @@ test('the Admin tiles are two to a row on a phone and nothing on the tab is wide
   expect(slow?.x).toBe(requests?.x);
   expect(slow?.y ?? 0).toBeGreaterThan(requests?.y ?? 0);
   expect((typical?.x ?? 0) + (typical?.width ?? 0)).toBeLessThanOrEqual(375);
-  // The machines have read by now, so the widest things on the tab are drawn: charts and tables scroll inside their cards.
+  // The pinned card is a fold under the open one on a phone; unfolded, the widest things on the tab are drawn,
+  // and charts and tables scroll inside their cards.
+  await page.getByTestId('bench-pin-fold').click();
   await expect(page.getByTestId('machines-card')).toBeVisible({ timeout: 60_000 });
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(overflow).toBe(0);
+});
+
+test('on a phone the Admin cards are a drawer behind the Cards button, and a card chosen there opens (the workbench)', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=timing');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
+  // No rail beside the card on a phone: it is behind a thumb-sized button.
+  await expect(page.getByTestId('bench-rail')).toHaveCount(0);
+  const cards = page.getByTestId('bench-cards');
+  await expect(async () => {
+    expect((await cards.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+  }).toPass();
+  await cards.click();
+  const drawer = page.getByRole('dialog', { name: 'Admin cards' });
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByTestId('bench-link-timing')).toHaveAttribute('aria-current', 'page');
+  await drawer.getByTestId('bench-link-errors').click();
+  await expect(drawer).toBeHidden();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'errors');
+  await expect(page).toHaveURL(/[?&]card=errors(&|$)/);
+  // Nothing on the tab is wider than the phone with the drawer's button in the bar.
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
   );

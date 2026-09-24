@@ -73,7 +73,7 @@ On the Cosmos container the SQL card is replaced by this one. On the relational
 container this endpoint answers an empty list and the SQL card stays. One
 image, one page, and the page shows whichever store it is on:
 
-```live path=src/components/AdminPanel.tsx region=store-card
+```live path=src/components/admin/StoreCard.tsx region=store-card
 ```
 
 The cold start is the first thing in the log: four `ReadContainer` metadata
@@ -165,6 +165,6 @@ page.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): the wrapper every operation goes through.
 - [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the ring and the window's numbers.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the endpoint, and the request charge in the metrics.
-- [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx): the card.
+- [`src/components/admin/StoreCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/StoreCard.tsx): the card.
 - [`api/TheYard.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminObservabilityTests.cs): the canary, on both stores.
 - [`docs/ADR-043-what-the-database-is-doing.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-043-what-the-database-is-doing.md): the SQL card this one is the sibling of.

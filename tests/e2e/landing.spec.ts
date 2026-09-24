@@ -60,6 +60,15 @@ for (const viewport of [
       await expect(page.getByTestId('landing-proof-tests')).toContainText(/\d[\d,]* *tests/);
       await expect(page.getByTestId('landing-proof-gate')).toContainText('one gate');
       await expect(page.getByTestId('landing-proof-records')).toContainText('decision records');
+      // The two figures that are a share of a whole carry a ring, its number in words (the operator's look).
+      await expect(page.getByTestId('landing-proof-ring-tests')).toHaveAttribute(
+        'aria-label',
+        /^[\d,]+ of [\d,]+ tests passed$/
+      );
+      await expect(page.getByTestId('landing-proof-ring-stores')).toHaveAttribute(
+        'aria-label',
+        /^\d of \d stores up$/
+      );
 
       // The resume is a large tile, and it opens the PDF this site serves.
       const resume = page.getByTestId('landing-tile-resume');

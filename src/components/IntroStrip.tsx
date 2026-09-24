@@ -39,7 +39,11 @@ export function IntroStrip({
   };
 
   return (
-    <aside className={styles.strip} aria-label="About this site" data-testid="intro-strip">
+    <aside
+      className={`${styles.strip} op-glass`}
+      aria-label="About this site"
+      data-testid="intro-strip"
+    >
       <p className={styles.sentence}>{INTRO.sentence}</p>
       <div className={styles.links}>
         {INTRO.links.map((link) =>

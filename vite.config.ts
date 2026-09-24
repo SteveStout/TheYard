@@ -3,22 +3,23 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // #region font-preload
-// The four Poppins files are named in src/styles/fonts.css, which the browser
-// only reads after it has fetched the stylesheet, so on a cold visit the type
-// is discovered one round trip late: measured on the live sites on 2026-09-22,
-// the four files started about 150 ms after the CSS and each took another
-// 140 to 165 ms. A preload link in the head starts them with the stylesheet
-// instead. They are 32 KB in all and every one of them paints on the first
-// screen (body, medium, semibold and bold), so none of this is speculative.
+// The type file (IBM Plex Sans since 1.0.3.19, one variable file for its four
+// weights; the four Poppins files before it) is named in src/styles/fonts.css,
+// which the browser only reads after it has fetched the stylesheet, so on a
+// cold visit the type is discovered one round trip late: measured on the live
+// sites on 2026-09-22, the Poppins files started about 150 ms after the CSS and
+// each took another 140 to 165 ms. A preload link in the head starts it with
+// the stylesheet instead. It is 29 KB and every weight in it paints on the
+// first screen (body, medium, semibold and bold), so none of this is
+// speculative.
 //
-// The names are read from the build's own output rather than written here,
-// because Vite hashes them. The dev server has no bundle, so there the four
-// source paths are what the page asks for; they are written out rather than
-// read off the disk because this project carries no @types/node and is not
-// adding it for four strings. A drift between this list and the files is
-// caught by fonts.spec.ts, which counts the links and reads the faces the
-// page actually painted with.
-const WEIGHTS = [400, 500, 600, 700];
+// The name is read from the build's own output rather than written here,
+// because Vite hashes it. The dev server has no bundle, so there the source
+// path is what the page asks for; it is written out rather than read off the
+// disk because this project carries no @types/node and is not adding it for
+// one string. A drift between this and the file is caught by fonts.spec.ts,
+// which counts the links and reads the face the page actually painted with.
+const FACES = ['ibm-plex-sans-latin'];
 
 function preloadTheFonts(): Plugin {
   return {
@@ -32,7 +33,7 @@ function preloadTheFonts(): Plugin {
         const hrefs: string[] =
           built.length > 0
             ? built.map((file: string) => `/${file}`)
-            : WEIGHTS.map((weight) => `/src/assets/fonts/poppins-latin-${weight}.woff2`);
+            : FACES.map((face) => `/src/assets/fonts/${face}.woff2`);
         return {
           html,
           tags: hrefs.sort().map((href) => ({
@@ -90,10 +91,12 @@ export default defineConfig({
     // the palette file raw to measure its contrast, and ribbons.test.ts reads
     // the ribbon sheet raw to hold its performance rules, so those go through,
     // and from 1.0.3.10 icons.test.ts reads every component sheet raw for a
-    // stroke written in a number of its own, so those go through as well.
+    // stroke written in a number of its own, so those go through as well, and
+    // operator.test.ts reads the operator's look's shared sheet raw.
     css: {
       include: [
         /tokens\.css\?raw$/,
+        /operator\.css\?raw$/,
         /Ribbons\.module\.css\?raw$/,
         /components\/[^/]+\.module\.css\?raw$/,
       ],

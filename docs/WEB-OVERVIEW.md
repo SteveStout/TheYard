@@ -13,7 +13,7 @@ to the page moved; this one is the page as it stands at 1.0.0.144.
 | The script | One bundle, named by a hash of its contents | about 90 KB (314,334 bytes built) | a year, `immutable`; a new build is a new name |
 | The document renderer | `marked` and highlight.js, a chunk of its own since 1.0.0.141 | 117,430 bytes built, fetched with the first document a reader opens and never on the inventory page | a year |
 | The stylesheet | One file, hashed | about 8.5 KB | a year |
-| The type | Four Poppins files served from `/assets` since 1.0.0.140, in place of Google Fonts | about 8 KB each | a year |
+| The type | One IBM Plex Sans file for its four weights, served from `/assets` (four Poppins files from 1.0.0.140 to 1.0.3.18), in place of Google Fonts | 29 KB (Poppins about 8 KB each) | a year |
 | The photographs | A WebP copy at 480 and 1280 wide offered first through a `picture` element, the JPEG pair as the fallback | 15 to 37 KB each at 480 | a day |
 | The data | JSON from `/api`, the listing of 100 vehicles the largest at about 13.7 KB | | never; every API read is forwarded to the container |
 
@@ -38,7 +38,7 @@ The four waves were the same on every round of both sites:
    landing, both from the site's own domain over the same HTTP/2 connection. The stylesheet, 8.5 KB,
    is the only thing the first paint waits for: on all six rounds the first paint came 5 to 9 ms
    after the stylesheet finished.
-3. **What those two name.** The stylesheet asks for the four Poppins files, about 8 KB each at the
+3. **What those two name.** The stylesheet asks for the type (four Poppins files when this was measured, about 8 KB each; one IBM Plex Sans file of 29 KB since), at the
    highest priority; the script asks for six API reads at once: stores, bids, filter values,
    version, who is signed in, and the listing of 100 vehicles. The first contentful paint lands
    inside this wave on every round.
@@ -133,6 +133,6 @@ were sent, and the paint marks between them.
 
 - [`scripts/load-order.cjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/load-order.cjs): the script that produced every number in the load order above.
 - [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the document, and the one script it names.
-- [`src/styles/fonts.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/fonts.css): the four faces, declared once and hashed by the build.
+- [`src/styles/fonts.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/fonts.css): the face, one file for its four weights, declared once and hashed by the build.
 - [`src/components/VehicleImage.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleImage.tsx): the `picture` element that offers the WebP pair first.
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the edge that compresses and forwards.

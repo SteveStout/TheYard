@@ -6,7 +6,8 @@
  * The palette is Figma's "Urban slate" (ADR-016): five colors, gray, brown
  * and blue, from foggy cityscapes. Where a shade had to be deepened so text
  * clears WCAG AA, the note beside it says which of the five it came from.
- * Type stays Poppins, buttons stay pills.
+ * Buttons stay pills. The type is IBM Plex Sans since 1.0.3.19, the one face
+ * for the whole site; Poppins was the face before it.
  *
  * Since 1.0.0.169 the accent family is teal, dark green and gold, on the same
  * grounds and with the same text colours (ADR-016, the addendum on teal, dark
@@ -175,6 +176,9 @@
      body's 1.5 line height, held from the first paint, because the row
      arrived with /api/stores and moved the page 38 px in half the runs. */
   --store-note-height: 38px;
+  /* An Admin card while its chunk is on the way (the workbench): about a card's
+     first screen, so the page under it does not jump when it lands. */
+  --admin-card-loading-height: 360px;
   /* #endregion reserved-heights */
   /* #region controls */
   /* One height per kind of control (1.0.3.9): a pill is a chooser, a back
@@ -208,6 +212,8 @@
   --rail-width-collapsed: 64px;
   /* The Admin workbench's own rail of cards, beside the site's (1.0.3.18). */
   --bench-rail-width: 260px;
+  /* And the hour at a glance beside its card on a wide desk. */
+  --bench-hour-width: 260px;
   /* #endregion rail-widths */
 
   /* Radius: cards 16px, controls 8px, buttons pill */
@@ -217,7 +223,12 @@
   --radius-full: 999px;
 
   /* Typography */
-  --font-sans: 'Poppins', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  /* Code listings, and only code: a document's samples, the SQL a card shows and
+     an error's stack keep a monospaced face, because code reads like code (ADR:
+     Code that reads like code). Every other reading is the one face with tabular
+     figures, which the body sets once below. */
+  --font-code: Consolas, 'SF Mono', Menlo, ui-monospace, monospace;
   --text-xs: 12px;
   --text-sm: 13px;
   --text-base: 14px;
@@ -242,7 +253,11 @@
      on a container, so a panel's words, numbers and photographs are always
      fully solid. The three fallbacks under this block turn a panel solid
      white where a blur is not available or not wanted. */
-  --glass-bg: rgba(255, 255, 255, 0.66);
+  /* Transparent, "like in iron man" (Steve, 2026-09-24): the ribbons and the
+     watermark read through every panel; 0.66 until then. A phone's smaller type
+     gets a touch more fill (the operator's look, operator.css). */
+  --glass-bg: rgba(255, 255, 255, 0.42);
+  --glass-bg-phone: rgba(255, 255, 255, 0.5);
   --glass-filter: blur(7px) saturate(1.2);
   --glass-border: rgba(2, 67, 69, 0.18);
   --glass-shadow: 0 8px 24px rgba(2, 67, 69, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -255,6 +270,32 @@
   --frame-photo-border: 3px solid var(--color-teal-deep);
   --frame-photo-shadow: 0 0 0 1.5px var(--color-gold), 0 8px 22px rgba(2, 67, 69, 0.22);
   /* #endregion glass */
+
+  /* #region operator-look */
+  /* The operator's look (Steve, 2026-09-24: "more iron man", "the color scheme
+     should not change"): a panel's top rule with two corner brackets in the
+     rule's colour, following the panel's radius, the dark green on panels and
+     cards and the gold on stat tiles; readings in small spaced capitals with
+     tabular figures; a ring wherever a number is a share of a whole, with the
+     number in words beside it. No new colour: every value is a token above.
+     One shared class draws it (src/styles/operator.css), never a component. */
+  --rule-width: 3px;
+  --rule-panel-color: var(--color-teal-deep);
+  --rule-tile-color: var(--color-gold-light);
+  --rule-panel: var(--rule-width) solid var(--rule-panel-color);
+  --rule-tile: var(--rule-width) solid var(--rule-tile-color);
+  --bracket-size: 18px;
+  --bracket-size-tile: 10px;
+  --bracket-size-rail: 14px;
+  --bracket-stroke: 2px;
+  --readout-size: 0.6875rem;
+  --readout-tracking: 0.08em;
+  --readout-weight: var(--weight-medium);
+  --ring-track: var(--color-accent-soft);
+  --ring-first: var(--color-accent);
+  --ring-second: var(--color-gold-light);
+  --ring-fill-time: 400ms;
+  /* #endregion operator-look */
 
   /* What dims the page behind a dialog or the drawer: the brown-gray, see-through. */
   --scrim: rgba(94, 86, 83, 0.45);
@@ -310,6 +351,9 @@ html {
 body {
   margin: 0;
   font-family: var(--font-sans);
+  /* Tabular figures on every reading, so a column of numbers lines up without a
+     rule per component (the one face, 2026-09-24). */
+  font-variant-numeric: tabular-nums;
   font-size: var(--text-base);
   line-height: 1.5;
   color: var(--color-text);

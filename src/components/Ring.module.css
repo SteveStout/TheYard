@@ -1,0 +1,62 @@
+/* The ring's colours and its one motion (ADR: The glass look, the addendum on
+   the operator's look). The sizes and strokes are src/lib/ring.ts's table, set
+   on the drawing by the component; nothing here writes a stroke width. */
+.ring {
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.track,
+.arc {
+  fill: none;
+}
+
+.track {
+  stroke: var(--ring-track);
+}
+
+.arc {
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--ring-fill-time) ease;
+}
+
+.first {
+  stroke: var(--ring-first);
+}
+
+.second {
+  stroke: var(--ring-second);
+}
+
+.inside {
+  fill: var(--color-heading);
+  font-family: inherit;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.tiny .inside,
+.small .inside {
+  font-size: 8px;
+}
+
+.tile .inside {
+  font-size: 11px;
+}
+
+.page .inside {
+  font-size: 13px;
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.large .inside {
+  font-size: 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arc {
+    transition: none;
+  }
+}

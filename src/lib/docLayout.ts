@@ -30,8 +30,39 @@ export function layoutDocument(html: string): string {
   const lead = /^<h2[ >]/.test(parts[0]) ? '' : parts[0];
   const sections = lead === '' ? parts : parts.slice(1);
   const panels = [
-    ...(lead.trim() === '' ? [] : [`<section class="${PANEL} doc-lead">${lead}</section>`]),
-    ...sections.map((section) => `<section class="${PANEL}">${section}</section>`),
+    ...(lead.trim() === ''
+      ? []
+      : [`<section class="${PANEL} op-glass doc-lead">${statusReading(lead)}</section>`]),
+    ...sections.map((section) => `<section class="${PANEL} op-glass">${section}</section>`),
   ];
   return `<div class="doc-page" data-testid="doc-page">${panels.join('')}</div>`;
 }
+
+// #region status-reading
+/**
+ * A record's status line as a reading (the operator's look): "Status: accepted,
+ * 2026-09-02, shipped as 1.0.0.21." opens most decision records, and it is a
+ * reading, not prose, so it is drawn as one, a label and its value for each of
+ * the three, in small spaced capitals. Whatever the paragraph says after that
+ * first sentence stays a paragraph, word for word. A status line in any other
+ * shape is left as the writer wrote it.
+ */
+const STATUS =
+  /<p>Status: ([a-z]+), (\d{4}-\d{2}-\d{2})(?:, shipped as (\d+(?:\.\d+){2,3}))?\.\s*([\s\S]*?)<\/p>/;
+
+export function statusReading(lead: string): string {
+  const match = STATUS.exec(lead);
+  if (!match) return lead;
+  const [whole, status, date, shipped, rest] = match;
+  const rows: [string, string][] = [
+    ['Status', status],
+    ['Date', date],
+    ...(shipped ? [['Shipped as', shipped] as [string, string]] : []),
+  ];
+  const reading =
+    `<dl class="doc-status">` +
+    rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('') +
+    `</dl>`;
+  return lead.replace(whole, reading + (rest.trim() === '' ? '' : `<p>${rest}</p>`));
+}
+// #endregion status-reading

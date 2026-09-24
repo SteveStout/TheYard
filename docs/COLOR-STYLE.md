@@ -124,7 +124,8 @@ Unchanged by the new look, on purpose: "I loved the background of white and ligh
 - **The two quiet colours, muted `#5f636c` and faint `#61656e`, are only ever used inside a
   panel.** On grey they clear 4.5 with little to spare, and the watermark's darkest stroke takes
   that away. Inside a panel the panel's white is between the word and the drawing, and the faint
-  colour, the weakest, still reads 5.20 at the worst.
+  colour, the weakest, still reads 4.78 at the worst, through the transparent glass of the
+  operator's look, a panel of 42 per cent white.
 
 ## Status colours, reserved
 

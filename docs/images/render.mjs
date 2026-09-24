@@ -22,7 +22,7 @@ try {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
   await page.setContent(
     `<!doctype html><html><head>
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
       <style>html,body{margin:0;background:#e9e6e7}svg{display:block}</style>
     </head><body>${svg}</body></html>`,
     { waitUntil: 'networkidle' }

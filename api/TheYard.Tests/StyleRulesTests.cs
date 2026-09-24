@@ -293,10 +293,14 @@ public class StyleRulesTests
             }
         }
 
-        // The charts' lines are toned in one component. 'bad' is the one status tone a line may take,
-        // and only the server errors series may take it.
-        string panel = WithoutComments(
-            File.ReadAllText(Path.Combine(Root, "src", "components", "AdminPanel.tsx")));
+        // The charts' lines are toned in the Admin tab and its cards, one file each since the
+        // workbench. 'bad' is the one status tone a line may take, and only the server errors
+        // series may take it.
+        string panel = WithoutComments(string.Join(
+            "\n",
+            Directory.EnumerateFiles(Path.Combine(Root, "src", "components", "admin"), "*.tsx")
+                .Prepend(Path.Combine(Root, "src", "components", "AdminPanel.tsx"))
+                .Select(File.ReadAllText)));
         foreach (Match tones in Regex.Matches(panel, @"tones=\{\[([^\]]*)\]\}"))
         {
             string[] each = tones.Groups[1].Value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -427,6 +431,148 @@ public class StyleRulesTests
     }
     // #endregion rule seven
 
+    // #region rule nine, the one face
+    /// <summary>
+    /// One face for the whole site (Steve, 2026-09-24: IBM Plex Sans, "the best
+    /// for phones and tablets"). The token names it first; no sheet or component
+    /// names Poppins, the face before it, outside a comment; and a monospaced
+    /// face is only ever the code token, on code: a reading is the one face
+    /// with tabular figures, which the body sets once.
+    /// </summary>
+    [Fact]
+    public void The_one_face_is_IBM_Plex_Sans_and_monospace_is_only_code()
+    {
+        var wrong = new List<string>();
+        string sheet = WithoutComments(TokenSheet());
+        if (!Regex.IsMatch(sheet, @"--font-sans:\s*'IBM Plex Sans',"))
+        {
+            wrong.Add("src/styles/tokens.css should name 'IBM Plex Sans' first in --font-sans");
+        }
+        if (!Regex.IsMatch(sheet, @"body\s*\{[^}]*font-variant-numeric:\s*tabular-nums;"))
+        {
+            wrong.Add("src/styles/tokens.css should set tabular figures on body, once, for every reading");
+        }
+
+        foreach (string path in StyledSource().Append(Path.Combine(Root, "src", "styles", "tokens.css")))
+        {
+            string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
+            string source = WithoutComments(File.ReadAllText(path));
+            if (source.Contains("Poppins", StringComparison.Ordinal))
+            {
+                wrong.Add($"{relative} names Poppins: the face is IBM Plex Sans, through var(--font-sans)");
+            }
+            if (!relative.EndsWith("tokens.css", StringComparison.Ordinal)
+                && Regex.IsMatch(source, @"font-family:[^;]*monospace"))
+            {
+                wrong.Add($"{relative} writes a monospaced face of its own: code takes var(--font-code), and a reading takes the one face");
+            }
+        }
+
+        // The code token is for code: a selector that takes it names code, a pre or a stack.
+        foreach (string path in StyledSource().Where(path => path.EndsWith(".css", StringComparison.Ordinal)))
+        {
+            string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
+            foreach (Match rule in Regex.Matches(WithoutComments(File.ReadAllText(path)), @"([^{}]+)\{[^}]*var\(--font-code\)[^}]*\}"))
+            {
+                string selector = rule.Groups[1].Value.Trim();
+                if (!Regex.IsMatch(selector, @"code|pre|\.sql|\.detail"))
+                {
+                    wrong.Add($"{relative} gives the code face to '{selector}', which is not code");
+                }
+            }
+        }
+
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+    // #endregion rule nine, the one face
+
+    // #region rule nine, the operator's look
+    /// <summary>
+    /// The operator's look is one shared sheet, src/styles/operator.css, drawn
+    /// from the tokens (ADR: The glass look, the addendum on the operator's
+    /// look): a panel, a card or a tile is .op-glass, so no component sheet
+    /// gives one its own ground, border, rule or radius, spaces its capitals
+    /// by a number of its own, or rounds a button to anything but a pill. The
+    /// views still to come onto it are listed with the version that brings
+    /// them, and the list is empty when the lane that started it closes.
+    /// </summary>
+    private static readonly Dictionary<string, string> NotYetOnTheLook = new(StringComparer.Ordinal)
+    {
+    };
+
+    /// <summary>The header and the site's own rail are the frame, not panels on it (Steve: "leave the header and page background the same").</summary>
+    private static readonly string[] TheFrame = ["src/App.module.css", "src/components/SideNav.module.css"];
+
+    /// <summary>A name the scan reads as a panel's that is not one, each with why.</summary>
+    private static readonly Dictionary<string, string> NotAPanel = new(StringComparer.Ordinal)
+    {
+        ["src/components/StoreBar.module.css .bar"] = "the store band under the header is part of the frame, as the header is",
+        ["src/components/AdminPanel.module.css .scannerStrip"] = "the activity card's quiet line of what scanners probed, on the page ground inside the card: a line in a card, not a panel",
+    };
+
+    [Fact]
+    public void Every_panel_is_the_shared_glass_and_no_sheet_draws_its_own_rule_bracket_or_tracking()
+    {
+        var wrong = new List<string>();
+        var panel = new Regex(@"\.[A-Za-z]*(?:[Pp]anel|[Cc]ard|[Tt]ile|[Hh]ero|[Pp]roofItem|[Ss]trip|[Dd]ialog|\bbar)\b(?![-\w])", RegexOptions.Compiled);
+        var own = new Regex(@"(?:^|;)\s*(background|border(?:-top)?|border-radius|box-shadow)\s*:", RegexOptions.Compiled);
+        int sheets = 0;
+
+        foreach (string path in StyledSource().Where(path => path.EndsWith(".module.css", StringComparison.Ordinal)))
+        {
+            string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
+            if (TheFrame.Contains(relative))
+            {
+                continue;
+            }
+            sheets++;
+            string css = WithoutComments(File.ReadAllText(path));
+            foreach (Match rule in Regex.Matches(css, @"([^{}@]+)\{([^{}]*)\}"))
+            {
+                string selector = rule.Groups[1].Value.Trim();
+                string body = rule.Groups[2].Value;
+                // The last compound of each selector in the list: a panel's own ground, not a thing inside it.
+                foreach (string one in selector.Split(','))
+                {
+                    string last = one.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? "";
+                    Match named = panel.Match(last);
+                    bool state = last.Contains(':', StringComparison.Ordinal) && !last.Contains(":global", StringComparison.Ordinal);
+                    if (!named.Success || state || last.Contains("::", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+                    string key = $"{relative} {named.Value}";
+                    Match drawn = own.Match(body);
+                    if (drawn.Success && !NotYetOnTheLook.ContainsKey(key) && !NotAPanel.ContainsKey(key))
+                    {
+                        wrong.Add($"{relative} '{one.Trim()}' sets its own {drawn.Groups[1].Value}: a panel, a card or a tile is .op-glass (src/styles/operator.css), which owns the ground, the rule, the brackets and the radius");
+                    }
+                }
+                foreach (Match tracking in Regex.Matches(body, @"letter-spacing:\s*([^;]+);"))
+                {
+                    string value = tracking.Groups[1].Value.Trim();
+                    if (value is "var(--readout-tracking)" or "0" or "normal" or "inherit")
+                    {
+                        continue;
+                    }
+                    if (!NotYetOnTheLook.ContainsKey($"{relative} letter-spacing"))
+                    {
+                        wrong.Add($"{relative} '{selector}' spaces its letters by {value}: spaced capitals take var(--readout-tracking)");
+                    }
+                }
+                if (Regex.IsMatch(selector, @"(^|[\s>+~,])button\b") && Regex.Match(body, @"border-radius:\s*([^;]+);") is { Success: true } radius
+                    && radius.Groups[1].Value.Trim() is not ("var(--radius-full)" or "50%"))
+                {
+                    wrong.Add($"{relative} '{selector}' rounds a button to {radius.Groups[1].Value.Trim()}: every button is a pill, var(--radius-full), or a circle");
+                }
+            }
+        }
+
+        Assert.True(sheets > 15, $"only {sheets} component sheets were read, so this scan is reading the wrong folder");
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+    // #endregion rule nine, the operator's look
+
     // #region rule eight
     /// <summary>
     /// One consistent experience, from tokens (1.0.3.9). The sweep of every
@@ -524,7 +670,8 @@ public class StyleRulesTests
             }
         }
 
-        foreach (string token in new[] { "--pill-height", "--control-height", "--control-height-lg", "--focus-ring", "--focus-ring-on-dark", "--focus-ring-offset", "--focus-ring-inset", "--title-weight", "--badge-weight", "--input-border", "--input-radius", "--icon-sm", "--icon-md", "--icon-stroke" })
+        // And the operator's look (the workbench, 2026-09-24): the rule, the brackets, the readout and the ring.
+        foreach (string token in new[] { "--pill-height", "--control-height", "--control-height-lg", "--focus-ring", "--focus-ring-on-dark", "--focus-ring-offset", "--focus-ring-inset", "--title-weight", "--badge-weight", "--input-border", "--input-radius", "--icon-sm", "--icon-md", "--icon-stroke", "--rule-panel", "--rule-tile", "--bracket-size", "--bracket-stroke", "--readout-size", "--readout-tracking", "--ring-track", "--ring-first", "--ring-second" })
         {
             if (!TokenSheet().Contains(token + ":", StringComparison.Ordinal))
             {

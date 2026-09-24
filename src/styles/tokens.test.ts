@@ -133,6 +133,12 @@ describe('the site palette (ADR-016)', () => {
     };
     const glass = tokens.match(/--glass-bg:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
     if (!glass) throw new Error('tokens.css should state --glass-bg as white at a share');
+    // The glass is transparent since the operator's look (0.42, from 0.66), and a
+    // phone's is a touch fuller; the desk's, the thinner, is the one held below.
+    const phone = tokens.match(/--glass-bg-phone:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
+    if (!phone) throw new Error('tokens.css should state --glass-bg-phone as white at a share');
+    expect(Number(glass[1])).toBeLessThanOrEqual(0.45);
+    expect(Number(phone[1])).toBeGreaterThanOrEqual(Number(glass[1]));
     const rgb = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
     const hex = (parts: number[]) =>
       `#${parts.map((part) => Math.round(part).toString(16).padStart(2, '0')).join('')}`;

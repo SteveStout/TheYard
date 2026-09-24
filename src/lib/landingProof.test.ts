@@ -92,3 +92,27 @@ describe('the landing page evidence strip', () => {
     expect(figures(1515)).toBe('1,515');
   });
 });
+
+describe("the rings on the evidence strip (the operator's look)", () => {
+  it('draws the tests as passed of all counted, and says it in words', () => {
+    const tests = proofFigures(summary, 82)![0];
+    expect(tests.ring).toEqual({ value: 905, max: 905, words: '905 of 905 tests passed' });
+    const red = {
+      ...summary,
+      suites: summary.suites.map((suite) =>
+        suite.id === 'vitest' ? { ...suite, passed: 223, failed: 1 } : suite
+      ),
+    };
+    expect(proofFigures(red, 82)![0].ring).toEqual({
+      value: 904,
+      max: 905,
+      words: '904 of 905 tests passed',
+    });
+  });
+
+  it('draws no ring for a figure that is not a share of a whole', () => {
+    const shown = proofFigures(summary, 82)!;
+    expect(shown[1].ring).toBeUndefined();
+    expect(shown[2].ring).toBeUndefined();
+  });
+});

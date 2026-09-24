@@ -41,6 +41,34 @@ public static class ApiDocument
     /// <summary>The site's own icon, the same drawing index.html carries inline, so the reference page's tab matches the app's.</summary>
     public const string Favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%235e5653'/%3E%3Cpath d='M13 5 8 18h5l-2 9 10-14h-6l4-8z' fill='%23ab978c'/%3E%3C/svg%3E";
 
+    // #region reference-look
+    /// <summary>
+    /// The reference page on the operator's look, like every other page the site
+    /// serves (ADR: The glass look, the addendum on the operator's look): the one
+    /// face, IBM Plex Sans, from the same Google stylesheet the diagram pages
+    /// use, since no bundle loads here; the page ground; each of the page's cards
+    /// on the shared glass with the dark green rule and two corner brackets,
+    /// the values repeated from the token sheet on purpose, as DiagramPage.cs does;
+    /// and every button a pill. The page's code face is Plex too, because the
+    /// page sets its paths and methods in it and those are names on the page;
+    /// a sample keeps the site's monospaced stack, the one --font-code names,
+    /// because code reads like code (ADR: Code that reads like code). The shape
+    /// rules are marked important because the page's own sheet sits in cascade
+    /// layers of its own and a stylesheet it is given may land in one too.
+    /// </summary>
+    public const string ReferenceCss = """
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+        body { margin: 0; background: #e9e6e7; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; font-variant-numeric: tabular-nums; }
+        .scalar-app { --scalar-font: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-font-code: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-color-accent: #006360; }
+        .scalar-app pre, .scalar-app code, .scalar-app [class*="code-block"] { font-family: Consolas, 'SF Mono', Menlo, ui-monospace, monospace !important; }
+        .scalar-app button { border-radius: 9999px !important; }
+        .scalar-app .scalar-card { position: relative !important; border: 1px solid rgba(2, 67, 69, 0.18) !important; border-top: 3px solid #024345 !important; border-radius: 10px !important; overflow: visible !important; }
+        .scalar-app .scalar-card::before, .scalar-app .scalar-card::after { content: '' !important; position: absolute; width: 18px; height: 18px; border-color: #024345; border-style: solid; pointer-events: none; z-index: 1; }
+        .scalar-app .scalar-card::before { left: -1px; top: -3px; border-width: 3px 0 0 2px; border-top-left-radius: 10px; }
+        .scalar-app .scalar-card::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 10px; }
+        """;
+    // #endregion reference-look
+
     // #region public-surface
     /// <summary>
     /// Whether an endpoint belongs in the document a stranger reads. One

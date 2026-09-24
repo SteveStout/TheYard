@@ -92,7 +92,7 @@ export function VehicleDetail({
 
       <div className={styles.layout}>
         <div className={styles.content}>
-          <section className={styles.gallery} aria-label="Photos">
+          <section className={`${styles.gallery} op-glass`} aria-label="Photos">
             <div className={styles.mainImage}>
               <VehicleImage
                 key={mainImage ?? 'none'}
@@ -114,7 +114,7 @@ export function VehicleDetail({
                       aria-label={`Show photo ${index + 1}`}
                       aria-current={index === imageIndex ? 'true' : undefined}
                     >
-                      <VehicleImage key={image} src={image} alt="" sizes="88px" />
+                      <VehicleImage key={image} src={image} alt="" sizes="64px" />
                     </button>
                   </li>
                 ))}
@@ -144,7 +144,7 @@ export function VehicleDetail({
             </aside>
           )}
 
-          <section className={styles.card} aria-label="Specifications">
+          <section className={`${styles.card} op-glass`} aria-label="Specifications">
             <h2 className={styles.sectionTitle}>Specifications</h2>
             <dl className={styles.specs}>
               {specs.map(([label, value]) => (
@@ -158,7 +158,7 @@ export function VehicleDetail({
             </dl>
           </section>
 
-          <section className={styles.card} aria-label="Condition">
+          <section className={`${styles.card} op-glass`} aria-label="Condition">
             <div className={styles.conditionHeader}>
               <h2 className={styles.sectionTitle}>Condition</h2>
               <ConditionBadge grade={vehicle.condition_grade} size="lg" />
@@ -201,7 +201,7 @@ export function VehicleDetail({
             onBuyNow={onBuyNow}
           />
 
-          <section className={styles.card} aria-label="Seller">
+          <section className={`${styles.card} op-glass`} aria-label="Seller">
             <h2 className={styles.sectionTitle}>Seller</h2>
             <p className={styles.dealership}>{vehicle.selling_dealership}</p>
             <p className={styles.dealershipMeta}>

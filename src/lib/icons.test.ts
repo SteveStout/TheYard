@@ -7,12 +7,16 @@ import { ICON } from './icons';
 // in the way tokens.css does above rather than through node:fs. App.tsx is
 // in the list because it draws the header's hamburger itself (1.0.3.10: the
 // sweep read its stroke at 2 while every icon was on the token, and this test
-// had not been looking at the file).
-const components = import.meta.glob(['../components/*.tsx', '../App.tsx'], {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
+// had not been looking at the file). The Admin tab's cards are a file each
+// since the workbench, in components/admin, and are read with the rest.
+const components = import.meta.glob(
+  ['../components/*.tsx', '../components/admin/*.tsx', '../App.tsx'],
+  {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }
+) as Record<string, string>;
 
 // The component sheets, for the strokes a sheet writes rather than a component.
 const sheets = import.meta.glob('../components/*.module.css', {
@@ -21,13 +25,16 @@ const sheets = import.meta.glob('../components/*.module.css', {
   eager: true,
 }) as Record<string, string>;
 
-/** A drawing is not an icon: the fallback car in VehicleImage is a picture at its own size. */
-const DRAWINGS = ['VehicleImage.tsx'];
+/**
+ * A drawing is not an icon: the fallback car in VehicleImage is a picture at its
+ * own size, and Ring.tsx is a gauge, scaled by its size prop from src/lib/ring.ts.
+ */
+const DRAWINGS = ['VehicleImage.tsx', 'Ring.tsx'];
 
 /**
  * The strokes a sheet may write in a number of its own, by selector, each a
  * drawing rather than an icon (1.0.3.10): a chart's axis, grid, line and
- * readout, the health rings and the sparkline on the Admin tab, the pass and
+ * readout and the sparkline on the Admin tab, the pass and
  * fail marks on its tests card (a filled disc with a bold glyph, drawn at 16
  * and 44 px from one 24-unit viewBox, so its strokes scale with the mark and
  * the icon stroke would read as a hairline at the small size), and the
@@ -41,8 +48,6 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
     '.readoutRule',
     '.readoutBox',
     '.line',
-    '.ringTrack',
-    '.ringHeld',
     '.spark',
     '.resultMark path',
     '.resultDisc',
