@@ -421,3 +421,12 @@ came from, one read, and returned beside the days (`who` in the report);
 the rows still leave the server only through the keyed endpoint. Tests hold
 the mark, the port, the loopback networks, the one-machine rule and the
 three kinds adding up.
+
+The chart, from 1.0.3.12, stacks the three kinds day by day rather than
+drawing one line per store: people at the bottom, then scanners and
+crawlers, then the site's own reads, in three tokens chosen as a set and
+checked for colour vision together (the Colour and style page, its chart
+colours), each band's name written on the band where it is as thick as a
+line of text, a legend for all three, and the day-by-day numbers in a
+table under the chart. The lines by store are the other view, a click
+away; the split by store stays in the line under the chart in both.

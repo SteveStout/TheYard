@@ -46,6 +46,10 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
     '.spark',
     '.resultMark path',
     '.resultDisc',
+    // The activity chart's stacked bands (1.0.3.12): the two-pixel gap in the card's ground
+    // between bands, and the halo round a band's name. Drawings, not icons.
+    '.bandEdge',
+    '.bandLabel',
   ],
   'Watermark.module.css': ['.rings', '.rows'],
 };

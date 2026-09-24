@@ -187,6 +187,107 @@ export function areaPath(points: ActivityPoint[], ceiling: number): string {
   return `${line} L${lastX.toFixed(1)} ${baseline} L${CHART.left} ${baseline} Z`;
 }
 
+// #region stack
+/**
+ * The three kinds of traffic stacked (1.0.3.12): people at the bottom, then
+ * scanners and crawlers, then the site's own reads, in that order always, so
+ * a colour means the same kind on every window. Under Visitors only the stack
+ * is the people alone. A band is the day-by-day floor and ceiling it fills
+ * between, in visitor-days.
+ */
+export type ActivityKind = 'people' | 'scanners' | 'self';
+export const ACTIVITY_KINDS: readonly ActivityKind[] = ['people', 'scanners', 'self'];
+export const KIND_NAMES: Readonly<Record<ActivityKind, string>> = {
+  people: 'People',
+  scanners: 'Scanners and crawlers',
+  self: "The site's own reads",
+};
+export type ActivityBand = { kind: ActivityKind; lower: number[]; upper: number[] };
+
+export function stackBands(days: ActivityDay[], who: ActivityWho): ActivityBand[] {
+  const kinds: readonly ActivityKind[] = who === 'people' ? ['people'] : ACTIVITY_KINDS;
+  const running = days.map(() => 0);
+  return kinds.map((kind) => {
+    const lower = [...running];
+    days.forEach((day, index) => {
+      running[index] += day[kind];
+    });
+    return { kind, lower, upper: [...running] };
+  });
+}
+
+/** The top of the stack on its highest day, or 1, so a quiet window still has an axis. */
+export function stackCeiling(bands: ActivityBand[]): number {
+  const top = bands.length === 0 ? [] : bands[bands.length - 1].upper;
+  const most = Math.max(0, ...top);
+  return most === 0 ? 1 : most;
+}
+
+function xAt(index: number, count: number): number {
+  const innerWidth = CHART.width - CHART.left - CHART.right;
+  return CHART.left + (count <= 1 ? 0 : (innerWidth / (count - 1)) * index);
+}
+
+function yAt(value: number, ceiling: number): number {
+  const innerHeight = CHART.height - CHART.top - CHART.bottom;
+  return CHART.top + innerHeight - (value / ceiling) * innerHeight;
+}
+
+/** One band as the `d` of a closed SVG path: along its ceiling left to right, back along its floor. */
+export function bandPath(band: ActivityBand, ceiling: number): string {
+  const count = band.upper.length;
+  if (count === 0) return '';
+  const top = band.upper.map(
+    (value, index) =>
+      `${index === 0 ? 'M' : 'L'}${xAt(index, count).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`
+  );
+  const bottom = band.lower
+    .map((value, index) => `L${xAt(index, count).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`)
+    .reverse();
+  return `${[...top, ...bottom].join(' ')} Z`;
+}
+
+/** A band's ceiling alone, drawn in the card's ground over the fills: the two-pixel gap between bands. */
+export function edgePath(band: ActivityBand, ceiling: number): string {
+  const count = band.upper.length;
+  return band.upper
+    .map(
+      (value, index) =>
+        `${index === 0 ? 'M' : 'L'}${xAt(index, count).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`
+    )
+    .join(' ');
+}
+
+/**
+ * Where a band's name is written on the chart: the middle of the day it is
+ * thickest, anchored so it never leaves the drawing at either end; nowhere
+ * when the band is never as thick as a line of text, in which case the legend
+ * and the table carry it.
+ */
+export function labelSpot(
+  band: ActivityBand,
+  ceiling: number,
+  minHeight = 16
+): { x: number; y: number; anchor: 'start' | 'middle' | 'end' } | null {
+  const count = band.upper.length;
+  let best = -1;
+  let thickest = 0;
+  band.upper.forEach((value, index) => {
+    const thickness = yAt(band.lower[index], ceiling) - yAt(value, ceiling);
+    if (thickness > thickest) {
+      thickest = thickness;
+      best = index;
+    }
+  });
+  if (best < 0 || thickest < minHeight) return null;
+  return {
+    x: xAt(best, count) + (best === 0 ? 6 : best === count - 1 ? -6 : 0),
+    y: (yAt(band.upper[best], ceiling) + yAt(band.lower[best], ceiling)) / 2 + 4,
+    anchor: best === 0 ? 'start' : best === count - 1 ? 'end' : 'middle',
+  };
+}
+// #endregion stack
+
 /** Which points carry an x label: about six across the width, the first and the last always. */
 export function labelledIndexes(count: number): number[] {
   if (count <= 1) return count === 1 ? [0] : [];

@@ -106,6 +106,15 @@
   --color-series-1: #0a3021;
   --color-series-2: #188f8d; /* 3.92 on white, 3.67 against the dark green; never text */
   --color-series-3: #7b7f8a; /* a third series, or a request the site turned away; 4.0 on white */
+  /* Who the traffic was, on the Site activity card (1.0.3.12): people, scanners
+     and crawlers, the site's own reads, stacked in that order. Validated as a
+     set for colour vision on 2026-09-24 (adjacent pairs 12.4 apart at the worst
+     under protanopia, 19.8 in full colour, in OKLab times a hundred), and each
+     clears 3:1 on white as a mark. Never text: the band's name is written in
+     the heading colour, and a legend names all three. */
+  --color-who-people: #0a8f85;
+  --color-who-scanners: #b8800a;
+  --color-who-self: #5b78c2;
   /* #endregion palette */
 
   /* Status colors carry meaning (clean, rebuilt, salvage, live) and stay

@@ -1,16 +1,25 @@
 import { Fragment, type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
+  ACTIVITY_KINDS,
   ACTIVITY_WHO,
   ACTIVITY_WINDOWS,
   CHART,
+  KIND_NAMES,
   areaPath,
+  bandPath,
   ceilingOf,
+  countFor,
   dayLines,
+  edgePath,
   groupByDay,
   labelFor,
+  labelSpot,
   labelledIndexes,
   linePath,
   sortVisitors,
+  stackBands,
+  stackCeiling,
+  type ActivityKind,
   type ActivityReport,
   type ActivityVisitors,
   type ActivityWho,
@@ -2221,36 +2230,82 @@ function SortHeader({
   );
 }
 
-/** The two lines, the axis, the totals and the top paths; the arithmetic is in src/lib/activity.ts. */
+/**
+ * The chart, the totals and the top paths; the arithmetic is in src/lib/activity.ts.
+ * By kind (the default from 1.0.3.12): visitor-days per day stacked by who
+ * they were, people at the bottom, then scanners and crawlers, then the site's
+ * own reads, in the three colours validated for colour vision together, with
+ * a legend and the band's name on the band where it is thick enough to carry
+ * it. By store: the lines the card drew before, everybody and each store.
+ */
 function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityWho }) {
-  // Unique visitors per UTC day: everybody as one line, and one line per
-  // store underneath it, so the split shows against the whole; people only
-  // under Visitors only, all three kinds under All traffic.
+  const [view, setView] = useState<'kind' | 'store'>('kind');
+  // Unique visitors per UTC day, by store: everybody as one line, and one
+  // line per store underneath it; people only under Visitors only.
   const lines = dayLines(
     report.days,
     report.series.map((line) => line.store),
     who
   );
-  const ceiling = ceilingOf(lines);
-  const points = lines[0]?.points ?? [];
-  const labels = labelledIndexes(points.length);
+  const bands = stackBands(report.days, who);
+  const ceiling = view === 'kind' ? stackCeiling(bands) : ceilingOf(lines);
+  const count = report.days.length;
+  const labels = labelledIndexes(count);
   const innerWidth = CHART.width - CHART.left - CHART.right;
-  const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
+  const step = count <= 1 ? 0 : innerWidth / (count - 1);
   const colour = (store: string) =>
     store === 'cosmos' ? styles.cosmosLine : store === 'sql' ? styles.sqlLine : styles.allLine;
+  const kindClass = (kind: ActivityKind) =>
+    kind === 'people'
+      ? styles.whoPeople
+      : kind === 'scanners'
+        ? styles.whoScanners
+        : styles.whoSelf;
   const shown = who === 'people' ? report.who.people : report.who.all;
   const { people, scanners, self } = report.who;
   const nameOf = (store: string) =>
     report.series.find((line) => line.store === store)?.name ?? store;
   return (
     <>
+      <p className={styles.statusRow} role="group" aria-label="How the chart is split">
+        {(['kind', 'store'] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={styles.back}
+            aria-pressed={option === view}
+            onClick={() => setView(option)}
+            data-testid={`activity-view-${option}`}
+          >
+            {option === 'kind' ? 'By kind' : 'By store'}
+          </button>
+        ))}
+      </p>
+      {view === 'kind' && bands.length > 1 && (
+        <ul className={styles.legend} data-testid="activity-legend">
+          {bands.map((band) => (
+            <li key={band.kind}>
+              <span className={`${styles.swatch} ${kindClass(band.kind)}`} aria-hidden="true" />
+              {KIND_NAMES[band.kind]}
+            </li>
+          ))}
+        </ul>
+      )}
       <svg
         className={styles.chart}
         viewBox={`0 0 ${CHART.width} ${CHART.height}`}
         role="img"
-        aria-label={`Unique visitors per day over the ${report.window} window, ${
-          who === 'people' ? 'people only' : 'all traffic'
-        }, everybody as one line and one line per store`}
+        aria-label={
+          view === 'kind'
+            ? `Visitor-days per day over the ${report.window} window, ${
+                who === 'people'
+                  ? 'people only'
+                  : "all traffic, stacked: people, scanners and crawlers, the site's own reads"
+              }`
+            : `Unique visitors per day over the ${report.window} window, ${
+                who === 'people' ? 'people only' : 'all traffic'
+              }, everybody as one line and one line per store`
+        }
         data-testid="activity-graph"
       >
         <line
@@ -2284,25 +2339,54 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
             className={styles.axisLabel}
             x={CHART.left + index * step}
             y={CHART.height - 8}
-            textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
+            textAnchor={index === 0 ? 'start' : index === count - 1 ? 'end' : 'middle'}
           >
-            {points[index] ? labelFor(points[index].at, report.window) : ''}
+            {report.days[index] ? labelFor(report.days[index].day, report.window) : ''}
           </text>
         ))}
-        {lines.map((line) => (
-          <g
-            key={line.store}
-            className={colour(line.store)}
-            data-testid={`activity-line-${line.store}`}
-          >
-            <path className={styles.area} d={areaPath(line.points, ceiling)} />
-            <path className={styles.line} d={linePath(line.points, ceiling)} />
-          </g>
-        ))}
+        {view === 'kind'
+          ? bands.map((band) => (
+              <g
+                key={band.kind}
+                className={kindClass(band.kind)}
+                data-testid={`activity-band-${band.kind}`}
+              >
+                <path className={styles.band} d={bandPath(band, ceiling)} />
+                <path className={styles.bandEdge} d={edgePath(band, ceiling)} />
+              </g>
+            ))
+          : lines.map((line) => (
+              <g
+                key={line.store}
+                className={colour(line.store)}
+                data-testid={`activity-line-${line.store}`}
+              >
+                <path className={styles.area} d={areaPath(line.points, ceiling)} />
+                <path className={styles.line} d={linePath(line.points, ceiling)} />
+              </g>
+            ))}
+        {view === 'kind' &&
+          bands.map((band) => {
+            const spot = labelSpot(band, ceiling);
+            return spot === null ? null : (
+              <text
+                key={`label:${band.kind}`}
+                className={styles.bandLabel}
+                x={spot.x}
+                y={spot.y}
+                textAnchor={spot.anchor}
+                data-testid={`activity-band-label-${band.kind}`}
+              >
+                {KIND_NAMES[band.kind]}
+              </text>
+            );
+          })}
       </svg>
       <ul className={styles.summaryList} data-testid="activity-totals">
         <li>
-          <span className={`${styles.swatch} ${styles.allLine}`} aria-hidden="true" />
+          {view === 'store' && (
+            <span className={`${styles.swatch} ${styles.allLine}`} aria-hidden="true" />
+          )}
           {who === 'people'
             ? `${people.visitor_days.toLocaleString()} visitor-days that looked like people across the days in the window, ${people.requests.toLocaleString()} requests in the window.`
             : `${shown.visitor_days.toLocaleString()} visitor-days across the days in the window: ${people.visitor_days.toLocaleString()} people, ${scanners.visitor_days.toLocaleString()} scanners and crawlers, ${self.visitor_days.toLocaleString()} the site's own reads; ${shown.requests.toLocaleString()} requests in the window.`}
@@ -2343,6 +2427,42 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           {report.collector.interval_seconds} seconds.
         </li>
       </ul>
+      <details className={styles.about}>
+        <summary className={styles.aboutSummary}>Day by day</summary>
+        <div
+          className={styles.tableWrap}
+          role="region"
+          aria-label="Visitor-days per day, by kind"
+          tabIndex={0}
+        >
+          <table className={styles.table} data-testid="activity-days-table">
+            <thead>
+              <tr>
+                <th scope="col">Day</th>
+                {ACTIVITY_KINDS.map((kind) => (
+                  <th key={kind} scope="col">
+                    {KIND_NAMES[kind]}
+                  </th>
+                ))}
+                <th scope="col">All</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.days.map((day) => (
+                <tr key={day.day}>
+                  <th scope="row">{labelFor(day.day, '30d')}</th>
+                  {ACTIVITY_KINDS.map((kind) => (
+                    <td key={kind} className={styles.mono}>
+                      {day[kind].toLocaleString()}
+                    </td>
+                  ))}
+                  <td className={styles.mono}>{countFor(day, 'all').toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
     </>
   );
 }

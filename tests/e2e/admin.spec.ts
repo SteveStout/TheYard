@@ -507,9 +507,17 @@ test('the activity graph draws at the top of the tab and its response names nobo
   await expect(card).toBeVisible();
   await expect(card).toContainText('Site activity');
   await expect(card.getByTestId('activity-graph')).toBeVisible();
+  // By kind is the default (1.0.3.12): the people band alone under Visitors
+  // only; the store lines are the other view.
+  await expect(card.getByTestId('activity-view-kind')).toHaveAttribute('aria-pressed', 'true');
+  await expect(card.getByTestId('activity-band-people')).toHaveCount(1);
+  await expect(card.getByTestId('activity-band-scanners')).toHaveCount(0);
+  await expect(card.getByTestId('activity-legend')).toHaveCount(0);
+  await card.getByTestId('activity-view-store').click();
   for (const store of stores.stores) {
     await expect(card.getByTestId(`activity-line-${store.key}`)).toHaveCount(1);
   }
+  await card.getByTestId('activity-view-kind').click();
   await expect(card.getByTestId('activity-totals')).toContainText(/\d+ requests in the window/);
   // Visitors only is the default (1.0.3.11), and says what it left out; All
   // traffic counts the three kinds together, and the toggle fetches nothing.
@@ -521,6 +529,12 @@ test('the activity graph draws at the top of the tab and its response names nobo
     /\d+ people, \d+ scanners and crawlers/
   );
   await expect(card.getByTestId('activity-left-out')).toHaveCount(0);
+  // All traffic stacks the three kinds, bottom to top, with a legend naming them.
+  for (const kind of ['people', 'scanners', 'self']) {
+    await expect(card.getByTestId(`activity-band-${kind}`)).toHaveCount(1);
+  }
+  await expect(card.getByTestId('activity-legend')).toContainText('Scanners and crawlers');
+  await expect(card.getByTestId('activity-days-table')).toHaveCount(1);
   await expect(card.getByTestId('activity-graph')).toHaveAttribute('aria-label', /all traffic/);
   await card.getByTestId('activity-who-people').click();
   // A week is the default; a month is a change, and the graph redraws for it.

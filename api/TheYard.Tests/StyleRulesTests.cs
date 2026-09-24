@@ -209,6 +209,9 @@ public class StyleRulesTests
         ("--color-series-2", "--color-surface", 3.0),
         ("--color-series-2", "--color-series-1", 3.0),
         ("--color-series-3", "--color-surface", 3.0),
+        ("--color-who-people", "--color-surface", 3.0),
+        ("--color-who-scanners", "--color-surface", 3.0),
+        ("--color-who-self", "--color-surface", 3.0),
         // Distances the page states, which are reasons and not floors.
         ("--color-accent", "--color-success", 0),
         ("--color-teal-deep", "--color-success", 0),

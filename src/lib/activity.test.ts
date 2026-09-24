@@ -3,8 +3,12 @@ import {
   CHART,
   areaPath,
   ceilingOf,
+  bandPath,
   countFor,
   dayLines,
+  labelSpot,
+  stackBands,
+  stackCeiling,
   groupByDay,
   labelledIndexes,
   linePath,
@@ -168,6 +172,35 @@ describe('unique visitors per day', () => {
     expect(lines[0].points.map((point) => point.requests)).toEqual([1, 0]);
     expect(lines[1].points.map((point) => point.requests)).toEqual([1, 0]);
     expect(lines[2].points.map((point) => point.requests)).toEqual([0, 0]);
+  });
+
+  it("stacks people, then scanners, then the site's own reads, each band on the one below", () => {
+    const bands = stackBands(days, 'all');
+    expect(bands.map((band) => band.kind)).toEqual(['people', 'scanners', 'self']);
+    expect(bands[0].lower).toEqual([0, 0]);
+    expect(bands[0].upper).toEqual([1, 0]);
+    expect(bands[1].lower).toEqual([1, 0]);
+    expect(bands[1].upper).toEqual([2, 0]);
+    expect(bands[2].upper).toEqual([3, 0]);
+    expect(stackCeiling(bands)).toBe(3);
+  });
+
+  it('stacks the people alone under Visitors only, and a quiet window still has an axis', () => {
+    const bands = stackBands(days, 'people');
+    expect(bands.map((band) => band.kind)).toEqual(['people']);
+    expect(stackCeiling(stackBands([days[1]], 'all'))).toBe(1);
+  });
+
+  it('closes a band along its floor and names it only where it is as thick as a line of text', () => {
+    const [people, scanners] = stackBands(days, 'all');
+    const d = bandPath(people, 3);
+    expect(d.startsWith('M')).toBe(true);
+    expect(d.endsWith('Z')).toBe(true);
+    expect(d.split(/[ML]/).length - 1).toBe(4);
+    const spot = labelSpot(scanners, 3);
+    expect(spot).not.toBeNull();
+    expect(spot?.anchor).toBe('start');
+    expect(labelSpot(scanners, 3, 1000)).toBeNull();
   });
 
   it('adds the three kinds under All traffic, and only people under Visitors only', () => {

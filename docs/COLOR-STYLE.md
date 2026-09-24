@@ -159,6 +159,9 @@ A fixed order, never shuffled, so a colour means the same place on every chart.
 --color-series-3 | Third series, and "turned away"
 --color-store-sql | The relational store
 --color-store-cosmos | The document store
+--color-who-people | People, on the activity card
+--color-who-scanners | Scanners and crawlers, on the activity card
+--color-who-self | The site's own reads, on the activity card
 ```
 
 1. Dark green `#0a3021`.
@@ -166,6 +169,12 @@ A fixed order, never shuffled, so a colour means the same place on every chart.
    and not 4.5 for text, so it is never text.
 3. Neutral grey `#7b7f8a`, 4.00 on white: a third series, or a request the site turned away, which
    is the visitor's and says nothing about the site.
+
+**Who the traffic was** has its own three, on the Site activity card only, stacked in one order:
+people in teal `#0a8f85` (3.98 on white), scanners and crawlers in amber `#b8800a` (3.43), and
+the site's own reads in blue `#5b78c2` (4.28). Chosen as a set and checked for colour vision
+together: the closest neighbours stay well apart under every common deficiency. Marks only; each
+band's name is written on it in the heading colour, and a legend names all three.
 
 Axes and grid lines use the border colours. Labels, numbers and legends are in the text colours,
 never in a series' colour.
