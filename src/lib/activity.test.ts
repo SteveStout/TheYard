@@ -6,7 +6,9 @@ import {
   bandPath,
   countFor,
   dayLines,
+  dayAt,
   labelSpot,
+  partialDay,
   pathShares,
   stackBands,
   stackCeiling,
@@ -214,6 +216,21 @@ describe('unique visitors per day', () => {
       ])
     ).toEqual([1, 0.25, 0.02, 0]);
     expect(pathShares([{ visitor_days: 0 }, { visitor_days: 0 }])).toEqual([0, 0]);
+  });
+
+  it('says the last day is a part-day, with its hours, only when it is today', () => {
+    const now = new Date('2026-09-13T16:20:00Z');
+    expect(partialDay(days, now)).toEqual({ index: 1, hours: 16 });
+    expect(partialDay(days, new Date('2026-09-14T01:00:00Z'))).toBeNull();
+    expect(partialDay([], now)).toBeNull();
+  });
+
+  it('reads the day under a pointer, the nearest point, never off either end', () => {
+    expect(dayAt(CHART.left, 8)).toBe(0);
+    expect(dayAt(CHART.width - CHART.right, 8)).toBe(7);
+    expect(dayAt(-50, 8)).toBe(0);
+    expect(dayAt(10_000, 8)).toBe(7);
+    expect(dayAt(123, 1)).toBe(0);
   });
 
   it('adds the three kinds under All traffic, and only people under Visitors only', () => {

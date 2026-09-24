@@ -50,6 +50,9 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
     // between bands, and the halo round a band's name. Drawings, not icons.
     '.bandEdge',
     '.bandLabel',
+    // The crosshair (1.0.3.14): a hairline down the day and a ringed dot on each band.
+    '.crosshair line',
+    '.crossDot',
   ],
   'Watermark.module.css': ['.rings', '.rows'],
 };

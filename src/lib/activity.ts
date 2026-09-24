@@ -245,12 +245,12 @@ export function stackCeiling(bands: ActivityBand[]): number {
   return most === 0 ? 1 : most;
 }
 
-function xAt(index: number, count: number): number {
+export function xAt(index: number, count: number): number {
   const innerWidth = CHART.width - CHART.left - CHART.right;
   return CHART.left + (count <= 1 ? 0 : (innerWidth / (count - 1)) * index);
 }
 
-function yAt(value: number, ceiling: number): number {
+export function yAt(value: number, ceiling: number): number {
   const innerHeight = CHART.height - CHART.top - CHART.bottom;
   return CHART.top + innerHeight - (value / ceiling) * innerHeight;
 }
@@ -307,6 +307,28 @@ export function labelSpot(
     y: (yAt(band.upper[best], ceiling) + yAt(band.lower[best], ceiling)) / 2 + 4,
     anchor: best === 0 ? 'start' : best === count - 1 ? 'end' : 'middle',
   };
+}
+/**
+ * Today's column, when the window ends on today (UTC): which point it is and
+ * how many of its hours have passed, so the chart can say the last day is a
+ * part-day and not a fall.
+ */
+export function partialDay(
+  days: { day: string }[],
+  now: Date
+): { index: number; hours: number } | null {
+  const index = days.length - 1;
+  return index >= 0 && days[index].day === now.toISOString().slice(0, 10)
+    ? { index, hours: now.getUTCHours() }
+    : null;
+}
+
+/** The day nearest a point along the drawing, in the drawing's own units, never off either end. */
+export function dayAt(x: number, count: number): number {
+  if (count <= 1) return 0;
+  const innerWidth = CHART.width - CHART.left - CHART.right;
+  const index = Math.round(((x - CHART.left) / innerWidth) * (count - 1));
+  return Math.min(count - 1, Math.max(0, index));
 }
 // #endregion stack
 

@@ -1,4 +1,11 @@
-import { Fragment, type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  Fragment,
+  type PointerEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import {
   ACTIVITY_KINDS,
   ACTIVITY_WHO,
@@ -10,6 +17,7 @@ import {
   bandPath,
   ceilingOf,
   countFor,
+  dayAt,
   dayLines,
   edgePath,
   groupByDay,
@@ -17,10 +25,13 @@ import {
   labelSpot,
   labelledIndexes,
   linePath,
+  partialDay,
   pathShares,
   sortVisitors,
   stackBands,
   stackCeiling,
+  xAt,
+  yAt,
   type ActivityKind,
   type ActivityReport,
   type ActivityVisitors,
@@ -2245,6 +2256,8 @@ const PATH_CHART = { width: 360, row: 26, bar: 120, count: 44 } as const;
  */
 function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityWho }) {
   const [view, setView] = useState<'kind' | 'store'>('kind');
+  // The day under the pointer or the finger (1.0.3.14); null when there is none.
+  const [hover, setHover] = useState<number | null>(null);
   // Unique visitors per UTC day, by store: everybody as one line, and one
   // line per store underneath it; people only under Visitors only.
   const lines = dayLines(
@@ -2270,6 +2283,39 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
   const { people, scanners, self } = report.who;
   const nameOf = (store: string) =>
     report.series.find((line) => line.store === store)?.name ?? store;
+  const partial = partialDay(report.days, new Date());
+  // The day under the pointer, read off the drawing's own width, so a finger
+  // and a mouse land on the same day in every engine.
+  const point = (event: PointerEvent<SVGSVGElement>) => {
+    const box = event.currentTarget.getBoundingClientRect();
+    if (box.width === 0) return;
+    setHover(dayAt(((event.clientX - box.left) / box.width) * CHART.width, count));
+  };
+  const hovered = hover !== null && hover < count ? hover : null;
+  // What the crosshair reads out: each band's own share under By kind, each
+  // line under By store, in the order the legend names them.
+  const readings =
+    hovered === null
+      ? []
+      : view === 'kind'
+        ? bands.map((band) => ({
+            key: band.kind,
+            className: kindClass(band.kind),
+            name: KIND_NAMES[band.kind],
+            value: band.upper[hovered] - band.lower[hovered],
+            top: band.upper[hovered],
+          }))
+        : lines.map((line) => ({
+            key: line.store,
+            className: colour(line.store),
+            name: line.store === 'all' ? line.name : nameOf(line.store),
+            value: line.points[hovered]?.requests ?? 0,
+            top: line.points[hovered]?.requests ?? 0,
+          }));
+  const readingTotal =
+    view === 'kind'
+      ? readings.reduce((sum, reading) => sum + reading.value, 0)
+      : (readings[0]?.value ?? 0);
   return (
     <>
       <p className={styles.statusRow} role="group" aria-label="How the chart is split">
@@ -2296,97 +2342,169 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           ))}
         </ul>
       )}
-      <svg
-        className={styles.chart}
-        viewBox={`0 0 ${CHART.width} ${CHART.height}`}
-        role="img"
-        aria-label={
-          view === 'kind'
-            ? `Visitor-days per day over the ${report.window} window, ${
-                who === 'people'
-                  ? 'people only'
-                  : "all traffic, stacked: people, scanners and crawlers, the site's own reads"
-              }`
-            : `Unique visitors per day over the ${report.window} window, ${
-                who === 'people' ? 'people only' : 'all traffic'
-              }, everybody as one line and one line per store`
-        }
-        data-testid="activity-graph"
-      >
-        <line
-          className={styles.axis}
-          x1={CHART.left}
-          y1={CHART.height - CHART.bottom}
-          x2={CHART.width - CHART.right}
-          y2={CHART.height - CHART.bottom}
-        />
-        <line
-          className={styles.axis}
-          x1={CHART.left}
-          y1={CHART.top}
-          x2={CHART.left}
-          y2={CHART.height - CHART.bottom}
-        />
-        <text className={styles.axisLabel} x={CHART.left - 4} y={CHART.top + 4} textAnchor="end">
-          {ceiling}
-        </text>
-        <text
-          className={styles.axisLabel}
-          x={CHART.left - 4}
-          y={CHART.height - CHART.bottom}
-          textAnchor="end"
+      <p className={styles.chartCaption} data-testid="activity-axis-name">
+        Visitor-days per day
+        {view === 'store'
+          ? ', by store'
+          : who === 'people'
+            ? ', people only'
+            : ', stacked by who they were'}
+      </p>
+      <div className={styles.chartWrap}>
+        <svg
+          className={styles.chart}
+          viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+          onPointerMove={point}
+          onPointerDown={point}
+          onPointerLeave={(event) => {
+            if (event.pointerType === 'mouse') setHover(null);
+          }}
+          role="img"
+          aria-label={
+            view === 'kind'
+              ? `Visitor-days per day over the ${report.window} window, ${
+                  who === 'people'
+                    ? 'people only'
+                    : "all traffic, stacked: people, scanners and crawlers, the site's own reads"
+                }`
+              : `Unique visitors per day over the ${report.window} window, ${
+                  who === 'people' ? 'people only' : 'all traffic'
+                }, everybody as one line and one line per store`
+          }
+          data-testid="activity-graph"
         >
-          0
-        </text>
-        {labels.map((index) => (
-          <text
-            key={index}
-            className={styles.axisLabel}
-            x={CHART.left + index * step}
-            y={CHART.height - 8}
-            textAnchor={index === 0 ? 'start' : index === count - 1 ? 'end' : 'middle'}
-          >
-            {report.days[index] ? labelFor(report.days[index].day, report.window) : ''}
+          <line
+            className={styles.axis}
+            x1={CHART.left}
+            y1={CHART.height - CHART.bottom}
+            x2={CHART.width - CHART.right}
+            y2={CHART.height - CHART.bottom}
+          />
+          <line
+            className={styles.axis}
+            x1={CHART.left}
+            y1={CHART.top}
+            x2={CHART.left}
+            y2={CHART.height - CHART.bottom}
+          />
+          <text className={styles.axisLabel} x={CHART.left - 4} y={CHART.top + 4} textAnchor="end">
+            {ceiling}
           </text>
-        ))}
-        {view === 'kind'
-          ? bands.map((band) => (
-              <g
-                key={band.kind}
-                className={kindClass(band.kind)}
-                data-testid={`activity-band-${band.kind}`}
-              >
-                <path className={styles.band} d={bandPath(band, ceiling)} />
-                <path className={styles.bandEdge} d={edgePath(band, ceiling)} />
-              </g>
-            ))
-          : lines.map((line) => (
-              <g
-                key={line.store}
-                className={colour(line.store)}
-                data-testid={`activity-line-${line.store}`}
-              >
-                <path className={styles.area} d={areaPath(line.points, ceiling)} />
-                <path className={styles.line} d={linePath(line.points, ceiling)} />
-              </g>
+          <text
+            className={styles.axisLabel}
+            x={CHART.left - 4}
+            y={CHART.height - CHART.bottom}
+            textAnchor="end"
+          >
+            0
+          </text>
+          {labels.map((index) => (
+            <text
+              key={index}
+              className={styles.axisLabel}
+              x={CHART.left + index * step}
+              y={CHART.height - 8}
+              textAnchor={index === 0 ? 'start' : index === count - 1 ? 'end' : 'middle'}
+            >
+              {report.days[index]
+                ? labelFor(report.days[index].day, report.window) +
+                  (partial !== null && index === partial.index
+                    ? `, today ${partial.hours} h in`
+                    : '')
+                : ''}
+            </text>
+          ))}
+          {partial !== null && count > 1 && (
+            <rect
+              className={styles.todayBand}
+              x={xAt(partial.index, count) - step / 2}
+              y={CHART.top}
+              width={step / 2}
+              height={CHART.height - CHART.top - CHART.bottom}
+              data-testid="activity-today"
+            />
+          )}
+          {view === 'kind'
+            ? bands.map((band) => (
+                <g
+                  key={band.kind}
+                  className={kindClass(band.kind)}
+                  data-testid={`activity-band-${band.kind}`}
+                >
+                  <path className={styles.band} d={bandPath(band, ceiling)} />
+                  <path className={styles.bandEdge} d={edgePath(band, ceiling)} />
+                </g>
+              ))
+            : lines.map((line) => (
+                <g
+                  key={line.store}
+                  className={colour(line.store)}
+                  data-testid={`activity-line-${line.store}`}
+                >
+                  <path className={styles.area} d={areaPath(line.points, ceiling)} />
+                  <path className={styles.line} d={linePath(line.points, ceiling)} />
+                </g>
+              ))}
+          {view === 'kind' &&
+            bands.map((band) => {
+              const spot = labelSpot(band, ceiling);
+              return spot === null ? null : (
+                <text
+                  key={`label:${band.kind}`}
+                  className={styles.bandLabel}
+                  x={spot.x}
+                  y={spot.y}
+                  textAnchor={spot.anchor}
+                  data-testid={`activity-band-label-${band.kind}`}
+                >
+                  {KIND_NAMES[band.kind]}
+                </text>
+              );
+            })}
+          {hovered !== null && (
+            <g className={styles.crosshair} data-testid="activity-crosshair">
+              <line
+                x1={xAt(hovered, count)}
+                x2={xAt(hovered, count)}
+                y1={CHART.top}
+                y2={CHART.height - CHART.bottom}
+              />
+              {readings.map((reading) => (
+                <circle
+                  key={reading.key}
+                  className={`${styles.crossDot} ${reading.className}`}
+                  cx={xAt(hovered, count)}
+                  cy={yAt(reading.top, ceiling)}
+                  r={4}
+                />
+              ))}
+            </g>
+          )}
+        </svg>
+        {hovered !== null && (
+          <div
+            className={`${styles.chartTip} ${
+              xAt(hovered, count) > CHART.width / 2 ? styles.chartTipLeft : styles.chartTipRight
+            }`}
+            role="status"
+            data-testid="activity-tooltip"
+          >
+            <strong>
+              {labelFor(report.days[hovered].day, '30d')}
+              {partial !== null && partial.index === hovered
+                ? `, today, ${partial.hours} h in`
+                : ''}
+              : {readingTotal.toLocaleString()}
+            </strong>
+            {readings.map((reading) => (
+              <span key={reading.key}>
+                <span className={`${styles.swatch} ${reading.className}`} aria-hidden="true" />
+                {reading.name} {reading.value.toLocaleString()}
+              </span>
             ))}
-        {view === 'kind' &&
-          bands.map((band) => {
-            const spot = labelSpot(band, ceiling);
-            return spot === null ? null : (
-              <text
-                key={`label:${band.kind}`}
-                className={styles.bandLabel}
-                x={spot.x}
-                y={spot.y}
-                textAnchor={spot.anchor}
-                data-testid={`activity-band-label-${band.kind}`}
-              >
-                {KIND_NAMES[band.kind]}
-              </text>
-            );
-          })}
-      </svg>
+          </div>
+        )}
+      </div>
       <ul className={styles.summaryList} data-testid="activity-totals">
         <li>
           {view === 'store' && (

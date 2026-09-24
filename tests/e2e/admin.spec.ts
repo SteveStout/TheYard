@@ -535,6 +535,11 @@ test('the activity graph draws at the top of the tab and its response names nobo
   }
   await expect(card.getByTestId('activity-legend')).toContainText('Scanners and crawlers');
   await expect(card.getByTestId('activity-days-table')).toHaveCount(1);
+  // The axis is named, and a pointer over the chart reads the day out (1.0.3.14).
+  await expect(card.getByTestId('activity-axis-name')).toContainText('Visitor-days per day');
+  await card.getByTestId('activity-graph').hover();
+  await expect(card.getByTestId('activity-crosshair')).toHaveCount(1);
+  await expect(card.getByTestId('activity-tooltip')).toContainText('People');
   // The recruiter's path: four steps, in the order they are walked.
   for (const step of ['site', 'inventory', 'author', 'resume']) {
     await expect(card.getByTestId(`activity-path-${step}`)).toHaveCount(1);
