@@ -16,6 +16,8 @@ import {
   groupByDay,
   labelledIndexes,
   linePath,
+  namedPaths,
+  pageName,
   sortVisitors,
   type ActivityDay,
   type ActivitySeries,
@@ -233,6 +235,32 @@ describe('unique visitors per day', () => {
     expect(dayAt(-50, 8)).toBe(0);
     expect(dayAt(10_000, 8)).toBe(7);
     expect(dayAt(123, 1)).toBe(0);
+  });
+
+  it('names a path by the page a person asked for, the most particular pattern first', () => {
+    expect(pageName('/')).toBe('Opened the site');
+    expect(pageName('/index.html')).toBe('Opened the site');
+    expect(pageName('/api/vehicles')).toBe('Inventory listing');
+    expect(pageName('/api/vehicles/abc-001/bids')).toBe("One vehicle's bids");
+    expect(pageName('/api/vehicles/abc-001')).toBe('One vehicle');
+    expect(pageName('/api/docs/resume')).toBe('The resume');
+    expect(pageName('/docs/resume.pdf')).toBe('The resume');
+    expect(pageName('/resume.pdf')).toBe('The resume');
+    expect(pageName('/api/docs/changelog')).toBe('Document: changelog');
+    expect(pageName('/wp-admin/install.php')).toBe('/wp-admin/install.php');
+  });
+
+  it('adds two paths that are one page, most asked for first', () => {
+    expect(
+      namedPaths([
+        { path: '/api/facets', requests: 5 },
+        { path: '/index.html', requests: 4 },
+        { path: '/', requests: 3 },
+      ])
+    ).toEqual([
+      { name: 'Opened the site', requests: 7 },
+      { name: 'Facets and filters', requests: 5 },
+    ]);
   });
 
   it('adds the three kinds under All traffic, and only people under Visitors only', () => {

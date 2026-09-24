@@ -529,6 +529,11 @@ test('the activity graph draws at the top of the tab and its response names nobo
     /\d+ people, \d+ scanners and crawlers/
   );
   await expect(card.getByTestId('activity-left-out')).toHaveCount(0);
+  // What people asked for is named by page; the collector is one line with its numbers behind Details.
+  await expect(card.getByTestId('activity-asked-for')).toContainText('What people asked for');
+  await expect(card.getByTestId('activity-collector')).toContainText(
+    /Collector (fine|: \d+ batches failed)/
+  );
   // All traffic stacks the three kinds, bottom to top, with a legend naming them.
   for (const kind of ['people', 'scanners', 'self']) {
     await expect(card.getByTestId(`activity-band-${kind}`)).toHaveCount(1);

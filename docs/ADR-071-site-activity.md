@@ -439,3 +439,9 @@ it and `/docs/resume.pdf` as the repository serves it). Read off the rows
 before it shipped: of the 41 resume requests in the eight days to 24
 September, 39 came through `/api/docs/resume`, which is why the step
 names it first.
+
+From 1.0.3.16 the card names what people asked for by page, from a table
+of patterns in `src/lib/activity.ts` (the most particular first, a path
+nothing names shown as itself), shows what scanners probed apart from it,
+and puts the collector's counts behind a Details line that says whether it
+is fine.

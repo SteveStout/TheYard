@@ -163,6 +163,50 @@ export function groupByDay(
 }
 // #endregion days
 
+// #region page-names
+/**
+ * A path as the page a person asked for (1.0.3.16): the listing, the facets,
+ * About Steven, and not the route, so the list reads as what people looked at.
+ * The most particular pattern first; a path nothing names is itself.
+ */
+const PAGE_NAMES: readonly (readonly [RegExp, string])[] = [
+  [/^\/(index\.html)?$/, 'Opened the site'],
+  [/^\/api\/vehicles$/, 'Inventory listing'],
+  [/^\/api\/vehicles\/[^/]+\/bids$/, "One vehicle's bids"],
+  [/^\/api\/vehicles\/[^/]+$/, 'One vehicle'],
+  [/^\/api\/facets$/, 'Facets and filters'],
+  [/^\/api\/bids$/, 'Bids'],
+  [/^\/api\/auth\/me$/, 'Who am I (sign-in state)'],
+  [/^\/api\/stores$/, 'The store bar'],
+  [/^\/api\/version$/, 'The version line'],
+  [/^\/api\/tests\/summary$/, 'The test counts'],
+  [/^\/api\/docs\/author$/, 'About Steven'],
+  [/^(\/api\/docs\/resume|\/docs\/resume\.pdf|\/resume\.pdf)$/, 'The resume'],
+  [/^\/api\/docs\/(.+)$/, 'Document: $1'],
+  [/^\/api\/admin\/(.+)$/, 'Admin: $1'],
+];
+
+export function pageName(path: string): string {
+  for (const [pattern, name] of PAGE_NAMES) {
+    const match = pattern.exec(path);
+    if (match) return name.replace('$1', match[1] ?? '');
+  }
+  return path;
+}
+
+/** Paths by page name, two paths that are one page added together, most asked for first. */
+export function namedPaths(paths: ActivityPath[]): { name: string; requests: number }[] {
+  const merged = new Map<string, number>();
+  for (const entry of paths) {
+    const name = pageName(entry.path);
+    merged.set(name, (merged.get(name) ?? 0) + entry.requests);
+  }
+  return [...merged.entries()]
+    .map(([name, requests]) => ({ name, requests }))
+    .sort((a, b) => b.requests - a.requests || a.name.localeCompare(b.name));
+}
+// #endregion page-names
+
 // #region chart-geometry
 /** The drawing area the lines are laid into, in SVG units; the card scales it to its width. */
 export const CHART = { width: 720, height: 200, left: 36, right: 12, top: 12, bottom: 28 } as const;

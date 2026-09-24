@@ -25,6 +25,7 @@ import {
   labelSpot,
   labelledIndexes,
   linePath,
+  namedPaths,
   partialDay,
   pathShares,
   sortVisitors,
@@ -2534,13 +2535,26 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
               {store.name} keeps no activity here: {store.reason}.
             </li>
           ))}
-        <li>
-          Top paths:{' '}
-          {shown.top_paths.length === 0
-            ? 'none yet'
-            : shown.top_paths.map((entry) => `${entry.path} (${entry.requests})`).join(', ')}
+        <li data-testid="activity-asked-for">
+          What people asked for, named by page:{' '}
+          {people.top_paths.length === 0
+            ? 'nothing yet'
+            : namedPaths(people.top_paths)
+                .slice(0, 8)
+                .map((entry) => `${entry.name} ${entry.requests.toLocaleString()}`)
+                .join(' · ')}
           .
         </li>
+        {who === 'all' && self.top_paths.length > 0 && (
+          <li className={styles.muted} data-testid="activity-own-asked-for">
+            The site's own reads asked for:{' '}
+            {namedPaths(self.top_paths)
+              .slice(0, 5)
+              .map((entry) => `${entry.name} ${entry.requests.toLocaleString()}`)
+              .join(' · ')}
+            .
+          </li>
+        )}
         {who === 'people' && (
           <li className={styles.muted} data-testid="activity-left-out">
             Left out: {scanners.visitor_days.toLocaleString()} visitor-days of scanners and crawlers
@@ -2549,13 +2563,33 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
             the container warm, the page sweep and the ship's readers).
           </li>
         )}
-        <li className={styles.muted}>
-          Collector: {report.collector.offered.toLocaleString()} hits offered since the process
-          started, {report.collector.written.toLocaleString()} written,{' '}
-          {report.collector.failed_batches} batches failed, one batch per store every{' '}
-          {report.collector.interval_seconds} seconds.
+        <li className={styles.muted} data-testid="activity-collector">
+          <details className={styles.about}>
+            <summary className={styles.aboutSummary}>
+              {report.collector.failed_batches === 0
+                ? 'Collector fine'
+                : `Collector: ${report.collector.failed_batches} batches failed`}
+            </summary>
+            <p className={styles.muted}>
+              {report.collector.offered.toLocaleString()} hits offered since the process started,{' '}
+              {report.collector.written.toLocaleString()} written, {report.collector.failed_batches}{' '}
+              batches failed, one batch per store every {report.collector.interval_seconds} seconds.
+            </p>
+          </details>
         </li>
       </ul>
+      {scanners.top_paths.length > 0 && (
+        <p className={styles.scannerStrip} data-testid="activity-scanners">
+          <strong>What scanners probed, kept out of the lists above:</strong>{' '}
+          {scanners.top_paths
+            .slice(0, 6)
+            .map((entry) => `${entry.path} ${entry.requests.toLocaleString()}`)
+            .join(' · ')}
+          ; {scanners.requests.toLocaleString()} requests from{' '}
+          {scanners.visitor_days.toLocaleString()} visitor-days that looked like scanners and
+          crawlers.
+        </p>
+      )}
       <section className={styles.pathTile} data-testid="activity-path">
         <h3 className={styles.cardTitle}>The recruiter's path</h3>
         <svg
