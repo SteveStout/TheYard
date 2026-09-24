@@ -559,6 +559,8 @@ test('the activity graph draws at the top of the tab and its response names nobo
   await card.getByTestId('activity-graph').hover();
   await expect(card.getByTestId('activity-crosshair')).toHaveCount(1);
   await expect(card.getByTestId('activity-tooltip')).toContainText('People');
+  // Where they came from (1.0.3.17): the tile is there whether or not anything has been counted yet.
+  await expect(card.getByTestId('activity-sources')).toContainText('Where they came from');
   // The recruiter's path: four steps, in the order they are walked.
   for (const step of ['site', 'inventory', 'author', 'resume']) {
     await expect(card.getByTestId(`activity-path-${step}`)).toHaveCount(1);

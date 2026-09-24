@@ -14,6 +14,7 @@ CREATE TABLE [dbo].[ActivityVisitors] (
     [Requests]   int            NOT NULL,
     [Bots]       int            NOT NULL,
     [Paths]      nvarchar(4000) NOT NULL,  -- the paths this visitor asked for most, JSON, top twenty
+    [Sources]    nvarchar(4000) NULL,      -- the hosts that linked here on a page load, JSON, top twenty (1.0.3.17)
     CONSTRAINT [PK_ActivityVisitors] PRIMARY KEY ([Store], [Day], [Visitor])
 );
 GO

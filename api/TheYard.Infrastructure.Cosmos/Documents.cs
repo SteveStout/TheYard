@@ -252,6 +252,9 @@ public sealed class ActivityVisitorDocument
     public int Bots { get; set; }
     public Dictionary<string, int> Paths { get; set; } = new(StringComparer.Ordinal);
 
+    /// <summary>The hosts that linked here on a page load, with their counts (1.0.3.17); absent on a document written before, which reads as none.</summary>
+    public Dictionary<string, int> Sources { get; set; } = new(StringComparer.Ordinal);
+
     public static string IdFor(string store, string visitor) => $"visitor:{store}:{visitor}";
 }
 // #endregion activity-documents

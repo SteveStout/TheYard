@@ -49,5 +49,8 @@ public sealed class ActivityVisitorRow
     public required int Bots { get; set; }
 
     public required string Paths { get; set; }
+
+    /// <summary>The hosts that linked here on a page load, as a JSON object, top twenty (1.0.3.17); null on a row written before.</summary>
+    public string? Sources { get; set; }
 }
 // #endregion activity-rows

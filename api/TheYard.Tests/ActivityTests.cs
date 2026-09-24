@@ -197,6 +197,41 @@ public class ActivityTests
     }
     // #endregion hits
 
+    // #region sources
+    // Where a page load came from (1.0.3.17): the host only, only on the page
+    // itself, never this site or its other store, "(none)" for nothing.
+    [Theory]
+    [InlineData("https://www.linkedin.com/in/someone?trk=abc", "/index.html", "www.linkedin.com")]
+    [InlineData("https://www.google.com/", "/", "www.google.com")]
+    [InlineData("HTTPS://GitHub.com/SteveStout/TheYard", "/index.html", "github.com")]
+    [InlineData(null, "/index.html", "(none)")]
+    [InlineData("", "/", "(none)")]
+    [InlineData("https://theyard.stevenstout.biz/?view=admin", "/index.html", null)]
+    [InlineData("https://theyard-cosmos.stevenstout.biz/", "/", null)]
+    [InlineData("https://app-theyard-ss.azurewebsites.net/", "/", null)]
+    [InlineData("android-app://com.linkedin.android/", "/", "other")]
+    [InlineData("https://www.linkedin.com/feed", "/api/vehicles", null)]
+    public void A_page_load_keeps_the_host_that_linked_here_and_nothing_else_of_it(string? referer, string path, string? expected) =>
+        Assert.Equal(expected, Hits.SourceOf(referer, path, "theyard.stevenstout.biz"));
+
+    [Fact]
+    public void A_visitors_sources_are_folded_by_host_and_a_hit_with_none_adds_nothing()
+    {
+        var at = "2026-09-24T18:00:00Z";
+        var hits = new[]
+        {
+            Hit("sql", at, path: "/index.html") with { Source = "www.linkedin.com" },
+            Hit("sql", at, path: "/index.html") with { Source = "www.linkedin.com" },
+            Hit("sql", at, path: "/api/vehicles"),
+        };
+
+        var delta = Assert.Single(ActivityFolding.Visitors(hits));
+        var source = Assert.Single(delta.Sources);
+        Assert.Equal("www.linkedin.com", source.Key);
+        Assert.Equal(2, source.Value);
+    }
+    // #endregion sources
+
     // #region who
     private static ActivityVisitor Row(string visitor, string network, int requests, int bots, string day = "2026-09-23", string store = "sql", string path = "/index.html") =>
         new(store, day, visitor, network, DateTimeOffset.Parse(day + "T10:00:00Z"), DateTimeOffset.Parse(day + "T11:00:00Z"), requests, bots,
@@ -277,6 +312,26 @@ public class ActivityTests
         Assert.Equal(2, steps["inventory"]);
         Assert.Equal(1, steps["author"]);
         Assert.Equal(1, steps["resume"]);
+    }
+
+    [Fact]
+    public void The_hosts_that_linked_here_are_counted_in_visitor_days()
+    {
+        var rows = new List<ActivityVisitor>
+        {
+            Row("p1", "107.138.48.x", 3, 0) with { Sources = new Dictionary<string, int>(StringComparer.Ordinal) { ["www.linkedin.com"] = 2, ["(none)"] = 1 } },
+            Row("p1", "107.138.48.x", 1, 0, store: "cosmos") with { Sources = new Dictionary<string, int>(StringComparer.Ordinal) { ["www.linkedin.com"] = 1 } },
+            Row("p2", "198.51.100.x", 1, 0) with { Sources = new Dictionary<string, int>(StringComparer.Ordinal) { ["www.linkedin.com"] = 1 } },
+            // A row written before the sources were kept adds nothing.
+            Row("p3", "203.0.113.x", 1, 0),
+        };
+
+        var hosts = JsonSerializer.SerializeToElement(ActivityWho.Sources(rows)).EnumerateArray()
+            .ToDictionary(entry => entry.GetProperty("host").GetString()!, entry => entry.GetProperty("visitor_days").GetInt32());
+
+        Assert.Equal(2, hosts["www.linkedin.com"]);
+        Assert.Equal(1, hosts["(none)"]);
+        Assert.Equal(2, hosts.Count);
     }
 
     [Fact]
@@ -518,6 +573,24 @@ public class ActivityEndpointTests : IClassFixture<ActivityEndpointTests.KeyedHo
         var visitor = Assert.Single(await store.VisitorsAsync(at, CancellationToken.None), v => v.Visitor == hit.Visitor);
         Assert.Equal(3, visitor.Requests);
         Assert.Equal("198.51.100.x", visitor.Network);
+    }
+    [Fact]
+    public async Task A_referring_host_is_kept_on_the_visitor_row_in_either_store()
+    {
+        var store = _host.Services.GetRequiredService<Backends>().Default.Activity;
+        var at = new DateTimeOffset(2001, 1, 1, 0, 0, 0, TimeSpan.Zero).AddHours(Random.Shared.Next(1, 80_000));
+        string token = Convert.ToHexStringLower(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
+        var hit = new ActivityHit(
+            at, token, "198.51.100.x", "/index.html", _host.Services.GetRequiredService<Backends>().Default.Key, false, "www.linkedin.com");
+
+        await store.RecordAsync([hit], CancellationToken.None);
+        await store.RecordAsync([hit with { Source = "github.com" }, hit with { Source = null, Path = "/api/vehicles" }], CancellationToken.None);
+
+        var visitor = Assert.Single(await store.VisitorsAsync(at, CancellationToken.None), v => v.Visitor == token);
+        Assert.NotNull(visitor.Sources);
+        Assert.Equal(1, visitor.Sources!["www.linkedin.com"]);
+        Assert.Equal(1, visitor.Sources["github.com"]);
+        Assert.Equal(3, visitor.Requests);
     }
     // #endregion endpoints
 }

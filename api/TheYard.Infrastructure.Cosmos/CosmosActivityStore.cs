@@ -115,6 +115,7 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore
                     Requests = delta.Requests,
                     Bots = delta.Bots,
                     Paths = new Dictionary<string, int>(ActivityFolding.Merge(Empty, delta.Paths), StringComparer.Ordinal),
+                    Sources = new Dictionary<string, int>(ActivityFolding.Merge(Empty, delta.Sources), StringComparer.Ordinal),
                 },
                 (ActivityVisitorDocument stored) =>
                 {
@@ -131,6 +132,10 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore
                     if (delta.First < stored.FirstSeen)
                     {
                         operations.Add(PatchOperation.Set("/first_seen", delta.First));
+                    }
+                    if (delta.Sources.Count > 0)
+                    {
+                        operations.Add(PatchOperation.Set("/sources", ActivityFolding.Merge(stored.Sources ?? Empty, delta.Sources)));
                     }
                     return operations;
                 },
@@ -229,7 +234,7 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore
             .WithParameter("@day", ActivityFolding.DayOf(since));
         var documents = await ReadAllAsync<ActivityVisitorDocument>(query, cancellation);
         return documents
-            .Select(d => new ActivityVisitor(d.Store, d.Day, d.Visitor, d.Network, d.FirstSeen, d.LastSeen, d.Requests, d.Bots, d.Paths))
+            .Select(d => new ActivityVisitor(d.Store, d.Day, d.Visitor, d.Network, d.FirstSeen, d.LastSeen, d.Requests, d.Bots, d.Paths, d.Sources))
             .OrderByDescending(visitor => visitor.LastSeen)
             .ToList();
     }

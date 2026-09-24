@@ -27,6 +27,11 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
 {
     private static readonly string[] Required = ["ActivityHours", "ActivityVisitors"];
 
+    // A column this build maps that a database published before it lacks (1.0.3.17):
+    // the store is refused the way a missing table refuses it, rather than
+    // failing every batch on a column SQL Server has not heard of.
+    private static readonly string[] RequiredColumns = ["Sources"];
+
     private ActivityAvailability? _availability;
 
     // #region availability
@@ -51,6 +56,16 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
                 .SqlQuery<string>($"SELECT name AS Value FROM sys.tables")
                 .ToListAsync(cancellation);
             var missing = Required.Where(table => !present.Contains(table, StringComparer.OrdinalIgnoreCase)).ToList();
+            if (missing.Count == 0)
+            {
+                var columns = await db.Database
+                    .SqlQuery<string>($"SELECT name AS Value FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.ActivityVisitors')")
+                    .ToListAsync(cancellation);
+                missing.AddRange(RequiredColumns
+                    .Where(column => !columns.Contains(column, StringComparer.OrdinalIgnoreCase))
+                    .Select(column => $"ActivityVisitors.{column}"));
+            }
+
             return _availability = missing.Count == 0
                 ? new ActivityAvailability(true, "kept in Azure SQL Database")
                 : new ActivityAvailability(false, $"the published schema is missing {string.Join(", ", missing)}; publish api/TheYard.Database");
@@ -133,18 +148,20 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
                     Requests = delta.Requests,
                     Bots = delta.Bots,
                     Paths = Write(ActivityFolding.Merge(Empty, delta.Paths)),
+                    Sources = delta.Sources.Count == 0 ? null : Write(ActivityFolding.Merge(Empty, delta.Sources)),
                 }, cancellation);
                 continue;
             }
 
             var stored = await db.ActivityVisitors.AsNoTracking()
                 .Where(row => row.Store == delta.Store && row.Day == delta.Day && row.Visitor == delta.Visitor)
-                .Select(row => row.Paths)
+                .Select(row => new { row.Paths, row.Sources })
                 .FirstOrDefaultAsync(cancellation);
-            string merged = Write(ActivityFolding.Merge(Read(stored), delta.Paths));
+            string merged = Write(ActivityFolding.Merge(Read(stored?.Paths), delta.Paths));
+            string? sources = delta.Sources.Count == 0 ? stored?.Sources : Write(ActivityFolding.Merge(Read(stored?.Sources), delta.Sources));
             await db.ActivityVisitors
                 .Where(row => row.Store == delta.Store && row.Day == delta.Day && row.Visitor == delta.Visitor)
-                .ExecuteUpdateAsync(set => set.SetProperty(row => row.Paths, merged), cancellation);
+                .ExecuteUpdateAsync(set => set.SetProperty(row => row.Paths, merged).SetProperty(row => row.Sources, sources), cancellation);
         }
     }
 
@@ -218,7 +235,8 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
                 new DateTimeOffset(DateTime.SpecifyKind(row.LastSeen, DateTimeKind.Utc)),
                 row.Requests,
                 row.Bots,
-                Read(row.Paths)))
+                Read(row.Paths),
+                Read(row.Sources)))
             .ToList();
     }
     // #endregion read

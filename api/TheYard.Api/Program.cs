@@ -482,7 +482,7 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
     string token = visitorTokens.TokenFor(address, at);
     string network = VisitorTokens.NetworkOf(address);
     string store = backends.For(context).Key;
-    activityCollector?.Offer(Hits.For(visitorTokens, address, at, token, network, path, store, context.Request.Headers.UserAgent.FirstOrDefault()));
+    activityCollector?.Offer(Hits.For(visitorTokens, address, at, token, network, path, store, context.Request.Headers.UserAgent.FirstOrDefault(), Hits.SourceOf(context.Request.Headers.Referer.FirstOrDefault(), path, context.Request.Host.Host)));
     // #endregion activity-hook
 
     // #region kept-logs-hook

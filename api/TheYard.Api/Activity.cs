@@ -207,10 +207,53 @@ public static class Hits
     /// count leaves it out as well. That is the one request that pays for a
     /// second keyed hash.
     /// </summary>
-    public static ActivityHit For(VisitorTokens tokens, string address, DateTimeOffset at, string token, string network, string path, string store, string? userAgent) =>
+    public static ActivityHit For(VisitorTokens tokens, string address, DateTimeOffset at, string token, string network, string path, string store, string? userAgent, string? source = null) =>
         IsSelf(userAgent)
             ? new ActivityHit(at, tokens.TokenFor(SelfNetwork + "|" + address, at), SelfNetwork, PathOf(path), store, true)
-            : new ActivityHit(at, token, network, PathOf(path), store, LooksLikeABot(userAgent, path));
+            : new ActivityHit(at, token, network, PathOf(path), store, LooksLikeABot(userAgent, path), source);
+
+    /// <summary>What a page load with no referring page is kept under: typed, bookmarked, or sent by something that says nothing.</summary>
+    public const string NoSource = "(none)";
+
+    private static readonly Regex HostShape = new(@"^[a-z0-9.-]{1,100}$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Where a page load came from (1.0.3.17): the host of the Referer, lowercased,
+    /// and nothing else of it, so a path or a query that could carry something
+    /// about the visitor never reaches a row. Only the page itself is asked,
+    /// because every call the page makes after it names this site as its
+    /// referrer. A referrer that is this site, the other store's site or the
+    /// App Service origin is moving within the site and is no source; no
+    /// referrer at all is kept as "(none)", typed or unknown; anything that is
+    /// not a web address's host is kept as "other".
+    /// </summary>
+    public static string? SourceOf(string? referer, string path, string requestHost)
+    {
+        if (path != "/" && path != "/index.html")
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(referer))
+        {
+            return NoSource;
+        }
+
+        if (!Uri.TryCreate(referer.Trim(), UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+        {
+            return "other";
+        }
+
+        string host = uri.Host.ToLowerInvariant();
+        if (string.Equals(host, requestHost, StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".azurewebsites.net", StringComparison.Ordinal)
+            || (host.StartsWith("theyard", StringComparison.Ordinal) && host.EndsWith(".stevenstout.biz", StringComparison.Ordinal)))
+        {
+            return null;
+        }
+
+        return HostShape.IsMatch(host) ? host : "other";
+    }
 
     /// <summary>The path a row keeps: no query string, bounded, and with no at sign in it.</summary>
     public static string PathOf(string path)
@@ -669,6 +712,7 @@ public static class ActivityWho
                 requests = theirs.Sum(row => row.Requests),
                 top_paths = TopPaths(theirs),
                 path = Path(theirs),
+                sources = Sources(theirs),
                 by_store = stores.Select(store =>
                 {
                     var here = theirs.Where(row => row.Store == store).ToList();
@@ -717,6 +761,31 @@ public static class ActivityWho
                 .Distinct(StringComparer.Ordinal)
                 .Count(),
         }).ToList();
+
+    /// <summary>
+    /// The hosts that linked here (1.0.3.17), each counted in visitor-days: a
+    /// visitor-day that arrived from two places counts under both, once each.
+    /// Rows written before 1.0.3.17 have no sources and add nothing.
+    /// </summary>
+    public static List<object> Sources(IReadOnlyList<ActivityVisitor> rows)
+    {
+        var days = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        foreach (var row in rows)
+        {
+            foreach (var host in (row.Sources ?? new Dictionary<string, int>()).Keys)
+            {
+                if (!days.TryGetValue(host, out var names))
+                {
+                    days[host] = names = new HashSet<string>(StringComparer.Ordinal);
+                }
+
+                names.Add(NameOf(row));
+            }
+        }
+
+        return days.OrderByDescending(entry => entry.Value.Count).ThenBy(entry => entry.Key, StringComparer.Ordinal).Take(12)
+            .Select(entry => (object)new { host = entry.Key, visitor_days = entry.Value.Count }).ToList();
+    }
 
     private static List<object> TopPaths(IEnumerable<ActivityVisitor> rows)
     {

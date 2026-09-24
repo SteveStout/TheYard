@@ -12,6 +12,7 @@ import {
   ACTIVITY_WINDOWS,
   CHART,
   KIND_NAMES,
+  SOURCE_NAMES,
   STEP_NAMES,
   areaPath,
   bandPath,
@@ -20,6 +21,7 @@ import {
   dayAt,
   dayLines,
   edgePath,
+  groupSources,
   groupByDay,
   labelFor,
   labelSpot,
@@ -2634,6 +2636,91 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
         <p className={styles.muted}>
           Visitor-days that asked for each step in the window: the page itself, the inventory's
           listing, About Steven, and the resume, which is the number this site exists for.
+        </p>
+      </section>
+      <section className={styles.pathTile} data-testid="activity-sources">
+        <h3 className={styles.cardTitle}>Where they came from</h3>
+        {shown.sources.length === 0 ? (
+          <p className={styles.muted}>
+            Counted from 1.0.3.17, 24 September: no page load in the window has arrived since with
+            its referring site kept.
+          </p>
+        ) : (
+          <>
+            <svg
+              className={styles.pathChart}
+              viewBox={`0 0 ${PATH_CHART.width} ${PATH_CHART.row * 5}`}
+              role="img"
+              aria-label={`Where they came from over the ${report.window} window: ${groupSources(
+                shown.sources
+              )
+                .map((entry) => `${SOURCE_NAMES[entry.group]} ${entry.visitor_days}`)
+                .join(', ')}`}
+            >
+              {groupSources(shown.sources).map((entry, index, all) => {
+                const y = index * PATH_CHART.row;
+                const share = pathShares(all)[index];
+                return (
+                  <g key={entry.group} data-testid={`activity-source-${entry.group}`}>
+                    <text className={styles.pathLabel} x={0} y={y + 17}>
+                      {SOURCE_NAMES[entry.group]}
+                    </text>
+                    <rect
+                      className={styles.pathTrack}
+                      x={PATH_CHART.bar}
+                      y={y + 5}
+                      width={PATH_CHART.width - PATH_CHART.bar - PATH_CHART.count}
+                      height={16}
+                      rx={4}
+                    />
+                    <rect
+                      className={`${styles.pathBar} ${who === 'people' ? styles.whoPeople : styles.allLine}`}
+                      x={PATH_CHART.bar}
+                      y={y + 5}
+                      width={share * (PATH_CHART.width - PATH_CHART.bar - PATH_CHART.count)}
+                      height={16}
+                      rx={4}
+                    />
+                    <text
+                      className={styles.pathCount}
+                      x={PATH_CHART.width}
+                      y={y + 17}
+                      textAnchor="end"
+                    >
+                      {entry.visitor_days.toLocaleString()}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+            <div
+              className={styles.tableWrap}
+              role="region"
+              aria-label="The sites that linked here"
+              tabIndex={0}
+            >
+              <table className={styles.table} data-testid="activity-source-hosts">
+                <thead>
+                  <tr>
+                    <th scope="col">Site</th>
+                    <th scope="col">Visitor-days</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shown.sources.slice(0, 10).map((entry) => (
+                    <tr key={entry.host}>
+                      <td className={styles.mono}>{entry.host}</td>
+                      <td className={styles.mono}>{entry.visitor_days.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+        <p className={styles.muted}>
+          The host of the page that linked here, kept on a page load and never its path. A link
+          opened from a PDF, the resume among them, sends no referrer and reads as typed or unknown.
         </p>
       </section>
       <details className={styles.about}>

@@ -16,8 +16,10 @@ import {
   groupByDay,
   labelledIndexes,
   linePath,
+  groupSources,
   namedPaths,
   pageName,
+  sourceGroup,
   sortVisitors,
   type ActivityDay,
   type ActivitySeries,
@@ -260,6 +262,35 @@ describe('unique visitors per day', () => {
     ).toEqual([
       { name: 'Opened the site', requests: 7 },
       { name: 'Facets and filters', requests: 5 },
+    ]);
+  });
+
+  it('puts a referring host in one of five groups, a host nothing names being another site', () => {
+    expect(sourceGroup('www.linkedin.com')).toBe('linkedin');
+    expect(sourceGroup('lnkd.in')).toBe('linkedin');
+    expect(sourceGroup('github.com')).toBe('github');
+    expect(sourceGroup('stevestout.github.io')).toBe('github');
+    expect(sourceGroup('www.google.com')).toBe('search');
+    expect(sourceGroup('www.google.co.uk')).toBe('search');
+    expect(sourceGroup('duckduckgo.com')).toBe('search');
+    expect(sourceGroup('boards.greenhouse.io')).toBe('other');
+    expect(sourceGroup('notlinkedin.com')).toBe('other');
+    expect(sourceGroup('(none)')).toBe('none');
+  });
+
+  it('adds the hosts up by group, every group present and in the fixed order', () => {
+    expect(
+      groupSources([
+        { host: 'www.linkedin.com', visitor_days: 9 },
+        { host: 'lnkd.in', visitor_days: 3 },
+        { host: '(none)', visitor_days: 18 },
+      ])
+    ).toEqual([
+      { group: 'linkedin', visitor_days: 12 },
+      { group: 'github', visitor_days: 0 },
+      { group: 'search', visitor_days: 0 },
+      { group: 'other', visitor_days: 0 },
+      { group: 'none', visitor_days: 18 },
     ]);
   });
 

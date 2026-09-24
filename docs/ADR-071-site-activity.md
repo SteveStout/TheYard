@@ -445,3 +445,30 @@ of patterns in `src/lib/activity.ts` (the most particular first, a path
 nothing names shown as itself), shows what scanners probed apart from it,
 and puts the collector's counts behind a Details line that says whether it
 is fine.
+
+## Addendum, 2026-09-24: where they came from
+
+From 1.0.3.17 a hit carries a seventh field, on a page load only: the host of
+the page that linked here, lowercased, and nothing else of the referrer, so
+a path or a query that could carry something about the visitor never
+reaches a row. A referrer that is this site, the other store's site or the
+App Service origin is moving within the site and is no source; no referrer
+is kept as "(none)". The hosts are counted on the visitor row the way the
+paths are, top twenty, in both stores: a field on the Cosmos DB document,
+and a nullable `Sources` column on `ActivityVisitors` in the database
+project and in a SQLite migration. The relational column reaches Azure SQL
+Database at the next deliberate publish (ADR: Data first, and the database in source
+control). Until then the relational activity store finds the column
+missing and refuses itself, naming it, the way a missing table refuses it,
+rather than failing every batch; that matters only on a start where Cosmos
+DB did not answer, because Cosmos DB keeps the activity on both sites.
+
+The hosts are public on the card, beside the five groups the card draws
+(LinkedIn, GitHub, search, another site, typed or unknown). Three ways were
+put to Steve with a picture of each: the group alone, the plain host, and a
+keyed hash of the host. He chose the plain host, and on keeping it behind
+the operator's key: "no reason that should be behind a operator key no
+personal information", and "we would only obscure personal information
+and that is not personal". A referring site names a site and not a person. A
+link opened from a PDF, the resume among them, sends no referrer, so it
+reads as typed or unknown unless the link itself carries a tag.

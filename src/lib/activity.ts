@@ -56,6 +56,7 @@ export type ActivityWhoEntry = {
   requests: number;
   top_paths: ActivityPath[];
   path: { step: ActivityStep; visitor_days: number }[];
+  sources: { host: string; visitor_days: number }[];
   by_store: { store: string; visitor_days: number; requests: number }[];
 };
 /** The card's toggle: visitors only (the people) or all traffic (the three kinds together). */
@@ -204,6 +205,54 @@ export function namedPaths(paths: ActivityPath[]): { name: string; requests: num
   return [...merged.entries()]
     .map(([name, requests]) => ({ name, requests }))
     .sort((a, b) => b.requests - a.requests || a.name.localeCompare(b.name));
+}
+
+/**
+ * Where they came from (1.0.3.17): the host of the page that linked here, put in
+ * one of five groups, in a fixed order. A host nothing names is another site;
+ * "(none)" is a page load with no referring page, typed, bookmarked, or opened
+ * from something that says nothing, a PDF among them.
+ */
+export type SourceGroup = 'linkedin' | 'github' | 'search' | 'other' | 'none';
+export const SOURCE_GROUPS: readonly SourceGroup[] = [
+  'linkedin',
+  'github',
+  'search',
+  'other',
+  'none',
+];
+export const SOURCE_NAMES: Readonly<Record<SourceGroup, string>> = {
+  linkedin: 'LinkedIn',
+  github: 'GitHub',
+  search: 'Search',
+  other: 'Another site',
+  none: 'Typed or unknown',
+};
+
+export function sourceGroup(host: string): SourceGroup {
+  if (host === '(none)') return 'none';
+  if (/(^|\.)linkedin\.com$|^lnkd\.in$/.test(host)) return 'linkedin';
+  if (/(^|\.)github\.(com|io)$/.test(host)) return 'github';
+  if (
+    /(^|\.)(google\.[a-z.]+|bing\.com|duckduckgo\.com|yahoo\.com|ecosia\.org|baidu\.com|yandex\.[a-z]+|startpage\.com)$/.test(
+      host
+    ) ||
+    host === 'search.brave.com'
+  )
+    return 'search';
+  return 'other';
+}
+
+/** The hosts added up by group, every group present and in the fixed order, so the tile's rows never move. */
+export function groupSources(
+  sources: { host: string; visitor_days: number }[]
+): { group: SourceGroup; visitor_days: number }[] {
+  const totals = new Map<SourceGroup, number>(SOURCE_GROUPS.map((group) => [group, 0]));
+  for (const entry of sources) {
+    const group = sourceGroup(entry.host);
+    totals.set(group, (totals.get(group) ?? 0) + entry.visitor_days);
+  }
+  return SOURCE_GROUPS.map((group) => ({ group, visitor_days: totals.get(group) ?? 0 }));
 }
 // #endregion page-names
 

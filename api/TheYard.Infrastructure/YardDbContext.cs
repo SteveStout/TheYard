@@ -266,6 +266,7 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
             // could not be read: never four octets.
             visitor.Property(row => row.Network).HasMaxLength(NetworkLength);
             visitor.Property(row => row.Paths).HasMaxLength(PathsLength);
+            visitor.Property(row => row.Sources).HasMaxLength(PathsLength);
         });
         // #endregion activity-model
     }

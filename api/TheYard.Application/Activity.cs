@@ -8,14 +8,17 @@ namespace TheYard.Application;
 // either through this.
 //
 // What a hit carries is the whole privacy decision, so it is decided here and
-// not in an adapter. Six fields: when, a visitor token that is a keyed hash of
-// the address and rotates daily, the address cut to its first three octets,
-// the path with no query string, the store, and whether the request looked
-// like a bot. No user agent, no account, no email, no full address, no query
-// string. A row that has no field for a thing cannot leak it.
+// not in an adapter. Seven fields: when, a visitor token that is a keyed hash
+// of the address and rotates daily, the address cut to its first three octets,
+// the path with no query string, the store, whether the request looked like a
+// bot, and on a page load the host of the page that linked here (1.0.3.17; the
+// host only, never its path or query, and not personal information in Steve's
+// words, so it is as public as the rest of the tab). No user agent, no
+// account, no email, no full address, no query string. A row that has no
+// field for a thing cannot leak it.
 
 /// <summary>One request as the activity feature sees it. The type has no room for anything a person could be named by.</summary>
-public sealed record ActivityHit(DateTimeOffset At, string Visitor, string Network, string Path, string Store, bool Bot);
+public sealed record ActivityHit(DateTimeOffset At, string Visitor, string Network, string Path, string Store, bool Bot, string? Source = null);
 
 /// <summary>One store's requests in one UTC hour, with the paths it served most, for the graph.</summary>
 public sealed record ActivityHour(string Store, DateTimeOffset Hour, int Requests, int Bots, IReadOnlyDictionary<string, int> Paths);
@@ -30,7 +33,8 @@ public sealed record ActivityVisitor(
     DateTimeOffset LastSeen,
     int Requests,
     int Bots,
-    IReadOnlyDictionary<string, int> Paths);
+    IReadOnlyDictionary<string, int> Paths,
+    IReadOnlyDictionary<string, int>? Sources = null);
 
 /// <summary>Whether a store can keep activity right now, and if not, why, in one sentence a page can show.</summary>
 public sealed record ActivityAvailability(bool Available, string Reason);
@@ -106,7 +110,8 @@ public static class ActivityFolding
                 group.Max(hit => hit.At),
                 group.Count(),
                 group.Count(hit => hit.Bot),
-                TopPaths(group)))
+                TopPaths(group),
+                TopSources(group)))
             .OrderBy(delta => delta.Store, StringComparer.Ordinal)
             .ThenBy(delta => delta.Day, StringComparer.Ordinal)
             .ThenBy(delta => delta.Visitor, StringComparer.Ordinal)
@@ -137,6 +142,16 @@ public static class ActivityFolding
     /// <summary>The UTC day as text, which is what both stores key and partition a visitor on.</summary>
     public static string DayOf(DateTimeOffset at) => at.ToUniversalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
+    /// <summary>The hosts that linked here, by page loads, kept to the top few like the paths.</summary>
+    private static IReadOnlyList<KeyValuePair<string, int>> TopSources(IEnumerable<ActivityHit> hits) =>
+        hits.Where(hit => hit.Source is not null)
+            .GroupBy(hit => hit.Source!, StringComparer.Ordinal)
+            .Select(group => new KeyValuePair<string, int>(group.Key, group.Count()))
+            .OrderByDescending(entry => entry.Value)
+            .ThenBy(entry => entry.Key, StringComparer.Ordinal)
+            .Take(PathsKept)
+            .ToList();
+
     private static IReadOnlyList<KeyValuePair<string, int>> TopPaths(IEnumerable<ActivityHit> hits) =>
         hits.GroupBy(hit => hit.Path, StringComparer.Ordinal)
             .Select(group => new KeyValuePair<string, int>(group.Key, group.Count()))
@@ -159,5 +174,6 @@ public sealed record ActivityVisitorDelta(
     DateTimeOffset Last,
     int Requests,
     int Bots,
-    IReadOnlyList<KeyValuePair<string, int>> Paths);
+    IReadOnlyList<KeyValuePair<string, int>> Paths,
+    IReadOnlyList<KeyValuePair<string, int>> Sources);
 // #endregion activity-folding
