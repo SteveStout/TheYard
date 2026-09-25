@@ -1,7 +1,24 @@
 /*
  * Design tokens: the single source of truth for color, spacing, radius,
- * typography, and shadow. Imported once at the app root; every component
- * module consumes these variables.
+ * typography, shadow, layers and motion. Imported once at the app root; every
+ * component module consumes these variables and writes no value of its own
+ * (StyleRulesTests holds colours, sizes, weights, radii, tracking and layers).
+ *
+ * Three tiers, top to bottom (the styling pass of 25 September):
+ *   the palette    raw values, each written once: the printed Urban slate, the
+ *                  ribbon ground, teal and gold, the code theme, the status set;
+ *   the roles      what a value is for (--color-text, --color-accent,
+ *                  --glass-bg), a hex where the role owns the colour and a
+ *                  var() where it borrows one;
+ *   the components the sidebar sheet, the Mark VII marks, the operator's
+ *                  rule and ring: every one a var() of a role or a tint of
+ *                  one by color-mix, so a palette change reaches them all.
+ * A token that repeats another's value is written as that token, never as the
+ * same hex twice; the tests and the swatches read through var() to the value.
+ *
+ * The width scale is in src/lib/breakpoints.ts, because a media query cannot
+ * read a custom property: 480, 640, 768, 1024, 1280 and 1440, written
+ * (min-width: 640px) above a step and (max-width: 639.98px) under it.
  *
  * The palette is Figma's "Urban slate" (ADR-016): five colors, gray, brown
  * and blue, from foggy cityscapes. Where a shade had to be deepened so text
@@ -17,7 +34,14 @@
   /* #region palette */
   /* Urban slate, the five as Figma prints them:
      #E9E6E7 light gray, #5E5653 brown-gray, #7B7F8A slate gray,
-     #AB978C taupe, #6B7C98 slate blue. */
+     #AB978C taupe, #6B7C98 slate blue. Two are kept as they print because
+     other tokens are made from them: the brown-gray tints every shadow and the
+     scrim, and the slate gray is the third chart series and the sidebar's icons.
+     White is written once too: it is the surface, the ink on the accent and on
+     the header, and the right end of the page's ground. */
+  --palette-white: #ffffff;
+  --palette-brown-gray: #5e5653;
+  --palette-slate-gray: #7b7f8a;
   --color-bg: #e9e6e7; /* the light gray, as printed: the page ground */
   /* #region ribbon-ground */
   /* The page's ground since the ribbons (ADR: The glass look, the addendum on the
@@ -25,7 +49,7 @@
      ribbons' own colours. The ribbons are code, never an image. */
   --color-ground-left: #dcebe7;
   --color-ground-mid: #f3f7f6;
-  --color-ground-right: #ffffff;
+  --color-ground-right: var(--palette-white);
   --color-ribbon-gold: #c9a24a;
   --color-ribbon-gold-soft: #e8cf8a;
   --color-ribbon-teal: #2a8c8c;
@@ -44,16 +68,26 @@
     var(--color-ground-right) 100%
   );
   --ribbon-tints:
-    radial-gradient(60% 50% at 18% 30%, rgba(42, 140, 140, 0.1), transparent 70%),
-    radial-gradient(45% 40% at 30% 85%, rgba(243, 217, 138, 0.22), transparent 70%);
+    radial-gradient(
+      60% 50% at 18% 30%,
+      color-mix(in srgb, var(--color-ribbon-teal) 10%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      45% 40% at 30% 85%,
+      color-mix(in srgb, var(--color-ribbon-shine) 22%, transparent),
+      transparent 70%
+    );
   /* #endregion ribbon-ground */
-  --color-surface: #ffffff;
+  --color-surface: var(--palette-white);
   --color-surface-muted: #f4f2f3; /* the light gray, halfway to white */
   --color-border: #d8d3d4; /* the light gray, one step darker */
   --color-border-strong: #b6afb0;
   --color-text: #524b48; /* the brown-gray, as printed (#5e5653) until the self-review of 25 September deepened it a step in the same hue: over the 30 per cent glass on a ribbon's teal stop it read 3.88, and it now holds 4.63 and stays darker than the secondary grey */
   --color-text-muted: #4a4e57; /* the slate gray; deepened in ADR-035 (4.39 on the neutral chip), and again in the tweaks pass (#5f636c until 1.0.3.23), where the 30 per cent glass over a ribbon's teal stop held #4d515a at 4.31 */
-  --color-text-faint: #4a4e57; /* folds into muted from 1.0.3.23: one grey for secondary text (ADR-042 deepened it for an ended countdown on the page ground) */
+  /* Faint folds into muted from 1.0.3.23: one grey for secondary text (ADR-042
+     had deepened it for an ended countdown on the page ground). */
+  --color-text-faint: var(--color-text-muted);
   --color-heading: #3f3a37; /* the brown-gray, deepened for weight */
 
   /* #region teal-and-gold */
@@ -65,13 +99,14 @@
   --color-accent: #006360; /* teal: white on it 7.11; as text 7.11 on white, 5.73 on the page ground */
   --color-accent-hover: #004f4d; /* white on it 9.44 */
   --color-accent-soft: #e0ecee; /* the teal, as a pale tint: the accent on it 5.89 */
-  --color-on-accent: #ffffff;
+  --color-on-accent: var(--palette-white);
   --color-green-dark: #0a3021; /* it draws: a card's left edge, a heading's rule, the first series; 14.41 on white */
   --color-teal-deep: #024345; /* a plain tile's top, a vehicle's title, an upcoming auction's chip; white on it 11.1 */
   --color-teal-header: #03505a; /* the bottom of the header gradient and nothing else; white on it 9.13 */
   --color-gold: #d4aa3a; /* trim on white, as decoration only: 2.19 on white, so never text and never data */
   --color-gold-light: #dcbf57; /* trim on the header: 7.98 on the dark green, 5.06 on the header teal */
-  --color-brand-mark: #dcbf57; /* the lightning mark, which only ever sits on the header gradient */
+  /* The lightning mark, which only ever sits on the header gradient. */
+  --color-brand-mark: var(--color-gold-light);
   /* One gradient, top to bottom, for every header bar: the site header on a
      phone, and the side rail's brand block. */
   --gradient-header: linear-gradient(180deg, var(--color-green-dark), var(--color-teal-header));
@@ -98,15 +133,16 @@
   --color-store-sql: #536786;
   --color-store-cosmos: #8a6a4f;
   /* A chart's series when they are not the two stores: a line's identity,
-     first and second, and never a status colour, because a series drawn in
-     the warning colour reads as an alarm (ADR: The Admin tab, as a product,
-     the addendum on the traffic card in plain words). Today they are the
-     accent's value and the heading's; they are their own tokens so a palette
-     changes values here and touches no chart. Graphics, so 3:1 on white. The
-     order is fixed and never shuffled: dark green, bright teal, neutral grey. */
-  --color-series-1: #0a3021;
-  --color-series-2: #188f8d; /* 3.92 on white, 3.67 against the dark green; never text */
-  --color-series-3: #7b7f8a; /* a third series, or a request the site turned away; 4.0 on white */
+     first, second and third, and never a status colour, because a series drawn
+     in the warning colour reads as an alarm (ADR: The Admin tab, as a product,
+     the addendum on the traffic card in plain words). Since the tweaks pass the
+     first two are the Mark VII teal and gold below, told apart by hue, so two
+     series always carry a legend; the third is the printed slate gray.
+     Graphics, so 3:1 on white. The order is fixed and never shuffled. */
+  --color-series-1: var(--color-mark-teal);
+  --color-series-2: var(--color-mark-gold);
+  /* The third: a third series, or a request the site turned away; 4.0 on white. */
+  --color-series-3: var(--palette-slate-gray);
   /* Who the traffic was, on the Site activity card (1.0.3.12): people, scanners
      and crawlers, the site's own reads, stacked in that order. Validated as a
      set for colour vision on 2026-09-24 (adjacent pairs 12.4 apart at the worst
@@ -119,20 +155,29 @@
   /* #region mark-vii */
   /* The Admin tab's charts and gauges in the Mark VII grammar (the tweaks pass,
      B2, from Steve's flight-panel picture): a teal and a gold series, told apart
-     by hue for colour vision and each 3:1 on white as a mark (3.72 and 3.67);
+     by hue for colour vision and each 3:1 as a mark on white and on the page
+     ground (3.81 and 3.07, 3.82 and 3.08; a step deeper in the styling pass,
+     where they had read 2.99 and 2.96 on the ground);
      the dark green draws axes and ticks; a gold marks the end of a gauge's fill
      and the callout's leader. The status colours stay for status. */
-  --color-mark-teal: #13948d;
-  --color-mark-gold: #a87f1e;
-  --color-mark-axis: #024345;
-  --color-mark-marker: #c9a24a;
-  --color-mark-track: rgba(2, 67, 69, 0.15);
-  --color-mark-bar-track: rgba(2, 67, 69, 0.08);
-  --color-mark-rule: rgba(2, 67, 69, 0.14);
-  --color-mark-tint: rgba(2, 67, 69, 0.05);
-  /* A bar gauge's fill is see-through like the chart fills (1.0.3.24); white on
-     the deep teal at this share holds 4.5 over the glass (tokens.test.ts). */
+  --color-mark-teal: #13928b;
+  --color-mark-gold: #a57c1d;
+  --color-mark-axis: var(--color-teal-deep);
+  --color-mark-marker: var(--color-ribbon-gold);
+  --color-mark-track: color-mix(in srgb, var(--color-teal-deep) 15%, transparent);
+  --color-mark-bar-track: color-mix(in srgb, var(--color-teal-deep) 8%, transparent);
+  --color-mark-rule: color-mix(in srgb, var(--color-teal-deep) 14%, transparent);
+  --color-mark-tint: color-mix(in srgb, var(--color-teal-deep) 5%, transparent);
+  /* How strongly a fill is laid down (1.0.3.24, Steve: "not the lines, the
+     fill"): see-through, so the frost and the grid read through it, while its
+     edge carries the colour at full strength. A gauge's fill is the strongest,
+     because white is read inside it: at this share it holds 4.5 over the glass
+     (tokens.test.ts). The wash is the page ground drawn over today's part-day. */
   --gauge-fill-opacity: 0.8;
+  --mark-bar-opacity: 0.6;
+  --mark-band-opacity: 0.55;
+  --mark-area-opacity: 0.12;
+  --mark-wash-opacity: 0.7;
   /* #endregion mark-vii */
   /* #endregion palette */
 
@@ -150,8 +195,8 @@
   --color-live: #16a34a;
   /* The header's text is measured against the lighter end of the gradient,
      which is the worse of the two for white. */
-  --color-header: #03505a;
-  --color-header-text: #ffffff;
+  --color-header: var(--color-teal-header);
+  --color-header-text: var(--palette-white);
   --color-header-text-muted: #cfe3e6;
 
   /* #region sheet-tokens */
@@ -160,15 +205,15 @@
      deepened blue for active icons. Every pair below clears WCAG AA against
      both grounds, measured before it was chosen and asserted by
      tokens.test.ts beside this file. */
-  --color-sheet-bg: #ffffff;
-  --color-sheet-bg-raised: #e0ecee;
-  --color-sheet-text: #5e5653;
-  --color-sheet-text-muted: #4a4e57; /* the one secondary grey, from 1.0.3.23 */
-  --color-sheet-icon: #7b7f8a;
-  --color-sheet-icon-active: #006360;
-  --color-sheet-focus: #006360;
-  --color-sheet-divider: #e9e6e7;
-  --color-sheet-divider-strong: #d8d3d4;
+  --color-sheet-bg: var(--color-surface);
+  --color-sheet-bg-raised: var(--color-accent-soft);
+  /* The rail's text is the body ink since the styling pass (the printed
+     brown-gray until then), and its muted text the one secondary grey. */
+  --color-sheet-text: var(--color-text);
+  --color-sheet-text-muted: var(--color-text-muted);
+  --color-sheet-icon: var(--palette-slate-gray);
+  --color-sheet-icon-active: var(--color-accent);
+  --color-sheet-divider-strong: var(--color-border);
   /* #endregion sheet-tokens */
 
   /* Spacing, on a 4px base scale */
@@ -181,8 +226,6 @@
   --space-7: 32px;
   --space-8: 48px;
 
-  /* #region rail-widths */
-  /* The sidebar's docked rail (ADR-013): open, and collapsed to icons. */
   /* #region reserved-heights */
   /* Heights the page reserves before an answer arrives (1.0.3.7), so nothing
      the visitor has already read moves: the store bar's segment, a phone's
@@ -226,6 +269,8 @@
   --icon-md: 20px;
   --icon-stroke: 1.6;
   /* #endregion controls */
+  /* #region rail-widths */
+  /* The sidebar's docked rail (ADR-013): open, and collapsed to icons. */
   --rail-width: 272px;
   --rail-width-collapsed: 64px;
   /* The Admin workbench's own rail of cards, beside the site's (1.0.3.18). */
@@ -235,6 +280,7 @@
   /* #endregion rail-widths */
 
   /* Radius: cards 16px, controls 8px, buttons pill */
+  --radius-xs: 3px; /* a chip's corner and a legend swatch's */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 16px;
@@ -259,11 +305,23 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
+  /* A display title sits a hair tighter than the body. */
+  --title-tracking: -0.01em;
+  /* Writing inside a drawing (a chart's labels, its readout, a callout), in the
+     drawing's own units, which a chart's viewBox scales with its width. */
+  --chart-text: 12px;
+  --chart-text-sm: 11px;
+  --chart-text-xs: 10px;
+  --chart-text-2xs: 9px;
 
-  /* Shadow */
-  --shadow-sm: 0 1px 2px rgba(94, 86, 83, 0.06), 0 1px 3px rgba(94, 86, 83, 0.1);
-  --shadow-md: 0 4px 12px rgba(94, 86, 83, 0.12), 0 2px 4px rgba(94, 86, 83, 0.06);
-  --shadow-lg: 0 12px 32px rgba(94, 86, 83, 0.18);
+  /* Shadow: the printed brown-gray, see-through. */
+  --shadow-sm:
+    0 1px 2px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent),
+    0 1px 3px color-mix(in srgb, var(--palette-brown-gray) 10%, transparent);
+  --shadow-md:
+    0 4px 12px color-mix(in srgb, var(--palette-brown-gray) 12%, transparent),
+    0 2px 4px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, var(--palette-brown-gray) 18%, transparent);
 
   /* #region glass */
   /* Panels are slightly see-through over a soft watermark (ADR: The glass
@@ -283,13 +341,14 @@
      until then, when the ribbons read through a panel as lines; 20 px and 1.5
      until the tweaks pass, which added the inner glow to the rim. */
   --glass-filter: blur(28px) saturate(1.6);
-  --glass-border: rgba(2, 67, 69, 0.18);
+  --glass-border: color-mix(in srgb, var(--color-teal-deep) 18%, transparent);
   --glass-shadow:
-    0 10px 30px rgba(2, 67, 69, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.55), inset 0 0 40px rgba(255, 255, 255, 0.18);
+    0 10px 30px color-mix(in srgb, var(--color-teal-deep) 12%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 0 40px rgba(255, 255, 255, 0.18);
   /* The panel's texture (the tweaks pass, B3): a 24 px hairline grid in the deep
      teal at 3.5 per cent, inside a glass panel only, under its words. */
-  --glass-grid-line: rgba(2, 67, 69, 0.035);
+  --glass-grid-line: color-mix(in srgb, var(--color-teal-deep) 3.5%, transparent);
   --glass-grid-size: 24px;
   /* The document dialog (B1b, Steve's "About Steven" picture): the dialog's own
      sheet nearly clear and barely blurred, the reading panel inside it frosted. */
@@ -304,7 +363,9 @@
      picture changes together (ADR: The sidebar, the addendum on the author's
      section). */
   --frame-photo-border: 3px solid var(--color-teal-deep);
-  --frame-photo-shadow: 0 0 0 1.5px var(--color-gold), 0 8px 22px rgba(2, 67, 69, 0.22);
+  --frame-photo-shadow:
+    0 0 0 1.5px var(--color-gold),
+    0 8px 22px color-mix(in srgb, var(--color-teal-deep) 22%, transparent);
   /* #endregion glass */
 
   /* #region operator-look */
@@ -333,10 +394,23 @@
   --ring-marker: var(--color-mark-marker);
   --ring-tile-size: 44px;
   --ring-fill-time: 400ms;
+  /* The reading inside a ring, by the ring's size. */
+  --ring-text-tiny: 8px;
+  --ring-text-tile: 11px;
+  --ring-text-page: 13px;
+  --ring-text-large: 28px;
   /* #endregion operator-look */
 
   /* What dims the page behind a dialog or the drawer: the brown-gray, see-through. */
-  --scrim: rgba(94, 86, 83, 0.45);
+  --scrim: color-mix(in srgb, var(--palette-brown-gray) 45%, transparent);
+
+  /* Layers, bottom to top: the page's own ground behind everything, the
+     docked rail over the page beside it, the sticky header, and the skip link
+     over all of it. A dialog is in the top layer and needs none. */
+  --layer-ground: -1;
+  --layer-rail: 1;
+  --layer-header: 10;
+  --layer-skip: 100;
 
   /* Motion */
   --transition-fast: 150ms ease;
@@ -344,7 +418,7 @@
 
 /* #region glass-fallbacks */
 /* Every see-through ground turns solid together: the panels, a phone's fuller
-   panel, a document's sheet and its reading panels (the self-review of 26
+   panel, a document's sheet and its reading panels (the self-review of 25
    September, when the sheet's tenth of white was left see-through here). */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
@@ -383,7 +457,7 @@
 /* #region controls-phone */
 /* A phone's thumb: every pill and control reaches the touch target (Steve,
    2026-09-22: "the pills reach 44 px on a phone"); the desk keeps them dense. */
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   :root {
     --pill-height: var(--touch-target);
     --control-height: var(--touch-target);

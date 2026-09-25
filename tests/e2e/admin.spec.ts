@@ -489,6 +489,55 @@ test('Pin sits in the card header beside Previous and Next, and This hour stands
   await expect(pin).toHaveText('Pin');
 });
 
+// #region stale-chunk
+// Steve's iPhone, 25 September: a page left open across the 1.0.3.26 roll asked for the
+// old version's card chunks by their hashed names, and every card he opened said
+// "Importing a module script failed". A chunk that is not on the server any more loads
+// the page again onto the new version, once; a chunk that keeps failing is shown, not
+// looped. The deploy is stood in for by refusing the Errors card's chunk.
+const errorsChunk = /ErrorsCard[^/]*\.(js|tsx)(\?.*)?$/;
+
+test('a card whose code a deploy replaced loads the page again onto the new version, once', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=admin&card=health');
+  await expect(page.getByTestId('health-card')).toBeVisible();
+  let refused = 0;
+  await page.route(errorsChunk, async (route) => {
+    refused++;
+    await route.fulfill({ status: 404, body: 'gone' });
+    // Refused once, as a deploy refuses the old name: the reload asks again and is answered.
+    await page.unroute(errorsChunk);
+  });
+  const reloaded = page.waitForEvent('framenavigated');
+  await page.getByTestId('bench-link-errors').click();
+  await reloaded;
+  await expect(page.getByTestId('errors-card')).toBeVisible({ timeout: 30_000 });
+  expect(refused).toBe(1);
+  await expect(page.getByTestId('render-error')).toHaveCount(0);
+});
+
+test('a card whose code keeps failing is shown as the error after one reload, never a loop', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=admin&card=health');
+  await expect(page.getByTestId('health-card')).toBeVisible();
+  let refused = 0;
+  await page.route(errorsChunk, async (route) => {
+    refused++;
+    await route.fulfill({ status: 404, body: 'gone' });
+  });
+  let loads = 0;
+  page.on('load', () => loads++);
+  await page.getByTestId('bench-link-errors').click();
+  await expect(page.getByTestId('render-error')).toBeVisible({ timeout: 30_000 });
+  expect(loads).toBe(1);
+  expect(refused).toBeGreaterThanOrEqual(2);
+});
+// #endregion stale-chunk
+
 // The self-review of 25 September: at 1024 the site's rail and the Admin rail left a card
 // 460 px wide and three of its tables scrolled sideways. Under 1280 the Admin rail is the
 // drawer behind Cards, and the card has the width its tables need.

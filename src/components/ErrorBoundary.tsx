@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { isStaleChunk, reloadOnce, tabStorage } from '../lib/staleChunk';
 import styles from './ErrorBoundary.module.css';
 
 // #region boundary
@@ -14,22 +15,45 @@ import styles from './ErrorBoundary.module.css';
  * Errors thrown in event handlers and promises never reach a boundary, which
  * is why main.tsx also reports those (ADR: Error handling).
  */
-export class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
-  state: { error: Error | null } = { error: null };
+export class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null; reloading: boolean }
+> {
+  state: { error: Error | null; reloading: boolean } = { error: null, reloading: false };
 
   /** Runs during the failed render: the only place state may be set from an error. */
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
 
-  /** Runs after: side effects belong here, never in the method above. */
+  /**
+   * Runs after: side effects belong here, never in the method above. A chunk
+   * the page names that a deploy has since replaced is not a crash: the page
+   * loads again onto the new version, once (src/lib/staleChunk.ts), and says
+   * so for the moment the reload takes. Anything else is reported and shown.
+   */
   componentDidCatch(error: Error, info: ErrorInfo) {
+    if (isStaleChunk(error) && reloadOnce(tabStorage(), () => window.location.reload())) {
+      this.setState({ reloading: true });
+      return;
+    }
     reportClientError(error, info.componentStack ?? undefined);
   }
 
   render() {
     if (!this.state.error) {
       return this.props.children;
+    }
+    if (this.state.reloading) {
+      return (
+        <div
+          className={`${styles.wrap} op-glass op-solid`}
+          role="status"
+          data-testid="stale-reload"
+        >
+          <p className={styles.body}>The site was just updated. Loading the new version.</p>
+        </div>
+      );
     }
     return (
       <div className={`${styles.wrap} op-glass op-solid`} role="alert" data-testid="render-error">

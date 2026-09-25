@@ -41,6 +41,8 @@ import {
   type HourGlance,
 } from '../lib/bench';
 import type { CardSlug } from '../lib/workbench';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { PHONE, WIDE, WIDEST } from '../lib/breakpoints';
 import styles from './AdminPanel.module.css';
 import { Readout } from './Readout';
 import { Ring } from './Ring';
@@ -477,24 +479,6 @@ function follow(event: MouseEvent<HTMLElement>, open: () => void) {
 }
 
 /**
- * The workbench (ADR: The Admin tab, as a product, the addendum on the
- * workbench): the rail of the five questions down the left, one card large
- * beside it, and a second column for the card that is pinned. The keys j and
- * k walk the rail's order wherever focus is, except in a field being typed in.
- */
-/** Whether a media query matches now, and again whenever that changes. */
-function useMatches(query: string): boolean {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
-  useEffect(() => {
-    const list = window.matchMedia(query);
-    const change = () => setMatches(list.matches);
-    list.addEventListener('change', change);
-    return () => list.removeEventListener('change', change);
-  }, [query]);
-  return matches;
-}
-
-/**
  * The rail's contents: the search box, the note for a name that is no card, and
  * the five questions with their cards. Beside the card on a desk; inside the
  * Cards drawer on a phone.
@@ -576,8 +560,8 @@ function RailContent({
  * workbench): the rail of the five questions down the left, one card large
  * beside it, and a second column for the card that is pinned. The keys j and
  * k walk the rail's order wherever focus is, except in a field being typed in.
- * Under 600 px the rail is a drawer behind a Cards button and the pinned card
- * is a fold under the open one, which reads nothing until it is unfolded.
+ * Under 1280 the rail is a drawer behind a Cards button; under 640 the pinned
+ * card is also a fold under the open one, which reads nothing until it is unfolded.
  */
 function Workbench({
   open,
@@ -596,13 +580,13 @@ function Workbench({
   glance: HourGlance;
   render: (slug: CardSlug) => ReactNode;
 }) {
-  const phone = useMatches('(max-width: 599px)');
-  const wide = useMatches('(min-width: 1440px)');
+  const phone = useMediaQuery(PHONE);
+  const wide = useMediaQuery(WIDEST);
   // The rail of cards stands beside the card from 1280; under it the rail is the
   // drawer behind Cards, as on a phone (the self-review of 25 September: at 1024
   // the site's rail and this one left a card 460 px wide, and three of its tables
   // scrolled sideways on a desk).
-  const railInDrawer = useMatches('(max-width: 1279.98px)');
+  const railInDrawer = !useMediaQuery(WIDE);
   const drawerRef = useRef<HTMLDialogElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [foldOpen, setFoldOpen] = useState(false);

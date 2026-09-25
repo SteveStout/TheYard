@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contrast } from '../lib/contrast';
+import { contrast, hexTokens } from '../lib/contrast';
 import tokens from './tokens.css?raw';
 
 /**
@@ -10,10 +10,15 @@ import tokens from './tokens.css?raw';
  * future shade change cannot slip under it.
  */
 
+// One reader for the sheet, the one the swatches use (src/lib/contrast.ts): a
+// token written as another token is read through to the value it comes to.
+const values = new Map(hexTokens(tokens).map((entry) => [entry.name, entry.hex]));
+
 function token(name: string): string {
-  const match = tokens.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`));
-  if (!match) throw new Error(`tokens.css has no six-digit hex value for --${name}`);
-  return match[1];
+  const hex = values.get(`--${name}`);
+  if (hex === undefined)
+    throw new Error(`tokens.css has no colour for --${name} that comes to a hex`);
+  return hex;
 }
 
 // #region site-palette
@@ -62,6 +67,9 @@ describe('the site palette (ADR-016)', () => {
   // (ADR: The Admin tab, as a product, the addendum on the traffic card in plain words).
   it('the series colours clear 3:1 on white and on the page ground, are told apart, and are no status colour', () => {
     const series = [token('color-series-1'), token('color-series-2'), token('color-series-3')];
+    // The first two are the Mark VII teal and gold, told apart by hue (a legend names both).
+    expect(series[0]).toBe(token('color-mark-teal'));
+    expect(series[1]).toBe(token('color-mark-gold'));
     for (const line of series) {
       for (const ground of ['color-surface', 'color-bg']) {
         expect(contrast(line, token(ground))).toBeGreaterThanOrEqual(3);
@@ -71,8 +79,21 @@ describe('the site palette (ADR-016)', () => {
       }
     }
     expect(new Set(series).size).toBe(3);
-    // Dark green beside bright teal is one family told apart by light and dark, so the gap is held too.
-    expect(contrast(series[0], series[1])).toBeGreaterThanOrEqual(3);
+    // Teal and gold are near in lightness and far apart in hue, which is how they are told apart.
+    const hue = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16) / 255);
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const turn =
+        max === r
+          ? ((g - b) / (max - min)) % 6
+          : max === g
+            ? (b - r) / (max - min) + 2
+            : (r - g) / (max - min) + 4;
+      return (turn * 60 + 360) % 360;
+    };
+    const apart = Math.abs(hue(series[0]) - hue(series[1]));
+    expect(Math.min(apart, 360 - apart)).toBeGreaterThanOrEqual(90);
   });
 
   // #region teal-and-gold
@@ -232,12 +253,14 @@ describe('the site palette (ADR-016)', () => {
   it('white inside a deep teal gauge fill holds 4.5 over the glass on either stop', () => {
     const fill = tokens.match(/--gauge-fill-opacity:\s*([0-9.]+)\s*;/);
     if (!fill) throw new Error('tokens.css should state --gauge-fill-opacity');
-    const track = tokens.match(/--color-mark-bar-track:\s*rgba\(2, 67, 69, ([0-9.]+)\)/);
+    const track = tokens.match(
+      /--color-mark-bar-track:\s*color-mix\(in srgb, var\(--color-teal-deep\) ([0-9.]+)%, transparent\)/
+    );
     if (!track)
       throw new Error('tokens.css should state --color-mark-bar-track as the deep teal at a share');
     for (const stop of stops()) {
       const glass = over(white, share('glass-bg'), stop);
-      const ground = over(rgb(token('color-teal-deep')), Number(track[1]), glass);
+      const ground = over(rgb(token('color-teal-deep')), Number(track[1]) / 100, glass);
       const drawn = hex(over(rgb(token('color-mark-axis')), Number(fill[1]), ground));
       expect(contrast('#ffffff', drawn)).toBeGreaterThanOrEqual(4.5);
     }
@@ -370,7 +393,9 @@ describe('the sidebar palette', () => {
   it.each(grounds)('icons and the focus ring clear AA for graphics on %s', (ground) => {
     expect(contrast(token('color-sheet-icon'), token(ground))).toBeGreaterThanOrEqual(3);
     expect(contrast(token('color-sheet-icon-active'), token(ground))).toBeGreaterThanOrEqual(3);
-    expect(contrast(token('color-sheet-focus'), token(ground))).toBeGreaterThanOrEqual(3);
+    // The rail's focus ring is the site's one ring, drawn in the accent (--focus-ring).
+    expect(tokens).toContain('--focus-ring: 2px solid var(--color-accent);');
+    expect(contrast(token('color-accent'), token(ground))).toBeGreaterThanOrEqual(3);
   });
 
   it('measures the way WCAG does: white on black is 21:1', () => {

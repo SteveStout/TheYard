@@ -4,13 +4,26 @@
  * region and applied by name, so no component draws its own bracket, rule,
  * radius or segment. Imported once, from main.tsx, after tokens.css.
  *
- * .op-glass   a panel or a card: the glass, the dark green top rule, and two
- *             corner brackets in the rule's colour that follow the radius (an
- *             arc, never an L), top left and bottom right.
- * .op-tile    a stat tile: the same, with the gold rule and smaller brackets.
- * .op-rail    a rail down the side: the top left bracket only.
- * .op-seg     a pill group: a rounded border round the segments, the chosen
- *             one filled with the accent and written in white.
+ * .op-glass     a panel or a card: the glass, the dark green top rule, and two
+ *               corner brackets in the rule's colour that follow the radius (an
+ *               arc, never an L), top left and bottom right; a hairline grid
+ *               inside it, under its words.
+ * .op-tile      a stat tile: the same, with the gold rule and smaller brackets,
+ *               and no grid.
+ * .op-rail      a rail down the side: the top left bracket only.
+ * .op-seg       a pill group: a rounded border round the segments, the chosen
+ *               one filled with the accent and written in white.
+ * .op-seg-wrap  a pill group that may wrap: separate pills rather than one
+ *               pill bent round two lines (1.0.3.25).
+ *
+ * And four modifiers on .op-glass:
+ * .op-solid     a panel read on white: no see-through, no blur, no grid.
+ * .op-sheet     a document's dialog: a clear sheet, the frost on the reading
+ *               panels inside it, and frost edge to edge on a phone.
+ * .op-inset     a panel that clips what it holds: the brackets drawn inside.
+ * .op-card      one of the inventory's hundred cards: glass in its ground only.
+ *
+ * Every value here is a token; the widths are the scale in src/lib/breakpoints.ts.
  */
 
 /* #region op-glass */
@@ -84,7 +97,7 @@
    put the title in dark type over the page's dark header and let the home
    page's words ghost through the gaps, so a phone's document is frost from
    edge to edge, title bar included. */
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   .op-glass.op-sheet {
     background: var(--dialog-page-bg);
     -webkit-backdrop-filter: var(--dialog-page-filter);
@@ -122,7 +135,7 @@
 }
 
 /* A phone's smaller type sits on a touch more fill. */
-@media (max-width: 600px) {
+@media (max-width: 639.98px) {
   .op-glass {
     background: var(--glass-bg-phone);
   }
@@ -178,7 +191,7 @@
 /* A group with more words than a phone's width holds (the Admin tab's windows,
    .op-seg-wrap) lets its segments go to a second line as pills of their own,
    rather than one pill stretched round two lines. */
-@media (max-width: 599px) {
+@media (max-width: 639.98px) {
   .op-seg.op-seg-wrap {
     gap: var(--space-2);
     padding: 0;

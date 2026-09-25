@@ -103,7 +103,7 @@
   grid-column: span 2;
 }
 
-@media (max-width: 30rem) {
+@media (max-width: 479.98px) {
   .priceField {
     grid-column: 1 / -1;
   }

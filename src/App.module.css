@@ -42,7 +42,7 @@
   box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--layer-header);
 }
 
 .headerInner {
@@ -66,12 +66,12 @@
   color: var(--color-gold-light);
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--title-tracking);
   cursor: pointer;
   white-space: nowrap;
 }
 
-@media (max-width: 479px) {
+@media (max-width: 479.98px) {
   .brandSub {
     display: none;
   }
@@ -184,7 +184,7 @@
   position: absolute;
   left: var(--space-3);
   top: -3rem;
-  z-index: 100;
+  z-index: var(--layer-skip);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--color-accent);
@@ -380,7 +380,7 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   .main {
     padding: var(--space-4);
   }

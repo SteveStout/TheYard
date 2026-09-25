@@ -98,7 +98,7 @@ export function Landing({
               className={styles.badgeImage}
               src={photo.src}
               srcSet={photo.srcSet}
-              sizes={large ? '(max-width: 639px) 64px, 88px' : '64px'}
+              sizes={large ? '(max-width: 639.98px) 64px, 88px' : '64px'}
               width={88}
               height={88}
               alt=""

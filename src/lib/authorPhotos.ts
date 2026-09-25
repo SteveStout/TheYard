@@ -67,7 +67,7 @@ const BASE = '/api/images/author';
 export const PHONE_WIDEST = 960;
 
 /** The width a phone stops at and a wider layout begins, the same line the page's stylesheet draws. */
-export const PHONE_LINE = '(max-width: 720px)';
+export const PHONE_LINE = '(max-width: 767.98px)';
 
 const escape = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

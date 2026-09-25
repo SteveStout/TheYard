@@ -21,10 +21,30 @@ export function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** Every `--name: #rrggbb;` in a stylesheet's text, in the order written. */
+/**
+ * Every colour token in a stylesheet's text that comes to a six-digit hex, in
+ * the order written: `--name: #rrggbb;`, and `--name: var(--other);` read
+ * through to the hex the other one comes to, however many steps away (the
+ * styling pass of 25 September: a token that repeats another's value is
+ * written as that token). The first value a name is given is the token; the
+ * fallback blocks under the sheet give some names a second. A name whose value
+ * is anything else (a color-mix, an rgba) is left out, and so is a var() that
+ * never reaches a hex, a loop included.
+ */
 export function hexTokens(sheet: string): { name: string; hex: string }[] {
-  return Array.from(sheet.matchAll(/(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;/g), (match) => ({
-    name: match[1],
-    hex: match[2].toLowerCase(),
-  }));
+  const written = new Map<string, string>();
+  for (const match of sheet.matchAll(
+    /(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6}|var\(\s*(--[a-z0-9-]+)\s*\))\s*;/g
+  )) {
+    if (!written.has(match[1])) written.set(match[1], match[3] ?? match[2].toLowerCase());
+  }
+  const resolve = (name: string, seen: Set<string>): string | undefined => {
+    const value = written.get(name);
+    if (value === undefined || seen.has(name)) return undefined;
+    return value.startsWith('#') ? value : resolve(value, new Set(seen).add(name));
+  };
+  return Array.from(written.keys()).flatMap((name) => {
+    const hex = resolve(name, new Set());
+    return hex === undefined ? [] : [{ name, hex }];
+  });
 }

@@ -366,7 +366,7 @@
   font-size: var(--text-md);
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   .heading {
     font-size: var(--text-2xl);
   }

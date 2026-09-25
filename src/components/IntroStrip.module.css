@@ -78,7 +78,7 @@
 
 /* On a phone the four links fill two rows, and the dismissal would take a third to itself: it sits
    in the strip's top corner instead, beside the sentence, still a full 44 pixel target. */
-@media (max-width: 560px) {
+@media (max-width: 639.98px) {
   .strip {
     position: relative;
   }

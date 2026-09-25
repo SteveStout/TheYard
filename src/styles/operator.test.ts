@@ -77,7 +77,9 @@ describe("the operator's look", () => {
     expect(grid).toContain('var(--glass-grid-line) 1px, transparent 1px');
     expect(grid).toContain('background-size: var(--glass-grid-size) var(--glass-grid-size);');
     expect(grid).toContain('background-blend-mode: multiply;');
-    expect(tokens).toContain('--glass-grid-line: rgba(2, 67, 69, 0.035);');
+    expect(tokens).toContain(
+      '--glass-grid-line: color-mix(in srgb, var(--color-teal-deep) 3.5%, transparent);'
+    );
     expect(tokens).toContain('--glass-grid-size: 24px;');
     expect(rule('.op-tile')).not.toContain('background-image');
     // The document dialog's clear sheet (B1b) is the shared glass's too.
@@ -85,7 +87,7 @@ describe("the operator's look", () => {
     expect(rule('.op-glass.op-sheet')).toContain('backdrop-filter: var(--dialog-sheet-filter);');
     // And frosted on a phone (1.0.3.24), where the clear sheet read as broken.
     expect(operator).toMatch(
-      /@media \(max-width: 639px\) \{\s*\.op-glass\.op-sheet \{\s*background: var\(--dialog-page-bg\);/
+      /@media \(max-width: 639\.98px\) \{\s*\.op-glass\.op-sheet \{\s*background: var\(--dialog-page-bg\);/
     );
   });
 });

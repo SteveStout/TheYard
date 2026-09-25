@@ -399,6 +399,19 @@ test('a vehicle on a phone reads title, bid, photos, specifications, condition, 
   });
   expect(tops.every((value) => value >= 0)).toBe(true);
   expect([...tops].sort((a, b) => a - b)).toEqual(tops);
+  // And every section the full width of the column (1.0.3.26 shrank Specifications to half
+  // the screen on Steve's iPhone when the phone order became CSS).
+  const widths = await page.getByTestId('vehicle-layout').evaluate((layout) => {
+    const full = layout.getBoundingClientRect().width;
+    return Array.from(layout.querySelectorAll('section[aria-label]'))
+      .filter((section) => section.parentElement?.closest('section') === null)
+      .map((section) => ({
+        name: section.getAttribute('aria-label'),
+        short: Math.round(full - section.getBoundingClientRect().width),
+      }))
+      .filter((section) => section.short > 1);
+  });
+  expect(widths, 'sections narrower than the column').toEqual([]);
   // The header carries no countdown or sold chip of its own under 1024.
   const header = page.locator('article header').first();
   await expect(header.locator('[class*="countdown"], [class*="soldChip"]')).toHaveCount(0);

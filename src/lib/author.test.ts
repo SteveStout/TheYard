@@ -123,13 +123,13 @@ describe('a photograph as markup', () => {
   it('offers a phone its own tighter cut first, when the photograph has one', () => {
     const wide = { ...photo, phone: { name: 'tight-cut', widths: [480, 960] } };
     const figure = photoFigure(wide, 'Alt', null);
-    const tight = figure.indexOf('media="(max-width: 720px)" type="image/avif"');
+    const tight = figure.indexOf('media="(max-width: 767.98px)" type="image/avif"');
     expect(tight).toBeGreaterThan(-1);
     expect(tight).toBeLessThan(figure.indexOf(`${photo.name}-480.avif`));
     expect(figure).toContain('/api/images/author/tight-cut-960.jpg 960w');
     const plain = photoFigure({ ...photo, phone: undefined }, 'Alt', null);
     expect(plain).toContain(
-      `media="(max-width: 720px)" type="image/avif" srcset="/api/images/author/${photo.name}-480.avif 480w`
+      `media="(max-width: 767.98px)" type="image/avif" srcset="/api/images/author/${photo.name}-480.avif 480w`
     );
   });
 

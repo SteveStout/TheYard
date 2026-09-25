@@ -27,18 +27,41 @@ public class StyleRulesTests
     private static string StylePage() =>
         File.ReadAllText(Path.Combine(Root, "docs", "COLOR-STYLE.md"));
 
-    private static readonly Regex HexToken =
-        new(@"(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;", RegexOptions.Compiled);
+    private static readonly Regex ColourToken =
+        new(@"(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6}|var\(\s*(--[a-z0-9-]+)\s*\))\s*;", RegexOptions.Compiled);
 
-    /// <summary>Every token the sheet gives a six-digit value, by name.</summary>
+    /// <summary>
+    /// Every token the sheet gives a six-digit value, by name: written as a hex,
+    /// or written as another token and read through to the hex that one comes to
+    /// (the styling pass of 25 September: a value is written once). The same
+    /// reading as src/lib/contrast.ts's hexTokens, which the swatches and
+    /// tokens.test.ts use.
+    /// </summary>
     private static Dictionary<string, string> Tokens()
     {
         // The first value a name is given is the token. The fallbacks under the
         // sheet give --glass-bg a second and a third, and those are fallbacks.
-        var tokens = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (Match match in HexToken.Matches(TokenSheet()))
+        var written = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (Match match in ColourToken.Matches(TokenSheet()))
         {
-            tokens.TryAdd(match.Groups[1].Value, match.Groups[2].Value.ToLowerInvariant());
+            written.TryAdd(match.Groups[1].Value, match.Groups[3].Success ? match.Groups[3].Value : match.Groups[2].Value.ToLowerInvariant());
+        }
+
+        var tokens = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (string name in written.Keys)
+        {
+            string current = name;
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            while (written.TryGetValue(current, out string? value) && seen.Add(current))
+            {
+                if (value.StartsWith('#'))
+                {
+                    tokens[name] = value;
+                    break;
+                }
+
+                current = value;
+            }
         }
 
         return tokens;
@@ -207,14 +230,16 @@ public class StyleRulesTests
         ("--color-danger", "--color-surface", 4.5),
         ("--color-series-1", "--color-surface", 3.0),
         ("--color-series-2", "--color-surface", 3.0),
-        ("--color-series-2", "--color-series-1", 3.0),
         ("--color-series-3", "--color-surface", 3.0),
         ("--color-who-people", "--color-surface", 3.0),
         ("--color-who-scanners", "--color-surface", 3.0),
         ("--color-who-self", "--color-surface", 3.0),
-        // The Mark VII marks (the tweaks pass, 25 September): graphics, so 3.0.
+        // The Mark VII marks (the tweaks pass, 25 September): graphics, so 3.0. The first two
+        // series are these two since the styling pass, told apart by hue and not by light.
         ("--color-mark-teal", "--color-surface", 3.0),
         ("--color-mark-gold", "--color-surface", 3.0),
+        ("--color-mark-teal", "--color-bg", 3.0),
+        ("--color-mark-gold", "--color-bg", 3.0),
         // Distances the page states, which are reasons and not floors.
         ("--color-accent", "--color-success", 0),
         ("--color-teal-deep", "--color-success", 0),
@@ -499,10 +524,6 @@ public class StyleRulesTests
     /// views still to come onto it are listed with the version that brings
     /// them, and the list is empty when the lane that started it closes.
     /// </summary>
-    private static readonly Dictionary<string, string> NotYetOnTheLook = new(StringComparer.Ordinal)
-    {
-    };
-
     /// <summary>The header and the site's own rail are the frame, not panels on it (Steve: "leave the header and page background the same").</summary>
     private static readonly string[] TheFrame = ["src/App.module.css", "src/components/SideNav.module.css"];
 
@@ -546,7 +567,7 @@ public class StyleRulesTests
                     }
                     string key = $"{relative} {named.Value}";
                     Match drawn = own.Match(body);
-                    if (drawn.Success && !NotYetOnTheLook.ContainsKey(key) && !NotAPanel.ContainsKey(key))
+                    if (drawn.Success && !NotAPanel.ContainsKey(key))
                     {
                         wrong.Add($"{relative} '{one.Trim()}' sets its own {drawn.Groups[1].Value}: a panel, a card or a tile is .op-glass (src/styles/operator.css), which owns the ground, the rule, the brackets and the radius");
                     }
@@ -554,14 +575,11 @@ public class StyleRulesTests
                 foreach (Match tracking in Regex.Matches(body, @"letter-spacing:\s*([^;]+);"))
                 {
                     string value = tracking.Groups[1].Value.Trim();
-                    if (value is "var(--readout-tracking)" or "0" or "normal" or "inherit")
+                    if (value is "var(--readout-tracking)" or "var(--title-tracking)" or "0" or "normal" or "inherit")
                     {
                         continue;
                     }
-                    if (!NotYetOnTheLook.ContainsKey($"{relative} letter-spacing"))
-                    {
-                        wrong.Add($"{relative} '{selector}' spaces its letters by {value}: spaced capitals take var(--readout-tracking)");
-                    }
+                    wrong.Add($"{relative} '{selector}' spaces its letters by {value}: spaced capitals take var(--readout-tracking)");
                 }
                 if (Regex.IsMatch(selector, @"(^|[\s>+~,])button\b") && Regex.Match(body, @"border-radius:\s*([^;]+);") is { Success: true } radius
                     && radius.Groups[1].Value.Trim() is not ("var(--radius-full)" or "50%"))
@@ -695,4 +713,144 @@ public class StyleRulesTests
         return css[at..end];
     }
     // #endregion rule eight
+
+    // #region rule ten, the width scale
+    /// <summary>
+    /// One width scale (the styling pass of 25 September). The sheets had
+    /// grown eleven breakpoints, 479, 30rem, 560, 599, 600, 601, 639, 720,
+    /// 767, 900 and 1023, several a pixel apart and meaning the same step, and
+    /// a width under zoom (639.5) could fall between a max-width and the
+    /// min-width a pixel over it. Six steps now, in src/lib/breakpoints.ts:
+    /// a stylesheet writes (min-width: N) above a step and (max-width: N - 0.02)
+    /// under it, an image's sizes attribute the same, and a component asks for
+    /// a width only through the constants, never with a query of its own. A
+    /// container query measures its own box, not the screen, and keeps its own widths.
+    /// </summary>
+    [Fact]
+    public void Every_width_a_page_asks_about_is_a_step_on_the_one_scale()
+    {
+        int[] steps = [480, 640, 768, 1024, 1280, 1440];
+        var allowed = steps.Select(step => $"(min-width: {step}px)")
+            .Concat(steps.Select(step => $"(max-width: {(step - 0.02).ToString("0.00", CultureInfo.InvariantCulture)}px)"))
+            .ToHashSet(StringComparer.Ordinal);
+        string scale = File.ReadAllText(Path.Combine(Root, "src", "lib", "breakpoints.ts"));
+        var wrong = new List<string>();
+        int read = 0;
+
+        foreach (string path in StyledSource())
+        {
+            string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
+            string source = WithoutComments(File.ReadAllText(path));
+            // A stylesheet's media queries (a container query measures its box, not the
+            // screen, and keeps its own widths); in script, every query it writes.
+            string asked = path.EndsWith(".css", StringComparison.Ordinal)
+                ? string.Join(" ", Regex.Matches(source, @"@media[^{]+").Select(media => media.Value))
+                : source;
+            foreach (Match query in Regex.Matches(asked, @"\((?:min|max)-width:\s*[^)]*\)"))
+            {
+                read++;
+                if (!allowed.Contains(query.Value))
+                {
+                    wrong.Add($"{relative} asks about {query.Value}: use a step of the scale in src/lib/breakpoints.ts, (min-width: N) above it and (max-width: N minus 0.02) under it");
+                }
+            }
+            if (path.EndsWith(".tsx", StringComparison.Ordinal) && Regex.IsMatch(source, @"use(MediaQuery|Matches)\(\s*['""`]"))
+            {
+                wrong.Add($"{relative} asks a media query of its own: import the step from src/lib/breakpoints.ts");
+            }
+        }
+        foreach (Match constant in Regex.Matches(scale, @"export const [A-Z]+ = '([^']+)';"))
+        {
+            if (!allowed.Contains(constant.Groups[1].Value))
+            {
+                wrong.Add($"src/lib/breakpoints.ts exports {constant.Groups[1].Value}, which is not a step of the scale");
+            }
+        }
+
+        Assert.True(read > 20, $"only {read} width queries were read, so this scan is reading the wrong files");
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+    // #endregion rule ten, the width scale
+
+    // #region rule eleven, values from the sheet
+    /// <summary>
+    /// Every size, weight, corner, tracking and layer a stylesheet writes comes
+    /// from the token sheet (the styling pass of 25 September): a font size is
+    /// a token or a share of the size around it (0.9em), a weight, a radius and
+    /// a stacking layer are tokens, and a letter spacing is one of the two
+    /// trackings. The fonts sheet declares the face's weight range and is left
+    /// out. A zero, 50 per cent (a circle) and inherit are not values of a
+    /// design and pass.
+    /// </summary>
+    [Fact]
+    public void Every_size_weight_corner_tracking_and_layer_comes_from_the_token_sheet()
+    {
+        var properties = new Regex(@"(?<![-\w])(font-size|font-weight|border(?:-[a-z]+)*-radius|z-index|letter-spacing):\s*([^;{}]+);", RegexOptions.Compiled);
+        var wrong = new List<string>();
+        int read = 0;
+
+        foreach (string path in StyledSource().Where(path => path.EndsWith(".css", StringComparison.Ordinal) && !path.EndsWith("fonts.css", StringComparison.Ordinal)))
+        {
+            string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
+            foreach (Match match in properties.Matches(WithoutComments(File.ReadAllText(path))))
+            {
+                read++;
+                string property = match.Groups[1].Value;
+                string value = match.Groups[2].Value.Trim();
+                // What is left once every token, and every calc() made of one, is taken out.
+                string left = Regex.Replace(value, @"calc\((?:[^()]|\([^()]*\))*\)", " ");
+                left = Regex.Replace(left, @"var\(--[a-z0-9-]+\)", " ");
+                bool fine = left.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(part =>
+                    part is "0" or "inherit" or "normal" or "50%"
+                    || (property == "font-size" && Regex.IsMatch(part, @"^\d*\.?\d+em$")));
+                if (!fine)
+                {
+                    wrong.Add($"{relative} writes '{property}: {value}': take the value from src/styles/tokens.css, adding a token there if the role is new");
+                }
+            }
+        }
+
+        Assert.True(read > 150, $"only {read} declarations were read, so this scan is reading the wrong files");
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+    // #endregion rule eleven, values from the sheet
+
+    // #region rule twelve, a value written once
+    /// <summary>
+    /// A colour is written once (the styling pass of 25 September). The sheet
+    /// carried white four times, the deep teal twice, the accent three times
+    /// and the old body ink in the sidebar after the body had moved on, so a
+    /// palette change had to find every copy and one had been missed. A token
+    /// that repeats another's colour is written as that token, var(--other),
+    /// and a see-through tint of one is mixed from it, never copied as an rgba
+    /// of its channels. The glass's white shares are the one rgba the sheet
+    /// writes, because the tests read the share off them.
+    /// </summary>
+    [Fact]
+    public void Every_colour_is_written_once_and_a_tint_is_mixed_from_its_token()
+    {
+        string sheet = WithoutComments(TokenSheet());
+        string roots = sheet[..sheet.IndexOf("@supports", StringComparison.Ordinal)];
+        var wrong = new List<string>();
+        var first = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (Match match in Regex.Matches(roots, @"(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;"))
+        {
+            string hex = match.Groups[2].Value.ToLowerInvariant();
+            if (!first.TryAdd(hex, match.Groups[1].Value))
+            {
+                wrong.Add($"{match.Groups[1].Value} repeats {first[hex]}'s {hex}: write it as var({first[hex]})");
+            }
+        }
+        foreach (Match rgba in Regex.Matches(roots, @"rgba\((\d+), (\d+), (\d+), [0-9.]+\)"))
+        {
+            if (rgba.Groups[1].Value != "255" || rgba.Groups[2].Value != "255" || rgba.Groups[3].Value != "255")
+            {
+                wrong.Add($"src/styles/tokens.css writes {rgba.Value}: mix the tint from its token, color-mix(in srgb, var(--token) N%, transparent)");
+            }
+        }
+
+        Assert.True(first.Count > 30, $"only {first.Count} colours were read from the sheet");
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+    // #endregion rule twelve, a value written once
 }

@@ -282,7 +282,9 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
             question: 'cost',
             label: 'Request units',
             value: `${Math.round(charged.request_units * 10) / 10}`,
-            detail: `in the ring, against ${charged.free_per_second} a second free`,
+            // A total, so it is not set against the free tier's rate (the self-review of
+            // 25 September); the rate is on the machines card, busiest minute against it.
+            detail: `charged in the ring; the free tier allows ${charged.free_per_second} a second`,
             tone: 'plain',
             spark: sparks?.charged,
           }

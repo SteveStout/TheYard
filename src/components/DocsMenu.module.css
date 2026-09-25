@@ -43,7 +43,7 @@
    phone's toolbars open between a height measured once and the screen). And the
    page behind is frosted, the reading panel's own ground, so whatever the
    phone's toolbars do, what shows round the sheet is frost, never the page. */
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   .dialog {
     position: fixed;
     inset: 0;
@@ -118,7 +118,7 @@
 /* The phone's padding, after the rules it replaces: written above them, as it was
    until 2026-09-22, it lost to them on source order and a phone kept the desk's
    24 px a side (Steve: "remove the extra padding on the left"). */
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   .dialogHeader {
     padding: var(--space-3) var(--space-4);
   }
@@ -308,7 +308,7 @@
   background: none;
   border-bottom: 2px solid var(--color-mark-axis);
   color: var(--color-mark-axis);
-  font-size: 11px;
+  font-size: var(--readout-size);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--readout-tracking);
   text-transform: uppercase;
@@ -425,8 +425,8 @@
 /* The Author page (ADR: The sidebar, the addendum on the author's section).
    The markup is written by src/lib/author.ts over a served document, so these
    names are global. The dialog is wider for this one page, because it is a
-   page and not a letter, and it stays solid like every document: the panels
-   are white cards on the page's grey, inside the dialog. */
+   page and not a letter; its words stand on the frosted reading panels every
+   document uses, inside the clear sheet (the tweaks pass, B1b). */
 /* Wider only where there is room to be: on a phone every document is the whole screen already. */
 @media (min-width: 640px) {
   .dialogWide {
@@ -436,15 +436,15 @@
 
 /* Every document stands on the ribbon ground like every page (Steve, 2026-09-22: "the
    background isn't showing behind the about the author page", and on the rest of the
-   library: "our documentation isn't formatted like the author section"). The dialog holds
-   its own copy of the drawing; contain: paint makes the dialog the box that copy is fixed
-   to, so it fills the dialog, stays put while the body scrolls, and never spills onto the
-   scrim. The panels inside carry the words, so nothing is read off the drawing. */
+   library: "our documentation isn't formatted like the author section"). The dialog held
+   its own copy of the drawing until the tweaks pass; since then the page's own ground reads
+   through the clear sheet. contain: paint still keeps everything the dialog paints inside
+   its box, and the body is the one scroller, so the sheet stands still while it scrolls.
+   The panels inside carry the words, so nothing is read off the drawing. */
 .dialogGround {
   contain: paint;
-  /* The body scrolls and the dialog does not, so the copy of the ribbons fixed to the dialog
-     stays behind every screen of the page instead of scrolling away with the first. Flex
-     only while open: a closed dialog keeps the browser's display: none. */
+  /* The body scrolls and the dialog does not (Steve, 2026-09-22: "a scroll inside the
+     scroll"). Flex only while open: a closed dialog keeps the browser's display: none. */
   flex-direction: column;
   overflow: hidden;
 }
@@ -763,7 +763,7 @@
   color: var(--color-text-muted);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 767.98px) {
   .prose :global(.author-hero),
   .prose :global(.author-blocks),
   .prose :global(.author-pair) {

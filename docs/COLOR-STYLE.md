@@ -56,7 +56,7 @@ a scroll, and every target in it is at least 44 pixels tall.
 ### Dark green `#0a3021`
 
 - **Job:** it draws. A card's left edge where the edge is deliberate, the rule under a section
-  heading, the FIRST line or bar on any chart, the top of the header gradient. 14.41 on white and
+  heading, the top of the header gradient. 14.41 on white and
   11.62 on grey.
 - **Not for:** every hairline. Those stay the neutral border. Not a large fill beside deep teal:
   the two are close in darkness and blur together without a rule between them.
@@ -66,7 +66,7 @@ a scroll, and every target in it is at least 44 pixels tall.
 - **Job:** the top border of a PLAIN stat tile, a vehicle's title, the chip of an auction still to
   come. White on it reads 11.10. It sits 1.70 from the status green, which is what lets a plain
   tile and a healthy tile read as two different things.
-- **Not for:** a second series beside dark green. They are too close in darkness to tell apart.
+- **Not for:** a chart's line. A line is a series, and the series are below.
 
 ### Header teal `#03505a`
 
@@ -168,11 +168,15 @@ A fixed order, never shuffled, so a colour means the same place on every chart.
 --color-who-self | The site's own reads, on the activity card
 ```
 
-1. Dark green `#0a3021`.
-2. Bright teal `#188f8d`: 3.92 on white and 3.67 against the dark green. It clears 3.0 for a line
-   and not 4.5 for text, so it is never text.
+1. Teal `#13928b`, the Mark VII teal below.
+2. Gold `#a57c1d`, the Mark VII gold. The two are close in lightness and far apart in hue, so they
+   are told apart by hue, and a chart that draws both always carries a legend naming them.
 3. Neutral grey `#7b7f8a`, 4.00 on white: a third series, or a request the site turned away, which
    is the visitor's and says nothing about the site.
+
+The series are written as the Mark VII tokens and the printed slate gray (`var()`), not as values
+of their own; the dark green and the bright teal they were until the styling pass of 25 September
+had drifted from what the charts drew since the tweaks pass.
 
 **Who the traffic was** has its own three, on the Site activity card only, stacked in one order:
 people in teal `#0a8f85` (3.98 on white), scanners and crawlers in amber `#b8800a` (3.43), and
@@ -194,7 +198,9 @@ ring's fill and a gold leader line to the callout on a peak.
 --color-mark-marker | Mark VII, the marker, the leader and the bracket ticks
 ```
 
-- Teal `#13948d` reads 3.72 on white and gold `#a87f1e` 3.67: marks, never text. They are told
+- Teal `#13928b` reads 3.81 on white and 3.07 on grey, gold `#a57c1d` 3.82 and 3.08: marks,
+  never text. Both went a step deeper in the styling pass, where the series test found them just
+  under 3.0 on the page ground. They are told
   apart by hue rather than by light, so two series always carry a legend.
 - The gauges' tracks are the deep teal faint (`--color-mark-track`, `--color-mark-bar-track`),
   table rules and the rail's current row the same teal fainter still (`--color-mark-rule`,
@@ -283,8 +289,6 @@ inside a document (ADR: Code that reads like code). Both are held to AA by the s
 --color-sheet-text-muted | Rail text, muted
 --color-sheet-icon | Rail icon
 --color-sheet-icon-active | Rail icon, active
---color-sheet-focus | Rail focus ring
---color-sheet-divider | Rail divider
 --color-sheet-divider-strong | Rail divider, strong
 --color-header | Header, flat, under the gradient
 --color-header-text | Header text
@@ -298,6 +302,48 @@ inside a document (ADR: Code that reads like code). Both are held to AA by the s
 --color-code-meta | Code, an attribute
 ```
 
+## How the sheet is built
+
+`src/styles/tokens.css` is the only file that writes a value. Every other stylesheet and component
+takes its colours, sizes, weights, corners, tracking and layers from it, and the gate holds that.
+
+**Three tiers, top to bottom.**
+
+| Tier | What it holds | Written as |
+| --- | --- | --- |
+| The palette | Raw values: the printed Urban slate, the ribbon ground, teal and gold, the code theme, the status set | A hex, once |
+| The roles | What a value is for: `--color-text`, `--color-accent`, `--glass-bg`, `--shadow-md` | A hex where the role owns the colour, `var()` where it borrows one |
+| The components | The side rail's sheet, the Mark VII marks, the operator's rule and ring | `var()` of a role, or a tint of one by `color-mix` |
+
+**A value is written once.** A token that repeats another's colour is written as that token, so
+the rail's text is `var(--color-text)` and follows the body when it moves (it had kept the old
+brown after the body deepened). A see-through tint is mixed from its token,
+`color-mix(in srgb, var(--color-teal-deep) 15%, transparent)`, never copied as an `rgba` of the
+token's channels. The swatches on this page, the contrast tests and the gate all read through
+`var()` to the value.
+
+**One width scale.** A media query cannot read a custom property, so the scale lives in
+`src/lib/breakpoints.ts`, and every media query and every image's `sizes` is written from it.
+
+| Step | What starts there |
+| --- | --- |
+| 480 | A phone held upright, past a small phone |
+| 640 | Past a phone: a document stops filling the screen, pills drop to their desk height |
+| 768 | A tablet: the Admin strip four across, the tables loosen |
+| 1024 | A desk: the site's rail docks, a vehicle takes two columns |
+| 1280 | A wide desk: the Admin rail beside the card, a pinned card gets its own column |
+| 1440 | The widest: the hour beside its card, the store bar's whole sentence |
+
+Above a step a sheet writes `(min-width: 640px)`, under it `(max-width: 639.98px)`, so a width
+under zoom lands on one side and never between the two. A component asks for a width only through
+the constants in that file. A container query measures its own box and keeps its own widths.
+
+**Sizes, weights, corners, tracking and layers are tokens too.** Type from `--text-*`, writing
+inside a chart from `--chart-text-*`, a ring's reading from `--ring-text-*`, corners from
+`--radius-*`, the two trackings (`--readout-tracking` for small capitals, `--title-tracking` for a
+display title), and the stacking order from `--layer-*`. A share of the size around it (`0.9em`),
+a zero, a circle's `50%` and `inherit` are not design values and pass.
+
 ## The rules, short
 
 1. Teal fills, dark green draws, gold trims. Text colours do not change; the ground is the ribbon
@@ -309,6 +355,8 @@ inside a document (ADR: Code that reads like code). Both are held to AA by the s
    colour in a component.
 6. Text and images are always fully opaque.
 7. Contrast is tested in the gate, not eyeballed.
+8. A value is written once, in the token sheet; a tint is mixed from its token.
+9. One width scale, six steps, in `src/lib/breakpoints.ts`.
 
 ## What holds them
 
@@ -323,4 +371,7 @@ a change has to pass (ADR: The rules a change has to pass).
 | No chart series is a status colour's value, and a chart's line takes a status tone only for server errors | StyleRulesTests, and the browser suite reads every line's stroke on the traffic card |
 | The gold tokens are used only by the header, the brand mark and the named trim | StyleRulesTests |
 | `--gradient-header` is defined once and every header bar uses it | StyleRulesTests |
+| A colour is written once in the token sheet, a token that repeats one is written as it, and a tint is mixed from its token | StyleRulesTests |
+| Every width a page asks about is a step on the one scale, and a component asks only through `src/lib/breakpoints.ts` | StyleRulesTests |
+| Every size, weight, corner, tracking and layer a stylesheet writes comes from the token sheet | StyleRulesTests |
 | Nothing that holds a word or an image is drawn at less than full strength, and a quiet word is never on the bare ground | `glass.spec.ts`, on the inventory, a vehicle's page and the Admin tab |
