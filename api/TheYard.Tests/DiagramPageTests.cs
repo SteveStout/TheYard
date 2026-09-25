@@ -55,6 +55,8 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         Assert.DoesNotContain("<?xml", page);
         Assert.Contains("<svg xmlns=\"http://www.w3.org/2000/svg\"><title>t</title></svg>", page);
         Assert.Contains("blob/main/docs/images/x.svg", page);
+        // The site's own icon, so no browser asks for /favicon.ico and logs a 404.
+        Assert.Contains($"<link rel=\"icon\" href=\"{ApiDocument.Favicon}\">", page);
     }
 
     [Fact]

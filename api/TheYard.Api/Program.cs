@@ -1014,8 +1014,8 @@ var wireFormat = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPo
 // this host: at the default address the page's own request for its document
 // came back as index.html on every developer's machine and in the browser
 // suite, and worked only in the container. The page's script comes from the
-// package, not a content delivery network, and the fonts it would fetch from
-// one are turned off, so the reference adds no third-party script to the site.
+// package, not a content delivery network, and the fonts, telemetry, AI chat
+// and MCP link it would reach out for are off; it stays in the one light theme.
 app.MapOpenApi("/api/openapi/{documentName}.json");
 app.MapScalarApiReference(ApiDocument.ReferenceRoute, options => options
     .WithTitle(ApiDocument.Title)
@@ -1023,8 +1023,8 @@ app.MapScalarApiReference(ApiDocument.ReferenceRoute, options => options
     .WithOpenApiRoutePattern("/api/openapi/{documentName}.json")
     .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
     .AddPreferredSecuritySchemes(ApiDocument.BearerScheme)
-    .DisableDefaultFonts()
-    .WithCustomCss(ApiDocument.ReferenceCss));
+    .DisableDefaultFonts().DisableTelemetry().DisableAgent().DisableMcp().HideDeveloperTools()
+    .ForceLightMode().HideDarkModeToggle().WithCustomCss(ApiDocument.ReferenceCss));
 // #endregion api-document-routes
 #endregion composition
 

@@ -135,6 +135,10 @@ behind the key where they were behind it, and their tests are unchanged. Hiding 
 document is not a security measure and is not described as one here; ADR: The code is public and
 the secrets are not is where that question is answered.
 
+## Addendum, 2026-09-25 (1.0.3.21): the site's page, not a product's
+
+The reference page came with Scalar's own extras: a telemetry call on every visit, an AI chat button, an MCP link, a developer toolbar on a local run, and a dark mode the stylesheet the site hands the page (the operator's look, 1.0.3.19) is not written in. All of them are off in the page's options, so it offers what the site offers and fetches from nothing but this host and the one font. `sidebar.spec` opens the page and holds it there: no Ask AI, no developer toolbar, no dark mode button, no request to any other host.
+
 ## Files
 
 - [`api/TheYard.Api/ApiDocument.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ApiDocument.cs): the document's name, title and routes, the public-surface filter, and the two transformers.

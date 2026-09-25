@@ -845,16 +845,29 @@
   overflow-wrap: anywhere;
 }
 
-/* The line under a tile's number holds two lines' room from the first paint:
-   "not read yet" is one line and the reading that replaces it is often two
-   (the request units against their allowance), and a tile that grew when its
-   reading arrived moved the bench under the strip (0.023 of shift at 1280).
-   A phone does not show the line. */
+/* The line under a tile's number is two lines, from the first paint and
+   after: "not read yet" is one line and the reading that replaces it is often
+   two, and on the live sites the typical answer's took three, so a tile that
+   grew when its reading arrived moved the bench under the strip (0.023 of
+   shift at 1280, then 0.018 once the store bar held still). On the strip the
+   third line is cut with an ellipsis and whole in the tile's title; the card
+   behind the tile says all of it. A phone does not show the line. */
 .tileDetail {
   font-size: var(--text-xs);
   line-height: 1.5;
   min-height: 3em;
   color: var(--color-text-muted);
+}
+
+/* The strip's tiles only: the traffic card's four numbers keep their whole
+   line, since the card is where the whole of it is read. */
+.statStrip .tileDetail {
+  height: 3em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .tileTone {
@@ -1005,11 +1018,16 @@
    beside it, a pinned card as a second column. On a phone the card comes first
    and the rail after it; from 900px the rail is its own column and scrolls on
    its own when the window is shorter than it. */
+/* At least a screen tall, so the footer starts below the first screen and a
+   card landing taller than its reservation moves nothing in view (the footer
+   left the first screen when the timing and errors cards landed pinned at
+   1280: 0.025 of shift on 1.0.3.20). */
 .bench {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   align-items: start;
+  min-height: 100vh;
 }
 
 .rail {

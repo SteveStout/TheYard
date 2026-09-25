@@ -921,7 +921,9 @@ function StatStrip({
                   </span>
                 </span>
                 <span className={styles.tileValue}>{tile.value}</span>
-                <span className={styles.tileDetail}>{tile.detail}</span>
+                <span className={styles.tileDetail} title={tile.detail}>
+                  {tile.detail}
+                </span>
                 {/* A tile keeps the room its word and its line will take, so nothing under the
                     strip moves when the hour's reading arrives. */}
                 {word !== null ? (

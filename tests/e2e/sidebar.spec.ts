@@ -114,6 +114,23 @@ test.describe('the docked rail', () => {
     const spec = (await json.json()) as { info: { title: string }; paths: Record<string, unknown> };
     expect(spec.info.title).toBe('TheYard API');
     expect(Object.keys(spec.paths).some((path) => path.startsWith('/api/admin'))).toBe(false);
+
+    // The page is the site's, not a product's: no AI chat, no developer toolbar, no dark mode
+    // the site's stylesheet for it is not written in, and nothing fetched from anywhere but
+    // this host and the one font (ADR: The API describes itself).
+    const hosts = new Set<string>();
+    page.on('request', (request) => hosts.add(new URL(request.url()).host));
+    await page.goto('/api/reference');
+    await expect(page.locator('.scalar-api-reference').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.scalar-card').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('button', { name: /ask ai/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /developer tools/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /dark mode/i })).toHaveCount(0);
+    const own = new URL(page.url()).host;
+    const elsewhere = [...hosts].filter(
+      (host) => host !== own && host !== 'fonts.googleapis.com' && host !== 'fonts.gstatic.com'
+    );
+    expect(elsewhere).toEqual([]);
   });
 
   test('the rail collapses to icons, keeps its names, and remembers the choice', async ({
