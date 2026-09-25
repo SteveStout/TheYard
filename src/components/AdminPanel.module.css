@@ -259,6 +259,21 @@
 .table tr:last-child td {
   border-bottom: none;
 }
+
+/* A phone (1.0.3.25): tighter cells, and an identifier's column never narrower
+   than a short path, so "/api/version" reads as one line and not five. A table
+   of five columns of numbers may still scroll inside its panel on a phone, as
+   the last resort; on a desk nothing does. */
+@media (max-width: 599px) {
+  .table th,
+  .table td {
+    padding: var(--space-2);
+  }
+
+  .table td.mono {
+    min-width: 9rem;
+  }
+}
 /* #endregion tables */
 
 /* The statement itself. Wrapped rather than truncated: a query nobody can read
@@ -1071,8 +1086,10 @@
     display: none;
   }
 
+  /* A step smaller than the desk's, so "124 of 124" stands beside its ring on
+     one line (1.0.3.25; at 20 px it broke over two). */
   .statStrip .tileValue {
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
   }
 
   .statStrip .tileDetail {

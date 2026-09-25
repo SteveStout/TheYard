@@ -365,3 +365,34 @@ test('a vehicle on a phone reads title, bid, photos, specifications, condition, 
   await expect(header.locator('[class*="countdown"], [class*="soldChip"]')).toHaveCount(0);
 });
 // #endregion vehicle-order
+
+// #region one-line-readings
+// 1.0.3.25, read on the live site at 390 after 1.0.3.24: "124 of 124" broke over two lines
+// beside its ring, and a timing path broke every four characters. On a phone every strip
+// tile's reading is one line, and a path in a table is never narrower than a short path.
+test('a phone reads every strip tile on one line, and a table path is never squeezed', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=timing');
+  const strip = page.getByTestId('stat-strip');
+  for (const tile of ['tile-pages', 'tile-memory', 'tile-health']) {
+    await expect(strip.getByTestId(tile)).not.toHaveAttribute('data-tone', 'waiting', {
+      timeout: 45_000,
+    });
+  }
+  const lines = await strip.locator('[class*="tileValue_"]').evaluateAll((values) =>
+    values.map((value) => {
+      const style = getComputedStyle(value);
+      const line = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.15;
+      return {
+        text: value.textContent ?? '',
+        lines: Math.round(value.getBoundingClientRect().height / line),
+      };
+    })
+  );
+  for (const value of lines) expect(value.lines, `"${value.text}"`).toBeLessThanOrEqual(1);
+  const path = page.getByTestId('timing-card').locator('td[class*="mono_"]').first();
+  await expect(path).toBeVisible({ timeout: 30_000 });
+  expect((await path.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(140);
+});
+// #endregion one-line-readings

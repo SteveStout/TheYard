@@ -138,7 +138,7 @@ export default function ActivityCard({
         days or back to a person; a full address is never stored, no account is ever named, and no
         list of visitors is shown on this site.
       </About>
-      <p className={`${styles.statusRow} op-seg`} role="group" aria-label="Window">
+      <p className={`${styles.statusRow} op-seg op-seg-wrap`} role="group" aria-label="Window">
         {ACTIVITY_WINDOWS.map((option) => (
           <button
             key={option}
