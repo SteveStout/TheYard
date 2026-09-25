@@ -46,22 +46,27 @@ public static class ApiDocument
     /// The reference page on the operator's look, like every other page the site
     /// serves (ADR: The glass look, the addendum on the operator's look): the one
     /// face, IBM Plex Sans, from the same Google stylesheet the diagram pages
-    /// use, since no bundle loads here; the page ground; each of the page's cards
-    /// on the shared glass with the dark green rule and two corner brackets,
-    /// the values repeated from the token sheet on purpose, as DiagramPage.cs does;
-    /// and every button a pill. The page's code face is Plex too, because the
-    /// page sets its paths and methods in it and those are names on the page;
-    /// a sample keeps the site's monospaced stack, the one --font-code names,
-    /// because code reads like code (ADR: Code that reads like code). The shape
-    /// rules are marked important because the page's own sheet sits in cascade
-    /// layers of its own and a stylesheet it is given may land in one too.
+    /// use, since no bundle loads here; the site's ground and ink (the ground's
+    /// light teal grey behind, white cards, the site's three text colours, the
+    /// teal accent), solid rather than the gradient, because the page's own
+    /// headers stick while it scrolls and a see-through header would lay words
+    /// over words; each of the page's cards on the shared glass with the dark
+    /// green rule and two corner brackets, the values repeated from the token
+    /// sheet on purpose, as DiagramPage.cs does; and every button a pill, a link
+    /// drawn as one included (the live page's Open API Client read square after
+    /// 1.0.3.19). The page's code face is Plex too, because the page sets its
+    /// paths and methods in it and those are names on the page; a sample keeps
+    /// the site's monospaced stack, the one --font-code names, because code reads
+    /// like code (ADR: Code that reads like code). The shape rules are marked
+    /// important because the page's own sheet sits in cascade layers of its own
+    /// and a stylesheet it is given may land in one too.
     /// </summary>
     public const string ReferenceCss = """
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-        body { margin: 0; background: #e9e6e7; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; font-variant-numeric: tabular-nums; }
-        .scalar-app { --scalar-font: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-font-code: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-color-accent: #006360; }
+        body { margin: 0; background: #f3f7f6; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; font-variant-numeric: tabular-nums; }
+        .scalar-app { --scalar-font: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-font-code: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-color-accent: #006360; --scalar-background-1: #f3f7f6; --scalar-background-2: #ffffff; --scalar-background-3: #e4eeeb; --scalar-border-color: rgba(2, 67, 69, 0.18); --scalar-color-1: #3f3a37; --scalar-color-2: #5e5653; --scalar-color-3: #5f636c; }
         .scalar-app pre, .scalar-app code, .scalar-app [class*="code-block"] { font-family: Consolas, 'SF Mono', Menlo, ui-monospace, monospace !important; }
-        .scalar-app button { border-radius: 9999px !important; }
+        .scalar-app button, .scalar-app a[class*="button"] { border-radius: 9999px !important; }
         .scalar-app .scalar-card { position: relative !important; border: 1px solid rgba(2, 67, 69, 0.18) !important; border-top: 3px solid #024345 !important; border-radius: 10px !important; overflow: visible !important; }
         .scalar-app .scalar-card::before, .scalar-app .scalar-card::after { content: '' !important; position: absolute; width: 18px; height: 18px; border-color: #024345; border-style: solid; pointer-events: none; z-index: 1; }
         .scalar-app .scalar-card::before { left: -1px; top: -3px; border-width: 3px 0 0 2px; border-top-left-radius: 10px; }

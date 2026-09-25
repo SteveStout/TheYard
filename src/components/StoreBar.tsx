@@ -94,7 +94,11 @@ export function StoreBar() {
             testId="store-bar-ready"
           />
         </span>
-        <span className={styles.note} data-testid="store-bar-note">
+        <span
+          className={styles.note}
+          data-testid="store-bar-note"
+          title={stores === null ? undefined : note(stores)}
+        >
           {stores === null ? '' : note(stores)}
         </span>
       </div>

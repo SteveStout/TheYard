@@ -54,8 +54,16 @@ describe('the ribbon ground', () => {
 
   it('fetches nothing: every url in it is one of its own gradients or filters', () => {
     for (const url of (component + sheet).matchAll(/url\(([^)]*)\)/g)) {
-      expect(url[1]).toMatch(/^#ribbon-/);
+      expect(url[1]).toMatch(/^#\$\{own\}-/);
     }
+    expect(component).toMatch(/const own = `ribbon-\$\{useId\(\)/);
     expect(component + sheet).not.toMatch(/<image|https?:/);
+  });
+
+  it("names its gradients and filters per copy, so the page's copy and a dialog's never share a name", () => {
+    // Two copies once both said "ribbon-gold": a reference found the closed dialog's, and
+    // Chrome painted the page's ribbons blank (1.0.3.20).
+    expect(component).not.toMatch(/\sid="/);
+    expect(sheet).not.toMatch(/url\(#/);
   });
 });

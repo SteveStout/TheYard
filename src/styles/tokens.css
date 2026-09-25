@@ -258,9 +258,15 @@
      gets a touch more fill (the operator's look, operator.css). */
   --glass-bg: rgba(255, 255, 255, 0.42);
   --glass-bg-phone: rgba(255, 255, 255, 0.5);
-  --glass-filter: blur(7px) saturate(1.2);
+  /* Frosted (Steve, 2026-09-25, two pictures of frosted glass as the model for
+     the transparency and nothing else): the ground behind a panel reads as
+     soft colour, never as shapes, and a light rim lifts the edge. 7 px and 1.2
+     until then, when the ribbons read through a panel as lines. */
+  --glass-filter: blur(20px) saturate(1.5);
   --glass-border: rgba(2, 67, 69, 0.18);
-  --glass-shadow: 0 8px 24px rgba(2, 67, 69, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --glass-shadow:
+    0 8px 24px rgba(2, 67, 69, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
   --watermark-opacity: 0.1;
   --radius-glass: 10px;
   /* The one frame every photograph on the Author page wears: a gold hairline

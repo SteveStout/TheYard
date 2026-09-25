@@ -925,12 +925,23 @@
     font-size: var(--text-xs);
   }
 
+  /* A reading breaks only between words, and its room is two lines from the
+     first paint: at text-lg a version broke inside itself ("1.0.3.1", "9"),
+     and a reading that took a second line when it arrived moved the rows
+     under it (0.013 of shift at 390 on 1.0.3.19). */
   .statStrip .tileValue {
-    font-size: var(--text-lg);
+    font-size: var(--text-md);
+    overflow-wrap: normal;
+    min-height: calc(2 * 1.15em);
   }
 
   .statStrip .tileTone {
     padding: 0 var(--space-1);
+  }
+
+  /* The word's room as the phone draws the word, without the desk's padding. */
+  .statStrip .tileToneSlot {
+    height: 1.5em;
   }
 }
 

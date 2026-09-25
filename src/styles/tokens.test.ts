@@ -174,6 +174,14 @@ describe('the site palette (ADR-016)', () => {
     }
   });
 
+  it('is frosted: what is behind a panel reads as colour, not as shapes (Steve, 2026-09-25)', () => {
+    const frost = tokens.match(/--glass-filter:\s*blur\((\d+)px\)\s*saturate\(([0-9.]+)\)/);
+    if (!frost)
+      throw new Error('tokens.css should state --glass-filter as a blur and a saturation');
+    expect(Number(frost[1])).toBeGreaterThanOrEqual(16);
+    expect(Number(frost[2])).toBeGreaterThan(1);
+  });
+
   it('a panel turns solid where a blur is not available or not wanted', () => {
     // Three fallbacks, each turning the panel's ground solid: no backdrop-filter,
     // a reader who asked for less transparency, and forced colours.

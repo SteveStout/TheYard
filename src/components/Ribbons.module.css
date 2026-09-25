@@ -63,13 +63,11 @@
 .ribbons {
   fill: none;
   stroke-linecap: round;
-  filter: url(#ribbon-glow);
 }
 
 .shineStrands {
   fill: none;
   stroke-linecap: round;
-  filter: url(#ribbon-shine-blur);
 }
 
 .star {

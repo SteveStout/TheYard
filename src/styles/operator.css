@@ -60,8 +60,11 @@
   --bracket-size: var(--bracket-size-rail);
 }
 
-/* A panel read on white rather than over the page: a document's dialog. */
-.op-solid {
+/* A panel read on white rather than over the page: a document's dialog.
+   Two classes, so the phone's half-white glass further down cannot reach it
+   (1.0.3.19 let it, and on a phone the page behind a document showed between
+   its panels). */
+.op-glass.op-solid {
   background: var(--color-surface);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;

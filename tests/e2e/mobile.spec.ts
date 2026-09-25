@@ -21,7 +21,7 @@ test('a phone gets one hamburger and no rail', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Admin', exact: true })).toBeHidden();
 });
 
-test('the drawer lists every menu, opens a doc full-screen, and closes on Escape', async ({
+test('the drawer lists every menu, opens a doc full-screen on white, and closes on Escape', async ({
   page,
 }) => {
   await openTheYard(page);
@@ -59,6 +59,11 @@ test('the drawer lists every menu, opens a doc full-screen, and closes on Escape
   const box = await doc.boundingBox();
   expect(box?.width).toBe(375);
   expect(box?.height).toBe(812);
+  // Read on white, not over the page behind it: 1.0.3.19 let the phone's half-white glass
+  // through, and the landing page showed between a document's panels.
+  expect(await doc.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
+    'rgb(255, 255, 255)'
+  );
 
   await page.keyboard.press('Escape');
   await expect(doc).toBeHidden();

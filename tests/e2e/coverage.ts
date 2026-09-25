@@ -56,6 +56,10 @@ export type PageFacts = {
   unstyled: string[];
   square: string[];
   wrongFace: string[];
+  /** Ids used more than once on the page. */
+  twice: string[];
+  /** References inside a drawing that find nothing, another drawing's element, or a hidden one. */
+  lost: string[];
 };
 
 /**
@@ -145,6 +149,43 @@ export function readPage(): PageFacts {
   const wrong = Array.from(document.querySelectorAll('h1, h2, h3, p, li, dt, dd, button, a, span'))
     .filter(visible)
     .filter((e) => !inCode(e) && !getComputedStyle(e).fontFamily.includes('IBM Plex Sans'));
+  // The fault that left the ribbons blank in Chrome (1.0.3.20): two copies of a drawing gave their
+  // gradients one set of names, a reference found the first, and that was inside a closed dialog.
+  // So an id is used once, and a reference inside a drawing finds an element of its own drawing
+  // that is drawn whenever the reference is.
+  // The API reference's client is Scalar's markup, not the site's, and it names its own parts
+  // twice (read on the live page, 1400); every other id on every page is the site's.
+  const count = new Map<string, number>();
+  for (const e of Array.from(document.querySelectorAll('[id]'))) {
+    if (e.closest('.scalar-app')) continue;
+    count.set(e.id, (count.get(e.id) ?? 0) + 1);
+  }
+  const twice = Array.from(count)
+    .filter(([, n]) => n > 1)
+    .map(([id]) => id);
+  const hidden = (e: Element) => {
+    for (let n: Element | null = e; n; n = n.parentElement) {
+      if (getComputedStyle(n).display === 'none') return true;
+      if (n instanceof HTMLDialogElement && !n.open) return true;
+    }
+    return false;
+  };
+  const lost: string[] = [];
+  const REFERENCES = ['fill', 'stroke', 'filter', 'clip-path', 'mask'];
+  for (const e of Array.from(document.querySelectorAll('svg, svg *'))) {
+    for (const attribute of REFERENCES) {
+      const id = /url\(\s*['"]?#([^)'"]+)/.exec(e.getAttribute(attribute) ?? '')?.[1];
+      if (id === undefined) continue;
+      const target = document.getElementById(id);
+      if (
+        target === null ||
+        target.closest('svg') !== e.closest('svg') ||
+        (hidden(target) && !hidden(e))
+      ) {
+        lost.push(`${name(e)} ${attribute} #${id}`);
+      }
+    }
+  }
   const unique = (list: Element[], label: (e: Element) => string) =>
     Array.from(new Set(list.map(label))).slice(0, 12);
   return {
@@ -157,5 +198,7 @@ export function readPage(): PageFacts {
         `${name(e)} "${(e.getAttribute('aria-label') ?? e.textContent ?? '').trim().slice(0, 24)}"`
     ),
     wrongFace: unique(wrong, (e) => `${name(e)} ${getComputedStyle(e).fontFamily.split(',')[0]}`),
+    twice: twice.slice(0, 12),
+    lost: Array.from(new Set(lost)).slice(0, 12),
   };
 }

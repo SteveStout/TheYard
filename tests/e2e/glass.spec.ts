@@ -124,6 +124,22 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
   await expect(page.getByTestId('ribbons')).toHaveCount(1);
   // Every document carries the ground and stands its words on panels over it (1.0.2.0).
   await expect(page.getByTestId('ribbons-dialog')).toHaveCount(1);
+  // Each copy paints from its own gradients and filters: the two once shared their names, a
+  // reference found the dialog's first, and Chrome drew the page's ribbons blank behind it.
+  for (const id of ['ribbons', 'ribbons-dialog']) {
+    const own = await page.getByTestId(id).evaluate((layer) =>
+      Array.from(
+        layer.querySelectorAll('[stroke^="url("], [fill^="url("], [filter^="url("]')
+      ).every((node) => {
+        const value =
+          node.getAttribute('stroke') ?? node.getAttribute('fill') ?? node.getAttribute('filter');
+        const name = /url\(#([^)]+)\)/.exec(value ?? '')?.[1];
+        const target = name === undefined ? null : document.getElementById(name);
+        return target !== null && layer.contains(target);
+      })
+    );
+    expect(own, `${id} paints from its own gradients`).toBe(true);
+  }
   await expect(page.getByTestId('doc-page').locator('.doc-panel').first()).toBeVisible();
   // The Author page carries its own copy, fixed to its dialog, so the ground shows behind it too.
   await openTheYard(page, '/?doc=author');

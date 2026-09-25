@@ -6,8 +6,8 @@ import { readPage, siteList, type SitePage } from './coverage';
  * page the same). One test per width: every page the site lists for itself is
  * opened and read in the browser, and a page passes when its body is IBM Plex
  * Sans, it draws at least one panel, every panel carries the brackets and the
- * 3 px rule, no button is square, and no word is set in another face (code
- * excepted). StyleRulesTests rule nine is the static half: a sheet that forgot
+ * 3 px rule, no button is square, no word is set in another face (code
+ * excepted), no id is used twice and no drawing's reference is lost. StyleRulesTests rule nine is the static half: a sheet that forgot
  * the look fails there, and a page that rendered without it fails here.
  */
 async function everyPage(
@@ -77,6 +77,8 @@ async function everyPage(
           facts.unstyled.length ? `unstyled ${facts.unstyled.join(', ')}` : '',
           facts.square.length ? `square ${facts.square.join(', ')}` : '',
           facts.wrongFace.length ? `another face ${facts.wrongFace.join(', ')}` : '',
+          facts.twice.length ? `an id used twice ${facts.twice.join(', ')}` : '',
+          facts.lost.length ? `a drawing's reference lost ${facts.lost.join(', ')}` : '',
         ].filter(Boolean);
         if (wrong.length) failures.push(`${next.address} at ${width}: ${wrong.join('; ')}`);
       }

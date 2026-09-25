@@ -97,3 +97,39 @@ test('the other segment is a link to the other site at this same page, and never
   expect(gone.status()).toBe(405);
   expect(gone.headers()['set-cookie']).toBeUndefined();
 });
+
+test('the bar is as tall before the stores answer as after, at a desk, whatever the note says', async ({
+  page,
+}) => {
+  // The deployed sites answer /api/stores after the first paint and name Azure's stores, whose
+  // note is longer than a local run's: 1.0.3.19 set it in spaced capitals and it wrapped to a
+  // second line at 1280 when it arrived, moving every page 29 px (0.024 of shift). Here the
+  // answer is held back and its store given a name longer than any real one.
+  for (const width of [1024, 1280, 1440]) {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.unrouteAll();
+    await page.route('**/api/stores', async (route) => {
+      const response = await route.fetch();
+      const body = (await response.json()) as Stores;
+      for (const store of body.stores) {
+        store.name = `${store.name}, the store with the longest name this bar will ever be handed`;
+      }
+      await held;
+      await route.fulfill({ response, json: body });
+    });
+    await page.setViewportSize({ width, height: 900 });
+    await openTheYard(page, '/');
+    const bar = page.getByTestId('store-bar');
+    await expect(bar).toHaveAttribute('data-state', 'loading');
+    const before = await bar.boundingBox();
+    release();
+    await expect(bar).toHaveAttribute('data-state', 'ready');
+    const note = bar.getByTestId('store-bar-note');
+    await expect(note).toHaveAttribute('title', /the longest name this bar will ever be handed/);
+    const after = await bar.boundingBox();
+    expect(after?.height, `the bar's height at ${width}`).toBe(before?.height);
+  }
+});

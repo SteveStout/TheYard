@@ -55,6 +55,10 @@
   font-weight: 600;
   padding: 4px 14px;
   border-radius: var(--radius-full);
+  /* The segment's words fit inside its reserved height (4 + 17 + 4 is under
+     28), so the height is the reservation's and not the words': at the body's
+     1.5 they made it 28.4 and the band grew 0.39 px when the segments arrived. */
+  line-height: 1.25;
   min-height: var(--store-segment-height);
   text-decoration: none;
 }
@@ -87,14 +91,29 @@ a.segment:focus-visible {
   cursor: not-allowed;
 }
 
-/* The note is a reading on a desk (the operator's look): small spaced
-   capitals, the sentence word for word. A phone keeps it a sentence, below. */
+/* The note, a sentence at every width. On a desk it takes the rest of the
+   band's one line and is cut with an ellipsis rather than wrapped: the band's
+   height is set before /api/stores answers, and a note that wrapped once it
+   arrived moved every page (1.0.3.19 set it in spaced capitals, and Azure's
+   store names took it to a second line at 1280: 29 px, 0.024 of shift). The
+   whole sentence is its title. A phone gives it a row of its own, below. */
 .note {
-  font-size: var(--readout-size);
-  font-weight: var(--readout-weight);
-  letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
+  font-size: 0.8rem;
   color: var(--color-text-muted);
+}
+
+@media (min-width: 601px) {
+  .inner {
+    flex-wrap: nowrap;
+  }
+
+  .note {
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 @media (max-width: 600px) {
@@ -116,9 +135,5 @@ a.segment:focus-visible {
   .note {
     flex-basis: 100%;
     min-height: var(--store-note-height);
-    font-size: 0.8rem;
-    font-weight: var(--weight-regular);
-    letter-spacing: normal;
-    text-transform: none;
   }
 }
