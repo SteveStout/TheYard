@@ -26,10 +26,6 @@
   stroke-width: 1;
 }
 
-.mark {
-  fill: var(--color-gold);
-}
-
 /* A page that asked for no transparency, or for its own colours, gets no
    watermark at all: it is decoration and nothing is lost with it. */
 @media (prefers-reduced-transparency: reduce), (forced-colors: active), print {

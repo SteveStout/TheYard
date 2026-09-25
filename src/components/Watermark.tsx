@@ -2,9 +2,12 @@ import styles from './Watermark.module.css';
 
 /**
  * The soft watermark behind the page (ADR: The glass look): ONE inline SVG,
- * fixed behind everything, about a tenth as strong as the ink it is drawn in.
- * Dotted rows in the lighter teal and the site's own lightning mark in gold
- * (the concentric rings came out on 2026-09-21 at Steve's word).
+ * fixed behind everything, about a tenth as strong as the ink it is drawn in:
+ * dotted rows in the lighter teal and nothing else. The concentric rings came
+ * out on 2026-09-21 at Steve's word, and the large lightning mark in gold on
+ * 2026-09-25 ("there is a odd white box in the background on desktop", "on all
+ * pages"): over the ribbon ground and through the thinner glass, its straight
+ * edges and its notch read as a pale box behind every page.
  * It is a drawing and not a picture, so it costs no
  * request, and it does not move, so it costs no frame. It holds no words and
  * no image, which is why it may be faint: everything that is read is solid.
@@ -29,11 +32,6 @@ export function Watermark() {
           <path key={y} d={`M0 ${y}H1040`} strokeDasharray="1 11" />
         ))}
       </g>
-      <path
-        className={styles.mark}
-        transform="translate(330 140) scale(0.6)"
-        d="M850 120 700 380h95l-40 210 190-290h-100z"
-      />
     </svg>
   );
 }

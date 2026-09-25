@@ -65,6 +65,15 @@ test('the watermark is one drawing behind the page, with no words in it and no r
   expect(await watermark.evaluate((svg) => (svg.textContent ?? '').trim())).toBe('');
   expect(await watermark.evaluate((svg) => getComputedStyle(svg).pointerEvents)).toBe('none');
   expect(await watermark.evaluate((svg) => getComputedStyle(svg).position)).toBe('fixed');
+  // Lines only, no filled shape (Steve, 25 September: the lightning mark's fill read as
+  // "a odd white box in the background" on every page through the thinner glass).
+  expect(
+    await watermark.evaluate((svg) =>
+      Array.from(svg.querySelectorAll('path, rect, circle, polygon, ellipse'))
+        .filter((shape) => getComputedStyle(shape).fill !== 'none')
+        .map((shape) => shape.outerHTML.slice(0, 80))
+    )
+  ).toEqual([]);
   expect(pictures).toEqual([]);
 });
 

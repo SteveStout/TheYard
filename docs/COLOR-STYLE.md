@@ -219,7 +219,7 @@ page and not in the drawings would be a half move. They move together, in a ship
 ## The glass look
 
 - **A soft watermark** fixed behind the page: ONE inline SVG at a tenth of the strength of its
-  inks, rings in the teal, dotted rows in the bright teal, the lightning mark in gold. No image
+  ink: dotted rows in the Mark VII teal, and nothing else since 25 September. No image
   request and no animation. A page that asked for less transparency, a page in forced colours and
   a printed page get none.
 - **Panels are slightly see-through**: white at about two thirds with a blur behind, a hairline

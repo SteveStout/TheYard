@@ -167,7 +167,8 @@ describe('the site palette (ADR-016)', () => {
     const over = (top: string, bottom: string, share: number) =>
       hex(rgb(top).map((part, index) => part * share + rgb(bottom)[index] * (1 - share)));
 
-    // The watermark's darkest ink is the teal of its rings: the rows are the lighter teal and the mark is gold.
+    // The watermark's one ink is the rows' lighter teal; this measures the darker accent, the
+    // rings' ink until they came out, so the margin the rings needed is kept.
     const stroke = over(token('color-accent'), token('color-bg'), number('watermark-opacity'));
     const throughPanel = over('#ffffff', stroke, Number(glass[1]));
 
