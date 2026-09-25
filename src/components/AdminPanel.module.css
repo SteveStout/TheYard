@@ -16,7 +16,7 @@
 .title {
   margin: 0;
   padding-bottom: var(--space-1);
-  border-bottom: 3px solid var(--color-gold);
+  border-bottom: var(--rule-gold);
   color: var(--color-heading);
   font-size: var(--text-2xl);
   font-weight: var(--title-weight);
@@ -31,7 +31,7 @@
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
   color: var(--color-text);
-  padding: 6px 14px;
+  padding: var(--pill-padding);
   min-height: var(--pill-height);
   font-size: var(--text-sm);
   font-weight: var(--pill-weight);
@@ -52,7 +52,7 @@
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-on-accent);
-  box-shadow: 0 0 0 2px var(--color-gold);
+  box-shadow: var(--ring-gold);
 }
 
 /* On the bare ground, so the body colour and not the muted one: a quiet colour
@@ -515,11 +515,11 @@
    in plain words). .warnLine stays below for the kept log's rows, where a
    warning is a state. */
 .firstLine {
-  color: var(--color-mark-teal);
+  color: var(--color-series-1);
 }
 
 .secondLine {
-  color: var(--color-mark-gold);
+  color: var(--color-series-2);
 }
 
 /* The neutral grey: a third series, or a request the site turned away, which
@@ -1081,7 +1081,8 @@
 }
 
 /* Two to a row under 768 (the tweaks pass, A2): the name, the value row with its
-   ring, one line under it and the word; the line over time is the desk's. */
+   ring, the detail on two lines like the desk's (1.0.3.27, where one line cut it
+   with an ellipsis), and the word; the line over time is the desk's alone. */
 @media (max-width: 767.98px) {
   .statStrip .tile {
     padding: var(--space-3);
@@ -1397,7 +1398,7 @@
 .benchDrawer {
   position: fixed;
   inset: 0 auto 0 0;
-  width: min(84vw, 360px);
+  width: var(--drawer-width);
   max-width: 100vw;
   height: 100dvh;
   max-height: 100dvh;

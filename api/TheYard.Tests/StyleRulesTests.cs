@@ -27,8 +27,8 @@ public class StyleRulesTests
     private static string StylePage() =>
         File.ReadAllText(Path.Combine(Root, "docs", "COLOR-STYLE.md"));
 
-    private static readonly Regex ColourToken =
-        new(@"(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6}|var\(\s*(--[a-z0-9-]+)\s*\))\s*;", RegexOptions.Compiled);
+    private static readonly Regex Definition =
+        new(@"(--[a-z0-9-]+):\s*([^;{}]+);", RegexOptions.Compiled);
 
     /// <summary>
     /// Every token the sheet gives a six-digit value, by name: written as a hex,
@@ -39,12 +39,18 @@ public class StyleRulesTests
     /// </summary>
     private static Dictionary<string, string> Tokens()
     {
-        // The first value a name is given is the token. The fallbacks under the
-        // sheet give --glass-bg a second and a third, and those are fallbacks.
+        // The first value a name is given is the token, whatever it is: the
+        // fallbacks under the sheet give --glass-bg a solid white, and its token is
+        // the rgba above them, which is no hex and so is left out rather than read
+        // as the fallback's white.
         var written = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (Match match in ColourToken.Matches(TokenSheet()))
+        foreach (Match match in Definition.Matches(WithoutComments(TokenSheet())))
         {
-            written.TryAdd(match.Groups[1].Value, match.Groups[3].Success ? match.Groups[3].Value : match.Groups[2].Value.ToLowerInvariant());
+            string value = match.Groups[2].Value.Trim();
+            var alias = Regex.Match(value, @"^var\(\s*(--[a-z0-9-]+)\s*\)$");
+            written.TryAdd(
+                match.Groups[1].Value,
+                alias.Success ? alias.Groups[1].Value : Regex.IsMatch(value, "^#[0-9a-fA-F]{6}$") ? value.ToLowerInvariant() : "");
         }
 
         var tokens = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -52,7 +58,7 @@ public class StyleRulesTests
         {
             string current = name;
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            while (written.TryGetValue(current, out string? value) && seen.Add(current))
+            while (written.TryGetValue(current, out string? value) && value.Length > 0 && seen.Add(current))
             {
                 if (value.StartsWith('#'))
                 {
@@ -372,7 +378,7 @@ public class StyleRulesTests
         {
             string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
             string source = WithoutComments(File.ReadAllText(path));
-            if (!Regex.IsMatch(source, @"--color-gold(-light)?\b") || GoldAllowed.ContainsKey(relative))
+            if (!Regex.IsMatch(source, @"--(color-gold(-light)?|rule-gold|ring-gold)\b") || GoldAllowed.ContainsKey(relative))
             {
                 continue;
             }
@@ -385,7 +391,7 @@ public class StyleRulesTests
         // And where it is allowed, it is never the colour of words on a light ground or the stroke of a chart's line.
         string panel = WithoutComments(
             File.ReadAllText(Path.Combine(Root, "src", "components", "AdminPanel.module.css")));
-        foreach (Match rule in Regex.Matches(panel, @"\.(\w*Line|tile\w*|ring\w*)\s*\{[^}]*--color-gold[^}]*\}"))
+        foreach (Match rule in Regex.Matches(panel, @"\.(\w*Line|tile\w*|ring\w*)\s*\{[^}]*--(color-gold|rule-gold|ring-gold)[^}]*\}"))
         {
             wrong.Add($"the rule .{rule.Groups[1].Value} uses gold: gold is never a chart's line, a tile's top or a ring");
         }
@@ -519,11 +525,9 @@ public class StyleRulesTests
     /// from the tokens (ADR: The glass look, the addendum on the operator's
     /// look): a panel, a card or a tile is .op-glass, so no component sheet
     /// gives one its own ground, border, rule or radius, spaces its capitals
-    /// by a number of its own, or rounds a button to anything but a pill. The
-    /// views still to come onto it are listed with the version that brings
-    /// them, and the list is empty when the lane that started it closes.
+    /// by a number of its own, or rounds a button to anything but a pill.
     /// </summary>
-    /// <summary>The header and the site's own rail are the frame, not panels on it (Steve: "leave the header and page background the same").</summary>
+    /// <remarks>The header and the site's own rail are the frame, not panels on it (Steve: "leave the header and page background the same").</remarks>
     private static readonly string[] TheFrame = ["src/App.module.css", "src/components/SideNav.module.css"];
 
     /// <summary>A name the scan reads as a panel's that is not one, each with why.</summary>
@@ -736,10 +740,21 @@ public class StyleRulesTests
         var wrong = new List<string>();
         int read = 0;
 
-        foreach (string path in StyledSource())
+        var data = Repo.FilesWith(".json")
+            .Where(path => path.Contains(Path.Combine(Root, "src") + Path.DirectorySeparatorChar, StringComparison.Ordinal));
+        foreach (string path in StyledSource().Concat(data))
         {
             string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
-            string source = WithoutComments(File.ReadAllText(path));
+            string source = path.EndsWith(".json", StringComparison.Ordinal) ? File.ReadAllText(path) : WithoutComments(File.ReadAllText(path));
+            // Range syntax, (width < 640px), would pass the scan below unread.
+            foreach (Match range in Regex.Matches(source, @"\((?:width|height)\s*[<>=]"))
+            {
+                wrong.Add($"{relative} writes a range query {range.Value}: write (min-width: N) or (max-width: N minus 0.02) from the scale, so this rule can read it");
+            }
+            if (path.EndsWith(".tsx", StringComparison.Ordinal) && Regex.IsMatch(source, @"matchMedia\(\s*['""`][^'""`]*width"))
+            {
+                wrong.Add($"{relative} asks window.matchMedia a width of its own: import the step from src/lib/breakpoints.ts (a preference such as reduced motion is not a width, and passes)");
+            }
             // A stylesheet's media queries (a container query measures its box, not the
             // screen, and keeps its own widths); in script, every query it writes.
             string asked = path.EndsWith(".css", StringComparison.Ordinal)
@@ -758,7 +773,7 @@ public class StyleRulesTests
                 wrong.Add($"{relative} asks a media query of its own: import the step from src/lib/breakpoints.ts");
             }
         }
-        foreach (Match constant in Regex.Matches(scale, @"export const [A-Z]+ = '([^']+)';"))
+        foreach (Match constant in Regex.Matches(scale, @"export const [A-Z0-9_]+ = '([^']+)';"))
         {
             if (!allowed.Contains(constant.Groups[1].Value))
             {
@@ -773,18 +788,24 @@ public class StyleRulesTests
 
     // #region rule eleven, values from the sheet
     /// <summary>
-    /// Every size, weight, corner, tracking and layer a stylesheet writes comes
-    /// from the token sheet (the styling pass of 25 September): a font size is
-    /// a token or a share of the size around it (0.9em), a weight, a radius and
-    /// a stacking layer are tokens, and a letter spacing is one of the two
-    /// trackings. The fonts sheet declares the face's weight range and is left
-    /// out. A zero, 50 per cent (a circle) and inherit are not values of a
-    /// design and pass.
+    /// Every size, weight, corner, tracking, layer and strength a stylesheet
+    /// writes comes from the token sheet (the styling pass of 25 September): a
+    /// font size is a token or a share of the size around it (0.9em), a weight,
+    /// a radius, a stacking layer and an opacity are tokens, and a letter spacing
+    /// is one of the two trackings. A calc() may nudge a token by a hairline of a
+    /// pixel or two and multiply it, nothing more. The fonts sheet declares the
+    /// face's weight range and is left out. A zero, a full one for an opacity,
+    /// 50 per cent (a circle) and inherit are not values of a design and pass.
+    /// A drawing's own geometry in a component (a chart's rx, its viewBox) is
+    /// the drawing's units and is not read here.
     /// </summary>
     [Fact]
     public void Every_size_weight_corner_tracking_and_layer_comes_from_the_token_sheet()
     {
-        var properties = new Regex(@"(?<![-\w])(font-size|font-weight|border(?:-[a-z]+)*-radius|z-index|letter-spacing):\s*([^;{}]+);", RegexOptions.Compiled);
+        var properties = new Regex(
+            @"(?<![-\w])(font|font-size|font-weight|border(?:-[a-z]+)*-radius|z-index|letter-spacing|opacity|fill-opacity|stroke-opacity):\s*([^;{}]+)(?:;|(?=\}))",
+            RegexOptions.Compiled);
+        var number = new Regex(@"-?\d*\.?\d+([a-z%]*)", RegexOptions.Compiled);
         var wrong = new List<string>();
         int read = 0;
 
@@ -796,11 +817,26 @@ public class StyleRulesTests
                 read++;
                 string property = match.Groups[1].Value;
                 string value = match.Groups[2].Value.Trim();
-                // What is left once every token, and every calc() made of one, is taken out.
-                string left = Regex.Replace(value, @"calc\((?:[^()]|\([^()]*\))*\)", " ");
-                left = Regex.Replace(left, @"var\(--[a-z0-9-]+\)", " ");
-                bool fine = left.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(part =>
-                    part is "0" or "inherit" or "normal" or "50%"
+                // Every token taken out, then each calc() read for what is left in it: a
+                // multiplier, or a hairline of a pixel or two that nudges a token (the
+                // radius inside a border, calc(var(--radius-glass) - 1px)), and nothing else.
+                string left = Regex.Replace(value, @"var\(--[a-z0-9-]+\)", " ");
+                bool fine = true;
+                foreach (Match calc in Regex.Matches(left, @"calc\((?:[^()]|\([^()]*\))*\)"))
+                {
+                    foreach (Match figure in number.Matches(calc.Value))
+                    {
+                        string unit = figure.Groups[1].Value;
+                        double amount = Math.Abs(double.Parse(figure.Value[..^unit.Length], CultureInfo.InvariantCulture));
+                        fine &= unit.Length == 0 || (unit == "px" && amount <= 2);
+                    }
+                }
+                left = Regex.Replace(left, @"calc\((?:[^()]|\([^()]*\))*\)", " ");
+                bool opacity = property.EndsWith("opacity", StringComparison.Ordinal);
+                fine &= left.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(part =>
+                    part is "0" or "inherit"
+                    || (!opacity && part is "normal" or "50%")
+                    || (opacity && part == "1")
                     || (property == "font-size" && Regex.IsMatch(part, @"^\d*\.?\d+em$")));
                 if (!fine)
                 {
@@ -829,22 +865,46 @@ public class StyleRulesTests
     public void Every_colour_is_written_once_and_a_tint_is_mixed_from_its_token()
     {
         string sheet = WithoutComments(TokenSheet());
-        string roots = sheet[..sheet.IndexOf("@supports", StringComparison.Ordinal)];
+        int fallbacks = sheet.IndexOf("@supports", StringComparison.Ordinal);
+        Assert.True(fallbacks > 0, "src/styles/tokens.css should keep its glass fallbacks under @supports, after the tokens");
+        string roots = sheet[..fallbacks];
         var wrong = new List<string>();
         var first = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (Match match in Regex.Matches(roots, @"(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;"))
+        foreach (Match match in Regex.Matches(roots, @"(--[a-z0-9-]+):\s*([^;{}]+);"))
         {
-            string hex = match.Groups[2].Value.ToLowerInvariant();
-            if (!first.TryAdd(hex, match.Groups[1].Value))
+            string name = match.Groups[1].Value;
+            string value = match.Groups[2].Value.Trim();
+            if (Regex.IsMatch(value, "^#[0-9a-fA-F]{6}$"))
             {
-                wrong.Add($"{match.Groups[1].Value} repeats {first[hex]}'s {hex}: write it as var({first[hex]})");
+                string hex = value.ToLowerInvariant();
+                if (!first.TryAdd(hex, name))
+                {
+                    wrong.Add($"{name} repeats {first[hex]}'s {hex}: write it as var({first[hex]})");
+                }
+                continue;
+            }
+            // Anywhere else a colour is written it is a token's var() or a mix of one:
+            // no hex of any length inside a gradient or a shadow, and no rgb() or hsl()
+            // but the glass's white shares, which the tests read the share off.
+            foreach (Match hex in Regex.Matches(value, @"#[0-9a-fA-F]{3,8}\b"))
+            {
+                wrong.Add($"{name} writes {hex.Value} inside its value: name the colour as a token and use var()");
+            }
+            foreach (Match colour in Regex.Matches(value, @"\b(?:rgba?|hsla?)\([^)]*\)"))
+            {
+                if (!Regex.IsMatch(colour.Value, @"^rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*[0-9.]+\s*\)$"))
+                {
+                    wrong.Add($"{name} writes {colour.Value}: mix the tint from its token, color-mix(in srgb, var(--token) N%, transparent)");
+                }
             }
         }
-        foreach (Match rgba in Regex.Matches(roots, @"rgba\((\d+), (\d+), (\d+), [0-9.]+\)"))
+        // The fallbacks turn the see-through grounds solid and the blurs off, and do nothing else.
+        foreach (Match match in Regex.Matches(sheet[fallbacks..], @"(--[a-z0-9-]+):\s*([^;{}]+);"))
         {
-            if (rgba.Groups[1].Value != "255" || rgba.Groups[2].Value != "255" || rgba.Groups[3].Value != "255")
+            string value = match.Groups[2].Value.Trim();
+            if (value is not ("#ffffff" or "Canvas" or "none") && !value.StartsWith("var(", StringComparison.Ordinal))
             {
-                wrong.Add($"src/styles/tokens.css writes {rgba.Value}: mix the tint from its token, color-mix(in srgb, var(--token) N%, transparent)");
+                wrong.Add($"the fallbacks give {match.Groups[1].Value} the value {value}: a fallback turns a ground solid (#ffffff, Canvas) or a blur off (none), or points at a token");
             }
         }
 

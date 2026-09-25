@@ -373,6 +373,27 @@ test('About Steven opened from the home page covers the whole phone screen, its 
 });
 // #endregion about-from-home
 
+// #region scale-band
+// The styling pass moved the phone step from 600 to 640 (one scale of six steps). At 620,
+// inside the band that moved, a document fills the screen as it does on any phone and the
+// page does not scroll sideways (the reviewer of 25 September: no test stood in the band).
+test('at 620, under the 640 step, a document fills the screen and nothing scrolls sideways', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 620, height: 900 });
+  await openTheYard(page, '/?doc=hosting');
+  const sheet = page.locator('dialog[open]').last();
+  await expect(sheet.locator('.doc-panel').first()).toBeVisible();
+  const box = await sheet.boundingBox();
+  expect(box?.x).toBe(0);
+  expect(box?.width).toBe(620);
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(sideways).toBe(0);
+});
+// #endregion scale-band
+
 // #region vehicle-order
 // The tweaks pass (A5): under 1024 a buyer reads the bid before the photos. Title,
 // bid, photos, specifications, condition, seller, top to bottom, and the status

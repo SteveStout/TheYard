@@ -45,7 +45,7 @@
 
 /* A phone has the drawer: the ribbons run from the edge and stand back a little. */
 :global([data-rail='drawer']) .drawing {
-  opacity: 0.7;
+  opacity: var(--ribbons-phone-opacity);
 }
 
 .ribbons {
@@ -63,7 +63,7 @@
 }
 
 .sparks circle {
-  opacity: 0.4;
+  opacity: var(--ribbons-spark-opacity);
 }
 
 .gold {

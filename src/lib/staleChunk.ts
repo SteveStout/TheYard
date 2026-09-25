@@ -32,15 +32,18 @@ type Storage = { getItem(key: string): string | null; setItem(key: string, value
 
 /**
  * Reloads the page onto the new version, once: true when it did (the caller
- * shows nothing more), false when a reload already happened inside the window
- * or there is no storage to remember it in (the caller shows the error).
+ * shows that the new version is loading), false when it did not (the caller
+ * shows the error). It does not reload a page that is offline, where a reload
+ * lands on the browser's own offline page and loses the site (the same words
+ * come from a chunk that failed for want of a network), nor a second time inside
+ * the window, nor where there is no storage to remember the first in.
  */
 export function reloadOnce(
   storage: Storage | null,
   reload: () => void,
-  now: number = Date.now()
+  { now = Date.now(), online = true }: { now?: number; online?: boolean } = {}
 ): boolean {
-  if (storage === null) return false;
+  if (storage === null || !online) return false;
   try {
     const last = Number(storage.getItem(RELOADED_AT));
     if (Number.isFinite(last) && last > 0 && now - last < RELOAD_WINDOW_MS) return false;

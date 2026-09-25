@@ -12,14 +12,9 @@
   pointer-events: none;
 }
 
-.rings {
-  fill: none;
-  stroke: var(--color-accent);
-  stroke-width: 1.2;
-}
-
-/* The rows are the lighter teal, so the rings' teal is the darkest ink in the
-   drawing: that is the ink every text colour is measured against. */
+/* The rows are the drawing's one ink (the rings came out on 21 September and the
+   lightning mark on 25 September). Every text colour is still measured against
+   the darker accent the rings were drawn in, so the margin they needed is kept. */
 .rows {
   fill: none;
   stroke: var(--color-mark-teal);

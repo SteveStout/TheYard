@@ -222,15 +222,16 @@ page and not in the drawings would be a half move. They move together, in a ship
   ink: dotted rows in the Mark VII teal, and nothing else since 25 September. No image
   request and no animation. A page that asked for less transparency, a page in forced colours and
   a printed page get none.
-- **Panels are slightly see-through**: white at about two thirds with a blur behind, a hairline
-  teal border, a soft teal shadow, a 10 pixel radius. The see-through is in the BACKGROUND COLOUR
+- **Panels are see-through**: white at 30 per cent (38 on a phone) over a 28 pixel frost, a
+  hairline teal border, a soft teal shadow, a 10 pixel radius. The see-through is in the BACKGROUND COLOUR
   and never in an `opacity` on the container, so nothing inside a panel is ever faded. Where a
   blur is not supported, where the reader asked for reduced transparency, and in forced colours, a
   panel is solid white.
 - **The blur is spent where it is cheap**, because a phone pays for it by the pixel: tiles, small
   cards, the window buttons, the filter bar, the intro strip, a vehicle's page, the store bar. The
-  Admin tab's wide cards and the hundred vehicle cards are see-through without it. The side rail
-  and the documents' dialog are solid.
+  Admin tab's wide cards are see-through without it, and each of the hundred vehicle cards frosts
+  its words' box only. The side rail is solid. A document's dialog is a clear sheet with the frost
+  on its reading panels, and frost from edge to edge on a phone.
 - **Words are measured against the worst thing behind them**, the watermark's darkest stroke, and
   not against plain white.
 - **A ring gauge is honest or absent.** A ring is a share of a known whole: 5 of 5 checks, 118 of
@@ -304,8 +305,10 @@ inside a document (ADR: Code that reads like code). Both are held to AA by the s
 
 ## How the sheet is built
 
-`src/styles/tokens.css` is the only file that writes a value. Every other stylesheet and component
-takes its colours, sizes, weights, corners, tracking and layers from it, and the gate holds that.
+`src/styles/tokens.css` is the one file that writes a design value. Every other stylesheet takes its
+colours, type sizes, weights, corners, tracking, layers and strengths from it, and the gate holds
+that. What stays where it is used is layout: a column's width, a line height, and a drawing's own
+geometry in its component (a chart's viewBox and corners are the drawing's units).
 
 **Three tiers, top to bottom.**
 
@@ -313,7 +316,7 @@ takes its colours, sizes, weights, corners, tracking and layers from it, and the
 | --- | --- | --- |
 | The palette | Raw values: the printed Urban slate, the ribbon ground, teal and gold, the code theme, the status set | A hex, once |
 | The roles | What a value is for: `--color-text`, `--color-accent`, `--glass-bg`, `--shadow-md` | A hex where the role owns the colour, `var()` where it borrows one |
-| The components | The side rail's sheet, the Mark VII marks, the operator's rule and ring | `var()` of a role, or a tint of one by `color-mix` |
+| The components | The side rail's sheet, the Mark VII marks, the operator's rule and ring, the trims | `var()` of a role or a `color-mix` tint of one where it borrows a colour; a value it owns (the Mark VII teal and gold, a ring's reading size, a fill's strength) written once, here |
 
 **A value is written once.** A token that repeats another's colour is written as that token, so
 the rail's text is `var(--color-text)` and follows the body when it moves (it had kept the old
@@ -323,7 +326,8 @@ token's channels. The swatches on this page, the contrast tests and the gate all
 `var()` to the value.
 
 **One width scale.** A media query cannot read a custom property, so the scale lives in
-`src/lib/breakpoints.ts`, and every media query and every image's `sizes` is written from it.
+`src/lib/breakpoints.ts`, and every media query and every image's `sizes`, in a sheet, a component
+or the photographs' data, is written on it.
 
 | Step | What starts there |
 | --- | --- |
@@ -334,9 +338,17 @@ token's channels. The swatches on this page, the contrast tests and the gate all
 | 1280 | A wide desk: the Admin rail beside the card, a pinned card gets its own column |
 | 1440 | The widest: the hour beside its card, the store bar's whole sentence |
 
-Above a step a sheet writes `(min-width: 640px)`, under it `(max-width: 639.98px)`, so a width
-under zoom lands on one side and never between the two. A component asks for a width only through
-the constants in that file. A container query measures its own box and keeps its own widths.
+Above a step a sheet writes `(min-width: 640px)`, under it `(max-width: 639.98px)`: a width under
+zoom (639.5) lands on one side, where a whole pixel between the two used to fall into neither, and
+what is left is a fiftieth of a pixel. A component asks script for a width only through the
+constants in that file; a `sizes` attribute is written on the scale, and the same rule reads it.
+Range syntax, `(width < 640px)`, is not used, so the rule can read every query. A container query
+measures its own box and keeps its own widths.
+
+**The browser floor.** The tints use `color-mix()`: Chrome and Edge 111, Safari 16.2 (iOS 16.2),
+Firefox 113, all from late 2022 or early 2023. An older browser draws those tints as nothing: a
+panel without its hairline and shadow, the gauges without their tracks. The words and the grounds
+behind them are hex tokens and read the same everywhere.
 
 **Sizes, weights, corners, tracking and layers are tokens too.** Type from `--text-*`, writing
 inside a chart from `--chart-text-*`, a ring's reading from `--ring-text-*`, corners from

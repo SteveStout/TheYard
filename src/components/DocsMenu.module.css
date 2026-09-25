@@ -167,7 +167,7 @@
   font-size: var(--text-2xl);
   margin-top: 0;
   padding-bottom: var(--space-1);
-  border-bottom: 3px solid var(--color-gold);
+  border-bottom: var(--rule-gold);
 }
 
 .prose h2 {
@@ -555,7 +555,7 @@
 .prose :global(.author-intro) h2 {
   display: inline-block;
   font-size: var(--text-2xl);
-  border-bottom: 3px solid var(--color-gold);
+  border-bottom: var(--rule-gold);
   background: none;
   padding-bottom: var(--space-1);
 }

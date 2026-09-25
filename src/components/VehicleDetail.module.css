@@ -18,7 +18,7 @@
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
   color: var(--color-text);
-  padding: 6px 14px;
+  padding: var(--pill-padding);
   min-height: var(--pill-height);
   font-size: var(--text-sm);
   font-weight: var(--pill-weight);

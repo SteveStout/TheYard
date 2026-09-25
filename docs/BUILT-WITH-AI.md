@@ -31,7 +31,7 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 664 xUnit tests, 232 Vitest tests at 1.0.3.0 and 127 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 664 xUnit tests, 232 Vitest tests at 1.0.3.0 and 128 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the latest gate, on 1.0.0.182, took 493 seconds. A push that fails the gate does not roll.
 

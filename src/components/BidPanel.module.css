@@ -197,7 +197,7 @@
   padding: var(--space-2) var(--space-5);
   background: var(--color-surface);
   color: var(--color-accent);
-  border: 1.5px solid var(--color-accent);
+  border: var(--border-accent);
   border-radius: var(--radius-full);
   font-weight: var(--weight-semibold);
   cursor: pointer;

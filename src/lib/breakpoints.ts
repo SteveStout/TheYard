@@ -18,7 +18,6 @@
  * property; tokens.css repeats the list in its comment.
  */
 export const PHONE = '(max-width: 639.98px)';
-export const TABLET = '(min-width: 768px)';
 export const DESK = '(min-width: 1024px)';
 export const WIDE = '(min-width: 1280px)';
 export const WIDEST = '(min-width: 1440px)';

@@ -49,7 +49,7 @@
 .tick {
   stroke: var(--color-mark-axis);
   stroke-width: 1;
-  stroke-opacity: 0.45;
+  stroke-opacity: var(--ring-tick-opacity);
 }
 
 .tickMajor {

@@ -67,7 +67,7 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
     '.calloutText',
   ],
   'Ring.module.css': ['.tick', '.tickMajor'],
-  'Watermark.module.css': ['.rings', '.rows'],
+  'Watermark.module.css': ['.rows'],
 };
 
 describe('the icons', () => {

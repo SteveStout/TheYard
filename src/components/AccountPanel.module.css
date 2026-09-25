@@ -29,7 +29,7 @@
 .title {
   margin: 0;
   padding-bottom: var(--space-1);
-  border-bottom: 3px solid var(--color-gold);
+  border-bottom: var(--rule-gold);
   color: var(--color-heading);
   font-size: var(--text-2xl);
   font-weight: var(--title-weight);
@@ -43,7 +43,7 @@
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
   color: var(--color-text);
-  padding: 6px 14px;
+  padding: var(--pill-padding);
   min-height: var(--pill-height);
   font-size: var(--text-sm);
   font-weight: var(--pill-weight);
@@ -179,7 +179,7 @@
 
 .primary:disabled,
 .secondary:disabled {
-  opacity: 0.6;
+  opacity: var(--opacity-disabled);
   cursor: default;
 }
 

@@ -4,7 +4,7 @@
     "widths": [480, 960, 1600],
     "width": 1600,
     "height": 1999,
-    "sizes": "(max-width: 720px) 92vw, 420px",
+    "sizes": "(max-width: 767.98px) 92vw, 420px",
     "narrowBecause": "a phone selfie 1671 pixels wide: 1600 is the widest cut it can give"
   },
   {
@@ -12,7 +12,7 @@
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 1599,
-    "sizes": "(max-width: 720px) 92vw, 960px",
+    "sizes": "(max-width: 767.98px) 92vw, 960px",
     "credit": "Photos of Steve and Katie at the stream, on the bridge and under the willow by McKinley Griggs.",
     "between": true
   },
@@ -21,7 +21,7 @@
     "widths": [480, 960, 1920, 2400],
     "width": 2400,
     "height": 1321,
-    "sizes": "(max-width: 720px) 92vw, 960px",
+    "sizes": "(max-width: 767.98px) 92vw, 960px",
     "phone": { "name": "couple-on-wooden-bridge", "widths": [480, 960], "height": 800 },
     "credit": "Photos of Steve and Katie at the stream, on the bridge and under the willow by McKinley Griggs.",
     "between": true
@@ -31,7 +31,7 @@
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 960,
-    "sizes": "(max-width: 720px) 92vw, 960px",
+    "sizes": "(max-width: 767.98px) 92vw, 960px",
     "credit": "Ha Ha Tonka photograph from 417mag.com."
   },
   {
@@ -39,7 +39,7 @@
     "widths": [480, 678],
     "width": 678,
     "height": 452,
-    "sizes": "(max-width: 720px) 92vw, 678px",
+    "sizes": "(max-width: 767.98px) 92vw, 678px",
     "narrowBecause": "the source picture is 678 pixels wide: 678 is every pixel it has",
     "credit": "Pantheon photograph from fullsuitcase.com."
   },
@@ -48,7 +48,7 @@
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 1080,
-    "sizes": "(max-width: 720px) 92vw, 960px",
+    "sizes": "(max-width: 767.98px) 92vw, 960px",
     "credit": "Mass Effect Legendary Edition key art © Electronic Arts."
   },
   {
@@ -56,21 +56,21 @@
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 2560,
-    "sizes": "(max-width: 720px) 92vw, 480px"
+    "sizes": "(max-width: 767.98px) 92vw, 480px"
   },
   {
     "name": "interior-door-in-new-frame",
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 2560,
-    "sizes": "(max-width: 720px) 92vw, 480px"
+    "sizes": "(max-width: 767.98px) 92vw, 480px"
   },
   {
     "name": "couple-under-willow",
     "widths": [480, 960, 1600],
     "width": 1600,
     "height": 1067,
-    "sizes": "(max-width: 720px) 92vw, 960px",
+    "sizes": "(max-width: 767.98px) 92vw, 960px",
     "narrowBecause": "the photograph was sent 1600 pixels wide: 1600 is every pixel it has",
     "credit": "Photos of Steve and Katie at the stream, on the bridge and under the willow by McKinley Griggs.",
     "between": true
@@ -80,7 +80,7 @@
     "widths": [480, 960, 1600],
     "width": 1600,
     "height": 1288,
-    "sizes": "(max-width: 720px) 92vw, 480px",
+    "sizes": "(max-width: 767.98px) 92vw, 480px",
     "narrowBecause": "a phone snapshot cropped tight to the two rabbits: 1600 is every pixel the crop has"
   },
   {
@@ -88,7 +88,7 @@
     "widths": [480, 960, 1067],
     "width": 1067,
     "height": 1600,
-    "sizes": "(max-width: 720px) 92vw, 480px",
+    "sizes": "(max-width: 767.98px) 92vw, 480px",
     "narrowBecause": "the photograph was sent 1067 pixels wide: 1067 is every pixel it has"
   },
   {
@@ -96,7 +96,7 @@
     "widths": [480, 960, 1500],
     "width": 1500,
     "height": 1233,
-    "sizes": "(max-width: 720px) 92vw, 960px",
+    "sizes": "(max-width: 767.98px) 92vw, 960px",
     "narrowBecause": "the source picture is 1500 pixels wide: 1500 is every pixel it has",
     "credit": "St. Charles photograph from midwestliving.com."
   },
@@ -105,7 +105,7 @@
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 2560,
-    "sizes": "(max-width: 720px) 92vw, 960px",
+    "sizes": "(max-width: 767.98px) 92vw, 960px",
     "between": true
   }
 ]

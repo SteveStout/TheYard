@@ -21,9 +21,14 @@ export class ErrorBoundary extends Component<
 > {
   state: { error: Error | null; reloading: boolean } = { error: null, reloading: false };
 
-  /** Runs during the failed render: the only place state may be set from an error. */
+  /**
+   * Runs during the failed render: the only place state may be set from an error.
+   * A stale chunk is drawn as the new version loading from this first commit, so
+   * the error card never flashes before the reload; componentDidCatch takes that
+   * back when it does not reload.
+   */
   static getDerivedStateFromError(error: Error) {
-    return { error };
+    return { error, reloading: isStaleChunk(error) };
   }
 
   /**
@@ -33,10 +38,11 @@ export class ErrorBoundary extends Component<
    * so for the moment the reload takes. Anything else is reported and shown.
    */
   componentDidCatch(error: Error, info: ErrorInfo) {
-    if (isStaleChunk(error) && reloadOnce(tabStorage(), () => window.location.reload())) {
-      this.setState({ reloading: true });
-      return;
-    }
+    const reloaded =
+      isStaleChunk(error) &&
+      reloadOnce(tabStorage(), () => window.location.reload(), { online: navigator.onLine });
+    if (reloaded) return;
+    if (this.state.reloading) this.setState({ reloading: false });
     reportClientError(error, info.componentStack ?? undefined);
   }
 

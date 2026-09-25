@@ -100,7 +100,7 @@
   --color-accent-hover: #004f4d; /* white on it 9.44 */
   --color-accent-soft: #e0ecee; /* the teal, as a pale tint: the accent on it 5.89 */
   --color-on-accent: var(--palette-white);
-  --color-green-dark: #0a3021; /* it draws: a card's left edge, a heading's rule, the first series; 14.41 on white */
+  --color-green-dark: #0a3021; /* it draws: a card's left edge, a heading's rule, the rule under a section heading; 14.41 on white */
   --color-teal-deep: #024345; /* a plain tile's top, a vehicle's title, an upcoming auction's chip; white on it 11.1 */
   --color-teal-header: #03505a; /* the bottom of the header gradient and nothing else; white on it 9.13 */
   --color-gold: #d4aa3a; /* trim on white, as decoration only: 2.19 on white, so never text and never data */
@@ -135,7 +135,7 @@
   /* A chart's series when they are not the two stores: a line's identity,
      first, second and third, and never a status colour, because a series drawn
      in the warning colour reads as an alarm (ADR: The Admin tab, as a product,
-     the addendum on the traffic card in plain words). Since the tweaks pass the
+     the addendum on the traffic card in plain words). Since the styling pass the
      first two are the Mark VII teal and gold below, told apart by hue, so two
      series always carry a legend; the third is the printed slate gray.
      Graphics, so 3:1 on white. The order is fixed and never shuffled. */
@@ -279,11 +279,10 @@
   --bench-hour-width: 260px;
   /* #endregion rail-widths */
 
-  /* Radius: cards 16px, controls 8px, buttons pill */
+  /* Radius: a chip 3px, a small control 6px, a control 8px, a button a pill */
   --radius-xs: 3px; /* a chip's corner and a legend swatch's */
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 16px;
   --radius-full: 999px;
 
   /* Typography */
@@ -392,7 +391,8 @@
   --ring-first: var(--color-teal-deep);
   --ring-second: var(--color-gold-light);
   --ring-marker: var(--color-mark-marker);
-  --ring-tile-size: 44px;
+  --ring-tile-size: var(--touch-target);
+  --ring-tick-opacity: 0.45; /* a minor graduation round a large ring */
   --ring-fill-time: 400ms;
   /* The reading inside a ring, by the ring's size. */
   --ring-text-tiny: 8px;
@@ -403,6 +403,25 @@
 
   /* What dims the page behind a dialog or the drawer: the brown-gray, see-through. */
   --scrim: color-mix(in srgb, var(--palette-brown-gray) 45%, transparent);
+
+  /* The trims and the page's measures, each written once: a title's gold
+     underline, the gold ring round a chosen control, the accent hairline round
+     an outlined control, a pill's padding, the page's widest measure and a
+     drawer's width. */
+  --rule-gold: var(--rule-width) solid var(--color-gold);
+  --ring-gold: 0 0 0 2px var(--color-gold);
+  --border-accent: 1.5px solid var(--color-accent);
+  --pill-padding: 6px 14px;
+  --page-width: 1200px;
+  --drawer-width: min(84vw, 360px);
+
+  /* Strengths: a disabled control, the low of a live dot's pulse, the ribbons
+     standing back on a phone, and their sparks. Nothing that is read is faded
+     (glass.spec): a disabled control is the one exception, and it says so. */
+  --opacity-disabled: 0.6;
+  --opacity-pulse: 0.35;
+  --ribbons-phone-opacity: 0.7;
+  --ribbons-spark-opacity: 0.4;
 
   /* Layers, bottom to top: the page's own ground behind everything, the
      docked rail over the page beside it, the sticky header, and the skip link

@@ -12,7 +12,7 @@
 }
 
 .inner {
-  max-width: 1200px;
+  max-width: var(--page-width);
   margin: 0 auto;
   padding: var(--space-2) var(--space-6);
   display: flex;

@@ -29,7 +29,7 @@
 /* A page's title, with the gold underline, as Admin, Account and Inventory. */
 .heading {
   padding-bottom: var(--space-1);
-  border-bottom: 3px solid var(--color-gold);
+  border-bottom: var(--rule-gold);
   font-size: var(--text-3xl);
   font-weight: var(--title-weight);
   line-height: var(--title-line);
@@ -316,7 +316,7 @@
 .badgeBig {
   width: 88px;
   height: 88px;
-  box-shadow: 0 0 0 2px var(--color-gold);
+  box-shadow: var(--ring-gold);
 }
 
 /* A photograph in the badge, in place of the icon: the same round gold ring,

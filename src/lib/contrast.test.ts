@@ -24,6 +24,12 @@ describe('hexTokens', () => {
     ]);
   });
 
+  it("takes a name whose first value is no hex as no colour, not as a fallback's hex", () => {
+    const sheet =
+      ':root { --glass: rgba(255, 255, 255, 0.3); } @supports not (x) { :root { --glass: #ffffff; } }';
+    expect(hexTokens(sheet)).toEqual([]);
+  });
+
   it('leaves out a mix, an alias that reaches no hex, and a loop', () => {
     const sheet =
       ':root { --m: color-mix(in srgb, var(--a) 5%, transparent); --x: var(--nowhere); --p: var(--q); --q: var(--p); --a: #010203; }';

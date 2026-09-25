@@ -7,7 +7,6 @@ import './styles/code.css';
 import App from './App';
 import { ErrorBoundary, reportClientError } from './components/ErrorBoundary';
 import { captureAdminKey } from './lib/adminKey';
-import { reloadOnce, tabStorage } from './lib/staleChunk';
 
 // #region bootstrap
 // fonts.css comes first so the face is declared before anything asks
@@ -31,13 +30,6 @@ captureAdminKey();
 // (ADR: Error handling).
 window.addEventListener('error', (event) => reportClientError(event.error ?? event.message));
 window.addEventListener('unhandledrejection', (event) => reportClientError(event.reason));
-
-// A chunk's own stylesheet or imports that a deploy has replaced fail before the
-// chunk does, and Vite says so with this event: the page loads again onto the new
-// version, once, and a second failure goes on to the boundary (src/lib/staleChunk.ts).
-window.addEventListener('vite:preloadError', (event) => {
-  if (reloadOnce(tabStorage(), () => window.location.reload())) event.preventDefault();
-});
 
 createRoot(root).render(
   <StrictMode>

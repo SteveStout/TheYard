@@ -34,7 +34,7 @@ describe('reloadOnce', () => {
   it('reloads, and remembers when', () => {
     const storage = memory();
     const reload = vi.fn();
-    expect(reloadOnce(storage, reload, 1_000_000)).toBe(true);
+    expect(reloadOnce(storage, reload, { now: 1_000_000 })).toBe(true);
     expect(reload).toHaveBeenCalledTimes(1);
     expect(storage.values.get(RELOADED_AT)).toBe('1000000');
   });
@@ -42,11 +42,19 @@ describe('reloadOnce', () => {
   it('does not reload a second time inside the window, so a real failure is shown, not looped', () => {
     const storage = memory();
     const reload = vi.fn();
-    reloadOnce(storage, reload, 1_000_000);
-    expect(reloadOnce(storage, reload, 1_000_000 + RELOAD_WINDOW_MS - 1)).toBe(false);
+    reloadOnce(storage, reload, { now: 1_000_000 });
+    expect(reloadOnce(storage, reload, { now: 1_000_000 + RELOAD_WINDOW_MS - 1 })).toBe(false);
     expect(reload).toHaveBeenCalledTimes(1);
-    expect(reloadOnce(storage, reload, 1_000_000 + RELOAD_WINDOW_MS + 1)).toBe(true);
+    expect(reloadOnce(storage, reload, { now: 1_000_000 + RELOAD_WINDOW_MS + 1 })).toBe(true);
     expect(reload).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not reload a page that is offline: the same words come from a chunk that had no network', () => {
+    const storage = memory();
+    const reload = vi.fn();
+    expect(reloadOnce(storage, reload, { now: 1_000_000, online: false })).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+    expect(storage.values.has(RELOADED_AT)).toBe(false);
   });
 
   it('shows the error where there is no storage to remember the reload in', () => {

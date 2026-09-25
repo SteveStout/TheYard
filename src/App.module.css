@@ -46,7 +46,7 @@
 }
 
 .headerInner {
-  max-width: 1200px;
+  max-width: var(--page-width);
   margin: 0 auto;
   padding: var(--space-4) var(--space-6);
   display: flex;
@@ -103,8 +103,8 @@
 /* The resume, as an icon beside the hamburger (1.0.1.0): a 44 px round target
    in the header's gold, which reads on the gradient (7.98 on the dark green). */
 .headerIcon {
-  width: 44px;
-  height: 44px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -129,8 +129,8 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  width: 44px;
-  height: 44px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -152,7 +152,7 @@
 .resetBids {
   appearance: none;
   background: var(--color-surface);
-  border: 1.5px solid var(--color-accent);
+  border: var(--border-accent);
   color: var(--color-accent);
   padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-full);
@@ -225,7 +225,7 @@
 .main {
   flex: 1;
   width: 100%;
-  max-width: 1200px;
+  max-width: var(--page-width);
   margin: 0 auto;
   padding: var(--space-6);
   /* The inventory grid asks this box how wide it is, rather than asking the
@@ -248,7 +248,7 @@
 .listTitle {
   margin: 0;
   padding-bottom: var(--space-1);
-  border-bottom: 3px solid var(--color-gold);
+  border-bottom: var(--rule-gold);
   font-size: var(--text-2xl);
   /* Bold, as the Admin and Account titles are: one page title across the site (one look, 2026-09-21). */
   font-weight: var(--weight-bold);
@@ -350,8 +350,8 @@
   padding: var(--space-2) var(--space-6);
   background: var(--color-accent);
   color: var(--color-on-accent);
-  border: 1.5px solid var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-gold);
+  border: var(--border-accent);
+  box-shadow: var(--ring-gold);
   border-radius: var(--radius-full);
   font-weight: var(--weight-semibold);
   cursor: pointer;

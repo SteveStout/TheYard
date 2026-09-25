@@ -32,15 +32,22 @@ export function contrast(a: string, b: string): number {
  * never reaches a hex, a loop included.
  */
 export function hexTokens(sheet: string): { name: string; hex: string }[] {
+  // The first value a name is given is the token, whatever it is: --glass-bg's
+  // token is an rgba (left out), not the solid white a fallback gives it later.
   const written = new Map<string, string>();
-  for (const match of sheet.matchAll(
-    /(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6}|var\(\s*(--[a-z0-9-]+)\s*\))\s*;/g
-  )) {
-    if (!written.has(match[1])) written.set(match[1], match[3] ?? match[2].toLowerCase());
+  const text = sheet.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  for (const match of text.matchAll(/(--[a-z0-9-]+):\s*([^;{}]+);/g)) {
+    if (written.has(match[1])) continue;
+    const value = match[2].trim();
+    const alias = /^var\(\s*(--[a-z0-9-]+)\s*\)$/.exec(value);
+    written.set(
+      match[1],
+      alias ? alias[1] : /^#[0-9a-fA-F]{6}$/.test(value) ? value.toLowerCase() : ''
+    );
   }
   const resolve = (name: string, seen: Set<string>): string | undefined => {
     const value = written.get(name);
-    if (value === undefined || seen.has(name)) return undefined;
+    if (value === undefined || value === '' || seen.has(name)) return undefined;
     return value.startsWith('#') ? value : resolve(value, new Set(seen).add(name));
   };
   return Array.from(written.keys()).flatMap((name) => {
