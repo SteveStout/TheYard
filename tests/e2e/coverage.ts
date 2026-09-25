@@ -204,15 +204,14 @@ export function readPage(): PageFacts {
     .flatMap((cell) => [cell, ...Array.from(cell.querySelectorAll('*'))])
     .filter((e) => !e.closest('code'))
     .filter(breaksAnywhere);
-  // On a desk, nothing scrolls sideways: a table's box holds the table whole (a phone may
-  // still scroll a table of long names inside its panel, as the last resort).
-  const sideways =
-    window.innerWidth < 1024
-      ? []
-      : Array.from(document.querySelectorAll('table'))
-          .filter((e) => !e.closest('.scalar-app') && visible(e))
-          .map((e) => e.parentElement ?? e)
-          .filter((box) => box.scrollWidth > box.clientWidth + 1);
+  // On a desk, nothing scrolls sideways: a table's box holds the table whole. On a phone an
+  // Admin table stacks its rows or fits (1.0.3.30), so it never scrolls either; a document's
+  // table of long names may still scroll inside its panel, as the last resort.
+  const sideways = Array.from(document.querySelectorAll('table'))
+    .filter((e) => !e.closest('.scalar-app') && visible(e))
+    .filter((e) => window.innerWidth >= 1024 || e.closest('[data-testid="bench-open"]') !== null)
+    .map((e) => e.parentElement ?? e)
+    .filter((box) => box.scrollWidth > box.clientWidth + 1);
   const unique = (list: Element[], label: (e: Element) => string) =>
     Array.from(new Set(list.map(label))).slice(0, 12);
   return {

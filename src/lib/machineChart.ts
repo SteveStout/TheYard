@@ -5,7 +5,7 @@
  * the reasoning is testable on its own.
  */
 
-import { plotFrame } from './plotFrame';
+import { plotFrame, type PlotBox } from './plotFrame';
 
 /** One reading. A null value is a gap rather than a zero: the first processor share has nothing to compare against. */
 export type ChartPoint = { at: string; value: number | null };
@@ -46,9 +46,13 @@ export function ceilingFor(series: ChartSeries[], atLeast = 1): number {
  * The line, with a break wherever a reading is missing: a gap drawn as a
  * straight line across it would be a number nobody measured.
  */
-export function pathFor(points: ChartPoint[], ceiling: number): string {
-  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
-  const innerHeight = MACHINE_CHART.height - MACHINE_CHART.top - MACHINE_CHART.bottom;
+export function pathFor(
+  points: ChartPoint[],
+  ceiling: number,
+  box: PlotBox = MACHINE_CHART
+): string {
+  const innerWidth = box.width - box.left - box.right;
+  const innerHeight = box.height - box.top - box.bottom;
   const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
   let path = '';
   let penDown = false;
@@ -57,9 +61,8 @@ export function pathFor(points: ChartPoint[], ceiling: number): string {
       penDown = false;
       return;
     }
-    const x = MACHINE_CHART.left + index * step;
-    const y =
-      MACHINE_CHART.top + innerHeight - (Math.min(point.value, ceiling) / ceiling) * innerHeight;
+    const x = box.left + index * step;
+    const y = box.top + innerHeight - (Math.min(point.value, ceiling) / ceiling) * innerHeight;
     path += `${path === '' || !penDown ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)} `;
     penDown = true;
   });
@@ -73,18 +76,22 @@ export function pathFor(points: ChartPoint[], ceiling: number): string {
  * plot, so a finger at the edge of the card reads the first or the last slot
  * and never nothing.
  */
-export function nearestIndex(x: number, count: number): number | null {
+export function nearestIndex(
+  x: number,
+  count: number,
+  box: PlotBox = MACHINE_CHART
+): number | null {
   if (count <= 0 || Number.isNaN(x)) return null;
   if (count === 1) return 0;
-  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
+  const innerWidth = box.width - box.left - box.right;
   const step = innerWidth / (count - 1);
-  return Math.min(count - 1, Math.max(0, Math.round((x - MACHINE_CHART.left) / step)));
+  return Math.min(count - 1, Math.max(0, Math.round((x - box.left) / step)));
 }
 
 /** Where a slot is drawn, across: the same arithmetic the line uses. */
-export function xOf(index: number, count: number): number {
-  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
-  return MACHINE_CHART.left + (count <= 1 ? 0 : (index * innerWidth) / (count - 1));
+export function xOf(index: number, count: number, box: PlotBox = MACHINE_CHART): number {
+  const innerWidth = box.width - box.left - box.right;
+  return box.left + (count <= 1 ? 0 : (index * innerWidth) / (count - 1));
 }
 
 /** One line of the readout: a reading in the axis's unit, or the words for a slot nobody measured. */
@@ -103,25 +110,26 @@ export function readoutLine(name: string, value: number | null, unit?: string): 
  * along the bottom, eight even steps minor, and the side and brackets every
  * framed chart shares (src/lib/plotFrame.ts).
  */
-export function machineFrame(count: number) {
-  const inner = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
+export function machineFrame(count: number, box: PlotBox = MACHINE_CHART) {
+  const inner = box.width - box.left - box.right;
   const minor = Array.from({ length: 9 }, (_, step) => ({
     key: `m${step}`,
-    x: MACHINE_CHART.left + (inner * step) / 8,
+    x: box.left + (inner * step) / 8,
     major: false,
   }));
   const major = ticks(count).map((index) => ({
     key: `x${index}`,
-    x: xOf(index, count),
+    x: xOf(index, count, box),
     major: true,
   }));
-  return plotFrame(MACHINE_CHART, [...minor, ...major]);
+  return plotFrame(box, [...minor, ...major]);
 }
 
 /** A series' highest reading and where it is drawn, for the callout; null when nothing rose above zero. */
 export function peakOf(
   points: ChartPoint[],
-  ceiling: number
+  ceiling: number,
+  box: PlotBox = MACHINE_CHART
 ): { index: number; value: number; x: number; y: number } | null {
   let index = -1;
   let value = 0;
@@ -132,12 +140,12 @@ export function peakOf(
     }
   });
   if (index < 0 || ceiling <= 0) return null;
-  const innerHeight = MACHINE_CHART.height - MACHINE_CHART.top - MACHINE_CHART.bottom;
-  const y = MACHINE_CHART.top + innerHeight - (Math.min(value, ceiling) / ceiling) * innerHeight;
+  const innerHeight = box.height - box.top - box.bottom;
+  const y = box.top + innerHeight - (Math.min(value, ceiling) / ceiling) * innerHeight;
   return {
     index,
     value,
-    x: Math.round(xOf(index, points.length) * 10) / 10,
+    x: Math.round(xOf(index, points.length, box) * 10) / 10,
     y: Math.round(y * 10) / 10,
   };
 }
@@ -154,7 +162,8 @@ export function calloutFor(
   series: ChartSeries[],
   callout: { key: string; name: string },
   ceiling: number,
-  window: MachineWindow
+  window: MachineWindow,
+  box: PlotBox = MACHINE_CHART
 ): {
   label: string;
   dot: { x: number; y: number };
@@ -162,11 +171,11 @@ export function calloutFor(
   text: { x: number; y: number; anchor: 'start' | 'end' };
 } | null {
   const line = series.find((one) => one.key === callout.key);
-  const peak = line === undefined ? null : peakOf(line.points, ceiling);
+  const peak = line === undefined ? null : peakOf(line.points, ceiling, box);
   if (line === undefined || peak === null) return null;
-  const toRight = peak.x < MACHINE_CHART.width / 2;
+  const toRight = peak.x < box.width / 2;
   const away = toRight ? 1 : -1;
-  const elbow = { x: peak.x + away * CALLOUT.reach, y: MACHINE_CHART.top + CALLOUT.drop };
+  const elbow = { x: peak.x + away * CALLOUT.reach, y: box.top + CALLOUT.drop };
   return {
     label: `${callout.name} · peak ${peak.value.toLocaleString()} at ${axisLabel(line.points[peak.index].at, window)}`,
     dot: { x: peak.x, y: peak.y },

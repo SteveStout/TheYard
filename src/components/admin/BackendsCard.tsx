@@ -14,6 +14,7 @@ import type {
   Peer,
 } from './types';
 import { useRead, failed, About, ms, msAndRu } from './common';
+import { type Column, DataTable } from './DataTable';
 
 // #region comparison
 /** The rows the comparison card puts side by side: the paths a visitor actually takes (ADR: Backends, side by side). */
@@ -28,7 +29,7 @@ const COMPARED_ROUTES: { route: string; label: string }[] = [
 ];
 
 /** One column of the comparison: a store, wherever it runs, on the rows the card draws. */
-type Column = {
+type StoreColumn = {
   title: string;
   store: string;
   startup: Startup;
@@ -48,7 +49,7 @@ function storeOpsLine(store: StoreSummary | null, sql: SqlSummary | null): strin
 }
 
 /** A whole container's metrics as one column, which is what a peer answers with. */
-function columnOf(title: string, m: Metrics): Column {
+function columnOf(title: string, m: Metrics): StoreColumn {
   const cosmos = m.store.store === 'Azure Cosmos DB';
   return {
     title,
@@ -61,7 +62,7 @@ function columnOf(title: string, m: Metrics): Column {
 }
 
 /** One store of a container that runs more than one (ADR: One container, both stores). */
-function columnOfBackend(backend: BackendMetrics, current: boolean): Column {
+function columnOfBackend(backend: BackendMetrics, current: boolean): StoreColumn {
   return {
     title: current ? `${backend.store}, serving this visit` : backend.store,
     store: backend.store,
@@ -79,7 +80,10 @@ function columnOfBackend(backend: BackendMetrics, current: boolean): Column {
  * and when it relayed nothing the column says why and the rest of the card
  * stands (ADR: Backends, side by side).
  */
-function columns(mine: Metrics, peer: Peer | null): { columns: Column[]; note: string | null } {
+function columns(
+  mine: Metrics,
+  peer: Peer | null
+): { columns: StoreColumn[]; note: string | null } {
   const backends = mine.backends ?? [];
   if (backends.length > 1) {
     const current = backends.find((b) => b.store === mine.store.store) ?? backends[0];
@@ -99,7 +103,7 @@ function columns(mine: Metrics, peer: Peer | null): { columns: Column[]; note: s
           ? `The other site (${peer.metrics?.store.store ?? 'store unknown'})`
           : `The other site is not answering`;
   const peerNote = peer !== null && peer.configured && !peer.reachable ? peer.reason : null;
-  const empty: Column = {
+  const empty: StoreColumn = {
     title: peerTitle,
     store: '',
     startup: {
@@ -124,11 +128,14 @@ function columns(mine: Metrics, peer: Peer | null): { columns: Column[]; note: s
   };
 }
 
+/** A line of the comparison: what is measured, and its reading in each store's column. */
+type ComparedRow = { label: string; cells: (column: StoreColumn) => string };
+
 function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
   const { columns: cols, note } = columns(mine, peer);
-  const blank = (column: Column) => column.store === '';
+  const blank = (column: StoreColumn) => column.store === '';
 
-  const routeCell = (column: Column, route: string): string => {
+  const routeCell = (column: StoreColumn, route: string): string => {
     if (blank(column)) return '';
     const timing = column.requests.by_route.find((r) => r.route === route);
     if (timing === undefined) return 'not seen yet';
@@ -137,7 +144,7 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
     return charge === undefined ? time : `${time} · ${charge.ru_p50} RU`;
   };
 
-  const rows: { label: string; cells: (column: Column) => string }[] = [
+  const rows: ComparedRow[] = [
     { label: 'Store', cells: (c) => c.store },
     {
       label: 'Cold start, process start to ready',
@@ -162,45 +169,26 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
     },
     ...COMPARED_ROUTES.map((entry) => ({
       label: entry.label,
-      cells: (c: Column) => routeCell(c, entry.route),
+      cells: (c: StoreColumn) => routeCell(c, entry.route),
     })),
     { label: 'Store operations, this window', cells: (c) => c.storeOps },
   ];
 
   return (
-    <div className={styles.tableWrap} role="region" aria-label="Backends side by side" tabIndex={0}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th scope="col">Measured</th>
-            {cols.map((column) => (
-              <th scope="col" key={column.title}>
-                {column.title}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.label}>
-              <td>{row.label}</td>
-              {cols.map((column) => (
-                <td className={styles.mono} key={column.title}>
-                  {row.cells(column)}
-                </td>
-              ))}
-            </tr>
-          ))}
-          {note !== null ? (
-            <tr>
-              <td className={styles.muted} colSpan={cols.length + 1} data-testid="peer-note">
-                {note}
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      label="Backends side by side"
+      rows={rows}
+      rowKey={(row) => row.label}
+      columns={[
+        { name: 'Measured', cell: (row) => row.label },
+        ...cols.map((column): Column<ComparedRow> => ({
+          name: column.title,
+          mono: true,
+          cell: (row) => row.cells(column),
+        })),
+      ]}
+      note={note === null ? undefined : { content: note, testId: 'peer-note' }}
+    />
   );
 }
 // #endregion comparison

@@ -2,8 +2,18 @@
  * The partition key, live (ADR: The partition key).
  */
 import styles from '../AdminPanel.module.css';
-import type { Experiment } from './types';
+import type { Experiment, ExperimentRow } from './types';
 import { useRead, failed, About } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** A query: what it asked, how many partitions it touched, and what that cost. */
+const EXPERIMENT_COLUMNS: Column<ExperimentRow>[] = [
+  { name: 'Query', cell: (row) => row.query },
+  { name: 'Partitions', mono: true, num: true, cell: (row) => row.partitions },
+  { name: 'Charge', mono: true, num: true, cell: (row) => `${row.request_charge} RU` },
+  { name: 'Took', mono: true, num: true, cell: (row) => `${row.duration_ms} ms` },
+  { name: 'Documents', mono: true, num: true, cell: (row) => row.documents },
+];
 
 export default function ExperimentCard({ tick }: { tick: number }) {
   const experiment = useRead<Experiment>('/api/admin/experiment', tick);
@@ -36,43 +46,12 @@ export default function ExperimentCard({ tick }: { tick: number }) {
               {experiment.physical_partitions === 1 ? '' : 's'}, measured at{' '}
               {experiment.ran_at ? new Date(experiment.ran_at).toLocaleTimeString() : ''}.
             </p>
-            <div
-              className={styles.tableWrap}
-              role="region"
-              aria-label="Queries against the partitioned catalogue"
-              tabIndex={0}
-            >
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th scope="col">Query</th>
-                    <th scope="col" className={styles.num}>
-                      Partitions
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      Charge
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      Took
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      Documents
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {experiment.rows.map((row) => (
-                    <tr key={row.query}>
-                      <td>{row.query}</td>
-                      <td className={`${styles.mono} ${styles.num}`}>{row.partitions}</td>
-                      <td className={`${styles.mono} ${styles.num}`}>{row.request_charge} RU</td>
-                      <td className={`${styles.mono} ${styles.num}`}>{row.duration_ms} ms</td>
-                      <td className={`${styles.mono} ${styles.num}`}>{row.documents}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              label="Queries against the partitioned catalogue"
+              rows={experiment.rows}
+              rowKey={(row) => row.query}
+              columns={EXPERIMENT_COLUMNS}
+            />
           </>
         )}
       </article>

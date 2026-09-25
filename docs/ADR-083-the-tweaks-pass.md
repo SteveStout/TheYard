@@ -120,3 +120,25 @@ Steve: "make sure you do 3-4 quality checks of everything". The fourth check was
 - **Words that disagreed with the code**, on the style page, in the sheet's comments and in the watermark's stylesheet, where a dead rule for the rings remained.
 
 Held on purpose, and said on the style page: `color-mix()` sets a browser floor of late 2022 (Safari 16.2, Chrome 111), below which the tints draw as nothing and the words and grounds are unchanged.
+
+## Addendum, 2026-09-25 (1.0.3.30): tables on a phone, charts at their width, whole tile lines
+
+Two independent readers went through the pictures of 1.0.3.29 at every width from 390 to 1440. At 390 the Admin tab was the worst of it: the log gave its message about twenty pixels and ran rows three hundred tall, the store, the machines and the backends were cut at the phone's edge, three strip tiles ended their line in an ellipsis, and chart words drew at about 4 px because a 720 box was scaled into a 316 card.
+
+- **One table.** Every Admin table (16 in 13 cards) is drawn by `src/components/admin/DataTable.tsx`. A card names its columns once; the name is the header on a desk and the label beside each value on a phone. Under 640 a table of three or more columns stacks: each row is a block led by its first column, and every other value sits on its own line behind its column's name. The label is generated text with an empty alternative (`content: attr(data-label) / ''`), so a screen reader hears it once, as the header. Every part carries its ARIA role, because Safari stops calling a table a table when its display changes. Sort headers are buttons and stay visible on a phone. SortHeader is gone.
+
+```tsx
+const stacks = columns.length >= STACK_FROM_COLUMNS;
+// The first column leads a stacked row and needs no label; the rest name themselves.
+const label = at === 0 ? undefined : column.name;
+```
+
+- **Charts at their width.** `fitBox` in `src/lib/plotFrame.ts` and the `useFittedBox` hook in `charts.tsx` measure the drawing before paint and on resize, and the geometry in `machineChart.ts` and `activity.ts` takes that box. The box is never wider than the desk's 720, so a desk draws as before and a phone keeps 10 px words. The callout clamps inside a narrow box.
+- **Whole tile lines.** A tile's `detail` is short enough for two lines on the narrowest tile, measured in IBM Plex from 340 to 1440, and a new `more` field carries the rest of the sentence to screen readers and the tile's title; `tileSentence()` joins them.
+- **Under 1 ms.** `millisecondsWords()` gives the traffic card's typical and slow blocks "under 1 ms" where they said "0 ms".
+- **The reset card without the key** is an Absent card, so Previous from Health no longer lands on an empty bench.
+- **Found while checking the pictures before the ship:** a stacked log message with no space in it (a SQL command's parameter list) pushed its row 20 to 50 px past a phone's edge; a stacked value now wraps inside its line when it has to, and a word with room is never broken.
+
+How it is held: `mobile.spec` at 360 (no tile line cut, three-column tables stacked with labels and never sideways, a chart's viewBox equal to its drawn width), `coverage.ts` (no Admin table scrolls sideways on a phone), `admin.spec` (Next walks every card and each opens with a name), and unit tests on `statTiles`, `trafficCard` and `activity`.
+
+Still open, from the same readers, for the versions after this one: the desk store and log tables, the Machines card's two time zones, the Telemetry card's zeros, the dialogs over the sidebar at 1024 and 1280, and WebKit's bold and glass, which may be the test browser rather than Safari.

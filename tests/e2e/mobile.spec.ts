@@ -488,3 +488,78 @@ test('a phone reads every strip tile on one line, and a table path is never sque
   expect((await path.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(140);
 });
 // #endregion one-line-readings
+
+// #region phone-tables
+test.describe('the Admin tab on the narrowest phone', () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  test("every strip tile's line is whole in two lines, and what it leaves out is still read (1.0.3.30)", async ({
+    page,
+  }) => {
+    // At 390 on 1.0.3.29 three tiles cut their line with an ellipsis.
+    await openTheYard(page, '/?view=admin&card=health');
+    const strip = page.getByTestId('stat-strip');
+    for (const tile of ['tile-pages', 'tile-memory', 'tile-health', 'tile-speed']) {
+      await expect(strip.getByTestId(tile)).not.toHaveAttribute('data-tone', 'waiting', {
+        timeout: 45_000,
+      });
+    }
+    const cut = await strip
+      .locator('[class*="tileDetail_"]')
+      .evaluateAll((lines) =>
+        lines
+          .filter((line) => line.scrollHeight > line.clientHeight + 1)
+          .map((line) => line.textContent ?? '')
+      );
+    expect(cut).toEqual([]);
+    // The typical answer's line names what it is over, and the rest of the sentence is heard.
+    await expect(strip.getByTestId('tile-speed')).toContainText('requests in the last hour');
+  });
+
+  test('a table of three or more columns stacks its rows, each value behind its column name, and none scrolls sideways (1.0.3.30)', async ({
+    page,
+  }) => {
+    // At 390 on 1.0.3.29 the log gave its message twenty pixels and the machines were cut at the edge.
+    for (const card of ['log', 'machines', 'tests', 'timing', 'backends']) {
+      await openTheYard(page, `/?view=admin&card=${card}`);
+      const open = page.getByTestId('bench-open');
+      await expect(open.locator('table').first()).toBeVisible({ timeout: 60_000 });
+      const tables = await open.locator('table').evaluateAll((all) =>
+        all.map((table) => {
+          const columns = table.querySelectorAll('thead th').length;
+          const row = table.querySelector('tbody tr:not([class*="dayRow"])');
+          const second = row?.children[1] ?? null;
+          const box = table.parentElement ?? table;
+          return {
+            columns,
+            sideways: box.scrollWidth - box.clientWidth,
+            rowDisplay: row === null ? null : getComputedStyle(row).display,
+            label: second === null ? null : getComputedStyle(second, '::before').content,
+          };
+        })
+      );
+      for (const table of tables) {
+        expect(table.sideways, `${card}: a table scrolls sideways`).toBeLessThanOrEqual(1);
+        if (table.columns >= 3 && table.rowDisplay !== null) {
+          expect(table.rowDisplay, `${card}: a row of ${table.columns} columns`).toBe('block');
+          expect(table.label, `${card}: a value's label`).not.toBe('none');
+        }
+      }
+    }
+  });
+
+  test('a chart is drawn at the width the phone gives it, so its words keep their size (1.0.3.30)', async ({
+    page,
+  }) => {
+    // At 390 on 1.0.3.29 a chart laid out for 720 was scaled into 316 and its ten-pixel words drew at four.
+    await openTheYard(page, '/?view=admin&card=machines');
+    const chart = page.getByTestId('bench-open').locator('svg[role="img"][viewBox]').first();
+    await expect(chart).toBeVisible({ timeout: 60_000 });
+    const drawn = await chart.evaluate((svg) => ({
+      units: (svg as SVGSVGElement).viewBox.baseVal.width,
+      pixels: svg.getBoundingClientRect().width,
+    }));
+    expect(Math.abs(drawn.units - drawn.pixels)).toBeLessThanOrEqual(1);
+  });
+});
+// #endregion phone-tables

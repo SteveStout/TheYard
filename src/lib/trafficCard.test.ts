@@ -57,6 +57,15 @@ describe('trafficBlocks', () => {
     });
   });
 
+  it('says under a millisecond where the tile does, never 0 ms (1.0.3.30)', () => {
+    const blocks = trafficBlocks([slot(0, 29), slot(0, 12)], quiet, 'last hour', true);
+    expect(blocks[1].value).toBe('under 1 ms');
+    expect(blocks[2].value).toBe('139 ms');
+    expect(
+      trafficBlocks([slot(0, 0)], { ...quiet, slowest_p95_ms: 0 }, 'last hour', true)[2].value
+    ).toBe('under 1 ms');
+  });
+
   it('never writes a status code or a percentile a reader has to know', () => {
     const words = trafficBlocks([slot(12, 139)], quiet, 'last hour', true)
       .map((block) => `${block.label} ${block.detail}`)

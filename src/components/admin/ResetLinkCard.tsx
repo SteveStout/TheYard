@@ -3,7 +3,7 @@
  */
 import { useState } from 'react';
 import styles from '../AdminPanel.module.css';
-import { About } from './common';
+import { About, Absent } from './common';
 
 /**
  * A password reset link, minted by the operator for one account on this
@@ -17,7 +17,16 @@ export default function ResetLinkCard({ adminKey }: { adminKey: string | null })
   const [busy, setBusy] = useState(false);
   const [made, setMade] = useState<{ email: string; url: string; expires_at: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  if (adminKey === null) return null;
+  // Without the key the card still stands and says whose it is (1.0.3.30): Previous and
+  // Next walk every card, and a visitor walked onto an empty bench here.
+  if (adminKey === null) {
+    return (
+      <Absent
+        name="Reset a password"
+        note="Minting a reset link is the operator's, behind the operator's key, which the Operator card takes."
+      />
+    );
+  }
 
   return (
     <article className={`${styles.wide} op-glass`} data-testid="reset-link-card">

@@ -34,8 +34,10 @@ import {
   todayNote,
   xAt,
   yAt,
+  type ActivityDay,
   type ActivityKind,
   type ActivityReport,
+  type ActivityVisitor,
   type ActivityVisitors,
   type ActivityWho,
   type ActivityWindow,
@@ -43,9 +45,80 @@ import {
 } from '../../lib/activity';
 import { plotFrame } from '../../lib/plotFrame';
 import styles from '../AdminPanel.module.css';
-import { PlotFrame } from './charts';
+import { PlotFrame, useFittedBox } from './charts';
 import type { Fetched } from './types';
 import { About } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/**
+ * A visitor's day: the hash, the network, the store, when first and last seen,
+ * how much it asked for and where. Every column but the hash and the paths sorts.
+ */
+const visitorColumns = (
+  current: VisitorSortKey,
+  sortBy: (column: VisitorSortKey) => void
+): Column<ActivityVisitor>[] => {
+  const sort = (column: VisitorSortKey) => ({
+    active: current === column,
+    onSort: () => sortBy(column),
+  });
+  return [
+    { name: 'Visitor', mono: true, cell: (row) => row.visitor.slice(0, 12) },
+    { name: 'Network', mono: true, sort: sort('network'), cell: (row) => row.network },
+    { name: 'Store', sort: sort('store'), cell: (row) => row.store },
+    {
+      name: 'First seen',
+      mono: true,
+      sort: sort('first_seen'),
+      cell: (row) => new Date(row.first_seen).toLocaleString(),
+    },
+    {
+      name: 'Last seen',
+      mono: true,
+      sort: sort('last_seen'),
+      cell: (row) => new Date(row.last_seen).toLocaleString(),
+    },
+    {
+      name: 'Requests',
+      mono: true,
+      sort: sort('requests'),
+      cell: (row) => `${row.requests}${row.bots > 0 ? ` (${row.bots} bot)` : ''}`,
+    },
+    {
+      name: 'Top paths',
+      mono: true,
+      cell: (row) => row.top_paths.map((entry) => `${entry.path} (${entry.requests})`).join(', '),
+    },
+  ];
+};
+
+/** A site that linked here, and how many visitor-days it sent. */
+const SOURCE_COLUMNS: Column<{ host: string; visitor_days: number }>[] = [
+  { name: 'Site', mono: true, cell: (entry) => entry.host },
+  {
+    name: 'Visitor-days',
+    mono: true,
+    num: true,
+    cell: (entry) => entry.visitor_days.toLocaleString(),
+  },
+];
+
+/** A day: its visitor-days of each kind, and all of them. */
+const DAY_COLUMNS: Column<ActivityDay>[] = [
+  { name: 'Day', rowHeader: true, cell: (day) => labelFor(day.day, '30d') },
+  ...ACTIVITY_KINDS.map((kind): Column<ActivityDay> => ({
+    name: KIND_NAMES[kind],
+    mono: true,
+    num: true,
+    cell: (day) => day[kind].toLocaleString(),
+  })),
+  {
+    name: 'All',
+    mono: true,
+    num: true,
+    cell: (day) => countFor(day, 'all').toLocaleString(),
+  },
+];
 
 /**
  * Site activity (ADR: Site activity, and the line an address does not cross).
@@ -200,110 +273,23 @@ export default function ActivityCard({
               The visitor rows did not answer to this key.
             </p>
           ) : (
-            <div
-              className={styles.tableWrap}
-              role="region"
-              aria-label="Visitors in the window"
-              tabIndex={0}
-            >
-              <table className={styles.table} data-testid="activity-visitors">
-                <thead>
-                  <tr>
-                    <th scope="col">Visitor</th>
-                    <SortHeader
-                      label="Network"
-                      column="network"
-                      current={sortKey}
-                      onSort={sortBy}
-                    />
-                    <SortHeader label="Store" column="store" current={sortKey} onSort={sortBy} />
-                    <SortHeader
-                      label="First seen"
-                      column="first_seen"
-                      current={sortKey}
-                      onSort={sortBy}
-                    />
-                    <SortHeader
-                      label="Last seen"
-                      column="last_seen"
-                      current={sortKey}
-                      onSort={sortBy}
-                    />
-                    <SortHeader
-                      label="Requests"
-                      column="requests"
-                      current={sortKey}
-                      onSort={sortBy}
-                    />
-                    <th scope="col">Top paths</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupByDay(visitors.visitors).flatMap((group) => [
-                    <tr
-                      key={`day:${group.day}`}
-                      className={styles.dayRow}
-                      data-testid="activity-day"
-                    >
-                      <th scope="rowgroup" colSpan={7}>
-                        {labelFor(group.day, '30d')} ({group.day}): {group.visitors} visitor
-                        {group.visitors === 1 ? '' : 's'}, {group.requests} request
-                        {group.requests === 1 ? '' : 's'}
-                      </th>
-                    </tr>,
-                    ...sortVisitors(group.rows, sortKey, descending).map((row) => (
-                      <tr key={`${row.store}:${row.day}:${row.visitor}`}>
-                        <td className={styles.mono}>{row.visitor.slice(0, 12)}</td>
-                        <td className={styles.mono}>{row.network}</td>
-                        <td>{row.store}</td>
-                        <td className={styles.mono}>{new Date(row.first_seen).toLocaleString()}</td>
-                        <td className={styles.mono}>{new Date(row.last_seen).toLocaleString()}</td>
-                        <td className={styles.mono}>
-                          {row.requests}
-                          {row.bots > 0 ? ` (${row.bots} bot)` : ''}
-                        </td>
-                        <td className={styles.mono}>
-                          {row.top_paths
-                            .map((entry) => `${entry.path} (${entry.requests})`)
-                            .join(', ')}
-                        </td>
-                      </tr>
-                    )),
-                  ])}
-                  {visitors.visitors.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className={styles.muted}>
-                        Nobody in this window.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              label="Visitors in the window"
+              testId="activity-visitors"
+              groups={groupByDay(visitors.visitors).map((group) => ({
+                key: group.day,
+                testId: 'activity-day',
+                title: `${labelFor(group.day, '30d')} (${group.day}): ${group.visitors} visitor${group.visitors === 1 ? '' : 's'}, ${group.requests} request${group.requests === 1 ? '' : 's'}`,
+                rows: sortVisitors(group.rows, sortKey, descending),
+              }))}
+              rowKey={(row) => `${row.store}:${row.day}:${row.visitor}`}
+              empty="Nobody in this window."
+              columns={visitorColumns(sortKey, sortBy)}
+            />
           )}
         </>
       )}
     </article>
-  );
-}
-
-function SortHeader({
-  label,
-  column,
-  current,
-  onSort,
-}: {
-  label: string;
-  column: VisitorSortKey;
-  current: VisitorSortKey;
-  onSort: (column: VisitorSortKey) => void;
-}) {
-  return (
-    <th scope="col" aria-sort={current === column ? 'other' : 'none'}>
-      <button type="button" className={styles.sortButton} onClick={() => onSort(column)}>
-        {label}
-      </button>
-    </th>
   );
 }
 
@@ -322,6 +308,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
   const [view, setView] = useState<'kind' | 'store'>('kind');
   // The day under the pointer or the finger (1.0.3.14); null when there is none.
   const [hover, setHover] = useState<number | null>(null);
+  const [fit, chart] = useFittedBox(CHART);
   // Unique visitors per UTC day, by store: everybody as one line, and one
   // line per store underneath it; people only under Visitors only.
   const lines = dayLines(
@@ -333,7 +320,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
   const ceiling = view === 'kind' ? stackCeiling(bands) : ceilingOf(lines);
   const count = report.days.length;
   const labels = labelledIndexes(count);
-  const innerWidth = CHART.width - CHART.left - CHART.right;
+  const innerWidth = chart.width - chart.left - chart.right;
   const step = count <= 1 ? 0 : innerWidth / (count - 1);
   const colour = (store: string) =>
     store === 'cosmos' ? styles.cosmosLine : store === 'sql' ? styles.sqlLine : styles.allLine;
@@ -353,7 +340,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
   const point = (event: PointerEvent<SVGSVGElement>) => {
     const box = event.currentTarget.getBoundingClientRect();
     if (box.width === 0) return;
-    setHover(dayAt(((event.clientX - box.left) / box.width) * CHART.width, count));
+    setHover(dayAt(((event.clientX - box.left) / box.width) * chart.width, count, chart));
   };
   const hovered = hover !== null && hover < count ? hover : null;
   // What the crosshair reads out: each band's own share under By kind, each
@@ -416,8 +403,9 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
       </p>
       <div className={styles.chartWrap}>
         <svg
+          ref={fit}
           className={styles.chart}
-          viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+          viewBox={`0 0 ${chart.width} ${chart.height}`}
           onPointerMove={point}
           onPointerDown={point}
           onPointerLeave={(event) => {
@@ -439,38 +427,38 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
         >
           <line
             className={styles.axis}
-            x1={CHART.left}
-            y1={CHART.height - CHART.bottom}
-            x2={CHART.width - CHART.right}
-            y2={CHART.height - CHART.bottom}
+            x1={chart.left}
+            y1={chart.height - chart.bottom}
+            x2={chart.width - chart.right}
+            y2={chart.height - chart.bottom}
           />
           <line
             className={styles.axis}
-            x1={CHART.left}
-            y1={CHART.top}
-            x2={CHART.left}
-            y2={CHART.height - CHART.bottom}
+            x1={chart.left}
+            y1={chart.top}
+            x2={chart.left}
+            y2={chart.height - chart.bottom}
           />
           {/* The Mark VII grammar (the tweaks pass, B2): graduations up the side at the
               quarters, a tick under each day, and two gold bracket ticks at the corners,
               the frame every framed chart shares (src/lib/plotFrame.ts). */}
           <PlotFrame
             frame={plotFrame(
-              CHART,
+              chart,
               report.days.map((day, index) => ({
                 key: `d${day.day}`,
-                x: xAt(index, count),
+                x: xAt(index, count, chart),
                 major: false,
               }))
             )}
           />
-          <text className={styles.axisLabel} x={CHART.left - 8} y={CHART.top + 4} textAnchor="end">
+          <text className={styles.axisLabel} x={chart.left - 8} y={chart.top + 4} textAnchor="end">
             {ceiling}
           </text>
           <text
             className={styles.axisLabel}
-            x={CHART.left - 8}
-            y={CHART.height - CHART.bottom}
+            x={chart.left - 8}
+            y={chart.height - chart.bottom}
             textAnchor="end"
           >
             0
@@ -479,8 +467,8 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
             <text
               key={index}
               className={styles.axisLabel}
-              x={CHART.left + index * step}
-              y={CHART.height - 8}
+              x={chart.left + index * step}
+              y={chart.height - 8}
               textAnchor={index === 0 ? 'start' : index === count - 1 ? 'end' : 'middle'}
               data-testid="activity-x-label"
             >
@@ -490,8 +478,8 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           {partial !== null && (
             <text
               className={styles.axisLabel}
-              x={CHART.width - CHART.right}
-              y={CHART.top - 2}
+              x={chart.width - chart.right}
+              y={chart.top - 2}
               textAnchor="end"
               data-testid="activity-today-note"
             >
@@ -501,10 +489,10 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           {partial !== null && count > 1 && (
             <rect
               className={styles.todayBand}
-              x={xAt(partial.index, count) - step / 2}
-              y={CHART.top}
+              x={xAt(partial.index, count, chart) - step / 2}
+              y={chart.top}
               width={step / 2}
-              height={CHART.height - CHART.top - CHART.bottom}
+              height={chart.height - chart.top - chart.bottom}
               data-testid="activity-today"
             />
           )}
@@ -515,8 +503,8 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
                   className={kindClass(band.kind)}
                   data-testid={`activity-band-${band.kind}`}
                 >
-                  <path className={styles.band} d={bandPath(band, ceiling)} />
-                  <path className={styles.bandEdge} d={edgePath(band, ceiling)} />
+                  <path className={styles.band} d={bandPath(band, ceiling, chart)} />
+                  <path className={styles.bandEdge} d={edgePath(band, ceiling, chart)} />
                 </g>
               ))
             : lines.map((line) => (
@@ -525,13 +513,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
                   className={colour(line.store)}
                   data-testid={`activity-line-${line.store}`}
                 >
-                  <path className={styles.area} d={areaPath(line.points, ceiling)} />
-                  <path className={styles.line} d={linePath(line.points, ceiling)} />
+                  <path className={styles.area} d={areaPath(line.points, ceiling, chart)} />
+                  <path className={styles.line} d={linePath(line.points, ceiling, chart)} />
                 </g>
               ))}
           {view === 'kind' &&
             bands.map((band) => {
-              const spot = labelSpot(band, ceiling);
+              const spot = labelSpot(band, ceiling, chart);
               return spot === null ? null : (
                 <text
                   key={`label:${band.kind}`}
@@ -548,16 +536,16 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           {hovered !== null && (
             <g className={styles.crosshair} data-testid="activity-crosshair">
               <line
-                x1={xAt(hovered, count)}
-                x2={xAt(hovered, count)}
-                y1={CHART.top}
-                y2={CHART.height - CHART.bottom}
+                x1={xAt(hovered, count, chart)}
+                x2={xAt(hovered, count, chart)}
+                y1={chart.top}
+                y2={chart.height - chart.bottom}
               />
               {readings.map((reading) => (
                 <circle
                   key={reading.key}
                   className={`${styles.crossDot} ${reading.className}`}
-                  cx={xAt(hovered, count)}
+                  cx={xAt(hovered, count, chart)}
                   cy={yAt(reading.top, ceiling)}
                   r={4}
                 />
@@ -568,7 +556,9 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
         {hovered !== null && (
           <div
             className={`${styles.chartTip} ${
-              xAt(hovered, count) > CHART.width / 2 ? styles.chartTipLeft : styles.chartTipRight
+              xAt(hovered, count, chart) > chart.width / 2
+                ? styles.chartTipLeft
+                : styles.chartTipRight
             }`}
             role="status"
             data-testid="activity-tooltip"
@@ -771,33 +761,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
                 );
               })}
             </svg>
-            <div
-              className={styles.tableWrap}
-              role="region"
-              aria-label="The sites that linked here"
-              tabIndex={0}
-            >
-              <table className={styles.table} data-testid="activity-source-hosts">
-                <thead>
-                  <tr>
-                    <th scope="col">Site</th>
-                    <th scope="col" className={styles.num}>
-                      Visitor-days
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shown.sources.slice(0, 10).map((entry) => (
-                    <tr key={entry.host}>
-                      <td className={styles.mono}>{entry.host}</td>
-                      <td className={`${styles.mono} ${styles.num}`}>
-                        {entry.visitor_days.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              label="The sites that linked here"
+              testId="activity-source-hosts"
+              rows={shown.sources.slice(0, 10)}
+              rowKey={(entry) => entry.host}
+              columns={SOURCE_COLUMNS}
+            />
           </>
         )}
         <p className={styles.muted}>
@@ -807,43 +777,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
       </section>
       <details className={styles.about}>
         <summary className={styles.aboutSummary}>Day by day</summary>
-        <div
-          className={styles.tableWrap}
-          role="region"
-          aria-label="Visitor-days per day, by kind"
-          tabIndex={0}
-        >
-          <table className={styles.table} data-testid="activity-days-table">
-            <thead>
-              <tr>
-                <th scope="col">Day</th>
-                {ACTIVITY_KINDS.map((kind) => (
-                  <th key={kind} scope="col" className={styles.num}>
-                    {KIND_NAMES[kind]}
-                  </th>
-                ))}
-                <th scope="col" className={styles.num}>
-                  All
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.days.map((day) => (
-                <tr key={day.day}>
-                  <th scope="row">{labelFor(day.day, '30d')}</th>
-                  {ACTIVITY_KINDS.map((kind) => (
-                    <td key={kind} className={`${styles.mono} ${styles.num}`}>
-                      {day[kind].toLocaleString()}
-                    </td>
-                  ))}
-                  <td className={`${styles.mono} ${styles.num}`}>
-                    {countFor(day, 'all').toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          label="Visitor-days per day, by kind"
+          testId="activity-days-table"
+          rows={report.days}
+          rowKey={(day) => day.day}
+          columns={DAY_COLUMNS}
+        />
       </details>
     </>
   );

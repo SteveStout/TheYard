@@ -8,11 +8,52 @@ import {
   rowsOf,
   type TestOrder,
   type TestResults,
+  type TestRow,
+  type TestSuite,
   totals,
 } from '../../lib/testResults';
 import styles from '../AdminPanel.module.css';
 import type { Fetched } from './types';
 import { About } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** A suite: its name and mark, then what passed, failed and was skipped, and how long it took. */
+const SUITE_COLUMNS: Column<TestSuite>[] = [
+  {
+    name: 'Suite',
+    rowHeader: true,
+    cell: (suite) => (
+      <>
+        <ResultMark passed={suite.failed === 0} label /> {suite.name}
+        {suite.carried && (
+          <span className={styles.muted} data-testid={`tests-carried-${suite.id}`}>
+            {' '}
+            (carried from {suite.carried}: nothing this pass covers changed)
+          </span>
+        )}
+      </>
+    ),
+  },
+  { name: 'Passed', mono: true, num: true, cell: (suite) => suite.passed.toLocaleString() },
+  { name: 'Failed', mono: true, num: true, cell: (suite) => suite.failed },
+  { name: 'Skipped', mono: true, num: true, cell: (suite) => suite.skipped },
+  { name: 'Took', mono: true, num: true, cell: (suite) => `${suite.seconds} s` },
+];
+
+/** A test: its group, its name, what it did, and how long it took. */
+const TEST_COLUMNS: Column<TestRow>[] = [
+  { name: 'Group', mono: true, cell: (row) => row[0] },
+  { name: 'Test', cell: (row) => row[1] },
+  {
+    name: 'Result',
+    cell: (row) => (
+      <>
+        {row[2] === 's' ? null : <ResultMark passed={row[2] === 'p'} />} {outcomeWord(row[2])}
+      </>
+    ),
+  },
+  { name: 'Took', mono: true, num: true, cell: (row) => duration(row[3]) },
+];
 
 /**
  * Every test the ship's gate ran for the build in the footer (ADR: The
@@ -84,38 +125,14 @@ export default function TestsCard() {
               </Fragment>
             ))}
           </p>
-          <div className={styles.tableWrap} role="region" aria-label="Every suite" tabIndex={0}>
-            <table className={styles.table} data-testid="tests-suites">
-              <thead>
-                <tr>
-                  <th scope="col">Suite</th>
-                  <th scope="col">Passed</th>
-                  <th scope="col">Failed</th>
-                  <th scope="col">Skipped</th>
-                  <th scope="col">Took</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.suites.map((suite) => (
-                  <tr key={suite.id} data-testid={`tests-suite-${suite.id}`}>
-                    <th scope="row">
-                      <ResultMark passed={suite.failed === 0} label /> {suite.name}
-                      {suite.carried && (
-                        <span className={styles.muted} data-testid={`tests-carried-${suite.id}`}>
-                          {' '}
-                          (carried from {suite.carried}: nothing this pass covers changed)
-                        </span>
-                      )}
-                    </th>
-                    <td className={styles.mono}>{suite.passed.toLocaleString()}</td>
-                    <td className={styles.mono}>{suite.failed}</td>
-                    <td className={styles.mono}>{suite.skipped}</td>
-                    <td className={styles.mono}>{suite.seconds} s</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label="Every suite"
+            testId="tests-suites"
+            rows={results.suites}
+            rowKey={(suite) => suite.id}
+            rowProps={(suite) => ({ testId: `tests-suite-${suite.id}` })}
+            columns={SUITE_COLUMNS}
+          />
           <form
             className={styles.filterRow}
             aria-label="Find a test"
@@ -158,36 +175,12 @@ export default function TestsCard() {
                   {rows.length.toLocaleString()} of {suite.tests.length.toLocaleString()} tests
                 </summary>
                 {open && rows.length > 0 && (
-                  <div
-                    className={styles.tableWrap}
-                    role="region"
-                    aria-label={`${suite.name}, every test`}
-                    tabIndex={0}
-                  >
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th scope="col">Group</th>
-                          <th scope="col">Test</th>
-                          <th scope="col">Result</th>
-                          <th scope="col">Took</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((row, index) => (
-                          <tr key={index}>
-                            <td className={styles.mono}>{row[0]}</td>
-                            <td>{row[1]}</td>
-                            <td>
-                              {row[2] === 's' ? null : <ResultMark passed={row[2] === 'p'} />}{' '}
-                              {outcomeWord(row[2])}
-                            </td>
-                            <td className={styles.mono}>{duration(row[3])}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <DataTable
+                    label={`${suite.name}, every test`}
+                    rows={rows}
+                    rowKey={(_row, index) => index}
+                    columns={TEST_COLUMNS}
+                  />
                 )}
               </details>
             );

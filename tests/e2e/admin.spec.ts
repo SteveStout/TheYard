@@ -423,6 +423,31 @@ test("the strip's Health tile opens the health card (the workbench)", async ({ p
   await expect(page.getByTestId('health-card')).toBeVisible();
 });
 
+// #region every-card
+test('Next walks every card on the rail, and every one opens to a card with its name, the key-only one too (1.0.3.30)', async ({
+  page,
+}) => {
+  // The reset card drew nothing without the key, so Previous from Health landed on an empty bench.
+  await openTheYard(page, '/?view=admin&card=health');
+  const open = page.getByTestId('bench-open');
+  const slugs = await page
+    .getByTestId('bench-rail')
+    .first()
+    .locator('[data-testid^="bench-link-"]')
+    .evaluateAll((links) =>
+      links.map((link) => (link.getAttribute('data-testid') ?? '').replace('bench-link-', ''))
+    );
+  expect(slugs.length).toBeGreaterThanOrEqual(19);
+  for (const slug of slugs) {
+    await expect(open).toHaveAttribute('data-card', slug);
+    await expect(open.locator('article h2').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('render-error')).toHaveCount(0);
+    await page.getByTestId('bench-next').first().click();
+  }
+  await expect(open).toHaveAttribute('data-card', slugs[0]);
+});
+// #endregion every-card
+
 test('j walks the rail forward and k walks it back, and neither is heard in a field (the workbench)', async ({
   page,
 }) => {

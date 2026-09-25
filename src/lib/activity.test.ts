@@ -210,7 +210,7 @@ describe('unique visitors per day', () => {
     const spot = labelSpot(scanners, 3);
     expect(spot).not.toBeNull();
     expect(spot?.anchor).toBe('start');
-    expect(labelSpot(scanners, 3, 1000)).toBeNull();
+    expect(labelSpot(scanners, 3, CHART, 1000)).toBeNull();
   });
 
   it("draws each step of the recruiter's path as a share of the widest, never thinner than a sliver once reached", () => {

@@ -3,6 +3,8 @@
 // order the visitor table sorts into (ADR: Site activity, and the line an
 // address does not cross).
 
+import type { PlotBox } from './plotFrame';
+
 export type ActivityWindow = '24h' | '7d' | '30d';
 export const ACTIVITY_WINDOWS: readonly ActivityWindow[] = ['24h', '7d', '30d'];
 
@@ -265,7 +267,11 @@ export function groupSources(
 // #endregion page-names
 
 // #region chart-geometry
-/** The drawing area the lines are laid into, in SVG units; the card scales it to its width. */
+/**
+ * The drawing area the lines are laid into, in SVG units: the desk's, which the
+ * card scales up to its width, and narrowed to the width a phone gives it
+ * (fitBox in src/lib/plotFrame.ts, 1.0.3.30) so its words keep their size.
+ */
 export const CHART = { width: 720, height: 200, left: 36, right: 12, top: 12, bottom: 28 } as const;
 
 /** The highest count on any series, or 1, so a flat day still has a y axis. */
@@ -285,29 +291,29 @@ export function ceilingOf(series: ActivitySeries[]): number {
  * the server hands back a fixed grid with zeros where nothing happened, so
  * the two stores share an axis without the page having to align them.
  */
-export function linePath(points: ActivityPoint[], ceiling: number): string {
+export function linePath(points: ActivityPoint[], ceiling: number, box: PlotBox = CHART): string {
   if (points.length === 0) return '';
-  const innerWidth = CHART.width - CHART.left - CHART.right;
-  const innerHeight = CHART.height - CHART.top - CHART.bottom;
+  const innerWidth = box.width - box.left - box.right;
+  const innerHeight = box.height - box.top - box.bottom;
   const step = points.length === 1 ? 0 : innerWidth / (points.length - 1);
   return points
     .map((point, index) => {
-      const x = CHART.left + index * step;
-      const y = CHART.top + innerHeight - (point.requests / ceiling) * innerHeight;
+      const x = box.left + index * step;
+      const y = box.top + innerHeight - (point.requests / ceiling) * innerHeight;
       return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
     })
     .join(' ');
 }
 
 /** The same line closed down to the baseline, for the soft fill under it. */
-export function areaPath(points: ActivityPoint[], ceiling: number): string {
-  const line = linePath(points, ceiling);
+export function areaPath(points: ActivityPoint[], ceiling: number, box: PlotBox = CHART): string {
+  const line = linePath(points, ceiling, box);
   if (line === '') return '';
-  const innerWidth = CHART.width - CHART.left - CHART.right;
-  const baseline = CHART.height - CHART.bottom;
+  const innerWidth = box.width - box.left - box.right;
+  const baseline = box.height - box.bottom;
   const step = points.length === 1 ? 0 : innerWidth / (points.length - 1);
-  const lastX = CHART.left + (points.length - 1) * step;
-  return `${line} L${lastX.toFixed(1)} ${baseline} L${CHART.left} ${baseline} Z`;
+  const lastX = box.left + (points.length - 1) * step;
+  return `${line} L${lastX.toFixed(1)} ${baseline} L${box.left} ${baseline} Z`;
 }
 
 // #region stack
@@ -346,9 +352,9 @@ export function stackCeiling(bands: ActivityBand[]): number {
   return most === 0 ? 1 : most;
 }
 
-export function xAt(index: number, count: number): number {
-  const innerWidth = CHART.width - CHART.left - CHART.right;
-  return CHART.left + (count <= 1 ? 0 : (innerWidth / (count - 1)) * index);
+export function xAt(index: number, count: number, box: PlotBox = CHART): number {
+  const innerWidth = box.width - box.left - box.right;
+  return box.left + (count <= 1 ? 0 : (innerWidth / (count - 1)) * index);
 }
 
 export function yAt(value: number, ceiling: number): number {
@@ -357,26 +363,28 @@ export function yAt(value: number, ceiling: number): number {
 }
 
 /** One band as the `d` of a closed SVG path: along its ceiling left to right, back along its floor. */
-export function bandPath(band: ActivityBand, ceiling: number): string {
+export function bandPath(band: ActivityBand, ceiling: number, box: PlotBox = CHART): string {
   const count = band.upper.length;
   if (count === 0) return '';
   const top = band.upper.map(
     (value, index) =>
-      `${index === 0 ? 'M' : 'L'}${xAt(index, count).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`
+      `${index === 0 ? 'M' : 'L'}${xAt(index, count, box).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`
   );
   const bottom = band.lower
-    .map((value, index) => `L${xAt(index, count).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`)
+    .map(
+      (value, index) => `L${xAt(index, count, box).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`
+    )
     .reverse();
   return `${[...top, ...bottom].join(' ')} Z`;
 }
 
 /** A band's ceiling alone, drawn in the card's ground over the fills: the two-pixel gap between bands. */
-export function edgePath(band: ActivityBand, ceiling: number): string {
+export function edgePath(band: ActivityBand, ceiling: number, box: PlotBox = CHART): string {
   const count = band.upper.length;
   return band.upper
     .map(
       (value, index) =>
-        `${index === 0 ? 'M' : 'L'}${xAt(index, count).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`
+        `${index === 0 ? 'M' : 'L'}${xAt(index, count, box).toFixed(1)} ${yAt(value, ceiling).toFixed(1)}`
     )
     .join(' ');
 }
@@ -390,6 +398,7 @@ export function edgePath(band: ActivityBand, ceiling: number): string {
 export function labelSpot(
   band: ActivityBand,
   ceiling: number,
+  box: PlotBox = CHART,
   minHeight = 16
 ): { x: number; y: number; anchor: 'start' | 'middle' | 'end' } | null {
   const count = band.upper.length;
@@ -404,7 +413,7 @@ export function labelSpot(
   });
   if (best < 0 || thickest < minHeight) return null;
   return {
-    x: xAt(best, count) + (best === 0 ? 6 : best === count - 1 ? -6 : 0),
+    x: xAt(best, count, box) + (best === 0 ? 6 : best === count - 1 ? -6 : 0),
     y: (yAt(band.upper[best], ceiling) + yAt(band.lower[best], ceiling)) / 2 + 4,
     anchor: best === 0 ? 'start' : best === count - 1 ? 'end' : 'middle',
   };
@@ -434,10 +443,10 @@ export function todayNote(hours: number): string {
 }
 
 /** The day nearest a point along the drawing, in the drawing's own units, never off either end. */
-export function dayAt(x: number, count: number): number {
+export function dayAt(x: number, count: number, box: PlotBox = CHART): number {
   if (count <= 1) return 0;
-  const innerWidth = CHART.width - CHART.left - CHART.right;
-  const index = Math.round(((x - CHART.left) / innerWidth) * (count - 1));
+  const innerWidth = box.width - box.left - box.right;
+  const index = Math.round(((x - box.left) / innerWidth) * (count - 1));
   return Math.min(count - 1, Math.max(0, index));
 }
 // #endregion stack

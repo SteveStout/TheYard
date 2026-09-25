@@ -3,8 +3,24 @@
  */
 import { useEffect, useState } from 'react';
 import styles from '../AdminPanel.module.css';
-import type { PageStatus, Fetched } from './types';
+import type { PageEntry, PageStatus, Fetched } from './types';
 import { About } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** An address: what it is, what kind, what it answered, and how much and how fast. */
+const PAGE_COLUMNS: Column<PageEntry>[] = [
+  { name: 'Address', mono: true, cell: (entry) => entry.address },
+  { name: 'What', cell: (entry) => entry.what },
+  { name: 'Kind', cell: (entry) => entry.kind },
+  {
+    name: 'Answered',
+    mono: true,
+    cell: (entry) => (entry.status === 0 ? (entry.reason ?? 'no answer') : entry.status),
+  },
+  { name: 'Type', mono: true, cell: (entry) => entry.content_type ?? 'none' },
+  { name: 'Bytes', mono: true, num: true, cell: (entry) => entry.bytes.toLocaleString() },
+  { name: 'Took', mono: true, num: true, cell: (entry) => `${entry.ms} ms` },
+];
 
 /**
  * Every address this site serves, as the container found them (ADR: Every
@@ -148,47 +164,13 @@ export default function PagesCard({
                 </p>
               )}
               {shown.length > 0 && (
-                <div
-                  className={styles.tableWrap}
-                  role="region"
-                  aria-label="Every address this container serves"
-                  tabIndex={0}
-                >
-                  <table className={styles.table} data-testid="pages-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Address</th>
-                        <th scope="col">What</th>
-                        <th scope="col">Kind</th>
-                        <th scope="col">Answered</th>
-                        <th scope="col">Type</th>
-                        <th scope="col" className={styles.num}>
-                          Bytes
-                        </th>
-                        <th scope="col" className={styles.num}>
-                          Took
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {shown.map((entry) => (
-                        <tr key={entry.address}>
-                          <td className={styles.mono}>{entry.address}</td>
-                          <td>{entry.what}</td>
-                          <td>{entry.kind}</td>
-                          <td className={styles.mono}>
-                            {entry.status === 0 ? (entry.reason ?? 'no answer') : entry.status}
-                          </td>
-                          <td className={styles.mono}>{entry.content_type ?? 'none'}</td>
-                          <td className={`${styles.mono} ${styles.num}`}>
-                            {entry.bytes.toLocaleString()}
-                          </td>
-                          <td className={`${styles.mono} ${styles.num}`}>{entry.ms} ms</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  label="Every address this container serves"
+                  testId="pages-table"
+                  rows={shown}
+                  rowKey={(entry) => entry.address}
+                  columns={PAGE_COLUMNS}
+                />
               )}
             </>
           )}

@@ -11,7 +11,7 @@
  * news are decided by plain functions over the slots the charts are drawn
  * from, so the words and the lines cannot disagree and the words can be tested.
  */
-import { SLOW_P95_MS } from './statTiles';
+import { millisecondsWords, SLOW_P95_MS } from './statTiles';
 import type { TrafficSlot } from './machineChart';
 
 export type TrafficTotals = {
@@ -109,7 +109,7 @@ export function trafficBlocks(
     {
       key: 'typical',
       label: 'Typical answer',
-      value: typical === null ? 'none' : `${typical.toLocaleString('en-US')} ms`,
+      value: typical === null ? 'none' : millisecondsWords(typical),
       detail:
         typical === null
           ? 'nobody asked for anything'
@@ -120,7 +120,7 @@ export function trafficBlocks(
     {
       key: 'slow',
       label: 'Slow answers',
-      value: slow === null ? 'none' : `${slow.toLocaleString('en-US')} ms`,
+      value: slow === null ? 'none' : millisecondsWords(slow),
       detail:
         slow === null
           ? 'nobody asked for anything'

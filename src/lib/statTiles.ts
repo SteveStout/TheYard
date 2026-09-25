@@ -21,7 +21,20 @@ export type StatTile = {
   question: TileQuestion;
   label: string;
   value: string;
+  /**
+   * The line under the number, whole in two lines on the narrowest tile the
+   * strip draws (360 px, and four across at 768), since a line cut with an
+   * ellipsis reads as a fault (1.0.3.30). Worst-case numbers are measured in
+   * tests/e2e/mobile.spec.ts.
+   */
   detail: string;
+  /**
+   * What the line leaves out, when a reading has more to say: it starts with
+   * its own joining word or mark, so detail then more is the whole sentence.
+   * A screen reader hears it and the tile's title holds it; the card behind
+   * the tile says all of it on the page.
+   */
+  more?: string;
   tone: TileTone;
   /** The last hour behind the number, oldest first, null where nothing was measured; absent where a line would say nothing. */
   spark?: (number | null)[];
@@ -111,6 +124,52 @@ export function uptimeWords(totalSeconds: number): string {
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
+}
+
+/**
+ * A time in words. The rings and the readings keep whole milliseconds, so a
+ * median of 0 is a median under a millisecond, and every place that shows one
+ * says so (1.0.3.9 on the tile; the traffic card's "0 ms" beside the tile's
+ * "under 1 ms" until 1.0.3.30).
+ */
+export function millisecondsWords(ms: number): string {
+  return ms === 0 ? 'under 1 ms' : `${ms.toLocaleString('en-US')} ms`;
+}
+
+/** A tile's whole sentence: the line under its number and what the line leaves out. */
+export function tileSentence(tile: Pick<StatTile, 'detail' | 'more'>): string {
+  return tile.detail + (tile.more ?? '');
+}
+
+/**
+ * The line under the typical answer: what the number is over on the tile, and
+ * the hour, its slowest minute and a left-out start in what the tile leaves
+ * out, so the two together are the sentence the strip used to cut (1.0.3.30).
+ */
+function speedLine(
+  t: NonNullable<TileReadings['traffic']>,
+  judged: boolean,
+  both: string
+): { detail: string; more?: string } {
+  const tail =
+    (t.slowest_label ? `, slowest at ${t.slowest_label}` : '') +
+    (t.cold_start_label ? `; the start at ${t.cold_start_label} is left out` : '');
+  if (judged && t.p95_ms !== null) {
+    return {
+      detail: `95th ${t.p95_ms} ms over ${t.warm_requests} requests`,
+      more: ` in the last hour${tail}`,
+    };
+  }
+  if (t.warm_requests > 0) {
+    return {
+      detail: `${t.warm_requests} requests in the last hour`,
+      more: `, too few to judge${both === '' ? '' : `; ${both}`}${tail}`,
+    };
+  }
+  return {
+    detail: `${t.requests} requests in the last hour`,
+    ...(tail === '' ? {} : { more: tail }),
+  };
 }
 
 const waiting = (key: string, question: TileQuestion, label: string): Omit<StatTile, 'ringed'> => ({
@@ -221,22 +280,11 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           // under a millisecond, which is what the tile says (1.0.3.9).
           value:
             busy && traffic.p50_ms !== null
-              ? traffic.p50_ms === 0
-                ? 'under 1 ms'
-                : `${traffic.p50_ms} ms`
+              ? millisecondsWords(traffic.p50_ms)
               : traffic.warm_requests === 0 && traffic.requests > 0 && traffic.cold_start_label
                 ? 'warming'
                 : 'quiet',
-          detail:
-            (busy && traffic.p95_ms !== null
-              ? `95th ${traffic.p95_ms} ms over ${traffic.warm_requests} requests in the last hour`
-              : traffic.warm_requests > 0
-                ? `${traffic.warm_requests} requests in the last hour, too few to judge; ${percentiles(traffic)}`
-                : `${traffic.requests} requests in the last hour`) +
-            (traffic.slowest_label ? `, slowest at ${traffic.slowest_label}` : '') +
-            (traffic.cold_start_label
-              ? `; the start at ${traffic.cold_start_label} is left out`
-              : ''),
+          ...speedLine(traffic, busy, percentiles(traffic)),
           tone:
             !busy || traffic.p95_ms === null
               ? 'plain'
@@ -284,7 +332,7 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
             value: `${Math.round(charged.request_units * 10) / 10}`,
             // A total, so it is not set against the free tier's rate (the self-review of
             // 25 September); the rate is on the machines card, busiest minute against it.
-            detail: `charged in the ring; the free tier allows ${charged.free_per_second} a second`,
+            detail: `in the ring; ${charged.free_per_second} a second is free`,
             tone: 'plain',
             spark: sparks?.charged,
           }
@@ -302,8 +350,9 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
       value: `${Math.max(failing, reported)}`,
       detail:
         failing === 0 && reported === 0
-          ? 'nothing answered 5xx and nothing was reported'
-          : `${failing} answered 5xx in the last hour, ${reported} reported`,
+          ? 'no 5xx answered and none reported'
+          : `${failing} answered 5xx, ${reported} reported`,
+      ...(failing === 0 && reported === 0 ? {} : { more: "; the 5xx are the last hour's" }),
       tone: failing > 0 || reported > 0 ? 'bad' : 'good',
       spark: sparks?.errors,
     });
@@ -317,7 +366,7 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           question: 'fast',
           label: 'Visitors today',
           value: `${visitorsToday}`,
-          detail: 'people, by a hash that changes daily; bots are left out',
+          detail: 'counted by a daily hash, bots left out',
           tone: 'plain',
         }
   );

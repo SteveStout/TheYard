@@ -2,7 +2,7 @@
  * The chart the traffic and machines cards draw with, and the box that reads a
  * minute out of it (ADR: What the machines are doing).
  */
-import { type CSSProperties, useState } from 'react';
+import { type CSSProperties, useLayoutEffect, useState } from 'react';
 import {
   axisLabel,
   ceilingFor,
@@ -20,8 +20,33 @@ import {
   xOf,
 } from '../../lib/machineChart';
 import { gaugeMeter } from '../../lib/gauge';
-import type { plotFrame } from '../../lib/plotFrame';
+import { fitBox, type plotFrame, type PlotBox } from '../../lib/plotFrame';
 import styles from '../AdminPanel.module.css';
+
+// #region fitted-box
+/**
+ * A chart's box fitted to the width its svg is given (1.0.3.30): the box's own
+ * on a desk, and the phone's width on a phone, so the drawing's words keep
+ * their size (fitBox, src/lib/plotFrame.ts). Measured before the first paint
+ * and again whenever the width changes, so the chart is drawn once at the
+ * right width and nothing moves when it is.
+ */
+export function useFittedBox<Box extends PlotBox>(
+  box: Box
+): [(node: SVGSVGElement | null) => void, Box] {
+  const [node, setNode] = useState<SVGSVGElement | null>(null);
+  const [given, setGiven] = useState(0);
+  useLayoutEffect(() => {
+    if (node === null) return;
+    const measure = () => setGiven(node.getBoundingClientRect().width);
+    measure();
+    const watcher = new ResizeObserver(measure);
+    watcher.observe(node);
+    return () => watcher.disconnect();
+  }, [node]);
+  return [setNode, fitBox(box, given)];
+}
+// #endregion fitted-box
 
 // #region chart-readout
 /**
@@ -40,30 +65,34 @@ export function ChartReadout({
   when,
   rows,
   unit,
+  box = MACHINE_CHART,
 }: {
   testId: string;
   x: number;
   when: string;
   rows: { name: string; value: number | null }[];
   unit?: string;
+  box?: PlotBox;
 }) {
   const lines = [when, ...rows.map((row) => readoutLine(row.name, row.value, unit))];
-  const width = Math.min(360, Math.max(...lines.map((line) => line.length)) * 6.2 + 16);
+  const width = Math.min(360, box.width, Math.max(...lines.map((line) => line.length)) * 6.2 + 16);
   const height = lines.length * 14 + 10;
-  const left = x + 8 + width > MACHINE_CHART.width - MACHINE_CHART.right ? x - 8 - width : x + 8;
+  // Beside the rule, on the side with room, and never past either edge of a narrow drawing.
+  const beside = x + 8 + width > box.width - box.right ? x - 8 - width : x + 8;
+  const left = Math.max(0, Math.min(beside, box.width - width));
   return (
     <g className={styles.readout} data-testid={`${testId}-readout`} aria-hidden="true">
       <line
         className={styles.readoutRule}
         x1={x}
-        y1={MACHINE_CHART.top}
+        y1={box.top}
         x2={x}
-        y2={MACHINE_CHART.height - MACHINE_CHART.bottom}
+        y2={box.height - box.bottom}
       />
       <rect
         className={styles.readoutBox}
         x={left}
-        y={MACHINE_CHART.top + READOUT_DROP}
+        y={box.top + READOUT_DROP}
         width={width}
         height={height}
         rx="4"
@@ -73,7 +102,7 @@ export function ChartReadout({
           key={line}
           className={index === 0 ? styles.readoutWhen : styles.readoutText}
           x={left + 8}
-          y={MACHINE_CHART.top + READOUT_DROP + 15 + index * 14}
+          y={box.top + READOUT_DROP + 15 + index * 14}
         >
           {line}
         </text>
@@ -128,12 +157,14 @@ export function MachineChart({
 }) {
   // The slot a pointer or a finger is over, for the readout; none until one is.
   const [over, setOver] = useState<number | null>(null);
+  const [fit, box] = useFittedBox(MACHINE_CHART);
   const ceiling = ceilingFor(series, percentage === true ? 100 : 1);
   const points = series[0]?.points ?? [];
   const drawn = series.some((line) => line.points.some((point) => point.value !== null));
-  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
+  const innerWidth = box.width - box.left - box.right;
   const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
-  const peak = callout === undefined ? null : calloutFor(series, callout, ceiling, drawnWindow);
+  const peak =
+    callout === undefined ? null : calloutFor(series, callout, ceiling, drawnWindow, box);
   // A single series has no legend, so its unit goes at the top of the axis
   // when the caller named no axis unit: a number on the axis is a number of something.
   const shownUnit = axisUnit ?? (series.length === 1 && percentage !== true ? unit : undefined);
@@ -157,53 +188,46 @@ export function MachineChart({
   return (
     <>
       <svg
+        ref={fit}
         className={styles.chart}
-        viewBox={`0 0 ${MACHINE_CHART.width} ${MACHINE_CHART.height}`}
+        viewBox={`0 0 ${box.width} ${box.height}`}
         role="img"
         aria-label={peak === null ? label : `${label}; ${peak.label}`}
         data-testid={testId}
         onPointerMove={(event) => {
-          const box = event.currentTarget.getBoundingClientRect();
-          if (box.width <= 0) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          if (rect.width <= 0) return;
           setOver(
-            nearestIndex(
-              ((event.clientX - box.left) / box.width) * MACHINE_CHART.width,
-              points.length
-            )
+            nearestIndex(((event.clientX - rect.left) / rect.width) * box.width, points.length, box)
           );
         }}
         onPointerLeave={() => setOver(null)}
       >
         {/* The Mark VII grammar (the tweaks pass, B2): no grid, graduation ticks on the
             axes, and two gold bracket ticks at the plot's top-left and bottom-right corners. */}
-        <PlotFrame frame={machineFrame(points.length)} testId={testId} />
+        <PlotFrame frame={machineFrame(points.length, box)} testId={testId} />
         <line
           className={styles.axis}
-          x1={MACHINE_CHART.left}
-          y1={MACHINE_CHART.height - MACHINE_CHART.bottom}
-          x2={MACHINE_CHART.width - MACHINE_CHART.right}
-          y2={MACHINE_CHART.height - MACHINE_CHART.bottom}
+          x1={box.left}
+          y1={box.height - box.bottom}
+          x2={box.width - box.right}
+          y2={box.height - box.bottom}
         />
         <line
           className={styles.axis}
-          x1={MACHINE_CHART.left}
-          y1={MACHINE_CHART.top}
-          x2={MACHINE_CHART.left}
-          y2={MACHINE_CHART.height - MACHINE_CHART.bottom}
+          x1={box.left}
+          y1={box.top}
+          x2={box.left}
+          y2={box.height - box.bottom}
         />
-        <text
-          className={styles.axisLabel}
-          x={MACHINE_CHART.left - 8}
-          y={MACHINE_CHART.top + 4}
-          textAnchor="end"
-        >
+        <text className={styles.axisLabel} x={box.left - 8} y={box.top + 4} textAnchor="end">
           {ceiling}
           {percentage === true ? '%' : ''}
         </text>
         <text
           className={styles.axisLabel}
-          x={MACHINE_CHART.left - 8}
-          y={MACHINE_CHART.height - MACHINE_CHART.bottom}
+          x={box.left - 8}
+          y={box.height - box.bottom}
           textAnchor="end"
         >
           0
@@ -212,8 +236,8 @@ export function MachineChart({
           <text
             key={index}
             className={styles.axisLabel}
-            x={MACHINE_CHART.left + index * step}
-            y={MACHINE_CHART.height - 8}
+            x={box.left + index * step}
+            y={box.height - 8}
             textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
           >
             {points[index] ? axisLabel(points[index].at, drawnWindow) : ''}
@@ -226,15 +250,15 @@ export function MachineChart({
             data-testid={`${testId}-${line.key}`}
             data-tone={tones?.[index] ?? 'position'}
           >
-            <path className={styles.line} d={pathFor(line.points, ceiling)} />
+            <path className={styles.line} d={pathFor(line.points, ceiling, box)} />
           </g>
         ))}
         {peak !== null && <PeakCallout drawn={peak} testId={testId} />}
         {shownUnit !== undefined && (
           <text
             className={`${styles.axisLabel} ${styles.axisUnit}`}
-            x={MACHINE_CHART.left + 6}
-            y={MACHINE_CHART.top + 4}
+            x={box.left + 6}
+            y={box.top + 4}
             data-testid={`${testId}-unit`}
           >
             {shownUnit}
@@ -243,13 +267,14 @@ export function MachineChart({
         {over !== null && points[over] !== undefined && (
           <ChartReadout
             testId={testId}
-            x={xOf(over, points.length)}
+            x={xOf(over, points.length, box)}
             when={axisLabel(points[over].at, drawnWindow)}
             rows={series.map((line) => ({
               name: line.name,
               value: line.points[over]?.value ?? null,
             }))}
             unit={axisUnit ?? (percentage === true ? '%' : unit)}
+            box={box}
           />
         )}
       </svg>

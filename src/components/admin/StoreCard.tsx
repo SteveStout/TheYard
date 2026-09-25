@@ -8,8 +8,37 @@ import { documentStore } from '../../lib/metrics';
 import styles from '../AdminPanel.module.css';
 import type { Metrics, StoreOperation, StoreLog, Fetched } from './types';
 import { useRead, useKeptWindow, Absent, About, describeParameters } from './common';
+import { type Column, DataTable } from './DataTable';
 
 // #region store-card
+/** An operation: when, how long, what it cost, who caused it, where it went and what it carried. */
+const storeColumns = (window_: CardWindow): Column<StoreOperation>[] => [
+  { name: 'At', mono: true, cell: (operation) => stampFor(window_, operation.at) },
+  { name: 'Took', mono: true, num: true, cell: (operation) => `${operation.duration_ms} ms` },
+  { name: 'Charge', mono: true, num: true, cell: (operation) => `${operation.request_charge} RU` },
+  { name: 'Caused by', mono: true, cell: (operation) => operation.request ?? 'startup' },
+  { name: 'Container', mono: true, cell: (operation) => operation.container },
+  { name: 'Kind', cell: (operation) => operation.kind },
+  {
+    name: 'Partition',
+    cell: (operation) =>
+      operation.partition +
+      (operation.partition.startsWith('cross')
+        ? ` (${operation.physical_partitions} physical)`
+        : ''),
+  },
+  {
+    name: 'Operation',
+    cell: (operation) => (
+      <>
+        <pre className={styles.sql}>{operation.text}</pre>
+        <span className={styles.muted}>{operation.outcome}</span>
+      </>
+    ),
+  },
+  { name: 'Parameters', mono: true, cell: (operation) => describeParameters(operation.parameters) },
+];
+
 /** The document store's counterpart of the SQL card: every operation with its partition and its charge (ADR: What the store is actually doing). */
 function StoreTable({
   log,
@@ -47,55 +76,12 @@ function StoreTable({
           <p className={styles.muted}>Nothing recorded yet.</p>
         )
       ) : (
-        <div
-          className={styles.tableWrap}
-          role="region"
-          aria-label="Operations this application sent to the document store"
-          tabIndex={0}
-        >
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">At</th>
-                <th scope="col" className={styles.num}>
-                  Took
-                </th>
-                <th scope="col" className={styles.num}>
-                  Charge
-                </th>
-                <th scope="col">Caused by</th>
-                <th scope="col">Container</th>
-                <th scope="col">Kind</th>
-                <th scope="col">Partition</th>
-                <th scope="col">Operation</th>
-                <th scope="col">Parameters</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.slice(0, window_ === 'now' ? 60 : 200).map((operation, index) => (
-                <tr key={index}>
-                  <td className={styles.mono}>{stampFor(window_, operation.at)}</td>
-                  <td className={`${styles.mono} ${styles.num}`}>{operation.duration_ms} ms</td>
-                  <td className={`${styles.mono} ${styles.num}`}>{operation.request_charge} RU</td>
-                  <td className={styles.mono}>{operation.request ?? 'startup'}</td>
-                  <td className={styles.mono}>{operation.container}</td>
-                  <td>{operation.kind}</td>
-                  <td>
-                    {operation.partition}
-                    {operation.partition.startsWith('cross')
-                      ? ` (${operation.physical_partitions} physical)`
-                      : ''}
-                  </td>
-                  <td>
-                    <pre className={styles.sql}>{operation.text}</pre>
-                    <span className={styles.muted}>{operation.outcome}</span>
-                  </td>
-                  <td className={styles.mono}>{describeParameters(operation.parameters)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          label="Operations this application sent to the document store"
+          rows={rows.slice(0, window_ === 'now' ? 60 : 200)}
+          rowKey={(_operation, index) => index}
+          columns={storeColumns(window_)}
+        />
       )}
     </article>
   );

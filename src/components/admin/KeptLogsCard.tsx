@@ -11,12 +11,28 @@ import {
   queryFor,
   toneOf,
   type KeptLogs,
+  type LogEvent,
   type LogFilter,
   type LogKind,
 } from '../../lib/logs';
 import styles from '../AdminPanel.module.css';
 import type { Fetched } from './types';
 import { About } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** A kept line: when, what kind, on which store, what happened, from where, and its detail. */
+const KEPT_COLUMNS: Column<LogEvent>[] = [
+  { name: 'When', mono: true, cell: (e) => new Date(e.at).toLocaleTimeString() },
+  { name: 'Kind', cell: (e) => e.kind },
+  { name: 'Store', cell: (e) => e.store || '(none)' },
+  { name: 'What', mono: true, cell: (e) => describeEvent(e) },
+  { name: 'Network', mono: true, cell: (e) => e.network },
+  {
+    name: 'Detail',
+    className: styles.detail,
+    cell: (e) => (e.kind === 'request' ? e.trace_id : e.detail || e.category),
+  },
+];
 
 /**
  * The kept log (ADR: Logs that outlive the container): every request, error
@@ -154,70 +170,30 @@ export default function KeptLogsCard({ adminKey }: { adminKey: string | null }) 
                 Collector: {logs.collector.written} written, {logs.collector.failed_batches} failed
                 batches, every {logs.collector.interval_seconds} seconds.
               </p>
-              <div
-                className={styles.tableWrap}
-                role="region"
-                aria-label="Kept log in the window"
-                tabIndex={0}
-              >
-                <table className={styles.table} data-testid="kept-logs">
-                  <thead>
-                    <tr>
-                      <th scope="col">When</th>
-                      <th scope="col">Kind</th>
-                      <th scope="col">Store</th>
-                      <th scope="col">What</th>
-                      <th scope="col">Network</th>
-                      <th scope="col">Detail</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {groupEventsByDay(logs.events).flatMap((group) => [
-                      <tr
-                        key={`day:${group.day}`}
-                        className={styles.dayRow}
-                        data-testid="kept-logs-day"
-                      >
-                        <th scope="rowgroup" colSpan={6}>
-                          {labelFor(group.day, '30d')} ({group.day}): {group.events.length} line
-                          {group.events.length === 1 ? '' : 's'}
-                        </th>
-                      </tr>,
-                      ...group.events.map((e, index) => {
-                        const tone = toneOf(e);
-                        return (
-                          <tr
-                            key={`${e.at}:${e.trace_id}:${index}`}
-                            className={
-                              tone === 'error'
-                                ? styles.errorLine
-                                : tone === 'warn'
-                                  ? styles.warnLine
-                                  : undefined
-                            }
-                          >
-                            <td className={styles.mono}>{new Date(e.at).toLocaleTimeString()}</td>
-                            <td>{e.kind}</td>
-                            <td>{e.store || '(none)'}</td>
-                            <td className={styles.mono}>{describeEvent(e)}</td>
-                            <td className={styles.mono}>{e.network}</td>
-                            <td className={styles.detail}>
-                              {e.kind === 'request' ? e.trace_id : e.detail || e.category}
-                            </td>
-                          </tr>
-                        );
-                      }),
-                    ])}
-                    {logs.events.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className={styles.muted}>
-                          Nothing in this window.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                label="Kept log in the window"
+                testId="kept-logs"
+                groups={groupEventsByDay(logs.events).map((group) => ({
+                  key: group.day,
+                  testId: 'kept-logs-day',
+                  title: `${labelFor(group.day, '30d')} (${group.day}): ${group.events.length} line${group.events.length === 1 ? '' : 's'}`,
+                  rows: group.events,
+                }))}
+                rowKey={(e, index) => `${e.at}:${e.trace_id}:${index}`}
+                rowProps={(e) => {
+                  const tone = toneOf(e);
+                  return {
+                    className:
+                      tone === 'error'
+                        ? styles.errorLine
+                        : tone === 'warn'
+                          ? styles.warnLine
+                          : undefined,
+                  };
+                }}
+                empty="Nothing in this window."
+                columns={KEPT_COLUMNS}
+              />
             </>
           )}
         </>

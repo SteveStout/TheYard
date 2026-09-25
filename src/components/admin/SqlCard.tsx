@@ -2,10 +2,28 @@
  * The SQL this application ran (ADR: What the database is actually doing), now or over a
  * kept window, on a container that runs a relational store.
  */
-import { stampFor } from '../../lib/keptCards';
+import { type CardWindow, stampFor } from '../../lib/keptCards';
 import styles from '../AdminPanel.module.css';
 import type { SqlStatement, Metrics, StoreLog } from './types';
 import { useRead, useKeptWindow, failed, Absent, About, describeParameters } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** A statement: when, how long, which request caused it, the text and what it was handed. */
+const sqlColumns = (window_: CardWindow): Column<SqlStatement>[] => [
+  { name: 'At', mono: true, cell: (statement) => stampFor(window_, statement.at) },
+  { name: 'Took', mono: true, num: true, cell: (statement) => `${statement.duration_ms} ms` },
+  { name: 'Caused by', mono: true, cell: (statement) => statement.request ?? 'startup' },
+  {
+    name: 'Statement',
+    cell: (statement) => (
+      <>
+        <pre className={styles.sql}>{statement.text}</pre>
+        <span className={styles.muted}>{statement.outcome}</span>
+      </>
+    ),
+  },
+  { name: 'Parameters', mono: true, cell: (statement) => describeParameters(statement.parameters) },
+];
 
 export default function SqlCard({ tick }: { tick: number }) {
   const sql = useRead<SqlStatement[]>('/api/admin/sql', tick);
@@ -58,40 +76,12 @@ export default function SqlCard({ tick }: { tick: number }) {
           </p>
         )
       ) : (
-        <div
-          className={styles.tableWrap}
-          role="region"
-          aria-label="SQL statements this application ran"
-          tabIndex={0}
-        >
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">At</th>
-                <th scope="col" className={styles.num}>
-                  Took
-                </th>
-                <th scope="col">Caused by</th>
-                <th scope="col">Statement</th>
-                <th scope="col">Parameters</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sqlRows.slice(0, cardWindows.sql === 'now' ? 60 : 200).map((statement, index) => (
-                <tr key={index}>
-                  <td className={styles.mono}>{stampFor(cardWindows.sql, statement.at)}</td>
-                  <td className={`${styles.mono} ${styles.num}`}>{statement.duration_ms} ms</td>
-                  <td className={styles.mono}>{statement.request ?? 'startup'}</td>
-                  <td>
-                    <pre className={styles.sql}>{statement.text}</pre>
-                    <span className={styles.muted}>{statement.outcome}</span>
-                  </td>
-                  <td className={styles.mono}>{describeParameters(statement.parameters)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          label="SQL statements this application ran"
+          rows={sqlRows.slice(0, cardWindows.sql === 'now' ? 60 : 200)}
+          rowKey={(_statement, index) => index}
+          columns={sqlColumns(cardWindows.sql)}
+        />
       )}
     </article>
   );

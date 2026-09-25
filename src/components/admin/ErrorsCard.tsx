@@ -2,10 +2,31 @@
  * Recent errors, from the server and the browser (ADR-023), now or over a kept
  * window. The strip reads the ring for its tile, so the ring is handed in.
  */
-import { stampFor } from '../../lib/keptCards';
+import { type CardWindow, stampFor } from '../../lib/keptCards';
 import styles from '../AdminPanel.module.css';
 import type { ErrorEntry, Fetched } from './types';
 import { useKeptWindow, failed } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** An error: when, what answered, where, what it was, and the stack behind a fold. */
+const errorColumns = (window_: CardWindow): Column<ErrorEntry>[] => [
+  { name: 'At', mono: true, cell: (entry) => stampFor(window_, entry.at) },
+  { name: 'Status', mono: true, cell: (entry) => (entry.status === 0 ? 'browser' : entry.status) },
+  { name: 'Where', mono: true, cell: (entry) => entry.path },
+  { name: 'What', cell: (entry) => entry.message },
+  {
+    name: 'Stack',
+    cell: (entry, index) =>
+      entry.frames.length === 0 ? (
+        <span className={styles.muted}>no stack</span>
+      ) : (
+        <details data-testid={`error-frames-${index}`}>
+          <summary>{entry.frames.length} frames</summary>
+          <pre className={styles.sql}>{entry.frames.join('\n')}</pre>
+        </details>
+      ),
+  },
+];
 
 export default function ErrorsCard({
   errors,
@@ -37,39 +58,13 @@ export default function ErrorsCard({
           </p>
         )
       ) : (
-        <div className={styles.tableWrap} role="region" aria-label="Recent errors" tabIndex={0}>
-          <table className={styles.table} data-testid="errors-table">
-            <thead>
-              <tr>
-                <th scope="col">At</th>
-                <th scope="col">Status</th>
-                <th scope="col">Where</th>
-                <th scope="col">What</th>
-                <th scope="col">Stack</th>
-              </tr>
-            </thead>
-            <tbody>
-              {errorRows.map((entry, index) => (
-                <tr key={index}>
-                  <td className={styles.mono}>{stampFor(cardWindows.errors, entry.at)}</td>
-                  <td className={styles.mono}>{entry.status === 0 ? 'browser' : entry.status}</td>
-                  <td className={styles.mono}>{entry.path}</td>
-                  <td>{entry.message}</td>
-                  <td>
-                    {entry.frames.length === 0 ? (
-                      <span className={styles.muted}>no stack</span>
-                    ) : (
-                      <details data-testid={`error-frames-${index}`}>
-                        <summary>{entry.frames.length} frames</summary>
-                        <pre className={styles.sql}>{entry.frames.join('\n')}</pre>
-                      </details>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          label="Recent errors"
+          testId="errors-table"
+          rows={errorRows}
+          rowKey={(_entry, index) => index}
+          columns={errorColumns(cardWindows.errors)}
+        />
       )}
     </article>
   );

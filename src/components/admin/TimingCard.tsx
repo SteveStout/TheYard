@@ -4,8 +4,18 @@
  */
 import { documentStoreLine, sqlLine, timingWindow } from '../../lib/metrics';
 import styles from '../AdminPanel.module.css';
-import type { Metrics } from './types';
+import type { EndpointTiming, Metrics } from './types';
 import { useRead, failed } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** A path: how often it was asked for, and how long it took at the middle, the ninety-fifth and the worst. */
+const TIMING_COLUMNS: Column<EndpointTiming>[] = [
+  { name: 'Path', mono: true, cell: (timing) => timing.path },
+  { name: 'Calls', num: true, cell: (timing) => timing.count },
+  { name: 'p50', num: true, cell: (timing) => `${timing.p50_ms} ms` },
+  { name: 'p95', num: true, cell: (timing) => `${timing.p95_ms} ms` },
+  { name: 'Slowest', num: true, cell: (timing) => `${timing.max_ms} ms` },
+];
 
 export default function TimingCard({ tick }: { tick: number }) {
   const metrics = useRead<Metrics>('/api/admin/metrics', tick);
@@ -39,43 +49,12 @@ export default function TimingCard({ tick }: { tick: number }) {
                 .
               </li>
             </ul>
-            <div
-              className={styles.tableWrap}
-              role="region"
-              aria-label="Request timing by endpoint"
-              tabIndex={0}
-            >
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th scope="col">Path</th>
-                    <th scope="col" className={styles.num}>
-                      Calls
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      p50
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      p95
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      Slowest
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.requests.by_path.slice(0, 15).map((timing) => (
-                    <tr key={timing.path}>
-                      <td className={styles.mono}>{timing.path}</td>
-                      <td className={styles.num}>{timing.count}</td>
-                      <td className={styles.num}>{timing.p50_ms} ms</td>
-                      <td className={styles.num}>{timing.p95_ms} ms</td>
-                      <td className={styles.num}>{timing.max_ms} ms</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              label="Request timing by endpoint"
+              rows={metrics.requests.by_path.slice(0, 15)}
+              rowKey={(timing) => timing.path}
+              columns={TIMING_COLUMNS}
+            />
           </>
         )}
       </article>

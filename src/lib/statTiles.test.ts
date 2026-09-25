@@ -6,6 +6,7 @@ import {
   QUIET_BELOW_REQUESTS,
   sparkCaption,
   sparkRuns,
+  tileSentence,
   tilesFrom,
   type TileReadings,
   ringOf,
@@ -97,7 +98,8 @@ describe('the stat tiles', () => {
     expect(tile(quietDay, 'speed')).toMatchObject({
       label: 'Typical answer',
       value: '12 ms',
-      detail: '95th 180 ms over 240 requests in the last hour',
+      detail: '95th 180 ms over 240 requests',
+      more: ' in the last hour',
       tone: 'good',
     });
     expect(tile(quietDay, 'memory')).toMatchObject({
@@ -134,7 +136,8 @@ describe('the stat tiles', () => {
       )
     ).toMatchObject({
       value: '3',
-      detail: '3 answered 5xx in the last hour, 1 reported',
+      detail: '3 answered 5xx, 1 reported',
+      more: "; the 5xx are the last hour's",
       tone: 'bad',
     });
     // A check that fails while the site still calls itself healthy is the fallback serving: amber.
@@ -230,7 +233,8 @@ describe('the stat tiles', () => {
       )
     ).toMatchObject({
       value: '8 ms',
-      detail: '95th 1212 ms over 74 requests in the last hour, slowest at 07:32',
+      detail: '95th 1212 ms over 74 requests',
+      more: ' in the last hour, slowest at 07:32',
       tone: 'warn',
     });
   });
@@ -273,8 +277,8 @@ describe('the stat tiles', () => {
       )
     ).toMatchObject({
       value: '5 ms',
-      detail:
-        '95th 320 ms over 60 requests in the last hour, slowest at 07:41; the start at 07:30 is left out',
+      detail: '95th 320 ms over 60 requests',
+      more: ' in the last hour, slowest at 07:41; the start at 07:30 is left out',
       tone: 'good',
     });
   });
@@ -335,9 +339,11 @@ describe('the stat tiles', () => {
     expect(quiet).toMatchObject({
       value: 'quiet',
       tone: 'plain',
-      detail:
-        '10 requests in the last hour, too few to judge; typical 4 ms, 95th 6355 ms, slowest at 06:20',
+      detail: '10 requests in the last hour',
     });
+    expect(tileSentence(quiet)).toBe(
+      '10 requests in the last hour, too few to judge; typical 4 ms, 95th 6355 ms, slowest at 06:20'
+    );
     // The same ninety-fifth over forty requests is somebody should be looking.
     expect(
       tile(
@@ -425,5 +431,47 @@ describe('the ring beside a number', () => {
     expect(ringStroke(1, 10)).toEqual({ length: 62.8, gap: 0 });
     expect(ringStroke(0.5, 10)).toEqual({ length: 62.8, gap: 31.4 });
     expect(ringStroke(0, 10)).toEqual({ length: 62.8, gap: 62.8 });
+  });
+
+  it('writes every line to fit two lines on the narrowest tile, and keeps the rest in the sentence', () => {
+    // The widest readings a tile is likely to see; tests/e2e/mobile.spec.ts measures
+    // the strip's lines at 360 and four across at 768 against the real font.
+    const loud: TileReadings = {
+      health: { ...quietDay.health!, uptime_seconds: 13 * 86_400 + 12 * 3_600 },
+      pages: { checked: 1160, up: 1100 },
+      traffic: {
+        requests: 24_000,
+        server_errors: 130,
+        client_errors: 2,
+        warm_requests: 24_000,
+        p50_ms: 1_200,
+        p95_ms: 12_120,
+        slowest_label: '07:32',
+        cold_start_label: '07:30',
+      },
+      memory: { working_set_mb: 1185.6, limit_mb: 1185.6 },
+      charged: { request_units: 123_456.7, free_per_second: 1000 },
+      errors: 120,
+      visitorsToday: 12_000,
+    };
+    const quietHour: TileReadings = {
+      ...loud,
+      traffic: { ...loud.traffic!, warm_requests: 19, requests: 12_000 },
+    };
+    for (const readings of [
+      nothing,
+      quietDay,
+      loud,
+      quietHour,
+      { ...quietDay, charged: 'none' as const },
+    ]) {
+      for (const each of tilesFrom(readings)) {
+        expect(each.detail.length, each.detail).toBeLessThanOrEqual(38);
+        expect(tileSentence(each).startsWith(each.detail)).toBe(true);
+      }
+    }
+    expect(tileSentence(tile(loud, 'speed'))).toBe(
+      '95th 12120 ms over 24000 requests in the last hour, slowest at 07:32; the start at 07:30 is left out'
+    );
   });
 });

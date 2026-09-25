@@ -217,14 +217,15 @@
    code does, because it has no words to break between; a number stays on one
    line, right-aligned in tabular figures. So a table is as wide as its card and
    the scroller round it is a last resort. The header is a 2 px rule with small
-   capitals over it, not a grey block. */
+   capitals over it, not a grey block. Every table is drawn by DataTable
+   (src/components/admin/DataTable.tsx). */
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
 
-.table th {
+.table thead th {
   text-align: left;
   padding: var(--space-2) var(--space-3);
   background: none;
@@ -240,6 +241,18 @@
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-mark-rule);
   vertical-align: top;
+}
+
+/* A row's own name (a suite, a day) reads as the row's first cell in the heading
+   colour, not as a column header: the small capitals are the columns' alone
+   (1.0.3.30; "XUNIT ON SQLITE" had worn them). */
+.table tbody th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-mark-rule);
+  vertical-align: top;
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
 }
 
 .table td.mono {
@@ -260,18 +273,139 @@
   border-bottom: none;
 }
 
-/* A phone (1.0.3.25): tighter cells, and an identifier's column never narrower
-   than a short path, so "/api/version" reads as one line and not five. A table
-   of five columns of numbers may still scroll inside its panel on a phone, as
-   the last resort; on a desk nothing does. */
+/* A phone (1.0.3.25): tighter cells, and in a table that stays a table an
+   identifier's column is never narrower than a short path, so "/api/version"
+   reads as one line and not five. A number is not an identifier and keeps its
+   own width. */
 @media (max-width: 639.98px) {
   .table th,
   .table td {
     padding: var(--space-2);
   }
 
-  .table td.mono {
+  .table:not(.stack) td.mono:not(.num) {
     min-width: 9rem;
+  }
+}
+
+/* A table of three or more columns on a phone (1.0.3.30): every row a block led
+   by its first column, and every other value on a line behind its column's
+   name, so nothing is cut at the phone's edge and nothing scrolls sideways.
+   The header row keeps only what can be pressed, the sort buttons, as a row of
+   words; the names it held are beside every value now, and a screen reader
+   still hears them as the columns' headers. The label is generated text, so it
+   is given an empty alternative and read once, as the header. */
+@media (max-width: 639.98px) {
+  .stack,
+  .stack tbody,
+  .stack tr,
+  .stack td,
+  .stack tbody th {
+    display: block;
+  }
+
+  .stack thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    border-bottom: 2px solid var(--color-mark-axis);
+    padding-bottom: var(--space-2);
+  }
+
+  .stack thead th {
+    border: none;
+    padding: 0;
+  }
+
+  .stack thead th:not([aria-sort]) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .stack thead:not(:has([aria-sort])) tr {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .stack tbody tr {
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-mark-rule);
+  }
+
+  .stack tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .stack td,
+  .stack tbody th {
+    border: none;
+    padding: 2px 0;
+    text-align: left;
+    white-space: normal;
+    /* A value with no space in it (a SQL command's parameter list) wraps inside
+       its line instead of pushing the row past the phone's edge; a word with
+       room is never broken (coverage's rule, the tweaks pass A1). */
+    overflow-wrap: break-word;
+  }
+
+  .stack .lead {
+    padding-bottom: var(--space-1);
+    color: var(--color-heading);
+    font-weight: var(--weight-semibold);
+  }
+
+  .stack [data-label] {
+    display: grid;
+    grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .stack [data-label]::before {
+    content: attr(data-label);
+    content: attr(data-label) / '';
+    padding-top: 2px;
+    color: var(--color-mark-axis);
+    font-family: var(--font-sans);
+    font-size: var(--readout-size);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--readout-tracking);
+    text-transform: uppercase;
+  }
+
+  .stack [data-label]:empty {
+    display: none;
+  }
+
+  .stack .num {
+    text-align: left;
+  }
+
+  .stack .dayRow th {
+    padding: var(--space-2) 0;
+  }
+
+  /* A kept line's state marks the whole block, not its first line. */
+  .stack .warnLine,
+  .stack .errorLine {
+    padding-left: var(--space-2);
+  }
+
+  .stack .warnLine {
+    border-left: 3px solid var(--color-warning);
+  }
+
+  .stack .errorLine {
+    border-left: 3px solid var(--color-danger);
+  }
+
+  .stack .warnLine td:first-child,
+  .stack .errorLine td:first-child {
+    border-left: none;
   }
 }
 /* #endregion tables */
@@ -1006,16 +1140,30 @@
 
 /* The line under a tile's number is two lines, from the first paint and
    after: "not read yet" is one line and the reading that replaces it is often
-   two, and on the live sites the typical answer's took three, so a tile that
-   grew when its reading arrived moved the bench under the strip (0.023 of
-   shift at 1280, then 0.018 once the store bar held still). On the strip the
-   third line is cut with an ellipsis and whole in the tile's title; the card
-   behind the tile says all of it. A phone does not show the line. */
+   two, so a tile that grew when its reading arrived moved the bench under the
+   strip (0.023 of shift at 1280, then 0.018 once the store bar held still).
+   Every line is written to fit two lines on the narrowest tile, 360 px and four
+   across at 768 (1.0.3.30: at 390 three tiles showed an ellipsis); what a line
+   leaves out is in the tile's title and read to a screen reader, and the clamp
+   stays as the guard, never the plan. */
 .tileDetail {
   font-size: var(--text-xs);
   line-height: 1.5;
   min-height: 3em;
   color: var(--color-text-muted);
+}
+
+/* What a tile's line leaves out: heard, not shown. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* The strip's tiles only: the traffic card's four numbers keep their whole

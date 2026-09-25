@@ -14,9 +14,48 @@ import {
   windowName,
 } from '../../lib/machineChart';
 import styles from '../AdminPanel.module.css';
-import type { Machines, Fetched } from './types';
+import type { DocumentMinute, Fetched, MachineSample, Machines, ResourceStatRow } from './types';
 import { About } from './common';
 import { BarGauge, MachineChart, youngRecord } from './charts';
+import { type Column, DataTable } from './DataTable';
+
+/** The container every fifteen seconds: memory three ways, the processor and the threads. */
+const CONTAINER_COLUMNS: Column<MachineSample>[] = [
+  { name: 'At', mono: true, cell: (sample) => new Date(sample.at).toLocaleTimeString() },
+  { name: 'Working set', mono: true, num: true, cell: (sample) => `${sample.working_set_mb} MB` },
+  { name: 'Managed', mono: true, num: true, cell: (sample) => `${sample.managed_mb} MB` },
+  { name: 'Heap', mono: true, num: true, cell: (sample) => `${sample.heap_mb} MB` },
+  {
+    name: 'Processors',
+    mono: true,
+    num: true,
+    cell: (sample) => (sample.cpu_percent === null ? 'first' : `${sample.cpu_percent}%`),
+  },
+  { name: 'Threads', mono: true, num: true, cell: (sample) => sample.threads },
+];
+
+/** The relational store's own reading: each share of what its tier allows. */
+const RELATIONAL_COLUMNS: Column<ResourceStatRow>[] = [
+  { name: 'At', mono: true, cell: (row) => new Date(row.at).toLocaleTimeString() },
+  { name: 'Processor', mono: true, num: true, cell: (row) => `${row.cpu_percent}%` },
+  { name: 'Memory', mono: true, num: true, cell: (row) => `${row.memory_percent}%` },
+  { name: 'Data', mono: true, num: true, cell: (row) => `${row.data_io_percent}%` },
+  { name: 'Log', mono: true, num: true, cell: (row) => `${row.log_write_percent}%` },
+  { name: 'Workers', mono: true, num: true, cell: (row) => `${row.worker_percent}%` },
+];
+
+/** The document store a minute at a time: what it charged, for how many operations, against a free second. */
+const DOCUMENT_COLUMNS: Column<DocumentMinute>[] = [
+  { name: 'Minute', mono: true, cell: (minute) => new Date(minute.at).toLocaleTimeString() },
+  { name: 'Request units', mono: true, num: true, cell: (minute) => `${minute.request_units} RU` },
+  { name: 'Operations', mono: true, num: true, cell: (minute) => minute.operations },
+  {
+    name: 'Share of a free second',
+    mono: true,
+    num: true,
+    cell: (minute) => `${minute.share_of_free_percent}%`,
+  },
+];
 
 export default function MachinesCard({
   machines,
@@ -155,52 +194,13 @@ function MachinesBody({
               },
             ]}
           />
-          <div
-            className={styles.tableWrap}
-            role="region"
-            aria-label="The container, sampled"
-            tabIndex={0}
-          >
-            <table className={styles.table} data-testid="machines-container-table">
-              <thead>
-                <tr>
-                  <th scope="col">At</th>
-                  <th scope="col" className={styles.num}>
-                    Working set
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Managed
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Heap
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Processors
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Threads
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...samples]
-                  .reverse()
-                  .slice(0, 20)
-                  .map((sample) => (
-                    <tr key={sample.at}>
-                      <td className={styles.mono}>{new Date(sample.at).toLocaleTimeString()}</td>
-                      <td className={`${styles.mono} ${styles.num}`}>{sample.working_set_mb} MB</td>
-                      <td className={`${styles.mono} ${styles.num}`}>{sample.managed_mb} MB</td>
-                      <td className={`${styles.mono} ${styles.num}`}>{sample.heap_mb} MB</td>
-                      <td className={`${styles.mono} ${styles.num}`}>
-                        {sample.cpu_percent === null ? 'first' : `${sample.cpu_percent}%`}
-                      </td>
-                      <td className={`${styles.mono} ${styles.num}`}>{sample.threads}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label="The container, sampled"
+            testId="machines-container-table"
+            rows={[...samples].reverse().slice(0, 20)}
+            rowKey={(sample) => sample.at}
+            columns={CONTAINER_COLUMNS}
+          />
         </>
       )}
 
@@ -247,37 +247,13 @@ function MachinesBody({
               },
             ]}
           />
-          <div
-            className={styles.tableWrap}
-            role="region"
-            aria-label="The relational store's own reading"
-            tabIndex={0}
-          >
-            <table className={styles.table} data-testid="machines-relational-table">
-              <thead>
-                <tr>
-                  <th scope="col">At</th>
-                  <th scope="col">Processor</th>
-                  <th scope="col">Memory</th>
-                  <th scope="col">Data</th>
-                  <th scope="col">Log</th>
-                  <th scope="col">Workers</th>
-                </tr>
-              </thead>
-              <tbody>
-                {machines.relational.rows.slice(0, 20).map((row) => (
-                  <tr key={row.at}>
-                    <td className={styles.mono}>{new Date(row.at).toLocaleTimeString()}</td>
-                    <td className={styles.mono}>{row.cpu_percent}%</td>
-                    <td className={styles.mono}>{row.memory_percent}%</td>
-                    <td className={styles.mono}>{row.data_io_percent}%</td>
-                    <td className={styles.mono}>{row.log_write_percent}%</td>
-                    <td className={styles.mono}>{row.worker_percent}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label="The relational store's own reading"
+            testId="machines-relational-table"
+            rows={machines.relational.rows.slice(0, 20)}
+            rowKey={(row) => row.at}
+            columns={RELATIONAL_COLUMNS}
+          />
         </>
       )}
 
@@ -320,36 +296,13 @@ function MachinesBody({
               },
             ]}
           />
-          <div
-            className={styles.tableWrap}
-            role="region"
-            aria-label="What the document store charged"
-            tabIndex={0}
-          >
-            <table className={styles.table} data-testid="machines-document-table">
-              <thead>
-                <tr>
-                  <th scope="col">Minute</th>
-                  <th scope="col">Request units</th>
-                  <th scope="col">Operations</th>
-                  <th scope="col">Share of a free second</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...machines.document.minutes]
-                  .reverse()
-                  .slice(0, 20)
-                  .map((minute) => (
-                    <tr key={minute.at}>
-                      <td className={styles.mono}>{new Date(minute.at).toLocaleTimeString()}</td>
-                      <td className={styles.mono}>{minute.request_units} RU</td>
-                      <td className={styles.mono}>{minute.operations}</td>
-                      <td className={styles.mono}>{minute.share_of_free_percent}%</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label="What the document store charged"
+            testId="machines-document-table"
+            rows={[...machines.document.minutes].reverse().slice(0, 20)}
+            rowKey={(minute) => minute.at}
+            columns={DOCUMENT_COLUMNS}
+          />
         </>
       )}
     </article>

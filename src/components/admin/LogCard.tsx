@@ -1,10 +1,29 @@
 /**
  * The log, as the console got it (ADR-010), now or over a kept window.
  */
-import { stampFor } from '../../lib/keptCards';
+import { type CardWindow, stampFor } from '../../lib/keptCards';
 import styles from '../AdminPanel.module.css';
 import type { LogEntry } from './types';
 import { useRead, useKeptWindow, failed, About } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** A log line: when, how loud, from where, and what it said. */
+const logColumns = (window_: CardWindow): Column<LogEntry>[] => [
+  { name: 'At', mono: true, cell: (entry) => stampFor(window_, entry.at) },
+  { name: 'Level', mono: true, cell: (entry) => entry.level },
+  { name: 'Category', mono: true, cell: (entry) => entry.category },
+  {
+    name: 'Message',
+    cell: (entry) => (
+      <>
+        {entry.message}
+        {entry.exception === null ? null : (
+          <span className={styles.muted}> ({entry.exception})</span>
+        )}
+      </>
+    ),
+  },
+];
 
 export default function LogCard({ tick }: { tick: number }) {
   const logs = useRead<LogEntry[]>('/api/admin/logs', tick);
@@ -37,38 +56,12 @@ export default function LogCard({ tick }: { tick: number }) {
             <p className={styles.muted}>Nothing recorded since the container started.</p>
           )
         ) : (
-          <div
-            className={styles.tableWrap}
-            role="region"
-            aria-label="Recent log lines"
-            tabIndex={0}
-          >
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">At</th>
-                  <th scope="col">Level</th>
-                  <th scope="col">Category</th>
-                  <th scope="col">Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logRows.slice(0, cardWindows.logs === 'now' ? 80 : 200).map((entry, index) => (
-                  <tr key={index}>
-                    <td className={styles.mono}>{stampFor(cardWindows.logs, entry.at)}</td>
-                    <td className={styles.mono}>{entry.level}</td>
-                    <td className={styles.mono}>{entry.category}</td>
-                    <td>
-                      {entry.message}
-                      {entry.exception === null ? null : (
-                        <span className={styles.muted}> ({entry.exception})</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label="Recent log lines"
+            rows={logRows.slice(0, cardWindows.logs === 'now' ? 80 : 200)}
+            rowKey={(_entry, index) => index}
+            columns={logColumns(cardWindows.logs)}
+          />
         )}
       </article>
       {/* #endregion log-section */}

@@ -5,8 +5,41 @@
 import { useState } from 'react';
 import { pairedBars } from '../../lib/machineChart';
 import styles from '../AdminPanel.module.css';
-import type { Fetched, Proof } from './types';
+import type { Fetched, Proof, ProofResult, ProofRow } from './types';
 import { useRead, About } from './common';
+import { type Column, DataTable } from './DataTable';
+
+/** A path: its reading on each store, the difference, the difference without the round trips, and the verdict. */
+const proofColumns = (result: ProofResult): Column<ProofRow>[] => [
+  { name: 'Path', cell: (row) => row.label },
+  // A row's cells come in the stores' order, one for each.
+  ...result.stores.map((store, place): Column<ProofRow> => ({
+    name: store.name,
+    mono: true,
+    cell: (row) => {
+      const cell = row.cells[place];
+      return cell === undefined || cell.samples === 0
+        ? 'not measured'
+        : `p50 ${cell.p50_ms} ms, p95 ${cell.p95_ms} ms (${cell.samples})` +
+            (cell.request_units_per_request === null
+              ? ''
+              : ` · ${cell.request_units_per_request} RU`) +
+            (cell.operations_per_request > 0 ? `, ${cell.operations_per_request} ops` : '');
+    },
+  })),
+  {
+    name: 'Difference',
+    mono: true,
+    cell: (row) => (row.median_difference_ms === null ? '' : signed(row.median_difference_ms)),
+  },
+  {
+    name: 'Without the round trips',
+    mono: true,
+    cell: (row) =>
+      row.difference_without_hops_ms === null ? '' : signed(row.difference_without_hops_ms),
+  },
+  { name: 'Verdict', cell: (row) => row.verdict },
+];
 
 function ProofBody({
   proof,
@@ -114,52 +147,12 @@ function ProofBody({
               </li>
             ))}
           </ul>
-          <div className={styles.tableWrap} role="region" aria-label="The proof" tabIndex={0}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">Path</th>
-                  {result.stores.map((s) => (
-                    <th scope="col" key={s.key}>
-                      {s.name}
-                    </th>
-                  ))}
-                  <th scope="col">Difference</th>
-                  <th scope="col">Without the round trips</th>
-                  <th scope="col">Verdict</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.rows.map((row) => (
-                  <tr key={row.path}>
-                    <td>{row.label}</td>
-                    {row.cells.map((cell) => (
-                      <td className={styles.mono} key={cell.store}>
-                        {cell.samples === 0
-                          ? 'not measured'
-                          : `p50 ${cell.p50_ms} ms, p95 ${cell.p95_ms} ms (${cell.samples})` +
-                            (cell.request_units_per_request === null
-                              ? ''
-                              : ` · ${cell.request_units_per_request} RU`) +
-                            (cell.operations_per_request > 0
-                              ? `, ${cell.operations_per_request} ops`
-                              : '')}
-                      </td>
-                    ))}
-                    <td className={styles.mono}>
-                      {row.median_difference_ms === null ? '' : signed(row.median_difference_ms)}
-                    </td>
-                    <td className={styles.mono}>
-                      {row.difference_without_hops_ms === null
-                        ? ''
-                        : signed(row.difference_without_hops_ms)}
-                    </td>
-                    <td>{row.verdict}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label="The proof"
+            rows={result.rows}
+            rowKey={(row) => row.path}
+            columns={proofColumns(result)}
+          />
         </>
       )}
     </article>

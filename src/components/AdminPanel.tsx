@@ -27,6 +27,7 @@ import {
   sparkCaption,
   sparkRuns,
   type StatTile,
+  tileSentence,
   tilesFrom,
   type TileQuestion,
   visitorsOn,
@@ -922,8 +923,11 @@ function StatStrip({
                     </span>
                   )}
                 </span>
-                <span className={styles.tileDetail} title={tile.detail}>
+                {/* The line fits two lines on the narrowest tile; what it leaves out is heard
+                    by a screen reader and held in the title (1.0.3.30). */}
+                <span className={styles.tileDetail} title={tileSentence(tile)}>
                   {tile.detail}
+                  {tile.more !== undefined && <span className={styles.srOnly}>{tile.more}</span>}
                 </span>
                 {/* A tile keeps the room its word and its line will take, so nothing under the
                     strip moves when the hour's reading arrives. */}
