@@ -44,7 +44,6 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   'AdminPanel.module.css': [
     '.axis',
     '.axisUnit',
-    '.gridLine',
     '.readoutRule',
     '.readoutBox',
     '.line',
@@ -58,7 +57,16 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
     // The crosshair (1.0.3.14): a hairline down the day and a ringed dot on each band.
     '.crosshair line',
     '.crossDot',
+    // The Mark VII grammar (the tweaks pass, B2): graduations, the plot's bracket
+    // ticks, and the callout's leader, dot and halo. Drawings, not icons.
+    '.markTick',
+    '.markTickMajor',
+    '.plotBracket',
+    '.calloutLine',
+    '.calloutDot',
+    '.calloutText',
   ],
+  'Ring.module.css': ['.tick', '.tickMajor'],
   'Watermark.module.css': ['.rings', '.rows'],
 };
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RING, ringArc, type RingSize } from '../lib/ring';
+import { RING, ringArc, ringGraduations, ringMarker, type RingSize } from '../lib/ring';
 import styles from './Ring.module.css';
 
 /**
@@ -20,6 +20,7 @@ export function Ring({
   inside,
   label,
   testId,
+  graduated = false,
 }: {
   value: number;
   max: number;
@@ -33,6 +34,8 @@ export function Ring({
   /** What the ring says to a screen reader; null when the words beside it already say it. */
   label: string | null;
   testId?: string;
+  /** Thirty-six graduation ticks round the outside (the tweaks pass, B2): the large rings of This hour. */
+  graduated?: boolean;
 }) {
   const { size: box, stroke } = RING[size];
   const outer = ringArc(value, max, box, stroke);
@@ -47,6 +50,8 @@ export function Ring({
   }, []);
   const middle = box / 2;
   const turn = `rotate(-90 ${middle} ${middle})`;
+  // The gold marker at the fill's end (A3): a full ring still reads as a gauge.
+  const marker = ringMarker(outer.share, box, stroke);
   return (
     <svg
       className={`${styles.ring} ${styles[size]}`}
@@ -76,6 +81,18 @@ export function Ring({
         strokeDasharray={`${shown ? outer.drawn : 0} ${outer.length}`}
         transform={turn}
       />
+      {graduated &&
+        ringGraduations(box).map((tick) => (
+          <line
+            key={`${tick.x1},${tick.y1}`}
+            className={tick.major ? `${styles.tick} ${styles.tickMajor}` : styles.tick}
+            x1={tick.x1}
+            y1={tick.y1}
+            x2={tick.x2}
+            y2={tick.y2}
+            data-testid="ring-tick"
+          />
+        ))}
       {inner !== null && (
         <>
           <circle
@@ -95,6 +112,15 @@ export function Ring({
             transform={turn}
           />
         </>
+      )}
+      {marker !== null && (
+        <circle
+          className={`${styles.marker} ${shown ? styles.markerShown : ''} ${tone === 'second' ? styles.markerOnGold : ''}`}
+          cx={marker.x}
+          cy={marker.y}
+          r={Math.max(1.5, stroke * 0.42)}
+          data-testid="ring-marker"
+        />
       )}
       {inside !== undefined && (
         <text

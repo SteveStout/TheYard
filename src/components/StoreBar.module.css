@@ -32,6 +32,21 @@
 .ready {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-2);
+}
+
+/* "2/2 ready" beside the ring (the tweaks pass, A3), in the readout's small
+   spaced capitals, its width held before the answer so nothing moves. */
+.readyWords {
+  display: inline-block;
+  min-width: 7.5em;
+  font-size: var(--readout-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-teal-deep);
+  white-space: nowrap;
 }
 
 /* The control's height is reserved before the segments exist (1.0.3.7), so the
@@ -51,7 +66,7 @@
   background: transparent;
   color: var(--color-text);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   font-weight: 600;
   padding: 4px 14px;
   border-radius: var(--radius-full);
@@ -91,15 +106,37 @@ a.segment:focus-visible {
   cursor: not-allowed;
 }
 
-/* The note, a sentence at every width. On a desk it takes the rest of the
-   band's one line and is cut with an ellipsis rather than wrapped: the band's
-   height is set before /api/stores answers, and a note that wrapped once it
-   arrived moved every page (1.0.3.19 set it in spaced capitals, and Azure's
-   store names took it to a second line at 1280: 29 px, 0.024 of shift). The
-   whole sentence is its title. A phone gives it a row of its own, below. */
+/* The note (the tweaks pass, A6 and A9): 13 px, the whole sentence on one line
+   from 1440, where it fits whole beside the control with the rail open, and the
+   short form under 1440, "SQL site · Azure SQL Database", where the sentence was
+   cut with an ellipsis. The pass asked for the sentence from 1280; with the
+   rail open and Azure's store names it measured wider than the band there, so
+   it starts where it fits (the gate's Cosmos DB pass, ship 1418).
+   The band's height is set before /api/stores answers, and a note that wrapped
+   once it arrived moved every page (1.0.3.19: 29 px, 0.024 of shift at 1280),
+   so it never wraps on a desk and never ends in an ellipsis. The whole sentence
+   is its title at every width. A phone gives it a row of its own, below. */
 .note {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+
+.noteLong {
+  display: none;
+}
+
+.noteShort {
+  display: inline;
+}
+
+@media (min-width: 1440px) {
+  .noteLong {
+    display: inline;
+  }
+
+  .noteShort {
+    display: none;
+  }
 }
 
 @media (min-width: 601px) {
@@ -112,7 +149,6 @@ a.segment:focus-visible {
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
 }
 

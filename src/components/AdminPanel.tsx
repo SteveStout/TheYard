@@ -22,7 +22,6 @@ import {
   windowName,
 } from '../lib/machineChart';
 import {
-  QUESTIONS,
   afterColdStart,
   hourTiming,
   sparkCaption,
@@ -606,9 +605,12 @@ function Workbench({
   const openCard = benchCard(open);
   const question = BENCH_QUESTIONS.find((entry) => entry.key === openCard.question);
   const pinShown = pin !== null && pin !== open;
-  // The hour at a glance stands beside the card on a wide desk with nothing
-  // pinned, and above it everywhere else, where a third column would squeeze it.
-  const hourBeside = wide && !phone && !pinShown;
+  // The hour at a glance is on the Admin home and the two cards it summarises,
+  // timing and traffic, and nowhere else (the tweaks pass, A7). It stands beside
+  // the card on a wide desk with nothing pinned, and above it everywhere else,
+  // where a third column would squeeze it.
+  const hourHere = HOUR_CARDS.includes(open);
+  const hourBeside = hourHere && wide && !phone && !pinShown;
 
   // A layout effect, so the keys are listened for in the same commit that draws the card: a j pressed the
   // moment the card is on the page walks the rail rather than falling between the paint and a passive effect.
@@ -704,49 +706,52 @@ function Workbench({
           <p className={styles.crumb} data-testid="bench-crumb">
             {question?.title} <span aria-hidden="true">/</span> {openCard.name}
           </p>
-          <p
-            className={`${styles.stepper} op-seg`}
-            role="group"
-            aria-label="The card before and after"
-          >
+          <div className={styles.benchControls}>
+            {/* Pin sits in the card's header row beside Previous and Next, where
+                the card's controls live (the tweaks pass, A7). */}
             <button
               type="button"
-              className={styles.back}
-              onClick={() => onOpen(previous)}
-              aria-label={`Previous card, ${benchCard(previous).name}`}
-              data-testid="bench-previous"
+              className={`${styles.back} ${styles.pinButton}`}
+              aria-pressed={pin === open}
+              onClick={() => onPin(pin === open ? null : open)}
+              data-testid="bench-pin"
             >
-              Previous
+              <span className={styles.pinDot} aria-hidden="true" />
+              {pin === open ? 'Pinned' : 'Pin'}
             </button>
-            <button
-              type="button"
-              className={styles.back}
-              onClick={() => onOpen(next)}
-              aria-label={`Next card, ${benchCard(next).name}`}
-              data-testid="bench-next"
+            <p
+              className={`${styles.stepper} op-seg`}
+              role="group"
+              aria-label="The card before and after"
             >
-              Next
-            </button>
-          </p>
+              <button
+                type="button"
+                className={styles.back}
+                onClick={() => onOpen(previous)}
+                aria-label={`Previous card, ${benchCard(previous).name}`}
+                data-testid="bench-previous"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className={styles.back}
+                onClick={() => onOpen(next)}
+                aria-label={`Next card, ${benchCard(next).name}`}
+                data-testid="bench-next"
+              >
+                Next
+              </button>
+            </p>
+          </div>
         </div>
-        {!hourBeside && <HourAtAGlance glance={glance} beside={false} />}
+        {hourHere && !hourBeside && <HourAtAGlance glance={glance} beside={false} />}
         <div
           className={styles.benchColumns}
           data-pinned={pinShown && !phone ? 'true' : 'false'}
           data-hour={hourBeside ? 'beside' : 'above'}
         >
           <div className={styles.benchColumn} data-testid="bench-open" data-card={open}>
-            <p className={styles.columnBar}>
-              <button
-                type="button"
-                className={styles.back}
-                aria-pressed={pin === open}
-                onClick={() => onPin(pin === open ? null : open)}
-                data-testid="bench-pin"
-              >
-                {pin === open ? 'Pinned' : 'Pin'}
-              </button>
-            </p>
             {render(open)}
           </div>
           {pinShown && !phone && (
@@ -800,6 +805,9 @@ function Workbench({
   );
 }
 
+/** The cards the hour at a glance stands with: the Admin home and the two it summarises (A7). */
+const HOUR_CARDS: readonly CardSlug[] = ['health', 'timing', 'traffic'];
+
 /**
  * The hour at a glance (the operator's look): the typical answer inside the
  * ninety-fifth as two rings against ten milliseconds, the number in words in
@@ -825,6 +833,7 @@ function HourAtAGlance({ glance, beside }: { glance: HourGlance; beside: boolean
           inside={glance.inside}
           label={glance.label}
           testId="bench-hour-ring"
+          graduated
         />
         <Readout rows={glance.rows} testId="bench-hour-readout" />
       </div>
@@ -898,16 +907,16 @@ function StatStrip({
                 data-tone={tile.tone}
                 onClick={(event) => follow(event, () => onOpenCard(cardForTile(tile.key)))}
               >
-                <span className={styles.tileHead}>
-                  <span className={styles.tileHeadText}>
-                    <span className={styles.tileQuestion}>{QUESTIONS[tile.question]}</span>
-                    <span className={styles.tileLabel}>{tile.label}</span>
-                  </span>
+                {/* Name, value row, foot (the tweaks pass, A2): the rail names the section,
+                    so the tile no longer repeats its question; the value row holds the ring
+                    when there is one, and every tile in a row sets its number on one baseline. */}
+                <span className={styles.tileLabel}>{tile.label}</span>
+                <span className={styles.tileValueRow}>
+                  <span className={styles.tileValue}>{tile.value}</span>
                   {/* The ring beside a tile's number (ADR: The glass look): a share of a known
-                      whole, the shared ring of the operator's look. Hidden from a screen reader,
-                      because the tile already says the number in words. Its box is on every tile
-                      from the first paint, drawn or not, so the words beside it wrap the same
-                      before the reading arrives as after it. */}
+                      whole, hidden from a screen reader because the tile says the number in
+                      words. Its box is on every tile from the first paint, drawn or not, so
+                      the number beside it wraps the same before the reading arrives as after. */}
                   <span className={styles.tileRing}>
                     {tile.ring !== undefined && (
                       <Ring
@@ -920,7 +929,6 @@ function StatStrip({
                     )}
                   </span>
                 </span>
-                <span className={styles.tileValue}>{tile.value}</span>
                 <span className={styles.tileDetail} title={tile.detail}>
                   {tile.detail}
                 </span>

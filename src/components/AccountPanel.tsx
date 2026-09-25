@@ -92,7 +92,7 @@ function SignInForm({ onAccountChange }: { onAccountChange: (account: Account) =
       <h2 className={styles.heading}>Sign in to bid</h2>
       <p className={styles.lede}>
         Bids belong to an account, so the auction can tell two people apart. Nothing is emailed and
-        nothing is shared; this is a demo, and the address is only the name your bids are under.
+        nothing is shared; this is a showcase, and the address is only the name your bids are under.
       </p>
 
       <form

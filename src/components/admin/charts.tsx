@@ -2,13 +2,14 @@
  * The chart the traffic and machines cards draw with, and the box that reads a
  * minute out of it (ADR: What the machines are doing).
  */
-import { useState } from 'react';
+import { type CSSProperties, useState } from 'react';
 import {
   axisLabel,
   ceilingFor,
   type ChartSeries,
-  gridHeights,
   type KeptBucket,
+  markTicks,
+  peakOf,
   LEAST_SLOTS,
   MACHINE_CHART,
   type MachineWindow,
@@ -95,6 +96,7 @@ export function MachineChart({
   window: drawnWindow = '1h',
   tones,
   axisUnit,
+  callout,
 }: {
   testId: string;
   label: string;
@@ -116,6 +118,11 @@ export function MachineChart({
   tones?: ('first' | 'second' | 'third' | 'bad')[];
   /** The unit, written at the top of the axis, so a number on the axis is a number of something. */
   axisUnit?: string;
+  /**
+   * The peak of interest, called out (the tweaks pass, B2): a gold leader line
+   * from the series' highest reading to a label in small capitals.
+   */
+  callout?: { key: string; name: string };
 }) {
   // The slot a pointer or a finger is over, for the readout; none until one is.
   const [over, setOver] = useState<number | null>(null);
@@ -161,16 +168,29 @@ export function MachineChart({
         }}
         onPointerLeave={() => setOver(null)}
       >
-        {gridHeights().map((y) => (
+        {/* The Mark VII grammar (the tweaks pass, B2): no grid, graduation ticks on the
+            axes, and two gold bracket ticks at the plot's top-left and bottom-right corners. */}
+        {markTicks(points.length).map((tick) => (
           <line
-            key={y}
-            className={styles.gridLine}
-            x1={MACHINE_CHART.left}
-            y1={y}
-            x2={MACHINE_CHART.width - MACHINE_CHART.right}
-            y2={y}
+            key={tick.key}
+            className={tick.major ? `${styles.markTick} ${styles.markTickMajor}` : styles.markTick}
+            x1={tick.x1}
+            y1={tick.y1}
+            x2={tick.x2}
+            y2={tick.y2}
+            data-testid={`${testId}-tick`}
           />
         ))}
+        <path
+          className={styles.plotBracket}
+          d={`M${MACHINE_CHART.left + 1} ${MACHINE_CHART.top + 9}V${MACHINE_CHART.top + 1}H${MACHINE_CHART.left + 9}`}
+          data-testid={`${testId}-bracket`}
+        />
+        <path
+          className={styles.plotBracket}
+          d={`M${MACHINE_CHART.width - MACHINE_CHART.right - 9} ${MACHINE_CHART.height - MACHINE_CHART.bottom - 1}H${MACHINE_CHART.width - MACHINE_CHART.right - 1}V${MACHINE_CHART.height - MACHINE_CHART.bottom - 9}`}
+          data-testid={`${testId}-bracket`}
+        />
         <line
           className={styles.axis}
           x1={MACHINE_CHART.left}
@@ -187,7 +207,7 @@ export function MachineChart({
         />
         <text
           className={styles.axisLabel}
-          x={MACHINE_CHART.left - 4}
+          x={MACHINE_CHART.left - 8}
           y={MACHINE_CHART.top + 4}
           textAnchor="end"
         >
@@ -196,7 +216,7 @@ export function MachineChart({
         </text>
         <text
           className={styles.axisLabel}
-          x={MACHINE_CHART.left - 4}
+          x={MACHINE_CHART.left - 8}
           y={MACHINE_CHART.height - MACHINE_CHART.bottom}
           textAnchor="end"
         >
@@ -223,6 +243,32 @@ export function MachineChart({
             <path className={styles.line} d={pathFor(line.points, ceiling)} />
           </g>
         ))}
+        {(() => {
+          const line =
+            callout === undefined ? undefined : series.find((one) => one.key === callout.key);
+          const peak = line === undefined ? null : peakOf(line.points, ceiling);
+          if (callout === undefined || peak === null) return null;
+          const label = `${callout.name} · peak ${peak.value.toLocaleString()} at ${axisLabel(points[peak.index].at, drawnWindow)}`;
+          const toRight = peak.x < MACHINE_CHART.width / 2;
+          const elbow = { x: toRight ? peak.x + 14 : peak.x - 14, y: MACHINE_CHART.top + 10 };
+          return (
+            <g className={styles.callout} data-testid={`${testId}-callout`}>
+              <polyline
+                className={styles.calloutLine}
+                points={`${peak.x},${peak.y} ${elbow.x},${elbow.y} ${toRight ? elbow.x + 8 : elbow.x - 8},${elbow.y}`}
+              />
+              <circle className={styles.calloutDot} cx={peak.x} cy={peak.y} r={3} />
+              <text
+                className={styles.calloutText}
+                x={toRight ? elbow.x + 11 : elbow.x - 11}
+                y={elbow.y + 3}
+                textAnchor={toRight ? 'start' : 'end'}
+              >
+                {label}
+              </text>
+            </g>
+          );
+        })()}
         {axisUnit !== undefined && (
           <text
             className={`${styles.axisLabel} ${styles.axisUnit}`}
@@ -246,18 +292,83 @@ export function MachineChart({
           />
         )}
       </svg>
-      <ul className={styles.summaryList}>
-        {series.map((line, index) => (
-          <li key={line.key}>
-            <span className={`${styles.swatch} ${colour(index)}`} aria-hidden="true" />
-            {line.name}
-            {unit === undefined ? '' : ` (${unit})`}
-          </li>
-        ))}
-      </ul>
+      {/* Two series always carry a legend; a single series carries none, its name is the chart's own. */}
+      {series.length > 1 && (
+        <ul className={styles.summaryList} data-testid={`${testId}-legend`}>
+          {series.map((line, index) => (
+            <li key={line.key}>
+              <span className={`${styles.swatch} ${colour(index)}`} aria-hidden="true" />
+              {line.name}
+              {unit === undefined ? '' : ` (${unit})`}
+            </li>
+          ))}
+        </ul>
+      )}
     </>
   );
 }
+
+// #region bar-gauge
+/**
+ * A share of a ceiling as a bar (the tweaks pass, B2): a 22 px track in the deep
+ * teal faint, the fill in the deep teal (gold for request units), ticks every
+ * tenth, and the reading printed after the fill's end in ink, or inside the fill
+ * in white once the fill is 40 per cent or more. The number is always in words,
+ * and the whole is a meter to a screen reader.
+ */
+export function BarGauge({
+  testId,
+  name,
+  ceiling,
+  value,
+  max,
+  reading,
+  tone = 'deep',
+}: {
+  testId: string;
+  name: string;
+  /** The ceiling in words, on the right of the name: "1,183 MB". */
+  ceiling: string;
+  value: number;
+  max: number;
+  /** The reading in words: "31 % · 364 MB". */
+  reading: string;
+  /** The fill: the deep teal, the gold for request units, or the status colour over a plan. */
+  tone?: 'deep' | 'gold' | 'over';
+}) {
+  const share = max > 0 && Number.isFinite(value) ? Math.max(0, Math.min(1, value / max)) : 0;
+  const inside = share >= 0.4;
+  const fill = { '--gauge-share': `${(share * 100).toFixed(1)}%` } as CSSProperties;
+  return (
+    <div className={styles.gauge} data-testid={testId}>
+      <div className={styles.gaugeHead}>
+        <span className={styles.gaugeName}>{name}</span>
+        <span className={styles.gaugeCeiling}>{ceiling}</span>
+      </div>
+      <div
+        className={styles.gaugeTrack}
+        role="meter"
+        aria-label={`${name}: ${reading} of ${ceiling}`}
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={Math.min(value, max)}
+        style={fill}
+      >
+        <span
+          className={`${styles.gaugeFill} ${tone === 'gold' ? styles.gaugeGold : tone === 'over' ? styles.gaugeOver : ''}`}
+        />
+        <span
+          className={inside ? styles.gaugeInside : styles.gaugeAfter}
+          data-testid={`${testId}-reading`}
+          data-inside={inside ? 'true' : 'false'}
+        >
+          {reading}
+        </span>
+      </div>
+    </div>
+  );
+}
+// #endregion bar-gauge
 
 /**
  * Traffic, drawn (ADR: The Admin tab, as a product). Four numbers in plain

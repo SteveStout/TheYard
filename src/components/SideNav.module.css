@@ -189,13 +189,37 @@
   padding-top: var(--space-1);
 }
 
+/* The rail belongs to the same instrument (the tweaks pass, B4): a group's
+   heading in small capitals in the deep teal, a gold bracket tick at its left
+   and a gold hairline fading to the right. */
 .groupTitle {
   margin: 0;
   padding: var(--space-3) var(--space-4) 0;
-  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
   font-weight: var(--weight-bold);
-  color: var(--color-sheet-text);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-teal-deep);
   white-space: nowrap;
+}
+
+.groupTitle::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-top: 1.5px solid var(--color-mark-marker);
+  border-left: 1.5px solid var(--color-mark-marker);
+}
+
+.groupTitle::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(to right, var(--color-mark-marker), transparent);
 }
 
 .rail[data-collapsed='true'] .section + .section {
@@ -249,11 +273,13 @@
 }
 
 /* The row whose doc is open, or Admin while the tab is showing. */
+/* The current row (B4): a 2 px gold left edge over a faint tint of the rule's
+   colour, where it was a filled block with a teal edge. */
 .row[aria-current] {
-  background: var(--color-sheet-bg-raised);
-  color: var(--color-heading);
+  background: var(--color-mark-tint);
+  color: var(--color-teal-deep);
   font-weight: var(--weight-semibold);
-  box-shadow: inset 3px 0 0 var(--color-sheet-icon-active);
+  box-shadow: inset 2px 0 0 var(--color-mark-marker);
 }
 
 /* Child records sit a step in from their parent, as in the old dropdowns. */

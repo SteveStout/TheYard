@@ -70,6 +70,15 @@
   backdrop-filter: none;
 }
 
+/* A document's dialog (the tweaks pass, B1b): a clear sheet, a tenth white and
+   lightly blurred, the page's ribbons reading through it; the frost is on the
+   reading panels inside. Two classes, so the phone's fuller glass cannot reach it. */
+.op-glass.op-sheet {
+  background: var(--dialog-sheet-bg);
+  -webkit-backdrop-filter: var(--dialog-sheet-filter);
+  backdrop-filter: var(--dialog-sheet-filter);
+}
+
 /* A panel that clips what it holds (a dialog that contains its own ground):
    the brackets stand just inside its edge, where they are not cut off. */
 .op-inset::before {
@@ -102,6 +111,22 @@
     background: var(--glass-bg-phone);
   }
 }
+
+/* #region op-grid */
+/* The panel's texture (the tweaks pass, B3): a hairline grid inside a glass
+   panel, under its words and over the frost, multiplied into the fill so it
+   reads as ruled glass and never as a pattern. Panels only: a stat tile, a
+   panel read on white and a dialog's own sheet go without it, and a pill, an
+   input or the header is never .op-glass. Written after the phone's fill, and
+   one class weightier, so the phone's fill cannot take it off. */
+.op-glass:not(.op-tile, .op-solid, .op-sheet) {
+  background-image:
+    linear-gradient(to right, var(--glass-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--glass-grid-line) 1px, transparent 1px);
+  background-size: var(--glass-grid-size) var(--glass-grid-size);
+  background-blend-mode: multiply;
+}
+/* #endregion op-grid */
 /* #endregion op-glass */
 
 /* #region op-seg */

@@ -60,6 +60,8 @@ export type PageFacts = {
   twice: string[];
   /** References inside a drawing that find nothing, another drawing's element, or a hidden one. */
   lost: string[];
+  /** Table cells that break a word anywhere (the tweaks pass, A1: "Resou rce" on a phone). */
+  anywhere: string[];
 };
 
 /**
@@ -186,6 +188,14 @@ export function readPage(): PageFacts {
       }
     }
   }
+  // A table cell wraps between words or not at all (the tweaks pass, A1): a cell that
+  // computes overflow-wrap: anywhere broke "Resource" into "Resou rce" on a phone.
+  const anywhere = Array.from(document.querySelectorAll('td, th'))
+    .filter((e) => !e.closest('.scalar-app'))
+    .filter((e) => {
+      const wrap = getComputedStyle(e).overflowWrap;
+      return wrap === 'anywhere' || getComputedStyle(e).wordBreak === 'break-all';
+    });
   const unique = (list: Element[], label: (e: Element) => string) =>
     Array.from(new Set(list.map(label))).slice(0, 12);
   return {
@@ -200,5 +210,6 @@ export function readPage(): PageFacts {
     wrongFace: unique(wrong, (e) => `${name(e)} ${getComputedStyle(e).fontFamily.split(',')[0]}`),
     twice: twice.slice(0, 12),
     lost: Array.from(new Set(lost)).slice(0, 12),
+    anywhere: unique(anywhere, (e) => `${name(e)} "${(e.textContent ?? '').trim().slice(0, 24)}"`),
   };
 }

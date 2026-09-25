@@ -79,6 +79,7 @@ async function everyPage(
           facts.wrongFace.length ? `another face ${facts.wrongFace.join(', ')}` : '',
           facts.twice.length ? `an id used twice ${facts.twice.join(', ')}` : '',
           facts.lost.length ? `a drawing's reference lost ${facts.lost.join(', ')}` : '',
+          facts.anywhere.length ? `a cell breaks anywhere ${facts.anywhere.join(', ')}` : '',
         ].filter(Boolean);
         if (wrong.length) failures.push(`${next.address} at ${width}: ${wrong.join('; ')}`);
       }
@@ -104,3 +105,96 @@ test("every page the site lists is on the operator's look on a desk, 1280 wide",
   test.setTimeout(12 * 60_000);
   await everyPage(browser, request, 1280);
 });
+
+// #region strip-rows
+/**
+ * The Admin strip and the landing stat row (the tweaks pass, A2): two across on
+ * a phone and four on a desk, every tile in a row the same height, and every
+ * number in a row on one baseline, read on the rendered page with the readings in.
+ */
+async function rowsOf(
+  browser: Browser,
+  width: number,
+  address: string,
+  tile: string,
+  figure: string
+): Promise<{ columns: number; rows: { tops: number[]; heights: number[] }[] }> {
+  const phone = width < 600;
+  const context = await browser.newContext({
+    baseURL: test.info().project.use.baseURL,
+    viewport: { width, height: phone ? 844 : 900 },
+    isMobile: phone,
+    hasTouch: phone,
+    reducedMotion: 'reduce',
+  });
+  const tab = await context.newPage();
+  await tab.goto(address, { waitUntil: 'networkidle' });
+  await expect(tab.locator(tile).first()).toBeVisible({ timeout: 60_000 });
+  await tab.waitForTimeout(500);
+  const read = await tab.evaluate(
+    ({ tile, figure }) => {
+      const boxes = Array.from(document.querySelectorAll(tile)).map((element) => {
+        const box = element.getBoundingClientRect();
+        const number = element.querySelector(figure)?.getBoundingClientRect();
+        return {
+          left: Math.round(box.left),
+          top: Math.round(box.top),
+          height: Math.round(box.height),
+          figure: number === undefined ? -1 : Math.round(number.top),
+        };
+      });
+      const columns = new Set(boxes.map((box) => box.left)).size;
+      const byRow = new Map<number, { tops: number[]; heights: number[] }>();
+      for (const box of boxes) {
+        const row = byRow.get(box.top) ?? { tops: [], heights: [] };
+        row.tops.push(box.figure);
+        row.heights.push(box.height);
+        byRow.set(box.top, row);
+      }
+      return { columns, rows: Array.from(byRow.values()) };
+    },
+    { tile, figure }
+  );
+  await context.close();
+  return read;
+}
+
+for (const [width, across] of [
+  [390, 2],
+  [1280, 4],
+] as const) {
+  test(`the Admin strip is ${across} across at ${width}, each row one height and its numbers on one baseline`, async ({
+    browser,
+  }) => {
+    const strip = await rowsOf(
+      browser,
+      width,
+      '/?view=admin&card=health',
+      '[data-testid="stat-strip"] > li > a',
+      '[class*="tileValue_"]'
+    );
+    expect(strip.columns).toBe(across);
+    for (const row of strip.rows) {
+      expect(Math.max(...row.tops) - Math.min(...row.tops)).toBeLessThanOrEqual(1);
+      expect(Math.max(...row.heights) - Math.min(...row.heights)).toBeLessThanOrEqual(1);
+    }
+  });
+}
+
+test('the landing stat row sets its numbers on one baseline, the two-line label reserved', async ({
+  browser,
+}) => {
+  for (const width of [390, 1280]) {
+    const row = await rowsOf(
+      browser,
+      width,
+      '/',
+      '[data-testid="landing-proof"] > li',
+      '[class*="proofFigure_"]'
+    );
+    for (const line of row.rows) {
+      expect(Math.max(...line.tops) - Math.min(...line.tops), `at ${width}`).toBeLessThanOrEqual(1);
+    }
+  }
+});
+// #endregion strip-rows

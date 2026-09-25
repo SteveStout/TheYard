@@ -81,12 +81,18 @@
   background: var(--color-danger);
 }
 
+/* The card's words on the frost (the tweaks pass, A12): the info block takes the
+   glass's blur over the card's own ground, so the ribbons read as colour behind
+   the price and never as lines; the photograph above it is untouched. */
 .body {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
   flex: 1;
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border-radius: 0 0 calc(var(--radius-glass) - 1px) calc(var(--radius-glass) - 1px);
 }
 
 .title {

@@ -39,7 +39,6 @@ import { BrandMark } from './components/BrandMark';
 import { StoreBar } from './components/StoreBar';
 import { Ribbons } from './components/Ribbons';
 import { Watermark } from './components/Watermark';
-import { IntroStrip } from './components/IntroStrip';
 import { Landing } from './components/Landing';
 import { NavGlyph } from './components/SheetIcons';
 import { useMediaQuery } from './hooks/useMediaQuery';
@@ -1023,12 +1022,7 @@ export default function App() {
             />
           ) : (
             <section aria-label="Vehicle inventory">
-              <IntroStrip
-                resumeHref={LINKS.resume.href}
-                onOpenAuthor={() => openDocument('author')}
-                onOpenBuilt={() => openDocument('architecture')}
-                onOpenAdmin={openAdmin}
-              />
+              {/* No welcome banner over the inventory (the tweaks pass, A4): the landing page owns that copy. */}
               <div className={styles.listHeader}>
                 <h1 className={styles.listTitle}>Inventory</h1>
               </div>

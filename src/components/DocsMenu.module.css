@@ -4,8 +4,12 @@
    opened at the height of its Loading line and grew to the viewport when the
    document arrived, a layout shift of 0.19 measured at 1280 on 1.0.3.4. Every
    served document is taller than a screen, so nothing is lost by holding it. */
-/* The rule, the brackets, the radius and the white it is read on are the
-   shared glass's (.op-glass .op-solid .op-inset, the operator's look). */
+/* The rule, the brackets, the radius and the sheet are the shared glass's
+   (.op-glass .op-sheet .op-inset, the operator's look). The sheet is nearly
+   clear (the tweaks pass, B1b, from Steve's "About Steven" picture): nothing
+   dimmed behind it, so the page's ribbons read straight through, and the words
+   stand on the frosted reading panels inside it. White with a dimmed page
+   behind until 1.0.3.23. */
 .dialog {
   width: min(760px, calc(100vw - 2 * var(--space-4)));
   height: calc(100vh - 2 * var(--space-6));
@@ -15,7 +19,7 @@
 }
 
 .dialog::backdrop {
-  background: var(--scrim);
+  background: transparent;
 }
 
 /* One scroll at a time (Steve, 2026-09-22: "a scroll inside the scroll"). A document
@@ -49,10 +53,10 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--glass-border);
   position: sticky;
   top: 0;
-  background: var(--color-surface);
+  background: transparent;
 }
 
 .dialogTitle {
@@ -99,13 +103,19 @@
     padding: var(--space-3) var(--space-4);
   }
 
+  /* On a phone the reading panels carry the frost edge to edge; the clear sheet
+     shows at the title bar and between the panels. */
   .dialogBody {
-    padding: var(--space-3) var(--space-3) var(--space-7);
+    padding: var(--space-3) 0 var(--space-7);
   }
 }
 
 .docLoading,
 .docError {
+  margin: 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-glass);
+  background: var(--dialog-page-bg);
   color: var(--color-text-muted);
 }
 
@@ -184,19 +194,17 @@
 .prose,
 .prose p,
 .prose li,
-.prose td,
-.prose th,
 .prose a,
 .prose code {
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 720px) {
-  .prose table {
-    display: block;
-    overflow-x: auto;
-    max-width: 100%;
-  }
+/* A table's cells wrap between words and never inside one (the tweaks pass, A1:
+   "Resource" broke as "Resou rce" on a phone); the table sits in its own
+   scroller (markdown.ts wraps it), so a phone scrolls it inside the panel. */
+.prose td,
+.prose th {
+  overflow-wrap: normal;
 }
 /* #endregion no-sideways-scroll */
 
@@ -234,10 +242,27 @@
   font-weight: var(--weight-semibold);
 }
 
+/* #region doc-tables */
+/* A document's table (the tweaks pass, A1): in a scroller of its own, at least
+   as wide as its columns kept whole (a text column is never narrower than a
+   short phrase), the first column and every right-aligned number on one line,
+   the header a 2 px rule with small capitals over it and the rows parted by a
+   hairline, where it was a grey block over a grid of borders. */
+.prose :global(.table-scroll) {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0 0 var(--space-4);
+}
+
+.prose :global(.table-scroll):focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .prose table {
   width: 100%;
   border-collapse: collapse;
-  margin: 0 0 var(--space-4);
+  margin: 0;
   font-size: var(--text-sm);
 }
 
@@ -245,14 +270,41 @@
 .prose td {
   text-align: left;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
+  border: 0;
+  border-bottom: 1px solid var(--color-mark-rule);
+  vertical-align: top;
+  min-width: 8rem;
 }
 
 .prose th {
-  background: var(--color-surface-muted);
-  color: var(--color-heading);
+  background: none;
+  border-bottom: 2px solid var(--color-mark-axis);
+  color: var(--color-mark-axis);
+  font-size: 11px;
   font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
+
+.prose td:first-child,
+.prose th:first-child,
+.prose td[align='right'],
+.prose th[align='right'] {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.prose td[align='right'],
+.prose th[align='right'] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.prose tr:last-child td {
+  border-bottom: none;
+}
+/* #endregion doc-tables */
 
 /* Child records sit indented under their parent entry. */
 .subItem {
@@ -428,6 +480,18 @@
   padding: var(--space-5);
   min-width: 0;
 }
+
+/* #region reading-panel */
+/* The reading panel (the tweaks pass, B1b): inside the clear sheet, the frost
+   is here, heavy enough that body text holds 4.5 over the brightest ribbon
+   (tokens.test.ts holds the pair). */
+.dialog .prose :global(.doc-panel),
+.dialog .prose :global(.author-panel) {
+  background-color: var(--dialog-page-bg);
+  -webkit-backdrop-filter: var(--dialog-page-filter);
+  backdrop-filter: var(--dialog-page-filter);
+}
+/* #endregion reading-panel */
 
 /* A record's status line, drawn as a reading (docLayout.ts, statusReading). */
 .prose :global(.doc-status) {

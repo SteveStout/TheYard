@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './DocsMenu.module.css';
-import { Ribbons } from './Ribbons';
 import type { MenuVariant } from '../lib/siteMap';
 import { layoutDocument } from '../lib/docLayout';
 import { ICON } from '../lib/icons';
@@ -100,6 +99,7 @@ export type DocKey =
   | 'adrAdminProduct'
   | 'adrGlassLook'
   | 'adrLandingPage'
+  | 'adrTweaks'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'infrastructureOverview'
@@ -786,6 +786,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '082',
   },
+  adrTweaks: {
+    title: 'ADR: The tweaks pass',
+    menuLabel: 'ADR: The tweaks pass',
+    url: '/api/docs/adr-tweaks',
+    kind: 'adr',
+    number: '083',
+  },
   author: {
     title: 'About Steven',
     menuLabel: 'About Steven',
@@ -1069,6 +1076,7 @@ export const MENUS: Record<
       { key: 'adrAdminProduct' },
       { key: 'adrGlassLook' },
       { key: 'adrLandingPage' },
+      { key: 'adrTweaks' },
     ],
   },
   // #endregion records-menu
@@ -1208,8 +1216,8 @@ export function DocDialog({
       ref={dialogRef}
       className={
         activeDoc === 'author'
-          ? `${styles.dialog} ${styles.dialogGround} ${styles.dialogWide} op-glass op-solid op-inset`
-          : `${styles.dialog} ${styles.dialogGround} op-glass op-solid op-inset`
+          ? `${styles.dialog} ${styles.dialogGround} ${styles.dialogWide} op-glass op-sheet op-inset`
+          : `${styles.dialog} ${styles.dialogGround} op-glass op-sheet op-inset`
       }
       aria-label={DOCS[activeDoc].title}
       onClose={onClose}
@@ -1218,8 +1226,8 @@ export function DocDialog({
         if (event.target === dialogRef.current) dialogRef.current?.close();
       }}
     >
-      {/* Every document stands on the ribbon ground (1.0.2.0), its own copy fixed to this dialog. */}
-      <Ribbons contained />
+      {/* Every document stands on the ribbon ground: the page's own, read through the clear
+          sheet since 1.0.3.23, where the dialog carried a copy of its own from 1.0.2.0. */}
       <div className={styles.dialogHeader}>
         <h2 className={styles.dialogTitle}>{DOCS[activeDoc].title}</h2>
         <button

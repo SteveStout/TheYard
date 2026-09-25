@@ -57,8 +57,12 @@ function StoreTable({
             <thead>
               <tr>
                 <th scope="col">At</th>
-                <th scope="col">Took</th>
-                <th scope="col">Charge</th>
+                <th scope="col" className={styles.num}>
+                  Took
+                </th>
+                <th scope="col" className={styles.num}>
+                  Charge
+                </th>
                 <th scope="col">Caused by</th>
                 <th scope="col">Container</th>
                 <th scope="col">Kind</th>
@@ -71,8 +75,8 @@ function StoreTable({
               {rows.slice(0, window_ === 'now' ? 60 : 200).map((operation, index) => (
                 <tr key={index}>
                   <td className={styles.mono}>{stampFor(window_, operation.at)}</td>
-                  <td className={styles.mono}>{operation.duration_ms} ms</td>
-                  <td className={styles.mono}>{operation.request_charge} RU</td>
+                  <td className={`${styles.mono} ${styles.num}`}>{operation.duration_ms} ms</td>
+                  <td className={`${styles.mono} ${styles.num}`}>{operation.request_charge} RU</td>
                   <td className={styles.mono}>{operation.request ?? 'startup'}</td>
                   <td className={styles.mono}>{operation.container}</td>
                   <td>{operation.kind}</td>

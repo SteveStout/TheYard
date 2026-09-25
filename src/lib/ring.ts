@@ -44,3 +44,50 @@ export function ringArc(value: number, max: number, size: number, stroke: number
     share,
   };
 }
+
+// #region ring-marker
+/**
+ * Where the gold marker sits (the tweaks pass, A3): the end of the fill, on the
+ * circle's centre line, so a ring at 100 per cent still reads as a gauge that
+ * came round rather than a plain circle. Null when nothing is drawn.
+ */
+export function ringMarker(
+  share: number,
+  size: number,
+  stroke: number
+): { x: number; y: number } | null {
+  if (!(share > 0)) return null;
+  const radius = (size - stroke) / 2;
+  const middle = size / 2;
+  const angle = Math.min(1, share) * 2 * Math.PI;
+  return {
+    x: Math.round((middle + radius * Math.sin(angle)) * 100) / 100,
+    y: Math.round((middle - radius * Math.cos(angle)) * 100) / 100,
+  };
+}
+
+/**
+ * The graduations round a large ring (B2): thirty-six ticks outside the stroke,
+ * every ninth a major one, twice as long, at the quarters. Drawn outside the
+ * ring's box, which is its size from the first paint, so they move nothing.
+ */
+export function ringGraduations(
+  size: number,
+  count = 36
+): { x1: number; y1: number; x2: number; y2: number; major: boolean }[] {
+  const middle = size / 2;
+  const inner = middle + 3;
+  return Array.from({ length: count }, (_, index) => {
+    const major = index % (count / 4) === 0;
+    const outer = inner + (major ? 6 : 3);
+    const angle = (index / count) * 2 * Math.PI;
+    const at = (radius: number) => ({
+      x: Math.round((middle + radius * Math.sin(angle)) * 100) / 100,
+      y: Math.round((middle - radius * Math.cos(angle)) * 100) / 100,
+    });
+    const from = at(inner);
+    const to = at(outer);
+    return { x1: from.x, y1: from.y, x2: to.x, y2: to.y, major };
+  });
+}
+// #endregion ring-marker

@@ -124,18 +124,19 @@ export default function ActivityCard({
     <article className={`${styles.wide} op-glass`} data-testid="activity-card">
       <h2 className={styles.cardTitle}>Site activity</h2>
       <About>
-        Unique visitors per day, everybody and each store, from rows kept in Azure Cosmos DB by both
-        sites, each row naming the store that served it, so the two stores show against each other
-        and a paused relational database cannot take this card down with it. Visitors only counts
-        the people; All traffic adds the scanners and crawlers (every request looked like a bot, by
-        its agent or by what it asked for) and the site's own reads (App Service asking after the
-        container from its own loopback address, and the site's tools, which carry a mark on their
-        agent). Under it, each visitor's day: when they came, how many requests, which store, and
-        what they asked for. Written off the request path in batches; the page's own files, the
-        photos and this tab's reads are not counted. A visitor is a keyed hash of the address that
-        changes daily, so the counts group and nothing joins across days or back to a person; a full
-        address is never stored and no account is ever named. The table of visitors is behind a key
-        only the operator holds.
+        Visitor-days per day, stacked by who they were: people at the bottom, then scanners and
+        crawlers (every request looked like a bot, by its agent or by what it asked for), then the
+        site's own reads (App Service asking after the container from its own loopback address, and
+        the site's tools, which carry a mark on their agent). Visitors only shows the people; All
+        traffic shows the three together; By store splits the same days by the store that served
+        them. Under the chart: what people asked for, named by page, the recruiter's path from the
+        site to the resume, and where visitors came from by the host that linked here. Every row is
+        kept in Azure Cosmos DB, one batch every few seconds written off the request path, each row
+        naming the store that served it, so a paused relational database cannot take this card down
+        with it; the page's own files, the photos and this tab's reads are not counted. A visitor is
+        a keyed hash of the address that changes daily, so the counts group and nothing joins across
+        days or back to a person; a full address is never stored, no account is ever named, and no
+        list of visitors is shown on this site.
       </About>
       <p className={`${styles.statusRow} op-seg`} role="group" aria-label="Window">
         {ACTIVITY_WINDOWS.map((option) => (
@@ -279,6 +280,13 @@ export default function ActivityCard({
       )}
     </article>
   );
+}
+
+/** The collector's one line: fine, or what went wrong first (failed batches outrank drops). */
+function collectorSummary(collector: ActivityReport['collector']): string {
+  if (collector.failed_batches > 0) return `Collector: ${collector.failed_batches} batches failed`;
+  if (collector.dropped > 0) return `Collector: ${collector.dropped.toLocaleString()} hits dropped`;
+  return 'Collector fine';
 }
 
 function SortHeader({
@@ -445,12 +453,47 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
             x2={CHART.left}
             y2={CHART.height - CHART.bottom}
           />
-          <text className={styles.axisLabel} x={CHART.left - 4} y={CHART.top + 4} textAnchor="end">
+          {/* The Mark VII grammar (the tweaks pass, B2): graduations up the side at the
+              quarters, a tick under each day, and two gold bracket ticks at the corners. */}
+          {[0, 0.25, 0.5, 0.75, 1].map((share) => {
+            const y =
+              CHART.height - CHART.bottom - (CHART.height - CHART.top - CHART.bottom) * share;
+            const major = share === 0 || share === 0.5 || share === 1;
+            return (
+              <line
+                key={`y${share}`}
+                className={major ? `${styles.markTick} ${styles.markTickMajor}` : styles.markTick}
+                x1={CHART.left - (major ? 6 : 3)}
+                y1={y}
+                x2={CHART.left}
+                y2={y}
+              />
+            );
+          })}
+          {report.days.map((day, index) => (
+            <line
+              key={`d${day.day}`}
+              className={styles.markTick}
+              x1={xAt(index, count)}
+              y1={CHART.height - CHART.bottom}
+              x2={xAt(index, count)}
+              y2={CHART.height - CHART.bottom + 3}
+            />
+          ))}
+          <path
+            className={styles.plotBracket}
+            d={`M${CHART.left + 1} ${CHART.top + 9}V${CHART.top + 1}H${CHART.left + 9}`}
+          />
+          <path
+            className={styles.plotBracket}
+            d={`M${CHART.width - CHART.right - 9} ${CHART.height - CHART.bottom - 1}H${CHART.width - CHART.right - 1}V${CHART.height - CHART.bottom - 9}`}
+          />
+          <text className={styles.axisLabel} x={CHART.left - 8} y={CHART.top + 4} textAnchor="end">
             {ceiling}
           </text>
           <text
             className={styles.axisLabel}
-            x={CHART.left - 4}
+            x={CHART.left - 8}
             y={CHART.height - CHART.bottom}
             textAnchor="end"
           >
@@ -584,6 +627,11 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
             {store.requests.toLocaleString()} requests.
           </li>
         ))}
+        {report.retention !== null && (
+          <li className={styles.muted} data-testid="activity-retention">
+            Rows {report.retention}.
+          </li>
+        )}
         {report.stores
           .filter((store) => !store.available)
           .map((store) => (
@@ -621,15 +669,16 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
         )}
         <li className={styles.muted} data-testid="activity-collector">
           <details className={styles.about}>
-            <summary className={styles.aboutSummary}>
-              {report.collector.failed_batches === 0
-                ? 'Collector fine'
-                : `Collector: ${report.collector.failed_batches} batches failed`}
-            </summary>
-            <p className={styles.muted}>
+            <summary className={styles.aboutSummary}>{collectorSummary(report.collector)}</summary>
+            <p className={styles.muted} data-testid="activity-collector-details">
               {report.collector.offered.toLocaleString()} hits offered since the process started,{' '}
-              {report.collector.written.toLocaleString()} written, {report.collector.failed_batches}{' '}
-              batches failed, one batch per store every {report.collector.interval_seconds} seconds.
+              {report.collector.written.toLocaleString()} written,{' '}
+              {report.collector.dropped.toLocaleString()} dropped by a full queue,{' '}
+              {report.collector.failed_batches} batches failed; everything queued goes as one batch
+              to the keeper, {nameOf(report.kept_by)}, every {report.collector.interval_seconds}{' '}
+              seconds.
+              {report.cost !== null &&
+                ` Keeping it has cost ${report.cost.request_units.toLocaleString()} request units over ${report.cost.operations.toLocaleString()} operations since the process started${report.cost.failures > 0 ? `, ${report.cost.failures} of them failed` : ''}.`}
             </p>
           </details>
         </li>
@@ -757,14 +806,18 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
                 <thead>
                   <tr>
                     <th scope="col">Site</th>
-                    <th scope="col">Visitor-days</th>
+                    <th scope="col" className={styles.num}>
+                      Visitor-days
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {shown.sources.slice(0, 10).map((entry) => (
                     <tr key={entry.host}>
                       <td className={styles.mono}>{entry.host}</td>
-                      <td className={styles.mono}>{entry.visitor_days.toLocaleString()}</td>
+                      <td className={`${styles.mono} ${styles.num}`}>
+                        {entry.visitor_days.toLocaleString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -790,11 +843,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
               <tr>
                 <th scope="col">Day</th>
                 {ACTIVITY_KINDS.map((kind) => (
-                  <th key={kind} scope="col">
+                  <th key={kind} scope="col" className={styles.num}>
                     {KIND_NAMES[kind]}
                   </th>
                 ))}
-                <th scope="col">All</th>
+                <th scope="col" className={styles.num}>
+                  All
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -802,11 +857,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
                 <tr key={day.day}>
                   <th scope="row">{labelFor(day.day, '30d')}</th>
                   {ACTIVITY_KINDS.map((kind) => (
-                    <td key={kind} className={styles.mono}>
+                    <td key={kind} className={`${styles.mono} ${styles.num}`}>
                       {day[kind].toLocaleString()}
                     </td>
                   ))}
-                  <td className={styles.mono}>{countFor(day, 'all').toLocaleString()}</td>
+                  <td className={`${styles.mono} ${styles.num}`}>
+                    {countFor(day, 'all').toLocaleString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

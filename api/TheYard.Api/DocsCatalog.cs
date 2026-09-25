@@ -111,6 +111,7 @@ public static class DocsCatalog
         ["adr-admin-product"] = "docs/ADR-080-the-admin-tab-as-a-product.md",
         ["adr-glass-look"] = "docs/ADR-081-the-glass-look.md",
         ["adr-landing-page"] = "docs/ADR-082-the-landing-page-and-the-site-map.md",
+        ["adr-tweaks"] = "docs/ADR-083-the-tweaks-pass.md",
         ["color-style"] = "docs/COLOR-STYLE.md",
         ["author"] = "docs/AUTHOR.md",
         ["security"] = "docs/SECURITY.md",

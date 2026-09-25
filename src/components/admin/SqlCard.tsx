@@ -68,7 +68,9 @@ export default function SqlCard({ tick }: { tick: number }) {
             <thead>
               <tr>
                 <th scope="col">At</th>
-                <th scope="col">Took</th>
+                <th scope="col" className={styles.num}>
+                  Took
+                </th>
                 <th scope="col">Caused by</th>
                 <th scope="col">Statement</th>
                 <th scope="col">Parameters</th>
@@ -78,7 +80,7 @@ export default function SqlCard({ tick }: { tick: number }) {
               {sqlRows.slice(0, cardWindows.sql === 'now' ? 60 : 200).map((statement, index) => (
                 <tr key={index}>
                   <td className={styles.mono}>{stampFor(cardWindows.sql, statement.at)}</td>
-                  <td className={styles.mono}>{statement.duration_ms} ms</td>
+                  <td className={`${styles.mono} ${styles.num}`}>{statement.duration_ms} ms</td>
                   <td className={styles.mono}>{statement.request ?? 'startup'}</td>
                   <td>
                     <pre className={styles.sql}>{statement.text}</pre>

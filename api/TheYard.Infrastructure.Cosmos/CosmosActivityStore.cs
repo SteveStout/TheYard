@@ -23,7 +23,7 @@ namespace TheYard.Infrastructure.Cosmos;
 /// already had to design out (ADR: What the store is actually doing). What it
 /// costs is counted here instead and reported with the card.</para>
 /// </summary>
-public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore
+public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IActivityCost
 {
     private readonly Container _container = store.ContainerNamed(Containers.Activity);
     private ActivityAvailability? _availability;

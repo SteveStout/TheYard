@@ -81,13 +81,21 @@ export type ActivityReport = {
   };
   top_paths: ActivityPath[];
   stores: ActivityStoreState[];
+  /** The key of the one store every batch is written to (14 September). */
+  kept_by: string;
+  /** The keeper's own sentence for how long rows are kept, when it is up ("kept in Azure Cosmos DB with no expiry"). */
+  retention: string | null;
   collector: {
     offered: number;
     written: number;
     failed_batches: number;
+    /** Hits a full channel dropped, oldest first, since the process started (25 September). */
+    dropped: number;
     last_write: string | null;
     interval_seconds: number;
   };
+  /** What keeping activity has cost the keeper since the process started; null on a store with no unit for it. */
+  cost: { request_units: number; operations: number; failures: number } | null;
 };
 
 export type ActivityVisitor = {

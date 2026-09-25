@@ -28,9 +28,11 @@ describe("the operator's look", () => {
     expect(region).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/);
     expect(region).toContain('--rule-panel-color: var(--color-teal-deep);');
     expect(region).toContain('--rule-tile-color: var(--color-gold-light);');
-    expect(region).toContain('--ring-track: var(--color-accent-soft);');
-    expect(region).toContain('--ring-first: var(--color-accent);');
+    // The ring at 100 per cent (the tweaks pass, A3): a faint track under a dark fill, a gold marker.
+    expect(region).toContain('--ring-track: var(--color-mark-track);');
+    expect(region).toContain('--ring-first: var(--color-teal-deep);');
     expect(region).toContain('--ring-second: var(--color-gold-light);');
+    expect(region).toContain('--ring-marker: var(--color-mark-marker);');
   });
 
   it('draws a panel as glass with the dark green rule, and a tile with the gold one', () => {
@@ -65,5 +67,20 @@ describe("the operator's look", () => {
     expect(operator).toMatch(
       /\.op-seg > \[aria-current='page'\] \{\s*background: var\(--color-accent\);\s*color: var\(--color-on-accent\);/
     );
+  });
+
+  // The tweaks pass (B3): a 24 px hairline grid inside a glass panel, multiplied into
+  // its fill, and never on a tile, a panel read on white or a dialog's own sheet.
+  it('rules a glass panel with a hairline grid, and a tile, a solid panel and a dialog sheet without one', () => {
+    const grid = rule('.op-glass:not(.op-tile, .op-solid, .op-sheet)');
+    expect(grid).toContain('var(--glass-grid-line) 1px, transparent 1px');
+    expect(grid).toContain('background-size: var(--glass-grid-size) var(--glass-grid-size);');
+    expect(grid).toContain('background-blend-mode: multiply;');
+    expect(tokens).toContain('--glass-grid-line: rgba(2, 67, 69, 0.035);');
+    expect(tokens).toContain('--glass-grid-size: 24px;');
+    expect(rule('.op-tile')).not.toContain('background-image');
+    // The document dialog's clear sheet (B1b) is the shared glass's too.
+    expect(rule('.op-glass.op-sheet')).toContain('background: var(--dialog-sheet-bg);');
+    expect(rule('.op-glass.op-sheet')).toContain('backdrop-filter: var(--dialog-sheet-filter);');
   });
 });

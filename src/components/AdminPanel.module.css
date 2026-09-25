@@ -202,8 +202,6 @@
  */
 .tableWrap {
   overflow-x: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
 }
 
 .tableWrap:focus-visible {
@@ -211,6 +209,12 @@
   outline-offset: var(--focus-ring-offset);
 }
 
+/* #region tables */
+/* The tables (the tweaks pass, A1): cells wrap between words or not at all, the
+   first column and every number on one line, numbers right-aligned in tabular
+   figures, and the table at least as wide as its columns kept whole, so a phone
+   scrolls the table inside its panel and never breaks a word. The header is a
+   2 px rule with small capitals over it, not a grey block. */
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -220,20 +224,39 @@
 .table th {
   text-align: left;
   padding: var(--space-2) var(--space-3);
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
+  background: none;
+  border-bottom: 2px solid var(--color-mark-axis);
+  color: var(--color-mark-axis);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
 .table td {
   padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-mark-rule);
   vertical-align: top;
+  min-width: 8rem;
+}
+
+.table td:first-child,
+.table th:first-child,
+.table .num {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .table tr:last-child td {
   border-bottom: none;
 }
+/* #endregion tables */
 
 /* The statement itself. Wrapped rather than truncated: a query nobody can read
    the end of is a decoration. */
@@ -271,10 +294,136 @@
   max-height: 260px;
 }
 
+/* #region mark-vii */
+/* The Admin tab's charts in the Mark VII grammar (the tweaks pass, B2): one
+   1 px axis line in the deep teal, graduation ticks in place of a grid, labels
+   in the quiet grey in small capitals, two gold bracket ticks at the plot's
+   corners, and a gold leader line to the callout on a peak. */
 .axis {
-  stroke: var(--color-border-strong);
+  stroke: var(--color-mark-axis);
   stroke-width: 1;
 }
+
+.markTick {
+  stroke: var(--color-mark-axis);
+  stroke-width: 1;
+}
+
+.markTickMajor {
+  stroke-width: 1.5;
+}
+
+.plotBracket {
+  fill: none;
+  stroke: var(--color-mark-marker);
+  stroke-width: 1.5;
+}
+
+.calloutLine {
+  fill: none;
+  stroke: var(--color-mark-marker);
+  stroke-width: 1;
+}
+
+.calloutDot {
+  fill: var(--color-surface);
+  stroke: var(--color-mark-gold);
+  stroke-width: 1.5;
+}
+
+.calloutText {
+  fill: var(--color-teal-deep);
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* A share of a ceiling as a bar (B2): a 22 px track, ticks every tenth, the
+   reading after the fill's end in ink, or inside the fill in white from 40 %. */
+.gauge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.gaugeHead {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.gaugeName {
+  color: var(--color-teal-deep);
+}
+
+.gaugeCeiling {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.gaugeTrack {
+  position: relative;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(10% - 1px),
+      var(--color-surface) calc(10% - 1px),
+      var(--color-surface) 10%
+    ),
+    var(--color-mark-bar-track);
+  overflow: hidden;
+}
+
+.gaugeFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--gauge-share, 0%);
+  background: var(--color-mark-axis);
+}
+
+.gaugeGold {
+  background: var(--color-mark-gold);
+}
+
+.gaugeOver {
+  background: var(--color-danger);
+}
+
+.gaugeInside,
+.gaugeAfter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gaugeInside {
+  left: var(--space-2);
+  color: var(--color-on-accent);
+}
+
+.gaugeAfter {
+  left: calc(var(--gauge-share, 0%) + var(--space-2));
+  color: var(--color-heading);
+}
+/* #endregion mark-vii */
 
 /* The unit at the top of an axis keeps a halo of the card's ground, so a line
    that starts at the top of the axis passes behind the word and not through it. */
@@ -283,13 +432,6 @@
   stroke: var(--color-surface);
   stroke-width: 4px;
   stroke-linejoin: round;
-}
-
-/* The fine grid behind a chart, at the quarters: quieter than the axis. */
-.gridLine {
-  stroke: var(--color-border);
-  stroke-width: 1;
-  stroke-dasharray: 2 6;
 }
 
 /* The readout under a pointer: a rule at the slot and a box that says the
@@ -323,8 +465,10 @@
 
 .axisLabel {
   fill: var(--color-text-muted);
-  font-size: 11px;
+  font-size: 10px;
   font-family: inherit;
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
 }
 
 .sqlLine {
@@ -345,11 +489,11 @@
    in plain words). .warnLine stays below for the kept log's rows, where a
    warning is a state. */
 .firstLine {
-  color: var(--color-series-1);
+  color: var(--color-mark-teal);
 }
 
 .secondLine {
-  color: var(--color-series-2);
+  color: var(--color-mark-gold);
 }
 
 /* The neutral grey: a third series, or a request the site turned away, which
@@ -671,7 +815,7 @@
 
 .detail {
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   max-width: 48ch;
   font-size: var(--text-xs);
 }
@@ -706,20 +850,12 @@
   gap: var(--space-3);
 }
 
-@media (min-width: 720px) {
+/* Two across under 768 and four from there (the tweaks pass, A2): four across
+   at 390 gave each tile 80 px, a label three lines and numbers at four heights. */
+@media (min-width: 768px) {
   .strip {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-4);
-  }
-}
-
-/* A phone (the workbench): the strip over the tab is two rows of four, each
-   tile its label, its number and its word, so the card is on the first screen
-   under them. The traffic card's four numbers keep two to a row. */
-@media (max-width: 599px) {
-  .statStrip {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-2);
   }
 }
 
@@ -793,56 +929,48 @@
   --tile-soft: var(--color-neutral-soft);
 }
 
-/* The question over a tile, in small spaced capitals: a label on an
-   instrument, read after the number and not before it. */
-.tileQuestion {
-  font-size: 10px;
+/* A tile's name, one line (the tweaks pass, A2: the section's question came off
+   the tile, since the rail names the section), so every number in a row starts
+   at the same height. */
+.tileLabel {
+  display: block;
+  max-width: 100%;
+  font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
-  color: var(--color-text-muted);
+  line-height: 1.5;
+  color: var(--color-heading);
+  white-space: nowrap;
 }
 
-.tileHead {
+/* The value row: the number, and the ring beside it when there is one. The row
+   is the ring's height on every tile, drawn or not, so numbers in a row share
+   one baseline and nothing moves when a ring arrives. */
+.tileValueRow {
   width: 100%;
+  min-height: var(--ring-tile-size);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-2);
 }
 
-.tileHeadText {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* The ring beside a number that is a share of a known whole: the shared ring
-   (src/components/Ring.tsx), in a box that keeps it at its own size, the tile
-   ring's 44 (RING.tile in src/lib/ring.ts). The box is there on every tile from
-   the first paint, so a tile's question wraps the same before its reading
-   arrives as after (a question squeezed to two lines when the ring landed was
-   0.022 of shift at 1280). */
+/* The ring's box, the tile ring's 44 (RING.tile in src/lib/ring.ts), on every
+   tile from the first paint (a label squeezed when the ring landed was 0.022 of
+   shift at 1280 on 1.0.3.19). */
 .tileRing {
   flex: none;
   display: block;
-  width: 44px;
-  height: 44px;
-}
-
-.tileLabel {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-heading);
+  width: var(--ring-tile-size);
+  height: var(--ring-tile-size);
 }
 
 .tileValue {
+  min-width: 0;
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
   line-height: 1.15;
+  font-variant-numeric: tabular-nums;
   color: var(--color-heading);
-  overflow-wrap: anywhere;
 }
 
 /* The line under a tile's number is two lines, from the first paint and
@@ -870,8 +998,10 @@
   overflow: hidden;
 }
 
+/* The foot: the state's word, its room held from the first paint. */
 .tileTone {
   margin-top: var(--space-1);
+  min-height: 1.4em;
   border-radius: var(--radius-full);
   padding: 1px 10px;
   font-size: var(--text-xs);
@@ -919,42 +1049,27 @@
   vector-effect: non-scaling-stroke;
 }
 
-/* Four to a row on a phone (the workbench): the label, the number and the
-   word; the question, the line under it and the ring are the desk's. */
-@media (max-width: 599px) {
+/* Two to a row under 768 (the tweaks pass, A2): the name, the value row with its
+   ring, one line under it and the word; the line over time is the desk's. */
+@media (max-width: 767px) {
   .statStrip .tile {
-    padding: var(--space-2);
+    padding: var(--space-3);
   }
 
-  .statStrip .tileQuestion,
-  .statStrip .tileDetail,
-  .statStrip .tileRing,
   .statStrip .sparkSlot,
   .statStrip .spark {
     display: none;
   }
 
-  .statStrip .tileLabel {
-    font-size: var(--text-xs);
-  }
-
-  /* A reading breaks only between words, and its room is two lines from the
-     first paint: at text-lg a version broke inside itself ("1.0.3.1", "9"),
-     and a reading that took a second line when it arrived moved the rows
-     under it (0.013 of shift at 390 on 1.0.3.19). */
   .statStrip .tileValue {
-    font-size: var(--text-md);
-    overflow-wrap: normal;
-    min-height: calc(2 * 1.15em);
+    font-size: var(--text-xl);
   }
 
-  .statStrip .tileTone {
-    padding: 0 var(--space-1);
-  }
-
-  /* The word's room as the phone draws the word, without the desk's padding. */
-  .statStrip .tileToneSlot {
+  .statStrip .tileDetail {
     height: 1.5em;
+    min-height: 1.5em;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 }
 
@@ -1091,21 +1206,34 @@
   gap: var(--space-1);
 }
 
+/* A question's heading on the rail (the tweaks pass, B4): the deep teal, a gold
+   bracket tick at its left and a gold hairline fading to the right under it. */
 .railTitle {
   margin: 0;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: var(--space-2);
   padding-bottom: var(--space-1);
-  border-bottom: 1px solid var(--glass-border);
-  color: var(--color-accent);
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(to right, var(--color-mark-marker), transparent) 1;
+  color: var(--color-teal-deep);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: var(--readout-tracking);
 }
 
+.railTitle::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-top: 1.5px solid var(--color-mark-marker);
+  border-left: 1.5px solid var(--color-mark-marker);
+}
+
 .railCount {
+  margin-left: auto;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1138,9 +1266,10 @@
 }
 
 .railLink[aria-current='page'] {
-  border-left-color: var(--color-accent);
-  background: var(--color-accent-soft);
-  color: var(--color-heading);
+  border-left: 2px solid var(--color-mark-marker);
+  padding-left: calc(var(--space-2) + 1px);
+  background: var(--color-mark-tint);
+  color: var(--color-teal-deep);
   font-weight: var(--weight-semibold);
 }
 
@@ -1166,6 +1295,31 @@
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: var(--readout-tracking);
+}
+
+/* The card's controls in one row: Pin, then Previous and Next (the tweaks pass, A7). */
+.benchControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pinButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pinDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid currentColor;
+}
+
+.pinButton[aria-pressed='true'] .pinDot {
+  background: currentColor;
 }
 
 .stepper,

@@ -44,4 +44,15 @@ describe('renderDocument', () => {
     expect(html).toContain('<a target="_blank" rel="noopener" href="https://github.com/x">');
     expect(html).toContain('<a href="#top">');
   });
+
+  it('puts every table in a scroller of its own, reachable from the keyboard (the tweaks pass, A1)', async () => {
+    const html = await renderDocument(
+      '| Resource | Cost |\n| --- | ---: |\n| Azure Cosmos DB | $0.00 |\n'
+    );
+    expect(html).toContain(
+      '<div class="table-scroll" role="group" aria-label="Table, scrolls sideways" tabindex="0"><table>'
+    );
+    expect(html).toContain('</table></div>');
+    expect(html).toContain('<td align="right">$0.00</td>');
+  });
 });

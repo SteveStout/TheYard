@@ -248,3 +248,7 @@ Steve: "No ribbon movement at all it should center only with CSS, we want a mini
 ## Addendum, 2026-09-22 (1.0.1.0): showcase
 
 The intro sentence in `src/lib/intro.ts` now reads "showcase" where it read "working demo" (Steve: "it should be showcase"). The quotations above keep the words of the day they were written.
+
+## Addendum, 2026-09-25 (1.0.3.23): thinner glass, deeper frost, and a document on a clear sheet
+
+Two sentences above stopped being true with the tweaks pass (ADR: The tweaks pass). The glass is no longer 42 per cent white: it is 30 per cent, 38 on a phone, frosted at 28 px with a saturation of 1.6 and an inner glow, and the contrast figures above that were measured on 42 now stand on a secondary grey deepened to `#4a4e57`, held by `tokens.test.ts` at the new share over the ribbons' brightest stops. And a document on a phone is no longer read on white: every document, at every width, opens on a clear sheet (a tenth white, a 6 px blur, nothing dimmed behind it) with its words on frosted reading panels at 78 per cent, which on a phone run edge to edge. The dialog's own copy of the ribbons went with the white, since the page's own drawing now reads through the sheet. The inventory no longer carries the intro strip; the landing page carries its sentence, and `src/components/IntroStrip.tsx` stays in the repository, unrendered, as the file this record names.

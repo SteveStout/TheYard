@@ -121,11 +121,12 @@ Unchanged by the new look, on purpose: "I loved the background of white and ligh
 
 - Body text `#5e5653` reads 7.16 on white and 5.78 on grey. Headings and the big numbers on tiles
   are `#3f3a37`, 11.22 on white and 9.05 on grey.
-- **The two quiet colours, muted `#5f636c` and faint `#61656e`, are only ever used inside a
-  panel.** On grey they clear 4.5 with little to spare, and the watermark's darkest stroke takes
-  that away. Inside a panel the panel's white is between the word and the drawing, and the faint
-  colour, the weakest, still reads 4.78 at the worst, through the transparent glass of the
-  operator's look, a panel of 42 per cent white.
+- **The quiet colour, `#4a4e57`, is one grey for every secondary word, and only ever used inside
+  a panel.** Muted and faint were two slate greys a step apart until the
+  tweaks pass of 25 September, when the glass went to 30 per cent white and the grey deepened
+  until it held 4.5 over the thinner glass where it lies straight over a ribbon's teal or gold
+  stop; faint and the rail's muted grey fold into it. Through a panel over the watermark at its
+  worst it reads 6.51.
 
 ## Status colours, reserved
 
@@ -177,8 +178,29 @@ the site's own reads in blue `#5b78c2` (4.28). Chosen as a set and checked for c
 together: the closest neighbours stay well apart under every common deficiency. Marks only; each
 band's name is written on it in the heading colour, and a legend names all three.
 
-Axes and grid lines use the border colours. Labels, numbers and legends are in the text colours,
-never in a series' colour.
+### The Admin tab's charts and gauges (the tweaks pass, Mark VII)
+
+From 25 September every chart and gauge on the Admin tab is drawn in one instrument grammar, from
+Steve's flight-panel picture: one axis line and graduation ticks in the deep teal, no grid, labels
+in the quiet grey in small capitals, two series in teal and gold, a gold marker at the end of a
+ring's fill and a gold leader line to the callout on a peak.
+
+```swatches
+--color-mark-teal | Mark VII, first series
+--color-mark-gold | Mark VII, second series
+--color-mark-axis | Mark VII, axes and ticks
+--color-mark-marker | Mark VII, the marker, the leader and the bracket ticks
+```
+
+- Teal `#13948d` reads 3.72 on white and gold `#a87f1e` 3.67: marks, never text. They are told
+  apart by hue rather than by light, so two series always carry a legend.
+- The gauges' tracks are the deep teal faint (`--color-mark-track`, `--color-mark-bar-track`),
+  table rules and the rail's current row the same teal fainter still (`--color-mark-rule`,
+  `--color-mark-tint`).
+- The status colours stay for states: the registry's gauge over its plan is the one place one
+  appears on a gauge.
+
+Labels, numbers and legends are in the text colours, never in a series' colour.
 
 **The two stores keep their own pair for now**, slate blue `#536786` and brown `#8a6a4f`, on the
 comparison cards, the proof's bars and the visitors graph. They mean "the relational store" and

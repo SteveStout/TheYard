@@ -16,7 +16,8 @@ import {
   pathFor,
   requestUnitsAMinute,
   shareOf,
-  gridHeights,
+  markTicks,
+  peakOf,
   nearestIndex,
   readoutLine,
   ticks,
@@ -304,8 +305,35 @@ describe('the readout on a chart', () => {
     expect(xOf(0, 1)).toBe(MACHINE_CHART.left);
   });
 
-  it('draws the fine grid at the quarters of the plot', () => {
-    expect(gridHeights()).toEqual([45.5, 79, 112.5]);
+  // The tweaks pass (B2): graduations on the axes where the grid was.
+  it('graduates both axes outside the plot, the quarters up the side and the labelled slots along', () => {
+    const marks = markTicks(61);
+    const up = marks.filter((tick) => tick.key.startsWith('y'));
+    expect(up.map((tick) => tick.y1)).toEqual([146, 112.5, 79, 45.5, 12]);
+    expect(up.filter((tick) => tick.major).map((tick) => tick.x2 - tick.x1)).toEqual([6, 6, 6]);
+    expect(up.filter((tick) => !tick.major).map((tick) => tick.x2 - tick.x1)).toEqual([3, 3]);
+    const along = marks.filter((tick) => !tick.key.startsWith('y'));
+    expect(along.filter((tick) => tick.major)).toHaveLength(3);
+    expect(along.filter((tick) => !tick.major)).toHaveLength(9);
+    // No tick crosses into the plot: each one starts at its axis and stands outside it.
+    for (const tick of up) expect(tick.x2).toBe(MACHINE_CHART.left);
+    for (const tick of along) expect(tick.y1).toBe(MACHINE_CHART.height - MACHINE_CHART.bottom);
+  });
+
+  it('finds the peak to call out, and none when nothing rose above zero', () => {
+    const points = [0, 2, 11, 3, null].map((value, index) => ({
+      at: `2026-09-25T06:0${index}:00Z`,
+      value,
+    }));
+    const peak = peakOf(points, 12);
+    expect(peak).toMatchObject({ index: 2, value: 11 });
+    expect(peak?.x).toBe(xOf(2, 5));
+    expect(
+      peakOf(
+        points.map((point) => ({ ...point, value: 0 })),
+        12
+      )
+    ).toBeNull();
   });
 
   it('says a reading in the unit the axis is in, and says a gap is a gap', () => {

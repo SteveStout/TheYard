@@ -27,7 +27,7 @@ footer displays exactly that.
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
   walk the code.
-- **Decisions get written down.** Eighty-two ADRs record why the architecture is
+- **Decisions get written down.** Eighty-three ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.

@@ -9,6 +9,7 @@ import { ConditionBadge } from './ConditionBadge';
 import { ReserveBadge } from './ReserveBadge';
 import { TitleStatusBadge } from './TitleStatusBadge';
 import { VehicleImage } from './VehicleImage';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import styles from './VehicleDetail.module.css';
 import { ICON } from '../lib/icons';
 
@@ -40,6 +41,8 @@ export function VehicleDetail({
   onBuyNow,
 }: VehicleDetailProps) {
   const [imageIndex, setImageIndex] = useState(0);
+  // A phone and a tablet read the bid before the photos (the tweaks pass, A5).
+  const narrow = useMediaQuery('(max-width: 1023px)');
   const timing = auctionTiming(vehicle, now);
   const alt = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
   const mainImage = vehicle.images[imageIndex] ?? vehicle.images[0];
@@ -55,6 +58,128 @@ export function VehicleDetail({
     ['VIN', vehicle.vin],
     ['Lot', vehicle.lot],
   ];
+
+  const photos = (
+    <section className={`${styles.gallery} op-glass`} aria-label="Photos">
+      <div className={styles.mainImage}>
+        <VehicleImage
+          key={mainImage ?? 'none'}
+          src={mainImage}
+          alt={`${alt}, photo ${imageIndex + 1} of ${vehicle.images.length}`}
+          fallbackLabel={alt}
+          loading="eager"
+          sizes="(min-width: 1024px) 640px, 94vw"
+        />
+      </div>
+      {vehicle.images.length > 1 && (
+        <ul className={styles.thumbs}>
+          {vehicle.images.map((image, index) => (
+            <li key={image}>
+              <button
+                type="button"
+                className={`${styles.thumb} ${index === imageIndex ? styles.thumbActive : ''}`}
+                onClick={() => setImageIndex(index)}
+                aria-label={`Show photo ${index + 1}`}
+                aria-current={index === imageIndex ? 'true' : undefined}
+              >
+                <VehicleImage key={image} src={image} alt="" sizes="64px" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {/* #region photo-provenance */}
+      {/* Said on the page, not only in the README. The catalogue is
+                synthetic and the photographs are vendored stock, chosen from
+                the pool for the body style, so a Tesla listing can carry a
+                photograph of another manufacturer's SUV. A reader who notices
+                that before being told it is deliberate has been given a reason
+                to doubt everything else on the page, and the fix is one
+                sentence rather than fifty thousand photographs. */}
+      <p className={styles.provenance}>
+        Stock photography, chosen for the body style. Not photographs of this vehicle.
+      </p>
+      {/* #endregion photo-provenance */}
+    </section>
+  );
+  const titleWarning = vehicle.title_status !== 'clean' && (
+    <aside className={styles.titleWarning}>
+      <TitleStatusBadge status={vehicle.title_status} size="lg" />
+      <p>
+        This vehicle carries a {vehicle.title_status} title. Review the condition report and damage
+        notes carefully before bidding.
+      </p>
+    </aside>
+  );
+  const specifications = (
+    <section className={`${styles.card} op-glass`} aria-label="Specifications">
+      <h2 className={styles.sectionTitle}>Specifications</h2>
+      <dl className={styles.specs}>
+        {specs.map(([label, value]) => (
+          <div key={label} className={styles.specRow}>
+            <dt className={styles.specLabel}>{label}</dt>
+            <dd className={label === 'VIN' ? styles.specValueMono : styles.specValue}>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+  const condition = (
+    <section className={`${styles.card} op-glass`} aria-label="Condition">
+      <div className={styles.conditionHeader}>
+        <h2 className={styles.sectionTitle}>Condition</h2>
+        <ConditionBadge grade={vehicle.condition_grade} size="lg" />
+      </div>
+      <p className={styles.report}>{vehicle.condition_report}</p>
+      {vehicle.damage_notes.length > 0 ? (
+        <ul className={styles.damageList}>
+          {vehicle.damage_notes.map((note) => (
+            <li key={note} className={styles.damageItem}>
+              <svg viewBox="0 0 16 16" width={ICON.sm} height={ICON.sm} aria-hidden="true">
+                <path
+                  d="M8 1.5 15 14H1L8 1.5Zm0 4.5v4m0 2v.01"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={ICON.stroke}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {note}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className={styles.noDamage}>No damage reported.</p>
+      )}
+    </section>
+  );
+  const bidPanel = (
+    <BidPanel
+      vehicle={vehicle}
+      now={now}
+      isHighBidder={isHighBidder}
+      isOutbid={isOutbid}
+      wonBuyNow={wonBuyNow}
+      signedIn={signedIn}
+      onOpenAccount={onOpenAccount}
+      onPlaceBid={onPlaceBid}
+      onBuyNow={onBuyNow}
+    />
+  );
+  const seller = (
+    <section className={`${styles.card} op-glass`} aria-label="Seller">
+      <h2 className={styles.sectionTitle}>Seller</h2>
+      <p className={styles.dealership}>{vehicle.selling_dealership}</p>
+      <p className={styles.dealershipMeta}>
+        {vehicle.city}, {vehicle.province}
+      </p>
+      <div className={styles.sellerBadges}>
+        <TitleStatusBadge status={vehicle.title_status} />
+        <ReserveBadge state={reserveState(vehicle)} />
+      </div>
+    </section>
+  );
 
   return (
     <article className={styles.detail}>
@@ -83,137 +208,39 @@ export function VehicleDetail({
             {vehicle.province}
           </p>
         </div>
-        {wonBuyNow || vehicle.sold ? (
+        {narrow ? null : wonBuyNow || vehicle.sold ? (
           <span className={styles.soldChip}>Sold</span>
         ) : (
           <AuctionCountdown timing={timing} now={now} />
         )}
       </header>
 
-      <div className={styles.layout}>
-        <div className={styles.content}>
-          <section className={`${styles.gallery} op-glass`} aria-label="Photos">
-            <div className={styles.mainImage}>
-              <VehicleImage
-                key={mainImage ?? 'none'}
-                src={mainImage}
-                alt={`${alt}, photo ${imageIndex + 1} of ${vehicle.images.length}`}
-                fallbackLabel={alt}
-                loading="eager"
-                sizes="(min-width: 1024px) 640px, 94vw"
-              />
-            </div>
-            {vehicle.images.length > 1 && (
-              <ul className={styles.thumbs}>
-                {vehicle.images.map((image, index) => (
-                  <li key={image}>
-                    <button
-                      type="button"
-                      className={`${styles.thumb} ${index === imageIndex ? styles.thumbActive : ''}`}
-                      onClick={() => setImageIndex(index)}
-                      aria-label={`Show photo ${index + 1}`}
-                      aria-current={index === imageIndex ? 'true' : undefined}
-                    >
-                      <VehicleImage key={image} src={image} alt="" sizes="64px" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {/* #region photo-provenance */}
-            {/* Said on the page, not only in the README. The catalogue is
-                synthetic and the photographs are vendored stock, chosen from
-                the pool for the body style, so a Tesla listing can carry a
-                photograph of another manufacturer's SUV. A reader who notices
-                that before being told it is deliberate has been given a reason
-                to doubt everything else on the page, and the fix is one
-                sentence rather than fifty thousand photographs. */}
-            <p className={styles.provenance}>
-              Stock photography, chosen for the body style. Not photographs of this vehicle.
-            </p>
-            {/* #endregion photo-provenance */}
-          </section>
-
-          {vehicle.title_status !== 'clean' && (
-            <aside className={styles.titleWarning}>
-              <TitleStatusBadge status={vehicle.title_status} size="lg" />
-              <p>
-                This vehicle carries a {vehicle.title_status} title. Review the condition report and
-                damage notes carefully before bidding.
-              </p>
-            </aside>
-          )}
-
-          <section className={`${styles.card} op-glass`} aria-label="Specifications">
-            <h2 className={styles.sectionTitle}>Specifications</h2>
-            <dl className={styles.specs}>
-              {specs.map(([label, value]) => (
-                <div key={label} className={styles.specRow}>
-                  <dt className={styles.specLabel}>{label}</dt>
-                  <dd className={label === 'VIN' ? styles.specValueMono : styles.specValue}>
-                    {value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-
-          <section className={`${styles.card} op-glass`} aria-label="Condition">
-            <div className={styles.conditionHeader}>
-              <h2 className={styles.sectionTitle}>Condition</h2>
-              <ConditionBadge grade={vehicle.condition_grade} size="lg" />
-            </div>
-            <p className={styles.report}>{vehicle.condition_report}</p>
-            {vehicle.damage_notes.length > 0 ? (
-              <ul className={styles.damageList}>
-                {vehicle.damage_notes.map((note) => (
-                  <li key={note} className={styles.damageItem}>
-                    <svg viewBox="0 0 16 16" width={ICON.sm} height={ICON.sm} aria-hidden="true">
-                      <path
-                        d="M8 1.5 15 14H1L8 1.5Zm0 4.5v4m0 2v.01"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={ICON.stroke}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    {note}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.noDamage}>No damage reported.</p>
-            )}
-          </section>
+      {narrow ? (
+        // Under 1024 the bid comes first (the tweaks pass, A5): title, bid, photos,
+        // specifications, condition, seller, and the status line once, in the bid panel.
+        <div className={styles.stack} data-testid="vehicle-stack">
+          {bidPanel}
+          {photos}
+          {titleWarning}
+          {specifications}
+          {condition}
+          {seller}
         </div>
+      ) : (
+        <div className={styles.layout}>
+          <div className={styles.content}>
+            {photos}
+            {titleWarning}
+            {specifications}
+            {condition}
+          </div>
 
-        <aside className={styles.sidebar}>
-          <BidPanel
-            vehicle={vehicle}
-            now={now}
-            isHighBidder={isHighBidder}
-            isOutbid={isOutbid}
-            wonBuyNow={wonBuyNow}
-            signedIn={signedIn}
-            onOpenAccount={onOpenAccount}
-            onPlaceBid={onPlaceBid}
-            onBuyNow={onBuyNow}
-          />
-
-          <section className={`${styles.card} op-glass`} aria-label="Seller">
-            <h2 className={styles.sectionTitle}>Seller</h2>
-            <p className={styles.dealership}>{vehicle.selling_dealership}</p>
-            <p className={styles.dealershipMeta}>
-              {vehicle.city}, {vehicle.province}
-            </p>
-            <div className={styles.sellerBadges}>
-              <TitleStatusBadge status={vehicle.title_status} />
-              <ReserveBadge state={reserveState(vehicle)} />
-            </div>
-          </section>
-        </aside>
-      </div>
+          <aside className={styles.sidebar}>
+            {bidPanel}
+            {seller}
+          </aside>
+        </div>
+      )}
     </article>
   );
 }

@@ -133,11 +133,12 @@ describe('the site palette (ADR-016)', () => {
     };
     const glass = tokens.match(/--glass-bg:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
     if (!glass) throw new Error('tokens.css should state --glass-bg as white at a share');
-    // The glass is transparent since the operator's look (0.42, from 0.66), and a
-    // phone's is a touch fuller; the desk's, the thinner, is the one held below.
+    // The glass is transparent since the operator's look (0.42, from 0.66), and
+    // thinner again since the tweaks pass (0.30); a phone's is a touch fuller, and
+    // the desk's, the thinner, is the one held below.
     const phone = tokens.match(/--glass-bg-phone:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
     if (!phone) throw new Error('tokens.css should state --glass-bg-phone as white at a share');
-    expect(Number(glass[1])).toBeLessThanOrEqual(0.45);
+    expect(Number(glass[1])).toBe(0.3);
     expect(Number(phone[1])).toBeGreaterThanOrEqual(Number(glass[1]));
     const rgb = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
     const hex = (parts: number[]) =>
@@ -178,9 +179,58 @@ describe('the site palette (ADR-016)', () => {
     const frost = tokens.match(/--glass-filter:\s*blur\((\d+)px\)\s*saturate\(([0-9.]+)\)/);
     if (!frost)
       throw new Error('tokens.css should state --glass-filter as a blur and a saturation');
-    expect(Number(frost[1])).toBeGreaterThanOrEqual(16);
-    expect(Number(frost[2])).toBeGreaterThan(1);
+    // Deeper in the tweaks pass: 28 px and 1.6, where it was 20 px and 1.5.
+    expect(Number(frost[1])).toBe(28);
+    expect(Number(frost[2])).toBe(1.6);
+    expect(tokens).toContain('inset 0 0 40px rgba(255, 255, 255, 0.18)');
   });
+
+  // #region worst-case-pairs
+  // The worst case the tweaks pass named (B1): the secondary ink over the 30 per
+  // cent glass where the glass lies straight over a ribbon's teal stop and its
+  // gold stop, blended at the glass's share. The ink darkened until both held
+  // 4.5 (#4d515a read 4.31 and 4.40); the glass's share did not move back. One
+  // grey for secondary text: the faint ink and the sidebar's muted ink are it.
+  it('the secondary ink holds 4.5 over the 30 per cent glass on the ribbons teal and gold stops', () => {
+    const glass = tokens.match(/--glass-bg:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
+    if (!glass) throw new Error('tokens.css should state --glass-bg as white at a share');
+    const share = Number(glass[1]);
+    const hex = (parts: number[]) =>
+      `#${parts.map((part) => Math.round(part).toString(16).padStart(2, '0')).join('')}`;
+    const through = (stop: number[]) => hex(stop.map((part) => 255 * share + part * (1 - share)));
+    for (const stop of [
+      [95, 179, 168],
+      [201, 162, 74],
+    ]) {
+      expect(contrast(token('color-text-muted'), through(stop))).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(token('color-text-faint')).toBe(token('color-text-muted'));
+    expect(token('color-sheet-text-muted')).toBe(token('color-text-muted'));
+  });
+
+  // The document dialog (B1b): the sheet nearly clear, the reading panel frosted,
+  // and body text on the reading panel over the same two stops holds 4.5.
+  it('a document reads on a frosted panel inside a clear sheet', () => {
+    expect(tokens).toContain('--dialog-sheet-bg: rgba(255, 255, 255, 0.1);');
+    expect(tokens).toContain('--dialog-sheet-filter: blur(6px);');
+    expect(tokens).toContain('--dialog-page-filter: blur(28px) saturate(1.5);');
+    const page = tokens.match(/--dialog-page-bg:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
+    if (!page) throw new Error('tokens.css should state --dialog-page-bg as white at a share');
+    const share = Number(page[1]);
+    expect(share).toBe(0.78);
+    const hex = (parts: number[]) =>
+      `#${parts.map((part) => Math.round(part).toString(16).padStart(2, '0')).join('')}`;
+    for (const stop of [
+      [95, 179, 168],
+      [201, 162, 74],
+    ]) {
+      const ground = hex(stop.map((part) => 255 * share + part * (1 - share)));
+      for (const name of ['color-text', 'color-text-muted', 'color-heading']) {
+        expect(contrast(token(name), ground)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+  // #endregion worst-case-pairs
 
   it('a panel turns solid where a blur is not available or not wanted', () => {
     // Three fallbacks, each turning the panel's ground solid: no backdrop-filter,

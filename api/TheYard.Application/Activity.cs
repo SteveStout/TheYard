@@ -39,6 +39,17 @@ public sealed record ActivityVisitor(
 /// <summary>Whether a store can keep activity right now, and if not, why, in one sentence a page can show.</summary>
 public sealed record ActivityAvailability(bool Available, string Reason);
 
+/// <summary>
+/// What keeping activity has cost a store since the process started, for a
+/// store that has a unit to count it in: request units on the document store.
+/// Beside the port rather than on it, because the relational store has no such
+/// unit and a fake in a test should not have to invent one.
+/// </summary>
+public interface IActivityCost
+{
+    (double Charge, int Operations, int Failures) Cost { get; }
+}
+
 /// <summary>Port: where activity is kept. Writes arrive in batches, never from a request thread.</summary>
 public interface IActivityStore
 {

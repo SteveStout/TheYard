@@ -472,3 +472,43 @@ personal information", and "we would only obscure personal information
 and that is not personal". A referring site names a site and not a person. A
 link opened from a PDF, the resume among them, sends no referrer, so it
 reads as typed or unknown unless the link itself carries a tag.
+
+## Addendum, 2026-09-25: what the card said it did, and what it did
+
+A read of this record against the code on 1.0.3.22 found the card promising
+three things it never showed and saying two things that had stopped being
+true. From 1.0.3.23:
+
+- **A dropped hit is counted.** The channel drops the oldest hit when it is
+  full, and with that mode the write that causes the drop still succeeds, so
+  the collector counted every offered hit as offered and nothing counted the
+  drop, though this record and the collector's own summary said it did. The
+  channel's callback for an evicted item now counts it; the report carries
+  `collector.dropped` and the Details line says it. A test fills the channel
+  past its ten thousand and reads the count.
+- **The request-unit cost is on the card.** The document adapter counted
+  what the feature cost it from the start, as "What the feature costs the
+  stores" above says the card shows, and nothing read it. The report carries
+  `cost` (request units, operations, failures since the process started)
+  when the keeper has a unit to count in, and null on the relational store,
+  which has none; the Details line says it.
+- **The retention is on the card while the store is up.** The keeper's own
+  sentence ("kept in Azure Cosmos DB with no expiry") reached the page only
+  as the reason a store was unavailable. The report carries it as
+  `retention` and the card shows it under the totals.
+- **One keeper, said so.** The Details line said "one batch per store"
+  after the 14 September addendum made every batch go to one keeper; it
+  names the keeper now, and so does the collector's summary.
+- **The About text says what the card shows.** It led with the per-store
+  lines the card drew before 1.0.3.12 and described a visitor table behind a
+  key, where the rows have been off since 13 September. It opens now with
+  visitor-days stacked by kind and says no list of visitors is shown.
+
+On the 24 September addendum's sentence "What sent them is not attributed
+here": it was true of the rows, which keep no user agent, and the sender was
+named the same day off the configuration and the kept log (activitylane,
+queue 1353): both App Services run `alwaysOn` with `healthCheckPath` set to
+`/healthz`, and the kept log held 204 loopback lines per store that day,
+every one `GET /index.html`, a median of 300 seconds apart. The card has
+named App Service as the sender since 1.0.3.11; the sentence above stays as
+it was written.

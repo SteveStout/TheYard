@@ -29,6 +29,34 @@
   stroke: var(--ring-second);
 }
 
+/* The gold marker at the fill's end (the tweaks pass, A3), shown once the arc
+   has filled; on a gold arc it takes the dark green so it still reads. */
+.marker {
+  fill: var(--ring-marker);
+  opacity: 0;
+  transition: opacity var(--ring-fill-time) ease var(--ring-fill-time);
+}
+
+.markerShown {
+  opacity: 1;
+}
+
+.markerOnGold {
+  fill: var(--ring-first);
+}
+
+/* The graduations round a large ring (B2): hairlines in the axis colour, the quarters heavier. */
+.tick {
+  stroke: var(--color-mark-axis);
+  stroke-width: 1;
+  opacity: 0.45;
+}
+
+.tickMajor {
+  opacity: 1;
+  stroke-width: 1.5;
+}
+
 .inside {
   fill: var(--color-heading);
   font-family: inherit;
@@ -56,7 +84,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arc {
+  .arc,
+  .marker {
     transition: none;
   }
 }

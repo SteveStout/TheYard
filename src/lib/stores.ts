@@ -93,6 +93,24 @@ export function note(stores: Stores): string {
 }
 
 /**
+ * The note's short form, under 1280 (the tweaks pass, A6): the site and the
+ * store serving it, "SQL site · Azure SQL Database", so the band never cuts a
+ * sentence with an ellipsis; the whole sentence stays the note's title.
+ */
+export function shortNote(stores: Stores): string {
+  const current = stores.stores.find((store) => store.key === stores.current);
+  if (!current) return '';
+  if (!current.ready) return `${current.name} did not come up`;
+  const family = FAMILIES.find((candidate) => candidate.key === siteStore(stores)?.key);
+  return family ? `${family.label} site · ${current.name}` : current.name;
+}
+
+/** How many of the stores this container runs came up, for the words beside the bar's ring (A3). */
+export function readyCount(stores: Stores): { up: number; of: number } {
+  return { up: stores.stores.filter((store) => store.ready).length, of: stores.stores.length };
+}
+
+/**
  * The other site, when the server names one: its origin and the host to show,
  * because the host is what tells the two sites apart. An address the browser
  * cannot parse, or one that is not http or https, is not a link.

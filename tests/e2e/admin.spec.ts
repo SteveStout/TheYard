@@ -459,6 +459,30 @@ test('a pin keeps a second card beside the open one, by address, and unpinning d
   await expect(page.getByTestId('bench-pinned')).toHaveAttribute('data-card', 'health');
 });
 
+test('Pin sits in the card header beside Previous and Next, and This hour stands only with the home, timing and traffic cards (the tweaks pass, A7)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=admin&card=errors');
+  await expect(page.getByTestId('errors-card')).toBeVisible();
+  const row = await page.evaluate(() => {
+    const top = (id: string) =>
+      document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1;
+    return { pin: top('bench-pin'), previous: top('bench-previous'), next: top('bench-next') };
+  });
+  expect(Math.abs(row.pin - row.previous)).toBeLessThanOrEqual(2);
+  expect(Math.abs(row.pin - row.next)).toBeLessThanOrEqual(2);
+  // The lone Pin row over the card is gone.
+  await expect(page.getByTestId('bench-open').getByTestId('bench-pin')).toHaveCount(0);
+  await expect(page.getByTestId('bench-hour')).toHaveCount(0);
+  for (const card of ['health', 'timing', 'traffic']) {
+    await openCard(page, card);
+    await expect(page.getByTestId('bench-hour')).toHaveCount(1);
+  }
+  await openCard(page, 'sql');
+  await expect(page.getByTestId('bench-hour')).toHaveCount(0);
+});
+
 test('the tab reads what the strip and the open card need, and a card is fetched when it is opened (the workbench)', async ({
   page,
 }) => {
@@ -673,8 +697,18 @@ test('the activity graph draws at the top of the tab and its response names nobo
   // What people asked for is named by page; the collector is one line with its numbers behind Details.
   await expect(card.getByTestId('activity-asked-for')).toContainText('What people asked for');
   await expect(card.getByTestId('activity-collector')).toContainText(
-    /Collector (fine|: \d+ batches failed)/
+    /Collector (fine|: \d+ batches failed|: [\d,]+ hits dropped)/
   );
+  // Behind Details: the drop count and the one keeper, not "one batch per store";
+  // the keeper's retention on the card while the store is up (25 September).
+  await expect(card.getByTestId('activity-collector-details')).toContainText(
+    /[\d,]+ dropped by a full queue/
+  );
+  await expect(card.getByTestId('activity-collector-details')).toContainText(
+    'as one batch to the keeper'
+  );
+  await expect(card.getByTestId('activity-collector-details')).not.toContainText('per store');
+  await expect(card.getByTestId('activity-retention')).toContainText(/^Rows kept in /);
   // All traffic stacks the three kinds, bottom to top, with a legend naming them.
   for (const kind of ['people', 'scanners', 'self']) {
     await expect(card.getByTestId(`activity-band-${kind}`)).toHaveCount(1);

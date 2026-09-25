@@ -122,29 +122,54 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
   await expect(page.getByTestId('ribbons')).toHaveCount(1);
   await openTheYard(page, '/?doc=color-style');
   await expect(page.getByTestId('ribbons')).toHaveCount(1);
-  // Every document carries the ground and stands its words on panels over it (1.0.2.0).
-  await expect(page.getByTestId('ribbons-dialog')).toHaveCount(1);
-  // Each copy paints from its own gradients and filters: the two once shared their names, a
-  // reference found the dialog's first, and Chrome drew the page's ribbons blank behind it.
-  for (const id of ['ribbons', 'ribbons-dialog']) {
-    const own = await page.getByTestId(id).evaluate((layer) =>
-      Array.from(
-        layer.querySelectorAll('[stroke^="url("], [fill^="url("], [filter^="url("]')
-      ).every((node) => {
+  // Every document stands its words on frosted reading panels inside a clear sheet
+  // (the tweaks pass, B1b): the page's own ground reads through the sheet, so the
+  // dialog carries no copy of the drawing and nothing dims the page behind it.
+  await expect(page.getByTestId('ribbons-dialog')).toHaveCount(0);
+  const own = await page.getByTestId('ribbons').evaluate((layer) =>
+    Array.from(layer.querySelectorAll('[stroke^="url("], [fill^="url("], [filter^="url("]')).every(
+      (node) => {
         const value =
           node.getAttribute('stroke') ?? node.getAttribute('fill') ?? node.getAttribute('filter');
         const name = /url\(#([^)]+)\)/.exec(value ?? '')?.[1];
         const target = name === undefined ? null : document.getElementById(name);
         return target !== null && layer.contains(target);
-      })
-    );
-    expect(own, `${id} paints from its own gradients`).toBe(true);
-  }
+      }
+    )
+  );
+  expect(own, 'the ribbons paint from their own gradients').toBe(true);
   await expect(page.getByTestId('doc-page').locator('.doc-panel').first()).toBeVisible();
-  // The Author page carries its own copy, fixed to its dialog, so the ground shows behind it too.
+  // Read until the document has settled: a panel read while the renderer replaces it is a
+  // detached node, whose computed ground is empty (the gate's first try at 1418).
+  await expect(async () => {
+    const sheet = await page
+      .getByTestId('doc-page')
+      .locator('.doc-panel')
+      .first()
+      .evaluate((panel) => {
+        const dialog = panel.closest('dialog') ?? panel;
+        return {
+          sheet: getComputedStyle(dialog).backgroundColor,
+          dim: getComputedStyle(dialog, '::backdrop').backgroundColor,
+          panel: getComputedStyle(panel).backgroundColor,
+        };
+      });
+    expect(sheet.sheet).toBe('rgba(255, 255, 255, 0.1)');
+    expect(sheet.dim).toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
+    expect(sheet.panel).toBe('rgba(255, 255, 255, 0.78)');
+  }).toPass({ timeout: 15_000 });
+  // The Author page reads the same way: the sheet clear, the panels frosted.
   await openTheYard(page, '/?doc=author');
-  await expect(page.getByTestId('ribbons-dialog')).toHaveCount(1);
-  await expect(page.getByTestId('ribbons-dialog')).toBeVisible();
+  await expect(page.getByTestId('ribbons-dialog')).toHaveCount(0);
+  await expect(page.locator('dialog[open] .author-panel').first()).toBeVisible();
+  await expect(async () => {
+    expect(
+      await page
+        .locator('dialog[open] .author-panel')
+        .first()
+        .evaluate((panel) => getComputedStyle(panel).backgroundColor)
+    ).toBe('rgba(255, 255, 255, 0.78)');
+  }).toPass({ timeout: 15_000 });
 
   // A phone: the rail is the drawer, so the ribbons run from the screen's edge.
   await page.setViewportSize({ width: 375, height: 812 });

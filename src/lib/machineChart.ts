@@ -92,12 +92,72 @@ export function readoutLine(name: string, value: number | null, unit?: string): 
   return `${name}: ${shown}${unit === undefined ? '' : unit === '%' ? '%' : ` ${unit}`}`;
 }
 
-/** The quarter lines of the fine grid behind a chart, as heights in the drawing. */
-export function gridHeights(): number[] {
-  const innerHeight = MACHINE_CHART.height - MACHINE_CHART.top - MACHINE_CHART.bottom;
-  return [0.25, 0.5, 0.75].map((share) => MACHINE_CHART.top + innerHeight * share);
-}
 // #endregion readout
+
+// #region mark-vii
+/**
+ * The Mark VII grammar's graduations (the tweaks pass, B2), in place of the
+ * grid the charts drew until 1.0.3.23: ticks outside the plot on both axes, a
+ * major one 6 units long and a minor one 3. Up the side, the quarters, major
+ * at nothing, half and the ceiling; along the bottom, the labelled slots major
+ * and eight even steps minor.
+ */
+export function markTicks(
+  count: number
+): { key: string; x1: number; y1: number; x2: number; y2: number; major: boolean }[] {
+  const innerHeight = MACHINE_CHART.height - MACHINE_CHART.top - MACHINE_CHART.bottom;
+  const bottom = MACHINE_CHART.height - MACHINE_CHART.bottom;
+  const up = [0, 0.25, 0.5, 0.75, 1].map((share) => {
+    const major = share === 0 || share === 0.5 || share === 1;
+    const y = Math.round((bottom - innerHeight * share) * 10) / 10;
+    return {
+      key: `y${share}`,
+      x1: MACHINE_CHART.left - (major ? 6 : 3),
+      y1: y,
+      x2: MACHINE_CHART.left,
+      y2: y,
+      major,
+    };
+  });
+  const labelled = new Set(ticks(count));
+  const along: { key: string; x1: number; y1: number; x2: number; y2: number; major: boolean }[] =
+    [];
+  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
+  for (let step = 0; step <= 8; step++) {
+    const x = Math.round((MACHINE_CHART.left + (innerWidth * step) / 8) * 10) / 10;
+    along.push({ key: `m${step}`, x1: x, y1: bottom, x2: x, y2: bottom + 3, major: false });
+  }
+  for (const index of labelled) {
+    const x = Math.round(xOf(index, count) * 10) / 10;
+    along.push({ key: `x${index}`, x1: x, y1: bottom, x2: x, y2: bottom + 6, major: true });
+  }
+  return [...up, ...along];
+}
+
+/** A series' highest reading and where it is drawn, for the callout; null when nothing rose above zero. */
+export function peakOf(
+  points: ChartPoint[],
+  ceiling: number
+): { index: number; value: number; x: number; y: number } | null {
+  let index = -1;
+  let value = 0;
+  points.forEach((point, at) => {
+    if (point.value !== null && point.value > value) {
+      value = point.value;
+      index = at;
+    }
+  });
+  if (index < 0 || ceiling <= 0) return null;
+  const innerHeight = MACHINE_CHART.height - MACHINE_CHART.top - MACHINE_CHART.bottom;
+  const y = MACHINE_CHART.top + innerHeight - (Math.min(value, ceiling) / ceiling) * innerHeight;
+  return {
+    index,
+    value,
+    x: Math.round(xOf(index, points.length) * 10) / 10,
+    y: Math.round(y * 10) / 10,
+  };
+}
+// #endregion mark-vii
 
 /** Up to three evenly spaced indexes to label, first and last always. */
 export function ticks(count: number): number[] {

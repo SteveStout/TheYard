@@ -15,7 +15,7 @@ import {
 import styles from '../AdminPanel.module.css';
 import type { Machines, Fetched } from './types';
 import { About } from './common';
-import { MachineChart, youngRecord } from './charts';
+import { BarGauge, MachineChart, youngRecord } from './charts';
 
 export default function MachinesCard({
   machines,
@@ -105,6 +105,14 @@ function MachinesBody({
             {latest.gen2_collections} full ones since this container started. Peak working set in
             the window: {peak} MB.
           </p>
+          <BarGauge
+            testId="machines-memory-gauge"
+            name="Memory"
+            ceiling={`${machines.container.memory_limit_mb.toLocaleString()} MB`}
+            value={latest.working_set_mb}
+            max={machines.container.memory_limit_mb}
+            reading={`${Math.round((latest.working_set_mb / Math.max(1, machines.container.memory_limit_mb)) * 100)} % · ${latest.working_set_mb.toLocaleString()} MB`}
+          />
           {machines.container.catalogues && machines.container.catalogues.length > 0 && (
             // Most of that memory is catalogues, a hundred thousand vehicles a
             // store, so the card says which ones the process is holding. The
@@ -156,11 +164,21 @@ function MachinesBody({
               <thead>
                 <tr>
                   <th scope="col">At</th>
-                  <th scope="col">Working set</th>
-                  <th scope="col">Managed</th>
-                  <th scope="col">Heap</th>
-                  <th scope="col">Processors</th>
-                  <th scope="col">Threads</th>
+                  <th scope="col" className={styles.num}>
+                    Working set
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Managed
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Heap
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Processors
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Threads
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -170,13 +188,13 @@ function MachinesBody({
                   .map((sample) => (
                     <tr key={sample.at}>
                       <td className={styles.mono}>{new Date(sample.at).toLocaleTimeString()}</td>
-                      <td className={styles.mono}>{sample.working_set_mb} MB</td>
-                      <td className={styles.mono}>{sample.managed_mb} MB</td>
-                      <td className={styles.mono}>{sample.heap_mb} MB</td>
-                      <td className={styles.mono}>
+                      <td className={`${styles.mono} ${styles.num}`}>{sample.working_set_mb} MB</td>
+                      <td className={`${styles.mono} ${styles.num}`}>{sample.managed_mb} MB</td>
+                      <td className={`${styles.mono} ${styles.num}`}>{sample.heap_mb} MB</td>
+                      <td className={`${styles.mono} ${styles.num}`}>
                         {sample.cpu_percent === null ? 'first' : `${sample.cpu_percent}%`}
                       </td>
-                      <td className={styles.mono}>{sample.threads}</td>
+                      <td className={`${styles.mono} ${styles.num}`}>{sample.threads}</td>
                     </tr>
                   ))}
               </tbody>
@@ -277,6 +295,15 @@ function MachinesBody({
             below is what each minute would be of one second of that. There is no memory or
             processor reading here: the store is sold by request unit and reports neither.
           </p>
+          <BarGauge
+            testId="machines-ru-gauge"
+            name="Request units"
+            ceiling={`${machines.document.free_request_units_per_second.toLocaleString()} / s free`}
+            value={machines.document.request_units}
+            max={machines.document.free_request_units_per_second}
+            reading={`${machines.document.request_units.toLocaleString()} in the ring`}
+            tone="gold"
+          />
           <MachineChart
             testId="machine-chart-document"
             label="What the document store charged, request units a minute"

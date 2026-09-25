@@ -110,11 +110,12 @@ function TrafficCard({
               label={`Requests answered with an error over the ${stretch}, a minute: a server error is the site failing, a turned-away request is one it refused`}
               axisUnit={TRAFFIC_CHARTS.errors.unit}
               window={window_}
-              tones={['bad', 'third']}
+              tones={['bad', 'second']}
               series={[
                 series('5xx', TRAFFIC_CHARTS.errors.server, (slot) => slot.server_errors),
                 series('4xx', TRAFFIC_CHARTS.errors.turnedAway, (slot) => slot.client_errors),
               ]}
+              callout={{ key: '4xx', name: 'Turned away' }}
             />
           </section>
           <section className={styles.chartSection} data-testid="traffic-section-requests">

@@ -268,10 +268,13 @@ public static class Hits
 /// <summary>
 /// Hits off the request path. A request offers its hit to a bounded channel
 /// and goes on its way; this service drains the channel every few seconds,
-/// or sooner when it fills, and hands each store the hits it served. A full
-/// channel drops the oldest hit rather than blocking a request, because a
-/// count of visitors is never worth a visitor's time, and the drop is
-/// counted so the card can say it happened.
+/// or sooner when it fills, and writes everything queued as one batch to the
+/// keeper, each hit still naming the store that served it (14 September). A
+/// full channel drops the oldest hit rather than blocking a request, because
+/// a count of visitors is never worth a visitor's time, and the drop is
+/// counted so the card can say it happened: the channel's own callback counts
+/// each hit it evicts, because with DropOldest the write that caused the
+/// eviction still succeeds (25 September; before then nothing counted it).
 /// </summary>
 public sealed class ActivityCollector : BackgroundService
 {
@@ -279,8 +282,7 @@ public sealed class ActivityCollector : BackgroundService
     public static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
     private const int DrainAt = 500;
 
-    private readonly Channel<ActivityHit> _channel = Channel.CreateBounded<ActivityHit>(
-        new BoundedChannelOptions(Capacity) { FullMode = BoundedChannelFullMode.DropOldest });
+    private readonly Channel<ActivityHit> _channel;
 
     private readonly IReadOnlyDictionary<string, IActivityStore> _stores;
     private readonly ILogger<ActivityCollector> _logger;
@@ -288,6 +290,7 @@ public sealed class ActivityCollector : BackgroundService
     private long _offered;
     private long _written;
     private long _failedBatches;
+    private long _dropped;
     private DateTimeOffset? _lastWrite;
 
     /// <summary>
@@ -305,6 +308,9 @@ public sealed class ActivityCollector : BackgroundService
         _stores = stores;
         KeeperKey = keeperKey;
         _logger = logger;
+        _channel = Channel.CreateBounded<ActivityHit>(
+            new BoundedChannelOptions(Capacity) { FullMode = BoundedChannelFullMode.DropOldest },
+            _ => Interlocked.Increment(ref _dropped));
     }
 
     public ActivityCollector(IReadOnlyDictionary<string, IActivityStore> stores, ILogger<ActivityCollector> logger)
@@ -321,9 +327,9 @@ public sealed class ActivityCollector : BackgroundService
     /// <summary>The keeper itself, or the null store when the key names nothing.</summary>
     public IActivityStore Keeper => _stores.GetValueOrDefault(KeeperKey) ?? NullActivityStore.Instance;
 
-    /// <summary>What has passed through: offered, written, batches that failed, and the last time anything was written.</summary>
-    public (long Offered, long Written, long FailedBatches, DateTimeOffset? LastWrite) Counters =>
-        (Interlocked.Read(ref _offered), Interlocked.Read(ref _written), Interlocked.Read(ref _failedBatches), _lastWrite);
+    /// <summary>What has passed through: offered, written, batches that failed, hits a full channel dropped, and the last time anything was written.</summary>
+    public (long Offered, long Written, long FailedBatches, long Dropped, DateTimeOffset? LastWrite) Counters =>
+        (Interlocked.Read(ref _offered), Interlocked.Read(ref _written), Interlocked.Read(ref _failedBatches), Interlocked.Read(ref _dropped), _lastWrite);
 
     /// <summary>Called on the request thread and returns at once.</summary>
     public void Offer(ActivityHit hit)
@@ -465,6 +471,10 @@ public static class ActivityReport
         }
 
         var counters = collector.Counters;
+        // What the feature has cost the keeper since the process started, when
+        // the keeper counts it (the document store does, in request units);
+        // null on a store that has no such unit (25 September).
+        var cost = collector.Keeper is IActivityCost costed ? costed.Cost : ((double Charge, int Operations, int Failures)?)null;
         return new
         {
             window = chosen.Name,
@@ -486,14 +496,20 @@ public static class ActivityReport
                 .Select(entry => new { path = entry.Key, requests = entry.Value }).ToList(),
             stores,
             kept_by = collector.KeeperKey,
+            // The keeper's own sentence for how long the rows are kept ("kept in
+            // Azure Cosmos DB with no expiry"), shown when the store is up, not
+            // only as the reason it is down (25 September).
+            retention = availability.Available ? availability.Reason : null,
             collector = new
             {
                 offered = counters.Offered,
                 written = counters.Written,
                 failed_batches = counters.FailedBatches,
+                dropped = counters.Dropped,
                 last_write = counters.LastWrite,
                 interval_seconds = (int)ActivityCollector.Interval.TotalSeconds,
             },
+            cost = cost is { } spent ? new { request_units = spent.Charge, operations = spent.Operations, failures = spent.Failures } : null,
         };
     }
 

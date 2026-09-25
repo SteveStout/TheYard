@@ -25,9 +25,18 @@ const SITE = 'https://theyard.stevenstout.biz/';
 marked.use({
   hooks: {
     postprocess(html: string) {
-      return html
-        .replaceAll(`href="${SITE}`, 'href="/')
-        .replace(/<a href="(?!#)/g, '<a target="_blank" rel="noopener" href="');
+      return (
+        html
+          .replaceAll(`href="${SITE}`, 'href="/')
+          .replace(/<a href="(?!#)/g, '<a target="_blank" rel="noopener" href="')
+          // Every table in a scroller of its own (the tweaks pass, A1), reachable
+          // from the keyboard, so a phone scrolls a wide table and never breaks a word.
+          .replaceAll(
+            '<table>',
+            '<div class="table-scroll" role="group" aria-label="Table, scrolls sideways" tabindex="0"><table>'
+          )
+          .replaceAll('</table>', '</table></div>')
+      );
     },
   },
 });

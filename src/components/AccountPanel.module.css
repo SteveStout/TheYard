@@ -6,6 +6,17 @@
   gap: var(--space-4);
 }
 
+/* At 1024 and up the head and the card are one centred column (the tweaks pass,
+   A8): the title and Back sat at the canvas's left edge over a card in its
+   middle, which read as two layouts. */
+@media (min-width: 1024px) {
+  .wrap {
+    width: 100%;
+    max-width: 560px;
+    margin-inline: auto;
+  }
+}
+
 /* The head is the Admin tab's head, rule for rule. Two view switches that
    look different are two views; these are one application. */
 .head {

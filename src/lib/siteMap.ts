@@ -194,9 +194,9 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       menu: 'author',
       icon: 'author',
       group: 'who',
-      // His resume's own words (1.0.2.0), so the tile says what he is rather than that he exists.
-      blurb:
-        'Staff-level .NET engineer who owns platform architecture end to end, twelve years full stack and seven fully remote.',
+      // His resume's own words (1.0.2.0), so the tile says what he is rather than that he exists;
+      // cut to two lines at 1024 in the tweaks pass (A10), where it took four beside Inventory's two.
+      blurb: 'Staff-level .NET engineer, twelve years full stack, seven fully remote.',
       featured: true,
       featuredRank: 2,
       // The vineyard selfie of Steve and Katie (Steve, 2026-09-22: option A).

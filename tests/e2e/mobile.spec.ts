@@ -21,7 +21,7 @@ test('a phone gets one hamburger and no rail', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Admin', exact: true })).toBeHidden();
 });
 
-test('the drawer lists every menu, opens a doc full-screen on white, and closes on Escape', async ({
+test('the drawer lists every menu, opens a doc full-screen on a clear sheet with frosted panels, and closes on Escape', async ({
   page,
 }) => {
   await openTheYard(page);
@@ -59,11 +59,21 @@ test('the drawer lists every menu, opens a doc full-screen on white, and closes 
   const box = await doc.boundingBox();
   expect(box?.width).toBe(375);
   expect(box?.height).toBe(812);
-  // Read on white, not over the page behind it: 1.0.3.19 let the phone's half-white glass
-  // through, and the landing page showed between a document's panels.
-  expect(await doc.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
-    'rgb(255, 255, 255)'
-  );
+  // The sheet is clear and the reading panels carry the frost edge to edge (the tweaks
+  // pass, B1b, which replaced "a document on a phone read on white"): a tenth white on the
+  // sheet, 78 per cent on each panel, and a panel as wide as the screen.
+  const read = await doc.evaluate((element) => {
+    const panel = element.querySelector('.doc-panel');
+    const box = panel?.getBoundingClientRect();
+    return {
+      sheet: getComputedStyle(element).backgroundColor,
+      panel: panel === null ? '' : getComputedStyle(panel).backgroundColor,
+      width: box?.width ?? 0,
+    };
+  });
+  expect(read.sheet).toBe('rgba(255, 255, 255, 0.1)');
+  expect(read.panel).toBe('rgba(255, 255, 255, 0.78)');
+  expect(read.width).toBeGreaterThanOrEqual(373);
 
   await page.keyboard.press('Escape');
   await expect(doc).toBeHidden();
@@ -157,7 +167,7 @@ test('the phone header has its own decision record, reachable from the drawer', 
   ).toBeVisible();
 });
 
-test('the Admin tiles are four to a row on a phone and nothing on the tab is wider than the phone', async ({
+test('the Admin tiles are two to a row on a phone and nothing on the tab is wider than the phone', async ({
   page,
 }) => {
   // The traffic card open and the machines card pinned under it: the two widest cards on the tab.
@@ -166,18 +176,17 @@ test('the Admin tiles are four to a row on a phone and nothing on the tab is wid
   await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
     timeout: 45_000,
   });
-  // Two rows of four (the workbench): the first four side by side and the same size, the fifth under the first,
-  // in the strip's own order (version, health, pages, speed, then visitors to start the second row).
+  // Four rows of two (the tweaks pass, A2; two rows of four until then, when a label took three
+  // lines in an 80 px tile): the first two side by side and the same size, the third under the
+  // first, in the strip's own order.
   const tiles = strip.locator('li > [data-testid^="tile-"]');
   await expect(tiles).toHaveCount(8);
-  const boxes = await Promise.all([0, 1, 2, 3, 4].map((index) => tiles.nth(index).boundingBox()));
-  for (const box of boxes.slice(1, 4)) {
-    expect(box?.y).toBe(boxes[0]?.y);
-    expect(box?.width).toBe(boxes[0]?.width);
-  }
-  expect(boxes[4]?.x).toBe(boxes[0]?.x);
-  expect(boxes[4]?.y ?? 0).toBeGreaterThan(boxes[0]?.y ?? 0);
-  expect((boxes[3]?.x ?? 0) + (boxes[3]?.width ?? 0)).toBeLessThanOrEqual(375);
+  const boxes = await Promise.all([0, 1, 2].map((index) => tiles.nth(index).boundingBox()));
+  expect(boxes[1]?.y).toBe(boxes[0]?.y);
+  expect(boxes[1]?.width).toBe(boxes[0]?.width);
+  expect(boxes[2]?.x).toBe(boxes[0]?.x);
+  expect(boxes[2]?.y ?? 0).toBeGreaterThan(boxes[0]?.y ?? 0);
+  expect((boxes[1]?.x ?? 0) + (boxes[1]?.width ?? 0)).toBeLessThanOrEqual(375);
   // The traffic card's four numbers wear the same look and keep the same rule: two to a row.
   const stats = page.getByTestId('traffic-stats');
   await expect(stats).toBeVisible({ timeout: 60_000 });
@@ -273,49 +282,20 @@ test('the Admin and Account pills are a thumb tall on a phone', async ({ page })
   }).toPass();
 });
 
-test('the first screen on a phone says what this is, who built it and where the resume is (ADR: The glass look)', async ({
+test('the landing page says what this is and who built it, and the inventory carries no welcome banner (the tweaks pass, A4)', async ({
   page,
 }) => {
+  // The landing page owns the sentence; the inventory opens on its own title and filters.
+  await openTheYard(page, '/');
+  const landing = page.getByTestId('landing');
+  await expect(landing).toBeVisible();
+  await expect(landing).toContainText('Steven Stout');
+  const lede = await landing.locator('p').first().boundingBox();
+  expect((lede?.y ?? 9999) + (lede?.height ?? 0)).toBeLessThanOrEqual(812);
   await openTheYard(page);
-  const strip = page.getByTestId('intro-strip');
-  await expect(strip).toBeVisible();
-  await expect(strip).toContainText('Steven Stout');
-  // Brand, purpose and a way to the resume, all inside the first 812 pixels, without a scroll.
-  const brand = await page
-    .getByRole('button', { name: /The Yard/ })
-    .first()
-    .boundingBox();
-  const sentence = await strip.locator('p').boundingBox();
-  const resume = page.getByTestId('intro-resume');
-  const resumeBox = await resume.boundingBox();
-  expect(brand?.y ?? 9999).toBeLessThan(812);
-  expect((sentence?.y ?? 9999) + (sentence?.height ?? 0)).toBeLessThanOrEqual(812);
-  expect((resumeBox?.y ?? 9999) + (resumeBox?.height ?? 0)).toBeLessThanOrEqual(812);
-  await expect(resume).toHaveAttribute('href', '/api/docs/resume');
-  // Everything pressable in the strip, and the hamburger over it, is a full 44 pixel target.
-  for (const target of [
-    resume,
-    page.getByTestId('intro-author'),
-    page.getByTestId('intro-built'),
-    page.getByTestId('intro-admin'),
-    page.getByTestId('intro-dismiss'),
-    page.getByRole('button', { name: 'Menu' }),
-  ]) {
-    const box = await target.boundingBox();
-    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
-  }
-  // It never covers the inventory: the title is under it, not behind it.
-  const title = await page.getByRole('heading', { level: 1, name: 'Inventory' }).boundingBox();
-  const stripBox = await strip.boundingBox();
-  expect(title?.y ?? 0).toBeGreaterThanOrEqual((stripBox?.y ?? 0) + (stripBox?.height ?? 0));
-  // Dismissed, it stays dismissed in this browser.
-  await page.getByTestId('intro-dismiss').click();
-  await expect(strip).toHaveCount(0);
-  await page.reload();
-  await expect(page.getByRole('heading', { level: 1, name: 'Inventory' })).toBeVisible({
-    timeout: 20_000,
-  });
   await expect(page.getByTestId('intro-strip')).toHaveCount(0);
+  const title = await page.getByRole('heading', { level: 1, name: 'Inventory' }).boundingBox();
+  expect((title?.y ?? 9999) + (title?.height ?? 0)).toBeLessThanOrEqual(812);
 });
 
 // #region no-sideways-scroll
@@ -353,3 +333,35 @@ test.describe('a document on a phone', () => {
   });
 });
 // #endregion no-sideways-scroll
+
+// #region vehicle-order
+// The tweaks pass (A5): under 1024 a buyer reads the bid before the photos. Title,
+// bid, photos, specifications, condition, seller, top to bottom, and the status
+// line once, in the bid panel, where the header repeated it.
+test('a vehicle on a phone reads title, bid, photos, specifications, condition, seller, the status once', async ({
+  page,
+}) => {
+  await openTheYard(page);
+  await page.locator('article button').first().click();
+  const title = page.getByRole('heading', { level: 1 });
+  await expect(title).toBeVisible();
+  await expect(page.getByTestId('vehicle-stack')).toBeVisible();
+  const tops = await page.evaluate(() => {
+    const top = (selector: string) =>
+      document.querySelector(selector)?.getBoundingClientRect().top ?? -1;
+    return [
+      top('h1'),
+      top('section[aria-label="Auction"]'),
+      top('section[aria-label="Photos"]'),
+      top('section[aria-label="Specifications"]'),
+      top('section[aria-label="Condition"]'),
+      top('section[aria-label="Seller"]'),
+    ];
+  });
+  expect(tops.every((value) => value >= 0)).toBe(true);
+  expect([...tops].sort((a, b) => a - b)).toEqual(tops);
+  // The header carries no countdown or sold chip of its own under 1024.
+  const header = page.locator('article header').first();
+  await expect(header.locator('[class*="countdown"], [class*="soldChip"]')).toHaveCount(0);
+});
+// #endregion vehicle-order

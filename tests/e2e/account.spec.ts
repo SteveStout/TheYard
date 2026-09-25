@@ -180,3 +180,19 @@ test('forgot password answers one sentence, and says so when the site cannot sen
   await expect(page.getByTestId('forgot-note')).toContainText('cannot send email');
 });
 // #endregion forgot-password
+
+// The tweaks pass (A8): at 1024 and up the head and the card are one centred column,
+// and the page calls the site a showcase, not a demo.
+test('the account card is centred at 1024 and up, and the site is a showcase', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=account');
+  const wrap = page.getByRole('region', { name: 'Account' });
+  await expect(wrap).toContainText('this is a showcase');
+  await expect(wrap).not.toContainText('this is a demo');
+  const centred = await wrap.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const parent = (element.parentElement ?? element).getBoundingClientRect();
+    return Math.abs(box.left - parent.left - (parent.right - box.right));
+  });
+  expect(centred).toBeLessThanOrEqual(2);
+});

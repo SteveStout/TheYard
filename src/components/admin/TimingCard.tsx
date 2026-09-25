@@ -49,20 +49,28 @@ export default function TimingCard({ tick }: { tick: number }) {
                 <thead>
                   <tr>
                     <th scope="col">Path</th>
-                    <th scope="col">Calls</th>
-                    <th scope="col">p50</th>
-                    <th scope="col">p95</th>
-                    <th scope="col">Slowest</th>
+                    <th scope="col" className={styles.num}>
+                      Calls
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      p50
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      p95
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Slowest
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {metrics.requests.by_path.slice(0, 15).map((timing) => (
                     <tr key={timing.path}>
                       <td className={styles.mono}>{timing.path}</td>
-                      <td>{timing.count}</td>
-                      <td>{timing.p50_ms} ms</td>
-                      <td>{timing.p95_ms} ms</td>
-                      <td>{timing.max_ms} ms</td>
+                      <td className={styles.num}>{timing.count}</td>
+                      <td className={styles.num}>{timing.p50_ms} ms</td>
+                      <td className={styles.num}>{timing.p95_ms} ms</td>
+                      <td className={styles.num}>{timing.max_ms} ms</td>
                     </tr>
                   ))}
                 </tbody>

@@ -20,8 +20,9 @@
   /* The title and its sentence sit on the glass the large tiles wear, so the
      ribbons behind them do not cross the words (Steve, 2026-09-22: "needs a
      faint background to make this more readable"). */
-  align-self: center;
-  max-width: 760px;
+  /* As wide as the rows under it (the tweaks pass, A10): a 760 px panel over
+     full-width rows read as a different page's header. */
+  align-self: stretch;
   padding: var(--space-4) var(--space-5);
 }
 
@@ -187,6 +188,9 @@
     'label label'
     'figure ring'
     'detail detail';
+  /* The figure's row is the ring's height on every tile, ring or not, so every
+     number in the row sits on one baseline (the tweaks pass, A2). */
+  grid-template-rows: auto minmax(44px, auto) auto;
   align-items: center;
   column-gap: var(--space-3);
   row-gap: 2px;
@@ -194,9 +198,14 @@
   min-width: 0;
 }
 
-/* A reading: the label in small spaced capitals over the figure. */
+/* A reading: the label in small spaced capitals over the figure, two lines
+   reserved on every tile, so "Stores, one codebase" wrapping no longer pushes
+   its number below its neighbours' (the tweaks pass, A2). */
 .proofLabel {
   grid-area: label;
+  align-self: start;
+  line-height: 1.4;
+  min-height: calc(2 * 1.4em);
 }
 
 .proofFigure {

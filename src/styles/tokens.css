@@ -52,8 +52,8 @@
   --color-border: #d8d3d4; /* the light gray, one step darker */
   --color-border-strong: #b6afb0;
   --color-text: #5e5653; /* the brown-gray, as printed */
-  --color-text-muted: #5f636c; /* the slate gray; deepened again in ADR-035, where axe found it at 4.39 on the neutral chip */
-  --color-text-faint: #61656e; /* the slate gray; deepened again in ADR-042, where axe found it at 3.82 as an ended countdown on the page ground */
+  --color-text-muted: #4a4e57; /* the slate gray; deepened in ADR-035 (4.39 on the neutral chip), and again in the tweaks pass (#5f636c until 1.0.3.23), where the 30 per cent glass over a ribbon's teal stop held #4d515a at 4.31 */
+  --color-text-faint: #4a4e57; /* folds into muted from 1.0.3.23: one grey for secondary text (ADR-042 deepened it for an ended countdown on the page ground) */
   --color-heading: #3f3a37; /* the brown-gray, deepened for weight */
 
   /* #region teal-and-gold */
@@ -116,6 +116,21 @@
   --color-who-people: #0a8f85;
   --color-who-scanners: #b8800a;
   --color-who-self: #5b78c2;
+  /* #region mark-vii */
+  /* The Admin tab's charts and gauges in the Mark VII grammar (the tweaks pass,
+     B2, from Steve's flight-panel picture): a teal and a gold series, told apart
+     by hue for colour vision and each 3:1 on white as a mark (3.72 and 3.67);
+     the dark green draws axes and ticks; a gold marks the end of a gauge's fill
+     and the callout's leader. The status colours stay for status. */
+  --color-mark-teal: #13948d;
+  --color-mark-gold: #a87f1e;
+  --color-mark-axis: #024345;
+  --color-mark-marker: #c9a24a;
+  --color-mark-track: rgba(2, 67, 69, 0.15);
+  --color-mark-bar-track: rgba(2, 67, 69, 0.08);
+  --color-mark-rule: rgba(2, 67, 69, 0.14);
+  --color-mark-tint: rgba(2, 67, 69, 0.05);
+  /* #endregion mark-vii */
   /* #endregion palette */
 
   /* Status colors carry meaning (clean, rebuilt, salvage, live) and stay
@@ -145,7 +160,7 @@
   --color-sheet-bg: #ffffff;
   --color-sheet-bg-raised: #e0ecee;
   --color-sheet-text: #5e5653;
-  --color-sheet-text-muted: #62666f;
+  --color-sheet-text-muted: #4a4e57; /* the one secondary grey, from 1.0.3.23 */
   --color-sheet-icon: #7b7f8a;
   --color-sheet-icon-active: #006360;
   --color-sheet-focus: #006360;
@@ -254,19 +269,31 @@
      fully solid. The three fallbacks under this block turn a panel solid
      white where a blur is not available or not wanted. */
   /* Transparent, "like in iron man" (Steve, 2026-09-24): the ribbons and the
-     watermark read through every panel; 0.66 until then. A phone's smaller type
-     gets a touch more fill (the operator's look, operator.css). */
-  --glass-bg: rgba(255, 255, 255, 0.42);
-  --glass-bg-phone: rgba(255, 255, 255, 0.5);
+     watermark read through every panel; 0.66 until then, 0.42 until the tweaks
+     pass (1.0.3.23), where the frost went deeper and the fill thinner. A
+     phone's smaller type gets a touch more fill (operator.css). */
+  --glass-bg: rgba(255, 255, 255, 0.3);
+  --glass-bg-phone: rgba(255, 255, 255, 0.38);
   /* Frosted (Steve, 2026-09-25, two pictures of frosted glass as the model for
      the transparency and nothing else): the ground behind a panel reads as
      soft colour, never as shapes, and a light rim lifts the edge. 7 px and 1.2
-     until then, when the ribbons read through a panel as lines. */
-  --glass-filter: blur(20px) saturate(1.5);
+     until then, when the ribbons read through a panel as lines; 20 px and 1.5
+     until the tweaks pass, which added the inner glow to the rim. */
+  --glass-filter: blur(28px) saturate(1.6);
   --glass-border: rgba(2, 67, 69, 0.18);
   --glass-shadow:
-    0 8px 24px rgba(2, 67, 69, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    0 10px 30px rgba(2, 67, 69, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55), inset 0 0 40px rgba(255, 255, 255, 0.18);
+  /* The panel's texture (the tweaks pass, B3): a 24 px hairline grid in the deep
+     teal at 3.5 per cent, inside a glass panel only, under its words. */
+  --glass-grid-line: rgba(2, 67, 69, 0.035);
+  --glass-grid-size: 24px;
+  /* The document dialog (B1b, Steve's "About Steven" picture): the dialog's own
+     sheet nearly clear and barely blurred, the reading panel inside it frosted. */
+  --dialog-sheet-bg: rgba(255, 255, 255, 0.1);
+  --dialog-sheet-filter: blur(6px);
+  --dialog-page-bg: rgba(255, 255, 255, 0.78);
+  --dialog-page-filter: blur(28px) saturate(1.5);
   --watermark-opacity: 0.1;
   --radius-glass: 10px;
   /* The one frame every photograph on the Author page wears: a gold hairline
@@ -297,9 +324,11 @@
   --readout-size: 0.6875rem;
   --readout-tracking: 0.08em;
   --readout-weight: var(--weight-medium);
-  --ring-track: var(--color-accent-soft);
-  --ring-first: var(--color-accent);
+  --ring-track: var(--color-mark-track);
+  --ring-first: var(--color-teal-deep);
   --ring-second: var(--color-gold-light);
+  --ring-marker: var(--color-mark-marker);
+  --ring-tile-size: 44px;
   --ring-fill-time: 400ms;
   /* #endregion operator-look */
 

@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchStores, note, otherSite, otherSiteAt, segments, type Stores } from './stores';
+import {
+  fetchStores,
+  note,
+  otherSite,
+  otherSiteAt,
+  readyCount,
+  segments,
+  shortNote,
+  type Stores,
+} from './stores';
 
 /**
  * The Store bar's seam (ADR: One container, both stores, and its addendum on
@@ -119,6 +128,27 @@ describe('note', () => {
       'Azure Cosmos DB did not come up'
     );
     expect(note({ current: 'nowhere', stores: both.stores })).toBe('');
+  });
+});
+
+describe('the short note and the ready count (the tweaks pass, A3 and A6)', () => {
+  it('names the site and the store in a few words, and says when the store is down', () => {
+    expect(shortNote(both)).toBe('SQL site · Azure SQL Database');
+    expect(shortNote({ ...both, current: 'cosmos' })).toBe('SQL site · Azure Cosmos DB');
+    const down = { ...both.stores[1], ready: false };
+    expect(shortNote({ current: 'cosmos', stores: [both.stores[0], down] })).toBe(
+      'Azure Cosmos DB did not come up'
+    );
+    expect(shortNote({ current: 'nowhere', stores: both.stores })).toBe('');
+  });
+
+  it('counts the stores that came up of those the container runs', () => {
+    expect(readyCount(both)).toEqual({ up: 2, of: 2 });
+    const down = { ...both.stores[1], ready: false };
+    expect(readyCount({ current: 'sql', stores: [both.stores[0], down] })).toEqual({
+      up: 1,
+      of: 2,
+    });
   });
 });
 

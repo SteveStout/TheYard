@@ -46,20 +46,28 @@ export default function ExperimentCard({ tick }: { tick: number }) {
                 <thead>
                   <tr>
                     <th scope="col">Query</th>
-                    <th scope="col">Partitions</th>
-                    <th scope="col">Charge</th>
-                    <th scope="col">Took</th>
-                    <th scope="col">Documents</th>
+                    <th scope="col" className={styles.num}>
+                      Partitions
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Charge
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Took
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Documents
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {experiment.rows.map((row) => (
                     <tr key={row.query}>
                       <td>{row.query}</td>
-                      <td className={styles.mono}>{row.partitions}</td>
-                      <td className={styles.mono}>{row.request_charge} RU</td>
-                      <td className={styles.mono}>{row.duration_ms} ms</td>
-                      <td className={styles.mono}>{row.documents}</td>
+                      <td className={`${styles.mono} ${styles.num}`}>{row.partitions}</td>
+                      <td className={`${styles.mono} ${styles.num}`}>{row.request_charge} RU</td>
+                      <td className={`${styles.mono} ${styles.num}`}>{row.duration_ms} ms</td>
+                      <td className={`${styles.mono} ${styles.num}`}>{row.documents}</td>
                     </tr>
                   ))}
                 </tbody>

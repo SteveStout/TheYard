@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchStores, note, segments, type Stores } from '../lib/stores';
+import { fetchStores, note, readyCount, segments, shortNote, type Stores } from '../lib/stores';
 import { Ring } from './Ring';
 import styles from './StoreBar.module.css';
 
@@ -81,25 +81,41 @@ export function StoreBar() {
         {/* The stores that came up, of those this container runs (the
             operator's look): an empty track until the answer, at its size from
             the first paint, so the band does not move when it fills. */}
-        <span className={styles.ready}>
+        <span
+          className={styles.ready}
+          title={
+            stores === null
+              ? undefined
+              : `${readyCount(stores).up} of ${readyCount(stores).of} stores ready`
+          }
+        >
           <Ring
-            value={stores === null ? 0 : stores.stores.filter((store) => store.ready).length}
-            max={stores === null ? 1 : stores.stores.length}
+            value={stores === null ? 0 : readyCount(stores).up}
+            max={stores === null ? 1 : readyCount(stores).of}
             size="tiny"
             label={
               stores === null
                 ? null
-                : `${stores.stores.filter((store) => store.ready).length} of ${stores.stores.length} stores ready`
+                : `${readyCount(stores).up} of ${readyCount(stores).of} stores ready`
             }
             testId="store-bar-ready"
           />
+          {/* The count in words beside the ring (the tweaks pass, A3): a full tiny ring
+              read as a plain circle. Its room is held from the first paint. */}
+          <span className={styles.readyWords} data-testid="store-bar-ready-words">
+            {stores === null ? '' : `${readyCount(stores).up}/${readyCount(stores).of} ready`}
+          </span>
         </span>
         <span
           className={styles.note}
           data-testid="store-bar-note"
           title={stores === null ? undefined : note(stores)}
         >
-          {stores === null ? '' : note(stores)}
+          {/* The whole sentence from 1440, the short form under it (A6): no ellipsis at any width. */}
+          <span className={styles.noteLong}>{stores === null ? '' : note(stores)}</span>
+          <span className={styles.noteShort} aria-hidden="true">
+            {stores === null ? '' : shortNote(stores)}
+          </span>
         </span>
       </div>
     </div>

@@ -162,8 +162,12 @@ export default function PagesCard({
                         <th scope="col">Kind</th>
                         <th scope="col">Answered</th>
                         <th scope="col">Type</th>
-                        <th scope="col">Bytes</th>
-                        <th scope="col">Took</th>
+                        <th scope="col" className={styles.num}>
+                          Bytes
+                        </th>
+                        <th scope="col" className={styles.num}>
+                          Took
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -176,8 +180,10 @@ export default function PagesCard({
                             {entry.status === 0 ? (entry.reason ?? 'no answer') : entry.status}
                           </td>
                           <td className={styles.mono}>{entry.content_type ?? 'none'}</td>
-                          <td className={styles.mono}>{entry.bytes.toLocaleString()}</td>
-                          <td className={styles.mono}>{entry.ms} ms</td>
+                          <td className={`${styles.mono} ${styles.num}`}>
+                            {entry.bytes.toLocaleString()}
+                          </td>
+                          <td className={`${styles.mono} ${styles.num}`}>{entry.ms} ms</td>
                         </tr>
                       ))}
                     </tbody>
