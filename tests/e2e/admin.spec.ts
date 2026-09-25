@@ -483,7 +483,8 @@ test('the tab reads what the strip and the open card need, and a card is fetched
   expect(asked.filter((path) => path.includes('SqlCard'))).toEqual([]);
   await openCard(page, 'sql');
   await expect(page.getByTestId('sql-card')).toBeVisible();
-  expect(asked).toContain('/api/admin/sql');
+  // The card is drawn a moment before its read goes out (a precheck read the list in between).
+  await expect.poll(() => asked).toContain('/api/admin/sql');
   expect(asked.filter((path) => path.includes('SqlCard')).length).toBeGreaterThan(0);
 });
 // #endregion workbench

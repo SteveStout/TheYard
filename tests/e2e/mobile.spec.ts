@@ -225,6 +225,30 @@ test('on a phone the Admin cards are a drawer behind the Cards button, and a car
   expect(overflow).toBe(0);
 });
 
+test('on a phone the Admin tab holds a screen while its chunk is on the way, so the footer stays below it', async ({
+  page,
+}) => {
+  // A phone that waited 1.9 s for the tab's chunk saw the footer on its first screen and then
+  // pushed off it when the tab arrived (0.062 of shift on 1.0.3.21). The chunk is held back here.
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/AdminPanel/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  // Not openTheYard: it waits for the page's load event, and a built page counts the held chunk
+  // in that (its preload), so it would wait for the release this test gives only after reading.
+  await page.goto('/?view=admin', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByText('Reading the machines...')).toBeVisible();
+  const footer = await page.locator('[data-frame="footer"]').boundingBox();
+  expect(footer, 'the footer is drawn while the tab is on its way').not.toBeNull();
+  expect(footer?.y ?? 0).toBeGreaterThanOrEqual(812);
+  release();
+  await expect(page.getByTestId('workbench')).toBeVisible();
+});
+
 test('the Admin and Account pills are a thumb tall on a phone', async ({ page }) => {
   // 44 px is the touch target the intro strip's pills already meet; on the desk
   // the same pills stay at 34 so the Admin rows stay dense (Steve, 2026-09-22).
