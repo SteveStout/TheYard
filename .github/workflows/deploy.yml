@@ -286,3 +286,34 @@ jobs:
           cache-to: type=gha,scope=theyard,mode=max
           provenance: false
       # #endregion cache-export
+      # #region keep-ten
+      # The registry keeps the newest ten images and nothing else (Steve, 25
+      # September: "we only want the last 10 deployments"). ACR Tasks are refused
+      # on this subscription, so acr purge cannot run on a schedule; the deploy
+      # prunes instead, after the site answers. It deletes nothing if it reads
+      # fewer than ten tagged images or if either site runs an image outside the
+      # newest ten, and a refusal to delete never fails the deploy.
+      - name: Keep the newest ten images
+        continue-on-error: true
+        env:
+          COSMOS_APP: APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2
+        run: |
+          set -euo pipefail
+          meta=$(az acr manifest list-metadata -r "$REGISTRY_NAME" -n theyard --orderby time_desc -o json)
+          tagged=$(echo "$meta" | jq '[.[] | select((.tags // []) | length > 0)] | length')
+          if [ "$tagged" -lt 10 ]; then echo "$tagged tagged images; nothing pruned"; exit 0; fi
+          keep=$(echo "$meta" | jq -r '[.[] | select((.tags // []) | length > 0)] | .[0:10] | .[].digest')
+          for app in "$APP" "$COSMOS_APP"; do
+            tag=$(az webapp config show -g "$RG" -n "$app" --query linuxFxVersion -o tsv | sed 's/.*://')
+            digest=$(echo "$meta" | jq -r --arg t "$tag" '.[] | select((.tags // []) | index($t)) | .digest')
+            if ! echo "$keep" | grep -qx "$digest"; then echo "$app runs $tag, outside the newest ten; nothing pruned"; exit 0; fi
+          done
+          gone=0
+          for digest in $(echo "$meta" | jq -r '.[].digest'); do
+            if ! echo "$keep" | grep -qx "$digest"; then
+              az acr repository delete -n "$REGISTRY_NAME" --image "theyard@$digest" --yes -o none
+              gone=$((gone + 1))
+            fi
+          done
+          echo "kept the newest ten images, deleted $gone"
+      # #endregion keep-ten

@@ -59,9 +59,9 @@ test('the drawer lists every menu, opens a doc full-screen on a clear sheet with
   const box = await doc.boundingBox();
   expect(box?.width).toBe(375);
   expect(box?.height).toBe(812);
-  // The sheet is clear and the reading panels carry the frost edge to edge (the tweaks
-  // pass, B1b, which replaced "a document on a phone read on white"): a tenth white on the
-  // sheet, 78 per cent on each panel, and a panel as wide as the screen.
+  // On a phone the sheet is frosted edge to edge, title bar included (1.0.3.24: the clear
+  // sheet of the tweaks pass put dark type over the page's dark header), 78 per cent on
+  // the sheet and on each panel, and a panel as wide as the screen.
   const read = await doc.evaluate((element) => {
     const panel = element.querySelector('.doc-panel');
     const box = panel?.getBoundingClientRect();
@@ -71,7 +71,7 @@ test('the drawer lists every menu, opens a doc full-screen on a clear sheet with
       width: box?.width ?? 0,
     };
   });
-  expect(read.sheet).toBe('rgba(255, 255, 255, 0.1)');
+  expect(read.sheet).toBe('rgba(255, 255, 255, 0.78)');
   expect(read.panel).toBe('rgba(255, 255, 255, 0.78)');
   expect(read.width).toBeGreaterThanOrEqual(373);
 

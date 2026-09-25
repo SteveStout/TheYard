@@ -243,11 +243,16 @@
 }
 
 /* #region doc-tables */
-/* A document's table (the tweaks pass, A1): in a scroller of its own, at least
-   as wide as its columns kept whole (a text column is never narrower than a
-   short phrase), the first column and every right-aligned number on one line,
-   the header a 2 px rule with small capitals over it and the rows parted by a
-   hairline, where it was a grey block over a grid of borders. */
+/* A document's table (the tweaks pass, A1, and Steve's correction the same
+   morning: "as much as possible we want to eliminate horizontal scrolling ...
+   especially on desktop"). Words wrap between themselves and never inside one,
+   every column wraps, so a table is as wide as its panel and no wider; only a
+   right-aligned number stays on one line. The scroller markdown.ts puts round
+   it is a last resort for a phone and a table of long unbroken names. The
+   header is a 2 px rule with small capitals over it and the rows are parted by
+   a hairline, where it was a grey block over a grid of borders. 1.0.3.23 kept
+   the first column on one line, and a record whose first column is sentences
+   ran off the side of the dialog. */
 .prose :global(.table-scroll) {
   max-width: 100%;
   overflow-x: auto;
@@ -273,7 +278,6 @@
   border: 0;
   border-bottom: 1px solid var(--color-mark-rule);
   vertical-align: top;
-  min-width: 8rem;
 }
 
 .prose th {
@@ -284,20 +288,12 @@
   font-weight: var(--weight-semibold);
   letter-spacing: var(--readout-tracking);
   text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.prose td:first-child,
-.prose th:first-child,
-.prose td[align='right'],
-.prose th[align='right'] {
-  min-width: 0;
-  white-space: nowrap;
 }
 
 .prose td[align='right'],
 .prose th[align='right'] {
   text-align: right;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 

@@ -80,6 +80,7 @@ async function everyPage(
           facts.twice.length ? `an id used twice ${facts.twice.join(', ')}` : '',
           facts.lost.length ? `a drawing's reference lost ${facts.lost.join(', ')}` : '',
           facts.anywhere.length ? `a cell breaks anywhere ${facts.anywhere.join(', ')}` : '',
+          facts.sideways.length ? `a table scrolls sideways ${facts.sideways.join(', ')}` : '',
         ].filter(Boolean);
         if (wrong.length) failures.push(`${next.address} at ${width}: ${wrong.join('; ')}`);
       }

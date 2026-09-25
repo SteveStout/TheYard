@@ -82,5 +82,9 @@ describe("the operator's look", () => {
     // The document dialog's clear sheet (B1b) is the shared glass's too.
     expect(rule('.op-glass.op-sheet')).toContain('background: var(--dialog-sheet-bg);');
     expect(rule('.op-glass.op-sheet')).toContain('backdrop-filter: var(--dialog-sheet-filter);');
+    // And frosted on a phone (1.0.3.24), where the clear sheet read as broken.
+    expect(operator).toMatch(
+      /@media \(max-width: 639px\) \{\s*\.op-glass\.op-sheet \{\s*background: var\(--dialog-page-bg\);/
+    );
   });
 });

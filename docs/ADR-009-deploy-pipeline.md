@@ -193,3 +193,7 @@ The build step used to write every layer to the build cache (mode=max) before it
 
 ```live path=.github/workflows/deploy.yml region=cache-export
 ```
+
+## Addendum, 2026-09-25: the registry keeps the newest ten images
+
+Steve: "make sure and add default pruning we only want the last 10 deployments". The registry held 212 tagged images and 23 untagged manifests, 14.1 GB against the Basic plan's 10 GiB, one image for every version since 31 August. The first choice was ACR's own purge as a scheduled ACR task; the subscription refuses ACR Tasks (`TasksOperationsNotAllowed`), so the pipeline prunes instead, in two places. After the site answers, `deploy.yml` reads the image list newest first, keeps the ten newest tagged images, and deletes every older one and every untagged manifest; it deletes nothing if it reads fewer than ten, or if either site runs an image outside the ten, and a refusal to delete marks the step and never fails the deploy. The deploy's identity holds AcrPush, which pushes and cannot delete, so that step deletes only once the identity is also granted AcrDelete on the registry, a grant that is Steve's to make. Until then, and after it as a second line, the ship script on the machine that makes every push runs the same rule after the roll with the owner's sign-in. The registry was pruned to ten by hand the same morning (tweaklane, queue 1425: 216 of 225 manifests deleted, 14.1 GB to 2.1 GB). `DeployWorkflowTests` holds the step.

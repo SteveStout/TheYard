@@ -79,6 +79,19 @@
   backdrop-filter: var(--dialog-sheet-filter);
 }
 
+/* On a phone the sheet itself is frosted (1.0.3.24, Steve: "on mobile the
+   about me page opens weird when opened from the home page"): the clear sheet
+   put the title in dark type over the page's dark header and let the home
+   page's words ghost through the gaps, so a phone's document is frost from
+   edge to edge, title bar included. */
+@media (max-width: 639px) {
+  .op-glass.op-sheet {
+    background: var(--dialog-page-bg);
+    -webkit-backdrop-filter: var(--dialog-page-filter);
+    backdrop-filter: var(--dialog-page-filter);
+  }
+}
+
 /* A panel that clips what it holds (a dialog that contains its own ground):
    the brackets stand just inside its edge, where they are not cut off. */
 .op-inset::before {

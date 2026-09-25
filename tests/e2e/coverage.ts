@@ -62,6 +62,8 @@ export type PageFacts = {
   lost: string[];
   /** Table cells that break a word anywhere (the tweaks pass, A1: "Resou rce" on a phone). */
   anywhere: string[];
+  /** On a desk, a table that scrolls sideways inside its box (Steve, 25 September: "eliminate horizontal scrolling"). */
+  sideways: string[];
 };
 
 /**
@@ -190,12 +192,24 @@ export function readPage(): PageFacts {
   }
   // A table cell wraps between words or not at all (the tweaks pass, A1): a cell that
   // computes overflow-wrap: anywhere broke "Resource" into "Resou rce" on a phone.
+  // An identifier (a path, an address, a digest, in the small .mono type) has no words to break
+  // between and may break at any character, as code does; a word may not.
   const anywhere = Array.from(document.querySelectorAll('td, th'))
     .filter((e) => !e.closest('.scalar-app'))
+    .filter((e) => !Array.from(e.classList).some((c) => /(^|_)mono(_|$)/.test(c)))
     .filter((e) => {
       const wrap = getComputedStyle(e).overflowWrap;
       return wrap === 'anywhere' || getComputedStyle(e).wordBreak === 'break-all';
     });
+  // On a desk, nothing scrolls sideways: a table's box holds the table whole (a phone may
+  // still scroll a table of long names inside its panel, as the last resort).
+  const sideways =
+    window.innerWidth < 1024
+      ? []
+      : Array.from(document.querySelectorAll('table'))
+          .filter((e) => !e.closest('.scalar-app') && visible(e))
+          .map((e) => e.parentElement ?? e)
+          .filter((box) => box.scrollWidth > box.clientWidth + 1);
   const unique = (list: Element[], label: (e: Element) => string) =>
     Array.from(new Set(list.map(label))).slice(0, 12);
   return {
@@ -211,5 +225,6 @@ export function readPage(): PageFacts {
     twice: twice.slice(0, 12),
     lost: Array.from(new Set(lost)).slice(0, 12),
     anywhere: unique(anywhere, (e) => `${name(e)} "${(e.textContent ?? '').trim().slice(0, 24)}"`),
+    sideways: unique(sideways, (e) => `${name(e)} ${e.scrollWidth} in ${e.clientWidth}`),
   };
 }

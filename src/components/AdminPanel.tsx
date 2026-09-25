@@ -24,6 +24,7 @@ import {
 import {
   afterColdStart,
   hourTiming,
+  RINGED_TILES,
   sparkCaption,
   sparkRuns,
   type StatTile,
@@ -917,17 +918,19 @@ function StatStrip({
                       whole, hidden from a screen reader because the tile says the number in
                       words. Its box is on every tile from the first paint, drawn or not, so
                       the number beside it wraps the same before the reading arrives as after. */}
-                  <span className={styles.tileRing}>
-                    {tile.ring !== undefined && (
-                      <Ring
-                        value={tile.ring.share}
-                        max={1}
-                        inside={tile.ring.label}
-                        label={null}
-                        testId="tile-ring"
-                      />
-                    )}
-                  </span>
+                  {RINGED_TILES.includes(tile.key) && (
+                    <span className={styles.tileRing}>
+                      {tile.ring !== undefined && (
+                        <Ring
+                          value={tile.ring.share}
+                          max={1}
+                          inside={tile.ring.label}
+                          label={null}
+                          testId="tile-ring"
+                        />
+                      )}
+                    </span>
+                  )}
                 </span>
                 <span className={styles.tileDetail} title={tile.detail}>
                   {tile.detail}

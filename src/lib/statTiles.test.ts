@@ -4,6 +4,7 @@ import {
   COLD_START_MINUTES,
   hourTiming,
   QUIET_BELOW_REQUESTS,
+  RINGED_TILES,
   sparkCaption,
   sparkRuns,
   tilesFrom,
@@ -382,6 +383,13 @@ describe('the stat tiles', () => {
 });
 
 describe('the ring beside a number', () => {
+  it('is drawn only on the tiles that hold its room (1.0.3.24)', () => {
+    const full = { ...quietDay, pages: { checked: 1000, up: 999 } };
+    for (const tile of tilesFrom(full)) {
+      if (tile.ring !== undefined) expect(RINGED_TILES).toContain(tile.key);
+    }
+  });
+
   it('is a share of a known whole, and only the three tiles that have one carry it', () => {
     const tiles = tilesFrom(quietDay);
     expect(tiles.filter((each) => each.ring !== undefined).map((each) => each.key)).toEqual([

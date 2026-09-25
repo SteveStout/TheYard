@@ -68,3 +68,15 @@ The inventory's welcome banner is gone from the inventory, since the landing pag
 - [`src/components/VehicleDetail.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleDetail.tsx): the order under 1024.
 - [`src/components/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/StoreBar.tsx) and [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts): the short note and the count.
 - [`tests/e2e/coverage.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/coverage.spec.ts): the cells and the strip, read on every page.
+
+## Addendum, 2026-09-25 (1.0.3.24): a ring's room only where a ring is drawn
+
+Read on the live site after 1.0.3.23 rolled: on a phone every strip tile held a ring's 44 px beside its number, drawn or not, and "under 1 ms" and "124 of 124" broke over two lines in the tiles that never draw a ring. The room is now held on the three tiles that draw one (health, pages, memory), from the first paint as before, so nothing moves when a ring arrives, and the others give the number the tile's width. `statTiles.test.ts` holds that no other tile draws a ring.
+
+## Addendum, 2026-09-25 (1.0.3.24): tables that fit, and fills you can see through
+
+Steve, on the live site after 1.0.3.23, of a record's table running off the side of its dialog: "this looks broken", and "as much as possible we want to eliminate horizontal scrolling that's a negative pattern especially on desktop". The tweaks pass kept a table's first column on one line, from a drawing whose first column was a short name; in the style page's rules table it is a sentence. From 1.0.3.24 every column wraps between words, a word still never breaks inside itself, an identifier (a path, an address, a digest, in the small .mono type) may break at any character as code does, and only a right-aligned number stays on one line, so a table is as wide as its panel. `coverage.spec` now fails any page at 1024 or wider on which a table scrolls sideways inside its box, and the cells rule excuses identifiers and nothing else.
+
+And, of the activity chart: "should the bars and graphs have slightly transparent background when they're filled in", "not the lines, the fill". The stacked bands are 55 per cent with a solid top edge in their own colour, the recruiter's path and the sources' bars 60 per cent on the gauges' faint teal track where the track was grey, and a bar gauge's fill 80 per cent, at which the white reading inside it still reads 5.5.
+
+The same morning, on a phone: "the about me page opens weird when opened from the home page". Read on the live site in Chrome and WebKit at 390: the clear sheet put the dialog's title in dark type over the page's dark teal header, and the home page's large words ghosted through between the panels. On a phone the sheet is now frosted like the reading panels, title bar included; at a desk it stays clear.

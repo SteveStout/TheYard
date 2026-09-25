@@ -28,6 +28,28 @@ public class DeployWorkflowTests
         return values;
     }
 
+    // #region keep-ten
+    /// <summary>
+    /// The registry keeps the newest ten images (Steve, 25 September). The
+    /// deploy prunes after the site answers, keeps ten, refuses to delete when
+    /// either site runs an image outside them, and never fails the deploy over
+    /// a refusal (ADR: The deploy pipeline, the addendum of 25 September).
+    /// </summary>
+    [Fact]
+    public void The_deploy_keeps_the_newest_ten_images_and_never_the_one_a_site_runs()
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
+        int step = workflow.IndexOf("- name: Keep the newest ten images", StringComparison.Ordinal);
+        Assert.True(step > 0, "deploy.yml should carry the step that keeps the newest ten images");
+        Assert.True(step > workflow.IndexOf("- name: Verify", StringComparison.Ordinal), "the prune runs after the site answers");
+        string body = workflow[step..];
+        Assert.Contains("continue-on-error: true", body, StringComparison.Ordinal);
+        Assert.Contains(".[0:10]", body, StringComparison.Ordinal);
+        Assert.Contains("if [ \"$tagged\" -lt 10 ]", body, StringComparison.Ordinal);
+        Assert.Contains("outside the newest ten; nothing pruned", body, StringComparison.Ordinal);
+    }
+    // #endregion keep-ten
+
     // #region workflows-agree
     [Fact]
     public void The_two_deploy_workflows_name_the_same_registry_group_server_database_and_identity()

@@ -130,6 +130,13 @@ const waiting = (key: string, question: TileQuestion, label: string): StatTile =
  * amber. The thresholds are this site's own, read off what it measures on a
  * quiet day, and they are here to be argued with.
  */
+/**
+ * The tiles that draw a ring, the only ones that hold a ring's room beside
+ * their number (1.0.3.24): a tile that never draws one kept an empty 44 px box
+ * and broke "under 1 ms" over two lines on a phone.
+ */
+export const RINGED_TILES: readonly string[] = ['health', 'pages', 'memory'];
+
 export const SLOW_P95_MS = 1_000;
 export const VERY_SLOW_P95_MS = 3_000;
 /**
