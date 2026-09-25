@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { INTRO } from '../lib/intro';
 import { HEALTH_WORDS, landingHealth, storesUp, type LandingHealth } from '../lib/landingHealth';
-import { proofFigures, type ProofFigure, type TestSummary } from '../lib/landingProof';
+import { proofFigures, ringReading, type ProofFigure, type TestSummary } from '../lib/landingProof';
 import { landingTiles, type LandingTile } from '../lib/siteMap';
 import { LINKS, MENUS, type DocKey } from './DocsMenu';
 import { CountUp } from './CountUp';
@@ -26,21 +26,6 @@ import styles from './Landing.module.css';
  */
 /** The two figures that are a share of a whole, and so carry a ring (the operator's look). */
 const RINGED = ['tests', 'stores'];
-
-/**
- * The reading inside a landing ring (the tweaks pass, A3): the stores as a count
- * of the whole ("2/2"), the tests as a per cent, and nothing until the reading
- * is in, so a full ring never reads as a plain circle.
- */
-function ringReading(
-  key: string,
-  ring: { value: number; max: number } | undefined
-): string | undefined {
-  if (ring === undefined || !(ring.max > 0)) return undefined;
-  return key === 'stores'
-    ? `${ring.value}/${ring.max}`
-    : `${Math.round((ring.value / ring.max) * 100)}`;
-}
 
 /** The strip's four places before the gate's counts arrive: the same boxes, blank, so nothing moves when they fill. */
 const PROOF_PLACEHOLDER: ProofFigure[] = ['tests', 'gate', 'records', 'stores'].map((key) => ({

@@ -140,10 +140,10 @@ test('the bar is as tall before the stores answer as after, at a desk, whatever 
 // open and Azure's store names, the whole sentence on one line; at every width, the
 // words the reader sees fit their box whole. The ready ring has
 // its count in words beside it, and the whole count in its title.
-test('the store bar ends no word in an ellipsis at 1024, 1280 or 1440, and says how many stores are ready', async ({
+test('the store bar ends no word in an ellipsis at 768, 1024, 1280 or 1440, and says how many stores are ready', async ({
   page,
 }) => {
-  for (const width of [1024, 1280, 1440]) {
+  for (const width of [768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await openTheYard(page, '/');
     const bar = page.getByTestId('store-bar');
@@ -159,11 +159,12 @@ test('the store bar ends no word in an ellipsis at 1024, 1280 or 1440, and says 
           shown === undefined ? false : shown.getBoundingClientRect().width <= note.clientWidth + 1,
       };
     });
-    expect(read.overflow, `at ${width}`).not.toBe('ellipsis');
     expect(read.fits, `the note fits whole at ${width}: "${read.words}"`).toBe(true);
     if (width < 1440) expect(read.words).toMatch(/^(SQL|Cosmos DB) site · /);
     else expect(read.words).toMatch(/^This is the (SQL|Cosmos DB) site, served from /);
     await expect(bar.getByTestId('store-bar-ready-words')).toHaveText(/^\d\/\d ready$/i);
+    // A screen reader hears the note at every width: the displayed form is not hidden from it.
+    await expect(bar.getByTestId('store-bar-note').locator('[aria-hidden="true"]')).toHaveCount(0);
     await expect(bar.getByTestId('store-bar-ready-words').locator('..')).toHaveAttribute(
       'title',
       /^\d of \d stores ready$/

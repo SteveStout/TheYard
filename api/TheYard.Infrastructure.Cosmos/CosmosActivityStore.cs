@@ -27,12 +27,15 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IAc
 {
     private readonly Container _container = store.ContainerNamed(Containers.Activity);
     private ActivityAvailability? _availability;
-    private double _charge;
+    // Counted from the drain thread and from every report request at once, so
+    // each move is atomic: the charge is held in hundredths of a request unit
+    // so it can move by Interlocked.Add like the two counts (25 September).
+    private long _centiUnits;
     private int _operations;
     private int _failures;
 
-    /// <summary>What this feature has cost the store since the process started: request units, operations, failures.</summary>
-    public (double Charge, int Operations, int Failures) Cost => (Math.Round(_charge, 2), _operations, _failures);
+    /// <summary>What this feature has cost the store since this process started, on this container only.</summary>
+    public ActivityCost Cost => new(Interlocked.Read(ref _centiUnits) / 100.0, Volatile.Read(ref _operations), Volatile.Read(ref _failures));
 
     // #region availability
     public async Task<ActivityAvailability> AvailabilityAsync(CancellationToken cancellation)
@@ -48,8 +51,9 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IAc
             Count(response.RequestCharge);
             string key = response.Resource.PartitionKeyPath;
             int? ttl = response.Resource.DefaultTimeToLive;
+            string retention = ttl is > 0 ? $"kept in Azure Cosmos DB for {ttl.Value / 86_400} days" : "kept in Azure Cosmos DB with no expiry";
             return _availability = key == Containers.PartitionKeyPaths[Containers.Activity]
-                ? new ActivityAvailability(true, ttl is > 0 ? $"kept in Azure Cosmos DB for {ttl.Value / 86_400} days" : "kept in Azure Cosmos DB with no expiry")
+                ? new ActivityAvailability(true, retention, retention)
                 : new ActivityAvailability(false, $"the activity container is partitioned on {key} and the code was written for /day");
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -195,7 +199,7 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IAc
             catch (CosmosException ex)
             {
                 Count(ex.RequestCharge);
-                _failures++;
+                Interlocked.Increment(ref _failures);
                 return;
             }
         }
@@ -258,7 +262,7 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IAc
 
     private void Count(double charge)
     {
-        _charge += charge;
-        _operations++;
+        Interlocked.Add(ref _centiUnits, (long)Math.Round(charge * 100));
+        Interlocked.Increment(ref _operations);
     }
 }

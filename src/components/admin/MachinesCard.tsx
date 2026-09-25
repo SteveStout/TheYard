@@ -4,6 +4,7 @@
  */
 import type { ReactNode } from 'react';
 import {
+  busiestRate,
   coverage,
   fromFirstReading,
   type MachineWindow,
@@ -291,17 +292,17 @@ function MachinesBody({
             <strong>{machines.document.request_units} request units</strong> across{' '}
             {machines.document.operations} operations in the ring, {machines.document.p50_ms} ms at
             the median and {machines.document.p95_ms} ms at the ninety-fifth. The free tier allows{' '}
-            {machines.document.free_request_units_per_second} request units a second, and the share
-            below is what each minute would be of one second of that. There is no memory or
-            processor reading here: the store is sold by request unit and reports neither.
+            {machines.document.free_request_units_per_second} request units a second, and the gauge
+            below is the busiest minute in the ring as a rate against that allowance. There is no
+            memory or processor reading here: the store is sold by request unit and reports neither.
           </p>
           <BarGauge
             testId="machines-ru-gauge"
-            name="Request units"
+            name="Request units, busiest minute"
             ceiling={`${machines.document.free_request_units_per_second.toLocaleString()} / s free`}
-            value={machines.document.request_units}
+            value={busiestRate(machines.document.minutes)}
             max={machines.document.free_request_units_per_second}
-            reading={`${machines.document.request_units.toLocaleString()} in the ring`}
+            reading={`${busiestRate(machines.document.minutes).toLocaleString()} / s`}
             tone="gold"
           />
           <MachineChart

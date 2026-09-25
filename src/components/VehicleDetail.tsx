@@ -10,6 +10,7 @@ import { ReserveBadge } from './ReserveBadge';
 import { TitleStatusBadge } from './TitleStatusBadge';
 import { VehicleImage } from './VehicleImage';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { DESK } from '../lib/breakpoints';
 import styles from './VehicleDetail.module.css';
 import { ICON } from '../lib/icons';
 
@@ -42,7 +43,9 @@ export function VehicleDetail({
 }: VehicleDetailProps) {
   const [imageIndex, setImageIndex] = useState(0);
   // A phone and a tablet read the bid before the photos (the tweaks pass, A5).
-  const narrow = useMediaQuery('(max-width: 1023px)');
+  // Only the header's countdown reads the width; the order below is CSS, so the
+  // bid panel is never remounted (and never loses a typed amount) on a rotate.
+  const narrow = !useMediaQuery(DESK);
   const timing = auctionTiming(vehicle, now);
   const alt = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
   const mainImage = vehicle.images[imageIndex] ?? vehicle.images[0];
@@ -215,32 +218,23 @@ export function VehicleDetail({
         )}
       </header>
 
-      {narrow ? (
-        // Under 1024 the bid comes first (the tweaks pass, A5): title, bid, photos,
-        // specifications, condition, seller, and the status line once, in the bid panel.
-        <div className={styles.stack} data-testid="vehicle-stack">
+      {/* One tree at every width, the bid first in it: the desk places it in the right
+          column, and under 1024 the columns dissolve so it reads title, bid, photos,
+          specifications, condition, seller (the tweaks pass, A5; the self-review of
+          25 September, where switching trees remounted the bid panel). */}
+      <div className={styles.layout} data-testid="vehicle-layout">
+        <aside className={styles.sidebar}>
           {bidPanel}
+          <div className={styles.sellerSlot}>{seller}</div>
+        </aside>
+
+        <div className={styles.content}>
           {photos}
           {titleWarning}
           {specifications}
           {condition}
-          {seller}
         </div>
-      ) : (
-        <div className={styles.layout}>
-          <div className={styles.content}>
-            {photos}
-            {titleWarning}
-            {specifications}
-            {condition}
-          </div>
-
-          <aside className={styles.sidebar}>
-            {bidPanel}
-            {seller}
-          </aside>
-        </div>
-      )}
+      </div>
     </article>
   );
 }

@@ -35,14 +35,29 @@
 }
 
 /* #region phone-dialog */
-/* Phones: the doc takes the whole screen; code blocks already scroll sideways. */
+/* Phones: the doc takes the whole screen; code blocks already scroll sideways.
+   Pinned to all four edges of the viewport rather than sized to 100dvh from the
+   top (Steve's iPhone, Chrome, 25 September, About Steven opened from the home
+   page on 1.0.3.25: the dialog sat about 100 px high, its title bar above the
+   screen and the home page's resume tile showing under its foot, the gap the
+   phone's toolbars open between a height measured once and the screen). And the
+   page behind is frosted, the reading panel's own ground, so whatever the
+   phone's toolbars do, what shows round the sheet is frost, never the page. */
 @media (max-width: 639px) {
   .dialog {
-    width: 100vw;
-    max-width: 100vw;
-    height: 100dvh;
-    max-height: 100dvh;
+    position: fixed;
+    inset: 0;
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
     margin: 0;
+  }
+
+  .dialog::backdrop {
+    background: var(--dialog-page-bg);
+    -webkit-backdrop-filter: var(--dialog-page-filter);
+    backdrop-filter: var(--dialog-page-filter);
   }
 }
 /* #endregion phone-dialog */
@@ -56,7 +71,12 @@
   border-bottom: 1px solid var(--glass-border);
   position: sticky;
   top: 0;
-  background: transparent;
+  /* The title bar is frosted at every width (the self-review of 25 September):
+     a desk's dialog opens 24 px down, and a clear bar put the dark title over
+     the page's dark header at 1.6:1, the defect 1.0.3.24 fixed on a phone. */
+  background: var(--dialog-page-bg);
+  -webkit-backdrop-filter: var(--dialog-page-filter);
+  backdrop-filter: var(--dialog-page-filter);
 }
 
 .dialogTitle {
@@ -201,9 +221,13 @@
 
 /* A table's cells wrap between words and never inside one (the tweaks pass, A1:
    "Resource" broke as "Resou rce" on a phone); the table sits in its own
-   scroller (markdown.ts wraps it), so a phone scrolls it inside the panel. */
+   scroller (markdown.ts wraps it), so a phone scrolls it inside the panel. A link
+   in a cell is words too (the self-review of 25 September); code in a cell is an
+   identifier and keeps breaking anywhere, as the .mono cells on the Admin tab do. */
 .prose td,
-.prose th {
+.prose th,
+.prose td a,
+.prose th a {
   overflow-wrap: normal;
 }
 /* #endregion no-sideways-scroll */

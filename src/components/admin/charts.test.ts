@@ -45,7 +45,9 @@ describe('a chart in the Mark VII grammar', () => {
     expect(full).toEqual([
       [MACHINE_CHART.left, 146, MACHINE_CHART.width - MACHINE_CHART.right, 146],
     ]);
-    expect(html.match(/data-testid="chart-tick"/g)?.length).toBe(17);
+    // Five up the side, three labelled slots, and six of the nine even steps: the
+    // other three sit under a labelled slot and are drawn once, as the major.
+    expect(html.match(/data-testid="chart-tick"/g)?.length).toBe(14);
     expect(html.match(/data-testid="chart-bracket"/g)?.length).toBe(2);
   });
 
@@ -59,6 +61,18 @@ describe('a chart in the Mark VII grammar', () => {
     expect(two).toContain('data-testid="chart-legend"');
   });
 
+  it('writes a single series its unit at the top of the axis, since it has no legend to carry it', () => {
+    const html = renderToStaticMarkup(
+      createElement(MachineChart, {
+        testId: 'chart',
+        label: 'a chart',
+        unit: 'request units a minute',
+        series: [{ key: 'a', name: 'A', points: slots([1, 2]) }],
+      })
+    );
+    expect(html).toMatch(/data-testid="chart-unit"[^>]*>request units a minute</);
+  });
+
   it('calls out the peak of the series it is asked to, and nothing when that series stayed at zero', () => {
     const peaked = draw(
       [
@@ -69,6 +83,8 @@ describe('a chart in the Mark VII grammar', () => {
     );
     expect(peaked).toContain('data-testid="chart-callout"');
     expect(peaked).toContain('Turned away · peak 11 at');
+    // The callout is in the drawing's name too, for a reader who cannot see it.
+    expect(peaked).toMatch(/aria-label="a chart; Turned away · peak 11 at/);
     const flat = draw([{ key: '4xx', name: 'Turned away', points: slots([0, 0]) }], {
       key: '4xx',
       name: 'Turned away',
@@ -82,12 +98,11 @@ describe('a bar gauge', () => {
     const low = renderToStaticMarkup(
       createElement(BarGauge, {
         testId: 'g',
-        name: 'Request units',
-        ceiling: '1,000 / s free',
-        value: 13.8,
-        max: 1000,
-        reading: '13.8 in the ring',
-        tone: 'gold',
+        name: 'Memory',
+        ceiling: '1,183 MB',
+        value: 120,
+        max: 1183,
+        reading: '10 % · 120 MB',
       })
     );
     const high = renderToStaticMarkup(
@@ -104,5 +119,42 @@ describe('a bar gauge', () => {
     expect(high).toContain('data-inside="true"');
     expect(low).toContain('role="meter"');
     expect(high).toContain('--gauge-share:50.7%');
+  });
+
+  it('never prints a reading on the gold fill, which no ink clears 4.5 on', () => {
+    for (const value of [5, 900]) {
+      const html = renderToStaticMarkup(
+        createElement(BarGauge, {
+          testId: 'g',
+          name: 'Request units, busiest minute',
+          ceiling: '1,000 / s free',
+          value,
+          max: 1000,
+          reading: `${value} / s`,
+          tone: 'gold',
+        })
+      );
+      expect(html).toContain('data-inside="false"');
+      const track = html.slice(html.indexOf('role="meter"'));
+      expect(track.slice(0, track.indexOf('</div>'))).not.toContain('g-reading');
+      expect(html).toContain('data-testid="g-reading"');
+    }
+  });
+
+  it('is a meter named by its name, read as the reading of the ceiling, within 0 and the ceiling', () => {
+    const html = renderToStaticMarkup(
+      createElement(BarGauge, {
+        testId: 'g',
+        name: 'Memory',
+        ceiling: '1,183 MB',
+        value: 1500,
+        max: 1183,
+        reading: 'over the plan',
+      })
+    );
+    expect(html).toContain('aria-labelledby="g-name"');
+    expect(html).toContain('id="g-name"');
+    expect(html).toContain('aria-valuetext="over the plan of 1,183 MB"');
+    expect(html).toContain('aria-valuenow="1183"');
   });
 });

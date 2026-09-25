@@ -73,19 +73,13 @@
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  grid-template-areas: 'content sidebar';
   gap: var(--space-5);
   align-items: start;
 }
 
 .content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  min-width: 0;
-}
-
-/* Under 1024 one column in the order a buyer reads (the tweaks pass, A5). */
-.stack {
+  grid-area: content;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
@@ -93,6 +87,7 @@
 }
 
 .sidebar {
+  grid-area: sidebar;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
@@ -278,13 +273,23 @@
   margin-top: var(--space-3);
 }
 
-@media (max-width: 900px) {
+/* Under 1024 one column in the order a buyer reads (the tweaks pass, A5): the
+   two columns dissolve into the layout, the bid (first in the tree) stays first
+   and the seller moves to the end. The same tree as the desk, so nothing
+   remounts when a tablet turns. */
+@media (max-width: 1023.98px) {
   .layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
 
+  .content,
   .sidebar {
-    position: static;
+    display: contents;
+  }
+
+  .sellerSlot {
+    order: 1;
   }
 }
 

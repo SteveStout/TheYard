@@ -24,7 +24,6 @@ import {
 import {
   afterColdStart,
   hourTiming,
-  RINGED_TILES,
   sparkCaption,
   sparkRuns,
   type StatTile,
@@ -599,6 +598,11 @@ function Workbench({
 }) {
   const phone = useMatches('(max-width: 599px)');
   const wide = useMatches('(min-width: 1440px)');
+  // The rail of cards stands beside the card from 1280; under it the rail is the
+  // drawer behind Cards, as on a phone (the self-review of 25 September: at 1024
+  // the site's rail and this one left a card 460 px wide, and three of its tables
+  // scrolled sideways on a desk).
+  const railInDrawer = useMatches('(max-width: 1279.98px)');
   const drawerRef = useRef<HTMLDialogElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [foldOpen, setFoldOpen] = useState(false);
@@ -638,7 +642,7 @@ function Workbench({
     if (!drawer) return;
     if (drawerOpen && !drawer.open) drawer.showModal();
     if (!drawerOpen && drawer.open) drawer.close();
-  }, [drawerOpen, phone]);
+  }, [drawerOpen, railInDrawer]);
   const openFromDrawer = (slug: CardSlug) => {
     setDrawerOpen(false);
     onOpen(slug);
@@ -647,7 +651,7 @@ function Workbench({
 
   return (
     <div className={styles.bench} data-testid="workbench">
-      {phone ? (
+      {railInDrawer ? (
         <dialog
           ref={drawerRef}
           className={styles.benchDrawer}
@@ -686,13 +690,13 @@ function Workbench({
         </nav>
       )}
       <div className={styles.benchMain}>
-        {phone && asked !== null && (
+        {railInDrawer && asked !== null && (
           <p className={styles.railNote} role="status" data-testid="bench-unknown">
             No card is called &lsquo;{asked}&rsquo;, so this is {openCard.name}.
           </p>
         )}
         <div className={styles.benchBar}>
-          {phone && (
+          {railInDrawer && (
             <button
               type="button"
               className={styles.back}
@@ -709,7 +713,9 @@ function Workbench({
           </p>
           <div className={styles.benchControls}>
             {/* Pin sits in the card's header row beside Previous and Next, where
-                the card's controls live (the tweaks pass, A7). */}
+                the card's controls live (the tweaks pass, A7). A toggle keeps its
+                name and says its state by aria-pressed and the dot, so a screen
+                reader hears "Pin, pressed" and never "Pinned, pressed". */}
             <button
               type="button"
               className={`${styles.back} ${styles.pinButton}`}
@@ -718,7 +724,7 @@ function Workbench({
               data-testid="bench-pin"
             >
               <span className={styles.pinDot} aria-hidden="true" />
-              {pin === open ? 'Pinned' : 'Pin'}
+              Pin
             </button>
             <p
               className={`${styles.stepper} op-seg`}
@@ -750,7 +756,7 @@ function Workbench({
         <div
           className={styles.benchColumns}
           data-pinned={pinShown && !phone ? 'true' : 'false'}
-          data-hour={hourBeside ? 'beside' : 'above'}
+          data-hour={!hourHere ? 'none' : hourBeside ? 'beside' : 'above'}
         >
           <div className={styles.benchColumn} data-testid="bench-open" data-card={open}>
             {render(open)}
@@ -918,7 +924,7 @@ function StatStrip({
                       whole, hidden from a screen reader because the tile says the number in
                       words. Its box is on every tile from the first paint, drawn or not, so
                       the number beside it wraps the same before the reading arrives as after. */}
-                  {RINGED_TILES.includes(tile.key) && (
+                  {tile.ringed && (
                     <span className={styles.tileRing}>
                       {tile.ring !== undefined && (
                         <Ring

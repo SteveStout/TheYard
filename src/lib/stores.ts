@@ -93,7 +93,7 @@ export function note(stores: Stores): string {
 }
 
 /**
- * The note's short form, under 1280 (the tweaks pass, A6): the site and the
+ * The note's short form, under 1440 (the tweaks pass, A6): the site and the
  * store serving it, "SQL site · Azure SQL Database", so the band never cuts a
  * sentence with an ellipsis; the whole sentence stays the note's title.
  */

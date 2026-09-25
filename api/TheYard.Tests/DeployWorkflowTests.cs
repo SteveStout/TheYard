@@ -42,11 +42,46 @@ public class DeployWorkflowTests
         int step = workflow.IndexOf("- name: Keep the newest ten images", StringComparison.Ordinal);
         Assert.True(step > 0, "deploy.yml should carry the step that keeps the newest ten images");
         Assert.True(step > workflow.IndexOf("- name: Verify", StringComparison.Ordinal), "the prune runs after the site answers");
-        string body = workflow[step..];
+        int next = workflow.IndexOf("- name:", step + 1, StringComparison.Ordinal);
+        string body = next < 0 ? workflow[step..] : workflow[step..next];
         Assert.Contains("continue-on-error: true", body, StringComparison.Ordinal);
+        Assert.Contains("timeout-minutes: 5", body, StringComparison.Ordinal);
         Assert.Contains(".[0:10]", body, StringComparison.Ordinal);
         Assert.Contains("if [ \"$tagged\" -lt 10 ]", body, StringComparison.Ordinal);
         Assert.Contains("outside the newest ten; nothing pruned", body, StringComparison.Ordinal);
+        // A refused delete (no AcrDelete) warns and ends the step green.
+        Assert.Contains("::warning::the registry refused a delete", body, StringComparison.Ordinal);
+        // Digests are fixed strings, not patterns.
+        Assert.DoesNotContain("grep -qx", body, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The prune deletes every untagged digest, which is safe only while each
+    /// digest is a whole image. Provenance or a second platform makes each image
+    /// an index whose children are untagged, and the prune would delete the
+    /// children of the ten it keeps. Every build step holds provenance off.
+    /// </summary>
+    [Fact]
+    public void Every_image_build_is_a_single_manifest_so_the_prune_deletes_whole_images()
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
+        int builds = Regex.Matches(workflow, @"uses: docker/build-push-action@").Count;
+        Assert.True(builds > 0, "deploy.yml should build an image");
+        Assert.Equal(builds, Regex.Matches(workflow, @"^\s+provenance: false\s*$", RegexOptions.Multiline).Count);
+        Assert.DoesNotContain("platforms:", workflow, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The prune reads which image the second site runs by its app name, a
+    /// third copy of that name; it has to be the one the second site's own
+    /// workflow deploys to, or the prune refuses on every run.
+    /// </summary>
+    [Fact]
+    public void The_prune_names_the_second_site_the_way_its_own_workflow_does()
+    {
+        var match = Regex.Match(File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml")), @"^\s+COSMOS_APP: (\S+)\s*$", RegexOptions.Multiline);
+        Assert.True(match.Success, "deploy.yml's prune should name the second site");
+        Assert.Equal(EnvOf("deploy-cosmos.yml")["APP"], match.Groups[1].Value);
     }
     // #endregion keep-ten
 

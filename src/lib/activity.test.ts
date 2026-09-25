@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  collectorSummary,
+  costSentence,
   CHART,
   areaPath,
   ceilingOf,
@@ -326,5 +328,37 @@ describe('unique visitors per day', () => {
     expect(grouped[1].visitors).toBe(1);
     expect(grouped[1].requests).toBe(6);
     expect(grouped[1].rows).toHaveLength(2);
+  });
+});
+
+describe('the collector in words', () => {
+  const collector = {
+    offered: 10,
+    written: 10,
+    failed_batches: 0,
+    dropped: 0,
+    last_write: null,
+    interval_seconds: 5,
+  };
+
+  it('says fine, or what went wrong first, in the right number', () => {
+    expect(collectorSummary(collector)).toBe('Collector fine');
+    expect(collectorSummary({ ...collector, failed_batches: 1, dropped: 4 })).toBe(
+      'Collector: 1 batch failed'
+    );
+    expect(collectorSummary({ ...collector, failed_batches: 3 })).toBe(
+      'Collector: 3 batches failed'
+    );
+    expect(collectorSummary({ ...collector, dropped: 1 })).toBe('Collector: 1 hit dropped');
+    expect(collectorSummary({ ...collector, dropped: 1200 })).toBe('Collector: 1,200 hits dropped');
+  });
+
+  it('says whose the cost is: this container, since it started', () => {
+    expect(costSentence({ request_units: 1234.5, operations: 80, failures: 0 })).toBe(
+      'Keeping it has cost this container 1,234.5 request units over 80 operations since it started.'
+    );
+    expect(costSentence({ request_units: 2, operations: 3, failures: 1 })).toMatch(
+      /, 1 of them failed\.$/
+    );
   });
 });

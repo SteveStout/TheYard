@@ -49,7 +49,7 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
             {
                 // The migration made them; a query proves it without a second list of names.
                 await db.ActivityHours.AsNoTracking().Take(1).ToListAsync(cancellation);
-                return _availability = new ActivityAvailability(true, "kept in SQLite");
+                return _availability = new ActivityAvailability(true, "kept in SQLite", "kept in SQLite with no expiry");
             }
 
             var present = await db.Database
@@ -67,7 +67,7 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
             }
 
             return _availability = missing.Count == 0
-                ? new ActivityAvailability(true, "kept in Azure SQL Database")
+                ? new ActivityAvailability(true, "kept in Azure SQL Database", "kept in Azure SQL Database with no expiry")
                 : new ActivityAvailability(false, $"the published schema is missing {string.Join(", ", missing)}; publish api/TheYard.Database");
         }
         catch (Exception ex)

@@ -103,3 +103,21 @@ export function proofFigures(summary: TestSummary | null, records: number): Proo
     },
   ];
 }
+
+/**
+ * The reading inside a landing ring (the tweaks pass, A3): the stores as a count
+ * of the whole ("2/2"), the tests as a per cent ("99%"), and nothing until the
+ * reading is in, so a full ring never reads as a plain circle. The per cent
+ * rounds down and reads 100 only when nothing failed: 1,499 of 1,500 is 99%
+ * beside its "1 failure", never 100 (the self-review of 25 September).
+ */
+export function ringReading(
+  key: string,
+  ring: { value: number; max: number } | undefined
+): string | undefined {
+  if (ring === undefined || !(ring.max > 0)) return undefined;
+  if (key === 'stores') return `${ring.value}/${ring.max}`;
+  const share =
+    ring.value >= ring.max ? 100 : Math.floor((Math.max(0, ring.value) / ring.max) * 100);
+  return `${share}%`;
+}

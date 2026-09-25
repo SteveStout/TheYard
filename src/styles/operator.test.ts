@@ -70,9 +70,10 @@ describe("the operator's look", () => {
   });
 
   // The tweaks pass (B3): a 24 px hairline grid inside a glass panel, multiplied into
-  // its fill, and never on a tile, a panel read on white or a dialog's own sheet.
-  it('rules a glass panel with a hairline grid, and a tile, a solid panel and a dialog sheet without one', () => {
-    const grid = rule('.op-glass:not(.op-tile, .op-solid, .op-sheet)');
+  // its fill, and never on a tile, a panel read on white, a dialog's own sheet or
+  // one of the inventory's hundred cards.
+  it('rules a glass panel with a hairline grid, and a tile, a solid panel, a dialog sheet and a card without one', () => {
+    const grid = rule('.op-glass:not(.op-tile, .op-solid, .op-sheet, .op-card)');
     expect(grid).toContain('var(--glass-grid-line) 1px, transparent 1px');
     expect(grid).toContain('background-size: var(--glass-grid-size) var(--glass-grid-size);');
     expect(grid).toContain('background-blend-mode: multiply;');

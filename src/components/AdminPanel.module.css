@@ -362,7 +362,8 @@
 }
 
 /* A share of a ceiling as a bar (B2): a 22 px track, ticks every tenth, the
-   reading after the fill's end in ink, or inside the fill in white from 40 %. */
+   reading after the fill's end in ink, or inside the fill in white from 40 %;
+   a gold gauge's reading under the track. */
 .gauge {
   display: flex;
   flex-direction: column;
@@ -409,16 +410,21 @@
   inset: 0 auto 0 0;
   width: var(--gauge-share, 0%);
   background: var(--color-mark-axis);
-  /* See-through like the chart fills (1.0.3.24); white on it still reads 5.5 over the track. */
-  opacity: 0.8;
+  /* See-through like the chart fills (1.0.3.24); white on it reads 6.5 over the
+     track and 7.7 over the glass on a ribbon's teal stop (tokens.test.ts). */
+  opacity: var(--gauge-fill-opacity);
 }
 
+/* No text sits on the gold fill: its reading is printed under the track. */
 .gaugeGold {
   background: var(--color-mark-gold);
 }
 
-.gaugeOver {
-  background: var(--color-danger);
+.gaugeBelow {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-heading);
 }
 
 .gaugeInside,
@@ -1180,7 +1186,9 @@
   padding: var(--space-4);
 }
 
-@media (min-width: 900px) {
+/* The rail beside the card from 1280; under it the rail is the drawer behind
+   Cards (AdminPanel.tsx), so a card at 1024 has the width its tables need. */
+@media (min-width: 1280px) {
   .bench {
     grid-template-columns: var(--bench-rail-width) minmax(0, 1fr);
   }
@@ -1390,9 +1398,9 @@
   min-width: 0;
 }
 
-/* The phone (under 600 px): the rail is a drawer behind the Cards button, the
-   same shape as the site's own drawer, and a pinned card is a fold under the
-   open one rather than a second column. */
+/* Under 1280 the rail is a drawer behind the Cards button, the same shape as
+   the site's own drawer; on a phone (under 600 px) a pinned card is also a fold
+   under the open one rather than a second column. */
 .benchDrawer {
   position: fixed;
   inset: 0 auto 0 0;

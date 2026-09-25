@@ -24,18 +24,6 @@
   transform: translateZ(0);
 }
 
-/* The copy inside a dialog fills the dialog, from its own left edge, whatever the rail. */
-.contained {
-  height: 100%;
-  bottom: 0;
-}
-
-.contained .drawing,
-:global([data-rail]) .contained .drawing {
-  left: 0;
-  width: 100%;
-}
-
 .drawing {
   position: absolute;
   top: 0;

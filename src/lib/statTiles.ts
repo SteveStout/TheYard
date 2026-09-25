@@ -32,6 +32,13 @@ export type StatTile = {
    * is a gauge that measures nothing (ADR: The glass look).
    */
   ring?: TileRing;
+  /**
+   * Whether the tile holds a ring's room beside its number, from the first
+   * paint and whether or not the reading has drawn one yet (1.0.3.24): a tile
+   * that never draws one keeps no empty 44 px box. Set by tilesFrom, the one
+   * place that decides which tiles have a whole to be a share of.
+   */
+  ringed: boolean;
 };
 
 export type TileRing = {
@@ -96,13 +103,6 @@ export type TileReadings = {
   };
 };
 
-export const QUESTIONS: Record<TileQuestion, string> = {
-  up: 'Is it up?',
-  fast: 'Is it fast?',
-  cost: 'Is it costing anything?',
-  broke: 'What broke?',
-};
-
 /** Days, hours and minutes, the two largest that are not zero. */
 export function uptimeWords(totalSeconds: number): string {
   const days = Math.floor(totalSeconds / 86_400);
@@ -113,7 +113,7 @@ export function uptimeWords(totalSeconds: number): string {
   return `${minutes}m`;
 }
 
-const waiting = (key: string, question: TileQuestion, label: string): StatTile => ({
+const waiting = (key: string, question: TileQuestion, label: string): Omit<StatTile, 'ringed'> => ({
   key,
   question,
   label,
@@ -130,13 +130,6 @@ const waiting = (key: string, question: TileQuestion, label: string): StatTile =
  * amber. The thresholds are this site's own, read off what it measures on a
  * quiet day, and they are here to be argued with.
  */
-/**
- * The tiles that draw a ring, the only ones that hold a ring's room beside
- * their number (1.0.3.24): a tile that never draws one kept an empty 44 px box
- * and broke "under 1 ms" over two lines on a phone.
- */
-export const RINGED_TILES: readonly string[] = ['health', 'pages', 'memory'];
-
 export const SLOW_P95_MS = 1_000;
 export const VERY_SLOW_P95_MS = 3_000;
 /**
@@ -150,12 +143,19 @@ export const VERY_SLOW_P95_MS = 3_000;
  * reads amber under 1 per cent of the time on either site.
  */
 export const QUIET_BELOW_REQUESTS = 20;
+
+/**
+ * The tiles whose number is a share of a known whole, the only ones that hold a
+ * ring's room (1.0.3.24): a tile that never draws one kept an empty 44 px box
+ * and broke "under 1 ms" over two lines on a phone.
+ */
+const RINGED = new Set(['health', 'pages', 'memory']);
 export const MEMORY_WARN_SHARE = 0.8;
 export const MEMORY_BAD_SHARE = 0.95;
 
 export function tilesFrom(readings: TileReadings): StatTile[] {
   const { health, pages, traffic, memory, charged, errors, visitorsToday, sparks } = readings;
-  const tiles: StatTile[] = [];
+  const tiles: Omit<StatTile, 'ringed'>[] = [];
 
   if (health === null) {
     tiles.push(waiting('version', 'up', 'Version'), waiting('health', 'up', 'Health'));
@@ -320,7 +320,7 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
         }
   );
 
-  return tiles;
+  return tiles.map((tile) => ({ ...tile, ringed: RINGED.has(tile.key) }));
 }
 // #endregion tile-rules
 

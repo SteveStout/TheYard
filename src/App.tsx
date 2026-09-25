@@ -42,6 +42,7 @@ import { Watermark } from './components/Watermark';
 import { Landing } from './components/Landing';
 import { NavGlyph } from './components/SheetIcons';
 import { useMediaQuery } from './hooks/useMediaQuery';
+import { DESK } from './lib/breakpoints';
 import { FilterBar } from './components/FilterBar';
 import { InventoryGrid } from './components/InventoryGrid';
 import { VehicleDetail } from './components/VehicleDetail';
@@ -162,7 +163,7 @@ export default function App() {
   const [build, setBuild] = useState<{ version: string; commit: string } | null>(null);
   // #region docking
   /** The sidebar (ADR-013): a docked rail at 1024px and up, a drawer below. */
-  const docked = useMediaQuery('(min-width: 1024px)');
+  const docked = useMediaQuery(DESK);
   const [railCollapsed, setRailCollapsed] = useState(readRailCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
   useEffect(() => {

@@ -13,6 +13,8 @@ import {
   areaPath,
   bandPath,
   ceilingOf,
+  collectorSummary,
+  costSentence,
   countFor,
   dayAt,
   dayLines,
@@ -39,7 +41,9 @@ import {
   type ActivityWindow,
   type VisitorSortKey,
 } from '../../lib/activity';
+import { plotFrame } from '../../lib/plotFrame';
 import styles from '../AdminPanel.module.css';
+import { PlotFrame } from './charts';
 import type { Fetched } from './types';
 import { About } from './common';
 
@@ -135,8 +139,9 @@ export default function ActivityCard({
         naming the store that served it, so a paused relational database cannot take this card down
         with it; the page's own files, the photos and this tab's reads are not counted. A visitor is
         a keyed hash of the address that changes daily, so the counts group and nothing joins across
-        days or back to a person; a full address is never stored, no account is ever named, and no
-        list of visitors is shown on this site.
+        days or back to a person; a full address is never stored and no account is ever named. The
+        per-visitor rows, still only hashes, are served to the operator's key alone, and only on a
+        site that turns them on.
       </About>
       <p className={`${styles.statusRow} op-seg op-seg-wrap`} role="group" aria-label="Window">
         {ACTIVITY_WINDOWS.map((option) => (
@@ -280,13 +285,6 @@ export default function ActivityCard({
       )}
     </article>
   );
-}
-
-/** The collector's one line: fine, or what went wrong first (failed batches outrank drops). */
-function collectorSummary(collector: ActivityReport['collector']): string {
-  if (collector.failed_batches > 0) return `Collector: ${collector.failed_batches} batches failed`;
-  if (collector.dropped > 0) return `Collector: ${collector.dropped.toLocaleString()} hits dropped`;
-  return 'Collector fine';
 }
 
 function SortHeader({
@@ -454,39 +452,17 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
             y2={CHART.height - CHART.bottom}
           />
           {/* The Mark VII grammar (the tweaks pass, B2): graduations up the side at the
-              quarters, a tick under each day, and two gold bracket ticks at the corners. */}
-          {[0, 0.25, 0.5, 0.75, 1].map((share) => {
-            const y =
-              CHART.height - CHART.bottom - (CHART.height - CHART.top - CHART.bottom) * share;
-            const major = share === 0 || share === 0.5 || share === 1;
-            return (
-              <line
-                key={`y${share}`}
-                className={major ? `${styles.markTick} ${styles.markTickMajor}` : styles.markTick}
-                x1={CHART.left - (major ? 6 : 3)}
-                y1={y}
-                x2={CHART.left}
-                y2={y}
-              />
-            );
-          })}
-          {report.days.map((day, index) => (
-            <line
-              key={`d${day.day}`}
-              className={styles.markTick}
-              x1={xAt(index, count)}
-              y1={CHART.height - CHART.bottom}
-              x2={xAt(index, count)}
-              y2={CHART.height - CHART.bottom + 3}
-            />
-          ))}
-          <path
-            className={styles.plotBracket}
-            d={`M${CHART.left + 1} ${CHART.top + 9}V${CHART.top + 1}H${CHART.left + 9}`}
-          />
-          <path
-            className={styles.plotBracket}
-            d={`M${CHART.width - CHART.right - 9} ${CHART.height - CHART.bottom - 1}H${CHART.width - CHART.right - 1}V${CHART.height - CHART.bottom - 9}`}
+              quarters, a tick under each day, and two gold bracket ticks at the corners,
+              the frame every framed chart shares (src/lib/plotFrame.ts). */}
+          <PlotFrame
+            frame={plotFrame(
+              CHART,
+              report.days.map((day, index) => ({
+                key: `d${day.day}`,
+                x: xAt(index, count),
+                major: false,
+              }))
+            )}
           />
           <text className={styles.axisLabel} x={CHART.left - 8} y={CHART.top + 4} textAnchor="end">
             {ceiling}
@@ -677,8 +653,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
               {report.collector.failed_batches} batches failed; everything queued goes as one batch
               to the keeper, {nameOf(report.kept_by)}, every {report.collector.interval_seconds}{' '}
               seconds.
-              {report.cost !== null &&
-                ` Keeping it has cost ${report.cost.request_units.toLocaleString()} request units over ${report.cost.operations.toLocaleString()} operations since the process started${report.cost.failures > 0 ? `, ${report.cost.failures} of them failed` : ''}.`}
+              {report.cost !== null && ` ${costSentence(report.cost)}`}
             </p>
           </details>
         </li>

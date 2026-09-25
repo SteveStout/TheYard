@@ -50,9 +50,18 @@ describe('renderDocument', () => {
       '| Resource | Cost |\n| --- | ---: |\n| Azure Cosmos DB | $0.00 |\n'
     );
     expect(html).toContain(
-      '<div class="table-scroll" role="group" aria-label="Table, scrolls sideways" tabindex="0"><table>'
+      '<div class="table-scroll" role="region" aria-label="Table" tabindex="0"><table>'
     );
     expect(html).toContain('</table></div>');
     expect(html).toContain('<td align="right">$0.00</td>');
+  });
+
+  it('leaves a raw HTML table as its author wrote it, with no stray closing tag', async () => {
+    const html = await renderDocument(
+      '<table class="wide"><tr><td>x</td></tr></table>\n\nAfter.\n'
+    );
+    expect(html).toContain('<table class="wide">');
+    expect(html).not.toContain('table-scroll');
+    expect(html.match(/<\/div>/g) ?? []).toHaveLength(0);
   });
 });

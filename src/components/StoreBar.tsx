@@ -27,6 +27,8 @@ export function StoreBar() {
   }, []);
 
   const here = { pathname: window.location.pathname, search: window.location.search };
+  const ready = stores === null ? null : readyCount(stores);
+  const readySentence = ready === null ? undefined : `${ready.up} of ${ready.of} stores ready`;
 
   return (
     <div
@@ -81,29 +83,19 @@ export function StoreBar() {
         {/* The stores that came up, of those this container runs (the
             operator's look): an empty track until the answer, at its size from
             the first paint, so the band does not move when it fills. */}
-        <span
-          className={styles.ready}
-          title={
-            stores === null
-              ? undefined
-              : `${readyCount(stores).up} of ${readyCount(stores).of} stores ready`
-          }
-        >
+        <span className={styles.ready} title={readySentence}>
+          {/* The words beside it say the count, so the ring is drawn and not read. */}
           <Ring
-            value={stores === null ? 0 : readyCount(stores).up}
-            max={stores === null ? 1 : readyCount(stores).of}
+            value={ready === null ? 0 : ready.up}
+            max={ready === null ? 1 : ready.of}
             size="tiny"
-            label={
-              stores === null
-                ? null
-                : `${readyCount(stores).up} of ${readyCount(stores).of} stores ready`
-            }
+            label={null}
             testId="store-bar-ready"
           />
           {/* The count in words beside the ring (the tweaks pass, A3): a full tiny ring
               read as a plain circle. Its room is held from the first paint. */}
           <span className={styles.readyWords} data-testid="store-bar-ready-words">
-            {stores === null ? '' : `${readyCount(stores).up}/${readyCount(stores).of} ready`}
+            {ready === null ? '' : `${ready.up}/${ready.of} ready`}
           </span>
         </span>
         <span
@@ -111,11 +103,11 @@ export function StoreBar() {
           data-testid="store-bar-note"
           title={stores === null ? undefined : note(stores)}
         >
-          {/* The whole sentence from 1440, the short form under it (A6): no ellipsis at any width. */}
+          {/* The whole sentence from 1440, the short form under it (A6): no ellipsis at
+              any width. One of the two is displayed at every width, so a screen reader
+              always hears the note the eye reads. */}
           <span className={styles.noteLong}>{stores === null ? '' : note(stores)}</span>
-          <span className={styles.noteShort} aria-hidden="true">
-            {stores === null ? '' : shortNote(stores)}
-          </span>
+          <span className={styles.noteShort}>{stores === null ? '' : shortNote(stores)}</span>
         </span>
       </div>
     </div>

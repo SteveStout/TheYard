@@ -512,3 +512,7 @@ queue 1353): both App Services run `alwaysOn` with `healthCheckPath` set to
 every one `GET /index.html`, a median of 300 seconds apart. The card has
 named App Service as the sender since 1.0.3.11; the sentence above stays as
 it was written.
+
+## Addendum, 2026-09-25 (1.0.3.26): the retention and the cost, said precisely
+
+The card's retention line read the store's availability sentence, the reason a store gives when it is down, so on SQLite it said "kept in SQLite", a place and not a time. The port carries the retention as its own field from 1.0.3.26, and every store states it: Azure Cosmos DB from the container's time-to-live, the relational stores "with no expiry", which is what they do. The cost is a record, `ActivityCost`, counted with interlocked adds (the charge in hundredths of a request unit), because the batch writer and every report request count at once and a plain `+=` lost updates. The card says whose it is: this container's, since it started; the other container writes to the same keeper and counts its own. The About text no longer says no list of visitors is shown: the per-visitor rows, hashes only, are served to the operator's key on a site that turns them on.

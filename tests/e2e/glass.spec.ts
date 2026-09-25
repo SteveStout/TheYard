@@ -125,7 +125,7 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
   // Every document stands its words on frosted reading panels inside a clear sheet
   // (the tweaks pass, B1b): the page's own ground reads through the sheet, so the
   // dialog carries no copy of the drawing and nothing dims the page behind it.
-  await expect(page.getByTestId('ribbons-dialog')).toHaveCount(0);
+  await expect(page.locator('dialog[open] [data-testid="ribbons"]')).toHaveCount(0);
   const own = await page.getByTestId('ribbons').evaluate((layer) =>
     Array.from(layer.querySelectorAll('[stroke^="url("], [fill^="url("], [filter^="url("]')).every(
       (node) => {
@@ -152,15 +152,19 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
           sheet: getComputedStyle(dialog).backgroundColor,
           dim: getComputedStyle(dialog, '::backdrop').backgroundColor,
           panel: getComputedStyle(panel).backgroundColor,
+          title: getComputedStyle(dialog.querySelector('[class*="dialogHeader"]') ?? dialog)
+            .backgroundColor,
         };
       });
     expect(sheet.sheet).toBe('rgba(255, 255, 255, 0.1)');
+    // The title bar is frosted at every width, never clear over the page's dark header.
+    expect(sheet.title).toBe('rgba(255, 255, 255, 0.78)');
     expect(sheet.dim).toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
     expect(sheet.panel).toBe('rgba(255, 255, 255, 0.78)');
   }).toPass({ timeout: 15_000 });
   // The Author page reads the same way: the sheet clear, the panels frosted.
   await openTheYard(page, '/?doc=author');
-  await expect(page.getByTestId('ribbons-dialog')).toHaveCount(0);
+  await expect(page.locator('dialog[open] [data-testid="ribbons"]')).toHaveCount(0);
   await expect(page.locator('dialog[open] .author-panel').first()).toBeVisible();
   await expect(async () => {
     expect(

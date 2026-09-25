@@ -51,7 +51,7 @@
   --color-surface-muted: #f4f2f3; /* the light gray, halfway to white */
   --color-border: #d8d3d4; /* the light gray, one step darker */
   --color-border-strong: #b6afb0;
-  --color-text: #5e5653; /* the brown-gray, as printed */
+  --color-text: #524b48; /* the brown-gray, as printed (#5e5653) until the self-review of 25 September deepened it a step in the same hue: over the 30 per cent glass on a ribbon's teal stop it read 3.88, and it now holds 4.63 and stays darker than the secondary grey */
   --color-text-muted: #4a4e57; /* the slate gray; deepened in ADR-035 (4.39 on the neutral chip), and again in the tweaks pass (#5f636c until 1.0.3.23), where the 30 per cent glass over a ribbon's teal stop held #4d515a at 4.31 */
   --color-text-faint: #4a4e57; /* folds into muted from 1.0.3.23: one grey for secondary text (ADR-042 deepened it for an ended countdown on the page ground) */
   --color-heading: #3f3a37; /* the brown-gray, deepened for weight */
@@ -130,6 +130,9 @@
   --color-mark-bar-track: rgba(2, 67, 69, 0.08);
   --color-mark-rule: rgba(2, 67, 69, 0.14);
   --color-mark-tint: rgba(2, 67, 69, 0.05);
+  /* A bar gauge's fill is see-through like the chart fills (1.0.3.24); white on
+     the deep teal at this share holds 4.5 over the glass (tokens.test.ts). */
+  --gauge-fill-opacity: 0.8;
   /* #endregion mark-vii */
   /* #endregion palette */
 
@@ -340,23 +343,39 @@
 }
 
 /* #region glass-fallbacks */
+/* Every see-through ground turns solid together: the panels, a phone's fuller
+   panel, a document's sheet and its reading panels (the self-review of 26
+   September, when the sheet's tenth of white was left see-through here). */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
     --glass-bg: #ffffff;
+    --glass-bg-phone: #ffffff;
+    --dialog-sheet-bg: #ffffff;
+    --dialog-page-bg: #ffffff;
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   :root {
     --glass-bg: #ffffff;
+    --glass-bg-phone: #ffffff;
+    --dialog-sheet-bg: #ffffff;
+    --dialog-page-bg: #ffffff;
     --glass-filter: none;
+    --dialog-sheet-filter: none;
+    --dialog-page-filter: none;
   }
 }
 
 @media (forced-colors: active) {
   :root {
     --glass-bg: Canvas;
+    --glass-bg-phone: Canvas;
+    --dialog-sheet-bg: Canvas;
+    --dialog-page-bg: Canvas;
     --glass-filter: none;
+    --dialog-sheet-filter: none;
+    --dialog-page-filter: none;
   }
 }
 /* #endregion glass-fallbacks */

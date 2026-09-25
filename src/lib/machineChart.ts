@@ -5,6 +5,8 @@
  * the reasoning is testable on its own.
  */
 
+import { plotFrame } from './plotFrame';
+
 /** One reading. A null value is a gap rather than a zero: the first processor share has nothing to compare against. */
 export type ChartPoint = { at: string; value: number | null };
 
@@ -96,42 +98,24 @@ export function readoutLine(name: string, value: number | null, unit?: string): 
 
 // #region mark-vii
 /**
- * The Mark VII grammar's graduations (the tweaks pass, B2), in place of the
- * grid the charts drew until 1.0.3.23: ticks outside the plot on both axes, a
- * major one 6 units long and a minor one 3. Up the side, the quarters, major
- * at nothing, half and the ceiling; along the bottom, the labelled slots major
- * and eight even steps minor.
+ * The Mark VII frame for a machine chart of `count` slots (the tweaks pass, B2),
+ * in place of the grid the charts drew until 1.0.3.23: the labelled slots major
+ * along the bottom, eight even steps minor, and the side and brackets every
+ * framed chart shares (src/lib/plotFrame.ts).
  */
-export function markTicks(
-  count: number
-): { key: string; x1: number; y1: number; x2: number; y2: number; major: boolean }[] {
-  const innerHeight = MACHINE_CHART.height - MACHINE_CHART.top - MACHINE_CHART.bottom;
-  const bottom = MACHINE_CHART.height - MACHINE_CHART.bottom;
-  const up = [0, 0.25, 0.5, 0.75, 1].map((share) => {
-    const major = share === 0 || share === 0.5 || share === 1;
-    const y = Math.round((bottom - innerHeight * share) * 10) / 10;
-    return {
-      key: `y${share}`,
-      x1: MACHINE_CHART.left - (major ? 6 : 3),
-      y1: y,
-      x2: MACHINE_CHART.left,
-      y2: y,
-      major,
-    };
-  });
-  const labelled = new Set(ticks(count));
-  const along: { key: string; x1: number; y1: number; x2: number; y2: number; major: boolean }[] =
-    [];
-  const innerWidth = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
-  for (let step = 0; step <= 8; step++) {
-    const x = Math.round((MACHINE_CHART.left + (innerWidth * step) / 8) * 10) / 10;
-    along.push({ key: `m${step}`, x1: x, y1: bottom, x2: x, y2: bottom + 3, major: false });
-  }
-  for (const index of labelled) {
-    const x = Math.round(xOf(index, count) * 10) / 10;
-    along.push({ key: `x${index}`, x1: x, y1: bottom, x2: x, y2: bottom + 6, major: true });
-  }
-  return [...up, ...along];
+export function machineFrame(count: number) {
+  const inner = MACHINE_CHART.width - MACHINE_CHART.left - MACHINE_CHART.right;
+  const minor = Array.from({ length: 9 }, (_, step) => ({
+    key: `m${step}`,
+    x: MACHINE_CHART.left + (inner * step) / 8,
+    major: false,
+  }));
+  const major = ticks(count).map((index) => ({
+    key: `x${index}`,
+    x: xOf(index, count),
+    major: true,
+  }));
+  return plotFrame(MACHINE_CHART, [...minor, ...major]);
 }
 
 /** A series' highest reading and where it is drawn, for the callout; null when nothing rose above zero. */
@@ -157,6 +141,44 @@ export function peakOf(
     y: Math.round(y * 10) / 10,
   };
 }
+
+/** The callout's leader: out from the peak, down from the top of the plot, then a shelf the label sits on. */
+const CALLOUT = { reach: 14, drop: 10, shelf: 8 } as const;
+
+/**
+ * The peak callout (the tweaks pass, B2), placed: the dot on the peak, a leader
+ * up to an elbow under the top of the plot, and the label running away from the
+ * nearer edge. Null when the series is not there or never rose above zero.
+ */
+export function calloutFor(
+  series: ChartSeries[],
+  callout: { key: string; name: string },
+  ceiling: number,
+  window: MachineWindow
+): {
+  label: string;
+  dot: { x: number; y: number };
+  leader: string;
+  text: { x: number; y: number; anchor: 'start' | 'end' };
+} | null {
+  const line = series.find((one) => one.key === callout.key);
+  const peak = line === undefined ? null : peakOf(line.points, ceiling);
+  if (line === undefined || peak === null) return null;
+  const toRight = peak.x < MACHINE_CHART.width / 2;
+  const away = toRight ? 1 : -1;
+  const elbow = { x: peak.x + away * CALLOUT.reach, y: MACHINE_CHART.top + CALLOUT.drop };
+  return {
+    label: `${callout.name} · peak ${peak.value.toLocaleString()} at ${axisLabel(line.points[peak.index].at, window)}`,
+    dot: { x: peak.x, y: peak.y },
+    leader: `${peak.x},${peak.y} ${elbow.x},${elbow.y} ${elbow.x + away * CALLOUT.shelf},${elbow.y}`,
+    text: {
+      x: elbow.x + away * (CALLOUT.shelf + 3),
+      y: elbow.y + 3,
+      anchor: toRight ? 'start' : 'end',
+    },
+  };
+}
+
 // #endregion mark-vii
 
 /** Up to three evenly spaced indexes to label, first and last always. */
@@ -263,6 +285,16 @@ export function shareOf(valueMb: number | null | undefined, limitMb: number | nu
 }
 
 /** What a bucket was charged, as request units a minute over the minutes it actually holds. */
+/**
+ * The busiest minute in the ring as request units a second (the self-review of
+ * 25 September): the one figure a free tier's allowance, a rate, can be held
+ * against. The ring's total was held against it until then, a total against a rate.
+ */
+export function busiestRate(minutes: { request_units: number }[]): number {
+  const busiest = minutes.reduce((most, minute) => Math.max(most, minute.request_units), 0);
+  return Math.round((busiest / 60) * 10) / 10;
+}
+
 export function requestUnitsAMinute(bucket: KeptBucket | null): number | null {
   if (bucket === null || bucket.minutes <= 0) return null;
   return Math.round((bucket.request_units / bucket.minutes) * 100) / 100;

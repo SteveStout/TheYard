@@ -108,7 +108,10 @@
 }
 
 /* A card that is one of a hundred on a page is glass in its ground only: a blur
-   is paid for by the pixel (VehicleCard's reason, ADR: The glass look). */
+   is paid for by the pixel (VehicleCard's reason, ADR: The glass look). The
+   tweaks pass (A12) put the blur back on the card's info block alone, the
+   words' box and not the photograph, and the record says what that cost
+   (ADR: The tweaks pass, the addendum of 25 September). */
 .op-card {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -129,10 +132,10 @@
 /* The panel's texture (the tweaks pass, B3): a hairline grid inside a glass
    panel, under its words and over the frost, multiplied into the fill so it
    reads as ruled glass and never as a pattern. Panels only: a stat tile, a
-   panel read on white and a dialog's own sheet go without it, and a pill, an
-   input or the header is never .op-glass. Written after the phone's fill, and
+   panel read on white, a dialog's own sheet and an inventory card go without
+   it, and a pill, an input or the header is never .op-glass. Written after the phone's fill, and
    one class weightier, so the phone's fill cannot take it off. */
-.op-glass:not(.op-tile, .op-solid, .op-sheet) {
+.op-glass:not(.op-tile, .op-solid, .op-sheet, .op-card) {
   background-image:
     linear-gradient(to right, var(--glass-grid-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--glass-grid-line) 1px, transparent 1px);

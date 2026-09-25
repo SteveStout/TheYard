@@ -471,10 +471,10 @@ public static class ActivityReport
         }
 
         var counters = collector.Counters;
-        // What the feature has cost the keeper since the process started, when
+        // What the feature has cost the keeper since this process started, when
         // the keeper counts it (the document store does, in request units);
         // null on a store that has no such unit (25 September).
-        var cost = collector.Keeper is IActivityCost costed ? costed.Cost : ((double Charge, int Operations, int Failures)?)null;
+        var cost = (collector.Keeper as IActivityCost)?.Cost;
         return new
         {
             window = chosen.Name,
@@ -497,9 +497,9 @@ public static class ActivityReport
             stores,
             kept_by = collector.KeeperKey,
             // The keeper's own sentence for how long the rows are kept ("kept in
-            // Azure Cosmos DB with no expiry"), shown when the store is up, not
-            // only as the reason it is down (25 September).
-            retention = availability.Available ? availability.Reason : null,
+            // Azure Cosmos DB with no expiry"), its own field on the port rather
+            // than the reason a store is down (25 September).
+            retention = availability.Available ? availability.Retention : null,
             collector = new
             {
                 offered = counters.Offered,
@@ -509,7 +509,7 @@ public static class ActivityReport
                 last_write = counters.LastWrite,
                 interval_seconds = (int)ActivityCollector.Interval.TotalSeconds,
             },
-            cost = cost is { } spent ? new { request_units = spent.Charge, operations = spent.Operations, failures = spent.Failures } : null,
+            cost = cost is null ? null : new { request_units = Math.Round(cost.RequestUnits, 2), operations = cost.Operations, failures = cost.Failures },
         };
     }
 

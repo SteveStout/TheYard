@@ -482,3 +482,26 @@ export function sortVisitors(
   return descending ? sorted.reverse() : sorted;
 }
 // #endregion visitor-order
+
+// #region collector-words
+/** The collector's one line: fine, or what went wrong first (failed batches outrank drops). */
+export function collectorSummary(collector: ActivityReport['collector']): string {
+  const plural = (count: number, one: string, many: string) =>
+    `${count.toLocaleString()} ${count === 1 ? one : many}`;
+  if (collector.failed_batches > 0)
+    return `Collector: ${plural(collector.failed_batches, 'batch', 'batches')} failed`;
+  if (collector.dropped > 0)
+    return `Collector: ${plural(collector.dropped, 'hit', 'hits')} dropped`;
+  return 'Collector fine';
+}
+
+/**
+ * What keeping activity has cost, in a sentence. The count is this container's
+ * own since it started: the other container writes to the same keeper and
+ * counts its own, so the sentence says whose it is.
+ */
+export function costSentence(cost: NonNullable<ActivityReport['cost']>): string {
+  const failed = cost.failures > 0 ? `, ${cost.failures.toLocaleString()} of them failed` : '';
+  return `Keeping it has cost this container ${cost.request_units.toLocaleString()} request units over ${cost.operations.toLocaleString()} operations since it started${failed}.`;
+}
+// #endregion collector-words

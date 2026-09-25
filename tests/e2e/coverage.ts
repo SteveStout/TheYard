@@ -192,15 +192,18 @@ export function readPage(): PageFacts {
   }
   // A table cell wraps between words or not at all (the tweaks pass, A1): a cell that
   // computes overflow-wrap: anywhere broke "Resource" into "Resou rce" on a phone.
-  // An identifier (a path, an address, a digest, in the small .mono type) has no words to break
-  // between and may break at any character, as code does; a word may not.
+  // An identifier (a path, an address, a digest, in the small .mono type, or code) has no
+  // words to break between and may break at any character; a word may not, in the cell or in
+  // anything inside it, a link included (the self-review of 25 September).
+  const breaksAnywhere = (e: Element) =>
+    getComputedStyle(e).overflowWrap === 'anywhere' ||
+    getComputedStyle(e).wordBreak === 'break-all';
   const anywhere = Array.from(document.querySelectorAll('td, th'))
     .filter((e) => !e.closest('.scalar-app'))
     .filter((e) => !Array.from(e.classList).some((c) => /(^|_)mono(_|$)/.test(c)))
-    .filter((e) => {
-      const wrap = getComputedStyle(e).overflowWrap;
-      return wrap === 'anywhere' || getComputedStyle(e).wordBreak === 'break-all';
-    });
+    .flatMap((cell) => [cell, ...Array.from(cell.querySelectorAll('*'))])
+    .filter((e) => !e.closest('code'))
+    .filter(breaksAnywhere);
   // On a desk, nothing scrolls sideways: a table's box holds the table whole (a phone may
   // still scroll a table of long names inside its panel, as the last resort).
   const sideways =

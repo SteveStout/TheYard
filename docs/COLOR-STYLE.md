@@ -119,7 +119,9 @@ Unchanged by the new look, on purpose: "I loved the background of white and ligh
 --color-heading | Heading
 ```
 
-- Body text `#5e5653` reads 7.16 on white and 5.78 on grey. Headings and the big numbers on tiles
+- Body text `#524b48` reads 8.54 on white and 6.89 on grey. It was the printed `#5e5653` until
+  25 September, when it read under 4.5 over the 30 per cent glass on a ribbon's teal stop and
+  deepened a step in the same hue, which also puts it back above the secondary grey. Headings and the big numbers on tiles
   are `#3f3a37`, 11.22 on white and 9.05 on grey.
 - **The quiet colour, `#4a4e57`, is one grey for every secondary word, and only ever used inside
   a panel.** Muted and faint were two slate greys a step apart until the
@@ -197,8 +199,9 @@ ring's fill and a gold leader line to the callout on a peak.
 - The gauges' tracks are the deep teal faint (`--color-mark-track`, `--color-mark-bar-track`),
   table rules and the rail's current row the same teal fainter still (`--color-mark-rule`,
   `--color-mark-tint`).
-- The status colours stay for states: the registry's gauge over its plan is the one place one
-  appears on a gauge.
+- The status colours stay for states and never fill a gauge. A gauge's fill is the deep teal,
+  with white inside it once it passes 40 per cent, or the gold for request units, which carries no
+  text: no ink clears 4.5 on it, so its reading is printed under the track.
 
 Labels, numbers and legends are in the text colours, never in a series' colour.
 

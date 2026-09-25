@@ -36,8 +36,16 @@ public sealed record ActivityVisitor(
     IReadOnlyDictionary<string, int> Paths,
     IReadOnlyDictionary<string, int>? Sources = null);
 
-/// <summary>Whether a store can keep activity right now, and if not, why, in one sentence a page can show.</summary>
-public sealed record ActivityAvailability(bool Available, string Reason);
+/// <summary>
+/// Whether a store can keep activity right now, and if not, why, in one
+/// sentence a page can show. <paramref name="Retention"/> is how long a kept
+/// row lasts, said by the store that keeps it ("kept in Azure Cosmos DB with no
+/// expiry"); null when the store is down or does not know.
+/// </summary>
+public sealed record ActivityAvailability(bool Available, string Reason, string? Retention = null);
+
+/// <summary>What keeping activity has cost a store: request units, operations, and the operations that failed.</summary>
+public sealed record ActivityCost(double RequestUnits, int Operations, int Failures);
 
 /// <summary>
 /// What keeping activity has cost a store since the process started, for a
@@ -47,7 +55,7 @@ public sealed record ActivityAvailability(bool Available, string Reason);
 /// </summary>
 public interface IActivityCost
 {
-    (double Charge, int Operations, int Failures) Cost { get; }
+    ActivityCost Cost { get; }
 }
 
 /// <summary>Port: where activity is kept. Writes arrive in batches, never from a request thread.</summary>

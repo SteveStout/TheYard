@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { figures, proofFigures, type TestSummary } from './landingProof';
+import { figures, proofFigures, ringReading, type TestSummary } from './landingProof';
 
 const summary: TestSummary = {
   version: '1.0.1.6',
@@ -114,5 +114,22 @@ describe("the rings on the evidence strip (the operator's look)", () => {
     const shown = proofFigures(summary, 82)!;
     expect(shown[1].ring).toBeUndefined();
     expect(shown[2].ring).toBeUndefined();
+  });
+});
+
+describe('ringReading', () => {
+  it('reads the stores as a count of the whole', () => {
+    expect(ringReading('stores', { value: 2, max: 2 })).toBe('2/2');
+  });
+
+  it('reads the tests as a per cent that says 100 only when nothing failed', () => {
+    expect(ringReading('tests', { value: 1500, max: 1500 })).toBe('100%');
+    expect(ringReading('tests', { value: 1499, max: 1500 })).toBe('99%');
+    expect(ringReading('tests', { value: 0, max: 12 })).toBe('0%');
+  });
+
+  it('reads nothing until there is a whole to read against', () => {
+    expect(ringReading('tests', undefined)).toBeUndefined();
+    expect(ringReading('tests', { value: 0, max: 0 })).toBeUndefined();
   });
 });

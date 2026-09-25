@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   axisLabel,
+  busiestRate,
   ceilingFor,
   clockLabel,
   coverage,
@@ -16,7 +17,8 @@ import {
   pathFor,
   requestUnitsAMinute,
   shareOf,
-  markTicks,
+  machineFrame,
+  calloutFor,
   peakOf,
   nearestIndex,
   readoutLine,
@@ -307,14 +309,15 @@ describe('the readout on a chart', () => {
 
   // The tweaks pass (B2): graduations on the axes where the grid was.
   it('graduates both axes outside the plot, the quarters up the side and the labelled slots along', () => {
-    const marks = markTicks(61);
+    const marks = machineFrame(61).ticks;
     const up = marks.filter((tick) => tick.key.startsWith('y'));
     expect(up.map((tick) => tick.y1)).toEqual([146, 112.5, 79, 45.5, 12]);
     expect(up.filter((tick) => tick.major).map((tick) => tick.x2 - tick.x1)).toEqual([6, 6, 6]);
     expect(up.filter((tick) => !tick.major).map((tick) => tick.x2 - tick.x1)).toEqual([3, 3]);
     const along = marks.filter((tick) => !tick.key.startsWith('y'));
     expect(along.filter((tick) => tick.major)).toHaveLength(3);
-    expect(along.filter((tick) => !tick.major)).toHaveLength(9);
+    // Nine even steps, less the three that sit under a labelled slot.
+    expect(along.filter((tick) => !tick.major)).toHaveLength(6);
     // No tick crosses into the plot: each one starts at its axis and stands outside it.
     for (const tick of up) expect(tick.x2).toBe(MACHINE_CHART.left);
     for (const tick of along) expect(tick.y1).toBe(MACHINE_CHART.height - MACHINE_CHART.bottom);
@@ -334,6 +337,44 @@ describe('the readout on a chart', () => {
         12
       )
     ).toBeNull();
+  });
+
+  it('reads the busiest minute as a rate a second, the unit the free allowance is in', () => {
+    expect(
+      busiestRate([{ request_units: 30 }, { request_units: 600 }, { request_units: 12 }])
+    ).toBe(10);
+    expect(busiestRate([{ request_units: 100 }])).toBe(1.7);
+    expect(busiestRate([])).toBe(0);
+  });
+
+  it('calls out the peak of the series it names, reading the time from that series', () => {
+    const first = points([1, 2]);
+    const longer = points([0, 3, 9, 4, 2, 1]);
+    const drawn = calloutFor(
+      [
+        { key: 'a', name: 'A', points: first },
+        { key: 'b', name: 'B', points: longer },
+      ],
+      { key: 'b', name: 'Busiest' },
+      10,
+      '1h'
+    );
+    expect(drawn?.label).toBe(`Busiest · peak 9 at ${axisLabel(longer[2].at, '1h')}`);
+    expect(drawn?.text.anchor).toBe('start');
+    expect(
+      calloutFor([{ key: 'a', name: 'A', points: first }], { key: 'z', name: 'Z' }, 10, '1h')
+    ).toBeNull();
+  });
+
+  it('runs the callout label left when the peak is in the right half', () => {
+    const drawn = calloutFor(
+      [{ key: 'a', name: 'A', points: points([0, 1, 2, 3, 8]) }],
+      { key: 'a', name: 'A' },
+      10,
+      '1h'
+    );
+    expect(drawn?.text.anchor).toBe('end');
+    expect(drawn!.text.x).toBeLessThan(drawn!.dot.x);
   });
 
   it('says a reading in the unit the axis is in, and says a gap is a gap', () => {

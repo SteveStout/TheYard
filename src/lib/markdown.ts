@@ -25,22 +25,30 @@ const SITE = 'https://theyard.stevenstout.biz/';
 marked.use({
   hooks: {
     postprocess(html: string) {
-      return (
-        html
-          .replaceAll(`href="${SITE}`, 'href="/')
-          .replace(/<a href="(?!#)/g, '<a target="_blank" rel="noopener" href="')
-          // Every table in a scroller of its own (the tweaks pass, A1), reachable
-          // from the keyboard, so a phone scrolls a wide table and never breaks a word.
-          .replaceAll(
-            '<table>',
-            '<div class="table-scroll" role="group" aria-label="Table, scrolls sideways" tabindex="0"><table>'
-          )
-          .replaceAll('</table>', '</table></div>')
-      );
+      return html
+        .replaceAll(`href="${SITE}`, 'href="/')
+        .replace(/<a href="(?!#)/g, '<a target="_blank" rel="noopener" href="');
     },
   },
 });
 // #endregion doc-links
+
+// #region doc-tables
+// Every markdown table in a scroller of its own (the tweaks pass, A1), reachable
+// from the keyboard, so a phone scrolls a wide table and never breaks a word. A
+// renderer and not a string replace (the self-review of 25 September): a raw
+// HTML table in a document is left as its author wrote it, where the replace
+// wrapped its end and not its start. A region, like every table wrapper on the
+// Admin tab.
+const plainRenderer = new marked.Renderer();
+marked.use({
+  renderer: {
+    table(token) {
+      return `<div class="table-scroll" role="region" aria-label="Table" tabindex="0">${plainRenderer.table.call(this, token).trimEnd()}</div>\n`;
+    },
+  },
+});
+// #endregion doc-tables
 
 // #region doc-images
 // A document's pictures load when the reader reaches them (1.0.3.5): the

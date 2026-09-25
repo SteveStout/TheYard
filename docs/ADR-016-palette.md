@@ -314,3 +314,7 @@ Steve compared Poppins with IBM Plex Sans and two others on one page, every view
 ## Addendum, 2026-09-25 (1.0.3.23): one secondary grey
 
 The muted and faint text colours, `--color-text-muted` and `--color-text-faint`, and the rail's muted text were three slate greys a step apart. From 1.0.3.23 they are one, `#4a4e57`: the glass went to 30 per cent white in the tweaks pass (ADR: The tweaks pass), and over that glass, where it lies straight over a ribbon's teal stop, the grey the pass first proposed read 4.31. The grey went darker until the worst case held 4.5; the glass did not go back. The style page and `tokens.test.ts` carry the figures.
+
+## Addendum, 2026-09-25 (1.0.3.26): body text a step deeper
+
+The body ink, the printed brown-gray `#5e5653`, read 3.88 over the 30 per cent glass where it lies over a ribbon's teal stop, and 3.97 over the gold one. The secondary grey had been deepened for exactly that case on 25 September and the body ink had not, which left the body text lighter than the secondary text. It is `#524b48` from 1.0.3.26, the same hue a step darker: 4.63 and 4.72 over the two stops, 8.54 on white and 6.89 on the page ground, and darker than `#4a4e57` again. `tokens.test.ts` now reads every ink, body, secondary and heading, over both stops, and holds the body ink darker than the secondary. The API reference and the diagram page keep the printed colour: they are read on white, where it reads 7.16.

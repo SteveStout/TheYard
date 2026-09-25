@@ -107,6 +107,17 @@ test("every page the site lists is on the operator's look on a desk, 1280 wide",
   await everyPage(browser, request, 1280);
 });
 
+// The narrowest desk: the rail docks at 1024 and the columns are at their tightest,
+// which is where a table scrolling sideways would show first (the self-review of 26
+// September; the record said 1024 or wider, and the gate read 1280 only).
+test("every page the site lists is on the operator's look on the narrowest desk, 1024 wide", async ({
+  browser,
+  request,
+}) => {
+  test.setTimeout(12 * 60_000);
+  await everyPage(browser, request, 1024);
+});
+
 // #region strip-rows
 /**
  * The Admin strip and the landing stat row (the tweaks pass, A2): two across on
@@ -129,9 +140,25 @@ async function rowsOf(
     reducedMotion: 'reduce',
   });
   const tab = await context.newPage();
-  await tab.goto(address, { waitUntil: 'networkidle' });
+  await tab.goto(address);
   await expect(tab.locator(tile).first()).toBeVisible({ timeout: 60_000 });
-  await tab.waitForTimeout(500);
+  // Read once every tile has its reading: no tile waiting, every figure in words.
+  await expect
+    .poll(
+      () =>
+        tab.evaluate(
+          ({ tile, figure }) =>
+            Array.from(document.querySelectorAll(tile)).every(
+              (element) =>
+                element.getAttribute('data-tone') !== 'waiting' &&
+                (element.querySelector(figure)?.textContent ?? '').trim() !== '' &&
+                (element.querySelector(figure)?.textContent ?? '').trim() !== '…'
+            ),
+          { tile, figure }
+        ),
+      { timeout: 60_000 }
+    )
+    .toBe(true);
   const read = await tab.evaluate(
     ({ tile, figure }) => {
       const boxes = Array.from(document.querySelectorAll(tile)).map((element) => {
@@ -176,6 +203,8 @@ for (const [width, across] of [
     );
     expect(strip.columns).toBe(across);
     for (const row of strip.rows) {
+      // A figure the selector missed reads -1 and would pass the baseline check vacuously.
+      expect(Math.min(...row.tops)).toBeGreaterThanOrEqual(0);
       expect(Math.max(...row.tops) - Math.min(...row.tops)).toBeLessThanOrEqual(1);
       expect(Math.max(...row.heights) - Math.min(...row.heights)).toBeLessThanOrEqual(1);
     }
@@ -194,6 +223,7 @@ test('the landing stat row sets its numbers on one baseline, the two-line label 
       '[class*="proofFigure_"]'
     );
     for (const line of row.rows) {
+      expect(Math.min(...line.tops), `a figure found at ${width}`).toBeGreaterThanOrEqual(0);
       expect(Math.max(...line.tops) - Math.min(...line.tops), `at ${width}`).toBeLessThanOrEqual(1);
     }
   }

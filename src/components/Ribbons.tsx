@@ -17,17 +17,12 @@ import styles from './Ribbons.module.css';
  * closed dialog: Chrome paints nothing from a gradient it does not render, so
  * the page's ribbons were blank in Chrome while WebKit still drew them.
  */
-export function Ribbons({ contained = false }: { contained?: boolean }) {
-  // contained: the copy inside a dialog (the Author page), filling that dialog rather than the screen.
+export function Ribbons() {
   const own = `ribbon-${useId().replace(/[^A-Za-z0-9_-]/g, '')}`;
   const ref = (name: string) => `url(#${own}-${name})`;
   const gradient = { gold: ref('gold'), teal: ref('teal'), mixed: ref('mixed') };
   return (
-    <div
-      className={contained ? `${styles.layer} ${styles.contained}` : styles.layer}
-      aria-hidden="true"
-      data-testid={contained ? 'ribbons-dialog' : 'ribbons'}
-    >
+    <div className={styles.layer} aria-hidden="true" data-testid="ribbons">
       <svg
         className={styles.drawing}
         viewBox="-370 0 1440 900"

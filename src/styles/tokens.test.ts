@@ -186,45 +186,70 @@ describe('the site palette (ADR-016)', () => {
   });
 
   // #region worst-case-pairs
-  // The worst case the tweaks pass named (B1): the secondary ink over the 30 per
-  // cent glass where the glass lies straight over a ribbon's teal stop and its
-  // gold stop, blended at the glass's share. The ink darkened until both held
-  // 4.5 (#4d515a read 4.31 and 4.40); the glass's share did not move back. One
-  // grey for secondary text: the faint ink and the sidebar's muted ink are it.
-  it('the secondary ink holds 4.5 over the 30 per cent glass on the ribbons teal and gold stops', () => {
-    const glass = tokens.match(/--glass-bg:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
-    if (!glass) throw new Error('tokens.css should state --glass-bg as white at a share');
-    const share = Number(glass[1]);
-    const hex = (parts: number[]) =>
-      `#${parts.map((part) => Math.round(part).toString(16).padStart(2, '0')).join('')}`;
-    const through = (stop: number[]) => hex(stop.map((part) => 255 * share + part * (1 - share)));
-    for (const stop of [
-      [95, 179, 168],
-      [201, 162, 74],
-    ]) {
-      expect(contrast(token('color-text-muted'), through(stop))).toBeGreaterThanOrEqual(4.5);
+  // The worst case the tweaks pass named (B1): ink over the 30 per cent glass
+  // where the glass lies straight over a ribbon's teal stop and its gold stop,
+  // blended at the glass's share, the stops read from the ribbon tokens. The
+  // secondary ink darkened until both held 4.5 (#4d515a read 4.31 and 4.40);
+  // the body ink joined the check in the self-review of 25 September, when it
+  // read 3.88 there and deepened a step (#5e5653 to #524b48). One grey for
+  // secondary text: the faint ink and the sidebar's muted ink are it.
+  const rgb = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
+  const hex = (parts: number[]) =>
+    `#${parts.map((part) => Math.round(part).toString(16).padStart(2, '0')).join('')}`;
+  const over = (top: number[], share: number, below: number[]) =>
+    top.map((part, index) => part * share + below[index] * (1 - share));
+  const white = [255, 255, 255];
+  const share = (name: string) => {
+    const match = tokens.match(new RegExp(`--${name}:\\s*rgba\\(255, 255, 255, ([0-9.]+)\\)`));
+    if (!match) throw new Error(`tokens.css should state --${name} as white at a share`);
+    return Number(match[1]);
+  };
+  const stops = () => [rgb(token('color-ribbon-teal-light')), rgb(token('color-ribbon-gold'))];
+
+  it('every ink holds 4.5 over the 30 per cent glass on the ribbons teal and gold stops', () => {
+    for (const stop of stops()) {
+      const ground = hex(over(white, share('glass-bg'), stop));
+      for (const name of ['color-text', 'color-text-muted', 'color-heading']) {
+        expect(
+          contrast(token(name), ground),
+          `${name} on the glass over ${hex(stop)}`
+        ).toBeGreaterThanOrEqual(4.5);
+      }
     }
     expect(token('color-text-faint')).toBe(token('color-text-muted'));
     expect(token('color-sheet-text-muted')).toBe(token('color-text-muted'));
   });
 
+  it('body text stays darker than the secondary grey, so the hierarchy reads the right way round', () => {
+    expect(contrast(token('color-text'), '#ffffff')).toBeGreaterThan(
+      contrast(token('color-text-muted'), '#ffffff')
+    );
+  });
+
+  // A bar gauge's reading inside its deep teal fill: white on the fill at its
+  // share, over the gauge's faint track, over the glass on either stop. The gold
+  // fill carries no text at all (charts.test.ts): no ink clears 4.5 on it.
+  it('white inside a deep teal gauge fill holds 4.5 over the glass on either stop', () => {
+    const fill = tokens.match(/--gauge-fill-opacity:\s*([0-9.]+)\s*;/);
+    if (!fill) throw new Error('tokens.css should state --gauge-fill-opacity');
+    const track = tokens.match(/--color-mark-bar-track:\s*rgba\(2, 67, 69, ([0-9.]+)\)/);
+    if (!track)
+      throw new Error('tokens.css should state --color-mark-bar-track as the deep teal at a share');
+    for (const stop of stops()) {
+      const glass = over(white, share('glass-bg'), stop);
+      const ground = over(rgb(token('color-teal-deep')), Number(track[1]), glass);
+      const drawn = hex(over(rgb(token('color-mark-axis')), Number(fill[1]), ground));
+      expect(contrast('#ffffff', drawn)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   // The document dialog (B1b): the sheet nearly clear, the reading panel frosted,
   // and body text on the reading panel over the same two stops holds 4.5.
   it('a document reads on a frosted panel inside a clear sheet', () => {
-    expect(tokens).toContain('--dialog-sheet-bg: rgba(255, 255, 255, 0.1);');
     expect(tokens).toContain('--dialog-sheet-filter: blur(6px);');
-    expect(tokens).toContain('--dialog-page-filter: blur(28px) saturate(1.5);');
-    const page = tokens.match(/--dialog-page-bg:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
-    if (!page) throw new Error('tokens.css should state --dialog-page-bg as white at a share');
-    const share = Number(page[1]);
-    expect(share).toBe(0.78);
-    const hex = (parts: number[]) =>
-      `#${parts.map((part) => Math.round(part).toString(16).padStart(2, '0')).join('')}`;
-    for (const stop of [
-      [95, 179, 168],
-      [201, 162, 74],
-    ]) {
-      const ground = hex(stop.map((part) => 255 * share + part * (1 - share)));
+    expect(share('dialog-sheet-bg')).toBeLessThan(share('glass-bg'));
+    for (const stop of stops()) {
+      const ground = hex(over(white, share('dialog-page-bg'), stop));
       for (const name of ['color-text', 'color-text-muted', 'color-heading']) {
         expect(contrast(token(name), ground)).toBeGreaterThanOrEqual(4.5);
       }
@@ -238,13 +263,23 @@ describe('the site palette (ADR-016)', () => {
     const solid = (condition: RegExp) => {
       const at = tokens.search(condition);
       expect(at).toBeGreaterThan(-1);
-      return tokens.slice(at, at + 220);
+      return tokens.slice(at, at + 420);
     };
-    expect(solid(/@supports not \(\(backdrop-filter/)).toContain('--glass-bg: #ffffff;');
-    expect(solid(/@media \(prefers-reduced-transparency: reduce\)/)).toContain(
-      '--glass-bg: #ffffff;'
-    );
-    expect(solid(/@media \(forced-colors: active\)/)).toContain('--glass-bg: Canvas;');
+    // Every see-through ground turns with the panels: a phone's fuller glass, a
+    // document's sheet and its reading panels (the self-review of 25 September).
+    const grounds = ['--glass-bg', '--glass-bg-phone', '--dialog-sheet-bg', '--dialog-page-bg'];
+    const noBlur = solid(/@supports not \(\(backdrop-filter/);
+    const lessGlass = solid(/@media \(prefers-reduced-transparency: reduce\)/);
+    const forced = solid(/@media \(forced-colors: active\)/);
+    for (const ground of grounds) {
+      expect(noBlur).toContain(`${ground}: #ffffff;`);
+      expect(lessGlass).toContain(`${ground}: #ffffff;`);
+      expect(forced).toContain(`${ground}: Canvas;`);
+    }
+    for (const filter of ['--glass-filter', '--dialog-sheet-filter', '--dialog-page-filter']) {
+      expect(lessGlass).toContain(`${filter}: none;`);
+      expect(forced).toContain(`${filter}: none;`);
+    }
   });
   // #endregion glass
 

@@ -481,6 +481,32 @@ test('Pin sits in the card header beside Previous and Next, and This hour stands
   }
   await openCard(page, 'sql');
   await expect(page.getByTestId('bench-hour')).toHaveCount(0);
+  // A toggle keeps its name; its state is aria-pressed (the self-review of 25 September).
+  const pin = page.getByTestId('bench-pin');
+  await expect(pin).toHaveAttribute('aria-pressed', 'false');
+  await pin.click();
+  await expect(pin).toHaveAttribute('aria-pressed', 'true');
+  await expect(pin).toHaveText('Pin');
+});
+
+// The self-review of 25 September: at 1024 the site's rail and the Admin rail left a card
+// 460 px wide and three of its tables scrolled sideways. Under 1280 the Admin rail is the
+// drawer behind Cards, and the card has the width its tables need.
+test('under 1280 the Admin rail is the drawer behind Cards, and the open card is wide enough for its tables', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await openTheYard(page, '/?view=admin&card=errors');
+  await expect(page.getByTestId('errors-card')).toBeVisible();
+  await expect(page.getByTestId('bench-rail')).toHaveCount(0);
+  await expect(page.getByTestId('bench-cards')).toBeVisible();
+  const width = await page
+    .getByTestId('bench-open')
+    .evaluate((node) => node.getBoundingClientRect().width);
+  expect(width).toBeGreaterThan(600);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page.getByTestId('bench-rail')).toBeVisible();
+  await expect(page.getByTestId('bench-cards')).toHaveCount(0);
 });
 
 test('the tab reads what the strip and the open card need, and a card is fetched when it is opened (the workbench)', async ({
@@ -697,7 +723,7 @@ test('the activity graph draws at the top of the tab and its response names nobo
   // What people asked for is named by page; the collector is one line with its numbers behind Details.
   await expect(card.getByTestId('activity-asked-for')).toContainText('What people asked for');
   await expect(card.getByTestId('activity-collector')).toContainText(
-    /Collector (fine|: \d+ batches failed|: [\d,]+ hits dropped)/
+    /Collector (fine|: [\d,]+ batch(es)? failed|: [\d,]+ hits? dropped)/
   );
   // Behind Details: the drop count and the one keeper, not "one batch per store";
   // the keeper's retention on the card while the store is up (25 September).

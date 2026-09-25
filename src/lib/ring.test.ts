@@ -39,4 +39,11 @@ describe("a ring gauge (ADR: The glass look, the addendum on the operator's look
     expect(ticks[0]).toEqual({ x1: 100, y1: -3, x2: 100, y2: -9, major: true });
     expect(ticks[1].y1 - ticks[1].y2).toBeCloseTo(3 * Math.cos((2 * Math.PI) / 36), 1);
   });
+
+  it('marks major only the quarters that land on a tick, whatever the count', () => {
+    const ten = ringGraduations(200, 10);
+    expect(ten.flatMap((tick, index) => (tick.major ? [index] : []))).toEqual([0, 5]);
+    const forty = ringGraduations(200, 40);
+    expect(forty.flatMap((tick, index) => (tick.major ? [index] : []))).toEqual([0, 10, 20, 30]);
+  });
 });

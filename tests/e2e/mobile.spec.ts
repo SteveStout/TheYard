@@ -334,6 +334,45 @@ test.describe('a document on a phone', () => {
 });
 // #endregion no-sideways-scroll
 
+// #region about-from-home
+// Steve's iPhone, 25 September, on 1.0.3.25: About Steven opened from the home page sat
+// about 100 px high, its title above the screen and the home page's resume tile under
+// its foot. The phone's dialog is pinned to all four edges and the page behind it is
+// frosted. No emulator has a phone's toolbars; this holds what one can: the sheet
+// covers the screen edge to edge, top to bottom, its title is on the screen, and what
+// is behind it is frost, after the home page was scrolled before the tile was pressed.
+test('About Steven opened from the home page covers the whole phone screen, its title on it, frost behind', async ({
+  page,
+}) => {
+  await openTheYard(page, '/');
+  const tile = page.getByTestId('landing-tile-author');
+  await tile.scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 400);
+  await tile.click();
+  const sheet = page.locator('dialog[open]').last();
+  await expect(sheet.locator('.author-panel').first()).toBeVisible();
+  await expect(async () => {
+    const read = await sheet.evaluate((dialog) => {
+      const box = dialog.getBoundingClientRect();
+      const title = dialog.querySelector('[class*="dialogHeader"]')?.getBoundingClientRect();
+      return {
+        top: box.top,
+        left: box.left,
+        right: window.innerWidth - box.right,
+        bottom: window.innerHeight - box.bottom,
+        title: title === undefined ? -1 : title.top,
+        behind: getComputedStyle(dialog, '::backdrop').backgroundColor,
+      };
+    });
+    expect([read.top, read.left, read.right, read.bottom]).toEqual([0, 0, 0, 0]);
+    // The title bar on the screen, at its top, inside the sheet's border (3 px measured).
+    expect(read.title).toBeGreaterThanOrEqual(0);
+    expect(read.title).toBeLessThanOrEqual(4);
+    expect(read.behind).toBe('rgba(255, 255, 255, 0.78)');
+  }).toPass({ timeout: 15_000 });
+});
+// #endregion about-from-home
+
 // #region vehicle-order
 // The tweaks pass (A5): under 1024 a buyer reads the bid before the photos. Title,
 // bid, photos, specifications, condition, seller, top to bottom, and the status
@@ -345,7 +384,7 @@ test('a vehicle on a phone reads title, bid, photos, specifications, condition, 
   await page.locator('article button').first().click();
   const title = page.getByRole('heading', { level: 1 });
   await expect(title).toBeVisible();
-  await expect(page.getByTestId('vehicle-stack')).toBeVisible();
+  await expect(page.getByTestId('vehicle-layout')).toBeVisible();
   const tops = await page.evaluate(() => {
     const top = (selector: string) =>
       document.querySelector(selector)?.getBoundingClientRect().top ?? -1;
@@ -363,6 +402,25 @@ test('a vehicle on a phone reads title, bid, photos, specifications, condition, 
   // The header carries no countdown or sold chip of its own under 1024.
   const header = page.locator('article header').first();
   await expect(header.locator('[class*="countdown"], [class*="soldChip"]')).toHaveCount(0);
+});
+
+// The self-review of 25 September: the phone order was a second tree, so turning a
+// tablet across 1024 remounted the bid panel and dropped a typed amount and a bid in
+// flight. The order is CSS now; the panel is the same element on both sides of 1024.
+test('the bid panel is the same element on both sides of 1024, so a turn keeps what was typed', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page);
+  await page.locator('article button').first().click();
+  const panel = page.locator('section[aria-label="Auction"]');
+  await expect(panel).toBeVisible();
+  await panel.evaluate((node) => node.setAttribute('data-kept', 'yes'));
+  await page.setViewportSize({ width: 800, height: 1100 });
+  await expect(page.locator('section[aria-label="Photos"]')).toBeVisible();
+  await expect(panel).toHaveAttribute('data-kept', 'yes');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(panel).toHaveAttribute('data-kept', 'yes');
 });
 // #endregion vehicle-order
 

@@ -457,9 +457,23 @@ public class ActivityTests
         Assert.Equal(0, cost.GetProperty("failures").GetInt32());
     }
 
-    /// <summary>A keeper with no unit to count in puts no cost on the wire, and a keeper that is down puts no retention.</summary>
+    /// <summary>A keeper that is up but has no unit to count in keeps its retention on the wire and puts no cost there.</summary>
     [Fact]
-    public async Task A_keeper_with_no_unit_has_no_cost_and_one_that_is_down_has_no_retention()
+    public async Task A_keeper_with_no_unit_puts_no_cost_but_keeps_its_retention()
+    {
+        var collector = new ActivityCollector(new Dictionary<string, IActivityStore>(StringComparer.Ordinal) { ["sql"] = new RecordingActivityStore() }, "sql", NullLogger<ActivityCollector>.Instance);
+        var backends = new Backends([FakeBackend.Named("sql", "SQLite")], "sql");
+
+        var report = await ActivityReport.PublicAsync(collector, backends, "24h", DateTimeOffset.Parse("2026-09-25T12:30:00Z"), false, CancellationToken.None);
+        using var json = JsonDocument.Parse(JsonSerializer.Serialize(report));
+
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("cost").ValueKind);
+        Assert.Equal(RecordingActivityStore.Kept, json.RootElement.GetProperty("retention").GetString());
+    }
+
+    /// <summary>A keeper that is down puts no retention on the wire: its reason is why it is down, not how long rows last.</summary>
+    [Fact]
+    public async Task A_keeper_that_is_down_puts_no_retention()
     {
         var collector = new ActivityCollector(new Dictionary<string, IActivityStore>(StringComparer.Ordinal) { ["sql"] = new NullActivityStore("down") }, "sql", NullLogger<ActivityCollector>.Instance);
         var backends = new Backends([FakeBackend.Named("sql", "SQLite")], "sql");
@@ -474,10 +488,10 @@ public class ActivityTests
 
     private sealed class CostedActivityStore : IActivityStore, IActivityCost
     {
-        public (double Charge, int Operations, int Failures) Cost => (12.5, 4, 0);
+        public ActivityCost Cost => new(12.5, 4, 0);
 
         public Task<ActivityAvailability> AvailabilityAsync(CancellationToken cancellation) =>
-            Task.FromResult(new ActivityAvailability(true, "kept in Azure Cosmos DB with no expiry"));
+            Task.FromResult(new ActivityAvailability(true, "kept in Azure Cosmos DB with no expiry", "kept in Azure Cosmos DB with no expiry"));
 
         public Task RecordAsync(IReadOnlyList<ActivityHit> hits, CancellationToken cancellation) => Task.CompletedTask;
 
@@ -490,10 +504,12 @@ public class ActivityTests
 
     private sealed class RecordingActivityStore : IActivityStore
     {
+        public const string Kept = "kept in memory with no expiry";
+
         public List<ActivityHit> Recorded { get; } = [];
 
         public Task<ActivityAvailability> AvailabilityAsync(CancellationToken cancellation) =>
-            Task.FromResult(new ActivityAvailability(true, "recording"));
+            Task.FromResult(new ActivityAvailability(true, "recording", Kept));
 
         public Task RecordAsync(IReadOnlyList<ActivityHit> hits, CancellationToken cancellation)
         {
@@ -562,12 +578,14 @@ public class ActivityEndpointTests : IClassFixture<ActivityEndpointTests.KeyedHo
         Assert.Equal(stores, series);
         Assert.True(root.GetProperty("totals").GetProperty("requests").GetInt32() >= 3);
         // The keeper's retention and the drop count are on the wire whichever
-        // store keeps the rows (25 September); the cost only where the keeper
-        // has a unit for it.
-        Assert.StartsWith("kept in ", root.GetProperty("retention").GetString());
-        Assert.True(root.GetProperty("collector").GetProperty("dropped").GetInt64() >= 0);
-        var cost = root.GetProperty("cost");
-        Assert.True(cost.ValueKind == JsonValueKind.Null || cost.GetProperty("request_units").GetDouble() >= 0);
+        // store keeps the rows (25 September); the cost exactly where the
+        // keeper has a unit for it, so a Cosmos DB pass with no cost fails.
+        var keeper = _host.Services.GetRequiredService<ActivityCollector>().Keeper;
+        var kept = await keeper.AvailabilityAsync(CancellationToken.None);
+        Assert.Equal(kept.Retention, root.GetProperty("retention").GetString());
+        Assert.NotNull(kept.Retention);
+        Assert.Equal(JsonValueKind.Number, root.GetProperty("collector").GetProperty("dropped").ValueKind);
+        Assert.Equal(keeper is IActivityCost, root.GetProperty("cost").ValueKind != JsonValueKind.Null);
         // Not asserted: that the encoded path is among the top paths. On the
         // gate's Cosmos DB pass the hour document is shared with every test
         // that ran this hour and keeps twenty paths, so one hit is pruned; the

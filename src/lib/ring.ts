@@ -78,7 +78,9 @@ export function ringGraduations(
   const middle = size / 2;
   const inner = middle + 3;
   return Array.from({ length: count }, (_, index) => {
-    const major = index % (count / 4) === 0;
+    // Major where a quarter lands on a tick; a count not divisible by four has
+    // majors only at the quarters it does land on.
+    const major = (index * 4) % count === 0;
     const outer = inner + (major ? 6 : 3);
     const angle = (index / count) * 2 * Math.PI;
     const at = (radius: number) => ({

@@ -295,6 +295,7 @@ jobs:
       # newest ten, and a refusal to delete never fails the deploy.
       - name: Keep the newest ten images
         continue-on-error: true
+        timeout-minutes: 5
         env:
           COSMOS_APP: APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2
         run: |
@@ -306,12 +307,18 @@ jobs:
           for app in "$APP" "$COSMOS_APP"; do
             tag=$(az webapp config show -g "$RG" -n "$app" --query linuxFxVersion -o tsv | sed 's/.*://')
             digest=$(echo "$meta" | jq -r --arg t "$tag" '.[] | select((.tags // []) | index($t)) | .digest')
-            if ! echo "$keep" | grep -qx "$digest"; then echo "$app runs $tag, outside the newest ten; nothing pruned"; exit 0; fi
+            if ! echo "$keep" | grep -Fqx "$digest"; then echo "::warning::$app runs $tag, outside the newest ten; nothing pruned"; exit 0; fi
           done
           gone=0
           for digest in $(echo "$meta" | jq -r '.[].digest'); do
-            if ! echo "$keep" | grep -qx "$digest"; then
-              az acr repository delete -n "$REGISTRY_NAME" --image "theyard@$digest" --yes -o none
+            if ! echo "$keep" | grep -Fqx "$digest"; then
+              # Untagged digests are whole images only while the builds set
+              # provenance: false; DeployWorkflowTests holds that. A refusal
+              # (no AcrDelete on the deploy identity) is a warning, not a red step.
+              if ! az acr repository delete -n "$REGISTRY_NAME" --image "theyard@$digest" --yes -o none; then
+                echo "::warning::the registry refused a delete (does the deploy identity hold AcrDelete?); deleted $gone, the rest kept"
+                exit 0
+              fi
               gone=$((gone + 1))
             fi
           done
