@@ -10,7 +10,7 @@ import { type Column, DataTable } from './DataTable';
 
 /** A statement: when, how long, which request caused it, the text and what it was handed. */
 const sqlColumns = (window_: CardWindow): Column<SqlStatement>[] => [
-  { name: 'At', mono: true, cell: (statement) => stampFor(window_, statement.at) },
+  { name: 'At', mono: true, short: true, cell: (statement) => stampFor(window_, statement.at) },
   { name: 'Took', mono: true, num: true, cell: (statement) => `${statement.duration_ms} ms` },
   { name: 'Caused by', mono: true, cell: (statement) => statement.request ?? 'startup' },
   {

@@ -88,6 +88,23 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
     }
 
     /// <summary>
+    /// The database's reading goes out as UTC with its Z (1.0.3.31): with no
+    /// offset a browser read it as local time, and the Machines card drew the
+    /// database hours away from the container beside it.
+    /// </summary>
+    [Fact]
+    public void The_databases_own_reading_goes_out_as_utc_with_its_offset()
+    {
+        var read = new ResourceStatRow(new DateTime(2026, 9, 25, 21, 53, 21, 117, DateTimeKind.Unspecified), 0.58, 0, 0, 0.11, 3.33);
+
+        var sent = ResourceStats.InUtc(read);
+
+        Assert.Equal(DateTimeKind.Utc, sent.At.Kind);
+        Assert.Equal(read.At.Ticks, sent.At.Ticks);
+        Assert.Equal("\"2026-09-25T21:53:21.117Z\"", JsonSerializer.Serialize(sent.At));
+    }
+
+    /// <summary>
     /// A reading that did not happen says which kind of not-happening it was.
     /// The permission case is the one that matters: it is the difference
     /// between a store that keeps no such reading and a store that keeps it

@@ -21,7 +21,12 @@ import { type Column, DataTable } from './DataTable';
 
 /** The container every fifteen seconds: memory three ways, the processor and the threads. */
 const CONTAINER_COLUMNS: Column<MachineSample>[] = [
-  { name: 'At', mono: true, cell: (sample) => new Date(sample.at).toLocaleTimeString() },
+  {
+    name: 'At',
+    mono: true,
+    short: true,
+    cell: (sample) => new Date(sample.at).toLocaleTimeString(),
+  },
   { name: 'Working set', mono: true, num: true, cell: (sample) => `${sample.working_set_mb} MB` },
   { name: 'Managed', mono: true, num: true, cell: (sample) => `${sample.managed_mb} MB` },
   { name: 'Heap', mono: true, num: true, cell: (sample) => `${sample.heap_mb} MB` },
@@ -36,7 +41,7 @@ const CONTAINER_COLUMNS: Column<MachineSample>[] = [
 
 /** The relational store's own reading: each share of what its tier allows. */
 const RELATIONAL_COLUMNS: Column<ResourceStatRow>[] = [
-  { name: 'At', mono: true, cell: (row) => new Date(row.at).toLocaleTimeString() },
+  { name: 'At', mono: true, short: true, cell: (row) => new Date(row.at).toLocaleTimeString() },
   { name: 'Processor', mono: true, num: true, cell: (row) => `${row.cpu_percent}%` },
   { name: 'Memory', mono: true, num: true, cell: (row) => `${row.memory_percent}%` },
   { name: 'Data', mono: true, num: true, cell: (row) => `${row.data_io_percent}%` },
@@ -46,7 +51,12 @@ const RELATIONAL_COLUMNS: Column<ResourceStatRow>[] = [
 
 /** The document store a minute at a time: what it charged, for how many operations, against a free second. */
 const DOCUMENT_COLUMNS: Column<DocumentMinute>[] = [
-  { name: 'Minute', mono: true, cell: (minute) => new Date(minute.at).toLocaleTimeString() },
+  {
+    name: 'Minute',
+    mono: true,
+    short: true,
+    cell: (minute) => new Date(minute.at).toLocaleTimeString(),
+  },
   { name: 'Request units', mono: true, num: true, cell: (minute) => `${minute.request_units} RU` },
   { name: 'Operations', mono: true, num: true, cell: (minute) => minute.operations },
   {

@@ -62,6 +62,37 @@
 }
 /* #endregion phone-dialog */
 
+/* #region desk-dialog */
+/* A docked desk (1.0.3.31): the document opens in the page's own column, right
+   of the site's rail and under the store bar, and centred there. Centred on the
+   whole screen, as it was, it sat over half the rail at 1024 and 1280 and cut
+   the rail's words mid-word, and its top edge sliced through the store bar (the
+   two picture reviews of 1.0.3.29). The page behind stays clear, as Steve chose
+   for the tweaks pass (B1b). */
+@media (min-width: 1024px) {
+  :global([data-rail='open']) .dialog,
+  :global([data-rail='collapsed']) .dialog {
+    --dialog-left: var(--rail-width);
+
+    position: fixed;
+    inset: calc(var(--space-8) + var(--space-3)) 0 var(--space-6) var(--dialog-left);
+    width: min(760px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
+    height: auto;
+    max-height: none;
+    margin: 0 auto;
+  }
+
+  :global([data-rail='collapsed']) .dialog {
+    --dialog-left: var(--rail-width-collapsed);
+  }
+
+  :global([data-rail='open']) .dialogWide,
+  :global([data-rail='collapsed']) .dialogWide {
+    width: min(1040px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
+  }
+}
+/* #endregion desk-dialog */
+
 .dialogHeader {
   display: flex;
   align-items: center;

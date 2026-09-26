@@ -222,6 +222,29 @@ test.describe('the docked rail', () => {
   });
 });
 
+// A document on a docked desk opens in the page's own column (1.0.3.31): on 1.0.3.29
+// the dialog was centred on the whole screen, sat over half the rail at 1024 and 1280
+// and cut its words mid-word, and its top edge sliced through the store bar.
+for (const width of [1024, 1280]) {
+  test(`a document at ${width} opens right of the rail and under the store bar`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await openTheYard(page, '/?doc=readme');
+    const dialog = page.locator('dialog[open]');
+    await expect(dialog).toBeVisible({ timeout: 30_000 });
+    const rail = await page.getByTestId('side-rail').boundingBox();
+    const bar = await page.getByTestId('store-bar').boundingBox();
+    const box = await dialog.boundingBox();
+    expect(rail).not.toBeNull();
+    expect(bar).not.toBeNull();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(rail!.x + rail!.width - 1);
+    expect(box!.y).toBeGreaterThanOrEqual(bar!.y + bar!.height - 1);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(width + 1);
+  });
+}
+
 test.describe('just under the docking line', () => {
   test.use({ viewport: { width: 1023, height: 800 } });
 

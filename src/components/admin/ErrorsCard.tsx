@@ -10,8 +10,13 @@ import { type Column, DataTable } from './DataTable';
 
 /** An error: when, what answered, where, what it was, and the stack behind a fold. */
 const errorColumns = (window_: CardWindow): Column<ErrorEntry>[] => [
-  { name: 'At', mono: true, cell: (entry) => stampFor(window_, entry.at) },
-  { name: 'Status', mono: true, cell: (entry) => (entry.status === 0 ? 'browser' : entry.status) },
+  { name: 'At', mono: true, short: true, cell: (entry) => stampFor(window_, entry.at) },
+  {
+    name: 'Status',
+    mono: true,
+    short: true,
+    cell: (entry) => (entry.status === 0 ? 'browser' : entry.status),
+  },
   { name: 'Where', mono: true, cell: (entry) => entry.path },
   { name: 'What', cell: (entry) => entry.message },
   {

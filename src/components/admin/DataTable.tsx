@@ -4,10 +4,11 @@
  * and the name is both the column's header and, on a phone, the label beside
  * each value.
  *
- * Under 640 px a table of three or more columns stacks: each row becomes a
- * block led by its first column, with every other value on a line of its own
- * behind its column's name. The pictures of 1.0.3.29 at 390 showed why: the log
- * gave its message twenty pixels and rows three hundred tall, and the store,
+ * A table of three or more columns stacks when its card cannot give every
+ * column a column's room (src/lib/tableFit.ts; 1.0.3.31, before which it was
+ * under 640 px only): each row becomes a block led by its first column, with
+ * every other value on a line of its own behind its column's name. The
+ * pictures of 1.0.3.29 at 390 showed why: the log gave its message twenty pixels and rows three hundred tall, and the store,
  * the machines and the backends were cut at the phone's edge. A table of two
  * columns is already a label and a value, and stays a table.
  *
@@ -15,7 +16,8 @@
  * reader it is a table (Safari has), so every part carries its role, and the
  * reader hears the same table at every width.
  */
-import type { ReactNode } from 'react';
+import { type ReactNode, useLayoutEffect, useState } from 'react';
+import { STACK_FROM_COLUMNS, stacksAt } from '../../lib/tableFit';
 import styles from '../AdminPanel.module.css';
 
 export type Column<Row> = {
@@ -27,6 +29,8 @@ export type Column<Row> = {
   mono?: boolean;
   /** A number: tabular figures, right-aligned in a table and never broken. */
   num?: boolean;
+  /** A short reading (a time, a level, a status), kept on one line: 1.0.3.29 broke them a character a line. */
+  short?: boolean;
   /** The row's own name, a header for the row rather than a value in it. */
   rowHeader?: boolean;
   /** A class of the card's own for the cell, beside the ones above. */
@@ -59,16 +63,25 @@ export type DataTableProps<Row> = Rows<Row> & {
   note?: { content: ReactNode; testId?: string };
 };
 
-/** A table of three or more columns stacks on a phone; two are a label and a value already. */
-export const STACK_FROM_COLUMNS = 3;
-
 const joined = (...names: (string | false | undefined)[]) =>
   names.filter((name) => typeof name === 'string' && name !== '').join(' ') || undefined;
 
 export function DataTable<Row>(props: DataTableProps<Row>) {
   const { label, columns, rowKey, testId, rowProps, empty, note } = props;
-  const stacks = columns.length >= STACK_FROM_COLUMNS;
   const across = columns.length;
+  const narrow = columns.filter((column) => column.num === true || column.short === true).length;
+  // The box is measured before paint and on every resize, so the first frame a
+  // reader sees is already the right shape.
+  const [box, setBox] = useState<HTMLDivElement | null>(null);
+  const [stacks, setStacks] = useState(false);
+  useLayoutEffect(() => {
+    if (box === null || across < STACK_FROM_COLUMNS) return;
+    const measure = () => setStacks(stacksAt(box.clientWidth, across - narrow, narrow));
+    measure();
+    const watcher = new ResizeObserver(measure);
+    watcher.observe(box);
+    return () => watcher.disconnect();
+  }, [box, across, narrow]);
 
   const row = (entry: Row, index: number) => {
     const own = rowProps?.(entry);
@@ -83,6 +96,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
           const className = joined(
             column.mono === true && styles.mono,
             column.num === true && styles.num,
+            column.short === true && styles.short,
             at === 0 && stacks && styles.lead,
             column.className
           );
@@ -122,7 +136,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       : props.groups.reduce((total, group) => total + group.rows.length, 0);
 
   return (
-    <div className={styles.tableWrap} role="region" aria-label={label} tabIndex={0}>
+    <div ref={setBox} className={styles.tableWrap} role="region" aria-label={label} tabIndex={0}>
       <table
         role="table"
         className={joined(styles.table, stacks && styles.stack)}

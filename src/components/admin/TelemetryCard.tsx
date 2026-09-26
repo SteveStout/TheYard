@@ -1,12 +1,23 @@
 /**
  * Application Insights, read back through the container's own identity (ADR-024).
  */
+import { emptyHourWords } from '../../lib/telemetryCard';
 import styles from '../AdminPanel.module.css';
 import type { Telemetry } from './types';
+
+/** The newest request's time, in the reader's own clock, as the log card writes its times. */
+const timeOf = (iso: string) => {
+  const when = new Date(iso);
+  return Number.isNaN(when.getTime()) ? '' : when.toLocaleTimeString();
+};
 import { useRead, pill, failed } from './common';
 
 export default function TelemetryCard({ tick }: { tick: number }) {
   const telemetry = useRead<Telemetry>('/api/admin/telemetry', tick);
+  const emptyHour =
+    telemetry === null || telemetry === 'failed'
+      ? null
+      : emptyHourWords(telemetry.summary?.total ?? 0, telemetry.newest_request_at, timeOf);
   return (
     <>
       {/* #region telemetry-card */}
@@ -24,6 +35,10 @@ export default function TelemetryCard({ tick }: { tick: number }) {
         ) : !telemetry.configured || telemetry.available === false ? (
           <p className={styles.muted} data-testid="telemetry-note">
             {telemetry.note}
+          </p>
+        ) : emptyHour !== null ? (
+          <p className={styles.muted} data-testid="telemetry-empty">
+            {emptyHour}
           </p>
         ) : (
           <>

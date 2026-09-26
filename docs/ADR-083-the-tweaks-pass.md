@@ -142,3 +142,22 @@ const label = at === 0 ? undefined : column.name;
 How it is held: `mobile.spec` at 360 (no tile line cut, three-column tables stacked with labels and never sideways, a chart's viewBox equal to its drawn width), `coverage.ts` (no Admin table scrolls sideways on a phone), `admin.spec` (Next walks every card and each opens with a name), and unit tests on `statTiles`, `trafficCard` and `activity`.
 
 Still open, from the same readers, for the versions after this one: the desk store and log tables, the Machines card's two time zones, the Telemetry card's zeros, the dialogs over the sidebar at 1024 and 1280, and WebKit's bold and glass, which may be the test browser rather than Safari.
+
+## Addendum, 2026-09-25 (1.0.3.31): tables that fit their card, and the rest of the high findings
+
+The same two readers' high findings on 1.0.3.29, after 1.0.3.30 fixed the phone.
+
+- **Tables that fit their card.** 1.0.3.30 stacked a table under 640 only, and a desk was not room enough either: the store's nine columns in a card about 660 wide at 1024 were cut at its edge, and its times broke a character a line. A table now measures its own box before paint and on every resize, and stacks when the box cannot give each column its room, 7.5rem for a column of words and 5.5rem for a number or a short reading (`src/lib/tableFit.ts`). A time, a level and a status are `short` columns and stay on one line; a log category breaks at its dots. The gate had never seen the store's rows, because the local store log is empty on SQLite; `admin.spec` now holds the store and the log at 768, 1024, 1280 and 1440 against rows in the live site's shape.
+
+```ts
+export function stacksAt(boxWidth: number, wide: number, narrow = 0): boolean {
+  const columns = wide + narrow;
+  const room = wide * COLUMN_ROOM_PX + narrow * NARROW_ROOM_PX;
+  return columns >= STACK_FROM_COLUMNS && boxWidth > 0 && boxWidth < room;
+}
+```
+
+- **A document on a desk** opens in the page's own column, right of the rail and under the store bar. Centred on the whole screen it sat over half the rail at 1024 and 1280 and cut the rail's words, and its top edge sliced the store bar. The page behind stays clear, as Steve chose in the tweaks pass (B1b); the readers asked for a scrim, which is his call and is not added.
+- **One clock on the Machines card.** `sys.dm_db_resource_stats` gives `end_time` in UTC with no kind, the wire wrote it with no offset, and a browser read it as its own time: the database drew at 20:16 beside a container at 15:55 in Chicago. `ResourceStats.InUtc` marks it UTC, and it goes out with its Z.
+- **The telemetry card says why an hour is empty.** It said "0 requests" while the strip counted hundreds. Measured on 25 September: Application Insights held 20,879 requests between 12:00 and 18:00 UTC, 819 in the six hours from 18:00, and none in the hour the card read at 21:53 UTC; the component's daily cap is 0.1 GB, which stops ingestion until midnight UTC. The query now returns the newest request of the day, and an empty hour reads as a sentence naming it and the cap as the likeliest reason (`src/lib/telemetryCard.ts`). The cap itself is a cost control and is unchanged.
+- **WebKit's bold and glass, measured before touching anything.** In Playwright's WebKit on the build machine, against the live site, the page's glass computes `blur(6px)`, both `backdrop-filter` spellings are supported, and IBM Plex lays out at three widths for 400, 600 and 700 (480.8, 495.6 and 501.6 px for one line, the same as Chromium). The stylesheet gives WebKit the right values; whether a real Safari paints them is for a real iPhone to say, and nothing was changed on the strength of the test browser's pictures.

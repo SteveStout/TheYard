@@ -516,7 +516,7 @@ test.describe('the Admin tab on the narrowest phone', () => {
     await expect(strip.getByTestId('tile-speed')).toContainText('requests in the last hour');
   });
 
-  test('a table of three or more columns stacks its rows, each value behind its column name, and none scrolls sideways (1.0.3.30)', async ({
+  test('a table too wide for the phone stacks its rows, each value behind its column name, and none scrolls sideways (1.0.3.30)', async ({
     page,
   }) => {
     // At 390 on 1.0.3.29 the log gave its message twenty pixels and the machines were cut at the edge.
@@ -540,7 +540,9 @@ test.describe('the Admin tab on the narrowest phone', () => {
       );
       for (const table of tables) {
         expect(table.sideways, `${card}: a table scrolls sideways`).toBeLessThanOrEqual(1);
-        if (table.columns >= 3 && table.rowDisplay !== null) {
+        // From 1.0.3.31 a table stacks when its card is too narrow for its columns, so a
+        // few short numbers may fit as a table; the log's words never do on a phone.
+        if (table.columns >= 3 && (card === 'log' || table.rowDisplay === 'block')) {
           expect(table.rowDisplay, `${card}: a row of ${table.columns} columns`).toBe('block');
           expect(table.label, `${card}: a value's label`).not.toBe('none');
         }

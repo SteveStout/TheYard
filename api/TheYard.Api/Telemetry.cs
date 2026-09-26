@@ -43,6 +43,12 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled)
     /// of the two. Every one of those was learned from the query API's own
     /// error message rather than guessed, after the first version shipped
     /// broken (ADR: Telemetry that outlives the container, second pass).
+    ///
+    /// The fifth answer, the newest request of the last day (1.0.3.31), is how
+    /// the card tells an empty hour from a quiet site: on 25 September the card
+    /// said 0 requests while the site answered hundreds: the component had
+    /// taken 20,879 requests between 12:00 and 18:00 UTC against its daily data
+    /// cap, and a component at its cap takes nothing more until midnight UTC. `newest_at` and not `last`: `last` does not parse.
     /// </summary>
     private const string Query = """
         let lookback = 1h;
@@ -71,7 +77,12 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled)
             | summarize hits = count(), last_at = max(timestamp)
             | extend part = "browser"
             | project part, hits, last_at;
-        union summary, slowest, failures, browser
+        let newest = requests
+            | where timestamp > ago(1d)
+            | summarize newest_at = max(timestamp)
+            | extend part = "newest"
+            | project part, newest_at;
+        union summary, slowest, failures, browser, newest
         """;
     // #endregion kql
 
@@ -188,6 +199,7 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled)
 
         object? summary = null;
         object? browser = null;
+        string? newest = null;
         var slowest = new List<object>();
         var exceptions = new List<object>();
 
@@ -221,6 +233,9 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled)
                         last_at = Text(row, "last_at") ?? "",
                     });
                     break;
+                case "newest":
+                    newest = Text(row, "newest_at");
+                    break;
                 case "browser":
                     browser = new
                     {
@@ -240,6 +255,7 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled)
             slowest,
             exceptions,
             browser = browser ?? new { count = 0, last_at = "" },
+            newest_request_at = newest,
         };
     }
     // #endregion shape

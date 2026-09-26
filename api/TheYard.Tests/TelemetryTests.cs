@@ -93,6 +93,27 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
     }
 
     /// <summary>
+    /// An empty hour says how old the newest request is (1.0.3.31), so the card
+    /// can tell a component that stopped taking data from a quiet site.
+    /// </summary>
+    [Fact]
+    public void An_empty_hour_carries_the_newest_request_of_the_day()
+    {
+        using var body = JsonDocument.Parse("""
+            {"tables":[{"name":"PrimaryResult",
+              "columns":[{"name":"part"},{"name":"total"},{"name":"failed"},{"name":"p50"},{"name":"p95"},{"name":"newest_at"}],
+              "rows":[["requests",0,0,null,null,null],["newest",null,null,null,null,"2026-09-25T18:04:11.52Z"]]}]}
+            """);
+        var shape = typeof(TelemetryReader).GetMethod("Shape", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.NotNull(shape);
+
+        string json = JsonSerializer.Serialize(shape!.Invoke(null, [body]));
+
+        Assert.Contains("\"newest_request_at\":\"2026-09-25T18:04:11.52Z\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"total\":0", json, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The query is private, which is right: it is an implementation detail of
     /// the reader. Reflection is the narrow exception a test earns when the
     /// alternative is making the field public for the test's convenience.

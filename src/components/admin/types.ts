@@ -138,6 +138,8 @@ export type Telemetry = {
   slowest?: TelemetryRoute[];
   exceptions?: TelemetryException[];
   browser?: TelemetryBrowser;
+  /** The newest request of the last day, or null when there is none (1.0.3.31). */
+  newest_request_at?: string | null;
 };
 
 export type SqlParameterShape = { name: string; type: string; size: number | null };

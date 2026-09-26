@@ -1,7 +1,9 @@
 /**
  * The log, as the console got it (ADR-010), now or over a kept window.
  */
+import { Fragment } from 'react';
 import { type CardWindow, stampFor } from '../../lib/keptCards';
+import { dottedParts } from '../../lib/tableFit';
 import styles from '../AdminPanel.module.css';
 import type { LogEntry } from './types';
 import { useRead, useKeptWindow, failed, About } from './common';
@@ -9,9 +11,20 @@ import { type Column, DataTable } from './DataTable';
 
 /** A log line: when, how loud, from where, and what it said. */
 const logColumns = (window_: CardWindow): Column<LogEntry>[] => [
-  { name: 'At', mono: true, cell: (entry) => stampFor(window_, entry.at) },
-  { name: 'Level', mono: true, cell: (entry) => entry.level },
-  { name: 'Category', mono: true, cell: (entry) => entry.category },
+  { name: 'At', mono: true, short: true, cell: (entry) => stampFor(window_, entry.at) },
+  { name: 'Level', mono: true, short: true, cell: (entry) => entry.level },
+  {
+    name: 'Category',
+    mono: true,
+    // A narrow column breaks the category at a dot, never inside a word (1.0.3.31).
+    cell: (entry) =>
+      dottedParts(entry.category).map((part, at) => (
+        <Fragment key={at}>
+          {at > 0 && <wbr />}
+          {part}
+        </Fragment>
+      )),
+  },
   {
     name: 'Message',
     cell: (entry) => (

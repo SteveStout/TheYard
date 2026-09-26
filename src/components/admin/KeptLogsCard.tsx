@@ -22,7 +22,7 @@ import { type Column, DataTable } from './DataTable';
 
 /** A kept line: when, what kind, on which store, what happened, from where, and its detail. */
 const KEPT_COLUMNS: Column<LogEvent>[] = [
-  { name: 'When', mono: true, cell: (e) => new Date(e.at).toLocaleTimeString() },
+  { name: 'When', mono: true, short: true, cell: (e) => new Date(e.at).toLocaleTimeString() },
   { name: 'Kind', cell: (e) => e.kind },
   { name: 'Store', cell: (e) => e.store || '(none)' },
   { name: 'What', mono: true, cell: (e) => describeEvent(e) },

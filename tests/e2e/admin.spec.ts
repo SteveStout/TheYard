@@ -430,13 +430,13 @@ test('Next walks every card on the rail, and every one opens to a card with its 
   // The reset card drew nothing without the key, so Previous from Health landed on an empty bench.
   await openTheYard(page, '/?view=admin&card=health');
   const open = page.getByTestId('bench-open');
-  const slugs = await page
-    .getByTestId('bench-rail')
-    .first()
-    .locator('[data-testid^="bench-link-"]')
-    .evaluateAll((links) =>
-      links.map((link) => (link.getAttribute('data-testid') ?? '').replace('bench-link-', ''))
-    );
+  // The rail comes with the tab's own chunk; its links are waited for, not assumed
+  // (1.0.3.31: the gate read them once before they had drawn and found none).
+  const rail = page.getByTestId('bench-rail').first().locator('[data-testid^="bench-link-"]');
+  await expect(rail.first()).toBeAttached({ timeout: 30_000 });
+  const slugs = await rail.evaluateAll((links) =>
+    links.map((link) => (link.getAttribute('data-testid') ?? '').replace('bench-link-', ''))
+  );
   expect(slugs.length).toBeGreaterThanOrEqual(19);
   for (const slug of slugs) {
     await expect(open).toHaveAttribute('data-card', slug);
@@ -1302,4 +1302,69 @@ test('the tests card shows every suite and every test the gate ran, failures fir
   await card.getByTestId('tests-filter').fill('auth sign');
   await expect(failing.locator('tbody tr')).toHaveCount(1);
   await expect(failing.locator('summary')).toContainText('1 of 3 tests');
+});
+
+test('the store and the log never scroll sideways on a desk: a table too wide for its card stacks, and a time stays on one line (1.0.3.31)', async ({
+  page,
+}) => {
+  // The gate's own store log is empty on SQLite, which is why the desk coverage never saw
+  // the store's nine columns cut at the card's edge on 1.0.3.29; this holds it to rows in
+  // the live site's shape (read from theyard.stevenstout.biz, 25 September).
+  const operation = (at: string, container: string, kind: string, text: string, ms: number) => ({
+    at,
+    container,
+    kind,
+    text,
+    parameters: [{ name: '@make', type: 'String', size: 6 }],
+    partition: kind === 'query' ? 'cross-partition' : 'n/a',
+    physical_partitions: kind === 'query' ? 1 : 0,
+    request_charge: 2.89,
+    duration_ms: ms,
+    outcome: '1 document(s) in 1 page(s)',
+    request: null,
+    request_id: null,
+  });
+  await page.route('**/api/admin/store', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        store: 'Azure Cosmos DB',
+        operations: [
+          operation(
+            '2026-09-25T20:54:58.1783069+00:00',
+            'vehicles',
+            'query',
+            'SELECT VALUE COUNT(1) FROM c WHERE c.make = @make',
+            3590
+          ),
+          operation('2026-09-25T20:54:53.6375509+00:00', 'users', 'metadata', 'ReadContainer', 53),
+        ],
+      }),
+    })
+  );
+  for (const width of [768, 1024, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const card of ['store', 'log']) {
+      await openTheYard(page, `/?view=admin&card=${card}`);
+      const table = page.getByTestId('bench-open').locator('table').first();
+      await expect(table).toBeVisible({ timeout: 60_000 });
+      const read = await table.evaluate((element) => {
+        const box = element.parentElement ?? element;
+        const time = element.querySelector('tbody td');
+        // The line boxes the time's words were laid out in: one, or it broke.
+        const range = document.createRange();
+        if (time !== null) range.selectNodeContents(time);
+        return {
+          sideways: box.scrollWidth - box.clientWidth,
+          timeLines:
+            time === null
+              ? 0
+              : new Set(Array.from(range.getClientRects()).map((rect) => Math.round(rect.top)))
+                  .size,
+        };
+      });
+      expect(read.sideways, `${card} at ${width}`).toBeLessThanOrEqual(1);
+      expect(read.timeLines, `${card}'s time at ${width}`).toBeLessThanOrEqual(1);
+    }
+  }
 });

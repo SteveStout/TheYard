@@ -179,7 +179,7 @@ public static class ResourceStats
             // and returns whatever the last hour holds.
             string sql = Query.Replace("{rows}", Math.Clamp(rows, 1, 240).ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
             var rowsRead = await db.Database.SqlQueryRaw<ResourceStatRow>(sql).ToListAsync(cancellation);
-            return new StoreLoad(true, null, rowsRead);
+            return new StoreLoad(true, null, rowsRead.Select(InUtc).ToList());
         }
         catch (Exception ex) when (ex is DbException or InvalidOperationException or OperationCanceledException)
         {
@@ -193,6 +193,16 @@ public static class ResourceStats
             return StoreLoad.Absent(ReasonFor((ex as SqlException)?.Number, ex.GetType().Name));
         }
     }
+
+    /// <summary>
+    /// The view's end_time is UTC and arrives with no kind on it, so the wire
+    /// wrote it with no offset and a browser read it as its own local time: the
+    /// Machines card drew the database at 20:16 beside a container at 15:55 on
+    /// 1.0.3.29, five hours apart in Chicago (1.0.3.31). Marked UTC here, it goes
+    /// out with its Z like every other instant on the card.
+    /// </summary>
+    public static ResourceStatRow InUtc(ResourceStatRow row) =>
+        row with { At = DateTime.SpecifyKind(row.At, DateTimeKind.Utc) };
 
     /// <summary>What to say on a public card about a reading that did not happen, from the database's own error number.</summary>
     public static string ReasonFor(int? number, string typeName)

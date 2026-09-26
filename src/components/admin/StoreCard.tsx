@@ -13,12 +13,12 @@ import { type Column, DataTable } from './DataTable';
 // #region store-card
 /** An operation: when, how long, what it cost, who caused it, where it went and what it carried. */
 const storeColumns = (window_: CardWindow): Column<StoreOperation>[] => [
-  { name: 'At', mono: true, cell: (operation) => stampFor(window_, operation.at) },
+  { name: 'At', mono: true, short: true, cell: (operation) => stampFor(window_, operation.at) },
   { name: 'Took', mono: true, num: true, cell: (operation) => `${operation.duration_ms} ms` },
   { name: 'Charge', mono: true, num: true, cell: (operation) => `${operation.request_charge} RU` },
   { name: 'Caused by', mono: true, cell: (operation) => operation.request ?? 'startup' },
   { name: 'Container', mono: true, cell: (operation) => operation.container },
-  { name: 'Kind', cell: (operation) => operation.kind },
+  { name: 'Kind', short: true, cell: (operation) => operation.kind },
   {
     name: 'Partition',
     cell: (operation) =>
