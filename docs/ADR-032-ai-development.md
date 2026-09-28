@@ -74,7 +74,7 @@ pipeline's own account of itself.
 ## Files
 
 - [`docs/AI-DEVELOPMENT.md`](https://github.com/SteveStout/TheYard/blob/main/docs/AI-DEVELOPMENT.md): the document.
-- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the About menu entry.
+- [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the About menu entry.
 - [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the slug that serves it.
 - [`docs/ADR-014-live-samples.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-014-live-samples.md): why a document here cannot quietly drift from the code it describes.
 - [`docs/ADR-027-competing-bidders.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-027-competing-bidders.md): the eleven defects the document cites.

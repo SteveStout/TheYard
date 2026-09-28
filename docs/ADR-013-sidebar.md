@@ -55,17 +55,17 @@ served (ADR: Live code samples). The one component and its two shapes
 ```
 
 The docking line, read by the app as a media query, and the rail's memory
-([`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx)
+([`src/app/hooks/useRail.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useRail.ts)
 and [`src/hooks/useMediaQuery.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useMediaQuery.ts)):
 
-```live path=src/App.tsx region=docking
+```live path=src/app/hooks/useRail.ts region=docking
 ```
 
 The layout, two columns with the rail's width from a token
-([`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css)
+([`src/app/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/app/App.module.css)
 and [`src/styles/sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sizes.css)):
 
-```live path=src/App.module.css region=rail-grid
+```live path=src/app/App.module.css region=rail-grid
 ```
 
 ```live path=src/styles/sizes.css region=rail-widths
@@ -151,10 +151,10 @@ table of contents without opening anything. The browser suite's count of heading
 - [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx) and
   [`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css): the one navigation surface in
   its two shapes.
-- [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx) and [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css): the docking line,
+- [`src/app/hooks/useRail.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useRail.ts) and [`src/app/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/app/App.module.css): the docking line,
   the rail grid, and the header that exists only below it.
 - [`src/hooks/useMediaQuery.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useMediaQuery.ts): how the docking line is read.
-- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the sections, in `MENU_ORDER`.
+- [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the sections, in `MENU_ORDER`.
 - [`src/components/shared/SheetIcons/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/SheetIcons/SheetIcons.tsx) and
   [`src/components/layout/BrandMark/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/BrandMark/BrandMark.tsx): the row icons and the brand.
 - [`src/styles/sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sizes.css) and [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the rail widths and the sheet tokens.
@@ -283,7 +283,7 @@ document cannot leave two neighbours the same. Gold there is trim on a white car
 near it, which is the job the style page gives it; the panels keep the dark green left edge and the
 dark green rule with its gold tick.
 
-```live path=src/components/docs/DocsMenu/DocsMenu.module.css region=author-alternation
+```live path=src/library/DocDialog.module.css region=author-alternation
 ```
 
 The browser suite opens the page from the rail and from the phone's drawer, counts the three

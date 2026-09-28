@@ -1,4 +1,4 @@
-import type { DocKind } from '../../docs/DocsMenu';
+import type { DocKind } from '../../../library/documents';
 import type { NavIcon } from '../../../lib/siteMap';
 import { ICON } from '../../../lib/icons';
 

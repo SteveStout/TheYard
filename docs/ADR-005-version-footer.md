@@ -52,7 +52,7 @@ second claim is the one the footer makes.
   compute-version in ADR: The deploy pipeline, and ADR: The version comes from
   the changelog for why it is no longer a run counter).
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the endpoint that reports them.
-- [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the footer that renders them, linking the commit to
+- [`src/app/Footer.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/Footer.tsx): the footer that renders them, linking the commit to
   GitHub.
 - [`tests/e2e/practices.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/practices.spec.ts): the check that the footer reports
   the running build.
@@ -63,5 +63,5 @@ second claim is the one the footer makes.
 ```live path=api/TheYard.Api/Program.cs region=version-endpoint
 ```
 
-```live path=src/App.tsx region=footer-version
+```live path=src/app/Footer.tsx region=footer-version
 ```

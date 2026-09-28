@@ -184,7 +184,7 @@ page is open moves out of the way within a second, without one.
 
 - [`src/lib/auction.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auction.ts): `nextAuctionBoundary`, and why the boundary is the moment worth asking at, and `byAuctionUrgency`, which is why asking was not enough.
 - [`src/lib/auction.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auction.test.ts): what it returns, including the two cases that make it stop asking.
-- [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the timer, the floor, and the hidden tab.
+- [`src/app/hooks/useListingRefresh.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useListingRefresh.ts): the timer, the floor, and the hidden tab.
 - [`api/TheYard.Domain/VehicleOrdering.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleOrdering.cs): the ranking that was never wrong.
 - [`docs/ADR-055-broken-windows.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-055-broken-windows.md): the shape this belongs to.
 

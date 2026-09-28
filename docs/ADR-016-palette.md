@@ -86,12 +86,12 @@ WCAG AA, so a shade that fails contrast fails the build.
   sheet-tokens above).
 - [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the contrast proof.
 - [`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css),
-  [`src/components/docs/DocsMenu/DocsMenu.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.module.css),
+  [`src/library/DocDialog.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/library/DocDialog.module.css),
   [`src/components/shared/AuctionCountdown/AuctionCountdown.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/AuctionCountdown/AuctionCountdown.module.css),
   [`src/components/inventory/VehicleCard/VehicleCard.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/inventory/VehicleCard/VehicleCard.module.css),
   [`src/components/shared/VehicleImage/VehicleImage.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/VehicleImage/VehicleImage.module.css): the five stylesheets
   that carried a color of their own before the repaint.
-- [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css) and [`src/components/layout/BrandMark/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/BrandMark/BrandMark.tsx):
+- [`src/app/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/app/App.module.css) and [`src/components/layout/BrandMark/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/BrandMark/BrandMark.tsx):
   the brand mark in the palette's taupe.
 - [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the favicon.
 - [`src/styles/fonts.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/fonts.css) and [`src/assets/fonts`](https://github.com/SteveStout/TheYard/tree/main/src/assets/fonts): IBM Plex Sans since the addendum of 24 September, one variable file for its four weights (the four Poppins faces before it), served by the site itself since 1.0.0.140, with the font's licence beside it.

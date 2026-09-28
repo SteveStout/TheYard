@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { DocDialog, DOCS, LINKS, MENUS, type DocKey, type DocRequest } from '../../docs/DocsMenu';
+import { DocDialog, type DocRequest } from '../../../library/DocDialog';
+import { DOCS, type DocKey } from '../../../library/documents';
+import { LINKS, MENUS } from '../../../library/sections';
 import { NavGlyph, RowIcon } from '../../shared/SheetIcons';
 import { SITE_GROUPS, SITE_MAP, sectionsIn, type SiteAction } from '../../../lib/siteMap';
 import { BrandMark } from '../BrandMark';
@@ -33,7 +35,7 @@ export type SideNavProps = {
   /** Docked only: icons-only rail. */
   collapsed: boolean;
   onToggleCollapsed: () => void;
-  /** Drawer only: App owns the open flag; the hamburger in the header sets it. */
+  /** Drawer only: useRail owns the open flag; the hamburger in the header sets it. */
   drawerOpen: boolean;
   onDrawerClose: () => void;
   onHome: () => void;
@@ -52,9 +54,9 @@ export type SideNavProps = {
   onResetBids: () => void;
   build: Build;
   /**
-   * The record showing, or null. App owns it because App owns the address bar
-   * (ADR: A record with no address): a document is a view, and every other
-   * view here is a GET parameter.
+   * The record showing, or null. useAddressBar owns it because it owns the
+   * address bar (ADR: A record with no address): a document is a view, and
+   * every other view here is a GET parameter.
    */
   openDocKey: DocKey | null;
   /**
@@ -92,7 +94,7 @@ export function SideNav(props: SideNavProps) {
   // #endregion request-from-prop
 
   // #region drawer-dialog
-  // The drawer is a native dialog: App flips drawerOpen, this mirrors it.
+  // The drawer is a native dialog: useRail flips drawerOpen, this mirrors it.
   useEffect(() => {
     const drawer = drawerRef.current;
     if (!drawer) return;
@@ -409,7 +411,7 @@ function LinkRow({
 }
 
 /**
- * One of the site map's actions as a pinned row: a view App opens, or a link
+ * One of the site map's actions as a pinned row: a view the app opens, or a link
  * out (the resume and the repository) in a new tab.
  */
 function PinnedRow({

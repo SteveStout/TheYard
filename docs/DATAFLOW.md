@@ -66,7 +66,7 @@ walks that file top to bottom.
    changes (500 ms), caches responses per query string (5-minute TTL; hits skip the
    debounce), and aborts superseded requests. The query string itself is built by
    `src/lib/inventory.ts`, the same serializer that feeds the address bar.
-7. **Render.** `src/App.tsx` holds the page and mirrors filters plus `?vehicle={id}`
+7. **Render.** `src/app/hooks/useAddressBar.ts` holds the view and mirrors filters plus `?vehicle={id}`
    into the URL; components (`src/components/`) format currency
    (`src/lib/format.ts`), tick countdowns from the server's window, and recompute
    live/ended locally as time passes (`src/lib/auction.ts`). No business math runs in

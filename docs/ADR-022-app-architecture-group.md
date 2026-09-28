@@ -61,9 +61,9 @@ on the half a tool cannot check.
 ## In the code
 
 The one record of every document the sidebar can open, and the section
-order (`src/components/docs/DocsMenu/DocsMenu.tsx`):
+order (`src/library/sections.ts`):
 
-```live path=src/components/docs/DocsMenu/DocsMenu.tsx region=architecture-menu
+```live path=src/library/sections.ts region=architecture-menu
 ```
 
 ```live path=src/lib/siteMap.ts region=MENU_ORDER
@@ -90,7 +90,8 @@ The mechanical style rules (`.editorconfig`):
 
 ## Files
 
-- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the sections, their order, and the document record.
+- [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the sections and their order.
+- [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): the document record.
 - [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the two new slugs.
 - [`docs/ARCHITECTURE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ARCHITECTURE.md) and [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the two documents this section was made for.
 - [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/.editorconfig): the mechanical rules.

@@ -10,7 +10,7 @@
  * here changes both places, because neither keeps a list of its own.
  *
  * What is in a section (its documents and its links) stays in MENUS in
- * DocsMenu.tsx, which holds the documents themselves. This file holds only
+ * src/library/sections.ts, beside the documents themselves. This file holds only
  * the shape of the site: what comes first, its icon, its one line, and
  * whether the landing page shows it large.
  *
@@ -93,7 +93,7 @@ export type SiteSection = {
 
 /**
  * The things that are not documents: a view of the app, or a link out. A view
- * is opened by App (it owns the address bar); a link is one of LINKS.
+ * is opened by useNavigation (useAddressBar owns the address bar); a link is one of LINKS.
  */
 export type SiteAction = {
   key: 'home' | 'inventory' | 'account' | 'admin' | 'resume' | 'repo';

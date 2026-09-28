@@ -243,7 +243,7 @@ it. What it would cost is the one property worth keeping.
   Application, and a test in `api/TheYard.Tests` boots the host and calls
   it.
 - **A new document:** one line in `DocsCatalog.cs` and one in
-  `DocsMenu.tsx`; a test fails if the two disagree.
+  `src/library/records.ts` and `pages.ts`; a test fails if the two disagree.
 - **A new service:** `AddSingleton` unless it holds per-request state, and
   then think again about whether it should exist.
 - **A new file the app reads:** locate it once at startup from `repoRoot`,

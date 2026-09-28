@@ -42,7 +42,7 @@ superseded by ADR: The sidebar the same day, so what follows is the part
 that still stands, shown as it is today.
 
 The sidebar renders its sections from the same record the dropdowns once
-used ([`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx)):
+used ([`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts)):
 
 ```live path=src/lib/siteMap.ts region=MENU_ORDER
 ```
@@ -55,15 +55,15 @@ the one shared viewer ([`src/components/layout/SideNav/SideNav.tsx`](https://git
 
 Below the docking line the header carries the brand, Reset bids, and the
 hamburger; above it the rail makes a header redundant
-([`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx)):
+([`src/app/Shell.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/Shell.tsx), drawn by [`src/app/Header.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/Header.tsx)):
 
-```live path=src/App.tsx region=header-below-dock
+```live path=src/app/Shell.tsx region=header-below-dock
 ```
 
 The doc viewer goes edge to edge on a phone
-([`src/components/docs/DocsMenu/DocsMenu.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.module.css)):
+([`src/library/DocDialog.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/library/DocDialog.module.css)):
 
-```live path=src/components/docs/DocsMenu/DocsMenu.module.css region=phone-dialog
+```live path=src/library/DocDialog.module.css region=phone-dialog
 ```
 
 The proof is [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts),
@@ -176,7 +176,7 @@ rule from the addendum above stand; only the colors changed.
   [`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css): the drawer, now one shape of
   the sidebar (ADR: The sidebar).
 - [`src/components/shared/SheetIcons/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/SheetIcons/SheetIcons.tsx): the icon per row kind.
-- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the one data record both shapes
+- [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the one data record both shapes
   render from.
 - [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css) and [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts):
   the palette and its measured contrast.

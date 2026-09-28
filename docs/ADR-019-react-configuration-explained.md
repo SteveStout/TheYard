@@ -156,16 +156,16 @@ an entry so the browser's Back button closes the detail page, and a
 deep-linked visit that has no list entry behind it swaps the URL in place
 instead.
 
-```live path=src/App.tsx region=url-mirror
+```live path=src/app/hooks/useAddressBar.ts region=url-mirror
 ```
 
-```live path=src/App.tsx region=history
+```live path=src/app/hooks/useNavigation.ts region=history
 ```
 
 Back and Forward re-read the whole view from the URL, which is the only
 place it lives.
 
-```live path=src/App.tsx region=back-forward
+```live path=src/app/hooks/useAddressBar.ts region=back-forward
 ```
 
 A router would add a dependency to do what these functions do, and it
@@ -243,6 +243,114 @@ never received.
   `tsconfig.node.json` for the config; CI runs `tsc -b` over both before
   anything is built.
 
+## Addendum, 2026-09-28 (1.0.3.36): two files split by job
+
+Until 1.0.3.35 two files did most of the frontend's work, and a newcomer had to read
+all of either one to find the part they came for. `src/App.tsx` was 1,100 lines doing
+seven jobs: it read and wrote the address bar, fetched the vehicle list, opened and
+closed every view, knew who was signed in, placed bids, docked the rail, and drew the
+header and the footer. `src/components/docs/DocsMenu/DocsMenu.tsx` was 1,308 lines and
+held no menu at all (the rail draws the menu): a list of 106 document names typed by
+hand, every document as data, what each sidebar section holds, a document's address,
+and the window a document opens in.
+
+They are two folders now. Every file in them does one job, its name says which, and
+its first three lines say it again.
+
+### src/app: the app shell
+
+| File | What it does |
+| --- | --- |
+| `App.tsx` | Joins the pieces and picks which view shows. It holds no logic of its own. |
+| `Shell.tsx` | The frame every page sits in: the skip link, the rail, the store bar, main, the footer. |
+| `Header.tsx` | The header a phone shows: the bolt, The Yard, Reset bids, the resume, the menu button. |
+| `Footer.tsx` | The version line. |
+| `InventoryView.tsx` | The inventory page: the filter bar, the grid, Load more, and the loading and unreachable notices. |
+| `hooks/useAddressBar.ts` | Holds the open view and keeps the address bar in step with it, both ways. The only code that writes the address bar. |
+| `hooks/useNavigation.ts` | Opens and closes each view, moves focus, and says the change to a screen reader. |
+| `hooks/useInventory.ts` | The vehicle list: fetched only when shown, filtered, paged, retried, with this visitor's bids on it. |
+| `hooks/useListingRefresh.ts` | Asks for the list again when an auction starts or ends, never while nobody can see it. |
+| `hooks/useOpenVehicle.ts` | The vehicle on screen: keeps its price current, places a bid, buys it now. |
+| `hooks/useAccount.ts` | Who is signed in, asked of the API. |
+| `hooks/useRail.ts` | Docked, collapsed or a drawer, and remembering it. |
+| `hooks/useRunningBuild.ts` | Which build is running, asked of the API once; the rail and the footer both show it. |
+
+A hook is named for what it gives back, so `App.tsx` reads top to bottom like a table
+of contents: one line per hook with a comment saying what it holds, then the frame
+with one view inside it.
+
+```live path=src/app/App.tsx region=table-of-contents
+```
+
+### src/library: the documents the site serves
+
+| File | What it does |
+| --- | --- |
+| `records.ts` | Every decision record, numbered, as data. |
+| `pages.ts` | Every other document: the overviews, the Bicep file, the changelog, the Author page. |
+| `documents.ts` | Joins the two into the one list every document is looked up in. |
+| `sections.ts` | What each sidebar section holds. The sections' order and icons stay in `src/lib/siteMap.ts`. |
+| `addresses.ts` | A document's address (`?doc=slug`) and back again. |
+| `DocDialog.tsx` | The window a document opens in: it asks the API, renders, lays out the panels, and copies the link. |
+
+The hand-typed list of names is gone. `DocKey` is worked out by TypeScript from the
+two lists, so a document cannot be named in code without existing, and adding one is
+one entry in `records.ts` or `pages.ts`:
+
+```live path=src/library/documents.ts region=doc-key
+```
+
+The folder is `library`, not `docs`, because the repository root already has `docs/`
+for the markdown, and two folders called docs would send a new developer to the wrong
+one.
+
+### The header every file opens with
+
+```ts
+/**
+ * Does:      Holds the open view (the page, the vehicle, the Admin card, the document, the filters and sort)
+ *            and keeps the address bar in step with it, both ways: the first-load reads, deep links, Back and Forward.
+ * Does not:  Decide when a view opens (useNavigation.ts does), fetch the vehicle list, or draw anything.
+ * Used by:   App.tsx, useNavigation.ts, useInventory.ts, useOpenVehicle.ts.
+ */
+```
+
+"Does not" is there because the question a reader brings is usually "is it in here?",
+and the fastest answer is the file saying where it went instead. `FileHeaderTests`
+fails any file in either folder that ships without the three lines, reads "Used by"
+against the files that really import it, so the line cannot go stale, and holds every
+file to 300 lines except the ones it names with why: `records.ts`, which is data, and
+the two stylesheets that moved whole (ADR: The rules a change has to pass lists it).
+
+### What did not change
+
+Nothing a visitor sees: the same pages, the same addresses, the same Back and Forward.
+Every region moved with its code under the same name, so every record above that shows
+one shows the same lines from its new file. Every existing test passes with only paths
+changed. The lazy chunks keep their names (`AdminPanel`, `markdown`, `author`), because
+each lazy import still names the same file.
+
+Two lines read differently, because the linter reads small files more closely than it
+read the large one. The rail now closes its drawer while it renders, the moment the
+window crosses the docking line, instead of in an effect after the paint; and moving
+focus to `<main>` finds it by its id, the same id the skip link names, instead of
+through a ref handed down the tree.
+
+Where the plan had six hooks there are seven, and one more file on each side: the list
+refresh has a file of its own because the list's hook would have been 350 lines with
+it, the running build has one because the rail and the footer both show it,
+`InventoryView.tsx` keeps the list's markup out of `App.tsx`, and `documents.ts` is
+where the two lists are joined.
+
+### Where a change goes now
+
+- **A new view:** its flag in `useAddressBar.ts`, its open and close in
+  `useNavigation.ts`, one branch in `App.tsx`.
+- **Something the whole app knows:** a hook in `src/app/hooks`, named for what it
+  gives back, with the header.
+- **A new document:** the markdown in `docs/`, its slug in `DocsCatalog.cs`, its entry
+  in `records.ts` or `pages.ts`, and its row in `sections.ts`.
+
 ## Files
 
 - [`package.json`](https://github.com/SteveStout/TheYard/blob/main/package.json): the scripts and the dependencies.
@@ -250,7 +358,10 @@ never received.
 - [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts): the plugin, the proxy, the watcher, and the Vitest settings.
 - [`tsconfig.json`](https://github.com/SteveStout/TheYard/blob/main/tsconfig.json), [`tsconfig.app.json`](https://github.com/SteveStout/TheYard/blob/main/tsconfig.app.json), [`tsconfig.node.json`](https://github.com/SteveStout/TheYard/blob/main/tsconfig.node.json), [`src/vite-env.d.ts`](https://github.com/SteveStout/TheYard/blob/main/src/vite-env.d.ts): the compiler, split by where the code runs.
 - [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css) and [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the palette and its contrast test.
-- [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts), [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts), [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the URL as state and the one seam to the API.
+- [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts), [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts), [`src/app/hooks/useAddressBar.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useAddressBar.ts): the URL as state and the one seam to the API.
+- [`src/app/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/App.tsx): the table of contents.
+- [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): the documents, joined, and the names worked out from them.
+- [`api/TheYard.Tests/FileHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/FileHeaderTests.cs): the header rule.
 - [`src/hooks/useNow.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useNow.ts), [`src/hooks/useBids.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useBids.ts), [`src/hooks/useMediaQuery.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useMediaQuery.ts): the shared state.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts) and [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the two runners and the jobs that run them.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the build stage that repeats `npm run build` in the image.

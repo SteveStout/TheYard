@@ -125,7 +125,7 @@ every diagram was linked on the UI, wanted one place, and the sidebar now
 has a Diagrams section near the top: one row per page, each a link
 that opens in a new tab the way the preview links already do, in the order a
 reader meets the system (the whole, the data, the schema, the two sites, the
-two stores). The list lives beside the menus in `DocsMenu.tsx`, the server's
+two stores). The list lives beside the menus in `src/library/sections.ts`, the server's
 `DocsCatalog.Diagrams` stays the authority for which drawings exist, and a
 test holds the two equal, so a drawing cannot gain a page without a row or a
 row without a page; the browser suite reads the section and every row's

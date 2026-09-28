@@ -299,21 +299,21 @@ each with its own changelog line and, where it decided something, its own record
   view is shareable and bookmarkable. Opening a vehicle is GET navigation too
   (`?vehicle={id}` pushes a history entry): the browser's Back button closes the detail,
   Forward reopens it, and a cold load of a vehicle URL deep-links straight to it.
-  *Where:* `src/lib/inventory.ts` (URL and filter serialization), `src/App.tsx`
+  *Where:* `src/lib/inventory.ts` (URL and filter serialization), `src/app/hooks/useAddressBar.ts`
   (pushState and popstate), `api/TheYard.Api/VehicleQueryParams.cs` (binding),
   `api/TheYard.Domain/VehicleFilter.cs` (the LINQ predicate).
 - **Debounced, cached requests.** Filter changes debounce 500 ms so typing does not
   hammer the API, and responses are cached per query string (5-minute TTL, bounded).
   Cache hits skip the debounce entirely: the delay only exists to protect the server,
   and a hit never touches it.
-  *Where:* `src/lib/data.ts` (cache, `peekVehicles`), `src/App.tsx` (the debounced
+  *Where:* `src/lib/data.ts` (cache, `peekVehicles`), `src/app/hooks/useInventory.ts` (the debounced
   fetch effect), `api/TheYard.Api/Program.cs` (cache headers).
 - **Server-side pagination at scale.** 100,000 records, but the wire only ever carries a
   page: an envelope of `{ total, vehicles }` with `limit` and `offset`, a landing page of
   the top 100 by auction time, and Load More to walk deeper.
   *Where:* `api/TheYard.Application/InventoryService.cs` (`Search`),
   `api/TheYard.Infrastructure/SyntheticVehicleSource.cs` (the 100k expansion),
-  `src/App.tsx` (`loadMore`).
+  `src/app/hooks/useInventory.ts` (`loadMore`).
 - **A search that does its work once.** Both halves of a free-text comparison are
   precomputed: each vehicle's searchable text when the dataset loads, each query's
   tokens when the filter compiles. The version before this rebuilt both inside the
@@ -453,7 +453,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (678 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (681 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory

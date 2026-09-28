@@ -5,7 +5,7 @@ namespace TheYard.Api;
 
 /// <summary>
 /// Every document the site serves, by the slug the sidebar asks for (ADR-017).
-/// src/components/docs/DocsMenu/DocsMenu.tsx carries the same slugs with titles and menus, so
+/// src/library/records.ts and src/library/pages.ts carry the same slugs with titles, so
 /// a new record is one line here and one line there, and DocsCatalogTests holds
 /// the two lists to each other. A slug missing from this table is a 404 at
 /// /api/docs/{slug}, never a file read.

@@ -48,7 +48,7 @@ const READ = [
     'Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at, auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.']],
   ['The fetch seam', 'src/lib/data.ts', [
     'Debounces filter changes (500 ms), caches responses per query string for five minutes (a hit skips the debounce) and aborts superseded requests. The query string comes from src/lib/inventory.ts, the same serializer that feeds the address bar.']],
-  ['App state and the address bar', 'src/App.tsx', [
+  ['App state and the address bar', 'src/app/hooks/useAddressBar.ts', [
     'Holds the page. Filters, sort, ?vehicle and ?view are mirrored into the URL, and Back and Forward re-read it.']],
   ['Cards, detail, bid panel', 'src/components/*', [
     "Format currency (src/lib/format.ts) and tick the countdowns from the server's window (src/lib/auction.ts). No business math runs in the browser."]],

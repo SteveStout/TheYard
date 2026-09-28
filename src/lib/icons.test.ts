@@ -4,20 +4,25 @@ import { ICON } from './icons';
 
 // Every component's source, and the shell's, read as text by the bundler: this
 // project carries no Node types on purpose (vite.config.ts), so the files come
-// in the way the token sheets do above rather than through node:fs. App.tsx is
-// in the list because it draws the header's hamburger itself (1.0.3.10: the
-// sweep read its stroke at 2 while every icon was on the token, and this test
-// had not been looking at the file). Every component has a folder of its own,
-// grouped by section (ADR: One folder per component), so the pattern reads
-// every folder under components, the Admin tab's cards with the rest.
-const components = import.meta.glob(['../components/**/*.tsx', '../App.tsx'], {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
+// in the way the token sheets do above rather than through node:fs. The app
+// shell (src/app) is in the list because its Header.tsx draws the phone's
+// hamburger itself (1.0.3.10: the sweep read its stroke at 2 while every icon
+// was on the token, and this test had not been looking at the file), and the
+// document library (src/library) because DocDialog.tsx draws its close button.
+// Every component has a folder of its own, grouped by section (ADR: One folder
+// per component), so the pattern reads every folder under components, the
+// Admin tab's cards with the rest.
+const components = import.meta.glob(
+  ['../components/**/*.tsx', '../app/**/*.tsx', '../library/**/*.tsx'],
+  {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }
+) as Record<string, string>;
 
 // The component sheets, for the strokes a sheet writes rather than a component.
-const sheets = import.meta.glob('../components/**/*.module.css', {
+const sheets = import.meta.glob(['../components/**/*.module.css', '../library/**/*.module.css'], {
   query: '?raw',
   import: 'default',
   eager: true,
@@ -87,7 +92,7 @@ describe('the icons', () => {
       }
     }
     expect(Object.keys(components).length).toBeGreaterThan(10);
-    expect(Object.keys(components).some((path) => path.endsWith('/App.tsx'))).toBe(true);
+    expect(Object.keys(components).some((path) => path.endsWith('/app/Header.tsx'))).toBe(true);
     expect(written).toEqual([]);
   });
 

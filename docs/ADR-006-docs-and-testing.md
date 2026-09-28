@@ -100,7 +100,7 @@ repository's own shell removes it.
 
 Documentation:
 
-- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): every document the sidebar can
+- [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): every document the sidebar can
   open, its title, its menu and its kind, one record.
 - [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the same documents by slug on
   the server, held to the sidebar's list by a test (ADR: The staff review).
@@ -168,9 +168,9 @@ from this build ([`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/m
 ```
 
 The one record of every document the sidebar can open
-([`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx)):
+([`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts), reading [`src/library/records.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/records.ts) and [`src/library/pages.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/pages.ts)):
 
-```live path=src/components/docs/DocsMenu/DocsMenu.tsx region=docs-record
+```live path=src/library/documents.ts region=docs-record
 ```
 
 ## Addendum, 2026-09-09: the picture redrawn for two stores

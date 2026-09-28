@@ -73,12 +73,23 @@ running server required.
 React + TypeScript, deliberately thin. No business math runs in the browser:
 
 - `main.tsx`: entry point. Mounts `App` inside the error boundary and imports the design tokens and the base styles once.
-- `App.tsx`: composition root. View state, the debounced fetch effect, URL sync
-  (filters + `?vehicle={id}`), browser history, and Load More.
+- `app/`: the app shell. `App.tsx` is the composition root and reads like a table of
+  contents: one line per hook, then the view the address names inside `Shell.tsx`
+  (the frame), with `Header.tsx`, `Footer.tsx` and `InventoryView.tsx` beside it.
+  `app/hooks/` holds what the app knows, one file each: `useAddressBar` (view state and
+  URL sync, the only writer of the address bar, Back and Forward), `useNavigation`
+  (opening and closing views, focus, the announcement), `useInventory` (the debounced
+  fetch effect and Load More, with `useListingRefresh` beside it), `useOpenVehicle`,
+  `useAccount`, `useRail` and `useRunningBuild`.
+- `library/`: the documents the site serves, as data. `records.ts` (every decision
+  record), `pages.ts` (every other document), `documents.ts` (the two joined, and the
+  `DocKey` worked out from them), `sections.ts` (what each sidebar section holds),
+  `addresses.ts` (`?doc=` both ways) and `DocDialog.tsx` (this dialog). Named `library`
+  because the repository root already has `docs/` for the markdown.
 - `components/`: presentation only, one `.module.css` per component. `FilterBar`,
   `InventoryGrid`, `VehicleCard`, `VehicleDetail`, `BidPanel`, the badge trio
   (`ConditionBadge`, `TitleStatusBadge`, `ReserveBadge`), `AuctionCountdown`,
-  `VehicleImage` (graceful fallback), and `DocsMenu` (this dialog).
+  `VehicleImage` (graceful fallback).
 - `hooks/`: React-aware orchestration. `useBids` (relays bid actions to the API,
   mirrors the bid map) and `useNow` (the one shared clock every countdown ticks on).
 - `lib/`: pure, framework-free modules with their unit tests beside them.
@@ -111,8 +122,8 @@ lib/          inner ring: pure functions and the API seam, imports NO React,
               so it unit-tests in Node with no rendering and no mocks
 ```
 
-`App.tsx` is the composition root, the same role `Program.cs` plays on the API side,
-holding view state and wiring the rings together. And `lib/data.ts` is a genuine port:
+`app/App.tsx` is the composition root, the same role `Program.cs` plays on the API side,
+wiring the rings together; the view state it used to hold is in `app/hooks/`. And `lib/data.ts` is a genuine port:
 when data moved from a JSON import to an API to a paged API, every change landed in
 that one file.
 

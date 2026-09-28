@@ -158,7 +158,7 @@ Where the two meet (`api/TheYard.Application/InventoryService.cs`):
 - [`api/TheYard.Tests/VehicleSearchIndexTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/VehicleSearchIndexTests.cs): the indexed and unindexed paths must answer identically.
 - [`api/TheYard.Tests/SearchIndexBenchmarkTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SearchIndexBenchmarkTests.cs): the measurement above, and the coverage assertion.
 - [`api/TheYard.Tests/InventoryServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/InventoryServiceTests.cs): the facets are one instance, built with the catalogue (the addendum below).
-- [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the page asks for the facets until it has them, then keeps them.
+- [`src/app/hooks/useInventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useInventory.ts): the page asks for the facets until it has them, then keeps them.
 
 ## Addendum, 2026-09-17: the facets are built with the index
 
@@ -189,7 +189,7 @@ cache there is and the only one a reader has to trust.
 ```live path=api/TheYard.Application/InventoryService.cs region=facets
 ```
 
-```live path=src/App.tsx region=facets-once
+```live path=src/app/hooks/useInventory.ts region=facets-once
 ```
 
 The server-side number is read off the container's own request ring

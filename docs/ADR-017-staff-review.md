@@ -32,7 +32,7 @@ pass gets its own dated addendum here.
   the file is read from the repo root, and every document goes through
   the expander. A slug that is not in the catalog is a 404, never a file
   read. Adding a record is one line in the catalog and one in
-  [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx),
+  [`src/library/pages.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/pages.ts) or [`src/library/records.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/records.ts),
   and
   [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs)
   fails the build when the two lists disagree, when a file is missing, or
@@ -43,7 +43,7 @@ pass gets its own dated addendum here.
   header called the list's back-to-inventory path, which does nothing while
   the Admin tab is showing; the sidebar's brand button knew to close Admin
   first. Both call the same home function now
-  ([`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx)),
+  ([`src/app/hooks/useNavigation.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useNavigation.ts)),
   and the phone spec proves the tap
   ([`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts)).
 - **Honest failure states on the Admin tab.** A card whose fetch failed
@@ -83,7 +83,7 @@ pass gets its own dated addendum here.
 ### Kept
 
 - **The doc viewer caches each document for the life of the tab**
-  ([`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx)).
+  ([`src/library/DocDialog.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/library/DocDialog.tsx)).
   A deploy under an open tab is served on the next load, and the page is
   no-cache since ADR: Cache headers, so a reload is always fresh.
 - **The rendered markdown is our own.** The viewer sets HTML from the
@@ -181,6 +181,6 @@ So the served markdown names them here instead (`DocImages` in DocsCatalog.cs): 
 - [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the slug-to-file catalog that endpoint reads.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health and build types this review moved out of the host file.
 - [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the test that holds the catalog and the sidebar to the same list.
-- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the sidebar's copy of that list, and the one brand mark this review deduplicated.
+- [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): the sidebar's copy of that list, and the one brand mark this review deduplicated.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the timeout and the readiness check this review added to the pipeline.
 - [`docs/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): the record that made this section a rule rather than a habit.

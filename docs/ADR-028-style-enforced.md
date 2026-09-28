@@ -97,7 +97,7 @@ and a second render for no reason. The fix was to hold the nonce that failed
 rather than a flag saying something did, which makes the flag derivable and
 deletes the reset:
 
-```live path=src/components/docs/DocsMenu/DocsMenu.tsx region=derived-error
+```live path=src/library/DocDialog.tsx region=derived-error
 ```
 
 That is `docs/STYLE.md`'s own derive-do-not-store rule, violated in the
@@ -207,4 +207,4 @@ The style job (`.github/workflows/ci.yml`):
 - [`package.json`](https://github.com/SteveStout/TheYard/blob/main/package.json): `lint`, `format`, `format:check`, `format:api`, `format:api:check`.
 - [`docs/ARCHITECTURE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ARCHITECTURE.md): the topology and the layer direction, in Mermaid.
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the half a tool cannot check.
-- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the finding, fixed.
+- [`src/library/DocDialog.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/library/DocDialog.tsx): the finding, fixed.

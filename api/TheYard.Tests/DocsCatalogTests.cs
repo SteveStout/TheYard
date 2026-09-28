@@ -43,7 +43,9 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
     public void The_catalog_and_the_sidebar_record_name_the_same_slugs_and_every_file_exists()
     {
         string root = RepoRoot();
-        string menu = File.ReadAllText(Path.Combine(root, "src", "components", "docs", "DocsMenu", "DocsMenu.tsx"));
+        // The documents are two lists, the decision records and every other page (src/library).
+        string menu = File.ReadAllText(Path.Combine(root, "src", "library", "records.ts"))
+            + File.ReadAllText(Path.Combine(root, "src", "library", "pages.ts"));
         var inMenu = Regex.Matches(menu, @"url: '/api/docs/([a-z0-9-]+)'")
             .Select(m => m.Groups[1].Value)
             .Where(slug => slug is not "bicep") // the Bicep file has its own route: it is not markdown
@@ -157,7 +159,7 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
     public void The_sidebar_lists_every_diagram_page_and_no_other()
     {
         string root = RepoRoot();
-        string menu = File.ReadAllText(Path.Combine(root, "src", "components", "docs", "DocsMenu", "DocsMenu.tsx"));
+        string menu = File.ReadAllText(Path.Combine(root, "src", "library", "sections.ts"));
         var inMenu = Regex.Matches(menu, @"href: '/api/docs/diagrams/([a-z0-9-]+)'")
             .Select(m => m.Groups[1].Value)
             .ToHashSet(StringComparer.Ordinal);

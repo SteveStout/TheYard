@@ -43,6 +43,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Code shown in a document is read from the build at request time, never pasted | ADR: Live code samples | LiveSamplesTests, LiveSampleCoverageTests |
 | Every count a living document states is the count | ADR: The public face | PublicFaceTests |
 | The slug, the catalog and the sidebar offer the same documents | ADR: The staff review | DocsCatalogTests |
+| Every file in `src/app` and `src/library` opens with what it does, what it does not, and which files use it; the last is read against the files that import it, and no file there runs past 300 lines but the ones named with why | ADR: The React configuration, explained for a new developer | FileHeaderTests |
 | One changelog line per shipped version, newest first, and the deploy reads the version from it | ADR: The changelog, ADR: The version comes from the changelog | ChangelogTests |
 | Nothing this repository ships or serves contains an em dash | ADR: Style, enforced | HouseVoiceTests |
 | No marker for work that is not happening, no focused test, no console call under `src` | ADR: Broken windows, and the rule that answers them | BrokenWindowsTests |
@@ -105,5 +106,6 @@ is how the decision survives a busy month.
 - [`api/TheYard.Tests/RuleTableTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RuleTableTests.cs): the test that keeps the table honest.
 - [`api/TheYard.Tests/RecordShapeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RecordShapeTests.cs): the shape every record keeps.
 - [`api/TheYard.Tests/RecordLinksTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RecordLinksTests.cs): the links and citations, in both directions.
+- [`api/TheYard.Tests/FileHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/FileHeaderTests.cs): the header every file in the app shell and the document library opens with.
 - [`CLAUDE.md`](https://github.com/SteveStout/TheYard/blob/main/CLAUDE.md): what an agent reads before it changes anything, which now points here.
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the rules no test holds (served as Coding and Commenting Style under App Architecture).

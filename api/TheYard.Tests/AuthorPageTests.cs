@@ -401,7 +401,7 @@ public class AuthorPageTests
         }
         // One frame: the markup gives every photograph the class, and the class takes the frame's two tokens.
         string markup = File.ReadAllText(Path.Combine(Root, "src", "lib", "authorPhotos.ts"));
-        string sheet = File.ReadAllText(Path.Combine(Root, "src", "components", "docs", "DocsMenu", "DocsMenu.module.css"));
+        string sheet = File.ReadAllText(Path.Combine(Root, "src", "library", "DocDialog.module.css"));
         if (!markup.Contains("<img class=\"author-frame\"", StringComparison.Ordinal))
         {
             wrong.Add("photoFigure no longer gives its image the author-frame class: every photograph wears the one frame");

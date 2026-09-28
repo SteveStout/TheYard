@@ -8,7 +8,7 @@ import './styles/effects.css';
 import './styles/base.css';
 import './styles/panels.css';
 import './styles/code-highlight.css';
-import App from './App';
+import App from './app/App';
 import { ErrorBoundary, reportClientError } from './components/shared/ErrorBoundary';
 import { captureAdminKey } from './lib/adminKey';
 

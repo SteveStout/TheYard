@@ -383,12 +383,12 @@ public class StyleRulesTests
     /// <summary>Where gold is trim, by file, with what it trims there.</summary>
     private static readonly Dictionary<string, string> GoldAllowed = new(StringComparer.Ordinal)
     {
-        ["src/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings, a page title's underline, the ring round Load more",
+        ["src/app/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings, a page title's underline, the ring round Load more",
         ["src/components/layout/SideNav/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings",
         ["src/components/account/AccountPanel/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",
         ["src/components/admin/shared/card.module.css"] = "the ring round the chosen window button",
-        ["src/components/docs/DocsMenu/DocsMenu.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
+        ["src/library/DocDialog.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
         ["src/components/landing/Landing/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
     };
 
@@ -456,7 +456,7 @@ public class StyleRulesTests
             }
         }
 
-        string[] bars = ["src/App.module.css", "src/components/layout/SideNav/SideNav.module.css"];
+        string[] bars = ["src/app/App.module.css", "src/components/layout/SideNav/SideNav.module.css"];
         foreach (string bar in bars)
         {
             string source = File.ReadAllText(Path.Combine(Root, bar.Replace('/', Path.DirectorySeparatorChar)));
@@ -546,14 +546,14 @@ public class StyleRulesTests
             ("src/components/admin/shared/card.module.css", ".back", "--pill-height"),
             ("src/components/account/AccountPanel/AccountPanel.module.css", ".back", "--pill-height"),
             ("src/components/vehicle/VehicleDetail/VehicleDetail.module.css", ".back", "--pill-height"),
-            ("src/components/docs/DocsMenu/DocsMenu.module.css", ".copyLink", "--pill-height"),
-            ("src/components/docs/DocsMenu/DocsMenu.module.css", ".close", "--pill-height"),
+            ("src/library/DocDialog.module.css", ".copyLink", "--pill-height"),
+            ("src/library/DocDialog.module.css", ".close", "--pill-height"),
             ("src/components/account/AccountPanel/AccountPanel.module.css", ".input", "--control-height"),
             ("src/components/account/AccountPanel/AccountPanel.module.css", ".primary,\n.secondary", "--control-height"),
             ("src/components/vehicle/BidPanel/BidPanel.module.css", ".bidButton", "--control-height"),
             ("src/components/inventory/FilterBar/FilterBar.module.css", ".searchInput", "--control-height"),
             ("src/components/inventory/FilterBar/FilterBar.module.css", ".select", "--control-height"),
-            ("src/components/docs/DocsMenu/DocsMenu.module.css", ".prose :global(.author-button)", "--control-height-lg"),
+            ("src/library/DocDialog.module.css", ".prose :global(.author-button)", "--control-height-lg"),
         };
         foreach (var (sheet, selector, token) in controls)
         {
@@ -876,7 +876,7 @@ public class StyleRulesTests
     /// by a number of its own, or rounds a button to anything but a pill.
     /// </summary>
     /// <remarks>The header and the site's own rail are the frame, not panels on it (Steve: "leave the header and page background the same").</remarks>
-    private static readonly string[] TheFrame = ["src/App.module.css", "src/components/layout/SideNav/SideNav.module.css"];
+    private static readonly string[] TheFrame = ["src/app/App.module.css", "src/components/layout/SideNav/SideNav.module.css"];
 
     /// <summary>A name the scan reads as a panel's that is not one, each with why.</summary>
     private static readonly Dictionary<string, string> NotAPanel = new(StringComparer.Ordinal)

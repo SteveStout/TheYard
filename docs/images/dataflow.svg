@@ -99,7 +99,7 @@
   <path d="M120 1366 L120 1400" class="flow"/>
   <rect x="60" y="1402" width="760" height="101" class="box"/>
   <text x="75" y="1428" class="title">App state and the address bar</text>
-  <text x="75" y="1450" class="mono">src/App.tsx</text>
+  <text x="75" y="1450" class="mono">src/app/hooks/useAddressBar.ts</text>
   <text x="75" y="1472" class="body">Holds the page. Filters, sort, ?vehicle and ?view are mirrored into the URL, and Back</text>
   <text x="75" y="1489" class="body">and Forward re-read it.</text>
   <path d="M120 1503 L120 1537" class="flow"/>

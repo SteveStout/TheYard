@@ -196,7 +196,7 @@ answer, and nothing applied.
 ```live path=src/lib/auth.ts region=late-answer
 ```
 
-```live path=src/App.tsx region=who
+```live path=src/app/hooks/useAccount.ts region=who
 ```
 
 The first fix considered was to make the form wait for the question before it

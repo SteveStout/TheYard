@@ -42,7 +42,12 @@ Frontend keeps the same discipline: `components` -> `hooks` -> `lib`. **`src/lib
 React.** Every component has a folder of its own, `src/components/<section>/<Name>/`, holding its `.tsx`,
 its `.module.css` and an `index.ts` that re-exports it, so an import reads `components/<section>/<Name>`; a
 component another section renders lives in `shared/`, and `src/lib` and `src/hooks` stay where they are
-(ADR: One folder per component).
+(ADR: One folder per component). `src/app` is the shell: `App.tsx` reads like a table of contents, and what
+the app knows is one hook per file in `src/app/hooks`, named for what it gives back. `src/library` is the
+documents the site serves, as data, and the window one opens in. **Every file in those two folders opens with
+a Does / Does not / Used by header, one job per file, 300 lines at most**; `FileHeaderTests` holds all three
+and checks "Used by" against the real importers (ADR: The React configuration, explained, the addendum on the
+split).
 
 ## Rules that must survive any change
 

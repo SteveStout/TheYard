@@ -13,7 +13,8 @@ import {
   type TestSummary,
 } from '../../../lib/landingProof';
 import { landingTiles, type LandingTile } from '../../../lib/siteMap';
-import { LINKS, MENUS, type DocKey } from '../../docs/DocsMenu';
+import type { DocKey } from '../../../library/documents';
+import { LINKS, MENUS } from '../../../library/sections';
 import { CountUp } from '../../shared/CountUp';
 import { Ring } from '../../shared/Ring';
 import { NavGlyph } from '../../shared/SheetIcons';

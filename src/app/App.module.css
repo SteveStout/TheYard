@@ -1,3 +1,8 @@
+/**
+ * Does:      Styles the frame and the inventory page: the rail's grid, the phone's header, the skip link, main, the list's notices, Load more, the footer.
+ * Does not:  Hold a colour of its own (every colour is a token from src/styles), or style a component that has its own sheet.
+ * Used by:   App.tsx, Shell.tsx, Header.tsx, Footer.tsx, InventoryView.tsx.
+ */
 .app {
   min-height: 100vh;
   display: flex;

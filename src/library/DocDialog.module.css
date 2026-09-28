@@ -1,3 +1,8 @@
+/**
+ * Does:      Styles the window a document opens in, the prose inside it, and the Author page's panels, blocks and photographs.
+ * Does not:  Hold a colour of its own (every colour is a token from src/styles), or style the sidebar that opens it.
+ * Used by:   DocDialog.tsx.
+ */
 /* The doc viewer (DocDialog): the dialog every sidebar row opens. */
 
 /* The height is fixed rather than a maximum (1.0.3.7): with a maximum the dialog

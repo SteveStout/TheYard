@@ -350,7 +350,7 @@ place.
 
 **The address bar is the application state.** Filters, sort, the open
 vehicle and the Admin tab are all query parameters, mirrored by
-`src/App.tsx` and read back by `src/lib/inventory.ts`. There is no router
+`src/app/hooks/useAddressBar.ts` and read back by `src/lib/inventory.ts`. There is no router
 and no state library; Back and Forward work because the URL is the truth.
 
 **One seam to the API for the inventory.** Every `fetch` for vehicles,
@@ -378,7 +378,9 @@ deploy without them (ADR: The tests, explained).
 | A new API call from the browser | one function in `src/lib/data.ts` |
 | A new view state | the URL, through `filtersToSearchParams` |
 | A visitor preference (not a view) | `localStorage`, like the collapsed rail |
-| A new document or record | `docs/`, then `DocsCatalog.cs` and `DocsMenu.tsx` |
+| A new document or record | `docs/`, then `DocsCatalog.cs`, and `src/library/records.ts` or `pages.ts` |
+| A new sidebar section's contents | `src/library/sections.ts`; its order and icon in `src/lib/siteMap.ts` |
+| Something the whole app knows (a view, the list, the account) | a hook in `src/app/hooks/`, named for what it gives back, with its header |
 | A new colour or spacing value | `src/styles/colors.css` or `sizes.css`, never a literal |
 
 ## What is deliberately not here

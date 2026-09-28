@@ -53,25 +53,25 @@ interrupting.
 ## In the code
 
 The focus effect, keyed on view identity rather than on any one piece of state
-(`src/App.tsx`):
+(`src/app/hooks/useNavigation.ts` and `src/app/Shell.tsx`):
 
-```live path=src/App.tsx region=focus
+```live path=src/app/hooks/useNavigation.ts region=focus
 ```
 
 The announcement, derived rather than pushed, so it cannot go stale:
 
-```live path=src/App.tsx region=announcement
+```live path=src/app/hooks/useNavigation.ts region=announcement
 ```
 
 The link itself, and the element it targets:
 
-```live path=src/App.tsx region=skip-link
+```live path=src/app/Shell.tsx region=skip-link
 ```
 
 The two rules that make a hidden thing audible and a focused thing visible
-(`src/App.module.css`):
+(`src/app/App.module.css`):
 
-```live path=src/App.module.css region=a11y
+```live path=src/app/App.module.css region=a11y
 ```
 
 ## Consequences
@@ -90,8 +90,9 @@ The two rules that make a hidden thing audible and a focused thing visible
 
 ## Files
 
-- [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the skip link, the focus effect, the live region.
-- [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css): the two rules that make them work.
+- [`src/app/Shell.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/Shell.tsx): the skip link and the live region.
+- [`src/app/hooks/useNavigation.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useNavigation.ts): the focus effect and what the live region says.
+- [`src/app/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/app/App.module.css): the two rules that make them work.
 - [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): the drawer's native dialog, and `aria-current="page"` on the open document.
 - [`tests/e2e/a11y.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/a11y.spec.ts): the keyboard path, walked.
 - [`docs/ADR-016-palette.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-016-palette.md): the contrast half of this, decided earlier and asserted in `src/styles/tokens.test.ts`.
