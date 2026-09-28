@@ -314,3 +314,58 @@ check once before anything rolls, and the minutes are measured, not named.
 Together the two cuts take a frontend-only ship's gate from about 480
 seconds to about 270 to 300; a ship that touches `api/` runs everything.
 Steve chose both on 2026-09-22, and the 44 px pills that ship beside them.
+
+## Addendum, 2026-09-28: the ship's wall clock
+
+Steve asked for the time from the start of the gate to both sites live to
+come down, with every check still run once. Measured first, from the gate's
+own log for 1.0.3.36 (queue script 1494): the gate 831 seconds, of which the
+.NET side took 224 and then the node side 541, the browser pass on SQLite
+414 of those; the push at 838 seconds; both sites serving the new version at
+1,483; and the reads after the roll (the Admin tab's health on both sites,
+the page sweep, the live look and the load proof) another 264 seconds, to
+1,747. The lane that shipped waited on all of it.
+
+**The reads after the roll no longer hold the ship.** The ship ends when
+both domains serve the new version and commit. The reads that follow run as
+a job of their own on the same runner, write their own log with one verdict
+line, and a red one is reported the moment it is read. Deploy and Deploy
+Cosmos already check the version, `/readyz` and the store before either
+finishes, so nothing that decides whether a version is live moved; on
+1.0.3.36 this is the 264 seconds after the roll.
+
+**The gate script every lane copies is the current one.** The gate lives
+outside this repository (ADR: Where a gate lives), and the template a lane
+starts from had fallen behind its copies: it still started the .NET side and
+the node side together, the shape the addendum of 21 September measured
+slower. It now runs the .NET side to its end and then the node side, and
+carries what the lane copies carry: the version gate, the two cuts, the test
+results file and the allowed list.
+
+**The coverage checks in parts, tried and taken back.** On 1.0.3.36 the
+three checks that read every page the site lists, at 390, 1024 and 1280
+wide, ran one after another on one browser worker, 307 seconds, while the
+other three workers finished early (394 seconds on that worker, 234 to 239
+on each of the others). The trial read each width in four parts, every
+fourth page, with the file declared parallel so the four workers shared the
+twelve parts, and every page still read at every width. Measured on one take
+with every pass forced on so it compared like for like (queue script 1497):
+
+| | 1.0.3.36 | In parts |
+| --- | --- | --- |
+| Browser pass on SQLite | 414 s | 626 s |
+| The coverage checks, test time | 5.2 minutes | about 18 minutes |
+| The whole gate | 831 s | 1,131 s |
+
+Each part of a width took about as long as the whole width had taken alone,
+and one part was retried when the Admin tab did not draw inside thirty
+seconds, the starving the file's own comment names for more than three
+pages at once. The machine was busier on the trial (1,189 MB free with
+Chrome at 2,450 MB, against 1,236 MB and 1,270 MB), and the .NET side, which
+the change does not touch, went from 224 seconds to 279; the browser pass
+moved by 212 seconds, and the per-test times say where. The browser pass on
+this machine is bound by its four cores, and four workers already use them:
+spreading the same pages across more tabs at once is slower work, the
+finding of 21 September a third time. The parts are taken back and the file
+is as it was. The long worker is still the place to look, and the lever
+there is what one page costs to read at the phone width.
