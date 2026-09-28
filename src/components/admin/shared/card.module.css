@@ -1,0 +1,214 @@
+/* The pieces every Admin card is built from: the card itself, its title, its quiet text, its
+   back pill and filter row, its check lists and status rows, and the mono type of a reading.
+   A class here is used by more than one card (ADR: One folder per component). */
+
+/* A pill: the height and weight are the tokens' (1.0.3.9), 34 on a desk and the
+   touch target on a phone (Steve, 2026-09-22). */
+.back {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  color: var(--color-text);
+  padding: var(--pill-padding);
+  min-height: var(--pill-height);
+  font-size: var(--text-sm);
+  font-weight: var(--pill-weight);
+  cursor: pointer;
+}
+
+.back:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+/* The window a row of buttons is on. Until 1.0.0.165 the chosen button was told
+   to a screen reader and to nobody else. */
+/* The chosen one is filled with the accent and ringed in gold: the ring is
+   trim, and the fill and the white words are what say it is chosen. */
+.back[aria-pressed='true'],
+.back[aria-pressed='true']:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: var(--ring-gold);
+}
+
+/* A card is a glass panel (ADR: The glass look): the see-through is in the
+   background colour, so nothing the card holds is ever faded. The glass, the
+   top rule and the corner brackets are the shared .op-glass class (the
+   operator's look); this sheet lays the card out. */
+.card {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.statusRow {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.checkList,
+.errorList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  flex-wrap: wrap;
+}
+
+.errorRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-block;
+  border-radius: var(--radius-full);
+  padding: 1px 10px;
+  font-size: var(--text-xs);
+  font-weight: var(--badge-weight);
+}
+
+.ok {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.bad {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.mono {
+  font-size: var(--text-xs);
+}
+
+/* How long a health probe took, kept to the right edge of its row. */
+.duration {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Long messages (an image digest, say) wrap inside the card instead of running
+   past its edge. Found by the screenshot pass (ADR-006 addendum). */
+.checkRow > span,
+.errorRow > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * The SQL, the log and the timing are tables, and a table in a 380px grid
+ * column is a column of ellipses. These sit below the grid at full width and
+ * scroll sideways inside themselves, so the page body never does.
+ */
+/* The wide cards are the large ones, so they are see-through without the
+   blur: a blur is paid for by the pixel on a phone, and the tiles, the small
+   cards and the buttons are where it is spent (ADR: The glass look). */
+.wide {
+  padding: var(--space-5);
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* The statement itself. Wrapped rather than truncated: a query nobody can read
+   the end of is a decoration. */
+.sql {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 46ch;
+}
+
+/* The kept log's filter row: the same pills as the window buttons, with two plain fields beside them. */
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: var(--space-2) 0;
+}
+
+.filterRow input,
+.filterRow select {
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 6px 12px;
+  min-height: var(--pill-height);
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.filterRow input {
+  width: 16ch;
+}
+
+/* #region questions */
+
+.about {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.aboutSummary {
+  cursor: pointer;
+  width: fit-content;
+  font-weight: var(--weight-medium);
+  color: var(--color-accent);
+}
+
+.aboutSummary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.about[open] > .aboutSummary {
+  margin-bottom: var(--space-2);
+}
+
+.about > p {
+  margin: 0;
+  max-width: 80ch;
+  color: var(--color-text);
+}
+
+/* #endregion questions */

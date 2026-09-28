@@ -4,7 +4,9 @@
  */
 import { useState } from 'react';
 import { pairedBars } from '../../../lib/machineChart';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from './ProofCard.module.css';
+import chartStyles from '../charts/charts.module.css';
+import cardStyles from '../shared/card.module.css';
 import type { Fetched, Proof, ProofResult, ProofRow } from '../shared/types';
 import { useRead, About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
@@ -55,8 +57,8 @@ function ProofBody({
   const running = proof !== null && proof !== 'failed' && proof.status === 'running';
   const result = proof !== null && proof !== 'failed' ? proof.result : null;
   return (
-    <article className={`${styles.wide} op-glass`} data-testid="proof-card">
-      <h2 className={styles.cardTitle}>Same performance, proven</h2>
+    <article className={`${cardStyles.wide} op-glass`} data-testid="proof-card">
+      <h2 className={cardStyles.cardTitle}>Same performance, proven</h2>
       <About>
         The same requests a visitor makes, sent by this container to itself on both stores in paired
         rounds that alternate which store goes first: identical process, identical request, only the
@@ -77,7 +79,7 @@ function ProofBody({
             proven, addendum). */}
         <button
           type="button"
-          className={styles.back}
+          className={cardStyles.back}
           onClick={signedIn ? onRun : onOpenAccount}
           disabled={running}
           data-testid="proof-run"
@@ -92,25 +94,25 @@ function ProofBody({
         </button>
       </p>
       {proof === null ? (
-        <p className={styles.muted}>Loading…</p>
+        <p className={cardStyles.muted}>Loading…</p>
       ) : proof === 'failed' ? (
-        <p className={styles.muted} data-testid="card-failed">
+        <p className={cardStyles.muted} data-testid="card-failed">
           Could not read the proof on the last try; the next try is in 30 seconds.
         </p>
       ) : result === null ? (
-        <p className={styles.muted} data-testid="proof-note">
+        <p className={cardStyles.muted} data-testid="proof-note">
           {running
             ? 'Running. The result lands here within a minute.'
             : 'Not run yet on this container. The button runs it; the result stays until the next deploy.'}
         </p>
       ) : result.status === 'failed' ? (
-        <p className={styles.muted} data-testid="proof-note">
+        <p className={cardStyles.muted} data-testid="proof-note">
           {result.reason}
         </p>
       ) : (
         <>
           <p data-testid="proof-sentence">{result.sentence}</p>
-          <p className={styles.muted}>
+          <p className={cardStyles.muted}>
             {result.rounds} paired rounds, finished{' '}
             {result.finished_at ? new Date(result.finished_at).toLocaleTimeString() : ''}. One round
             trip to the store:{' '}
@@ -131,14 +133,14 @@ function ProofBody({
                   {pair.bars.map((bar, index) => (
                     <span key={bar.store} className={styles.pairBarRow}>
                       <svg
-                        className={`${styles.pairTrack} ${index === 0 ? styles.sqlLine : styles.cosmosLine}`}
+                        className={`${styles.pairTrack} ${index === 0 ? chartStyles.sqlLine : chartStyles.cosmosLine}`}
                         viewBox="0 0 100 8"
                         preserveAspectRatio="none"
                         aria-hidden="true"
                       >
                         <rect className={styles.pairBar} width={bar.share} height="8" rx="2" />
                       </svg>
-                      <span className={styles.mono}>
+                      <span className={cardStyles.mono}>
                         {bar.ms} ms, {bar.store}
                       </span>
                     </span>

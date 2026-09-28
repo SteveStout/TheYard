@@ -1,0 +1,255 @@
+/* The stat strip: the tiles across the top of the workbench and the traffic card's own strip,
+   one look for both (ADR: One folder per component). */
+
+/* #region stat-strip */
+
+/* The window every chart follows, and what the lines under the tiles are of. */
+.stripHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.stripHead > p {
+  margin: 0;
+  color: var(--color-text);
+}
+
+/*
+ * The strip of tiles (ADR: The Admin tab, as a product). Everything here is
+ * the token sheet's: the surfaces, the three status colours and their soft
+ * grounds, the radius, the two shadows. Two columns under 768 and four from
+ * there, so eight tiles are four rows of two at 375px and two rows of four on
+ * a desk, and no tile is ever narrower than its own number.
+ */
+.strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+/* Two across under 768 and four from there (the tweaks pass, A2): four across
+   at 390 gave each tile 80 px, a label three lines and numbers at four heights. */
+@media (min-width: 768px) {
+  .strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+.stripItem {
+  display: flex;
+  min-width: 0;
+}
+
+.tile {
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--color-text);
+  padding: var(--space-3) var(--space-4) var(--space-3);
+  cursor: pointer;
+  transition:
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.tile:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.tile:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    transition: none;
+  }
+
+  .tile:hover {
+    transform: none;
+  }
+}
+
+.tileGood {
+  --tile-tone: var(--color-success);
+  --tile-soft: var(--color-success-soft);
+}
+
+.tileWarn {
+  --tile-tone: var(--color-warning);
+  --tile-soft: var(--color-warning-soft);
+}
+
+.tileBad {
+  --tile-tone: var(--color-danger);
+  --tile-soft: var(--color-danger-soft);
+}
+
+/* A plain tile is the deep teal and never the accent teal, which sits 1.09
+   from the status green: only a healthy tile is green. */
+.tilePlain {
+  --tile-tone: var(--color-teal-deep);
+  --tile-soft: var(--color-accent-soft);
+}
+
+.tileWaiting {
+  --tile-tone: var(--color-border-strong);
+  --tile-soft: var(--color-neutral-soft);
+}
+
+/* A tile's name, one line (the tweaks pass, A2: the section's question came off
+   the tile, since the rail names the section), so every number in a row starts
+   at the same height. */
+.tileLabel {
+  display: block;
+  max-width: 100%;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.5;
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+
+/* The value row: the number, and the ring beside it when there is one. The row
+   is the ring's height on every tile, drawn or not, so numbers in a row share
+   one baseline and nothing moves when a ring arrives. */
+.tileValueRow {
+  width: 100%;
+  min-height: var(--ring-tile-size);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* The ring's box, the tile ring's 44 (RING.tile in src/lib/ring.ts), on every
+   tile from the first paint (a label squeezed when the ring landed was 0.022 of
+   shift at 1280 on 1.0.3.19). */
+.tileRing {
+  flex: none;
+  display: block;
+  width: var(--ring-tile-size);
+  height: var(--ring-tile-size);
+}
+
+.tileValue {
+  min-width: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-heading);
+}
+
+/* The line under a tile's number is two lines, from the first paint and
+   after: "not read yet" is one line and the reading that replaces it is often
+   two, so a tile that grew when its reading arrived moved the bench under the
+   strip (0.023 of shift at 1280, then 0.018 once the store bar held still).
+   Every line is written to fit two lines on the narrowest tile, 360 px and four
+   across at 768 (1.0.3.30: at 390 three tiles showed an ellipsis); what a line
+   leaves out is in the tile's title and read to a screen reader, and the clamp
+   stays as the guard, never the plan. */
+.tileDetail {
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  min-height: 3em;
+  color: var(--color-text-muted);
+}
+
+/* The strip's tiles only: the traffic card's four numbers keep their whole
+   line, since the card is where the whole of it is read. */
+.statStrip .tileDetail {
+  height: 3em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* The foot: the state's word, its room held from the first paint. */
+.tileTone {
+  margin-top: var(--space-1);
+  min-height: 1.4em;
+  border-radius: var(--radius-full);
+  padding: 1px 10px;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+  background: var(--tile-soft);
+}
+
+/* The room a tile's word and its line take before the hour's reading arrives,
+   the same as the word and the line once they are there, so the strip keeps
+   its height and nothing under it moves (0.044 of shift at 1280 without). */
+.tileToneSlot {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  height: calc(1.5em + 2px);
+}
+
+.sparkSlot {
+  display: block;
+  width: 100%;
+  height: 24px;
+  margin-top: auto;
+  padding-top: var(--space-1);
+  box-sizing: content-box;
+}
+
+.spark {
+  display: block;
+  width: 100%;
+  height: 24px;
+  margin-top: auto;
+  padding-top: var(--space-1);
+  box-sizing: content-box;
+  fill: none;
+  stroke: var(--tile-tone);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* The line is stretched to the tile's width, and the stroke must not stretch with it. */
+.spark polyline {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Two to a row under 768 (the tweaks pass, A2): the name, the value row with its
+   ring, the detail on two lines like the desk's (1.0.3.27, where one line cut it
+   with an ellipsis), and the word; the line over time is the desk's alone. */
+@media (max-width: 767.98px) {
+  .statStrip .tile {
+    padding: var(--space-3);
+  }
+
+  .statStrip .sparkSlot,
+  .statStrip .spark {
+    display: none;
+  }
+
+  /* A step smaller than the desk's, so "124 of 124" stands beside its ring on
+     one line (1.0.3.25; at 20 px it broke over two). */
+  .statStrip .tileValue {
+    font-size: var(--text-lg);
+  }
+}
+
+/* #endregion stat-strip */

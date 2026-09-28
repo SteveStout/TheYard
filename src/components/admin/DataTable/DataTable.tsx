@@ -15,7 +15,8 @@
  */
 import { type ReactNode, useLayoutEffect, useState } from 'react';
 import { STACK_FROM_COLUMNS, stacksAt } from '../../../lib/tableFit';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from './DataTable.module.css';
+import cardStyles from '../shared/card.module.css';
 
 export type Column<Row> = {
   /** The header's words, and the label beside each value when a phone stacks the row. */
@@ -94,6 +95,9 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       >
         {columns.map((column, at) => {
           const className = joined(
+            // The mono type is the card sheet's; the table's own .mono carries the rules for a
+            // mono cell inside a table (DataTable.module.css), so a mono cell wears both.
+            column.mono === true && cardStyles.mono,
             column.mono === true && styles.mono,
             column.num === true && styles.num,
             column.short === true && styles.short,
@@ -124,7 +128,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
 
   const line = (content: ReactNode, key: string, lineTestId?: string) => (
     <tr role="row" key={key}>
-      <td role="cell" colSpan={across} className={styles.muted} data-testid={lineTestId}>
+      <td role="cell" colSpan={across} className={cardStyles.muted} data-testid={lineTestId}>
         {content}
       </td>
     </tr>

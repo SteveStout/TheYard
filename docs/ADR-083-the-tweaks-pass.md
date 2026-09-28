@@ -43,7 +43,7 @@ The inventory's welcome banner is gone from the inventory, since the landing pag
 
 - A table cell never breaks a word: `coverage.spec` fails any page with a cell computing `overflow-wrap: anywhere`, on every page the site lists at 390 and 1280.
 
-```live path=src/components/admin/AdminPanel/AdminPanel.module.css region=tables
+```live path=src/components/admin/DataTable/DataTable.module.css region=tables
 ```
 
 - A ring's marker and graduations: `ring.test.ts`.

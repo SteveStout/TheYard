@@ -15,7 +15,9 @@ import {
   type LogFilter,
   type LogKind,
 } from '../../../lib/logs';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import tableStyles from '../DataTable/DataTable.module.css';
+import styles from './KeptLogsCard.module.css';
+import cardStyles from '../shared/card.module.css';
 import type { Fetched } from '../shared/types';
 import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
@@ -69,8 +71,8 @@ export default function KeptLogsCard({ adminKey }: { adminKey: string | null }) 
   }, [window_, applied, key]);
 
   return (
-    <article className={`${styles.wide} op-glass`} data-testid="kept-logs-card">
-      <h2 className={styles.cardTitle}>Kept log</h2>
+    <article className={`${cardStyles.wide} op-glass`} data-testid="kept-logs-card">
+      <h2 className={cardStyles.cardTitle}>Kept log</h2>
       <About>
         Every request, every error and every warning, written to Azure Cosmos DB off the request
         path in batches and kept for three years, so the log outlives the container and the thirty
@@ -79,17 +81,17 @@ export default function KeptLogsCard({ adminKey }: { adminKey: string | null }) 
         bounded stack, and no field can carry an at sign. Behind a key only the operator holds.
       </About>
       {key === null ? (
-        <p className={styles.muted} data-testid="kept-logs-keyless">
+        <p className={cardStyles.muted} data-testid="kept-logs-keyless">
           The kept log answers only to the operator's key.
         </p>
       ) : (
         <>
-          <p className={`${styles.statusRow} op-seg`} role="group" aria-label="Window">
+          <p className={`${cardStyles.statusRow} op-seg`} role="group" aria-label="Window">
             {ACTIVITY_WINDOWS.map((option) => (
               <button
                 key={option}
                 type="button"
-                className={styles.back}
+                className={cardStyles.back}
                 aria-pressed={option === window_}
                 onClick={() => {
                   if (option === window_) return;
@@ -107,7 +109,7 @@ export default function KeptLogsCard({ adminKey }: { adminKey: string | null }) 
             ))}
           </p>
           <form
-            className={styles.filterRow}
+            className={cardStyles.filterRow}
             aria-label="Narrow the kept log"
             onSubmit={(event) => {
               event.preventDefault();
@@ -151,19 +153,19 @@ export default function KeptLogsCard({ adminKey }: { adminKey: string | null }) 
                 data-testid="kept-logs-path"
               />
             </label>
-            <button type="submit" className={styles.back} data-testid="kept-logs-apply">
+            <button type="submit" className={cardStyles.back} data-testid="kept-logs-apply">
               Apply
             </button>
           </form>
           {logs === null ? (
-            <p className={styles.muted}>Loading…</p>
+            <p className={cardStyles.muted}>Loading…</p>
           ) : logs === 'failed' ? (
-            <p className={styles.muted} data-testid="kept-logs-refused">
+            <p className={cardStyles.muted} data-testid="kept-logs-refused">
               The kept log did not answer to this key.
             </p>
           ) : (
             <>
-              <p className={styles.muted} data-testid="kept-logs-summary">
+              <p className={cardStyles.muted} data-testid="kept-logs-summary">
                 {logs.kept.available
                   ? `${logs.kept.reason}: ${countsLine(logs.counts)} in the window, ${logs.count} shown`
                   : `Nothing is kept on this container: ${logs.kept.reason}.`}{' '}
@@ -185,9 +187,9 @@ export default function KeptLogsCard({ adminKey }: { adminKey: string | null }) 
                   return {
                     className:
                       tone === 'error'
-                        ? styles.errorLine
+                        ? tableStyles.errorLine
                         : tone === 'warn'
-                          ? styles.warnLine
+                          ? tableStyles.warnLine
                           : undefined,
                   };
                 }}

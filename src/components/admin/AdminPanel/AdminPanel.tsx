@@ -55,6 +55,8 @@ import type { CardSlug } from '../../../lib/workbench';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { PHONE, WIDE, WIDEST } from '../../../lib/breakpoints';
 import styles from './AdminPanel.module.css';
+import cardStyles from '../shared/card.module.css';
+import stripStyles from '../shared/stat-strip.module.css';
 import { Readout } from '../../shared/Readout';
 import { Ring } from '../../shared/Ring';
 import type { ErrorEntry, Fetched, Health, Machines, PageStatus } from '../shared/types';
@@ -415,7 +417,7 @@ export function AdminPanel({
     <section className={styles.wrap} aria-label="Admin">
       <div className={styles.head}>
         <h1 className={styles.title}>Admin</h1>
-        <button type="button" className={styles.back} onClick={onBack}>
+        <button type="button" className={cardStyles.back} onClick={onBack}>
           {backTo === 'home' ? 'Back to home' : 'Back to inventory'}
         </button>
       </div>
@@ -467,11 +469,11 @@ export function AdminPanel({
 function CardLoading({ slug }: { slug: CardSlug }) {
   return (
     <article
-      className={`${styles.wide} ${styles.cardLoading} op-glass`}
+      className={`${cardStyles.wide} ${styles.cardLoading} op-glass`}
       data-testid="bench-loading"
     >
-      <h2 className={styles.cardTitle}>{benchCard(slug).name}</h2>
-      <p className={styles.muted} role="status">
+      <h2 className={cardStyles.cardTitle}>{benchCard(slug).name}</h2>
+      <p className={cardStyles.muted} role="status">
         Loading…
       </p>
     </article>
@@ -668,7 +670,7 @@ function Workbench({
                 <span className={styles.pinnedLabel}>Cards</span>
                 <button
                   type="button"
-                  className={styles.back}
+                  className={cardStyles.back}
                   onClick={() => setDrawerOpen(false)}
                   data-testid="bench-drawer-close"
                 >
@@ -698,7 +700,7 @@ function Workbench({
           {railInDrawer && (
             <button
               type="button"
-              className={styles.back}
+              className={cardStyles.back}
               aria-haspopup="dialog"
               aria-expanded={drawerOpen}
               onClick={() => setDrawerOpen(true)}
@@ -716,7 +718,7 @@ function Workbench({
                 than the confusing "Pinned, pressed". */}
             <button
               type="button"
-              className={`${styles.back} ${styles.pinButton}`}
+              className={`${cardStyles.back} ${styles.pinButton}`}
               aria-pressed={pin === open}
               onClick={() => onPin(pin === open ? null : open)}
               data-testid="bench-pin"
@@ -731,7 +733,7 @@ function Workbench({
             >
               <button
                 type="button"
-                className={styles.back}
+                className={cardStyles.back}
                 onClick={() => onOpen(previous)}
                 aria-label={`Previous card, ${benchCard(previous).name}`}
                 data-testid="bench-previous"
@@ -740,7 +742,7 @@ function Workbench({
               </button>
               <button
                 type="button"
-                className={styles.back}
+                className={cardStyles.back}
                 onClick={() => onOpen(next)}
                 aria-label={`Next card, ${benchCard(next).name}`}
                 data-testid="bench-next"
@@ -765,7 +767,7 @@ function Workbench({
                 <span className={styles.pinnedLabel}>Pinned beside it</span>
                 <button
                   type="button"
-                  className={styles.back}
+                  className={cardStyles.back}
                   onClick={() => onPin(null)}
                   data-testid="bench-unpin"
                 >
@@ -791,7 +793,7 @@ function Workbench({
                   <p className={styles.columnBar}>
                     <button
                       type="button"
-                      className={styles.back}
+                      className={cardStyles.back}
                       onClick={() => onPin(null)}
                       data-testid="bench-unpin"
                     >
@@ -877,25 +879,25 @@ function StatStrip({
   caption: string;
 }) {
   const toneClass: Record<StatTile['tone'], string> = {
-    good: styles.tileGood,
-    warn: styles.tileWarn,
-    bad: styles.tileBad,
-    plain: styles.tilePlain,
-    waiting: styles.tileWaiting,
+    good: stripStyles.tileGood,
+    warn: stripStyles.tileWarn,
+    bad: stripStyles.tileBad,
+    plain: stripStyles.tilePlain,
+    waiting: stripStyles.tileWaiting,
   };
   const ordered = QUESTION_ORDER.flatMap((question) =>
     tiles.filter((tile) => tile.question === question)
   );
   return (
     <>
-      <div className={styles.stripHead}>
+      <div className={stripStyles.stripHead}>
         {toolbar}
-        <p className={styles.muted} data-testid="strip-caption">
+        <p className={cardStyles.muted} data-testid="strip-caption">
           {caption}
         </p>
       </div>
       <ul
-        className={`${styles.strip} ${styles.statStrip}`}
+        className={`${stripStyles.strip} ${stripStyles.statStrip}`}
         aria-label="The site at a glance"
         data-testid="stat-strip"
       >
@@ -903,24 +905,24 @@ function StatStrip({
           const runs = tile.spark === undefined ? [] : sparkRuns(tile.spark, 100, 24);
           const word = TONE_WORD[tile.tone];
           return (
-            <li key={tile.key} className={styles.stripItem}>
+            <li key={tile.key} className={stripStyles.stripItem}>
               <a
                 href={`?view=admin&card=${cardForTile(tile.key)}`}
-                className={`${styles.tile} op-glass op-tile ${toneClass[tile.tone]}`}
+                className={`${stripStyles.tile} op-glass op-tile ${toneClass[tile.tone]}`}
                 data-testid={`tile-${tile.key}`}
                 data-tone={tile.tone}
                 onClick={(event) => follow(event, () => onOpenCard(cardForTile(tile.key)))}
               >
                 {/* A tile is: label, value row (number plus optional ring), detail,
                     tone word, sparkline. Numbers line up on one baseline per row. */}
-                <span className={styles.tileLabel}>{tile.label}</span>
-                <span className={styles.tileValueRow}>
-                  <span className={styles.tileValue}>{tile.value}</span>
+                <span className={stripStyles.tileLabel}>{tile.label}</span>
+                <span className={stripStyles.tileValueRow}>
+                  <span className={stripStyles.tileValue}>{tile.value}</span>
                   {/* The ring shows a share of a whole (ADR-081). Screen readers skip
                       it, since the tile says the number in words. Its box is there
                       before data arrives, so the number does not shift when it does. */}
                   {tile.ringed && (
-                    <span className={styles.tileRing}>
+                    <span className={stripStyles.tileRing}>
                       {tile.ring !== undefined && (
                         <Ring
                           value={tile.ring.share}
@@ -935,21 +937,21 @@ function StatStrip({
                 </span>
                 {/* The detail is kept short enough for two lines. The full sentence is
                     in the title (hover text), and the extra part is read to screen readers. */}
-                <span className={styles.tileDetail} title={tileSentence(tile)}>
+                <span className={stripStyles.tileDetail} title={tileSentence(tile)}>
                   {tile.detail}
                   {tile.more !== undefined && <span className={styles.srOnly}>{tile.more}</span>}
                 </span>
                 {/* Empty slots hold the space for the tone word and sparkline, so
                     the page does not jump when the data arrives. */}
                 {word !== null ? (
-                  <span className={styles.tileTone}>{word}</span>
+                  <span className={stripStyles.tileTone}>{word}</span>
                 ) : (
-                  <span className={styles.tileToneSlot} aria-hidden="true" />
+                  <span className={stripStyles.tileToneSlot} aria-hidden="true" />
                 )}
-                {runs.length === 0 && <span className={styles.sparkSlot} aria-hidden="true" />}
+                {runs.length === 0 && <span className={stripStyles.sparkSlot} aria-hidden="true" />}
                 {runs.length > 0 && (
                   <svg
-                    className={styles.spark}
+                    className={stripStyles.spark}
                     viewBox="0 0 100 24"
                     preserveAspectRatio="none"
                     aria-hidden="true"
@@ -1022,7 +1024,7 @@ function useMachines(): {
   // screen readers.
   const toolbar = (where: string, testPrefix: string) => (
     <p
-      className={`${styles.statusRow} op-seg op-seg-wrap`}
+      className={`${cardStyles.statusRow} op-seg op-seg-wrap`}
       role="group"
       aria-label={`Window for every chart, ${where}`}
     >
@@ -1030,7 +1032,7 @@ function useMachines(): {
         <button
           key={option}
           type="button"
-          className={styles.back}
+          className={cardStyles.back}
           aria-pressed={option === window_}
           onClick={() => {
             // Reset to loading here, where the window changes, not in the effect.

@@ -4,7 +4,7 @@
 import { Fragment } from 'react';
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
 import { dottedParts } from '../../../lib/tableFit';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type { LogEntry } from '../shared/types';
 import { useRead, useKeptWindow, failed, About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';

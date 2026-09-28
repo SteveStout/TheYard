@@ -2,7 +2,7 @@
  * Application Insights, read back through the container's own identity (ADR-024).
  */
 import { emptyHourWords } from '../../../lib/telemetryCard';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type { Telemetry } from '../shared/types';
 
 /** The newest request's time, in the reader's own clock, as the log card writes its times. */

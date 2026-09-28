@@ -2,7 +2,7 @@
  * Azure's view of the container (ADR-010), asked by the container with its own identity.
  */
 import { shortenDigests, formatDateTime } from '../../../lib/format';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type { AzureState } from '../shared/types';
 import { useRead, pill, failed } from '../shared/common';
 

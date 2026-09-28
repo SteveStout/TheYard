@@ -3,7 +3,8 @@
  * two lines (ADR: Backends, side by side, the addendum on parity).
  */
 import { documentStoreLine, sqlLine, timingWindow } from '../../../lib/metrics';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import chartStyles from '../charts/charts.module.css';
+import cardStyles from '../shared/card.module.css';
 import type { EndpointTiming, Metrics } from '../shared/types';
 import { useRead, failed } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
@@ -23,16 +24,16 @@ export default function TimingCard({ tick }: { tick: number }) {
   return (
     <>
       {/* #region timing-section */}
-      <article className={`${styles.wide} op-glass`} data-testid="timing-card">
-        <h2 className={styles.cardTitle}>Timing</h2>
+      <article className={`${cardStyles.wide} op-glass`} data-testid="timing-card">
+        <h2 className={cardStyles.cardTitle}>Timing</h2>
         {metrics === null ? (
-          <p className={styles.muted}>Loading…</p>
+          <p className={cardStyles.muted}>Loading…</p>
         ) : metrics === 'failed' ? (
           failed('the timing')
         ) : (
           <>
-            <p className={styles.muted}>{timingWindow(metrics)}</p>
-            <ul className={styles.summaryList}>
+            <p className={cardStyles.muted}>{timingWindow(metrics)}</p>
+            <ul className={chartStyles.summaryList}>
               <li>
                 Requests: p50 {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms.
               </li>

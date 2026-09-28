@@ -2,7 +2,7 @@
  * Every page, checked (ADR: Every page, checked at every roll).
  */
 import { useEffect, useState } from 'react';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type { PageEntry, PageStatus, Fetched } from '../shared/types';
 import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';

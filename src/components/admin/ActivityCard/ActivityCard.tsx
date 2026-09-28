@@ -44,7 +44,9 @@ import {
   type VisitorSortKey,
 } from '../../../lib/activity';
 import { plotFrame } from '../../../lib/plotFrame';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from './ActivityCard.module.css';
+import chartStyles from '../charts/charts.module.css';
+import cardStyles from '../shared/card.module.css';
 import { PlotFrame, useFittedBox } from '../charts';
 import type { Fetched } from '../shared/types';
 import { About } from '../shared/common';
@@ -199,8 +201,8 @@ export default function ActivityCard({
   };
 
   return (
-    <article className={`${styles.wide} op-glass`} data-testid="activity-card">
-      <h2 className={styles.cardTitle}>Site activity</h2>
+    <article className={`${cardStyles.wide} op-glass`} data-testid="activity-card">
+      <h2 className={cardStyles.cardTitle}>Site activity</h2>
       <About>
         Visitor-days per day, stacked by who they were: people at the bottom, then scanners and
         crawlers (every request looked like a bot, by its agent or by what it asked for), then the
@@ -217,12 +219,12 @@ export default function ActivityCard({
         per-visitor rows, still only hashes, are served to the operator's key alone, and only on a
         site that turns them on.
       </About>
-      <p className={`${styles.statusRow} op-seg op-seg-wrap`} role="group" aria-label="Window">
+      <p className={`${cardStyles.statusRow} op-seg op-seg-wrap`} role="group" aria-label="Window">
         {ACTIVITY_WINDOWS.map((option) => (
           <button
             key={option}
             type="button"
-            className={styles.back}
+            className={cardStyles.back}
             aria-pressed={option === window_}
             onClick={() => {
               // The change of window is the event; the cards go back to
@@ -241,12 +243,12 @@ export default function ActivityCard({
           </button>
         ))}
       </p>
-      <p className={`${styles.statusRow} op-seg`} role="group" aria-label="Whose traffic">
+      <p className={`${cardStyles.statusRow} op-seg`} role="group" aria-label="Whose traffic">
         {ACTIVITY_WHO.map((option) => (
           <button
             key={option}
             type="button"
-            className={styles.back}
+            className={cardStyles.back}
             aria-pressed={option === who}
             onClick={() => setWho(option)}
             data-testid={`activity-who-${option}`}
@@ -256,9 +258,9 @@ export default function ActivityCard({
         ))}
       </p>
       {report === null ? (
-        <p className={styles.muted}>Loading…</p>
+        <p className={cardStyles.muted}>Loading…</p>
       ) : report === 'failed' ? (
-        <p className={styles.muted} data-testid="card-failed">
+        <p className={cardStyles.muted} data-testid="card-failed">
           Could not read the activity on the last try; the next try is on the next window change.
         </p>
       ) : (
@@ -266,11 +268,11 @@ export default function ActivityCard({
       )}
       {key !== null && rowsServed === true && (
         <>
-          <h3 className={styles.cardTitle}>Visitors</h3>
+          <h3 className={cardStyles.cardTitle}>Visitors</h3>
           {visitors === null ? (
-            <p className={styles.muted}>Loading…</p>
+            <p className={cardStyles.muted}>Loading…</p>
           ) : visitors === 'failed' ? (
-            <p className={styles.muted} data-testid="visitors-refused">
+            <p className={cardStyles.muted} data-testid="visitors-refused">
               The visitor rows did not answer to this key.
             </p>
           ) : (
@@ -382,7 +384,11 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
   const innerWidth = chart.width - chart.left - chart.right;
   const step = count <= 1 ? 0 : innerWidth / (count - 1);
   const colour = (store: string) =>
-    store === 'cosmos' ? styles.cosmosLine : store === 'sql' ? styles.sqlLine : styles.allLine;
+    store === 'cosmos'
+      ? chartStyles.cosmosLine
+      : store === 'sql'
+        ? chartStyles.sqlLine
+        : chartStyles.allLine;
   const kindClass = (kind: ActivityKind) =>
     kind === 'people'
       ? styles.whoPeople
@@ -428,12 +434,16 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
       : (readings[0]?.value ?? 0);
   return (
     <>
-      <p className={`${styles.statusRow} op-seg`} role="group" aria-label="How the chart is split">
+      <p
+        className={`${cardStyles.statusRow} op-seg`}
+        role="group"
+        aria-label="How the chart is split"
+      >
         {(['kind', 'store'] as const).map((option) => (
           <button
             key={option}
             type="button"
-            className={styles.back}
+            className={cardStyles.back}
             aria-pressed={option === view}
             onClick={() => setView(option)}
             data-testid={`activity-view-${option}`}
@@ -443,10 +453,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
         ))}
       </p>
       {view === 'kind' && bands.length > 1 && (
-        <ul className={styles.legend} data-testid="activity-legend">
+        <ul className={chartStyles.legend} data-testid="activity-legend">
           {bands.map((band) => (
             <li key={band.kind}>
-              <span className={`${styles.swatch} ${kindClass(band.kind)}`} aria-hidden="true" />
+              <span
+                className={`${chartStyles.swatch} ${kindClass(band.kind)}`}
+                aria-hidden="true"
+              />
               {KIND_NAMES[band.kind]}
             </li>
           ))}
@@ -463,7 +476,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
       <div className={styles.chartWrap}>
         <svg
           ref={fit}
-          className={styles.chart}
+          className={chartStyles.chart}
           viewBox={`0 0 ${chart.width} ${chart.height}`}
           onPointerMove={point}
           onPointerDown={point}
@@ -485,14 +498,14 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           data-testid="activity-graph"
         >
           <line
-            className={styles.axis}
+            className={chartStyles.axis}
             x1={chart.left}
             y1={chart.height - chart.bottom}
             x2={chart.width - chart.right}
             y2={chart.height - chart.bottom}
           />
           <line
-            className={styles.axis}
+            className={chartStyles.axis}
             x1={chart.left}
             y1={chart.top}
             x2={chart.left}
@@ -511,11 +524,16 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
               }))
             )}
           />
-          <text className={styles.axisLabel} x={chart.left - 8} y={chart.top + 4} textAnchor="end">
+          <text
+            className={chartStyles.axisLabel}
+            x={chart.left - 8}
+            y={chart.top + 4}
+            textAnchor="end"
+          >
             {ceiling}
           </text>
           <text
-            className={styles.axisLabel}
+            className={chartStyles.axisLabel}
             x={chart.left - 8}
             y={chart.height - chart.bottom}
             textAnchor="end"
@@ -525,7 +543,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           {labels.map((index) => (
             <text
               key={index}
-              className={styles.axisLabel}
+              className={chartStyles.axisLabel}
               x={chart.left + index * step}
               y={chart.height - 8}
               textAnchor={index === 0 ? 'start' : index === count - 1 ? 'end' : 'middle'}
@@ -536,7 +554,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           ))}
           {partial !== null && (
             <text
-              className={styles.axisLabel}
+              className={chartStyles.axisLabel}
               x={chart.width - chart.right}
               y={chart.top - 2}
               textAnchor="end"
@@ -573,7 +591,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
                   data-testid={`activity-line-${line.store}`}
                 >
                   <path className={styles.area} d={areaPath(line.points, ceiling, chart)} />
-                  <path className={styles.line} d={linePath(line.points, ceiling, chart)} />
+                  <path className={chartStyles.line} d={linePath(line.points, ceiling, chart)} />
                 </g>
               ))}
           {view === 'kind' &&
@@ -629,17 +647,17 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
             </strong>
             {readings.map((reading) => (
               <span key={reading.key}>
-                <span className={`${styles.swatch} ${reading.className}`} aria-hidden="true" />
+                <span className={`${chartStyles.swatch} ${reading.className}`} aria-hidden="true" />
                 {reading.name} {reading.value.toLocaleString()}
               </span>
             ))}
           </div>
         )}
       </div>
-      <ul className={styles.summaryList} data-testid="activity-totals">
+      <ul className={chartStyles.summaryList} data-testid="activity-totals">
         <li>
           {view === 'store' && (
-            <span className={`${styles.swatch} ${styles.allLine}`} aria-hidden="true" />
+            <span className={`${chartStyles.swatch} ${chartStyles.allLine}`} aria-hidden="true" />
           )}
           {who === 'people'
             ? `${people.visitor_days.toLocaleString()} visitor-days that looked like people across the days in the window, ${people.requests.toLocaleString()} requests in the window.`
@@ -647,13 +665,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
         </li>
         {shown.by_store.map((store) => (
           <li key={store.store}>
-            <span className={`${styles.swatch} ${colour(store.store)}`} aria-hidden="true" />
+            <span className={`${chartStyles.swatch} ${colour(store.store)}`} aria-hidden="true" />
             {nameOf(store.store)}: {store.visitor_days.toLocaleString()} visitor-days,{' '}
             {store.requests.toLocaleString()} requests.
           </li>
         ))}
         {report.retention !== null && (
-          <li className={styles.muted} data-testid="activity-retention">
+          <li className={cardStyles.muted} data-testid="activity-retention">
             Rows {report.retention}.
           </li>
         )}
@@ -675,7 +693,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           .
         </li>
         {who === 'all' && self.top_paths.length > 0 && (
-          <li className={styles.muted} data-testid="activity-own-asked-for">
+          <li className={cardStyles.muted} data-testid="activity-own-asked-for">
             The site's own reads asked for:{' '}
             {namedPaths(self.top_paths)
               .slice(0, 5)
@@ -685,17 +703,19 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           </li>
         )}
         {who === 'people' && (
-          <li className={styles.muted} data-testid="activity-left-out">
+          <li className={cardStyles.muted} data-testid="activity-left-out">
             Left out: {scanners.visitor_days.toLocaleString()} visitor-days of scanners and crawlers
             ({scanners.requests.toLocaleString()} requests) and {self.visitor_days.toLocaleString()}{' '}
             of the site's own reads ({self.requests.toLocaleString()} requests: App Service keeping
             the container warm, the page sweep and the ship's readers).
           </li>
         )}
-        <li className={styles.muted} data-testid="activity-collector">
-          <details className={styles.about}>
-            <summary className={styles.aboutSummary}>{collectorSummary(report.collector)}</summary>
-            <p className={styles.muted} data-testid="activity-collector-details">
+        <li className={cardStyles.muted} data-testid="activity-collector">
+          <details className={cardStyles.about}>
+            <summary className={cardStyles.aboutSummary}>
+              {collectorSummary(report.collector)}
+            </summary>
+            <p className={cardStyles.muted} data-testid="activity-collector-details">
               {report.collector.offered.toLocaleString()} hits offered since the process started,{' '}
               {report.collector.written.toLocaleString()} written,{' '}
               {report.collector.dropped.toLocaleString()} dropped by a full queue,{' '}
@@ -720,7 +740,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
         </p>
       )}
       <section className={styles.pathTile} data-testid="activity-path">
-        <h3 className={styles.cardTitle}>The recruiter's path</h3>
+        <h3 className={cardStyles.cardTitle}>The recruiter's path</h3>
         <PathBars
           rows={shown.path.map((step, index) => ({
             key: step.step,
@@ -732,17 +752,17 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           label={`The recruiter's path over the ${report.window} window: ${shown.path
             .map((step) => `${STEP_NAMES[step.step]} ${step.visitor_days}`)
             .join(', ')}`}
-          tone={who === 'people' ? styles.whoPeople : styles.allLine}
+          tone={who === 'people' ? styles.whoPeople : chartStyles.allLine}
         />
-        <p className={styles.muted}>
+        <p className={cardStyles.muted}>
           Visitor-days that asked for each step in the window: the page itself, the inventory's
           listing, About Steven, and the resume, which is the number this site exists for.
         </p>
       </section>
       <section className={styles.pathTile} data-testid="activity-sources">
-        <h3 className={styles.cardTitle}>Where they came from</h3>
+        <h3 className={cardStyles.cardTitle}>Where they came from</h3>
         {shown.sources.length === 0 ? (
-          <p className={styles.muted}>
+          <p className={cardStyles.muted}>
             Counted from 1.0.3.17, 24 September: no page load in the window has arrived since with
             its referring site kept.
           </p>
@@ -761,7 +781,7 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
               )
                 .map((entry) => `${SOURCE_NAMES[entry.group]} ${entry.visitor_days}`)
                 .join(', ')}`}
-              tone={who === 'people' ? styles.whoPeople : styles.allLine}
+              tone={who === 'people' ? styles.whoPeople : chartStyles.allLine}
             />
             <DataTable
               label="The sites that linked here"
@@ -772,13 +792,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
             />
           </>
         )}
-        <p className={styles.muted}>
+        <p className={cardStyles.muted}>
           The host of the page that linked here, kept on a page load and never its path. A link
           opened from a PDF, the resume among them, sends no referrer and reads as typed or unknown.
         </p>
       </section>
-      <details className={styles.about}>
-        <summary className={styles.aboutSummary}>Day by day</summary>
+      <details className={cardStyles.about}>
+        <summary className={cardStyles.aboutSummary}>Day by day</summary>
         <DataTable
           label="Visitor-days per day, by kind"
           testId="activity-days-table"

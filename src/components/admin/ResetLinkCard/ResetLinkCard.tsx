@@ -2,7 +2,7 @@
  * Reset a password: a link minted behind the operator's key (ADR: Reset is one person's).
  */
 import { useState } from 'react';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import { About, Absent } from '../shared/common';
 
 /**

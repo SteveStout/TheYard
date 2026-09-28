@@ -1,0 +1,160 @@
+/* #region activity-card */
+
+.area {
+  fill: currentColor;
+  fill-opacity: var(--mark-area-opacity);
+}
+
+/*
+ * The three kinds of traffic, stacked (1.0.3.12): people, scanners and
+ * crawlers, the site's own reads, each in its own token. A band is filled
+ * nearly solid, and its ceiling is drawn again in the card's ground, two
+ * pixels wide, so two bands of close lightness still read as two. A band's
+ * name sits on the band in the heading colour with a halo of the ground, so
+ * it reads on any of the three fills; the legend carries it where it does not.
+ */
+.whoPeople {
+  color: var(--color-who-people);
+}
+
+.whoScanners {
+  color: var(--color-who-scanners);
+}
+
+.whoSelf {
+  color: var(--color-who-self);
+}
+
+.band {
+  fill: currentColor;
+  /* Filled glass, not paint (Steve, 25 September: "not the lines, the fill"):
+     the frost and the grid read through a band, and its top edge carries the
+     colour at full strength. 0.85 until 1.0.3.24. */
+  fill-opacity: var(--mark-band-opacity);
+}
+
+.bandEdge {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.bandLabel {
+  fill: var(--color-heading);
+  font-size: var(--chart-text);
+  font-weight: var(--weight-semibold);
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* The recruiter's path (1.0.3.13): four bars on a track one step off the ground, the counts in the text colour. */
+.pathTile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pathChart {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  display: block;
+}
+
+.pathTrack {
+  fill: var(--color-mark-bar-track);
+}
+
+/* A bar's fill is see-through like a band's (1.0.3.24), on the gauges' faint teal track. */
+.pathBar {
+  fill: currentColor;
+  fill-opacity: var(--mark-bar-opacity);
+}
+
+.pathLabel,
+.pathCount {
+  fill: var(--color-text);
+  font-size: var(--chart-text);
+  font-family: inherit;
+}
+
+.pathCount {
+  font-weight: var(--weight-semibold);
+}
+
+/*
+ * Reading one day (1.0.3.14): the axis named above the drawing, today behind
+ * a wash of the page ground because it is a part-day, and under a pointer a
+ * hairline down the day with a dot on each band's top in its colour, ringed in
+ * the card's ground, and the day's numbers in a box in the corner away from
+ * the pointer, so the box never covers the day it reads.
+ */
+.chartCaption {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.chartWrap {
+  position: relative;
+}
+
+.todayBand {
+  fill: var(--color-bg);
+  fill-opacity: var(--mark-wash-opacity);
+}
+
+.crosshair line {
+  stroke: var(--color-heading);
+  stroke-width: 1;
+}
+
+.crossDot {
+  fill: currentColor;
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+
+.chartTip {
+  position: absolute;
+  top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  pointer-events: none;
+}
+
+.chartTip strong {
+  color: var(--color-heading);
+}
+
+.chartTipLeft {
+  left: calc(var(--space-2) + 36px);
+}
+
+.chartTipRight {
+  right: var(--space-2);
+}
+
+/* What scanners probed (1.0.3.16): a strip on the page ground, apart from what people asked for, and no alarm. */
+.scannerStrip {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+/* #endregion activity-card */

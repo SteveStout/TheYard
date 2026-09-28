@@ -13,7 +13,8 @@ import {
   rerunCount,
   totals,
 } from '../../../lib/testResults';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from './TestsCard.module.css';
+import cardStyles from '../shared/card.module.css';
 import type { Fetched } from '../shared/types';
 import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
@@ -28,7 +29,7 @@ const SUITE_COLUMNS: Column<TestSuite>[] = [
       <>
         <ResultMark passed={suite.failed === 0} label /> {suite.name}
         {suite.carried && (
-          <span className={styles.muted} data-testid={`tests-carried-${suite.id}`}>
+          <span className={cardStyles.muted} data-testid={`tests-carried-${suite.id}`}>
             {' '}
             (carried from {suite.carried}: nothing this pass covers changed)
           </span>
@@ -93,8 +94,8 @@ export default function TestsCard() {
   }, []);
 
   return (
-    <article className={`${styles.wide} op-glass`} data-testid="tests-card">
-      <h2 className={styles.cardTitle}>Every test, for this build</h2>
+    <article className={`${cardStyles.wide} op-glass`} data-testid="tests-card">
+      <h2 className={cardStyles.cardTitle}>Every test, for this build</h2>
       <About>
         The ship&rsquo;s gate runs every suite once, on the machine that ships: xUnit on SQLite and
         again booted on Cosmos DB, the live Cosmos DB tests, Vitest, and the browser suite on both
@@ -104,19 +105,19 @@ export default function TestsCard() {
         failures first and then the slowest.
       </About>
       {results === null ? (
-        <p className={styles.muted}>Loading…</p>
+        <p className={cardStyles.muted}>Loading…</p>
       ) : results === 'failed' ? (
-        <p className={styles.muted} data-testid="tests-failed">
+        <p className={cardStyles.muted} data-testid="tests-failed">
           Could not read the test results on the last try.
         </p>
       ) : results === 'none' ? (
-        <p className={styles.muted} data-testid="tests-none">
+        <p className={cardStyles.muted} data-testid="tests-none">
           No test results shipped with this build. The ship&rsquo;s gate writes them.
         </p>
       ) : (
         <>
           <TestsSummary results={results} />
-          <p className={styles.muted} data-testid="tests-checks">
+          <p className={cardStyles.muted} data-testid="tests-checks">
             {results.checks.map((check, index) => (
               <Fragment key={check.name}>
                 {index > 0 ? ' · ' : ''}
@@ -136,7 +137,7 @@ export default function TestsCard() {
             columns={SUITE_COLUMNS}
           />
           <form
-            className={styles.filterRow}
+            className={cardStyles.filterRow}
             aria-label="Find a test"
             onSubmit={(event) => event.preventDefault()}
           >
@@ -151,7 +152,7 @@ export default function TestsCard() {
             </label>
             <button
               type="button"
-              className={styles.back}
+              className={cardStyles.back}
               aria-pressed={order === 'name'}
               onClick={() => setOrder((o) => (o === 'slowest' ? 'name' : 'slowest'))}
               data-testid="tests-order"

@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react';
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
 import { documentStore } from '../../../lib/metrics';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type { Metrics, StoreOperation, StoreLog, Fetched } from '../shared/types';
 import { useRead, useKeptWindow, Absent, About, describeParameters } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';

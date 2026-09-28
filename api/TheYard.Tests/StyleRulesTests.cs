@@ -386,7 +386,8 @@ public class StyleRulesTests
         ["src/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings, a page title's underline, the ring round Load more",
         ["src/components/layout/SideNav/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings",
         ["src/components/account/AccountPanel/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
-        ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline, the ring round the chosen window button, the tick on a section's rule",
+        ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",
+        ["src/components/admin/shared/card.module.css"] = "the ring round the chosen window button",
         ["src/components/docs/DocsMenu/DocsMenu.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
         ["src/components/landing/Landing/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
     };
@@ -410,8 +411,12 @@ public class StyleRulesTests
         }
 
         // And where it is allowed, it is never the colour of words on a light ground or the stroke of a chart's line.
-        string panel = WithoutComments(
-            File.ReadAllText(Path.Combine(Root, "src", "components", "admin", "AdminPanel", "AdminPanel.module.css")));
+        // Every sheet of the Admin tab, a folder each since the stylesheet split (ADR: The Admin tab, as a product).
+        string panel = WithoutComments(string.Join(
+            "\n",
+            Directory.EnumerateFiles(Path.Combine(Root, "src", "components", "admin"), "*.module.css", SearchOption.AllDirectories)
+                .Order(StringComparer.Ordinal)
+                .Select(File.ReadAllText)));
         foreach (Match rule in Regex.Matches(panel, @"\.(\w*Line|tile\w*|ring\w*)\s*\{[^}]*--(color-gold|rule-gold|ring-gold)[^}]*\}"))
         {
             wrong.Add($"the rule .{rule.Groups[1].Value} uses gold: gold is never a chart's line, a tile's top or a ring");
@@ -538,7 +543,7 @@ public class StyleRulesTests
         // The controls, by sheet and selector, and the height token each takes.
         var controls = new (string Sheet, string Selector, string Token)[]
         {
-            ("src/components/admin/AdminPanel/AdminPanel.module.css", ".back", "--pill-height"),
+            ("src/components/admin/shared/card.module.css", ".back", "--pill-height"),
             ("src/components/account/AccountPanel/AccountPanel.module.css", ".back", "--pill-height"),
             ("src/components/vehicle/VehicleDetail/VehicleDetail.module.css", ".back", "--pill-height"),
             ("src/components/docs/DocsMenu/DocsMenu.module.css", ".copyLink", "--pill-height"),
@@ -877,7 +882,7 @@ public class StyleRulesTests
     private static readonly Dictionary<string, string> NotAPanel = new(StringComparer.Ordinal)
     {
         ["src/components/layout/StoreBar/StoreBar.module.css .bar"] = "the store band under the header is part of the frame, as the header is",
-        ["src/components/admin/AdminPanel/AdminPanel.module.css .scannerStrip"] = "the activity card's quiet line of what scanners probed, on the page ground inside the card: a line in a card, not a panel",
+        ["src/components/admin/ActivityCard/ActivityCard.module.css .scannerStrip"] = "the activity card's quiet line of what scanners probed, on the page ground inside the card: a line in a card, not a panel",
     };
 
     [Fact]

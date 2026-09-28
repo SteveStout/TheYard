@@ -1,7 +1,7 @@
 /**
  * The partition key, live (ADR: The partition key).
  */
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type { Experiment, ExperimentRow } from '../shared/types';
 import { useRead, failed, About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';

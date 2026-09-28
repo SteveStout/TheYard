@@ -25,7 +25,8 @@ import {
 } from '../../../lib/machineChart';
 import { gaugeMeter } from '../../../lib/gauge';
 import { fitBox, type plotFrame, type PlotBox } from '../../../lib/plotFrame';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from './charts.module.css';
+import cardStyles from '../shared/card.module.css';
 
 // #region fitted-box
 /**
@@ -182,7 +183,7 @@ export function MachineChart({
 
   if (!drawn) {
     return (
-      <p className={styles.muted} data-testid={`${testId}-empty`}>
+      <p className={cardStyles.muted} data-testid={`${testId}-empty`}>
         Nothing to draw yet.
       </p>
     );

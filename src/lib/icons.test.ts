@@ -39,24 +39,15 @@ const DRAWINGS = ['VehicleImage.tsx', 'Ring.tsx'];
  * watermark. Anything else a sheet strokes is on --icon-stroke.
  */
 const DRAWN_IN_CSS: Record<string, string[]> = {
-  'AdminPanel.module.css': [
+  // The Admin charts: an axis, its unit, the readout's rule and box, a line; and
+  // the Mark VII grammar (the tweaks pass, B2): graduations, the plot's bracket
+  // ticks, and the callout's leader, dot and halo. Drawings, not icons.
+  'charts.module.css': [
     '.axis',
     '.axisUnit',
     '.readoutRule',
     '.readoutBox',
     '.line',
-    '.spark',
-    '.resultMark path',
-    '.resultDisc',
-    // The activity chart's stacked bands (1.0.3.12): the two-pixel gap in the card's ground
-    // between bands, and the halo round a band's name. Drawings, not icons.
-    '.bandEdge',
-    '.bandLabel',
-    // The crosshair (1.0.3.14): a hairline down the day and a ringed dot on each band.
-    '.crosshair line',
-    '.crossDot',
-    // The Mark VII grammar (the tweaks pass, B2): graduations, the plot's bracket
-    // ticks, and the callout's leader, dot and halo. Drawings, not icons.
     '.markTick',
     '.markTickMajor',
     '.plotBracket',
@@ -64,6 +55,14 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
     '.calloutDot',
     '.calloutText',
   ],
+  // The sparkline on the workbench's stat strip.
+  'stat-strip.module.css': ['.spark'],
+  // The pass and fail marks on the tests card.
+  'TestsCard.module.css': ['.resultMark path', '.resultDisc'],
+  // The activity chart's stacked bands (1.0.3.12): the two-pixel gap in the card's ground
+  // between bands, and the halo round a band's name; and the crosshair (1.0.3.14), a
+  // hairline down the day and a ringed dot on each band. Drawings, not icons.
+  'ActivityCard.module.css': ['.bandEdge', '.bandLabel', '.crosshair line', '.crossDot'],
   'Ring.module.css': ['.tick', '.tickMajor'],
   'Watermark.module.css': ['.rows'],
 };

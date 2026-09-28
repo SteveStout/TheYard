@@ -13,7 +13,7 @@ import {
   timeline,
   windowName,
 } from '../../../lib/machineChart';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type {
   DocumentMinute,
   Fetched,

@@ -2,7 +2,7 @@
  * The operator's desk: the key this browser holds, entered or forgotten.
  */
 import { useState } from 'react';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 
 /**
  * The operator's key on this browser (ADR: Site activity, and the line an

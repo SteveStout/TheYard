@@ -1,0 +1,277 @@
+/* The Admin table: its box, its sortable headers, its day rows, its stacked form on a narrow
+   card, and the tone of a warning or an error row (ADR: One folder per component). */
+
+/* #region wide-sections */
+
+/*
+ * Scrollable, and reachable from the keyboard.
+ *
+ * A div with overflow-x and nothing focusable inside is a region a mouse can
+ * scroll and a keyboard cannot, which is WCAG 2.1.1 and which axe names
+ * scrollable-region-focusable. It only fires when the box actually overflows,
+ * so it passed on a wide window here and failed on CI's viewport, where these
+ * three tables are wider than the space they get. tabindex makes the region
+ * focusable so the arrow keys work; the label is what a screen reader announces
+ * on arriving there, which is the other half of the same requirement.
+ */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.tableWrap:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* #region tables */
+
+/* The tables (the tweaks pass, A1, and Steve's correction the same morning:
+   "eliminate horizontal scrolling ... especially on desktop"). Words wrap
+   between themselves and never inside one; an identifier (a path, an address,
+   a digest, set in the small .mono type) may break at any character, the way
+   code does, because it has no words to break between; a number stays on one
+   line, right-aligned in tabular figures. So a table is as wide as its card and
+   the scroller round it is a last resort. The header is a 2 px rule with small
+   capitals over it, not a grey block. Every table is drawn by DataTable
+   (src/components/admin/DataTable/DataTable.tsx). */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table thead th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border-bottom: 2px solid var(--color-mark-axis);
+  color: var(--color-mark-axis);
+  font-size: var(--readout-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-mark-rule);
+  vertical-align: top;
+}
+
+/* A row's own name (a suite, a day) reads as the row's first cell in the heading
+   colour, not as a column header: the small capitals are the columns' alone
+   (1.0.3.30; "XUNIT ON SQLITE" had worn them). */
+.table tbody th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-mark-rule);
+  vertical-align: top;
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.table td.mono {
+  overflow-wrap: anywhere;
+}
+
+.table .num {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.table td.num {
+  overflow-wrap: normal;
+}
+
+/* A short reading, a time, a level or a status, on one line (1.0.3.31): a desk
+   table broke "3:54:58 PM" a character a line and "Information" in two. */
+.table .short {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* A phone (1.0.3.25): tighter cells, and in a table that stays a table an
+   identifier's column is never narrower than a short path, so "/api/version"
+   reads as one line and not five. A number is not an identifier and keeps its
+   own width. */
+@media (max-width: 639.98px) {
+  .table th,
+  .table td {
+    padding: var(--space-2);
+  }
+
+  .table:not(.stack) td.mono:not(.num) {
+    min-width: 9rem;
+  }
+}
+
+/* A table of three or more columns when its card cannot give each column a
+   column's room (1.0.3.30 on a phone; from 1.0.3.31 wherever the card is too
+   narrow, decided by DataTable measuring its box against src/lib/tableFit.ts):
+   every row a block led by its first column, and every other value on a line
+   behind its column's name, so nothing is cut at the card's edge and nothing
+   scrolls sideways. The header row keeps only what can be pressed, the sort
+   buttons, as a row of words; the names it held are beside every value now,
+   and a screen reader still hears them as the columns' headers. The label is
+   generated text, so it is given an empty alternative and read once, as the
+   header. */
+.stack,
+.stack tbody,
+.stack tr,
+.stack td,
+.stack tbody th {
+  display: block;
+}
+
+.stack thead tr {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  border-bottom: 2px solid var(--color-mark-axis);
+  padding-bottom: var(--space-2);
+}
+
+.stack thead th {
+  border: none;
+  padding: 0;
+}
+
+.stack thead th:not([aria-sort]) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.stack thead:not(:has([aria-sort])) tr {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.stack tbody tr {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-mark-rule);
+}
+
+.stack tbody tr:last-child {
+  border-bottom: none;
+}
+
+.stack td,
+.stack tbody th {
+  border: none;
+  padding: 2px 0;
+  text-align: left;
+  white-space: normal;
+  /* A value with no space in it (a SQL command's parameter list) wraps inside
+     its line instead of pushing the row past the phone's edge; a word with
+     room is never broken (coverage's rule, the tweaks pass A1). */
+  overflow-wrap: break-word;
+}
+
+.stack .lead {
+  padding-bottom: var(--space-1);
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.stack [data-label] {
+  display: grid;
+  grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.stack [data-label]::before {
+  content: attr(data-label);
+  content: attr(data-label) / '';
+  padding-top: 2px;
+  color: var(--color-mark-axis);
+  font-family: var(--font-sans);
+  font-size: var(--readout-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.stack [data-label]:empty {
+  display: none;
+}
+
+.stack .num {
+  text-align: left;
+}
+
+.stack .dayRow th {
+  padding: var(--space-2) 0;
+}
+
+/* A kept line's state marks the whole block, not its first line. */
+.stack .warnLine,
+.stack .errorLine {
+  padding-left: var(--space-2);
+}
+
+.stack .warnLine {
+  border-left: 3px solid var(--color-warning);
+}
+
+.stack .errorLine {
+  border-left: 3px solid var(--color-danger);
+}
+
+.stack .warnLine td:first-child,
+.stack .errorLine td:first-child {
+  border-left: none;
+}
+
+/* #endregion tables */
+
+/* #endregion wide-sections */
+
+.warnLine {
+  color: var(--color-warning);
+}
+
+/* A day's heading row in the visitor table: the page ground, so the day reads as a group and not a row. */
+.dayRow th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg);
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* A column header that sorts on a click: the button is the whole header, so the target is the word. */
+.sortButton {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--color-border-strong);
+}
+
+.sortButton:hover {
+  color: var(--color-accent);
+}
+
+/* A kept line's tone: a warning or a 4xx in the warning colour, an error or a 5xx in the danger colour. */
+.warnLine td:first-child {
+  border-left: 3px solid var(--color-warning);
+}
+
+.errorLine td:first-child {
+  border-left: 3px solid var(--color-danger);
+}

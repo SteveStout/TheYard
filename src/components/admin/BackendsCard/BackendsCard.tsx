@@ -2,7 +2,7 @@
  * Backends, side by side (ADR: Backends, side by side): the two stores on the same
  * rows, or this container against its peer.
  */
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type {
   RouteTiming,
   StoreSummary,

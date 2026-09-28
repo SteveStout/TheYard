@@ -1,0 +1,6 @@
+/* Four cards in a three-track grid leave one alone on the second row with two
+   thirds of the width empty, which reads as something failing to load rather
+   than as a layout. The fourth takes the row it is on. */
+.wideCard {
+  grid-column: 1 / -1;
+}

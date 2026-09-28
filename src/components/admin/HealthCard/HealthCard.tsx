@@ -2,7 +2,7 @@
  * Application health (ADR-010): the checks the container runs on itself, with
  * how long each took. The strip reads the same answer, so it is handed in.
  */
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type { Health, Fetched } from '../shared/types';
 import { pill, failed, formatUptime } from '../shared/common';
 

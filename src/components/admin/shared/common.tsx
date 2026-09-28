@@ -16,7 +16,7 @@ import {
   type KeptMeta,
   metaOf,
 } from '../../../lib/keptCards';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from './card.module.css';
 import type { Machines, SqlParameterShape, Fetched } from './types';
 
 // #region reads

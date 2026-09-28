@@ -3,7 +3,7 @@
  * kept window, on a container that runs a relational store.
  */
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from '../shared/card.module.css';
 import type { SqlStatement, Metrics, StoreLog } from '../shared/types';
 import {
   useRead,

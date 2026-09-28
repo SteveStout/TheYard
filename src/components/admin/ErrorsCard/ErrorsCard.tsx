@@ -3,7 +3,8 @@
  * window. The strip reads the ring for its tile, so the ring is handed in.
  */
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
-import styles from '../AdminPanel/AdminPanel.module.css';
+import styles from './ErrorsCard.module.css';
+import cardStyles from '../shared/card.module.css';
 import type { ErrorEntry, Fetched } from '../shared/types';
 import { useKeptWindow, failed } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
@@ -23,11 +24,11 @@ const errorColumns = (window_: CardWindow): Column<ErrorEntry>[] => [
     name: 'Stack',
     cell: (entry, index) =>
       entry.frames.length === 0 ? (
-        <span className={styles.muted}>no stack</span>
+        <span className={cardStyles.muted}>no stack</span>
       ) : (
         <details data-testid={`error-frames-${index}`}>
           <summary>{entry.frames.length} frames</summary>
-          <pre className={styles.sql}>{entry.frames.join('\n')}</pre>
+          <pre className={cardStyles.sql}>{entry.frames.join('\n')}</pre>
         </details>
       ),
   },
@@ -45,16 +46,16 @@ export default function ErrorsCard({
   const picker = (_card: string) => kept.picker;
   const errorRows = kept.window === 'now' ? errors : kept.rows;
   return (
-    <article className={`${styles.card} ${styles.wideCard} op-glass`} data-testid="errors-card">
-      <h2 className={styles.cardTitle}>Recent errors</h2>
+    <article className={`${cardStyles.card} ${styles.wideCard} op-glass`} data-testid="errors-card">
+      <h2 className={cardStyles.cardTitle}>Recent errors</h2>
       {picker('errors')}
       {errorRows === null ? (
-        <p className={styles.muted}>Loading…</p>
+        <p className={cardStyles.muted}>Loading…</p>
       ) : errorRows === 'failed' ? (
         failed('the error list')
       ) : errorRows.length === 0 ? (
         cardWindows.errors !== 'now' ? null : (
-          <p className={styles.muted}>
+          <p className={cardStyles.muted}>
             None recorded since the container started, from the server or the browser. The buffer
             holds the last 50 and resets on every deploy; Application Insights keeps the durable
             copy (ADR: Telemetry). A server error carries its stack, file and line beside it; the

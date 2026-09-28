@@ -1,0 +1,6 @@
+.detail {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  max-width: 48ch;
+  font-size: var(--text-xs);
+}
