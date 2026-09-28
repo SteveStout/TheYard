@@ -32,12 +32,14 @@ import {
 import { applyBidRecord, useBids } from './hooks/useBids';
 import { cardFromAddress, pinFromAddress, type CardSlug } from './lib/workbench';
 import { useNow } from './hooks/useNow';
+import { prefetchWhenIdle } from './lib/prefetch';
 // #region admin-on-demand
 // The Admin tab is the biggest view in the app, and few visitors open it.
 // lazy() splits it into its own file that the browser downloads only when
 // ?view=admin opens, so the landing page does not pay for it.
+const loadAdminPanel = () => import('./components/admin/AdminPanel/AdminPanel');
 const AdminPanel = lazy(() =>
-  import('./components/admin/AdminPanel/AdminPanel').then((module) => ({
+  loadAdminPanel().then((module) => ({
     default: module.AdminPanel,
   }))
 );
@@ -184,6 +186,13 @@ export default function App() {
     if (docked) setDrawerOpen(false);
   }, [docked]);
   // #endregion docking
+  // #region fetch-ahead
+  // The two chunks a click most often waits on, fetched once the first page has
+  // loaded and the browser is idle: the renderer every document needs and the
+  // Admin tab. Nothing here is on the first page's bytes, and a reader who asked
+  // to save data, or is on 2G, gets none of it (src/lib/prefetch.ts).
+  useEffect(() => prefetchWhenIdle([() => import('./lib/markdown'), loadAdminPanel]), []);
+  // #endregion fetch-ahead
   // Bid state lives in the API; refetch the list whenever it changes.
   const refreshList = useCallback(() => setReloadNonce((n) => n + 1), []);
   // Keyed on the signed-in email: bids belong to an account, so signing in or

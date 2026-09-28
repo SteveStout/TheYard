@@ -57,10 +57,34 @@ async function hideTheGround(page: Page): Promise<void> {
 }
 // #endregion ribbons-off
 
+// #region prefetch-off
+/**
+ * The idle prefetch (ADR: Code that reads like code, the addendum of 28 September)
+ * is off on every page a spec opens: each spec opens the page as a reader whose
+ * browser asks to save data. The specs that hold a card fetched when it is opened,
+ * and a chunk a deploy replaced loading the page again, are about that fetch, and a
+ * prefetch would have made it before the click. prefetch.spec.ts asks for it back
+ * with `window.__yardPrefetch`, and holds the prefetch itself.
+ */
+const prefetchOff = new WeakSet<Page>();
+async function turnOffThePrefetch(page: Page): Promise<void> {
+  if (prefetchOff.has(page)) return;
+  prefetchOff.add(page);
+  await page.addInitScript(() => {
+    if ((window as unknown as { __yardPrefetch?: boolean }).__yardPrefetch) return;
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: { saveData: true },
+    });
+  });
+}
+// #endregion prefetch-off
+
 // The inventory by default: since 1.0.1.0 a bare address opens the landing page,
 // and nearly every spec here is about the inventory. landing.spec.ts opens '/'.
 export async function openTheYard(page: Page, path = '/?view=inventory'): Promise<void> {
   await hideTheGround(page);
+  await turnOffThePrefetch(page);
   await page.goto(path);
   const announcement = page.getByTestId('view-announcement');
   // Present at all: React has mounted and rendered a view. Thirty-five seconds, not

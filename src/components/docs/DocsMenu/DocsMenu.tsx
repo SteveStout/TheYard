@@ -1193,27 +1193,30 @@ export function DocDialog({
     if (dialog && !dialog.open) dialog.showModal();
     const { key } = request;
     if (cache.current[key] !== undefined) return;
-    fetch(DOCS[key].url)
-      .then(async (response) => {
+    // #region renderer-on-demand
+    // The document and the code that renders it are asked for together, not one
+    // after the other: the renderer (marked and the highlighter, the two
+    // heaviest things the frontend carries) is a chunk of its own that the
+    // inventory never needs (ADR: Code that reads like code, addendum), and on
+    // 28 September its request started only once the document's had finished,
+    // 775 ms in. Both now start at once, and the Author page's layout with them.
+    // The browser keeps each chunk for a year like every other hashed file, and
+    // the page fetches the renderer ahead when it is idle (src/lib/prefetch.ts).
+    Promise.all([
+      fetch(DOCS[key].url).then(async (response) => {
         if (!response.ok) throw new Error(String(response.status));
-        const markdown = await response.text();
-        // #region renderer-on-demand
-        // The renderer arrives with the first document a reader opens, not with
-        // the page: marked and the highlighter are the two heaviest things the
-        // frontend carries and the inventory never needs them, so they live in
-        // a chunk of their own that this import fetches once (ADR: Code that
-        // reads like code, addendum). The browser caches the chunk for a year
-        // like every other hashed file, so the second document pays nothing.
-        const { renderDocument } = await import('../../../lib/markdown');
-        // #endregion renderer-on-demand
+        return response.text();
+      }),
+      import('../../../lib/markdown'),
+      key === 'author' ? import('../../../lib/author') : Promise.resolve(null),
+    ])
+      .then(async ([markdown, { renderDocument }, author]) => {
         const rendered = await renderDocument(markdown);
+        // #endregion renderer-on-demand
         // The Author page has a shape of its own: panels, blocks, buttons and
         // photographs. Every other document takes the same panels by its
         // headings (1.0.2.0), so one look covers the whole library.
-        const html =
-          key === 'author'
-            ? (await import('../../../lib/author')).layoutAuthor(rendered)
-            : layoutDocument(rendered);
+        const html = author !== null ? author.layoutAuthor(rendered) : layoutDocument(rendered);
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })

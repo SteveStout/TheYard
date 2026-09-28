@@ -141,3 +141,11 @@ carries now, with the renderer's chunk beside it.
 ## Addendum, 2026-09-28 (1.0.3.34): code.css is code-highlight.css
 
 The code theme is `src/styles/code-highlight.css`, named for what it does (ADR-016, the addendum on the four token files). Its rules are unchanged; the six code colours it draws in are in `colors.css`.
+
+## Addendum, 2026-09-28 (1.0.3.35): the renderer and the Admin tab are fetched ahead
+
+The renderer arriving with the first document had a cost the 17 September addendum did not measure: the order. Read on the live site on 28 September, opening a document fetched the markdown, and only when the markdown had arrived (775 ms in) did the renderer's chunk start (781 ms): a waterfall, the reader waiting on two trips in a row. The Admin tab and each of its cards have the same shape, a chunk fetched on the click that needs it.
+
+- **The document and its renderer start together.** The dialog asks for the document, the renderer and, for the Author page, its layout in one `Promise.all`, so the two trips overlap rather than follow each other. `prefetch.spec.ts` holds the overlap: with the document held back half a second, the renderer's request has to begin before the document's response ends.
+- **Fetched ahead, when the page is idle.** Once the first page has loaded and the browser is idle (`requestIdleCallback`, or a short timer where a browser has none), the page fetches the renderer and the Admin tab's chunk; once the Admin tab has mounted, it fetches every card's chunk in the rail the same way (`src/lib/prefetch.ts`). A reader whose browser asks to save data, or rates the connection as 2G, gets none of it, which `prefetch.test.ts` holds. The browser suite opens every page as such a reader (`tests/e2e/app.ts`), because the specs that hold a card fetched when it is opened, and a chunk a deploy replaced loading the page again, are about that very fetch; `prefetch.spec.ts` turns the prefetch back on and holds it. None of it is on the first page's critical path: it starts after the page's `load` event.
+- **What a card waits on now.** With every card's chunk already in the browser, choosing a card waits on its first data read and not on its code, so the read is not started any earlier than the card's own `useRead` starts it: there is no second request for the same address to race the first.

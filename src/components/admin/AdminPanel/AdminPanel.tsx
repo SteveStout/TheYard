@@ -52,6 +52,7 @@ import {
   type HourGlance,
 } from '../../../lib/bench';
 import type { CardSlug } from '../../../lib/workbench';
+import { prefetchWhenIdle } from '../../../lib/prefetch';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { PHONE, WIDE, WIDEST } from '../../../lib/breakpoints';
 import styles from './AdminPanel.module.css';
@@ -63,28 +64,51 @@ import type { ErrorEntry, Fetched, Health, Machines, PageStatus } from '../share
 import { About, Absent, hourSlots, REFRESH_MS } from '../shared/common';
 
 // #region lazy-cards
-// Each card is its own code chunk. `lazy` means the browser downloads a
-// card's code only the first time that card is opened, so the Admin tab
-// itself stays small: just the strip, the rail and the strip's reads.
-const HealthCard = lazy(() => import('../HealthCard/HealthCard'));
-const AzureCard = lazy(() => import('../AzureCard/AzureCard'));
-const PagesCard = lazy(() => import('../PagesCard/PagesCard'));
-const TestsCard = lazy(() => import('../TestsCard/TestsCard'));
-const TrafficSection = lazy(() => import('../TrafficCard/TrafficCard'));
-const TelemetryCard = lazy(() => import('../TelemetryCard/TelemetryCard'));
-const TimingCard = lazy(() => import('../TimingCard/TimingCard'));
-const BackendsCard = lazy(() => import('../BackendsCard/BackendsCard'));
-const ProofCard = lazy(() => import('../ProofCard/ProofCard'));
-const MachinesCard = lazy(() => import('../MachinesCard/MachinesCard'));
-const ExperimentCard = lazy(() => import('../ExperimentCard/ExperimentCard'));
-const SqlCard = lazy(() => import('../SqlCard/SqlCard'));
-const StoreCard = lazy(() => import('../StoreCard/StoreCard'));
-const ErrorsCard = lazy(() => import('../ErrorsCard/ErrorsCard'));
-const LogCard = lazy(() => import('../LogCard/LogCard'));
-const KeptLogsCard = lazy(() => import('../KeptLogsCard/KeptLogsCard'));
-const ActivityCard = lazy(() => import('../ActivityCard/ActivityCard'));
-const OperatorCard = lazy(() => import('../OperatorCard/OperatorCard'));
-const ResetLinkCard = lazy(() => import('../ResetLinkCard/ResetLinkCard'));
+// Each card is its own code chunk. `lazy` means the card's code is not in the
+// Admin tab's own chunk, so the tab itself stays small: just the strip, the
+// rail and the strip's reads. Once the tab has mounted and the browser is
+// idle, every card's chunk is fetched ahead of the click (src/lib/prefetch.ts),
+// so choosing a card waits on its data and not on its code.
+const CARD_CHUNKS = {
+  HealthCard: () => import('../HealthCard/HealthCard'),
+  AzureCard: () => import('../AzureCard/AzureCard'),
+  PagesCard: () => import('../PagesCard/PagesCard'),
+  TestsCard: () => import('../TestsCard/TestsCard'),
+  TrafficSection: () => import('../TrafficCard/TrafficCard'),
+  TelemetryCard: () => import('../TelemetryCard/TelemetryCard'),
+  TimingCard: () => import('../TimingCard/TimingCard'),
+  BackendsCard: () => import('../BackendsCard/BackendsCard'),
+  ProofCard: () => import('../ProofCard/ProofCard'),
+  MachinesCard: () => import('../MachinesCard/MachinesCard'),
+  ExperimentCard: () => import('../ExperimentCard/ExperimentCard'),
+  SqlCard: () => import('../SqlCard/SqlCard'),
+  StoreCard: () => import('../StoreCard/StoreCard'),
+  ErrorsCard: () => import('../ErrorsCard/ErrorsCard'),
+  LogCard: () => import('../LogCard/LogCard'),
+  KeptLogsCard: () => import('../KeptLogsCard/KeptLogsCard'),
+  ActivityCard: () => import('../ActivityCard/ActivityCard'),
+  OperatorCard: () => import('../OperatorCard/OperatorCard'),
+  ResetLinkCard: () => import('../ResetLinkCard/ResetLinkCard'),
+};
+const HealthCard = lazy(CARD_CHUNKS.HealthCard);
+const AzureCard = lazy(CARD_CHUNKS.AzureCard);
+const PagesCard = lazy(CARD_CHUNKS.PagesCard);
+const TestsCard = lazy(CARD_CHUNKS.TestsCard);
+const TrafficSection = lazy(CARD_CHUNKS.TrafficSection);
+const TelemetryCard = lazy(CARD_CHUNKS.TelemetryCard);
+const TimingCard = lazy(CARD_CHUNKS.TimingCard);
+const BackendsCard = lazy(CARD_CHUNKS.BackendsCard);
+const ProofCard = lazy(CARD_CHUNKS.ProofCard);
+const MachinesCard = lazy(CARD_CHUNKS.MachinesCard);
+const ExperimentCard = lazy(CARD_CHUNKS.ExperimentCard);
+const SqlCard = lazy(CARD_CHUNKS.SqlCard);
+const StoreCard = lazy(CARD_CHUNKS.StoreCard);
+const ErrorsCard = lazy(CARD_CHUNKS.ErrorsCard);
+const LogCard = lazy(CARD_CHUNKS.LogCard);
+const KeptLogsCard = lazy(CARD_CHUNKS.KeptLogsCard);
+const ActivityCard = lazy(CARD_CHUNKS.ActivityCard);
+const OperatorCard = lazy(CARD_CHUNKS.OperatorCard);
+const ResetLinkCard = lazy(CARD_CHUNKS.ResetLinkCard);
 // #endregion lazy-cards
 
 /**
@@ -130,6 +154,8 @@ export function AdminPanel({
   onOpenCard?: (slug: CardSlug) => void;
   onPin?: (slug: CardSlug | null) => void;
 }) {
+  // Every card's chunk, fetched once the tab is up and the browser is idle.
+  useEffect(() => prefetchWhenIdle(Object.values(CARD_CHUNKS)), []);
   // The key is state so that forgetting it updates the cards at once.
   // It starts as the value read when the module loaded.
   const [adminKey, setAdminKey] = useState<string | null>(ADMIN_KEY);
