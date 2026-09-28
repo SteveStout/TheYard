@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { contrast, hexTokens } from '../lib/contrast';
-import tokens from './tokens.css?raw';
+import { styleSheet as tokens } from '../lib/styleSheet';
 
 /**
  * The sidebar's palette (ADR-013; light since its addendum, dark in ADR-011's
  * first pass) is chosen by measurement, because "looks readable" is not one.
- * This reads the sheet tokens straight from tokens.css and holds every pair
+ * This reads the tokens straight from the token sheets (src/lib/styleSheet.ts) and holds every pair
  * to WCAG AA: 4.5:1 for normal text, 3:1 for icons and other graphics. A
  * future shade change cannot slip under it.
  */
@@ -17,12 +17,12 @@ const values = new Map(hexTokens(tokens).map((entry) => [entry.name, entry.hex])
 function token(name: string): string {
   const hex = values.get(`--${name}`);
   if (hex === undefined)
-    throw new Error(`tokens.css has no colour for --${name} that comes to a hex`);
+    throw new Error(`the token sheets have no colour for --${name} that comes to a hex`);
   return hex;
 }
 
 // #region site-palette
-// Contrast is measured, not eyeballed. The test reads the real tokens.css with
+// Contrast is measured, not eyeballed. The test reads the real token sheets with
 // ?raw and computes the WCAG ratio for every text and ground pair the site
 // actually uses, so a palette change that fails AA fails the build instead of
 // shipping (ADR-016).
@@ -149,16 +149,17 @@ describe('the site palette (ADR-016)', () => {
   it('every text colour clears AA over the watermark at its worst, bare and through a panel', () => {
     const number = (name: string) => {
       const match = tokens.match(new RegExp(`--${name}:\\s*([0-9.]+)\\s*;`));
-      if (!match) throw new Error(`tokens.css has no number for --${name}`);
+      if (!match) throw new Error(`the token sheets have no number for --${name}`);
       return Number(match[1]);
     };
     const glass = tokens.match(/--glass-bg:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
-    if (!glass) throw new Error('tokens.css should state --glass-bg as white at a share');
+    if (!glass) throw new Error('the token sheets should state --glass-bg as white at a share');
     // The glass is transparent since the operator's look (0.42, from 0.66), and
     // thinner again since the tweaks pass (0.30); a phone's is a touch fuller, and
     // the desk's, the thinner, is the one held below.
     const phone = tokens.match(/--glass-bg-phone:\s*rgba\(255, 255, 255, ([0-9.]+)\)/);
-    if (!phone) throw new Error('tokens.css should state --glass-bg-phone as white at a share');
+    if (!phone)
+      throw new Error('the token sheets should state --glass-bg-phone as white at a share');
     expect(Number(glass[1])).toBe(0.3);
     expect(Number(phone[1])).toBeGreaterThanOrEqual(Number(glass[1]));
     const rgb = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
@@ -200,7 +201,7 @@ describe('the site palette (ADR-016)', () => {
   it('is frosted: what is behind a panel reads as colour, not as shapes (Steve, 2026-09-25)', () => {
     const frost = tokens.match(/--glass-filter:\s*blur\((\d+)px\)\s*saturate\(([0-9.]+)\)/);
     if (!frost)
-      throw new Error('tokens.css should state --glass-filter as a blur and a saturation');
+      throw new Error('the token sheets should state --glass-filter as a blur and a saturation');
     // Deeper in the tweaks pass: 28 px and 1.6, where it was 20 px and 1.5.
     expect(Number(frost[1])).toBe(28);
     expect(Number(frost[2])).toBe(1.6);
@@ -223,7 +224,7 @@ describe('the site palette (ADR-016)', () => {
   const white = [255, 255, 255];
   const share = (name: string) => {
     const match = tokens.match(new RegExp(`--${name}:\\s*rgba\\(255, 255, 255, ([0-9.]+)\\)`));
-    if (!match) throw new Error(`tokens.css should state --${name} as white at a share`);
+    if (!match) throw new Error(`the token sheets should state --${name} as white at a share`);
     return Number(match[1]);
   };
   const stops = () => [rgb(token('color-ribbon-teal-light')), rgb(token('color-ribbon-gold'))];
@@ -253,12 +254,14 @@ describe('the site palette (ADR-016)', () => {
   // fill carries no text at all (charts.test.ts): no ink clears 4.5 on it.
   it('white inside a deep teal gauge fill holds 4.5 over the glass on either stop', () => {
     const fill = tokens.match(/--gauge-fill-opacity:\s*([0-9.]+)\s*;/);
-    if (!fill) throw new Error('tokens.css should state --gauge-fill-opacity');
+    if (!fill) throw new Error('the token sheets should state --gauge-fill-opacity');
     const track = tokens.match(
       /--color-mark-bar-track:\s*color-mix\(in srgb, var\(--color-teal-deep\) ([0-9.]+)%, transparent\)/
     );
     if (!track)
-      throw new Error('tokens.css should state --color-mark-bar-track as the deep teal at a share');
+      throw new Error(
+        'the token sheets should state --color-mark-bar-track as the deep teal at a share'
+      );
     for (const stop of stops()) {
       const glass = over(white, share('glass-bg'), stop);
       const ground = over(rgb(token('color-teal-deep')), Number(track[1]) / 100, glass);

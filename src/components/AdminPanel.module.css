@@ -563,7 +563,7 @@
   width: var(--gauge-share, 0%);
   background: var(--color-mark-axis);
   /* See-through like the chart fills (1.0.3.24); white on it reads 6.5 over the
-     track and 7.7 over the glass on a ribbon's teal stop (tokens.test.ts). */
+     track and 7.7 over the glass on a ribbon's teal stop (colors.test.ts). */
   opacity: var(--gauge-fill-opacity);
 }
 

@@ -38,7 +38,7 @@ The front end keeps the same discipline: `components` use `hooks` use `lib`, and
 - A rule about bidding goes in `TheYard.Domain/BidRules.cs` and nowhere else.
 - An endpoint is a route, a call into `TheYard.Application`, and a result. No business logic in `TheYard.Api`.
 - Presentation arithmetic goes in `src/lib` with a test beside it; a component reads it.
-- A colour, a space or a font size goes in `src/styles/tokens.css`. A raw hex in a component fails the style test.
+- A colour goes in `src/styles/colors.css`, a space or a size in `sizes.css`, a font size or weight in `typography.css`, a shadow, blur or opacity in `effects.css`. A raw hex in a component fails the style test.
 - A decision that someone could reasonably disagree with goes in `docs/ADR-*.md`, as a record with what was considered and what it cost. The Decision Records section of this site is that folder.
 
 ## What the gate asks

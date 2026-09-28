@@ -1,0 +1,139 @@
+/*
+ * Effects: shadows, the frosted glass and its fallbacks, the panel look,
+ * trims, opacities and motion. Read together with colors, sizes, typography
+ * and base.
+ */
+:root {
+  /* Shadows: the brown-gray, see-through. */
+  --shadow-sm:
+    0 1px 2px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent),
+    0 1px 3px color-mix(in srgb, var(--palette-brown-gray) 10%, transparent);
+  --shadow-md:
+    0 4px 12px color-mix(in srgb, var(--palette-brown-gray) 12%, transparent),
+    0 2px 4px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, var(--palette-brown-gray) 18%, transparent);
+
+  /* #region glass */
+  /* Panels are frosted glass over the ribbons (ADR-081). The see-through part
+     is the background colour only, never an opacity on the panel, so the
+     words, numbers and photos inside are always fully solid. Where blur is
+     not available or not wanted, the fallbacks below turn every panel solid. */
+  --glass-bg: rgba(255, 255, 255, 0.3);
+  /* A little more white behind a phone's smaller type. */
+  --glass-bg-phone: rgba(255, 255, 255, 0.38);
+  /* The frost: what is behind a panel reads as soft colour, never as shapes,
+     and a light rim lifts the edge (ADR-083). */
+  --glass-filter: blur(28px) saturate(1.6);
+  --glass-border: color-mix(in srgb, var(--color-teal-deep) 18%, transparent);
+  --glass-shadow:
+    0 10px 30px color-mix(in srgb, var(--color-teal-deep) 12%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 0 40px rgba(255, 255, 255, 0.18);
+  /* A faint 24 px grid inside every glass panel, under its words. */
+  --glass-grid-line: color-mix(in srgb, var(--color-teal-deep) 3.5%, transparent);
+  --glass-grid-size: 24px;
+  /* A document's dialog: a nearly clear sheet, with the frost on the reading
+     panel inside it. */
+  --dialog-sheet-bg: rgba(255, 255, 255, 0.1);
+  --dialog-sheet-filter: blur(6px);
+  --dialog-page-bg: rgba(255, 255, 255, 0.78);
+  --dialog-page-filter: blur(28px) saturate(1.5);
+  --watermark-opacity: 0.1;
+  --radius-glass: 10px;
+  /* The frame on every Author page photo: a deep teal border, a gold hairline
+     outside it and a soft teal shadow. One token, so every photo changes
+     together (ADR-013). */
+  --frame-photo-border: 3px solid var(--color-teal-deep);
+  --frame-photo-shadow:
+    0 0 0 1.5px var(--color-gold),
+    0 8px 22px color-mix(in srgb, var(--color-teal-deep) 22%, transparent);
+  /* #endregion glass */
+
+  /* #region operator-look */
+  /* The instrument-panel look on panels, cards and tiles (ADR-081): a rule
+     across the top with a corner bracket at each end, dark green on panels
+     and gold on stat tiles; readings in small spaced capitals; and a ring
+     wherever a number is a share of a whole. No new colour: every value
+     below is a token from above. panels.css draws it, once, for everyone. */
+  --rule-width: 3px;
+  --rule-panel-color: var(--color-teal-deep);
+  --rule-tile-color: var(--color-gold-light);
+  --rule-panel: var(--rule-width) solid var(--rule-panel-color);
+  --rule-tile: var(--rule-width) solid var(--rule-tile-color);
+  --bracket-size: 18px;
+  --bracket-size-tile: 10px;
+  --bracket-size-rail: 14px;
+  --bracket-stroke: 2px;
+  --readout-size: 0.6875rem;
+  --readout-tracking: 0.08em;
+  --readout-weight: var(--weight-medium);
+  /* A ring gauge: a faint track, the fill in deep teal (or gold for the
+     second kind of reading), and a gold marker where the fill ends. */
+  --ring-track: var(--color-mark-track);
+  --ring-fill-teal: var(--color-teal-deep);
+  --ring-fill-gold: var(--color-gold-light);
+  --ring-marker: var(--color-mark-marker);
+  --ring-tile-size: var(--touch-target);
+  --ring-tick-opacity: 0.45; /* the small graduations round a large ring */
+  --ring-fill-time: 400ms;
+  /* The number inside a ring, by the ring's size. */
+  --ring-text-tiny: 8px;
+  --ring-text-tile: 11px;
+  --ring-text-page: 13px;
+  --ring-text-large: 28px;
+  /* #endregion operator-look */
+
+  /* Trims: a title's gold underline, the gold ring round a chosen control,
+     and the accent hairline round an outlined control. */
+  --rule-gold: var(--rule-width) solid var(--color-gold);
+  --ring-gold: 0 0 0 2px var(--color-gold);
+  --border-accent: 1.5px solid var(--color-accent);
+
+  /* Strengths. Nothing a visitor reads is ever faded (glass.spec checks it);
+     a disabled control is the one exception, and it says it is disabled. */
+  --opacity-disabled: 0.6;
+  --opacity-pulse: 0.35; /* the low point of a live dot's pulse */
+  --ribbons-phone-opacity: 0.7;
+  --ribbons-spark-opacity: 0.4;
+
+  /* Motion */
+  --transition-fast: 150ms ease;
+}
+
+/* #region glass-fallbacks */
+/* When glass cannot or should not be drawn, every see-through ground turns
+   solid together: no blur support, a visitor who asked for less
+   transparency, and Windows high-contrast (forced colours). */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-bg: #ffffff;
+    --glass-bg-phone: #ffffff;
+    --dialog-sheet-bg: #ffffff;
+    --dialog-page-bg: #ffffff;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: #ffffff;
+    --glass-bg-phone: #ffffff;
+    --dialog-sheet-bg: #ffffff;
+    --dialog-page-bg: #ffffff;
+    --glass-filter: none;
+    --dialog-sheet-filter: none;
+    --dialog-page-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --glass-bg: Canvas;
+    --glass-bg-phone: Canvas;
+    --dialog-sheet-bg: Canvas;
+    --dialog-page-bg: Canvas;
+    --glass-filter: none;
+    --dialog-sheet-filter: none;
+    --dialog-page-filter: none;
+  }
+}
+/* #endregion glass-fallbacks */

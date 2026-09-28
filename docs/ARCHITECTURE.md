@@ -379,7 +379,7 @@ deploy without them (ADR: The tests, explained).
 | A new view state | the URL, through `filtersToSearchParams` |
 | A visitor preference (not a view) | `localStorage`, like the collapsed rail |
 | A new document or record | `docs/`, then `DocsCatalog.cs` and `DocsMenu.tsx` |
-| A new colour or spacing value | `src/styles/tokens.css`, never a literal |
+| A new colour or spacing value | `src/styles/colors.css` or `sizes.css`, never a literal |
 
 ## What is deliberately not here
 

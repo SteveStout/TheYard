@@ -209,7 +209,7 @@ each with its own changelog line and, where it decided something, its own record
 ## Stack
 
 - **Frontend:** React 19 + TypeScript (strict) on Vite 8; plain CSS via CSS Modules over
-  a single design-token sheet (`src/styles/tokens.css`); Vitest for tests. No component,
+  design tokens in four sheets named for what they control (`src/styles/colors.css`, `sizes.css`, `typography.css`, `effects.css`); Vitest for tests. No component,
   icon, state or CSS libraries, and no router: icons are small inline SVGs and the
   address bar is the application state. Four runtime dependencies: react, react-dom,
   marked for rendering the served documents, and highlight.js for their code samples. The grounds and the text are Figma's Urban slate, gray

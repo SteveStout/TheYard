@@ -2,8 +2,8 @@
  * The one navigation surface (ADR-013). Two shapes, one set of rows:
  * .rail docks beside the page at 1024px and up and collapses to icons;
  * .drawer slides in over the page below that. Colors are the sheet tokens in
- * tokens.css (a light ground since the ADR-013 addendum), each pair measured
- * against WCAG AA in tokens.test.ts.
+ * colors.css (a light ground since the ADR-013 addendum), each pair measured
+ * against WCAG AA in colors.test.ts.
  */
 
 /* ---- the docked rail ---- */

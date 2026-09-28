@@ -53,18 +53,18 @@ came from and why.
 ## In the code
 
 The palette, read from this build
-([`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css)):
+([`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css)):
 
-```live path=src/styles/tokens.css region=palette
+```live path=src/styles/colors.css region=palette
 ```
 
 The sidebar's share of it:
 
-```live path=src/styles/tokens.css region=sheet-tokens
+```live path=src/styles/colors.css region=sheet-tokens
 ```
 
 The proof is
-[`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts),
+[`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts),
 which reads the tokens file and holds every text and ground pair above to
 WCAG AA, so a shade that fails contrast fails the build.
 
@@ -82,9 +82,9 @@ WCAG AA, so a shade that fails contrast fails the build.
 
 ## Files
 
-- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): every color token (regions palette and
+- [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): every color token (regions palette and
   sheet-tokens above).
-- [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts): the contrast proof.
+- [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the contrast proof.
 - [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css),
   [`src/components/DocsMenu.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.module.css),
   [`src/components/AuctionCountdown.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AuctionCountdown.module.css),
@@ -104,9 +104,9 @@ WCAG AA, so a shade that fails contrast fails the build.
 ![A vehicle open: the slate-blue Place bid button and Back link on the same ground](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-vehicle.jpg)
 
 The measurements that hold the palette to WCAG AA, read from this build
-([`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts)):
+([`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts)):
 
-```live path=src/styles/tokens.test.ts region=site-palette
+```live path=src/styles/colors.test.ts region=site-palette
 ```
 
 ## Addendum, 2026-09-17: the type is the site's own
@@ -318,3 +318,14 @@ The muted and faint text colours, `--color-text-muted` and `--color-text-faint`,
 ## Addendum, 2026-09-25 (1.0.3.26): body text a step deeper
 
 The body ink, the printed brown-gray `#5e5653`, read 3.88 over the 30 per cent glass where it lies over a ribbon's teal stop, and 3.97 over the gold one. The secondary grey had been deepened for exactly that case on 25 September and the body ink had not, which left the body text lighter than the secondary text. It is `#524b48` from 1.0.3.26, the same hue a step darker: 4.63 and 4.72 over the two stops, 8.54 on white and 6.89 on the page ground, and darker than `#4a4e57` again. `tokens.test.ts` now reads every ink, body, secondary and heading, over both stops, and holds the body ink darker than the secondary. The API reference and the diagram page keep the printed colour: they are read on white, where it reads 7.16.
+
+## Addendum, 2026-09-28 (1.0.3.34): the tokens in four files named for what they control
+
+Steve asked that a developer find any style setting from the file name alone. `src/styles/tokens.css` held every token in one 440-line sheet, so "where is the drawer's width?" meant searching it. From 1.0.3.34 the same 221 tokens live in four files, each named for what it controls, loaded in this order by `main.tsx`:
+
+- `colors.css`: the palette (with the ribbon ground, teal and gold, the code theme, the stores, the series, who came, the chart marks), the status and header colours, the side rail's colours and the scrim. It keeps the three-tier header.
+- `sizes.css`: spacing, reserved heights, the controls, rail widths, corners, the pill's padding, the page and drawer widths, layers, and the phone's control heights.
+- `typography.css`: the families, text sizes, weights, the title's tracking and chart text.
+- `effects.css`: shadows, the glass and its fallbacks, the panel look, the gold trims, strengths and motion.
+
+Whole regions moved intact, and no value, variable name, selector or class name changed: the sorted list of names before and after is identical, and so is the sorted list of declarations. Code that reads the tokens as text (the swatches and the contrast tests) reads the four joined, from `src/lib/styleSheet.ts`, and StyleRulesTests reads the same four; the glass-fallbacks check reads `effects.css`, and the check for tabular figures reads `base.css`. This reverses the choice in ADR-083's 1.0.3.32 addendum to keep one token sheet for the tests' sake: the tests now read four files as one, so the split costs them nothing. `tokens.test.ts` is `colors.test.ts`. What these records say about `tokens.css` above is history; their links and live samples point at the new files.

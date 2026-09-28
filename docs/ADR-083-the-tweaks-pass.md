@@ -38,7 +38,7 @@ The inventory's welcome banner is gone from the inventory, since the landing pag
 
 - The glass, the frost, the one grey and the worst-case pairs: `tokens.test.ts`, and StyleRulesTests for every figure on the style page.
 
-```live path=src/styles/tokens.css region=glass
+```live path=src/styles/effects.css region=glass
 ```
 
 - A table cell never breaks a word: `coverage.spec` fails any page with a cell computing `overflow-wrap: anywhere`, on every page the site lists at 390 and 1280.
@@ -60,8 +60,8 @@ The inventory's welcome banner is gone from the inventory, since the landing pag
 
 ## Files
 
-- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the glass, the dialog's sheet and page, the grid, the Mark VII marks.
-- [`src/styles/operator.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/operator.css): the grid on a panel and the dialog's clear sheet.
+- [`src/styles/effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css): the glass, the dialog's sheet and page, the grid, the Mark VII marks.
+- [`src/styles/panels.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/panels.css): the grid on a panel and the dialog's clear sheet.
 - [`src/components/admin/charts.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/charts.tsx): the chart, its callout, and the bar gauge.
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the graduations and the peak.
 - [`src/components/Ring.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Ring.tsx) and [`src/lib/ring.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ring.ts): the marker and the graduations.

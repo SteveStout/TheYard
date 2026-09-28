@@ -13,7 +13,7 @@
 import { marked } from 'marked';
 import { highlight, grammarFor } from './highlight';
 import { swatchSheet } from './swatches';
-import tokenSheet from '../styles/tokens.css?raw';
+import { styleSheet as tokenSheet } from './styleSheet';
 
 // #region doc-links
 // Links in a served document lead out of the app (GitHub, a diagram page), so

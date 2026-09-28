@@ -535,7 +535,7 @@
 /* #region reading-panel */
 /* The reading panel (the tweaks pass, B1b): inside the clear sheet, the frost
    is here, heavy enough that body text holds 4.5 over the brightest ribbon
-   (tokens.test.ts holds the pair). */
+   (colors.test.ts holds the pair). */
 .dialog .prose :global(.doc-panel),
 .dialog .prose :global(.author-panel) {
   background-color: var(--dialog-page-bg);

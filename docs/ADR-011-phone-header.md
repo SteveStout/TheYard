@@ -129,9 +129,9 @@ the drawer is
 with its styles in
 [`src/components/MobileDocs.module.css`](https://github.com/SteveStout/TheYard/blob/587c9e9/src/components/MobileDocs.module.css),
 the palette lives in
-[`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css)
+[`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css)
 with its proof in
-[`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts),
+[`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts),
 and the phone spec
 [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts)
 now asserts the Changelog section, an icon on every row, and the row height.
@@ -178,7 +178,7 @@ rule from the addendum above stand; only the colors changed.
 - [`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx): the icon per row kind.
 - [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the one data record both shapes
   render from.
-- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css) and [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts):
+- [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css) and [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts):
   the palette and its measured contrast.
 - [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts): the 375 by 812 proof.
 - [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the viewport meta that makes a phone a phone.

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import tokens from '../styles/tokens.css?raw';
+import { styleSheet as tokens } from './styleSheet';
 import { ICON } from './icons';
 
 // Every component's source, and the shell's, read as text by the bundler: this
 // project carries no Node types on purpose (vite.config.ts), so the files come
-// in the way tokens.css does above rather than through node:fs. App.tsx is
+// in the way the token sheets do above rather than through node:fs. App.tsx is
 // in the list because it draws the header's hamburger itself (1.0.3.10: the
 // sweep read its stroke at 2 while every icon was on the token, and this test
 // had not been looking at the file). The Admin tab's cards are a file each

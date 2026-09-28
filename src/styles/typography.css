@@ -1,0 +1,30 @@
+/*
+ * Typography: font families, text sizes, weights, tracking and chart text.
+ * Read together with colors, sizes, effects and base: a token in one may use
+ * a token from another.
+ */
+:root {
+  /* Type. IBM Plex Sans is the one face for the whole site (ADR-016). */
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  /* Code, and only code, is monospaced (ADR-074). */
+  --font-code: Consolas, 'SF Mono', Menlo, ui-monospace, monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --title-tracking: -0.01em; /* a display title sits a hair tighter than the body */
+  /* Words inside a chart (labels, readouts, callouts), in the chart's own
+     units, which scale with the chart's width. */
+  --chart-text: 12px;
+  --chart-text-sm: 11px;
+  --chart-text-xs: 10px;
+  --chart-text-2xs: 9px;
+}

@@ -1,20 +1,24 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/fonts.css';
-import './styles/tokens.css';
+import './styles/colors.css';
+import './styles/sizes.css';
+import './styles/typography.css';
+import './styles/effects.css';
 import './styles/base.css';
-import './styles/operator.css';
-import './styles/code.css';
+import './styles/panels.css';
+import './styles/code-highlight.css';
 import App from './App';
 import { ErrorBoundary, reportClientError } from './components/ErrorBoundary';
 import { captureAdminKey } from './lib/adminKey';
 
 // #region bootstrap
 // The stylesheets load in the order of the imports above, and the order
-// matters. fonts.css declares the face before anything asks for it.
-// tokens.css defines every colour and size as a variable. base.css sets the
-// page's defaults from those variables. operator.css and code.css draw shared
-// looks in the same variables, so each must come after tokens.css.
+// matters. fonts.css declares the face before anything asks for it. colors,
+// sizes, typography and effects define every design value as a variable,
+// each file named for what it controls. base.css sets the page's defaults
+// from those variables. panels.css and code-highlight.css draw shared looks
+// in the same variables, so they come after them.
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 

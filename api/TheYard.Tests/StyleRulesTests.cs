@@ -12,7 +12,7 @@ namespace TheYard.Tests;
 /// failure.
 ///
 /// <para>Two rules are held elsewhere and are not repeated: every pairing the
-/// site makes is measured in src/styles/tokens.test.ts, and that nothing which
+/// site makes is measured in src/styles/colors.test.ts, and that nothing which
 /// is read is faded is held against the rendered page by tests/e2e/glass.spec.ts.
 /// The last fact here holds that those two are still there.</para>
 /// </summary>
@@ -21,8 +21,23 @@ public class StyleRulesTests
     // #region the sheet and the page
     private static string Root => Repo.Root();
 
+    /// <summary>The four token sheets, named for what they control, in the
+    /// order main.tsx loads them. Every design value is a token in one of them.</summary>
+    private static readonly string[] TokenSheets = ["colors.css", "sizes.css", "typography.css", "effects.css"];
+
+    /// <summary>The four token sheets read as one, as src/lib/styleSheet.ts
+    /// reads them for the swatches and the contrast tests.</summary>
     private static string TokenSheet() =>
-        File.ReadAllText(Path.Combine(Root, "src", "styles", "tokens.css"));
+        string.Join("\n", TokenSheets.Select(name => File.ReadAllText(Path.Combine(Root, "src", "styles", name))));
+
+    /// <summary>True for one of the four token sheets.</summary>
+    private static bool IsTokenSheet(string path) =>
+        TokenSheets.Any(name => path.EndsWith(Path.DirectorySeparatorChar + name, StringComparison.Ordinal)
+            || path.EndsWith("/" + name, StringComparison.Ordinal));
+
+    /// <summary>The shadows, the glass and its fallbacks, the panel look.</summary>
+    private static string EffectsSheet() =>
+        File.ReadAllText(Path.Combine(Root, "src", "styles", "effects.css"));
 
     /// <summary>The page's base rules (the body, box sizing, headings), which
     /// set defaults and write no design value of their own.</summary>
@@ -40,7 +55,7 @@ public class StyleRulesTests
     /// or written as another token and read through to the hex that one comes to
     /// (the styling pass of 25 September: a value is written once). The same
     /// reading as src/lib/contrast.ts's hexTokens, which the swatches and
-    /// tokens.test.ts use.
+    /// colors.test.ts use.
     /// </summary>
     private static Dictionary<string, string> Tokens()
     {
@@ -86,12 +101,13 @@ public class StyleRulesTests
         return Regex.Replace(blocks, @"(?m)(^|\s)//.*$", " ");
     }
 
-    /// <summary>The stylesheets and components this site writes, the token
-    /// sheet and the tests left out.</summary>
+    /// <summary>The stylesheets and components this site writes, the four
+    /// token sheets and the tests left out. base.css is in: it sets defaults
+    /// and is held to every rule a component is.</summary>
     private static IEnumerable<string> StyledSource() =>
         Repo.FilesWith(".css", ".tsx", ".ts")
             .Where(path => path.Contains(Path.Combine(Root, "src") + Path.DirectorySeparatorChar, StringComparison.Ordinal))
-            .Where(path => !path.EndsWith("tokens.css", StringComparison.Ordinal))
+            .Where(path => !IsTokenSheet(path))
             .Where(path => !path.EndsWith(".test.ts", StringComparison.Ordinal)
                 && !path.EndsWith(".test.tsx", StringComparison.Ordinal));
     // #endregion the sheet and the page
@@ -166,7 +182,7 @@ public class StyleRulesTests
                 foreach (Match match in raw.Matches(lines[i]))
                 {
                     found.Add(
-                        $"{relative} has the raw colour '{match.Value}': give it a token in src/styles/tokens.css, "
+                        $"{relative} has the raw colour '{match.Value}': give it a token in src/styles/colors.css, "
                         + "list the token on docs/COLOR-STYLE.md, and use var(--the-token) here");
                 }
             }
@@ -191,7 +207,7 @@ public class StyleRulesTests
             if (!values.Contains(match.Value.ToLowerInvariant()))
             {
                 wrong.Add(
-                    $"docs/COLOR-STYLE.md states {match.Value}, which is the value of no token in src/styles/tokens.css: "
+                    $"docs/COLOR-STYLE.md states {match.Value}, which is the value of no token in src/styles/colors.css: "
                     + "the page describes the sheet, so change the page to the sheet's value or name the colour in words");
             }
         }
@@ -201,7 +217,7 @@ public class StyleRulesTests
             if (!Regex.IsMatch(page, Regex.Escape(name) + @"(?![a-z0-9-])"))
             {
                 wrong.Add(
-                    $"{name} is in src/styles/tokens.css and not on docs/COLOR-STYLE.md: "
+                    $"{name} is in src/styles/colors.css and not on docs/COLOR-STYLE.md: "
                     + "add it to the swatches fence of the section it belongs to, with the name a person calls it");
             }
         }
@@ -412,7 +428,7 @@ public class StyleRulesTests
         string sheet = WithoutComments(TokenSheet());
         Assert.True(
             Regex.Matches(sheet, @"--gradient-header\s*:").Count == 1,
-            "--gradient-header should be defined exactly once, in src/styles/tokens.css");
+            "--gradient-header should be defined exactly once, in src/styles/colors.css");
 
         var wrong = new List<string>();
         foreach (string path in StyledSource().Where(path => path.EndsWith(".css", StringComparison.Ordinal)))
@@ -461,11 +477,11 @@ public class StyleRulesTests
             Regex.Matches(glass, @"quietWordsOnTheBareGround\(page\)\)\.toEqual\(\[\]\)").Count >= 3,
             "tests/e2e/glass.spec.ts should hold that a quiet word is never on the bare ground, on the inventory, a vehicle's page and the Admin tab");
 
-        string measured = File.ReadAllText(Path.Combine(Root, "src", "styles", "tokens.test.ts"));
+        string measured = File.ReadAllText(Path.Combine(Root, "src", "styles", "colors.test.ts"));
         Assert.True(
             measured.Contains("region teal-and-gold", StringComparison.Ordinal)
                 && measured.Contains("region glass", StringComparison.Ordinal),
-            "src/styles/tokens.test.ts should still measure the teal and gold pairings and the watermark at its worst");
+            "src/styles/colors.test.ts should still measure the teal and gold pairings and the watermark at its worst");
     }
     // #endregion rule seven
 
@@ -571,7 +587,7 @@ public class StyleRulesTests
         {
             if (!TokenSheet().Contains(token + ":", StringComparison.Ordinal))
             {
-                wrong.Add($"src/styles/tokens.css should define {token}");
+                wrong.Add($"the token sheets (src/styles/sizes.css for a size, effects.css for the panel look) should define {token}");
             }
         }
 
@@ -604,14 +620,14 @@ public class StyleRulesTests
         string sheet = WithoutComments(TokenSheet());
         if (!Regex.IsMatch(sheet, @"--font-sans:\s*'IBM Plex Sans',"))
         {
-            wrong.Add("src/styles/tokens.css should name 'IBM Plex Sans' first in --font-sans");
+            wrong.Add("src/styles/typography.css should name 'IBM Plex Sans' first in --font-sans");
         }
         if (!Regex.IsMatch(WithoutComments(BaseSheet()), @"body\s*\{[^}]*font-variant-numeric:\s*tabular-nums;"))
         {
             wrong.Add("src/styles/base.css should set tabular figures on body, once, for every reading");
         }
 
-        foreach (string path in StyledSource().Append(Path.Combine(Root, "src", "styles", "tokens.css")))
+        foreach (string path in StyledSource().Concat(TokenSheets.Select(name => Path.Combine(Root, "src", "styles", name))))
         {
             string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
             string source = WithoutComments(File.ReadAllText(path));
@@ -619,7 +635,7 @@ public class StyleRulesTests
             {
                 wrong.Add($"{relative} names Poppins: the face is IBM Plex Sans, through var(--font-sans)");
             }
-            if (!relative.EndsWith("tokens.css", StringComparison.Ordinal)
+            if (!IsTokenSheet(relative)
                 && Regex.IsMatch(source, @"font-family:[^;]*monospace"))
             {
                 wrong.Add($"{relative} writes a monospaced face of its own: code takes var(--font-code), and a reading takes the one face");
@@ -767,7 +783,7 @@ public class StyleRulesTests
                     || (property == "font-size" && Regex.IsMatch(part, @"^\d*\.?\d+em$")));
                 if (!fine)
                 {
-                    wrong.Add($"{relative} writes '{property}: {value}': take the value from src/styles/tokens.css, adding a token there if the role is new");
+                    wrong.Add($"{relative} writes '{property}: {value}': take the value from the token sheet for its kind (sizes.css for a size, radius or layer, typography.css for a font size or weight, effects.css for an opacity), adding a token there if the role is new");
                 }
             }
         }
@@ -791,10 +807,16 @@ public class StyleRulesTests
     [Fact]
     public void Every_colour_is_written_once_and_a_tint_is_mixed_from_its_token()
     {
-        string sheet = WithoutComments(TokenSheet());
-        int fallbacks = sheet.IndexOf("@supports", StringComparison.Ordinal);
-        Assert.True(fallbacks > 0, "src/styles/tokens.css should keep its glass fallbacks under @supports, after the tokens");
-        string roots = sheet[..fallbacks];
+        // The fallbacks are the last thing in effects.css; everything before them,
+        // in all four sheets, is where a token is defined.
+        string effects = WithoutComments(EffectsSheet());
+        int fallbacks = effects.IndexOf("@supports", StringComparison.Ordinal);
+        Assert.True(fallbacks > 0, "src/styles/effects.css should keep its glass fallbacks under @supports, after the tokens");
+        string others = string.Join("\n", TokenSheets.Where(name => name != "effects.css")
+            .Select(name => WithoutComments(File.ReadAllText(Path.Combine(Root, "src", "styles", name)))));
+        string roots = others + "\n" + effects[..fallbacks];
+        string sheet = roots + effects[fallbacks..];
+        fallbacks = roots.Length;
         var wrong = new List<string>();
         var first = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (Match match in Regex.Matches(roots, @"(--[a-z0-9-]+):\s*([^;{}]+);"))
@@ -842,7 +864,7 @@ public class StyleRulesTests
 
     // #region rule thirteen, the operator's look
     /// <summary>
-    /// The operator's look is one shared sheet, src/styles/operator.css, drawn
+    /// The operator's look is one shared sheet, src/styles/panels.css, drawn
     /// from the tokens (ADR: The glass look, the addendum on the operator's
     /// look): a panel, a card or a tile is .op-glass, so no component sheet
     /// gives one its own ground, border, rule or radius, spaces its capitals
@@ -893,7 +915,7 @@ public class StyleRulesTests
                     Match drawn = own.Match(body);
                     if (drawn.Success && !NotAPanel.ContainsKey(key))
                     {
-                        wrong.Add($"{relative} '{one.Trim()}' sets its own {drawn.Groups[1].Value}: a panel, a card or a tile is .op-glass (src/styles/operator.css), which owns the ground, the rule, the brackets and the radius");
+                        wrong.Add($"{relative} '{one.Trim()}' sets its own {drawn.Groups[1].Value}: a panel, a card or a tile is .op-glass (src/styles/panels.css), which owns the ground, the rule, the brackets and the radius");
                     }
                 }
                 foreach (Match tracking in Regex.Matches(body, @"letter-spacing:\s*([^;]+);"))

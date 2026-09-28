@@ -55,7 +55,7 @@ anyway, which is worth saying plainly rather than filing as bad luck.
 which measures 4.71 on the page ground and 5.84 on white. The test now requires
 AA on both grounds:
 
-```live path=src/styles/tokens.test.ts region=composed-pairs
+```live path=src/styles/colors.test.ts region=composed-pairs
 ```
 
 A token used for text clears AA on every ground this site puts it on. If a future
@@ -317,8 +317,8 @@ pattern matching nothing makes one silent. All three are green.
 
 ## Files
 
-- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the colour, and the measurement in the comment beside it.
-- [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts): the exemption that is no longer there.
+- [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the colour, and the measurement in the comment beside it.
+- [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the exemption that is no longer there.
 - [`src/components/AuctionCountdown.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AuctionCountdown.module.css): where the pair was composed.
 - [`tests/e2e/account.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/account.spec.ts): waiting for the answer rather than for the consequence.
 - [`tests/e2e/market.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/market.spec.ts): answering the price it posts against.

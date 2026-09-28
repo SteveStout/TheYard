@@ -89,10 +89,11 @@ React + TypeScript, deliberately thin. No business math runs in the browser:
   - `auction.ts`: status recomputation from server-sent windows, reserve display.
   - `format.ts`: currency, odometer, countdown, and date formatting (one
     CURRENCY/LOCALE constant).
-- `styles/tokens.css`: every color, space, radius, type, and shadow token. The
-  Urban slate palette lives here (ADR-016): a light gray ground, brown-gray
+- `styles/colors.css`, `sizes.css`, `typography.css`, `effects.css`: every
+  design token, in the file named for what it controls. The Urban slate palette
+  lives in `colors.css` (ADR-016): a light gray ground, brown-gray
   text, a teal accent with dark green and gold (ADR-016, addendum), every text and ground pair measured against WCAG
-  AA by a unit test. A reskin is one file.
+  AA by a unit test (`colors.test.ts`). A reskin is one file.
 - `tests/e2e/` (repo root): Playwright smokes that prove the whole stack end to end.
 
 ### Its architecture

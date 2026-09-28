@@ -1,5 +1,5 @@
 /* Fixed behind the page's content, never in front of it, and deaf to the
-   pointer. The strength is one token, and tokens.test.ts holds every text
+   pointer. The strength is one token, and colors.test.ts holds every text
    colour against the darkest stroke of this drawing at that strength, which
    is the worst thing a word can find behind it (ADR: The glass look). */
 .watermark {

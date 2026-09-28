@@ -4,7 +4,7 @@
  * The documents render through `marked`, which hands a fenced block back as
  * plain text, so until now a C# sample on the site was the same color as the
  * sentence above it. highlight.js does the tokenizing; the colors are this
- * site's own tokens rather than a stock theme, and `src/styles/code.css`
+ * site's own tokens rather than a stock theme, and `src/styles/code-highlight.css`
  * holds them.
  *
  * Only the languages the documents actually use are registered, counted

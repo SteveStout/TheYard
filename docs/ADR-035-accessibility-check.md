@@ -104,7 +104,7 @@ The check (`tests/e2e/axe.spec.ts`):
 The two pairs the palette test now also holds
 (`src/styles/tokens.test.ts`):
 
-```live path=src/styles/tokens.test.ts region=composed-pairs
+```live path=src/styles/colors.test.ts region=composed-pairs
 ```
 
 ## Consequences
@@ -123,8 +123,8 @@ The two pairs the palette test now also holds
 ## Files
 
 - [`tests/e2e/axe.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/axe.spec.ts): the check.
-- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the two colours that moved.
-- [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts): the enumerated floor, with the two pairs it was missing.
+- [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the two colours that moved.
+- [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the enumerated floor, with the two pairs it was missing.
 - [`tests/e2e/a11y.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/a11y.spec.ts): the keyboard path, which is the half a machine cannot check for you.
 - [`docs/ADR-016-palette.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-016-palette.md): where the palette and its measurement came from.
 - [`docs/ADR-026-keyboard.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-026-keyboard.md): the focus work this sits beside.

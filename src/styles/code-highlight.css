@@ -4,8 +4,8 @@
  * highlight.js names the tokens; these rules give them this site's colors
  * rather than a stock theme, so a C# sample sits in the Urban slate palette
  * beside the prose instead of arriving from another design. Every color here
- * is a token in tokens.css and every one of them is held to WCAG AA against
- * the code ground by tokens.test.ts.
+ * is a token in colors.css and every one of them is held to WCAG AA against
+ * the code ground by colors.test.ts.
  */
 
 /* #region code-theme */

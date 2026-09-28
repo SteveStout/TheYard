@@ -87,16 +87,15 @@ export default defineConfig({
     // never needed it, for one boolean. What is checked instead is that
     // nothing here turns it off (ADR: Broken windows, and the rule that
     // answers them).
-    // Vitest blanks CSS imports it is not told to process. tokens.test.ts reads
-    // the palette file raw to measure its contrast, and ribbons.test.ts reads
-    // the ribbon sheet raw to hold its performance rules, so those go through,
-    // and from 1.0.3.10 icons.test.ts reads every component sheet raw for a
-    // stroke written in a number of its own, so those go through as well, and
-    // operator.test.ts reads the operator's look's shared sheet raw.
+    // Vitest blanks CSS imports it is not told to process. These are read as
+    // text: the four token sheets (through src/lib/styleSheet.ts, for the
+    // contrast tests and the swatches), the panels sheet (panels.test.ts), the
+    // ribbon sheet (ribbons.test.ts) and every component sheet (icons.test.ts,
+    // for a stroke written as a number of its own).
     css: {
       include: [
-        /tokens\.css\?raw$/,
-        /operator\.css\?raw$/,
+        /(colors|sizes|typography|effects)\.css\?raw$/,
+        /panels\.css\?raw$/,
         /Ribbons\.module\.css\?raw$/,
         /components\/[^/]+\.module\.css\?raw$/,
       ],

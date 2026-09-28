@@ -26,7 +26,7 @@ export function swatchLines(fence: string): SwatchLine[] {
 }
 
 /**
- * The sheet, as HTML. `sheet` is the text of tokens.css. A token the sheet
+ * The sheet, as HTML. `sheet` is the text of the token sheets (styleSheet.ts). A token the sheet
  * does not define is drawn as a gap that says so, because a swatch page that
  * quietly skips a token is the stale picture again.
  */

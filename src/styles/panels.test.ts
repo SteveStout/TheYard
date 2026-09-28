@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import operator from './operator.css?raw';
-import tokens from './tokens.css?raw';
+import operator from './panels.css?raw';
+import { styleSheet as tokens } from '../lib/styleSheet';
 
 /**
  * The operator's look (ADR: The glass look, the addendum on the operator's
@@ -10,7 +10,7 @@ import tokens from './tokens.css?raw';
 const region = (() => {
   const start = tokens.indexOf('/* #region operator-look */');
   const end = tokens.indexOf('/* #endregion operator-look */');
-  if (start < 0 || end < 0) throw new Error('tokens.css has no operator-look region');
+  if (start < 0 || end < 0) throw new Error('effects.css has no operator-look region');
   return tokens.slice(start, end);
 })();
 
@@ -20,7 +20,7 @@ const rule = (selector: string) => {
   for (const [, head, body] of operator.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (head.replace(/\/\*[\s\S]*?\*\//g, '').trim() === selector) return body;
   }
-  throw new Error(`operator.css has no rule ${selector}`);
+  throw new Error(`panels.css has no rule ${selector}`);
 };
 
 describe("the operator's look", () => {

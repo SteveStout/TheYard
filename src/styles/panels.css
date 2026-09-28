@@ -2,8 +2,8 @@
  * The operator's look: the shared classes that frame panels, stat tiles, side
  * rails and pill groups (ADR-081). A component applies one of these classes by
  * name. It never draws its own border, corner bracket or radius, so every panel
- * on the site matches. Every value here is a token from tokens.css, which
- * main.tsx imports before this file. The phone width in the media queries comes
+ * on the site matches. Every value here is a token from the token sheets
+ * (colors, sizes, typography, effects), which main.tsx imports first. The phone width in the media queries comes
  * from the scale in src/lib/breakpoints.ts.
  */
 

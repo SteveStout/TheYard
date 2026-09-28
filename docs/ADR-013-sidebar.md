@@ -63,19 +63,19 @@ and [`src/hooks/useMediaQuery.ts`](https://github.com/SteveStout/TheYard/blob/ma
 
 The layout, two columns with the rail's width from a token
 ([`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css)
-and [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css)):
+and [`src/styles/sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sizes.css)):
 
 ```live path=src/App.module.css region=rail-grid
 ```
 
-```live path=src/styles/tokens.css region=rail-widths
+```live path=src/styles/sizes.css region=rail-widths
 ```
 
 The rows, the icons, and the palette are unchanged from the phone record:
 [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css),
 [`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx),
 and the contrast proof in
-[`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts).
+[`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts).
 The proof of the docked shape is
 [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts).
 
@@ -128,9 +128,9 @@ What changed, all of it in the tokens and one stylesheet:
   guards this one; only the numbers it reads changed.
 
 The palette, read from this build
-([`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css)):
+([`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css)):
 
-```live path=src/styles/tokens.css region=sheet-tokens
+```live path=src/styles/colors.css region=sheet-tokens
 ```
 
 Nothing moved: the rows, the icons, the docking line, the collapse and the
@@ -157,7 +157,7 @@ table of contents without opening anything. The browser suite's count of heading
 - [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the sections, in `MENU_ORDER`.
 - [`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx) and
   [`src/components/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BrandMark.tsx): the row icons and the brand.
-- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the rail widths and the sheet tokens.
+- [`src/styles/sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sizes.css) and [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the rail widths and the sheet tokens.
 - [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts) and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts):
   the proof at 1280, 1023 and 375.
 

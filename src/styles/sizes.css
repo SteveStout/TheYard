@@ -1,0 +1,90 @@
+/*
+ * Sizes: spacing, control and reserved heights, widths, corners and layers.
+ * Read together with colors, typography, effects and base. The width scale
+ * for media queries is in src/lib/breakpoints.ts.
+ */
+:root {
+  /* Spacing, on a 4 px scale. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+
+  /* #region reserved-heights */
+  /* Room a page holds before its data arrives, so nothing you are already
+     reading jumps when it lands (ADR-083). */
+  --store-segment-height: 28px;
+  --touch-target: 44px; /* the smallest thing a thumb should have to hit */
+  --inventory-loading-height: 100vh;
+  --store-note-height: 38px; /* two lines of the store bar's note on a phone */
+  --admin-card-loading-height: 360px; /* about one screen of an Admin card */
+  /* #endregion reserved-heights */
+  /* #region controls */
+  /* One size for each kind of control. A pill is a chooser, a back button or
+     a copy link. A control is an input and the button beside it. The large
+     one is the Author page's calls to action. One focus ring, one border and
+     one radius for every input. On a phone the pill and the control grow to
+     the touch target (see controls-phone at the end of this file). */
+  --pill-height: 34px;
+  --control-height: 40px;
+  --control-height-lg: 48px;
+  --pill-weight: var(--weight-medium);
+  --control-weight: var(--weight-semibold);
+  --badge-weight: var(--weight-medium);
+  --input-border: 1px solid var(--color-border-strong);
+  --input-radius: var(--radius-md);
+  --title-weight: var(--weight-bold);
+  --title-line: 1.25;
+  --focus-ring: 2px solid var(--color-accent);
+  --focus-ring-on-dark: 2px solid var(--color-gold-light);
+  --focus-ring-warning: 2px solid var(--color-warning);
+  --focus-ring-offset: 2px;
+  --focus-ring-inset: -2px; /* for a control whose box would clip the ring */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-stroke: 1.6;
+  /* #endregion controls */
+  /* #region rail-widths */
+  /* The site's side rail, open and collapsed to icons (ADR-013). */
+  --rail-width: 272px;
+  --rail-width-collapsed: 64px;
+  /* The Admin tab's own rail of cards, and the hour-at-a-glance column. */
+  --bench-rail-width: 260px;
+  --bench-hour-width: 260px;
+  /* #endregion rail-widths */
+
+  /* Corners: a chip 3 px, a small control 6 px, a control 8 px, a button a pill. */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-full: 999px;
+
+  /* Measures: a pill's padding, the page's widest measure and a drawer's
+     width. */
+  --pill-padding: 6px 14px;
+  --page-width: 1200px;
+  --drawer-width: min(84vw, 360px);
+
+  /* Layers, bottom to top: the page's ground, the docked rail, the sticky
+     header, and the skip link over everything. A dialog sits in the
+     browser's top layer and needs none. */
+  --layer-ground: -1;
+  --layer-rail: 1;
+  --layer-header: 10;
+  --layer-skip: 100;
+}
+
+/* #region controls-phone */
+/* On a phone, every pill and control grows to the touch target. A desk keeps
+   them compact. */
+@media (max-width: 639.98px) {
+  :root {
+    --pill-height: var(--touch-target);
+    --control-height: var(--touch-target);
+  }
+}
+/* #endregion controls-phone */

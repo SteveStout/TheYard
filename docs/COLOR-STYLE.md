@@ -1,12 +1,14 @@
 # Colour and style
 
-**A style guide the build enforces.** Every colour, size and width on this site is a token in one
-file, [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css).
-Thirteen tests read that file, every stylesheet and this page on every build, and a change that
-breaks a rule does not ship. [Read the tests on GitHub](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs).
+**A style guide the build enforces.** Every colour, size and width on this site is a token, kept in
+four files named for what they control: [`colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css),
+[`sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sizes.css),
+[`typography.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/typography.css) and
+[`effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css). Thirteen tests read those files, every
+stylesheet and this page on every build, and a change that breaks a rule does not ship. [Read the tests on GitHub](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs).
 
 **The swatches below are live.** Each one is painted with the token itself, read from
-`tokens.css` when you open this page, and the contrast figure beside it is computed from the same
+`colors.css` when you open this page, and the contrast figure beside it is computed from the same
 file. Nothing here is a picture, so nothing here can go stale. The bars to clear are **4.5** for body
 text and **3.0** for large text, lines and other marks.
 
@@ -226,7 +228,8 @@ tokens and writes no design value of its own.
 
 ## How the sheet is built
 
-`tokens.css` reads top to bottom in three tiers.
+The tokens live in four files, each named for what it controls, and `colors.css` reads top to bottom
+in three tiers.
 
 | Tier | What it holds |
 | --- | --- |
@@ -272,7 +275,7 @@ rule learns the rule from the failure.
     brackets, and every button is a pill or a circle.
 
 Two more tests stand behind them.
-[`tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts)
+[`colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts)
 measures the contrast of every text and ground pairing the site makes, and
 [`glass.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/glass.spec.ts) opens the
 site in a real browser and checks that nothing a visitor reads is faded.

@@ -71,7 +71,7 @@ holds every one of those ratios, and it holds a second thing a ratio cannot: tha
 the same value and none of them is the prose color, because six colors that all clear AA and cannot be
 told apart is a theme that passed a test and failed a reader.
 
-```live path=src/styles/code.css region=code-theme
+```live path=src/styles/code-highlight.css region=code-theme
 ```
 
 ## Addendum, the same afternoon: what the owner saw
@@ -99,9 +99,9 @@ palette is read on the page it ships to, not in the file it is written in.**
 
 - [`src/lib/highlight.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/highlight.ts): the grammars, the aliases and the one function that turns code into HTML.
 - [`src/lib/highlight.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/highlight.test.ts): what happens to a C# class, to a region that starts mid-file, and to a tag inside a sample.
-- [`src/styles/code.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/code.css): the theme, in tokens.
-- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the six colors.
-- [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts): the contrast floor and the told-apart rule.
+- [`src/styles/code-highlight.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/code-highlight.css): the theme, in tokens.
+- [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the six colors.
+- [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the contrast floor and the told-apart rule.
 - [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.ts): the renderer, loaded with the first document.
 - [`src/lib/markdown.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.test.ts): the rendered shape of a fence and a link.
 - [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the dialog, and the import that fetches the renderer on demand.
@@ -138,3 +138,6 @@ carries now, with the renderer's chunk beside it.
 ```live path=src/components/DocsMenu.tsx region=renderer-on-demand
 ```
 
+## Addendum, 2026-09-28 (1.0.3.34): code.css is code-highlight.css
+
+The code theme is `src/styles/code-highlight.css`, named for what it does (ADR-016, the addendum on the four token files). Its rules are unchanged; the six code colours it draws in are in `colors.css`.

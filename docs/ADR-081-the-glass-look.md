@@ -189,20 +189,20 @@ The same day he asked for "the original background image" back. The ribbons had 
 
 ## Files
 
-- [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css): the glass tokens and their three fallbacks, beside the palette.
-- [`src/styles/tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts): every text colour against the watermark at its worst, bare and through a panel, and the fallbacks.
+- [`src/styles/effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css): the glass tokens and their three fallbacks, beside the palette.
+- [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): every text colour against the watermark at its worst, bare and through a panel, and the fallbacks.
 - [`src/components/Watermark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Watermark.tsx) and [`src/components/Watermark.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/Watermark.module.css): the one drawing behind the page.
 - [`src/components/IntroStrip.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/IntroStrip.tsx) and [`src/lib/intro.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/intro.ts): the first screen's sentence and its three links.
 - [`src/lib/statTiles.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.ts): which tiles carry a ring, and the ring as a stroke.
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the readout's arithmetic and its words, and the fine grid.
-- [`src/styles/operator.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/operator.css) and [`src/styles/operator.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/operator.test.ts): the operator's look as one shared sheet, and what holds it to the tokens.
+- [`src/styles/panels.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/panels.css) and [`src/styles/panels.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/panels.test.ts): the operator's look as one shared sheet, and what holds it to the tokens.
 - [`src/components/Ring.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Ring.tsx), [`src/components/Readout.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Readout.tsx) and [`src/lib/ring.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ring.ts): the ring and the readout, one component each.
 - [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx) and [`src/components/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.module.css): the tiles, the rings, the readout and the panels of the Admin tab.
 - [`tests/e2e/glass.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/glass.spec.ts) and [`tests/e2e/glass.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/glass.ts): nothing that is read is faded, quiet words are never on the bare ground, and the watermark is one drawing with no request behind it.
 - [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts): the first screen on a phone.
 - [`docs/images/og.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/og.mjs): the link preview, in the new look.
 
-```live path=src/styles/tokens.css region=glass
+```live path=src/styles/effects.css region=glass
 ```
 
 ```live path=src/components/Watermark.tsx region=*
@@ -256,3 +256,7 @@ Two sentences above stopped being true with the tweaks pass (ADR: The tweaks pas
 ## Addendum, 2026-09-25 (1.0.3.28): the watermark without its lightning mark
 
 Steve, on the live site at a desk: "there is a odd white box in the background on desktop", and "on all pages". The box was the watermark's lightning mark: a gold bolt a third of the screen tall at a tenth of its strength, whose straight edge and notch read as a pale box over the ribbon ground, more so since the glass thinned to 30 per cent in the tweaks pass. It is gone from 1.0.3.28, and the watermark is its dotted rows alone, the way the rings went on 21 September. `glass.spec` holds the watermark to lines, no filled shape. The lightning mark is still the site's own mark on the header, where it was always read.
+
+## Addendum, 2026-09-28 (1.0.3.34): operator.css is panels.css
+
+The shared sheet that draws every panel, card, tile, rail and pill group is `src/styles/panels.css`, and its test `panels.test.ts`, named for what they draw (ADR-016, the addendum on the four token files). Nothing in either changed but the name; the operator-look tokens it draws from are in `effects.css`.

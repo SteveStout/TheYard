@@ -1,8 +1,8 @@
 /*
  * Base styles: the few rules every page needs before any component draws.
  * This file sets defaults and nothing else. It writes no design value of its
- * own: the face, the size, the ink and the ground all come from tokens.css,
- * which main.tsx imports just before this file.
+ * own: the face, the size, the ink and the ground all come from the token
+ * sheets (colors, sizes, typography, effects), which main.tsx imports first.
  *
  * Everything that belongs to one component lives in that component's
  * .module.css. If you are about to add a class here, it probably belongs there.

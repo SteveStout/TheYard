@@ -14,7 +14,7 @@
  * it as `(max-width: 639.98px)`. The .02 gap means a fractional width under
  * zoom (639.5) always lands on one side, never between the two.
  *
- * The steps are in pixels here, not in tokens.css, because a media query
+ * The steps are in pixels here, not in sizes.css, because a media query
  * cannot read a CSS variable. StyleRulesTests (rule ten) fails the build on
  * any media query off this list, and on a component that asks for a width
  * without importing one of these constants.
