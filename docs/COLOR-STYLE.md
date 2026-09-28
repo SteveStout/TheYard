@@ -1,29 +1,17 @@
 # Colour and style
 
-How this site looks, and the rules that keep it looking that way. Decided on 2026-09-21 and shipped
-as 1.0.0.169 (ADR: The palette, the addendum on teal, dark green and gold; ADR: The glass look). The
-live examples are the [inventory](https://theyard.stevenstout.biz/) and the
-[Admin tab](https://theyard.stevenstout.biz/?view=admin).
+**A style guide the build enforces.** Every colour, size and width on this site is a token in one
+file, [`src/styles/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.css).
+Thirteen tests read that file, every stylesheet and this page on every build, and a change that
+breaks a rule does not ship. [Read the tests on GitHub](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs).
 
-**The idea in one line: teal fills, dark green draws, gold trims, glass panels sit over a soft
-watermark, and the grounds stay white and light grey. Every word, number and photograph is fully
-solid.**
+**The swatches below are live.** Each one is painted with the token itself, read from
+`tokens.css` when you open this page, and the contrast figure beside it is computed from the same
+file. Nothing here is a picture, so nothing here can go stale. The bars to clear are **4.5** for body
+text and **3.0** for large text, lines and other marks.
 
-Every swatch on this page is painted with the token itself, read from `src/styles/tokens.css` when
-the page is drawn, and the figures beside it are computed from the same file: the value, then its
-measured WCAG contrast on white (a card) and on grey (the page ground). Nothing here is a picture,
-so nothing here can go stale. The bars to clear are **4.5** for body text and **3.0** for large
-text, lines and other marks.
-
-The rules at the end of this page are held by tests in the gate. A session that never reads this
-page still cannot ship a change that breaks one.
-
-## Who it is for
-
-A recruiter or a hiring manager who tapped a link in a post, most likely on a phone, with about ten
-seconds. The phone is the primary screen: every picture of a change is read at 375 pixels before it
-is read at 1280. The first screen says what this is, who built it and where the resume is, without
-a scroll, and every target in it is at least 44 pixels tall.
+The look in one line: teal fills, dark green draws, gold trims, frosted glass panels sit over a light
+ground, and every word, number and photo is fully solid.
 
 ## Brand colours
 
@@ -40,71 +28,33 @@ a scroll, and every target in it is at least 44 pixels tall.
 --color-on-accent | Words on a fill
 ```
 
-### Teal `#006360`, the accent
-
-- **Job:** pressed buttons, links, toggles, focus rings, the store switch, "Load more vehicles", the
-  chosen row of the side rail. White on it reads 7.11. As text it reads 7.11 on white and 5.73 on
-  grey. Under a pointer it deepens to `#004f4d`, and white on that reads 9.44.
-- **Not for:** the top of a tile. It sits 1.09 from the status green `#146c34`, so on a tile it
-  would read as "fine".
-
-### Teal tint `#e0ecee`
-
-- **Job:** the soft ground behind an accent thing: a hovered button, the chosen row in the side
-  rail. Heading text on it reads 9.30 and the accent 5.89.
-
-### Dark green `#0a3021`
-
-- **Job:** it draws. A card's left edge where the edge is deliberate, the rule under a section
-  heading, the top of the header gradient. 14.41 on white and
-  11.62 on grey.
-- **Not for:** every hairline. Those stay the neutral border. Not a large fill beside deep teal:
-  the two are close in darkness and blur together without a rule between them.
-
-### Deep teal `#024345`
-
-- **Job:** the top border of a PLAIN stat tile, a vehicle's title, the chip of an auction still to
-  come. White on it reads 11.10. It sits 1.70 from the status green, which is what lets a plain
-  tile and a healthy tile read as two different things.
-- **Not for:** a chart's line. A line is a series, and the series are below.
-
-### Header teal `#03505a`
-
-- **Job:** the bottom of the header gradient, and nothing else. White on it reads 9.13 and gold
-  light 5.06. The teal sampled from the reference picture was too close to the dark green for a
-  gradient between them to be seen on a bar fifty pixels tall, so this is one step bluer.
-
-### Gold `#d4aa3a` and gold light `#dcbf57`
-
-- **Job:** trim. The lightning mark, the rule under the header, the site name on the header, the
-  underline of a page's title, a short tick at the start of a section's rule, a ring round the
-  chosen button, the hairline outside a photograph's frame on the Author page, and the top edge
-  of every other headed block there, where the card is white and no amber is near. Gold light
-  reads 7.98 on the dark green and 5.06 on the header teal, so it is safe as text anywhere on the
-  header.
-- **Not for:** anything on white that carries meaning. On white the two read 2.19 and 1.81, under
-  3.0: never text, never a line on a chart, never the top of a tile, and never beside the amber
-  "worth a look", where gold reads as a warning.
-- **How much gold was a decision.** Three levels were drawn: a touch (the mark and the header rule
-  only), trim (the list above) and gold forward (gold tile tops, section rules and card edges). Trim
-  was chosen. Gold forward puts gold beside the amber tile, which is the one place it must not go.
-
-### The header gradient
+- **Teal `#006360`** fills: buttons, links, toggles, focus rings, the chosen row of the side rail.
+  White on it reads 7.11, and as text it reads 7.11 on white and 5.73 on grey. Under a pointer it
+  deepens to `#004f4d` (white on it 9.44). It is never the top of a tile: it sits 1.09 from the
+  status green `#146c34`, so a teal tile would read as "fine".
+- **Teal tint `#e0ecee`** is the soft ground behind an accent thing. Heading text on it reads 9.30
+  and the accent 5.89.
+- **Dark green `#0a3021`** draws: a card's edge, the rule under a section heading, the top of the
+  header gradient. 14.41 on white and 11.62 on grey.
+- **Deep teal `#024345`** tops a plain stat tile and titles a vehicle. White on it reads 11.10. It
+  sits 1.70 from the status green, which is what keeps a plain tile and a healthy tile apart.
+- **Header teal `#03505a`** is the bottom of the header gradient and nothing else. White on it
+  reads 9.13.
+- **Gold `#d4aa3a` and gold light `#dcbf57`** are trim: the lightning mark, the rule under the
+  header, a page title's underline, the ring round a chosen button, a photo's frame. Gold light reads
+  7.98 on the dark green and 5.06 on the header teal, so it is safe as text on the header. On white
+  the two read 2.19 and 1.81, so gold is never text, never data and never beside the amber
+  "worth a look", where it would read as a warning.
 
 ```swatches
 --gradient-header | The header, on a phone and on the side rail's brand block
 ```
 
-`linear-gradient(180deg, ...)` from the dark green to the header teal, **top to bottom**, because
-left to right could not be seen, with a 3 pixel gold light rule under it. White text reads 14.41 at
-its top and 9.13 at its bottom, so text is safe anywhere on it. It is ONE token,
-`--gradient-header`, used by every header bar: the phone's header and the side rail's brand block.
-The rule under a section heading is 2 pixels and too thin for a vertical gradient to show, so it is
-solid dark green with the short gold tick.
+The header gradient runs top to bottom, dark green to header teal, because left to right could not
+be seen on a bar fifty pixels tall. White text reads 14.41 at its top and 9.13 at its bottom. It is
+one token, used by every header bar.
 
 ## Grounds and text
-
-Unchanged by the new look, on purpose: "I loved the background of white and light grey."
 
 ```swatches
 --color-bg | Page grey
@@ -119,16 +69,11 @@ Unchanged by the new look, on purpose: "I loved the background of white and ligh
 --color-heading | Heading
 ```
 
-- Body text `#524b48` reads 8.54 on white and 6.89 on grey. It was the printed `#5e5653` until
-  25 September, when it read under 4.5 over the 30 per cent glass on a ribbon's teal stop and
-  deepened a step in the same hue, which also puts it back above the secondary grey. Headings and the big numbers on tiles
+- Body text `#524b48` reads 8.54 on white and 6.89 on grey. Headings and the big numbers on tiles
   are `#3f3a37`, 11.22 on white and 9.05 on grey.
-- **The quiet colour, `#4a4e57`, is one grey for every secondary word, and only ever used inside
-  a panel.** Muted and faint were two slate greys a step apart until the
-  tweaks pass of 25 September, when the glass went to 30 per cent white and the grey deepened
-  until it held 4.5 over the thinner glass where it lies straight over a ribbon's teal or gold
-  stop; faint and the rail's muted grey fold into it. Through a panel over the watermark at its
-  worst it reads 6.51.
+- **One grey, `#4a4e57`, for every secondary word, and only ever inside a panel.** It is measured
+  against the worst thing behind it: the thinnest glass over the darkest ribbon. Through a panel
+  over the watermark at its worst it reads 6.51.
 
 ## Status colours, reserved
 
@@ -147,15 +92,14 @@ These mean a state and nothing else, always with a word beside the colour ("fine
 ```
 
 - Fine `#146c34` reads 6.51 on white, worth a look `#b45309` 5.02, needs attention `#b91c1c` 6.47.
-- **A chart series never wears one.** A slow-requests line drawn in the warning colour read as an
-  alarm to somebody scanning the page, which is the defect that started this page (ADR: The Admin
-  tab, as a product, the addendum on the traffic card in plain words).
-- **The one line that may:** server errors on "Did anything fail?", because a server error is a
-  state. It is something wrong whenever it is above zero.
+- **A chart line never wears one.** A slow-requests line drawn in the warning colour read as an
+  alarm to somebody scanning the page. The one exception is server errors, because a server error
+  is a state.
 
 ## Chart colours
 
-A fixed order, never shuffled, so a colour means the same place on every chart.
+A fixed order, never shuffled, so a colour means the same thing on every chart. Labels, numbers and
+legends are in the text colours, never in a series' colour.
 
 ```swatches
 --color-series-1 | First series
@@ -166,99 +110,35 @@ A fixed order, never shuffled, so a colour means the same place on every chart.
 --color-who-people | People, on the activity card
 --color-who-scanners | Scanners and crawlers, on the activity card
 --color-who-self | The site's own reads, on the activity card
+--color-mark-teal | Charts and gauges, teal series
+--color-mark-gold | Charts and gauges, gold series
+--color-mark-axis | Charts and gauges, axes and ticks
+--color-mark-marker | Charts and gauges, the marker at a fill's end
 ```
 
-1. Teal `#13928b`, the Mark VII teal below.
-2. Gold `#a57c1d`, the Mark VII gold. The two are close in lightness and far apart in hue, so they
-   are told apart by hue, and a chart that draws both always carries a legend naming them.
-3. Neutral grey `#7b7f8a`, 4.00 on white: a third series, or a request the site turned away, which
-   is the visitor's and says nothing about the site.
+1. Teal `#13928b`, 3.81 on white and 3.07 on grey.
+2. Gold `#a57c1d`, 3.82 on white and 3.08 on grey. The two are close in lightness and far apart in
+   hue, so a chart that draws both always carries a legend.
+3. Neutral grey `#7b7f8a`, 4.00 on white: a third series, or a request the site turned away.
 
-The series are written as the Mark VII tokens and the printed slate gray (`var()`), not as values
-of their own; the dark green and the bright teal they were until the styling pass of 25 September
-had drifted from what the charts drew since the tweaks pass.
+The Admin tab's charts and gauges share one instrument style, modelled on an aircraft panel: one
+axis line with ticks in deep teal, no grid, labels in small capitals, and a gold marker where a
+gauge's fill ends. The two data stores keep their own pair, slate blue `#536786` and brown
+`#8a6a4f`. The activity card stacks who came in three colours chosen as a set that stays apart
+under colour blindness: people `#0a8f85` (3.98 on white), scanners and crawlers `#b8800a` (3.43),
+and the site's own reads `#5b78c2` (4.28).
 
-**Who the traffic was** has its own three, on the Site activity card only, stacked in one order:
-people in teal `#0a8f85` (3.98 on white), scanners and crawlers in amber `#b8800a` (3.43), and
-the site's own reads in blue `#5b78c2` (4.28). Chosen as a set and checked for colour vision
-together: the closest neighbours stay well apart under every common deficiency. Marks only; each
-band's name is written on it in the heading colour, and a legend names all three.
+## The glass and the ground
 
-### The Admin tab's charts and gauges (the tweaks pass, Mark VII)
-
-From 25 September every chart and gauge on the Admin tab is drawn in one instrument grammar, from
-Steve's flight-panel picture: one axis line and graduation ticks in the deep teal, no grid, labels
-in the quiet grey in small capitals, two series in teal and gold, a gold marker at the end of a
-ring's fill and a gold leader line to the callout on a peak.
-
-```swatches
---color-mark-teal | Mark VII, first series
---color-mark-gold | Mark VII, second series
---color-mark-axis | Mark VII, axes and ticks
---color-mark-marker | Mark VII, the marker, the leader and the bracket ticks
-```
-
-- Teal `#13928b` reads 3.81 on white and 3.07 on grey, gold `#a57c1d` 3.82 and 3.08: marks,
-  never text. Both went a step deeper in the styling pass, where the series test found them just
-  under 3.0 on the page ground. They are told
-  apart by hue rather than by light, so two series always carry a legend.
-- The gauges' tracks are the deep teal faint (`--color-mark-track`, `--color-mark-bar-track`),
-  table rules and the rail's current row the same teal fainter still (`--color-mark-rule`,
-  `--color-mark-tint`).
-- The status colours stay for states and never fill a gauge. A gauge's fill is the deep teal,
-  with white inside it once it passes 40 per cent, or the gold for request units, which carries no
-  text: no ink clears 4.5 on it, so its reading is printed under the track.
-
-Labels, numbers and legends are in the text colours, never in a series' colour.
-
-**The two stores keep their own pair for now**, slate blue `#536786` and brown `#8a6a4f`, on the
-comparison cards, the proof's bars and the visitors graph. They mean "the relational store" and
-"the document store" in five drawings and in the records that show them, and moving them on the
-page and not in the drawings would be a half move. They move together, in a ship of their own.
-
-## The glass look
-
-- **A soft watermark** fixed behind the page: ONE inline SVG at a tenth of the strength of its
-  ink: dotted rows in the Mark VII teal, and nothing else since 25 September. No image
-  request and no animation. A page that asked for less transparency, a page in forced colours and
-  a printed page get none.
-- **Panels are see-through**: white at 30 per cent (38 on a phone) over a 28 pixel frost, a
-  hairline teal border, a soft teal shadow, a 10 pixel radius. The see-through is in the BACKGROUND COLOUR
-  and never in an `opacity` on the container, so nothing inside a panel is ever faded. Where a
-  blur is not supported, where the reader asked for reduced transparency, and in forced colours, a
-  panel is solid white.
-- **The blur is spent where it is cheap**, because a phone pays for it by the pixel: tiles, small
-  cards, the window buttons, the filter bar, the intro strip, a vehicle's page, the store bar. The
-  Admin tab's wide cards are see-through without it, and each of the hundred vehicle cards frosts
-  its words' box only. The side rail is solid. A document's dialog is a clear sheet with the frost
-  on its reading panels, and frost from edge to edge on a phone.
-- **Words are measured against the worst thing behind them**, the watermark's darkest stroke, and
-  not against plain white.
-- **A ring gauge is honest or absent.** A ring is a share of a known whole: 5 of 5 checks, 118 of
-  118 pages, memory against its limit. Milliseconds and request units have no whole and get no
-  ring.
-
-## Background
-
-Approved on 2026-09-21 ("that is the one") and shipped as 1.0.0.175 (ADR: The glass look, the
-addendum on the ribbon ground). **The background is code, never an image**: a gradient on the page
-and one inline SVG, so it costs no request.
-
-- **The ground** runs left to right from green-grey `#dcebe7` through `#f3f7f6` to white, in place
-  of the flat grey behind the panels. It is one token, `--gradient-ground`, on the body. The page
-  grey stays a token for the few surfaces that are drawn in it, and it is what a page gets where
-  the gradient is not drawn.
-- **The ribbons** sweep in an S-curve down the left of the content, teal and gold, from the right
-  edge of the side rail: the rail's width token when it is docked, its collapsed width when it is
-  collapsed, and the screen's edge on a phone, where the rail is the drawer and the ribbons stand
-  back a little. Highlight strands in pale gold, two soft star flares and seventy sparks sit on
-  them. The faint watermark stays in front of them.
-- **Nothing moves** (Steve, 21 September: a minimal site that looks good): the drawing is painted
-  once, placed and centred by the stylesheet alone, and costs nothing after the first paint.
-  Asked for less transparency, forced
-  colours or a printed page, and there are no ribbons, as there is no watermark.
-- **Panels, words and pictures are untouched** and fully solid. Every word is measured against the
-  ground's darkest stop as well as the page grey.
+- **Panels are frosted glass.** White at 30 per cent (38 on a phone) over a 28 pixel blur, a hairline
+  teal border and a 10 pixel radius. The see-through part is the background colour, never an
+  `opacity` on the panel, so nothing inside a panel is ever faded. Where blur is not supported,
+  where the reader asked for less transparency, and in forced colours, every panel turns solid white.
+- **The ground is code, never an image.** A gradient from green-grey to white, with teal and gold
+  ribbons sweeping down the left and a faint watermark in front of them. It is drawn once and never
+  moves, so it costs no request and nothing after the first paint.
+- **A ring gauge is honest or absent.** A ring shows a share of a known whole: 5 of 5 checks, memory
+  against its limit. A reading with no whole, such as milliseconds, gets no ring.
 
 ```swatches
 --gradient-ground | The ground, left to right
@@ -278,10 +158,10 @@ and one inline SVG, so it costs no request.
 --color-ribbon-star | A flare's arms
 ```
 
-## The sidebar and the code theme
+## The side rail and the code theme
 
-The side rail's own tokens, light since the record on the sidebar, and the colours code is read in
-inside a document (ADR: Code that reads like code). Both are held to AA by the same test.
+The side rail's own colours, and the colours code is shown in inside a document. Both are held to
+WCAG AA by the same test.
 
 ```swatches
 --color-sheet-bg | Rail ground
@@ -303,87 +183,96 @@ inside a document (ADR: Code that reads like code). Both are held to AA by the s
 --color-code-meta | Code, an attribute
 ```
 
-## How the sheet is built
+## Sizes and widths
 
-`src/styles/tokens.css` is the one file that writes a design value. Every other stylesheet takes its
-colours, type sizes, weights, corners, tracking, layers and strengths from it, and the gate holds
-that. What stays where it is used is layout: a column's width, a line height, and a drawing's own
-geometry in its component (a chart's viewBox and corners are the drawing's units).
+Colour is half of a style guide. The other half is size, and it is held the same way.
 
-**Three tiers, top to bottom.**
-
-| Tier | What it holds | Written as |
-| --- | --- | --- |
-| The palette | Raw values: the printed Urban slate, the ribbon ground, teal and gold, the code theme, the status set | A hex, once |
-| The roles | What a value is for: `--color-text`, `--color-accent`, `--glass-bg`, `--shadow-md` | A hex where the role owns the colour, `var()` where it borrows one |
-| The components | The side rail's sheet, the Mark VII marks, the operator's rule and ring, the trims | `var()` of a role or a `color-mix` tint of one where it borrows a colour; a value it owns (the Mark VII teal and gold, a ring's reading size, a fill's strength) written once, here |
-
-**A value is written once.** A token that repeats another's colour is written as that token, so
-the rail's text is `var(--color-text)` and follows the body when it moves (it had kept the old
-brown after the body deepened). A see-through tint is mixed from its token,
-`color-mix(in srgb, var(--color-teal-deep) 15%, transparent)`, never copied as an `rgba` of the
-token's channels. The swatches on this page, the contrast tests and the gate all read through
-`var()` to the value.
-
-**One width scale.** A media query cannot read a custom property, so the scale lives in
-`src/lib/breakpoints.ts`, and every media query and every image's `sizes`, in a sheet, a component
-or the photographs' data, is written on it.
+**One width scale, six steps.** A media query cannot read a CSS variable, so the steps live in
+[`src/lib/breakpoints.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/breakpoints.ts),
+and every media query in the site is written on them. Open the
+[inventory](https://theyard.stevenstout.biz/) and narrow the window to watch them change the page.
 
 | Step | What starts there |
 | --- | --- |
-| 480 | A phone held upright, past a small phone |
-| 640 | Past a phone: a document stops filling the screen, pills drop to their desk height |
-| 768 | A tablet: the Admin strip four across, the tables loosen |
-| 1024 | A desk: the site's rail docks, a vehicle takes two columns |
-| 1280 | A wide desk: the Admin rail beside the card, a pinned card gets its own column |
-| 1440 | The widest: the hour beside its card, the store bar's whole sentence |
+| 480 | A phone held upright |
+| 640 | Past a phone: pills drop to desk height |
+| 768 | A tablet: the Admin strip goes four across |
+| 1024 | A desk: the side rail docks |
+| 1280 | A wide desk: the Admin rail sits beside the card |
+| 1440 | The widest: the hour beside its card |
 
-Above a step a sheet writes `(min-width: 640px)`, under it `(max-width: 639.98px)`: a width under
-zoom (639.5) lands on one side, where a whole pixel between the two used to fall into neither, and
-what is left is a fiftieth of a pixel. A component asks script for a width only through the
-constants in that file; a `sizes` attribute is written on the scale, and the same rule reads it.
-Range syntax, `(width < 640px)`, is not used, so the rule can read every query. A container query
-measures its own box and keeps its own widths.
+Above a step a sheet writes `(min-width: 640px)`, under it `(max-width: 639.98px)`, so a width
+under zoom always lands on one side.
 
-**The browser floor.** The tints use `color-mix()`: Chrome and Edge 111, Safari 16.2 (iOS 16.2),
-Firefox 113, all from late 2022 or early 2023. An older browser draws those tints as nothing: a
-panel without its hairline and shadow, the gauges without their tracks. The words and the grounds
-behind them are hex tokens and read the same everywhere.
+**Tables stack when their card is too narrow.** Every table on the Admin tab is drawn by one
+component, `DataTable`. It measures its own card, not the screen, and when the card cannot give
+each column room ([`tableFit.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/tableFit.ts)),
+each row becomes a small block of labels and values. See the nine columns of the
+[store card](https://theyard.stevenstout.biz/?view=admin&card=store) on a phone.
 
-**Sizes, weights, corners, tracking and layers are tokens too.** Type from `--text-*`, writing
-inside a chart from `--chart-text-*`, a ring's reading from `--ring-text-*`, corners from
-`--radius-*`, the two trackings (`--readout-tracking` for small capitals, `--title-tracking` for a
-display title), and the stacking order from `--layer-*`. A share of the size around it (`0.9em`),
-a zero, a circle's `50%` and `inherit` are not design values and pass.
+**Charts are drawn at their real width.** A chart laid out for a desk and shrunk onto a phone
+shrinks its words too. Each chart measures the width it is given and lays itself out at that width
+(`fitBox`), so its labels keep their size and only the plot narrows. See the
+[activity chart](https://theyard.stevenstout.biz/?view=admin&card=activity) on a phone.
 
-## The rules, short
+**Type, weights, corners, tracking and layers are tokens too.** Type from `--text-*`, words inside
+a chart from `--chart-text-*`, corners from `--radius-*`, the stacking order from `--layer-*`, and a
+touch target of 44 pixels on a phone.
 
-1. Teal fills, dark green draws, gold trims. Text colours do not change; the ground is the ribbon
-   ground, and it is code, never an image.
-2. Status colours mean a state. Never decoration, never a chart series, server errors excepted.
-3. Gold never on white as text or data, never on a chart or a tile, never beside amber.
-4. A plain tile is deep teal. Only a healthy tile is green.
-5. Every colour is a token in `src/styles/tokens.css` with its measured contrast recorded. No raw
-   colour in a component.
-6. Text and images are always fully opaque.
-7. Contrast is tested in the gate, not eyeballed.
-8. A value is written once, in the token sheet; a tint is mixed from its token.
-9. One width scale, six steps, in `src/lib/breakpoints.ts`.
+**The base styles have their own small file,**
+[`src/styles/base.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/base.css): box
+sizing, the body's face and ground, headings with no default margin. It sets defaults from the
+tokens and writes no design value of its own.
+
+## How the sheet is built
+
+`tokens.css` reads top to bottom in three tiers.
+
+| Tier | What it holds |
+| --- | --- |
+| The palette | Raw values, each written once as a hex |
+| The roles | What a value is for: `--color-text`, `--color-accent`, `--glass-bg` |
+| The components | The side rail, the chart marks, the panel rule and the ring, each a `var()` of a role |
+
+**A value is written once.** A token that needs another token's colour is written as that token,
+`var(--color-text)`, so it follows when the colour moves. A see-through tint is mixed from its token
+with `color-mix()`, never copied as an `rgba`.
+
+**The browser floor.** The tints use `color-mix()`, which every major browser has had since early
+2023. An older browser draws those tints as nothing, and the words and grounds, which are plain hex
+tokens, read the same everywhere.
 
 ## What holds them
 
-Each of these fails with a sentence that says what to do, and each is a row in the table of rules
-a change has to pass (ADR: The rules a change has to pass).
+Thirteen tests in
+[`StyleRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs)
+run on every build. Each one fails with a sentence that says what to do, so a change that breaks a
+rule learns the rule from the failure.
 
-| Rule | What holds it |
-| --- | --- |
-| No raw colour, hex, `rgb(` or `hsl(`, in any stylesheet or component outside the token sheet; an exception is on a list with its reason | StyleRulesTests |
-| Every hex on this page is the value of a token, and every colour token is on this page | StyleRulesTests |
-| Every contrast figure this page states is the figure the tokens give, and clears the bar it needs | StyleRulesTests, and `tokens.test.ts` for every pairing the site makes |
-| No chart series is a status colour's value, and a chart's line takes a status tone only for server errors | StyleRulesTests, and the browser suite reads every line's stroke on the traffic card |
-| The gold tokens are used only by the header, the brand mark and the named trim | StyleRulesTests |
-| `--gradient-header` is defined once and every header bar uses it | StyleRulesTests |
-| A colour is written once in the token sheet, a token that repeats one is written as it, and a tint is mixed from its token | StyleRulesTests |
-| Every width a page asks about is a step on the one scale, and a component asks only through `src/lib/breakpoints.ts` | StyleRulesTests |
-| Every size, weight, corner, tracking and layer a stylesheet writes comes from the token sheet | StyleRulesTests |
-| Nothing that holds a word or an image is drawn at less than full strength, and a quiet word is never on the bare ground | `glass.spec.ts`, on the inventory, a vehicle's page and the Admin tab |
+1. **No raw colour.** No stylesheet or component writes a hex, `rgb()` or `hsl()`. Every colour is
+   a token.
+2. **This page matches the sheet.** Every hex on this page is a token's value, and every colour
+   token is on this page.
+3. **Every contrast figure here is real.** Each figure on this page is the one the tokens give, and
+   it clears the bar it needs.
+4. **Status colours stay status.** No chart series is a status colour, and a line turns red only for
+   server errors.
+5. **Gold is trim.** Only the header, the brand mark and the named trim use it.
+6. **One header gradient.** It is defined once, and every header bar uses it.
+7. **The other checks are still there.** The browser test that nothing a visitor reads is faded, and
+   the contrast test for every pairing, both still exist and still run.
+8. **One size per control.** Every focus ring, control height and title weight comes from a token.
+9. **One face.** IBM Plex Sans everywhere, with even-width figures set once on the body, and a
+   monospaced face only on code.
+10. **One width scale.** Every width a page asks about is one of the six steps.
+11. **Values from the sheet.** Every size, weight, corner, tracking and layer comes from a token.
+12. **Written once.** No colour is written twice in the sheet, and every tint is mixed from its
+    token.
+13. **One panel look.** Every panel, card and tile is the one shared glass with its rule and
+    brackets, and every button is a pill or a circle.
+
+Two more tests stand behind them.
+[`tokens.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/tokens.test.ts)
+measures the contrast of every text and ground pairing the site makes, and
+[`glass.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/glass.spec.ts) opens the
+site in a real browser and checks that nothing a visitor reads is faded.

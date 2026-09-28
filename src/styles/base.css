@@ -1,0 +1,63 @@
+/*
+ * Base styles: the few rules every page needs before any component draws.
+ * This file sets defaults and nothing else. It writes no design value of its
+ * own: the face, the size, the ink and the ground all come from tokens.css,
+ * which main.tsx imports just before this file.
+ *
+ * Everything that belongs to one component lives in that component's
+ * .module.css. If you are about to add a class here, it probably belongs there.
+ */
+
+/* Width and height include padding and border, so a box set to 100% wide
+   stays 100% wide after you pad it. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Stop a phone from enlarging the text on its own when it is turned sideways. */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* The page: the one face, the base size and ink, and the ribbon ground behind
+   everything. tabular-nums gives every digit the same width, so a column of
+   numbers lines up without each component asking for it. StyleRulesTests
+   (rule nine) reads this rule. */
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  background-image: var(--gradient-ground);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A picture never overflows its box, and sits on its own line. */
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* Browsers give form controls their own font and colour. These take the
+   page's instead, so a button reads like the words around it. */
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* No default gaps above or below headings and paragraphs. Each component
+   spaces its own, from the --space-* tokens. */
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}

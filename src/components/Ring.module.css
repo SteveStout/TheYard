@@ -22,11 +22,11 @@
 }
 
 .first {
-  stroke: var(--ring-first);
+  stroke: var(--ring-fill-teal);
 }
 
 .second {
-  stroke: var(--ring-second);
+  stroke: var(--ring-fill-gold);
 }
 
 /* The gold marker at the fill's end (the tweaks pass, A3), shown once the arc
@@ -42,7 +42,7 @@
 }
 
 .markerOnGold {
-  fill: var(--ring-first);
+  fill: var(--ring-fill-teal);
 }
 
 /* The graduations round a large ring (B2): hairlines in the axis colour, the quarters heavier. */

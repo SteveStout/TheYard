@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/fonts.css';
 import './styles/tokens.css';
+import './styles/base.css';
 import './styles/operator.css';
 import './styles/code.css';
 import App from './App';
@@ -9,19 +10,16 @@ import { ErrorBoundary, reportClientError } from './components/ErrorBoundary';
 import { captureAdminKey } from './lib/adminKey';
 
 // #region bootstrap
-// fonts.css comes first so the face is declared before anything asks
-// for them, then tokens.css so the palette exists before any component's
-// styles are applied, operator.css with the shared shapes drawn in those
-// tokens, and code.css after them, because the code theme is written in the
-// tokens too. StrictMode costs nothing in production; in development
-// it mounts, unmounts and remounts once, which is how an effect that leaks a
-// timer or a listener gets caught early.
+// The stylesheets load in the order of the imports above, and the order
+// matters. fonts.css declares the face before anything asks for it.
+// tokens.css defines every colour and size as a variable. base.css sets the
+// page's defaults from those variables. operator.css and code.css draw shared
+// looks in the same variables, so each must come after tokens.css.
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 
-// The operator's key is read here, before the first render takes it out of the
-// address bar, because the Admin tab that uses it now arrives in a chunk of its
-// own and mounts after that (1.0.3.0).
+// Read the operator's key now, before the first render removes it from the
+// address bar. The Admin tab that needs it loads later, in its own chunk.
 captureAdminKey();
 
 // A boundary catches a crash during render. These two catch what a boundary

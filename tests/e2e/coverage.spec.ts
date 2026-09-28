@@ -7,7 +7,7 @@ import { readPage, siteList, type SitePage } from './coverage';
  * opened and read in the browser, and a page passes when its body is IBM Plex
  * Sans, it draws at least one panel, every panel carries the brackets and the
  * 3 px rule, no button is square, no word is set in another face (code
- * excepted), no id is used twice and no drawing's reference is lost. StyleRulesTests rule nine is the static half: a sheet that forgot
+ * excepted), no id is used twice and no drawing's reference is lost. StyleRulesTests rules nine and thirteen are the static half: a sheet that forgot
  * the look fails there, and a page that rendered without it fails here.
  */
 async function everyPage(

@@ -72,7 +72,7 @@ running server required.
 
 React + TypeScript, deliberately thin. No business math runs in the browser:
 
-- `main.tsx`: entry point. Mounts `App` inside the error boundary and imports the design tokens once.
+- `main.tsx`: entry point. Mounts `App` inside the error boundary and imports the design tokens and the base styles once.
 - `App.tsx`: composition root. View state, the debounced fetch effect, URL sync
   (filters + `?vehicle={id}`), browser history, and Load More.
 - `components/`: presentation only, one `.module.css` per component. `FilterBar`,

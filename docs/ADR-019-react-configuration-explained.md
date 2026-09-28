@@ -55,9 +55,9 @@ layouts in ADR: The phone header possible at all.
 
 ### main.tsx: the lines that start React
 
-`tokens.css` is imported before anything else so the palette's custom
+`tokens.css` is imported before the other sheets so the palette's custom
 properties exist before the first component's styles are applied (ADR:
-The palette). `createRoot` is the React 18 and 19 way to mount; the older
+The palette), and `base.css`, the page's defaults, comes right after it. `createRoot` is the React 18 and 19 way to mount; the older
 `ReactDOM.render` is gone. `StrictMode` costs nothing in production; in
 development it mounts, unmounts and remounts every component once, so
 every effect's setup runs twice, which flushes out effects that leak a

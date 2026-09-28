@@ -1,52 +1,49 @@
 /*
- * Design tokens: the single source of truth for color, spacing, radius,
- * typography, shadow, layers and motion. Imported once at the app root; every
- * component module consumes these variables and writes no value of its own
- * (StyleRulesTests holds colours, sizes, weights, radii, tracking and layers).
+ * Design tokens: every colour, size, weight, corner, shadow, layer and
+ * strength the site uses, written once, here. main.tsx imports this file
+ * first, so every other stylesheet can read these variables. A component
+ * never writes a value of its own: it writes var(--the-token).
+ * StyleRulesTests fails the build when one does.
  *
- * Three tiers, top to bottom (the styling pass of 25 September):
- *   the palette    raw values, each written once: the printed Urban slate, the
- *                  ribbon ground, teal and gold, the code theme, the status set;
- *   the roles      what a value is for (--color-text, --color-accent,
- *                  --glass-bg), a hex where the role owns the colour and a
- *                  var() where it borrows one;
- *   the components the sidebar sheet, the Mark VII marks, the operator's
- *                  rule and ring: every one a var() of a role or a tint of
- *                  one by color-mix, so a palette change reaches them all.
- * A token that repeats another's value is written as that token, never as the
- * same hex twice; the tests and the swatches read through var() to the value.
+ * The file reads top to bottom in three tiers:
  *
- * The width scale is in src/lib/breakpoints.ts, because a media query cannot
- * read a custom property: 480, 640, 768, 1024, 1280 and 1440, written
- * (min-width: 640px) above a step and (max-width: 639.98px) under it.
+ *   1. The palette.    Raw values, each written once as a hex: the printed
+ *                      Urban slate, the ribbon ground, teal and gold, the code
+ *                      theme, the status colours.
+ *   2. The roles.      What a value is for: --color-text, --color-accent,
+ *                      --glass-bg. A role that owns its colour writes a hex; a
+ *                      role that borrows one writes var(--the-palette-token).
+ *   3. The components. The side rail, the chart marks, the panel rule and the
+ *                      ring. Each is a var() of a role, or a see-through tint
+ *                      of one made with color-mix(), so changing a palette
+ *                      value changes every component that uses it.
  *
- * The palette is Figma's "Urban slate" (ADR-016): five colors, gray, brown
- * and blue, from foggy cityscapes. Where a shade had to be deepened so text
- * clears WCAG AA, the note beside it says which of the five it came from.
- * Buttons stay pills. The type is IBM Plex Sans since 1.0.3.19, the one face
- * for the whole site; Poppins was the face before it.
+ * Never write the same hex twice. If a token needs another token's colour,
+ * write var(--that-token).
  *
- * Since 1.0.0.169 the accent family is teal, dark green and gold, on the same
- * grounds and with the same text colours (ADR-016, the addendum on teal, dark
- * green and gold); the region teal-and-gold below holds them.
+ * Two things are not here. The width scale (480 to 1440) is in
+ * src/lib/breakpoints.ts, because a media query cannot read a custom property.
+ * The page's base rules (box sizing, the body, headings) are in base.css.
+ *
+ * Why each colour was chosen is in ADR-016 (the palette) and ADR-081 (the
+ * glass look). docs/COLOR-STYLE.md shows every colour token as a live swatch.
  */
 :root {
   /* #region palette */
-  /* Urban slate, the five as Figma prints them:
+  /* Urban slate, the five colours as Figma prints them (ADR-016):
      #E9E6E7 light gray, #5E5653 brown-gray, #7B7F8A slate gray,
-     #AB978C taupe, #6B7C98 slate blue. Two are kept as they print because
-     other tokens are made from them: the brown-gray tints every shadow and the
-     scrim, and the slate gray is the third chart series and the sidebar's icons.
-     White is written once too: it is the surface, the ink on the accent and on
-     the header, and the right end of the page's ground. */
+     #AB978C taupe, #6B7C98 slate blue. Two are kept as printed because other
+     tokens are built from them: the brown-gray tints every shadow and the
+     scrim, and the slate gray is the third chart series and the rail's icons.
+     White is written once too. */
   --palette-white: #ffffff;
   --palette-brown-gray: #5e5653;
   --palette-slate-gray: #7b7f8a;
-  --color-bg: #e9e6e7; /* the light gray, as printed: the page ground */
+  --color-bg: #e9e6e7; /* the light gray: the page ground where the ribbons are not drawn */
   /* #region ribbon-ground */
-  /* The page's ground since the ribbons (ADR: The glass look, the addendum on the
-     ribbon ground): green-grey on the left to white on the right, and the
-     ribbons' own colours. The ribbons are code, never an image. */
+  /* The page's ground: green-grey on the left fading to white on the right,
+     and the ribbons' own colours. The ribbons are drawn in code, never an
+     image (ADR-081, the ribbon ground). */
   --color-ground-left: #dcebe7;
   --color-ground-mid: #f3f7f6;
   --color-ground-right: var(--palette-white);
@@ -83,83 +80,72 @@
   --color-surface-muted: #f4f2f3; /* the light gray, halfway to white */
   --color-border: #d8d3d4; /* the light gray, one step darker */
   --color-border-strong: #b6afb0;
-  --color-text: #524b48; /* the brown-gray, as printed (#5e5653) until the self-review of 25 September deepened it a step in the same hue: over the 30 per cent glass on a ribbon's teal stop it read 3.88, and it now holds 4.63 and stays darker than the secondary grey */
-  --color-text-muted: #4a4e57; /* the slate gray; deepened in ADR-035 (4.39 on the neutral chip), and again in the tweaks pass (#5f636c until 1.0.3.23), where the 30 per cent glass over a ribbon's teal stop held #4d515a at 4.31 */
-  /* Faint folds into muted from 1.0.3.23: one grey for secondary text (ADR-042
-     had deepened it for an ended countdown on the page ground). */
-  --color-text-faint: var(--color-text-muted);
+  /* Text greys. Each is measured against the thinnest glass over the
+     darkest ribbon, not against plain white (ADR-016, ADR-083). */
+  --color-text: #524b48; /* body text: the brown-gray, one step deeper */
+  --color-text-muted: #4a4e57; /* every secondary word: the slate gray, deepened */
+  --color-text-faint: var(--color-text-muted); /* kept as a name; it is the muted grey (ADR-083) */
   --color-heading: #3f3a37; /* the brown-gray, deepened for weight */
 
   /* #region teal-and-gold */
-  /* The accent family since 1.0.0.169 (ADR: The palette, the addendum on teal,
-     dark green and gold): teal fills, dark green draws, gold trims, and the
-     grounds and the text colours above are as they were. Every value was read
-     off the pixels of the two pictures Steve gave, and every figure beside one
-     is a measured WCAG ratio that tokens.test.ts holds. */
+  /* The accent family: teal fills, dark green draws, gold trims (ADR-016, the
+     teal and gold addendum). The number beside a colour is its WCAG contrast
+     ratio; tokens.test.ts measures every one, so a shade that fails fails the
+     build. */
   --color-accent: #006360; /* teal: white on it 7.11; as text 7.11 on white, 5.73 on the page ground */
   --color-accent-hover: #004f4d; /* white on it 9.44 */
   --color-accent-soft: #e0ecee; /* the teal, as a pale tint: the accent on it 5.89 */
   --color-on-accent: var(--palette-white);
-  --color-green-dark: #0a3021; /* it draws: a card's left edge, a heading's rule, the rule under a section heading; 14.41 on white */
+  --color-green-dark: #0a3021; /* it draws: a card's left edge, a heading's rule; 14.41 on white */
   --color-teal-deep: #024345; /* a plain tile's top, a vehicle's title, an upcoming auction's chip; white on it 11.1 */
   --color-teal-header: #03505a; /* the bottom of the header gradient and nothing else; white on it 9.13 */
-  --color-gold: #d4aa3a; /* trim on white, as decoration only: 2.19 on white, so never text and never data */
+  --color-gold: #d4aa3a; /* trim on white, decoration only: 2.19 on white, so never text and never data */
   --color-gold-light: #dcbf57; /* trim on the header: 7.98 on the dark green, 5.06 on the header teal */
-  /* The lightning mark, which only ever sits on the header gradient. */
+  /* The lightning mark. It only ever sits on the header gradient. */
   --color-brand-mark: var(--color-gold-light);
-  /* One gradient, top to bottom, for every header bar: the site header on a
-     phone, and the side rail's brand block. */
+  /* One gradient, top to bottom, for every header bar: the phone's header and
+     the side rail's brand block. */
   --gradient-header: linear-gradient(180deg, var(--color-green-dark), var(--color-teal-header));
   /* #endregion teal-and-gold */
 
   /* #region code-palette */
-  /* The code theme (ADR: Code that reads like code). Six colours, each one
-     deepened until it clears WCAG AA on the ground code sits on, which is
-     --color-surface-muted; tokens.test.ts holds every one of them there, so a
-     prettier shade that fails the ratio fails the build. */
-  --color-code-text: #332f2c; /* the code itself, darker than the prose: the ground it sits on is not white */
+  /* The colours code is shown in inside a document (ADR-074). Code sits on
+     --color-surface-muted, so each colour is deepened until it clears WCAG AA
+     on that ground, and tokens.test.ts checks every one. */
+  --color-code-text: #332f2c; /* the code itself, darker than the prose because its ground is not white */
   --color-code-keyword: #6d4a83; /* the slate blue, turned toward plum */
   --color-code-type: #1f5c8b; /* the slate blue, deepened */
   --color-code-string: #8a5a3c; /* the taupe, deepened until it reads as ink */
   --color-code-comment: #25663a; /* green, which is where a reader looks for a comment */
-  --color-code-number: #96363b; /* brick, so a literal number is not a second green */
+  --color-code-number: #96363b; /* brick, so a number is not a second green */
   --color-code-meta: #6b5a1e; /* olive: attributes and the preprocessor */
   /* #endregion code-palette */
-  /* The two stores when they are drawn against each other: the accent for the
-     relational store and the taupe deepened for the document store, the same
-     pair docs/images/sql-vs-cosmos.mjs draws its numbers in. Graphics rather
-     than text, so the floor is 3:1 on white (ADR: Site activity, and the line
-     an address does not cross). */
+  /* The two data stores, whenever they are drawn against each other: slate
+     blue for the relational store, brown for the document store. Marks, not
+     text, so the floor is 3:1 on white (ADR-071). */
   --color-store-sql: #536786;
   --color-store-cosmos: #8a6a4f;
-  /* A chart's series when they are not the two stores: a line's identity,
-     first, second and third, and never a status colour, because a series drawn
-     in the warning colour reads as an alarm (ADR: The Admin tab, as a product,
-     the addendum on the traffic card in plain words). Since the styling pass the
-     first two are the Mark VII teal and gold below, told apart by hue, so two
-     series always carry a legend; the third is the printed slate gray.
-     Graphics, so 3:1 on white. The order is fixed and never shuffled. */
+  /* A chart's series, in a fixed order that is never shuffled. A series is
+     never a status colour, because a line drawn in the warning colour reads
+     as an alarm (ADR-080). The first two are told apart by hue, so a chart
+     that draws both always carries a legend. */
   --color-series-1: var(--color-mark-teal);
   --color-series-2: var(--color-mark-gold);
-  /* The third: a third series, or a request the site turned away; 4.0 on white. */
+  /* A third series, or a request the site turned away. */
   --color-series-3: var(--palette-slate-gray);
-  /* Who the traffic was, on the Site activity card (1.0.3.12): people, scanners
-     and crawlers, the site's own reads, stacked in that order. Validated as a
-     set for colour vision on 2026-09-24 (adjacent pairs 12.4 apart at the worst
-     under protanopia, 19.8 in full colour, in OKLab times a hundred), and each
-     clears 3:1 on white as a mark. Never text: the band's name is written in
-     the heading colour, and a legend names all three. */
+  /* Who the traffic was, on the Site activity card, stacked in this order:
+     people, scanners and crawlers, the site's own reads. Chosen as a set that
+     stays apart under colour blindness (ADR-071). Marks only: a legend names
+     each band. */
   --color-who-people: #0a8f85;
   --color-who-scanners: #b8800a;
   --color-who-self: #5b78c2;
   /* #region mark-vii */
-  /* The Admin tab's charts and gauges in the Mark VII grammar (the tweaks pass,
-     B2, from Steve's flight-panel picture): a teal and a gold series, told apart
-     by hue for colour vision and each 3:1 as a mark on white and on the page
-     ground (3.81 and 3.07, 3.82 and 3.08; a step deeper in the styling pass,
-     where they had read 2.99 and 2.96 on the ground);
-     the dark green draws axes and ticks; a gold marks the end of a gauge's fill
-     and the callout's leader. The status colours stay for status. */
+  /* The Admin tab's charts and gauges, drawn in one instrument style
+     (ADR-083). A teal and a gold series, each at least 3:1 as a mark on
+     white and on the page ground. The deep teal draws axes and ticks; the
+     ribbon gold marks the end of a gauge's fill. Status colours stay for
+     status. */
   --color-mark-teal: #13928b;
   --color-mark-gold: #a57c1d;
   --color-mark-axis: var(--color-teal-deep);
@@ -168,11 +154,10 @@
   --color-mark-bar-track: color-mix(in srgb, var(--color-teal-deep) 8%, transparent);
   --color-mark-rule: color-mix(in srgb, var(--color-teal-deep) 14%, transparent);
   --color-mark-tint: color-mix(in srgb, var(--color-teal-deep) 5%, transparent);
-  /* How strongly a fill is laid down (1.0.3.24, Steve: "not the lines, the
-     fill"): see-through, so the frost and the grid read through it, while its
-     edge carries the colour at full strength. A gauge's fill is the strongest,
-     because white is read inside it: at this share it holds 4.5 over the glass
-     (tokens.test.ts). The wash is the page ground drawn over today's part-day. */
+  /* How solid a chart's fill is. Fills are see-through so the glass reads
+     through them; the edge carries the full colour. A gauge's fill is the
+     most solid, because white words sit inside it (tokens.test.ts checks
+     4.5 there). The wash is the page ground laid over today's part-day. */
   --gauge-fill-opacity: 0.8;
   --mark-bar-opacity: 0.6;
   --mark-band-opacity: 0.55;
@@ -181,9 +166,9 @@
   /* #endregion mark-vii */
   /* #endregion palette */
 
-  /* Status colors carry meaning (clean, rebuilt, salvage, live) and stay
-     semantic on purpose: the one part of the page outside the five. */
-  --color-success: #146c34; /* deepened in ADR-035: it read 4.04 as countdown text on the page ground */
+  /* Status colours mean a state (fine, worth a look, needs attention, live)
+     and nothing else. They are the one part of the page outside the palette. */
+  --color-success: #146c34;
   --color-success-soft: #dcfce7;
   --color-warning: #b45309;
   --color-warning-soft: #fef3c7;
@@ -193,22 +178,18 @@
   --color-neutral-soft: #e4e0e1;
 
   --color-live: #16a34a;
-  /* The header's text is measured against the lighter end of the gradient,
-     which is the worse of the two for white. */
+  /* The header's text is measured against the lighter, bottom end of the
+     gradient, which is the harder one for white. */
   --color-header: var(--color-teal-header);
   --color-header-text: var(--palette-white);
   --color-header-text-muted: #cfe3e6;
 
   /* #region sheet-tokens */
-  /* The sidebar (ADR-013, light addendum), in Urban slate since ADR-016: a
-     white ground, the slate blue's tint for the hover and current rows, the
-     deepened blue for active icons. Every pair below clears WCAG AA against
-     both grounds, measured before it was chosen and asserted by
-     tokens.test.ts beside this file. */
+  /* The side rail (ADR-013): a white ground, the accent's tint behind the
+     hovered and current rows, the accent for active icons. Every pair clears
+     WCAG AA on both grounds; tokens.test.ts checks them. */
   --color-sheet-bg: var(--color-surface);
   --color-sheet-bg-raised: var(--color-accent-soft);
-  /* The rail's text is the body ink since the styling pass (the printed
-     brown-gray until then), and its muted text the one secondary grey. */
   --color-sheet-text: var(--color-text);
   --color-sheet-text-muted: var(--color-text-muted);
   --color-sheet-icon: var(--palette-slate-gray);
@@ -216,7 +197,7 @@
   --color-sheet-divider-strong: var(--color-border);
   /* #endregion sheet-tokens */
 
-  /* Spacing, on a 4px base scale */
+  /* Spacing, on a 4 px scale. */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -227,29 +208,20 @@
   --space-8: 48px;
 
   /* #region reserved-heights */
-  /* Heights the page reserves before an answer arrives (1.0.3.7), so nothing
-     the visitor has already read moves: the store bar's segment, a phone's
-     touch target, and the space the inventory holds while it loads. */
+  /* Room a page holds before its data arrives, so nothing you are already
+     reading jumps when it lands (ADR-083). */
   --store-segment-height: 28px;
-  --touch-target: 44px;
+  --touch-target: 44px; /* the smallest thing a thumb should have to hit */
   --inventory-loading-height: 100vh;
-  /* The store bar's note on a phone (1.0.3.10): two lines of 0.8rem at the
-     body's 1.5 line height, held from the first paint, because the row
-     arrived with /api/stores and moved the page 38 px in half the runs. */
-  --store-note-height: 38px;
-  /* An Admin card while its chunk is on the way (the workbench): about a card's
-     first screen, so the page under it does not jump when it lands. */
-  --admin-card-loading-height: 360px;
+  --store-note-height: 38px; /* two lines of the store bar's note on a phone */
+  --admin-card-loading-height: 360px; /* about one screen of an Admin card */
   /* #endregion reserved-heights */
   /* #region controls */
-  /* One height per kind of control (1.0.3.9): a pill is a chooser, a back
-     button or a copy link, dense on a desk and a thumb's target on a phone; a
-     control is an input and the button beside it; the large one is the
-     author page's calls to action. One weight per kind, one border and one
-     radius for every input, one weight for every page title, one focus ring
-     with one offset (and an inset one for a control clipped by its box), and
-     two icon sizes with one stroke. The phone values are under the media
-     query at the end of this block. */
+  /* One size for each kind of control. A pill is a chooser, a back button or
+     a copy link. A control is an input and the button beside it. The large
+     one is the Author page's calls to action. One focus ring, one border and
+     one radius for every input. On a phone the pill and the control grow to
+     the touch target (see controls-phone at the end of this file). */
   --pill-height: 34px;
   --control-height: 40px;
   --control-height-lg: 48px;
@@ -264,33 +236,29 @@
   --focus-ring-on-dark: 2px solid var(--color-gold-light);
   --focus-ring-warning: 2px solid var(--color-warning);
   --focus-ring-offset: 2px;
-  --focus-ring-inset: -2px;
+  --focus-ring-inset: -2px; /* for a control whose box would clip the ring */
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-stroke: 1.6;
   /* #endregion controls */
   /* #region rail-widths */
-  /* The sidebar's docked rail (ADR-013): open, and collapsed to icons. */
+  /* The site's side rail, open and collapsed to icons (ADR-013). */
   --rail-width: 272px;
   --rail-width-collapsed: 64px;
-  /* The Admin workbench's own rail of cards, beside the site's (1.0.3.18). */
+  /* The Admin tab's own rail of cards, and the hour-at-a-glance column. */
   --bench-rail-width: 260px;
-  /* And the hour at a glance beside its card on a wide desk. */
   --bench-hour-width: 260px;
   /* #endregion rail-widths */
 
-  /* Radius: a chip 3px, a small control 6px, a control 8px, a button a pill */
-  --radius-xs: 3px; /* a chip's corner and a legend swatch's */
+  /* Corners: a chip 3 px, a small control 6 px, a control 8 px, a button a pill. */
+  --radius-xs: 3px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-full: 999px;
 
-  /* Typography */
+  /* Type. IBM Plex Sans is the one face for the whole site (ADR-016). */
   --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
-  /* Code listings, and only code: a document's samples, the SQL a card shows and
-     an error's stack keep a monospaced face, because code reads like code (ADR:
-     Code that reads like code). Every other reading is the one face with tabular
-     figures, which the body sets once below. */
+  /* Code, and only code, is monospaced (ADR-074). */
   --font-code: Consolas, 'SF Mono', Menlo, ui-monospace, monospace;
   --text-xs: 12px;
   --text-sm: 13px;
@@ -304,16 +272,15 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
-  /* A display title sits a hair tighter than the body. */
-  --title-tracking: -0.01em;
-  /* Writing inside a drawing (a chart's labels, its readout, a callout), in the
-     drawing's own units, which a chart's viewBox scales with its width. */
+  --title-tracking: -0.01em; /* a display title sits a hair tighter than the body */
+  /* Words inside a chart (labels, readouts, callouts), in the chart's own
+     units, which scale with the chart's width. */
   --chart-text: 12px;
   --chart-text-sm: 11px;
   --chart-text-xs: 10px;
   --chart-text-2xs: 9px;
 
-  /* Shadow: the printed brown-gray, see-through. */
+  /* Shadows: the brown-gray, see-through. */
   --shadow-sm:
     0 1px 2px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent),
     0 1px 3px color-mix(in srgb, var(--palette-brown-gray) 10%, transparent);
@@ -323,44 +290,35 @@
   --shadow-lg: 0 12px 32px color-mix(in srgb, var(--palette-brown-gray) 18%, transparent);
 
   /* #region glass */
-  /* Panels are slightly see-through over a soft watermark (ADR: The glass
-     look). The translucency is in the BACKGROUND COLOUR only, never an opacity
-     on a container, so a panel's words, numbers and photographs are always
-     fully solid. The three fallbacks under this block turn a panel solid
-     white where a blur is not available or not wanted. */
-  /* Transparent, "like in iron man" (Steve, 2026-09-24): the ribbons and the
-     watermark read through every panel; 0.66 until then, 0.42 until the tweaks
-     pass (1.0.3.23), where the frost went deeper and the fill thinner. A
-     phone's smaller type gets a touch more fill (operator.css). */
+  /* Panels are frosted glass over the ribbons (ADR-081). The see-through part
+     is the background colour only, never an opacity on the panel, so the
+     words, numbers and photos inside are always fully solid. Where blur is
+     not available or not wanted, the fallbacks below turn every panel solid. */
   --glass-bg: rgba(255, 255, 255, 0.3);
+  /* A little more white behind a phone's smaller type. */
   --glass-bg-phone: rgba(255, 255, 255, 0.38);
-  /* Frosted (Steve, 2026-09-25, two pictures of frosted glass as the model for
-     the transparency and nothing else): the ground behind a panel reads as
-     soft colour, never as shapes, and a light rim lifts the edge. 7 px and 1.2
-     until then, when the ribbons read through a panel as lines; 20 px and 1.5
-     until the tweaks pass, which added the inner glow to the rim. */
+  /* The frost: what is behind a panel reads as soft colour, never as shapes,
+     and a light rim lifts the edge (ADR-083). */
   --glass-filter: blur(28px) saturate(1.6);
   --glass-border: color-mix(in srgb, var(--color-teal-deep) 18%, transparent);
   --glass-shadow:
     0 10px 30px color-mix(in srgb, var(--color-teal-deep) 12%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.55),
     inset 0 0 40px rgba(255, 255, 255, 0.18);
-  /* The panel's texture (the tweaks pass, B3): a 24 px hairline grid in the deep
-     teal at 3.5 per cent, inside a glass panel only, under its words. */
+  /* A faint 24 px grid inside every glass panel, under its words. */
   --glass-grid-line: color-mix(in srgb, var(--color-teal-deep) 3.5%, transparent);
   --glass-grid-size: 24px;
-  /* The document dialog (B1b, Steve's "About Steven" picture): the dialog's own
-     sheet nearly clear and barely blurred, the reading panel inside it frosted. */
+  /* A document's dialog: a nearly clear sheet, with the frost on the reading
+     panel inside it. */
   --dialog-sheet-bg: rgba(255, 255, 255, 0.1);
   --dialog-sheet-filter: blur(6px);
   --dialog-page-bg: rgba(255, 255, 255, 0.78);
   --dialog-page-filter: blur(28px) saturate(1.5);
   --watermark-opacity: 0.1;
   --radius-glass: 10px;
-  /* The one frame every photograph on the Author page wears: a gold hairline
-     outside a deep teal border, and a soft teal shadow. One token, so every
-     picture changes together (ADR: The sidebar, the addendum on the author's
-     section). */
+  /* The frame on every Author page photo: a deep teal border, a gold hairline
+     outside it and a soft teal shadow. One token, so every photo changes
+     together (ADR-013). */
   --frame-photo-border: 3px solid var(--color-teal-deep);
   --frame-photo-shadow:
     0 0 0 1.5px var(--color-gold),
@@ -368,13 +326,11 @@
   /* #endregion glass */
 
   /* #region operator-look */
-  /* The operator's look (Steve, 2026-09-24: "more iron man", "the color scheme
-     should not change"): a panel's top rule with two corner brackets in the
-     rule's colour, following the panel's radius, the dark green on panels and
-     cards and the gold on stat tiles; readings in small spaced capitals with
-     tabular figures; a ring wherever a number is a share of a whole, with the
-     number in words beside it. No new colour: every value is a token above.
-     One shared class draws it (src/styles/operator.css), never a component. */
+  /* The instrument-panel look on panels, cards and tiles (ADR-081): a rule
+     across the top with a corner bracket at each end, dark green on panels
+     and gold on stat tiles; readings in small spaced capitals; and a ring
+     wherever a number is a share of a whole. No new colour: every value
+     below is a token from above. operator.css draws it, once, for everyone. */
   --rule-width: 3px;
   --rule-panel-color: var(--color-teal-deep);
   --rule-tile-color: var(--color-gold-light);
@@ -387,27 +343,28 @@
   --readout-size: 0.6875rem;
   --readout-tracking: 0.08em;
   --readout-weight: var(--weight-medium);
+  /* A ring gauge: a faint track, the fill in deep teal (or gold for the
+     second kind of reading), and a gold marker where the fill ends. */
   --ring-track: var(--color-mark-track);
-  --ring-first: var(--color-teal-deep);
-  --ring-second: var(--color-gold-light);
+  --ring-fill-teal: var(--color-teal-deep);
+  --ring-fill-gold: var(--color-gold-light);
   --ring-marker: var(--color-mark-marker);
   --ring-tile-size: var(--touch-target);
-  --ring-tick-opacity: 0.45; /* a minor graduation round a large ring */
+  --ring-tick-opacity: 0.45; /* the small graduations round a large ring */
   --ring-fill-time: 400ms;
-  /* The reading inside a ring, by the ring's size. */
+  /* The number inside a ring, by the ring's size. */
   --ring-text-tiny: 8px;
   --ring-text-tile: 11px;
   --ring-text-page: 13px;
   --ring-text-large: 28px;
   /* #endregion operator-look */
 
-  /* What dims the page behind a dialog or the drawer: the brown-gray, see-through. */
+  /* What dims the page behind a dialog or the drawer. */
   --scrim: color-mix(in srgb, var(--palette-brown-gray) 45%, transparent);
 
-  /* The trims and the page's measures, each written once: a title's gold
-     underline, the gold ring round a chosen control, the accent hairline round
-     an outlined control, a pill's padding, the page's widest measure and a
-     drawer's width. */
+  /* Trims and measures: a title's gold underline, the gold ring round a
+     chosen control, the accent hairline round an outlined control, a pill's
+     padding, the page's widest measure and a drawer's width. */
   --rule-gold: var(--rule-width) solid var(--color-gold);
   --ring-gold: 0 0 0 2px var(--color-gold);
   --border-accent: 1.5px solid var(--color-accent);
@@ -415,17 +372,16 @@
   --page-width: 1200px;
   --drawer-width: min(84vw, 360px);
 
-  /* Strengths: a disabled control, the low of a live dot's pulse, the ribbons
-     standing back on a phone, and their sparks. Nothing that is read is faded
-     (glass.spec): a disabled control is the one exception, and it says so. */
+  /* Strengths. Nothing a visitor reads is ever faded (glass.spec checks it);
+     a disabled control is the one exception, and it says it is disabled. */
   --opacity-disabled: 0.6;
-  --opacity-pulse: 0.35;
+  --opacity-pulse: 0.35; /* the low point of a live dot's pulse */
   --ribbons-phone-opacity: 0.7;
   --ribbons-spark-opacity: 0.4;
 
-  /* Layers, bottom to top: the page's own ground behind everything, the
-     docked rail over the page beside it, the sticky header, and the skip link
-     over all of it. A dialog is in the top layer and needs none. */
+  /* Layers, bottom to top: the page's ground, the docked rail, the sticky
+     header, and the skip link over everything. A dialog sits in the
+     browser's top layer and needs none. */
   --layer-ground: -1;
   --layer-rail: 1;
   --layer-header: 10;
@@ -436,9 +392,9 @@
 }
 
 /* #region glass-fallbacks */
-/* Every see-through ground turns solid together: the panels, a phone's fuller
-   panel, a document's sheet and its reading panels (the self-review of 25
-   September, when the sheet's tenth of white was left see-through here). */
+/* When glass cannot or should not be drawn, every see-through ground turns
+   solid together: no blur support, a visitor who asked for less
+   transparency, and Windows high-contrast (forced colours). */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
     --glass-bg: #ffffff;
@@ -474,8 +430,8 @@
 /* #endregion glass-fallbacks */
 
 /* #region controls-phone */
-/* A phone's thumb: every pill and control reaches the touch target (Steve,
-   2026-09-22: "the pills reach 44 px on a phone"); the desk keeps them dense. */
+/* On a phone, every pill and control grows to the touch target. A desk keeps
+   them compact. */
 @media (max-width: 639.98px) {
   :root {
     --pill-height: var(--touch-target);
@@ -483,48 +439,3 @@
   }
 }
 /* #endregion controls-phone */
-
-/* Minimal base styles; everything else lives in component modules. */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  /* Tabular figures on every reading, so a column of numbers lines up without a
-     rule per component (the one face, 2026-09-24). */
-  font-variant-numeric: tabular-nums;
-  font-size: var(--text-base);
-  line-height: 1.5;
-  color: var(--color-text);
-  background-color: var(--color-bg);
-  background-image: var(--gradient-ground);
-  -webkit-font-smoothing: antialiased;
-}
-
-img {
-  display: block;
-  max-width: 100%;
-}
-
-button,
-input,
-select {
-  font: inherit;
-  color: inherit;
-}
-
-h1,
-h2,
-h3,
-h4,
-p {
-  margin: 0;
-}

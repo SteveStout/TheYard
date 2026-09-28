@@ -30,8 +30,8 @@ describe("the operator's look", () => {
     expect(region).toContain('--rule-tile-color: var(--color-gold-light);');
     // The ring at 100 per cent (the tweaks pass, A3): a faint track under a dark fill, a gold marker.
     expect(region).toContain('--ring-track: var(--color-mark-track);');
-    expect(region).toContain('--ring-first: var(--color-teal-deep);');
-    expect(region).toContain('--ring-second: var(--color-gold-light);');
+    expect(region).toContain('--ring-fill-teal: var(--color-teal-deep);');
+    expect(region).toContain('--ring-fill-gold: var(--color-gold-light);');
     expect(region).toContain('--ring-marker: var(--color-mark-marker);');
   });
 
