@@ -516,3 +516,25 @@ it was written.
 ## Addendum, 2026-09-25 (1.0.3.26): the retention and the cost, said precisely
 
 The card's retention line read the store's availability sentence, the reason a store gives when it is down, so on SQLite it said "kept in SQLite", a place and not a time. The port carries the retention as its own field from 1.0.3.26, and every store states it: Azure Cosmos DB from the container's time-to-live, the relational stores "with no expiry", which is what they do. The cost is a record, `ActivityCost`, counted with interlocked adds (the charge in hundredths of a request unit), because the batch writer and every report request count at once and a plain `+=` lost updates. The card says whose it is: this container's, since it started; the other container writes to the same keeper and counts its own. The About text no longer says no list of visitors is shown: the per-visitor rows, hashes only, are served to the operator's key on a site that turns them on.
+
+## Addendum, 2026-09-28 (1.0.3.35): the first read, and where its two seconds went
+
+Measured on the Cosmos DB site from Missouri that morning, the first `GET /api/admin/activity` after a quiet spell took 2.0 to 2.2 s to its first byte, and the next about 260 ms. The workbench reads the week on mount and the card opens on the week, so that first read was the week's.
+
+Where it goes, timed step by step with a stopwatch against the live activity container from Steve's machine (a one-off test, read only, not kept; the figures include the trip from Missouri to the region, so the large reads are slower here than inside Azure, but the shape is the point):
+
+| Step | First use | Warm, two more passes |
+| --- | --- | --- |
+| The credential's first token | 2,964 ms | held |
+| The container's first read (the availability check) | 2,985 ms | 64 to 65 ms, then held |
+| The day's hour rows, 50 of them | 1,432 ms | 59 to 61 ms |
+| The day's visitor rows, 170 | 488 ms | 134 to 192 ms |
+| The week's visitor rows, 3,661 | 3,439 ms | 2,754 to 3,137 ms |
+| The month's visitor rows, 5,279 | 8,017 ms | 4,064 to 5,080 ms |
+| Folding the rows into the report | 46 to 73 ms | 1 to 101 ms |
+
+One read of each window cost 312 request units, nearly all of it the visitor rows. Two costs, then. A process's first use of the store pays for a token and for waking its connections, which nothing in the report can remove. And every report, first or not, reads every visitor row of its window to count the people, the scanners and the site's own reads: the largest cost of any read of the week or the month, and the one a reader was waiting on.
+
+**The fix: the report is kept, and rebuilt behind the reader** (`ActivityReportCache` in `api/TheYard.Api/Activity.cs`). A window's report younger than thirty seconds is served as it is. One older than that, up to ten minutes, is served at once while a new one is built behind it, so the next reader gets the new one. Only with no report, or one older than ten minutes, does a reader wait for the build, and however many ask at once, one build runs per window. The numbers on the card are at most thirty seconds behind the rows when anybody is reading it, and a reader after a quiet spell sees the last report while the new one is counted. The warm read is the time to serialise a report already built, under the 260 ms it was. Once the site is kept awake, a report is never ten minutes old, so no visitor waits on a build. `ActivityReportCacheTests` holds the thirty seconds, the ten minutes, the one build and a failed rebuild leaving the old report in place.
+
+**`/api/health`'s first read** (736 ms against about 190 warm) runs one probe per store (Azure SQL Database, and two point reads of Azure Cosmos DB) beside three file checks, each timed, and nothing it does is heavy. The difference is the connections: after a quiet spell both stores' connections have to be opened again, and the edge's to the origin with them. That is not a cost in this code, and the keep-warm loop is what answers it.

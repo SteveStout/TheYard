@@ -1780,10 +1780,17 @@ app.MapGet("/api/admin/metrics", (HttpContext http) =>
 // paths, the bot and human counts, and what the feature has cost. It names
 // nobody, so it is as public as the rest of this tab. The window is a name
 // and not a number, so a caller cannot ask for a year.
+// A report is kept thirty seconds and rebuilt behind the next read for ten
+// minutes after that, so a reader never waits on the visitor rows being counted
+// (ActivityReportCache, the addendum of 28 September).
+var activityReports = new ActivityReportCache(TimeProvider.System);
 app.MapGet("/api/admin/activity", async (string? window, ActivityCollector collector, CancellationToken cancellation) =>
     ActivityWindows.Parse(window) is null
         ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-        : Results.Json(await ActivityReport.PublicAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, visitorRows, cancellation)));
+        : Results.Json(await activityReports.GetAsync(
+            window ?? "24h",
+            (now, building) => ActivityReport.PublicAsync(collector, backends, window ?? "24h", now, visitorRows, building),
+            cancellation)));
 
 // The visitor rows, behind the operator's key: a token that rotates daily,
 // the network to three octets, the store, the counts and the top paths. The
