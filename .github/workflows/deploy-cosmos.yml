@@ -48,6 +48,8 @@ jobs:
       # address (ADR: One plan, two sites).
       APP: APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2
       ORIGIN: https://app-theyard-cosmos-ss-zmnetj67bn5h2.azurewebsites.net
+      # Its public name, which the edge proxies to that origin; the edge is warmed through it.
+      SITE: https://theyard-cosmos.stevenstout.biz
       AI_NAME: appi-theyard-ss
       # The same database Deploy composes a connection string for, so this
       # container runs both stores too (ADR: One container, both stores).
@@ -227,4 +229,17 @@ jobs:
             echo "- origin: $ORIGIN"
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion verify-cosmos
+      # #region warm-edge
+      # Every deploy renames every hashed file, so the first visitor after it
+      # would pay the edge's miss on every chunk they open (ADR: Cache headers,
+      # addendum of 28 September). This asks the public address, not the origin,
+      # for every file the build serves and for the Admin tab's public reads,
+      # once each, as the site reading itself. A failure is a warning and never
+      # fails the deploy.
+      - name: Warm the edge
+        if: github.event_name != 'workflow_dispatch' || inputs.action == 'roll'
+        continue-on-error: true
+        timeout-minutes: 5
+        run: node scripts/warm-edge.mjs "$SITE" deploy
+      # #endregion warm-edge
 

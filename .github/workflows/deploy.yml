@@ -266,6 +266,19 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion verify
 
+      # #region warm-edge
+      # Every deploy renames every hashed file, so the first visitor after it
+      # would pay the edge's miss on every chunk they open (ADR: Cache headers,
+      # addendum of 28 September). This asks the public address, not the origin,
+      # for every file the build serves and for the Admin tab's public reads,
+      # once each, as the site reading itself. A failure is a warning and never
+      # fails the deploy.
+      - name: Warm the edge
+        continue-on-error: true
+        timeout-minutes: 5
+        run: node scripts/warm-edge.mjs "$SITE" deploy
+      # #endregion warm-edge
+
       # #region cache-export
       # The build cache is written after the site answers, not inside the build:
       # exporting every layer (mode=max) took about a minute between the image

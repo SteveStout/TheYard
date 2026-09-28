@@ -85,6 +85,24 @@ public class DeployWorkflowTests
     }
     // #endregion keep-ten
 
+    // #region warm-edge
+    [Theory]
+    [InlineData("deploy.yml")]
+    [InlineData("deploy-cosmos.yml")]
+    public void Each_deploy_warms_the_edge_through_the_public_address_after_the_site_answers_and_never_fails_for_it(string file)
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
+        int verify = workflow.IndexOf("- name: Verify", StringComparison.Ordinal);
+        int step = workflow.IndexOf("- name: Warm the edge", StringComparison.Ordinal);
+        Assert.True(step > verify && verify > 0, $"{file} should warm the edge after Verify");
+        string body = workflow[step..workflow.IndexOf("#endregion warm-edge", step, StringComparison.Ordinal)];
+        Assert.Contains("continue-on-error: true", body, StringComparison.Ordinal);
+        Assert.Contains("node scripts/warm-edge.mjs \"$SITE\" deploy", body, StringComparison.Ordinal);
+        Assert.StartsWith("https://theyard", EnvOf(file)["SITE"], StringComparison.Ordinal);
+        Assert.Contains("TheYard-SelfRead/1", File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "warm-edge.mjs")), StringComparison.Ordinal);
+    }
+    // #endregion warm-edge
+
     // #region workflows-agree
     [Fact]
     public void The_two_deploy_workflows_name_the_same_registry_group_server_database_and_identity()
