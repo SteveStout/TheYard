@@ -54,7 +54,7 @@ The landing page was drawn for a reader who explores. The reader it actually get
 - [`src/lib/landingHealth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/landingHealth.ts): the Admin tile's health dot, as a word and a tone.
 - [`src/lib/landingProof.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/landingProof.ts): the evidence strip's four figures, from the gate's own counts.
 - [`api/TheYard.Api/TestSummary.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TestSummary.cs): those counts, read out of the results file the gate wrote.
-- [`src/components/Landing.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Landing.tsx): the landing page drawn from it.
-- [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx): the sidebar's pinned rows drawn from it.
+- [`src/components/landing/Landing/Landing.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/landing/Landing/Landing.tsx): the landing page drawn from it.
+- [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): the sidebar's pinned rows drawn from it.
 - [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): `opensInventory()`, which keeps every older address on the inventory.
 - [`tests/e2e/landing.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/landing.spec.ts): the landing page against the map.

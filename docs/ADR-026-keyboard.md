@@ -92,6 +92,6 @@ The two rules that make a hidden thing audible and a focused thing visible
 
 - [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the skip link, the focus effect, the live region.
 - [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css): the two rules that make them work.
-- [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx): the drawer's native dialog, and `aria-current="page"` on the open document.
+- [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): the drawer's native dialog, and `aria-current="page"` on the open document.
 - [`tests/e2e/a11y.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/a11y.spec.ts): the keyboard path, walked.
 - [`docs/ADR-016-palette.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-016-palette.md): the contrast half of this, decided earlier and asserted in `src/styles/tokens.test.ts`.

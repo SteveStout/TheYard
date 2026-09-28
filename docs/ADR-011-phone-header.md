@@ -42,15 +42,15 @@ superseded by ADR: The sidebar the same day, so what follows is the part
 that still stands, shown as it is today.
 
 The sidebar renders its sections from the same record the dropdowns once
-used ([`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx)):
+used ([`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx)):
 
 ```live path=src/lib/siteMap.ts region=MENU_ORDER
 ```
 
 Opening a doc from the drawer closes the drawer and hands the request to
-the one shared viewer ([`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx)):
+the one shared viewer ([`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx)):
 
-```live path=src/components/SideNav.tsx region=drawer-dialog
+```live path=src/components/layout/SideNav/SideNav.tsx region=drawer-dialog
 ```
 
 Below the docking line the header carries the brand, Reset bids, and the
@@ -61,9 +61,9 @@ hamburger; above it the rail makes a header redundant
 ```
 
 The doc viewer goes edge to edge on a phone
-([`src/components/DocsMenu.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.module.css)):
+([`src/components/docs/DocsMenu/DocsMenu.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.module.css)):
 
-```live path=src/components/DocsMenu.module.css region=phone-dialog
+```live path=src/components/docs/DocsMenu/DocsMenu.module.css region=phone-dialog
 ```
 
 The proof is [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts),
@@ -123,7 +123,7 @@ What changed:
   unchanged, and the desktop specs still say so.
 
 In the code: the icon set is
-[`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx),
+[`src/components/shared/SheetIcons/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/SheetIcons/SheetIcons.tsx),
 the drawer is
 [`src/components/MobileDocs.tsx`](https://github.com/SteveStout/TheYard/blob/587c9e9/src/components/MobileDocs.tsx)
 with its styles in
@@ -157,9 +157,9 @@ ADR: The sidebar, under Best Practices. What this record still owns: the
 one-data-source rule, the native dialog, the shared viewer, the phone-sized
 proof, and the palette and icon rows from the addendum. The component moved
 from `src/components/MobileDocs.tsx` to
-[`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx)
+[`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx)
 with its styles in
-[`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css);
+[`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css);
 the links above that name the old files now point at 587c9e9, the commit
 that shipped them, so they keep resolving.
 
@@ -172,11 +172,11 @@ rule from the addendum above stand; only the colors changed.
 
 ## Files
 
-- [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx) and
-  [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css): the drawer, now one shape of
+- [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx) and
+  [`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css): the drawer, now one shape of
   the sidebar (ADR: The sidebar).
-- [`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx): the icon per row kind.
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the one data record both shapes
+- [`src/components/shared/SheetIcons/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/SheetIcons/SheetIcons.tsx): the icon per row kind.
+- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the one data record both shapes
   render from.
 - [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css) and [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts):
   the palette and its measured contrast.
@@ -190,7 +190,7 @@ rule from the addendum above stand; only the colors changed.
 ![The drawer open on the phone: icon-led rows under muted section headings](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-phone-drawer.jpg)
 
 The icon per row kind, seven paths that cover every row
-([`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx)):
+([`src/components/shared/SheetIcons/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/SheetIcons/SheetIcons.tsx)):
 
-```live path=src/components/SheetIcons.tsx region=icons
+```live path=src/components/shared/SheetIcons/SheetIcons.tsx region=icons
 ```

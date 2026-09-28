@@ -39,14 +39,14 @@ piece of state.
 
 ## In the code
 
-The section, and the numbering (`src/components/DocsMenu.tsx`):
+The section, and the numbering (`src/components/docs/DocsMenu/DocsMenu.tsx`):
 
-```live path=src/components/DocsMenu.tsx region=records-menu
+```live path=src/components/docs/DocsMenu/DocsMenu.tsx region=records-menu
 ```
 
-One shell for both kinds of section (`src/components/SideNav.tsx`):
+One shell for both kinds of section (`src/components/layout/SideNav/SideNav.tsx`):
 
-```live path=src/components/SideNav.tsx region=section-shell
+```live path=src/components/layout/SideNav/SideNav.tsx region=section-shell
 ```
 
 ## Consequences
@@ -65,9 +65,9 @@ One shell for both kinds of section (`src/components/SideNav.tsx`):
 
 ## Files
 
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the sections, the record order, the numbers.
-- [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx): the section shell and the disclosure.
-- [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css): the summary's marker and the number's tabular figures.
+- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the sections, the record order, the numbers.
+- [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): the section shell and the disclosure.
+- [`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css): the summary's marker and the number's tabular figures.
 - [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the test that still holds the sidebar and the served catalog to the same slugs, unchanged by the move.
 - [`docs/ADR-022-app-architecture-group.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-022-app-architecture-group.md): the grouping this replaces, and why it was right at the time.
 

@@ -1,0 +1,113 @@
+import type { Vehicle } from '../../../lib/types';
+import { auctionTiming, currentPrice, reserveState } from '../../../lib/auction';
+import { capitalize, formatCountdown, formatCurrency, formatOdometer } from '../../../lib/format';
+import { AuctionCountdown } from '../../shared/AuctionCountdown';
+import { Ring } from '../../shared/Ring';
+import { ConditionBadge } from '../../shared/ConditionBadge';
+import { ReserveBadge } from '../../shared/ReserveBadge';
+import { TitleStatusBadge } from '../../shared/TitleStatusBadge';
+import { VehicleImage } from '../../shared/VehicleImage';
+import styles from './VehicleCard.module.css';
+
+interface VehicleCardProps {
+  vehicle: Vehicle;
+  now: number;
+  onSelect: (vehicle: Vehicle) => void;
+  isHighBidder?: boolean;
+  /** The simulated room has bid past the buyer here (ADR-027). */
+  isOutbid?: boolean;
+  /** The buyer bought this vehicle via Buy Now, so the auction is over. */
+  isWon?: boolean;
+}
+
+export function VehicleCard({
+  vehicle,
+  now,
+  onSelect,
+  isHighBidder = false,
+  isOutbid = false,
+  isWon = false,
+}: VehicleCardProps) {
+  const timing = auctionTiming(vehicle, now);
+  const hasBids = vehicle.current_bid !== null;
+  // Sold to this visitor, or sold to somebody: either way the countdown is
+  // over and the price is what it went for (ADR: Accounts and per-user bids,
+  // the addendum on the second buyer).
+  const sold = isWon || vehicle.sold;
+  const alt = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+
+  return (
+    <article className={`${styles.card} op-glass op-card`}>
+      <div className={styles.media}>
+        <VehicleImage src={vehicle.images[0]} alt={alt} fallbackLabel={alt} />
+        <div className={styles.mediaOverlay}>
+          {sold ? (
+            <span className={styles.soldChip}>{isWon ? 'Sold to you' : 'Sold'}</span>
+          ) : (
+            <span className={styles.timing}>
+              <AuctionCountdown timing={timing} now={now} variant="overlay" />
+              {timing.status === 'live' && (
+                // The time left as a share of the auction's length, beside the words that say it (the operator's look).
+                <span className={styles.timeRing}>
+                  <Ring
+                    value={timing.endsAt - now}
+                    max={timing.endsAt - timing.startsAt}
+                    size="small"
+                    tone="second"
+                    label={`${formatCountdown(timing.endsAt, now)} left of the auction`}
+                  />
+                </span>
+              )}
+            </span>
+          )}
+          {isHighBidder && !sold && <span className={styles.highBidder}>High bidder</span>}
+          {isOutbid && !sold && <span className={styles.outbid}>Outbid</span>}
+        </div>
+      </div>
+
+      <div className={styles.body}>
+        <header>
+          <h3 className={styles.title}>
+            <button type="button" className={styles.titleLink} onClick={() => onSelect(vehicle)}>
+              {vehicle.year} {vehicle.make} {vehicle.model}
+            </button>
+          </h3>
+          <p className={styles.subtitle}>
+            {vehicle.trim} · {capitalize(vehicle.body_style)}
+          </p>
+        </header>
+
+        <div className={styles.priceRow}>
+          <div>
+            <span className={styles.priceLabel}>
+              {sold
+                ? 'Purchase price'
+                : hasBids
+                  ? timing.status === 'ended'
+                    ? 'Final bid'
+                    : 'Current bid'
+                  : 'Starting bid'}
+            </span>
+            <span className={styles.price}>{formatCurrency(currentPrice(vehicle))}</span>
+          </div>
+          <span className={styles.bidCount}>
+            {vehicle.bid_count} {vehicle.bid_count === 1 ? 'bid' : 'bids'}
+          </span>
+        </div>
+
+        <div className={styles.badges}>
+          <ConditionBadge grade={vehicle.condition_grade} />
+          <TitleStatusBadge status={vehicle.title_status} />
+          <ReserveBadge state={reserveState(vehicle)} />
+        </div>
+
+        <footer className={styles.meta}>
+          <span>
+            {vehicle.city}, {vehicle.province}
+          </span>
+          <span>{formatOdometer(vehicle.odometer_km)}</span>
+        </footer>
+      </div>
+    </article>
+  );
+}

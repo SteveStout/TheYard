@@ -134,5 +134,5 @@ were sent, and the paint marks between them.
 - [`scripts/load-order.cjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/load-order.cjs): the script that produced every number in the load order above.
 - [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the document, and the one script it names.
 - [`src/styles/fonts.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/fonts.css): the face, one file for its four weights, declared once and hashed by the build.
-- [`src/components/VehicleImage.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleImage.tsx): the `picture` element that offers the WebP pair first.
+- [`src/components/shared/VehicleImage/VehicleImage.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/VehicleImage/VehicleImage.tsx): the `picture` element that offers the WebP pair first.
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the edge that compresses and forwards.

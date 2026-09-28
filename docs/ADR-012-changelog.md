@@ -67,11 +67,11 @@ served by the one endpoint in
 ```
 
 The menu, one item on purpose, in
-[`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx);
+[`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx);
 the sidebar renders its sections from `MENU_ORDER`, so the new menu
 appeared on every screen from this one entry:
 
-```live path=src/components/DocsMenu.tsx region=menu-changelog
+```live path=src/components/docs/DocsMenu/DocsMenu.tsx region=menu-changelog
 ```
 
 ```live path=src/lib/siteMap.ts region=MENU_ORDER
@@ -112,7 +112,7 @@ reads like a person wrote it.
 - [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): the file, one sentence per version.
 - [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): its two entries (region
   docs-changelog above).
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the one-item menu (region
+- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the one-item menu (region
   menu-changelog above).
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the warning when a version has no
   line (region changelog-check above).

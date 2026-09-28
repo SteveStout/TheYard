@@ -110,7 +110,7 @@
   <text x="75" y="1626" class="body">(src/lib/auction.ts). No business math runs in the browser.</text>
   <rect x="890" y="170" width="450" height="118" class="box"/>
   <text x="905" y="196" class="title">BidPanel</text>
-  <text x="905" y="218" class="mono">src/components/BidPanel.tsx</text>
+  <text x="905" y="218" class="mono">src/components/vehicle/BidPanel/BidPanel.tsx</text>
   <text x="905" y="240" class="body">Posts { amount, anchor_ms } to POST</text>
   <text x="905" y="257" class="body">/api/vehicles/{id}/bids through src/lib/data.ts; buy now</text>
   <text x="905" y="274" class="body">posts to /buy-now.</text>

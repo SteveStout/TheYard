@@ -56,7 +56,7 @@ const READ = [
 const READ_LABELS = { 0: 'once, at startup', 3: 'then, for every request', 6: '{ total, vehicles } as JSON' };
 
 const WRITE = [
-  ['BidPanel', 'src/components/BidPanel.tsx', [
+  ['BidPanel', 'src/components/vehicle/BidPanel/BidPanel.tsx', [
     'Posts { amount, anchor_ms } to POST /api/vehicles/{id}/bids through src/lib/data.ts; buy now posts to /buy-now.']],
   ['HandleBid', 'api/TheYard.Api/Program.cs', [
     'Three questions in order: is the clock anchor valid (400 if not), does the vehicle exist (404 if not), does the domain accept the action (400 with the reason if not).']],

@@ -293,7 +293,7 @@ and belong to the record that takes that on.
 - [`src/lib/auth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.ts): the account seam in the browser, and the question that ignores a late answer.
 - [`src/lib/auth.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.test.ts): the seam's tests, including the late answer.
 - [`tests/e2e/account.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/account.spec.ts): the form end to end, the run that found the late answer.
-- [`src/components/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BidPanel.tsx): the form, rendered only to a signed-in visitor.
+- [`src/components/vehicle/BidPanel/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/vehicle/BidPanel/BidPanel.tsx): the form, rendered only to a signed-in visitor.
 
 ## Addendum, 2026-09-13: a login lasts a year past the last visit
 
@@ -437,7 +437,7 @@ whose session lands after the page has drawn sees the control for the
 moment the rail shows "Sign in", and then the form, which is the rail's own
 behaviour and the cost of a page that does not hold the cookie.
 
-```live path=src/components/BidPanel.tsx region=signed-out
+```live path=src/components/vehicle/BidPanel/BidPanel.tsx region=signed-out
 ```
 
 `account.spec.ts` holds it on both stores: signed out, the region named

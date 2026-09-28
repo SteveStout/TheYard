@@ -5,7 +5,7 @@ namespace TheYard.Api;
 
 /// <summary>
 /// Every document the site serves, by the slug the sidebar asks for (ADR-017).
-/// src/components/DocsMenu.tsx carries the same slugs with titles and menus, so
+/// src/components/docs/DocsMenu/DocsMenu.tsx carries the same slugs with titles and menus, so
 /// a new record is one line here and one line there, and DocsCatalogTests holds
 /// the two lists to each other. A slug missing from this table is a 404 at
 /// /api/docs/{slug}, never a file read.
@@ -112,6 +112,7 @@ public static class DocsCatalog
         ["adr-glass-look"] = "docs/ADR-081-the-glass-look.md",
         ["adr-landing-page"] = "docs/ADR-082-the-landing-page-and-the-site-map.md",
         ["adr-tweaks"] = "docs/ADR-083-the-tweaks-pass.md",
+        ["adr-component-folders"] = "docs/ADR-084-one-folder-per-component.md",
         ["color-style"] = "docs/COLOR-STYLE.md",
         ["author"] = "docs/AUTHOR.md",
         ["security"] = "docs/SECURITY.md",

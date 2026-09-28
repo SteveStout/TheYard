@@ -348,13 +348,13 @@ public class StyleRulesTests
             }
         }
 
-        // The charts' lines are toned in the Admin tab and its cards, one file each since the
-        // workbench. 'bad' is the one status tone a line may take, and only the server errors
-        // series may take it.
+        // The charts' lines are toned in the Admin tab and its cards, a folder each since the
+        // folders by component (the workbench, every card, the charts), all under components/admin.
+        // 'bad' is the one status tone a line may take, and only the server errors series may take it.
         string panel = WithoutComments(string.Join(
             "\n",
-            Directory.EnumerateFiles(Path.Combine(Root, "src", "components", "admin"), "*.tsx")
-                .Prepend(Path.Combine(Root, "src", "components", "AdminPanel.tsx"))
+            Directory.EnumerateFiles(Path.Combine(Root, "src", "components", "admin"), "*.tsx", SearchOption.AllDirectories)
+                .Order(StringComparer.Ordinal)
                 .Select(File.ReadAllText)));
         foreach (Match tones in Regex.Matches(panel, @"tones=\{\[([^\]]*)\]\}"))
         {
@@ -384,11 +384,11 @@ public class StyleRulesTests
     private static readonly Dictionary<string, string> GoldAllowed = new(StringComparer.Ordinal)
     {
         ["src/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings, a page title's underline, the ring round Load more",
-        ["src/components/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings",
-        ["src/components/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
-        ["src/components/AdminPanel.module.css"] = "the Admin title's underline, the ring round the chosen window button, the tick on a section's rule",
-        ["src/components/DocsMenu.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
-        ["src/components/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
+        ["src/components/layout/SideNav/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings",
+        ["src/components/account/AccountPanel/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
+        ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline, the ring round the chosen window button, the tick on a section's rule",
+        ["src/components/docs/DocsMenu/DocsMenu.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
+        ["src/components/landing/Landing/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
     };
 
     [Fact]
@@ -411,7 +411,7 @@ public class StyleRulesTests
 
         // And where it is allowed, it is never the colour of words on a light ground or the stroke of a chart's line.
         string panel = WithoutComments(
-            File.ReadAllText(Path.Combine(Root, "src", "components", "AdminPanel.module.css")));
+            File.ReadAllText(Path.Combine(Root, "src", "components", "admin", "AdminPanel", "AdminPanel.module.css")));
         foreach (Match rule in Regex.Matches(panel, @"\.(\w*Line|tile\w*|ring\w*)\s*\{[^}]*--(color-gold|rule-gold|ring-gold)[^}]*\}"))
         {
             wrong.Add($"the rule .{rule.Groups[1].Value} uses gold: gold is never a chart's line, a tile's top or a ring");
@@ -451,7 +451,7 @@ public class StyleRulesTests
             }
         }
 
-        string[] bars = ["src/App.module.css", "src/components/SideNav.module.css"];
+        string[] bars = ["src/App.module.css", "src/components/layout/SideNav/SideNav.module.css"];
         foreach (string bar in bars)
         {
             string source = File.ReadAllText(Path.Combine(Root, bar.Replace('/', Path.DirectorySeparatorChar)));
@@ -538,17 +538,17 @@ public class StyleRulesTests
         // The controls, by sheet and selector, and the height token each takes.
         var controls = new (string Sheet, string Selector, string Token)[]
         {
-            ("src/components/AdminPanel.module.css", ".back", "--pill-height"),
-            ("src/components/AccountPanel.module.css", ".back", "--pill-height"),
-            ("src/components/VehicleDetail.module.css", ".back", "--pill-height"),
-            ("src/components/DocsMenu.module.css", ".copyLink", "--pill-height"),
-            ("src/components/DocsMenu.module.css", ".close", "--pill-height"),
-            ("src/components/AccountPanel.module.css", ".input", "--control-height"),
-            ("src/components/AccountPanel.module.css", ".primary,\n.secondary", "--control-height"),
-            ("src/components/BidPanel.module.css", ".bidButton", "--control-height"),
-            ("src/components/FilterBar.module.css", ".searchInput", "--control-height"),
-            ("src/components/FilterBar.module.css", ".select", "--control-height"),
-            ("src/components/DocsMenu.module.css", ".prose :global(.author-button)", "--control-height-lg"),
+            ("src/components/admin/AdminPanel/AdminPanel.module.css", ".back", "--pill-height"),
+            ("src/components/account/AccountPanel/AccountPanel.module.css", ".back", "--pill-height"),
+            ("src/components/vehicle/VehicleDetail/VehicleDetail.module.css", ".back", "--pill-height"),
+            ("src/components/docs/DocsMenu/DocsMenu.module.css", ".copyLink", "--pill-height"),
+            ("src/components/docs/DocsMenu/DocsMenu.module.css", ".close", "--pill-height"),
+            ("src/components/account/AccountPanel/AccountPanel.module.css", ".input", "--control-height"),
+            ("src/components/account/AccountPanel/AccountPanel.module.css", ".primary,\n.secondary", "--control-height"),
+            ("src/components/vehicle/BidPanel/BidPanel.module.css", ".bidButton", "--control-height"),
+            ("src/components/inventory/FilterBar/FilterBar.module.css", ".searchInput", "--control-height"),
+            ("src/components/inventory/FilterBar/FilterBar.module.css", ".select", "--control-height"),
+            ("src/components/docs/DocsMenu/DocsMenu.module.css", ".prose :global(.author-button)", "--control-height-lg"),
         };
         foreach (var (sheet, selector, token) in controls)
         {
@@ -560,10 +560,10 @@ public class StyleRulesTests
         }
         var titles = new (string Sheet, string Selector)[]
         {
-            ("src/components/Landing.module.css", ".heading"),
-            ("src/components/AdminPanel.module.css", ".title"),
-            ("src/components/AccountPanel.module.css", ".title"),
-            ("src/components/VehicleDetail.module.css", ".title"),
+            ("src/components/landing/Landing/Landing.module.css", ".heading"),
+            ("src/components/admin/AdminPanel/AdminPanel.module.css", ".title"),
+            ("src/components/account/AccountPanel/AccountPanel.module.css", ".title"),
+            ("src/components/vehicle/VehicleDetail/VehicleDetail.module.css", ".title"),
         };
         foreach (var (sheet, selector) in titles)
         {
@@ -871,13 +871,13 @@ public class StyleRulesTests
     /// by a number of its own, or rounds a button to anything but a pill.
     /// </summary>
     /// <remarks>The header and the site's own rail are the frame, not panels on it (Steve: "leave the header and page background the same").</remarks>
-    private static readonly string[] TheFrame = ["src/App.module.css", "src/components/SideNav.module.css"];
+    private static readonly string[] TheFrame = ["src/App.module.css", "src/components/layout/SideNav/SideNav.module.css"];
 
     /// <summary>A name the scan reads as a panel's that is not one, each with why.</summary>
     private static readonly Dictionary<string, string> NotAPanel = new(StringComparer.Ordinal)
     {
-        ["src/components/StoreBar.module.css .bar"] = "the store band under the header is part of the frame, as the header is",
-        ["src/components/AdminPanel.module.css .scannerStrip"] = "the activity card's quiet line of what scanners probed, on the page ground inside the card: a line in a card, not a panel",
+        ["src/components/layout/StoreBar/StoreBar.module.css .bar"] = "the store band under the header is part of the frame, as the header is",
+        ["src/components/admin/AdminPanel/AdminPanel.module.css .scannerStrip"] = "the activity card's quiet line of what scanners probed, on the page ground inside the card: a line in a card, not a panel",
     };
 
     [Fact]

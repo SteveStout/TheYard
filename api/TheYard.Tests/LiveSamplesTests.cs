@@ -57,7 +57,7 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     // #endregion rejection
 
     [Theory]
-    [InlineData("src/components/DocsMenu.tsx")]
+    [InlineData("src/components/docs/DocsMenu/DocsMenu.tsx")]
     [InlineData("api/TheYard.Api/Program.cs")]
     [InlineData("infra/main.bicep")]
     [InlineData(".github/workflows/deploy.yml")]
@@ -174,7 +174,7 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     /// </summary>
     [Theory]
     [InlineData("api/TheYard.Api/Program.cs", "csharp")]
-    [InlineData("src/components/DocsMenu.tsx", "tsx")]
+    [InlineData("src/components/docs/DocsMenu/DocsMenu.tsx", "tsx")]
     [InlineData("Dockerfile", "dockerfile")]
     [InlineData(".editorconfig", "ini")]
     [InlineData("netlify.toml", "ini")]

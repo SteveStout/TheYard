@@ -37,24 +37,25 @@ import { useNow } from './hooks/useNow';
 // lazy() splits it into its own file that the browser downloads only when
 // ?view=admin opens, so the landing page does not pay for it.
 const AdminPanel = lazy(() =>
-  import('./components/AdminPanel').then((module) => ({ default: module.AdminPanel }))
+  import('./components/admin/AdminPanel/AdminPanel').then((module) => ({
+    default: module.AdminPanel,
+  }))
 );
 // #endregion admin-on-demand
-import { AccountPanel } from './components/AccountPanel';
+import { AccountPanel } from './components/account/AccountPanel';
 import { accountQuestion, SIGNED_OUT, type Account } from './lib/auth';
-import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/SideNav';
-import { docKeyForSlug, docSlug, LINKS, type DocKey } from './components/DocsMenu';
-import { BrandMark } from './components/BrandMark';
-import { StoreBar } from './components/StoreBar';
-import { Ribbons } from './components/Ribbons';
-import { Watermark } from './components/Watermark';
-import { Landing } from './components/Landing';
-import { NavGlyph } from './components/SheetIcons';
+import { readRailCollapsed, SideNav, storeRailCollapsed } from './components/layout/SideNav';
+import { docKeyForSlug, docSlug, LINKS, type DocKey } from './components/docs/DocsMenu';
+import { BrandMark } from './components/layout/BrandMark';
+import { StoreBar } from './components/layout/StoreBar';
+import { Background } from './components/layout/Background';
+import { Landing } from './components/landing/Landing';
+import { NavGlyph } from './components/shared/SheetIcons';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { DESK } from './lib/breakpoints';
-import { FilterBar } from './components/FilterBar';
-import { InventoryGrid } from './components/InventoryGrid';
-import { VehicleDetail } from './components/VehicleDetail';
+import { FilterBar } from './components/inventory/FilterBar';
+import { InventoryGrid } from './components/inventory/InventoryGrid';
+import { VehicleDetail } from './components/vehicle/VehicleDetail';
 import styles from './App.module.css';
 
 type LoadState = 'loading' | 'ready' | 'error';
@@ -873,8 +874,7 @@ export default function App() {
       />
 
       <div className={styles.page}>
-        <Ribbons />
-        <Watermark />
+        <Background />
         {/* #region header-below-dock */}
         {/* Below the docking line the header carries the brand, Reset bids,
             and the hamburger; the docked rail makes it redundant above it. */}

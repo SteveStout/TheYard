@@ -81,9 +81,9 @@ the weight.
 
 ## In the code
 
-Choosing the copy (`src/components/VehicleImage.tsx`):
+Choosing the copy (`src/components/shared/VehicleImage/VehicleImage.tsx`):
 
-```live path=src/components/VehicleImage.tsx region=srcset
+```live path=src/components/shared/VehicleImage/VehicleImage.tsx region=srcset
 ```
 
 The test that makes the convention safe
@@ -116,8 +116,8 @@ The Author page was 755 KB on a phone and 1,535 KB on a desk, all of it photogra
 ## Files
 
 - [`scripts/resize_photos.mjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/resize_photos.mjs): the resizer.
-- [`src/components/VehicleImage.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleImage.tsx): the srcset and the derived name.
-- [`src/components/VehicleDetail.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleDetail.tsx): the two other sizes.
+- [`src/components/shared/VehicleImage/VehicleImage.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/VehicleImage/VehicleImage.tsx): the srcset and the derived name.
+- [`src/components/vehicle/VehicleDetail/VehicleDetail.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/vehicle/VehicleDetail/VehicleDetail.tsx): the two other sizes.
 - [`api/TheYard.Tests/PhotoSizeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PhotoSizeTests.cs): the convention, held.
 - [`docs/ADR-015-cache-headers.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-015-cache-headers.md): why these files are cached the way they are once they arrive.
 

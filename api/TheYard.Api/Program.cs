@@ -1289,7 +1289,7 @@ app.MapDelete("/api/bids", async Task<Results<NoContent, ProblemHttpResult>> (Cu
 
 #region docs-endpoint
 // One route for every document (ADR-017): the slug is looked up in the catalog
-// (DocsCatalog.cs, the same slugs src/components/DocsMenu.tsx carries), the file
+// (DocsCatalog.cs, the same slugs src/components/docs/DocsMenu/DocsMenu.tsx carries), the file
 // is read from the repo root and its live blocks are expanded (ADR-014). A slug
 // missing from the catalog is a 404, never a file read. The Bicep file and the
 // resume keep their own routes below because they are not markdown; a literal

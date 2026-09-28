@@ -50,7 +50,7 @@ is what helps somebody with ten seconds, and each piece had to earn its place ag
 **Panels are glass, the page has one soft watermark behind it, and everything that is read is
 solid.**
 
-**The watermark** is ONE inline SVG (`src/components/Watermark.tsx`), fixed behind the page's
+**The watermark** is ONE inline SVG (`src/components/layout/Background/Watermark.tsx`), fixed behind the page's
 content at a tenth of the strength of its inks: concentric rings in the teal, dotted rows in the
 lighter teal, and the site's own lightning mark in gold. It is a drawing and not a picture, so it
 costs no request, and it does not move, so it costs no frame. It holds no words and no image, which
@@ -191,13 +191,13 @@ The same day he asked for "the original background image" back. The ribbons had 
 
 - [`src/styles/effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css): the glass tokens and their three fallbacks, beside the palette.
 - [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): every text colour against the watermark at its worst, bare and through a panel, and the fallbacks.
-- [`src/components/Watermark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Watermark.tsx) and [`src/components/Watermark.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/Watermark.module.css): the one drawing behind the page.
-- [`src/components/IntroStrip.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/IntroStrip.tsx) and [`src/lib/intro.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/intro.ts): the first screen's sentence and its three links.
+- [`src/components/layout/Background/Watermark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/Background/Watermark.tsx) and [`src/components/layout/Background/Watermark.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/Background/Watermark.module.css): the one drawing behind the page.
+- [`src/components/layout/IntroStrip/IntroStrip.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/IntroStrip/IntroStrip.tsx) and [`src/lib/intro.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/intro.ts): the first screen's sentence and its three links.
 - [`src/lib/statTiles.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.ts): which tiles carry a ring, and the ring as a stroke.
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the readout's arithmetic and its words, and the fine grid.
 - [`src/styles/panels.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/panels.css) and [`src/styles/panels.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/panels.test.ts): the operator's look as one shared sheet, and what holds it to the tokens.
-- [`src/components/Ring.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Ring.tsx), [`src/components/Readout.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Readout.tsx) and [`src/lib/ring.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ring.ts): the ring and the readout, one component each.
-- [`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx) and [`src/components/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.module.css): the tiles, the rings, the readout and the panels of the Admin tab.
+- [`src/components/shared/Ring/Ring.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/Ring/Ring.tsx), [`src/components/shared/Readout/Readout.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/Readout/Readout.tsx) and [`src/lib/ring.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ring.ts): the ring and the readout, one component each.
+- [`src/components/admin/AdminPanel/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/AdminPanel/AdminPanel.tsx) and [`src/components/admin/AdminPanel/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/AdminPanel/AdminPanel.module.css): the tiles, the rings, the readout and the panels of the Admin tab.
 - [`tests/e2e/glass.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/glass.spec.ts) and [`tests/e2e/glass.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/glass.ts): nothing that is read is faded, quiet words are never on the bare ground, and the watermark is one drawing with no request behind it.
 - [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts): the first screen on a phone.
 - [`docs/images/og.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/og.mjs): the link preview, in the new look.
@@ -205,7 +205,7 @@ The same day he asked for "the original background image" back. The ribbons had 
 ```live path=src/styles/effects.css region=glass
 ```
 
-```live path=src/components/Watermark.tsx region=*
+```live path=src/components/layout/Background/Watermark.tsx region=*
 ```
 
 ```live path=src/lib/statTiles.ts region=tile-rules
@@ -251,7 +251,7 @@ The intro sentence in `src/lib/intro.ts` now reads "showcase" where it read "wor
 
 ## Addendum, 2026-09-25 (1.0.3.23): thinner glass, deeper frost, and a document on a clear sheet
 
-Two sentences above stopped being true with the tweaks pass (ADR: The tweaks pass). The glass is no longer 42 per cent white: it is 30 per cent, 38 on a phone, frosted at 28 px with a saturation of 1.6 and an inner glow, and the contrast figures above that were measured on 42 now stand on a secondary grey deepened to `#4a4e57`, held by `tokens.test.ts` at the new share over the ribbons' brightest stops. And a document on a phone is no longer read on white: every document, at every width, opens on a clear sheet (a tenth white, a 6 px blur, nothing dimmed behind it) with its words on frosted reading panels at 78 per cent, which on a phone run edge to edge. The dialog's own copy of the ribbons went with the white, since the page's own drawing now reads through the sheet. The inventory no longer carries the intro strip; the landing page carries its sentence, and `src/components/IntroStrip.tsx` stays in the repository, unrendered, as the file this record names.
+Two sentences above stopped being true with the tweaks pass (ADR: The tweaks pass). The glass is no longer 42 per cent white: it is 30 per cent, 38 on a phone, frosted at 28 px with a saturation of 1.6 and an inner glow, and the contrast figures above that were measured on 42 now stand on a secondary grey deepened to `#4a4e57`, held by `tokens.test.ts` at the new share over the ribbons' brightest stops. And a document on a phone is no longer read on white: every document, at every width, opens on a clear sheet (a tenth white, a 6 px blur, nothing dimmed behind it) with its words on frosted reading panels at 78 per cent, which on a phone run edge to edge. The dialog's own copy of the ribbons went with the white, since the page's own drawing now reads through the sheet. The inventory no longer carries the intro strip; the landing page carries its sentence, and `src/components/layout/IntroStrip/IntroStrip.tsx` stays in the repository, unrendered, as the file this record names.
 
 ## Addendum, 2026-09-25 (1.0.3.28): the watermark without its lightning mark
 

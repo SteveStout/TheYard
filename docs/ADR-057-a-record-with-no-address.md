@@ -86,8 +86,8 @@ where you were.
 
 ## Files
 
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the slug both directions, and the dialog that now follows the state.
+- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the slug both directions, and the dialog that now follows the state.
 - [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx): the address bar, the pushed entry, and the close that knows whether it pushed one.
-- [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx): what is left of it, which is turning a key into a request.
+- [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): what is left of it, which is turning a key into a request.
 - [`tests/e2e/records.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/records.spec.ts): the link, the Back button, the keyboard, the copy button, and the address that names nothing.
 - [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the slugs the address bar borrows, held to the catalogue.

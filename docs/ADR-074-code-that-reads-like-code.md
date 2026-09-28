@@ -104,7 +104,7 @@ palette is read on the page it ships to, not in the file it is written in.**
 - [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the contrast floor and the told-apart rule.
 - [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.ts): the renderer, loaded with the first document.
 - [`src/lib/markdown.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.test.ts): the rendered shape of a fence and a link.
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the dialog, and the import that fetches the renderer on demand.
+- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the dialog, and the import that fetches the renderer on demand.
 - [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the language a file name implies.
 - [`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs): the theory that holds those answers.
 - [`tests/e2e/practices.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/practices.spec.ts): the browser check that a keyword and a comment are their own elements on the live page.
@@ -135,7 +135,7 @@ The before and after are on the Performance page, measured on the live
 site: the bytes the inventory page's script carried, and the bytes it
 carries now, with the renderer's chunk beside it.
 
-```live path=src/components/DocsMenu.tsx region=renderer-on-demand
+```live path=src/components/docs/DocsMenu/DocsMenu.tsx region=renderer-on-demand
 ```
 
 ## Addendum, 2026-09-28 (1.0.3.34): code.css is code-highlight.css

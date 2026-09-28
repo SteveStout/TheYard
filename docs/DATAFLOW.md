@@ -74,7 +74,7 @@ walks that file top to bottom.
 
 ## The write path (bids)
 
-1. `src/components/BidPanel.tsx` posts `{ amount }` to
+1. `src/components/vehicle/BidPanel/BidPanel.tsx` posts `{ amount }` to
    `POST /api/vehicles/{id}/bids` via `src/lib/data.ts`; the clock is the server's.
 2. `api/TheYard.Domain/BidRules.cs` is the sole authority: sold first (a vehicle anybody
    has bought takes no bid and no second purchase, a fact `BidService` supplies from

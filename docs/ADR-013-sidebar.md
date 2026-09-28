@@ -49,9 +49,9 @@ dropdowns and the drawer already shared. The dropdowns are deleted.
 
 The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The one component and its two shapes
-([`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx)):
+([`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx)):
 
-```live path=src/components/SideNav.tsx region=shapes
+```live path=src/components/layout/SideNav/SideNav.tsx region=shapes
 ```
 
 The docking line, read by the app as a media query, and the rail's memory
@@ -72,8 +72,8 @@ and [`src/styles/sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src
 ```
 
 The rows, the icons, and the palette are unchanged from the phone record:
-[`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css),
-[`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx),
+[`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css),
+[`src/components/shared/SheetIcons/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/SheetIcons/SheetIcons.tsx),
 and the contrast proof in
 [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts).
 The proof of the docked shape is
@@ -148,15 +148,15 @@ table of contents without opening anything. The browser suite's count of heading
 
 ## Files
 
-- [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx) and
-  [`src/components/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.module.css): the one navigation surface in
+- [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx) and
+  [`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css): the one navigation surface in
   its two shapes.
 - [`src/App.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/App.tsx) and [`src/App.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/App.module.css): the docking line,
   the rail grid, and the header that exists only below it.
 - [`src/hooks/useMediaQuery.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useMediaQuery.ts): how the docking line is read.
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the sections, in `MENU_ORDER`.
-- [`src/components/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SheetIcons.tsx) and
-  [`src/components/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BrandMark.tsx): the row icons and the brand.
+- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the sections, in `MENU_ORDER`.
+- [`src/components/shared/SheetIcons/SheetIcons.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/SheetIcons/SheetIcons.tsx) and
+  [`src/components/layout/BrandMark/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/BrandMark/BrandMark.tsx): the row icons and the brand.
 - [`src/styles/sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sizes.css) and [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the rail widths and the sheet tokens.
 - [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts) and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts):
   the proof at 1280, 1023 and 375.
@@ -173,9 +173,9 @@ end-to-end suite uses (ADR: Docs and testing, addendum).
 ![The drawer on a 375 pixel phone: the same rows, sliding in over the dimmed page](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/app-phone-drawer.jpg)
 
 The rows themselves, one loop over the shared record
-([`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx)):
+([`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx)):
 
-```live path=src/components/SideNav.tsx region=rows
+```live path=src/components/layout/SideNav/SideNav.tsx region=rows
 ```
 
 ## Addendum, 2026-09-09: two sections, for the stores and for the drawings
@@ -221,7 +221,7 @@ and none open again after a reload. Every spec that opens a document now names t
 in, through one helper in `tests/e2e/app.ts`, which is the part of this change that touched ten
 files.
 
-```live path=src/components/SideNav.tsx region=section-shell
+```live path=src/components/layout/SideNav/SideNav.tsx region=section-shell
 ```
 
 
@@ -283,7 +283,7 @@ document cannot leave two neighbours the same. Gold there is trim on a white car
 near it, which is the job the style page gives it; the panels keep the dark green left edge and the
 dark green rule with its gold tick.
 
-```live path=src/components/DocsMenu.module.css region=author-alternation
+```live path=src/components/docs/DocsMenu/DocsMenu.module.css region=author-alternation
 ```
 
 The browser suite opens the page from the rail and from the phone's drawer, counts the three

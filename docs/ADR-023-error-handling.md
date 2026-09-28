@@ -83,10 +83,10 @@ A deliberate 400, in the same shape:
 
 The boundary, and the reporter every path uses:
 
-```live path=src/components/ErrorBoundary.tsx region=boundary
+```live path=src/components/shared/ErrorBoundary/ErrorBoundary.tsx region=boundary
 ```
 
-```live path=src/components/ErrorBoundary.tsx region=report
+```live path=src/components/shared/ErrorBoundary/ErrorBoundary.tsx region=report
 ```
 
 The two window-level handlers, in `src/main.tsx`:
@@ -149,7 +149,7 @@ there, and the sentence the self-test throws with is not.
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the handler, the logging, the client-error endpoint, and the 400s.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the ring buffer both sides record into.
-- [`src/components/ErrorBoundary.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/ErrorBoundary.tsx) and [`ErrorBoundary.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/ErrorBoundary.module.css): the boundary and the reporter.
+- [`src/components/shared/ErrorBoundary/ErrorBoundary.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.tsx) and [`ErrorBoundary.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.module.css): the boundary and the reporter.
 - [`src/main.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/main.tsx): the boundary around the app and the two window handlers.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): reading `detail`.
 - [`api/TheYard.Tests/ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProblemDetailsTests.cs): every 400 carries the same shape, and a browser report reaches the errors list.

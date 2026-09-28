@@ -7,7 +7,7 @@ namespace TheYard.Api;
 /// <summary>
 /// Live code samples for the served docs (ADR-014). A markdown doc may hold an
 /// empty fenced block whose info string reads
-/// <c>live path=src/components/DocsMenu.tsx region=MENU_ORDER</c>, and this
+/// <c>live path=src/components/docs/DocsMenu/DocsMenu.tsx region=MENU_ORDER</c>, and this
 /// expands it at request time into an ordinary fenced block holding the
 /// current lines between the matching <c>#region NAME</c> and
 /// <c>#endregion</c> comment pair in that file, read from this build;

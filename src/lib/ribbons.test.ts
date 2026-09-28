@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import component from '../components/Ribbons.tsx?raw';
-import sheet from '../components/Ribbons.module.css?raw';
+import component from '../components/layout/Background/Ribbons.tsx?raw';
+import sheet from '../components/layout/Background/Ribbons.module.css?raw';
 import data from './ribbons.ts?raw';
 import { FLARES, RIBBONS, SHINE, SPARKS } from './ribbons';
 

@@ -343,6 +343,6 @@ never, so a developer's machine and the suite behave as they always have.
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a backend, the backends, the request's choice, and the context factory.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): two stores brought up, the endpoints on the request's store, the health check per store, the metrics per store, the toggle's endpoints.
 - [`api/TheYard.Tests/StoreToggleTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreToggleTests.cs): the rule, the endpoints, the ring.
-- [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts) and [`src/components/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/StoreBar.tsx): the toggle.
+- [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts) and [`src/components/layout/StoreBar/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/StoreBar/StoreBar.tsx): the toggle.
 - [`tests/e2e/store-toggle.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/store-toggle.spec.ts): the toggle in a browser, on one store and on two.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two groups, three variables apart.

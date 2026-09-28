@@ -128,17 +128,17 @@ The answer the badge needs, derived server-side
 ```
 
 The browser's half: the round it asks for, and the sentence it shows
-(`src/hooks/useBids.ts`, `src/components/BidPanel.tsx`):
+(`src/hooks/useBids.ts`, `src/components/vehicle/BidPanel/BidPanel.tsx`):
 
 ```live path=src/hooks/useBids.ts region=market-loop
 ```
 
-```live path=src/components/BidPanel.tsx region=outbid
+```live path=src/components/vehicle/BidPanel/BidPanel.tsx region=outbid
 ```
 
 And the guard that keeps the panel from offering a minimum it cannot vouch for:
 
-```live path=src/components/BidPanel.tsx region=stale-minimum
+```live path=src/components/vehicle/BidPanel/BidPanel.tsx region=stale-minimum
 ```
 
 ## What the review caught before this shipped
@@ -219,6 +219,6 @@ now exists.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composed overlays, the tick endpoint, and bidding against the room's price.
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the buyer's side, now stamped with when each bid was placed.
 - [`src/hooks/useBids.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useBids.ts) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the round the page asks for.
-- [`src/components/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BidPanel.tsx) and [`VehicleCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleCard.tsx): the sentence and the chip.
+- [`src/components/vehicle/BidPanel/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/vehicle/BidPanel/BidPanel.tsx) and [`VehicleCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/inventory/VehicleCard/VehicleCard.tsx): the sentence and the chip.
 - [`api/TheYard.Tests/MarketServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MarketServiceTests.cs): every limit, held.
 - [`tests/e2e/market.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/market.spec.ts): a bid, a round, and the badge changing hands in a browser.

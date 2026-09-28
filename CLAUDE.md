@@ -39,7 +39,10 @@ picks one per request from the `X-Yard-Store` header or the container's default 
 container groups default to different stores and each is one site.
 
 Frontend keeps the same discipline: `components` -> `hooks` -> `lib`. **`src/lib` imports nothing from
-React.**
+React.** Every component has a folder of its own, `src/components/<section>/<Name>/`, holding its `.tsx`,
+its `.module.css` and an `index.ts` that re-exports it, so an import reads `components/<section>/<Name>`; a
+component another section renders lives in `shared/`, and `src/lib` and `src/hooks` stay where they are
+(ADR: One folder per component).
 
 ## Rules that must survive any change
 

@@ -43,7 +43,7 @@ The inventory's welcome banner is gone from the inventory, since the landing pag
 
 - A table cell never breaks a word: `coverage.spec` fails any page with a cell computing `overflow-wrap: anywhere`, on every page the site lists at 390 and 1280.
 
-```live path=src/components/AdminPanel.module.css region=tables
+```live path=src/components/admin/AdminPanel/AdminPanel.module.css region=tables
 ```
 
 - A ring's marker and graduations: `ring.test.ts`.
@@ -62,11 +62,11 @@ The inventory's welcome banner is gone from the inventory, since the landing pag
 
 - [`src/styles/effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css): the glass, the dialog's sheet and page, the grid, the Mark VII marks.
 - [`src/styles/panels.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/panels.css): the grid on a panel and the dialog's clear sheet.
-- [`src/components/admin/charts.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/charts.tsx): the chart, its callout, and the bar gauge.
+- [`src/components/admin/charts/charts.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/charts/charts.tsx): the chart, its callout, and the bar gauge.
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the graduations and the peak.
-- [`src/components/Ring.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/Ring.tsx) and [`src/lib/ring.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ring.ts): the marker and the graduations.
-- [`src/components/VehicleDetail.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/VehicleDetail.tsx): the order under 1024.
-- [`src/components/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/StoreBar.tsx) and [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts): the short note and the count.
+- [`src/components/shared/Ring/Ring.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/Ring/Ring.tsx) and [`src/lib/ring.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ring.ts): the marker and the graduations.
+- [`src/components/vehicle/VehicleDetail/VehicleDetail.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/vehicle/VehicleDetail/VehicleDetail.tsx): the order under 1024.
+- [`src/components/layout/StoreBar/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/StoreBar/StoreBar.tsx) and [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts): the short note and the count.
 - [`tests/e2e/coverage.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/coverage.spec.ts): the cells and the strip, read on every page.
 
 ## Addendum, 2026-09-25 (1.0.3.24): a ring's room only where a ring is drawn
@@ -125,7 +125,7 @@ Held on purpose, and said on the style page: `color-mix()` sets a browser floor 
 
 Two independent readers went through the pictures of 1.0.3.29 at every width from 390 to 1440. At 390 the Admin tab was the worst of it: the log gave its message about twenty pixels and ran rows three hundred tall, the store, the machines and the backends were cut at the phone's edge, three strip tiles ended their line in an ellipsis, and chart words drew at about 4 px because a 720 box was scaled into a 316 card.
 
-- **One table.** Every Admin table (16 in 13 cards) is drawn by `src/components/admin/DataTable.tsx`. A card names its columns once; the name is the header on a desk and the label beside each value on a phone. Under 640 a table of three or more columns stacks: each row is a block led by its first column, and every other value sits on its own line behind its column's name. The label is generated text with an empty alternative (`content: attr(data-label) / ''`), so a screen reader hears it once, as the header. Every part carries its ARIA role, because Safari stops calling a table a table when its display changes. Sort headers are buttons and stay visible on a phone. SortHeader is gone.
+- **One table.** Every Admin table (16 in 13 cards) is drawn by `src/components/admin/DataTable/DataTable.tsx`. A card names its columns once; the name is the header on a desk and the label beside each value on a phone. Under 640 a table of three or more columns stacks: each row is a block led by its first column, and every other value sits on its own line behind its column's name. The label is generated text with an empty alternative (`content: attr(data-label) / ''`), so a screen reader hears it once, as the header. Every part carries its ARIA role, because Safari stops calling a table a table when its display changes. Sort headers are buttons and stay visible on a phone. SortHeader is gone.
 
 ```tsx
 const stacks = columns.length >= STACK_FROM_COLUMNS;

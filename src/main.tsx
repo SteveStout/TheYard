@@ -9,7 +9,7 @@ import './styles/base.css';
 import './styles/panels.css';
 import './styles/code-highlight.css';
 import App from './App';
-import { ErrorBoundary, reportClientError } from './components/ErrorBoundary';
+import { ErrorBoundary, reportClientError } from './components/shared/ErrorBoundary';
 import { captureAdminKey } from './lib/adminKey';
 
 // #region bootstrap

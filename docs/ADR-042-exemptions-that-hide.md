@@ -319,7 +319,7 @@ pattern matching nothing makes one silent. All three are green.
 
 - [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the colour, and the measurement in the comment beside it.
 - [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the exemption that is no longer there.
-- [`src/components/AuctionCountdown.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/AuctionCountdown.module.css): where the pair was composed.
+- [`src/components/shared/AuctionCountdown/AuctionCountdown.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/AuctionCountdown/AuctionCountdown.module.css): where the pair was composed.
 - [`tests/e2e/account.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/account.spec.ts): waiting for the answer rather than for the consequence.
 - [`tests/e2e/market.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/market.spec.ts): answering the price it posts against.
 - [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the encoded title, and the apostrophe pinned on its own.

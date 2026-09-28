@@ -32,7 +32,7 @@ pass gets its own dated addendum here.
   the file is read from the repo root, and every document goes through
   the expander. A slug that is not in the catalog is a 404, never a file
   read. Adding a record is one line in the catalog and one in
-  [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx),
+  [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx),
   and
   [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs)
   fails the build when the two lists disagree, when a file is missing, or
@@ -49,7 +49,7 @@ pass gets its own dated addendum here.
 - **Honest failure states on the Admin tab.** A card whose fetch failed
   showed "Loading" forever. Each card now says it could not read its data
   and that the next try is thirty seconds away
-  ([`src/components/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/AdminPanel.tsx)).
+  ([`src/components/admin/AdminPanel/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/AdminPanel/AdminPanel.tsx)).
   An observability screen that cannot say "I do not know" is not one.
 - **The observability types out of the host file.** The health record,
   the error buffer and the Azure reader lived at the bottom of Program.cs.
@@ -62,10 +62,10 @@ pass gets its own dated addendum here.
   the repo root and shared.
 - **One brand mark.** The lightning bolt was drawn twice, in the sidebar
   and the phone header; it is one component,
-  [`src/components/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/BrandMark.tsx).
+  [`src/components/layout/BrandMark/BrandMark.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/BrandMark/BrandMark.tsx).
   The four link rows in the sidebar were the same markup four times; they
   are one `LinkRow` in
-  [`src/components/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/SideNav.tsx).
+  [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx).
   The section headings there were `h3` under a page with no `h2`; they are
   `h2`, and the block's indentation was straightened.
 - **Tests clean up after themselves.** The live-sample tests created a
@@ -83,7 +83,7 @@ pass gets its own dated addendum here.
 ### Kept
 
 - **The doc viewer caches each document for the life of the tab**
-  ([`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx)).
+  ([`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx)).
   A deploy under an open tab is served on the next load, and the page is
   no-cache since ADR: Cache headers, so a reload is always fresh.
 - **The rendered markdown is our own.** The viewer sets HTML from the
@@ -181,6 +181,6 @@ So the served markdown names them here instead (`DocImages` in DocsCatalog.cs): 
 - [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the slug-to-file catalog that endpoint reads.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health and build types this review moved out of the host file.
 - [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the test that holds the catalog and the sidebar to the same list.
-- [`src/components/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/DocsMenu.tsx): the sidebar's copy of that list, and the one brand mark this review deduplicated.
+- [`src/components/docs/DocsMenu/DocsMenu.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/docs/DocsMenu/DocsMenu.tsx): the sidebar's copy of that list, and the one brand mark this review deduplicated.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the timeout and the readiness check this review added to the pipeline.
 - [`docs/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): the record that made this section a rule rather than a habit.

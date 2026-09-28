@@ -97,7 +97,7 @@ export default defineConfig({
         /(colors|sizes|typography|effects)\.css\?raw$/,
         /panels\.css\?raw$/,
         /Ribbons\.module\.css\?raw$/,
-        /components\/[^/]+\.module\.css\?raw$/,
+        /components\/.+\.module\.css\?raw$/,
       ],
     },
   },
