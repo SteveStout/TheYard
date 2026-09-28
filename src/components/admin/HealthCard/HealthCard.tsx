@@ -5,6 +5,7 @@
 import styles from '../shared/card.module.css';
 import type { Health, Fetched } from '../shared/types';
 import { pill, failed, formatUptime } from '../shared/common';
+import { keptWarmLine } from '../../../lib/keepWarm';
 
 export default function HealthCard({ health }: { health: Fetched<Health> }) {
   return (
@@ -36,6 +37,10 @@ export default function HealthCard({ health }: { health: Fetched<Health> }) {
                 </li>
               ))}
             </ul>
+            {/* The keep-warm loop's last pass (ADR: Kept awake). */}
+            <p className={styles.muted} data-testid="kept-warm">
+              {keptWarmLine(health.kept_warm)}
+            </p>
           </>
         )}
       </article>

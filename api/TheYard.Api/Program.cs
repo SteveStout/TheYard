@@ -426,6 +426,9 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
 // not cross).
 ActivityCollector? activityCollector = null;
 VisitorTokens? visitorTokens = null;
+// The loop that keeps every read warm (ADR: Kept awake), wired after the app is
+// built; the health report and the request hook read it through this.
+KeepWarm? keepWarm = null;
 
 // One request, timed and filed, unless it is the Admin tab watching itself.
 //
@@ -454,17 +457,25 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
         return;
     }
 
-    requestLog.Record(new RequestEntry(
-        DateTimeOffset.UtcNow,
-        context.Request.Method,
-        // Bounded, because a request line can be eight kilobytes and five
-        // hundred of those is four megabytes of ring nobody asked for.
-        path.Length > 200 ? path[..200] + "..." : path,
-        context.Response.StatusCode,
-        (long)elapsed.TotalMilliseconds,
-        // Which store served it, read the same way the request itself was
-        // routed, so the comparison card can split one ring two ways.
-        backends.For(context).Key));
+    // The keep-warm loop's reads (ADR: Kept awake) stay out of the ring and the
+    // kept log: two hundred slots of the container reading itself every four
+    // minutes would be the speed tile timing the loop, not a visitor. They still
+    // reach the activity card below, marked as the site reading itself.
+    bool keptWarm = context.Request.Headers.ContainsKey(KeepWarm.Header);
+    if (!keptWarm)
+    {
+        requestLog.Record(new RequestEntry(
+            DateTimeOffset.UtcNow,
+            context.Request.Method,
+            // Bounded, because a request line can be eight kilobytes and five
+            // hundred of those is four megabytes of ring nobody asked for.
+            path.Length > 200 ? path[..200] + "..." : path,
+            context.Response.StatusCode,
+            (long)elapsed.TotalMilliseconds,
+            // Which store served it, read the same way the request itself was
+            // routed, so the comparison card can split one ring two ways.
+            backends.For(context).Key));
+    }
 
     // #region activity-hook
     // And the same request as a hit for the activity card, offered to the
@@ -490,6 +501,11 @@ void RecordRequest(HttpContext context, TimeSpan elapsed)
     // network, with its method, status and duration, offered to the log
     // collector and forgotten. The page's own files and the photos are left
     // out for the reason the activity feature leaves them out.
+    if (keptWarm)
+    {
+        return;
+    }
+
     logCollector.Offer(LogEvents.Request(
         at,
         context.Request.Method,
@@ -1600,7 +1616,8 @@ app.MapGet("/api/health", async () =>
             (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
             buildVersion,
             buildCommit,
-            checks));
+            checks,
+            keepWarm is null ? null : KeepWarmReading.Of(keepWarm.Last)));
 })
     .WithName("GetHealth")
     .WithTags("Health")
@@ -2437,6 +2454,39 @@ app.Lifetime.ApplicationStarted.Register(() => _ = Task.Run(async () =>
     await Task.Delay(PageStatusRunner.SecondSweep);
     pageStatus.TryStart("settled");
 }));
+
+// #region keep-warm-wiring
+// Every public read, on both stores, every four minutes for as long as the
+// container runs (ADR: Kept awake). On where App Service runs the site
+// (WEBSITE_SITE_NAME is App Service's own) and off everywhere else, the test
+// host included; KeepWarm:Enabled says otherwise either way. It dials the
+// loopback the page sweep dials, through the whole pipeline.
+if (builder.Configuration.GetValue("KeepWarm:Enabled", !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"))))
+{
+    var keepWarmLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<KeepWarm>();
+    HttpClient? keepWarmClient = null;
+    var loop = new KeepWarm(
+        async cancellation =>
+        {
+            keepWarmClient ??= SelfAddress.Of(app.Services) is { } dialable
+                ? new HttpClient(new HttpClientHandler { UseCookies = false })
+                {
+                    BaseAddress = new Uri(dialable),
+                    Timeout = TimeSpan.FromSeconds(30),
+                }
+                : null;
+            return keepWarmClient is null
+                ? new KeepWarmPass(DateTimeOffset.UtcNow, 0, 0, 0, null)
+                : await KeepWarmReads.RunAsync(keepWarmClient, backends.All.Select(backend => backend.Key).ToList(), TimeProvider.System, keepWarmLog, cancellation);
+        },
+        TimeProvider.System,
+        KeepWarm.RandomStagger(),
+        keepWarmLog);
+    keepWarm = loop;
+    app.Lifetime.ApplicationStarted.Register(() => _ = loop.StartAsync(CancellationToken.None));
+    app.Lifetime.ApplicationStopping.Register(() => loop.StopAsync(CancellationToken.None).GetAwaiter().GetResult());
+}
+// #endregion keep-warm-wiring
 
 // The last sweep, whoever asked for it. Public, like every other reading on
 // this tab: it names addresses this site already serves to anybody.

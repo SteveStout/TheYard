@@ -1,3 +1,4 @@
+import type { KeptWarm } from '../../../lib/keepWarm';
 /**
  * The shapes the Admin tab's endpoints answer with, shared by its cards (ADR:
  * The Admin tab, as a product, the addendum on the workbench). Types only, so a
@@ -13,6 +14,8 @@ export type Health = {
   version: string;
   commit: string;
   checks: HealthCheck[];
+  /** The keep-warm loop's last pass (ADR: Kept awake); null where it is off. */
+  kept_warm?: KeptWarm;
 };
 
 export type ErrorEntry = {

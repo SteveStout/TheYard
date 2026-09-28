@@ -101,6 +101,7 @@ export type DocKey =
   | 'adrLandingPage'
   | 'adrTweaks'
   | 'adrComponentFolders'
+  | 'adrKeptAwake'
   | 'aiDevelopment'
   | 'builtWithAi'
   | 'infrastructureOverview'
@@ -801,6 +802,13 @@ export const DOCS: Record<
     kind: 'adr',
     number: '084',
   },
+  adrKeptAwake: {
+    title: 'ADR: Kept awake',
+    menuLabel: 'ADR: Kept awake',
+    url: '/api/docs/adr-kept-awake',
+    kind: 'adr',
+    number: '085',
+  },
   author: {
     title: 'About Steven',
     menuLabel: 'About Steven',
@@ -1086,6 +1094,7 @@ export const MENUS: Record<
       { key: 'adrLandingPage' },
       { key: 'adrTweaks' },
       { key: 'adrComponentFolders' },
+      { key: 'adrKeptAwake' },
     ],
   },
   // #endregion records-menu

@@ -113,6 +113,7 @@ public static class DocsCatalog
         ["adr-landing-page"] = "docs/ADR-082-the-landing-page-and-the-site-map.md",
         ["adr-tweaks"] = "docs/ADR-083-the-tweaks-pass.md",
         ["adr-component-folders"] = "docs/ADR-084-one-folder-per-component.md",
+        ["adr-kept-awake"] = "docs/ADR-085-kept-awake.md",
         ["color-style"] = "docs/COLOR-STYLE.md",
         ["author"] = "docs/AUTHOR.md",
         ["security"] = "docs/SECURITY.md",

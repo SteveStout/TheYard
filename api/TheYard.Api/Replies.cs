@@ -50,7 +50,15 @@ public sealed record HealthReport(
     long UptimeSeconds,
     string Version,
     string Commit,
-    IReadOnlyList<HealthCheckEntry> Checks);
+    IReadOnlyList<HealthCheckEntry> Checks,
+    [property: Description("The keep-warm loop's last pass (ADR: Kept awake); null where the loop is off.")] KeepWarmReading? KeptWarm = null);
+
+/// <summary>The keep-warm loop's last pass as the health card shows it: when, how many reads, how many failed, and the slowest.</summary>
+public sealed record KeepWarmReading(DateTimeOffset? LastPass, int Reads, int Failed, long SlowestMs, string? Slowest)
+{
+    public static KeepWarmReading Of(KeepWarmPass? pass) =>
+        pass is null ? new KeepWarmReading(null, 0, 0, 0, null) : new KeepWarmReading(pass.At, pass.Reads, pass.Failed, pass.SlowestMs, pass.Slowest);
+}
 
 /// <summary>The one sentence a forgot-password request answers, whether or not the address has an account.</summary>
 public sealed record ForgotReply(bool Sent, string Message);
