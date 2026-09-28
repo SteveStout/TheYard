@@ -80,7 +80,13 @@ export function VehicleCard({
         <div className={styles.priceRow}>
           <div>
             <span className={styles.priceLabel}>
-              {sold ? 'Purchase price' : hasBids ? 'Current bid' : 'Starting bid'}
+              {sold
+                ? 'Purchase price'
+                : hasBids
+                  ? timing.status === 'ended'
+                    ? 'Final bid'
+                    : 'Current bid'
+                  : 'Starting bid'}
             </span>
             <span className={styles.price}>{formatCurrency(currentPrice(vehicle))}</span>
           </div>

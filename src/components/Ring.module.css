@@ -76,7 +76,6 @@
 .page .inside {
   font-size: var(--ring-text-page);
   letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
 }
 
 .large .inside {

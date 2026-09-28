@@ -136,7 +136,13 @@ export function BidPanel({
         />
         <div className={styles.priceBlock}>
           <span className={styles.priceLabel}>
-            {sold ? 'Purchase price' : hasBids ? 'Current bid' : 'Starting bid'}
+            {sold
+              ? 'Purchase price'
+              : hasBids
+                ? status === 'ended'
+                  ? 'Final bid'
+                  : 'Current bid'
+                : 'Starting bid'}
           </span>
           <span className={styles.price}>{formatCurrency(currentPrice(vehicle))}</span>
           <ReserveBadge state={reserve} />

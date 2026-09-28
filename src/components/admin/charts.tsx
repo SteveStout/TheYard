@@ -1,6 +1,10 @@
 /**
- * The chart the traffic and machines cards draw with, and the box that reads a
- * minute out of it (ADR: What the machines are doing).
+ * Shared chart pieces for the Admin tab's cards (ADR-078). MachineChart draws up
+ * to two lines on one axis; the traffic and machines cards both use it.
+ * ChartReadout is the box that shows a minute's values under the pointer,
+ * BarGauge is a horizontal meter, and useFittedBox sizes a chart to its space.
+ * The arithmetic (scales, paths, ticks) lives in src/lib/machineChart.ts and
+ * src/lib/plotFrame.ts, which have no React in them. This file only draws.
  */
 import { type CSSProperties, useLayoutEffect, useState } from 'react';
 import {
@@ -25,17 +29,21 @@ import styles from '../AdminPanel.module.css';
 
 // #region fitted-box
 /**
- * A chart's box fitted to the width its svg is given (1.0.3.30): the box's own
- * on a desk, and the phone's width on a phone, so the drawing's words keep
- * their size (fitBox, src/lib/plotFrame.ts). Measured before the first paint
- * and again whenever the width changes, so the chart is drawn once at the
- * right width and nothing moves when it is.
+ * Sizes a chart's drawing box to the width its svg actually gets. On a desk
+ * that is the box's own width; on a phone it is the phone's width, so the
+ * chart's text keeps its size instead of shrinking (see fitBox in
+ * src/lib/plotFrame.ts). It measures before the first paint and again on every
+ * resize, so the chart is drawn once at the right width and never jumps.
+ *
+ * Returns a ref callback to put on the svg, and the fitted box.
  */
 export function useFittedBox<Box extends PlotBox>(
   box: Box
 ): [(node: SVGSVGElement | null) => void, Box] {
   const [node, setNode] = useState<SVGSVGElement | null>(null);
   const [given, setGiven] = useState(0);
+  // useLayoutEffect runs after the DOM is built but before the browser paints,
+  // so the first frame the user sees is already at the measured width.
   useLayoutEffect(() => {
     if (node === null) return;
     const measure = () => setGiven(node.getBoundingClientRect().width);
@@ -49,16 +57,17 @@ export function useFittedBox<Box extends PlotBox>(
 // #endregion fitted-box
 
 // #region chart-readout
-/**
- * What a chart says under a pointer or a finger (ADR: The glass look): a rule
- * at the slot, the slot's time, and each line's reading there in the unit the
- * axis is in. A slot nobody measured says so, because a gap is a gap. The box
- * sits to the right of the rule until it would leave the drawing, then to the
- * left. It takes no pointer events, so it never steals the hover it is showing.
- */
-/** Under the unit at the top of the axis, so the box never covers the word that says what it is counting. */
+/** How far the readout box sits below the plot's top, so it never covers the axis unit. */
 export const READOUT_DROP = 14;
 
+/**
+ * What a chart shows under a pointer or a finger (ADR-081): a vertical rule at
+ * that minute, the minute's time, and each line's value in the axis unit. A
+ * minute nobody measured says so, because a gap is not a zero. The box sits to
+ * the right of the rule, or to the left when it would run off the drawing. It is
+ * aria-hidden and takes no pointer events, so it never steals the hover that
+ * shows it.
+ */
 export function ChartReadout({
   testId,
   x,
@@ -75,6 +84,7 @@ export function ChartReadout({
   box?: PlotBox;
 }) {
   const lines = [when, ...rows.map((row) => readoutLine(row.name, row.value, unit))];
+  // Size the box to its longest line: about 6.2 units per character plus padding.
   const width = Math.min(360, box.width, Math.max(...lines.map((line) => line.length)) * 6.2 + 16);
   const height = lines.length * 14 + 10;
   // Beside the rule, on the side with room, and never past either edge of a narrow drawing.
@@ -112,11 +122,9 @@ export function ChartReadout({
 }
 
 /**
- * One resource, one chart (ADR: What the machines are doing, the addendum on
- * drawing them). Up to two lines on one axis, drawn the way the activity graph
- * is drawn and with the same arithmetic split out into src/lib/machineChart.ts.
- * A percentage chart keeps a full axis whatever the hour held, so a quiet hour
- * looks quiet; anything else takes its ceiling from the readings.
+ * One resource, one chart (ADR-078): up to two lines on one axis, drawn the same
+ * way as the activity graph. A percentage chart always runs its axis to 100%, so
+ * a quiet hour looks quiet. Any other chart takes its top from the readings.
  */
 export function MachineChart({
   testId,
@@ -136,23 +144,17 @@ export function MachineChart({
   unit?: string;
   window?: MachineWindow;
   /**
-   * A colour per line. A line is a series, and a series takes an identity
-   * colour: 'first', 'second' and 'third' are the series tokens, in their fixed
-   * order, which are not a store's and not a status; the third is the neutral
-   * grey, and it is what a turned-away request is drawn in. 'bad' is the one
-   * state a line can be, a server error, which is something wrong whenever it
-   * is above zero. There is no good line and no
-   * warning line: a slow series drawn in the warning colour reads as an alarm
-   * to somebody scanning the page (ADR: The Admin tab, as a product, the
-   * addendum on the traffic card in plain words).
+   * A colour per line. 'first', 'second' and 'third' are the fixed series
+   * colours: they tell lines apart and mean nothing else. The third is the
+   * neutral grey, used for turned-away requests. 'bad' is for server errors,
+   * which are a problem whenever they are above zero. There is deliberately no
+   * warning colour: a slow series drawn in amber reads as an alarm to someone
+   * scanning the page (ADR-080).
    */
   tones?: ('first' | 'second' | 'third' | 'bad')[];
-  /** The unit, written at the top of the axis, so a number on the axis is a number of something. */
+  /** The unit written at the top of the axis, so each axis number is a number of something. */
   axisUnit?: string;
-  /**
-   * The peak of interest, called out (the tweaks pass, B2): a gold leader line
-   * from the series' highest reading to a label in small capitals.
-   */
+  /** Marks the highest reading of one series with a gold leader line and a small label. */
   callout?: { key: string; name: string };
 }) {
   // The slot a pointer or a finger is over, for the readout; none until one is.
@@ -165,9 +167,10 @@ export function MachineChart({
   const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
   const peak =
     callout === undefined ? null : calloutFor(series, callout, ceiling, drawnWindow, box);
-  // A single series has no legend, so its unit goes at the top of the axis
-  // when the caller named no axis unit: a number on the axis is a number of something.
+  // A single series has no legend, so when the caller named no axis unit, the
+  // series' own unit goes at the top of the axis instead.
   const shownUnit = axisUnit ?? (series.length === 1 && percentage !== true ? unit : undefined);
+  // The CSS class for a line's colour: its tone if given, otherwise its position.
   const colour = (index: number) => {
     const tone = tones?.[index];
     if (tone === 'first') return styles.firstLine;
@@ -195,6 +198,7 @@ export function MachineChart({
         aria-label={peak === null ? label : `${label}; ${peak.label}`}
         data-testid={testId}
         onPointerMove={(event) => {
+          // Turn the pointer's screen position into drawing units, then into the nearest slot.
           const rect = event.currentTarget.getBoundingClientRect();
           if (rect.width <= 0) return;
           setOver(
@@ -203,8 +207,8 @@ export function MachineChart({
         }}
         onPointerLeave={() => setOver(null)}
       >
-        {/* The Mark VII grammar (the tweaks pass, B2): no grid, graduation ticks on the
-            axes, and two gold bracket ticks at the plot's top-left and bottom-right corners. */}
+        {/* The instrument style: no grid, graduation ticks on the axes, and gold
+            corner brackets at the plot's top left and bottom right. */}
         <PlotFrame frame={machineFrame(points.length, box)} testId={testId} />
         <line
           className={styles.axis}
@@ -257,8 +261,8 @@ export function MachineChart({
         {shownUnit !== undefined && (
           <text
             className={`${styles.axisLabel} ${styles.axisUnit}`}
-            x={box.left + 6}
-            y={box.top + 4}
+            x={box.left}
+            y={box.top - 3}
             data-testid={`${testId}-unit`}
           >
             {shownUnit}
@@ -278,9 +282,9 @@ export function MachineChart({
           />
         )}
       </svg>
-      {/* Two series always carry a legend; a single series carries none, its name is the chart's own. */}
+      {/* Two or more series get a legend. One series needs none: the chart's title names it. */}
       {series.length > 1 && (
-        <ul className={styles.summaryList} data-testid={`${testId}-legend`}>
+        <ul className={styles.legend} data-testid={`${testId}-legend`}>
           {series.map((line, index) => (
             <li key={line.key}>
               <span className={`${styles.swatch} ${colour(index)}`} aria-hidden="true" />
@@ -294,7 +298,7 @@ export function MachineChart({
   );
 }
 
-/** The Mark VII frame's ticks and corner brackets (src/lib/plotFrame.ts), drawn. */
+/** Draws the instrument-style frame: axis ticks and corner brackets from src/lib/plotFrame.ts. */
 export function PlotFrame({
   frame,
   testId,
@@ -327,7 +331,7 @@ export function PlotFrame({
   );
 }
 
-/** The peak callout, placed by calloutFor in src/lib/machineChart.ts. */
+/** Draws the peak callout: a dot, a leader line and a label, all placed by calloutFor. */
 function PeakCallout({
   drawn,
   testId,
@@ -353,14 +357,15 @@ function PeakCallout({
 
 // #region bar-gauge
 /**
- * A share of a ceiling as a bar (the tweaks pass, B2): a 22 px track in the deep
- * teal faint, the fill in the deep teal (gold for request units), ticks every
- * tenth, and the reading printed after the fill's end in ink, or inside the fill
- * once the fill is 40 per cent or more, white on the deep teal. A gold gauge
- * prints its reading under the track: neither white (2.84) nor the heading ink
- * (3.96) clears 4.5 on the gold fill (the self-review of 25 September).
- * The number is always in words, and the whole is a meter to a screen reader,
- * named by the gauge's name and read as the reading of the ceiling.
+ * A share of a ceiling as a horizontal bar, such as memory used of its limit.
+ * The name and the ceiling sit above the bar. The reading is printed just past
+ * the end of the fill, or inside the fill once the fill reaches 40%. A gold bar
+ * always prints its reading under the track instead, because neither white nor
+ * the heading text colour has enough contrast on gold.
+ *
+ * To a screen reader the whole bar is one meter, named by the gauge's name and
+ * read as "reading of ceiling". The visible reading is hidden from it so it is
+ * not heard twice.
  */
 export function BarGauge({
   testId,
@@ -373,20 +378,20 @@ export function BarGauge({
 }: {
   testId: string;
   name: string;
-  /** The ceiling in words, on the right of the name: "1,183 MB". */
+  /** The ceiling in words, shown on the right of the name: "1,183 MB". */
   ceiling: string;
   value: number;
   max: number;
   /** The reading in words: "31 % · 364 MB". */
   reading: string;
-  /** The fill: the deep teal, or the gold for request units. */
+  /** The fill colour: deep teal, or gold for request units. */
   tone?: 'deep' | 'gold';
 }) {
   const meter = gaugeMeter(value, max);
-  // Neither white nor the heading ink reads 4.5 on the gold fill, so a gold
-  // gauge prints its reading under the track, where the ink is on the card.
+  // Where the reading goes: under the track for gold, otherwise inside or after the fill.
   const below = tone === 'gold';
   const inside = !below && meter.share >= 0.4;
+  // The fill's width is a CSS custom property, so the stylesheet does the drawing.
   const fill = { '--gauge-share': `${(meter.share * 100).toFixed(1)}%` } as CSSProperties;
   const nameId = `${testId}-name`;
   return (
@@ -434,20 +439,7 @@ export function BarGauge({
 }
 // #endregion bar-gauge
 
-/**
- * Traffic, drawn (ADR: The Admin tab, as a product). Four numbers in plain
- * words, then the three questions a person opening this tab is asking, each a
- * section with the question as its title, one sentence on how to read it and
- * one chart in the frame the machine charts use: did anything fail, which
- * comes first because it is the one somebody opens the tab to find out, how
- * busy is it, and how fast is it answering. What the words are is decided in
- * src/lib/trafficCard.ts, which has no React in it. The hour is the request ring a minute at a time; a
- * wider window is the minutes each site keeps. Both are turned into the same
- * slots by src/lib/machineChart.ts, so a gap is a gap and a zero is a zero in
- * every window. A build with no traffic block, or a window nothing is kept
- * for, keeps its sentence and draws nothing, rather than pretending to a line.
- */
-/** The day and the time a kept window's drawing starts at, for the sentence that says so. */
+/** The date and time a kept window's chart starts at, for the sentence that says so. */
 export function startLabel(at: string): string {
   return new Date(at).toLocaleString(undefined, {
     month: 'short',
@@ -458,10 +450,10 @@ export function startLabel(at: string): string {
 }
 
 /**
- * Where a trimmed window's drawing starts, in words. The drawing starts at the
- * first reading unless that would leave fewer than a dozen slots, and then it
- * starts a dozen back; 1.0.0.166 called both "its first reading" and on its
- * first day was wrong by two days, on the live page, in its own sentence.
+ * The sentence for a window that reaches back further than the record does.
+ * The chart starts at the first reading, unless that would leave fewer than
+ * LEAST_SLOTS slots; then it starts LEAST_SLOTS buckets back from now. The two
+ * cases need different sentences, or the page states the wrong start date.
  */
 export function youngRecord(drawn: { at: string; bucket: KeptBucket | null }[]): string {
   const first = drawn.find((slot) => slot.bucket !== null);

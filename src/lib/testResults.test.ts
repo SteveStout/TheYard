@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   duration,
   outcomeWord,
+  rerunCount,
   rowsOf,
   totals,
   type TestResults,
@@ -34,6 +35,12 @@ const results: TestResults = {
 describe('the gate’s test results', () => {
   it('adds every suite’s counts together', () => {
     expect(totals(results)).toEqual({ tests: 4, passed: 5, failed: 1, skipped: 0 });
+  });
+
+  it('counts the second store’s reruns, which the landing page leaves out', () => {
+    expect(rerunCount(results)).toBe(0);
+    const withStore = { ...results, suites: [...results.suites, { ...suite, id: 'xunit-cosmos' }] };
+    expect(rerunCount(withStore)).toBe(4);
   });
 
   it('lists failures first, then the slowest, or by group and name', () => {

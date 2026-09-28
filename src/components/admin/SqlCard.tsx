@@ -7,11 +7,17 @@ import styles from '../AdminPanel.module.css';
 import type { SqlStatement, Metrics, StoreLog } from './types';
 import { useRead, useKeptWindow, failed, Absent, About, describeParameters } from './common';
 import { type Column, DataTable } from './DataTable';
+import { formatNumber } from '../../lib/format';
 
 /** A statement: when, how long, which request caused it, the text and what it was handed. */
 const sqlColumns = (window_: CardWindow): Column<SqlStatement>[] => [
   { name: 'At', mono: true, short: true, cell: (statement) => stampFor(window_, statement.at) },
-  { name: 'Took', mono: true, num: true, cell: (statement) => `${statement.duration_ms} ms` },
+  {
+    name: 'Took',
+    mono: true,
+    num: true,
+    cell: (statement) => `${formatNumber(statement.duration_ms)} ms`,
+  },
   { name: 'Caused by', mono: true, cell: (statement) => statement.request ?? 'startup' },
   {
     name: 'Statement',

@@ -5,13 +5,14 @@ import styles from '../AdminPanel.module.css';
 import type { Experiment, ExperimentRow } from './types';
 import { useRead, failed, About } from './common';
 import { type Column, DataTable } from './DataTable';
+import { formatNumber } from '../../lib/format';
 
 /** A query: what it asked, how many partitions it touched, and what that cost. */
 const EXPERIMENT_COLUMNS: Column<ExperimentRow>[] = [
   { name: 'Query', cell: (row) => row.query },
   { name: 'Partitions', mono: true, num: true, cell: (row) => row.partitions },
   { name: 'Charge', mono: true, num: true, cell: (row) => `${row.request_charge} RU` },
-  { name: 'Took', mono: true, num: true, cell: (row) => `${row.duration_ms} ms` },
+  { name: 'Took', mono: true, num: true, cell: (row) => `${formatNumber(row.duration_ms)} ms` },
   { name: 'Documents', mono: true, num: true, cell: (row) => row.documents },
 ];
 

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatCountdown, formatCurrency, formatOdometer, shortenDigests } from './format';
+import {
+  formatCountdown,
+  formatCurrency,
+  formatDateTime,
+  formatNumber,
+  formatOdometer,
+  shortenDigests,
+} from './format';
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -61,5 +68,23 @@ describe('shortenDigests', () => {
 
   it('leaves a digest that is already short alone, rather than half-shortening it', () => {
     expect(shortenDigests('pulled sha256:40b891e5ea6b')).toBe('pulled sha256:40b891e5ea6b');
+  });
+});
+
+describe('formatNumber', () => {
+  it('groups thousands and keeps decimals, so one fact reads one way everywhere', () => {
+    expect(formatNumber(1183)).toBe('1,183');
+    expect(formatNumber(72541)).toBe('72,541');
+    expect(formatNumber(298.4)).toBe('298.4');
+    expect(formatNumber(12)).toBe('12');
+  });
+});
+
+describe('formatDateTime', () => {
+  it('writes a date and a time the way an auction stamp does, and nothing for a bad date', () => {
+    const when = Date.UTC(2026, 8, 25, 17, 4);
+    expect(formatDateTime(when)).toBe(formatDateTime(new Date(when).toISOString()));
+    expect(formatDateTime(when)).toMatch(/^Sep\.? 25, \d{1,2}:04/);
+    expect(formatDateTime('not a date')).toBe('');
   });
 });

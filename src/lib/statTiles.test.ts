@@ -104,7 +104,7 @@ describe('the stat tiles', () => {
     });
     expect(tile(quietDay, 'memory')).toMatchObject({
       value: '26%',
-      detail: '310 of 1186 MB',
+      detail: '310 of 1,186 MB',
       tone: 'good',
     });
     expect(tile(quietDay, 'charged')).toMatchObject({ value: '24.5', tone: 'plain' });
@@ -233,7 +233,7 @@ describe('the stat tiles', () => {
       )
     ).toMatchObject({
       value: '8 ms',
-      detail: '95th 1212 ms over 74 requests',
+      detail: '95th 1,212 ms over 74 requests',
       more: ' in the last hour, slowest at 07:32',
       tone: 'warn',
     });
@@ -342,7 +342,7 @@ describe('the stat tiles', () => {
       detail: '10 requests in the last hour',
     });
     expect(tileSentence(quiet)).toBe(
-      '10 requests in the last hour, too few to judge; typical 4 ms, 95th 6355 ms, slowest at 06:20'
+      '10 requests in the last hour, too few to judge; typical 4 ms, 95th 6,355 ms, slowest at 06:20'
     );
     // The same ninety-fifth over forty requests is somebody should be looking.
     expect(
@@ -471,7 +471,7 @@ describe('the ring beside a number', () => {
       }
     }
     expect(tileSentence(tile(loud, 'speed'))).toBe(
-      '95th 12120 ms over 24000 requests in the last hour, slowest at 07:32; the start at 07:30 is left out'
+      '95th 12,120 ms over 24,000 requests in the last hour, slowest at 07:32; the start at 07:30 is left out'
     );
   });
 });

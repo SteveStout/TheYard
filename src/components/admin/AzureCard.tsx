@@ -1,7 +1,7 @@
 /**
  * Azure's view of the container (ADR-010), asked by the container with its own identity.
  */
-import { shortenDigests } from '../../lib/format';
+import { shortenDigests, formatDateTime } from '../../lib/format';
 import styles from '../AdminPanel.module.css';
 import type { AzureState } from './types';
 import { useRead, pill, failed } from './common';
@@ -86,7 +86,7 @@ export default function AzureCard({ tick }: { tick: number }) {
               <span className={styles.mono}>{event.name}</span>
               <span className={styles.muted}>
                 {event.count > 1 ? `${event.count} times, last ` : ''}
-                {event.last_at ? new Date(event.last_at).toLocaleString() : ''}
+                {event.last_at ? formatDateTime(event.last_at) : ''}
               </span>
               <span className={styles.muted}>{shortenDigests(event.message)}</span>
             </li>

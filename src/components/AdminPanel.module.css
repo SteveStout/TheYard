@@ -441,6 +441,13 @@
   font-size: var(--text-sm);
 }
 
+/* A line that already starts with its own marker (a colour swatch, or the
+   triangle of a details toggle) gets no bullet as well, so it shows one mark. */
+.summaryList > li:has(> .swatch:first-child),
+.summaryList > li:has(> details) {
+  list-style: none;
+}
+
 /* #region activity-card */
 /*
  * The activity graph: an inline SVG scaled to the card, two lines in the two
@@ -497,7 +504,6 @@
   font-size: var(--chart-text-2xs);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
   paint-order: stroke;
   stroke: var(--color-surface);
   stroke-width: 3px;
@@ -527,9 +533,12 @@
   color: var(--color-teal-deep);
 }
 
+/* The gauge's title is in capitals; its ceiling is a reading with a unit
+   ("1,000 / s free"), so it keeps its own case. */
 .gaugeCeiling {
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+  text-transform: none;
 }
 
 .gaugeTrack {
@@ -637,7 +646,6 @@
   font-size: var(--chart-text-xs);
   font-family: inherit;
   letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
 }
 
 .sqlLine {
@@ -1407,6 +1415,7 @@
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: var(--readout-tracking);
+  text-wrap: balance; /* no heading ends on one lonely word */
 }
 
 .railTitle::before {
@@ -1654,6 +1663,7 @@
   font-weight: var(--weight-semibold);
   letter-spacing: var(--readout-tracking);
   text-transform: uppercase;
+  text-wrap: balance; /* no heading ends on one lonely word */
 }
 
 .hourBody {

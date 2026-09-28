@@ -49,6 +49,20 @@ export function totals(results: TestResults): TestTotals {
   );
 }
 
+/**
+ * The suites that run tests already counted once, again, on the other store.
+ * The landing page counts each test once and leaves these out; the tests card
+ * counts every run, so it names these to show why its number is larger.
+ */
+export const STORE_RERUNS = ['xunit-cosmos', 'browser-cosmos'];
+
+/** How many of the gate's runs were those reruns. */
+export function rerunCount(results: TestResults): number {
+  return results.suites
+    .filter((suite) => STORE_RERUNS.includes(suite.id))
+    .reduce((sum, suite) => sum + suite.tests.length, 0);
+}
+
 export type TestOrder = 'slowest' | 'name';
 
 /**

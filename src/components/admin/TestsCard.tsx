@@ -10,12 +10,14 @@ import {
   type TestResults,
   type TestRow,
   type TestSuite,
+  rerunCount,
   totals,
 } from '../../lib/testResults';
 import styles from '../AdminPanel.module.css';
 import type { Fetched } from './types';
 import { About } from './common';
 import { type Column, DataTable } from './DataTable';
+import { formatDateTime } from '../../lib/format';
 
 /** A suite: its name and mark, then what passed, failed and was skipped, and how long it took. */
 const SUITE_COLUMNS: Column<TestSuite>[] = [
@@ -194,6 +196,7 @@ export default function TestsCard() {
 /** The card's one sentence: how many passed, of how many, for which build, and how long the gate took. */
 function TestsSummary({ results }: { results: TestResults }) {
   const sums = totals(results);
+  const reruns = rerunCount(results);
   const extra = [
     sums.failed > 0 ? `${sums.failed} failed` : null,
     sums.skipped > 0 ? `${sums.skipped} skipped` : null,
@@ -206,8 +209,10 @@ function TestsSummary({ results }: { results: TestResults }) {
           {sums.passed.toLocaleString()} of {sums.tests.toLocaleString()} tests passed
         </strong>
         {extra.length > 0 ? `, ${extra.join(', ')}` : ''}, for {results.version} in the ship&rsquo;s
-        gate at {new Date(results.ranAt).toLocaleString()}, {results.gateSeconds} s from the first
-        check to the last.
+        gate at {formatDateTime(results.ranAt)}, {results.gateSeconds} s from the first check to the
+        last.
+        {reruns > 0 &&
+          ` ${reruns.toLocaleString()} of these runs repeat tests on the second store, so the landing page, which counts each test once, shows ${(sums.tests - reruns).toLocaleString()}.`}
       </p>
     </div>
   );

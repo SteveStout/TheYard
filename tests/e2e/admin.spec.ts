@@ -1100,7 +1100,7 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
   await expect(strip.getByTestId('tile-health')).toContainText(/\d+ of \d+ checks pass/);
   // The version is the build's own, "dev" on a developer's machine, and the line under it is how long it has been up.
   await expect(strip.getByTestId('tile-version')).toContainText(/, up \d+[dhm]/);
-  await expect(strip.getByTestId('tile-memory')).toContainText(/\d+ of \d+ MB/, {
+  await expect(strip.getByTestId('tile-memory')).toContainText(/[\d,]+ of [\d,]+ MB/, {
     timeout: 60_000,
   });
   await expect(strip.getByTestId('tile-speed')).toContainText('requests in the last hour');

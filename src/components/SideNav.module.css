@@ -204,6 +204,7 @@
   text-transform: uppercase;
   color: var(--color-teal-deep);
   white-space: nowrap;
+  text-wrap: balance; /* no heading ends on one lonely word */
 }
 
 .groupTitle::before {
@@ -236,6 +237,7 @@
   text-transform: uppercase;
   color: var(--color-sheet-text-muted);
   white-space: nowrap;
+  text-wrap: balance; /* no heading ends on one lonely word */
 }
 
 /* One row shape for docs, links, and actions: icon, label, 48px tall. A row

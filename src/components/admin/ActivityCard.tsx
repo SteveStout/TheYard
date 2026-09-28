@@ -49,6 +49,7 @@ import { PlotFrame, useFittedBox } from './charts';
 import type { Fetched } from './types';
 import { About } from './common';
 import { type Column, DataTable } from './DataTable';
+import { formatDateTime } from '../../lib/format';
 
 /**
  * A visitor's day: the hash, the network, the store, when first and last seen,
@@ -70,13 +71,13 @@ const visitorColumns = (
       name: 'First seen',
       mono: true,
       sort: sort('first_seen'),
-      cell: (row) => new Date(row.first_seen).toLocaleString(),
+      cell: (row) => formatDateTime(row.first_seen),
     },
     {
       name: 'Last seen',
       mono: true,
       sort: sort('last_seen'),
-      cell: (row) => new Date(row.last_seen).toLocaleString(),
+      cell: (row) => formatDateTime(row.last_seen),
     },
     {
       name: 'Requests',
@@ -293,8 +294,66 @@ export default function ActivityCard({
   );
 }
 
-/** The recruiter's path drawn as four bars: a label column, the bar, the count, in SVG units the card scales. */
-const PATH_CHART = { width: 360, row: 26, bar: 120, count: 44 } as const;
+/**
+ * A list of bars (a label, the bar, the count), laid out at the width the
+ * card gives it, up to `width`. Drawn at its real width, its words stay the
+ * chart text size on a phone and on a wide desk alike; drawn once and scaled,
+ * they grew to about 20 px on a desk.
+ */
+const PATH_CHART = { width: 560, row: 26, bar: 120, count: 44 } as const;
+
+type PathBar = { key: string; name: string; count: number; share: number; testId: string };
+
+function PathBars({ rows, label, tone }: { rows: PathBar[]; label: string; tone: string }) {
+  const [fit, box] = useFittedBox({
+    width: PATH_CHART.width,
+    height: PATH_CHART.row * rows.length,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  });
+  const room = box.width - PATH_CHART.bar - PATH_CHART.count;
+  return (
+    <svg
+      ref={fit}
+      className={styles.pathChart}
+      viewBox={`0 0 ${box.width} ${box.height}`}
+      role="img"
+      aria-label={label}
+    >
+      {rows.map((row, index) => {
+        const y = index * PATH_CHART.row;
+        return (
+          <g key={row.key} data-testid={row.testId}>
+            <text className={styles.pathLabel} x={0} y={y + 17}>
+              {row.name}
+            </text>
+            <rect
+              className={styles.pathTrack}
+              x={PATH_CHART.bar}
+              y={y + 5}
+              width={room}
+              height={16}
+              rx={4}
+            />
+            <rect
+              className={`${styles.pathBar} ${tone}`}
+              x={PATH_CHART.bar}
+              y={y + 5}
+              width={row.share * room}
+              height={16}
+              rx={4}
+            />
+            <text className={styles.pathCount} x={box.width} y={y + 17} textAnchor="end">
+              {row.count.toLocaleString()}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 /**
  * The chart, the totals and the top paths; the arithmetic is in src/lib/activity.ts.
@@ -662,45 +721,19 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
       )}
       <section className={styles.pathTile} data-testid="activity-path">
         <h3 className={styles.cardTitle}>The recruiter's path</h3>
-        <svg
-          className={styles.pathChart}
-          viewBox={`0 0 ${PATH_CHART.width} ${PATH_CHART.row * shown.path.length}`}
-          role="img"
-          aria-label={`The recruiter's path over the ${report.window} window: ${shown.path
+        <PathBars
+          rows={shown.path.map((step, index) => ({
+            key: step.step,
+            name: STEP_NAMES[step.step],
+            count: step.visitor_days,
+            share: pathShares(shown.path)[index],
+            testId: `activity-path-${step.step}`,
+          }))}
+          label={`The recruiter's path over the ${report.window} window: ${shown.path
             .map((step) => `${STEP_NAMES[step.step]} ${step.visitor_days}`)
             .join(', ')}`}
-        >
-          {shown.path.map((step, index) => {
-            const y = index * PATH_CHART.row;
-            const share = pathShares(shown.path)[index];
-            return (
-              <g key={step.step} data-testid={`activity-path-${step.step}`}>
-                <text className={styles.pathLabel} x={0} y={y + 17}>
-                  {STEP_NAMES[step.step]}
-                </text>
-                <rect
-                  className={`${styles.pathTrack}`}
-                  x={PATH_CHART.bar}
-                  y={y + 5}
-                  width={PATH_CHART.width - PATH_CHART.bar - PATH_CHART.count}
-                  height={16}
-                  rx={4}
-                />
-                <rect
-                  className={`${styles.pathBar} ${who === 'people' ? styles.whoPeople : styles.allLine}`}
-                  x={PATH_CHART.bar}
-                  y={y + 5}
-                  width={share * (PATH_CHART.width - PATH_CHART.bar - PATH_CHART.count)}
-                  height={16}
-                  rx={4}
-                />
-                <text className={styles.pathCount} x={PATH_CHART.width} y={y + 17} textAnchor="end">
-                  {step.visitor_days.toLocaleString()}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+          tone={who === 'people' ? styles.whoPeople : styles.allLine}
+        />
         <p className={styles.muted}>
           Visitor-days that asked for each step in the window: the page itself, the inventory's
           listing, About Steven, and the resume, which is the number this site exists for.
@@ -715,52 +748,21 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           </p>
         ) : (
           <>
-            <svg
-              className={styles.pathChart}
-              viewBox={`0 0 ${PATH_CHART.width} ${PATH_CHART.row * 5}`}
-              role="img"
-              aria-label={`Where they came from over the ${report.window} window: ${groupSources(
+            <PathBars
+              rows={groupSources(shown.sources).map((entry, index, all) => ({
+                key: entry.group,
+                name: SOURCE_NAMES[entry.group],
+                count: entry.visitor_days,
+                share: pathShares(all)[index],
+                testId: `activity-source-${entry.group}`,
+              }))}
+              label={`Where they came from over the ${report.window} window: ${groupSources(
                 shown.sources
               )
                 .map((entry) => `${SOURCE_NAMES[entry.group]} ${entry.visitor_days}`)
                 .join(', ')}`}
-            >
-              {groupSources(shown.sources).map((entry, index, all) => {
-                const y = index * PATH_CHART.row;
-                const share = pathShares(all)[index];
-                return (
-                  <g key={entry.group} data-testid={`activity-source-${entry.group}`}>
-                    <text className={styles.pathLabel} x={0} y={y + 17}>
-                      {SOURCE_NAMES[entry.group]}
-                    </text>
-                    <rect
-                      className={styles.pathTrack}
-                      x={PATH_CHART.bar}
-                      y={y + 5}
-                      width={PATH_CHART.width - PATH_CHART.bar - PATH_CHART.count}
-                      height={16}
-                      rx={4}
-                    />
-                    <rect
-                      className={`${styles.pathBar} ${who === 'people' ? styles.whoPeople : styles.allLine}`}
-                      x={PATH_CHART.bar}
-                      y={y + 5}
-                      width={share * (PATH_CHART.width - PATH_CHART.bar - PATH_CHART.count)}
-                      height={16}
-                      rx={4}
-                    />
-                    <text
-                      className={styles.pathCount}
-                      x={PATH_CHART.width}
-                      y={y + 17}
-                      textAnchor="end"
-                    >
-                      {entry.visitor_days.toLocaleString()}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
+              tone={who === 'people' ? styles.whoPeople : styles.allLine}
+            />
             <DataTable
               label="The sites that linked here"
               testId="activity-source-hosts"

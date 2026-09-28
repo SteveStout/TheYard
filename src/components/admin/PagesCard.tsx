@@ -6,6 +6,7 @@ import styles from '../AdminPanel.module.css';
 import type { PageEntry, PageStatus, Fetched } from './types';
 import { About } from './common';
 import { type Column, DataTable } from './DataTable';
+import { formatNumber, formatDateTime } from '../../lib/format';
 
 /** An address: what it is, what kind, what it answered, and how much and how fast. */
 const PAGE_COLUMNS: Column<PageEntry>[] = [
@@ -19,7 +20,7 @@ const PAGE_COLUMNS: Column<PageEntry>[] = [
   },
   { name: 'Type', mono: true, cell: (entry) => entry.content_type ?? 'none' },
   { name: 'Bytes', mono: true, num: true, cell: (entry) => entry.bytes.toLocaleString() },
-  { name: 'Took', mono: true, num: true, cell: (entry) => `${entry.ms} ms` },
+  { name: 'Took', mono: true, num: true, cell: (entry) => `${formatNumber(entry.ms)} ms` },
 ];
 
 /**
@@ -156,7 +157,7 @@ export default function PagesCard({
                 </strong>{' '}
                 in {report.ms} ms, checked for {report.version} at {report.commit},{' '}
                 {report.trigger === 'roll' ? 'on the roll' : 'when asked'}, at{' '}
-                {new Date(report.at).toLocaleString()}.
+                {formatDateTime(report.at)}.
               </p>
               {down.length === 0 && !showAll && (
                 <p className={styles.muted} data-testid="pages-all-up">

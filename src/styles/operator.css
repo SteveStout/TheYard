@@ -1,29 +1,30 @@
 /*
- * The operator's look (ADR: The glass look, the addendum on the operator's
- * look): one shared class per shape, drawn from the tokens' operator-look
- * region and applied by name, so no component draws its own bracket, rule,
- * radius or segment. Imported once, from main.tsx, after tokens.css.
+ * The operator's look: the shared classes that frame panels, stat tiles, side
+ * rails and pill groups (ADR-081). A component applies one of these classes by
+ * name. It never draws its own border, corner bracket or radius, so every panel
+ * on the site matches. Every value here is a token from tokens.css, which
+ * main.tsx imports before this file. The phone width in the media queries comes
+ * from the scale in src/lib/breakpoints.ts.
+ */
+
+/*
+ * The classes:
+ * .op-glass     a panel or card: frosted glass, a dark green top rule, and two
+ *               corner brackets (top left, bottom right) that curve with the
+ *               corner. A panel also gets a faint grid behind its text.
+ * .op-tile      a stat tile: the same, with a gold rule, smaller brackets and no grid.
+ * .op-rail      a rail down the side: only the top left bracket.
+ * .op-seg       a pill group: one rounded border around the buttons, with the
+ *               chosen one filled in the accent colour.
+ * .op-seg-wrap  a pill group that may wrap on a phone: each button becomes its own
+ *               pill, instead of one pill bent round two lines.
  *
- * .op-glass     a panel or a card: the glass, the dark green top rule, and two
- *               corner brackets in the rule's colour that follow the radius (an
- *               arc, never an L), top left and bottom right; a hairline grid
- *               inside it, under its words.
- * .op-tile      a stat tile: the same, with the gold rule and smaller brackets,
- *               and no grid.
- * .op-rail      a rail down the side: the top left bracket only.
- * .op-seg       a pill group: a rounded border round the segments, the chosen
- *               one filled with the accent and written in white.
- * .op-seg-wrap  a pill group that may wrap: separate pills rather than one
- *               pill bent round two lines (1.0.3.25).
- *
- * And four modifiers on .op-glass:
- * .op-solid     a panel read on white: no see-through, no blur, no grid.
- * .op-sheet     a document's dialog: a clear sheet, the frost on the reading
- *               panels inside it, and frost edge to edge on a phone.
- * .op-inset     a panel that clips what it holds: the brackets drawn inside.
- * .op-card      one of the inventory's hundred cards: glass in its ground only.
- *
- * Every value here is a token; the widths are the scale in src/lib/breakpoints.ts.
+ * Modifiers for .op-glass:
+ * .op-solid     a panel on a white dialog: no see-through, no blur, no grid.
+ * .op-sheet     a document dialog's outer sheet: nearly clear, with the frost on the
+ *               reading panels inside it. Frosted edge to edge on a phone.
+ * .op-inset     a panel that clips its content: the brackets move just inside.
+ * .op-card      an inventory card: the glass colour, but no blur.
  */
 
 /* #region op-glass */
@@ -38,6 +39,9 @@
   box-shadow: var(--glass-shadow);
 }
 
+/* The two corner brackets are pseudo-elements: ::before is the top left one and
+   ::after is the bottom right one. Each is a small box with only two of its
+   borders drawn and its corner rounded to match the panel. */
 .op-glass::before,
 .op-glass::after {
   content: '';
@@ -49,6 +53,7 @@
   pointer-events: none;
 }
 
+/* Pulled up and left over the panel's own border, so it sits on the top rule. */
 .op-glass::before {
   left: -1px;
   top: calc(-1 * var(--rule-width));
@@ -63,6 +68,8 @@
   border-bottom-right-radius: var(--radius-glass);
 }
 
+/* A tile swaps in its own bracket size and colour through the custom properties
+   the brackets above read. */
 .op-tile {
   --bracket-size: var(--bracket-size-tile);
   --op-bracket-color: var(--rule-tile-color);
@@ -73,30 +80,26 @@
   --bracket-size: var(--bracket-size-rail);
 }
 
-/* A panel read on white rather than over the page: a document's dialog.
-   Two classes, so the phone's half-white glass further down cannot reach it
-   (1.0.3.19 let it, and on a phone the page behind a document showed between
-   its panels). */
+/* A panel read on white, inside a document dialog. It uses two classes so it
+   outranks the phone's glass rule further down, which would otherwise let the
+   page show through between the panels. */
 .op-glass.op-solid {
   background: var(--color-surface);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 
-/* A document's dialog (the tweaks pass, B1b): a clear sheet, a tenth white and
-   lightly blurred, the page's ribbons reading through it; the frost is on the
-   reading panels inside. Two classes, so the phone's fuller glass cannot reach it. */
+/* A document dialog's outer sheet: a faint, lightly blurred layer, so the page's
+   colours read through it. The frost is on the reading panels inside. Two
+   classes, so the phone's glass rule cannot override it. */
 .op-glass.op-sheet {
   background: var(--dialog-sheet-bg);
   -webkit-backdrop-filter: var(--dialog-sheet-filter);
   backdrop-filter: var(--dialog-sheet-filter);
 }
 
-/* On a phone the sheet itself is frosted (1.0.3.24, Steve: "on mobile the
-   about me page opens weird when opened from the home page"): the clear sheet
-   put the title in dark type over the page's dark header and let the home
-   page's words ghost through the gaps, so a phone's document is frost from
-   edge to edge, title bar included. */
+/* On a phone the whole sheet is frosted, title bar included. A clear sheet there
+   put the dark title over the dark header and let the page's text show through. */
 @media (max-width: 639.98px) {
   .op-glass.op-sheet {
     background: var(--dialog-page-bg);
@@ -105,8 +108,8 @@
   }
 }
 
-/* A panel that clips what it holds (a dialog that contains its own ground):
-   the brackets stand just inside its edge, where they are not cut off. */
+/* A panel that clips its content (overflow hidden) would cut off brackets drawn
+   on its edge, so here they sit just inside it. */
 .op-inset::before {
   top: 0;
   left: 0;
@@ -120,11 +123,9 @@
   border-bottom-right-radius: calc(var(--radius-glass) - 1px);
 }
 
-/* A card that is one of a hundred on a page is glass in its ground only: a blur
-   is paid for by the pixel (VehicleCard's reason, ADR: The glass look). The
-   tweaks pass (A12) put the blur back on the card's info block alone, the
-   words' box and not the photograph, and the record says what that cost
-   (ADR: The tweaks pass, the addendum of 25 September). */
+/* An inventory page shows a hundred cards, and a blur costs per pixel drawn, so
+   a card keeps the glass colour without the blur. The card's text block adds the
+   blur back on its own, in VehicleCard.module.css (ADR-083). */
 .op-card {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -134,7 +135,7 @@
   display: none;
 }
 
-/* A phone's smaller type sits on a touch more fill. */
+/* A phone's smaller text gets a slightly more solid fill behind it. */
 @media (max-width: 639.98px) {
   .op-glass {
     background: var(--glass-bg-phone);
@@ -142,12 +143,11 @@
 }
 
 /* #region op-grid */
-/* The panel's texture (the tweaks pass, B3): a hairline grid inside a glass
-   panel, under its words and over the frost, multiplied into the fill so it
-   reads as ruled glass and never as a pattern. Panels only: a stat tile, a
-   panel read on white, a dialog's own sheet and an inventory card go without
-   it, and a pill, an input or the header is never .op-glass. Written after the phone's fill, and
-   one class weightier, so the phone's fill cannot take it off. */
+/* The panel's texture: a hairline grid under the text and over the frost. The
+   multiply blend mixes it into the fill, so it reads as ruled glass rather than
+   a pattern. Tiles, solid panels, dialog sheets and cards go without it.
+   This rule comes after the phone's fill and is one class heavier, so the phone
+   rule (which resets the whole background) cannot remove the grid. */
 .op-glass:not(.op-tile, .op-solid, .op-sheet, .op-card) {
   background-image:
     linear-gradient(to right, var(--glass-grid-line) 1px, transparent 1px),
@@ -172,6 +172,7 @@
   background: var(--color-surface);
 }
 
+/* The buttons inside the group draw no frame of their own: the group is the pill. */
 .op-seg > button,
 .op-seg > a {
   border: 0;
@@ -182,15 +183,16 @@
   box-shadow: none;
 }
 
+/* The chosen segment: a pressed toggle, or the link to the current page. */
 .op-seg > [aria-pressed='true'],
 .op-seg > [aria-current='page'] {
   background: var(--color-accent);
   color: var(--color-on-accent);
 }
 
-/* A group with more words than a phone's width holds (the Admin tab's windows,
-   .op-seg-wrap) lets its segments go to a second line as pills of their own,
-   rather than one pill stretched round two lines. */
+/* On a phone, a group with too many words for one line (.op-seg-wrap, such as
+   the Admin tab's time windows) drops the shared border. Each button then wraps
+   as a pill of its own. */
 @media (max-width: 639.98px) {
   .op-seg.op-seg-wrap {
     gap: var(--space-2);
@@ -209,6 +211,12 @@
   .op-seg.op-seg-wrap > [aria-current='page'] {
     border-color: var(--color-accent);
     background: var(--color-accent);
+  }
+
+  /* Four pills wrap as two rows of two, never three and one left alone. */
+  .op-seg.op-seg-wrap:has(> :nth-child(4):last-child) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 /* #endregion op-seg */

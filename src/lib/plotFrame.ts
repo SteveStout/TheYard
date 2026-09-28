@@ -1,9 +1,9 @@
 /**
- * The Mark VII frame round a plot (the tweaks pass, B2), one drawing for every
- * chart that has one: graduations outside the plot up the side at the quarters
- * (major at nothing, half and the ceiling), the ticks along the bottom the
- * chart asks for, and two gold bracket ticks at the corners. The machine charts
- * and the activity chart drew this twice until the self-review of 25 September.
+ * The frame drawn round a chart's plot, shared by every chart that has one
+ * (ADR-083): tick marks up the side at each quarter (longer at zero, half
+ * and the top), the ticks along the bottom that the chart asks for, and two
+ * small gold brackets at the corners. Plain functions, no React: a chart
+ * passes its box in and draws the lines that come back.
  */
 export type PlotBox = {
   width: number;
@@ -15,11 +15,11 @@ export type PlotBox = {
 };
 
 /**
- * A drawing's box at the width it is given, never wider than its own (1.0.3.30).
- * A chart laid out for a desk and scaled down to a phone drew its ten-pixel
- * words at four pixels; laid out at the phone's own width, its words keep their
- * size and only the plot narrows. Wider than its own, the box is the desk's and
- * scales up as it always has.
+ * A chart's box, laid out at the width it is actually given (ADR-083).
+ * A chart drawn for a desk and then shrunk onto a phone shrinks its words
+ * too. Laid out at the phone's own width instead, its words keep their size
+ * and only the plot gets narrower. Given more room than its own width, the
+ * box stays as it is and the browser scales it up as usual.
  */
 export function fitBox<Box extends PlotBox>(box: Box, given: number): Box {
   return given > 0 && Math.round(given) < box.width ? { ...box, width: Math.round(given) } : box;

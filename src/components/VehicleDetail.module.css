@@ -184,9 +184,9 @@
   gap: var(--space-3) var(--space-6);
 }
 
-/* The specifications are a reading (the operator's look): small spaced
-   capitals with tabular figures, the label in the accent, a hairline under
-   each row, as the Readout block draws them. */
+/* The specifications are drawn like the Readout block: the label in small
+   spaced capitals and the accent, the value in its own case so a unit reads
+   as written ("96,891 km"), and a hairline under each row. */
 .specRow {
   display: flex;
   justify-content: space-between;
@@ -196,11 +196,11 @@
   font-size: var(--readout-size);
   font-weight: var(--readout-weight);
   letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
 }
 
 .specLabel {
   color: var(--color-accent);
+  text-transform: uppercase;
 }
 
 .specValue {

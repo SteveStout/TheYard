@@ -609,6 +609,14 @@
   margin: var(--space-4) 0 0;
 }
 
+/* Under a desk the buttons can wrap. Each line then shares its width, so a
+   button that wraps alone fills its line instead of sitting on it by itself. */
+@media (max-width: 1023.98px) {
+  .prose :global(.author-buttons) > :global(.author-button) {
+    flex: 1 1 auto;
+  }
+}
+
 .prose :global(.author-button) {
   display: inline-flex;
   align-items: center;

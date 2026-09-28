@@ -1,3 +1,13 @@
+// The Admin tab: the running site reporting on itself (ADR-010, ADR-080).
+//
+// AdminPanel, the export, is the page: it reads shared data, builds the
+// tiles and picks which card to show. The cards live in ./admin/, one file
+// each. Below AdminPanel come the five parts it uses, in file order:
+//   1. RailContent    - the list of cards grouped by question, with a search box.
+//   2. Workbench      - the layout: rail, open card, pinned card, j/k keys.
+//   3. HourAtAGlance  - the "This hour" rings and counts shown with some cards.
+//   4. StatStrip      - the row of tiles across the top.
+//   5. useMachines    - the hook that reads machine stats for charts and tiles.
 import {
   lazy,
   Suspense,
@@ -51,9 +61,9 @@ import type { ErrorEntry, Fetched, Health, Machines, PageStatus } from './admin/
 import { About, Absent, hourSlots, REFRESH_MS } from './admin/common';
 
 // #region lazy-cards
-// One chunk per card (the workbench, measured in the changelog line of the
-// version that made it): the Admin chunk is the strip, the rail and the reads
-// the strip needs, and a card's code is fetched the first time it is opened.
+// Each card is its own code chunk. `lazy` means the browser downloads a
+// card's code only the first time that card is opened, so the Admin tab
+// itself stays small: just the strip, the rail and the strip's reads.
 const HealthCard = lazy(() => import('./admin/HealthCard'));
 const AzureCard = lazy(() => import('./admin/AzureCard'));
 const PagesCard = lazy(() => import('./admin/PagesCard'));
@@ -76,22 +86,23 @@ const ResetLinkCard = lazy(() => import('./admin/ResetLinkCard'));
 // #endregion lazy-cards
 
 /**
- * The Admin tab (ADR-010): the running system reporting on itself. Three
- * cards fetch independently and degrade independently, so a dead Azure
- * leg never hides app health. Public on purpose; the ADR explains why.
- */
-/**
- * The operator's key, read from the address bar once, when the module loads,
- * and otherwise from what this browser remembered (src/lib/adminKey.ts).
- * Once and not per render, because the app mirrors its own view into the
- * address bar and drops anything it did not put there, which takes the key
- * out of the URL on the first render; that is welcome, since a key in an
- * address bar outlives the tab in the history, and it means the key has to be
- * read before that mirror runs (the 1.0.0.114 gate, take one). Remembered,
- * because the file the key lives in is on one machine and the operator
- * reads the site from his phone (the 1.0.0.120 change).
+ * The operator's key. It comes from the address bar, or else from what this
+ * browser saved earlier (src/lib/adminKey.ts).
+ *
+ * We read it once, when the module loads, not on every render. On its first
+ * render the app rewrites the address bar and drops anything it did not put
+ * there, including the key. That is good (a key left in the URL ends up in
+ * browser history), but it means the key must be read before that happens.
+ * Saving it lets the operator open the page later, on another device, without
+ * pasting the key again.
  */
 const ADMIN_KEY = adminKey();
+
+/**
+ * The Admin tab (ADR-010). Each card fetches and fails on its own, so one
+ * broken source (say, Azure) never hides the rest. The tab is public on
+ * purpose; ADR-010 explains why.
+ */
 
 export function AdminPanel({
   onBack,
@@ -105,20 +116,20 @@ export function AdminPanel({
   onPin = () => {},
 }: {
   onBack: () => void;
-  /** Where the back button goes, as its label says (1.0.3.9). */
+  /** Where the back button goes. Its label names the same place. */
   backTo?: 'home' | 'inventory';
   signedIn: boolean;
   onOpenAccount: () => void;
-  /** The card the address names, and the one pinned beside it (the workbench). */
+  /** The card named in the address, and the card pinned beside it, if any. */
   card?: CardSlug;
   pin?: CardSlug | null;
-  /** A name the address gave that is no card, said in the rail; null when there was none. */
+  /** A card name from the address that matched no card, so the rail can say so. */
   cardAsked?: string | null;
   onOpenCard?: (slug: CardSlug) => void;
   onPin?: (slug: CardSlug | null) => void;
 }) {
-  // The operator's key: state, so forgetting it takes effect on the cards
-  // at once; its first value is the one read when the module loaded.
+  // The key is state so that forgetting it updates the cards at once.
+  // It starts as the value read when the module loaded.
   const [adminKey, setAdminKey] = useState<string | null>(ADMIN_KEY);
   const forgetKey = () => {
     forgetAdminKey(browserStorage());
@@ -128,11 +139,11 @@ export function AdminPanel({
     const key = rememberAdminKey(entered, browserStorage());
     if (key !== null) setAdminKey(key);
   };
-  // Whether this site serves the per-visitor rows, learned from the activity
-  // report; null until it has answered. Off by default (13 September).
+  // Whether this site serves per-visitor rows (ADR-071). The activity report
+  // tells us; null until it answers.
   const [rowsServed, setRowsServed] = useState<boolean | null>(null);
-  // What the strip of tiles needs from the cards that do their own reading:
-  // today's people from the activity report, and the last page sweep.
+  // Two numbers the tiles need that other reads supply: today's visitors
+  // (from the activity report) and the last check of every page.
   const [visitorsToday, setVisitorsToday] = useState<number | null>(null);
   const [pagesSeen, setPagesSeen] = useState<{ checked: number; up: number } | null>(null);
   const onActivity = useCallback((report: ActivityReport) => {
@@ -150,8 +161,8 @@ export function AdminPanel({
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    // Not while the tab is hidden: a page nobody is looking at reads nothing
-    // (pipelane, 2026-09-21). The strip and the open card follow this clock.
+    // Bump `tick` every REFRESH_MS. The strip and the open card re-read when
+    // it changes. Skip it while the browser tab is hidden: nobody is looking.
     const id = window.setInterval(() => {
       if (!document.hidden) setTick((t) => t + 1);
     }, REFRESH_MS);
@@ -160,9 +171,10 @@ export function AdminPanel({
 
   useEffect(() => {
     let live = true;
-    // The strip's own reads (the workbench): health, the error ring and the page
-    // sweep. Every card reads for itself, and only while it is open.
-    // A failed or non-200 answer marks the card failed instead of leaving it loading forever.
+    // The strip's own reads: health, recent errors and the page check.
+    // Cards read their own data, and only while open.
+    // `live` goes false on cleanup, so a late answer never sets stale state.
+    // A network error or non-200 answer becomes 'failed', not endless loading.
     const grab = <T,>(url: string, set: (v: Fetched<T>) => void) =>
       fetch(url)
         .then((r) =>
@@ -176,8 +188,8 @@ export function AdminPanel({
         });
     void grab<Health>('/api/health', setHealth);
     void grab<ErrorEntry[]>('/api/errors', setErrors);
-    // The strip keeps its own read of the page sweep (the workbench): the pages
-    // card that shows it in full is not on the page unless it is the open card.
+    // The strip reads the page check itself, because the Pages card that also
+    // reads it is only mounted while it is open.
     void grab<PageStatus>('/api/admin/pages', (answer) => {
       if (answer !== null && answer !== 'failed' && answer.report !== null) {
         setPagesSeen({ checked: answer.report.checked, up: answer.report.up });
@@ -188,9 +200,9 @@ export function AdminPanel({
     };
   }, [tick]);
 
-  // Today's people, for the strip and for whether this site serves its kept
-  // rows, read once when the tab opens; the activity card reads its own window
-  // when it is open, and says what it read back through onActivity.
+  // Read the activity report once when the tab opens, for today's visitors
+  // and for `rowsServed`. The Activity card, when open, does its own read and
+  // passes the result back through onActivity.
   useEffect(() => {
     let live = true;
     void fetch('/api/admin/activity?window=7d')
@@ -207,13 +219,14 @@ export function AdminPanel({
   }, [onActivity]);
 
   // #region tiles
-  // The strip is made of what the cards below have already read, by the rules
-  // in statTiles.ts; it asks the server for nothing of its own, so a tile and
-  // the card it points at cannot disagree.
+  // Build the tiles from data already read above, using the rules in
+  // statTiles.ts. Because the strip and the cards share the same data, a tile
+  // can never disagree with the card it links to.
   const seen = latestMachines;
   const hour = seen === null ? null : hourSlots(seen);
-  // The lines under the tiles follow the window every chart follows, once the
-  // answer for that window has arrived and the store keeps it.
+  // The small line charts (sparklines) under the tiles use the chart window
+  // the user picked. For any window longer than 1h, use the stored history,
+  // but only once it has arrived for that window and the store keeps it.
   const keptHistory =
     seen !== null &&
     machineWindow !== '1h' &&
@@ -239,17 +252,17 @@ export function AdminPanel({
     seen !== null && seen.container.samples.length > 0
       ? seen.container.samples[seen.container.samples.length - 1]
       : null;
-  // The minutes of a cold start are not held against the hour (statTiles.ts,
-  // the cold-start region). When the process started is its newest sample's
-  // time less its uptime, both from the one answer, so nothing here reads a clock.
+  // A cold start (the slow first minutes after the process starts) should not
+  // count against the hour's speed (see statTiles.ts). Start time is the newest
+  // sample's time minus uptime. Both come from the server's answer, so this
+  // code never reads the browser's clock.
   const startedAt =
     seen === null || lastSample === null
       ? null
       : new Date(new Date(lastSample.at).getTime() - seen.container.uptime_seconds * 1000);
   const warmed = hour === null ? null : afterColdStart(hour, startedAt);
-  // Every request and every error in the hour is still counted; the median
-  // and the ninety-fifth are the warm minutes' own, over every request in
-  // them (statTiles.ts, hourTiming).
+  // Request and error counts still cover the whole hour. Only the timings
+  // (p50 is the median, p95 the 95th percentile) skip the cold-start minutes.
   const warmTiming = warmed === null ? null : hourTiming(warmed.warm);
   const hourTotals =
     hour === null || warmTiming === null
@@ -320,10 +333,10 @@ export function AdminPanel({
   );
 
   // #region bench-cards
-  // Every card is a chunk of its own, fetched when the workbench opens it or
-  // pins it, and each reads only while it is on the page (ADR: The Admin tab,
-  // as a product, the addendum on the workbench). What the strip reads above is
-  // handed to the cards that show it in full, rather than read twice.
+  // Draw one card by its slug (ADR-080). A card's code loads the first time
+  // it is opened or pinned, and it reads data only while on the page. Data the
+  // strip already read (health, errors, machines) is passed in, not re-read.
+  // Suspense shows CardLoading while the card's code downloads.
   const renderCard = (slug: CardSlug): ReactNode => {
     const drawn = (() => {
       switch (slug) {
@@ -448,8 +461,8 @@ export function AdminPanel({
 }
 
 /**
- * A card while its chunk is on the way: its name, at the height the page
- * reserves for a card, so nothing under it moves when it lands (1.0.3.7's rule).
+ * Placeholder while a card's code downloads: the card's name, at the height
+ * of a real card, so the content below does not jump when the card arrives.
  */
 function CardLoading({ slug }: { slug: CardSlug }) {
   return (
@@ -467,9 +480,9 @@ function CardLoading({ slug }: { slug: CardSlug }) {
 
 // #region workbench
 /**
- * A click on a link the workbench handles itself: a plain click opens the card
- * in place, and a click that asks for a new tab or window (a modifier key, the
- * middle button) is left to the browser, which follows the address.
+ * Click handler for card links. A plain left click opens the card in place.
+ * A click with a modifier key, or the middle button, means "open in a new tab",
+ * so we leave it to the browser, which follows the link's href.
  */
 function follow(event: MouseEvent<HTMLElement>, open: () => void) {
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
@@ -480,9 +493,10 @@ function follow(event: MouseEvent<HTMLElement>, open: () => void) {
 }
 
 /**
- * The rail's contents: the search box, the note for a name that is no card, and
- * the five questions with their cards. Beside the card on a desk; inside the
- * Cards drawer on a phone.
+ * What goes in the rail (the side list of cards): a search box, a note when the
+ * address named an unknown card, and the cards grouped under five questions.
+ * On a wide screen the rail sits beside the card; on narrower ones it is in the
+ * Cards drawer.
  */
 function RailContent({
   open,
@@ -557,12 +571,12 @@ function RailContent({
 }
 
 /**
- * The workbench (ADR: The Admin tab, as a product, the addendum on the
- * workbench): the rail of the five questions down the left, one card large
- * beside it, and a second column for the card that is pinned. The keys j and
- * k walk the rail's order wherever focus is, except in a field being typed in.
- * Under 1280 the rail is a drawer behind a Cards button; under 640 the pinned
- * card is also a fold under the open one, which reads nothing until it is unfolded.
+ * The workbench layout (ADR-080): the rail on the left, the open card large
+ * beside it, and an optional second column for a pinned card.
+ * The j and k keys move to the next and previous card, unless you are typing.
+ * Under 1280px the rail moves into a drawer behind a Cards button. Under 640px
+ * the pinned card becomes a fold under the open one and reads nothing until
+ * you expand it.
  */
 function Workbench({
   open,
@@ -583,10 +597,9 @@ function Workbench({
 }) {
   const phone = useMediaQuery(PHONE);
   const wide = useMediaQuery(WIDEST);
-  // The rail of cards stands beside the card from 1280; under it the rail is the
-  // drawer behind Cards, as on a phone (the self-review of 25 September: at 1024
-  // the site's rail and this one left a card 460 px wide, and three of its tables
-  // scrolled sideways on a desk).
+  // Below the WIDE breakpoint the rail goes in the drawer. With both the site's
+  // sidebar and this rail showing, a narrower screen leaves too little room for
+  // the card, and its tables scroll sideways.
   const railInDrawer = !useMediaQuery(WIDE);
   const drawerRef = useRef<HTMLDialogElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -595,15 +608,15 @@ function Workbench({
   const openCard = benchCard(open);
   const question = BENCH_QUESTIONS.find((entry) => entry.key === openCard.question);
   const pinShown = pin !== null && pin !== open;
-  // The hour at a glance is on the Admin home and the two cards it summarises,
-  // timing and traffic, and nowhere else (the tweaks pass, A7). It stands beside
-  // the card on a wide desk with nothing pinned, and above it everywhere else,
-  // where a third column would squeeze it.
+  // "This hour" shows only with the cards in HOUR_CARDS. On a wide screen with
+  // nothing pinned it sits beside the card; otherwise it goes above the card,
+  // because a third column would be too cramped.
   const hourHere = HOUR_CARDS.includes(open);
   const hourBeside = hourHere && wide && !phone && !pinShown;
 
-  // A layout effect, so the keys are listened for in the same commit that draws the card: a j pressed the
-  // moment the card is on the page walks the rail rather than falling between the paint and a passive effect.
+  // The j/k key listener. useLayoutEffect (not useEffect) attaches it in the
+  // same render that draws the card, so a key pressed right away is not missed.
+  // Keys are ignored while focus is in a text field or an open dialog.
   useLayoutEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
@@ -620,8 +633,9 @@ function Workbench({
   }, [open, onOpen]);
 
   // #region bench-drawer
-  // The drawer is a native dialog, the shape the site's own drawer has (SideNav):
-  // the button flips the flag, and this mirrors it onto the dialog.
+  // The drawer is a native <dialog>, like the site's own SideNav drawer.
+  // The Cards button sets `drawerOpen`; this effect opens or closes the dialog
+  // to match.
   useEffect(() => {
     const drawer = drawerRef.current;
     if (!drawer) return;
@@ -697,10 +711,9 @@ function Workbench({
             {question?.title} <span aria-hidden="true">/</span> {openCard.name}
           </p>
           <div className={styles.benchControls}>
-            {/* Pin sits in the card's header row beside Previous and Next, where
-                the card's controls live (the tweaks pass, A7). A toggle keeps its
-                name and says its state by aria-pressed and the dot, so a screen
-                reader hears "Pin, pressed" and never "Pinned, pressed". */}
+            {/* Pin is a toggle. Its label stays "Pin"; aria-pressed and the dot
+                show its state, so a screen reader says "Pin, pressed" rather
+                than the confusing "Pinned, pressed". */}
             <button
               type="button"
               className={`${styles.back} ${styles.pinButton}`}
@@ -797,14 +810,14 @@ function Workbench({
   );
 }
 
-/** The cards the hour at a glance stands with: the Admin home and the two it summarises (A7). */
+/** Cards that show "This hour": the Admin home and the two cards it sums up. */
 const HOUR_CARDS: readonly CardSlug[] = ['health', 'timing', 'traffic'];
 
 /**
- * The hour at a glance (the operator's look): the typical answer inside the
- * ninety-fifth as two rings against ten milliseconds, the number in words in
- * the middle, and the hour's counts as a readout under it. Made of what the
- * strip read, so it and the tiles say the same thing.
+ * The "This hour" panel: two rings for response time (p95 outside, p50
+ * inside, both against the same scale), the number in words in the middle,
+ * and the hour's counts below.
+ * It uses the same data as the tiles, so the two always agree.
  */
 function HourAtAGlance({ glance, beside }: { glance: HourGlance; beside: boolean }) {
   return (
@@ -836,11 +849,10 @@ function HourAtAGlance({ glance, beside }: { glance: HourGlance; beside: boolean
 
 // #region stat-strip
 /**
- * The strip across the top (ADR: The Admin tab, as a product): eight tiles
- * under four questions, each a button that goes to the cards that answer it.
- * What a tile says and what colour it is are decided in statTiles.ts, which
- * has no React in it; this only draws. The tone is a word as well as a
- * colour, because a colour alone says nothing to somebody who cannot see it.
+ * The strip of tiles across the top (ADR-080). Each tile is a link to the
+ * card that explains it. statTiles.ts (plain TypeScript, no React) decides
+ * what a tile says and its tone; this code only draws. The tone is shown as a
+ * word as well as a colour, so it does not depend on seeing colour.
  */
 const QUESTION_ORDER: TileQuestion[] = ['up', 'fast', 'cost', 'broke'];
 
@@ -859,7 +871,7 @@ function StatStrip({
   caption,
 }: {
   tiles: StatTile[];
-  /** A tile is a link to the card that answers it (the workbench). */
+  /** Opens the card a tile links to. */
   onOpenCard: (slug: CardSlug) => void;
   toolbar: ReactNode;
   caption: string;
@@ -899,16 +911,14 @@ function StatStrip({
                 data-tone={tile.tone}
                 onClick={(event) => follow(event, () => onOpenCard(cardForTile(tile.key)))}
               >
-                {/* Name, value row, foot (the tweaks pass, A2): the rail names the section,
-                    so the tile no longer repeats its question; the value row holds the ring
-                    when there is one, and every tile in a row sets its number on one baseline. */}
+                {/* A tile is: label, value row (number plus optional ring), detail,
+                    tone word, sparkline. Numbers line up on one baseline per row. */}
                 <span className={styles.tileLabel}>{tile.label}</span>
                 <span className={styles.tileValueRow}>
                   <span className={styles.tileValue}>{tile.value}</span>
-                  {/* The ring beside a tile's number (ADR: The glass look): a share of a known
-                      whole, hidden from a screen reader because the tile says the number in
-                      words. Its box is on every tile from the first paint, drawn or not, so
-                      the number beside it wraps the same before the reading arrives as after. */}
+                  {/* The ring shows a share of a whole (ADR-081). Screen readers skip
+                      it, since the tile says the number in words. Its box is there
+                      before data arrives, so the number does not shift when it does. */}
                   {tile.ringed && (
                     <span className={styles.tileRing}>
                       {tile.ring !== undefined && (
@@ -923,14 +933,14 @@ function StatStrip({
                     </span>
                   )}
                 </span>
-                {/* The line fits two lines on the narrowest tile; what it leaves out is heard
-                    by a screen reader and held in the title (1.0.3.30). */}
+                {/* The detail is kept short enough for two lines. The full sentence is
+                    in the title (hover text), and the extra part is read to screen readers. */}
                 <span className={styles.tileDetail} title={tileSentence(tile)}>
                   {tile.detail}
                   {tile.more !== undefined && <span className={styles.srOnly}>{tile.more}</span>}
                 </span>
-                {/* A tile keeps the room its word and its line will take, so nothing under the
-                    strip moves when the hour's reading arrives. */}
+                {/* Empty slots hold the space for the tone word and sparkline, so
+                    the page does not jump when the data arrives. */}
                 {word !== null ? (
                   <span className={styles.tileTone}>{word}</span>
                 ) : (
@@ -962,10 +972,10 @@ function StatStrip({
 
 // #region machines-read
 /**
- * One read for the traffic card, the machines card and the tiles over the
- * page, and one window for all three: they are only worth looking at side by
- * side over the same stretch. A hook and not a component since 1.0.0.161,
- * because the two cards now sit under different questions.
+ * Reads machine stats once and shares them with the Traffic card, the Machines
+ * card and the tiles. All three use one time window, so they always cover the
+ * same stretch and can be compared. It is a hook, not a component, because the
+ * two cards live in different places on the page.
  */
 function useMachines(): {
   machines: Fetched<Machines>;
@@ -974,9 +984,8 @@ function useMachines(): {
   toolbar: (where: string, testPrefix: string) => ReactNode;
 } {
   const [machines, setMachines] = useState<Fetched<Machines>>(null);
-  // The last answer that arrived, which a change of window does not take
-  // away: the tiles are made of it, and eight tiles going back to "waiting"
-  // because somebody asked a chart for a week would be the page flinching.
+  // The last good answer. Unlike `machines`, it is not cleared when the window
+  // changes, so the tiles keep their values instead of flashing "waiting".
   const [latest, setLatest] = useState<Machines | null>(null);
   const [window_, setWindow] = useState<MachineWindow>('1h');
 
@@ -996,8 +1005,8 @@ function useMachines(): {
           if (live) setMachines('failed');
         });
     void read();
-    // The sampler takes a reading every fifteen seconds; the card follows at
-    // half a minute, which is the rate the rest of this tab refreshes at.
+    // The server samples every 15 seconds. We re-read every 30, the same rate
+    // as the rest of the tab, and skip it while the browser tab is hidden.
     const timer = window.setInterval(() => {
       if (!document.hidden) void read();
     }, 30_000);
@@ -1007,11 +1016,10 @@ function useMachines(): {
     };
   }, [window_]);
 
-  // One window, and a row of buttons wherever a chart is: over the tiles, on
-  // the traffic card and on the machines card, which sit under different
-  // questions and a long scroll apart. Every row is the same state, so
-  // pressing one presses all three (ADR: The Admin tab, as a product, the
-  // addendum on one window for every chart).
+  // The window picker (1h, 24h, 7d, 30d). Each chart gets its own copy of
+  // this row of buttons, but they all share one state, so pressing a button
+  // in one row changes every chart (ADR-080). `where` names the row for
+  // screen readers.
   const toolbar = (where: string, testPrefix: string) => (
     <p
       className={`${styles.statusRow} op-seg op-seg-wrap`}
@@ -1025,9 +1033,9 @@ function useMachines(): {
           className={styles.back}
           aria-pressed={option === window_}
           onClick={() => {
-            // The change of window is the event, and the cards go back to
-            // loading here rather than inside the effect, as the activity
-            // card's do and for the reason it gives.
+            // Reset to loading here, where the window changes, not in the effect.
+            // Clicking the window already shown must do nothing: the effect
+            // would not re-run, and the cards would say "Loading" forever.
             if (option === window_) return;
             setWindow(option);
             setMachines(null);

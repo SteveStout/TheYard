@@ -1,3 +1,14 @@
+// App.tsx is the shell of the site. It decides which view is showing (home,
+// inventory, a vehicle, Admin, Account, or a decision record), keeps that view
+// in the address bar so every view is a shareable link, and loads the
+// inventory from the API. Everything it draws is a component; this file wires
+// state and handlers to them.
+//
+// Regions, in order: admin-on-demand, admin-card, listing-when-shown, docking,
+// visible-order, facets-once, who, url-mirror, back-forward, listing-goes-stale,
+// refresh-open-vehicle, focus, history, open-inventory, open-document,
+// open-account, announcement. In the JSX: skip-link, header-below-dock,
+// store-bar, footer-version.
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   fetchFacets,
@@ -22,11 +33,9 @@ import { applyBidRecord, useBids } from './hooks/useBids';
 import { cardFromAddress, pinFromAddress, type CardSlug } from './lib/workbench';
 import { useNow } from './hooks/useNow';
 // #region admin-on-demand
-// The Admin tab is the biggest thing this app draws, about four thousand lines
-// of cards and charts, and it is the one view a reader opens on purpose.
-// Loading it with the landing page made every first visit pay for it: it is a
-// chunk of its own since 1.0.3.0, fetched when ?view=admin opens, and the
-// browser caches it for a year like every other hashed file.
+// The Admin tab is the biggest view in the app, and few visitors open it.
+// lazy() splits it into its own file that the browser downloads only when
+// ?view=admin opens, so the landing page does not pay for it.
 const AdminPanel = lazy(() =>
   import('./components/AdminPanel').then((module) => ({ default: module.AdminPanel }))
 );
@@ -51,9 +60,9 @@ import styles from './App.module.css';
 type LoadState = 'loading' | 'ready' | 'error';
 
 /**
- * When the browser first ranked an answer: the clock the grid is ordered on
- * (ADR-056, the addendum of 21 September). Held per answer, so a bid layered
- * on later does not re-rank the page on a newer clock.
+ * The time the browser first received each page of results. The grid is
+ * ranked on this time, not the ticking clock, so a bid layered on later does
+ * not re-rank the page (ADR-056). A WeakMap lets old pages be garbage collected.
  */
 const answeredAt = new WeakMap<readonly Vehicle[], number>();
 function timeOfAnswer(vehicles: readonly Vehicle[]): number {
@@ -68,18 +77,19 @@ function timeOfAnswer(vehicles: readonly Vehicle[]): number {
 /** How long to let the user keep typing/clicking before asking the API to filter. */
 const FILTER_DEBOUNCE_MS = 500;
 
-/** A status-filtered list with nothing left to cross still drifts; refresh this often. */
+/**
+ * With a status filter on, the list drifts as auctions elsewhere end, even when
+ * nothing on this page is about to start or end. Refresh it this often.
+ */
 const STATUS_REFRESH_MS = 60_000;
 
 /**
- * The most often a listing will re-ask, however fast its auctions are ending.
- * A minute, not fifteen seconds (pipelane, 2026-09-21): recorded on the live
- * site, the inventory asked for the whole page four times a minute on every
- * view, and each answer moved cards under the reader's eye.
+ * The most often a listing re-asks the API, however fast its auctions end.
+ * Asking more often only moves cards under the reader's eye (ADR-056).
  */
 const LISTING_REFRESH_FLOOR_MS = 60_000;
 
-/** Asked a moment after the boundary, so the server has crossed it too. */
+/** Ask a moment after an auction starts or ends, so the server has seen it too. */
 const BOUNDARY_GRACE_MS = 750;
 
 /** `npm start` opens the browser before the API finishes booting, so keep
@@ -95,24 +105,24 @@ const EMPTY_FACETS: InventoryFacets = {
 };
 const EMPTY_PAGE: VehiclePage = { total: 0, vehicles: [] };
 
-/** Filters arrive in the URL (?make=Ford&status=live) so views are shareable. */
+/** The address, read once at startup. Filters live in it (?make=Ford&status=live). */
 const INITIAL_PARAMS = new URLSearchParams(window.location.search);
 const INITIAL_URL_STATE = filtersFromSearchParams(INITIAL_PARAMS);
 /** A tile click is GET navigation: ?vehicle={id} deep-links the detail view. */
 const INITIAL_VEHICLE_ID = INITIAL_PARAMS.get('vehicle');
 // A password reset link's token, read once: the address bar loses it on the first render.
 const INITIAL_RESET = INITIAL_PARAMS.get('reset');
-/** ?doc=adr-lockout, resolved once. An address that names nothing opens nothing. */
+/** ?doc=adr-lockout opens that record. A name that matches no record opens nothing. */
 const INITIAL_DOC = docKeyForSlug(INITIAL_PARAMS.get('doc'));
 /**
- * The landing page is home since 1.0.1.0; the inventory is ?view=inventory,
- * and every address that already meant the inventory still opens it.
+ * The landing page is home. The inventory is ?view=inventory, and an address
+ * with a filter, a sort or ?vehicle= opens the inventory too.
  */
 const INITIAL_INVENTORY = opensInventory(INITIAL_PARAMS);
 /** The Admin card an address names (?view=admin&card=timing&pin=errors), resolved once. */
 const INITIAL_CARD = cardFromAddress(INITIAL_PARAMS.get('card'));
 
-/** Where a view's back button goes, as its label says (1.0.3.9). */
+/** Where a view's back button goes. Its label says which: "Back to home" or inventory. */
 export type BackTo = 'home' | 'inventory';
 
 export default function App() {
@@ -131,10 +141,10 @@ export default function App() {
   /** The Admin tab (ADR-010): health, errors, and Azure's view, ?view=admin. */
   const [adminOpen, setAdminOpen] = useState(INITIAL_PARAMS.get('view') === 'admin');
   // #region admin-card
-  // The workbench's open card and its pin (ADR: The Admin tab, as a product, the
-  // addendum on the workbench): state here, beside the view, because the address
-  // mirror below is the one writer of the address bar. A name the address gave
-  // that is no card is kept only to be said in the rail; the card is health.
+  // The Admin workbench's open card and its pinned card (ADR-080). They live
+  // here, beside the view, because the url-mirror effect below is the only code
+  // that writes the address bar. If the address names a card that does not
+  // exist, cardAsked keeps the name so the rail can say so, and Health opens.
   const [adminCard, setAdminCard] = useState<CardSlug>(INITIAL_CARD.slug);
   const [adminPin, setAdminPin] = useState<CardSlug | null>(
     pinFromAddress(INITIAL_PARAMS.get('pin'))
@@ -143,17 +153,15 @@ export default function App() {
     INITIAL_CARD.known ? null : INITIAL_CARD.asked
   );
   // #endregion admin-card
-  /** The account view (ADR: Accounts and per-user bids), ?view=account. */
+  /** The account view (ADR-037), ?view=account. */
   const [accountOpen, setAccountOpen] = useState(INITIAL_PARAMS.get('view') === 'account');
-  /** The inventory list, rather than the landing page, is what shows under no other view. */
+  /** True when the base view is the inventory list rather than the landing page. */
   const [inventoryOpen, setInventoryOpen] = useState(INITIAL_INVENTORY);
   const [openDocKey, setOpenDocKey] = useState<DocKey | null>(INITIAL_DOC);
   // #region listing-when-shown
-  // The catalogue belongs to the inventory, not to the landing page (1.0.3.0).
-  // Measured on the live sites: /api/vehicles was the slowest request the
-  // landing page made, 450 ms on the SQL site and 897 ms on the Cosmos DB one,
-  // for a page that shows no vehicle. It is asked for when a view that needs
-  // it opens: the listing, a vehicle, or an address that carries a filter.
+  // The vehicle list belongs to the inventory, not the landing page. It is a
+  // slow request, and the landing page shows no vehicle. So it is fetched only
+  // when a view that needs it opens: the list, a vehicle, or a ?vehicle= link.
   const needsListing = inventoryOpen || selectedVehicle !== null || INITIAL_VEHICLE_ID !== null;
   // #endregion listing-when-shown
 
@@ -166,6 +174,7 @@ export default function App() {
   const docked = useMediaQuery(DESK);
   const [railCollapsed, setRailCollapsed] = useState(readRailCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Remember a collapsed rail between visits.
   useEffect(() => {
     storeRailCollapsed(railCollapsed);
   }, [railCollapsed]);
@@ -176,32 +185,26 @@ export default function App() {
   // #endregion docking
   // Bid state lives in the API; refetch the list whenever it changes.
   const refreshList = useCallback(() => setReloadNonce((n) => n + 1), []);
-  // Keyed on the address: the bid map belongs to an account, so signing in or
-  // out has to fetch a different one rather than keep showing the old badges.
+  // Keyed on the signed-in email: bids belong to an account, so signing in or
+  // out fetches that account's bids instead of showing the old badges.
   const { bids, placeBid, buyNow, resetBids } = useBids(refreshList, account.email);
 
   // #region visible-order
   /**
-   * The current page with the buyer's bids layered on for instant feedback,
-   * and, under the ending-soonest sort, reordered on the clock of the answer.
+   * The page on display, with the buyer's bids layered on for instant feedback.
+   * Under the ending-soonest sort it is also re-ranked here, in the browser.
    *
-   * The reorder is the same ranking the API applied, re-applied to the page it
-   * already sent. Re-asking the server on a timer was not enough and could not
-   * be: over a hundred thousand auctions the soonest one ends inside a second,
-   * so every answer's first row is expiring as it paints, and a shorter
-   * interval only means asking more often for a page with the same problem.
-   * The browser holds the one thing the response does not, which is the time
-   * now, so it moves an auction that has ended to where the server would have
-   * put it. Membership, the count and the paging stay the server's, and any
-   * other sort is left exactly as it arrived.
+   * Why: with this many auctions the soonest one is always about to end, so
+   * any page the server sends is already slightly out of date as it paints.
+   * The browser applies the server's own ranking again, which moves an ended
+   * auction to where the server would have put it. Which vehicles are on the
+   * page, the count and the paging stay the server's. Other sorts are left
+   * exactly as they arrived.
+   *
+   * It ranks on the time the page arrived (timeOfAnswer), not the ticking
+   * clock, because re-ranking every second made cards jump. A card that ends
+   * says "Ended" where it stands until the next answer lands (ADR-056).
    */
-  //
-  // Ranked on the clock of the answer, not the ticking one (pipelane,
-  // 2026-09-21). Re-ranked every second, the grid moved a card about once a
-  // second under ending-soonest: sixty moves, eight layout shifts (a total of
-  // 1.16) and a dozen pictures fetched again in one recorded minute, which is
-  // the flicker Steve saw. A card whose auction ends now says "Ended" where it
-  // stands, and the order catches up when the next answer lands.
   const visibleVehicles = useMemo(() => {
     const withBids = page.vehicles.map((vehicle) => applyBidRecord(vehicle, bids[vehicle.id]));
     return sort === 'ending-soonest'
@@ -211,19 +214,16 @@ export default function App() {
   // #endregion visible-order
 
   // #region facets-once
-  // Dropdown options come from the API (the page only ever holds a slice of
-  // the dataset). Missing facets degrade to empty dropdowns, not a crash.
+  // The filter dropdowns' options (facets) come from the API, because the page
+  // only holds a slice of the data. If the request fails, the dropdowns are
+  // empty rather than broken.
   //
-  // Asked until answered, then never again. The values are built once with
-  // the catalogue on the server and cannot change while this page is open,
-  // yet until 1.0.0.142 this effect ran on every listing refresh, which on the
-  // inventory page is four times a minute: four requests an idle minute for
-  // an answer the page already held (ADR: The search index, addendum). The
-  // nonce stays in the list so a first fetch that failed, the API still
-  // booting under `npm start` say, is tried again with the listing; once the
-  // facets have landed the effect returns before it asks.
+  // Asked until answered, then never again: the server builds the options once
+  // and they cannot change while the page is open (ADR-025). reloadNonce stays
+  // in the dependencies so a failed first try (the API still booting under
+  // `npm start`, say) is retried along with the listing.
   useEffect(() => {
-    // The dropdowns are the inventory's too, so the landing page does not ask (1.0.3.0).
+    // The dropdowns belong to the inventory too, so the landing page skips them.
     if (!needsListing || facets !== EMPTY_FACETS) return;
     const controller = new AbortController();
     fetchFacets(controller.signal)
@@ -233,7 +233,7 @@ export default function App() {
   }, [reloadNonce, facets, needsListing]);
   // #endregion facets-once
 
-  // The footer's version line: ask the running API which build it is.
+  // The footer's version line: ask the running API which build it is (ADR-005).
   useEffect(() => {
     fetch('/api/version')
       .then((r) => (r.ok ? r.json() : null))
@@ -242,16 +242,14 @@ export default function App() {
   }, []);
 
   // #region who
-  // Who is signed in, if anyone. The session is an httpOnly cookie, so the
-  // page cannot read it and has to ask (ADR: Accounts and per-user bids). A
-  // failure here leaves the visitor signed out, which is the safe answer.
+  // Who is signed in, if anyone. The session is an httpOnly cookie (one that
+  // page scripts cannot read), so the page has to ask the API (ADR-037). A
+  // failure leaves the visitor signed out, which is the safe answer.
   //
-  // The answer applies only if nothing has changed the account while the
-  // question was out. A visitor who registers before it comes back would
-  // otherwise be signed out again by a stale "nobody" landing after their
-  // fresh "you" (the addendum on that record has the run that showed it).
-  // Every change the page makes itself goes through changeAccount so the
-  // question can tell.
+  // The answer is dropped if the account changed while the question was out.
+  // Otherwise a visitor who registers quickly could be signed out again by a
+  // late "nobody" answer. Every change the page makes goes through
+  // changeAccount, which tells the question.
   const [whoIsSignedIn] = useState(accountQuestion);
   const changeAccount = useCallback(
     (next: Account) => {
@@ -265,11 +263,12 @@ export default function App() {
   }, [whoIsSignedIn]);
   // #endregion who
 
-  // Filtering, sorting, and paging are server-side: every change becomes a
-  // GET request, debounced so typing doesn't spam the API and cached per
-  // query string in data.ts. Cache hits skip the debounce entirely, because it
-  // exists to simulate not hammering the server. reloadNonce bumps are
-  // refreshes (retry buttons, the status interval): immediate and uncached.
+  // Filtering, sorting, and paging happen on the server: every change becomes a
+  // GET request. Requests are debounced (held until the user pauses for
+  // FILTER_DEBOUNCE_MS) so typing doesn't spam the API, and cached per query
+  // string in data.ts. A cache hit skips the debounce, since no request is
+  // made. A reloadNonce bump is a refresh (a retry button, a timer): it runs
+  // at once and skips the cache.
   const lastNonce = useRef(reloadNonce);
   const initialAttempts = useRef(0);
   useEffect(() => {
@@ -325,10 +324,9 @@ export default function App() {
       window.clearTimeout(retryTimer);
       controller.abort();
     };
-    // loadState is read above to decide whether this is a first load, and it
-    // is deliberately not a dependency: this effect sets it to ready itself,
-    // so listing it would run the effect again the moment the load it started
-    // finished.
+    // loadState is read above but deliberately left out of the dependencies.
+    // This effect sets it to 'ready' itself, so listing it would rerun the
+    // effect the moment its own load finished.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, sort, reloadNonce, needsListing]);
 
@@ -401,7 +399,8 @@ export default function App() {
   }, []);
 
   // #region back-forward
-  // Browser Back/Forward: re-read the whole view from the URL.
+  // Browser Back/Forward: re-read the whole view from the URL. The listener is
+  // registered once, so it reads the open vehicle through selectedIdRef.
   const selectedIdRef = useRef<string | null>(null);
   useEffect(() => {
     selectedIdRef.current = selectedVehicle?.id ?? null;
@@ -436,29 +435,19 @@ export default function App() {
   // #endregion back-forward
 
   // #region listing-goes-stale
-  // A listing is answered once and then watched for minutes
-  // (ADR: The listing that went stale while you looked at it). Auctions cross
-  // their boundaries while it is on screen: a card's countdown reaches zero,
-  // the browser turns it into an "Ended" chip, correctly, and it stays in the
-  // position the server ranked it in while it was live. Under the default
-  // sort, ending soonest, that position is the top of the front page, so a
-  // minute after loading the first thing a visitor sees is dead lots.
+  // A listing stays on screen for minutes, and auctions start and end while it
+  // does (ADR-056). Under the default ending-soonest sort, ended lots would sit
+  // at the top of the front page.
   //
-  // So the list is re-asked at the next moment its answer can have changed,
-  // which is the soonest start or end still ahead of it, floored so that a page
-  // where something ends every few seconds asks a few times a minute rather
-  // than a few times a second. With nothing left to cross and a status filter
-  // on, membership still drifts as auctions elsewhere end, and that keeps the
-  // slower timer it always had.
+  // So the list is re-asked at the next moment its answer can change: the
+  // soonest auction start or end still ahead, but never more often than
+  // LISTING_REFRESH_FLOOR_MS. With nothing left to cross and a status filter
+  // on, the slower STATUS_REFRESH_MS timer applies.
   //
-  // Not while the tab is hidden. Nobody is reading a stale card they cannot
-  // see, and a background tab that refetches on a timer for an hour is the kind
-  // of thing that gets noticed in somebody else's battery graph. The refresh
-  // that was skipped happens when the tab comes back.
+  // No refresh while the tab is hidden (it would drain battery for nobody), or
+  // while another view covers the list. missedRefresh remembers the skipped
+  // refresh, and it runs when the list is visible again.
   const missedRefresh = useRef(false);
-  // Nor while the listing is not the view: the Admin tab, the account, a
-  // vehicle or a document asked for the whole page every fifteen seconds and
-  // showed none of it. The skipped refresh happens on the way back.
   const listShowing =
     inventoryOpen && !adminOpen && !accountOpen && !selectedVehicle && !openDocKey;
   useEffect(() => {
@@ -478,6 +467,7 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
+  // Schedule the next refresh from the soonest start or end on this page.
   useEffect(() => {
     const boundary = nextAuctionBoundary(page.vehicles, Date.now());
     const delay =
@@ -499,15 +489,13 @@ export default function App() {
   }, [page, filters.status, listShowing]);
   // #endregion listing-goes-stale
 
-  // Having bid is not the same as leading any more (ADR-027): the room may
-  // have answered. The server decides which it is; this only reads the answer.
+  // Placing a bid does not mean you are leading: another bidder may have
+  // answered (ADR-027). The server decides; the page only reads its answer.
   // #region refresh-open-vehicle
-  // current_bid can be overlaid in the browser; min_next_bid cannot, because
-  // the increment tiers are domain rules and live only on the server. So when
-  // the room's figure on the open vehicle moves, the snapshot is refetched
-  // rather than patched. Without this the panel said "someone outbid you, the
-  // bid stands at $12,500" directly above "minimum $12,500", and submitting
-  // the number the page showed was rejected.
+  // The page can overlay current_bid, but not min_next_bid: the bid increment
+  // rules live only on the server. So when another bidder moves the price on
+  // the open vehicle, it is refetched rather than patched. Otherwise the panel
+  // could show a minimum bid that the server would reject.
   const openMarketAmount = selectedVehicle
     ? (bids[selectedVehicle.id]?.market_amount ?? null)
     : null;
@@ -526,6 +514,7 @@ export default function App() {
   }, [openMarketAmount]);
   // #endregion refresh-open-vehicle
 
+  // The bid map split three ways for the badges: leading, outbid, bought outright.
   const highBidderIds = useMemo(
     () =>
       new Set(
@@ -554,7 +543,10 @@ export default function App() {
     [bids]
   );
 
-  /** Appends the next server page; filters/sort changes reset via the fetch effect. */
+  /**
+   * Appends the next page from the server, skipping any vehicle already shown.
+   * A filter or sort change starts over through the fetch effect instead.
+   */
   const loadMore = async () => {
     if (loadingMore) return;
     setLoadingMore(true);
@@ -648,9 +640,8 @@ export default function App() {
   // #endregion history
 
   useEffect(() => {
-    // Admin is a view switch the same as a vehicle is. Left out of this, it
-    // opened at the list's scroll offset with its heading above the fold and
-    // focus on something the visitor could not see.
+    // Every view except the list opens at the top; the list returns to where
+    // the reader left it. Admin counts as a view switch too.
     window.scrollTo(
       0,
       selectedVehicle || adminOpen || accountOpen || !inventoryOpen ? 0 : listScrollY.current
@@ -671,9 +662,9 @@ export default function App() {
   };
   // #endregion open-inventory
 
-  // Where Back goes is remembered with the entry (1.0.3.9): opened from the
-  // landing page the button says "Back to home", because that is where Back
-  // takes it; opened from the inventory, or by its address, it says inventory.
+  // Where Back goes is stored in the history entry. Opened from the landing
+  // page, the button says "Back to home"; opened from the inventory, or
+  // straight from its address, it says inventory.
   const openedFrom = (): BackTo => (inventoryOpen ? 'inventory' : 'home');
   const openAdmin = () => {
     const params = filtersToSearchParams(filters, sort);
@@ -688,9 +679,9 @@ export default function App() {
   };
   /**
    * A card on the workbench is a place, so opening one pushes an entry and Back
-   * returns to the card before it. The entry carries how deep into the bench it
-   * is, so the view's own back button leaves the Admin tab in one step however
-   * many cards were opened on the way.
+   * returns to the card before it. The entry records benchDepth (how many cards
+   * deep it is), so the view's own back button leaves the Admin tab in one step
+   * however many cards were opened.
    */
   const openAdminCard = (slug: CardSlug) => {
     if (slug === adminCard && cardAsked === null) return;
@@ -713,22 +704,16 @@ export default function App() {
   };
 
   // #region open-document
-  // A record is a view, and every other view here is a GET parameter, so this
-  // is the same shape as Admin and Account (ADR: A record with no address).
-  // Before this, a decision record could only be reached by opening the site,
-  // finding the group and scrolling, which means it could not be sent to
-  // anybody, which for a project whose central artifact is its records is the
-  // wrong way round.
+  // A decision record is a view with its own address (?doc=...), the same shape
+  // as Admin and Account, so a record can be sent to someone as a link (ADR-057).
   const openDocument = (key: DocKey | null) => {
     if (key !== null) {
       const params = filtersToSearchParams(filters, sort);
       params.set('doc', docSlug(key));
-      // One entry for "a record is open", however many records get opened
-      // while it is. Otherwise Escape would walk back through them one at a
-      // time instead of closing, which is not what Escape means. The dialog is
-      // modal, so today the rail cannot be clicked while a record is showing
-      // and this branch is unreachable; it is here because the rule is the
-      // rule and a non-modal dialog would find the bug rather than the rule.
+      // One history entry for "a record is open", however many records are
+      // opened while it is, so Escape closes the dialog instead of stepping
+      // back through each record. The dialog is modal, so today the replace
+      // branch is unreachable; it guards a future non-modal dialog.
       const url = `?${params}`;
       if (openDocKey === null) {
         window.history.pushState({ viaDoc: true }, '', url);
@@ -772,6 +757,7 @@ export default function App() {
     window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
   };
   // #endregion open-account
+  // Leave Admin in one step, going back past every workbench card opened.
   const closeAdmin = () => {
     const held = window.history.state as { viaAdmin?: boolean; benchDepth?: number } | null;
     if (held?.viaAdmin) {
@@ -785,9 +771,8 @@ export default function App() {
   };
 
   /**
-   * The brand, in the rail and in the phone header: home is the landing page
-   * since 1.0.1.0, whatever is showing. Pushed, so Back returns to the view it
-   * left.
+   * The brand button, in the rail and the phone header, always goes to the
+   * landing page. Pushed, so Back returns to the view it left.
    */
   const goHome = () => {
     window.history.pushState({ viaHome: true }, '', window.location.pathname);
@@ -907,7 +892,7 @@ export default function App() {
                     Reset bids ({bidCount})
                   </button>
                 )}
-                {/* The resume as an icon (Steve, 2026-09-22); the rail has its row. */}
+                {/* The resume as an icon here; the docked rail has its own row for it. */}
                 <a
                   className={styles.headerIcon}
                   href={LINKS.resume.href}
@@ -943,9 +928,9 @@ export default function App() {
         {/* #endregion header-below-dock */}
 
         {/* #region store-bar */}
-        {/* The store toggle, at the top of every view on every width (ADR: One
-            container, both stores). Above main so it is never part of the
-            view that announces itself, and below the phone header so the
+        {/* The store toggle (SQL or Cosmos DB), at the top of every view on
+            every width (ADR-066). Above main so it is not part of the view
+            that announces itself, and below the phone header so the
             hamburger keeps its corner. */}
         <StoreBar />
         {/* #endregion store-bar */}
@@ -1023,7 +1008,7 @@ export default function App() {
             />
           ) : (
             <section aria-label="Vehicle inventory">
-              {/* No welcome banner over the inventory (the tweaks pass, A4): the landing page owns that copy. */}
+              {/* No welcome banner here: the landing page owns that copy. */}
               <div className={styles.listHeader}>
                 <h1 className={styles.listTitle}>Inventory</h1>
               </div>
@@ -1078,6 +1063,7 @@ export default function App() {
         </main>
 
         {/* #region footer-version */}
+        {/* The running build and its commit, linked to GitHub (ADR-005). */}
         {build && (
           <footer className={styles.footer} data-frame="footer">
             <span data-testid="build-version">

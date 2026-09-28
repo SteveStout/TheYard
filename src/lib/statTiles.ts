@@ -1,19 +1,19 @@
 /**
- * The strip of tiles across the top of the Admin tab (ADR: The Admin tab, as a
- * product, the addendum on the look). Four questions in the order somebody
- * asks them at three in the morning: is it up, is it fast, is it costing
- * anything, what broke. Each tile is one number, a line under it that says
- * what the number is a number of, and a tone.
+ * The strip of stat tiles across the top of the Admin tab (ADR-080). The tiles
+ * answer four questions, in the order someone on call asks them: is it up, is it
+ * fast, is it costing anything, what broke. Each tile is one number, a short line
+ * saying what the number counts, and a tone (good, warn, bad, plain or waiting).
  *
- * No React in here. The tiles are decided by plain functions over what the
- * tab has already read, so what makes a tile amber or red is a rule that can
- * be read and tested, and a reading that has not arrived is a tile that says
- * so rather than a zero.
+ * There is no React here. Plain functions turn what the tab has already read into
+ * tiles, so the rules that make a tile amber or red are easy to read and test.
+ * A reading that has not arrived yet gives a tile that says so, never a zero.
  */
+
+import { formatNumber } from './format';
 
 export type TileTone = 'good' | 'warn' | 'bad' | 'plain' | 'waiting';
 
-/** The four questions, which are also the four sections a tile links down to. */
+/** The four questions. Each is also the section of the tab a tile links down to. */
 export type TileQuestion = 'up' | 'fast' | 'cost' | 'broke';
 
 export type StatTile = {
@@ -22,34 +22,32 @@ export type StatTile = {
   label: string;
   value: string;
   /**
-   * The line under the number, whole in two lines on the narrowest tile the
-   * strip draws (360 px, and four across at 768), since a line cut with an
-   * ellipsis reads as a fault (1.0.3.30). Worst-case numbers are measured in
-   * tests/e2e/mobile.spec.ts.
+   * The line under the number. It must fit in two lines on the narrowest tile,
+   * because a line cut off with an ellipsis looks like a fault.
+   * tests/e2e/mobile.spec.ts checks the longest cases.
    */
   detail: string;
   /**
-   * What the line leaves out, when a reading has more to say: it starts with
-   * its own joining word or mark, so detail then more is the whole sentence.
-   * A screen reader hears it and the tile's title holds it; the card behind
-   * the tile says all of it on the page.
+   * The rest of the sentence, when a reading has more to say than fits. It starts
+   * with its own joining word or punctuation, so `detail + more` reads as one
+   * sentence. Screen readers and the tile's tooltip get it; the card further down
+   * the page shows it in full.
    */
   more?: string;
   tone: TileTone;
-  /** The last hour behind the number, oldest first, null where nothing was measured; absent where a line would say nothing. */
+  /** The last hour behind the number, oldest first. null marks an unmeasured minute. */
   spark?: (number | null)[];
   /**
-   * A ring beside the number, only where the number is a share of a known
-   * whole: checks passing, pages up, memory against its limit. A number with
-   * no whole, milliseconds or request units, gets none: a ring drawn for looks
-   * is a gauge that measures nothing (ADR: The glass look).
+   * A ring (a small circular gauge) beside the number. Only for a number that is
+   * a share of a known whole: checks passing, pages up, memory used of its limit.
+   * A number with no whole, like milliseconds, gets no ring, because a ring drawn
+   * for looks is a gauge that measures nothing (ADR-081).
    */
   ring?: TileRing;
   /**
-   * Whether the tile holds a ring's room beside its number, from the first
-   * paint and whether or not the reading has drawn one yet (1.0.3.24): a tile
-   * that never draws one keeps no empty 44 px box. Set by tilesFrom, the one
-   * place that decides which tiles have a whole to be a share of.
+   * Whether the tile reserves room for a ring, from the first paint, even before
+   * its reading arrives. Tiles that never draw a ring reserve no room. tilesFrom
+   * sets this, so the decision lives in one place.
    */
   ringed: boolean;
 };
@@ -57,23 +55,31 @@ export type StatTile = {
 export type TileRing = {
   /** From 0 to 1, clamped. */
   share: number;
-  /** What the ring's middle says, short enough to fit inside it. */
+  /** The text in the middle of the ring. Keep it short enough to fit. */
   label: string;
 };
 
-/** A share of a whole as a ring's reading; nothing to draw when there is no whole. */
+/** A part of a whole as a ring. Returns undefined when there is no whole to measure against. */
 export function ringOf(part: number, whole: number, label: string): TileRing | undefined {
   if (!(whole > 0) || Number.isNaN(part)) return undefined;
   return { share: Math.min(1, Math.max(0, part / whole)), label };
 }
 
-/** The ring as an SVG stroke: the circle's length and how much of it is left undrawn. */
+/**
+ * The ring as an SVG stroke dash: the circle's full length, and how much of it
+ * to leave undrawn. Both are rounded to one decimal place.
+ */
 export function ringStroke(share: number, radius: number): { length: number; gap: number } {
   const length = 2 * Math.PI * radius;
   const held = Math.min(1, Math.max(0, share));
   return { length: Math.round(length * 10) / 10, gap: Math.round(length * (1 - held) * 10) / 10 };
 }
 
+/**
+ * Everything the tiles are built from. Each field is null until it has been read.
+ * "The ring" below means the ring buffer of recent readings that the server
+ * process keeps in memory, not the ring gauge drawn on a tile.
+ */
 export type TileReadings = {
   health: {
     status: string;
@@ -84,30 +90,33 @@ export type TileReadings = {
   } | null;
   pages: { checked: number; up: number } | null;
   /**
-   * The last hour's traffic: every request and every error, added up, and the
-   * hour as a visitor felt it, from hourTiming() over the warm minutes: how
-   * many requests they held, their median and their ninety-fifth.
+   * The last hour's traffic: total requests and errors, plus the timing a visitor
+   * felt, from hourTiming() over the warm minutes (the minutes after the cold
+   * start).
    */
   traffic: {
     requests: number;
     server_errors: number;
     client_errors: number;
-    /** Requests in the warm minutes, the ones the two percentiles are over. */
+    /** Requests in the warm minutes. The two percentiles are over these. */
     warm_requests: number;
     p50_ms: number | null;
     p95_ms: number | null;
-    /** The minute the slowest request was answered in, already written as a clock time; absent on a quiet hour. */
+    /** The minute of the slowest request, as a clock time. Absent on a quiet hour. */
     slowest_label?: string | null;
-    /** The minute a cold start was left out of the reading above, as a clock time; absent when none was. */
+    /** The minute of a cold start that was left out, as a clock time. Absent if none. */
     cold_start_label?: string | null;
   } | null;
   memory: { working_set_mb: number; limit_mb: number } | null;
-  /** What the document store charged in the ring this process holds, and the allowance a second it is charged against. */
+  /**
+   * What the document store (Cosmos DB) charged in request units over the ring,
+   * and how many units a second are free. 'none' when no document store is in use.
+   */
   charged: { request_units: number; free_per_second: number } | 'none' | null;
-  /** Errors the server and the browser reported, in the ring this process holds. */
+  /** Errors the server and the browser reported, over the ring. */
   errors: number | null;
   visitorsToday: number | null;
-  /** The hour behind four of the tiles, a minute or a sample at a time. */
+  /** The last hour behind four of the tiles, one minute or one sample per entry. */
   sparks?: {
     speed?: (number | null)[];
     memory?: (number | null)[];
@@ -116,7 +125,7 @@ export type TileReadings = {
   };
 };
 
-/** Days, hours and minutes, the two largest that are not zero. */
+/** Uptime as the two largest non-zero units: "2d 5h", "3h 12m" or "7m". */
 export function uptimeWords(totalSeconds: number): string {
   const days = Math.floor(totalSeconds / 86_400);
   const hours = Math.floor((totalSeconds % 86_400) / 3_600);
@@ -127,24 +136,24 @@ export function uptimeWords(totalSeconds: number): string {
 }
 
 /**
- * A time in words. The rings and the readings keep whole milliseconds, so a
- * median of 0 is a median under a millisecond, and every place that shows one
- * says so (1.0.3.9 on the tile; the traffic card's "0 ms" beside the tile's
- * "under 1 ms" until 1.0.3.30).
+ * A time in words. The readings are stored as whole milliseconds, so 0 really
+ * means "under a millisecond". Every place that shows a time uses this, so they
+ * all say it the same way.
  */
 export function millisecondsWords(ms: number): string {
   return ms === 0 ? 'under 1 ms' : `${ms.toLocaleString('en-US')} ms`;
 }
 
-/** A tile's whole sentence: the line under its number and what the line leaves out. */
+/** A tile's whole sentence: the line under its number plus the part left out. */
 export function tileSentence(tile: Pick<StatTile, 'detail' | 'more'>): string {
   return tile.detail + (tile.more ?? '');
 }
 
 /**
- * The line under the typical answer: what the number is over on the tile, and
- * the hour, its slowest minute and a left-out start in what the tile leaves
- * out, so the two together are the sentence the strip used to cut (1.0.3.30).
+ * The speed tile's line and the rest of its sentence. The line says what the
+ * number is measured over. The rest adds the hour, the slowest minute, and any
+ * cold start that was left out. `judged` is true when the hour was busy enough
+ * to colour; `both` is the median and 95th percentile in words, or ''.
  */
 function speedLine(
   t: NonNullable<TileReadings['traffic']>,
@@ -156,7 +165,7 @@ function speedLine(
     (t.cold_start_label ? `; the start at ${t.cold_start_label} is left out` : '');
   if (judged && t.p95_ms !== null) {
     return {
-      detail: `95th ${t.p95_ms} ms over ${t.warm_requests} requests`,
+      detail: `95th ${formatNumber(t.p95_ms)} ms over ${formatNumber(t.warm_requests)} requests`,
       more: ` in the last hour${tail}`,
     };
   }
@@ -172,6 +181,7 @@ function speedLine(
   };
 }
 
+/** A tile whose reading has not arrived yet. */
 const waiting = (key: string, question: TileQuestion, label: string): Omit<StatTile, 'ringed'> => ({
   key,
   question,
@@ -183,35 +193,30 @@ const waiting = (key: string, question: TileQuestion, label: string): Omit<StatT
 
 // #region tile-rules
 /**
- * The rules, in one place. Amber is "worth a look" and red is "somebody should
- * be looking": a failing check or a page that is down is red; a slow
- * ninety-fifth, memory past four fifths of its limit or a refused request is
- * amber. The thresholds are this site's own, read off what it measures on a
- * quiet day, and they are here to be argued with.
+ * The colour rules, all in one place. Amber means "worth a look". Red means
+ * "someone should be looking". A failing check or a page that is down is red.
+ * A slow 95th percentile (p95: 95 of every 100 requests were faster), memory
+ * past 80% of its limit, or a refused request is amber. The thresholds are
+ * this site's own, set from what it measures on a quiet day, and open to change.
  */
 export const SLOW_P95_MS = 1_000;
 export const VERY_SLOW_P95_MS = 3_000;
 /**
- * A colour needs an hour with this many requests in it (Steve, 2026-09-23:
- * "is it fast keeps showing it's slow"). Over fewer, a ninety-fifth is one
- * request's time, and the tile reads quiet and shows the count instead.
- * Measured over the plan's first three days, about 30,000 requests: the old
- * tile, which headlined the worst minute's ninety-fifth, read amber 45 per
- * cent of the time on the SQL site while 1.5 per cent of its minutes were
- * slow; the hour's own ninety-fifth over its warm requests, with this floor,
- * reads amber under 1 per cent of the time on either site.
+ * The speed tile only takes a colour when the hour has at least this many warm
+ * requests. With fewer, the 95th percentile is really just the one slowest
+ * request, so the tile stays plain and shows the request count instead.
  */
 export const QUIET_BELOW_REQUESTS = 20;
 
 /**
- * The tiles whose number is a share of a known whole, the only ones that hold a
- * ring's room (1.0.3.24): a tile that never draws one kept an empty 44 px box
- * and broke "under 1 ms" over two lines on a phone.
+ * The tiles whose number is a share of a known whole. Only these reserve room
+ * for a ring, so the other tiles keep their full width for text on a phone.
  */
 const RINGED = new Set(['health', 'pages', 'memory']);
 export const MEMORY_WARN_SHARE = 0.8;
 export const MEMORY_BAD_SHARE = 0.95;
 
+/** Builds every tile, in display order, from the readings the tab holds. */
 export function tilesFrom(readings: TileReadings): StatTile[] {
   const { health, pages, traffic, memory, charged, errors, visitorsToday, sparks } = readings;
   const tiles: Omit<StatTile, 'ringed'>[] = [];
@@ -261,12 +266,14 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
         }
   );
 
-  // The hour as a visitor felt it: the median is the number, the ninety-fifth
-  // is the line under it, and both are over the warm minutes' requests. Under
-  // QUIET_BELOW_REQUESTS the hour is too quiet to colour and says so.
+  // Speed, as a visitor felt it. The median (p50) is the big number and the 95th
+  // percentile goes in the line under it, both over the warm requests. Below
+  // QUIET_BELOW_REQUESTS the hour is too quiet to colour, and the tile says so.
   const busy = traffic !== null && traffic.warm_requests >= QUIET_BELOW_REQUESTS;
   const percentiles = (t: NonNullable<TileReadings['traffic']>) =>
-    t.p50_ms === null || t.p95_ms === null ? '' : `typical ${t.p50_ms} ms, 95th ${t.p95_ms} ms`;
+    t.p50_ms === null || t.p95_ms === null
+      ? ''
+      : `typical ${formatNumber(t.p50_ms)} ms, 95th ${formatNumber(t.p95_ms)} ms`;
   tiles.push(
     traffic === null
       ? waiting('speed', 'fast', 'Typical answer')
@@ -274,10 +281,8 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           key: 'speed',
           question: 'fast',
           label: 'Typical answer',
-          // No median to read is a quiet hour, unless the only requests there
-          // were are the cold start's, and then it is a process warming.
-          // The ring keeps whole milliseconds, so a median of 0 is a median
-          // under a millisecond, which is what the tile says (1.0.3.9).
+          // With no median to show, the hour is "quiet", unless the only requests
+          // came during the cold start, in which case the process is "warming".
           value:
             busy && traffic.p50_ms !== null
               ? millisecondsWords(traffic.p50_ms)
@@ -306,7 +311,7 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
       question: 'cost',
       label: 'Memory',
       value: `${Math.round(share * 100)}%`,
-      detail: `${Math.round(memory.working_set_mb)} of ${Math.round(memory.limit_mb)} MB`,
+      detail: `${formatNumber(Math.round(memory.working_set_mb))} of ${formatNumber(Math.round(memory.limit_mb))} MB`,
       tone: share >= MEMORY_BAD_SHARE ? 'bad' : share >= MEMORY_WARN_SHARE ? 'warn' : 'good',
       spark: sparks?.memory,
       ring: ringOf(memory.working_set_mb, memory.limit_mb, `${Math.round(share * 100)}%`),
@@ -330,14 +335,17 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
             question: 'cost',
             label: 'Request units',
             value: `${Math.round(charged.request_units * 10) / 10}`,
-            // A total, so it is not set against the free tier's rate (the self-review of
-            // 25 September); the rate is on the machines card, busiest minute against it.
-            detail: `in the ring; ${charged.free_per_second} a second is free`,
+            // This is a total, not a rate, so it is never coloured against the free
+            // allowance per second. The machines card compares the busiest minute.
+            detail: `in the ring; ${formatNumber(charged.free_per_second)} a second is free`,
             tone: 'plain',
             spark: sparks?.charged,
           }
   );
 
+  // Errors: the big number is the larger of two counts, the server's 5xx answers
+  // this hour and the errors reported over the ring. The line shows both. Any
+  // error at all is red.
   if (errors === null && traffic === null) {
     tiles.push(waiting('errors', 'broke', 'Errors'));
   } else {
@@ -376,10 +384,10 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
 // #endregion tile-rules
 
 /**
- * Today's people, from the days an activity report carries; a report with no
- * row for today is a zero, which is what it means. People, and not humans,
- * from 1.0.3.11: humans counted App Service's own requests from the loopback
- * address, most of every day since 20 September.
+ * Today's visitor count from an activity report's list of days. No row for
+ * today means zero. Prefer `people`: the older `humans` count also included
+ * App Service's own requests from the loopback address, so it is only a
+ * fallback for a report that has no `people` field.
  */
 export function visitorsOn(
   days: { day: string; humans: number; people?: number }[],
@@ -392,17 +400,20 @@ export function visitorsOn(
 
 // #region cold-start
 /**
- * The minutes a process has just started in are not held against it. The
- * first tile to go amber went amber over something real, and then the same
- * tile went amber after every roll, because the first request a cold process
- * serves takes a second and a ninety-fifth over a quiet minute is that
- * minute's slowest request. An alarm that fires on every deploy teaches
- * people to look past it. So the speed tile reads the hour without the first
- * three minutes after the start, says on its face that it left them out, and
- * the traffic card goes on drawing them.
+ * The first few minutes after a process starts are not held against it. A cold
+ * process takes about a second to answer its first request, and on a quiet
+ * minute that one request is the whole 95th percentile. Counting it would turn
+ * the speed tile amber after every deploy, and an alarm that fires on every
+ * deploy teaches people to ignore it. So the tile leaves these minutes out and
+ * says so on its face. The traffic card still draws them.
  */
 export const COLD_START_MINUTES = 3;
 
+/**
+ * Splits per-minute slots into warm ones and the ones inside the cold-start
+ * window. The window starts at the minute the process started (rounded down).
+ * With no start time, every slot counts as warm.
+ */
 export function afterColdStart<T extends { at: string }>(
   slots: T[],
   startedAt: Date | null
@@ -420,14 +431,11 @@ export function afterColdStart<T extends { at: string }>(
 
 // #region hour-timing
 /**
- * The hour's own median and ninety-fifth, over every request in the minutes
- * handed in (the warm ones, after afterColdStart), from the durations each
- * minute carries. A percentile of an hour cannot be had from its minutes'
- * percentiles, and the worst minute's ninety-fifth, which the tile headlined
- * until 1.0.3.4, is one request's time on a quiet site and stayed on the tile
- * for the sixty minutes that minute was in the hour. Nearest rank, the same
- * arithmetic the API uses for a minute (Percentiles.Of), so the two agree on
- * an hour of one minute.
+ * The hour's median and 95th percentile, over every request in the minutes
+ * passed in (usually the warm ones from afterColdStart). You cannot get an
+ * hour's percentile from its minutes' percentiles, so this pools every request
+ * duration first. It uses the nearest-rank method, the same arithmetic as the
+ * API's Percentiles.Of, so the two agree on an hour that has one minute.
  */
 export function hourTiming(
   slots: { at: string; requests?: number | null; durations_ms?: number[] }[]
@@ -452,6 +460,7 @@ export function hourTiming(
     }
   }
   all.sort((a, b) => a - b);
+  // Nearest rank: the value at position ceil(p% of n), counting from 1.
   const rank = (percentile: number) =>
     all.length === 0 ? null : all[Math.max(0, Math.ceil((percentile / 100) * all.length) - 1)];
   return { requests: all.length, p50_ms: rank(50), p95_ms: rank(95), slowest_at: slowestAt };
@@ -459,9 +468,9 @@ export function hourTiming(
 // #endregion hour-timing
 
 /**
- * What the lines under the tiles are lines of, in words, because a line with
- * no axis says nothing about its own width. The number over a line is always
- * now; only the line follows the window.
+ * The caption that says what time span the small lines under the tiles cover.
+ * A sparkline has no axis, so without this it says nothing about its own width.
+ * The number over a line is always "now"; only the line follows the chosen window.
  */
 export function sparkCaption(
   stretch: string,
@@ -481,11 +490,11 @@ export function sparkCaption(
 
 // #region spark
 /**
- * The line under a tile, as the point lists of an SVG polyline: one list per
- * unbroken run, so a minute nobody measured is a gap in the line and not a
- * dive to the floor. The scale starts at zero, because a line scaled to its
- * own smallest value makes four megabytes of drift look like a cliff. A run
- * of one reading is left out: a polyline of one point draws nothing.
+ * The sparkline under a tile, as point lists for SVG polylines. There is one
+ * list per unbroken run, so an unmeasured minute is a gap in the line, not a
+ * drop to zero. The scale starts at zero: a line scaled from its own smallest
+ * value makes a few megabytes of drift look like a cliff. A run of a single
+ * reading is dropped, because a one-point polyline draws nothing.
  */
 export function sparkRuns(values: (number | null)[], width: number, height: number): string[] {
   const measured = values.filter((value): value is number => value !== null);
@@ -494,6 +503,7 @@ export function sparkRuns(values: (number | null)[], width: number, height: numb
   const step = values.length > 1 ? width / (values.length - 1) : 0;
   const runs: string[] = [];
   let run: string[] = [];
+  // Ends the current run, keeping it only if it has at least two points.
   const close = () => {
     if (run.length > 1) runs.push(run.join(' '));
     run = [];

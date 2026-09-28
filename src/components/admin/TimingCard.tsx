@@ -7,14 +7,15 @@ import styles from '../AdminPanel.module.css';
 import type { EndpointTiming, Metrics } from './types';
 import { useRead, failed } from './common';
 import { type Column, DataTable } from './DataTable';
+import { formatNumber } from '../../lib/format';
 
 /** A path: how often it was asked for, and how long it took at the middle, the ninety-fifth and the worst. */
 const TIMING_COLUMNS: Column<EndpointTiming>[] = [
   { name: 'Path', mono: true, cell: (timing) => timing.path },
   { name: 'Calls', num: true, cell: (timing) => timing.count },
-  { name: 'p50', num: true, cell: (timing) => `${timing.p50_ms} ms` },
-  { name: 'p95', num: true, cell: (timing) => `${timing.p95_ms} ms` },
-  { name: 'Slowest', num: true, cell: (timing) => `${timing.max_ms} ms` },
+  { name: 'p50', num: true, cell: (timing) => `${formatNumber(timing.p50_ms)} ms` },
+  { name: 'p95', num: true, cell: (timing) => `${formatNumber(timing.p95_ms)} ms` },
+  { name: 'Slowest', num: true, cell: (timing) => `${formatNumber(timing.max_ms)} ms` },
 ];
 
 export default function TimingCard({ tick }: { tick: number }) {

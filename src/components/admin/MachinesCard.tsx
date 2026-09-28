@@ -18,6 +18,7 @@ import type { DocumentMinute, Fetched, MachineSample, Machines, ResourceStatRow 
 import { About } from './common';
 import { BarGauge, MachineChart, youngRecord } from './charts';
 import { type Column, DataTable } from './DataTable';
+import { formatNumber } from '../../lib/format';
 
 /** The container every fifteen seconds: memory three ways, the processor and the threads. */
 const CONTAINER_COLUMNS: Column<MachineSample>[] = [
@@ -27,9 +28,19 @@ const CONTAINER_COLUMNS: Column<MachineSample>[] = [
     short: true,
     cell: (sample) => new Date(sample.at).toLocaleTimeString(),
   },
-  { name: 'Working set', mono: true, num: true, cell: (sample) => `${sample.working_set_mb} MB` },
-  { name: 'Managed', mono: true, num: true, cell: (sample) => `${sample.managed_mb} MB` },
-  { name: 'Heap', mono: true, num: true, cell: (sample) => `${sample.heap_mb} MB` },
+  {
+    name: 'Working set',
+    mono: true,
+    num: true,
+    cell: (sample) => `${formatNumber(sample.working_set_mb)} MB`,
+  },
+  {
+    name: 'Managed',
+    mono: true,
+    num: true,
+    cell: (sample) => `${formatNumber(sample.managed_mb)} MB`,
+  },
+  { name: 'Heap', mono: true, num: true, cell: (sample) => `${formatNumber(sample.heap_mb)} MB` },
   {
     name: 'Processors',
     mono: true,
@@ -57,7 +68,12 @@ const DOCUMENT_COLUMNS: Column<DocumentMinute>[] = [
     short: true,
     cell: (minute) => new Date(minute.at).toLocaleTimeString(),
   },
-  { name: 'Request units', mono: true, num: true, cell: (minute) => `${minute.request_units} RU` },
+  {
+    name: 'Request units',
+    mono: true,
+    num: true,
+    cell: (minute) => `${formatNumber(minute.request_units)} RU`,
+  },
   { name: 'Operations', mono: true, num: true, cell: (minute) => minute.operations },
   {
     name: 'Share of a free second',
@@ -186,7 +202,7 @@ function MachinesBody({
             series={[
               {
                 key: 'memory',
-                name: `Memory, share of ${machines.container.memory_limit_mb} MB`,
+                name: `Memory, share of ${formatNumber(machines.container.memory_limit_mb)} MB`,
                 points: samples.map((sample) => ({
                   at: sample.at,
                   value:
@@ -365,7 +381,7 @@ function KeptWindow({ machines, window: kept }: { machines: Machines; window: Ma
           ? `${youngRecord(slots)}; a gap after the first reading is drawn as the gap it is.`
           : 'A stretch with no reading is drawn as the gap it is.'}
         {held.held > 0 &&
-          ` Peak working set in the window: ${peak} MB. The document store charged ${Math.round(charged * 100) / 100} request units in it.`}
+          ` Peak working set in the window: ${formatNumber(peak)} MB. The document store charged ${Math.round(charged * 100) / 100} request units in it.`}
         {history.note !== null && held.held === 0 && ` ${history.note}.`}
       </p>
       <MachineChart

@@ -29,6 +29,15 @@ export function formatInteger(value: number): string {
   return integerFormat.format(value);
 }
 
+/**
+ * "1,183" or "298.4": a reading grouped by thousands, decimals kept. Every
+ * number shown with a unit (ms, MB, RU) goes through here, so the same fact
+ * never reads as "1183" in one place and "1,183" in another.
+ */
+export function formatNumber(value: number): string {
+  return integerFormat.format(value);
+}
+
 /** "47,731 km" */
 export function formatOdometer(km: number): string {
   return `${integerFormat.format(km)} km`;
@@ -49,6 +58,16 @@ const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, {
 /** "Apr. 5, 2:00 p.m.", for auction start and end stamps. */
 export function formatAuctionDateTime(epochMs: number): string {
   return dateTimeFormat.format(epochMs);
+}
+
+/**
+ * The same "Apr. 5, 2:00 p.m." for any moment the site states with its date:
+ * a test run, a page sweep, a visitor's first and last visit. One format for
+ * a date and a time, wherever it appears.
+ */
+export function formatDateTime(when: number | string): string {
+  const date = new Date(when);
+  return Number.isNaN(date.getTime()) ? '' : dateTimeFormat.format(date);
 }
 
 /**

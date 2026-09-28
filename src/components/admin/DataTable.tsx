@@ -1,20 +1,17 @@
 /**
- * Every table on the Admin tab, drawn one way (1.0.3.30; ADR: The tweaks pass, the
- * addendum on tables on a phone). A card names its columns once,
- * and the name is both the column's header and, on a phone, the label beside
- * each value.
+ * Every table on the Admin tab is drawn by this one component (ADR-083). A
+ * card names its columns once. On a wide card the names are the table's
+ * headers; on a stacked table they become the label beside each value.
  *
  * A table of three or more columns stacks when its card cannot give every
- * column a column's room (src/lib/tableFit.ts; 1.0.3.31, before which it was
- * under 640 px only): each row becomes a block led by its first column, with
- * every other value on a line of its own behind its column's name. The
- * pictures of 1.0.3.29 at 390 showed why: the log gave its message twenty pixels and rows three hundred tall, and the store,
- * the machines and the backends were cut at the phone's edge. A table of two
- * columns is already a label and a value, and stays a table.
+ * column room (src/lib/tableFit.ts). Each row becomes a block led by its
+ * first column, with every other value on its own line behind its column's
+ * name. A table of two columns is already a label and a value, so it never
+ * stacks.
  *
- * A browser that lays a table's parts out as blocks may stop telling a screen
- * reader it is a table (Safari has), so every part carries its role, and the
- * reader hears the same table at every width.
+ * Some browsers (Safari) stop telling a screen reader that a table is a
+ * table once its parts are laid out as blocks. So every part carries its
+ * ARIA role, and a screen reader hears the same table at every width.
  */
 import { type ReactNode, useLayoutEffect, useState } from 'react';
 import { STACK_FROM_COLUMNS, stacksAt } from '../../lib/tableFit';
@@ -29,7 +26,10 @@ export type Column<Row> = {
   mono?: boolean;
   /** A number: tabular figures, right-aligned in a table and never broken. */
   num?: boolean;
-  /** A short reading (a time, a level, a status), kept on one line: 1.0.3.29 broke them a character a line. */
+  /**
+   * A short reading (a time, a level, a status), kept on one line so a narrow
+   * column never breaks it one character per line.
+   */
   short?: boolean;
   /** The row's own name, a header for the row rather than a value in it. */
   rowHeader?: boolean;

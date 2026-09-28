@@ -36,12 +36,15 @@
   gap: var(--space-2);
 }
 
-/* The ring sits on a white disc so its arc reads over any photograph. */
+/* The ring sits on a small see-through disc with the glass's hairline, so its
+   arc reads over any photograph without a solid white blob on the picture. No
+   blur here: a hundred cards each blurring behind a ring costs a phone frames. */
 .timeRing {
   display: inline-flex;
   padding: 2px;
   border-radius: 50%;
-  background: var(--color-surface);
+  background: var(--glass-bg-phone);
+  box-shadow: 0 0 0 1px var(--glass-border);
 }
 
 .soldChip {

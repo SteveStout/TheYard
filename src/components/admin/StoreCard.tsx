@@ -9,12 +9,18 @@ import styles from '../AdminPanel.module.css';
 import type { Metrics, StoreOperation, StoreLog, Fetched } from './types';
 import { useRead, useKeptWindow, Absent, About, describeParameters } from './common';
 import { type Column, DataTable } from './DataTable';
+import { formatNumber } from '../../lib/format';
 
 // #region store-card
 /** An operation: when, how long, what it cost, who caused it, where it went and what it carried. */
 const storeColumns = (window_: CardWindow): Column<StoreOperation>[] => [
   { name: 'At', mono: true, short: true, cell: (operation) => stampFor(window_, operation.at) },
-  { name: 'Took', mono: true, num: true, cell: (operation) => `${operation.duration_ms} ms` },
+  {
+    name: 'Took',
+    mono: true,
+    num: true,
+    cell: (operation) => `${formatNumber(operation.duration_ms)} ms`,
+  },
   { name: 'Charge', mono: true, num: true, cell: (operation) => `${operation.request_charge} RU` },
   { name: 'Caused by', mono: true, cell: (operation) => operation.request ?? 'startup' },
   { name: 'Container', mono: true, cell: (operation) => operation.container },

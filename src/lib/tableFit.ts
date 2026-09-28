@@ -1,12 +1,9 @@
 /**
- * When an Admin table stacks (1.0.3.31; ADR: The tweaks pass, the addendum on
- * tables that fit their card). 1.0.3.30 stacked a table of three or more columns
- * under the phone step, 640, and left every desk a table. The pictures of
- * 1.0.3.29 showed that a desk is not room enough either: the store's nine
- * columns in a card about 700 wide at 1024 were cut at the card's edge and broke
- * its times one character a line. The question is the card's width against the
- * table's columns, not the screen's, so the table measures its own box and
- * stacks when that box cannot give every column a column's room.
+ * When an Admin table stacks (ADR-083). A table asks how wide its own card
+ * is, not how wide the screen is, because a desk can still hand a table a
+ * card too narrow for its columns. When the card cannot give every column
+ * enough room, the table stacks: each row becomes a small block of labels
+ * and values. DataTable.tsx does the measuring and calls stacksAt below.
  */
 
 /** A table of three or more columns can stack; two are a label and a value already. */

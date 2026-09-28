@@ -172,3 +172,28 @@ Steve asked for the styling code to read well to a code reviewer and a junior de
 - **Names say what a thing is.** `--ring-first` and `--ring-second` are `--ring-fill-teal` and `--ring-fill-gold`.
 - **Rules numbered once.** StyleRulesTests had two sections labelled rule nine. The one face stays rule nine; the operator's look is rule thirteen, and the sections run one to thirteen in order in the file.
 - **The style page leads with its point.** It opens on "a style guide the build enforces", says near the top that the swatches are painted live from the token sheet, drops the reader section, the dates and the internal names, adds the width scale, tables that stack in their card (`DataTable`, `tableFit`), charts drawn at their width (`fitBox`) and `base.css`, each with a live example, and ends on the thirteen tests in plain words with a link to the file. Every hex and every contrast figure on it is still held by rules two and three.
+
+## Addendum, 2026-09-28 (1.0.3.33): the readability pass over the key files
+
+The same pass as the token sheet, over the files a reviewer opens first: `main.tsx`, `breakpoints.ts`, `operator.css`, `App.tsx`, `AdminPanel.tsx`, `statTiles.ts`, `DataTable.tsx`, `tableFit.ts`, `charts.tsx` and `plotFrame.ts`. Comments only: a script that strips every comment from the old and the new file found the code identical in each. Each file opens with a short header saying what it is for, `App.tsx` and `AdminPanel.tsx` list their regions in order, each comment says what and why, and history (versions, dates, who asked, the names of past passes) moved out, with a numbered record pointer where the reason matters. Region markers are unchanged, because records quote them.
+
+**The two large files are not split in this pass**, because a split moves regions the records quote and is not mechanical. The proposal, for a pass of its own:
+
+- `App.tsx` (about 1,090 lines) keeps the wiring and the view switch, about 250 lines. The address bar and navigation (view flags, the URL mirror, history, back and forward, the open and close handlers) move to `hooks/useViewState.ts`; the listing (when it is shown, facets once, the debounced fetch, going stale, load more) to `hooks/useInventoryListing.ts`; the open vehicle to `hooks/useOpenVehicle.ts`; who is signed in to `hooks/useAccount.ts`; focus and announcements to `hooks/useViewFocus.ts`; the visible order to `lib/visibleOrder.ts`; the phone header and the footer to their own components.
+- `AdminPanel.tsx` (about 1,050 lines) keeps the lazy card imports, the shared reads, the tiles and the card switch, about 400 lines. `Workbench`, `RailContent`, `HourAtAGlance` and `StatStrip` each move to `src/components/admin/`, the shared click helper to `admin/common.tsx`, and `useMachines` to `src/hooks/`.
+- The records that quote a moved region by path change in the same commit, and LiveSamplesTests shows any it misses as "Sample unavailable".
+
+## Addendum, 2026-09-28 (1.0.3.33): the open findings from the picture reviews
+
+The findings still open from the two picture reviews of 1.0.3.29, each read on the live site (1.0.3.31) before it was changed.
+
+- **Units keep their case.** Small capitals are for labels. A reading's value keeps its own case, so "under 1 ms", "96,891 km" and "Sep 25, 12:04 p.m." no longer print as "UNDER 1 MS" and "96,891 KM". The Readout block and a vehicle's specifications put the capitals on the label only; a ring's reading, a chart's callout and axis words, and a gauge's ceiling drop them.
+- **One format per fact.** Every figure shown with a unit (ms, MB, RU, requests) goes through `formatNumber` in `src/lib/format.ts`, grouped by thousands, and every date shown with a time goes through `formatDateTime`, the same format as an auction's stamps. A time of day on its own keeps the browser's time format.
+- **The tests tile and the tests card.** The landing page counts each test once (1,146 on 1.0.3.31); the card counted every run, the second store's reruns included (1,850). Both are right; the card now says how many of its runs are reruns and what the landing page counts.
+- **Chart units** sit above the plot, off the top tick, so "1" and "errors / min" no longer read as one phrase.
+- **One marker per line.** A legend is the swatch list without bullets, and a line in a list that starts with its own swatch or a details toggle gets no bullet as well.
+- **No lone items.** Four window pills on a phone are two rows of two. A landing group of four is two by two, three and six are threes, and an odd last tile on a phone takes its row. The Author page's buttons under a desk share their line. A rail heading balances its lines rather than leaving one word.
+- **Readable at every width.** The recruiter's path and the sources are laid out at the width their card gives, up to 560, so their words stay the chart size on a desk (they had grown to about 20 px). A label sits 8 px above its input.
+- **The countdown ring on a photo** sits on a see-through disc with the glass's hairline, not a white one, and without a blur, because a hundred cards each blurring cost a phone frames.
+- **An ended lot** with bids says "Final bid", on its card and its page.
+- **Left as they are, with the reason.** An ended lot leading "Ending soonest" until the next answer is ADR-056's choice (cards do not jump under a reader). "Forgot your password?" is disabled until an email is typed, which `account.spec` holds. Inputs are 40 px and square-cornered and pills 34 px and round on a desk, one height per kind of control (the controls region of the token sheet).
