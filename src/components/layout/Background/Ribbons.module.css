@@ -4,10 +4,8 @@
  * Does not:  Hold the drawing's shapes (src/lib/ribbons.ts does), give a gradient or filter an id, or animate.
  * Used by:   Ribbons.tsx, ribbons.test.ts.
  */
-/* The ribbons (ADR: The glass look, the addendum on the ribbon ground): at the
-   top of the page and part of it, so they scroll away with the words like a
-   letterhead (ADR-081, the ground is part of the page); behind the page, deaf
-   to the pointer, from the rail's edge. */
+/* The ribbons (ADR-081): at the top of the page and part of it, so they scroll
+   away with the words; behind the page, deaf to the pointer, from the rail's edge. */
 /* #region ground-layer */
 .layer {
   position: absolute;
@@ -31,7 +29,7 @@
   transform: translateZ(0);
 }
 
-/* The page column starts at the rail; the layer starts at the window's edge, as it did. */
+/* The page column starts at the rail; the layer, at the window's edge. */
 :global([data-rail='open']) .layer {
   left: calc(-1 * var(--rail-width));
 }

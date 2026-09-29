@@ -16,6 +16,7 @@
  * renderer wrote from this project's own documents, and no React.
  */
 
+// #region layout-document
 const PANEL = 'doc-panel';
 
 /** Splits at every second-level heading that starts a line of markup, never inside a code block. */
@@ -37,6 +38,7 @@ export function layoutDocument(html: string): string {
   ];
   return `<div class="doc-page" data-testid="doc-page">${panels.join('')}</div>`;
 }
+// #endregion layout-document
 
 // #region status-reading
 /**

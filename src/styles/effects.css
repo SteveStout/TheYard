@@ -24,6 +24,7 @@
      is the background colour only, never an opacity on the panel, so the
      words, numbers and photos inside are always fully solid. Where blur is
      not available or not wanted, the fallbacks below turn every panel solid. */
+  /* #region glass-design-tokens */
   --glass-bg: rgba(255, 255, 255, 0.3);
   /* A little more white behind a phone's smaller type. */
   --glass-bg-phone: rgba(255, 255, 255, 0.38);
@@ -31,6 +32,7 @@
      and a light rim lifts the edge (ADR-083). */
   --glass-filter: blur(28px) saturate(1.6);
   --glass-border: color-mix(in srgb, var(--color-teal-deep) 18%, transparent);
+  /* #endregion glass-design-tokens */
   --glass-shadow:
     0 10px 30px color-mix(in srgb, var(--color-teal-deep) 12%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.55),

@@ -115,7 +115,10 @@ public static class DocsCatalog
         ["adr-component-folders"] = "docs/ADR-084-one-folder-per-component.md",
         ["adr-kept-awake"] = "docs/ADR-085-kept-awake.md",
         ["adr-composition-root"] = "docs/ADR-086-the-composition-root-split-by-job.md",
+        ["style-guide"] = "docs/STYLE-GUIDE.md",
         ["color-style"] = "docs/COLOR-STYLE.md",
+        ["background-ribbon"] = "docs/BACKGROUND-RIBBON.md",
+        ["ui-architecture"] = "docs/UI-ARCHITECTURE.md",
         ["author"] = "docs/AUTHOR.md",
         ["security"] = "docs/SECURITY.md",
         ["ai-development"] = "docs/AI-DEVELOPMENT.md",
@@ -137,6 +140,7 @@ public static class DocsCatalog
         ["erd"] = ("docs/images/erd.svg", "TheYard's database"),
         ["two-sites"] = ("docs/images/two-sites.svg", "TheYard's two sites"),
         ["sql-vs-cosmos"] = ("docs/images/sql-vs-cosmos.svg", "SQL Server and Cosmos DB, side by side"),
+        ["ui-architecture"] = ("docs/images/ui-architecture.svg", "TheYard's UI, layer by layer"),
     };
     // #endregion diagrams
 }

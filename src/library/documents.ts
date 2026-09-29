@@ -1,7 +1,7 @@
 /**
  * Does:      Joins records.ts and pages.ts into DOCS, the one list every document is looked up in, and works out DocKey from them.
  * Does not:  Hold a document itself, or know where one sits in the sidebar.
- * Used by:   records.ts, pages.ts, sections.ts, addresses.ts, DocDialog.tsx, SideNav.tsx, Landing.tsx, SheetIcons.tsx, Shell.tsx, useAddressBar.ts, useNavigation.ts.
+ * Used by:   records.ts, pages.ts, sections.ts, addresses.ts, DocDialog.tsx, SideNav.tsx, Landing.tsx, SheetIcons.tsx, Shell.tsx, useAddressBar.ts, useNavigation.ts, useLiveBlocks.tsx.
  */
 import { PAGES } from './pages';
 import { RECORDS } from './records';

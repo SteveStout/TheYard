@@ -9,16 +9,18 @@ import prose from './DocProse.module.css';
 import swatches from './DocSwatches.module.css';
 import panels from './DocPanels.module.css';
 import author from './AuthorPage.module.css';
+import blocks from './StyleBlocks.module.css';
+import { useLiveBlocks } from './useLiveBlocks';
 import { layoutDocument } from '../lib/docLayout';
 import { ICON } from '../lib/icons';
 import { DOCS, type DocKey } from './documents';
 
 /**
  * The document's sheets, one job each (ADR-019, the addendum on the stylesheets). Each scopes its
- * rules under its own .prose, so the element that holds the document carries all four; the
+ * rules under its own .prose, so the element that holds the document carries all five; the
  * reading panel's frost is scoped under the window as well, so the window carries that sheet's .dialog.
  */
-const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose}`;
+const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose} ${blocks.prose}`;
 const WINDOW = `${styles.dialog} ${panels.dialog} ${styles.dialogGround}`;
 
 /**
@@ -38,11 +40,15 @@ export type DocRequest = { key: DocKey };
 export function DocDialog({
   request,
   onClose,
+  onOpenDoc,
 }: {
   request: DocRequest | null;
   onClose?: () => void;
+  /** Opens another document in this window: an in-library link on the Style pages (useLiveBlocks.tsx). */
+  onOpenDoc?: (key: DocKey) => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const proseRef = useRef<HTMLDivElement>(null);
   const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>({});
   // #region derived-error
   // The request that failed, not a boolean saying something did. A boolean has
@@ -115,6 +121,8 @@ export function DocDialog({
       .catch(() => setFailedRequest(request));
   }, [request]);
 
+  useLiveBlocks(proseRef, request ? docHtml[activeDoc] : undefined, onOpenDoc);
+
   return (
     <dialog
       ref={dialogRef}
@@ -183,7 +191,11 @@ export function DocDialog({
         ) : docHtml[activeDoc] === undefined ? (
           <p className={styles.docLoading}>Loading...</p>
         ) : (
-          <div className={PROSE} dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }} />
+          <div
+            ref={proseRef}
+            className={PROSE}
+            dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }}
+          />
         )}
       </div>
     </dialog>

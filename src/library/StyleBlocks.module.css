@@ -1,0 +1,163 @@
+/**
+ * Does:      Styles the Style section's live blocks inside a document: the sub-page tiles in the landing tile's look,
+ *            the readouts the build counts, the glossary as a definition list, and the ribbon strip.
+ * Does not:  Draw a tile's or a readout's glass (panels.css does, through .op-glass and .op-tile), draw the ribbons
+ *            (Ribbons.tsx does), or hold a colour of its own.
+ * Used by:   DocDialog.tsx.
+ */
+/* #region style-blocks */
+/* The markup is written by src/library/styleBlocks.ts into a served document,
+   so these names are global, scoped under the document's own .prose. */
+.prose :global(.style-tiles) {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (min-width: 640px) {
+  .prose :global(.style-tiles) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.prose :global(.style-tiles) li {
+  margin: 0;
+}
+
+.prose :global(.style-tile) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.prose :global(.style-tile):focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* The round teal badge on a gold ring, the landing page's tile grammar. */
+.prose :global(.style-tile-badge) {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  box-shadow: 0 0 0 1.5px var(--color-gold);
+}
+
+.prose :global(.style-tile-text) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.prose :global(.style-tile-text) strong {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-heading);
+}
+
+.prose :global(.style-tile-text) span {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* The readouts: a stat tile each, the label in the readout's small capitals. */
+.prose :global(.style-readouts) {
+  margin: var(--space-3) 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+
+.prose :global(.style-readout-tile) {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.prose :global(.style-readout-tile) dt {
+  font-size: var(--readout-size);
+  font-weight: var(--readout-weight);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.prose :global(.style-readout-tile) dd {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-heading);
+}
+
+/* The glossary: a term and its CSS, then what it means and where it is used. */
+.prose :global(.style-glossary) {
+  margin: var(--space-3) 0 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 1024px) {
+  .prose :global(.style-glossary) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.prose :global(.style-glossary-entry) dt {
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.prose :global(.style-glossary-entry) dd {
+  margin: var(--space-1) 0 0;
+}
+
+.prose :global(.style-glossary-see) {
+  white-space: nowrap;
+}
+
+/* The ribbon strip: the page's own drawing in a short box of its own, clear of
+   the rail offsets the page's copy takes, so it reads the same on every width. */
+.prose :global(.style-ribbon-strip) {
+  margin: var(--space-3) 0;
+}
+
+.prose :global(.style-ribbon-box) {
+  position: relative;
+  isolation: isolate;
+  height: 180px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background-image: var(--gradient-ground);
+}
+
+.prose :global(.style-ribbon-box [data-testid='ribbons']) {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 100%;
+}
+
+.prose :global(.style-ribbon-box svg) {
+  left: 0;
+  width: 100%;
+}
+
+.prose :global(.style-ribbon-strip) figcaption {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+/* #endregion style-blocks */

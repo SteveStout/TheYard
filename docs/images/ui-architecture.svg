@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>TheYard's UI, layer by layer: four design token files at the bottom, the base and panel sheets and the width steps above them, then the component sheets, the site map and the document layout, each reading only the layers below it</title>
+  <defs>
+    <marker id="ui-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#024345"/>
+    </marker>
+    <style>
+      .layer { fill: #e0ecee; stroke: #006360; stroke-width: 1.5; }
+      .name { fill: #024345; font-size: 16px; font-weight: 600; }
+      .body { fill: #524b48; font-size: 13px; }
+      .mono { fill: #524b48; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 12px; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #4a4e57; font-size: 13px; }
+      .reads { stroke: #024345; stroke-width: 2; fill: none; marker-end: url(#ui-arrow); }
+      .tag { fill: #4a4e57; font-size: 12px; font-weight: 600; letter-spacing: 1.5px; }
+    </style>
+  </defs>
+  <rect width="1200" height="420" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">TheYard's UI, layer by layer</text>
+  <text x="40" y="68" class="caption">Each layer reads the layers below it and never the one above. A test stands beside every layer.</text>
+  <text x="40" y="100" class="tag">READS DOWN, NEVER UP</text>
+
+  <rect x="40" y="116" width="350" height="76" rx="10" class="layer"/>
+  <text x="215" y="146" text-anchor="middle" class="name">Component CSS modules</text>
+  <text x="215" y="170" text-anchor="middle" class="mono">src/components/**/*.module.css</text>
+  <rect x="425" y="116" width="350" height="76" rx="10" class="layer"/>
+  <text x="600" y="146" text-anchor="middle" class="name">One site map</text>
+  <text x="600" y="170" text-anchor="middle" class="mono">siteMap.ts: the rail and the landing</text>
+  <rect x="810" y="116" width="350" height="76" rx="10" class="layer"/>
+  <text x="985" y="146" text-anchor="middle" class="name">Every document in panels</text>
+  <text x="985" y="170" text-anchor="middle" class="mono">docLayout.ts, DocDialog.tsx</text>
+
+  <path d="M215 196 V224" class="reads"/>
+  <path d="M600 196 V224" class="reads"/>
+  <path d="M985 196 V224" class="reads"/>
+
+  <rect x="40" y="228" width="542" height="64" rx="10" class="layer"/>
+  <text x="311" y="256" text-anchor="middle" class="name">Base and panels</text>
+  <text x="311" y="278" text-anchor="middle" class="mono">base.css, panels.css (.op-glass, .op-tile)</text>
+  <rect x="618" y="228" width="542" height="64" rx="10" class="layer"/>
+  <text x="889" y="256" text-anchor="middle" class="name">The width steps</text>
+  <text x="889" y="278" text-anchor="middle" class="mono">breakpoints.ts: PHONE, DESK, WIDE, WIDEST</text>
+
+  <path d="M311 296 V324" class="reads"/>
+  <path d="M889 296 V324" class="reads"/>
+
+  <rect x="40" y="328" width="1120" height="64" rx="10" class="layer"/>
+  <text x="600" y="356" text-anchor="middle" class="name">Design tokens</text>
+  <text x="600" y="378" text-anchor="middle" class="mono">colors.css, sizes.css, typography.css, effects.css: three tiers in colors.css</text>
+</svg>

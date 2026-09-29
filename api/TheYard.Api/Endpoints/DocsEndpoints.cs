@@ -77,7 +77,7 @@ public static class DocsEndpoints
         DocsCatalog.Files.TryGetValue(slug, out var file)
             ? TypedResults.Text(
                 // The pictures are named here rather than on GitHub's raw host (DocsCatalog.cs, DocImages).
-                DocImages.Rewrite(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot),
+                DocImages.Rewrite(LiveCounts.Expand(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot), paths.RepoRoot),
                 "text/markdown")
             : TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document");
 

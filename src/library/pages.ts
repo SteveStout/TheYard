@@ -86,10 +86,28 @@ export const PAGES = {
     url: '/api/docs/architecture',
     kind: 'overview',
   },
+  styleGuide: {
+    title: 'Style guide',
+    menuLabel: 'Style guide',
+    url: '/api/docs/style-guide',
+    kind: 'overview',
+  },
   colorStyle: {
     title: 'Colour and style',
     menuLabel: 'Colour and style',
     url: '/api/docs/color-style',
+    kind: 'overview',
+  },
+  backgroundRibbon: {
+    title: 'Background and ribbon',
+    menuLabel: 'Background and ribbon',
+    url: '/api/docs/background-ribbon',
+    kind: 'overview',
+  },
+  uiArchitecture: {
+    title: 'UI architecture',
+    menuLabel: 'UI architecture',
+    url: '/api/docs/ui-architecture',
     kind: 'overview',
   },
   style: {

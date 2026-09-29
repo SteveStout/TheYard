@@ -15,7 +15,7 @@ namespace TheYard.Tests;
 /// </summary>
 public class FileHeaderTests
 {
-    // #region the header rule
+    // #region the-header-rule
     /// <summary>The two folders the rule holds for code and stylesheets alike, relative to the repository root.</summary>
     private static readonly string[] Folders = ["src/app", "src/library"];
 
@@ -43,7 +43,7 @@ public class FileHeaderTests
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin workbench's frame; split with AdminPanel.tsx (1,081 lines) in the component split lane",
         ["src/components/vehicle/VehicleDetail/VehicleDetail.module.css"] = "a vehicle's own page; split with VehicleDetail.tsx in the component split lane",
     };
-    // #endregion the header rule
+    // #endregion the-header-rule
 
     [Fact]
     public void Every_file_opens_with_what_it_does_what_it_does_not_and_who_uses_it()

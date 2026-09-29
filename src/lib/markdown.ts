@@ -14,6 +14,7 @@ import { marked } from 'marked';
 import { highlight, grammarFor } from './highlight';
 import { swatchSheet } from './swatches';
 import { styleSheet as tokenSheet } from './styleSheet';
+import { STYLE_FENCES, styleBlock, type StyleFence } from '../library/styleBlocks';
 
 // #region doc-links
 // Links in a served document lead out of the app (GitHub, a diagram page), so
@@ -85,6 +86,9 @@ marked.use({
       // sheet of swatches from the token sheet itself (ADR-016, the addendum on
       // the style section).
       if (name === 'swatches') return swatchSheet(text, tokenSheet);
+      // The Style section's tiles, readouts, glossary and ribbon strip (src/library/styleBlocks.ts).
+      if ((STYLE_FENCES as readonly string[]).includes(name))
+        return styleBlock(name as StyleFence, text);
       const grammar = grammarFor(name);
       const className = grammar ? `hljs language-${grammar}` : 'hljs';
       return `<pre><code class="${className}">${highlight(text, name)}</code></pre>\n`;
@@ -93,7 +97,32 @@ marked.use({
 });
 // #endregion code-renderer
 
+// #region heading-ids
+/**
+ * Every second-level heading gets an id from its words, the way GitHub makes
+ * one, so a link can land on a section (`?doc=color-style#the-glass`): the
+ * Style guide's glossary links to the section each term is used in. Two
+ * headings with the same words are told apart by a number, as GitHub does.
+ */
+export function withHeadingIds(html: string): string {
+  const used = new Map<string, number>();
+  return html.replace(/<h2>([\s\S]*?)<\/h2>/g, (_, inner: string) => {
+    const base =
+      inner
+        .replace(/<[^>]+>/g, '')
+        .replace(/&[a-z]+;|&#\d+;/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9 -]/g, '')
+        .trim()
+        .replace(/ +/g, '-') || 'section';
+    const seen = used.get(base) ?? 0;
+    used.set(base, seen + 1);
+    return `<h2 id="${seen === 0 ? base : `${base}-${seen}`}">${inner}</h2>`;
+  });
+}
+// #endregion heading-ids
+
 /** Our own docs, trusted, repository-authored content, rendered whole. */
-export function renderDocument(markdown: string): Promise<string> {
-  return marked.parse(markdown, { async: true });
+export async function renderDocument(markdown: string): Promise<string> {
+  return withHeadingIds(await marked.parse(markdown, { async: true }));
 }

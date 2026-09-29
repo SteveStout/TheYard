@@ -138,12 +138,14 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       group: 'built',
       blurb: 'Infrastructure, data flow, the database, the two sites.',
     },
+    // #region look-row
     {
       menu: 'look',
       icon: 'style',
       group: 'built',
       blurb: 'Colour, type and the rules the build enforces.',
     },
+    // #endregion look-row
     {
       menu: 'builtWithAi',
       icon: 'ai',

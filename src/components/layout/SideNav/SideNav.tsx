@@ -139,7 +139,7 @@ export function SideNav(props: SideNavProps) {
         </dialog>
       )}
       {/* #endregion shapes */}
-      <DocDialog request={request} onClose={() => onDocChange(null)} />
+      <DocDialog request={request} onClose={() => onDocChange(null)} onOpenDoc={onDocChange} />
     </>
   );
 }

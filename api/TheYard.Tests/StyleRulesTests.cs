@@ -44,8 +44,15 @@ public class StyleRulesTests
     private static string BaseSheet() =>
         File.ReadAllText(Path.Combine(Root, "src", "styles", "base.css"));
 
+    /// <summary>
+    /// The Style pages that carry colours, read as one (ADR: The palette, the
+    /// addendum on the four pages): Colour and style, and Background and ribbon,
+    /// which took the ground's and the ribbons' swatches. Every colour design
+    /// token is on one of them, and every figure on either is checked.
+    /// </summary>
     private static string StylePage() =>
-        File.ReadAllText(Path.Combine(Root, "docs", "COLOR-STYLE.md"));
+        string.Join("\n", new[] { "COLOR-STYLE.md", "BACKGROUND-RIBBON.md" }
+            .Select(name => File.ReadAllText(Path.Combine(Root, "docs", name))));
 
     private static readonly Regex Definition =
         new(@"(--[a-z0-9-]+):\s*([^;{}]+);", RegexOptions.Compiled);
@@ -207,7 +214,7 @@ public class StyleRulesTests
             if (!values.Contains(match.Value.ToLowerInvariant()))
             {
                 wrong.Add(
-                    $"docs/COLOR-STYLE.md states {match.Value}, which is the value of no token in src/styles/colors.css: "
+                    $"the Style pages state {match.Value}, which is the value of no token in src/styles/colors.css: "
                     + "the page describes the sheet, so change the page to the sheet's value or name the colour in words");
             }
         }
@@ -217,7 +224,7 @@ public class StyleRulesTests
             if (!Regex.IsMatch(page, Regex.Escape(name) + @"(?![a-z0-9-])"))
             {
                 wrong.Add(
-                    $"{name} is in src/styles/colors.css and not on docs/COLOR-STYLE.md: "
+                    $"{name} is in src/styles/colors.css and on neither docs/COLOR-STYLE.md nor docs/BACKGROUND-RIBBON.md: "
                     + "add it to the swatches fence of the section it belongs to, with the name a person calls it");
             }
         }
@@ -318,7 +325,7 @@ public class StyleRulesTests
             if (!computed.Contains(match.Value))
             {
                 wrong.Add(
-                    $"docs/COLOR-STYLE.md states {match.Value}, which no pairing in StyleRulesTests gives: "
+                    $"the Style pages state {match.Value}, which no pairing in StyleRulesTests gives: "
                     + "either the figure is stale, so recompute it from the tokens, or the pairing is new, so add it to Pairings");
             }
         }
@@ -390,6 +397,7 @@ public class StyleRulesTests
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",
         ["src/components/admin/shared/card.module.css"] = "the ring round the chosen window button",
         ["src/library/DocProse.module.css"] = "a document title's underline, the tick on a heading's rule",
+        ["src/library/StyleBlocks.module.css"] = "the gold ring round each Style tile's badge, the landing tile's trim",
         ["src/library/AuthorPage.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
         ["src/components/landing/Landing/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
     };

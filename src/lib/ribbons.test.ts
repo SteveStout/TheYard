@@ -32,6 +32,7 @@ describe('the ribbon ground', () => {
     expect(bytes).toBeLessThan(12_000);
   });
 
+  // #region does-not-move
   it('does not move: no animation, no transition, no keyframes, painted once', () => {
     for (const [selector, body] of rules(sheet)) {
       expect(body, selector).not.toMatch(/animation|transition|will-change/);
@@ -39,6 +40,7 @@ describe('the ribbon ground', () => {
     expect(sheet).not.toMatch(/@keyframes/);
     expect(component).not.toMatch(/<animate|requestAnimationFrame|setInterval/);
   });
+  // #endregion does-not-move
 
   it('is one drawing, centred by the stylesheet alone', () => {
     expect(component.match(/<svg/g)).toHaveLength(1);
@@ -52,12 +54,14 @@ describe('the ribbon ground', () => {
     expect(layer).toMatch(/contain:\s*strict/);
   });
 
+  // #region part-of-the-page
   it('is part of the page, not the window: it scrolls away with the words (ADR-081, the ground is part of the page)', () => {
     const layer = rules(sheet).find(([selector]) => selector === '.layer')?.[1] ?? '';
     expect(layer).toMatch(/position:\s*absolute/);
     expect(layer).not.toMatch(/position:\s*fixed/);
     expect(sheet).not.toMatch(/position:\s*(fixed|sticky)/);
   });
+  // #endregion part-of-the-page
 
   it('fetches nothing: every url in it is one of its own gradients or filters', () => {
     for (const url of (component + sheet).matchAll(/url\(([^)]*)\)/g)) {
@@ -67,10 +71,12 @@ describe('the ribbon ground', () => {
     expect(component + sheet).not.toMatch(/<image|https?:/);
   });
 
+  // #region own-ids
   it("names its gradients and filters per copy, so the page's copy and a dialog's never share a name", () => {
     // Two copies once both said "ribbon-gold": a reference found the closed dialog's, and
     // Chrome painted the page's ribbons blank (1.0.3.20).
     expect(component).not.toMatch(/\sid="/);
     expect(sheet).not.toMatch(/url\(#/);
   });
+  // #endregion own-ids
 });

@@ -152,13 +152,22 @@ public static partial class LiveSamples
         // region=* is the whole file, for files that cannot carry a comment marker
         // (package.json, the tsconfig files); everything else is a marked region.
         bool wholeFile = region == "*";
-        int start = wholeFile ? -1 : Array.FindIndex(source, line =>
+        // region=header is a file's opening three-line header (Does, Does not, Used by), which comes
+        // before anything else in the file and so cannot sit inside a marker (ADR-019, the addendum on
+        // the stylesheets).
+        bool header = region == "header";
+        int headerClose = header ? Array.FindIndex(source, line => line.Trim() == "*/") : -1;
+        if (header && !(source.Length > 0 && source[0].Trim() == "/**" && headerClose > 0))
+        {
+            return Note($"`{path}` does not open with a header.");
+        }
+        int start = wholeFile || header ? -1 : Array.FindIndex(source, line =>
         {
             var m = RegionStart().Match(line);
             return m.Success && m.Groups["name"].Value == region;
         });
         // A named end marker wins, so regions may nest; a bare #endregion closes the nearest open one.
-        int end = wholeFile ? source.Length : -1;
+        int end = wholeFile ? source.Length : header ? headerClose + 1 : -1;
         if (start >= 0)
         {
             end = Array.FindIndex(source, start + 1, line =>
@@ -175,7 +184,7 @@ public static partial class LiveSamples
                 });
             }
         }
-        if (!wholeFile && (start < 0 || end < 0))
+        if (!wholeFile && !header && (start < 0 || end < 0))
         {
             return Note($"region `{region}` was not found in `{path}`.");
         }

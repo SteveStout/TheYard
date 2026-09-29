@@ -38,7 +38,7 @@ export const API_REFERENCE: readonly MenuLink[] = [
  * Every drawing in the catalogue, on its own page (ADR: Every diagram opens on
  * its own page, the addendum on the section). The order is the order a reader
  * meets the system: the whole, the data, the schema, the two sites, the two
- * stores. The server's DocsCatalog.Diagrams is the authority for which
+ * stores, then the look. The server's DocsCatalog.Diagrams is the authority for which
  * drawings exist, and a test holds this list to it, so a drawing cannot have a
  * page without a row or a row without a page.
  */
@@ -48,6 +48,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'The database', href: '/api/docs/diagrams/erd' },
   { label: 'The two sites', href: '/api/docs/diagrams/two-sites' },
   { label: 'SQL Server vs Cosmos DB', href: '/api/docs/diagrams/sql-vs-cosmos' },
+  { label: 'The UI, layer by layer', href: '/api/docs/diagrams/ui-architecture' },
 ];
 // #endregion diagrams
 
@@ -123,15 +124,23 @@ export const MENUS: Record<
   },
   /**
    * How the site looks, and the rules that keep it looking that way, as a
-   * section of its own (ADR-016, the addendum on the style section): the
-   * colours, where each must not go, the glass look, and swatches drawn from
-   * the token sheet when the page is opened. The rules on it are held by the
-   * gate, so the page describes what the tests enforce.
+   * section of its own (ADR-016, the addenda on the style section and on its
+   * four pages): the Style guide on top, then the colours, the ground and the
+   * files the look is built from, each drawn from the design token files
+   * when the page is opened. The rules on them are held by the gate, so the
+   * pages describe what the tests enforce.
    */
+  // #region look-menu
   look: {
     label: 'Style',
-    items: [{ key: 'colorStyle' }],
+    items: [
+      { key: 'styleGuide' },
+      { key: 'colorStyle', sub: true },
+      { key: 'backgroundRibbon', sub: true },
+      { key: 'uiArchitecture', sub: true },
+    ],
   },
+  // #endregion look-menu
   hosting: {
     label: 'Hosting',
     items: [{ key: 'hosting' }, { key: 'bicep', sub: true }],

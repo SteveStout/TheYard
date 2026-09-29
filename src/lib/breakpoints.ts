@@ -19,7 +19,9 @@
  * any media query off this list, and on a component that asks for a width
  * without importing one of these constants.
  */
+// #region the-four-steps
 export const PHONE = '(max-width: 639.98px)';
 export const DESK = '(min-width: 1024px)';
 export const WIDE = '(min-width: 1280px)';
 export const WIDEST = '(min-width: 1440px)';
+// #endregion the-four-steps

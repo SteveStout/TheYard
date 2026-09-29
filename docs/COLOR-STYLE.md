@@ -1,19 +1,15 @@
 # Colour and style
 
-**A style guide the build enforces.** Every colour, size and width on this site is a token, kept in
-four files named for what they control: [`colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css),
-[`sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sizes.css),
-[`typography.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/typography.css) and
-[`effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css). Thirteen tests read those files, every
-stylesheet and this page on every build, and a change that breaks a rule does not ship. [Read the tests on GitHub](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs).
+**Every colour, size and width on this site is a design token, kept in four files named for what they control:** [`colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css), [`sizes.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sizes.css), [`typography.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/typography.css) and [`effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css). A design token is a named CSS custom property (a CSS variable) holding one design decision. {{live:facts api/TheYard.Tests/StyleRulesTests.cs}} tests read those files, every stylesheet and the Style pages on every build, and a change that breaks a rule does not ship. [Read the tests on GitHub](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs).
 
-**The swatches below are live.** Each one is painted with the token itself, read from
+**The swatches below are live.** Each one is painted with the design token itself, read from
 `colors.css` when you open this page, and the contrast figure beside it is computed from the same
-file. Nothing here is a picture, so nothing here can go stale. The bars to clear are **4.5** for body
+file. A figure is never typed on this page. The bars to clear are **4.5** for body
 text and **3.0** for large text, lines and other marks.
 
-The look in one line: teal fills, dark green draws, gold trims, frosted glass panels sit over a light
-ground, and every word, number and photo is fully solid.
+Teal fills, dark green draws, gold trims. Gold is decoration only: it is never text and never data.
+The ground behind every page, and the ribbons on it, have a page of their own:
+[Background and ribbon](https://theyard.stevenstout.biz/?doc=background-ribbon).
 
 ## Brand colours
 
@@ -54,7 +50,7 @@ ground, and every word, number and photo is fully solid.
 
 The header gradient runs top to bottom, dark green to header teal, because left to right could not
 be seen on a bar fifty pixels tall. White text reads 14.41 at its top and 9.13 at its bottom. It is
-one token, used by every header bar.
+one design token, used by every header bar.
 
 ## Grounds and text
 
@@ -130,40 +126,28 @@ gauge's fill ends. The two data stores keep their own pair, slate blue `#536786`
 under colour blindness: people `#0a8f85` (3.98 on white), scanners and crawlers `#b8800a` (3.43),
 and the site's own reads `#5b78c2` (4.28).
 
-## The glass and the ground
+## The glass
 
-- **Panels are frosted glass.** White at 30 per cent (38 on a phone) over a 28 pixel blur, a hairline
-  teal border and a 10 pixel radius. The see-through part is the background colour, never an
-  `opacity` on the panel, so nothing inside a panel is ever faded. Where blur is not supported,
-  where the reader asked for less transparency, and in forced colours, every panel turns solid white.
-- **The ground is code, never an image.** A gradient from green-grey to white, with teal and gold
-  ribbons sweeping down the left and a faint watermark in front of them. It is drawn once and never
-  moves, so it costs no request and nothing after the first paint.
+```live path=src/styles/effects.css region=glass-design-tokens
+```
+
+```live path=src/styles/panels.css region=op-glass
+```
+
+Panels only. A panel is frosted glass: a white tint at 30 percent for a tile (38 on a phone) and
+heavier on a reading panel, blurred at 28 pixels, with a hairline of the deep teal at 18 percent
+round it and a 10 pixel radius. The see-through part is the background colour, never an `opacity`
+on the panel, so nothing inside a panel is ever faded. Where blur is not supported, where the reader
+asked for less transparency, and in forced colours, every panel turns solid white. What the glass
+sits on is the ground, on [Background and ribbon](https://theyard.stevenstout.biz/?doc=background-ribbon#the-ground).
+
 - **A ring gauge is honest or absent.** A ring shows a share of a known whole: 5 of 5 checks, memory
   against its limit. A reading with no whole, such as milliseconds, gets no ring.
 
-```swatches
---gradient-ground | The ground, left to right
---color-ground-left | Ground, left
---color-ground-mid | Ground, middle
---color-ground-right | Ground, right
---color-ribbon-gold | Ribbon gold
---color-ribbon-gold-soft | Ribbon gold, soft
---color-ribbon-teal | Ribbon teal
---color-ribbon-teal-light | Ribbon teal, light
---color-ribbon-green | Ribbon dark green
---color-ribbon-shine | Highlight gold
---color-ribbon-shine-pale | Highlight, pale end
---color-ribbon-shine-white | Highlight, white end
---color-ribbon-flare | Flare and spark centre
---color-ribbon-spark | Spark gold
---color-ribbon-star | A flare's arms
-```
+## Side rail and code theme
 
-## The side rail and the code theme
-
-The side rail's own colours, and the colours code is shown in inside a document. Both are held to
-WCAG AA by the same test.
+The rail is white on the ground's darker end. Code takes six ink colours, each deepened until it
+reads as ink on the code block's grey. Both are held to WCAG AA by the same test.
 
 ```swatches
 --color-sheet-bg | Rail ground
@@ -203,7 +187,10 @@ and every media query in the site is written on them. Open the
 | 1280 | A wide desk: the Admin rail sits beside the card |
 | 1440 | The widest: the hour beside its card |
 
-Above a step a sheet writes `(min-width: 640px)`, under it `(max-width: 639.98px)`, so a width
+```live path=src/lib/breakpoints.ts region=the-four-steps
+```
+
+The four a component may import are above; the other two are read only by stylesheets. Above a step a sheet writes `(min-width: 640px)`, under it `(max-width: 639.98px)`, so a width
 under zoom always lands on one side.
 
 **Tables stack when their card is too narrow.** Every table on the Admin tab is drawn by one
@@ -217,19 +204,25 @@ shrinks its words too. Each chart measures the width it is given and lays itself
 (`fitBox`), so its labels keep their size and only the plot narrows. See the
 [activity chart](https://theyard.stevenstout.biz/?view=admin&card=activity) on a phone.
 
-**Type, weights, corners, tracking and layers are tokens too.** Type from `--text-*`, words inside
+**Type, weights, corners, tracking and layers are design tokens too.** Type from `--text-*`, words inside
 a chart from `--chart-text-*`, corners from `--radius-*`, the stacking order from `--layer-*`, and a
 touch target of 44 pixels on a phone.
 
 **The base styles have their own small file,**
 [`src/styles/base.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/base.css): box
 sizing, the body's face and ground, headings with no default margin. It sets defaults from the
-tokens and writes no design value of its own.
+design tokens and writes no design value of its own.
 
 ## How the sheet is built
 
-The tokens live in four files, each named for what it controls, and `colors.css` reads top to bottom
-in three tiers.
+```live path=src/styles/colors.css region=the-opening
+```
+
+The design tokens live in four files, each named for what it controls, and `colors.css` reads top
+to bottom in three tiers: the palette (a colour named for what it is: `--palette-white`), the roles
+(a colour named for what it does: `--color-accent`), and the components (a colour named for where it
+goes: `--color-sheet-icon-active`). A component file may read a role. It may never read the
+palette, and it may never write a colour of its own.
 
 | Tier | What it holds |
 | --- | --- |
@@ -237,26 +230,26 @@ in three tiers.
 | The roles | What a value is for: `--color-text`, `--color-accent`, `--glass-bg` |
 | The components | The side rail, the chart marks, the panel rule and the ring, each a `var()` of a role |
 
-**A value is written once.** A token that needs another token's colour is written as that token,
-`var(--color-text)`, so it follows when the colour moves. A see-through tint is mixed from its token
+**A value is written once.** A design token that needs another's colour is written as that one,
+`var(--color-text)`, so it follows when the colour moves. A see-through tint is mixed from its design token
 with `color-mix()`, never copied as an `rgba`.
 
 **The browser floor.** The tints use `color-mix()`, which every major browser has had since early
 2023. An older browser draws those tints as nothing, and the words and grounds, which are plain hex
-tokens, read the same everywhere.
+design tokens, read the same everywhere.
 
 ## What holds them
 
-Thirteen tests in
+{{live:facts api/TheYard.Tests/StyleRulesTests.cs}} facts in
 [`StyleRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs)
-run on every build. Each one fails with a sentence that says what to do, so a change that breaks a
+run on every build, each a row in ADR-075's table. Each one fails with a sentence that says what to do, so a change that breaks a
 rule learns the rule from the failure.
 
 1. **No raw colour.** No stylesheet or component writes a hex, `rgb()` or `hsl()`. Every colour is
-   a token.
-2. **This page matches the sheet.** Every hex on this page is a token's value, and every colour
-   token is on this page.
-3. **Every contrast figure here is real.** Each figure on this page is the one the tokens give, and
+   a design token.
+2. **The Style pages match the sheet.** Every hex on this page and on Background and ribbon is a
+   design token's value, and every colour design token is on one of the two.
+3. **Every contrast figure here is real.** Each figure on this page is the one the design tokens give, and
    it clears the bar it needs.
 4. **Status colours stay status.** No chart series is a status colour, and a line turns red only for
    server errors.
@@ -264,13 +257,13 @@ rule learns the rule from the failure.
 6. **One header gradient.** It is defined once, and every header bar uses it.
 7. **The other checks are still there.** The browser test that nothing a visitor reads is faded, and
    the contrast test for every pairing, both still exist and still run.
-8. **One size per control.** Every focus ring, control height and title weight comes from a token.
+8. **One size per control.** Every focus ring, control height and title weight comes from a design token.
 9. **One face.** IBM Plex Sans everywhere, with even-width figures set once on the body, and a
    monospaced face only on code.
 10. **One width scale.** Every width a page asks about is one of the six steps.
-11. **Values from the sheet.** Every size, weight, corner, tracking and layer comes from a token.
+11. **Values from the sheet.** Every size, weight, corner, tracking and layer comes from a design token.
 12. **Written once.** No colour is written twice in the sheet, and every tint is mixed from its
-    token.
+    design token.
 13. **One panel look.** Every panel, card and tile is the one shared glass with its rule and
     brackets, and every button is a pill or a circle.
 
