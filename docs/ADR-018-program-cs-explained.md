@@ -199,10 +199,10 @@ worth saying that it is a decision rather than a drift.
 What those lines are:
 
 ```
-1,752 total
-  705 comment
+1,688 total
+  684 comment
   99 blank
-  948 code, across 23 endpoints
+  905 code, across 20 endpoints
 ```
 
 Thirty-two lines of code per endpoint, and most endpoints are a route, a

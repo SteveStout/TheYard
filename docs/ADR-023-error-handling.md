@@ -73,7 +73,7 @@ The handler and the logging, in `api/TheYard.Api/Program.cs`:
 
 The endpoint browser errors report to:
 
-```live path=api/TheYard.Api/Program.cs region=client-errors
+```live path=api/TheYard.Api/Endpoints/ErrorEndpoints.cs region=client-errors
 ```
 
 A deliberate 400, in the same shape:
