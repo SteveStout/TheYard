@@ -46,19 +46,19 @@
   /* The page's ground: green-grey on the left fading to white on the right,
      and the ribbons' own colours. The ribbons are drawn in code, never an
      image (ADR-081, the ribbon ground). */
-  --color-ground-left: #dcebe7;
+  --color-ground-left: #deeaed;
   --color-ground-mid: #f3f7f6;
   --color-ground-right: var(--palette-white);
-  --color-ribbon-gold: #c9a24a;
-  --color-ribbon-gold-soft: #e8cf8a;
-  --color-ribbon-teal: #2a8c8c;
-  --color-ribbon-teal-light: #5fb3a8;
-  --color-ribbon-green: #1f4d3f;
-  --color-ribbon-shine: #f3d98a;
+  --color-ribbon-gold: #c9a95c;
+  --color-ribbon-gold-soft: var(--color-gold-light);
+  --color-ribbon-teal: #308ca6;
+  --color-ribbon-teal-light: #64afc4;
+  --color-ribbon-green: #1d5463;
+  --color-ribbon-shine: #f0dc94;
   --color-ribbon-shine-pale: #fff4cf;
   --color-ribbon-shine-white: #fff8e0;
   --color-ribbon-flare: #fffaf0;
-  --color-ribbon-spark: #f1d27e;
+  --color-ribbon-spark: var(--color-gold-light);
   --color-ribbon-star: #fff6d8;
   --gradient-ground: linear-gradient(
     90deg,
@@ -94,15 +94,30 @@
      teal and gold addendum). The number beside a colour is its WCAG contrast
      ratio; colors.test.ts measures every one, so a shade that fails fails the
      build. */
-  --color-accent: #006360; /* teal: white on it 7.11; as text 7.11 on white, 5.73 on the page ground */
-  --color-accent-hover: #004f4d; /* white on it 9.44 */
-  --color-accent-soft: #e0ecee; /* the teal, as a pale tint: the accent on it 5.89 */
+  --color-accent: #12677f; /* teal: white on it 6.42; as text 6.42 on white, 5.18 on the page ground */
+  --color-accent-hover: #0f576b; /* white on it 8.09 */
+  --color-accent-soft: #ddebee; /* the teal, as a pale tint: the accent on it 5.25; heading text 9.19 */
   --color-on-accent: var(--palette-white);
-  --color-green-dark: #0a3021; /* it draws: a card's left edge, a heading's rule; 14.41 on white */
-  --color-teal-deep: #024345; /* a plain tile's top, a vehicle's title, an upcoming auction's chip; white on it 11.1 */
-  --color-teal-header: #03505a; /* the bottom of the header gradient and nothing else; white on it 9.13 */
-  --color-gold: #d4aa3a; /* trim on white, decoration only: 2.19 on white, so never text and never data */
-  --color-gold-light: #dcbf57; /* trim on the header: 7.98 on the dark green, 5.06 on the header teal */
+  --color-green-dark: #0f4452; /* it draws: a card's left edge, a heading's rule; 10.67 on white; gold light on it 6.71 */
+  --color-teal-deep: #10495a; /* a plain tile's top, a vehicle's title, an upcoming auction's chip; white on it 9.89 */
+  --color-teal-header: #125568; /* the bottom of the header gradient and nothing else; white on it 8.32; gold light on it 5.23 */
+  --color-gold: #b8923f; /* the gold bar's mid tone: badge rings, the rail's group rules, the flat fallback under the bar; 2.91 on white, so never text and never data */
+  --color-gold-light: #e6cb7e; /* the gold bar's highlight, trim on the header: 6.71 on the dark green, 5.23 on the header teal */
+  /* The gold bar (2026-09-29, to match the resume): dark at both ends, the
+     highlight in the middle. A page title's underline and a stat tile's top
+     rule are drawn as this bar with border-image; the flat --color-gold stays
+     for the rings and the rail's group rules, and is what a browser without
+     border-image draws. The two bar tones are only ever stops in the bar. */
+  --color-gold-bar-dark: #7d582e;
+  --color-gold-bar-shade: #ad8e57;
+  --gradient-gold: linear-gradient(
+    90deg,
+    var(--color-gold-bar-dark) 0%,
+    var(--color-ribbon-gold) 30%,
+    var(--color-gold-light) 50%,
+    var(--color-gold-bar-shade) 80%,
+    var(--color-gold-bar-dark) 100%
+  );
   /* The lightning mark. It only ever sits on the header gradient. */
   --color-brand-mark: var(--color-gold-light);
   /* One gradient, top to bottom, for every header bar: the phone's header and
@@ -125,7 +140,7 @@
   /* The two data stores, whenever they are drawn against each other: slate
      blue for the relational store, brown for the document store. Marks, not
      text, so the floor is 3:1 on white (ADR-071). */
-  --color-store-sql: #536786;
+  --color-store-sql: #4a6c96;
   --color-store-cosmos: #8a6a4f;
   /* A chart's series, in a fixed order that is never shuffled. A series is
      never a status colour, because a line drawn in the warning colour reads
@@ -139,7 +154,7 @@
      people, scanners and crawlers, the site's own reads. Chosen as a set that
      stays apart under colour blindness (ADR-071). Marks only: a legend names
      each band. */
-  --color-who-people: #0a8f85;
+  --color-who-people: #1d90af;
   --color-who-scanners: #b8800a;
   --color-who-self: #5b78c2;
   /* #region mark-vii */
@@ -148,8 +163,8 @@
      white and on the page ground. The deep teal draws axes and ticks; the
      ribbon gold marks the end of a gauge's fill. Status colours stay for
      status. */
-  --color-mark-teal: #13928b;
-  --color-mark-gold: #a57c1d;
+  --color-mark-teal: #1f8ead;
+  --color-mark-gold: #9a7728;
   --color-mark-axis: var(--color-teal-deep);
   --color-mark-marker: var(--color-ribbon-gold);
   --color-mark-track: color-mix(in srgb, var(--color-teal-deep) 15%, transparent);
@@ -184,7 +199,7 @@
      gradient, which is the harder one for white. */
   --color-header: var(--color-teal-header);
   --color-header-text: var(--palette-white);
-  --color-header-text-muted: #cfe3e6;
+  --color-header-text-muted: #d1e1e6;
 
   /* #region sheet-tokens */
   /* The side rail (ADR-013): a white ground, the accent's tint behind the

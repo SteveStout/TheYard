@@ -43,6 +43,18 @@ describe("the operator's look", () => {
     expect(rule('.op-tile')).toContain('--op-bracket-color: var(--rule-tile-color);');
   });
 
+  // The gold bar (ADR-016, the addendum of 29 September): a tile's top rule is the bar, dark at both
+  // ends and bright in the middle, drawn with border-image on the top edge only. The page titles'
+  // underlines are held by StyleRulesTests, which reads every stylesheet.
+  it('draws a tile top as the gold bar', () => {
+    expect(tokens).toMatch(
+      /--gradient-gold: linear-gradient\(\s*90deg,\s*var\(--color-gold-bar-dark\) 0%,\s*var\(--color-ribbon-gold\) 30%,\s*var\(--color-gold-light\) 50%,\s*var\(--color-gold-bar-shade\) 80%,\s*var\(--color-gold-bar-dark\) 100%\s*\);/
+    );
+    expect(rule('.op-tile')).toContain(
+      'border-image: var(--gradient-gold) 1 / var(--rule-width) 0 0 0;'
+    );
+  });
+
   it('bends each bracket round the panel radius, an arc and never an L, at the one stroke', () => {
     expect(rule('.op-glass::before')).toContain('border-top-left-radius: var(--radius-glass);');
     expect(rule('.op-glass::after')).toContain('border-bottom-right-radius: var(--radius-glass);');

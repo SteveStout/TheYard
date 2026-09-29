@@ -26,13 +26,13 @@ import { chromium } from '@playwright/test';
 // pixels wide, so the name is drawn large enough to read at that size and one
 // line says what this is.
 const palette = {
-  top: '#0a3021',
-  bottom: '#03505a',
-  gold: '#d4aa3a',
-  goldLight: '#dcbf57',
+  top: '#0f4452',
+  bottom: '#125568',
+  gold: '#b8923f',
+  goldLight: '#e6cb7e',
   white: '#ffffff',
-  soft: '#cfe3e6',
-  chip: '#024345',
+  soft: '#d1e1e6',
+  chip: '#10495a',
 };
 
 const records = readdirSync('docs').filter((name) => /^ADR-\d+/.test(name)).length;

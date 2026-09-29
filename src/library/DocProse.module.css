@@ -34,6 +34,7 @@
   margin-top: 0;
   padding-bottom: var(--space-1);
   border-bottom: var(--rule-gold);
+  border-image: var(--gradient-gold) 1;
 }
 
 .prose h2 {

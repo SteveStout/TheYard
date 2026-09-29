@@ -345,3 +345,39 @@ The tiles, the readouts, the glossary and the ribbon strip are fences, the way t
 
 **1.0.3.43: the blocks are kept.** The live read after 1.0.3.42 found the ribbon strip empty on both sites, and one read of the Style guide with a tile missing its icon. The first version mounted the blocks when the document changed and let them go in the effect's cleanup, and a render in between could leave an element with no root. The blocks are now drawn once per element, on every render that finds one not yet drawn, and a root is let go only when its element has left the page. `style-section.spec.ts` holds the three icons, a tile opening its page in the same window, and the strip's drawing.
 
+## Addendum, 2026-09-29 (1.0.3.44): palette F, and the gold becomes a bar
+
+Steve, 29 September: the blues move toward palette F, hue 193, blue with enough green in it to soften the step to the gold; the gold becomes a gold bar, cut from the swatch he sent (dark `#7d582e`, highlight `#e6cb7e`). Both match the resume he made his main one the same day, which is teal `#125a68` with gold `#b8923f` rules; the header teal lands a hair from the resume's teal. Colour values only, plus the bar: the grounds, the ribbons' shapes, the glass, the face and the layout are unchanged, and so is every floor and every pairing in `StyleRulesTests`.
+
+| Token | Was | Is | Measured |
+| --- | --- | --- | --- |
+| `--color-accent` | `#006360` | `#12677f` | white on it 6.42; as text 6.42 on white, 5.18 on the page ground; 1.01 from the status green |
+| `--color-accent-hover` | `#004f4d` | `#0f576b` | white on it 8.09 |
+| `--color-accent-soft` | `#e0ecee` | `#ddebee` | the accent on it 5.25; heading text on it 9.19 |
+| `--color-green-dark` | `#0a3021` | `#0f4452` | 10.67 on white, 8.60 on the page ground; gold light on it 6.71 |
+| `--color-teal-deep` | `#024345` | `#10495a` | white on it 9.89; 1.52 from the status green |
+| `--color-teal-header` | `#03505a` | `#125568` | white on it 8.32; gold light on it 5.23 |
+| `--color-ribbon-teal` | `#2a8c8c` | `#308ca6` | a ribbon stop, no text on it |
+| `--color-ribbon-teal-light` | `#5fb3a8` | `#64afc4` | body text on the thinnest glass over it 4.62, the secondary grey 4.51 |
+| `--color-ribbon-green` | `#1f4d3f` | `#1d5463` | a ribbon stop |
+| `--color-ground-left` | `#dcebe7` | `#deeaed` | the ground's left end |
+| `--color-mark-teal` | `#13928b` | `#1f8ead` | 3.80 on white, 3.06 on the page ground; more than 150 degrees of hue from the gold mark |
+| `--color-who-people` | `#0a8f85` | `#1d90af` | 3.71 on white |
+| `--color-header-text-muted` | `#cfe3e6` | `#d1e1e6` | 6.19 on the header teal, 7.94 on the dark green |
+| `--color-store-sql` | `#536786` | `#4a6c96` | 5.42 on white, 4.37 on the page ground |
+| `--color-gold` | `#d4aa3a` | `#b8923f` | the bar's mid tone; 2.91 on white, so still never text |
+| `--color-gold-light` | `#dcbf57` | `#e6cb7e` | the bar's highlight; 1.59 on white |
+| `--color-ribbon-gold` | `#c9a24a` | `#c9a95c` | the bar's stop at 30 per cent; body text on the thinnest glass over it 4.94, the secondary grey 4.82 |
+| `--color-ribbon-gold-soft` | `#e8cf8a` | `var(--color-gold-light)` | the same value as the gold light, so written as it |
+| `--color-ribbon-shine` | `#f3d98a` | `#f0dc94` | a ribbon stop |
+| `--color-ribbon-spark` | `#f1d27e` | `var(--color-gold-light)` | the same value as the gold light, so written as it |
+| `--color-mark-gold` | `#a57c1d` | `#9a7728` | 4.16 on white, 3.36 on the page ground |
+| `--color-gold-bar-dark` | new | `#7d582e` | the bar's two ends, a stop in the gradient only |
+| `--color-gold-bar-shade` | new | `#ad8e57` | the bar's stop at 80 per cent, in the gradient only |
+| `--gradient-gold` | new | the bar, left to right | dark, ribbon gold, gold light, shade, dark |
+
+**Three values moved from the brief, each to pass a test that was already there.** The brief's accent `#126981` read 4.42 against the watermark's stroke, under the 4.5 `colors.test.ts` holds a link to there, so it went down a step in its own hue until it cleared: `#12677f`, 4.51. The brief's deep teal `#104f60` sat 1.40 from the status green, under the 1.5 that keeps a plain tile from reading as a healthy one, so it went down to `#10495a`, 1.52. The brief's ribbon gold `#ad8e57` put the body text at 4.06 and the secondary grey at 3.96 on the thinnest glass over it; darkening could not fix that, so the ribbon gold is the bar's own stop at 30 per cent, `#c9a95c`, and the brief's value stays in the bar as its shade. No floor was lowered and no pairing removed; the header teal and the mark teal are exactly the brief's.
+
+**The bar is drawn, not painted.** Every element that drew `--rule-gold` as a bottom border (the landing, Inventory, Admin and Account titles, a document's title and the Author page's) takes `border-image: var(--gradient-gold) 1`, so the rule is the bar. A stat tile's top rule takes the same bar on its top edge only (`border-image: var(--gradient-gold) 1 / var(--rule-width) 0 0 0`), which means the tile's hairline on the other three sides is no longer drawn and the bar's ends are square under the rounded corners. The flat `--color-gold` stays for the rings, the rail's group rules and a browser without `border-image`. Two tokens are new beside the gradient because the sheet writes no hex inside a value (`StyleRulesTests`, a value written once): the bar's dark ends and its shade.
+
+**Where else the old values lived.** The API's two inline pages (the diagram page and the API document's theme), the browser's theme colour and the tab icon in `index.html`, the preview card (`og.svg`, `public/og.png`), and the drawings whose style blocks named a palette colour (the UI architecture, the infrastructure, the data flow, the ERD, the two sites and SQL against Cosmos DB, each redrawn). The resume the site serves is the 29 September build, by hash.

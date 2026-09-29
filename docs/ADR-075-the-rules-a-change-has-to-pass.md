@@ -60,6 +60,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | A chart series is never a status colour, and a line takes a status tone only for server errors | ADR: The Admin tab, as a product | StyleRulesTests |
 | Gold is trim: only the header, the brand mark and the named trim use it, never a chart's line, a tile or a ring | ADR: The palette | StyleRulesTests |
 | There is one header gradient, defined once, and every header bar uses it | ADR: The palette | StyleRulesTests |
+| Every page title's underline and every stat tile's top rule is the gold bar, drawn from `--gradient-gold` with `border-image` | ADR: The palette | StyleRulesTests |
 | Nothing that holds a word or an image is faded, a quiet word is never on the bare ground, and the browser suite and the token test that hold those are still there | ADR: The glass look | StyleRulesTests |
 | One face for the whole site, IBM Plex Sans, with tabular figures set once on the body, and a monospaced face only on code | ADR: The palette | StyleRulesTests |
 | Every panel, card and tile is the one shared glass with its rule and brackets, no sheet spaces capitals by a number of its own, and every button is a pill or a circle | ADR: The glass look | StyleRulesTests |

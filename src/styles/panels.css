@@ -80,6 +80,8 @@
   --bracket-size: var(--bracket-size-tile);
   --op-bracket-color: var(--rule-tile-color);
   border-top: var(--rule-tile);
+  /* The top rule is the gold bar; the sides draw nothing from the image, so the bar is the top alone. */
+  border-image: var(--gradient-gold) 1 / var(--rule-width) 0 0 0;
 }
 
 .op-rail {

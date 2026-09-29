@@ -64,11 +64,11 @@ public static class ApiDocument
     public const string ReferenceCss = """
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
         body { margin: 0; background: #f3f7f6; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; font-variant-numeric: tabular-nums; }
-        .scalar-app { --scalar-font: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-font-code: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-color-accent: #006360; --scalar-background-1: #f3f7f6; --scalar-background-2: #ffffff; --scalar-background-3: #e4eeeb; --scalar-border-color: rgba(2, 67, 69, 0.18); --scalar-color-1: #3f3a37; --scalar-color-2: #5e5653; --scalar-color-3: #5f636c; }
+        .scalar-app { --scalar-font: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-font-code: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; --scalar-color-accent: #12677f; --scalar-background-1: #f3f7f6; --scalar-background-2: #ffffff; --scalar-background-3: #e4eeeb; --scalar-border-color: rgba(16, 73, 90, 0.18); --scalar-color-1: #3f3a37; --scalar-color-2: #5e5653; --scalar-color-3: #5f636c; }
         .scalar-app pre, .scalar-app code, .scalar-app [class*="code-block"] { font-family: Consolas, 'SF Mono', Menlo, ui-monospace, monospace !important; }
         .scalar-app button, .scalar-app a[class*="button"] { border-radius: 9999px !important; }
-        .scalar-app .scalar-card { position: relative !important; border: 1px solid rgba(2, 67, 69, 0.18) !important; border-top: 3px solid #024345 !important; border-radius: 10px !important; overflow: visible !important; }
-        .scalar-app .scalar-card::before, .scalar-app .scalar-card::after { content: '' !important; position: absolute; width: 18px; height: 18px; border-color: #024345; border-style: solid; pointer-events: none; z-index: 1; }
+        .scalar-app .scalar-card { position: relative !important; border: 1px solid rgba(16, 73, 90, 0.18) !important; border-top: 3px solid #10495a !important; border-radius: 10px !important; overflow: visible !important; }
+        .scalar-app .scalar-card::before, .scalar-app .scalar-card::after { content: '' !important; position: absolute; width: 18px; height: 18px; border-color: #10495a; border-style: solid; pointer-events: none; z-index: 1; }
         .scalar-app .scalar-card::before { left: -1px; top: -3px; border-width: 3px 0 0 2px; border-top-left-radius: 10px; }
         .scalar-app .scalar-card::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 10px; }
         """;

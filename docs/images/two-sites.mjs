@@ -23,8 +23,8 @@ const STYLE = `
       .lane-sub { fill: #62666f; font-size: 13px; }
       .body { fill: #5e5653; font-size: 12.5px; }
       .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 10.5px; }
-      .flow { stroke: #536786; stroke-width: 2; fill: none; marker-end: url(#arrow); }
-      .flow-label { fill: #536786; font-size: 12px; font-weight: 500; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .flow-label { fill: #4a6c96; font-size: 12px; font-weight: 500; }
       .loop { stroke: #ab978c; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow-taupe); }
       .loop-label { fill: #8a766b; font-size: 12px; font-weight: 500; }
       .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
@@ -156,7 +156,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <title>TheYard's two sites: two names at Wix, one Netlify edge, two web apps on one App Service plan on Azure, and both stores behind both</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#536786"/>
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
     </marker>
     <marker id="arrow-taupe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#ab978c"/>

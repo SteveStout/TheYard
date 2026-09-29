@@ -58,7 +58,7 @@ The ground is part of the page, not the window. It scrolls with the words in fro
 
 ## Glass over the ribbons
 
-The worst case for a word is the thinnest glass over the darkest thing behind it. Through a panel over the watermark at its worst, the one grey every secondary word uses reads 6.51, and [`StyleRulesTests`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs) computes that figure from the design tokens and holds the faintest text to 4.5 on it. When a reader's system asks for reduced transparency the glass turns solid; under forced colours the site steps aside and the watermark is not drawn.
+The worst case for a word is the thinnest glass over the darkest thing behind it. Through a panel over the watermark at its worst, the one grey every secondary word uses reads 6.53, and [`StyleRulesTests`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StyleRulesTests.cs) computes that figure from the design tokens and holds the faintest text to 4.5 on it. When a reader's system asks for reduced transparency the glass turns solid; under forced colours the site steps aside and the watermark is not drawn.
 
 ## The Chrome bug
 

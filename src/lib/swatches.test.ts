@@ -4,7 +4,7 @@ import { swatchLines, swatchSheet } from './swatches';
 const sheet = `:root {
   --color-bg: #e9e6e7;
   --color-surface: #ffffff;
-  --color-accent: #006360; /* teal */
+  --color-accent: #12677f; /* teal */
   --gradient-header: linear-gradient(180deg, var(--color-green-dark), var(--color-teal-header));
 }`;
 
@@ -19,7 +19,7 @@ describe('the swatches on the Colour and style page', () => {
   it('paints a chip with the token itself, and states the value and the measured contrast', () => {
     const html = swatchSheet('--color-accent | Teal', sheet);
     expect(html).toContain('style="background: var(--color-accent)"');
-    expect(html).toContain('#006360 · 7.11 on white · 5.73 on grey');
+    expect(html).toContain('#12677f · 6.42 on white · 5.18 on grey');
     expect(html).toContain('<code>--color-accent</code>');
   });
 
@@ -31,7 +31,7 @@ describe('the swatches on the Colour and style page', () => {
   });
 
   it('draws every gradient the sheet defines, and says which way each one runs', () => {
-    const two = `${sheet}\n:root { --gradient-ground: linear-gradient(90deg, #dcebe7 0%, #ffffff 100%); }`;
+    const two = `${sheet}\n:root { --gradient-ground: linear-gradient(90deg, #deeaed 0%, #ffffff 100%); }`;
     const html = swatchSheet('--gradient-ground | The ground\n--gradient-header | The header', two);
     expect(html).not.toContain('not in the token sheet');
     expect(html.match(/swatch-wide/g)).toHaveLength(2);

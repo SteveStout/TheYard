@@ -23,6 +23,7 @@
   margin: 0;
   padding-bottom: var(--space-1);
   border-bottom: var(--rule-gold);
+  border-image: var(--gradient-gold) 1;
   color: var(--color-heading);
   font-size: var(--text-2xl);
   font-weight: var(--title-weight);

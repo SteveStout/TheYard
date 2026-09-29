@@ -36,6 +36,7 @@
 .heading {
   padding-bottom: var(--space-1);
   border-bottom: var(--rule-gold);
+  border-image: var(--gradient-gold) 1;
   font-size: var(--text-3xl);
   font-weight: var(--title-weight);
   line-height: var(--title-line);

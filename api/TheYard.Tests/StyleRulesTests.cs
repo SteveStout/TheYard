@@ -436,6 +436,43 @@ public class StyleRulesTests
     }
     // #endregion rule five
 
+    // #region the gold bar
+    /// <summary>
+    /// The gold bar (ADR-016, the addendum of 29 September): a page title's
+    /// underline is drawn as the bar, dark at both ends and bright in the
+    /// middle, so every rule that draws the flat gold under a title also takes
+    /// the bar as its border image. The flat gold stays as what a browser
+    /// without border-image draws.
+    /// </summary>
+    [Fact]
+    public void Every_page_title_underline_is_the_gold_bar()
+    {
+        string sheet = WithoutComments(TokenSheet());
+        Assert.True(
+            Regex.IsMatch(sheet, @"--gradient-gold:\s*linear-gradient\(\s*90deg,\s*var\(--color-gold-bar-dark\) 0%"),
+            "--gradient-gold should be the gold bar, left to right, from the bar's dark end, in src/styles/colors.css");
+
+        var wrong = new List<string>();
+        int found = 0;
+        foreach (string path in StyledSource().Where(path => path.EndsWith(".css", StringComparison.Ordinal)))
+        {
+            string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
+            string source = WithoutComments(File.ReadAllText(path));
+            foreach (Match rule in Regex.Matches(source, @"\{[^{}]*border-bottom:\s*var\(--rule-gold\);[^{}]*\}"))
+            {
+                found++;
+                if (!rule.Value.Contains("border-image: var(--gradient-gold) 1;", StringComparison.Ordinal))
+                {
+                    wrong.Add($"{relative} draws a title's gold underline without the bar: add border-image: var(--gradient-gold) 1; beside it");
+                }
+            }
+        }
+
+        Assert.True(found >= 6, $"only {found} title underlines were found, so this scan is reading the wrong files");
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+    // #endregion the gold bar
+
     // #region rule six
     [Fact]
     public void The_header_gradient_is_defined_once_and_every_header_bar_uses_it()

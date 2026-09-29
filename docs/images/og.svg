@@ -1,36 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="TheYard, a used-vehicle auction platform, by Steven Stout">
   <defs>
     <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0a3021"/>
-      <stop offset="1" stop-color="#03505a"/>
+      <stop offset="0" stop-color="#0f4452"/>
+      <stop offset="1" stop-color="#125568"/>
     </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#ground)"/>
-  <g fill="none" stroke="#cfe3e6" stroke-opacity="0.12" stroke-width="2">
+  <g fill="none" stroke="#d1e1e6" stroke-opacity="0.12" stroke-width="2">
     <circle cx="1010" cy="170" r="120"/><circle cx="1010" cy="170" r="210"/><circle cx="1010" cy="170" r="300"/><circle cx="1010" cy="170" r="390"/>
   </g>
-  <rect x="0" y="618" width="1200" height="12" fill="#dcbf57"/>
+  <rect x="0" y="618" width="1200" height="12" fill="#e6cb7e"/>
 
   <g transform="translate(96, 176)">
-    <path d="M44 -84 L8 -8 h34 l-14 60 l70 -96 h-42 l28 -40 z" fill="#dcbf57"/>
-    <text x="124" y="16" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="104" font-weight="700" fill="#dcbf57">TheYard</text>
+    <path d="M44 -84 L8 -8 h34 l-14 60 l70 -96 h-42 l28 -40 z" fill="#e6cb7e"/>
+    <text x="124" y="16" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="104" font-weight="700" fill="#e6cb7e">TheYard</text>
   </g>
 
   <text x="96" y="296" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="44" font-weight="600" fill="#ffffff">A working used-vehicle auction site,</text>
   <text x="96" y="352" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="44" font-weight="600" fill="#ffffff">built and explained by Steven Stout.</text>
 
   <g font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif">
-    <rect x="96" y="404" width="320" height="112" rx="14" fill="#024345" stroke="#cfe3e6" stroke-opacity="0.35"/>
+    <rect x="96" y="404" width="320" height="112" rx="14" fill="#10495a" stroke="#d1e1e6" stroke-opacity="0.35"/>
     <text x="124" y="456" font-size="40" font-weight="700" fill="#ffffff">100,000</text>
-    <text x="124" y="492" font-size="24" font-weight="500" fill="#cfe3e6">listings</text>
-    <rect x="440" y="404" width="320" height="112" rx="14" fill="#024345" stroke="#cfe3e6" stroke-opacity="0.35"/>
+    <text x="124" y="492" font-size="24" font-weight="500" fill="#d1e1e6">listings</text>
+    <rect x="440" y="404" width="320" height="112" rx="14" fill="#10495a" stroke="#d1e1e6" stroke-opacity="0.35"/>
     <text x="468" y="456" font-size="40" font-weight="700" fill="#ffffff">86</text>
-    <text x="468" y="492" font-size="24" font-weight="500" fill="#cfe3e6">decision records</text>
-    <rect x="784" y="404" width="320" height="112" rx="14" fill="#024345" stroke="#cfe3e6" stroke-opacity="0.35"/>
+    <text x="468" y="492" font-size="24" font-weight="500" fill="#d1e1e6">decision records</text>
+    <rect x="784" y="404" width="320" height="112" rx="14" fill="#10495a" stroke="#d1e1e6" stroke-opacity="0.35"/>
     <text x="812" y="456" font-size="40" font-weight="700" fill="#ffffff">.NET 10</text>
-    <text x="812" y="492" font-size="24" font-weight="500" fill="#cfe3e6">and React 19</text>
+    <text x="812" y="492" font-size="24" font-weight="500" fill="#d1e1e6">and React 19</text>
   </g>
 
-  <text x="96" y="580" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="#cfe3e6">theyard.stevenstout.biz</text>
-  <text x="1104" y="580" text-anchor="end" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="#cfe3e6">Steven Stout · 1.0.3.43</text>
+  <text x="96" y="580" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="#d1e1e6">theyard.stevenstout.biz</text>
+  <text x="1104" y="580" text-anchor="end" font-family="IBM Plex Sans, Segoe UI, system-ui, Arial, sans-serif" font-size="26" font-weight="500" fill="#d1e1e6">Steven Stout · 1.0.3.44</text>
 </svg>

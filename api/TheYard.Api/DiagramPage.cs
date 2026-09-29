@@ -39,14 +39,14 @@ public static class DiagramPage
             <style>
               html { background: #f3f7f6; }
               html, body { margin: 0; color: #5e5653; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; font-variant-numeric: tabular-nums; }
-              body { min-height: 100vh; background: linear-gradient(90deg, #dcebe7 0%, #f3f7f6 45%, #ffffff 100%) fixed; }
+              body { min-height: 100vh; background: linear-gradient(90deg, #deeaed 0%, #f3f7f6 45%, #ffffff 100%) fixed; }
               header { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; padding: 12px 16px 8px; }
               h1 { margin: 0; font-size: 16px; color: #3f3a37; }
               header p { margin: 0; font-size: 13px; color: #5f636c; }
-              a { color: #006360; }
+              a { color: #12677f; }
               main { padding: 0 16px 16px; }
-              .op-glass { position: relative; max-width: 1600px; margin: 0 auto; padding: 8px; background: rgba(255, 255, 255, 0.42); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); border: 1px solid rgba(2, 67, 69, 0.18); border-top: 3px solid #024345; border-radius: 10px; box-shadow: 0 8px 24px rgba(2, 67, 69, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
-              .op-glass::before, .op-glass::after { content: ''; position: absolute; width: 18px; height: 18px; border-color: #024345; border-style: solid; pointer-events: none; }
+              .op-glass { position: relative; max-width: 1600px; margin: 0 auto; padding: 8px; background: rgba(255, 255, 255, 0.42); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); border: 1px solid rgba(16, 73, 90, 0.18); border-top: 3px solid #10495a; border-radius: 10px; box-shadow: 0 8px 24px rgba(16, 73, 90, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+              .op-glass::before, .op-glass::after { content: ''; position: absolute; width: 18px; height: 18px; border-color: #10495a; border-style: solid; pointer-events: none; }
               .op-glass::before { left: -1px; top: -3px; border-width: 3px 0 0 2px; border-top-left-radius: 10px; }
               .op-glass::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 10px; }
               main svg { display: block; width: 100%; height: auto; }

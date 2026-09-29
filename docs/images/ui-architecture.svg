@@ -2,16 +2,16 @@
   <title>TheYard's UI, layer by layer: four design token files at the bottom, the base and panel sheets and the width steps above them, then the component sheets, the site map and the document layout, each reading only the layers below it</title>
   <defs>
     <marker id="ui-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#024345"/>
+      <path d="M0 0 L10 5 L0 10 z" fill="#10495a"/>
     </marker>
     <style>
-      .layer { fill: #e0ecee; stroke: #006360; stroke-width: 1.5; }
-      .name { fill: #024345; font-size: 16px; font-weight: 600; }
+      .layer { fill: #ddebee; stroke: #12677f; stroke-width: 1.5; }
+      .name { fill: #10495a; font-size: 16px; font-weight: 600; }
       .body { fill: #524b48; font-size: 13px; }
       .mono { fill: #524b48; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 12px; }
       .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
       .caption { fill: #4a4e57; font-size: 13px; }
-      .reads { stroke: #024345; stroke-width: 2; fill: none; marker-end: url(#ui-arrow); }
+      .reads { stroke: #10495a; stroke-width: 2; fill: none; marker-end: url(#ui-arrow); }
       .tag { fill: #4a4e57; font-size: 12px; font-weight: 600; letter-spacing: 1.5px; }
     </style>
   </defs>

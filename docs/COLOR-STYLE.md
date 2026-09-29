@@ -11,6 +11,20 @@ Teal fills, dark green draws, gold trims. Gold is decoration only: it is never t
 The ground behind every page, and the ribbons on it, have a page of their own:
 [Background and ribbon](https://theyard.stevenstout.biz/?doc=background-ribbon).
 
+**2026-09-29, the teal moved bluer (palette F) and the gold became a bar, to match the resume.** Steve
+chose both on 29 September, colour values only: the grounds, the ribbons' shapes, the glass, the face and the
+layout are as they were. The teals moved to hue 193, blue with enough green to soften the step to the gold:
+`--color-accent` `#12677f`, `--color-accent-hover` `#0f576b`, `--color-accent-soft` `#ddebee`,
+`--color-green-dark` `#0f4452`, `--color-teal-deep` `#10495a`, `--color-teal-header` `#125568`,
+`--color-ribbon-teal` `#308ca6`, `--color-ribbon-teal-light` `#64afc4`, `--color-ribbon-green` `#1d5463`,
+`--color-ground-left` `#deeaed`, `--color-mark-teal` `#1f8ead`, `--color-who-people` `#1d90af`,
+`--color-header-text-muted` `#d1e1e6` and `--color-store-sql` `#4a6c96`. The golds were cut from the gold bar:
+`--color-gold` `#b8923f`, `--color-gold-light` `#e6cb7e`, `--color-ribbon-gold` `#c9a95c`,
+`--color-ribbon-shine` `#f0dc94` and `--color-mark-gold` `#9a7728`, with `--color-ribbon-gold-soft` and
+`--color-ribbon-spark` now written as the gold light. Three are new: the bar's two outer tones and
+`--gradient-gold`, the bar itself, which draws every page title's underline and every stat tile's top rule.
+Why each value is what it is, and the three that moved from the brief, is in ADR-016's addendum of the same day.
+
 ## Brand colours
 
 ```swatches
@@ -21,35 +35,44 @@ The ground behind every page, and the ribbons on it, have a page of their own:
 --color-teal-deep | Deep teal
 --color-teal-header | Header teal
 --color-gold | Gold
---color-gold-light | Gold light
+--color-gold-light | Gold light, the gold bar's highlight
+--color-gold-bar-dark | The gold bar, its dark ends
+--color-gold-bar-shade | The gold bar, its shade
 --color-brand-mark | The lightning mark
 --color-on-accent | Words on a fill
 ```
 
-- **Teal `#006360`** fills: buttons, links, toggles, focus rings, the chosen row of the side rail.
-  White on it reads 7.11, and as text it reads 7.11 on white and 5.73 on grey. Under a pointer it
-  deepens to `#004f4d` (white on it 9.44). It is never the top of a tile: it sits 1.09 from the
-  status green `#146c34`, so a teal tile would read as "fine".
-- **Teal tint `#e0ecee`** is the soft ground behind an accent thing. Heading text on it reads 9.30
-  and the accent 5.89.
-- **Dark green `#0a3021`** draws: a card's edge, the rule under a section heading, the top of the
-  header gradient. 14.41 on white and 11.62 on grey.
-- **Deep teal `#024345`** tops a plain stat tile and titles a vehicle. White on it reads 11.10. It
-  sits 1.70 from the status green, which is what keeps a plain tile and a healthy tile apart.
-- **Header teal `#03505a`** is the bottom of the header gradient and nothing else. White on it
-  reads 9.13.
-- **Gold `#d4aa3a` and gold light `#dcbf57`** are trim: the lightning mark, the rule under the
-  header, a page title's underline, the ring round a chosen button, a photo's frame. Gold light reads
-  7.98 on the dark green and 5.06 on the header teal, so it is safe as text on the header. On white
-  the two read 2.19 and 1.81, so gold is never text, never data and never beside the amber
-  "worth a look", where it would read as a warning.
+- **Teal `#12677f`** fills: buttons, links, toggles, focus rings, the chosen row of the side rail.
+  White on it reads 6.42, and as text it reads 6.42 on white and 5.18 on grey. Under a pointer it
+  deepens to `#0f576b` (white on it 8.09). It is never the top of a tile: it sits 1.01 from the
+  status green `#146c34` in lightness, so a teal tile would read as "fine".
+- **Teal tint `#ddebee`** is the soft ground behind an accent thing. Heading text on it reads 9.19
+  and the accent 5.25.
+- **Dark green `#0f4452`** draws: a card's edge, the rule under a section heading, the top of the
+  header gradient. 10.67 on white and 8.60 on grey. Since 29 September it is a deep blue-green, the
+  name kept so no reference moved.
+- **Deep teal `#10495a`** tops a plain stat tile and titles a vehicle. White on it reads 9.89. It
+  sits 1.52 from the status green, which is what keeps a plain tile and a healthy tile apart.
+- **Header teal `#125568`** is the bottom of the header gradient and nothing else. White on it
+  reads 8.32.
+- **Gold `#b8923f` and gold light `#e6cb7e`** are trim, cut from the gold bar: gold is its mid
+  tone and gold light its highlight. They draw the lightning mark, the rule under the header, the
+  ring round a chosen button and a photo's frame. Gold light reads 6.71 on the dark green and 5.23
+  on the header teal, so it is safe as text on the header. On white the two read 2.91 and 1.59, so
+  gold is never text, never data and never beside the amber "worth a look", where it would read as
+  a warning.
+- **The gold bar** is a page title's underline and a stat tile's top rule: dark at both ends
+  (`#7d582e`), the highlight in the middle, the ribbon gold and a shade (`#ad8e57`) either side of
+  it. It is drawn with `border-image`, so the rule is the bar; a browser without it draws the flat
+  gold.
 
 ```swatches
 --gradient-header | The header, on a phone and on the side rail's brand block
+--gradient-gold | The gold bar, under a page title and on a stat tile's top
 ```
 
 The header gradient runs top to bottom, dark green to header teal, because left to right could not
-be seen on a bar fifty pixels tall. White text reads 14.41 at its top and 9.13 at its bottom. It is
+be seen on a bar fifty pixels tall. White text reads 10.67 at its top and 8.32 at its bottom. It is
 one design token, used by every header bar.
 
 ## Grounds and text
@@ -71,7 +94,7 @@ one design token, used by every header bar.
   are `#3f3a37`, 11.22 on white and 9.05 on grey.
 - **One grey, `#4a4e57`, for every secondary word, and only ever inside a panel.** It is measured
   against the worst thing behind it: the thinnest glass over the darkest ribbon. Through a panel
-  over the watermark at its worst it reads 6.51.
+  over the watermark at its worst it reads 6.53.
 
 ## Status colours, reserved
 
@@ -114,16 +137,16 @@ legends are in the text colours, never in a series' colour.
 --color-mark-marker | Charts and gauges, the marker at a fill's end
 ```
 
-1. Teal `#13928b`, 3.81 on white and 3.07 on grey.
-2. Gold `#a57c1d`, 3.82 on white and 3.08 on grey. The two are close in lightness and far apart in
+1. Teal `#1f8ead`, 3.80 on white and 3.06 on grey.
+2. Gold `#9a7728`, 4.16 on white and 3.36 on grey. The two are close in lightness and far apart in
    hue, so a chart that draws both always carries a legend.
 3. Neutral grey `#7b7f8a`, 4.00 on white: a third series, or a request the site turned away.
 
 The Admin tab's charts and gauges share one instrument style, modelled on an aircraft panel: one
 axis line with ticks in deep teal, no grid, labels in small capitals, and a gold marker where a
-gauge's fill ends. The two data stores keep their own pair, slate blue `#536786` and brown
+gauge's fill ends. The two data stores keep their own pair, slate blue `#4a6c96` and brown
 `#8a6a4f`. The activity card stacks who came in three colours chosen as a set that stays apart
-under colour blindness: people `#0a8f85` (3.98 on white), scanners and crawlers `#b8800a` (3.43),
+under colour blindness: people `#1d90af` (3.71 on white), scanners and crawlers `#b8800a` (3.43),
 and the site's own reads `#5b78c2` (4.28).
 
 ## The glass
@@ -266,6 +289,8 @@ rule learns the rule from the failure.
     design token.
 13. **One panel look.** Every panel, card and tile is the one shared glass with its rule and
     brackets, and every button is a pill or a circle.
+14. **The gold bar.** Every page title's underline is drawn as the gold bar, and so is every stat
+    tile's top rule.
 
 Two more tests stand behind them.
 [`colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts)

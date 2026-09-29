@@ -18,6 +18,7 @@
   margin: 0;
   padding-bottom: var(--space-1);
   border-bottom: var(--rule-gold);
+  border-image: var(--gradient-gold) 1;
   font-size: var(--text-2xl);
   /* Bold, as the Admin and Account titles are: one page title across the site (one look, 2026-09-21). */
   font-weight: var(--weight-bold);

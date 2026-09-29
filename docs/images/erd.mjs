@@ -25,7 +25,7 @@ const PALETTE = {
   heading: '#3f3a37',
   body: '#5e5653',
   muted: '#62666f',
-  accent: '#536786',
+  accent: '#4a6c96',
   brand: '#ab978c',
 };
 
