@@ -74,7 +74,7 @@ install a second, competing one, and the symptom would be a 302 redirect to a
 login page that does not exist where a 401 was expected. `AddIdentityCore` is
 the one line that avoids all of that.
 
-```live path=api/TheYard.Api/Program.cs region=auth
+```live path=api/TheYard.Api/Composition/AuthRegistration.cs region=auth
 ```
 
 ### Why a scoped DbContext sits beside the factory

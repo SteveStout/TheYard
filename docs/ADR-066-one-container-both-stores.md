@@ -56,7 +56,7 @@ the same treatment one level down: `UserManager` is registered once, and the
 store behind it is chosen per request, Identity's own tables on the
 relational backend and one document per account on the document one.
 
-```live path=api/TheYard.Api/Program.cs region=user-store-per-request
+```live path=api/TheYard.Api/Composition/AuthRegistration.cs region=user-store-per-request
 ```
 
 **The toggle is a cookie and a reload.** `POST /api/stores/select` sets the

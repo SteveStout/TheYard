@@ -48,7 +48,7 @@ name is the same idea, done by the build, for every file, every time.
 The rules, read from this build
 ([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
 
-```live path=api/TheYard.Api/Program.cs region=cache-headers
+```live path=api/TheYard.Api/Composition/Pipeline.cs region=cache-headers
 ```
 
 The proof is
@@ -85,7 +85,7 @@ says no-cache rather than immutable; a photo keeps its day.
 The static file middleware, the photo set's own rule, and the fallback that
 answers only app routes ([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
 
-```live path=api/TheYard.Api/Program.cs region=static-files
+```live path=api/TheYard.Api/Composition/Pipeline.cs region=static-files
 ```
 
 ## Addendum, 2026-09-28 (1.0.3.35): the edge is warmed after every deploy

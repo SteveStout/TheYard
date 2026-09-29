@@ -65,7 +65,7 @@ for reading either.
 The registration, and the reader it hands the Admin tab
 (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheYard.Api/Program.cs region=telemetry
+```live path=api/TheYard.Api/Composition/TelemetryRegistration.cs region=telemetry
 ```
 
 ```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=telemetry-endpoint

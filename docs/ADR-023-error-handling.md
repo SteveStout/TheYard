@@ -68,7 +68,7 @@ Recent errors card now shows both sides of the app.
 
 The handler and the logging, in `api/TheYard.Api/Program.cs`:
 
-```live path=api/TheYard.Api/Program.cs region=problem-details
+```live path=api/TheYard.Api/Composition/ApiRegistration.cs region=problem-details
 ```
 
 The endpoint browser errors report to:

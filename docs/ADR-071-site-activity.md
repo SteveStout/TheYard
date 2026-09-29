@@ -206,7 +206,7 @@ and a guess that is right often enough does not need it.
 - [`src/lib/activity.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/activity.ts) and [`src/components/admin/ActivityCard/ActivityCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ActivityCard/ActivityCard.tsx): the geometry and the card.
 - [`api/TheYard.Tests/ActivityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ActivityTests.cs) and [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the folding, the token, the endpoints, and the at sign that is never there.
 
-```live path=api/TheYard.Api/Program.cs region=activity-hook
+```live path=api/TheYard.Api/Composition/ObservabilityRegistration.cs region=activity-hook
 ```
 
 ```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=activity-endpoints

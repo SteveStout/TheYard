@@ -185,7 +185,7 @@ application's memory and turned a two-minute suite into a thirty-minute crawl th
 The other store warms on the first request that names it, and no request thread ever waits on a load
 already in progress:
 
-```live path=api/TheYard.Api/Program.cs region=warm-before-reading
+```live path=api/TheYard.Api/Composition/Pipeline.cs region=warm-before-reading
 ```
 
 **The search is an index, and the page's files are cached for a year.** A text scan over the hundred
@@ -196,7 +196,7 @@ the same twenty milliseconds, since ordering and serialising a page is most of w
 every bundle file is named by a hash of its contents, so a browser keeps it for a year and a returning
 visitor fetches the small HTML page and the data, never the bundle again ([Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-015-cache-headers.md)):
 
-```live path=api/TheYard.Api/Program.cs region=cache-headers
+```live path=api/TheYard.Api/Composition/Pipeline.cs region=cache-headers
 ```
 
 ## What the page costs on the wire, measured on 17 September

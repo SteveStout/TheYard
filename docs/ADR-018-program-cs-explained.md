@@ -141,7 +141,7 @@ what they cover: they cover everything. The error middleware is the
 simplest example, a try around `next()` that records a 500 or an exception
 and rethrows so the framework still answers.
 
-```live path=api/TheYard.Api/Program.cs region=error-log
+```live path=api/TheYard.Api/Composition/Pipeline.cs region=error-log
 ```
 
 The static file middleware and the SPA fallback are registered last on
@@ -150,7 +150,7 @@ index.html and the bundle files get their headers; the fallback answers
 only addresses without a file extension, so a missing bundle file is a 404
 rather than a page dressed as a script.
 
-```live path=api/TheYard.Api/Program.cs region=static-files
+```live path=api/TheYard.Api/Composition/Pipeline.cs region=static-files
 ```
 
 ### Liveness, readiness, and the Admin tab
@@ -199,10 +199,10 @@ worth saying that it is a decision rather than a drift.
 What those lines are:
 
 ```
-1,300 total
-  544 comment
-  82 blank
-  674 code, across 0 endpoints
+54 total
+  10 comment
+  6 blank
+  38 code, across 0 endpoints
 ```
 
 Thirty-two lines of code per endpoint, and most endpoints are a route, a
@@ -268,10 +268,10 @@ store over its accounts. The three services left the container entirely; an
 endpoint takes `CurrentBackend`, which is scoped to the request and resolved
 once from the request's header, cookie or the container's default.
 
-```live path=api/TheYard.Api/Program.cs region=sql-backend
+```live path=api/TheYard.Api/Composition/StoreRegistration.cs region=sql-backend
 ```
 
-```live path=api/TheYard.Api/Program.cs region=cosmos-backend
+```live path=api/TheYard.Api/Composition/StoreRegistration.cs region=cosmos-backend
 ```
 
 Identity is registered once, unconditionally, and its store is the one thing

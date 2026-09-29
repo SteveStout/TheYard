@@ -145,7 +145,7 @@ The bid store, which is the only thing here that writes
 
 Startup: migrate, then seed, then serve (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheYard.Api/Program.cs region=migrate-and-seed
+```live path=api/TheYard.Api/Composition/StoreRegistration.cs region=migrate-and-seed
 ```
 
 ## If you want to change the schema
