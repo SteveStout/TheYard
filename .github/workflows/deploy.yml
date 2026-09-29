@@ -24,6 +24,7 @@ on:
     # September on the sample). A push that touches both rolls both.
     paths-ignore:
       - "samples/**"
+      - ".github/workflows/deploy-shed.yml"
 
 permissions:
   id-token: write

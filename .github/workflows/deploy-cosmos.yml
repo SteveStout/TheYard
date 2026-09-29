@@ -17,6 +17,7 @@ on:
     # The sample under samples/ has its own deploy (deploy-shed.yml); see deploy.yml.
     paths-ignore:
       - "samples/**"
+      - ".github/workflows/deploy-shed.yml"
   # And by hand: a roll of the current image, or stopping and starting the
   # second site. Stopping it saves nothing now, because the plan bills for the
   # machine whether one site runs on it or two; it is kept for the day the

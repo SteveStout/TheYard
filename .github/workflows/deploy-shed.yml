@@ -76,16 +76,18 @@ jobs:
           cache-to: type=gha,scope=theshed,mode=max
           provenance: false
 
-      # The site is described by the sample's Bicep every time, in incremental
-      # mode, with the image just pushed: the first run creates it on the plan,
-      # every later run is a roll.
-      - name: Describe the site and roll
+      # The site was created once from the sample's Bicep by a person with rights on
+      # the group (samples/maplarge/infra/site.bicep, the header says how); the deploy
+      # identity holds Website Contributor on the site and nothing wider, the same as
+      # on the two TheYard sites, so a roll here is the two calls deploy.yml makes:
+      # the settings, then the image. App Service starts the new container beside
+      # the old one and moves traffic when it answers.
+      - name: Roll
         run: |
           set -eu
-          az deployment group create -g "$RG" --name "theshed-site" --mode Incremental \
-            --template-file "$SAMPLE/infra/site.bicep" \
-            --parameters appImage="$IMAGE" shedCommit="$APP_COMMIT" \
-            --query "{state:properties.provisioningState, origin:properties.outputs.origin.value}" -o json
+          az webapp config appsettings set -g "$RG" -n "$APP" --settings "SHED_COMMIT=$APP_COMMIT" -o none
+          az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
+          az webapp show -g "$RG" -n "$APP" --query "{state:state, image:siteConfig.linuxFxVersion, host:defaultHostName}" -o json
 
       - name: Verify
         run: |
