@@ -88,7 +88,9 @@ dialog.addEventListener('close', () => {
 });
 
 api.version().then((version) => {
-  replace(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', h('a', { href: '?view=docs&doc=readme' }, 'about this build'));
+  // A real link, so it works with the keyboard and in a new tab; clicked in place it navigates without a reload.
+  const about = h('a', { href: '?view=docs&doc=readme', onclick: (event) => { event.preventDefault(); navigate({ view: 'docs', doc: 'readme' }); } }, 'about this build');
+  replace(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', about);
 }).catch(() => replace(footer, 'The Shed'));
 
 render();

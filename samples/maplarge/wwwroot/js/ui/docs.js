@@ -63,7 +63,12 @@ export function createDocs(root, navigate) {
       }
       replace(article, toDom(parse(markdown)));
       article.scrollTop = 0;
-      article.querySelector('h1, h2')?.focus?.();
+      // The heading takes focus so a screen reader lands on the title, not the top of the panel.
+      const heading = article.querySelector('h1, h2');
+      if (heading) {
+        heading.setAttribute('tabindex', '-1');
+        heading.focus();
+      }
     } catch (error) {
       replace(article, h('p', { class: 'notice error' }, error.message));
     }
