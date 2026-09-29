@@ -24,10 +24,16 @@ permissions:
   id-token: write
   contents: read
 
-# Two quick merges must not fight over the one site.
+# #region latest-push-wins
+# The latest push wins (ADR-009, addendum of 29 September). A newer push to
+# main cancels the run in flight, queued or rolling, and rolls the newest
+# commit, so lanes stack their pushes and the site is never rolled twice in a
+# row to reach the same place. Verify waits for the version it built, so a
+# roll cut off between its two calls is finished by the next run.
 concurrency:
   group: deploy-production
-  cancel-in-progress: false
+  cancel-in-progress: true
+# #endregion latest-push-wins
 
 jobs:
   deploy:
@@ -117,6 +123,7 @@ jobs:
       - uses: docker/setup-buildx-action@v4
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -285,8 +292,11 @@ jobs:
       # reaching the registry and the roll starting (measured on f5b81c4: the
       # second site found the tag 59 s before this site began to roll). The same
       # build again is all cache hits on this runner, so this step only uploads.
+      # It runs on a failed or a cancelled run too, once the image was built:
+      # always() is what reaches a cancelled run, and a run cancelled before
+      # the build has nothing new to keep (ADR-009, addendum of 29 September).
       - name: Keep the build cache
-        if: always()
+        if: always() && steps.build.outcome == 'success'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -306,7 +316,10 @@ jobs:
       # prunes instead, after the site answers. It deletes nothing if it reads
       # fewer than ten tagged images or if either site runs an image outside the
       # newest ten, and a refusal to delete never fails the deploy.
+      # A newer push cancels this run; the prune still runs once the image was
+      # built, so a morning of stacked pushes does not grow the registry.
       - name: Keep the newest ten images
+        if: always() && steps.build.outcome == 'success'
         continue-on-error: true
         timeout-minutes: 5
         env:

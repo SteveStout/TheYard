@@ -201,3 +201,17 @@ Steve: "make sure and add default pruning we only want the last 10 deployments".
 ## Addendum, 2026-09-25: a prune that is refused is a warning
 
 Until the deploy identity holds AcrDelete, the prune's first delete is refused, and the step went red with its orange mark on every deploy; a mark that is always there teaches a reader to skip it. From 1.0.3.26 a refused delete prints a warning naming the missing grant and ends the step green, and a site running an image outside the ten is a warning too. The step has a five-minute limit of its own, since `continue-on-error` does not reach the job's. Two tests hold what the step assumes: the second site's name in the prune is the one its own workflow deploys to, and every image build sets `provenance: false` with no second platform, so an untagged digest is a whole image and never the child of one of the ten.
+
+## Addendum, 2026-09-29: the latest push wins
+
+Steve: "focused on the fastest release cycle we can get so this unblocks future work, we can stack releases so we don't have to release each one at a time, the pipeline should always grab the latest push." Both workflows held their concurrency group with `cancel-in-progress: false`, so a second push to main waited in the queue behind the roll in flight and the site was rolled twice in a row to reach the same place: once to the version nobody needed any more, then to the newest.
+
+From 1.0.3.40 both groups cancel. A newer push cancels the run in flight, queued or rolling, and that run's successor rolls the newest commit. Nothing that decides whether a version is live moved: Verify waits for the version its own run built, at the origin and at the domain, so a roll cut off between its two calls (the settings, then the image) is finished by the next run inside its own timeout. Deploy Cosmos waits for its own image tag, so its cancelled run never rolls the second site to an image the first site skipped.
+
+```live path=.github/workflows/deploy.yml region=latest-push-wins
+```
+
+Two steps must still run on a cancelled run: the build cache, so the next version's build finds its layers, and the prune that keeps the registry to ten images. `always()` is the condition GitHub evaluates on a cancelled run; each step also asks whether the build step finished, because a run cancelled before its image was built has no new layers to keep and no new image to count. The proof is the second push of 29 September, read off the Actions list: one run cancelled, one complete, both domains on the second version.
+
+```live path=.github/workflows/deploy.yml region=cache-export
+```

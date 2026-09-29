@@ -32,9 +32,11 @@ permissions:
   id-token: write
   contents: read
 
+# The latest push wins here too (ADR-009, addendum of 29 September): a newer
+# push cancels the roll in flight and this site takes the newest image.
 concurrency:
   group: deploy-cosmos
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
