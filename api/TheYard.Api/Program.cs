@@ -32,20 +32,16 @@ using TheYard.Infrastructure.Cosmos;
 // built by decoration, a scale-up around the reader (ADR: Program.cs, explained).
 var builder = WebApplication.CreateBuilder(args);
 
-string contentRoot = builder.Environment.ContentRootPath;
 // Walk up to the repo root rather than assuming a fixed depth, which keeps
-// `dotnet run`, tests, and published output all working from one line.
-string dataPath = FindUpward(contentRoot, Path.Combine("data", "vehicles.json"));
-string readmePath = FindUpward(contentRoot, "README.md");
-// Every test result from the gate that shipped this build, beside the dataset
-// (ADR: The five-minute gate, the addendum on every check running once).
-string testResultsPath = Path.Combine(Path.GetDirectoryName(dataPath)!, "test-results.json");
-string resumePath = Path.Combine(contentRoot, "wwwroot", "docs", "resume.pdf");
-string manifestPath = Path.Combine(contentRoot, "photo-manifest.json");
-string imagesRoot = Path.Combine(contentRoot, "wwwroot", "images");
-// Live code samples (ADR-014) read whitelisted source files under the repo root,
-// which is the folder README.md sits in, both in the image and in a checkout.
-string repoRoot = Path.GetDirectoryName(readmePath)!;
+// `dotnet run`, tests, and published output all working from one line
+// (Composition/HostPaths.cs says what each path is).
+var paths = HostPaths.Find(builder.Environment.ContentRootPath);
+builder.Services.AddSingleton(paths);
+string dataPath = paths.DataPath;
+string testResultsPath = paths.TestResultsPath;
+string manifestPath = paths.ManifestPath;
+string imagesRoot = paths.ImagesRoot;
+string repoRoot = paths.RepoRoot;
 // Build provenance (ADR-005), read once: the Docker build bakes both in.
 // An hour of samples at a quarter of a minute each, which is also the number
 // of rows the relational store's own view keeps (ADR: What the machines are doing).
@@ -54,6 +50,7 @@ const int RequestRing = 500;
 
 string buildVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev";
 string buildCommit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local";
+builder.Services.AddSingleton(new BuildInfo(buildVersion, buildCommit));
 
 // The 200-record seed dataset is deterministically expanded to TargetCount
 // synthetic records (default 100,000): scale testing without a giant file.
@@ -1299,89 +1296,9 @@ app.MapDelete("/api/bids", async Task<Results<NoContent, ProblemHttpResult>> (Cu
     .ProducesProblem(StatusCodes.Status401Unauthorized);
 #endregion bid-endpoints
 
-// ---------------------------------------------------------------------------
-// Documents: every markdown the sidebar can open, served from one endpoint.
-// ---------------------------------------------------------------------------
-
-#region docs-endpoint
-// One route for every document (ADR-017): the slug is looked up in the catalog
-// (DocsCatalog.cs, the same slugs src/library/records.ts and pages.ts carry), the file
-// is read from the repo root and its live blocks are expanded (ADR-014). A slug
-// missing from the catalog is a 404, never a file read. The Bicep file and the
-// resume keep their own routes below because they are not markdown; a literal
-// route wins over the {slug} pattern.
-app.MapGet("/api/docs/{slug}", Results<ContentHttpResult, ProblemHttpResult> (string slug) =>
-    DocsCatalog.Files.TryGetValue(slug, out var file)
-        ? TypedResults.Text(
-            // The pictures are named here rather than on GitHub's raw host (DocsCatalog.cs, DocImages).
-            DocImages.Rewrite(LiveSamples.Expand(File.ReadAllText(Path.Combine(repoRoot, file)), repoRoot, buildCommit), repoRoot),
-            "text/markdown")
-        : TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document"))
-    .WithName("GetDocument")
-    .WithTags("Documents")
-    .WithSummary("One of the served documents, as markdown with its code samples expanded")
-    .WithDescription("The slug is one the sidebar offers: readme, architecture, a record such as adr-openapi. "
-        + "Every live block is read from this build at request time.")
-    .Produces<string>(StatusCodes.Status200OK, "text/markdown")
-    .ProducesProblem(StatusCodes.Status404NotFound);
-#endregion docs-endpoint
-
-#region docs-images-endpoint
-// A document's picture, from the repository (DocsCatalog.cs, DocImages). The
-// name is held to one shape, so an address cannot climb out of docs/images, and
-// a name that is not there is a 404 with nothing read. Cached for a day, the
-// same as the photographs: a drawing changes with a commit, and a day is the
-// most a reader would see the old one.
-app.MapGet("/api/docs/images/{name}", Results<PhysicalFileHttpResult, ProblemHttpResult> (string name, HttpContext http) =>
-{
-    string? path = DocImages.PathOf(repoRoot, name);
-    if (path is null || !File.Exists(path))
-    {
-        return TypedResults.Problem(detail: "No served document carries a picture by that name.", statusCode: 404, title: "No such picture");
-    }
-
-    http.Response.Headers.CacheControl = "public, max-age=86400";
-    return TypedResults.PhysicalFile(path, DocImages.ContentType(name));
-})
-    .WithName("GetDocumentImage")
-    .WithTags("Documents")
-    .WithSummary("A picture one of the served documents carries")
-    .WithDescription("The name is one a served document names, such as app-home.jpg or infrastructure.svg; the file is read from docs/images and nowhere else.")
-    .Produces<byte[]>(StatusCodes.Status200OK, "image/png", "image/jpeg", "image/svg+xml", "image/webp")
-    .ProducesProblem(StatusCodes.Status404NotFound);
-#endregion docs-images-endpoint
-
-#region diagram-page
-// A diagram on its own page (ADR-020): the SVG inlined in a small HTML document,
-// so it opens in a new tab, zooms with the browser, and keeps its text
-// selectable. The name is looked up in the catalog; nothing else is read.
-app.MapGet("/api/docs/diagrams/{name}", Results<ContentHttpResult, ProblemHttpResult> (string name) =>
-    DocsCatalog.Diagrams.TryGetValue(name, out var diagram)
-        ? TypedResults.Content(
-            DiagramPage.Render(diagram.Title, File.ReadAllText(Path.Combine(repoRoot, diagram.File)), diagram.File),
-            "text/html; charset=utf-8")
-        : TypedResults.Problem(detail: "No diagram has that name.", statusCode: 404, title: "No such diagram"))
-    .WithName("GetDiagram")
-    .WithTags("Documents")
-    .WithSummary("One diagram on its own page")
-    .WithDescription("The SVG inlined in a small HTML document, so it zooms with the browser and keeps its text selectable.")
-    .Produces<string>(StatusCodes.Status200OK, "text/html")
-    .ProducesProblem(StatusCodes.Status404NotFound);
-#endregion diagram-page
-
-app.MapGet("/api/docs/bicep", () =>
-    TypedResults.Text("# infra/main.bicep" + "\n\nWhat runs, as code: one App Service plan and two web apps, which are the module below it, with Azure Front Door and the origin lock behind a parameter that stays off while the subscription refuses Front Door. Deployed in incremental mode only; the Hosting overview explains both.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "main.bicep")) + "\n```\n\n## infra/appservice.bicep\n\nThe plan and the two sites, what differs between them, and every setting they carry.\n\n```bicep\n" + File.ReadAllText(Path.Combine(repoRoot, "infra", "appservice.bicep")) + "\n```\n", "text/markdown"))
-    .WithName("GetBicep")
-    .WithTags("Documents")
-    .WithSummary("The infrastructure definition, as a markdown page")
-    .Produces<string>(StatusCodes.Status200OK, "text/markdown");
-
-app.MapGet("/api/docs/resume", () =>
-    TypedResults.PhysicalFile(resumePath, "application/pdf"))
-    .WithName("GetResume")
-    .WithTags("Documents")
-    .WithSummary("The author's resume")
-    .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf");
+// Documents: every markdown the sidebar can open, the pictures and diagrams
+// they carry, the Bicep and the resume (Endpoints/DocsEndpoints.cs).
+app.MapDocsEndpoints();
 
 // ---------------------------------------------------------------------------
 // Build provenance - the version and commit this container was built from,
@@ -2627,25 +2544,6 @@ app.MapFallbackToFile("{*path:nonfile}", "index.html");
 #endregion static-files
 
 app.Run();
-
-#region find-upward
-// Started from three different folders (dotnet run, the test host's bin
-// directory, /app in the image), so nothing may assume a fixed depth. Walking
-// up until the file appears works from all three, and the throw names what
-// was missing instead of failing later as a null.
-static string FindUpward(string startDirectory, string relativePath)
-{
-    for (var dir = new DirectoryInfo(startDirectory); dir is not null; dir = dir.Parent)
-    {
-        string candidate = Path.Combine(dir.FullName, relativePath);
-        if (File.Exists(candidate))
-        {
-            return candidate;
-        }
-    }
-    throw new FileNotFoundException($"Could not locate {relativePath} in or above {startDirectory}");
-}
-#endregion find-upward
 
 #region records-and-test-hook
 /// <summary>

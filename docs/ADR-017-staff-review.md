@@ -122,7 +122,7 @@ The endpoint and the catalog, read from this build
 and
 [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs)):
 
-```live path=api/TheYard.Api/Program.cs region=docs-endpoint
+```live path=api/TheYard.Api/Endpoints/DocsEndpoints.cs region=docs-endpoint
 ```
 
 ```live path=api/TheYard.Api/DocsCatalog.cs region=docs-catalog

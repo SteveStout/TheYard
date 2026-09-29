@@ -44,7 +44,7 @@ never does. The folder README.md sits in becomes `repoRoot`, and every
 later path is built from it; ADR: The staff review removed the per-request
 walks that used to repeat this work.
 
-```live path=api/TheYard.Api/Program.cs region=find-upward
+```live path=api/TheYard.Api/Composition/HostPaths.cs region=find-upward
 ```
 
 ### The services, and why they are singletons
@@ -199,10 +199,10 @@ worth saying that it is a decision rather than a drift.
 What those lines are:
 
 ```
-2,667 total
-  934 comment
-  151 blank
-  1,582 code, across 48 endpoints
+2,565 total
+  911 comment
+  144 blank
+  1,510 code, across 43 endpoints
 ```
 
 Thirty-two lines of code per endpoint, and most endpoints are a route, a
