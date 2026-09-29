@@ -342,3 +342,6 @@ The Style section was one page, Colour and style. It is four now, in the sidebar
 ```
 
 The tiles, the readouts, the glossary and the ribbon strip are fences, the way the swatches are (`src/library/styleBlocks.ts`), and `src/library/useLiveBlocks.tsx` mounts the ribbons and the tile icons into them after the document is drawn. Every second-level heading now carries an id from its words, so the glossary's "See" links land on the section a term is used in.
+
+**1.0.3.43: the blocks are kept.** The live read after 1.0.3.42 found the ribbon strip empty on both sites, and one read of the Style guide with a tile missing its icon. The first version mounted the blocks when the document changed and let them go in the effect's cleanup, and a render in between could leave an element with no root. The blocks are now drawn once per element, on every render that finds one not yet drawn, and a root is let go only when its element has left the page. `style-section.spec.ts` holds the three icons, a tile opening its page in the same window, and the strip's drawing.
+

@@ -26,7 +26,35 @@ function keyOf(slug: string): DocKey | undefined {
   return (Object.keys(DOCS) as DocKey[]).find((key) => DOCS[key].url === `/api/docs/${slug}`);
 }
 
-/** Every live block inside `container`, mounted while `html` is on screen and unmounted when it goes. */
+/** The React root drawn into each live block, by its element, so no element is ever given a second root. */
+const mounted = new Map<Element, Root>();
+
+/** Draws every live block inside `root` that has not been drawn yet. */
+function mountBlocks(root: HTMLElement) {
+  // The ribbons, drawn by the same component as the page's ground, from the same data, with ids of their own.
+  for (const box of root.querySelectorAll<HTMLElement>('[data-ribbon-strip]')) {
+    if (mounted.has(box)) continue;
+    const strip = createRoot(box);
+    strip.render(<Ribbons />);
+    mounted.set(box, strip);
+  }
+  for (const badge of root.querySelectorAll<HTMLElement>('[data-glyph]')) {
+    if (mounted.has(badge)) continue;
+    const glyph = createRoot(badge);
+    glyph.render(<NavGlyph icon={badge.dataset.glyph as NavIcon} size={28} />);
+    mounted.set(badge, glyph);
+  }
+}
+
+/** Lets go of the roots whose element has left the page, after this render and never inside it. */
+function sweepDetached() {
+  const gone = Array.from(mounted).filter(([element]) => !element.isConnected);
+  if (gone.length === 0) return;
+  gone.forEach(([element]) => mounted.delete(element));
+  queueMicrotask(() => gone.forEach(([, each]) => each.unmount()));
+}
+
+/** Every live block inside `container`, drawn while `html` is on screen. */
 export function useLiveBlocks(
   container: RefObject<HTMLElement | null>,
   html: string | undefined,
@@ -37,21 +65,17 @@ export function useLiveBlocks(
   useEffect(() => {
     opener.current = onOpenDoc;
   });
+  // Every render, not only when the document changes: the blocks are mounted once per element and kept,
+  // so a render that did not change the document mounts nothing, and one that replaced its markup mounts
+  // the new elements. A root is let go only when its element has left the page.
+  useEffect(() => {
+    const root = container.current;
+    if (root && html !== undefined) mountBlocks(root);
+    sweepDetached();
+  });
   useEffect(() => {
     const root = container.current;
     if (!root || html === undefined) return;
-    const roots: Root[] = [];
-    // The ribbons, drawn by the same component as the page's ground, from the same data, with ids of their own.
-    for (const box of root.querySelectorAll<HTMLElement>('[data-ribbon-strip]')) {
-      const strip = createRoot(box);
-      strip.render(<Ribbons />);
-      roots.push(strip);
-    }
-    for (const badge of root.querySelectorAll<HTMLElement>('[data-glyph]')) {
-      const glyph = createRoot(badge);
-      glyph.render(<NavGlyph icon={badge.dataset.glyph as NavIcon} size={28} />);
-      roots.push(glyph);
-    }
     if (pendingAnchor !== '') {
       const target = root.querySelector<HTMLElement>(`[id="${CSS.escape(pendingAnchor)}"]`);
       if (target) {
@@ -84,11 +108,7 @@ export function useLiveBlocks(
       opener.current(key);
     };
     root.addEventListener('click', open);
-    return () => {
-      root.removeEventListener('click', open);
-      // After this render, never inside it: React refuses to unmount a root while it is rendering.
-      queueMicrotask(() => roots.forEach((each) => each.unmount()));
-    };
+    return () => root.removeEventListener('click', open);
   }, [container, html]);
 }
 // #endregion live-blocks
