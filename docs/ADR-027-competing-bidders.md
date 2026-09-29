@@ -118,7 +118,7 @@ Where the two overlays are composed (`api/TheYard.Api/Program.cs`):
 
 The endpoints (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheYard.Api/Program.cs region=market-endpoints
+```live path=api/TheYard.Api/Endpoints/BidEndpoints.cs region=market-endpoints
 ```
 
 The answer the badge needs, derived server-side

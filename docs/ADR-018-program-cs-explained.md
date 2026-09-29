@@ -120,10 +120,10 @@ vehicle exist (404 if not), does the domain accept the action (400 with
 the reason if not). The status codes are the contract the React app relies
 on: it reads `detail` out of a 400 and treats a 404 as gone.
 
-```live path=api/TheYard.Api/Program.cs region=bid-endpoints
+```live path=api/TheYard.Api/Endpoints/BidEndpoints.cs region=bid-endpoints
 ```
 
-```live path=api/TheYard.Api/Program.cs region=bid-handling
+```live path=api/TheYard.Api/Endpoints/BidEndpoints.cs region=bid-handling
 ```
 
 The documents come from one endpoint over a catalog (ADR: The staff
@@ -199,10 +199,10 @@ worth saying that it is a decision rather than a drift.
 What those lines are:
 
 ```
-2,494 total
-  892 comment
-  142 blank
-  1,460 code, across 40 endpoints
+2,254 total
+  807 comment
+  135 blank
+  1,312 code, across 34 endpoints
 ```
 
 Thirty-two lines of code per endpoint, and most endpoints are a route, a
