@@ -369,3 +369,14 @@ spreading the same pages across more tabs at once is slower work, the
 finding of 21 September a third time. The parts are taken back and the file
 is as it was. The long worker is still the place to look, and the lever
 there is what one page costs to read at the phone width.
+
+## Addendum, 2026-09-29: stack, gate once, push once
+
+Steve, 29 September: "we can stack releases so we don't have to release each one at a time, the pipeline should always grab the latest push." With the deploy group cancelling the run in flight (ADR: The deploy pipeline, addendum of 29 September), the rule for every lane that ships:
+
+- **Stack.** A lane's changes are local commits in order, each checked with the quick check only (the type check, the unit tests, the lint and the .NET tests that read what moved; about two minutes). No commit is rolled on its own.
+- **Gate once.** The full gate runs once, on the stacked head. A commit that turns it red is fixed on top; the whole gate is never run again per commit.
+- **Push once, without looking.** A lane pushes when its stack is green, without checking whether another roll is in flight: the pipeline takes the newest push and cancels the older roll.
+- **Never wait on a roll.** After the push the lane moves on. The proof that a version is live is the version the Actions run's own Verify step reports, not a lane polling both domains.
+
+This version is the second push of the proof: it went to main while 1.0.3.40 was rolling.
