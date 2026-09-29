@@ -614,5 +614,12 @@ export const RECORDS = {
     kind: 'adr',
     number: '085',
   },
+  adrCompositionRoot: {
+    title: 'ADR: The composition root, split by job',
+    menuLabel: 'ADR: The composition root, split by job',
+    url: '/api/docs/adr-composition-root',
+    kind: 'adr',
+    number: '086',
+  },
 } as const satisfies Record<string, RecordEntry>;
 // #endregion records

@@ -251,6 +251,7 @@ export const MENUS: Record<
       { key: 'adrTweaks' },
       { key: 'adrComponentFolders' },
       { key: 'adrKeptAwake' },
+      { key: 'adrCompositionRoot' },
     ],
   },
   // #endregion records-menu

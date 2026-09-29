@@ -114,6 +114,7 @@ public static class DocsCatalog
         ["adr-tweaks"] = "docs/ADR-083-the-tweaks-pass.md",
         ["adr-component-folders"] = "docs/ADR-084-one-folder-per-component.md",
         ["adr-kept-awake"] = "docs/ADR-085-kept-awake.md",
+        ["adr-composition-root"] = "docs/ADR-086-the-composition-root-split-by-job.md",
         ["color-style"] = "docs/COLOR-STYLE.md",
         ["author"] = "docs/AUTHOR.md",
         ["security"] = "docs/SECURITY.md",
