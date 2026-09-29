@@ -60,9 +60,17 @@ csharp_style_namespace_declarations = file_scoped:suggestion
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_style_prefer_pattern_matching = true:suggestion
 
-[*.{mjs,js}]
+[*.ts]
 indent_size = 2
 max_line_length = 100
+quote_type = single
+
+# What tsc wrote; not edited by hand, so it keeps the compiler's own layout.
+[wwwroot/js/**.js]
+indent_size = 4
+
+[tests/js/*.js]
+indent_size = 2
 quote_type = single
 
 [*.{yml,yaml}]

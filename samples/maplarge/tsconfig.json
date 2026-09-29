@@ -1,0 +1,23 @@
+{
+  // TypeScript with nothing else (ADR-006): the sources in src/ compile to plain ES modules in
+  // wwwroot/js, which the page loads as they are. No bundler, no framework. The output is committed
+  // so `dotnet run` works with the .NET SDK alone; `npm run build` regenerates it.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "rootDir": "src",
+    "outDir": "wwwroot/js",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "newLine": "lf"
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -3,94 +3,100 @@
 // only file that touches history; every view asks for a change through
 // navigate() and is redrawn from the address that results, the same path a Back
 // button or a pasted link takes.
-
 import * as api from './lib/api.js';
-import { DEFAULTS, isOpen, parse, serialize } from './lib/urlState.js';
+import { DEFAULTS, isOpen, parse, serialize, VIEWS } from './lib/urlState.js';
 import { createBrowser } from './ui/browser.js';
 import { createDocs } from './ui/docs.js';
 import { h, replace } from './ui/dom.js';
-
-const dialog = document.querySelector('dialog.shed');
-const trigger = document.querySelector('#open-shed');
-const tabs = document.querySelector('#tabs');
-const browserRoot = document.querySelector('#browser');
-const docsRoot = document.querySelector('#docs');
-const closeButton = document.querySelector('#close-shed');
-const footer = document.querySelector('#version');
-
+/** An element the page cannot work without; index.html is the only place it comes from. */
+function need(selector) {
+    const element = document.querySelector(selector);
+    if (!element) {
+        throw new Error(`index.html has no ${selector}.`);
+    }
+    return element;
+}
+function viewOf(value) {
+    return VIEWS.includes(value ?? '') ? value : DEFAULTS.view;
+}
+const dialog = need('dialog.shed');
+const trigger = need('#open-shed');
+const tabs = need('#tabs');
+const browserRoot = need('#browser');
+const docsRoot = need('#docs');
+const closeButton = need('#close-shed');
+const footer = need('#version');
 let state = parse(window.location.search);
 const browser = createBrowser(browserRoot, navigate);
 const docs = createDocs(docsRoot, navigate);
-
 // #region navigate
 /**
  * The one way the state changes: merge, write the address, redraw. Closing is
  * navigating to the defaults, so Back from a closed page reopens it where it was.
- * @param {object} partial the keys that change
- * @param {boolean} [replaceEntry] true to replace the history entry (typing in the search box)
+ * @param partial the keys that change
+ * @param replaceEntry true to replace the history entry (typing in the search box)
  */
 function navigate(partial, replaceEntry = false) {
-  const next = { ...state, open: true, ...partial };
-  const url = serialize(next) || window.location.pathname;
-  if (replaceEntry) {
-    window.history.replaceState(null, '', url);
-  } else {
-    window.history.pushState(null, '', url);
-  }
-  state = parse(window.location.search);
-  render();
+    const next = { ...state, open: true, ...partial };
+    const url = serialize(next) || window.location.pathname;
+    if (replaceEntry) {
+        window.history.replaceState(null, '', url);
+    }
+    else {
+        window.history.pushState(null, '', url);
+    }
+    state = parse(window.location.search);
+    render();
 }
-
 window.addEventListener('popstate', () => {
-  state = parse(window.location.search);
-  render();
+    state = parse(window.location.search);
+    render();
 });
 // #endregion navigate
-
 // #region render
 function render() {
-  if (!isOpen(state)) {
-    if (dialog.open) {
-      dialog.close();
-      trigger.focus(); // Back where the person started, with the keyboard.
+    if (!isOpen(state)) {
+        if (dialog.open) {
+            dialog.close();
+            trigger.focus(); // Back where the person started, with the keyboard.
+        }
+        return;
     }
-    return;
-  }
-  if (!dialog.open) {
-    dialog.showModal();
-  }
-  for (const button of tabs.querySelectorAll('button')) {
-    button.setAttribute('aria-pressed', button.dataset.view === state.view ? 'true' : 'false');
-  }
-  browserRoot.hidden = state.view !== 'browse';
-  docsRoot.hidden = state.view !== 'docs';
-  if (state.view === 'docs') {
-    docs.render(state);
-  } else {
-    browser.render(state);
-  }
+    if (!dialog.open) {
+        dialog.showModal();
+    }
+    for (const button of tabs.querySelectorAll('button')) {
+        button.setAttribute('aria-pressed', button.dataset['view'] === state.view ? 'true' : 'false');
+    }
+    browserRoot.hidden = state.view !== 'browse';
+    docsRoot.hidden = state.view !== 'docs';
+    void (state.view === 'docs' ? docs.render(state) : browser.render(state));
 }
 // #endregion render
-
 trigger.addEventListener('click', () => navigate({ view: 'browse' }));
+// Links on the page that open a view do it in place; as plain links they still work in a new tab.
+for (const link of document.querySelectorAll('a[data-view]')) {
+    link.addEventListener('click', (event) => {
+        event.preventDefault();
+        navigate({ view: viewOf(link.dataset['view']), doc: link.dataset['doc'] ?? '' });
+    });
+}
 closeButton.addEventListener('click', () => navigate({ ...DEFAULTS, open: false }));
 tabs.addEventListener('click', (event) => {
-  const button = event.target.closest('button[data-view]');
-  if (button) {
-    navigate({ view: button.dataset.view });
-  }
+    const button = event.target?.closest('button[data-view]');
+    if (button) {
+        navigate({ view: viewOf(button.dataset['view']) });
+    }
 });
 // Escape closes a modal dialog on its own; the address has to follow it.
 dialog.addEventListener('close', () => {
-  if (isOpen(state)) {
-    navigate({ ...DEFAULTS, open: false });
-  }
+    if (isOpen(state)) {
+        navigate({ ...DEFAULTS, open: false });
+    }
 });
-
 api.version().then((version) => {
-  // A real link, so it works with the keyboard and in a new tab; clicked in place it navigates without a reload.
-  const about = h('a', { href: '?view=docs&doc=readme', onclick: (event) => { event.preventDefault(); navigate({ view: 'docs', doc: 'readme' }); } }, 'about this build');
-  replace(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', about);
+    // A real link, so it works with the keyboard and in a new tab; clicked in place it navigates without a reload.
+    const about = h('a', { href: '?view=docs&doc=readme', onclick: (event) => { event.preventDefault(); navigate({ view: 'docs', doc: 'readme' }); } }, 'about this build');
+    replace(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', about);
 }).catch(() => replace(footer, 'The Shed'));
-
 render();

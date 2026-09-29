@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Shed</title>
-  <meta name="description" content="A file and folder browser: browse, search, upload, download, move, copy and delete under one configurable home directory. Vanilla JavaScript over an ASP.NET Core API." />
+  <meta name="description" content="A file and folder browser: browse, search, upload, download, move, copy and delete under one configurable home directory. TypeScript with no framework over an ASP.NET Core API." />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preload" href="/fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/css/tokens.css" />
@@ -12,7 +12,7 @@
 </head>
 <body>
   <!-- The page is this file and nothing more: a header, one panel with the trigger, the
-       dialog the browser lives in, and a footer. Every other element is made by js/main.js
+       dialog the browser lives in, and a footer. Every other element is made by src/main.ts (served compiled as js/main.js)
        and the views it owns, from the state in the address (ADR-005, ADR-006, ADR-007). -->
   <header class="site-header">
     <svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
@@ -24,6 +24,11 @@
       <h1>The Shed</h1>
       <p>Files and folders, browsed and searched. A small building in <a href="https://theyard.stevenstout.biz">the Yard</a>.</p>
     </div>
+    <nav class="site-nav" aria-label="About the author">
+      <a href="?view=docs&amp;doc=about" data-view="docs" data-doc="about">About Steven</a>
+      <a href="/resume.pdf">Resume</a>
+      <a href="/the-shed-explained.pdf">The Shed, explained</a>
+    </nav>
   </header>
 
   <main>
@@ -42,6 +47,11 @@
         <a href="?path=reports/2026">the 2026 reports</a>,
         <a href="?q=*.csv&amp;sort=size&amp;dir=desc">every CSV by size</a>,
         <a href="?view=docs&amp;doc=adr-003-the-line-a-path-cannot-cross">the record on the path guard</a>.
+      </p>
+      <p>
+        Reviewing it? <a href="/the-shed-explained.pdf">The Shed, explained</a> is one page: the numbers, the quick start,
+        the choices and why, and where it goes next. <a href="?view=docs&amp;doc=about" data-view="docs" data-doc="about">About Steven</a>
+        and the <a href="/resume.pdf">resume</a> are one click each.
       </p>
     </section>
   </main>

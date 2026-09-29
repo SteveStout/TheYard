@@ -7,7 +7,7 @@ namespace TestProject.Library;
 /// The documents the app serves, read from the <c>docs</c> folder beside the
 /// project at request time so a record can never go stale against the code it
 /// describes (ADR-012). The sidebar order is decided here: start here, the
-/// README, the decision records by number, then the guides.
+/// README, the author, the decision records by number, then the guides.
 /// </summary>
 public sealed partial class DocsCatalog(string contentRoot)
 {
@@ -30,6 +30,7 @@ public sealed partial class DocsCatalog(string contentRoot)
         {
             new("start-here", TitleOf(Path.Combine(DocsFolder, "START-HERE.md")), "Start here"),
             new("readme", TitleOf(Path.Combine(contentRoot, "README.md")), "Start here"),
+            new("about", TitleOf(Path.Combine(DocsFolder, "ABOUT.md")), "Start here"),
         };
         foreach (string file in Directory.EnumerateFiles(DocsFolder, "ADR-*.md").OrderBy(RecordNumber))
         {

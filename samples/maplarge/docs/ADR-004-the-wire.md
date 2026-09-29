@@ -10,7 +10,7 @@ shape of that JSON is a decision a reviewer will read in the first minute, so it
 ## Decision
 
 **snake_case, end to end.** `folder_count`, `size_bytes`, `modified_ms`, `took_ms`. One naming
-policy on the serializer, no mapping layer, and the JavaScript reads the same names it receives.
+policy on the serializer, no mapping layer, and the TypeScript declares the same names it receives (`src/lib/types.ts`).
 The choice is TheYard's habit, kept so a reader moving between the two projects sees one wire.
 
 **Records, sealed.** Every reply type is a positional record in `Data/Entries.cs`, sealed, with a
@@ -23,7 +23,7 @@ no parent, and that is information.
 
 **Bytes and milliseconds as long.** A size is bytes; an instant is milliseconds since the epoch,
 UTC, the unit the browser's `Date` already uses. Formatting ("1.2 MB", "today 09:07") is the
-page's job and lives in one file, `js/lib/format.js`, so the table and the totals line agree.
+page's job and lives in one file, `src/lib/format.ts`, so the table and the totals line agree.
 
 **Totals are computed on the server** for exactly what the reply lists: the direct children of a
 browse, the matches of a search. The page never adds up a column it might have sorted or filtered.

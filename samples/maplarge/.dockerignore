@@ -5,3 +5,4 @@ tests/**/obj/
 .vs/
 .git/
 TestResults/
+node_modules/

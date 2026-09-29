@@ -15,7 +15,7 @@ public sealed class HouseVoiceTests
     [Fact]
     public void No_file_we_wrote_contains_an_em_dash()
     {
-        List<string> offenders = Repo.FilesWith(".cs", ".js", ".css", ".html", ".md", ".json", ".csproj", ".yml", ".bicep", ".editorconfig")
+        List<string> offenders = Repo.FilesWith(".cs", ".ts", ".js", ".css", ".html", ".md", ".json", ".csproj", ".yml", ".bicep", ".editorconfig")
             .Where(file => File.ReadAllText(file).Contains(EmDash))
             .Select(Repo.Relative)
             .ToList();
@@ -105,6 +105,55 @@ public sealed partial class LayeringTests
 
     [GeneratedRegex(@"^using TestProject\.(?<folder>\w+);", RegexOptions.Multiline)]
     private static partial Regex Using();
+}
+
+/// <summary>The page is TypeScript with the same inward rule as the C#, compiled and committed, and never .innerHTML (ADR-006).</summary>
+public sealed partial class FrontEndRulesTests
+{
+    private static string Src => Path.Combine(Repo.Root(), "src");
+
+    [Fact]
+    public void Every_source_module_has_its_compiled_module_beside_the_page()
+    {
+        List<string> missing = Directory.EnumerateFiles(Src, "*.ts", SearchOption.AllDirectories)
+            .Select(file => Path.ChangeExtension(Path.GetRelativePath(Src, file), ".js"))
+            .Where(relative => !File.Exists(Path.Combine(Repo.Root(), "wwwroot", "js", relative)))
+            .ToList();
+        Assert.Empty(missing);
+    }
+
+    [Fact]
+    public void Lib_never_imports_ui_and_ui_never_reaches_past_lib()
+    {
+        var outward = new List<string>();
+        foreach (string file in Directory.EnumerateFiles(Path.Combine(Src, "lib"), "*.ts"))
+        {
+            foreach (Match match in Import().Matches(File.ReadAllText(file)))
+            {
+                if (match.Groups["from"].Value.Contains("/ui/", StringComparison.Ordinal))
+                {
+                    outward.Add($"{Repo.Relative(file)} imports {match.Groups["from"].Value}");
+                }
+            }
+        }
+        Assert.Empty(outward);
+    }
+
+    [Fact]
+    public void No_source_uses_innerHTML_and_only_the_compiler_is_a_dependency()
+    {
+        List<string> offenders = Directory.EnumerateFiles(Src, "*.ts", SearchOption.AllDirectories)
+            .Where(file => File.ReadAllText(file).Contains(".innerHTML", StringComparison.Ordinal))
+            .Select(Repo.Relative)
+            .ToList();
+        Assert.Empty(offenders);
+        string package = File.ReadAllText(Path.Combine(Repo.Root(), "package.json"));
+        Assert.DoesNotContain("\"dependencies\"", package, StringComparison.Ordinal);
+        Assert.Contains("\"typescript\"", package, StringComparison.Ordinal);
+    }
+
+    [GeneratedRegex(@"from\s+'(?<from>[^']+)'")]
+    private static partial Regex Import();
 }
 
 /// <summary>No stylesheet but the token sheet writes a colour, and every token used is declared (ADR-010).</summary>
@@ -201,6 +250,7 @@ public sealed class LiveSamplesTests
     [Theory]
     [InlineData("Domain/HomePath.cs", true)]
     [InlineData("Program.cs", true)]
+    [InlineData("src/lib/urlState.ts", true)]
     [InlineData("wwwroot/js/lib/urlState.js", true)]
     [InlineData("../secrets.txt", false)]
     [InlineData("Domain/../Program.cs", false)]

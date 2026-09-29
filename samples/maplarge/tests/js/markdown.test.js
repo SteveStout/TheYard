@@ -52,6 +52,18 @@ test('inline code, bold, italic and links', () => {
   assert.equal(nodes.at(-2).attrs.target, '_blank');
 });
 
+test('an image keeps its alt text and its address goes through the link check', () => {
+  const [figure] = parse('![Two rabbits asleep](https://example.com/rabbits.jpg "Fun fact")');
+  assert.equal(figure.tag, 'p');
+  assert.equal(figure.attrs.class, 'figure');
+  const [img] = figure.children;
+  assert.equal(img.tag, 'img');
+  assert.deepEqual(img.attrs, { src: 'https://example.com/rabbits.jpg', alt: 'Two rabbits asleep', title: 'Fun fact', loading: 'lazy' });
+  const [inlineImage] = parse('See ![x](javascript:alert(1)) here');
+  assert.equal(inlineImage.children[1].attrs.src, '#');
+  assert.equal(inlineImage.attrs.class, undefined);
+});
+
 test('a script tag in the source is text, and a javascript link is not a link', () => {
   const blocks = parse('<script>alert(1)</script> and [x](javascript:alert(1))');
   assert.equal(blocks[0].tag, 'p');

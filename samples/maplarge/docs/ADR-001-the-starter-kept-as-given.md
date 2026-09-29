@@ -39,7 +39,7 @@ before claiming (ADR-008). What is left behind, each with its reason:
 
 | Left behind | Why |
 | --- | --- |
-| React, Vite, TypeScript | The brief says vanilla JavaScript or TypeScript with no UI library; the page is plain modules (ADR-006). |
+| React, Vite, a bundler | The brief says vanilla JavaScript or TypeScript with no UI library; the page is TypeScript compiled by `tsc` to plain modules, nothing else (ADR-006). |
 | .NET 8 | The starter's framework; the sample runs on .NET 10 with TheYard, one stack for both. |
 | The two data stores | A file browser's store is the filesystem. |
 | Application Insights, accounts, the admin tab | Nothing to observe or protect at this size; a request log is a line in the console. |

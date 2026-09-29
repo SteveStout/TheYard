@@ -1,0 +1,112 @@
+// The page: reads the address, opens the dialog when the address says so, and
+// hands the state to whichever view it names (ADR-005, ADR-007). This is the
+// only file that touches history; every view asks for a change through
+// navigate() and is redrawn from the address that results, the same path a Back
+// button or a pasted link takes.
+
+import * as api from './lib/api.js';
+import { DEFAULTS, isOpen, parse, serialize, VIEWS, type State, type View } from './lib/urlState.js';
+import { createBrowser } from './ui/browser.js';
+import { createDocs } from './ui/docs.js';
+import { h, replace } from './ui/dom.js';
+
+/** An element the page cannot work without; index.html is the only place it comes from. */
+function need<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) {
+    throw new Error(`index.html has no ${selector}.`);
+  }
+  return element;
+}
+
+function viewOf(value: string | undefined): View {
+  return (VIEWS as readonly string[]).includes(value ?? '') ? (value as View) : DEFAULTS.view;
+}
+
+const dialog = need<HTMLDialogElement>('dialog.shed');
+const trigger = need<HTMLButtonElement>('#open-shed');
+const tabs = need<HTMLElement>('#tabs');
+const browserRoot = need<HTMLElement>('#browser');
+const docsRoot = need<HTMLElement>('#docs');
+const closeButton = need<HTMLButtonElement>('#close-shed');
+const footer = need<HTMLElement>('#version');
+
+let state: State = parse(window.location.search);
+const browser = createBrowser(browserRoot, navigate);
+const docs = createDocs(docsRoot, navigate);
+
+// #region navigate
+/**
+ * The one way the state changes: merge, write the address, redraw. Closing is
+ * navigating to the defaults, so Back from a closed page reopens it where it was.
+ * @param partial the keys that change
+ * @param replaceEntry true to replace the history entry (typing in the search box)
+ */
+function navigate(partial: Partial<State>, replaceEntry = false): void {
+  const next: State = { ...state, open: true, ...partial };
+  const url = serialize(next) || window.location.pathname;
+  if (replaceEntry) {
+    window.history.replaceState(null, '', url);
+  } else {
+    window.history.pushState(null, '', url);
+  }
+  state = parse(window.location.search);
+  render();
+}
+
+window.addEventListener('popstate', () => {
+  state = parse(window.location.search);
+  render();
+});
+// #endregion navigate
+
+// #region render
+function render(): void {
+  if (!isOpen(state)) {
+    if (dialog.open) {
+      dialog.close();
+      trigger.focus(); // Back where the person started, with the keyboard.
+    }
+    return;
+  }
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+  for (const button of tabs.querySelectorAll<HTMLButtonElement>('button')) {
+    button.setAttribute('aria-pressed', button.dataset['view'] === state.view ? 'true' : 'false');
+  }
+  browserRoot.hidden = state.view !== 'browse';
+  docsRoot.hidden = state.view !== 'docs';
+  void (state.view === 'docs' ? docs.render(state) : browser.render(state));
+}
+// #endregion render
+
+trigger.addEventListener('click', () => navigate({ view: 'browse' }));
+// Links on the page that open a view do it in place; as plain links they still work in a new tab.
+for (const link of document.querySelectorAll<HTMLAnchorElement>('a[data-view]')) {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    navigate({ view: viewOf(link.dataset['view']), doc: link.dataset['doc'] ?? '' });
+  });
+}
+closeButton.addEventListener('click', () => navigate({ ...DEFAULTS, open: false }));
+tabs.addEventListener('click', (event) => {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('button[data-view]');
+  if (button) {
+    navigate({ view: viewOf(button.dataset['view']) });
+  }
+});
+// Escape closes a modal dialog on its own; the address has to follow it.
+dialog.addEventListener('close', () => {
+  if (isOpen(state)) {
+    navigate({ ...DEFAULTS, open: false });
+  }
+});
+
+api.version().then((version) => {
+  // A real link, so it works with the keyboard and in a new tab; clicked in place it navigates without a reload.
+  const about = h('a', { href: '?view=docs&doc=readme', onclick: (event: Event) => { event.preventDefault(); navigate({ view: 'docs', doc: 'readme' }); } }, 'about this build');
+  replace(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', about);
+}).catch(() => replace(footer, 'The Shed'));
+
+render();

@@ -30,6 +30,7 @@ table is a rule the next change will break.
 | Every class is sealed, static or abstract, and the analyzer that holds the internal half is a warning with warnings as errors | ADR-001 | SealedByDefaultTests |
 | A folder uses only the folders inside it; Data and Domain touch no filesystem and no clock; Program maps no route itself | ADR-002 | LayeringTests |
 | No stylesheet but the token sheet writes a colour; every token used is declared; the font is served from this site | ADR-010 | StyleRulesTests |
+| Every TypeScript module has its compiled module beside the page; `lib` never imports `ui`; no source uses `.innerHTML`; the compiler is the only dependency | ADR-006 | FrontEndRulesTests |
 | Every test this table names exists with a test in it, and every record it cites exists | This record | RuleTableTests |
 | Browsing a folder of a hundred files, and searching ten thousand, stay under the bars, and the numbers are printed | ADR-008 | PerformanceTests |
 | The address round-trips through the parser and the serializer, and a value outside its list falls back | ADR-005 | `node --test tests/js` |
@@ -46,7 +47,7 @@ error), and no `using` is unused (IDE0005 as a warning, same reason).
 2. If the change contradicts a record, the record changes first, as an addendum that says when it
    stopped being true rather than an edit that makes it look like it was always this way.
 3. Write the test with the change, in the same commit.
-4. `dotnet test` and `node --test tests/js` run green before anything is committed. Any build
+4. `dotnet test` and `npm test` (after `npm run build`) run green before anything is committed. Any build
    warning is red.
 
 ## Files

@@ -20,9 +20,15 @@
          files the live samples read at request time (ADR-012). appsettings.json already travels. -->
     <Content Include="docs\**\*.md;sample-home\**\*" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Data\**\*.cs;Domain\**\*.cs;Application\**\*.cs;Infrastructure\**\*.cs;Controllers\**\*.cs;Library\**\*.cs;Program.cs;.editorconfig;Dockerfile" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="src\**\*.ts" CopyToPublishDirectory="PreserveNewest" />
+    <Content Update="tsconfig.json" CopyToPublishDirectory="PreserveNewest" />
+    <Content Remove="package.json;package-lock.json" />
     <Compile Remove="tests\**" />
     <Content Remove="tests\**" />
     <None Remove="tests\**" />
+    <!-- The compiler's own folder is not content; the Web SDK skips it for wwwroot, this says so for the root too. -->
+    <Content Remove="node_modules\**" />
+    <None Remove="node_modules\**" />
   </ItemGroup>
 
 </Project>

@@ -29,7 +29,7 @@ there, renders a one-line note rather than an error, so a renamed region shows u
 code that no longer exists.
 
 **Rendered in the browser.** The brief says do not render HTML server side, and the server does
-not: it serves markdown, and `js/lib/markdown.js` reads it into a tree of plain objects that
+not: it serves markdown, and `src/lib/markdown.ts` reads it into a tree of plain objects that
 `toDom` builds with `createElement` and `textContent`. The reader handles what the records use
 (headings, lists, fenced code with a caption, tables, quotes, inline marks) and nothing else, and
 it is tested in node with no DOM. A little colouring of comments, strings and keywords is done the
@@ -53,7 +53,7 @@ markup into the page, and because it is a reasonable thing to talk about in a co
 - [`Library/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Library/LiveSamples.cs): the expander.
 - [`Library/VersionReader.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Library/VersionReader.cs): the version and the commit.
 - [`Controllers/DocsController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/DocsController.cs): the three routes.
-- [`wwwroot/js/lib/markdown.js`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/js/lib/markdown.js): the reader.
+- [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/markdown.ts): the reader.
 - [`tests/TestProject.Tests/DocsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/DocsTests.cs): every fence resolves, every link lands.
 
 The allowed roots, and the check:
@@ -63,5 +63,5 @@ The allowed roots, and the check:
 
 The reader's block loop:
 
-```live path=wwwroot/js/lib/markdown.js region=blocks
+```live path=src/lib/markdown.ts region=blocks
 ```

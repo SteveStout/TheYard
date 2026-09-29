@@ -17,7 +17,7 @@ list, and a person reads the result before it goes anywhere.
 
 **Decided by a person, before code.** What the brief was asking for and how it would be read; that
 the answer is TheYard's practices applied to their starter and not TheYard's stack (ADR-001); plain
-JavaScript with no framework; the palette carried over and the branding dropped (ADR-010); that
+TypeScript with no framework; the palette carried over and the branding dropped (ADR-010); that
 the sample lives beside TheYard and deploys on its plan. The assistant put the rest to him as a
 written plan first: the layering (ADR-002), the guard (ADR-003), the wire (ADR-004), the address as
 the only state (ADR-005), the list of tests that became ADR-009. That plan was approved, with the

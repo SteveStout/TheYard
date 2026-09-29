@@ -2,4 +2,5 @@ bin/
 obj/
 .vs/
 TestResults/
+node_modules/
 *.user

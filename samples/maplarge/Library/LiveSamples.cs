@@ -15,7 +15,7 @@ public static partial class LiveSamples
 {
     // #region allowed
     /// <summary>The only folders a live block may read from, relative to the project root.</summary>
-    public static readonly string[] AllowedRoots = ["Data/", "Domain/", "Application/", "Infrastructure/", "Controllers/", "Library/", "wwwroot/", "tests/", "docs/", "infra/"];
+    public static readonly string[] AllowedRoots = ["Data/", "Domain/", "Application/", "Infrastructure/", "Controllers/", "Library/", "src/", "wwwroot/", "tests/", "docs/", "infra/"];
 
     /// <summary>The single files at the project root a live block may read.</summary>
     public static readonly string[] AllowedFiles = ["Program.cs", "TestProject.csproj", ".editorconfig", "Dockerfile", "appsettings.json"];
@@ -146,6 +146,7 @@ public static partial class LiveSamples
     public static string LanguageFor(string path) => Path.GetExtension(path).ToLowerInvariant() switch
     {
         ".cs" => "csharp",
+        ".ts" => "typescript",
         ".js" or ".mjs" => "javascript",
         ".css" => "css",
         ".html" => "html",

@@ -95,6 +95,25 @@ a {
 .site-header a:focus-visible {
   outline: var(--focus-ring-on-dark);
 }
+
+.site-nav {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.site-nav a {
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-gold-light);
+  padding-bottom: 1px;
+}
+
+.site-nav a:hover {
+  color: var(--color-gold-light);
+}
 /* #endregion header */
 
 /* #region page */
@@ -578,12 +597,16 @@ td.actions button {
   padding-bottom: var(--space-2);
   border-bottom: var(--rule-width) solid var(--color-gold);
   border-image: var(--gradient-gold) 1;
-  display: inline-block;
+  display: block;
+  width: fit-content;
 }
 
+/* Headings in a document stack; .panel h2 above makes the dialog's title inline, and that must not reach in here. */
 .docs article h2 {
   font-size: var(--text-lg);
   margin-top: var(--space-6);
+  display: block;
+  width: fit-content;
 }
 
 .docs article h3 {
@@ -656,6 +679,20 @@ td.actions button {
   color: var(--color-heading);
 }
 
+/* A photograph in a document wears the Yard's frame: a deep teal border, a gold hairline, a soft shadow. */
+.docs article img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 3px solid var(--color-teal-deep);
+  box-shadow: 0 0 0 1.5px var(--color-gold), var(--shadow-md);
+  border-radius: var(--radius-sm);
+}
+
+.docs article p.figure {
+  margin: var(--space-4) 0;
+}
+
 .docs article blockquote {
   margin: var(--space-3) 0;
   padding: var(--space-2) var(--space-3);
@@ -669,6 +706,12 @@ td.actions button {
 @media (max-width: 720px) {
   .site-header {
     padding: var(--space-3) var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .site-nav {
+    margin-left: 0;
+    width: 100%;
   }
 
   main {
@@ -746,6 +789,7 @@ td.actions button {
     min-height: var(--touch-target);
     margin: 0 var(--space-1) var(--space-1) 0;
   }
+}
 /* #endregion phone */
 
 /* #region views */
