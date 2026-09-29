@@ -11,7 +11,7 @@ commit: [/api/version](https://theshed.stevenstout.biz/api/version).
 
 **Reviewing it?** Three things, one click each, all served by the site itself:
 
-- [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): one page, the numbers, the quick start, the choices and why, and where it goes next.
+- [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): two pages, the numbers, the quick start, the choices and why, where it goes next, and the code in six pieces.
 - [About Steven](https://theshed.stevenstout.biz/?view=docs&doc=about): who built it.
 - [Resume](https://theshed.stevenstout.biz/resume.pdf).
 

@@ -8,7 +8,7 @@ MapLarge's developer test project in September 2026, on their starter, in the wo
 
 ## Three things a reviewer opens first
 
-- [The Shed, explained](/the-shed-explained.pdf): one page, the numbers, the quick start, the choices and why, where it goes next.
+- [The Shed, explained](/the-shed-explained.pdf): two pages, the numbers, the quick start, the choices and why, where it goes next, and the code in six pieces.
 - [About Steven](?view=docs&doc=about): who built it.
 - [Resume](/resume.pdf).
 
