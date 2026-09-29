@@ -8,6 +8,7 @@ import cardStyles from '../shared/card.module.css';
 import type { ErrorEntry, Fetched } from '../shared/types';
 import { useKeptWindow, failed } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
+import { messageParts } from '../../../lib/errorText';
 
 /** An error: when, what answered, where, what it was, and the stack behind a fold. */
 const errorColumns = (window_: CardWindow): Column<ErrorEntry>[] => [
@@ -19,7 +20,20 @@ const errorColumns = (window_: CardWindow): Column<ErrorEntry>[] => [
     cell: (entry) => (entry.status === 0 ? 'browser' : entry.status),
   },
   { name: 'Where', mono: true, cell: (entry) => entry.path },
-  { name: 'What', cell: (entry) => entry.message },
+  {
+    name: 'What',
+    // An address or a path in the message is an identifier and may break anywhere; the words stay words.
+    cell: (entry) =>
+      messageParts(entry.message).map((part, index) =>
+        part.identifier ? (
+          <code key={index} className={styles.codeToken}>
+            {part.text}
+          </code>
+        ) : (
+          <span key={index}>{part.text}</span>
+        )
+      ),
+  },
   {
     name: 'Stack',
     cell: (entry, index) =>

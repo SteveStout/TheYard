@@ -4,3 +4,12 @@
 .wideCard {
   grid-column: 1 / -1;
 }
+
+/* An address or a path quoted in an error message (lib/errorText.ts): an
+   identifier, so it breaks at any character and the table stays inside the
+   card on a desk; the words around it break only between words. */
+.codeToken {
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}

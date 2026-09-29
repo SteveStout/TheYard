@@ -1,9 +1,63 @@
-# TheYard, a used-vehicle auction platform
+# TheYard
 
-**Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz)
+A used-vehicle auction platform I built and run on Azure: browse 100,000 vehicles, open one, and bid against a simulated room of other bidders.
+
+**Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz), and the same build on Cosmos DB at [theyard-cosmos.stevenstout.biz](https://theyard-cosmos.stevenstout.biz). The running version and commit: [/api/version](https://theyard.stevenstout.biz/api/version).
+
+[![Deploy](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml/badge.svg)](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml)
+
+## Tests, and the gate every version passes
+
+Every version reaches `main` through one gate, and the gate's results for 1.0.3.37 hold 1,892 tests: 681 xUnit tests, 353 Vitest tests at 1.0.3.37 and 136 Playwright tests, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+
+| Suite | Framework | Count | What it covers |
+| --- | --- | ---: | --- |
+| API | xUnit | 681 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
+| Frontend | Vitest | 353 at 1.0.3.37 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
+| End to end | Playwright | 136 declared, 139 run | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe holding nine views to WCAG 2.1 AA. |
+
+**How 1,892 is counted**, from the gate's own results file for 1.0.3.37 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 353 Vitest tests, 674 xUnit tests on SQLite and the same 674 booted again on Cosmos DB, the 7 that need the live Cosmos DB account, 139 browser runs on SQLite (the specs declare 136, and a few are declared once inside a loop that runs them more than once) and 45 of those again on Cosmos DB, which is 1,892. On 1.0.3.37 the two Cosmos DB passes were carried forward from 1.0.3.36 and are marked so in the file.
+
+**The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The gate runs on the machine that ships: format, lint and type checks, the SQL project, xUnit on SQLite, the seven live Cosmos DB tests, and then Vitest and the browser suite, one side after the other. Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml) build the image and roll both sites, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites on a pull request, which has had no gate.
+
+**The time.** The target is five minutes (ADR-068), and the gate is over it today: it measured 831 seconds on 1.0.3.36 with every pass run and 758 seconds on 1.0.3.37 with the two store passes carried forward, on a four-core laptop shared with the browser I work in. Every result, test by test with its milliseconds, ships with the version and is on the Admin tab. [ADR-021](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-021-tests-explained.md) walks the three suites for a developer new to the stack.
+
+## Architecture and decisions
+
+Eighty-five decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Five to read first:
+
+- [ADR-075, the rules a change has to pass](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): every standing rule beside the test that holds it.
+- [ADR-068, the five-minute gate](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-068-the-five-minute-gate.md): what runs before anything rolls, and what it costs.
+- [ADR-066, one container, both stores](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-066-one-container-both-stores.md): the store toggle, Azure SQL and Cosmos DB behind one set of ports.
+- [ADR-072, the code is public and the secrets are not](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-072-the-code-is-public-the-secrets-are-not.md): managed identity, and no key in the repository.
+- [ADR-076, the API describes itself](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-076-the-api-describes-itself.md): the OpenAPI document and the [reference](https://theyard.stevenstout.biz/api/reference) built from the endpoints as mapped.
+
+## Stack
+
+- **API:** .NET 10 and C#, minimal APIs in an onion (Data, Domain, Application, Infrastructure, Api).
+- **Front end:** React and TypeScript on Vite.
+- **Stores:** Azure SQL Database and Azure Cosmos DB, chosen per request; SQLite locally.
+- **Hosting:** Azure, described in Bicep.
+- **Delivery:** GitHub Actions.
+
+## Run it locally
+
+Requires [Node 20+](https://nodejs.org) and the [.NET 10 SDK](https://dotnet.microsoft.com/download), and Chrome for the browser suite. From a clean clone:
+
+```
+npm ci
+npm start
+dotnet test api/TheYard.slnx --filter "Store!=cosmos"
+npm test
+npm run test:e2e
+```
+
+`npm start` runs the API and the front end together and opens the browser. The xUnit filter leaves out the seven tests that need the live Cosmos DB account, the way CI does. The browser suite starts both servers itself.
+
+## About this project
 
 Built by one engineer with AI as a force multiplier, test driven: I specify every test before the AI writes
-the first draft of the code against it, three suites of tests run once per version inside the one gate before anything rolls (the counts are in the testing section below, held to the suites
+the first draft of the code against it, three suites of tests run once per version inside the one gate before anything rolls (the counts are at the top of this page, held to the suites
 by a test), and eighty-five decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
@@ -12,7 +66,7 @@ millisecond speeds on free-tier stores and one small container, in
 
 TheYard is my portfolio implementation of a used-vehicle auction platform: browse a large
 inventory, inspect a vehicle in detail, and place bids against a simulated room of other
-bidders. It began as my submission to a company's take-home hiring challenge, in a fork
+bidders. It began as my submission to a company's take-home hiring exercise, in a fork
 of their starter repository, and everything described below was built on that start (ADR:
 The name says which, what changed and when). The frontend is a React app backed by a .NET 10 REST API that owns the data, the
 search, and the auction rules, storing accounts and bids in Azure SQL Database or Azure
@@ -36,20 +90,11 @@ rather than pasted, so a record cannot drift from the code it describes. The sha
 
 *A preview. [Open the infrastructure diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure) to zoom in and follow it. The data flow has [its own drawing](https://theyard.stevenstout.biz/api/docs/diagrams/dataflow) too.*
 
-## How to Run
+## Using the API locally
 
-Requires [Node 20+](https://nodejs.org) (built on Node 24) and the
-[.NET 10 SDK](https://dotnet.microsoft.com/download). On Windows:
-`winget install OpenJS.NodeJS.LTS Microsoft.DotNet.SDK.10`.
-
-```
-npm install
-npm start          # API + frontend in one command; opens the browser
-```
-
-(Or separately: `npm run api` and `npm run dev` in two terminals.)
-
-Open `http://localhost:5173`. The dev server proxies `/api` to the .NET API, which serves
+On Windows the two tools install with
+`winget install OpenJS.NodeJS.LTS Microsoft.DotNet.SDK.10`, and `npm run api` and `npm run dev` run the
+two halves in separate terminals. With `npm start` running, open `http://localhost:5173`. The dev server proxies `/api` to the .NET API, which serves
 the inventory and the vehicle photos (`/api/images/...`). The inventory is **100,000
 records**, deterministically synthesized at startup from the 200-record seed dataset
 (`Inventory:TargetCount` in `api/TheYard.Api/appsettings.json`), so there is no giant
@@ -99,23 +144,7 @@ that need a session are marked; the operator endpoints under `/api/admin/` are k
 four rules are held by a test rather than by care, which is the point of ADR: The API describes
 itself.
 
-Other scripts:
-
-```
-npm test           # frontend unit tests (Vitest)
-npm run test:api   # API unit + integration tests (xUnit)
-npm run test:e2e   # end-to-end smokes (Playwright; starts both servers itself)
-npm run build      # typecheck + production bundle to dist/
-npm run preview    # serve the production build
-```
-
-The ship's gate runs all three suites once per version, on both stores, and only a green
-gate pushes to `main`; the push builds the image and rolls both sites with no human step
-(`.github/workflows/deploy.yml`, `.github/workflows/deploy-cosmos.yml`). Every result, test by
-test, ships with the version and is on the Admin tab. CI (`.github/workflows/ci.yml`) runs
-the same suites on a pull request.
-
-The .NET suite is measured as well as run, and published as an annotation on every run so
+The .NET suite is measured as well as run, and published as an annotation on every CI run so
 it can be read without a GitHub sign-in. At 1.0.0.65 it was **89.6% of lines and 71.7% of
 branches**; the current figure is on the latest run rather than in this paragraph. The
 shape matters more than the total, and it is the shape the architecture predicts:
@@ -206,7 +235,7 @@ each with its own changelog line and, where it decided something, its own record
 - Out of scope by design: seller tooling, checkout, payments, and real-time push;
   accounts, a database and per-user bids arrived on 2026-09-03 and are described below.
 
-## Stack
+## Stack, in detail
 
 - **Frontend:** React 19 + TypeScript (strict) on Vite 8; plain CSS via CSS Modules over
   design tokens in four sheets named for what they control (`src/styles/colors.css`, `sizes.css`, `typography.css`, `effects.css`); Vitest for tests. No component,
@@ -472,7 +501,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (232 Vitest tests at 1.0.3.0):** presentation logic only, since the API owns the rules.
+**Frontend (353 Vitest tests at 1.0.3.37):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,
