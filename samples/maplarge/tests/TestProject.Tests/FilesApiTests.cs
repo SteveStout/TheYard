@@ -177,6 +177,24 @@ public sealed class FilesApiTests : IDisposable
     }
 
     [Fact]
+    public async Task The_filesystem_refusing_a_delete_is_a_problem_document_not_a_500()
+    {
+        string locked = _home.File("Archive/keep.txt", "keep");
+        // On Windows a read-only file inside a folder makes Directory.Delete throw; elsewhere
+        // an open handle with no sharing is the nearest equivalent the test can make.
+        File.SetAttributes(locked, FileAttributes.ReadOnly);
+        using FileStream? hold = OperatingSystem.IsWindows() ? null : new FileStream(locked, FileMode.Open, FileAccess.Read, FileShare.None);
+        HttpResponseMessage response = await _client.DeleteAsync("/api/files?path=Archive");
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return; // This operating system let the delete through; nothing to refuse.
+        }
+        Assert.True(response.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.Forbidden, $"expected 409 or 403, got {(int)response.StatusCode}");
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        File.SetAttributes(locked, FileAttributes.Normal);
+    }
+
+    [Fact]
     public async Task An_unknown_api_route_is_a_problem_too()
     {
         HttpResponseMessage response = await _client.GetAsync("/api/nothing-here");

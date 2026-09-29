@@ -37,7 +37,7 @@ node --test tests/js
 
 | Suite | Count | What it covers |
 | --- | --- | --- |
-| xUnit | 103 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the records, the live fences and the links; the repository rules (layering, sealed, no em dash, no raw colour, the rules table); a measured search over 10,000 files. |
+| xUnit | 104 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the records, the live fences and the links; the repository rules (layering, sealed, no em dash, no raw colour, the rules table); a measured search over 10,000 files. |
 | node --test | 20 | The address parser and serializer, the byte and date formatting, the markdown reader (a `<script>` arrives as text). |
 
 The build treats warnings as errors and a public member without a summary is a warning.
@@ -93,6 +93,19 @@ sample-home/          what is browsed until Files:Home is set
 ```
 
 Dependencies point inward, left to right in the list above, and a test holds it (ADR-002).
+
+## What comes next
+
+The Shed is a sample, and the parts worth keeping go back to the project it sits in:
+
+- `HomePath`, `PhysicalFileStore` and the capped search become a Files card on TheYard's Admin tab,
+  browsing the container's own logs, data and documents behind the operator's key.
+- ADR-003, the line a path cannot cross, becomes a Best Practices page there, the way its sealed-by-default
+  page is.
+- TheYard's sidebar gets a Code Samples section that links this one, so the two read as one way of
+  working on two problems.
+- A committed browser test for this page (the eight steps the build's headless pass runs) is the first
+  thing to add here.
 
 ## Built with AI
 

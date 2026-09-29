@@ -84,9 +84,14 @@ internal sealed class TempHome : IDisposable
     {
         try
         {
+            // A test may have made a file read-only on purpose; clear that first or the delete refuses.
+            foreach (string file in Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories))
+            {
+                System.IO.File.SetAttributes(file, FileAttributes.Normal);
+            }
             Directory.Delete(Root, recursive: true);
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // A handle the operating system has not released yet; the folder is under temp and harmless.
         }

@@ -37,7 +37,12 @@ export function createBrowser(root, navigate) {
   grid.addEventListener('drop', (event) => {
     event.preventDefault();
     grid.classList.remove('dropping');
-    uploadFiles([...event.dataTransfer.files]);
+    // A dropped folder arrives as an empty entry: dataTransfer.files holds files only.
+    const folders = [...(event.dataTransfer.items ?? [])].filter((item) => item.webkitGetAsEntry?.()?.isDirectory);
+    if (folders.length > 0) {
+      say('error', 'Drop files, not folders: make the folder here first, then drop its files into it.');
+    }
+    uploadFiles([...event.dataTransfer.files].filter((file) => !folders.some((item) => item.getAsFile()?.name === file.name)));
   });
 
   // #region render
@@ -277,31 +282,53 @@ export function createBrowser(root, navigate) {
     input.focus();
   }
 
-  /** Uploads files one at a time with a bar each; a 409 offers overwrite in place. */
-  async function uploadFiles(files, overwrite = false) {
+  /**
+   * Uploads files one at a time with a bar each. A 409 (the name exists) pauses the
+   * batch and asks in place: Overwrite sends that one file again with overwrite on,
+   * Skip leaves it; either way the rest of the batch goes on.
+   */
+  async function uploadFiles(files) {
     if (files.length === 0) {
       return;
     }
-    for (const file of files) {
-      const bar = h('div', {});
-      const line = h('div', {}, `Uploading ${file.name} (${bytes(file.size)})`, h('div', { class: 'progress' }, bar));
-      replace(noticeBox, h('div', { class: 'notice' }, line));
+    for (let i = 0; i < files.length; i += 1) {
+      const file = files[i];
       try {
-        await api.upload(state.path, file, overwrite, (fraction) => { bar.style.width = `${Math.round(fraction * 100)}%`; });
-        say('ok', `Uploaded ${file.name}.`);
+        await uploadOne(file, false);
       } catch (error) {
-        if (error.status === 409 && !overwrite) {
-          replace(noticeBox, h('div', { class: 'notice' }, `${error.message} `,
-            h('button', { type: 'button', class: 'small', onclick: () => uploadFiles([file], true) }, 'Overwrite'), ' ',
-            h('button', { type: 'button', class: 'small', onclick: () => replace(noticeBox) }, 'Skip')));
+        if (error.status !== 409) {
+          say('error', error.message);
           return;
         }
-        say('error', error.message);
-        return;
+        const overwrite = await askOverwrite(error.message);
+        if (overwrite) {
+          try {
+            await uploadOne(file, true);
+          } catch (again) {
+            say('error', again.message);
+            return;
+          }
+        }
       }
     }
     fileInput.value = '';
+    say('ok', files.length === 1 ? `Uploaded ${files[0].name}.` : `Uploaded ${files.length} files.`);
     render(state);
+  }
+
+  function uploadOne(file, overwrite) {
+    const bar = h('div', {});
+    replace(noticeBox, h('div', { class: 'notice' }, `Uploading ${file.name} (${bytes(file.size)})`, h('div', { class: 'progress' }, bar)));
+    return api.upload(state.path, file, overwrite, (fraction) => { bar.style.width = `${Math.round(fraction * 100)}%`; });
+  }
+
+  /** The 409 question, as a promise the batch can wait on. */
+  function askOverwrite(message) {
+    return new Promise((resolve) => {
+      replace(noticeBox, h('div', { class: 'notice' }, `${message} `,
+        h('button', { type: 'button', class: 'small', onclick: () => resolve(true) }, 'Overwrite'), ' ',
+        h('button', { type: 'button', class: 'small', onclick: () => resolve(false) }, 'Skip')));
+    });
   }
 
   function say(kind, text) {
