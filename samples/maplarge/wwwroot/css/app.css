@@ -1,0 +1,765 @@
+/*
+ * Everything that is not a token: the page, the panel, the dialog, the table,
+ * the document view. Every colour, size and face is read from a token in
+ * tokens.css (ADR-010); a literal here fails StyleRulesTests.
+ */
+
+/* #region base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--gradient-ground);
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--color-heading);
+  letter-spacing: var(--title-tracking);
+  line-height: 1.25;
+  margin: 0 0 var(--space-3);
+}
+
+a {
+  color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+/* #endregion base */
+
+/* #region header */
+.site-header {
+  background: var(--gradient-header);
+  color: var(--color-header-text);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: var(--layer-header);
+}
+
+.site-header .mark {
+  width: 36px;
+  height: 36px;
+  flex: none;
+}
+
+.site-header h1 {
+  color: var(--color-header-text);
+  font-size: var(--text-xl);
+  margin: 0;
+}
+
+.site-header p {
+  margin: 0;
+  color: var(--color-header-text-muted);
+  font-size: var(--text-sm);
+}
+
+.site-header a {
+  color: var(--color-header-text);
+}
+
+.site-header a:focus-visible {
+  outline: var(--focus-ring-on-dark);
+}
+/* #endregion header */
+
+/* #region page */
+main {
+  flex: 1;
+  width: min(960px, 100% - var(--space-8));
+  margin: var(--space-7) auto;
+}
+
+.panel {
+  position: relative;
+  background: var(--color-surface);
+  border: var(--panel-border);
+  border-top: var(--rule-panel);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+}
+
+/* The two corner brackets, the top left on the rule and the bottom right on the edge. */
+.panel::before,
+.panel::after {
+  content: '';
+  position: absolute;
+  width: var(--bracket-size);
+  height: var(--bracket-size);
+  border-color: var(--rule-panel-color);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.panel::before {
+  left: -1px;
+  top: calc(-1 * var(--rule-width));
+  border-width: var(--rule-width) 0 0 var(--bracket-stroke);
+  border-top-left-radius: var(--radius-glass);
+}
+
+.panel::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 var(--bracket-stroke) var(--bracket-stroke) 0;
+  border-bottom-right-radius: var(--radius-glass);
+}
+
+.panel h2 {
+  font-size: var(--text-2xl);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--rule-width) solid var(--color-gold);
+  border-image: var(--gradient-gold) 1;
+  display: inline-block;
+}
+
+.panel p {
+  max-width: 64ch;
+}
+
+.site-footer {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  padding: var(--space-4);
+}
+/* #endregion page */
+
+/* #region controls */
+.button,
+button {
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-accent);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+button:hover {
+  background: var(--color-accent-soft);
+}
+
+button.primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+button.primary:hover {
+  background: var(--color-accent-hover);
+}
+
+button.small {
+  height: var(--pill-height);
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+button.danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+button.danger:hover {
+  background: var(--color-danger-soft);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+input[type='search'],
+input[type='text'],
+select {
+  font: inherit;
+  height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  min-width: 0;
+}
+
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.seg button {
+  height: var(--pill-height);
+  border: 0;
+  padding: 0 var(--space-4);
+  font-weight: var(--weight-medium);
+}
+
+.seg button[aria-pressed='true'] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+/* #endregion controls */
+
+/* #region dialog */
+dialog.shed {
+  width: min(1100px, calc(100vw - var(--space-6)));
+  max-width: none;
+  height: min(88vh, 900px);
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-glass);
+  background: transparent;
+  overflow: visible;
+}
+
+dialog.shed::backdrop {
+  background: var(--scrim);
+}
+
+dialog.shed .panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.dialog-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.dialog-head h2 {
+  font-size: var(--text-xl);
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.dialog-head .spacer {
+  flex: 1;
+}
+
+.close {
+  width: var(--control-height);
+  padding: 0;
+  font-size: var(--text-xl);
+  line-height: 1;
+}
+/* #endregion dialog */
+
+/* #region browser */
+.toolbar {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toolbar form {
+  display: flex;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 260px;
+}
+
+.toolbar form input {
+  flex: 1;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-md);
+  min-height: var(--pill-height);
+}
+
+.crumbs button {
+  height: auto;
+  border: 0;
+  padding: var(--space-1) var(--space-2);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-sm);
+}
+
+.crumbs .here {
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+  padding: var(--space-1) var(--space-2);
+}
+
+.crumbs .sep {
+  color: var(--color-text-muted);
+}
+
+.readout {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: var(--readout-size);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+
+.readout strong {
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  letter-spacing: 0;
+  margin-right: var(--space-1);
+}
+
+.readout .warn {
+  color: var(--color-warning);
+}
+
+.grid {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.grid.dropping {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+  background: var(--color-accent-soft);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface-muted);
+  text-align: left;
+  font-size: var(--readout-size);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+thead th button {
+  all: unset;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+thead th button:focus-visible {
+  outline: var(--focus-ring);
+}
+
+thead th[aria-sort] button::after {
+  content: ' \2191';
+}
+
+thead th[aria-sort='descending'] button::after {
+  content: ' \2193';
+}
+
+tbody td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+tbody tr:hover {
+  background: var(--color-accent-soft);
+}
+
+td.name {
+  white-space: normal;
+  word-break: break-word;
+  width: 100%;
+}
+
+td.name button {
+  all: unset;
+  cursor: pointer;
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+}
+
+td.name button:focus-visible {
+  outline: var(--focus-ring);
+}
+
+td.name .kind {
+  display: inline-block;
+  width: var(--icon-sm);
+  margin-right: var(--space-2);
+  color: var(--color-teal-deep);
+  vertical-align: -2px;
+}
+
+td.num {
+  text-align: right;
+  color: var(--color-text-muted);
+}
+
+td.actions {
+  text-align: right;
+}
+
+td.actions button {
+  height: 28px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  border-width: 1px;
+  margin-left: var(--space-1);
+}
+
+.empty {
+  padding: var(--space-7);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.notice {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+  font-size: var(--text-sm);
+}
+
+.notice.error {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.notice.ok {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.progress {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+
+.progress > div {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width var(--transition-fast);
+}
+
+.actions-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.actions-row .took {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+/* #endregion browser */
+
+/* #region docs */
+.docs {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-4);
+}
+
+.docs nav {
+  overflow: auto;
+  border-right: 1px solid var(--color-border);
+  padding-right: var(--space-3);
+}
+
+.docs nav h3 {
+  font-size: var(--readout-size);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.docs nav button {
+  all: unset;
+  display: block;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  width: 100%;
+}
+
+.docs nav button:hover,
+.docs nav button[aria-current='page'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.docs nav button:focus-visible {
+  outline: var(--focus-ring);
+}
+
+.docs article {
+  overflow: auto;
+  padding-right: var(--space-3);
+  max-width: 80ch;
+}
+
+.docs article h1 {
+  font-size: var(--text-2xl);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--rule-width) solid var(--color-gold);
+  border-image: var(--gradient-gold) 1;
+  display: inline-block;
+}
+
+.docs article h2 {
+  font-size: var(--text-lg);
+  margin-top: var(--space-6);
+}
+
+.docs article h3 {
+  font-size: var(--text-md);
+  margin-top: var(--space-4);
+}
+
+.docs article pre {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  overflow: auto;
+  font-family: var(--font-code);
+  font-size: var(--text-sm);
+  color: var(--color-code-text);
+  line-height: 1.45;
+}
+
+.docs article pre .caption {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.docs article code {
+  font-family: var(--font-code);
+  font-size: 0.95em;
+  background: var(--color-surface-muted);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-xs);
+}
+
+.docs article pre code {
+  background: none;
+  padding: 0;
+}
+
+.docs article .tok-comment {
+  color: var(--color-code-comment);
+}
+
+.docs article .tok-keyword {
+  color: var(--color-code-keyword);
+}
+
+.docs article .tok-string {
+  color: var(--color-code-string);
+}
+
+.docs article table {
+  margin: var(--space-3) 0;
+}
+
+.docs article th,
+.docs article td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  white-space: normal;
+}
+
+.docs article th {
+  position: static;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--text-sm);
+  color: var(--color-heading);
+}
+
+.docs article blockquote {
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: var(--rule-width) solid var(--color-gold);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+/* #endregion docs */
+
+/* #region phone */
+@media (max-width: 720px) {
+  .site-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  main {
+    width: calc(100% - var(--space-6));
+    margin: var(--space-4) auto;
+  }
+
+  dialog.shed {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  dialog.shed .panel {
+    border-radius: 0;
+    padding: var(--space-3);
+  }
+
+  .docs {
+    grid-template-columns: 1fr;
+  }
+
+  .docs nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+    max-height: 30vh;
+  }
+
+  /* On a phone the table becomes a list: the name on one line, size and date under it, the
+     actions on their own row at thumb size, so a long name is never squeezed by four buttons. */
+  thead {
+    display: none;
+  }
+
+  table,
+  tbody,
+  tr,
+  td {
+    display: block;
+  }
+
+  tbody tr {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  tbody td {
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  td.name {
+    width: auto;
+    font-size: var(--text-md);
+  }
+
+  td.num {
+    display: inline-block;
+    margin-right: var(--space-3);
+    font-size: var(--text-xs);
+  }
+
+  td.num:empty {
+    display: none;
+  }
+
+  td.actions {
+    text-align: left;
+    margin-top: var(--space-2);
+  }
+
+  td.actions button {
+    height: auto;
+    min-height: var(--touch-target);
+    margin: 0 var(--space-1) var(--space-1) 0;
+  }
+/* #endregion phone */
+
+/* #region views */
+/* The two views inside the dialog fill it; hidden wins over the flex display. */
+#browser {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+#browser[hidden],
+#docs[hidden] {
+  display: none;
+}
+/* #endregion views */

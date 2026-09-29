@@ -127,6 +127,20 @@ wiring the rings together; the view state it used to hold is in `app/hooks/`. An
 when data moved from a JSON import to an API to a paged API, every change landed in
 that one file.
 
+## Beside the projects: samples/
+
+`samples/maplarge` is The Shed, a sample that is not one of the eleven pieces: its own
+solution (`TestProject.sln`, net8.0, controllers, a page in plain JavaScript), its own tests,
+its own twelve records served from its own running app, and its own deploy to a third web app
+on the plan the two sites share. It was built for MapLarge's developer test project in
+September 2026 on the starter they sent, in this project's working method: dependencies
+inward in four folders instead of five projects, sealed records on the wire, a problem document
+on every failure, a rules table beside the tests that hold it, and the palette carried over.
+Nothing in it is referenced by TheYard and nothing in TheYard is referenced by it; the
+repository's own tests skip the folder, because the sample holds its own copies of the rules.
+Live at [theshed.stevenstout.biz](https://theshed.stevenstout.biz); start at
+[`samples/maplarge/README.md`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/README.md).
+
 ## Where to start reading
 
 - [`docs/ARCHITECTURE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ARCHITECTURE.md): the layers, the rules that keep them, and where a change goes (served as Architecture overview under App Architecture).

@@ -1,0 +1,115 @@
+name: Deploy The Shed
+
+# The sample under samples/maplarge, rolled to its own web app on the plan the
+# two TheYard sites share (samples/maplarge/docs/ADR-001). Runs only when the
+# sample changes; TheYard's own deploys ignore samples/ for the same reason.
+# The steps are the ones deploy.yml uses, shorter: the version from the
+# sample's changelog, one image into the same registry, the site described by
+# the sample's own Bicep (incremental, so nothing else in the group is touched),
+# and a verify that waits for the new build to answer.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "samples/maplarge/**"
+      - ".github/workflows/deploy-shed.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-shed
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      REGISTRY_NAME: crtheyardsszmnetj67bn5h2
+      ACR: crtheyardsszmnetj67bn5h2.azurecr.io
+      RG: RG-THEYARD-SS
+      APP: APP-THESHED-SS-ZMNETJ67BN5H2
+      ORIGIN: https://app-theshed-ss-zmnetj67bn5h2.azurewebsites.net
+      SITE: https://theshed.stevenstout.biz
+      SAMPLE: samples/maplarge
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compute the version
+        run: |
+          set -eu
+          N=$(grep -m1 -oE '^- [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' "$SAMPLE/docs/CHANGELOG.md" | sed 's/^- //')
+          if [ -z "$N" ]; then
+            echo "::error file=$SAMPLE/docs/CHANGELOG.md::No version line at the top of the changelog"
+            exit 1
+          fi
+          {
+            echo "APP_VERSION=$N"
+            echo "APP_COMMIT=${GITHUB_SHA:0:7}"
+            echo "IMAGE=$ACR/theshed:v$N"
+          } >> "$GITHUB_ENV"
+          echo "Deploying The Shed $N from ${GITHUB_SHA:0:7} as $ACR/theshed:v$N"
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign in to the registry
+        run: az acr login --name "$REGISTRY_NAME"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: samples/maplarge
+          push: true
+          tags: ${{ env.IMAGE }}
+          build-args: |
+            SHED_COMMIT=${{ env.APP_COMMIT }}
+          cache-from: type=gha,scope=theshed
+          cache-to: type=gha,scope=theshed,mode=max
+          provenance: false
+
+      # The site is described by the sample's Bicep every time, in incremental
+      # mode, with the image just pushed: the first run creates it on the plan,
+      # every later run is a roll.
+      - name: Describe the site and roll
+        run: |
+          set -eu
+          az deployment group create -g "$RG" --name "theshed-site" --mode Incremental \
+            --template-file "$SAMPLE/infra/site.bicep" \
+            --parameters appImage="$IMAGE" shedCommit="$APP_COMMIT" \
+            --query "{state:properties.provisioningState, origin:properties.outputs.origin.value}" -o json
+
+      - name: Verify
+        run: |
+          set -eu
+          for i in $(seq 1 60); do
+            sleep 5
+            body=$(curl -fsS --max-time 10 "$ORIGIN/api/version" || true)
+            if [[ "$body" == *"\"$APP_VERSION\""* && "$body" == *"\"$APP_COMMIT\""* ]]; then
+              echo "origin serves $APP_VERSION at $APP_COMMIT after $((i * 5))s: $body"
+              break
+            fi
+            if [[ "$i" -eq 60 ]]; then
+              echo "origin never served $APP_VERSION at $APP_COMMIT (last answer: $body)"
+              exit 1
+            fi
+          done
+          curl -fsS --max-time 20 "$ORIGIN/healthz"
+          echo
+          curl -fsS --max-time 20 "$ORIGIN/api/files" | head -c 400
+          echo
+          # The public name, once its DNS exists; until then a warning, not a failure.
+          site=$(curl -fsS --max-time 30 "$SITE/api/version" || true)
+          if [[ "$site" == *"\"$APP_VERSION\""* ]]; then
+            echo "domain: $site"
+          else
+            echo "::warning::$SITE does not serve $APP_VERSION yet (DNS or the certificate is not in place): $site"
+          fi

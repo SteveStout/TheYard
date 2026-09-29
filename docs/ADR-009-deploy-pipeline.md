@@ -217,3 +217,13 @@ Two steps must still run on a cancelled run: the build cache, so the next versio
 ```
 
 **Measured on the proof, 29 September.** 1.0.3.40 (8c6f416) was pushed at 08:44:28 CDT and 1.0.3.41 (31a5f44) at 08:50:13, inside its roll. Both 1.0.3.40 runs ended cancelled in their Verify step, after the image was built and both sites had been handed it. On the cancelled Deploy run, `Keep the build cache` (15 s) and `Keep the newest ten images` (5 s) both ran and succeeded, so `always()` is what the runner honours on a cancel, with the build step's outcome as the guard. The 1.0.3.41 runs started when the cancelled run finished those two steps, about forty seconds after the push, and both sites served 1.0.3.41 at 31a5f44 by 08:59:34, nine minutes and twenty-one seconds after its push. One roll's wait was saved: before this the second push would have queued behind the whole of the first roll.
+
+## Addendum, 2026-09-29: the sample rolls on its own
+
+Steve: "lets deploy it along side the yard", "lives under samples, but the only thing shared is the bicep and app service". MapLarge's developer test project was built under `samples/maplarge` as The Shed, a solution of its own inside this repository. It deploys to a third web app on the plan the two sites share, from its own workflow, `deploy-shed.yml`, which runs when a push touches that folder: the version from the sample's own changelog, one image into the same registry, the site described by the sample's own Bicep in incremental mode (an existing plan and identity, one new site, nothing else in the group touched), and a verify that waits for the new build to answer at the origin.
+
+The two site deploys ignore `samples/**`, so a push that changes only the sample does not roll TheYard, and a push that changes both rolls both. The repository tests skip the folder (`Repo.NotOurs`): the sample holds its own copies of the house rules, in its own suite, and this suite reads TheYard. The sample's records say what it borrowed and what it left behind.
+
+```live path=.github/workflows/deploy-shed.yml region=*
+```
+

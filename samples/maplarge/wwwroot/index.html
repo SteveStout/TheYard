@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Shed</title>
+  <meta name="description" content="A file and folder browser: browse, search, upload, download, move, copy and delete under one configurable home directory. Vanilla JavaScript over an ASP.NET Core API." />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preload" href="/fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <!-- The page is this file and nothing more: a header, one panel with the trigger, the
+       dialog the browser lives in, and a footer. Every other element is made by js/main.js
+       and the views it owns, from the state in the address (ADR-005, ADR-006, ADR-007). -->
+  <header class="site-header">
+    <svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <rect width="64" height="64" rx="10" fill="var(--color-green-dark)" />
+      <path d="M14 40 L32 16 L50 40 Z" fill="var(--color-brand-mark)" />
+      <rect x="26" y="40" width="12" height="10" fill="var(--color-brand-mark)" />
+    </svg>
+    <div>
+      <h1>The Shed</h1>
+      <p>Files and folders, browsed and searched. A small building in <a href="https://theyard.stevenstout.biz">the Yard</a>.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>A file browser in a dialog</h2>
+      <p>
+        One button opens it. Inside: browse a home directory on the server, search it by name or
+        wildcard, upload and download, make folders, move, copy and delete. The address bar holds
+        the whole state, so any view is a link.
+      </p>
+      <p>
+        <button type="button" id="open-shed" class="primary">Open the file browser</button>
+      </p>
+      <p>
+        Or open a view straight from a link:
+        <a href="?path=reports/2026">the 2026 reports</a>,
+        <a href="?q=*.csv&amp;sort=size&amp;dir=desc">every CSV by size</a>,
+        <a href="?view=docs&amp;doc=adr-003-the-line-a-path-cannot-cross">the record on the path guard</a>.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="version">The Shed</footer>
+
+  <dialog class="shed" aria-labelledby="shed-title">
+    <div class="panel">
+      <div class="dialog-head">
+        <h2 id="shed-title">The Shed</h2>
+        <div class="seg" id="tabs" role="group" aria-label="View">
+          <button type="button" data-view="browse" aria-pressed="true">Files</button>
+          <button type="button" data-view="docs" aria-pressed="false">Docs</button>
+        </div>
+        <span class="spacer"></span>
+        <button type="button" id="close-shed" class="close" aria-label="Close the file browser">&times;</button>
+      </div>
+      <section id="browser" aria-label="Files"></section>
+      <section id="docs" class="docs" aria-label="Documents" hidden></section>
+    </div>
+  </dialog>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

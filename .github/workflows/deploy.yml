@@ -19,6 +19,11 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # A push that touches only the sample under samples/ rolls the sample and not
+    # the site; deploy-shed.yml watches that folder (ADR-009, the addendum of 29
+    # September on the sample). A push that touches both rolls both.
+    paths-ignore:
+      - "samples/**"
 
 permissions:
   id-token: write

@@ -1,0 +1,148 @@
+/*
+ * The design tokens, copied from TheYard's token sheets (src/styles/colors.css,
+ * sizes.css, typography.css, effects.css) with the values unchanged (ADR-010).
+ * This is the only file that writes a colour, a size or a face; app.css reads
+ * them as var(--the-token), and StyleRulesTests fails the build on a hex or an
+ * rgb() anywhere else.
+ *
+ * Left behind on purpose: the frosted glass, the ribbons and the chart marks,
+ * which belong to the site that has ribbons and charts. Contrast figures beside
+ * a colour are the source project's measurements (its colors.test.ts holds them).
+ */
+:root {
+  /* The palette: Urban slate, as Figma prints it, with white written once. */
+  --palette-white: #ffffff;
+  --palette-brown-gray: #5e5653;
+  --palette-slate-gray: #7b7f8a;
+  --color-bg: #e9e6e7;
+  --color-ground-left: #deeaed;
+  --color-ground-mid: #f3f7f6;
+  --color-ground-right: var(--palette-white);
+  --gradient-ground: linear-gradient(
+    90deg,
+    var(--color-ground-left) 0%,
+    var(--color-ground-mid) 45%,
+    var(--color-ground-right) 100%
+  );
+  --color-surface: var(--palette-white);
+  --color-surface-muted: #f4f2f3;
+  --color-border: #d8d3d4;
+  --color-border-strong: #b6afb0;
+  --color-text: #524b48;
+  --color-text-muted: #4a4e57;
+  --color-heading: #3f3a37;
+
+  /* Teal fills, dark green draws, gold trims. */
+  --color-accent: #12677f; /* white on it 6.42 */
+  --color-accent-hover: #0f576b; /* white on it 8.09 */
+  --color-accent-soft: #ddebee;
+  --color-on-accent: var(--palette-white);
+  --color-green-dark: #0f4452;
+  --color-teal-deep: #10495a;
+  --color-teal-header: #125568;
+  --color-gold: #b8923f; /* trim only, never text */
+  --color-gold-light: #e6cb7e;
+  --color-gold-bar-dark: #7d582e;
+  --color-gold-bar-shade: #ad8e57;
+  --color-ribbon-gold: #c9a95c;
+  --gradient-gold: linear-gradient(
+    90deg,
+    var(--color-gold-bar-dark) 0%,
+    var(--color-ribbon-gold) 30%,
+    var(--color-gold-light) 50%,
+    var(--color-gold-bar-shade) 80%,
+    var(--color-gold-bar-dark) 100%
+  );
+  --gradient-header: linear-gradient(180deg, var(--color-green-dark), var(--color-teal-header));
+  --color-header-text: var(--palette-white);
+  --color-header-text-muted: #d1e1e6;
+  --color-brand-mark: var(--color-gold-light);
+
+  /* Code inside a document, on the muted surface. */
+  --color-code-text: #332f2c;
+  --color-code-comment: #25663a;
+  --color-code-keyword: #6d4a83;
+  --color-code-string: #8a5a3c;
+
+  /* Status colours mean a state and nothing else. */
+  --color-success: #146c34;
+  --color-success-soft: #dcfce7;
+  --color-warning: #b45309;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #b91c1c;
+  --color-danger-soft: #fee2e2;
+
+  /* What dims the page behind the dialog. */
+  --scrim: color-mix(in srgb, var(--palette-brown-gray) 45%, transparent);
+
+  /* Sizes, on a 4 px scale. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --touch-target: 44px;
+  --pill-height: 34px;
+  --control-height: 40px;
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-glass: 10px;
+  --radius-full: 999px;
+  --icon-sm: 16px;
+  --focus-ring: 2px solid var(--color-accent);
+  --focus-ring-on-dark: 2px solid var(--color-gold-light);
+  --focus-ring-offset: 2px;
+  --layer-header: 10;
+
+  /* Type. IBM Plex Sans is the one face; code is the one monospace. */
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  --font-code: Consolas, 'SF Mono', Menlo, ui-monospace, monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --title-tracking: -0.01em;
+  --readout-size: 0.6875rem;
+  --readout-tracking: 0.08em;
+
+  /* Shadows, the brown-gray, see-through. */
+  --shadow-sm:
+    0 1px 2px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent),
+    0 1px 3px color-mix(in srgb, var(--palette-brown-gray) 10%, transparent);
+  --shadow-md:
+    0 4px 12px color-mix(in srgb, var(--palette-brown-gray) 12%, transparent),
+    0 2px 4px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, var(--palette-brown-gray) 18%, transparent);
+
+  /* The operator's look: a rule across the top of a panel with a bracket at each end. */
+  --rule-width: 3px;
+  --rule-panel-color: var(--color-teal-deep);
+  --rule-panel: var(--rule-width) solid var(--rule-panel-color);
+  --bracket-size: 18px;
+  --bracket-stroke: 2px;
+  --panel-border: 1px solid color-mix(in srgb, var(--color-teal-deep) 18%, transparent);
+  --transition-fast: 150ms ease;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('../fonts/ibm-plex-sans-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
