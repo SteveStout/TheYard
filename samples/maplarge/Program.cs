@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using TestProject.Application;
 using TestProject.Controllers;
-using TestProject.Docs;
+using TestProject.Library;
 using TestProject.Domain;
 using TestProject.Infrastructure;
 

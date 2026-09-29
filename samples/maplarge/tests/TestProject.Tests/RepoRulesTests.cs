@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using TestProject.Application;
-using TestProject.Docs;
+using TestProject.Library;
 using TestProject.Domain;
 
 namespace TestProject.Tests;
@@ -64,7 +64,7 @@ public sealed partial class LayeringTests
                 {
                     string used = match.Groups["folder"].Value;
                     int index = Array.IndexOf(Order, used);
-                    if (index > i || (used == "Docs" && Order[i] != "Controllers"))
+                    if (index > i || (used == "Library" && Order[i] != "Controllers"))
                     {
                         outward.Add($"{Repo.Relative(file)} uses TestProject.{used}");
                     }

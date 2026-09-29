@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TestProject.Application;
 using TestProject.Data;
-using TestProject.Docs;
+using TestProject.Library;
 
 namespace TestProject.Controllers;
 

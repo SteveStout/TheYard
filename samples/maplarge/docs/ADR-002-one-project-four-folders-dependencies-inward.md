@@ -28,8 +28,8 @@ Data  <-  Domain  <-  Application  <-  Infrastructure  <-  Controllers
   and the one exception type a use case throws. It knows what a browse is and not what a directory is.
 - `Infrastructure/` is the disk, behind the port: `PhysicalFileStore`, thin calls into `System.IO`.
 - `Controllers/` is HTTP: an action per route, each a line or three, and the handler that turns a
-  refusal into a problem document. `Docs/` sits beside it for the documents the app serves about
-  itself and is used only by the controllers and the host.
+  refusal into a problem document. `Library/` sits beside it for the documents the app serves
+  about itself and is used only by the controllers and the host.
 
 The compiler cannot hold a folder rule, so a test does: `LayeringTests` reads every `using
 TestProject.X;` line in every folder and fails on one that points right. A second test holds Data

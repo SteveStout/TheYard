@@ -2,7 +2,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using TestProject.Docs;
+using TestProject.Library;
 
 namespace TestProject.Tests;
 
@@ -116,8 +116,9 @@ public sealed partial class DocsTests : IDisposable
         {
             foreach (Match link in RepoLink().Matches(File.ReadAllText(file)))
             {
-                string target = Path.Combine(Repo.Root(), link.Groups["path"].Value.Replace('/', Path.DirectorySeparatorChar));
-                if (!File.Exists(target) && !Directory.Exists(target))
+                // Exact case, segment by segment: Windows would say a link with the wrong case exists,
+                // and GitHub, which serves the link, would not (1.0.0.2 learned this the hard way).
+                if (!ExistsExact(Repo.Root(), link.Groups["path"].Value))
                 {
                     broken.Add($"{Path.GetFileName(file)} -> {link.Groups["path"].Value}");
                 }
@@ -147,6 +148,23 @@ public sealed partial class DocsTests : IDisposable
         Assert.NotEmpty(versions);
         Assert.Equal(versions.OrderByDescending(v => v), versions);
         Assert.Equal(versions.Distinct().Count(), versions.Count);
+    }
+
+    private static bool ExistsExact(string root, string relative)
+    {
+        string current = root;
+        foreach (string segment in relative.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string? match = Directory.EnumerateFileSystemEntries(current)
+                .Select(entry => Path.GetFileName(entry))
+                .FirstOrDefault(name => string.Equals(name, segment, StringComparison.Ordinal));
+            if (match is null)
+            {
+                return false;
+            }
+            current = Path.Combine(current, match);
+        }
+        return true;
     }
 
     [GeneratedRegex(@"> Sample unavailable: [^\n]*")]

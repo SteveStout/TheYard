@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using TestProject.Data;
 
-namespace TestProject.Docs;
+namespace TestProject.Library;
 
 /// <summary>
 /// The version the footer shows comes from the top line of docs/CHANGELOG.md,

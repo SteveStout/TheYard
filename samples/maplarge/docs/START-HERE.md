@@ -1,6 +1,6 @@
 # Start here
 
-The Shed is a file and folder browser: an ASP.NET Core API over one configurable home directory,
+The Shed is a file and folder browser: an ASP.NET Core 10 API over one configurable home directory,
 and a single page in plain JavaScript that browses, searches, uploads, downloads, makes folders,
 moves, copies and deletes, with the whole state of the page in the address bar. It was built for
 MapLarge's developer test project in September 2026, on their starter, in the working method of
@@ -26,7 +26,7 @@ MapLarge's developer test project in September 2026, on their starter, in the wo
 | `Application/` | The use cases behind one port, `IFileStore`. |
 | `Infrastructure/` | The disk, behind the port. |
 | `Controllers/` | The routes, a line or three each, and the problem-document handler. |
-| `Docs/` | The catalogue, the live-sample expander, the version reader. |
+| `Library/` | The documents the app serves: the catalogue, the live-sample expander, the version reader. |
 | `wwwroot/` | The page: `index.html`, two stylesheets, `js/lib` (pure) and `js/ui` (renders). |
 | `tests/` | xUnit under `TestProject.Tests`, `node --test` under `js`. |
 | `docs/` | These documents. |

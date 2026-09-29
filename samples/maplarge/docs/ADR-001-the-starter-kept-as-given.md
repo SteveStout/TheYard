@@ -20,12 +20,17 @@ none of that belongs here, and the temptation to bring it anyway is the thing th
 The starter's shape is the project's shape. `TestProject.sln` and `TestProject.csproj` keep their
 names, `Program.cs` keeps one class with one `Main`, the API is controllers because the starter was,
 `wwwroot/index.html` is the one page. `TestController.cs` is deleted: it was the placeholder for what
-this is. The target stays `net8.0` as shipped, because the brief says the solution must build in
-Visual Studio 2022, and 2022 does not build .NET 10.
+this is. The target is `net10.0`, the framework TheYard is on, because the two are one stack by
+decision (Steve: the sample and the site share every version); the starter arrived on `net8.0`. The
+brief lists Visual Studio 2022 or newer, Rider, VS Code and the command line SDK, and the .NET 10
+SDK covers the last three and Visual Studio 2026 outright. The package versions the test project
+references are the ones TheYard pins.
 
 Three lines are added to the project file: warnings are errors, the code-style analyzers run in the
 build, and the documents and the sample home travel with a publish so a container can serve them.
-No package is referenced by the app. The test project references xunit and the in-memory test host,
+No package is referenced by the app. The starter's `UseHttpsRedirection` runs in Development only:
+behind the edge that terminates TLS the app sees HTTP, and the redirect would have nothing to
+redirect to. The test project references xunit and the in-memory test host,
 which is the least a test project can reference.
 
 What comes from TheYard is practice, not code: the layering rule (ADR-002), the record set you are
@@ -35,6 +40,7 @@ before claiming (ADR-008). What is left behind, each with its reason:
 | Left behind | Why |
 | --- | --- |
 | React, Vite, TypeScript | The brief says vanilla JavaScript or TypeScript with no UI library; the page is plain modules (ADR-006). |
+| .NET 8 | The starter's framework; the sample runs on .NET 10 with TheYard, one stack for both. |
 | The two data stores | A file browser's store is the filesystem. |
 | Application Insights, accounts, the admin tab | Nothing to observe or protect at this size; a request log is a line in the console. |
 | Docker, Bicep, the pipeline | Kept to a Dockerfile and one workflow so the sample can run beside TheYard on the same plan, and nothing more; the brief's reviewers open the solution, not the container. |

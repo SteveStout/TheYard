@@ -1,6 +1,6 @@
 # The Shed
 
-A file and folder browser: an ASP.NET Core 8 API over one configurable home directory, and a
+A file and folder browser: an ASP.NET Core 10 API over one configurable home directory, and a
 single page in plain JavaScript that browses, searches, uploads, downloads, makes folders, moves,
 copies and deletes, inside a dialog, with the whole state of the page in the address bar.
 
@@ -11,8 +11,8 @@ commit: [/api/version](https://theshed.stevenstout.biz/api/version).
 
 ## Run it
 
-Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (or newer) and, for
-the JavaScript tests, Node 20 or newer.
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), the same as TheYard,
+and, for the JavaScript tests, Node 20 or newer.
 
 ```
 dotnet run
@@ -85,7 +85,7 @@ Domain/               the rules: HomePath, NamePattern, ViewTotals (pure)
 Application/          FileBrowser, the use cases, behind IFileStore
 Infrastructure/       PhysicalFileStore, the disk
 Controllers/          FilesController, DocsController, BrowserProblemHandler
-Docs/                 DocsCatalog, LiveSamples, VersionReader
+Library/              DocsCatalog, LiveSamples, VersionReader: the documents the app serves
 wwwroot/              index.html, css/tokens.css, css/app.css, js/lib (pure), js/ui (renders)
 tests/                TestProject.Tests (xUnit), js (node --test)
 docs/                 the records and the guides

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using TestProject.Application;
@@ -29,6 +30,8 @@ public sealed class FilesApiTests : IDisposable
         _home.File("apple.txt", "apple");
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
+            // Production, so the HTTPS redirect the starter had stays out of the way (ADR-001).
+            builder.UseEnvironment("Production");
             builder.UseSetting("Files:Home", _home.Root);
             builder.UseSetting("Files:MaxUploadBytes", "64");
             builder.UseSetting("Files:SearchLimit", "2");

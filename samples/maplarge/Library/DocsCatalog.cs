@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using TestProject.Data;
 
-namespace TestProject.Docs;
+namespace TestProject.Library;
 
 /// <summary>
 /// The documents the app serves, read from the <c>docs</c> folder beside the

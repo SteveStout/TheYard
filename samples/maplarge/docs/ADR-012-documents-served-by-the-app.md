@@ -49,16 +49,16 @@ markup into the page, and because it is a reasonable thing to talk about in a co
 
 ## Files
 
-- [`Docs/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Docs/DocsCatalog.cs): the list and the slugs.
-- [`Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Docs/LiveSamples.cs): the expander.
-- [`Docs/VersionReader.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Docs/VersionReader.cs): the version and the commit.
+- [`Library/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Library/DocsCatalog.cs): the list and the slugs.
+- [`Library/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Library/LiveSamples.cs): the expander.
+- [`Library/VersionReader.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Library/VersionReader.cs): the version and the commit.
 - [`Controllers/DocsController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/DocsController.cs): the three routes.
 - [`wwwroot/js/lib/markdown.js`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/js/lib/markdown.js): the reader.
 - [`tests/TestProject.Tests/DocsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/DocsTests.cs): every fence resolves, every link lands.
 
 The allowed roots, and the check:
 
-```live path=Docs/LiveSamples.cs region=allowed
+```live path=Library/LiveSamples.cs region=allowed
 ```
 
 The reader's block loop:
