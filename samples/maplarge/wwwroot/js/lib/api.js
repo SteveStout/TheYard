@@ -1,8 +1,10 @@
-// Every call to the server, in one place (ADR-004). A failure is an ApiError
-// whose message is the problem document's `detail`, so the page shows the
-// server's sentence and never a status code. Listings are cached by path for
-// the life of the page and forgotten when anything under that path changes,
-// which is what makes Back instant and a delete re-read once (ADR-006).
+/**
+ * Every call to the server, in one place (ADR-004). A failure is an ApiError
+ * whose message is the problem document's `detail`, so the page shows the
+ * server's sentence and never a status code. Listings are cached by path for
+ * the life of the page and forgotten when anything under that path changes,
+ * which is what makes Back instant and a delete re-read once (ADR-006).
+ */
 import { ApiError } from './types.js';
 const listings = new Map();
 /**
@@ -35,7 +37,12 @@ async function send(url, options) {
     return response.status === 204 ? null : (await response.json());
 }
 // #region cache
-/** One folder, from the cache when it is there. */
+/**
+ * One folder, from the cache when it is there. The map holds the promise, not
+ * the listing, so two renders that ask for one folder in the same instant share
+ * one request instead of racing two; a failed request removes itself, so the
+ * next ask tries again rather than replaying the failure.
+ */
 export function browse(path) {
     let pending = listings.get(path);
     if (!pending) {
@@ -47,7 +54,12 @@ export function browse(path) {
     }
     return pending;
 }
-/** Forgets a folder and everything under it, after a write there. */
+/**
+ * Forgets a folder and everything under it, after a write there. Deleting a
+ * folder changes its parent's listing and every descendant's, and the cheapest
+ * correct answer is to forget the subtree rather than patch it; "" is home, so
+ * a write at home forgets everything.
+ */
 export function forget(path) {
     for (const key of [...listings.keys()]) {
         if (key === path || key.startsWith(`${path}/`) || path === '') {
@@ -55,7 +67,7 @@ export function forget(path) {
         }
     }
 }
-/** Forgets the folder a path sits in and, for a folder, the folder itself. */
+/** Forgets the folder a path sits in and, for a folder, the folder itself: what a move, copy or delete changes. */
 export function forgetAround(path) {
     const slash = path.lastIndexOf('/');
     forget(slash < 0 ? '' : path.slice(0, slash));
@@ -111,6 +123,8 @@ export function upload(path, file, overwrite, onProgress) {
             }
         });
         request.addEventListener('load', () => {
+            // Forgotten on every outcome, not only success: a 409 means the server saw the name, and
+            // the listing that said the folder was empty is already wrong.
             forget(path);
             if (request.status >= 200 && request.status < 300) {
                 resolve(JSON.parse(request.responseText));

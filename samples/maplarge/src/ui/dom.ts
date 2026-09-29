@@ -1,7 +1,9 @@
-// The two ways this page makes HTML: h() for what the code writes and toDom()
-// for what the markdown reader read (ADR-006). Both set text with textContent,
-// never innerHTML, so nothing a file name or a document carries can become
-// markup.
+/**
+ * The two ways this page makes HTML: h() for what the code writes and toDom()
+ * for what the markdown reader read (ADR-006). Both set text with textContent,
+ * never innerHTML, so nothing a file name or a document carries can become
+ * markup.
+ */
 
 import { isElement, type MdNode } from '../lib/markdown.js';
 
@@ -51,7 +53,7 @@ function append(node: ParentNode, children: Child[]): void {
   }
 }
 
-/** The markdown reader's tree as DOM nodes. */
+/** The markdown reader's tree as DOM nodes, by createElement and text nodes, so a document's text stays text. */
 export function toDom(nodes: MdNode[]): DocumentFragment {
   const fragment = document.createDocumentFragment();
   for (const node of nodes) {
@@ -71,7 +73,7 @@ export function toDom(nodes: MdNode[]): DocumentFragment {
   return fragment;
 }
 
-/** Replaces a container's children with new ones in one step. */
+/** Replaces a container's children in one step, so a redraw is one reflow and never a half-drawn table. */
 export function replace(container: ParentNode, ...children: Child[]): void {
   container.replaceChildren();
   append(container, children);

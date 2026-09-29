@@ -1,8 +1,10 @@
-// The one parser and the one serializer for the state the URL carries (ADR-005).
-// Pure: no DOM, no fetch, so node --test runs the compiled module as it is.
-// Everything the page shows is a function of this object, and nothing the page
-// knows is kept anywhere else, which is what makes a link to any view a link
-// to that view.
+/**
+ * The one parser and the one serializer for the state the URL carries (ADR-005).
+ * Pure: no DOM, no fetch, so node --test runs the compiled module as it is.
+ * Everything the page shows is a function of this object, and nothing the page
+ * knows is kept anywhere else, which is what makes a link to any view a link
+ * to that view.
+ */
 
 export const SORTS = ['name', 'size', 'modified'] as const;
 export const DIRS = ['asc', 'desc'] as const;
@@ -54,6 +56,8 @@ function pick<T extends string>(value: string | null, allowed: readonly T[], fal
 export function parse(search: string): State {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
   return {
+    // Any known key opens the dialog, so "?path=docs" is enough for a link and "?view=browse" is
+    // what a bare open serializes to (ADR-007).
     open: KEYS.some((key) => params.has(key)),
     view: pick(params.get('view'), VIEWS, DEFAULTS.view),
     path: cleanPath(params.get('path')),

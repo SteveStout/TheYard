@@ -1,8 +1,10 @@
-// The file browser inside the dialog: the breadcrumb, the search, the totals,
-// the table and the writes (ADR-006). It renders from the state it is given and
-// the reply it fetched, and every change of view goes through navigate(), so
-// the URL is always the state (ADR-005). One listener on the table handles every
-// row; a row is found again by its data-path.
+/**
+ * The file browser inside the dialog: the breadcrumb, the search, the totals,
+ * the table and the writes (ADR-006). It renders from the state it is given and
+ * the reply it fetched, and every change of view goes through navigate(), so
+ * the URL is always the state (ADR-005). One listener on the table handles every
+ * row; a row is found again by its data-path.
+ */
 
 import * as api from '../lib/api.js';
 import { bytes, plural, when } from '../lib/format.js';

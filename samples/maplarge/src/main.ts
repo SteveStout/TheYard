@@ -1,8 +1,10 @@
-// The page: reads the address, opens the dialog when the address says so, and
-// hands the state to whichever view it names (ADR-005, ADR-007). This is the
-// only file that touches history; every view asks for a change through
-// navigate() and is redrawn from the address that results, the same path a Back
-// button or a pasted link takes.
+/**
+ * The page: reads the address, opens the dialog when the address says so, and
+ * hands the state to whichever view it names (ADR-005, ADR-007). This is the
+ * only file that touches history; every view asks for a change through
+ * navigate() and is redrawn from the address that results, the same path a Back
+ * button or a pasted link takes.
+ */
 
 import * as api from './lib/api.js';
 import { DEFAULTS, isOpen, parse, serialize, VIEWS, type State, type View } from './lib/urlState.js';
@@ -44,12 +46,15 @@ const docs = createDocs(docsRoot, navigate);
  */
 function navigate(partial: Partial<State>, replaceEntry = false): void {
   const next: State = { ...state, open: true, ...partial };
+  // A closed state serializes to "", and pushState needs an address, so the bare path stands in.
   const url = serialize(next) || window.location.pathname;
   if (replaceEntry) {
     window.history.replaceState(null, '', url);
   } else {
     window.history.pushState(null, '', url);
   }
+  // Re-read from the address rather than trusting `next`: the browser is the one source, and a
+  // value the serializer dropped (a default) must not survive in memory either.
   state = parse(window.location.search);
   render();
 }
@@ -61,6 +66,13 @@ window.addEventListener('popstate', () => {
 // #endregion navigate
 
 // #region render
+/**
+ * Draws the page from the state and nothing else. The dialog's open flag is a
+ * fact about the address (ADR-007): closed when no known key is present, open
+ * otherwise, so a pasted link and the Back button land in the same place as a
+ * click. showModal rather than show, because a modal gives the focus trap,
+ * Escape, the backdrop and an inert page for free.
+ */
 function render(): void {
   if (!isOpen(state)) {
     if (dialog.open) {
@@ -72,6 +84,8 @@ function render(): void {
   if (!dialog.open) {
     dialog.showModal();
   }
+  // The tabs are buttons with aria-pressed, not links, because they change a view inside one
+  // page; the address still changes, through navigate, so a tab is a link in every way that counts.
   for (const button of tabs.querySelectorAll<HTMLButtonElement>('button')) {
     button.setAttribute('aria-pressed', button.dataset['view'] === state.view ? 'true' : 'false');
   }

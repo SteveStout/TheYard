@@ -1,6 +1,8 @@
-// Numbers and instants as a person reads them. The server sends bytes and
-// milliseconds; how they look is the page's decision (ADR-004), and it is made
-// here once so the table, the totals line and the upload notice agree.
+/**
+ * Numbers and instants as a person reads them. The server sends bytes and
+ * milliseconds; how they look is the page's decision (ADR-004), and it is made
+ * here once so the table, the totals line and the upload notice agree.
+ */
 
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
 

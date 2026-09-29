@@ -1,6 +1,8 @@
-// The Docs tab: the records the app serves about itself, listed by group and
-// rendered from markdown with the reader in lib/markdown.ts (ADR-012). Which
-// document is open is in the URL as ?view=docs&doc=slug (ADR-005).
+/**
+ * The Docs tab: the records the app serves about itself, listed by group and
+ * rendered from markdown with the reader in lib/markdown.ts (ADR-012). Which
+ * document is open is in the URL as ?view=docs&doc=slug (ADR-005).
+ */
 import * as api from '../lib/api.js';
 import { parse } from '../lib/markdown.js';
 import { h, replace, toDom } from './dom.js';

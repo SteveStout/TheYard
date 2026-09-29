@@ -1,13 +1,15 @@
-// A small markdown reader for the records the app serves (ADR-012). It turns
-// text into a tree of plain objects, {tag, attrs, children} and {text}, which
-// ui/dom.ts builds into DOM nodes with createElement and textContent. Nothing
-// here is ever handed to innerHTML, so a document cannot carry script into the
-// page, and the reader can be tested in node without a DOM.
-//
-// What it reads is what the records use: ATX headings, paragraphs, bullet and
-// numbered lists, fenced code (with the language and an optional caption on
-// the fence line), block quotes, pipe tables, horizontal rules, and inline
-// code, bold, italic, links and images. Anything else is a paragraph.
+/**
+ * A small markdown reader for the records the app serves (ADR-012). It turns
+ * text into a tree of plain objects, {tag, attrs, children} and {text}, which
+ * ui/dom.ts builds into DOM nodes with createElement and textContent. Nothing
+ * here is ever handed to innerHTML, so a document cannot carry script into the
+ * page, and the reader can be tested in node without a DOM.
+ *
+ * What it reads is what the records use: ATX headings, paragraphs, bullet and
+ * numbered lists, fenced code (with the language and an optional caption on
+ * the fence line), block quotes, pipe tables, horizontal rules, and inline
+ * code, bold, italic, links and images. Anything else is a paragraph.
+ */
 export function isElement(node) {
     return 'tag' in node;
 }
@@ -26,6 +28,7 @@ export function parse(markdown) {
             i += 1;
             continue;
         }
+        // Fences first: inside one, a "#" or a "-" is code, so nothing below may see those lines.
         const fence = /^```(\S*)\s*(.*)$/.exec(line);
         if (fence) {
             const body = [];
@@ -56,6 +59,7 @@ export function parse(markdown) {
                 quoted.push((lines[i] ?? '').replace(/^>\s?/, ''));
                 i += 1;
             }
+            // A quote is a document in its own right, so the reader recurses rather than special-casing it.
             blocks.push(element('blockquote', parse(quoted.join('\n'))));
             continue;
         }
