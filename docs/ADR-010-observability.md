@@ -73,7 +73,7 @@ The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The timed checks
 ([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
 
-```live path=api/TheYard.Api/Program.cs region=health-checks
+```live path=api/TheYard.Api/Endpoints/HealthEndpoints.cs region=health-checks
 ```
 
 The events, read from the same management response (the observability

@@ -422,8 +422,9 @@ var observabilityReads = new HashSet<string>(StringComparer.Ordinal)
 ActivityCollector? activityCollector = null;
 VisitorTokens? visitorTokens = null;
 // The loop that keeps every read warm (ADR: Kept awake), wired after the app is
-// built; the health report and the request hook read it through this.
-KeepWarm? keepWarm = null;
+// built; the health report reads it through this.
+var keepWarmState = new KeepWarmState();
+builder.Services.AddSingleton(keepWarmState);
 
 // One request, timed and filed, unless it is the Admin tab watching itself.
 //
@@ -788,6 +789,14 @@ var telemetry = new TelemetryReader(
     enabled: telemetryOn);
 #endregion telemetry
 
+// The two error rings and the moment the process started, registered before the
+// host exists so the endpoints can ask for them; the rings are wired to the kept
+// log and the start is marked further down, where they always were.
+var errorRings = new ErrorRings();
+builder.Services.AddSingleton(errorRings);
+var hostStart = new HostStart();
+builder.Services.AddSingleton(hostStart);
+
 var app = builder.Build();
 activityCollector = app.Services.GetRequiredService<ActivityCollector>();
 
@@ -1054,14 +1063,8 @@ app.MapDocsEndpoints();
 // baked in as environment variables by the Docker build (ADR-005).
 // ---------------------------------------------------------------------------
 
-#region version-endpoint
-// Read once at startup, not per request: these are baked into the image and
-// cannot change while the process lives (ADR-005).
-app.MapGet("/api/version", () => TypedResults.Ok(new BuildInfo(buildVersion, buildCommit)))
-    .WithName("GetVersion")
-    .WithTags("Health")
-    .WithSummary("The build this container was made from");
-#endregion version-endpoint
+// The running build, liveness, readiness and the health report (Endpoints/HealthEndpoints.cs).
+app.MapHealthEndpoints();
 
 
 // ---------------------------------------------------------------------------
@@ -1070,8 +1073,9 @@ app.MapGet("/api/version", () => TypedResults.Ok(new BuildInfo(buildVersion, bui
 // the container group's own state read from Azure with its managed identity.
 // ---------------------------------------------------------------------------
 
-var startedAt = DateTimeOffset.UtcNow;
-var errorLog = new ErrorRingBuffer(50);
+hostStart.Mark();
+var startedAt = hostStart.At;
+var errorLog = errorRings.Server;
 // #region two-rings
 // Browser reports get their own fifty slots rather than sharing the server's.
 //
@@ -1082,7 +1086,7 @@ var errorLog = new ErrorRingBuffer(50);
 // number of reports was not, so fifty posts from anybody evicted every real
 // server error from the page an operator would use to diagnose an outage. A
 // separate ring means a flood of reports can only push out other reports.
-var browserErrors = new ErrorRingBuffer(50);
+var browserErrors = errorRings.Browser;
 // #endregion two-rings
 errorLog.Kept = entry => keptRings.Keep(KeptRings.Errors, entry.At, entry);
 browserErrors.Kept = entry => keptRings.Keep(KeptRings.Errors, entry.At, entry);
@@ -1131,113 +1135,7 @@ app.Use(async (context, next) =>
 });
 #endregion error-log
 
-#region health-checks
-// Each probe is timed and each answer is a value, never an exception: a
-// health endpoint that throws tells an orchestrator nothing. The checks are
-// deliberately about the files this app cannot run without.
-async Task<HealthCheckEntry[]> RunChecksAsync(bool readinessOnly = false)
-{
-    // Each probe is timed: the Admin tab shows the milliseconds beside the check,
-    // so a slow disk or a slow lookup shows up before it fails (ADR-010, second pass).
-    // Awaited, because the document store's probe is two point reads over the
-    // network and a health check that blocked a thread on them would be the
-    // defect the ports record describes (ADR: The ports learn to wait).
-    async Task<HealthCheckEntry> Check(string name, Func<Task<bool>> probe, string detail, bool gatesReadiness = true)
-    {
-        if (readinessOnly && !gatesReadiness)
-        {
-            // Not asked, so not run. The caller filters these out anyway; this
-            // is what stops the probe behind them from happening at all.
-            return new HealthCheckEntry(name, "pass", "not asked", 0, gatesReadiness);
-        }
 
-        var clock = Stopwatch.StartNew();
-        try { return new HealthCheckEntry(name, await probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds, gatesReadiness); }
-        catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name, clock.ElapsedMilliseconds, gatesReadiness); }
-    }
-    var checks = new List<HealthCheckEntry>
-    {
-        await Check("dataset file", () => Task.FromResult(File.Exists(dataPath)), "data/vehicles.json present"),
-        await Check("docs", () => Task.FromResult(File.Exists(Path.Combine(repoRoot, "docs", "HOSTING.md"))), "served documents findable"),
-        await Check("photo manifest", () => Task.FromResult(File.Exists(manifestPath)), "image manifest present"),
-    };
-    // One check per store, named by the store, so a container running both
-    // says which one is unavailable (ADR: One container, both stores). The
-    // first is still called "database" for the deploy's Verify step and the
-    // Admin tab's card, which have read that name since ADR-010.
-    foreach (var backend in backends.All)
-    {
-        checks.Add(await Check(
-            ReferenceEquals(backend, backends.Default) ? "database" : $"database ({backend.Key})",
-            backend.Probe,
-            // The reason is in the log, not in this response. A health endpoint
-            // is public on purpose, and an exception message from a storage
-            // failure is typically a filesystem path: exactly the map of the
-            // inside of the process that ProblemHandler refuses to draw
-            // (the staff review, 2026-09-03).
-            backend.Database.Ready
-                ? $"the seed catalogue is in the store ({backend.Name})"
-                : $"{backend.Name} is unavailable, serving the catalogue from files; "
-                    + "the reason is in the log",
-            // The one check that does not gate readiness, which is the whole
-            // point of the fallback. A container with no database still serves
-            // the catalogue, the filters, the photos and the bidding; the only
-            // thing it loses is bids outliving the process. Reporting itself
-            // not ready would take a working site out of service, and it did:
-            // the 1.0.0.51 deploy failed on `curl -fsS /readyz` while the site
-            // it was checking was serving 100,000 vehicles perfectly well.
-            gatesReadiness: false));
-    }
-    return checks.ToArray();
-}
-#endregion health-checks
-
-#region probes
-// Three endpoints, three audiences. /healthz is the container's HEALTHCHECK
-// and answers only "the process is up". /readyz is the deploy's Verify step
-// and answers 503 until the files are in place. /api/health is the Admin tab
-// and carries the timings. A process can be alive and not yet ready, and the
-// orchestrator treats those differently (ADR-010).
-app.MapGet("/healthz", () => TypedResults.Text("ok"))
-    .WithName("Liveness")
-    .WithTags("Health")
-    .WithSummary("Is the process up")
-    .WithDescription("The container's own health check. Answers ok the moment the process is listening and says nothing else.")
-    .Produces<string>(StatusCodes.Status200OK, "text/plain");
-
-// Only the checks that gate it, and only those get run: the database probe is
-// two SQL statements whose answer readiness discards, and this endpoint is
-// polled by the orchestrator and by every deploy.
-app.MapGet("/readyz", async Task<Results<ContentHttpResult, ProblemHttpResult>> () =>
-    (await RunChecksAsync(readinessOnly: true)).Where(check => check.GatesReadiness).All(check => check.Status == "pass")
-        ? TypedResults.Text("ready")
-        : TypedResults.Problem(detail: "A file this site cannot run without is missing; the health report says which.", statusCode: 503, title: "Not ready"))
-    .WithName("Readiness")
-    .WithTags("Health")
-    .WithSummary("Should traffic be sent here")
-    .WithDescription("The deploy's verify step. Only the checks that gate readiness run, and the database is not one "
-        + "of them: a container whose store is gone still serves the catalogue from files.")
-    .Produces<string>(StatusCodes.Status200OK, "text/plain")
-    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
-
-app.MapGet("/api/health", async () =>
-{
-    var checks = await RunChecksAsync();
-    return TypedResults.Ok(
-        new HealthReport(
-            checks.All(c => c.Status == "pass") ? "healthy" : "degraded",
-            (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
-            buildVersion,
-            buildCommit,
-            checks,
-            keepWarm is null ? null : KeepWarmReading.Of(keepWarm.Last)));
-})
-    .WithName("GetHealth")
-    .WithTags("Health")
-    .WithSummary("Every check, timed, and the build that answered")
-    .WithDescription("The Admin tab's health card. One check per store, named by the store, so a container running "
-        + "both says which one is unavailable.");
-#endregion probes
 
 // Both rings, merged newest first, so the page is still one list.
 app.MapGet("/api/errors", () => TypedResults.Ok(
@@ -1695,7 +1593,7 @@ if (builder.Configuration.GetValue("KeepWarm:Enabled", !string.IsNullOrEmpty(Env
         TimeProvider.System,
         KeepWarm.RandomStagger(),
         keepWarmLog);
-    keepWarm = loop;
+    keepWarmState.Loop = loop;
     app.Lifetime.ApplicationStarted.Register(() => _ = loop.StartAsync(CancellationToken.None));
     app.Lifetime.ApplicationStopping.Register(() => loop.StopAsync(CancellationToken.None).GetAwaiter().GetResult());
 }

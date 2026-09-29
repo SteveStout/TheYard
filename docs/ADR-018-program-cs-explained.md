@@ -163,10 +163,10 @@ the same probes with their timings for the Admin tab. The difference
 matters: a process can be alive and not yet ready, and an orchestrator
 treats the two differently.
 
-```live path=api/TheYard.Api/Program.cs region=health-checks
+```live path=api/TheYard.Api/Endpoints/HealthEndpoints.cs region=health-checks
 ```
 
-```live path=api/TheYard.Api/Program.cs region=probes
+```live path=api/TheYard.Api/Endpoints/HealthEndpoints.cs region=probes
 ```
 
 ### The environment the container sets
@@ -177,7 +177,7 @@ build and read once at startup (ADR: Version in the footer). Locally
 neither exists, so the footer says "dev build" and the commit reads
 "local".
 
-```live path=api/TheYard.Api/Program.cs region=version-endpoint
+```live path=api/TheYard.Api/Endpoints/HealthEndpoints.cs region=version-endpoint
 ```
 
 ### The records at the bottom
@@ -199,10 +199,10 @@ worth saying that it is a decision rather than a drift.
 What those lines are:
 
 ```
-1,854 total
-  737 comment
-  101 blank
-  1,016 code, across 27 endpoints
+1,752 total
+  705 comment
+  99 blank
+  948 code, across 23 endpoints
 ```
 
 Thirty-two lines of code per endpoint, and most endpoints are a route, a

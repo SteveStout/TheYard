@@ -60,7 +60,7 @@ second claim is the one the footer makes.
 ```live path=Dockerfile region=build-args
 ```
 
-```live path=api/TheYard.Api/Program.cs region=version-endpoint
+```live path=api/TheYard.Api/Endpoints/HealthEndpoints.cs region=version-endpoint
 ```
 
 ```live path=src/app/Footer.tsx region=footer-version
