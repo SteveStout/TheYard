@@ -5,9 +5,21 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import styles from './DocDialog.module.css';
+import prose from './DocProse.module.css';
+import swatches from './DocSwatches.module.css';
+import panels from './DocPanels.module.css';
+import author from './AuthorPage.module.css';
 import { layoutDocument } from '../lib/docLayout';
 import { ICON } from '../lib/icons';
 import { DOCS, type DocKey } from './documents';
+
+/**
+ * The document's sheets, one job each (ADR-019, the addendum on the stylesheets). Each scopes its
+ * rules under its own .prose, so the element that holds the document carries all four; the
+ * reading panel's frost is scoped under the window as well, so the window carries that sheet's .dialog.
+ */
+const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose}`;
+const WINDOW = `${styles.dialog} ${panels.dialog} ${styles.dialogGround}`;
 
 /**
  * One open request. It is an object rather than a bare key because reopening
@@ -108,8 +120,8 @@ export function DocDialog({
       ref={dialogRef}
       className={
         activeDoc === 'author'
-          ? `${styles.dialog} ${styles.dialogGround} ${styles.dialogWide} op-glass op-sheet op-inset`
-          : `${styles.dialog} ${styles.dialogGround} op-glass op-sheet op-inset`
+          ? `${WINDOW} ${styles.dialogWide} op-glass op-sheet op-inset`
+          : `${WINDOW} op-glass op-sheet op-inset`
       }
       aria-label={DOCS[activeDoc].title}
       onClose={onClose}
@@ -171,7 +183,7 @@ export function DocDialog({
         ) : docHtml[activeDoc] === undefined ? (
           <p className={styles.docLoading}>Loading...</p>
         ) : (
-          <div className={styles.prose} dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }} />
+          <div className={PROSE} dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }} />
         )}
       </div>
     </dialog>

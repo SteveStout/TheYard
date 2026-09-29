@@ -1,3 +1,8 @@
+/**
+ * Does:      Draws the load proof's paired medians as bars: the list, each row, its label, its track and its bar.
+ * Does not:  Style the card or its chart axes (card.module.css and charts.module.css do).
+ * Used by:   ProofCard.tsx.
+ */
 /* The proof's paired medians, as bars. */
 .pairList {
   margin: 0;

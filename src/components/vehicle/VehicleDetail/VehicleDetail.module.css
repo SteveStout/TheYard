@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles a vehicle's own page: Back, the gallery and main image, the header and title, the layout,
+ *            condition, damage and the dealership.
+ * Does not:  Style the bid panel (BidPanel.module.css does) or a badge (each has its own sheet).
+ * Used by:   VehicleDetail.tsx.
+ */
 .detail {
   display: flex;
   flex-direction: column;

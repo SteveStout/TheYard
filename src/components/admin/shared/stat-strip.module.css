@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the stat strip: the tiles across the top of the workbench and the traffic card's strip, with
+ *            their labels, tones, rings and sparks.
+ * Does not:  Decide a tile's tone (the card does) or draw a tile's glass (panels.css does).
+ * Used by:   AdminPanel.tsx, TrafficCard.tsx.
+ */
 /* The stat strip: the tiles across the top of the workbench and the traffic card's own strip,
    one look for both (ADR: One folder per component). */
 

@@ -4,7 +4,7 @@ import styles from './Ribbons.module.css';
 
 /**
  * The teal and gold ribbons behind the page (ADR: The glass look, the addendum
- * on the ribbon ground): one layer of inline SVG, fixed behind everything, from
+ * on the ribbon ground): one layer of inline SVG at the top of the page, behind everything, from
  * the rail's edge. It is code and not a picture, so it costs no request.
  * Nothing in it moves (Steve, 2026-09-21: "No ribbon movement at all it should
  * center only with CSS, we want a minimal website"): it is painted once and

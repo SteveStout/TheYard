@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the traffic card's own parts: its four numbers as quiet tiles, the chart heading and reading, and
+ *            the index chip.
+ * Does not:  Style the stat strip the numbers sit in (stat-strip.module.css) or the card (card.module.css).
+ * Used by:   TrafficCard.tsx.
+ */
 /* The traffic card's four numbers wear the tile's look and are not buttons,
    so they do not lift under a pointer or invite a press. */
 .statBlock {

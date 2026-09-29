@@ -1,3 +1,8 @@
+/**
+ * Does:      Styles the reserve badge: its pill and the met, not met and no reserve tones.
+ * Does not:  Decide whether the reserve is met (the data does).
+ * Used by:   ReserveBadge.tsx.
+ */
 .badge {
   display: inline-flex;
   align-items: center;

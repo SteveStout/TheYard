@@ -8,7 +8,7 @@ import type { InventoryFilters, SortKey } from '../lib/inventory';
 import { FilterBar } from '../components/inventory/FilterBar';
 import { InventoryGrid } from '../components/inventory/InventoryGrid';
 import type { Inventory } from './hooks/useInventory';
-import styles from './App.module.css';
+import styles from './InventoryView.module.css';
 
 export function InventoryView({
   inventory,

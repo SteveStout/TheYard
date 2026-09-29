@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the filter bar over the inventory: its fields and labels, the search box, the price inputs, the
+ *            count and Clear.
+ * Does not:  Keep the filters (useAddressBar.ts does) or draw the panel's glass (panels.css does).
+ * Used by:   FilterBar.tsx.
+ */
 /* The shared glass with its dark green rule and brackets (the operator's look;
    a dark green left edge before it, ADR: The glass look). */
 .bar {

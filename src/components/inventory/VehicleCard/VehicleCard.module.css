@@ -1,3 +1,10 @@
+/**
+ * Does:      Styles one vehicle card: the photo and its overlay, the badges, the title and subtitle, the price row
+ *            and the bidder marks.
+ * Does not:  Blur what is behind it (a hundred cards on a page, so the card is clear glass without the blur), or hold
+ *            a colour of its own.
+ * Used by:   VehicleCard.tsx.
+ */
 /* A glass panel without the blur (ADR: The glass look, the addendum on every
    surface): there are a hundred of these on a page and a blur is paid for by
    the pixel, so the card is see-through in its ground only (.op-card). The

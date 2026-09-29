@@ -4,37 +4,44 @@ namespace TheYard.Tests;
 
 /// <summary>
 /// The clarity rule for the two folders the UI split made, src/app and
-/// src/library (ADR: The React configuration, explained, the addendum on the
-/// split). Every file in them opens with three lines: what it does, what it
-/// does not, and which files use it. The first two are for a reader and only
-/// their presence is checked; the third is a fact, so it is read against the
-/// files that really import each one. A header that still names a file which
-/// stopped importing it, or misses one that started, fails here, which is the
-/// only way a comment like that stays true.
+/// src/library, and for every stylesheet under src (ADR: The React
+/// configuration, explained, the addenda on the split and on the
+/// stylesheets). Every file it holds opens with three lines: what it does,
+/// what it does not, and which files use it. The first two are for a reader
+/// and only their presence is checked; the third is a fact, so it is read
+/// against the files that really import each one. A header that still names a
+/// file which stopped importing it, or misses one that started, fails here,
+/// which is the only way a comment like that stays true.
 /// </summary>
 public class FileHeaderTests
 {
     // #region the header rule
-    /// <summary>The two folders the rule holds, relative to the repository root.</summary>
+    /// <summary>The two folders the rule holds for code and stylesheets alike, relative to the repository root.</summary>
     private static readonly string[] Folders = ["src/app", "src/library"];
 
-    /// <summary>What a file in them can be: code, and the stylesheets that moved with it.</summary>
+    /// <summary>What a file in them can be: code, and the stylesheets beside it.</summary>
     private static readonly string[] Kinds = [".ts", ".tsx", ".css"];
+
+    /// <summary>And every stylesheet anywhere under this folder: a sheet grows a job at a time the way code does.</summary>
+    private const string Sheets = "src";
 
     /// <summary>The three labels, in the order a header gives them.</summary>
     private static readonly string[] Labels = ["Does:", "Does not:", "Used by:"];
 
     /// <summary>
-    /// Past three hundred lines, each with why. One job per file keeps code
-    /// short; a list of data is as long as the list, and the two stylesheets
-    /// moved whole in the split and are divided by the file that uses each
-    /// class in a pass of their own.
+    /// Past three hundred lines, each with why. One job per file keeps a file
+    /// short; a list of data is as long as the list. The four component
+    /// sheets named here each hold one component's look and are over the
+    /// line because that component is; each is split with its component by
+    /// the lane named beside it, and comes off this list when it does.
     /// </summary>
     private static readonly Dictionary<string, string> LongAllowed = new(StringComparer.Ordinal)
     {
         ["src/library/records.ts"] = "every decision record, as data",
-        ["src/app/App.module.css"] = "the frame's sheet, moved whole from src/App.module.css",
-        ["src/library/DocDialog.module.css"] = "the document window's sheet, moved whole from DocsMenu.module.css",
+        ["src/components/landing/Landing/Landing.module.css"] = "the landing page's one look (hero, featured tiles, section tiles); split with Landing.tsx in the component split lane",
+        ["src/components/layout/SideNav/SideNav.module.css"] = "the side rail's two shapes, one set of rows; split with SideNav.tsx (466 lines) in the component split lane",
+        ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin workbench's frame; split with AdminPanel.tsx (1,081 lines) in the component split lane",
+        ["src/components/vehicle/VehicleDetail/VehicleDetail.module.css"] = "a vehicle's own page; split with VehicleDetail.tsx in the component split lane",
     };
     // #endregion the header rule
 
@@ -63,7 +70,8 @@ public class FileHeaderTests
             }
         }
 
-        Assert.True(files.Count >= 15, $"only {files.Count} files were found under src/app and src/library");
+        Assert.True(files.Count >= 60, $"only {files.Count} files were found under src/app, src/library and the stylesheets under src");
+        Assert.True(files.Count(path => path.EndsWith(".css", StringComparison.Ordinal)) >= 40, "fewer than forty stylesheets were read, so this is reading the wrong folders");
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
 
@@ -134,8 +142,10 @@ public class FileHeaderTests
             .Where(Directory.Exists)
             .SelectMany(folder => Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
             .Where(path => Kinds.Contains(Path.GetExtension(path), StringComparer.Ordinal))
+            .Concat(Directory.EnumerateFiles(Path.Combine(Repo.Root(), Sheets), "*.css", SearchOption.AllDirectories))
             .Where(path => !path.EndsWith(".test.ts", StringComparison.Ordinal)
                 && !path.EndsWith(".test.tsx", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToList();
 

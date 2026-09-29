@@ -2,7 +2,7 @@ import styles from './Watermark.module.css';
 
 /**
  * The soft watermark behind the page (ADR: The glass look): ONE inline SVG,
- * fixed behind everything, about a tenth as strong as the ink it is drawn in:
+ * at the top of the page behind everything, about a tenth as strong as the ink it is drawn in:
  * dotted rows in the lighter teal and nothing else. The concentric rings came
  * out on 2026-09-21 at Steve's word, and the large lightning mark in gold on
  * 2026-09-25 ("there is a odd white box in the background on desktop", "on all

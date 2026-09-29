@@ -1,3 +1,8 @@
+/**
+ * Does:      Lays out the inventory grid by its container's width, and the empty state when no vehicle matches.
+ * Does not:  Style a card (VehicleCard.module.css does).
+ * Used by:   InventoryGrid.tsx.
+ */
 .grid {
   list-style: none;
   margin: 0;

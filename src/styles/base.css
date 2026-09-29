@@ -1,3 +1,9 @@
+/**
+ * Does:      Sets the few defaults every page needs before a component draws: the box model, the body's face, size,
+ *            ink and ground.
+ * Does not:  Write a design value of its own; every one comes from the design token files.
+ * Used by:   main.tsx.
+ */
 /*
  * Base styles: the few rules every page needs before any component draws.
  * This file sets defaults and nothing else. It writes no design value of its

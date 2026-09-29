@@ -1,3 +1,8 @@
+/**
+ * Does:      Styles the readout block: label and value rows, stacked or across, in the readout design tokens.
+ * Does not:  Choose what a readout shows (the component that uses it does).
+ * Used by:   Readout.tsx.
+ */
 /* The readout block (ADR: The glass look, the addendum on the operator's look):
    every size, spacing and weight is a token from the operator-look region. */
 .readout {

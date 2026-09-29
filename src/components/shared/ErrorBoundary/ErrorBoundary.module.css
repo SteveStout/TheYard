@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the page that says something broke: a solid panel with its title, the detail, and the two
+ *            buttons.
+ * Does not:  Catch the error (ErrorBoundary.tsx does) or draw the panel's rule and brackets (panels.css does).
+ * Used by:   ErrorBoundary.tsx.
+ */
 /* The page that says something broke is a panel like every other: the shared
    glass, its rule and its brackets (ADR: The glass look, the addendum on the
    operator's look), solid here because nothing behind it is worth reading. */

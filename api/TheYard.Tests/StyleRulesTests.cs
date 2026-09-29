@@ -383,12 +383,14 @@ public class StyleRulesTests
     /// <summary>Where gold is trim, by file, with what it trims there.</summary>
     private static readonly Dictionary<string, string> GoldAllowed = new(StringComparer.Ordinal)
     {
-        ["src/app/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings, a page title's underline, the ring round Load more",
+        ["src/app/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings",
+        ["src/app/InventoryView.module.css"] = "the inventory title's underline, the ring round Load more",
         ["src/components/layout/SideNav/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings",
         ["src/components/account/AccountPanel/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",
         ["src/components/admin/shared/card.module.css"] = "the ring round the chosen window button",
-        ["src/library/DocDialog.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
+        ["src/library/DocProse.module.css"] = "a document title's underline, the tick on a heading's rule",
+        ["src/library/AuthorPage.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
         ["src/components/landing/Landing/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
     };
 
@@ -553,7 +555,7 @@ public class StyleRulesTests
             ("src/components/vehicle/BidPanel/BidPanel.module.css", ".bidButton", "--control-height"),
             ("src/components/inventory/FilterBar/FilterBar.module.css", ".searchInput", "--control-height"),
             ("src/components/inventory/FilterBar/FilterBar.module.css", ".select", "--control-height"),
-            ("src/library/DocDialog.module.css", ".prose :global(.author-button)", "--control-height-lg"),
+            ("src/library/AuthorPage.module.css", ".prose :global(.author-button)", "--control-height-lg"),
         };
         foreach (var (sheet, selector, token) in controls)
         {

@@ -1,3 +1,10 @@
+/**
+ * Does:      Styles the account view: its card, the sign-in and sign-up form, the fields and hints, and the history
+ *            of this visitor's bids.
+ * Does not:  Style the header's account button, or hold a colour of its own (every colour is a design token from
+ *            src/styles).
+ * Used by:   AccountPanel.tsx.
+ */
 /* The account view. One card, the same surface the Admin tab and the detail
    view sit on, so signing in does not look like a different application. */
 .wrap {

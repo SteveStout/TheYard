@@ -1,3 +1,8 @@
+/**
+ * Does:      Styles the ring gauge: its track and arcs, ticks, the marker at a fill's end, and its one motion.
+ * Does not:  Size the ring or its strokes (src/lib/ring.ts's table does), or decide a share (the caller does).
+ * Used by:   Ring.tsx.
+ */
 /* The ring's colours and its one motion (ADR: The glass look, the addendum on
    the operator's look). The sizes and strokes are src/lib/ring.ts's table, set
    on the drawing by the component; nothing here writes a stroke width. */

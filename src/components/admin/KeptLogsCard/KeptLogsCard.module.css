@@ -1,3 +1,8 @@
+/**
+ * Does:      Wraps a kept log line's detail so a long message breaks inside its cell.
+ * Does not:  Style the table it sits in (DataTable.module.css does).
+ * Used by:   KeptLogsCard.tsx.
+ */
 .detail {
   white-space: pre-wrap;
   overflow-wrap: break-word;

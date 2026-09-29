@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles a vehicle's picture: the image, the wrapper that adds no box, and the fallback when there is no
+ *            photo.
+ * Does not:  Choose which file a screen gets (VehicleImage.tsx and its sources do).
+ * Used by:   VehicleImage.tsx.
+ */
 /* The picture element is only a choice of source; the img inside it is what
    lays out, so the wrapper contributes no box of its own. */
 .picture {

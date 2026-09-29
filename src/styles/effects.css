@@ -1,3 +1,9 @@
+/**
+ * Does:      Declares the design tokens for shadows, the frosted glass and its fallbacks, the panel look, trims,
+ *            opacities and motion.
+ * Does not:  Style any element; panels.css applies these as the shared classes.
+ * Used by:   main.tsx, styleSheet.ts.
+ */
 /*
  * Effects: shadows, the frosted glass and its fallbacks, the panel look,
  * trims, opacities and motion. Read together with colors, sizes, typography
@@ -41,7 +47,7 @@
   --watermark-opacity: 0.1;
   --radius-glass: 10px;
   /* The frame on every Author page photo: a deep teal border, a gold hairline
-     outside it and a soft teal shadow. One token, so every photo changes
+     outside it and a soft teal shadow. One design token, so every photo changes
      together (ADR-013). */
   --frame-photo-border: 3px solid var(--color-teal-deep);
   --frame-photo-shadow:
@@ -54,7 +60,7 @@
      across the top with a corner bracket at each end, dark green on panels
      and gold on stat tiles; readings in small spaced capitals; and a ring
      wherever a number is a share of a whole. No new colour: every value
-     below is a token from above. panels.css draws it, once, for everyone. */
+     below is a design token from above. panels.css draws it, once, for everyone. */
   --rule-width: 3px;
   --rule-panel-color: var(--color-teal-deep);
   --rule-tile-color: var(--color-gold-light);

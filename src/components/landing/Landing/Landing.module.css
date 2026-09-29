@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the landing page: the hero and its title, the featured tiles, the section tiles under their group
+ *            headings, and each tile's badge.
+ * Does not:  Decide which sections exist (siteMap.ts does), or draw a tile's glass (panels.css does).
+ * Used by:   Landing.tsx.
+ */
 /* The landing page (1.0.1.0), Example A as Steve approved it on 2026-09-22:
    glass tiles with a round teal icon on a gold ring, the two featured tiles
    large at the top, the sections under their group headings below them

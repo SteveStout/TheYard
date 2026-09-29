@@ -1,7 +1,12 @@
+/**
+ * Does:      Declares the design tokens for font families, text sizes, weights, tracking and chart text.
+ * Does not:  Load the face (fonts.css does).
+ * Used by:   main.tsx, styleSheet.ts.
+ */
 /*
  * Typography: font families, text sizes, weights, tracking and chart text.
- * Read together with colors, sizes, effects and base: a token in one may use
- * a token from another.
+ * Read together with colors, sizes, effects and base: a design token in one may use
+ * a design token from another.
  */
 :root {
   /* Type. IBM Plex Sans is the one face for the whole site (ADR-016). */

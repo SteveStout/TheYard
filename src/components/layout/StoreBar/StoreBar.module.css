@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the store band under the header: the two segments, this site and the other, and the readiness
+ *            note.
+ * Does not:  Decide which store a site runs on (the server does), or hold a colour of its own.
+ * Used by:   StoreBar.tsx.
+ */
 /* The Store bar at the top of the page (ADR: One container, both stores, and
    its addendum on the toggle moving to the sites). One slim band under the
    header, in the surface color so it reads as part of the chrome rather than

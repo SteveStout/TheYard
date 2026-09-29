@@ -1,3 +1,8 @@
+/**
+ * Does:      Lets the fourth errors card take its whole row, and sets the code of an error as a code token.
+ * Does not:  Style the card itself (card.module.css does).
+ * Used by:   ErrorsCard.tsx.
+ */
 /* Four cards in a three-track grid leave one alone on the second row with two
    thirds of the width empty, which reads as something failing to load rather
    than as a layout. The fourth takes the row it is on. */

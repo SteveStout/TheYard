@@ -1,3 +1,8 @@
+/**
+ * Does:      Styles the title status badge: its pill and the clean, caution, danger and neutral tones in two sizes.
+ * Does not:  Decide a title's status (the data does).
+ * Used by:   TitleStatusBadge.tsx.
+ */
 .badge {
   display: inline-flex;
   align-items: center;

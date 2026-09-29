@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the slim intro strip over the inventory: its sentence, its links and the Dismiss button, every
+ *            target 44 pixels tall.
+ * Does not:  Decide when the strip shows (IntroStrip.tsx does) or draw the panel's glass (panels.css does).
+ * Used by:   IntroStrip.tsx.
+ */
 /* A slim glass panel over the inventory and never on top of it, the shared
    glass with its dark green rule and brackets (the operator's look; the dark
    green left edge before it). Every target in it is 44 pixels tall, because

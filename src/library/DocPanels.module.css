@@ -1,0 +1,70 @@
+/**
+ * Does:      Styles the frosted reading panels every document stands on (docLayout.ts puts them there), their
+ *            padding and edges, and a record's status line drawn as a reading.
+ * Does not:  Style the window around them, the prose inside them, or the Author page's own blocks and photographs
+ *            (AuthorPage.module.css), or hold a colour of its own.
+ * Used by:   DocDialog.tsx.
+ */
+/* Every document on the Author page's panels (1.0.2.0): the same glass, the
+   same green edge, the same trim on the headings, so the library reads as one
+   thing whichever document is open. */
+.prose :global(.doc-page) {
+  display: grid;
+  gap: var(--space-4);
+  margin: calc(-1 * var(--space-2)) 0 0;
+}
+
+.prose :global(.doc-panel) > :first-child {
+  margin-top: 0;
+}
+
+.prose :global(.doc-panel) > :last-child {
+  margin-bottom: 0;
+}
+
+/* The ground, the rule and the brackets are the shared glass (op-glass, which
+   docLayout.ts and author.ts put on every panel; the dark green left edge
+   before the operator's look). */
+.prose :global(.doc-panel),
+.prose :global(.author-panel) {
+  padding: var(--space-5);
+  min-width: 0;
+}
+
+/* #region reading-panel */
+/* The reading panel (the tweaks pass, B1b): inside the clear sheet, the frost
+   is here, heavy enough that body text holds 4.5 over the brightest ribbon
+   (colors.test.ts holds the pair). */
+.dialog .prose :global(.doc-panel),
+.dialog .prose :global(.author-panel) {
+  background-color: var(--dialog-page-bg);
+  -webkit-backdrop-filter: var(--dialog-page-filter);
+  backdrop-filter: var(--dialog-page-filter);
+}
+/* #endregion reading-panel */
+
+/* A record's status line, drawn as a reading (docLayout.ts, statusReading). */
+.prose :global(.doc-status) {
+  margin: var(--space-3) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--readout-size);
+  font-weight: var(--readout-weight);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.prose :global(.doc-status) > div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.prose :global(.doc-status) dt {
+  color: var(--color-accent);
+}
+
+.prose :global(.doc-status) dd {
+  margin: 0;
+  color: var(--color-heading);
+}

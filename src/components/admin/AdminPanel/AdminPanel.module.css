@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the Admin tab's workbench: the title, the bench and its columns, the drawer and its rail, the
+ *            crumbs and the loading card.
+ * Does not:  Style a card's insides (each card and card.module.css do) or the stat strip (stat-strip.module.css).
+ * Used by:   AdminPanel.tsx.
+ */
 .wrap {
   display: flex;
   flex-direction: column;

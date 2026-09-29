@@ -52,6 +52,13 @@ describe('the ribbon ground', () => {
     expect(layer).toMatch(/contain:\s*strict/);
   });
 
+  it('is part of the page, not the window: it scrolls away with the words (ADR-081, the ground is part of the page)', () => {
+    const layer = rules(sheet).find(([selector]) => selector === '.layer')?.[1] ?? '';
+    expect(layer).toMatch(/position:\s*absolute/);
+    expect(layer).not.toMatch(/position:\s*fixed/);
+    expect(sheet).not.toMatch(/position:\s*(fixed|sticky)/);
+  });
+
   it('fetches nothing: every url in it is one of its own gradients or filters', () => {
     for (const url of (component + sheet).matchAll(/url\(([^)]*)\)/g)) {
       expect(url[1]).toMatch(/^#\$\{own\}-/);

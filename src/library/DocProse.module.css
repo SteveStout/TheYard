@@ -1,0 +1,208 @@
+/**
+ * Does:      Styles a document's prose: headings with the title's gold underline, paragraphs and lists, code,
+ *            links, the no-sideways-scroll rules, tables in their own scroll box, child records and pictures.
+ * Does not:  Style the window, the swatches, the reading panels or the Author page (each has its own sheet beside
+ *            this one), or hold a colour of its own.
+ * Used by:   DocDialog.tsx.
+ */
+/* Markdown prose, kept consistent with the app's tokens. */
+.prose {
+  font-size: var(--text-md);
+  line-height: 1.65;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+  margin: var(--space-6) 0 var(--space-3);
+  line-height: 1.25;
+}
+
+/* A document's title wears the page title's gold underline, as Inventory, Admin and
+   Account do, and its sections the Admin tab's trim: one look, 2026-09-21. Bold, as those
+   titles and the Admin tab's section headings are (measured 2026-09-22: 700 there, 600 here). */
+.prose h1,
+.prose h2 {
+  font-weight: var(--weight-bold);
+}
+
+.prose h1 {
+  display: inline-block;
+  font-size: var(--text-2xl);
+  margin-top: 0;
+  padding-bottom: var(--space-1);
+  border-bottom: var(--rule-gold);
+}
+
+.prose h2 {
+  font-size: var(--text-xl);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid transparent;
+  background:
+    linear-gradient(var(--color-gold), var(--color-gold)) left bottom / 34px 2px no-repeat,
+    linear-gradient(var(--color-green-dark), var(--color-green-dark)) left bottom / 100% 2px
+      no-repeat;
+  background-origin: border-box;
+}
+
+.prose h3 {
+  font-size: var(--text-lg);
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 var(--space-3);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: var(--space-6);
+}
+
+.prose li {
+  margin-bottom: var(--space-1);
+}
+
+/* #region no-sideways-scroll */
+/* A document never scrolls sideways (Steve, 2026-09-22: "the readme has this weird
+   left to right scrolling ... it shouldn't scroll left right on mobile"). Measured at
+   375 on the live site: the README's body was 375 wide and scrolled to 460, and what
+   pushed it was not a code block, which scrolls inside itself, but the long unbroken
+   tokens inline code carries in prose and in lists, a file path like
+   api/TheYard.Infrastructure/SyntheticVehicleSource.cs at 396 px in a 306 px column.
+   A word that cannot fit now breaks instead of widening the document; a table too
+   wide for a phone scrolls inside its own box rather than taking the page with it.
+   `anywhere` rather than `break-word` so the break also shrinks the box's own
+   minimum, which is what a grid column measures. */
+.prose,
+.prose p,
+.prose li,
+.prose a,
+.prose code {
+  overflow-wrap: anywhere;
+}
+
+/* A table's cells wrap between words and never inside one (the tweaks pass, A1:
+   "Resource" broke as "Resou rce" on a phone); the table sits in its own
+   scroller (markdown.ts wraps it), so a phone scrolls it inside the panel. A link
+   in a cell is words too (the self-review of 25 September); code in a cell is an
+   identifier and keeps breaking anywhere, as the .mono cells on the Admin tab do. */
+.prose td,
+.prose th,
+.prose td a,
+.prose th a {
+  overflow-wrap: normal;
+}
+/* #endregion no-sideways-scroll */
+
+.prose code {
+  font-family: var(--font-code);
+  font-size: 0.9em;
+  /* Darker than the prose: code sits on a gray ground, not on white (ADR: Code that reads like code). */
+  color: var(--color-code-text);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-1);
+}
+
+.prose pre {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin: 0 0 var(--space-4);
+}
+
+.prose pre code {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.prose a {
+  color: var(--color-accent);
+}
+
+.prose strong {
+  font-weight: var(--weight-semibold);
+}
+
+/* #region doc-tables */
+/* A document's table (the tweaks pass, A1, and Steve's correction the same
+   morning: "as much as possible we want to eliminate horizontal scrolling ...
+   especially on desktop"). Words wrap between themselves and never inside one,
+   every column wraps, so a table is as wide as its panel and no wider; only a
+   right-aligned number stays on one line. The scroller markdown.ts puts round
+   it is a last resort for a phone and a table of long unbroken names. The
+   header is a 2 px rule with small capitals over it and the rows are parted by
+   a hairline, where it was a grey block over a grid of borders. 1.0.3.23 kept
+   the first column on one line, and a record whose first column is sentences
+   ran off the side of the dialog. */
+.prose :global(.table-scroll) {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0 0 var(--space-4);
+}
+
+.prose :global(.table-scroll):focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.prose th,
+.prose td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--color-mark-rule);
+  vertical-align: top;
+}
+
+.prose th {
+  background: none;
+  border-bottom: 2px solid var(--color-mark-axis);
+  color: var(--color-mark-axis);
+  font-size: var(--readout-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.prose td[align='right'],
+.prose th[align='right'] {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.prose tr:last-child td {
+  border-bottom: none;
+}
+/* #endregion doc-tables */
+
+/* Child records sit indented under their parent entry. */
+.subItem {
+  padding-left: calc(var(--space-3) * 2.5);
+}
+
+/* height: auto keeps the width and height a picture's address gave as its
+   shape, so the room it takes is held before it arrives. */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin: 0 0 var(--space-3);
+}

@@ -1,3 +1,8 @@
+/**
+ * Does:      Styles the tests card's headline and its verdict marks, a tick or a cross in a status disc.
+ * Does not:  Choose passed or failed (the results file does), or style the card itself.
+ * Used by:   TestsCard.tsx.
+ */
 /* #region tests-card */
 
 /* The tests card's verdict marks: a tick in a green disc, a cross in a red one, from the

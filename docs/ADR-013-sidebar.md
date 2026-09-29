@@ -283,7 +283,7 @@ document cannot leave two neighbours the same. Gold there is trim on a white car
 near it, which is the job the style page gives it; the panels keep the dark green left edge and the
 dark green rule with its gold tick.
 
-```live path=src/library/DocDialog.module.css region=author-alternation
+```live path=src/library/AuthorPage.module.css region=author-alternation
 ```
 
 The browser suite opens the page from the rail and from the phone's drawer, counts the three

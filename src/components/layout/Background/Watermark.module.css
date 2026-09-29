@@ -1,15 +1,36 @@
-/* Fixed behind the page's content, never in front of it, and deaf to the
-   pointer. The strength is one token, and colors.test.ts holds every text
-   colour against the darkest stroke of this drawing at that strength, which
-   is the worst thing a word can find behind it (ADR: The glass look). */
+/**
+ * Does:      Styles the watermark: the dotted rows at the top of the page, behind its content, at one design token's strength.
+ * Does not:  Draw in front of the content, answer the pointer, or animate.
+ * Used by:   Watermark.tsx.
+ */
+/* At the top of the page and part of it, as the ribbons are (ADR-081, the
+   ground is part of the page): behind the page's content, never in front of
+   it, and deaf to the pointer. The strength is one design token, and
+   colors.test.ts holds every text colour against the darkest stroke of this
+   drawing at that strength, which is the worst thing a word can find behind
+   it (ADR: The glass look). */
 .watermark {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
   z-index: var(--layer-ground);
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100lvh;
   opacity: var(--watermark-opacity);
   pointer-events: none;
+}
+
+/* The page column starts at the rail; the drawing starts at the window's edge, as it did. */
+:global([data-rail='open']) .watermark {
+  left: calc(-1 * var(--rail-width));
+  width: calc(100% + var(--rail-width));
+}
+
+:global([data-rail='collapsed']) .watermark {
+  left: calc(-1 * var(--rail-width-collapsed));
+  width: calc(100% + var(--rail-width-collapsed));
 }
 
 /* The rows are the drawing's one ink (the rings came out on 21 September and the

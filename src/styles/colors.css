@@ -1,8 +1,15 @@
+/**
+ * Does:      Declares every colour the site uses as a design token, written once: the palette, the roles, the
+ *            components.
+ * Does not:  Style any element; it declares design tokens and nothing else.
+ * Used by:   main.tsx, styleSheet.ts.
+ */
+/* #region the-opening */
 /*
  * Colors: every colour the site uses, written once. The five style sheets
- * (colors, sizes, typography, effects, base) are read together: a token in
+ * (colors, sizes, typography, effects, base) are read together: a design token in
  * one may use another's. A component never writes a colour of its own; it
- * writes var(--the-token), and StyleRulesTests fails the build when one does.
+ * writes var(--the-design-token), and StyleRulesTests fails the build when one does.
  *
  * The file reads top to bottom in three tiers:
  *
@@ -11,23 +18,24 @@
  *                      theme, the chart marks.
  *   2. The roles.      What a value is for: --color-text, --color-accent, the
  *                      status colours. A role that owns its colour writes a
- *                      hex; a role that borrows one writes var(--the-token).
+ *                      hex; a role that borrows one writes var(--the-design-token).
  *   3. The components. The side rail and the header: each a var() of a role,
  *                      so changing a palette value changes every component
  *                      that uses it.
  *
- * Never write the same hex twice. If a token needs another token's colour,
- * write var(--that-token).
+ * Never write the same hex twice. If a design token needs another's colour,
+ * write var(--that-design-token).
  *
  * Why each colour was chosen is in ADR-016 (the palette) and ADR-081 (the
- * glass look). docs/COLOR-STYLE.md shows every colour token as a live swatch.
+ * glass look). docs/COLOR-STYLE.md shows every colour design token as a live swatch.
  */
+/* #endregion the-opening */
 :root {
   /* #region palette */
   /* Urban slate, the five colours as Figma prints them (ADR-016):
      #E9E6E7 light gray, #5E5653 brown-gray, #7B7F8A slate gray,
      #AB978C taupe, #6B7C98 slate blue. Two are kept as printed because other
-     tokens are built from them: the brown-gray tints every shadow and the
+     design tokens are built from them: the brown-gray tints every shadow and the
      scrim, and the slate gray is the third chart series and the rail's icons.
      White is written once too. */
   --palette-white: #ffffff;

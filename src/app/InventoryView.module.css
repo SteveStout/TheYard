@@ -1,0 +1,150 @@
+/**
+ * Does:      Styles the inventory page: its title with the gold underline, the count, the loading and error notices,
+ *            the stale banner, and Load more with its waiting state.
+ * Does not:  Style the frame around it (App.module.css does) or the grid and cards (InventoryGrid and VehicleCard have
+ *            their own sheets), or hold a colour of its own.
+ * Used by:   InventoryView.tsx.
+ */
+.listHeader {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+/* A page's title, with the gold underline: trim, on a heading that is read
+   in the heading colour, so the gold carries no meaning of its own. */
+.listTitle {
+  margin: 0;
+  padding-bottom: var(--space-1);
+  border-bottom: var(--rule-gold);
+  font-size: var(--text-2xl);
+  /* Bold, as the Admin and Account titles are: one page title across the site (one look, 2026-09-21). */
+  font-weight: var(--weight-bold);
+  color: var(--color-heading);
+}
+
+.listCount {
+  color: var(--color-text);
+}
+
+/* While the inventory loads the notice holds the height the grid will take
+   (1.0.3.7): with a one-line notice the footer sat on the first screen and fell
+   off it when the cards arrived, a layout shift of 0.10 to 0.81 measured at
+   1280 and 1440 on 1.0.3.4. */
+.loadingInventory {
+  min-height: var(--inventory-loading-height);
+  justify-content: center;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.noticeTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.retry {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-5);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border: 0;
+  border-radius: var(--radius-full);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.retry:hover {
+  background: var(--color-accent-hover);
+}
+
+.retry:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.staleBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.staleRetry {
+  appearance: none;
+  background: none;
+  border: 1.5px solid currentColor;
+  color: inherit;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.staleRetry:focus-visible {
+  outline: var(--focus-ring-warning);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.loadMoreRow {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}
+
+.loadMore {
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-6);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border: var(--border-accent);
+  box-shadow: var(--ring-gold);
+  border-radius: var(--radius-full);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.loadMore:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+/* Waiting is said with the colours of a thing that is not pressable, never
+   with an opacity: an opacity fades the words with the button. */
+.loadMore:disabled {
+  background: var(--color-neutral-soft);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-muted);
+  box-shadow: none;
+  cursor: default;
+}
+
+.loadMore:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}

@@ -1,3 +1,8 @@
+/**
+ * Does:      Holds a counting number's box at the finished figure's width, so nothing moves while it counts.
+ * Does not:  Count (CountUp.tsx does) or style the figure's type.
+ * Used by:   CountUp.tsx.
+ */
 /* The finished figure holds the box, unseen, in the same cell as the moving
    one, so the width never changes while it counts (1.0.3.7's rule). */
 .count {

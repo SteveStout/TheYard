@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles an auction's countdown: the dot and the words for upcoming, live and ended, on a card and over a
+ *            photo.
+ * Does not:  Count the time (AuctionCountdown.tsx and the shared clock do).
+ * Used by:   AuctionCountdown.tsx.
+ */
 .countdown {
   display: inline-flex;
   align-items: center;

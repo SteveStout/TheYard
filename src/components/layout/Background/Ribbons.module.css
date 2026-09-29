@@ -1,8 +1,16 @@
-/* The ribbons (ADR: The glass look, the addendum on the ribbon ground): fixed
-   behind the page, deaf to the pointer, from the rail's edge (its width token,
-   its collapsed width, or nothing when it is the drawer). */
+/**
+ * Does:      Styles the ribbon ground: its layer at the top of the page, the drawing clear of the rail, and each ribbon,
+ *            strand, flare and spark's paint.
+ * Does not:  Hold the drawing's shapes (src/lib/ribbons.ts does), give a gradient or filter an id, or animate.
+ * Used by:   Ribbons.tsx, ribbons.test.ts.
+ */
+/* The ribbons (ADR: The glass look, the addendum on the ribbon ground): at the
+   top of the page and part of it, so they scroll away with the words like a
+   letterhead (ADR-081, the ground is part of the page); behind the page, deaf
+   to the pointer, from the rail's edge. */
+/* #region ground-layer */
 .layer {
-  position: fixed;
+  position: absolute;
   top: 0;
   right: 0;
   left: 0;
@@ -18,11 +26,20 @@
   overflow: hidden;
   pointer-events: none;
   background: var(--ribbon-tints);
-  /* Its own layer, painted once: scrolling the page moves nothing over it that makes
-     the browser draw the blurred ribbons again. */
+  /* Its own layer, painted once. */
   contain: strict;
   transform: translateZ(0);
 }
+
+/* The page column starts at the rail; the layer starts at the window's edge, as it did. */
+:global([data-rail='open']) .layer {
+  left: calc(-1 * var(--rail-width));
+}
+
+:global([data-rail='collapsed']) .layer {
+  left: calc(-1 * var(--rail-width-collapsed));
+}
+/* #endregion ground-layer */
 
 .drawing {
   position: absolute;

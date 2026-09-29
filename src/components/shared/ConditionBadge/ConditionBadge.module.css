@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the condition badge: its pill, its grade, and the excellent, average and rough tones in two
+ *            sizes.
+ * Does not:  Grade a vehicle (the data does).
+ * Used by:   ConditionBadge.tsx.
+ */
 .badge {
   display: inline-flex;
   align-items: center;

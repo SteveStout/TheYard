@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the Admin table: its box, its sortable headers, its day rows, its stacked form on a narrow card,
+ *            and a warning or error row.
+ * Does not:  Choose what a row says or its tone (the card that fills the table does), or hold a colour of its own.
+ * Used by:   DataTable.tsx, KeptLogsCard.tsx.
+ */
 /* The Admin table: its box, its sortable headers, its day rows, its stacked form on a narrow
    card, and the tone of a warning or an error row (ADR: One folder per component). */
 

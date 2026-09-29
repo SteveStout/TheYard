@@ -1,3 +1,9 @@
+/**
+ * Does:      Styles the bid panel: the amount input, the bid and Buy now buttons, the high bidder and outbid lines,
+ *            and the ended box.
+ * Does not:  Take a bid (the API does) or draw the panel's glass (panels.css does).
+ * Used by:   BidPanel.tsx.
+ */
 /* The shared glass with its dark green rule and brackets (the operator's look). */
 .panel {
   padding: var(--space-5);
