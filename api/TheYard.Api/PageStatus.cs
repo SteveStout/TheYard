@@ -97,6 +97,7 @@ public static class ServedAddresses
         var addresses = new List<ServedAddress>
         {
             new("/api/reference", "API reference", "page"),
+            new("/about", "About Steven Stout", "page"),
             new("/api/version", "The build this container was made from", "api"),
             new("/api/health", "Health, both stores", "api"),
             new("/api/vehicles?limit=1", "The listing", "api"),

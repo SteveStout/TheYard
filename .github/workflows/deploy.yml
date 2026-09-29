@@ -138,6 +138,7 @@ jobs:
           build-args: |
             APP_VERSION=${{ env.APP_VERSION }}
             APP_COMMIT=${{ env.APP_COMMIT }}
+            GOOGLE_SITE_VERIFICATION=${{ vars.GOOGLE_SITE_VERIFICATION }}
           cache-from: type=gha,scope=theyard
           provenance: false
       # #endregion build-cache
@@ -311,6 +312,7 @@ jobs:
           build-args: |
             APP_VERSION=${{ env.APP_VERSION }}
             APP_COMMIT=${{ env.APP_COMMIT }}
+            GOOGLE_SITE_VERIFICATION=${{ vars.GOOGLE_SITE_VERIFICATION }}
           cache-from: type=gha,scope=theyard
           cache-to: type=gha,scope=theyard,mode=max
           provenance: false

@@ -58,6 +58,14 @@ public static class DocsEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
         #endregion diagram-page
 
+        #region about-page
+        // Who built this, on its own page for the reader who searched his name (AboutPage.cs,
+        // ADR-020's pattern). Outside /api because it is a page a search engine lists, not a
+        // resource; a literal route wins over the app's fallback. Each container names itself
+        // from Site:Url, and without one (a developer's machine, the test host) from the request.
+        app.MapGet("/about", About).ExcludeFromDescription();
+        #endregion about-page
+
         app.MapGet("/api/docs/bicep", Bicep)
             .WithName("GetBicep")
             .WithTags("Documents")
@@ -99,6 +107,13 @@ public static class DocsEndpoints
                 DiagramPage.Render(diagram.Title, File.ReadAllText(Path.Combine(paths.RepoRoot, diagram.File)), diagram.File),
                 "text/html; charset=utf-8")
             : TypedResults.Problem(detail: "No diagram has that name.", statusCode: 404, title: "No such diagram");
+
+    private static ContentHttpResult About(HttpContext http, IConfiguration configuration)
+    {
+        string? configured = configuration["Site:Url"];
+        string site = string.IsNullOrWhiteSpace(configured) ? $"{http.Request.Scheme}://{http.Request.Host}" : configured;
+        return TypedResults.Content(AboutPage.Render(site), "text/html; charset=utf-8");
+    }
 
     private static ContentHttpResult Bicep(HostPaths paths) =>
         TypedResults.Text("# infra/main.bicep" + "\n\nWhat runs, as code: one App Service plan and two web apps, which are the module below it, with Azure Front Door and the origin lock behind a parameter that stays off while the subscription refuses Front Door. Deployed in incremental mode only; the Hosting overview explains both.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "main.bicep")) + "\n```\n\n## infra/appservice.bicep\n\nThe plan and the two sites, what differs between them, and every setting they carry.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "appservice.bicep")) + "\n```\n", "text/markdown");

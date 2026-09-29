@@ -226,6 +226,10 @@ public class PublicFaceTests
     [InlineData("name=\"twitter:card\"")]
     [InlineData("rel=\"canonical\"")]
     [InlineData("application/ld+json")]
+    // The author as a Person of his own, the same node /about carries (AboutPage.cs), and
+    // the slot the Dockerfile writes Search Console's tag into when the variable is set.
+    [InlineData("\"@type\": \"Person\"")]
+    [InlineData("<!-- google-site-verification -->")]
     public void The_page_head_says_what_this_is(string expected) =>
         Assert.Contains(expected, File.ReadAllText(Path.Combine(Repo.Root(), "index.html")), StringComparison.Ordinal);
 
@@ -256,6 +260,22 @@ public class PublicFaceTests
         Assert.Contains("Disallow: /api/admin/selftest/", robots, StringComparison.Ordinal);
         Assert.Contains("<loc>https://theyard.stevenstout.biz/</loc>", sitemap, StringComparison.Ordinal);
         Assert.DoesNotContain("selftest", sitemap, StringComparison.Ordinal);
+    }
+    [Fact]
+    public void The_sitemap_lists_the_page_about_him_with_the_day_the_image_was_built()
+    {
+        string sitemap = File.ReadAllText(Path.Combine(Repo.Root(), "public", "sitemap.xml"));
+        Match about = Regex.Match(sitemap, @"<url>\s*<loc>https://theyard\.stevenstout\.biz/about</loc>(.*?)</url>", RegexOptions.Singleline);
+
+        Assert.True(about.Success, "public/sitemap.xml should list /about");
+        // The placeholder is the build's: the Dockerfile writes the day in its place (DockerBuildInputsTests).
+        Assert.Contains("<lastmod>__BUILD_DATE__</lastmod>", about.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Contains("<priority>0.9</priority>", about.Groups[1].Value, StringComparison.Ordinal);
+        // The JSON-LD in the head names no street and no postcode, like the page it points at.
+        string head = File.ReadAllText(Path.Combine(Repo.Root(), "index.html"));
+        Assert.Contains("\"addressLocality\": \"Saint Charles\"", head, StringComparison.Ordinal);
+        Assert.DoesNotContain("streetAddress", head, StringComparison.Ordinal);
+        Assert.DoesNotContain("postalCode", head, StringComparison.Ordinal);
     }
     // #endregion head
 

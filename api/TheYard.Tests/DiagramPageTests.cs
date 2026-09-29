@@ -1,4 +1,6 @@
 using System.Net;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TheYard.Api;
 
@@ -67,6 +69,73 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         Assert.Contains("<title>TheYard&#39;s database</title>", page);
         Assert.DoesNotContain("<title>TheYard's database</title>", page);
     }
+
+    // #region about-page
+    /// <summary>
+    /// /about, the page a search for his name should find (AboutPage.cs), on this
+    /// class's pattern: one small document, served by the API, its own head for a
+    /// search engine and an unfurler, and a Person in its structured data that says
+    /// his name, his title, his two profiles and his city, and nothing more.
+    /// </summary>
+    [Fact]
+    public async Task The_about_page_is_served_with_its_own_head_and_a_person_that_says_no_more_than_it_should()
+    {
+        var response = await _client.GetAsync("/about");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+        string body = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains($"<title>{WebUtility.HtmlEncode(AboutPage.Title)}</title>", body);
+        Assert.Contains("<h1>Steven Stout</h1>", body);
+        Assert.Contains("name=\"viewport\"", body);
+        // The test host has no Site:Url, so the page names itself from the request.
+        Assert.Matches("<link rel=\"canonical\" href=\"https?://[^\"]+/about\">", body);
+        foreach (string property in new[] { "og:url", "og:title", "og:description", "og:image" })
+        {
+            Assert.Contains($"property=\"{property}\"", body);
+        }
+        Assert.InRange(AboutPage.Description.Length, 50, 160);
+        Assert.Contains("href=\"/api/docs/resume\"", body);
+        foreach (string profile in AboutPage.Profiles)
+        {
+            Assert.Contains($"href=\"{profile}\"", body);
+        }
+
+        // Nothing fetched from another host: no stylesheet, script or font from anywhere else.
+        Assert.DoesNotMatch("<link[^>]+rel=\"stylesheet\"", body);
+        Assert.DoesNotMatch("<script[^>]+src=", body);
+        Assert.DoesNotContain("fonts.g", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("\u2014", body, StringComparison.Ordinal);
+
+        // The person: name, title, the two profiles, the city. No street, no postcode, no
+        // email and no phone number, in the data or on the page.
+        Match data = Regex.Match(body, "<script type=\"application/ld\\+json\">(.*?)</script>", RegexOptions.Singleline);
+        Assert.True(data.Success, "/about should carry its structured data");
+        using var person = JsonDocument.Parse(data.Groups[1].Value);
+        JsonElement root = person.RootElement;
+        Assert.Equal("Person", root.GetProperty("@type").GetString());
+        Assert.Equal("Steven Stout", root.GetProperty("name").GetString());
+        Assert.Equal(AboutPage.JobTitle, root.GetProperty("jobTitle").GetString());
+        Assert.Equal(AboutPage.Profiles, root.GetProperty("sameAs").EnumerateArray().Select(item => item.GetString()!).ToArray());
+        JsonElement address = root.GetProperty("address");
+        Assert.Equal("Saint Charles", address.GetProperty("addressLocality").GetString());
+        Assert.Equal(new[] { "@type", "addressLocality", "addressRegion", "addressCountry" }, address.EnumerateObject().Select(field => field.Name).ToArray());
+        Assert.False(root.TryGetProperty("email", out _) || root.TryGetProperty("telephone", out _) || root.TryGetProperty("birthDate", out _));
+        string text = Regex.Replace(body, "\"@(context|type|id)\"", "");
+        Assert.DoesNotMatch(@"[\w.+-]+@[\w-]+\.[\w.]+", text);
+        Assert.DoesNotMatch(@"\(?\b\d{3}\)?[ .-]\d{3}[ .-]\d{4}\b", body);
+    }
+
+    [Fact]
+    public void Each_site_names_itself_on_the_about_page()
+    {
+        string page = AboutPage.Render("https://theyard-cosmos.stevenstout.biz/");
+
+        Assert.Contains("<link rel=\"canonical\" href=\"https://theyard-cosmos.stevenstout.biz/about\">", page);
+        Assert.Contains("property=\"og:url\" content=\"https://theyard-cosmos.stevenstout.biz/about\"", page);
+        Assert.Contains("\"url\":\"https://theyard-cosmos.stevenstout.biz/\"", page);
+    }
+    // #endregion about-page
     // #endregion page-tests
 
     // #region as-drawn

@@ -44,7 +44,10 @@ async function everyPage(
         await tab.goto(next.address, { waitUntil: 'networkidle' });
         // An app view has settled when its announcement names it; a page of its own has drawn
         // itself when its script has run (the API reference renders after its script loads).
-        if (!next.address.startsWith('/api/')) {
+        // /about is a page the API renders (AboutPage.cs), not a view of the app, so it is read
+        // the way the API reference is: it has drawn when its panel is on the page.
+        const served = next.address.startsWith('/api/') || next.address === '/about';
+        if (!served) {
           await expect(tab.getByTestId('view-announcement')).not.toHaveText(/Loading/, {
             timeout: 60_000,
           });

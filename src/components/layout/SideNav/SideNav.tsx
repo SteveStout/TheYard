@@ -297,6 +297,9 @@ function NavContent({
               <p className={iconsOnly ? styles.srOnly : styles.groupTitle}>{group.label}</p>
               {sectionsIn(group.key).map(({ menu: variant }) => (
                 <SectionShell key={variant} label={MENUS[variant].label} iconsOnly={iconsOnly}>
+                  {MENUS[variant].lead?.map((link) => (
+                    <LinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
+                  ))}
                   {MENUS[variant].items.map(({ key, sub }) => (
                     <button
                       key={key}

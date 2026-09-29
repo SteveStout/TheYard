@@ -133,6 +133,29 @@ test.describe('the docked rail', () => {
     expect(elsewhere).toEqual([]);
   });
 
+  test('the About section opens with the page about him, in a new tab, and it answers', async ({
+    page,
+  }) => {
+    await openTheYard(page);
+    const rail = page.getByTestId('side-rail');
+    await openSection(rail, 'About');
+    // The first row of the section is the served page (api/TheYard.Api/AboutPage.cs), before the documents.
+    const about = rail.getByRole('link', { name: 'About Steven Stout', exact: true });
+    await expect(about).toHaveAttribute('href', '/about');
+    await expect(about).toHaveAttribute('target', '_blank');
+    const first = await about.evaluate((row) => {
+      const section = row.parentElement;
+      return section?.querySelector('a, button') === row;
+    });
+    expect(first).toBe(true);
+
+    const served = await page.request.get('/about');
+    expect(served.ok()).toBe(true);
+    const html = await served.text();
+    expect(html).toContain('<h1>Steven Stout</h1>');
+    expect(html).toContain('"@type":"Person"');
+  });
+
   test('the rail collapses to icons, keeps its names, and remembers the choice', async ({
     page,
   }) => {

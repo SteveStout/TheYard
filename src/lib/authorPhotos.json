@@ -66,6 +66,21 @@
     "sizes": "(max-width: 767.98px) 92vw, 480px"
   },
   {
+    "name": "house-plants-under-grow-light",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 1440,
+    "sizes": "(max-width: 767.98px) 92vw, 480px"
+  },
+  {
+    "name": "pothos-down-kitchen-shelves",
+    "widths": [480, 960, 1600],
+    "width": 1600,
+    "height": 2380,
+    "sizes": "(max-width: 767.98px) 92vw, 480px",
+    "narrowBecause": "a phone photograph cropped to the vine and the shelves: 1600 is the widest cut the crop gives"
+  },
+  {
     "name": "couple-under-willow",
     "widths": [480, 960, 1600],
     "width": 1600,

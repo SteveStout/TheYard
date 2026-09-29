@@ -54,6 +54,8 @@ function preloadTheFonts(): Plugin {
 // server needs the same proxy or `npm run preview` breaks.
 const apiProxy = {
   '/api': 'http://localhost:5210',
+  // The page about him is the API's too (api/TheYard.Api/AboutPage.cs), outside /api.
+  '/about': 'http://localhost:5210',
 };
 
 export default defineConfig({

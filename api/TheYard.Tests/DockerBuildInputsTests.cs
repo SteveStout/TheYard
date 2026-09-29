@@ -71,4 +71,25 @@ public class DockerBuildInputsTests
             Assert.True(File.Exists(Path.Combine(root, name)), $"public/{name} is what serves /{name}");
         }
     }
+
+    [Fact]
+    public void The_image_build_stamps_the_sitemap_and_writes_the_verification_tag_only_when_it_is_given()
+    {
+        string root = Repo.Root();
+        string dockerfile = File.ReadAllText(Path.Combine(root, "Dockerfile"));
+        string deploy = File.ReadAllText(Path.Combine(root, ".github", "workflows", "deploy.yml"));
+
+        // The build's day replaces the sitemap's placeholder, and a placeholder left behind stops the build.
+        Assert.Contains("s/__BUILD_DATE__/$(date -u +%Y-%m-%d)/", dockerfile, StringComparison.Ordinal);
+        Assert.Contains("if grep -q \"__BUILD_DATE__\" dist/sitemap.xml; then", dockerfile, StringComparison.Ordinal);
+        // The tag is written in place of index.html's comment, only when the variable is set, and only if it is a token.
+        Assert.Contains("ARG GOOGLE_SITE_VERIFICATION=", dockerfile, StringComparison.Ordinal);
+        Assert.Contains("if [ -n \"${GOOGLE_SITE_VERIFICATION}\" ]", dockerfile, StringComparison.Ordinal);
+        Assert.Contains("*[!A-Za-z0-9_-]*)", dockerfile, StringComparison.Ordinal);
+        Assert.Contains("s|<!-- google-site-verification -->|", dockerfile, StringComparison.Ordinal);
+        // A repository variable, not a secret: the tag is public by design. Every build of the image passes it,
+        // the cache export included, so the cached layers match the pushed ones.
+        Assert.Equal(2, Regex.Matches(deploy, @"GOOGLE_SITE_VERIFICATION=\$\{\{ vars\.GOOGLE_SITE_VERIFICATION \}\}").Count);
+        Assert.DoesNotContain("secrets.GOOGLE_SITE_VERIFICATION", deploy, StringComparison.Ordinal);
+    }
 }

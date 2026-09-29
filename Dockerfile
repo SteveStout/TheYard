@@ -27,6 +27,28 @@ COPY public ./public
 
 # Build the production bundle that will be served by the ASP.NET host.
 RUN npm run build
+
+# #region stamp-the-build
+# Two things the built site learns only here. The sitemap's /about entry takes
+# the day this image was built as its lastmod, in place of the placeholder
+# public/sitemap.xml carries; APP_VERSION is declared first so every version
+# runs this step again rather than keeping a cached day. And Search Console's
+# HTML-tag check: GOOGLE_SITE_VERIFICATION is a repository variable, public by
+# design, and when it is set its meta tag replaces the comment index.html keeps
+# for it. A token is letters, digits, underscores and hyphens and nothing else,
+# so anything else stops the build rather than reaching the page.
+ARG APP_VERSION=dev
+ARG GOOGLE_SITE_VERIFICATION=
+RUN set -e; \
+    sed -i "s/__BUILD_DATE__/$(date -u +%Y-%m-%d)/" dist/sitemap.xml; \
+    if grep -q "__BUILD_DATE__" dist/sitemap.xml; then echo "the sitemap kept its placeholder" >&2; exit 1; fi; \
+    if [ -n "${GOOGLE_SITE_VERIFICATION}" ]; then \
+      case "${GOOGLE_SITE_VERIFICATION}" in *[!A-Za-z0-9_-]*) echo "GOOGLE_SITE_VERIFICATION holds a character no token has" >&2; exit 1;; esac; \
+      sed -i "s|<!-- google-site-verification -->|<meta name=\"google-site-verification\" content=\"${GOOGLE_SITE_VERIFICATION}\" />|" dist/index.html; \
+      grep -q "name=\"google-site-verification\"" dist/index.html; \
+    fi; \
+    echo "stamped: $(grep -o '<lastmod>[^<]*</lastmod>' dist/sitemap.xml) for ${APP_VERSION}"
+# #endregion stamp-the-build
 # #endregion frontend-build
 
 # #region api-publish

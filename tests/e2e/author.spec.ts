@@ -48,10 +48,10 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   }).toPass({ timeout: 20_000 });
   await expect(doc.locator('a[href^="mailto:"], form, input')).toHaveCount(0);
 
-  // All ten pictures are on the page, in their places: the vineyard beside the words, the lake and the
-  // Pantheon in their blocks, the stream after History and the bridge after Games each on its own row,
-  // the game's art, the grill and the doors in their blocks, the two rabbit pictures
-  // side by side, and the photographer's credit under the panels.
+  // Every picture is on the page, in its place: the vineyard beside the words, the lake and the
+  // Pantheon in their blocks, the stream after History and the bridge after Games each on its own
+  // row, the game's art, the grill and the doors in their blocks, the two house plant pictures and
+  // the two rabbit pictures side by side, and the photographer's credit under the panels.
   await expect(async () => {
     const places = await doc.locator('.author-photo').evaluateAll((figures) =>
       figures.map((figure) => ({
@@ -71,6 +71,8 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       { name: 'grill-flames-on-driveway', hero: false, opens: false, paired: false },
       { name: 'interior-door-in-new-frame', hero: false, opens: false, paired: false },
       { name: 'couple-under-willow', hero: false, opens: false, paired: false },
+      { name: 'house-plants-under-grow-light', hero: false, opens: false, paired: true },
+      { name: 'pothos-down-kitchen-shelves', hero: false, opens: false, paired: true },
       { name: 'rabbits-both-lying-on-runner', hero: false, opens: false, paired: true },
       { name: 'rabbits-lop-on-blue-rug', hero: false, opens: false, paired: true },
       { name: 'st-charles-main-street-christmas', hero: false, opens: false, paired: false },
@@ -84,7 +86,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   // Every photograph is served from this site, in the one frame, with words for it and its box reserved,
   // and a phone is never handed a file wider than 960.
   const photos = doc.locator('.author-photo img');
-  await expect(photos).toHaveCount(13);
+  await expect(photos).toHaveCount(15);
   const count = await photos.count();
   for (let index = 0; index < count; index++) {
     // Read as one retried step: the drawer that opened this document lets go of it as it closes, and

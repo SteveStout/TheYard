@@ -4,12 +4,21 @@
   the interesting ones can be listed here rather than hidden behind a router
   that a crawler cannot drive. The documents are served as markdown from the
   API and are worth listing for the same reason: they are the substance.
+  /about is who built it, for a reader who searched his name. Its lastmod is
+  the day the image was built: the Dockerfile writes it in place of the
+  placeholder, so this file never carries a date somebody typed.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://theyard.stevenstout.biz/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/about</loc>
+    <lastmod>__BUILD_DATE__</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://theyard.stevenstout.biz/?view=admin</loc>

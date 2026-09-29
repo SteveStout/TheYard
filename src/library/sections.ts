@@ -1,5 +1,5 @@
 /**
- * Does:      Says what each sidebar section holds: its documents in order (MENUS), and the rows that open in a new tab (LINKS, API_REFERENCE, DIAGRAMS).
+ * Does:      Says what each sidebar section holds: its documents in order (MENUS), and the rows that open in a new tab (LINKS, ABOUT_PAGE, API_REFERENCE, DIAGRAMS).
  * Does not:  Order the sections or pick their icons (src/lib/siteMap.ts does), or hold a document itself (records.ts and pages.ts do).
  * Used by:   SideNav.tsx, Landing.tsx, Header.tsx.
  */
@@ -19,6 +19,9 @@ export const LINKS = {
   resume: { label: "Steven's resume (PDF)", href: '/api/docs/resume' },
   repo: { label: 'GitHub repository', href: 'https://github.com/SteveStout/TheYard' },
 } as const;
+
+/** The page about him, served by the API at /about, first in the About section. */
+export const ABOUT_PAGE: MenuLink = { label: 'About Steven Stout', href: '/about' };
 
 // #region api-reference
 /**
@@ -54,10 +57,16 @@ export const DIAGRAMS: readonly MenuLink[] = [
 
 export const MENUS: Record<
   MenuVariant,
-  { label: string; items: MenuEntry[]; links?: readonly MenuLink[] }
+  { label: string; lead?: readonly MenuLink[]; items: MenuEntry[]; links?: readonly MenuLink[] }
 > = {
+  /**
+   * About opens with the page about him (api/TheYard.Api/AboutPage.cs): served by the API
+   * like the diagrams, so it leaves the app in a new tab like every served page, and it is
+   * the first row because it is what a reader who searched his name came for.
+   */
   about: {
     label: 'About',
+    lead: [ABOUT_PAGE],
     items: [{ key: 'readme' }, { key: 'aiDevelopment' }],
   },
   /**

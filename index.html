@@ -76,25 +76,54 @@
       wrote it, in what, and where the source is, and there is a schema that
       says exactly that. Claiming to be an Organization or a Product would be
       more impressive and less true.
+
+      Since 1.0.3.47 the author is a Person node of his own, the same one
+      /about carries (api/TheYard.Api/AboutPage.cs): his name, the resume's
+      title line, the two profiles that are him, and his city. Nothing else
+      about him goes here, and never a street.
     -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareSourceCode",
-        "name": "TheYard",
-        "description": "A used-vehicle auction platform: browse 100,000 listings, inspect a vehicle, and bid against a simulated room.",
-        "url": "https://theyard.stevenstout.biz/",
-        "codeRepository": "https://github.com/SteveStout/TheYard",
-        "programmingLanguage": ["C#", "TypeScript"],
-        "runtimePlatform": [".NET 10", "React 19", "Azure Container Instances", "Azure SQL Database", "Azure Cosmos DB"],
-        "license": "https://github.com/SteveStout/TheYard/blob/main/LICENSE",
-        "author": {
-          "@type": "Person",
-          "name": "Steven Stout",
-          "url": "https://github.com/SteveStout"
-        }
+        "@graph": [
+          {
+            "@type": "Person",
+            "@id": "https://theyard.stevenstout.biz/about#steven-stout",
+            "name": "Steven Stout",
+            "jobTitle": "Lead / Staff .NET Engineer",
+            "url": "https://theyard.stevenstout.biz/",
+            "sameAs": [
+              "https://www.linkedin.com/in/stevenwstout/",
+              "https://github.com/SteveStout/TheYard"
+            ],
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Saint Charles",
+              "addressRegion": "Missouri",
+              "addressCountry": "US"
+            }
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "name": "TheYard",
+            "description": "A used-vehicle auction platform: browse 100,000 listings, inspect a vehicle, and bid against a simulated room.",
+            "url": "https://theyard.stevenstout.biz/",
+            "codeRepository": "https://github.com/SteveStout/TheYard",
+            "programmingLanguage": ["C#", "TypeScript"],
+            "runtimePlatform": [".NET 10", "React 19", "Azure App Service", "Azure SQL Database", "Azure Cosmos DB"],
+            "license": "https://github.com/SteveStout/TheYard/blob/main/LICENSE",
+            "author": { "@id": "https://theyard.stevenstout.biz/about#steven-stout" }
+          }
+        ]
       }
     </script>
+    <!--
+      Search Console's HTML-tag check. The token is a GitHub repository variable,
+      GOOGLE_SITE_VERIFICATION, public by design, passed to the image build, and
+      the Dockerfile writes the meta tag in place of the line below only when it
+      is set; unset, the line stays a comment and nothing is claimed.
+    -->
+    <!-- google-site-verification -->
   </head>
   <body>
     <div id="root"></div>
