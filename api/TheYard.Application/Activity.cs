@@ -18,12 +18,34 @@ namespace TheYard.Application;
 // field for a thing cannot leak it.
 
 /// <summary>One request as the activity feature sees it. The type has no room for anything a person could be named by.</summary>
+/// <param name="At">When the request arrived.</param>
+/// <param name="Visitor">A keyed hash of the address that rotates daily, so one visitor can be counted without being named.</param>
+/// <param name="Network">The address cut to its first three octets.</param>
+/// <param name="Path">The path requested, with no query string.</param>
+/// <param name="Store">The store that served the request.</param>
+/// <param name="Bot">True when the request looked like a bot.</param>
+/// <param name="Source">On a page load, the host of the page that linked here; null otherwise.</param>
 public sealed record ActivityHit(DateTimeOffset At, string Visitor, string Network, string Path, string Store, bool Bot, string? Source = null);
 
 /// <summary>One store's requests in one UTC hour, with the paths it served most, for the graph.</summary>
+/// <param name="Store">The store that served the requests.</param>
+/// <param name="Hour">The start of the UTC hour.</param>
+/// <param name="Requests">How many requests the store served in the hour.</param>
+/// <param name="Bots">How many of those requests looked like bots.</param>
+/// <param name="Paths">The most requested paths in the hour, with a request count for each.</param>
 public sealed record ActivityHour(string Store, DateTimeOffset Hour, int Requests, int Bots, IReadOnlyDictionary<string, int> Paths);
 
 /// <summary>One visitor token on one store on one UTC day, for the table nobody anonymous can read.</summary>
+/// <param name="Store">The store the visitor reached.</param>
+/// <param name="Day">The UTC day as yyyy-MM-dd.</param>
+/// <param name="Visitor">The visitor token, a keyed hash of the address that rotates daily.</param>
+/// <param name="Network">The address cut to its first three octets.</param>
+/// <param name="FirstSeen">The visitor's first request that day.</param>
+/// <param name="LastSeen">The visitor's last request that day.</param>
+/// <param name="Requests">How many requests the visitor made that day.</param>
+/// <param name="Bots">How many of those requests looked like bots.</param>
+/// <param name="Paths">The visitor's most requested paths, with a request count for each.</param>
+/// <param name="Sources">The hosts that linked the visitor here, with a page-load count for each; null when none were kept.</param>
 public sealed record ActivityVisitor(
     string Store,
     string Day,
@@ -42,9 +64,15 @@ public sealed record ActivityVisitor(
 /// row lasts, said by the store that keeps it ("kept in Azure Cosmos DB with no
 /// expiry"); null when the store is down or does not know.
 /// </summary>
+/// <param name="Available">True when the store can keep activity right now.</param>
+/// <param name="Reason">One sentence a page can show saying why activity is or is not kept.</param>
+/// <param name="Retention">How long a kept row lasts, as the store says it; null when the store is down or does not know.</param>
 public sealed record ActivityAvailability(bool Available, string Reason, string? Retention = null);
 
 /// <summary>What keeping activity has cost a store: request units, operations, and the operations that failed.</summary>
+/// <param name="RequestUnits">The request units spent keeping activity.</param>
+/// <param name="Operations">How many store operations keeping activity took.</param>
+/// <param name="Failures">How many of those operations failed.</param>
 public sealed record ActivityCost(double RequestUnits, int Operations, int Failures);
 
 /// <summary>
@@ -181,9 +209,24 @@ public static class ActivityFolding
 }
 
 /// <summary>What one batch adds to one store's hour.</summary>
+/// <param name="Store">The store that served the requests.</param>
+/// <param name="Hour">The start of the UTC hour.</param>
+/// <param name="Requests">How many requests the batch adds to the hour.</param>
+/// <param name="Bots">How many of those requests looked like bots.</param>
+/// <param name="Paths">The batch's most requested paths, with a request count for each.</param>
 public sealed record ActivityHourDelta(string Store, DateTimeOffset Hour, int Requests, int Bots, IReadOnlyList<KeyValuePair<string, int>> Paths);
 
 /// <summary>What one batch adds to one visitor's day on one store.</summary>
+/// <param name="Store">The store the visitor reached.</param>
+/// <param name="Day">The UTC day as yyyy-MM-dd.</param>
+/// <param name="Visitor">The visitor token, a keyed hash of the address that rotates daily.</param>
+/// <param name="Network">The address cut to its first three octets.</param>
+/// <param name="First">The visitor's earliest request in the batch.</param>
+/// <param name="Last">The visitor's latest request in the batch.</param>
+/// <param name="Requests">How many requests the batch adds for the visitor.</param>
+/// <param name="Bots">How many of those requests looked like bots.</param>
+/// <param name="Paths">The visitor's most requested paths in the batch, with a request count for each.</param>
+/// <param name="Sources">The hosts that linked the visitor here in the batch, with a page-load count for each.</param>
 public sealed record ActivityVisitorDelta(
     string Store,
     string Day,

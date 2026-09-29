@@ -19,6 +19,13 @@ namespace TheYard.Api;
 /// gate ran it, so a reader is never shown a number this build did not
 /// produce without being told which one did.</para>
 /// </summary>
+/// <param name="Id">The suite's id in the results file.</param>
+/// <param name="Name">The suite's display name.</param>
+/// <param name="Passed">How many tests passed.</param>
+/// <param name="Failed">How many tests failed.</param>
+/// <param name="Skipped">How many tests were skipped.</param>
+/// <param name="Seconds">How long the suite took, in seconds.</param>
+/// <param name="Carried">The version whose gate ran the suite when this build carried it forward, or null when this build ran it.</param>
 public sealed record TestSuiteCount(
     string Id,
     string Name,
@@ -29,6 +36,13 @@ public sealed record TestSuiteCount(
     string? Carried);
 
 /// <summary>Every suite's counts, and the totals across them.</summary>
+/// <param name="Version">The build version the results file was written for.</param>
+/// <param name="RanAt">When the gate ran, as the results file states it.</param>
+/// <param name="GateSeconds">How long the whole gate took, in seconds.</param>
+/// <param name="Passed">Passed tests across every suite.</param>
+/// <param name="Failed">Failed tests across every suite.</param>
+/// <param name="Skipped">Skipped tests across every suite.</param>
+/// <param name="Suites">Each suite's own counts.</param>
 public sealed record TestSummaryReport(
     string Version,
     string RanAt,

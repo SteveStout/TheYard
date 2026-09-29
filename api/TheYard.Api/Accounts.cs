@@ -6,13 +6,19 @@ using TheYard.Infrastructure;
 namespace TheYard.Api;
 
 /// <summary>What the register and login forms send.</summary>
+/// <param name="Email">The address the account is under; one account per address on each store.</param>
+/// <param name="Password">Eight characters or more; nothing else is required of it.</param>
 public sealed record Credentials(
     [property: Description("The address the account is under; one account per address on each store.")] string? Email,
     [property: Description("Eight characters or more; nothing else is required of it.")] string? Password);
 
 /// <summary>What the operator sends to mint a reset link, and what a visitor sends to use one (ADR: Accounts and per-user bids, addendum).</summary>
+/// <param name="Email">The address of the account the reset link is for.</param>
 public sealed record ResetLinkRequest(string? Email);
 
+/// <summary>What a visitor sends to set a new password with a reset link.</summary>
+/// <param name="Token">The GUID from the reset link; it works once, for an hour.</param>
+/// <param name="Password">The new password, eight characters or more.</param>
 public sealed record ResetRequest(
     [property: Description("The GUID from the reset link; it works once, for an hour.")] string? Token,
     [property: Description("The new password, eight characters or more.")] string? Password);
@@ -22,11 +28,15 @@ public sealed record ResetRequest(
 /// needs to read it, and a shape that carried it would invite somebody to put
 /// it somewhere a script could reach (ADR: Accounts and per-user bids).
 /// </summary>
+/// <param name="SignedIn">False for a visitor with no session on this store; the other two fields are null then.</param>
+/// <param name="Email">The signed-in account's email address, or null for a visitor.</param>
+/// <param name="MemberSinceMs">When the account was created, in milliseconds since the epoch, UTC.</param>
 public sealed record AccountView(
     [property: Description("False for a visitor with no session on this store; the other two fields are null then.")] bool SignedIn,
     string? Email,
     [property: Description("When the account was created, in milliseconds since the epoch, UTC.")] long? MemberSinceMs);
 
+/// <summary>Shared helpers for the account endpoints: the anonymous view, the store-unavailable answer, and plain-language registration errors.</summary>
 public static class Accounts
 {
     public static readonly AccountView Anonymous = new(false, null, null);

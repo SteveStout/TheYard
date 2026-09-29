@@ -3,6 +3,7 @@ using TheYard.Domain;
 
 namespace TheYard.Tests;
 
+/// <summary>Holds the photo gallery: four distinct photos per vehicle, deterministic per id, the vehicle's make preferred case-insensitively, and the FNV-1a hash matching the frontend's.</summary>
 public class PhotoGalleryTests
 {
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<PhotoEntry>> Pools =

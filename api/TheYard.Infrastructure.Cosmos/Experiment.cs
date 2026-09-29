@@ -4,9 +4,21 @@ using Microsoft.Azure.Cosmos;
 namespace TheYard.Infrastructure.Cosmos;
 
 /// <summary>One query of the experiment: what it asked, how far it fanned out, and what it cost.</summary>
+/// <param name="Query">What the query asked, in words.</param>
+/// <param name="Partitions">How far the query fanned out, such as "1 logical" or every physical partition.</param>
+/// <param name="RequestCharge">What the query cost, in request units.</param>
+/// <param name="DurationMs">How long the query took, in milliseconds.</param>
+/// <param name="Documents">How many documents the query returned or counted.</param>
 public sealed record ExperimentRow(string Query, string Partitions, double RequestCharge, long DurationMs, int Documents);
 
 /// <summary>The experiment card's answer, including the four ways it can have nothing to show.</summary>
+/// <param name="Available">True when the experiment ran and has rows to show.</param>
+/// <param name="Reason">Why there is nothing to show, or null when there is.</param>
+/// <param name="Container">The container the experiment ran against.</param>
+/// <param name="PhysicalPartitions">How many physical partitions the container has.</param>
+/// <param name="Documents">How many documents the container holds.</param>
+/// <param name="Rows">One row per query the experiment ran.</param>
+/// <param name="RanAt">When the experiment ran.</param>
 public sealed record ExperimentResult(
     bool Available,
     string? Reason,

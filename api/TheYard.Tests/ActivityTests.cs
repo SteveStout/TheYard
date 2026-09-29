@@ -529,6 +529,7 @@ public class ActivityTests
 /// <summary>The endpoints on a real host, with a key set and the collector drained by hand.</summary>
 public class ActivityEndpointTests : IClassFixture<ActivityEndpointTests.KeyedHost>
 {
+    /// <summary>The test host for the activity endpoints: an admin key set and the per-visitor rows turned on.</summary>
     public sealed class KeyedHost : WebApplicationFactory<Program>
     {
         public const string Key = "the-test-key";

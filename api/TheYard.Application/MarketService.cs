@@ -5,6 +5,9 @@ using TheYard.Domain;
 namespace TheYard.Application;
 
 /// <summary>One simulated competitor's standing on a vehicle.</summary>
+/// <param name="Amount">The competitor's standing bid, in whole dollars.</param>
+/// <param name="BidCount">How many bids the vehicle has taken, counting this one.</param>
+/// <param name="AtMs">When the bid was placed, as Unix epoch milliseconds.</param>
 public sealed record MarketBid(int Amount, int BidCount, long AtMs);
 
 /// <summary>

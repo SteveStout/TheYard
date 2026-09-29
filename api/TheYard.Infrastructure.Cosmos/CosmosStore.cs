@@ -487,14 +487,24 @@ public sealed class CosmosStore
 }
 
 /// <summary>A point read's answer with its cost, for a caller that wants the number and not only the document.</summary>
+/// <param name="Item">The document read, or null when it was not found.</param>
+/// <param name="Charge">What the read cost, in request units.</param>
+/// <param name="DurationMs">How long the read took, in milliseconds.</param>
 public sealed record MeasuredItem<T>(T? Item, double Charge, long DurationMs) where T : class;
 
 /// <summary>A query's answer with its cost: every page's charge added up, the page count, and the wall clock.</summary>
+/// <param name="Items">Every item the query returned, across all pages.</param>
+/// <param name="Charge">What all pages cost together, in request units.</param>
+/// <param name="Pages">How many pages the query took.</param>
+/// <param name="DurationMs">How long the query took end to end, in milliseconds.</param>
 public sealed record MeasuredQuery<T>(IReadOnlyList<T> Items, double Charge, int Pages, long DurationMs);
 
 /// <summary>What one response cost, in request units and as a status code, read off whichever response type the SDK answered with.</summary>
+/// <param name="Charge">What the response cost, in request units.</param>
+/// <param name="Status">The HTTP status code of the response.</param>
 public readonly record struct Cost(double Charge, int Status);
 
+/// <summary>Reads the request charge and status code off each response type the SDK returns.</summary>
 public static class Costs
 {
     public static Cost Cost<T>(this Response<T> response) => new(response.RequestCharge, (int)response.StatusCode);
@@ -503,7 +513,17 @@ public static class Costs
 }
 
 /// <summary>What the first boot found and paid, so the log line and the comparison card can say it.</summary>
+/// <param name="VehiclesInserted">How many vehicle documents the seed wrote.</param>
+/// <param name="PhotosInserted">How many photo documents the seed wrote.</param>
+/// <param name="VehiclesTotal">How many vehicle documents the container holds after the seed.</param>
+/// <param name="PhotosTotal">How many photo documents the container holds after the seed.</param>
+/// <param name="SeedCharge">What the seed cost, in request units.</param>
 public sealed record CosmosSeedResult(int VehiclesInserted, int PhotosInserted, int VehiclesTotal, int PhotosTotal, double SeedCharge);
 
 /// <summary>The startup numbers the Admin tab's comparison card shows: how long the containers took to check, how long the seed took and what it cost.</summary>
+/// <param name="CheckMs">How long checking the containers took, in milliseconds.</param>
+/// <param name="SeedMs">How long the seed took, in milliseconds.</param>
+/// <param name="SeedRequestUnits">What the seed cost, in request units.</param>
+/// <param name="VehiclesSeeded">How many vehicle documents the seed wrote.</param>
+/// <param name="PhotosSeeded">How many photo documents the seed wrote.</param>
 public sealed record StartupCost(long CheckMs, long SeedMs, double SeedRequestUnits, int VehiclesSeeded, int PhotosSeeded);

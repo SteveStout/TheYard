@@ -18,6 +18,11 @@ namespace TheYard.Api;
 /// failure without withholding the container from service
 /// (ADR: The relational store).</para>
 /// </summary>
+/// <param name="Name">The check's name.</param>
+/// <param name="Status">pass or fail.</param>
+/// <param name="Detail">What the check looked at, or the exception type name when it threw.</param>
+/// <param name="DurationMs">How long the check took, in milliseconds.</param>
+/// <param name="GatesReadiness">True when a failure withholds the container from traffic, not only from a healthy report.</param>
 public sealed record HealthCheckEntry(
     string Name, string Status, string Detail, long DurationMs, bool GatesReadiness = true);
 
@@ -31,6 +36,11 @@ public sealed record HealthCheckEntry(
 /// constraint, and this list is public (ADR: Error handling, the addendum on
 /// frames).
 /// </summary>
+/// <param name="At">When the error was recorded, UTC.</param>
+/// <param name="Path">The request path, or the page a browser report came from.</param>
+/// <param name="Status">The HTTP status code; 0 for a browser report.</param>
+/// <param name="Message">A short description, such as the exception type name; never the exception's own message.</param>
+/// <param name="Frames">The exception's stack, trimmed; empty when there was none.</param>
 public sealed record ErrorEntry(
     DateTimeOffset At,
     string Path,

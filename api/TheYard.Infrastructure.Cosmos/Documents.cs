@@ -280,6 +280,7 @@ public sealed class ResetLinkDocument
     public int Ttl { get; set; }
 }
 
+/// <summary>One kept log event as a document in the store, with its day and fields as strings.</summary>
 public sealed class LogDocument
 {
     /// <summary>{at as ticks}:{random}, so two events in the same tick on two containers are two documents.</summary>

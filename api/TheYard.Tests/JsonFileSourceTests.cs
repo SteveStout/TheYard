@@ -2,6 +2,7 @@ using TheYard.Infrastructure;
 
 namespace TheYard.Tests;
 
+/// <summary>Holds the JSON file sources: snake_case JSON reads into typed vehicles, and the repository's real dataset and photo manifest load.</summary>
 public class JsonFileSourceTests
 {
     [Fact]

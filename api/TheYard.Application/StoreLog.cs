@@ -19,6 +19,18 @@ namespace TheYard.Application;
 /// kind, what it cost in request units and in milliseconds, whether it was
 /// pinned to one partition or fanned out, and the HTTP request that caused it.
 /// </summary>
+/// <param name="At">When the operation ran.</param>
+/// <param name="Container">The container the operation went to.</param>
+/// <param name="Kind">The kind of operation, one of <see cref="StoreOperationKind"/>.</param>
+/// <param name="Text">The query text, or empty when the operation has none.</param>
+/// <param name="Parameters">The shape of each query parameter: name, type and size, never the value.</param>
+/// <param name="Partition">A description of the partition the operation was pinned to, or that it fanned out; never the key value.</param>
+/// <param name="PhysicalPartitions">How many physical partitions the container has for the operation to reach.</param>
+/// <param name="RequestCharge">What the operation cost, in request units.</param>
+/// <param name="DurationMs">How long the operation took, in milliseconds.</param>
+/// <param name="Outcome">The status code, or the failure the operation met.</param>
+/// <param name="Request">The HTTP request that caused the operation, like "GET /api/vehicles", or null when none did.</param>
+/// <param name="RequestId">The trace identifier of that HTTP request, or null when there was none.</param>
 public sealed record StoreOperation(
     DateTimeOffset At,
     string Container,

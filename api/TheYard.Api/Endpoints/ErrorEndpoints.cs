@@ -88,6 +88,9 @@ public static class ErrorEndpoints
 }
 
 /// <summary>What the browser reports when a render crashes or a promise rejects (ADR-023).</summary>
+/// <param name="Message">What the browser caught. Required; bounded and masked before it is kept.</param>
+/// <param name="Stack">The stack, if there was one.</param>
+/// <param name="Path">The page the visitor was on.</param>
 public sealed record ClientErrorReport(
     [property: Description("What the browser caught. Required; bounded and masked before it is kept.")] string? Message,
     [property: Description("The stack, if there was one.")] string? Stack,

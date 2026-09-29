@@ -13,6 +13,7 @@ namespace TheYard.Tests;
 /// </summary>
 public class VisitorRowsTests : IClassFixture<VisitorRowsTests.KeyedRowsOffHost>
 {
+    /// <summary>The test host for the rows-off case: an admin key set and the per-visitor rows left at their default of off.</summary>
     public sealed class KeyedRowsOffHost : WebApplicationFactory<Program>
     {
         public const string Key = "the-rows-off-key";

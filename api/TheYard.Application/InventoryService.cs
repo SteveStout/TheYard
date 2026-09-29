@@ -4,9 +4,15 @@ using TheYard.Domain;
 namespace TheYard.Application;
 
 /// <summary>One page of search results plus the total match count.</summary>
+/// <param name="Total">How many vehicles match the search across all pages.</param>
+/// <param name="Vehicles">The vehicles on the requested page.</param>
 public sealed record SearchResult(int Total, IReadOnlyList<Vehicle> Vehicles);
 
 /// <summary>Distinct dropdown values, one list per filterable field.</summary>
+/// <param name="Makes">Every distinct make in the inventory.</param>
+/// <param name="BodyStyles">Every distinct body style in the inventory.</param>
+/// <param name="TitleStatuses">Every distinct title status in the inventory.</param>
+/// <param name="Provinces">Every distinct province a vehicle sits in.</param>
 public sealed record InventoryFacets(
     IReadOnlyList<string> Makes,
     IReadOnlyList<string> BodyStyles,

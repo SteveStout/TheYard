@@ -20,6 +20,18 @@ namespace TheYard.Api;
 /// property's own typed array and the document builds (ADR: The API
 /// describes itself).</para>
 /// </summary>
+/// <param name="Q">Free text, matched against every filterable field and the derived auction status.</param>
+/// <param name="Make">One make, exactly as the facets list it.</param>
+/// <param name="BodyStyle">One body style, exactly as the facets list it.</param>
+/// <param name="TitleStatus">One title status, exactly as the facets list it.</param>
+/// <param name="Province">One province, exactly as the facets list it.</param>
+/// <param name="Status">live, upcoming or ended, on the server's clock. Anything else is a 400.</param>
+/// <param name="Sort">ending-soonest (the default), price-asc, price-desc, condition or most-bids. Anything else is a 400.</param>
+/// <param name="Limit">Page size, 1 to 500; 100 when absent.</param>
+/// <param name="Offset">How many matches to skip; 0 when absent.</param>
+/// <param name="MinCondition">The lowest condition grade to include.</param>
+/// <param name="PriceMin">The lowest standing price to include, in whole dollars.</param>
+/// <param name="PriceMax">The highest standing price to include, in whole dollars.</param>
 public sealed record VehicleQueryParams(
     [property: FromQuery(Name = "q"), Description("Free text, matched against every filterable field and the derived auction status.")] string? Q,
     [property: FromQuery(Name = "make"), Description("One make, exactly as the facets list it.")] string? Make,

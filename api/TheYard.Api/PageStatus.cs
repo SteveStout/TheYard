@@ -134,6 +134,9 @@ public static class ServedAddresses
 }
 
 /// <summary>One address the sweep checks: where it is, what a reader would call it, and which kind of thing it is.</summary>
+/// <param name="Address">The path the sweep requests.</param>
+/// <param name="What">What a reader would call the address.</param>
+/// <param name="Kind">Which kind of thing it is, such as page, api, document or drawing.</param>
 public sealed record ServedAddress(string Address, string What, string Kind);
 // #endregion served-addresses
 
@@ -310,6 +313,15 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
 }
 
 /// <summary>One address as the sweep found it. <c>Reason</c> is a type name and never a message, for the reason on the runner.</summary>
+/// <param name="Address">The path that was requested.</param>
+/// <param name="What">What a reader would call the address.</param>
+/// <param name="Kind">Which kind of thing it is, such as page, api, document or drawing.</param>
+/// <param name="Status">The HTTP status code; 0 when the request did not complete.</param>
+/// <param name="Ms">How long the check took, in milliseconds.</param>
+/// <param name="Bytes">How many bytes the body held.</param>
+/// <param name="ContentType">The media type the address answered with, or null.</param>
+/// <param name="Reason">An exception type name or a short note on a second look, or null; never a message.</param>
+/// <param name="Ok">True when the address answered with a success status and a body that is not empty.</param>
 public sealed record PageStatusEntry(
     string Address,
     string What,
@@ -322,6 +334,15 @@ public sealed record PageStatusEntry(
     bool Ok);
 
 /// <summary>One sweep: when, what started it, the build it checked, and every address.</summary>
+/// <param name="At">When the sweep finished, UTC.</param>
+/// <param name="Trigger">What started the sweep, such as roll, settled, or a request from the Admin tab.</param>
+/// <param name="Version">The build version the sweep checked.</param>
+/// <param name="Commit">The short commit of the build the sweep checked.</param>
+/// <param name="Ms">How long the whole sweep took, in milliseconds.</param>
+/// <param name="Checked">How many addresses were checked.</param>
+/// <param name="Up">How many of them were up.</param>
+/// <param name="Failed">The exception type name when the sweep itself stopped, or null when it ran to the end.</param>
+/// <param name="Entries">Every address as the sweep found it.</param>
 public sealed record PageStatusReport(
     DateTimeOffset At,
     string Trigger,

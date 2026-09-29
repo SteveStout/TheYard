@@ -62,6 +62,12 @@ public sealed class PeerReader(string? configuredUrl, HttpClient client)
 }
 
 /// <summary>What the comparison card learns about the peer: whether there is one, whether it answered, and if so its metrics as it reported them.</summary>
+/// <param name="Configured">True when this container has a peer to compare with.</param>
+/// <param name="Reachable">True when the peer answered with its metrics.</param>
+/// <param name="Reason">Why the peer could not be read, or null when it was.</param>
+/// <param name="Host">The peer's host name, or null when none is configured.</param>
+/// <param name="FetchedAt">When the read was attempted, UTC.</param>
+/// <param name="Metrics">The peer's metrics as it reported them, or null when it could not be read.</param>
 public sealed record PeerView(bool Configured, bool Reachable, string? Reason, string? Host, DateTimeOffset FetchedAt, JsonElement? Metrics);
 // #endregion peer
 
@@ -148,7 +154,20 @@ public static partial class Routes
             .ToArray();
 }
 
+/// <summary>One route's request timings for the comparison card.</summary>
+/// <param name="Route">The method and route template, such as GET /api/vehicles/{id}.</param>
+/// <param name="Count">How many requests to the route are in the window.</param>
+/// <param name="P50Ms">The median duration, in milliseconds.</param>
+/// <param name="P95Ms">The 95th percentile duration, in milliseconds.</param>
+/// <param name="MaxMs">The slowest duration, in milliseconds.</param>
 public sealed record RouteTiming(string Route, int Count, long P50Ms, long P95Ms, long MaxMs);
 
+/// <summary>What one route costs the document store per request, for the comparison card.</summary>
+/// <param name="Route">The method and route template, such as GET /api/vehicles/{id}.</param>
+/// <param name="Requests">How many requests to the route were seen.</param>
+/// <param name="OperationsPerRequest">The average number of store operations per request, to one decimal place.</param>
+/// <param name="RuP50">The median request units per request.</param>
+/// <param name="RuMax">The most request units any one request spent.</param>
+/// <param name="CrossPartition">How many of the route's operations crossed partitions, across all its requests.</param>
 public sealed record RouteCharge(string Route, int Requests, double OperationsPerRequest, double RuP50, double RuMax, int CrossPartition);
 // #endregion routes

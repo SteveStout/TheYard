@@ -2,6 +2,7 @@ using TheYard.Domain;
 
 namespace TheYard.Tests;
 
+/// <summary>Holds the vehicle filter: free-text tokens across every filterable field, case-insensitive exact filters, inclusive minimum condition, price bounds and status.</summary>
 public class VehicleFilterTests
 {
     private static readonly AuctionClock Now = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));

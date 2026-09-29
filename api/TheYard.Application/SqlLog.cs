@@ -15,12 +15,21 @@ namespace TheYard.Application;
 // write the value cannot leak it whatever anyone adds later.
 
 /// <summary>One parameter of a SQL statement, described but never valued.</summary>
+/// <param name="Name">The parameter name, such as <c>@p0</c>.</param>
+/// <param name="Type">The parameter's database type.</param>
+/// <param name="Size">The declared size of the parameter, or null when it has none.</param>
 public sealed record SqlParameterShape(string Name, string Type, int? Size);
 
 /// <summary>
 /// One SQL statement the application ran: its text, the shape of its
 /// parameters, how long the database took, and the HTTP request that caused it.
 /// </summary>
+/// <param name="At">When the statement ran.</param>
+/// <param name="Text">The SQL text as sent to the database.</param>
+/// <param name="Parameters">The shape of each parameter: name, type and size, never the value.</param>
+/// <param name="DurationMs">How long the database took, in milliseconds.</param>
+/// <param name="Outcome">How the statement ended, such as success or the failure it met.</param>
+/// <param name="Request">The HTTP request that caused the statement, like "GET /api/vehicles", or null when none did.</param>
 public sealed record SqlStatement(
     DateTimeOffset At,
     string Text,

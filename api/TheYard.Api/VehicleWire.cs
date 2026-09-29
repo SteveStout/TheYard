@@ -12,6 +12,40 @@ namespace TheYard.Api;
 /// the document could only describe as an object; the names, the values and
 /// the order are the same as they were.
 /// </summary>
+/// <param name="Id">The vehicle's id, a GUID.</param>
+/// <param name="Vin">The vehicle identification number.</param>
+/// <param name="Year">The model year.</param>
+/// <param name="Make">The manufacturer, such as Mazda.</param>
+/// <param name="Model">The model, such as CX-5.</param>
+/// <param name="Trim">The trim level.</param>
+/// <param name="BodyStyle">The body style, such as SUV.</param>
+/// <param name="ExteriorColor">The exterior color.</param>
+/// <param name="InteriorColor">The interior color.</param>
+/// <param name="Engine">The engine, such as 2.5L I4.</param>
+/// <param name="Transmission">The transmission, such as automatic.</param>
+/// <param name="Drivetrain">The drivetrain, such as FWD.</param>
+/// <param name="OdometerKm">The odometer reading, in kilometres.</param>
+/// <param name="FuelType">The fuel type, such as gasoline.</param>
+/// <param name="ConditionGrade">The condition grade the dataset gives it; higher is better.</param>
+/// <param name="ConditionReport">The inspector's written condition report.</param>
+/// <param name="DamageNotes">Notes on any damage; empty when there is none.</param>
+/// <param name="TitleStatus">The title status, such as clean.</param>
+/// <param name="Province">The province the vehicle is in.</param>
+/// <param name="City">The city the vehicle is in.</param>
+/// <param name="AuctionStart">The dataset's own date string, passed through; nothing is derived from it.</param>
+/// <param name="StartingBid">The opening bid, in whole dollars.</param>
+/// <param name="ReservePrice">The reserve price in whole dollars; null means no reserve.</param>
+/// <param name="BuyNowPrice">The buy-now price in whole dollars; null means no buy-now option.</param>
+/// <param name="Images">Gallery paths under /api/images, chosen for the body style.</param>
+/// <param name="SellingDealership">The dealership selling the vehicle.</param>
+/// <param name="Lot">The lot number, such as A-0001.</param>
+/// <param name="CurrentBid">The standing price, or null until the first bid.</param>
+/// <param name="BidCount">How many bids the vehicle has had.</param>
+/// <param name="AuctionStartsAt">When the auction opens, in milliseconds since the epoch, UTC. Derived from the id on the server's clock.</param>
+/// <param name="AuctionEndsAt">When the auction closes, in milliseconds since the epoch, UTC.</param>
+/// <param name="AuctionStatus">live, upcoming or ended, on the server's clock at the moment of the response.</param>
+/// <param name="MinNextBid">The smallest bid the rules will accept next, in whole dollars.</param>
+/// <param name="Sold">True once anybody has bought the vehicle outright; a sold vehicle takes no more bids from anyone.</param>
 public sealed record VehicleView(
     string Id,
     string Vin,

@@ -8,6 +8,8 @@ public enum AuctionStatus
 }
 
 /// <summary>An auction's open/close instants as Unix epoch milliseconds.</summary>
+/// <param name="StartsAtMs">When the auction opens, as Unix epoch milliseconds.</param>
+/// <param name="EndsAtMs">When the auction closes, as Unix epoch milliseconds.</param>
 public readonly record struct AuctionWindow(long StartsAtMs, long EndsAtMs);
 
 /// <summary>

@@ -9,6 +9,7 @@ file sealed class SeedSource(params Vehicle[] vehicles) : IVehicleSource
     public Task<IReadOnlyList<Vehicle>> LoadAsync() => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
 }
 
+/// <summary>Holds the synthetic vehicle source: it expands seeds to the target count with unique, deterministic ids, keeps grades and dataset invariants, and inherits seed identity fields.</summary>
 public class SyntheticVehicleSourceTests
 {
     private static readonly Vehicle[] Seeds =

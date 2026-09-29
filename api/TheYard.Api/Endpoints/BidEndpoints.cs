@@ -260,4 +260,5 @@ public static class BidEndpoints
 /// is the server's (ADR: Three readers with no memory of the project, the
 /// addendum on the clock).
 /// </summary>
+/// <param name="Amount">Whole dollars, at or above the vehicle's min_next_bid.</param>
 public sealed record BidRequest([property: Description("Whole dollars, at or above the vehicle's min_next_bid.")] int Amount);

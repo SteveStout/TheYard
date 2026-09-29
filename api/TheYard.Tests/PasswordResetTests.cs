@@ -38,6 +38,7 @@ public class PasswordResetTests : IClassFixture<PasswordResetTests.KeyedHost>
         }
     }
 
+    /// <summary>The test host for password reset: an admin key, a public site URL for links, and a recording email sender.</summary>
     public sealed class KeyedHost : WebApplicationFactory<Program>
     {
         public const string Key = "the-reset-test-key";

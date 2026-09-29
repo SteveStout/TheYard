@@ -17,6 +17,24 @@ namespace TheYard.Application;
 /// zero: a chart breaks its line over a gap, and an average over a month must
 /// not be pulled toward a number nobody measured.
 /// </summary>
+/// <param name="At">The start of the minute.</param>
+/// <param name="Site">The site the minute was read on.</param>
+/// <param name="MemoryLimitMb">The memory limit the container runs under, in megabytes.</param>
+/// <param name="WorkingSetMb">The average working set, in megabytes.</param>
+/// <param name="WorkingSetMaxMb">The highest working set sampled, in megabytes.</param>
+/// <param name="ManagedMb">The average managed heap size, in megabytes.</param>
+/// <param name="CpuPercent">The average process CPU, in percent; null when not read.</param>
+/// <param name="CpuMaxPercent">The highest process CPU sampled, in percent; null when not read.</param>
+/// <param name="SqlCpuPercent">The relational store's own CPU reading, in percent; null when not read.</param>
+/// <param name="SqlMemoryPercent">The relational store's own memory reading, in percent; null when not read.</param>
+/// <param name="SqlDataIoPercent">The relational store's own data IO reading, in percent; null when not read.</param>
+/// <param name="RequestUnits">What the document store charged, in request units.</param>
+/// <param name="Operations">How many operations went to the document store.</param>
+/// <param name="Requests">How many HTTP requests the site answered.</param>
+/// <param name="P50Ms">The median request duration, in milliseconds; null when not read.</param>
+/// <param name="P95Ms">The 95th percentile request duration, in milliseconds; null when not read.</param>
+/// <param name="ServerErrors">How many requests answered with a 5xx status.</param>
+/// <param name="ClientErrors">How many requests answered with a 4xx status.</param>
 public sealed record MachineMinute(
     DateTimeOffset At,
     string Site,
@@ -38,6 +56,24 @@ public sealed record MachineMinute(
     int ClientErrors = 0);
 
 /// <summary>One point on a windowed chart: every minute in the bucket, averaged, with the peaks kept as peaks.</summary>
+/// <param name="At">The start of the bucket.</param>
+/// <param name="Minutes">How many kept minutes the bucket averages.</param>
+/// <param name="MemoryLimitMb">The memory limit the container runs under, in megabytes.</param>
+/// <param name="WorkingSetMb">The average working set, in megabytes.</param>
+/// <param name="WorkingSetMaxMb">The highest working set sampled, in megabytes.</param>
+/// <param name="ManagedMb">The average managed heap size, in megabytes.</param>
+/// <param name="CpuPercent">The average process CPU, in percent; null when not read.</param>
+/// <param name="CpuMaxPercent">The highest process CPU sampled, in percent; null when not read.</param>
+/// <param name="SqlCpuPercent">The relational store's own CPU reading, in percent; null when not read.</param>
+/// <param name="SqlMemoryPercent">The relational store's own memory reading, in percent; null when not read.</param>
+/// <param name="SqlDataIoPercent">The relational store's own data IO reading, in percent; null when not read.</param>
+/// <param name="RequestUnits">What the document store charged, in request units, summed over the bucket.</param>
+/// <param name="Operations">How many operations went to the document store, summed over the bucket.</param>
+/// <param name="Requests">How many HTTP requests the site answered, summed over the bucket.</param>
+/// <param name="P50Ms">The median request duration, in milliseconds; null when not read.</param>
+/// <param name="P95Ms">The 95th percentile request duration, in milliseconds; null when not read.</param>
+/// <param name="ServerErrors">How many requests answered with a 5xx status, summed over the bucket.</param>
+/// <param name="ClientErrors">How many requests answered with a 4xx status, summed over the bucket.</param>
 public sealed record MachineBucket(
     DateTimeOffset At,
     int Minutes,
@@ -59,6 +95,8 @@ public sealed record MachineBucket(
     int ClientErrors = 0);
 
 /// <summary>Whether minutes can be kept right now, and if not, why, in words the card can show.</summary>
+/// <param name="Available">True when minutes can be kept now.</param>
+/// <param name="Reason">Why minutes cannot be kept, in words the card can show.</param>
 public sealed record MachineHistoryAvailability(bool Available, string Reason);
 // #endregion minute
 

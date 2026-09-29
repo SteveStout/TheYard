@@ -77,6 +77,11 @@ public sealed class SqlRingBuffer(int capacity) : ISqlLog
 }
 
 /// <summary>One log line as the Admin tab shows it.</summary>
+/// <param name="At">When the line was logged, UTC.</param>
+/// <param name="Level">The log level, such as Information or Warning.</param>
+/// <param name="Category">The logger category that wrote the line.</param>
+/// <param name="Message">The formatted message, cut to 1,000 characters.</param>
+/// <param name="Exception">The exception's type name, or null when there was none.</param>
 public sealed record LogEntry(DateTimeOffset At, string Level, string Category, string Message, string? Exception);
 
 /// <summary>Fixed-size, thread-safe ring of recent log lines.</summary>
@@ -175,6 +180,12 @@ public sealed class RingBufferLoggerProvider(LogRingBuffer buffer) : ILoggerProv
 }
 
 /// <summary>One request, as timed by the middleware, and the store that served it (ADR: One container, both stores).</summary>
+/// <param name="At">When the request was timed, UTC.</param>
+/// <param name="Method">The HTTP method.</param>
+/// <param name="Path">The request path.</param>
+/// <param name="Status">The HTTP status code the request answered with.</param>
+/// <param name="DurationMs">How long the request took, in milliseconds.</param>
+/// <param name="Store">The key of the store that served the request; sql unless set.</param>
 public sealed record RequestEntry(DateTimeOffset At, string Method, string Path, int Status, long DurationMs, string Store = "sql");
 
 /// <summary>Fixed-size, thread-safe ring of recent requests and their timings.</summary>
@@ -237,6 +248,11 @@ public sealed class HttpCurrentRequest(IHttpContextAccessor accessor) : ICurrent
 }
 
 /// <summary>One endpoint's timing, as the Admin tab shows it.</summary>
+/// <param name="Path">The endpoint path.</param>
+/// <param name="Count">How many requests to it are in the window.</param>
+/// <param name="P50Ms">The median duration, in milliseconds.</param>
+/// <param name="P95Ms">The 95th percentile duration, in milliseconds.</param>
+/// <param name="MaxMs">The slowest duration, in milliseconds.</param>
 public sealed record EndpointTiming(string Path, int Count, long P50Ms, long P95Ms, long MaxMs);
 
 /// <summary>
@@ -341,6 +357,16 @@ public sealed class StoreRingBuffer(int capacity) : IStoreLog
 }
 
 /// <summary>The store window's numbers, computed on read like the request percentiles.</summary>
+/// <param name="Store">The key of the store the numbers are for.</param>
+/// <param name="Window">How many store operations the numbers cover.</param>
+/// <param name="P50Ms">The median operation duration, in milliseconds.</param>
+/// <param name="P95Ms">The 95th percentile operation duration, in milliseconds.</param>
+/// <param name="MaxMs">The slowest operation, in milliseconds.</param>
+/// <param name="RuTotal">The request units spent across the window, rounded to two places.</param>
+/// <param name="RuP50">The median request units per operation.</param>
+/// <param name="RuMax">The most request units any one operation spent.</param>
+/// <param name="CrossPartition">How many operations crossed partitions.</param>
+/// <param name="PointOperations">How many operations were point reads or writes.</param>
 public sealed record StoreMetrics(
     string Store,
     int Window,

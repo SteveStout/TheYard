@@ -10,6 +10,8 @@ namespace TheYard.Domain;
 /// else (ADR: Three readers with no memory of the project, the addendum on
 /// the clock).
 /// </summary>
+/// <param name="NowMs">The current moment, as Unix epoch milliseconds.</param>
+/// <param name="AnchorMs">The UTC midnight the schedule anchors to, as Unix epoch milliseconds.</param>
 public readonly record struct AuctionClock(long NowMs, long AnchorMs)
 {
     // #region utc

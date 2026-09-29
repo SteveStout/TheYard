@@ -9,6 +9,10 @@ namespace TheYard.Application;
 /// the simulated room reads to decide whether enough time has passed to answer
 /// it (ADR: Competing bidders).
 /// </summary>
+/// <param name="Amount">The buyer's bid, in whole dollars.</param>
+/// <param name="BidCount">How many bids the vehicle had once this one was placed, counting everybody's.</param>
+/// <param name="WonBuyNow">True when the bid bought the vehicle outright at or above its buy-now price.</param>
+/// <param name="AtMs">When the bid was placed, in milliseconds since the epoch, UTC.</param>
 public sealed record BidState(int Amount, int BidCount, bool WonBuyNow, long AtMs);
 
 /// <summary>
@@ -17,9 +21,17 @@ public sealed record BidState(int Amount, int BidCount, bool WonBuyNow, long AtM
 /// what "you have been outbid" is measured against
 /// (ADR: Accounts and per-user bids).
 /// </summary>
+/// <param name="Amount">The highest bid on the vehicle, in whole dollars.</param>
+/// <param name="BidCount">How many bids the vehicle has had, counting everybody's.</param>
+/// <param name="HighBidderId">The user id of the buyer holding the highest bid.</param>
+/// <param name="SoldBuyNow">True once any buyer has bought the vehicle outright.</param>
+/// <param name="AtMs">When the standing bid was placed, in milliseconds since the epoch, UTC.</param>
 public sealed record VehicleStanding(int Amount, int BidCount, string HighBidderId, bool SoldBuyNow, long AtMs);
 
 /// <summary>One stored bid, as the store hands it back.</summary>
+/// <param name="UserId">The id of the buyer who placed the bid.</param>
+/// <param name="VehicleId">The id of the vehicle the bid is on.</param>
+/// <param name="State">The buyer's standing on that vehicle.</param>
 public sealed record StoredBid(string UserId, string VehicleId, BidState State);
 
 /// <summary>

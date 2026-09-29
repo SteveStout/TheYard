@@ -28,6 +28,8 @@ public enum YardProvider
 /// The one place that decides which database this process talks to and how it
 /// is configured. Everything else takes the answer.
 /// </summary>
+/// <param name="Provider">Which store the process talks to.</param>
+/// <param name="ConnectionString">The connection string for that store.</param>
 public sealed record YardConnection(YardProvider Provider, string ConnectionString)
 {
     /// <summary>

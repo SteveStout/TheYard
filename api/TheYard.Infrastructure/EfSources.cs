@@ -216,6 +216,9 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
 /// open changes which adapters are wired rather than becoming a 500 on the
 /// first request (ADR: The relational store).
 /// </summary>
+/// <param name="Ready">True when the store opened and can be used.</param>
+/// <param name="Note">One sentence about why the store is or is not ready.</param>
+/// <param name="Failure">The exception that kept the store from opening, or null when it opened.</param>
 public sealed record DatabaseState(bool Ready, string Note, Exception? Failure = null)
 {
     /// <summary>How long bringing the schema up, or checking it was there, took. For the Admin tab's comparison card.</summary>
@@ -337,6 +340,10 @@ public static class YardDatabase
 }
 
 /// <summary>What the first boot found, so the log line can say it.</summary>
+/// <param name="VehiclesInserted">How many vehicle rows the seed wrote.</param>
+/// <param name="PhotosInserted">How many photo rows the seed wrote.</param>
+/// <param name="VehiclesTotal">How many vehicle rows the table holds after the seed.</param>
+/// <param name="PhotosTotal">How many photo rows the table holds after the seed.</param>
 public sealed record SeedResult(int VehiclesInserted, int PhotosInserted, int VehiclesTotal, int PhotosTotal);
 
 /// <summary>

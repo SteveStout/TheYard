@@ -102,6 +102,14 @@ public sealed class MachineSampler(int capacity) : BackgroundService
 }
 
 /// <summary>One reading of the container: memory as the operating system and the runtime each see it, the processor share since the last reading, and what the collector has done.</summary>
+/// <param name="At">When the reading was taken, UTC.</param>
+/// <param name="WorkingSetMb">The process working set as the operating system sees it, in megabytes.</param>
+/// <param name="ManagedMb">Memory the runtime counts as allocated to managed objects, in megabytes.</param>
+/// <param name="HeapMb">The size of the managed heap after the last collection, in megabytes.</param>
+/// <param name="CpuPercent">The share of the container's processors spent since the last reading, as a percentage; null on the first reading.</param>
+/// <param name="Threads">How many threads the process has.</param>
+/// <param name="Gen0Collections">How many generation 0 collections have run since the process started.</param>
+/// <param name="Gen2Collections">How many generation 2 collections have run since the process started.</param>
 public sealed record MachineSample(
     DateTimeOffset At,
     double WorkingSetMb,
@@ -225,6 +233,12 @@ public static class ResourceStats
 }
 
 /// <summary>One fifteen-second interval as the database reports it, every figure a percentage of what the tier allows.</summary>
+/// <param name="At">The end of the fifteen-second interval, UTC.</param>
+/// <param name="CpuPercent">Processor use, as a percentage of the tier's limit.</param>
+/// <param name="DataIoPercent">Data file reads and writes, as a percentage of the tier's limit.</param>
+/// <param name="LogWritePercent">Transaction log writes, as a percentage of the tier's limit.</param>
+/// <param name="MemoryPercent">Memory use, as a percentage of the tier's limit.</param>
+/// <param name="WorkerPercent">Concurrent workers, as a percentage of the tier's limit.</param>
 public sealed record ResourceStatRow(
     DateTime At,
     double CpuPercent,
@@ -234,6 +248,9 @@ public sealed record ResourceStatRow(
     double WorkerPercent);
 
 /// <summary>The relational store's own reading, or the reason there is not one.</summary>
+/// <param name="Available">True when the database answered with its reading.</param>
+/// <param name="Note">Why there is no reading, or null when there is one.</param>
+/// <param name="Rows">The intervals the database reported, empty when there is no reading.</param>
 public sealed record StoreLoad(bool Available, string? Note, IReadOnlyList<ResourceStatRow> Rows)
 {
     public static StoreLoad Absent(string note) => new(false, note, []);
@@ -285,6 +302,15 @@ public static class TrafficMinutes
 /// The ring holds five hundred requests, so this is at most five hundred numbers on an answer the tab
 /// reads every thirty seconds.
 /// </summary>
+/// <param name="At">The start of the minute, UTC.</param>
+/// <param name="Requests">How many requests were answered in the minute.</param>
+/// <param name="P50Ms">The median duration, in milliseconds.</param>
+/// <param name="P95Ms">The 95th percentile duration, in milliseconds.</param>
+/// <param name="ServerErrors">How many requests answered with a 5xx status.</param>
+/// <param name="ClientErrors">How many requests answered with a 4xx status.</param>
+/// <param name="Redirects">How many requests answered with a 3xx status.</param>
+/// <param name="Ok">How many requests answered with a status below 300.</param>
+/// <param name="DurationsMs">Every request duration in the minute, sorted, in milliseconds.</param>
 public sealed record TrafficMinute(
     DateTimeOffset At,
     int Requests,
@@ -527,9 +553,21 @@ public static class DocumentLoad
 }
 
 /// <summary>One minute of the operations ring: what it cost, how many operations, and what share of a second of the free allowance that would be.</summary>
+/// <param name="At">The start of the minute, UTC.</param>
+/// <param name="RequestUnits">The request units spent in the minute, rounded to two places.</param>
+/// <param name="Operations">How many operations ran in the minute.</param>
+/// <param name="ShareOfFreePercent">The minute's charge as a percentage of one second of the free allowance, as if it had all arrived in one second.</param>
 public sealed record DocumentMinute(DateTimeOffset At, double RequestUnits, int Operations, double ShareOfFreePercent);
 
 /// <summary>The document store's side of the card.</summary>
+/// <param name="Store">The key of the document store.</param>
+/// <param name="Available">True when this container has sent the document store anything yet.</param>
+/// <param name="Note">Why there is no reading, or null when there is one.</param>
+/// <param name="RequestUnits">The request units spent across the operations ring, rounded to two places.</param>
+/// <param name="Operations">How many operations the ring holds.</param>
+/// <param name="P50Ms">The median operation duration, in milliseconds; null when there is no reading.</param>
+/// <param name="P95Ms">The 95th percentile operation duration, in milliseconds; null when there is no reading.</param>
+/// <param name="Minutes">The ring folded a minute at a time.</param>
 public sealed record DocumentLoadView(
     string Store,
     bool Available,

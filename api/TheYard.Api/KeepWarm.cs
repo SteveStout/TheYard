@@ -96,6 +96,11 @@ public sealed class KeepWarm : BackgroundService
 }
 
 /// <summary>One pass: when it ran, how many reads it sent, how many did not answer 200, and the slowest.</summary>
+/// <param name="At">When the pass started.</param>
+/// <param name="Reads">How many reads the pass sent.</param>
+/// <param name="Failed">How many of those reads did not answer 200.</param>
+/// <param name="SlowestMs">The slowest read, in milliseconds.</param>
+/// <param name="Slowest">The path and store of the slowest read, or null when nothing was read.</param>
 public sealed record KeepWarmPass(DateTimeOffset At, int Reads, int Failed, long SlowestMs, string? Slowest);
 
 /// <summary>What a pass reads, and the pass itself.</summary>

@@ -140,6 +140,7 @@ public class LogTests
 /// <summary>The keyed endpoint on a real host, with the collector drained by hand.</summary>
 public class LogEndpointTests : IClassFixture<LogEndpointTests.KeyedHost>
 {
+    /// <summary>The test host for the kept-log endpoint: an admin key set and the per-visitor rows turned on.</summary>
     public sealed class KeyedHost : WebApplicationFactory<Program>
     {
         public const string Key = "the-log-test-key";

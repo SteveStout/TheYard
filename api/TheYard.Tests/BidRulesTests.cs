@@ -2,6 +2,7 @@ using TheYard.Domain;
 
 namespace TheYard.Tests;
 
+/// <summary>Holds the pure bid rules: tiered increments, the minimum next bid, bids accepted only while live, buy-now wins, and a sold vehicle taking no further bid.</summary>
 public class BidRulesTests
 {
     private static readonly AuctionClock Now =

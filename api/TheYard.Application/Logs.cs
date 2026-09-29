@@ -23,6 +23,22 @@ namespace TheYard.Application;
 /// percent encoding, so an address pasted into a path, a query, an error
 /// message or a stack cannot be kept as one.</para>
 /// </summary>
+/// <param name="At">When the event happened.</param>
+/// <param name="Kind">Which kind of event this is: <c>request</c>, <c>error</c>, <c>app</c> or a kept ring kind.</param>
+/// <param name="Store">The site that wrote the event, one per deployed container.</param>
+/// <param name="Level">The log level, such as Warning or Error.</param>
+/// <param name="Category">The logger category or exception type that produced the event.</param>
+/// <param name="Method">The HTTP method of the request.</param>
+/// <param name="Path">The request path, cleaned by <see cref="LogText"/>.</param>
+/// <param name="Status">The HTTP status code the request answered with.</param>
+/// <param name="DurationMs">How long the request took, in milliseconds.</param>
+/// <param name="Visitor">The daily keyed hash of the visitor, never the visitor.</param>
+/// <param name="Network">The caller address cut to three octets.</param>
+/// <param name="Message">The error or warning message, cleaned and bounded.</param>
+/// <param name="Detail">Extra detail such as a bounded stack, cleaned and bounded.</param>
+/// <param name="TraceId">The trace id that ties the event to its request.</param>
+/// <param name="Entry">For a kept ring kind, the ring entry as JSON exactly as the ring serves it; null otherwise.</param>
+/// <param name="TtlSeconds">Seconds the store keeps the event before it expires; null for the store default.</param>
 public sealed record LogEvent(
     DateTimeOffset At,
     string Kind,
@@ -92,6 +108,8 @@ public static class KeptRings
 }
 
 /// <summary>A window of one kept ring: the newest entries as the ring would have served them, and how many the window holds in all.</summary>
+/// <param name="Entries">The newest entries in the window, as JSON strings the ring would have served.</param>
+/// <param name="Total">How many entries the window holds in all.</param>
 public sealed record KeptRingPage(IReadOnlyList<string> Entries, int Total);
 // #endregion kept-rings
 
@@ -123,12 +141,21 @@ public static class LogText
 }
 
 /// <summary>What the operator asks the store for: a window, and optional narrowing by kind, status and a fragment of the path.</summary>
+/// <param name="Since">The start of the window; only events at or after this instant are returned.</param>
+/// <param name="Kind">Only events of this kind, or null for every kind.</param>
+/// <param name="Status">Only requests that answered with this HTTP status, or null for any.</param>
+/// <param name="PathContains">Only events whose path contains this fragment, or null for any path.</param>
+/// <param name="Take">The most events to return.</param>
 public sealed record LogQuery(DateTimeOffset Since, string? Kind, int? Status, string? PathContains, int Take);
 
 /// <summary>Whether the store can keep events right now, and if not, why, in words a card can show.</summary>
+/// <param name="Available">True when the store can keep events now.</param>
+/// <param name="Reason">Why the store is not available, in words a card can show.</param>
 public sealed record LogAvailability(bool Available, string Reason);
 
 /// <summary>How many of each kind the window holds, so the card can say what a year of them costs before anyone scrolls.</summary>
+/// <param name="Kind">The event kind counted.</param>
+/// <param name="Count">How many events of that kind the window holds.</param>
 public sealed record LogCount(string Kind, int Count);
 // #endregion events
 

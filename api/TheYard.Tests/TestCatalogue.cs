@@ -52,6 +52,7 @@ public sealed class FullCatalogue : WebApplicationFactory<Program>
         builder.UseSetting("Inventory:TargetCount", Vehicles.ToString());
 }
 
+/// <summary>Holds that a test application boots the small test catalogue and the full catalogue is only built when asked for by name.</summary>
 public class TestCatalogueTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {

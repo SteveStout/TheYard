@@ -2,6 +2,7 @@ using TheYard.Domain;
 
 namespace TheYard.Tests;
 
+/// <summary>Holds vehicle ordering: price sorts use the competing price, and ending-soonest puts live before upcoming before ended, closest end first.</summary>
 public class VehicleOrderingTests
 {
     private static readonly AuctionClock Clock =

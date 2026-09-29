@@ -2,6 +2,7 @@ using TheYard.Domain;
 
 namespace TheYard.Tests;
 
+/// <summary>Holds the auction schedule: windows are stable for a fixed anchor, statuses mix upcoming, live and ended with start-inclusive, end-exclusive boundaries, and the clock anchors to UTC midnight.</summary>
 public class AuctionScheduleTests
 {
     private static readonly DateTimeOffset Now = new(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4));

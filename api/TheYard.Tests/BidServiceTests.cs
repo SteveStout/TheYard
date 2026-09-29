@@ -4,6 +4,7 @@ using TheYard.Domain;
 
 namespace TheYard.Tests;
 
+/// <summary>Holds the bid service: bids are measured against the composed room price, the bid count never drops, accepted bids move the next minimum, and buy-now ends the auction for everyone.</summary>
 public class BidServiceTests
 {
     /// <summary>

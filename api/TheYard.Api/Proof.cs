@@ -372,6 +372,12 @@ public sealed class ProofRunner(
         public List<Sample> Samples { get; } = [];
     }
 
+    /// <summary>One timed request in a proof run, and what the store did to answer it.</summary>
+    /// <param name="Path">The key of the path the request took, such as sign_in or listing.</param>
+    /// <param name="Ms">How long the request took, body included, in milliseconds.</param>
+    /// <param name="Status">The HTTP status code it answered with.</param>
+    /// <param name="Operations">How many statements or store operations the request ran.</param>
+    /// <param name="RequestUnits">The request units the operations spent; 0 on a store with no such unit.</param>
     public sealed record Sample(string Path, long Ms, int Status, int Operations, double RequestUnits);
 }
 // #endregion proof
@@ -388,6 +394,13 @@ public sealed class ProofClients(Func<HttpClient> create)
 
 // #region proof-result
 /// <summary>One path on one store: the samples, the medians, and what the store did per request.</summary>
+/// <param name="Store">The store's display name.</param>
+/// <param name="Samples">How many requests on the path answered below 400.</param>
+/// <param name="P50Ms">The median duration of those requests, in milliseconds.</param>
+/// <param name="P95Ms">The 95th percentile duration of those requests, in milliseconds.</param>
+/// <param name="OperationsPerRequest">The average number of statements or store operations per request, to one decimal place.</param>
+/// <param name="RequestUnitsPerRequest">The average request units per request, or null on a store with no such unit.</param>
+/// <param name="Failures">How many requests on the path answered 400 or above.</param>
 public sealed record ProofCell(
     string Store,
     int Samples,
@@ -403,6 +416,12 @@ public sealed record ProofCell(
 /// negative number means the second store was faster. The second difference
 /// is the same with one round trip per operation taken off each side.
 /// </summary>
+/// <param name="Path">The key of the path, such as sign_in or listing.</param>
+/// <param name="Label">The name the card shows for the path.</param>
+/// <param name="Cells">One cell per store, in store order.</param>
+/// <param name="MedianDifferenceMs">The median of the second store's time minus the first's per round, in milliseconds; null when nothing could be paired.</param>
+/// <param name="DifferenceWithoutHopsMs">The same difference with one round trip per operation taken off each side, in milliseconds; null when nothing could be paired.</param>
+/// <param name="Verdict">One phrase for the row, such as the same, not measured, or which store leads and by how much.</param>
 public sealed record ProofRow(
     string Path,
     string Label,
@@ -411,8 +430,21 @@ public sealed record ProofRow(
     long? DifferenceWithoutHopsMs,
     string Verdict);
 
+/// <summary>One store in a proof run, and its measured round trip.</summary>
+/// <param name="Key">The store's key.</param>
+/// <param name="Name">The store's display name.</param>
+/// <param name="HopMs">The median round trip to the store, in milliseconds, or null when it was not measured.</param>
 public sealed record ProofStore(string Key, string Name, long? HopMs);
 
+/// <summary>The outcome of one proof run: whether it finished, when, on which stores, every row, and the sentence that sums it up.</summary>
+/// <param name="Status">done or failed.</param>
+/// <param name="Reason">Why the run failed, or null when it finished.</param>
+/// <param name="StartedAt">When the run started, or null when it failed before starting.</param>
+/// <param name="FinishedAt">When the run finished or failed.</param>
+/// <param name="Rounds">How many paired rounds were run.</param>
+/// <param name="Stores">The stores compared, in order.</param>
+/// <param name="Rows">One row per path.</param>
+/// <param name="Sentence">The one sentence that sums up the run.</param>
 public sealed record ProofResult(
     string Status,
     string? Reason,

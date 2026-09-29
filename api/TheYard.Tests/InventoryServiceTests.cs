@@ -38,6 +38,7 @@ file sealed class FlakyVehicles(params Vehicle[] vehicles) : IVehicleSource
     }
 }
 
+/// <summary>Holds the inventory service: image rewriting, retrying a failed load, lookup by id, loading once, filtered and paged search, and facets.</summary>
 public class InventoryServiceTests
 {
     [Fact]

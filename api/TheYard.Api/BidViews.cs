@@ -12,6 +12,13 @@ namespace TheYard.Api;
 /// the server, which is that two implementations of one rule eventually
 /// disagree.
 /// </summary>
+/// <param name="Amount">The buyer's own bid, in whole dollars.</param>
+/// <param name="BidCount">How many bids the vehicle has had, counting everybody's, including the simulated room.</param>
+/// <param name="WonBuyNow">True when the buyer bought the vehicle outright.</param>
+/// <param name="AtMs">When the buyer's bid was placed, in milliseconds since the epoch, UTC.</param>
+/// <param name="Outbid">True when another buyer or the simulated room has gone higher and the vehicle was not bought outright.</param>
+/// <param name="MarketAmount">What the simulated room has bid, in whole dollars, or null when it has not bid.</param>
+/// <param name="HighestAmount">The highest bid on the vehicle from anyone, in whole dollars.</param>
 public sealed record BidView(
     int Amount,
     int BidCount,
@@ -21,6 +28,7 @@ public sealed record BidView(
     int? MarketAmount,
     int HighestAmount);
 
+/// <summary>Builds the signed-in buyer's bid badges by folding everybody else's bids into each of theirs.</summary>
 public static class BidViews
 {
     // #region views

@@ -11,6 +11,9 @@ public enum BidOutcomeKind
 }
 
 /// <summary>The result of a bid or buy-now attempt.</summary>
+/// <param name="Kind">Whether the attempt was rejected, accepted or won the vehicle.</param>
+/// <param name="Amount">The amount that stands, in whole dollars; zero when rejected.</param>
+/// <param name="Reason">Why the attempt was rejected, or null when it was not.</param>
 public readonly record struct BidOutcome(BidOutcomeKind Kind, int Amount, string? Reason)
 {
     public static BidOutcome Rejected(string reason) => new(BidOutcomeKind.Rejected, 0, reason);

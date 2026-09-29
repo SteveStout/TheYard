@@ -97,6 +97,14 @@ public sealed class Backend
 }
 
 /// <summary>What a store brings with it when it is attached to its backend: the state that says it came up, and the five things that stand on it.</summary>
+/// <param name="Database">The state that says whether the store came up, and why not if it did not.</param>
+/// <param name="Contexts">The relational contexts, on the SQL backend only; null otherwise.</param>
+/// <param name="QuietContexts">The same database without the statement interceptor, for readings that must not fill the SQL log; null otherwise.</param>
+/// <param name="Inventory">The catalogue service reading from this store.</param>
+/// <param name="Bids">The bid service writing through to this store.</param>
+/// <param name="Activity">Where this store keeps the requests it served.</param>
+/// <param name="Probe">Checks whether the seed catalogue is in the store right now.</param>
+/// <param name="UserStore">Builds Identity's account store for a request's scope, or returns null when there are no accounts to keep.</param>
 public sealed record StoreAttachment(
     DatabaseState Database,
     IDbContextFactory<YardDbContext>? Contexts,
@@ -190,6 +198,9 @@ public sealed class StoreSecondChance(
     ILogger<StoreSecondChance> logger) : BackgroundService
 {
     /// <summary>One backend that did not come up: how to try the store again, and what to do when it answers.</summary>
+    /// <param name="Backend">The backend whose store did not come up.</param>
+    /// <param name="Prepare">Asks the store again and returns its state.</param>
+    /// <param name="Attach">Attaches the backend to the store once it has answered.</param>
     public sealed record Plan(Backend Backend, Func<Task<DatabaseState>> Prepare, Func<DatabaseState, Task> Attach);
 
     public static readonly TimeSpan Every = TimeSpan.FromSeconds(30);
@@ -542,8 +553,15 @@ public sealed class ContextFactory(DbContextOptions<YardDbContext> options) : ID
 }
 
 /// <summary>One store on the toggle: its key, its name, whether it came up, and whether it is the container's default.</summary>
+/// <param name="Key">The store's key.</param>
+/// <param name="Name">The store's display name.</param>
+/// <param name="Ready">True when the store came up.</param>
+/// <param name="Default">True when it is the store a request gets when it names none.</param>
 public sealed record StoreView(string Key, string Name, bool Ready, bool Default);
 
 /// <summary>The bar's answer: which store this request is on, the stores there are (one of them this site's default), and the other site if there is one.</summary>
+/// <param name="Current">The key of the store this request is on.</param>
+/// <param name="Stores">Every store on the toggle.</param>
+/// <param name="OtherSite">The other site's http or https origin, or null when there is none.</param>
 public sealed record StoresView(string Current, IReadOnlyList<StoreView> Stores, string? OtherSite);
 // #endregion backends
