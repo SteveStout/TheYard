@@ -215,3 +215,5 @@ Two steps must still run on a cancelled run: the build cache, so the next versio
 
 ```live path=.github/workflows/deploy.yml region=cache-export
 ```
+
+**Measured on the proof, 29 September.** 1.0.3.40 (8c6f416) was pushed at 08:44:28 CDT and 1.0.3.41 (31a5f44) at 08:50:13, inside its roll. Both 1.0.3.40 runs ended cancelled in their Verify step, after the image was built and both sites had been handed it. On the cancelled Deploy run, `Keep the build cache` (15 s) and `Keep the newest ten images` (5 s) both ran and succeeded, so `always()` is what the runner honours on a cancel, with the build step's outcome as the guard. The 1.0.3.41 runs started when the cancelled run finished those two steps, about forty seconds after the push, and both sites served 1.0.3.41 at 31a5f44 by 08:59:34, nine minutes and twenty-one seconds after its push. One roll's wait was saved: before this the second push would have queued behind the whole of the first roll.

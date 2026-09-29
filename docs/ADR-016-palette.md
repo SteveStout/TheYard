@@ -329,3 +329,16 @@ Steve asked that a developer find any style setting from the file name alone. `s
 - `effects.css`: shadows, the glass and its fallbacks, the panel look, the gold trims, strengths and motion.
 
 Whole regions moved intact, and no value, variable name, selector or class name changed: the sorted list of names before and after is identical, and so is the sorted list of declarations. Code that reads the tokens as text (the swatches and the contrast tests) reads the four joined, from `src/lib/styleSheet.ts`, and StyleRulesTests reads the same four; the glass-fallbacks check reads `effects.css`, and the check for tabular figures reads `base.css`. This reverses the choice in ADR-083's 1.0.3.32 addendum to keep one token sheet for the tests' sake: the tests now read four files as one, so the split costs them nothing. `tokens.test.ts` is `colors.test.ts`. What these records say about `tokens.css` above is history; their links and live samples point at the new files.
+
+## Addendum, 2026-09-29: the Style section becomes four pages
+
+The Style section was one page, Colour and style. It is four now, in the sidebar in this order: the **Style guide** (the landing: three tiles that open the sub-pages in the same window, the standing rules, a glossary of twelve styling terms, and the readouts the build counts), **Colour and style** (the swatches, the glass, the sizes, how the sheet is built, what holds it), **Background and ribbon** (the ground, the ribbons and a live strip of them, the watermark, why it stands still, the glass over it, the Chrome bug) and **UI architecture** (the layers, where a change goes, one job per file). The ground's and the ribbons' swatches moved from Colour and style to Background and ribbon, and `StyleRulesTests` reads the two as one set: every colour design token is on one of them, and every hex and every contrast figure on either is checked.
+
+**"Design token", never a bare "token".** On a site with a Built with AI section, a bare "token" reads as the AI kind. Each page defines the term on first use (a named CSS custom property holding one design decision), and the comments in the four design token files say it too. `StyleSectionTests` holds the four pages and the four files to it, and holds the pages to no em dash.
+
+**Every number on the pages is counted by the build.** A page writes a live placeholder, two braces around `live:` and the name of a measure, and the API replaces it at request time (`LiveCounts.cs`): the design tokens, the facts in a test class, the lines in a file, the files that carry the three-line header, the entries in the ribbons' arrays. The count is made on the server because the browser cannot read a C# file or list a folder. The design token count is the number of distinct names across the four files, since a name declared again inside a media query is still one design token; the mock's 221 counted declarations.
+
+```live path=api/TheYard.Api/LiveCounts.cs region=live-counts
+```
+
+The tiles, the readouts, the glossary and the ribbon strip are fences, the way the swatches are (`src/library/styleBlocks.ts`), and `src/library/useLiveBlocks.tsx` mounts the ribbons and the tile icons into them after the document is drawn. Every second-level heading now carries an id from its words, so the glossary's "See" links land on the section a term is used in.

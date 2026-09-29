@@ -1,5 +1,7 @@
 # App Architecture
 
+*How the look is built, from the design tokens up, is on its own page: [UI architecture](https://theyard.stevenstout.biz/?doc=ui-architecture).*
+
 The shape of the whole application in one page: what each part owns, which
 way the dependencies point, and the rules that keep it that way. The
 records under this one in the sidebar explain the individual decisions;

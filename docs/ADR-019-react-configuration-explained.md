@@ -366,3 +366,21 @@ where the two lists are joined.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts) and [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the two runners and the jobs that run them.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the build stage that repeats `npm run build` in the image.
 - [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the whole-file samples this record uses for the files that cannot carry a region marker (ADR: Live code samples, second addendum).
+
+## Addendum, 2026-09-29 (1.0.3.42): the stylesheets follow
+
+The split of 28 September moved two stylesheets whole and named them as allowed past the 300-line cap. They were the last two files in those folders with more than one job, and they are split now, by the same rule as the code: one job per file, the name says the job, the three-line header.
+
+| The sheet | Before | After |
+| --- | --- | --- |
+| `src/library/DocDialog.module.css` | 828 lines, the window, the prose, the swatches, the reading panels and the Author page | `DocDialog.module.css` (the window), `DocProse.module.css`, `DocSwatches.module.css`, `DocPanels.module.css`, `AuthorPage.module.css` |
+| `src/app/App.module.css` | 425 lines, the frame and the inventory page | `App.module.css` (the frame), `InventoryView.module.css` |
+
+Every rule moved byte for byte; only the headers are new. Each document sheet scopes its rules under its own `.prose`, so the element that holds a document carries all of them (`DocDialog.tsx`, the `PROSE` line), and the reading panel's frost is scoped under the window as well, so the window carries that sheet's `.dialog`. The CSS modules keep the order the one sheet had, because `DocDialog.tsx` imports them in that order.
+
+**The header on every stylesheet.** `FileHeaderTests` reads every `.css` under `src` beside the code in `src/app` and `src/library`: the header, "Used by" against the files that really import each sheet, and the 300-line cap. Forty sheets under `src/components` and `src/styles` got the header in this version. The two "moved whole" allowances are gone. Four component sheets are over the line (`Landing`, `SideNav`, `AdminPanel`, `VehicleDetail`); each holds one component's look and is named in the test with that job and the lane that will split it with its component. A live fence may quote a file's header with `region=header`, since the header comes before anything a marker could wrap.
+
+```live path=api/TheYard.Tests/FileHeaderTests.cs region=the-header-rule
+```
+
+The next lane is the components that have the disease the split cured in `src/app`: `AdminPanel.tsx`, `ActivityCard.tsx` and `SideNav.tsx`, and their sheets with them.

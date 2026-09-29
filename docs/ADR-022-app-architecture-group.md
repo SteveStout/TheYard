@@ -97,3 +97,7 @@ The mechanical style rules (`.editorconfig`):
 - [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/.editorconfig): the mechanical rules.
 - [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts), [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts), [`tests/e2e/smoke.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/smoke.spec.ts): the section names and the two new pages, checked in a browser.
 - [`docs/ADR-013-sidebar.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-013-sidebar.md): the sidebar itself, which this record only regroups.
+
+## Addendum, 2026-09-29: UI architecture, from App Architecture
+
+The look has an architecture page of its own, UI architecture in the Style section: the four design token files, the base and panel sheets, the component sheets, the site map and the document layout, each reading only the layers below it. App Architecture stays about the API, the stores and the data, and links to it rather than repeating it.

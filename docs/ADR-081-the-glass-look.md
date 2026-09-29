@@ -260,3 +260,14 @@ Steve, on the live site at a desk: "there is a odd white box in the background o
 ## Addendum, 2026-09-28 (1.0.3.34): operator.css is panels.css
 
 The shared sheet that draws every panel, card, tile, rail and pill group is `src/styles/panels.css`, and its test `panels.test.ts`, named for what they draw (ADR-016, the addendum on the four token files). Nothing in either changed but the name; the operator-look tokens it draws from are in `effects.css`.
+
+## Addendum, 2026-09-29 (1.0.3.42): the ground is part of the page
+
+Steve: "I always hated how the background moves". Nothing in the drawing moved; the layer did. The ribbons and the watermark were pinned to the window (`position: fixed`, one large viewport tall), so a reader who scrolled watched the page slide over a still picture. Both are pinned to the page now (`position: absolute` at the top of the page, still one large viewport tall), so they scroll away with the words in front of them like a letterhead, and the gradient ground on the body carries on below. The page column starts at the rail, so the layer's left edge is moved back by the rail's width while the rail is docked or collapsed, and the drawing's own rail offsets are as they were: at the top of any page the picture is where it was. `contain: strict` and the one paint stay.
+
+```live path=src/components/layout/Background/Ribbons.module.css region=ground-layer
+```
+
+`ribbons.test.ts` holds that the layer is pinned to the page and never the window. The browser suite scrolls the front page 600 pixels at a desk and a phone width and reads the ribbons, the watermark and the words: all three move by the scroll, to the pixel. Two assertions in `glass.spec.ts` that read the ribbons' and the watermark's position as `fixed` read `absolute` now; that is this change, and no other assertion moved.
+
+One consequence to watch: a document opened after the reader has scrolled down stands on the gradient ground alone, since the ribbons are above the screen. The Background and ribbon page draws a second copy of the drawing in a strip, with ids of its own, which is also the standing proof of the Chrome fix of 1.0.3.20.

@@ -5,8 +5,8 @@ namespace TheYard.Api;
 
 /// <summary>
 /// Live numbers for the served docs (ADR: The palette, the addendum on the Style
-/// section becoming four pages). A document may write <c>{{live:MEASURE}}</c>
-/// anywhere, and this replaces it at request time with the number the
+/// section becoming four pages). A document may write a live placeholder (two
+/// braces around <c>live:</c> and a measure) anywhere, and this replaces it at request time with the number the
 /// repository in this build holds, the way <see cref="LiveSamples"/> replaces a
 /// live fence with the code: a count of the design tokens, of the facts in a
 /// test class, of the lines in a file, of the files that carry the three-line
@@ -25,7 +25,7 @@ public static partial class LiveCounts
     public static readonly string[] HeaderFolders = ["src/app", "src/library"];
 
     /// <summary>
-    /// Replaces every <c>{{live:MEASURE}}</c> in <paramref name="markdown"/> with the
+    /// Replaces every live placeholder in <paramref name="markdown"/> with the
     /// measure read from <paramref name="repoRoot"/>. A measure that returns
     /// several lines (the fact names) is meant to sit alone on a line inside a
     /// fence, and replaces that line.

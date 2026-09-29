@@ -43,7 +43,8 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Code shown in a document is read from the build at request time, never pasted | ADR: Live code samples | LiveSamplesTests, LiveSampleCoverageTests |
 | Every count a living document states is the count | ADR: The public face | PublicFaceTests |
 | The slug, the catalog and the sidebar offer the same documents | ADR: The staff review | DocsCatalogTests |
-| Every file in `src/app` and `src/library` opens with what it does, what it does not, and which files use it; the last is read against the files that import it, and no file there runs past 300 lines but the ones named with why | ADR: The React configuration, explained for a new developer | FileHeaderTests |
+| Every file in `src/app` and `src/library`, and every stylesheet under `src`, opens with what it does, what it does not, and which files use it; the last is read against the files that import it, and no file there runs past 300 lines but the ones named with why | ADR: The React configuration, explained for a new developer | FileHeaderTests |
+| The four Style pages are served and are the Style section's rows, say "design token" and never a bare "token" (as do the design token files' comments), carry no em dash, and every live number and live fence on them is one the build can count or read, and every tile and glossary link lands on a real section | ADR: The palette | StyleSectionTests |
 | One changelog line per shipped version, newest first, and the deploy reads the version from it | ADR: The changelog, ADR: The version comes from the changelog | ChangelogTests |
 | Nothing this repository ships or serves contains an em dash | ADR: Style, enforced | HouseVoiceTests |
 | No marker for work that is not happening, no focused test, no console call under `src` | ADR: Broken windows, and the rule that answers them | BrokenWindowsTests |
@@ -55,7 +56,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Sold is decided before every other bid rule, for everybody | ADR: Accounts and per-user bids | BidRulesTests |
 | Every public endpoint is in the API document with an operation id, a summary, its responses and its lock, and no operator endpoint is | ADR: The API describes itself | ApiDocumentTests |
 | No stylesheet or component carries a raw colour; every colour is a token in the one sheet | ADR: The palette | StyleRulesTests |
-| Every hex on the Colour and style page is a token's value, every colour token is on the page, and every contrast figure it states is the figure the tokens give and clears its bar | ADR: The palette | StyleRulesTests |
+| Every hex on the Style pages (Colour and style, Background and ribbon) is a token's value, every colour token is on one of them, and every contrast figure they state is the figure the tokens give and clears its bar | ADR: The palette | StyleRulesTests |
 | A chart series is never a status colour, and a line takes a status tone only for server errors | ADR: The Admin tab, as a product | StyleRulesTests |
 | Gold is trim: only the header, the brand mark and the named trim use it, never a chart's line, a tile or a ring | ADR: The palette | StyleRulesTests |
 | There is one header gradient, defined once, and every header bar uses it | ADR: The palette | StyleRulesTests |
