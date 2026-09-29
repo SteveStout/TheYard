@@ -78,7 +78,7 @@ The endpoint browser errors report to:
 
 A deliberate 400, in the same shape:
 
-```live path=api/TheYard.Api/Program.cs region=inventory-endpoint
+```live path=api/TheYard.Api/Endpoints/VehicleEndpoints.cs region=inventory-endpoint
 ```
 
 The boundary, and the reporter every path uses:

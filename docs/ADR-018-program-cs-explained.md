@@ -111,7 +111,7 @@ shape every failure uses (ADR: Error handling), a good one
 the auction facts on each vehicle come from `VehicleWire.ToWire`, so the
 same rules serve the list, the detail, and the bid responses.
 
-```live path=api/TheYard.Api/Program.cs region=inventory-endpoint
+```live path=api/TheYard.Api/Endpoints/VehicleEndpoints.cs region=inventory-endpoint
 ```
 
 The two bid endpoints share one local function, `HandleBid`, which answers
@@ -199,10 +199,10 @@ worth saying that it is a decision rather than a drift.
 What those lines are:
 
 ```
-2,565 total
-  911 comment
-  144 blank
-  1,510 code, across 43 endpoints
+2,494 total
+  892 comment
+  142 blank
+  1,460 code, across 40 endpoints
 ```
 
 Thirty-two lines of code per endpoint, and most endpoints are a route, a

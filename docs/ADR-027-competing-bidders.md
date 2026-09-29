@@ -113,7 +113,7 @@ One round of bidding, and the three limits:
 
 Where the two overlays are composed (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheYard.Api/Program.cs region=overlays
+```live path=api/TheYard.Api/Endpoints/VehicleEndpoints.cs region=overlays
 ```
 
 The endpoints (`api/TheYard.Api/Program.cs`):
