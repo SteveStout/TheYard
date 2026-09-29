@@ -1,8 +1,9 @@
 # The Shed
 
 A file and folder browser: an ASP.NET Core 10 API over one configurable home directory, and a
-single page in TypeScript, with no framework, that browses, searches, uploads, downloads, makes folders, moves,
-copies and deletes, inside a dialog, with the whole state of the page in the address bar.
+single page in TypeScript, with no framework, that browses, searches, uploads, downloads, makes
+folders, moves, copies and deletes, inside a dialog, with the whole state of the page in the
+address bar.
 
 Built for MapLarge's developer test project (September 2026) on the starter they sent, in the
 working method of [TheYard](https://theyard.stevenstout.biz), whose repository this folder lives
@@ -11,7 +12,8 @@ commit: [/api/version](https://theshed.stevenstout.biz/api/version).
 
 **Reviewing it?** Three things, one click each, all served by the site itself:
 
-- [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): two pages, the numbers, the quick start, the choices and why, where it goes next, and the code in six pieces.
+- [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): two pages, the
+  numbers, the quick start, the choices and why, where it goes next, and the code in six pieces.
 - [About Steven](https://theshed.stevenstout.biz/?view=docs&doc=about): who built it.
 - [Resume](https://theshed.stevenstout.biz/resume.pdf).
 
@@ -114,12 +116,12 @@ The Shed is a sample, and the parts worth keeping go back to the project it sits
 
 - `HomePath`, `PhysicalFileStore` and the capped search become a Files card on TheYard's Admin tab,
   browsing the container's own logs, data and documents behind the operator's key.
-- ADR-003, the line a path cannot cross, becomes a Best Practices page there, the way its sealed-by-default
-  page is.
+- ADR-003, the line a path cannot cross, becomes a Best Practices page there, the way its
+  sealed-by-default page is.
 - TheYard's sidebar gets a Code Samples section that links this one, so the two read as one way of
   working on two problems.
-- A committed browser test for this page (the eight steps the build's headless pass runs) is the first
-  thing to add here.
+- A committed browser test for this page (the eight steps the build's headless pass runs) is the
+  first thing to add here.
 
 ## Built with AI
 

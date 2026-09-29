@@ -34,8 +34,8 @@ the address always says what the page shows.
 Every change goes through one function, `navigate` in `main.ts`: merge the change into the state,
 write the address with `pushState`, then redraw from the address. Back and forward fire `popstate`,
 which redraws from the address the same way. Closing the dialog navigates to the bare address, so
-Back from a closed page reopens it where it was. The first keystroke of a search pushes an entry and every
-keystroke after it replaces that entry, so Back returns to the folder without the search and
+Back from a closed page reopens it where it was. The first keystroke of a search pushes an entry and
+every keystroke after it replaces that entry, so Back returns to the folder without the search and
 never steps through it letter by letter.
 
 Two things are deliberately not in the URL. The listing itself is fetched, and cached by path for

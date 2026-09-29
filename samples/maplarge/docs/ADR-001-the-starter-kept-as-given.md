@@ -5,11 +5,11 @@ Status: accepted, 2026-09-29.
 ## Context
 
 MapLarge's test project arrives as a zip: `TestProject.sln`, `TestProject.csproj` on net8.0 with
-controllers, a `Program.cs` that adds controllers and static files, one `TestController` that returns
-a string, and a `wwwroot/index.html` that says hello. The brief asks for a file and folder browser
-as a single page app over a JSON API, and says three things about how it wants to read the result:
-simple beats boilerplate, delete what is not used, and spend the time on original code rather than on
-framework or template.
+controllers, a `Program.cs` that adds controllers and static files, one `TestController` that
+returns a string, and a `wwwroot/index.html` that says hello. The brief asks for a file and folder
+browser as a single page app over a JSON API, and says three things about how it wants to read the
+result: simple beats boilerplate, delete what is not used, and spend the time on original code
+rather than on framework or template.
 
 The author's other project, [TheYard](https://theyard.stevenstout.biz), is a React and .NET 10 site
 with two databases, a Docker image, Bicep, a deploy pipeline and eighty-six of these records. Almost
@@ -19,8 +19,8 @@ none of that belongs here, and the temptation to bring it anyway is the thing th
 
 The starter's shape is the project's shape. `TestProject.sln` and `TestProject.csproj` keep their
 names, `Program.cs` keeps one class with one `Main`, the API is controllers because the starter was,
-`wwwroot/index.html` is the one page. `TestController.cs` is deleted: it was the placeholder for what
-this is. The target is `net10.0`, the framework TheYard is on, because the two are one stack by
+`wwwroot/index.html` is the one page. `TestController.cs` is deleted: it was the placeholder for
+what this is. The target is `net10.0`, the framework TheYard is on, because the two are one stack by
 decision (Steve: the sample and the site share every version); the starter arrived on `net8.0`. The
 brief lists Visual Studio 2022 or newer, Rider, VS Code and the command line SDK, and the .NET 10
 SDK covers the last three and Visual Studio 2026 outright. The package versions the test project

@@ -18,15 +18,15 @@ file name; `GET /api/docs` is the list and `GET /api/docs/{slug}` is one documen
 `text/markdown`. The files are read from `docs/` at request time, so editing a record and reloading
 is enough.
 
-**Live code.** A record may hold an empty fenced block whose info string reads
-`live path=Domain/HomePath.cs region=guard`. `LiveSamples.Expand` replaces it with an ordinary
-fenced block holding the current lines between `// #region guard` and its `// #endregion` in that
-file, from this build, with the path on the fence line as a caption. `region=*` shows a whole file.
-Paths are checked as strings against a short list of allowed roots before any file is read, the
-same idea as the home directory's guard on a shorter list; a path outside it, or a region that is not
-there, renders a one-line note rather than an error, so a renamed region shows up on the page.
-`DocsTests` requests every document and fails on any such note, which is how a record cannot quote
-code that no longer exists.
+**Live code.** A record may hold an empty fenced block whose info string reads `live
+path=Domain/HomePath.cs region=guard`. `LiveSamples.Expand` replaces it with an ordinary fenced
+block holding the current lines between `// #region guard` and its `// #endregion` in that file,
+from this build, with the path on the fence line as a caption. `region=*` shows a whole file. Paths
+are checked as strings against a short list of allowed roots before any file is read, the same idea
+as the home directory's guard on a shorter list; a path outside it, or a region that is not there,
+renders a one-line note rather than an error, so a renamed region shows up on the page. `DocsTests`
+requests every document and fails on any such note, which is how a record cannot quote code that no
+longer exists.
 
 **Rendered in the browser.** The brief says do not render HTML server side, and the server does
 not: it serves markdown, and `src/lib/markdown.ts` reads it into a tree of plain objects that

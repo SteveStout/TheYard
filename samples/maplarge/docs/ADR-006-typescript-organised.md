@@ -12,14 +12,14 @@ written down.
 
 ## Decision
 
-**TypeScript, compiled by `tsc` and nothing else.** The sources are in `src/`; `tsc` writes plain
-ES modules to `wwwroot/js`, and the page loads those as they are with one `<script type="module">`.
-No bundler, no dev server, no framework, no runtime dependency: `package.json` has one entry, the
+**TypeScript, compiled by `tsc` and nothing else.** The sources are in `src/`; `tsc` writes plain ES
+modules to `wwwroot/js`, and the page loads those as they are with one `<script type="module">`. No
+bundler, no dev server, no framework, no runtime dependency: `package.json` has one entry, the
 compiler. The compiled output is committed, so `dotnet run` works with the .NET SDK alone and a
-reviewer without Node still sees the page; `npm run build` regenerates it, and the compiler is strict
-(`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused locals and parameters as
-errors). The shapes on the wire are declared once in `src/lib/types.ts`, in the same snake_case as
-`Data/Entries.cs`, so the two can be read side by side (ADR-004).
+reviewer without Node still sees the page; `npm run build` regenerates it, and the compiler is
+strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused locals and
+parameters as errors). The shapes on the wire are declared once in `src/lib/types.ts`, in the same
+snake_case as `Data/Entries.cs`, so the two can be read side by side (ADR-004).
 
 **Modules, in two folders, with the same inward rule as the C#.** `src/lib/` is pure: `types`,
 `urlState`, `format`, `markdown`, `api`. Nothing in `lib` touches the document, which is why three
@@ -39,9 +39,9 @@ diffing and no framework because at this size the whole table is cheaper to rebu
 reconcile. A render that was overtaken by a newer one (the person clicked twice) checks and
 returns without drawing.
 
-**One listener on the table.** Rows carry `data-path` and `data-kind`; buttons carry
-`data-action`; one `click` listener on the grid reads both and dispatches. A table of a thousand rows
-has one listener, not four thousand.
+**One listener on the table.** Rows carry `data-path` and `data-kind`; buttons carry `data-action`;
+one `click` listener on the grid reads both and dispatches. A table of a thousand rows has one
+listener, not four thousand.
 
 **The search box is made once and kept.** Rebuilding it on every render would take the caret from
 someone typing. The breadcrumb and the table rebuild; the input does not.

@@ -25,7 +25,8 @@ Data  <-  Domain  <-  Application  <-  Infrastructure  <-  Controllers
   filesystem, no clock, no HTTP; `HomePath` is tested against root strings on whatever OS runs the
   suite because it never asks the disk anything.
 - `Application/` is the use cases (`FileBrowser`) behind one port (`IFileStore`), plus the options
-  and the one exception type a use case throws. It knows what a browse is and not what a directory is.
+  and the one exception type a use case throws. It knows what a browse is and not what a directory
+  is.
 - `Infrastructure/` is the disk, behind the port: `PhysicalFileStore`, thin calls into `System.IO`.
 - `Controllers/` is HTTP: an action per route, each a line or three, and the handler that turns a
   refusal into a problem document. `Library/` sits beside it for the documents the app serves

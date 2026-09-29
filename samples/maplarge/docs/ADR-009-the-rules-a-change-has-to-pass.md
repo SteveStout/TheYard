@@ -47,8 +47,8 @@ error), and no `using` is unused (IDE0005 as a warning, same reason).
 2. If the change contradicts a record, the record changes first, as an addendum that says when it
    stopped being true rather than an edit that makes it look like it was always this way.
 3. Write the test with the change, in the same commit.
-4. `dotnet test` and `npm test` (after `npm run build`) run green before anything is committed. Any build
-   warning is red.
+4. `dotnet test` and `npm test` (after `npm run build`) run green before anything is committed. Any
+   build warning is red.
 
 ## Files
 

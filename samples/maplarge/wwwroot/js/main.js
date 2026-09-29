@@ -99,7 +99,10 @@ closeButton.addEventListener('click', () => navigate({ ...DEFAULTS, open: false 
 tabs.addEventListener('click', (event) => {
     const button = event.target?.closest('button[data-view]');
     if (button) {
-        navigate({ view: viewOf(button.dataset['view']) });
+        // Leaving Docs drops the document from the address, so a link copied from the Files tab
+        // says only what the Files tab shows.
+        const view = viewOf(button.dataset['view']);
+        navigate(view === 'docs' ? { view } : { view, doc: '' });
     }
 });
 // Escape closes a modal dialog on its own; the address has to follow it.

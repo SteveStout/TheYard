@@ -10,8 +10,9 @@ shape of that JSON is a decision a reviewer will read in the first minute, so it
 ## Decision
 
 **snake_case, end to end.** `folder_count`, `size_bytes`, `modified_ms`, `took_ms`. One naming
-policy on the serializer, no mapping layer, and the TypeScript declares the same names it receives (`src/lib/types.ts`).
-The choice is TheYard's habit, kept so a reader moving between the two projects sees one wire.
+policy on the serializer, no mapping layer, and the TypeScript declares the same names it receives
+(`src/lib/types.ts`). The choice is TheYard's habit, kept so a reader moving between the two
+projects sees one wire.
 
 **Records, sealed.** Every reply type is a positional record in `Data/Entries.cs`, sealed, with a
 summary and a description of every field. A reply is a value; two listings with the same contents
@@ -32,13 +33,13 @@ browse, the matches of a search. The page never adds up a column it might have s
 shows in its corner is the server's own (ADR-008).
 
 **Every failure is an RFC 9457 problem document**, `application/problem+json`, with `status`,
-`title`, `detail` and the framework's `traceId`. A use case throws `BrowserProblemException` with the status
-it means (404 nothing there, 400 refused, 409 already exists, 413 too large); the home throws
-`PathRefusedException`, always a 400; `BrowserProblemHandler` turns either into the document and
-lets anything else through to the default handler, so an actual bug is still a 500 and never
+`title`, `detail` and the framework's `traceId`. A use case throws `BrowserProblemException` with
+the status it means (404 nothing there, 400 refused, 409 already exists, 413 too large); the home
+throws `PathRefusedException`, always a 400; `BrowserProblemHandler` turns either into the document
+and lets anything else through to the default handler, so an actual bug is still a 500 and never
 dressed as a client error. An unknown route under `/api` is a problem document too
-(`UseStatusCodePages` with the problem details service). The page reads `detail` first and shows
-the server's sentence.
+(`UseStatusCodePages` with the problem details service). The page reads `detail` first and shows the
+server's sentence.
 
 The problem document is the one place the wire is not snake_case: `traceId` is the framework's
 name for its own field, and renaming a standard's field to match a house style would cost more than
