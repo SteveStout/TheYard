@@ -209,7 +209,7 @@ and a guess that is right often enough does not need it.
 ```live path=api/TheYard.Api/Program.cs region=activity-hook
 ```
 
-```live path=api/TheYard.Api/Program.cs region=activity-endpoints
+```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=activity-endpoints
 ```
 
 ## Addendum, 2026-09-13: the measurement, read off both live containers on 1.0.0.114

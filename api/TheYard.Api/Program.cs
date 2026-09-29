@@ -39,10 +39,6 @@ string manifestPath = paths.ManifestPath;
 string imagesRoot = paths.ImagesRoot;
 string repoRoot = paths.RepoRoot;
 // Build provenance (ADR-005), read once: the Docker build bakes both in.
-// An hour of samples at a quarter of a minute each, which is also the number
-// of rows the relational store's own view keeps (ADR: What the machines are doing).
-const int MachineSamples = 240;
-const int RequestRing = 500;
 
 string buildVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev";
 string buildCommit = Environment.GetEnvironmentVariable("APP_COMMIT") ?? "local";
@@ -329,7 +325,9 @@ if (cosmos is not null)
 // are this process's memory and nothing else: they empty on every roll, which
 // the page says out loud (ADR: What the database is actually doing).
 var logLog = new LogRingBuffer(300);
-var requestLog = new RequestRingBuffer(RequestRing);
+var requestLog = new RequestRingBuffer(RingSizes.RequestRing);
+builder.Services.AddSingleton(logLog);
+builder.Services.AddSingleton(requestLog);
 builder.Services.AddSingleton(sqlLog);
 builder.Services.AddSingleton<ISqlLog>(sqlLog);
 builder.Services.AddSingleton(storeLog);
@@ -560,7 +558,7 @@ builder.Services.AddHostedService(services => services.GetRequiredService<Activi
 // Memory is not an event, so nothing on the Admin tab could show it until
 // something asked on a clock (ADR: What the machines are doing). Four an
 // hour for an hour, in about twenty kilobytes of this container's memory.
-builder.Services.AddSingleton(new MachineSampler(MachineSamples));
+builder.Services.AddSingleton(new MachineSampler(RingSizes.MachineSamples));
 builder.Services.AddHostedService(services => services.GetRequiredService<MachineSampler>());
 // #endregion machine-sampler-wiring
 // #region machine-history-wiring
@@ -600,6 +598,11 @@ builder.Services.AddSingleton(adminKey);
 // show. Admin__VisitorRows=true turns it back on (ADR: Site activity, and
 // the line an address does not cross, sixth addendum).
 bool visitorRows = builder.Configuration.GetValue("Admin:VisitorRows", false);
+builder.Services.AddSingleton(new AdminSettings(visitorRows));
+// A report is kept thirty seconds and rebuilt behind the next read for ten
+// minutes after that, so a reader never waits on the visitor rows being counted
+// (ActivityReportCache, the addendum of 28 September).
+builder.Services.AddSingleton(new ActivityReportCache(TimeProvider.System));
 
 // #region email-wiring
 // The one email this site sends, the reset link, through Azure Communication
@@ -785,7 +788,40 @@ var telemetry = new TelemetryReader(
     // Wired only where the connection string is: the app id has a default and
     // is therefore no evidence at all that this build can read anything.
     enabled: telemetryOn);
+builder.Services.AddSingleton(telemetry);
 #endregion telemetry
+
+// Identifiers, not secrets: the identity's client id and this group's ARM path.
+var azureSelf = new AzureSelf(
+    builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
+    builder.Configuration["Azure:SelfResourceId"]
+        ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
+builder.Services.AddSingleton(azureSelf);
+// The other container's metrics, read server side with a short patience (ADR: Backends, side by side).
+var peer = new PeerReader(
+    builder.Configuration["Peer:Url"],
+    new HttpClient { Timeout = PeerReader.Patience + TimeSpan.FromSeconds(1) });
+builder.Services.AddSingleton(peer);
+// The performance proof (ADR: Same performance, proven), built on first use so a test's own
+// ProofClients registration is the one it gets.
+builder.Services.AddSingleton(services => new ProofRunner(backends, services.GetRequiredService<ProofClients>(), sqlLog, storeLog));
+// The sweep over every address this container serves (ADR: Every page, checked at every roll):
+// it dials the loopback once the server is listening, and is started at the roll further down.
+builder.Services.AddSingleton(services => new PageStatusRunner(
+    () => SelfAddress.Of(services) is { } dialable
+        ? new HttpClient(new HttpClientHandler { UseCookies = false })
+        {
+            BaseAddress = new Uri(dialable),
+            Timeout = TimeSpan.FromSeconds(30),
+        }
+        : null,
+    // The frontend is in the image and not in a checkout, so the addresses it
+    // serves are checked where they exist and named nowhere else.
+    () => services.GetRequiredService<IWebHostEnvironment>() is { } environment
+        && !string.IsNullOrEmpty(environment.WebRootPath)
+        && File.Exists(Path.Combine(environment.WebRootPath, "index.html")),
+    buildVersion,
+    buildCommit));
 
 // The two error rings and the moment the process started, registered before the
 // host exists so the endpoints can ask for them; the rings are wired to the kept
@@ -1088,11 +1124,6 @@ var browserErrors = errorRings.Browser;
 // #endregion two-rings
 errorLog.Kept = entry => keptRings.Keep(KeptRings.Errors, entry.At, entry);
 browserErrors.Kept = entry => keptRings.Keep(KeptRings.Errors, entry.At, entry);
-// Identifiers, not secrets: the identity's client id and this group's ARM path.
-var azureSelf = new AzureSelf(
-    builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
-    builder.Configuration["Azure:SelfResourceId"]
-        ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
 
 #region error-log
 // Middleware, so it sees every response including the ones no endpoint
@@ -1138,358 +1169,20 @@ app.Use(async (context, next) =>
 // Recent errors, a browser's report of one, and the failure on purpose (Endpoints/ErrorEndpoints.cs).
 app.MapErrorEndpoints();
 
-#region admin-observability-endpoints
-// The raw SQL, newest first. Statement text, parameter names and types, how
-// long the database took, and the request that caused it. No parameter values:
-// see the comment on SqlStatement for why there is nowhere to put one.
-app.MapGet("/api/admin/sql", () => Results.Json(sqlLog.Snapshot()));
-
-// #region store-endpoint
-// The document store's operations, newest first: container, kind, the query
-// shape, whether it was pinned to one partition or fanned out, and the request
-// charge beside the milliseconds. Empty on a relational container, exactly as
-// the SQL list is empty on the document one; the page shows whichever the
-// container is (ADR: What the store is actually doing).
-app.MapGet("/api/admin/store", () => Results.Json(new
-{
-    store = backends.Named("cosmos")?.Name ?? backends.Default.Name,
-    operations = storeLog.Snapshot(),
-}));
-// #endregion store-endpoint
-
-// The raw log lines, newest first, exactly as the console got them.
-app.MapGet("/api/admin/logs", () => Results.Json(logLog.Snapshot()));
-
-// #region kept-rings-endpoint
-// The same four lists over a day, a week or a month, read back from the
-// document store (ADR: Logs that outlive the container, the addendum on the cards). card is one of errors,
-// logs, sql or store and window one of 24h, 7d or 30d; both pick from a fixed
-// list and neither reaches the store as anything but a parameter. Public,
-// because every entry is what the ring beside it already serves in public.
-app.MapGet("/api/admin/kept", async (string? card, string? window, KeptRingReader reader, CancellationToken cancellation) =>
-    await reader.ReadAsync(card, window, DateTimeOffset.UtcNow, cancellation) is { } answer
-        ? Results.Json(answer)
-        : Results.Problem(detail: "card is one of errors, logs, sql or store, and window is one of 24h, 7d or 30d.", statusCode: 400, title: "The card or the window could not be read"));
-// #endregion kept-rings-endpoint
-
-// Timing, computed on read from the two rings. The window is whatever the
-// rings currently hold, which the page states rather than implying.
-app.MapGet("/api/admin/metrics", (HttpContext http) =>
-{
-    var requests = requestLog.Snapshot();
-    var statements = sqlLog.Snapshot();
-    long[] requestDurations = requests.Select(entry => entry.DurationMs).ToArray();
-    long[] sqlDurations = statements.Select(statement => statement.DurationMs).ToArray();
-    // The store this request is on gets the top-level numbers, which is what
-    // the comparison card on a single-store container and the peer read have
-    // always taken. Every store this container runs is listed below them, each
-    // with its own cold start and its own share of the request ring
-    // (ADR: One container, both stores).
-    var mine = backends.For(http);
-    return Results.Json(new
-    {
-        requests = new
-        {
-            window = requests.Count,
-            p50_ms = Percentiles.Of(requestDurations, 50),
-            p95_ms = Percentiles.Of(requestDurations, 95),
-            by_path = Percentiles.ByPath(requests),
-            // The same window by route, for the comparison card: a bid on one
-            // vehicle and a bid on another are one row (ADR: Backends, side by side).
-            by_route = Routes.ByRoute(requests),
-        },
-        // Counts by status, which is the aggregate that makes the timing above
-        // mean something: a p95 of eight milliseconds reads very differently
-        // when a third of the window is 500s. It also names nobody, which the
-        // per-request list it replaced could not say.
-        by_status = requests
-            .GroupBy(entry => entry.Status)
-            .OrderBy(group => group.Key)
-            .Select(group => new { status = group.Key, count = group.Count() })
-            .ToArray(),
-        sql = new
-        {
-            window = statements.Count,
-            p50_ms = Percentiles.Of(sqlDurations, 50),
-            p95_ms = Percentiles.Of(sqlDurations, 95),
-            max_ms = sqlDurations.Length == 0 ? 0 : sqlDurations.Max(),
-        },
-        // #region store-metrics
-        // The same window over the document store, with what the window cost:
-        // total request units, the median charge, the dearest single operation,
-        // and how many of them fanned out across partitions. These are the
-        // numbers the comparison card puts beside the milliseconds
-        // (ADR: Backends, side by side).
-        store = StoreMetrics.Of(mine.Name, storeLog.Snapshot()),
-        store_by_route = Routes.ChargesByRoute(storeLog.Snapshot()),
-        // How this container came up: how long the store took to answer, how
-        // long the catalogue and the bids took to load, when it was ready to
-        // serve, and what the seed cost. Measured on this container at this
-        // start, which is the only honest cold start there is.
-        startup = StartupView(mine),
-        // #endregion store-metrics
-        // #region backends-metrics
-        // Every store this container runs, on the same rows the peer answers
-        // with, so the card compares two stores in one process the way it
-        // compared two containers: the cold start each one had, the requests
-        // each one served, and what those cost the one that can say.
-        backends = backends.All.Select(backend => new
-        {
-            key = backend.Key,
-            store = backend.Name,
-            ready = backend.Ready,
-            @default = ReferenceEquals(backend, backends.Default),
-            startup = StartupView(backend),
-            requests = RequestsView(requests.Where(entry => entry.Store == backend.Key).ToArray()),
-            store_metrics = backend.Cosmos is null
-                ? null
-                : StoreMetrics.Of(backend.Name, storeLog.Snapshot()),
-            store_by_route = backend.Cosmos is null
-                ? Array.Empty<RouteCharge>()
-                : Routes.ChargesByRoute(storeLog.Snapshot()),
-            sql = backend.Contexts is null
-                ? null
-                : new
-                {
-                    window = statements.Count,
-                    p50_ms = Percentiles.Of(sqlDurations, 50),
-                    p95_ms = Percentiles.Of(sqlDurations, 95),
-                    max_ms = sqlDurations.Length == 0 ? 0 : sqlDurations.Max(),
-                },
-        }).ToArray(),
-        // #endregion backends-metrics
-        // No recent_requests list. The first version returned the whole ring,
-        // five hundred entries of method, path, status and timing, which is a
-        // near-real-time feed of what every other visitor to a public site is
-        // doing: which vehicles they opened, which filters they typed. The page
-        // never rendered it. Aggregates answer the question the section is for
-        // and name nobody (the staff review, 2026-09-03).
-    });
-
-    static object RequestsView(IReadOnlyList<RequestEntry> served)
-    {
-        long[] durations = served.Select(entry => entry.DurationMs).ToArray();
-        return new
-        {
-            window = served.Count,
-            p50_ms = Percentiles.Of(durations, 50),
-            p95_ms = Percentiles.Of(durations, 95),
-            by_route = Routes.ByRoute(served),
-        };
-    }
-
-    object StartupView(Backend backend) => new
-    {
-        store = backend.Name,
-        prepare_ms = backend.Startup.Ms("prepare"),
-        schema_ms = backend.Database.SchemaMs,
-        seed_ms = backend.Database.SeedMs,
-        seed_ru = backend.Database.SeedRequestUnits,
-        catalogue_ms = backend.Startup.Ms("catalogue"),
-        bids_ms = backend.Startup.Ms("bids"),
-        ready_ms = backend.Startup.ReadyMs,
-        started_at = startedAt,
-    };
-});
-
-// #region activity-endpoints
-// Site activity (ADR: Site activity, and the line an address does not cross).
-// The public one: requests over time split by store, the totals, the top
-// paths, the bot and human counts, and what the feature has cost. It names
-// nobody, so it is as public as the rest of this tab. The window is a name
-// and not a number, so a caller cannot ask for a year.
-// A report is kept thirty seconds and rebuilt behind the next read for ten
-// minutes after that, so a reader never waits on the visitor rows being counted
-// (ActivityReportCache, the addendum of 28 September).
-var activityReports = new ActivityReportCache(TimeProvider.System);
-app.MapGet("/api/admin/activity", async (string? window, ActivityCollector collector, CancellationToken cancellation) =>
-    ActivityWindows.Parse(window) is null
-        ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-        : Results.Json(await activityReports.GetAsync(
-            window ?? "24h",
-            (now, building) => ActivityReport.PublicAsync(collector, backends, window ?? "24h", now, visitorRows, building),
-            cancellation)));
-
-// The visitor rows, behind the operator's key: a token that rotates daily,
-// the network to three octets, the store, the counts and the top paths. The
-// key is presented as a query parameter or a header and compared in constant
-// time; a wrong key, a missing key and an unconfigured key are all a 404, so
-// a stranger cannot tell the endpoint exists. This is the one Admin read that
-// is not public, because a network range beside a timestamp on a public page
-// can name an employer, and the tab is public by design (ADR-054).
-app.MapGet("/api/admin/activity/visitors", async (string? window, string? key, HttpContext http, ActivityCollector collector, CancellationToken cancellation) =>
-{
-    string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
-    if (!visitorRows || !adminKey.Admits(presented))
-    {
-        return Results.NotFound();
-    }
-
-    return ActivityWindows.Parse(window) is null
-        ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-        : Results.Json(await ActivityReport.VisitorsAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, cancellation));
-});
-// #endregion activity-endpoints
-
-// #region kept-logs-endpoints
-// The kept log (ADR: Logs that outlive the container), behind the same key
-// as the visitor rows and for the same reason: a request log names a network
-// beside a path and a time. A window, and optionally a kind, a status and a
-// fragment of the path, which travel to the store as parameters and never as
-// syntax. The answer says whether anything is kept at all, so a container
-// with no document store shows an honest card rather than an empty table.
-app.MapGet("/api/admin/logs/kept", async (string? window, string? kind, int? status, string? path, string? key, HttpContext http, LogCollector collector, CancellationToken cancellation) =>
-{
-    string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
-    if (!visitorRows || !adminKey.Admits(presented))
-    {
-        return Results.NotFound();
-    }
-
-    if (ActivityWindows.Parse(window) is null)
-    {
-        return Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read");
-    }
-
-    if (!string.IsNullOrEmpty(kind) && !LogEvent.Kinds.Contains(kind, StringComparer.Ordinal))
-    {
-        return Results.Problem(detail: "kind is one of request, error or app.", statusCode: 400, title: "The kind could not be read");
-    }
-
-    return Results.Json(await LogReport.QueryAsync(collector, window ?? "24h", kind, status, path, DateTimeOffset.UtcNow, cancellation));
-});
-// #endregion kept-logs-endpoints
-
-// #region stores-endpoints
-// The Store bar at the top of the page (ADR: One container, both stores, and
-// its addendum on the toggle moving to the sites). What stores this container
-// runs, which one is this site's default, which one this request is on, and
-// the other site's address. There is no switch endpoint any more: the bar's
-// other segment is a link to the other site, so the address bar changes and
-// each site stays one store's site. A cookie the old toggle set is expired
-// here, on the first page load that carries it.
-app.MapGet("/api/stores", (HttpContext http) =>
-{
-    Backends.ExpireLegacyCookie(http);
-    return TypedResults.Ok(backends.Describe(http));
-})
-    .WithName("GetStores")
-    .WithTags("Stores")
-    .WithSummary("Which stores this container runs, and which one this request is on")
-    .WithDescription("A request names a store with the X-Yard-Store header (sql or cosmos) or gets the site's default. "
-        + "The other site, if there is one, is the same code with the other default.");
-// #endregion stores-endpoints
-#endregion admin-observability-endpoints
+// The Admin tab's reads and the operator's actions (Endpoints/AdminEndpoints.cs).
+app.MapAdminEndpoints();
 
 
 
 // Accounts and the password reset (Endpoints/AccountEndpoints.cs).
 app.MapAccountEndpoints();
 
-app.MapGet("/api/admin/azure", async () => Results.Json(await azureSelf.GetStateAsync()));
-
-// #region peer-endpoint
-// The other container's metrics, read server side with a short patience, so
-// the comparison card can put both backends on the same rows whichever tab
-// is open. The peer's address is configuration on this container and never
-// reaches the browser (ADR: Backends, side by side).
-var peer = new PeerReader(
-    builder.Configuration["Peer:Url"],
-    new HttpClient { Timeout = PeerReader.Patience + TimeSpan.FromSeconds(1) });
-app.MapGet("/api/admin/peer", async () => Results.Json(await peer.ReadAsync()));
-// #endregion peer-endpoint
-
-// #region proof-endpoints
-// The performance proof (ADR: Same performance, proven): read the last result
-// or the run in progress, or start one. Reading is public like the rest of
-// the Admin tab. Starting is a write, sixteen bids in the stores, so it takes
-// a signed-in visitor, the same rule every other write here follows (ADR: The
-// one write a stranger can make, addendum); it answers 409 while a run is on
-// or for a minute after one, so the card is never asked to prove the same
-// thing twice at once.
-var proof = new ProofRunner(backends, app.Services.GetRequiredService<ProofClients>(), sqlLog, storeLog);
-
-// #region machines-endpoint
-// What the three machines under this site are doing, each reporting the way
-// that machine actually reports: the container from the runtime, the
-// relational store from its own resource view, the document store from what
-// its operations charged, because it has no memory reading to give
-// (ADR: What the machines are doing).
-app.MapGet("/api/admin/machines", async (string? window, MachineSampler sampler, MachineHistoryReader kept, CancellationToken cancellation) =>
-{
-    var relational = backends.Named("sql");
-    var load = await ResourceStats.ReadAsync(relational, MachineSamples, cancellation, app.Logger);
-    var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB");
-    return Results.Json(new
-    {
-        // The hour below is this process's own memory and is always here. A
-        // wider window is read from the store, in buckets sized to it.
-        windows = MachineWindows.Names,
-        history = await kept.ReadAsync(window, DateTimeOffset.UtcNow, cancellation),
-        // The request ring a minute at a time, in the unit a kept minute is
-        // written in, so the hour and the month are one chart.
-        traffic = new { ring = RequestRing, minutes = TrafficMinutes.From(requestLog.Snapshot()) },
-        container = new
-        {
-            memory_limit_mb = MachineSampler.MemoryLimitMb,
-            processors = MachineSampler.Processors,
-            uptime_seconds = (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
-            every_seconds = (int)MachineSampler.Every.TotalSeconds,
-            samples = sampler.Snapshot(),
-            // Which catalogues this process is holding right now, because a
-            // hundred thousand vehicles is most of what the memory above is.
-            catalogues = backends.All.Select(backend => new
-            {
-                store = backend.Name,
-                serves = ReferenceEquals(backend, backends.Default),
-                loaded = backend.Inventory.IsWarm,
-            }),
-        },
-        relational = new
-        {
-            store = relational?.Name ?? "no relational store on this container",
-            available = load.Available,
-            note = load.Note,
-            rows = load.Rows,
-        },
-        document = new
-        {
-            store = document.Store,
-            available = document.Available,
-            note = document.Note,
-            request_units = document.RequestUnits,
-            operations = document.Operations,
-            p50_ms = document.P50Ms,
-            p95_ms = document.P95Ms,
-            free_request_units_per_second = DocumentLoad.FreeRequestUnitsPerSecond,
-            minutes = document.Minutes,
-        },
-    });
-})
-    .WithName("GetMachines")
-    .WithTags("Admin")
-    .WithSummary("What the container and the two stores are doing, each as that machine reports itself, over the last hour or a kept window of 24h, 7d or 30d");
-// #endregion machines-endpoint
-
 // #region page-status-wiring
 // The sweep over every address this container serves. It dials the loopback
 // the proof dials, and it is null until the server is listening, which is what
 // keeps it from running under the test host: the suite drives RunAsync with
 // the test server's own client instead (ADR: Every page, checked at every roll).
-var pageStatus = new PageStatusRunner(
-    () => SelfAddress.Of(app.Services) is { } dialable
-        ? new HttpClient(new HttpClientHandler { UseCookies = false })
-        {
-            BaseAddress = new Uri(dialable),
-            Timeout = TimeSpan.FromSeconds(30),
-        }
-        : null,
-    // The frontend is in the image and not in a checkout, so the addresses it
-    // serves are checked where they exist and named nowhere else.
-    () => !string.IsNullOrEmpty(app.Environment.WebRootPath)
-        && File.Exists(Path.Combine(app.Environment.WebRootPath, "index.html")),
-    buildVersion,
-    buildCommit);
+var pageStatus = app.Services.GetRequiredService<PageStatusRunner>();
 
 // Every roll carries a check of the thing that was just rolled. The address
 // is read from the server when the sweep runs rather than from the variable
@@ -1540,92 +1233,11 @@ if (builder.Configuration.GetValue("KeepWarm:Enabled", !string.IsNullOrEmpty(Env
 }
 // #endregion keep-warm-wiring
 
-// The last sweep, whoever asked for it. Public, like every other reading on
-// this tab: it names addresses this site already serves to anybody.
-app.MapGet("/api/admin/pages", () => Results.Json(pageStatus.Status))
-    .WithName("GetPageStatus")
-    .WithTags("Admin")
-    .WithSummary("Every address this container serves, as the last sweep found it");
 
-// And one on demand. 409 rather than an error when a sweep is already running
-// or the last one is inside the cooldown, which is what the proof's start
-// does and what the card's button expects.
-app.MapPost("/api/admin/pages", () => pageStatus.TryStart("asked")
-    ? Results.Accepted("/api/admin/pages")
-    : Results.Conflict(new { status = "a sweep is already running, was run in the last twenty seconds, or this container has no address of its own to dial" }))
-    .WithName("RunPageStatus")
-    .WithTags("Admin")
-    .WithSummary("Check every address this container serves, now");
-// #endregion page-status-wiring
-// #region test-results
-// Every test the ship's gate ran for this build, as the gate wrote it: the
-// suites, their counts and times, and each test with its outcome and its
-// milliseconds. The file ships in the image beside the dataset and is read on
-// each request, because it is small and never changes inside a container.
-// Public like every reading on this tab; the tests are in the public
-// repository already. A build with no file says so rather than inventing one.
-// #region test-summary
-// The same file, added up: what the landing page shows a reader in its first
-// screen (1.0.2.0). The whole results file is 160 KB and the strip needs six
-// numbers, so this reads the counts and nothing else, and the answer is cached
-// until the file changes, which inside a container it never does.
-app.MapGet("/api/tests/summary", IResult () =>
-{
-    if (!File.Exists(testResultsPath))
-    {
-        return Results.Problem(
-            detail: "No test results shipped with this build. The ship's gate writes them.",
-            statusCode: StatusCodes.Status404NotFound,
-            title: "No test results");
-    }
 
-    return Results.Json(TestSummary.Of(testResultsPath), wireFormat);
-})
-    .WithName("GetTestSummary")
-    .WithTags("Admin")
-    .WithSummary("The gate's counts for this build, without the tests themselves")
-    .WithDescription("The landing page's evidence strip: the suites and their totals, read from the same file the Admin tab's tests card reads.")
-    .Produces<TestSummaryReport>(StatusCodes.Status200OK)
-    .ProducesProblem(StatusCodes.Status404NotFound);
-// #endregion test-summary
 
-app.MapGet("/api/admin/tests", IResult () => File.Exists(testResultsPath)
-    ? Results.Text(File.ReadAllText(testResultsPath), "application/json")
-    : Results.Problem(
-        detail: "No test results shipped with this build. The ship's gate writes them.",
-        statusCode: StatusCodes.Status404NotFound,
-        title: "No test results"))
-    .WithName("GetTestResults")
-    .WithTags("Admin")
-    .WithSummary("Every test the ship's gate ran for this build, and its result");
-// #endregion test-results
-app.MapGet("/api/admin/proof", () => Results.Json(proof.Status));
-app.MapPost("/api/admin/proof", (int? rounds) => proof.TryStart(rounds ?? ProofRunner.DefaultRounds)
-    ? Results.Json(new { status = "running" }, wireFormat, statusCode: StatusCodes.Status202Accepted)
-    : Results.Problem(
-        detail: "A run is in progress, or the last one finished less than a minute ago. The result is on the card.",
-        statusCode: StatusCodes.Status409Conflict,
-        title: "The proof is busy")).RequireAuthorization();
-// #endregion proof-endpoints
 
-// #region experiment-endpoint
-// The partition key, live: seven queries against the 100,000-document
-// catalogue, with the request charge beside each, run with this container's
-// own identity and cached for a minute (ADR: The partition key). On a
-// relational container it says so and shows nothing, which is the card's
-// fourth empty state.
-app.MapGet("/api/admin/experiment", async () => cosmos is null
-    ? Results.Json(new { available = false, reason = "this container is not on Azure Cosmos DB", rows = Array.Empty<object>() })
-    : Results.Json(await Experiment.RunAsync(cosmos)));
-// #endregion experiment-endpoint
 
-#region telemetry-endpoint
-// The last hour as Application Insights has it, for the Admin tab (ADR-024).
-// Answers a shape the card can render even when telemetry is off or the query
-// fails, because a panel that reports on the system must not be able to break
-// the page it reports from.
-app.MapGet("/api/admin/telemetry", async () => Results.Json(await telemetry.GetRecentAsync()));
-#endregion telemetry-endpoint
 
 #region cache-headers
 // Cache rules (ADR-015), from the shape of the address. Vite names every

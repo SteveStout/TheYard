@@ -143,7 +143,7 @@ container.
 ```live path=api/TheYard.Api/Logs.cs region=collector
 ```
 
-```live path=api/TheYard.Api/Program.cs region=kept-logs-endpoints
+```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=kept-logs-endpoints
 ```
 
 ## Addendum, 2026-09-13: three years

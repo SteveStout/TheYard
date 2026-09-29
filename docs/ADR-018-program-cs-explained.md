@@ -199,10 +199,10 @@ worth saying that it is a decision rather than a drift.
 What those lines are:
 
 ```
-1,688 total
-  684 comment
-  99 blank
-  905 code, across 20 endpoints
+1,300 total
+  544 comment
+  82 blank
+  674 code, across 0 endpoints
 ```
 
 Thirty-two lines of code per endpoint, and most endpoints are a route, a
@@ -280,7 +280,7 @@ store. The metrics endpoint answers the store the request is on at the top
 level, as it always did, and lists every store below it. And two endpoints
 were added for the toggle at the top of the page.
 
-```live path=api/TheYard.Api/Program.cs region=stores-endpoints
+```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=stores-endpoints
 ```
 
 The numbers in the section above are the file's numbers on the day this

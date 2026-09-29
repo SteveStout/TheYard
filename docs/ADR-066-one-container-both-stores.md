@@ -86,7 +86,7 @@ with its peer, so the second container and its card keep working unchanged.
 The request ring records which store served each request, which is what lets
 one ring be split two ways.
 
-```live path=api/TheYard.Api/Program.cs region=backends-metrics
+```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=backends-metrics
 ```
 
 **The health check names every store.** One check per store, the default's

@@ -68,7 +68,7 @@ The registration, and the reader it hands the Admin tab
 ```live path=api/TheYard.Api/Program.cs region=telemetry
 ```
 
-```live path=api/TheYard.Api/Program.cs region=telemetry-endpoint
+```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=telemetry-endpoint
 ```
 
 One query answers the whole card, because three questions in three round
