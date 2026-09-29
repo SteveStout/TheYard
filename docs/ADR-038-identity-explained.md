@@ -227,7 +227,7 @@ Four endpoints carry it: placing a bid, buying now, clearing your bids, and the
 bid history. Reading stays open, so an anonymous visitor still watches the
 auction and cannot bid in it.
 
-```live path=api/TheYard.Api/Program.cs region=auth-endpoints
+```live path=api/TheYard.Api/Endpoints/AccountEndpoints.cs region=auth-endpoints
 ```
 
 Inside an endpoint that requires it, `http.UserId()` reads the account id from
