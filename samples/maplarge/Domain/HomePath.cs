@@ -5,7 +5,11 @@ namespace TestProject.Domain;
 /// API accepts is relative to this root. This class is the only place that turns such
 /// a path into an absolute one, and the only place that decides a path is refused, so
 /// the safety rule lives in one spot. It never reads the filesystem; it works on
-/// strings only, so the tests can run it against any root on any operating system
+/// strings only, so the tests can run it against any root on any operating system.
+/// The project follows onion architecture: business rules sit in the innermost layer,
+/// Domain, and depend on nothing outside it, while the disk and HTTP sit in the outer
+/// layers. This class is that business logic pulled out on its own, which is why it can
+/// be tested with no disk, no web server and no database
 /// (more in docs/ADR-003-the-line-a-path-cannot-cross.md).
 /// </summary>
 public sealed class HomePath
@@ -45,7 +49,9 @@ public sealed class HomePath
     /// segment anywhere, and a segment containing a character the operating system does
     /// not allow in a name. It then joins the segments onto the root, normalises the
     /// result, and checks it still lies inside the root. That final check is the safety
-    /// net for any trick the first three checks do not anticipate.
+    /// net for any trick the first three checks do not anticipate. It is business logic in
+    /// the innermost layer of the onion architecture, so it depends on nothing and its tests
+    /// run with no disk.
     /// </summary>
     /// <param name="relative">The path the request sent; null or "" means home itself.</param>
     public string Resolve(string? relative)

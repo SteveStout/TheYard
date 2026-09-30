@@ -16,10 +16,11 @@ project, so it is one class, and it is the first thing a reviewer should read.
 absolute, or relative to the content root. Empty means `sample-home`, a small tree that ships with
 the project so a clean clone has something to browse. The folder is created if it is missing.
 
-`HomePath` is the only code that turns a request path into an absolute one, and it is pure: it
-reads no filesystem, so the tests run it against `C:\home\files` on Windows and `/home/files`
-elsewhere with the same assertions. `Resolve` refuses three things as strings, before any
-filesystem touch:
+`HomePath` is the only code that turns a request path into an absolute one. It sits in `Domain/`,
+the innermost layer of the onion architecture (ADR-002): business logic pulled out of the disk and
+HTTP code so it can be tested on its own. It is pure: it reads no filesystem, so the tests run it
+against `C:\home\files` on Windows and `/home/files` elsewhere with the same assertions. `Resolve`
+refuses three things as strings, before any filesystem touch:
 
 1. A rooted path: a drive letter, a leading slash or backslash.
 2. A `.` or `..` segment anywhere.

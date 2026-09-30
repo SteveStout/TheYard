@@ -59,7 +59,8 @@ public sealed class SealedByDefaultTests
 /// Infrastructure, Controllers, Composition. The tests read source files as text: the using
 /// lines in each folder, any call to the disk, the clock or the HTTP context in Data and Domain,
 /// and the size of Program.cs. Keeping dependencies one way lets the inner rules be tested with
-/// no web server and no disk.
+/// no web server and no disk. This is onion architecture: the business rules are in the middle,
+/// everything else depends on them, and these tests are what keep it that way.
 /// (more in docs/ADR-002-one-project-four-folders-dependencies-inward.md)
 /// </summary>
 public sealed partial class LayeringTests

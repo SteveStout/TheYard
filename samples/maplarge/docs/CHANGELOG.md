@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.20 The comments on HomePath and LayeringTests, ADR-002 and ADR-003 name the design: onion architecture, with the business rules pulled into the innermost layer so they are tested with no disk, no web server and no database.
 - 1.0.0.19 The Shed, explained rewraps each piece's comments to the full page width, so a comment reads as a paragraph and the code keeps its own lines; every piece is laid out the same way.
 - 1.0.0.18 The Shed, explained shows every piece of code whole, with its comments as the repository has them, laid out the same way for all nine pieces; it is six pages. A stray copy of the PDF that 1.0.0.17 put at the project root is removed.
 - 1.0.0.17 The refusal the API throws is ApiRefusalException and the handler that turns every refusal into a problem document is ProblemResponseHandler; "Browser" could mean the web browser or the file browser, and the documentation controller throws it too; routes, JSON and behaviour are unchanged.

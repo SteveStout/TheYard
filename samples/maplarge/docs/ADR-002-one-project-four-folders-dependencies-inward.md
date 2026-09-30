@@ -19,6 +19,14 @@ to its left, never anything to its right:
 Data  <-  Domain  <-  Application  <-  Infrastructure  <-  Controllers  <-  Composition
 ```
 
+This is onion architecture, also called clean architecture: the business rules sit in the middle
+and everything else depends on them, never the other way round. Pulling the rules out of the disk
+and HTTP code, into `Domain/` and `Application/`, is what lets them be tested on their own.
+`HomePath` is the clearest case: the security rule in the innermost ring, pure, strings in and a
+decision out, so its tests run with no file system on Windows and on Linux (ADR-003). The disk is in
+the outer ring behind the `IFileStore` interface, and `LayeringTests` fails the build if an inner
+folder reaches for the file system or points outward.
+
 - `Data/` is records and an enum, and nothing else: no method with a body, no dependency. If it
   computes anything it is in the wrong folder.
 - `Domain/` is the rules: the home directory's guard, the search pattern, the totals. Pure. No
