@@ -16,9 +16,10 @@
 
   <ItemGroup>
     <None Include="wwwroot\index.html" />
-    <!-- What a publish carries beyond the binaries: the records, the sample home, and the source
-         files the live samples read at request time (ADR-012). appsettings.json already travels. -->
-    <Content Include="docs\**\*.md;sample-home\**\*" CopyToPublishDirectory="PreserveNewest" />
+    <!-- What a publish carries beyond the binaries: the records, the README the Docs tab serves, the
+         sample home, and the source files the live samples read at request time (ADR-012).
+         appsettings.json already travels. DocsTests holds it for every document the catalogue lists. -->
+    <Content Include="docs\**\*.md;README.md;sample-home\**\*" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Data\**\*.cs;Domain\**\*.cs;Application\**\*.cs;Infrastructure\**\*.cs;Controllers\**\*.cs;Library\**\*.cs;Program.cs;.editorconfig;Dockerfile" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="src\**\*.ts" CopyToPublishDirectory="PreserveNewest" />
     <Content Update="tsconfig.json" CopyToPublishDirectory="PreserveNewest" />

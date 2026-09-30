@@ -167,6 +167,30 @@ public sealed partial class DocsTests : IDisposable
         return true;
     }
 
+    [Fact]
+    public void Every_document_the_catalogue_serves_is_published_with_the_app()
+    {
+        // The container is the content root at runtime, so a document the project file does not
+        // publish is missing there and nowhere else: README.md was, and the live site answered
+        // its slug with a 409 while every test here, reading the source folder, passed (1.0.0.10).
+        string root = Repo.Root();
+        List<Regex> published = System.Xml.Linq.XDocument.Load(Path.Combine(root, "TestProject.csproj"))
+            .Descendants("Content")
+            .Where(item => item.Attribute("CopyToPublishDirectory") is not null && item.Attribute("Include") is not null)
+            .SelectMany(item => item.Attribute("Include")!.Value.Split(';'))
+            .Select(GlobToRegex)
+            .ToList();
+        var catalogue = new DocsCatalog(root);
+        List<string> unpublished = catalogue.List()
+            .Select(entry => Path.GetRelativePath(root, catalogue.FileFor(entry.Slug)!).Replace('/', '\\'))
+            .Where(path => !published.Any(glob => glob.IsMatch(path)))
+            .ToList();
+        Assert.Empty(unpublished);
+    }
+
+    private static Regex GlobToRegex(string glob) =>
+        new("^" + Regex.Escape(glob.Trim()).Replace(@"\*\*\\", @"(.*\\)?", StringComparison.Ordinal).Replace(@"\*", @"[^\\]*", StringComparison.Ordinal) + "$", RegexOptions.IgnoreCase);
+
     [GeneratedRegex(@"> Sample unavailable: [^\n]*")]
     private static partial Regex SampleUnavailable();
 

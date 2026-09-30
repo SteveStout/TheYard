@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.10 The README reaches the running site: the project file now publishes it, so "The Shed" in the Docs tab and "about this build" in the footer open it there instead of a 409, and a test holds every catalogue document to the publish list.
 - 1.0.0.9 About Steven carries the Yard's house-plants section, below the rabbits as on the Yard, so the two About pages read the same; Start here names `src/` and ADR-012 names About Steven in the catalogue.
 - 1.0.0.8 Leaving the Docs tab drops the document from the address, so a link copied from the Files tab says only what that tab shows.
 - 1.0.0.7 The page's comments follow TheYard's standard: a doc block opens every file, the regions the records show carry teaching comments, and ADR-006 opens with the instruction that produced it.
