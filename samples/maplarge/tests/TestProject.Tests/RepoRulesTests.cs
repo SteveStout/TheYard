@@ -7,10 +7,16 @@ using TestProject.Domain;
 
 namespace TestProject.Tests;
 
-/// <summary>Nothing in the project carries an em dash (ADR-009; the house voice, docs/STYLE.md).</summary>
+/// <summary>
+/// Checks that no file in the project contains an em dash character. The test reads every source,
+/// style, markup, document and config file as text and lists any file that holds one. The
+/// project's writing style bans the character, and a test is the only way to keep a later change
+/// from slipping one back in. (more in docs/STYLE.md)
+/// </summary>
 public sealed class HouseVoiceTests
 {
-    // Written as a code point so this file passes its own scan.
+    // Built from its numeric code point, so this file never contains the character itself
+    // and passes its own scan.
     private const char EmDash = (char)0x2014;
 
     [Fact]
@@ -24,7 +30,13 @@ public sealed class HouseVoiceTests
     }
 }
 
-/// <summary>Every class is sealed, static or abstract (ADR-009; the practice is TheYard's docs/SEALED.md).</summary>
+/// <summary>
+/// Checks that every class in the app is sealed, static or abstract. The first test loads the
+/// compiled app by reflection and lists any top-level class that could still be inherited from.
+/// The second reads .editorconfig and the project file to confirm that analyzer CA1852, which
+/// flags an internal class that could be sealed, is a warning and that warnings fail the build.
+/// Sealing by default means inheritance is always a deliberate choice, never an accident.
+/// </summary>
 public sealed class SealedByDefaultTests
 {
     [Fact]
@@ -46,10 +58,18 @@ public sealed class SealedByDefaultTests
     }
 }
 
-/// <summary>Dependencies point inward: Data, Domain, Application, Infrastructure, Controllers, Composition (ADR-002).</summary>
+/// <summary>
+/// Checks that the app's folders depend only inward, in the order Data, Domain, Application,
+/// Infrastructure, Controllers, Composition. The tests read source files as text: the using
+/// lines in each folder, any call to the disk, the clock or the HTTP context in Data and Domain,
+/// and the size of Program.cs. Keeping dependencies one way lets the inner rules be tested with
+/// no web server and no disk.
+/// (more in docs/ADR-002-one-project-four-folders-dependencies-inward.md)
+/// </summary>
 public sealed partial class LayeringTests
 {
-    // A folder may use itself and anything to its left, never anything to its right.
+    // Innermost first. A folder may use itself and any folder earlier in this list, never a later
+    // one. The Library folder is allowed only in Controllers and Composition.
     private static readonly string[] Order = ["Data", "Domain", "Application", "Infrastructure", "Controllers", "Composition"];
 
     [Fact]
@@ -108,7 +128,14 @@ public sealed partial class LayeringTests
     private static partial Regex Using();
 }
 
-/// <summary>The page is TypeScript with the same inward rule as the C#, compiled and committed, and never .innerHTML (ADR-006).</summary>
+/// <summary>
+/// Checks the rules for the browser code under src. Every TypeScript module must have its compiled
+/// JavaScript committed under wwwroot/js, so the app runs with the .NET SDK alone and no Node build
+/// step. Modules in src/lib must never import from src/ui, so the logic stays testable without a
+/// page. No module may set innerHTML, because text from a file name or a document could then run
+/// as markup; the page builds elements instead. The TypeScript compiler is the only npm package.
+/// (more in docs/ADR-006-typescript-organised.md)
+/// </summary>
 public sealed partial class FrontEndRulesTests
 {
     private static string Src => Path.Combine(Repo.Root(), "src");
@@ -157,7 +184,14 @@ public sealed partial class FrontEndRulesTests
     private static partial Regex Import();
 }
 
-/// <summary>No stylesheet but the token sheet writes a colour, and every token used is declared (ADR-010).</summary>
+/// <summary>
+/// Checks the stylesheet rules. app.css may not write a colour value (hex, rgb or hsl); every
+/// colour comes from a CSS custom property, so the palette is changed in one file, tokens.css.
+/// Every custom property app.css uses must be declared, so a typo cannot silently leave an element
+/// with no colour. The font and its licence must be served from this site with no link to Google
+/// Fonts or a CDN, so the page loads without calling any other server.
+/// (more in docs/ADR-010-the-palette-borrowed-from-theyard.md)
+/// </summary>
 public sealed partial class StyleRulesTests
 {
     [Fact]
@@ -199,14 +233,20 @@ public sealed partial class StyleRulesTests
     private static partial Regex Used();
 }
 
-/// <summary>The rules table in ADR-009 names tests that exist, and every record it cites exists (ADR-009).</summary>
+/// <summary>
+/// Checks that the rules table in docs/ADR-009-the-rules-a-change-has-to-pass.md matches the code.
+/// Every test class a table row names must exist in this assembly and hold at least one test, and
+/// every ADR number the document cites must have a file in docs. A reader uses the table to find
+/// the test behind each rule, so renaming or deleting a test must fail here, not leave a dead row.
+/// </summary>
 public sealed partial class RuleTableTests
 {
     [Fact]
     public void Every_test_the_table_names_is_a_class_with_a_test_in_it()
     {
         string record = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "ADR-009-the-rules-a-change-has-to-pass.md"));
-        // Only the table's rows: a file name in the Files section (RepoRulesTests.cs) is not a rule.
+        // Keep only table rows, the lines that start with a pipe. The Files section below the
+        // table lists RepoRulesTests.cs, which fits the name pattern but is a file, not a rule.
         string table = string.Join('\n', record.Split('\n').Where(line => line.StartsWith('|')));
         List<string> named = TestName().Matches(table).Select(m => m.Value).Distinct().ToList();
         Assert.True(named.Count >= 8, $"the table names only {named.Count} tests");
@@ -245,7 +285,15 @@ public sealed partial class RuleTableTests
     private static partial Regex Citation();
 }
 
-/// <summary>The path guard the live samples use is the same idea as the home's, on a shorter list (ADR-012).</summary>
+/// <summary>
+/// Checks LiveSamples, which pastes real source code into the served documents. A document can
+/// hold an empty code block that names a file and a region, and the app fills it with the lines
+/// between that region's start and end markers. The tests cover which paths may be read, how a
+/// region is cut out, and what a bad block becomes. The path check uses the same rules as the file
+/// browser's home guard on a shorter list of folders, because the document picks the path and must
+/// never reach a file such as the development settings.
+/// (more in docs/ADR-012-documents-served-by-the-app.md)
+/// </summary>
 public sealed class LiveSamplesTests
 {
     [Theory]
@@ -299,7 +347,13 @@ public sealed class LiveSamplesTests
     }
 }
 
-/// <summary>The version is read from the changelog and the commit from .git, and each says "unknown" rather than guessing (ADR-012).</summary>
+/// <summary>
+/// Checks how the app finds the version and commit it reports. The version is the first bulleted
+/// line of the changelog, and the commit is read from the .git folder by following HEAD to its
+/// branch file. When either source is missing the answer is "unknown", because a guessed value
+/// would mislead anyone checking which build is running.
+/// (more in docs/ADR-012-documents-served-by-the-app.md)
+/// </summary>
 public sealed class VersionReaderTests
 {
     [Fact]
@@ -322,7 +376,13 @@ public sealed class VersionReaderTests
     }
 }
 
-/// <summary>The home directory's guard is the one the app runs with: FilesRegistration builds it from the same options (ADR-003).</summary>
+/// <summary>
+/// Checks how the app picks its home directory from configuration. The tests call
+/// FilesRegistration.HomeFor, the same method the running app uses, so they cover the real setup.
+/// No setting means the sample-home folder beside the project, created if missing, so a fresh
+/// copy runs with no setup. An absolute setting is used as given; a relative one goes under the
+/// content root. (more in docs/ADR-003-the-line-a-path-cannot-cross.md)
+/// </summary>
 public sealed class HomeForTests
 {
     [Fact]

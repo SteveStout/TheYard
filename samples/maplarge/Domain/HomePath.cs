@@ -1,25 +1,33 @@
 namespace TestProject.Domain;
 
 /// <summary>
-/// The home directory, and the line a path cannot cross (ADR-003). Every path
-/// the API accepts is relative to this root; this class is the only place that
-/// turns one into an absolute path, and the only place that decides a path is
-/// refused. Pure: it reads no filesystem, so the tests can run it against any
-/// root string on any operating system.
+/// The home directory and the rules that keep every request inside it. Every path the
+/// API accepts is relative to this root. This class is the only place that turns such
+/// a path into an absolute one, and the only place that decides a path is refused, so
+/// the safety rule lives in one spot. It never reads the filesystem; it works on
+/// strings only, so the tests can run it against any root on any operating system
+/// (more in docs/ADR-003-the-line-a-path-cannot-cross.md).
 /// </summary>
 public sealed class HomePath
 {
     // #region guard
     private static readonly char[] Separators = ['/', '\\'];
 
-    /// <summary>The absolute root, with no trailing separator.</summary>
+    /// <summary>The absolute path of the home directory, with no trailing separator.</summary>
     public string Root { get; }
 
-    /// <summary>Windows compares paths without case; everything else is exact.</summary>
+    /// <summary>
+    /// How paths are compared: without case on Windows, where the filesystem ignores
+    /// case, and exactly everywhere else.
+    /// </summary>
     private readonly StringComparison _comparison;
 
-    /// <summary>Builds the home from an absolute root. The root itself is trusted: it comes from configuration, never a request.</summary>
-    /// <param name="root">The absolute directory that is home.</param>
+    /// <summary>
+    /// Creates the home from an absolute directory path, normalised and with any trailing
+    /// separator removed. The root is not checked further, because it comes from
+    /// configuration and never from a request.
+    /// </summary>
+    /// <param name="root">The absolute path of the directory to use as home.</param>
     public HomePath(string root)
     {
         if (!System.IO.Path.IsPathRooted(root))
@@ -31,15 +39,15 @@ public sealed class HomePath
     }
 
     /// <summary>
-    /// Turns a request path into an absolute path under the root, or throws
-    /// <see cref="PathRefusedException"/>. Three refusals, checked as strings
-    /// before any filesystem touch: a rooted path (a drive letter or a leading
-    /// slash), a "." or ".." segment anywhere, and a segment carrying a character
-    /// the operating system forbids in a name. Then the joined path is
-    /// normalised and must still start inside the root; that last check is the
-    /// one that catches whatever the first three did not think of.
+    /// Turns a path from a request into an absolute path under the root, or throws
+    /// <see cref="PathRefusedException"/>. It first refuses three things by looking at the
+    /// string alone: a rooted path (a drive letter or a leading slash), a "." or ".."
+    /// segment anywhere, and a segment containing a character the operating system does
+    /// not allow in a name. It then joins the segments onto the root, normalises the
+    /// result, and checks it still lies inside the root. That final check is the safety
+    /// net for any trick the first three checks do not anticipate.
     /// </summary>
-    /// <param name="relative">The path as the request sent it; null or "" is home.</param>
+    /// <param name="relative">The path the request sent; null or "" means home itself.</param>
     public string Resolve(string? relative)
     {
         string trimmed = (relative ?? string.Empty).Trim();
@@ -71,7 +79,11 @@ public sealed class HomePath
         return joined;
     }
 
-    /// <summary>True when an absolute path is the root or lies under it.</summary>
+    /// <summary>
+    /// Returns true when an absolute path is the root itself or lies under it. The root is
+    /// matched with a separator after it, so a sibling such as "/home2" does not count as
+    /// inside "/home".
+    /// </summary>
     /// <param name="absolute">An absolute, normalised path.</param>
     public bool IsInside(string absolute)
     {
@@ -84,7 +96,11 @@ public sealed class HomePath
     }
     // #endregion guard
 
-    /// <summary>The wire form of an absolute path under the root: relative, forward slashes, "" for the root.</summary>
+    /// <summary>
+    /// Converts an absolute path under the root into the form the API sends: relative to
+    /// home, with forward slashes, and "" for the root itself. Throws
+    /// <see cref="PathRefusedException"/> for a path outside the root.
+    /// </summary>
     /// <param name="absolute">An absolute path that <see cref="IsInside"/> accepts.</param>
     public string Relative(string absolute)
     {
@@ -96,8 +112,11 @@ public sealed class HomePath
         return rest.Replace('\\', '/').TrimEnd('/');
     }
 
-    /// <summary>The folder above a wire path, or null for the root.</summary>
-    /// <param name="relative">A wire path.</param>
+    /// <summary>
+    /// Returns the folder above a relative path: "" when the path is directly under home,
+    /// and null when the path is home itself.
+    /// </summary>
+    /// <param name="relative">A path relative to home, with forward slashes.</param>
     public static string? ParentOf(string relative)
     {
         if (relative.Length == 0)
@@ -108,8 +127,8 @@ public sealed class HomePath
         return slash < 0 ? string.Empty : relative[..slash];
     }
 
-    /// <summary>The last segment of a wire path, or "" for the root.</summary>
-    /// <param name="relative">A wire path.</param>
+    /// <summary>Returns the last segment of a relative path, or "" for home itself.</summary>
+    /// <param name="relative">A path relative to home, with forward slashes.</param>
     public static string NameOf(string relative)
     {
         int slash = relative.LastIndexOf('/');
@@ -117,8 +136,10 @@ public sealed class HomePath
     }
 
     /// <summary>
-    /// A single name for a new file or folder: no separators, no "." or "..",
-    /// no forbidden character. Throws <see cref="PathRefusedException"/> otherwise.
+    /// Checks a name for a new file or folder and returns it with spaces at the ends
+    /// removed. The name must be a single segment: not empty, not "." or "..", with no
+    /// slash or backslash and no character the operating system forbids. Otherwise it
+    /// throws <see cref="PathRefusedException"/>.
     /// </summary>
     /// <param name="name">The name the request sent.</param>
     public static string ValidName(string? name)
@@ -133,5 +154,8 @@ public sealed class HomePath
     }
 }
 
-/// <summary>A request named a path the home refuses. The API answers 400 with the sentence.</summary>
+/// <summary>
+/// Thrown when a request names a path outside the home directory or a name that is not
+/// allowed. The API answers with status 400 and the exception message as the detail.
+/// </summary>
 public sealed class PathRefusedException(string detail) : Exception(detail);

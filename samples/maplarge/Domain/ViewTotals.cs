@@ -3,15 +3,16 @@ using TestProject.Data;
 namespace TestProject.Domain;
 
 /// <summary>
-/// The counts and bytes for a view, and the order entries are shown in. Both are
-/// computed once on the server and sent on the wire, so the page never adds up a
-/// column it might have sorted, filtered or half-loaded (ADR-004).
+/// Computes the totals for a listing or search result, and defines the order entries
+/// are sorted in. Both are done once on the server and sent with the reply, so the page
+/// never has to add up sizes itself from rows it may have sorted, filtered or only
+/// partly loaded.
 /// </summary>
 public static class ViewTotals
 {
-    /// <summary>Counts the entries and adds up the files' bytes.</summary>
-    /// <param name="folders">The folders in the view.</param>
-    /// <param name="files">The files in the view.</param>
+    /// <summary>Counts the folders and files and adds up the files' sizes.</summary>
+    /// <param name="folders">The folders in the result.</param>
+    /// <param name="files">The files in the result.</param>
     public static Totals Of(IReadOnlyList<FolderEntry> folders, IReadOnlyList<FileEntry> files)
     {
         long bytes = 0;
@@ -23,8 +24,9 @@ public static class ViewTotals
     }
 
     /// <summary>
-    /// The order a listing is shown in: by name, ignoring case, so "Reports" and
-    /// "archive" do not split into two alphabets the way an ordinal sort would.
+    /// The sort order for names: alphabetical, ignoring case. An ordinal sort would put
+    /// every capitalised name before every lower-case one, so "Reports" would come
+    /// before "archive"; ignoring case keeps them in one alphabet.
     /// </summary>
     public static readonly StringComparer NameOrder = StringComparer.OrdinalIgnoreCase;
 }

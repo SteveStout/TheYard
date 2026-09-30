@@ -1,4 +1,7 @@
-// node --test tests/js: the address parser and serializer, with no browser (ADR-005).
+// Tests how the page state is read from and written to the address bar query string (run with:
+// node --test tests/js). No browser is needed, because the parser works on plain strings. The
+// page keeps its state in the address so a link or a reload reopens the same view, which means
+// unknown keys and bad values must fall back to defaults and a parse then write must round-trip.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DEFAULTS, cleanPath, crumbs, isOpen, parentOf, parse, serialize } from '../../wwwroot/js/lib/urlState.js';

@@ -1,12 +1,16 @@
 /**
- * Numbers and instants as a person reads them. The server sends bytes and
- * milliseconds; how they look is the page's decision (ADR-004), and it is made
- * here once so the table, the totals line and the upload notice agree.
+ * Formats raw numbers from the server for display. The server sends sizes in
+ * bytes and times in milliseconds since the epoch, and leaves the display format
+ * to the page. All formatting lives here, so the file table, the totals line and
+ * the upload notice always show numbers the same way.
+ * (More in docs/ADR-004-the-wire.md.)
  */
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB'];
 /**
- * A byte count as "1.2 MB": one decimal above bytes, none for bytes, thousands
- * with a separator. 1024 to a step, because that is what the file system means.
+ * Formats a byte count such as "1.2 MB". Plain bytes get no decimal and larger units
+ * get one; digits are grouped with the person's locale separator. Each unit
+ * is 1024 times the unit below it, matching how operating systems report file sizes.
+ * Returns "" for a negative or non-finite count.
  */
 export function bytes(count) {
     if (!Number.isFinite(count) || count < 0) {
@@ -22,9 +26,11 @@ export function bytes(count) {
     return `${value.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${UNITS[unit]}`;
 }
 /**
- * Milliseconds since the epoch as a short local date and time, "2026-09-29 13:05",
- * or "today 13:05" when it is today.
- * @param now injected so a test can pin the day
+ * Formats milliseconds since the epoch as a short local date and time in the form
+ * "YYYY-MM-DD HH:MM", or "today HH:MM" when the date is today.
+ * Returns "" for zero, a negative or a non-finite value.
+ * @param ms the time to format, in milliseconds since the epoch
+ * @param now the current time; a parameter so a test can fix which day is "today"
  */
 export function when(ms, now = new Date()) {
     if (!Number.isFinite(ms) || ms <= 0) {
@@ -37,7 +43,10 @@ export function when(ms, now = new Date()) {
     const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     return day === today ? `today ${time}` : `${day} ${time}`;
 }
-/** A count with its noun: "1 folder", "12 files". */
+/**
+ * Formats a count with its noun, singular for exactly one: "1 folder", "12 files".
+ * The plural defaults to the singular plus "s".
+ */
 export function plural(count, singular, many = `${singular}s`) {
     return `${count.toLocaleString()} ${count === 1 ? singular : many}`;
 }

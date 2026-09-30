@@ -1,16 +1,22 @@
 /*
- * The design tokens, copied from TheYard's token sheets (src/styles/colors.css,
- * sizes.css, typography.css, effects.css) with the values unchanged (ADR-010).
- * This is the only file that writes a colour, a size or a face; app.css reads
- * them as var(--the-token), and StyleRulesTests fails the build on a hex or an
- * rgb() anywhere else.
+ * Design tokens: every colour, size, font and shadow the page uses, as CSS custom
+ * properties on :root. The values are the same as the token files of the sister
+ * site TheYard (src/styles/colors.css, sizes.css, typography.css, effects.css), so
+ * the two sites look alike.
  *
- * Left behind on purpose: the frosted glass, the ribbons and the chart marks,
- * which belong to the site that has ribbons and charts. Contrast figures beside
- * a colour are the source project's measurements (its colors.test.ts holds them).
+ * This is the only stylesheet allowed to write a colour value. app.css uses these
+ * properties through var(), and the StyleRulesTests test class fails the build if
+ * app.css contains a hex, rgb or hsl colour. Changing the palette therefore means
+ * editing this one file.
+ *
+ * Tokens for frosted glass, ribbons and chart marks are left out because this page
+ * has none of those elements. A number after a colour, such as "white on it 6.42",
+ * is the contrast ratio of white text on that colour (4.5 is the minimum for body
+ * text). (More in docs/ADR-010-the-palette-borrowed-from-theyard.md.)
  */
 :root {
-  /* The palette: Urban slate, as Figma prints it, with white written once. */
+  /* Base palette: page background, grounds, surfaces, borders and text colours.
+     White is written once here and reused through --palette-white. */
   --palette-white: #ffffff;
   --palette-brown-gray: #5e5653;
   --palette-slate-gray: #7b7f8a;
@@ -32,7 +38,8 @@
   --color-text-muted: #4a4e57;
   --color-heading: #3f3a37;
 
-  /* Teal fills, dark green draws, gold trims. */
+  /* Accent colours. Teal fills buttons and selected items, dark green draws the header
+     and lines, and gold is used only for thin trims and highlights. */
   --color-accent: #12677f; /* white on it 6.42 */
   --color-accent-hover: #0f576b; /* white on it 8.09 */
   --color-accent-soft: #ddebee;
@@ -40,7 +47,7 @@
   --color-green-dark: #0f4452;
   --color-teal-deep: #10495a;
   --color-teal-header: #125568;
-  --color-gold: #b8923f; /* trim only, never text */
+  --color-gold: #b8923f; /* trims only; too low in contrast to use for text */
   --color-gold-light: #e6cb7e;
   --color-gold-bar-dark: #7d582e;
   --color-gold-bar-shade: #ad8e57;
@@ -58,13 +65,14 @@
   --color-header-text-muted: #d1e1e6;
   --color-brand-mark: var(--color-gold-light);
 
-  /* Code inside a document, on the muted surface. */
+  /* Syntax colours for code blocks in the Docs tab, chosen to read on the muted surface. */
   --color-code-text: #332f2c;
   --color-code-comment: #25663a;
   --color-code-keyword: #6d4a83;
   --color-code-string: #8a5a3c;
 
-  /* Status colours mean a state and nothing else. */
+  /* Status colours for success, warning and error messages. Use them only to show a
+     status, so a colour always means the same thing. */
   --color-success: #146c34;
   --color-success-soft: #dcfce7;
   --color-warning: #b45309;
@@ -72,10 +80,11 @@
   --color-danger: #b91c1c;
   --color-danger-soft: #fee2e2;
 
-  /* What dims the page behind the dialog. */
+  /* The see-through layer that dims the page behind the open dialog. */
   --scrim: color-mix(in srgb, var(--palette-brown-gray) 45%, transparent);
 
-  /* Sizes, on a 4 px scale. */
+  /* Spacing, control sizes, corner radii and focus rings. Spacing steps are multiples of
+     4 px so gaps line up across the page. */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -98,7 +107,8 @@
   --focus-ring-offset: 2px;
   --layer-header: 10;
 
-  /* Type. IBM Plex Sans is the one face; code is the one monospace. */
+  /* Fonts and text sizes. IBM Plex Sans is the only text font and is served from this site;
+     code uses the first monospace font in the list that the system has installed. */
   --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
   --font-code: Consolas, 'SF Mono', Menlo, ui-monospace, monospace;
   --text-xs: 12px;
@@ -117,7 +127,7 @@
   --readout-size: 0.6875rem;
   --readout-tracking: 0.08em;
 
-  /* Shadows, the brown-gray, see-through. */
+  /* Shadows, made from the brown-gray palette colour at low opacity so they stay soft. */
   --shadow-sm:
     0 1px 2px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent),
     0 1px 3px color-mix(in srgb, var(--palette-brown-gray) 10%, transparent);
@@ -126,7 +136,8 @@
     0 2px 4px color-mix(in srgb, var(--palette-brown-gray) 6%, transparent);
   --shadow-lg: 0 12px 32px color-mix(in srgb, var(--palette-brown-gray) 18%, transparent);
 
-  /* The operator's look: a rule across the top of a panel with a bracket at each end. */
+  /* Panel decoration: a thick line across the top of a panel with a corner bracket at
+     each end, plus the thin panel border and the speed of short transitions. */
   --rule-width: 3px;
   --rule-panel-color: var(--color-teal-deep);
   --rule-panel: var(--rule-width) solid var(--rule-panel-color);

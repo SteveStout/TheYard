@@ -1,16 +1,25 @@
 /**
- * The page: reads the address, opens the dialog when the address says so, and
- * hands the state to whichever view it names (ADR-005, ADR-007). This is the
- * only file that touches history; every view asks for a change through
- * navigate() and is redrawn from the address that results, the same path a Back
- * button or a pasted link takes.
+ * Entry point for the page. It reads the page address (the query string), opens
+ * the file browser dialog when the address asks for it, and passes the parsed
+ * state to the view the address names: the file browser or the Docs tab.
+ *
+ * This is the only file that calls the browser history API. Views never change
+ * the address themselves; they call navigate(), which writes the new address and
+ * then redraws the page from it. The Back button and a pasted link also redraw
+ * from the address, so all three ways of reaching a view go through the same
+ * code and cannot drift apart. (More in docs/ADR-005-state-lives-in-the-url.md and
+ * docs/ADR-007-the-dialog-widget.md.)
  */
 import * as api from './lib/api.js';
 import { DEFAULTS, isOpen, parse, serialize, VIEWS } from './lib/urlState.js';
 import { createBrowser } from './ui/browser.js';
 import { createDocs } from './ui/docs.js';
 import { h, replace } from './ui/dom.js';
-/** An element the page cannot work without; index.html is the only place it comes from. */
+/**
+ * Finds an element the page cannot run without, or throws. These elements are
+ * written by hand in index.html, so a missing one is a mistake in that file and
+ * failing loudly at start-up names it at once.
+ */
 function need(selector) {
     const element = document.querySelector(selector);
     if (!element) {
@@ -33,14 +42,19 @@ const browser = createBrowser(browserRoot, navigate);
 const docs = createDocs(docsRoot, navigate);
 // #region navigate
 /**
- * The one way the state changes: merge, write the address, redraw. Closing is
- * navigating to the defaults, so Back from a closed page reopens it where it was.
- * @param partial the keys that change
- * @param replaceEntry true to replace the history entry (typing in the search box)
+ * Changes the page state. It merges the changed keys into the current state,
+ * writes the result into the address bar as a history entry, then redraws.
+ * Every state change in the app comes through here. Closing the dialog is also
+ * a navigation (to the default state), so pressing Back after closing reopens
+ * the dialog where it was.
+ * @param partial the state keys that change; keys left out keep their current value
+ * @param replaceEntry true to overwrite the current history entry instead of adding one
+ *   (used while typing in the search box, so each keystroke is not its own Back step)
  */
 function navigate(partial, replaceEntry = false) {
     const next = { ...state, open: true, ...partial };
-    // A closed state serializes to "", and pushState needs an address, so the bare path stands in.
+    // A closed state serializes to an empty string. pushState with "" would keep the old query
+    // string, so the page path with no query string is written instead, which clears it.
     const url = serialize(next) || window.location.pathname;
     if (replaceEntry) {
         window.history.replaceState(null, '', url);
@@ -48,8 +62,8 @@ function navigate(partial, replaceEntry = false) {
     else {
         window.history.pushState(null, '', url);
     }
-    // Re-read from the address rather than trusting `next`: the browser is the one source, and a
-    // value the serializer dropped (a default) must not survive in memory either.
+    // Parse the address again instead of keeping `next`. The address is the only source of truth,
+    // and parsing it also cleans up any value the serializer left out or would have rejected.
     state = parse(window.location.search);
     render();
 }
@@ -60,25 +74,27 @@ window.addEventListener('popstate', () => {
 // #endregion navigate
 // #region render
 /**
- * Draws the page from the state and nothing else. The dialog's open flag is a
- * fact about the address (ADR-007): closed when no known key is present, open
- * otherwise, so a pasted link and the Back button land in the same place as a
- * click. showModal rather than show, because a modal gives the focus trap,
- * Escape, the backdrop and an inert page for free.
+ * Draws the page from the current state and nothing else. The dialog is closed
+ * when the address has no known key and open otherwise, so a pasted link, the
+ * Back button and a click all end up showing the same thing.
+ * It uses showModal rather than show because a modal dialog keeps keyboard focus
+ * inside itself, closes on Escape, draws a backdrop and makes the rest of the
+ * page inert, with no extra code. (More in docs/ADR-007-the-dialog-widget.md.)
  */
 function render() {
     if (!isOpen(state)) {
         if (dialog.open) {
             dialog.close();
-            trigger.focus(); // Back where the person started, with the keyboard.
+            trigger.focus(); // Return keyboard focus to the button that opened the dialog.
         }
         return;
     }
     if (!dialog.open) {
         dialog.showModal();
     }
-    // The tabs are buttons with aria-pressed, not links, because they change a view inside one
-    // page; the address still changes, through navigate, so a tab is a link in every way that counts.
+    // Mark the tab for the current view as pressed. The tabs are buttons with aria-pressed because
+    // they switch a view inside one page. Clicking one still calls navigate, so the address changes
+    // and the view can be bookmarked or shared like a link.
     for (const button of tabs.querySelectorAll('button')) {
         button.setAttribute('aria-pressed', button.dataset['view'] === state.view ? 'true' : 'false');
     }
@@ -88,7 +104,8 @@ function render() {
 }
 // #endregion render
 trigger.addEventListener('click', () => navigate({ view: 'browse' }));
-// Links on the page that open a view do it in place; as plain links they still work in a new tab.
+// Links marked with data-view open that view inside the dialog without reloading the page.
+// They stay real links with an href, so opening one in a new tab still works.
 for (const link of document.querySelectorAll('a[data-view]')) {
     link.addEventListener('click', (event) => {
         event.preventDefault();
@@ -99,20 +116,22 @@ closeButton.addEventListener('click', () => navigate({ ...DEFAULTS, open: false 
 tabs.addEventListener('click', (event) => {
     const button = event.target?.closest('button[data-view]');
     if (button) {
-        // Leaving Docs drops the document from the address, so a link copied from the Files tab
-        // says only what the Files tab shows.
+        // Switching away from Docs removes the open document from the address, so a link copied
+        // from the file browser carries only what the file browser shows.
         const view = viewOf(button.dataset['view']);
         navigate(view === 'docs' ? { view } : { view, doc: '' });
     }
 });
-// Escape closes a modal dialog on its own; the address has to follow it.
+// The browser closes a modal dialog by itself when Escape is pressed. This listener then
+// updates the address to the closed state so the address and the dialog agree.
 dialog.addEventListener('close', () => {
     if (isOpen(state)) {
         navigate({ ...DEFAULTS, open: false });
     }
 });
 api.version().then((version) => {
-    // A real link, so it works with the keyboard and in a new tab; clicked in place it navigates without a reload.
+    // Show the build version in the footer with a link to the readme. It is a real link, so it
+    // works from the keyboard and in a new tab; a normal click navigates without a reload.
     const about = h('a', { href: '?view=docs&doc=readme', onclick: (event) => { event.preventDefault(); navigate({ view: 'docs', doc: 'readme' }); } }, 'about this build');
     replace(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', about);
 }).catch(() => replace(footer, 'The Shed'));

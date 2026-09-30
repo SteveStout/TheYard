@@ -1,15 +1,24 @@
 /**
- * Every call to the server, in one place (ADR-004). A failure is an ApiError
- * whose message is the problem document's `detail`, so the page shows the
- * server's sentence and never a status code. Listings are cached by path for
- * the life of the page and forgotten when anything under that path changes,
- * which is what makes Back instant and a delete re-read once (ADR-006).
+ * All HTTP calls from the page to the server live in this module, so the rest of
+ * the code never builds a URL or reads a response by hand.
+ *
+ * When a call fails, it throws an ApiError whose message is the `detail` field of
+ * the JSON error body the server sends. The page shows that sentence to the
+ * person instead of a bare status code, because the server knows best what went
+ * wrong.
+ *
+ * Folder listings are cached by path for as long as the page is open. Any write
+ * (upload, delete, move, copy, new folder) removes the affected paths from the
+ * cache. That makes the Back button instant while still re-fetching a folder
+ * after it changes. (More in docs/ADR-004-the-wire.md.)
  */
 import { ApiError } from './types.js';
 const listings = new Map();
 /**
- * Reads a problem document into an error, or a generic one when the body is
- * not a problem (a proxy's HTML page, a cut connection).
+ * Turns a failed response into an ApiError. It uses the `detail` (or `title`)
+ * field of the server's JSON error body. When the body is not JSON, for example
+ * an HTML error page from a proxy or a dropped connection, it falls back to the
+ * HTTP status code and status text.
  */
 export async function problemOf(response) {
     let detail = `${response.status} ${response.statusText}`.trim();
@@ -18,7 +27,7 @@ export async function problemOf(response) {
         detail = body.detail || body.title || detail;
     }
     catch {
-        // Not JSON; the status line is the best sentence there is.
+        // The body is not JSON, so keep the status code and text as the message.
     }
     return new ApiError(detail, response.status);
 }
@@ -38,10 +47,11 @@ async function send(url, options) {
 }
 // #region cache
 /**
- * One folder, from the cache when it is there. The map holds the promise, not
- * the listing, so two renders that ask for one folder in the same instant share
- * one request instead of racing two; a failed request removes itself, so the
- * next ask tries again rather than replaying the failure.
+ * Returns the listing of one folder, from the cache when it is there.
+ * The cache stores the promise rather than the finished listing, so two callers
+ * that ask for the same folder at the same moment share one request instead of
+ * sending two. A request that fails removes itself from the cache, so the next
+ * call tries again instead of getting the same failure back.
  */
 export function browse(path) {
     let pending = listings.get(path);
@@ -55,10 +65,10 @@ export function browse(path) {
     return pending;
 }
 /**
- * Forgets a folder and everything under it, after a write there. Deleting a
- * folder changes its parent's listing and every descendant's, and the cheapest
- * correct answer is to forget the subtree rather than patch it; "" is home, so
- * a write at home forgets everything.
+ * Removes a folder and every folder below it from the cache, after a write there.
+ * A change can affect the listings of all folders underneath, and dropping them
+ * is simpler and safer than trying to patch each cached listing. The empty path
+ * "" is the top folder, so a write there clears the whole cache.
  */
 export function forget(path) {
     for (const key of [...listings.keys()]) {
@@ -67,7 +77,10 @@ export function forget(path) {
         }
     }
 }
-/** Forgets the folder a path sits in and, for a folder, the folder itself: what a move, copy or delete changes. */
+/**
+ * Removes from the cache the parent folder of a path and the path itself (with
+ * everything below it). These are the listings a move, copy or delete changes.
+ */
 export function forgetAround(path) {
     const slash = path.lastIndexOf('/');
     forget(slash < 0 ? '' : path.slice(0, slash));
@@ -107,9 +120,13 @@ export async function copy(from, to) {
 }
 // #region upload
 /**
- * Uploads one file with progress. XMLHttpRequest, because fetch cannot report
- * upload progress and a person watching a 50 MB file go up deserves a bar.
- * @param onProgress 0 to 1
+ * Uploads one file and reports progress while it goes. It uses XMLHttpRequest
+ * because fetch cannot report upload progress, and a large file needs a
+ * progress bar so the person can see it is still moving.
+ * @param path the folder to upload into
+ * @param file the file to send
+ * @param overwrite true to replace a file with the same name; with false the server answers 409
+ * @param onProgress called with the fraction sent so far, from 0 to 1
  */
 export function upload(path, file, overwrite, onProgress) {
     return new Promise((resolve, reject) => {
@@ -123,8 +140,8 @@ export function upload(path, file, overwrite, onProgress) {
             }
         });
         request.addEventListener('load', () => {
-            // Forgotten on every outcome, not only success: a 409 means the server saw the name, and
-            // the listing that said the folder was empty is already wrong.
+            // Clear the cached folder whatever the outcome, not only on success. A 409 (name already
+            // taken) means the cached listing is already out of date, because it did not show that name.
             forget(path);
             if (request.status >= 200 && request.status < 300) {
                 resolve(JSON.parse(request.responseText));
@@ -135,7 +152,7 @@ export function upload(path, file, overwrite, onProgress) {
                     detail = JSON.parse(request.responseText).detail || detail;
                 }
                 catch {
-                    // A body that is not a problem document; keep the status line.
+                    // The body is not a JSON error, so keep the status code and text as the message.
                 }
                 reject(new ApiError(detail, request.status));
             }

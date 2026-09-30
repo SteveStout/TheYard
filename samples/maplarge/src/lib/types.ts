@@ -1,7 +1,9 @@
 /**
- * The wire, as TypeScript sees it: the same shapes Data/Entries.cs declares, in the same
- * snake_case, so a reader can hold the two files side by side (ADR-004). Nothing here is
- * computed; the server owns every derived fact.
+ * TypeScript types for the JSON the API sends. Each interface matches a C# record in
+ * Data/Entries.cs field for field, using the same snake_case names the JSON uses, so the
+ * two files can be compared side by side. This module only declares shapes and computes
+ * nothing: every value, such as totals and timings, comes from the server.
+ * (More in docs/ADR-004-the-wire.md.)
  */
 
 export interface FolderEntry {
@@ -59,7 +61,11 @@ export interface VersionInfo {
   commit: string;
 }
 
-/** A refusal from the server, carrying the problem document's status and its sentence. */
+/**
+ * An error returned by the server. The message is the human-readable sentence from the
+ * server's JSON error body, and status is the HTTP status code (0 when the request never
+ * reached the server). Code can check status, for example 409 for a name already taken.
+ */
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);

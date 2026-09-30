@@ -1,14 +1,18 @@
 /**
- * A small markdown reader for the records the app serves (ADR-012). It turns
- * text into a tree of plain objects, {tag, attrs, children} and {text}, which
- * ui/dom.ts builds into DOM nodes with createElement and textContent. Nothing
- * here is ever handed to innerHTML, so a document cannot carry script into the
- * page, and the reader can be tested in node without a DOM.
+ * A small markdown parser for the documents the app serves in its Docs tab.
+ * It turns markdown text into a tree of plain objects: {tag, attrs, children}
+ * for an element and {text} for text. The code in ui/dom.ts then builds real
+ * DOM nodes from that tree with createElement and text nodes.
  *
- * What it reads is what the records use: ATX headings, paragraphs, bullet and
- * numbered lists, fenced code (with the language and an optional caption on
- * the fence line), block quotes, pipe tables, horizontal rules, and inline
- * code, bold, italic, links and images. Anything else is a paragraph.
+ * The parser never produces an HTML string and nothing is assigned to innerHTML,
+ * so a document cannot inject script or markup into the page. Because the output
+ * is plain objects, the parser can also be tested in node without a DOM.
+ *
+ * It supports only what the documents use: "#" headings, paragraphs, bullet and
+ * numbered lists, fenced code blocks (with a language and an optional caption on
+ * the opening fence line), block quotes, pipe tables, horizontal rules, and inline
+ * code, bold, italic, links and images. Anything else is treated as a paragraph.
+ * (More in docs/ADR-012-documents-served-by-the-app.md.)
  */
 export function isElement(node) {
     return 'tag' in node;
@@ -17,7 +21,11 @@ function element(tag, children, attrs = {}) {
     return { tag, attrs, children };
 }
 // #region blocks
-/** Reads a whole document into its top-level blocks. */
+/**
+ * Parses a whole document into its top-level blocks. It walks the lines once,
+ * and at each line tries the block types in a fixed order (fence, heading, rule,
+ * quote, table, list); a line that starts none of them begins a paragraph.
+ */
 export function parse(markdown) {
     const lines = markdown.replace(/\r\n?/g, '\n').split('\n');
     const blocks = [];
@@ -28,7 +36,8 @@ export function parse(markdown) {
             i += 1;
             continue;
         }
-        // Fences first: inside one, a "#" or a "-" is code, so nothing below may see those lines.
+        // Code fences are checked first. Inside a fence, a line starting with "#" or "-" is code,
+        // so the fence consumes those lines before the heading or list checks below can see them.
         const fence = /^```(\S*)\s*(.*)$/.exec(line);
         if (fence) {
             const body = [];
@@ -59,7 +68,8 @@ export function parse(markdown) {
                 quoted.push((lines[i] ?? '').replace(/^>\s?/, ''));
                 i += 1;
             }
-            // A quote is a document in its own right, so the reader recurses rather than special-casing it.
+            // The text inside a quote can hold any block (lists, code, headings), so the quoted lines
+            // are parsed again with this same function instead of handling each case here.
             blocks.push(element('blockquote', parse(quoted.join('\n'))));
             continue;
         }
@@ -84,7 +94,7 @@ export function parse(markdown) {
                     i += 1;
                 }
                 else if (current.startsWith('  ') && items.length > 0 && current.trim() !== '') {
-                    // A continuation line, indented under the item it belongs to.
+                    // An indented line continues the previous item, so join it onto that item's text.
                     items[items.length - 1] += ` ${current.trim()}`;
                     i += 1;
                 }
@@ -105,7 +115,8 @@ export function parse(markdown) {
             i += 1;
         }
         const children = inline(paragraph.join(' '));
-        // A paragraph holding one image and nothing else is a figure, so the sheet can frame it.
+        // A paragraph that holds only one image gets the "figure" class, so the stylesheet can
+        // frame it as a standalone picture instead of an inline one.
         const first = children[0];
         const onlyImage = children.length === 1 && first !== undefined && isElement(first) && first.tag === 'img';
         blocks.push(element('p', children, onlyImage ? { class: 'figure' } : {}));
@@ -147,8 +158,10 @@ function codeBlock(language, caption, code) {
 // #endregion blocks
 // #region inline
 /**
- * Inline marks: code spans first (their contents are literal), then images,
- * links, bold and italic. Nothing is interpreted inside a code span.
+ * Parses the inline marks inside one block of text: code spans, images, links,
+ * bold and italic. One regular expression finds the next mark; text between
+ * marks becomes plain text nodes. Code spans come first in the pattern so that
+ * nothing inside backticks is read as another mark.
  */
 export function inline(text) {
     const out = [];
@@ -163,7 +176,8 @@ export function inline(text) {
             out.push(element('code', [{ text: match[2].trim() }]));
         }
         else if (match[4] !== undefined) {
-            // An image: the alt text is text, the address goes through the same check as a link.
+            // An image. The alt text stays plain text, and the image address goes through the same
+            // safety check as a link address.
             out.push(element('img', [], { src: safeHref(match[4]), alt: match[3] ?? '', title: match[5] ?? '', loading: 'lazy' }));
         }
         else if (match[6] !== undefined) {
@@ -182,7 +196,11 @@ export function inline(text) {
     }
     return out;
 }
-/** Only web and in-page addresses; anything else becomes a harmless "#". */
+/**
+ * Allows only http, https, site-relative and in-page addresses. Anything else,
+ * such as a "javascript:" address, is replaced with "#" so a document cannot run
+ * script when a link is clicked.
+ */
 export function safeHref(href) {
     return /^(https?:\/\/|\/|\?|#)/i.test(href) ? href : '#';
 }
@@ -194,9 +212,12 @@ const KEYWORDS = {
     typescript: 'import export from const let var function return if else for of in while switch case default new this class extends async await try catch finally throw null undefined true false typeof instanceof type interface readonly as'.split(' '),
 };
 /**
- * Comments, strings and keywords in C#, JavaScript and TypeScript, as spans;
- * every other character passes through as text. It is a reader's aid, not a
- * parser, and a construct it does not know is simply not coloured.
+ * Adds simple syntax colouring to a code block in C#, JavaScript or TypeScript.
+ * Comments, strings and keywords are wrapped in spans with a class the
+ * stylesheet colours; every other character passes through as plain text.
+ * It uses one regular expression rather than a real parser, because it only
+ * needs to help reading. Anything it does not recognise is left uncoloured.
+ * Code in any other language is returned as a single text node.
  */
 export function highlight(code, language) {
     const words = KEYWORDS[language];
@@ -231,7 +252,11 @@ export function highlight(code, language) {
     return out;
 }
 // #endregion highlight
-/** A heading's id: lower case, words joined by hyphens, so "?doc=x#the-decision" lands. */
+/**
+ * Builds the id for a heading: lower case, with runs of other characters turned
+ * into single hyphens. A link such as "?doc=x#the-decision" can then jump
+ * straight to the heading "The decision".
+ */
 export function slug(text) {
     return text
         .toLowerCase()

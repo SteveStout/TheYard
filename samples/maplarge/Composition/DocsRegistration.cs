@@ -3,12 +3,16 @@ using TestProject.Library;
 namespace TestProject.Composition;
 
 /// <summary>
-/// The documents the app serves about itself, read from the build at request time, and the
-/// version the footer shows (ADR-012).
+/// Registers the services behind the app's own documentation pages and the version in the
+/// page footer. The documents are read from the docs folder on each request, and the version
+/// and commit are read once here at startup.
 /// </summary>
 public static class DocsRegistration
 {
-    /// <summary>Registers the catalogue and the version.</summary>
+    /// <summary>
+    /// Adds the DocsCatalog, which lists and finds the documents, and the VersionInfo read from
+    /// the changelog and the git folder. Both are singletons rooted at the content root.
+    /// </summary>
     /// <param name="builder">The host being built.</param>
     public static void AddTheShedDocs(this WebApplicationBuilder builder)
     {

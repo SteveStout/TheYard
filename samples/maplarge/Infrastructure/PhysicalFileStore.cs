@@ -4,18 +4,22 @@ using TestProject.Data;
 namespace TestProject.Infrastructure;
 
 /// <summary>
-/// The disk, behind the port (ADR-002). Every method is a thin call into
-/// System.IO; the rules live one layer in. The one decision here is how a tree
-/// is walked: lazily, skipping what cannot be read, so a search can stop early
-/// and a folder with one locked subfolder still lists (ADR-008).
+/// The implementation of <see cref="IFileStore"/> that reads and writes real files and
+/// folders on disk. Each method is a thin call into System.IO; the rules about which
+/// paths and operations are allowed live in <see cref="FileBrowser"/> and are already
+/// applied before a call reaches this class. The one design choice made here is how a
+/// folder tree is walked: entries are returned one at a time as they are found, and
+/// anything that cannot be read is skipped. That lets a search stop as soon as it has
+/// enough matches, and lets a folder with one locked subfolder still be listed.
 /// </summary>
 public sealed class PhysicalFileStore : IFileStore
 {
     // #region walk
     /// <summary>
-    /// Hidden and system entries stay out of every listing: a person browsing a
-    /// home directory is not looking for desktop.ini, and a search across a tree
-    /// should not spend its limit on them.
+    /// Options for listing one folder's direct contents. This set and the deep set below
+    /// both skip entries that cannot be read, and both leave out hidden and system
+    /// entries, because a person browsing a folder is not looking for files like
+    /// desktop.ini and a search should not use up its result limit on them.
     /// </summary>
     private static readonly EnumerationOptions Shallow = new()
     {
@@ -23,6 +27,10 @@ public sealed class PhysicalFileStore : IFileStore
         AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
     };
 
+    /// <summary>
+    /// Options for walking every folder under a starting folder, at any depth, with the
+    /// same skipping rules as the single-folder options above.
+    /// </summary>
     private static readonly EnumerationOptions Deep = new()
     {
         IgnoreInaccessible = true,
@@ -38,9 +46,11 @@ public sealed class PhysicalFileStore : IFileStore
 
     private static IEnumerable<StoreEntry> Walk(string absoluteFolder, EnumerationOptions options)
     {
-        // EnumerateFileSystemInfos hands back each entry with its attributes and
-        // size already read from the directory listing, so a folder of ten
-        // thousand files costs one enumeration, not ten thousand stat calls.
+        // EnumerateFileSystemInfos returns each entry with its attributes, size and
+        // times already filled in from the directory listing itself. A folder of ten
+        // thousand files therefore costs one pass over the listing instead of ten
+        // thousand separate calls to look up each file. The yield return hands entries
+        // back one at a time, so a caller that stops early stops the walk too.
         foreach (FileSystemInfo info in new DirectoryInfo(absoluteFolder).EnumerateFileSystemInfos("*", options))
         {
             yield return From(info);

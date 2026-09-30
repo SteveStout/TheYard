@@ -5,9 +5,11 @@ using TestProject.Domain;
 namespace TestProject.Tests;
 
 /// <summary>
-/// The use cases over a store that lives in a dictionary (ADR-002). No temp
-/// folder, no disk: what these hold is the rules, and the disk is
-/// PhysicalFileStore's problem, tested through the host in FilesApiTests.
+/// Tests FileBrowser (browse, search, download, upload, create, delete, move, copy) against a
+/// store kept in a dictionary instead of a disk. With no temp folder the tests are fast and check
+/// only the rules: sort order, totals, limits, and the HTTP status each failure maps to.
+/// PhysicalFileStore, the class that reads and writes real files, is tested through the running
+/// app in FilesApiTests.
 /// </summary>
 public sealed class FileBrowserTests
 {
@@ -205,7 +207,10 @@ public sealed class FileBrowserTests
     }
 }
 
-/// <summary>An IFileStore in a dictionary: enough of a filesystem to hold the rules to.</summary>
+/// <summary>
+/// An IFileStore kept in a dictionary of absolute paths. It behaves enough like a filesystem for
+/// the rules to be tested, and it compares paths the way the OS running the tests does.
+/// </summary>
 internal sealed class FakeStore(string root) : IFileStore
 {
     private readonly Dictionary<string, StoreEntry> _entries = new(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
@@ -276,7 +281,10 @@ internal sealed class FakeStore(string root) : IFileStore
         }
     }
 
-    /// <summary>A write stream that hands its bytes to a callback when disposed, the way a file appears when its handle closes.</summary>
+    /// <summary>
+    /// A write stream that passes its bytes to a callback when disposed. The fake file appears only
+    /// then, the same way a real file is complete only once its handle closes.
+    /// </summary>
     private sealed class CapturingStream(Action<byte[]> onClose) : MemoryStream
     {
         protected override void Dispose(bool disposing)

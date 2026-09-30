@@ -5,19 +5,25 @@ using TestProject.Domain;
 namespace TestProject.Application;
 
 /// <summary>
-/// The use cases: browse, search, download, upload, new folder, delete, move,
-/// copy. Every one takes wire paths, resolves them through the home, asks the
-/// store, and shapes the reply. Nothing here knows about HTTP, and nothing here
-/// touches the disk except through the port (ADR-002).
+/// Carries out every file operation the API offers: browse, search, download, upload,
+/// new folder, delete, move and copy. Each method takes paths as the API receives them
+/// (relative to the home directory, forward slashes), turns them into absolute paths
+/// through <see cref="HomePath"/>, asks the file store to do the work, and builds the
+/// reply records. Nothing here knows about HTTP, and nothing here touches the disk
+/// except through the <see cref="IFileStore"/> interface, so the rules can be tested
+/// with an in-memory store (more in docs/ADR-002-one-project-four-folders-dependencies-inward.md).
 /// </summary>
 public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions options)
 {
-    /// <summary>The home directory these use cases are confined to.</summary>
+    /// <summary>The home directory every operation is kept inside.</summary>
     public HomePath Home { get; } = home;
 
     // #region browse
-    /// <summary>One folder's direct contents, folders first, each sorted by name.</summary>
-    /// <param name="path">A wire path to a folder; "" is home.</param>
+    /// <summary>
+    /// Lists one folder's direct contents with totals and timing. Folders come first,
+    /// then files, and each group is sorted by name ignoring case.
+    /// </summary>
+    /// <param name="path">The folder, relative to home; "" means home itself.</param>
     public Listing Browse(string? path)
     {
         long started = Stopwatch.GetTimestamp();
@@ -37,14 +43,18 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
 
     // #region search
     /// <summary>
-    /// Everything under a folder whose name matches, stopping at the limit. The
-    /// walk is lazy, so a search that hits its limit in the first subfolder never
-    /// reads the rest of the tree; that, and the limit itself, are what keep a
-    /// search on a large tree cheap (ADR-008).
+    /// Finds every file and folder under a folder, at any depth, whose name matches the
+    /// query, and stops once it has the maximum number of matches. The store hands back
+    /// entries one at a time as it walks, so a search that fills up early never reads
+    /// the rest of the tree. That early stop and the cap on results keep a search on a
+    /// large tree fast (more in docs/ADR-008-performance-measured.md).
     /// </summary>
-    /// <param name="path">Where to start; "" is home.</param>
-    /// <param name="query">A substring or a glob; empty is refused.</param>
-    /// <param name="limit">The most matches to return; null takes the configured default.</param>
+    /// <param name="path">The folder to search under, relative to home; "" means home.</param>
+    /// <param name="query">A plain substring, or a glob using * or ?; empty is refused.</param>
+    /// <param name="limit">
+    /// The most matches to return. Null uses the configured default, and any value is
+    /// clamped between 1 and the configured ceiling.
+    /// </param>
     public SearchResult Search(string? path, string? query, int? limit)
     {
         long started = Stopwatch.GetTimestamp();
@@ -77,8 +87,11 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     }
     // #endregion search
 
-    /// <summary>A file to send back: its absolute path for streaming and its entry for the headers.</summary>
-    /// <param name="path">A wire path to a file.</param>
+    /// <summary>
+    /// Checks that a path names a file and returns what the controller needs to send it:
+    /// the absolute path to stream from, and the file's entry for the response headers.
+    /// </summary>
+    /// <param name="path">The file, relative to home.</param>
     public (string Absolute, FileEntry Entry) Download(string? path)
     {
         string absolute = Home.Resolve(path);
@@ -91,15 +104,19 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
 
     // #region upload
     /// <summary>
-    /// Writes one uploaded file into a folder, streamed from the request to the
-    /// disk so a large upload never sits in memory. The size is checked before a
-    /// byte is read, so a refused upload costs nothing.
+    /// Writes one uploaded file into a folder. The bytes are copied straight from the
+    /// request stream to the file stream, so a large upload is never held in memory.
+    /// The declared size is checked before any byte is read, so an upload over the limit
+    /// is refused without reading its content.
     /// </summary>
-    /// <param name="folder">The receiving folder, a wire path.</param>
-    /// <param name="name">The file's name as the browser sent it; only the name is kept, never a path.</param>
-    /// <param name="length">The declared size in bytes.</param>
-    /// <param name="content">The bytes.</param>
-    /// <param name="overwrite">True to replace a file of the same name.</param>
+    /// <param name="folder">The folder that receives the file, relative to home.</param>
+    /// <param name="name">
+    /// The file name the browser sent. Only the last segment is kept, so a name that
+    /// carries a path cannot place the file anywhere else.
+    /// </param>
+    /// <param name="length">The size in bytes the request declared for this file.</param>
+    /// <param name="content">The stream of the file's bytes.</param>
+    /// <param name="overwrite">True to replace an existing file with the same name.</param>
     public async Task<FileEntry> UploadAsync(string? folder, string? name, long length, Stream content, bool overwrite)
     {
         if (length > options.MaxUploadBytes)
@@ -124,9 +141,12 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     }
     // #endregion upload
 
-    /// <summary>Creates a folder inside another.</summary>
-    /// <param name="parent">The folder to create it in, a wire path.</param>
-    /// <param name="name">The new folder's name.</param>
+    /// <summary>
+    /// Creates a new, empty folder inside an existing one. Refuses when anything with
+    /// that name is already there.
+    /// </summary>
+    /// <param name="parent">The folder to create it in, relative to home.</param>
+    /// <param name="name">The new folder's name; a single name, never a path.</param>
     public FolderEntry CreateFolder(string? parent, string? name)
     {
         string target = Path.Combine(Folder(parent), HomePath.ValidName(name));
@@ -138,8 +158,11 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         return Folder(store.Describe(target));
     }
 
-    /// <summary>Deletes a file, or a folder and its contents. Home itself is refused.</summary>
-    /// <param name="path">A wire path.</param>
+    /// <summary>
+    /// Deletes a file, or a folder with everything inside it. Deleting the home directory
+    /// itself is refused, because that would leave the app with nothing to browse.
+    /// </summary>
+    /// <param name="path">What to delete, relative to home.</param>
     public void Delete(string? path)
     {
         string absolute = Existing(path);
@@ -150,9 +173,12 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         store.Delete(absolute);
     }
 
-    /// <summary>Moves a file or folder to a new place, new name included.</summary>
-    /// <param name="from">A wire path to what moves.</param>
-    /// <param name="to">A wire path to where it goes.</param>
+    /// <summary>
+    /// Moves a file or folder to a new location, which can also give it a new name.
+    /// The checks it shares with copy run first (see <see cref="Transfer"/>).
+    /// </summary>
+    /// <param name="from">What to move, relative to home.</param>
+    /// <param name="to">The full new path, relative to home, new name included.</param>
     public StoreEntry Move(string? from, string? to)
     {
         (string source, string target) = Transfer(from, to);
@@ -160,9 +186,13 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         return store.Describe(target);
     }
 
-    /// <summary>Copies a file or folder to a new place, new name included.</summary>
-    /// <param name="from">A wire path to what is copied.</param>
-    /// <param name="to">A wire path to where the copy goes.</param>
+    /// <summary>
+    /// Copies a file, or a folder with everything inside it, to a new location, which can
+    /// also give the copy a new name. The checks it shares with move run first
+    /// (see <see cref="Transfer"/>).
+    /// </summary>
+    /// <param name="from">What to copy, relative to home.</param>
+    /// <param name="to">The full path of the copy, relative to home, new name included.</param>
     public StoreEntry Copy(string? from, string? to)
     {
         (string source, string target) = Transfer(from, to);
@@ -170,16 +200,22 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         return store.Describe(target);
     }
 
-    /// <summary>The wire entry for a store entry of either kind.</summary>
-    /// <param name="entry">What the store described.</param>
+    /// <summary>
+    /// Converts a store entry, which holds an absolute path, into the record the API
+    /// returns: a <see cref="FolderEntry"/> for a folder or a <see cref="FileEntry"/> for
+    /// a file, both with paths relative to home.
+    /// </summary>
+    /// <param name="entry">The entry the store described.</param>
     public object Describe(StoreEntry entry) => entry.Kind == EntryKind.Folder ? Folder(entry) : File(entry);
 
     // #region transfer-rules
     /// <summary>
-    /// The checks a move and a copy share: the source exists, home itself is not
-    /// moved, the destination's parent is a folder, nothing is at the destination
-    /// already, and a folder is not put inside itself, which a filesystem would
-    /// either refuse late or, for a copy, never finish.
+    /// Runs the checks that move and copy both need, in order: the source exists, the
+    /// source is not the home directory, the destination is not the home directory, the
+    /// destination's parent is an existing folder, nothing is already at the destination,
+    /// and a folder is not being put inside itself. That last check runs here because the
+    /// filesystem would either fail partway through or, for a copy, keep copying the
+    /// new folder into itself and never finish.
     /// </summary>
     private (string Source, string Target) Transfer(string? from, string? to)
     {

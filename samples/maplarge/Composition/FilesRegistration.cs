@@ -7,28 +7,38 @@ using TestProject.Infrastructure;
 namespace TestProject.Composition;
 
 /// <summary>
-/// The file browser itself: the home directory and its limits, the one port and its one adapter,
-/// and the use cases over them (ADR-002, ADR-003).
+/// Registers the file browser's services: the home directory and its limits, the file store
+/// interface with the class that reads and writes real files, and the FileBrowser that holds
+/// the rules. It also sets the server's upload size limits to match the configured maximum.
 /// </summary>
 public static class FilesRegistration
 {
-    /// <summary>Registers the home, the store, the use cases and the upload limits.</summary>
+    /// <summary>
+    /// Adds the home directory, the file store, the FileBrowser and the upload size limits to the
+    /// host.
+    /// </summary>
     /// <param name="builder">The host being built.</param>
     public static void AddTheShedFiles(this WebApplicationBuilder builder)
     {
         // #region files
-        // The home directory and the limits, from the Files section or FILES__* variables (ADR-003).
+        // Reads the "Files" section of configuration (or FILES__* environment variables) into
+        // FilesOptions, then registers the options object and the HomePath built from it as
+        // singletons, so every class receives the same home directory.
         builder.Services.Configure<FilesOptions>(builder.Configuration.GetSection(FilesOptions.Section));
         builder.Services.AddSingleton(provider => provider.GetRequiredService<IOptions<FilesOptions>>().Value);
         builder.Services.AddSingleton(provider => HomeFor(provider.GetRequiredService<FilesOptions>(), builder.Environment.ContentRootPath));
 
-        // The onion: the port, its one adapter, and the use cases over them (ADR-002).
+        // IFileStore is the interface the rules use to touch the disk, and PhysicalFileStore is
+        // the class that reads and writes real files. FileBrowser holds the rules and depends only
+        // on the interface, so tests can swap in a different store.
         builder.Services.AddSingleton<IFileStore, PhysicalFileStore>();
         builder.Services.AddSingleton<FileBrowser>();
 
-        // The exact limit is checked per file in FileBrowser.UploadAsync; the server and the form parser
-        // get the same number plus a megabyte for the multipart framing, so a request that is merely
-        // large reaches the check that can name the file, and one that is absurd is cut off earlier.
+        // FileBrowser.UploadAsync checks the exact per-file limit and names the file in its error.
+        // The web server and the form parser get that limit plus one megabyte, to allow for the
+        // multipart form's own headers and boundaries. A slightly large request therefore still
+        // reaches the per-file check and gets a clear message, while a far too large request is
+        // cut off by the server before it is read.
         long maxUpload = builder.Configuration.GetSection(FilesOptions.Section).GetValue("MaxUploadBytes", new FilesOptions().MaxUploadBytes);
         long slack = 1024 * 1024;
         builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = maxUpload + slack);
@@ -37,12 +47,13 @@ public static class FilesRegistration
     }
 
     /// <summary>
-    /// The home from configuration: absolute as given, relative to the content
-    /// root otherwise, and the sample-home that ships with the project when
-    /// nothing is configured, created if it is missing so a clean clone runs.
+    /// Works out the home directory from configuration. An absolute path is used as given, and a
+    /// relative path is taken from the content root. When nothing is configured, it uses the
+    /// sample-home folder that ships with the project. The folder is created if it is missing,
+    /// so a fresh copy of the project runs without any setup.
     /// </summary>
-    /// <param name="options">The Files section.</param>
-    /// <param name="contentRoot">Where the project runs from.</param>
+    /// <param name="options">The Files section of configuration.</param>
+    /// <param name="contentRoot">The folder the project runs from.</param>
     public static HomePath HomeFor(FilesOptions options, string contentRoot)
     {
         string configured = string.IsNullOrWhiteSpace(options.Home) ? "sample-home" : options.Home;

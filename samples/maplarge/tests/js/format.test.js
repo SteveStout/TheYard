@@ -1,4 +1,6 @@
-// node --test tests/js: bytes and instants as a person reads them.
+// Tests the display formatters (run with: node --test tests/js). They check that byte counts
+// step by 1024 with one decimal, that times read as a short local stamp or "today", and that
+// nouns take the right plural, because these strings are what a person reads in the file list.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { bytes, plural, when } from '../../wwwroot/js/lib/format.js';

@@ -4,24 +4,30 @@ using TestProject.Data;
 namespace TestProject.Library;
 
 /// <summary>
-/// The version the footer shows comes from the top line of docs/CHANGELOG.md,
-/// and the commit from .git, read once at startup (ADR-012). There is no
-/// version number typed anywhere else, so shipping a version and writing its
-/// changelog line are one act, and a footer can never claim a version the log
-/// does not know about.
+/// Reads the version and commit shown in the page footer, once at startup. The version comes
+/// from the newest entry in docs/CHANGELOG.md and the commit comes from the .git folder. The
+/// version number is written nowhere else, so releasing a version and adding its changelog entry
+/// are the same step, and the footer can never show a version the changelog does not list.
 /// </summary>
 public static partial class VersionReader
 {
-    /// <summary>What to show when a fact cannot be read: the footer says so rather than guessing.</summary>
+    /// <summary>
+    /// The value used when the version or commit cannot be read, so the footer says so instead
+    /// of guessing.
+    /// </summary>
     public const string Unknown = "unknown";
 
-    /// <summary>Reads the version and the commit for a project root.</summary>
+    /// <summary>Reads the version from the changelog and the commit for a project root.</summary>
     /// <param name="projectRoot">The folder holding docs/ and, when run from a clone, .git.</param>
     public static VersionInfo Read(string projectRoot) => new(VersionFrom(Path.Combine(projectRoot, "docs", "CHANGELOG.md")), CommitFrom(projectRoot));
 
     // #region version
-    /// <summary>The first four-number version in the changelog, which is the newest because the log is newest first.</summary>
-    /// <param name="changelog">The changelog's path.</param>
+    /// <summary>
+    /// Returns the first version number with four dot-separated parts on a line that starts
+    /// with "- ". The changelog lists entries newest first, so the first match is the current
+    /// version. Returns "unknown" when the file or a matching line is missing.
+    /// </summary>
+    /// <param name="changelog">The path to the changelog file.</param>
     public static string VersionFrom(string changelog)
     {
         if (!File.Exists(changelog))
@@ -41,12 +47,14 @@ public static partial class VersionReader
     // #endregion version
 
     /// <summary>
-    /// The short hash of HEAD, read from the .git folder without git installed:
-    /// HEAD names a ref, and the ref file (or packed-refs) names the commit. A
-    /// build with no .git, such as the zip they asked for, says "unknown", and a
-    /// container carries the hash in the SHED_COMMIT variable instead.
+    /// Returns the short (seven character) hash of the current commit. The SHED_COMMIT
+    /// environment variable wins when set, because a container image has no .git folder and
+    /// receives the hash that way. Otherwise it searches upward from the project root for a
+    /// .git folder and reads it directly, so git does not need to be installed: HEAD names a
+    /// branch ref, and that ref's file (or the packed-refs file) holds the commit hash. A copy
+    /// of the project with no .git folder, such as a zip download, gets "unknown".
     /// </summary>
-    /// <param name="projectRoot">The folder that may hold .git, or a parent of it.</param>
+    /// <param name="projectRoot">The folder that holds .git, or any folder below it.</param>
     public static string CommitFrom(string projectRoot)
     {
         string? fromEnvironment = Environment.GetEnvironmentVariable("SHED_COMMIT");

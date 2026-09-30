@@ -1,9 +1,15 @@
 /**
- * The one parser and the one serializer for the state the URL carries (ADR-005).
- * Pure: no DOM, no fetch, so node --test runs the compiled module as it is.
- * Everything the page shows is a function of this object, and nothing the page
- * knows is kept anywhere else, which is what makes a link to any view a link
- * to that view.
+ * Converts between the page address (the query string) and the State object the
+ * page draws from, in both directions: parse() reads an address into a State and
+ * serialize() writes a State back into an address. Nothing else in the app reads
+ * or writes these query keys.
+ *
+ * Everything the page shows is decided by this State, and the State is kept only
+ * in the address. That is why copying the address always gives a link that
+ * reopens exactly the same view.
+ *
+ * The module uses no DOM and makes no network calls, so its compiled output can
+ * be tested directly with `node --test`. (More in docs/ADR-005-state-lives-in-the-url.md.)
  */
 
 export const SORTS = ['name', 'size', 'modified'] as const;
@@ -15,7 +21,7 @@ export type Dir = (typeof DIRS)[number];
 export type View = (typeof VIEWS)[number];
 
 export interface State {
-  /** True when the address carries any known key: the dialog is open. */
+  /** True when the address carries any known key, which means the dialog is open. */
   open: boolean;
   view: View;
   path: string;
@@ -27,10 +33,18 @@ export interface State {
 
 type Keys = Exclude<keyof State, 'open'>;
 
-/** How a view asks for a change: the keys that differ, and whether to replace the history entry. */
+/**
+ * The function a view calls to change the state. It passes only the keys that
+ * change, and true as the second argument to overwrite the current history
+ * entry instead of adding a new one.
+ */
 export type Navigate = (partial: Partial<State>, replaceEntry?: boolean) => void;
 
-/** The state a bare address means: closed; and when open, home, no search, by name, ascending. */
+/**
+ * The value of each key when the address does not set it: the file browser view,
+ * the top folder, no search, no document, sorted by name in ascending order.
+ * An address with none of these keys means the dialog is closed.
+ */
 export const DEFAULTS: Readonly<Omit<State, 'open'>> = Object.freeze({
   view: 'browse',
   path: '',
@@ -47,17 +61,17 @@ function pick<T extends string>(value: string | null, allowed: readonly T[], fal
 
 // #region parse
 /**
- * Reads a query string into a state. Unknown keys are dropped, a value outside
- * its list falls back to the default, and a path is normalised to forward
- * slashes with no leading or trailing one, so two spellings of one folder are
- * one state.
- * @param search the location's search, with or without the leading ?
+ * Reads a query string into a State. Unknown keys are ignored. A value that is
+ * not in its allowed list falls back to the default. A path is cleaned to forward
+ * slashes with no leading or trailing slash, so two ways of writing the same
+ * folder give the same State.
+ * @param search the query string from the address, with or without the leading "?"
  */
 export function parse(search: string): State {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
   return {
-    // Any known key opens the dialog, so "?path=docs" is enough for a link and "?view=browse" is
-    // what a bare open serializes to (ADR-007).
+    // Any known key opens the dialog, so a link as short as "?path=docs" works. An open dialog
+    // with every other value at its default is written as "?view=browse" by serialize().
     open: KEYS.some((key) => params.has(key)),
     view: pick(params.get('view'), VIEWS, DEFAULTS.view),
     path: cleanPath(params.get('path')),
@@ -70,10 +84,10 @@ export function parse(search: string): State {
 // #endregion parse
 
 /**
- * Writes a state as a query string, leaving out every value that is the
- * default, so a link is as short as it can be. A closed state is "" (the bare
- * address); an open state at home, where nothing else would be written, keeps
- * "?view=browse" so the address still says the browser is open.
+ * Writes a State as a query string. Values equal to their default are left out,
+ * so links stay as short as possible. A closed State gives "" (no query at all).
+ * An open State where every value is the default would also give nothing, so it
+ * writes "?view=browse" to keep the dialog open when the address is read back.
  * @returns "" when closed, otherwise "?key=value&..."
  */
 export function serialize(state: Partial<State>): string {
@@ -93,15 +107,16 @@ export function serialize(state: Partial<State>): string {
   return `?${params.toString()}`;
 }
 
-/** True when the address asks for the browser to be open: any known key at all. */
+/** True when the State says the dialog is open, meaning the address had at least one known key. */
 export function isOpen(state: State): boolean {
   return state.open;
 }
 
 /**
- * A path as the API wants it: forward slashes, no empty segments, no leading
- * or trailing slash. Never touches "." or ".."; the server refuses those and the
- * page shows its sentence.
+ * Cleans a path into the form the API expects: backslashes turned into forward
+ * slashes, empty segments removed, and no leading or trailing slash.
+ * It leaves "." and ".." segments alone on purpose. The server checks every path
+ * and refuses those, and the page then shows the server's error message.
  */
 export function cleanPath(path: string | null | undefined): string {
   return (path ?? '')
@@ -116,7 +131,10 @@ export interface Crumb {
   path: string;
 }
 
-/** The folders on the way to a path, for the breadcrumb, from home down to the path itself. */
+/**
+ * Lists every folder from the top down to the given path, for the breadcrumb
+ * trail. The first entry is always "Home" with the empty path.
+ */
 export function crumbs(path: string): Crumb[] {
   const out: Crumb[] = [{ name: 'Home', path: '' }];
   let sofar = '';
@@ -127,7 +145,10 @@ export function crumbs(path: string): Crumb[] {
   return out;
 }
 
-/** The parent of a path, or "" at the top; null for home itself. */
+/**
+ * Returns the parent folder of a path: "" when the path is directly under the
+ * top folder, and null when the path is the top folder itself.
+ */
 export function parentOf(path: string): string | null {
   const clean = cleanPath(path);
   if (clean === '') {

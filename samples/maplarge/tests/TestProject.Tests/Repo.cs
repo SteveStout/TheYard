@@ -1,10 +1,10 @@
 namespace TestProject.Tests;
 
 /// <summary>
-/// Where the project is, from inside a test binary: walk up from the test's
-/// output folder to the directory holding TestProject.csproj. Several tests read
-/// the project itself (the records, the em dash rule, the stylesheet), and they
-/// share the walk and the list of folders that are not ours.
+/// Finds the project folder from inside a running test. It walks up from the test's
+/// output folder until it reaches the directory that holds TestProject.csproj. Several
+/// tests read the project's own files (the docs, the source, the stylesheets), so they
+/// share this search and the list of build and tool folders to skip.
 /// </summary>
 internal static class Repo
 {
@@ -24,7 +24,10 @@ internal static class Repo
         throw new InvalidOperationException($"no TestProject.csproj above {AppContext.BaseDirectory}");
     }
 
-    /// <summary>Every file under the project with one of these extensions, skipping build output.</summary>
+    /// <summary>
+    /// Every file under the project with one of these extensions. It skips build output, git and
+    /// tool folders, because those hold generated files the project's rules do not apply to.
+    /// </summary>
     public static List<string> FilesWith(params string[] extensions)
     {
         var found = new List<string>();
@@ -50,11 +53,17 @@ internal static class Repo
         }
     }
 
-    /// <summary>A path relative to the project root, forward slashes, for a message.</summary>
+    /// <summary>
+    /// A path relative to the project root with forward slashes, so failure messages read the same
+    /// on every OS.
+    /// </summary>
     public static string Relative(string file) => Path.GetRelativePath(Root(), file).Replace('\\', '/');
 }
 
-/// <summary>A temporary home directory for one test, deleted when the test ends.</summary>
+/// <summary>
+/// A new, empty folder under the system temp directory for one test, deleted when the test is
+/// disposed. Each test gets its own folder, so tests never share files or touch real ones.
+/// </summary>
 internal sealed class TempHome : IDisposable
 {
     public string Root { get; } = Path.Combine(Path.GetTempPath(), "shed-tests", Guid.NewGuid().ToString("N"));
@@ -64,7 +73,10 @@ internal sealed class TempHome : IDisposable
         Directory.CreateDirectory(Root);
     }
 
-    /// <summary>Writes a file under the home, creating folders on the way; the path uses forward slashes.</summary>
+    /// <summary>
+    /// Writes a file under the temp folder, creating any missing folders on the way, and returns
+    /// its full path. The relative path uses forward slashes, so a test reads the same on every OS.
+    /// </summary>
     public string File(string relative, string content = "")
     {
         string absolute = Path.Combine(Root, relative.Replace('/', Path.DirectorySeparatorChar));
@@ -84,7 +96,8 @@ internal sealed class TempHome : IDisposable
     {
         try
         {
-            // A test may have made a file read-only on purpose; clear that first or the delete refuses.
+            // A test may make a file read-only on purpose. Clear that attribute first,
+            // or the folder delete fails on that file.
             foreach (string file in Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories))
             {
                 System.IO.File.SetAttributes(file, FileAttributes.Normal);
@@ -93,7 +106,8 @@ internal sealed class TempHome : IDisposable
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // A handle the operating system has not released yet; the folder is under temp and harmless.
+            // The OS may not have released a file handle yet. The folder is under temp, so leaving
+            // it behind does no harm, and a cleanup error must not fail a test that passed.
         }
         GC.SuppressFinalize(this);
     }

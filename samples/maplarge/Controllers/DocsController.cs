@@ -6,20 +6,25 @@ using TestProject.Library;
 namespace TestProject.Controllers;
 
 /// <summary>
-/// The documents and the version: what the sidebar lists, each record as
-/// markdown with its live code expanded, and the footer's numbers (ADR-012).
-/// The markdown is rendered in the browser, never here.
+/// Serves the app's own documentation and version. It returns the list of documents for the
+/// sidebar, each document as markdown with its code samples filled in from this build, and the
+/// version and commit shown in the footer. The markdown is sent as plain text and turned into
+/// HTML by the browser, so the server needs no markdown library.
 /// </summary>
 [ApiController]
 [Route("api")]
 public sealed class DocsController(DocsCatalog catalog, VersionInfo version, IWebHostEnvironment environment) : ControllerBase
 {
-    /// <summary>The sidebar: every document with its slug, title and group. GET /api/docs</summary>
+    /// <summary>Lists each document's slug, title and sidebar group. GET /api/docs</summary>
     [HttpGet("docs")]
     public IReadOnlyList<DocEntry> List() => catalog.List();
 
-    /// <summary>One document as text/markdown, live fences expanded from this build. GET /api/docs/adr-003-the-line-a-path-cannot-cross</summary>
-    /// <param name="slug">The lower-case file name without .md.</param>
+    /// <summary>
+    /// Returns one document as text/markdown, with each live code block replaced by the current
+    /// code from this build. Answers 404 when no document has that slug.
+    /// GET /api/docs/adr-003-the-line-a-path-cannot-cross
+    /// </summary>
+    /// <param name="slug">The document's file name in lower case, without .md.</param>
     [HttpGet("docs/{slug}")]
     public IActionResult Document(string slug)
     {
@@ -32,7 +37,10 @@ public sealed class DocsController(DocsCatalog catalog, VersionInfo version, IWe
         return Content(markdown, "text/markdown; charset=utf-8");
     }
 
-    /// <summary>The version from the changelog and the commit it was built from. GET /api/version</summary>
+    /// <summary>
+    /// Returns the version from the changelog and the commit the app was built from, both read at
+    /// startup. GET /api/version
+    /// </summary>
     [HttpGet("version")]
     public VersionInfo Version() => version;
 }

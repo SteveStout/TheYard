@@ -3,13 +3,13 @@ using TestProject.Composition;
 namespace TestProject;
 
 /// <summary>
-/// The host, as a table of contents (ADR-001, ADR-002). The starter's shape is kept: one class,
-/// one Main. Each line names a part of the app in the order it is made, and the comment beside it
-/// names the file that shows how, the way TheYard's Program.cs reads.
+/// The entry point. It builds the web host and starts it. Each step is a single call, and the
+/// comment beside the call names the file that holds the details. The setup lives in those
+/// files so that this class stays a short, readable list of what the app is made of.
 /// </summary>
 public sealed class Program
 {
-    /// <summary>Builds and runs the app.</summary>
+    /// <summary>Builds the web app from its parts, in order, and runs it until shutdown.</summary>
     /// <param name="args">Command line arguments, passed to the host builder.</param>
     public static void Main(string[] args)
     {

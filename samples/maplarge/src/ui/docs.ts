@@ -1,7 +1,12 @@
 /**
- * The Docs tab: the records the app serves about itself, listed by group and
- * rendered from markdown with the reader in lib/markdown.ts (ADR-012). Which
- * document is open is in the URL as ?view=docs&doc=slug (ADR-005).
+ * The Docs tab: a list of the documents the app serves about itself, grouped by
+ * section, beside the open document drawn from its markdown. The markdown is
+ * parsed by lib/markdown.ts and turned into DOM nodes by ui/dom.ts.
+ *
+ * The open document is part of the page address, as ?view=docs&doc=<slug>, so a
+ * link to a document reopens that document. The list of documents is fetched
+ * once and kept for as long as the page is open.
+ * (More in docs/ADR-012-documents-served-by-the-app.md.)
  */
 
 import * as api from '../lib/api.js';
@@ -16,8 +21,10 @@ function messageOf(error: unknown): string {
 }
 
 /**
- * @param root the element the docs view owns
- * @param navigate pushes a state change
+ * Builds the Docs tab inside a container element and returns an object whose
+ * render() draws it for a given State.
+ * @param root the element the Docs tab fills; it replaces everything inside it
+ * @param navigate the function to call to change the State and the page address
  */
 export function createDocs(root: HTMLElement, navigate: Navigate): View {
   let catalogue: DocEntry[] | null = null;
@@ -70,11 +77,12 @@ export function createDocs(root: HTMLElement, navigate: Navigate): View {
     try {
       const markdown = await api.doc(slug);
       if (slug !== current) {
-        return; // Another document was chosen while this one loaded.
+        return; // Another document is now selected; its own render will draw it.
       }
       replace(article, toDom(parse(markdown)));
       article.scrollTop = 0;
-      // The heading takes focus so a screen reader lands on the title, not the top of the panel.
+      // Move focus to the first heading, so a screen reader starts at the document title
+      // rather than the top of the panel. tabindex -1 makes a heading focusable from code.
       const heading = article.querySelector<HTMLElement>('h1, h2');
       if (heading) {
         heading.setAttribute('tabindex', '-1');

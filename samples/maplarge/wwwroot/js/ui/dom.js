@@ -1,14 +1,21 @@
 /**
- * The two ways this page makes HTML: h() for what the code writes and toDom()
- * for what the markdown reader read (ADR-006). Both set text with textContent,
- * never innerHTML, so nothing a file name or a document carries can become
- * markup.
+ * Helpers that build DOM elements. h() builds the elements the page code
+ * describes, and toDom() builds elements from the tree the markdown parser in
+ * lib/markdown.ts produces.
+ *
+ * Both create elements with createElement and put text in text nodes. Neither
+ * ever assigns an HTML string through innerHTML, so text from a file name or a
+ * document is always shown as text and can never become markup or script.
+ * (More in docs/ADR-006-typescript-organised.md.)
  */
 import { isElement } from '../lib/markdown.js';
 /**
- * An element with attributes and children in one call.
- * @param attrs "onclick" style keys become listeners; true is a bare attribute; false, null and undefined are left out
- * @param children strings become text nodes
+ * Creates an element, sets its attributes and appends its children in one call.
+ * @param tag the element name, such as "div" or "button"
+ * @param attrs attributes to set: a function under an "on..." key becomes an event listener,
+ *   "class" sets the class name, true adds the attribute with no value, and false, null
+ *   and undefined leave the attribute out
+ * @param children child nodes; strings become text nodes and empty values are skipped
  */
 export function h(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
@@ -47,7 +54,11 @@ function append(node, children) {
         }
     }
 }
-/** The markdown reader's tree as DOM nodes, by createElement and text nodes, so a document's text stays text. */
+/**
+ * Converts the tree from the markdown parser into DOM nodes. Elements are made
+ * with createElement and text with text nodes, so a document's text is always
+ * shown as text. Attributes with an empty value are left out.
+ */
 export function toDom(nodes) {
     const fragment = document.createDocumentFragment();
     for (const node of nodes) {
@@ -66,7 +77,11 @@ export function toDom(nodes) {
     }
     return fragment;
 }
-/** Replaces a container's children in one step, so a redraw is one reflow and never a half-drawn table. */
+/**
+ * Removes all of a container's children and appends new ones. Doing it in one
+ * step means the browser lays out the result once, so a person never sees a
+ * half-drawn table.
+ */
 export function replace(container, ...children) {
     container.replaceChildren();
     append(container, children);

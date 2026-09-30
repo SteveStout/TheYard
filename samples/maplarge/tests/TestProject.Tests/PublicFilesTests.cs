@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Mvc.Testing;
 namespace TestProject.Tests;
 
 /// <summary>
-/// The two documents a reviewer opens first, and the author's page: the resume
-/// and "The Shed, explained" are served as PDFs from the site's own origin, and
-/// the About page sits in the catalogue's first group so the Docs tab shows it.
+/// Checks the files a visitor is most likely to open first. The resume and "The Shed, explained"
+/// must be served from this site as real PDFs: status 200, the PDF content type, more than 10 KB,
+/// and the %PDF signature at the start. The About page must sit in the "Start here" group of the
+/// document list so the Docs tab shows it first, must link both PDFs, and must hold no em dash.
+/// A broken or empty file here would be the first thing a visitor sees.
 /// </summary>
 public sealed class PublicFilesTests : IDisposable
 {

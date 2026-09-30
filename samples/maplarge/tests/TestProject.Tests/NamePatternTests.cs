@@ -2,7 +2,12 @@ using TestProject.Domain;
 
 namespace TestProject.Tests;
 
-/// <summary>A substring or a glob, never case-sensitive, and nothing matches nothing (ADR-004).</summary>
+/// <summary>
+/// Checks how a search query matches a file or folder name. A query with * or ? is a wildcard
+/// pattern that must match the whole name; any other query matches anywhere in the name. Case is
+/// ignored, regular expression symbols in a query are plain text, and the query is trimmed. An
+/// empty query matches nothing, so a blank search returns no results instead of the whole tree.
+/// </summary>
 public sealed class NamePatternTests
 {
     [Theory]

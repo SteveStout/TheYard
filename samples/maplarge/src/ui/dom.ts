@@ -1,22 +1,35 @@
 /**
- * The two ways this page makes HTML: h() for what the code writes and toDom()
- * for what the markdown reader read (ADR-006). Both set text with textContent,
- * never innerHTML, so nothing a file name or a document carries can become
- * markup.
+ * Helpers that build DOM elements. h() builds the elements the page code
+ * describes, and toDom() builds elements from the tree the markdown parser in
+ * lib/markdown.ts produces.
+ *
+ * Both create elements with createElement and put text in text nodes. Neither
+ * ever assigns an HTML string through innerHTML, so text from a file name or a
+ * document is always shown as text and can never become markup or script.
+ * (More in docs/ADR-006-typescript-organised.md.)
  */
 
 import { isElement, type MdNode } from '../lib/markdown.js';
 
-/** What h() accepts as a child: a node, text, nothing, or a list of those. */
+/**
+ * What h() accepts as a child: a DOM node, a string, an empty value (null,
+ * undefined or false, which are skipped), or a nested list of any of these.
+ */
 export type Child = Node | string | null | undefined | false | Child[];
 
-/** An attribute value: text, a flag, or, for "on..." keys, a listener. */
+/**
+ * What h() accepts as an attribute value: a string, a boolean flag, an empty
+ * value, or an event listener function for keys that start with "on".
+ */
 export type Attr = string | boolean | null | undefined | EventListener;
 
 /**
- * An element with attributes and children in one call.
- * @param attrs "onclick" style keys become listeners; true is a bare attribute; false, null and undefined are left out
- * @param children strings become text nodes
+ * Creates an element, sets its attributes and appends its children in one call.
+ * @param tag the element name, such as "div" or "button"
+ * @param attrs attributes to set: a function under an "on..." key becomes an event listener,
+ *   "class" sets the class name, true adds the attribute with no value, and false, null
+ *   and undefined leave the attribute out
+ * @param children child nodes; strings become text nodes and empty values are skipped
  */
 export function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, Attr> = {}, ...children: Child[]): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -53,7 +66,11 @@ function append(node: ParentNode, children: Child[]): void {
   }
 }
 
-/** The markdown reader's tree as DOM nodes, by createElement and text nodes, so a document's text stays text. */
+/**
+ * Converts the tree from the markdown parser into DOM nodes. Elements are made
+ * with createElement and text with text nodes, so a document's text is always
+ * shown as text. Attributes with an empty value are left out.
+ */
 export function toDom(nodes: MdNode[]): DocumentFragment {
   const fragment = document.createDocumentFragment();
   for (const node of nodes) {
@@ -73,7 +90,11 @@ export function toDom(nodes: MdNode[]): DocumentFragment {
   return fragment;
 }
 
-/** Replaces a container's children in one step, so a redraw is one reflow and never a half-drawn table. */
+/**
+ * Removes all of a container's children and appends new ones. Doing it in one
+ * step means the browser lays out the result once, so a person never sees a
+ * half-drawn table.
+ */
 export function replace(container: ParentNode, ...children: Child[]): void {
   container.replaceChildren();
   append(container, children);

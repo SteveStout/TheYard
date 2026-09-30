@@ -1,9 +1,16 @@
 /**
- * The file browser inside the dialog: the breadcrumb, the search, the totals,
- * the table and the writes (ADR-006). It renders from the state it is given and
- * the reply it fetched, and every change of view goes through navigate(), so
- * the URL is always the state (ADR-005). One listener on the table handles every
- * row; a row is found again by its data-path.
+ * The file browser shown inside the dialog: the breadcrumb trail, the search box,
+ * the totals line, the file table, and the actions that change files (upload,
+ * new folder, copy, move, delete).
+ *
+ * It draws only from the State it is given and the listing it fetched for that
+ * State. Every change of folder, search or sort goes through navigate(), so the
+ * page address always describes what is on screen.
+ *
+ * One click listener on the table handles the buttons of every row. Each row
+ * stores its path in a data-path attribute, so the listener finds which entry was
+ * clicked without keeping a listener per row. (More in
+ * docs/ADR-005-state-lives-in-the-url.md and docs/ADR-006-typescript-organised.md.)
  */
 import * as api from '../lib/api.js';
 import { bytes, plural, when } from '../lib/format.js';
@@ -14,13 +21,18 @@ const SEARCH_DEBOUNCE_MS = 250;
 function isSearch(reply) {
     return 'query' in reply;
 }
-/** The sentence a failure carries: the server's, or the browser's. */
+/**
+ * The message to show for a caught error: the server's sentence for an ApiError,
+ * the browser's message for any other Error, or the value as text otherwise.
+ */
 function messageOf(error) {
     return error instanceof Error ? error.message : String(error);
 }
 /**
- * @param root the element the browser owns
- * @param navigate pushes a state change, or replaces the current one
+ * Builds the file browser inside a container element and returns an object whose
+ * render() draws it for a given State.
+ * @param root the element the browser fills; it replaces everything inside it
+ * @param navigate the function to call to change the State and the page address
  */
 export function createBrowser(root, navigate) {
     let state = { open: true, view: 'browse', path: '', q: '', sort: 'name', dir: 'asc', doc: '' };
@@ -46,7 +58,8 @@ export function createBrowser(root, navigate) {
         if (!transfer) {
             return;
         }
-        // A dropped folder arrives as an empty entry: dataTransfer.files holds files only.
+        // A dropped folder shows up in dataTransfer.files as an empty entry with the folder's name,
+        // so folders are detected through the item list and left out of the upload with a message.
         const folders = [...transfer.items].filter((item) => item.webkitGetAsEntry()?.isDirectory);
         if (folders.length > 0) {
             say('error', 'Drop files, not folders: make the folder here first, then drop its files into it.');
@@ -54,7 +67,12 @@ export function createBrowser(root, navigate) {
         void uploadFiles([...transfer.files].filter((file) => !folders.some((item) => item.getAsFile()?.name === file.name)));
     });
     // #region render
-    /** Renders the state: a browse or a search, then the table from the reply. */
+    /**
+     * Draws the browser for a State. It fetches the folder listing, or the search
+     * results when the State has a search, then draws the totals, the table and
+     * the action buttons from that reply. A failed fetch shows the error message
+     * in place of the table.
+     */
     async function render(next) {
         state = next;
         renderToolbar();
@@ -70,19 +88,20 @@ export function createBrowser(root, navigate) {
             return;
         }
         if (next !== state) {
-            return; // A newer render started while this one was fetching; it will draw.
+            return; // A newer render started during this fetch; let the newer one draw.
         }
         renderReadout(reply);
         renderTable(reply);
         renderActions();
     }
-    // The search box is made once and kept, so re-rendering while a person types
-    // never takes the focus or the caret away from them.
+    // The search box is created once and reused on every render. Rebuilding it would move the
+    // keyboard focus and the text cursor away from a person who is still typing.
     const searchInput = h('input', { type: 'search', name: 'q', placeholder: 'Search this folder and below: name, *.md, report?', 'aria-label': 'Search' });
     searchInput.addEventListener('input', () => {
         clearTimeout(debounce);
-        // The first keystroke of a search pushes, so Back returns to the folder without it; every
-        // keystroke after that replaces, so Back never steps through a search letter by letter.
+        // Wait until typing pauses, then search. The first search adds a history entry, so Back
+        // returns to the folder without a search. Later keystrokes overwrite that entry, so Back
+        // does not step back through the search one letter at a time.
         debounce = window.setTimeout(() => navigate({ q: searchInput.value.trim() }, state.q !== ''), SEARCH_DEBOUNCE_MS);
     });
     const clearButton = h('button', { type: 'button', class: 'small', onclick: () => navigate({ q: '' }) }, 'Clear');
@@ -179,7 +198,10 @@ export function createBrowser(root, navigate) {
     }
     // #endregion render
     // #region writes
-    /** One listener for every row: the button's data-action says what, the row's data-path says which. */
+    /**
+     * Handles a click on any row button. The button's data-action attribute names
+     * the action, and the row's data-path attribute names the file or folder.
+     */
     function onRowAction(event) {
         const button = event.target?.closest('button[data-action]');
         const tr = button?.closest('tr');
@@ -222,7 +244,11 @@ export function createBrowser(root, navigate) {
         const slash = path.lastIndexOf('/');
         return dot > slash ? `${path.slice(0, dot)}-copy${path.slice(dot)}` : `${path}-copy`;
     }
-    /** Swaps a row's action cell for a question with one confirming button. */
+    /**
+     * Replaces a row's action buttons with a question, a confirm button and a
+     * Cancel button. Cancel, or a failed action, puts the original buttons back.
+     * Asking inside the row keeps the question next to the entry it is about.
+     */
     function confirmInRow(tr, question, verb, act) {
         const cell = tr.querySelector('td.actions');
         if (!cell) {
@@ -234,7 +260,11 @@ export function createBrowser(root, navigate) {
         replace(cell, h('span', {}, question, ' '), confirm, h('button', { type: 'button', onclick: restore }, 'Cancel'));
         confirm.focus();
     }
-    /** Swaps a row's action cell for an input and a confirming button. */
+    /**
+     * Replaces a row's action buttons with a text box, a confirm button and a
+     * Cancel button, for actions that need a destination path (move and copy).
+     * Cancel, or a failed action, puts the original buttons back.
+     */
     function askInRow(tr, label, value, verb, act) {
         const cell = tr.querySelector('td.actions');
         if (!cell) {
@@ -279,9 +309,11 @@ export function createBrowser(root, navigate) {
         input.focus();
     }
     /**
-     * Uploads files one at a time with a bar each. A 409 (the name exists) pauses the
-     * batch and asks in place: Overwrite sends that one file again with overwrite on,
-     * Skip leaves it; either way the rest of the batch goes on.
+     * Uploads files one at a time, each with its own progress bar. When the server
+     * answers 409 (a file with that name already exists), the batch pauses and asks
+     * the person. Overwrite sends that file again with overwrite turned on; Skip
+     * leaves it. Either way the remaining files continue. Any other error stops the
+     * batch and shows the message.
      */
     async function uploadFiles(files) {
         if (files.length === 0) {
@@ -317,7 +349,11 @@ export function createBrowser(root, navigate) {
         replace(noticeBox, h('div', { class: 'notice' }, `Uploading ${file.name} (${bytes(file.size)})`, h('div', { class: 'progress' }, bar)));
         return api.upload(state.path, file, overwrite, (fraction) => { bar.style.width = `${Math.round(fraction * 100)}%`; });
     }
-    /** The 409 question, as a promise the batch can wait on. */
+    /**
+     * Shows the "name already exists" question with Overwrite and Skip buttons, and
+     * returns a promise that resolves to true for Overwrite or false for Skip, so
+     * the upload loop can wait for the answer.
+     */
     function askOverwrite(message) {
         return new Promise((resolve) => {
             replace(noticeBox, h('div', { class: 'notice' }, `${message} `, h('button', { type: 'button', class: 'small', onclick: () => resolve(true) }, 'Overwrite'), ' ', h('button', { type: 'button', class: 'small', onclick: () => resolve(false) }, 'Skip')));

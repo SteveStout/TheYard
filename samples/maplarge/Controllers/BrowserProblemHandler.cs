@@ -7,14 +7,15 @@ using TestProject.Domain;
 namespace TestProject.Controllers;
 
 /// <summary>
-/// Turns a refusal into an RFC 9457 problem document (ADR-004). A
-/// <see cref="BrowserProblemException"/> carries its own status and title; a
-/// <see cref="PathRefusedException"/> from the home is always a 400; the
-/// filesystem's own refusals (a read-only file inside a folder being deleted, a
-/// file another process holds open) are a 409 or a 403 with the operating
-/// system's sentence, because they are the request's problem, not the server's.
-/// Anything else is not handled here, so an actual bug still reaches the default
-/// handler as a 500 with a trace id and never masquerades as a client error.
+/// Turns a refused request into an RFC 9457 problem document. A
+/// <see cref="BrowserProblemException"/> carries its own status and title. A
+/// <see cref="PathRefusedException"/> from the home directory check is always a 400.
+/// Refusals from the filesystem itself, such as a read-only file inside a folder being
+/// deleted or a file another process holds open, become a 403 or a 409 carrying the
+/// operating system's message. They are treated as client errors because the request
+/// asked for something the disk cannot do, not because the server is broken.
+/// Any other exception is left unhandled here, so a real bug still reaches the default
+/// handler as a 500 with a trace id and is never reported as a client error.
 /// </summary>
 public sealed class BrowserProblemHandler(IProblemDetailsService problems) : IExceptionHandler
 {
@@ -43,7 +44,7 @@ public sealed class BrowserProblemHandler(IProblemDetailsService problems) : IEx
                 Status = status,
                 Title = title,
                 Detail = exception.Message,
-                // The trace id the logs carry, so a person quoting a failure can be found in them.
+                // Adds the same trace id the logs carry, so a reported failure can be found there.
                 Extensions = { ["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier },
             },
         });

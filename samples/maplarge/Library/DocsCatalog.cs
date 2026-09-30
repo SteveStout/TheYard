@@ -4,26 +4,30 @@ using TestProject.Data;
 namespace TestProject.Library;
 
 /// <summary>
-/// The documents the app serves, read from the <c>docs</c> folder beside the
-/// project at request time so a record can never go stale against the code it
-/// describes (ADR-012). The sidebar order is decided here: start here, the
-/// README, the author, the decision records by number, then the guides.
+/// Lists and finds the markdown documents the app serves about itself. They are read from the
+/// <c>docs</c> folder beside the project on every request, not copied or cached, so the served
+/// text always matches the files in this build. This class also fixes the sidebar order: the
+/// start page, the README and the about page first, then the decision records by number, then
+/// the guides.
 /// </summary>
 public sealed partial class DocsCatalog(string contentRoot)
 {
-    /// <summary>The sidebar group a record sits in.</summary>
+    /// <summary>The sidebar group name for the decision records.</summary>
     public const string RecordsGroup = "Decision records";
 
-    /// <summary>The sidebar group the guides sit in.</summary>
+    /// <summary>The sidebar group name for the guides.</summary>
     public const string GuidesGroup = "Guides";
 
     private static readonly string[] Guides = ["STYLE", "BUILT-WITH-AI", "CHANGELOG"];
 
-    /// <summary>The folder the records are read from.</summary>
+    /// <summary>The docs folder the documents are read from.</summary>
     public string DocsFolder { get; } = Path.Combine(contentRoot, "docs");
 
     // #region catalogue
-    /// <summary>Every document, in the order the sidebar shows them.</summary>
+    /// <summary>
+    /// Returns every document in sidebar order. Each title is the first "# " heading in its file,
+    /// read fresh on each call.
+    /// </summary>
     public IReadOnlyList<DocEntry> List()
     {
         var entries = new List<DocEntry>
@@ -43,8 +47,12 @@ public sealed partial class DocsCatalog(string contentRoot)
         return entries;
     }
 
-    /// <summary>The file a slug names, or null. A slug is a lower-case file name, which is the only shape the catalogue makes.</summary>
-    /// <param name="slug">The address the request asked for.</param>
+    /// <summary>
+    /// Returns the file path for a slug, or null when no listed document has that slug. The README
+    /// sits at the project root, so it is handled first. Any other slug must appear in
+    /// <see cref="List"/>, so only documents the sidebar shows can be served.
+    /// </summary>
+    /// <param name="slug">The slug from the request: a lower-case file name without .md.</param>
     public string? FileFor(string slug)
     {
         if (slug == "readme")
@@ -57,7 +65,11 @@ public sealed partial class DocsCatalog(string contentRoot)
     }
     // #endregion catalogue
 
-    /// <summary>The number in a record's file name, so ADR-010 sorts after ADR-009 and not after ADR-001.</summary>
+    /// <summary>
+    /// Reads the number from a decision record's file name so records sort by number, putting
+    /// ADR-010 after ADR-009 rather than after ADR-001 as a text sort would. A name without a
+    /// number sorts last.
+    /// </summary>
     /// <param name="file">A path ending in ADR-NNN-anything.md.</param>
     public static int RecordNumber(string file)
     {

@@ -2,7 +2,13 @@ using TestProject.Domain;
 
 namespace TestProject.Tests;
 
-/// <summary>The line a path cannot cross (ADR-003), held as strings on whatever OS runs the suite.</summary>
+/// <summary>
+/// Checks HomePath, the guard that keeps every requested path inside the home folder. The tests
+/// pass plain strings and never touch a disk, with a root in the form of whichever OS runs them.
+/// This guard is what stops a request from reading or writing outside the home, so each way of
+/// escaping it (dot segments, rooted paths, bad characters, shared prefixes) has its own case.
+/// (more in docs/ADR-003-the-line-a-path-cannot-cross.md)
+/// </summary>
 public sealed class HomePathTests
 {
     private static readonly string Root = OperatingSystem.IsWindows() ? @"C:\home\files" : "/home/files";
@@ -59,7 +65,8 @@ public sealed class HomePathTests
     [Fact]
     public void The_root_with_a_prefix_in_common_is_outside()
     {
-        // /home/files-old starts with the same characters as /home/files and is not inside it.
+        // /home/files-old starts with the same characters as /home/files but is a different
+        // folder. A plain string prefix check would wrongly call it inside.
         Assert.False(_home.IsInside(_home.Root + "-old"));
         Assert.False(_home.IsInside(Path.Combine(_home.Root + "-old", "x")));
     }

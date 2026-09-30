@@ -3,29 +3,32 @@ using System.Text.RegularExpressions;
 namespace TestProject.Library;
 
 /// <summary>
-/// Live code in a served document (ADR-012). A record may hold an empty fenced
-/// block whose info string reads <c>live path=Domain/HomePath.cs region=guard</c>,
-/// and this replaces it at request time with an ordinary fenced block holding the
-/// lines between <c>// #region guard</c> and its <c>// #endregion</c> in that file,
-/// read from this build. <c>region=*</c> shows the whole file. A path outside the
-/// allowed roots, or a region that is not there, renders a one-line note and never
-/// an error, so a renamed region shows up on the page rather than in a log.
+/// Fills in live code samples in a served document. A document may contain an empty fenced
+/// code block whose info string reads <c>live path=Domain/HomePath.cs region=guard</c>.
+/// When the document is requested, this replaces that block with an ordinary fenced block
+/// holding the lines between <c>// #region guard</c> and its matching <c>// #endregion</c>
+/// in that file, read from this build, so the sample can never drift from the real code.
+/// <c>region=*</c> shows the whole file. A path outside the allowed folders, a missing file,
+/// or a missing region produces a one-line note in the page instead of an error, so a renamed
+/// region is visible to the reader rather than hidden in a log.
 /// </summary>
 public static partial class LiveSamples
 {
     // #region allowed
-    /// <summary>The only folders a live block may read from, relative to the project root.</summary>
+    /// <summary>The only folders a live block may read, relative to the project root.</summary>
     public static readonly string[] AllowedRoots = ["Data/", "Domain/", "Application/", "Infrastructure/", "Controllers/", "Composition/", "Library/", "src/", "wwwroot/", "tests/", "docs/", "infra/"];
 
-    /// <summary>The single files at the project root a live block may read.</summary>
+    /// <summary>The only files at the project root a live block may read.</summary>
     public static readonly string[] AllowedFiles = ["Program.cs", "TestProject.csproj", ".editorconfig", "Dockerfile", "appsettings.json"];
 
     /// <summary>
-    /// Pure string checks, before any filesystem touch: plain characters, forward
-    /// slashes, no "." or ".." segment, and under an allowed root or one of the
-    /// named files. The same idea as the home directory's guard, on a shorter list.
+    /// Decides whether a live block may read a path, using string checks only, before any
+    /// file is opened. The path must use plain characters and forward slashes, must have no
+    /// empty, "." or ".." segment, and must be one of the allowed files or sit under one of
+    /// the allowed folders. This keeps a document from reading anything outside the project
+    /// or any file that is not on these lists.
     /// </summary>
-    /// <param name="path">The path from the fence.</param>
+    /// <param name="path">The path from the code block's info string.</param>
     public static bool IsAllowedPath(string? path)
     {
         if (string.IsNullOrWhiteSpace(path) || !PlainPath().IsMatch(path))
@@ -41,9 +44,12 @@ public static partial class LiveSamples
     }
     // #endregion allowed
 
-    /// <summary>Replaces every live block in the markdown with the current sample or a note.</summary>
+    /// <summary>
+    /// Replaces every live block in the markdown with the current code sample, or with a note
+    /// when the sample cannot be shown. All other lines pass through unchanged.
+    /// </summary>
     /// <param name="markdown">The document as written.</param>
-    /// <param name="projectRoot">Where the project's files are.</param>
+    /// <param name="projectRoot">The folder that holds the project's files.</param>
     public static string Expand(string markdown, string projectRoot)
     {
         string[] lines = markdown.Split('\n');
@@ -56,8 +62,8 @@ public static partial class LiveSamples
                 output.Add(lines[i]);
                 continue;
             }
-            // Skip to the closing fence; a live block is empty by definition, and
-            // anything a writer put inside it is discarded rather than shown.
+            // Skips ahead to the closing fence. A live block is meant to be empty, so any text
+            // written inside it is dropped rather than shown next to the real code.
             int close = i + 1;
             while (close < lines.Length && !lines[close].TrimEnd('\r').StartsWith("```", StringComparison.Ordinal))
             {
@@ -69,7 +75,10 @@ public static partial class LiveSamples
         return string.Join('\n', output);
     }
 
-    /// <summary>Every live path a document names, so a test can check they all resolve.</summary>
+    /// <summary>
+    /// Returns the path and region of every live block in a document, so a test can check that
+    /// each one points at code that exists. A block without a region counts as "*".
+    /// </summary>
     /// <param name="markdown">The document as written.</param>
     public static IEnumerable<(string Path, string Region)> Fences(string markdown)
     {
@@ -110,7 +119,10 @@ public static partial class LiveSamples
         return block;
     }
 
-    /// <summary>The lines between a region marker and its end, without the markers, or none.</summary>
+    /// <summary>
+    /// Returns the lines between a named region marker and its matching end marker, without the
+    /// markers themselves. Returns an empty list when the region is not found or never closes.
+    /// </summary>
     /// <param name="source">The file's lines.</param>
     /// <param name="name">The region's name.</param>
     public static IReadOnlyList<string> Region(string[] source, string name)
@@ -120,7 +132,8 @@ public static partial class LiveSamples
         {
             return [];
         }
-        // Regions nest, so the matching end is the one that brings the depth back to zero.
+        // Regions can be nested, so this counts every start and end marker from the named start.
+        // The matching end is the one that brings the count back to zero.
         int depth = 0;
         for (int i = start; i < source.Length; i++)
         {
@@ -141,7 +154,10 @@ public static partial class LiveSamples
     }
     // #endregion sample
 
-    /// <summary>The fence language for a path, so the page can colour it; plain text when unknown.</summary>
+    /// <summary>
+    /// Returns the code block language name for a file, based on its extension, so the page can
+    /// apply syntax colouring. Unknown extensions get plain text.
+    /// </summary>
     /// <param name="path">A file path.</param>
     public static string LanguageFor(string path) => Path.GetExtension(path).ToLowerInvariant() switch
     {

@@ -1,7 +1,12 @@
 /*
- * Everything that is not a token: the page, the panel, the dialog, the table,
- * the document view. Every colour, size and face is read from a token in
- * tokens.css (ADR-010); a literal here fails StyleRulesTests.
+ * The layout and look of every part of the page: the header, the content panel,
+ * the file browser dialog, the file table and the Docs tab, plus the phone layout.
+ *
+ * Colours, fonts, shadows and the spacing scale are CSS custom properties defined
+ * in tokens.css, so the palette changes in that one file. This file never writes
+ * a colour value itself: the StyleRulesTests test class fails the build if it finds
+ * a hex, rgb or hsl colour here, and also if a custom property used here is not
+ * declared. (More in docs/ADR-010-the-palette-borrowed-from-theyard.md.)
  */
 
 /* #region base */
@@ -133,7 +138,8 @@ main {
   padding: var(--space-6);
 }
 
-/* The two corner brackets, the top left on the rule and the bottom right on the edge. */
+/* Corner brackets drawn with the ::before and ::after pseudo-elements: one sits on the thick
+   top line at the top left corner, the other on the border at the bottom right corner. */
 .panel::before,
 .panel::after {
   content: '';
@@ -601,7 +607,8 @@ td.actions button {
   width: fit-content;
 }
 
-/* Headings in a document stack; .panel h2 above makes the dialog's title inline, and that must not reach in here. */
+/* Document headings sit on their own line. The .panel h2 rule above makes h2 inline-block
+   for the dialog title, and a document is inside the panel, so this rule sets it back. */
 .docs article h2 {
   font-size: var(--text-lg);
   margin-top: var(--space-6);
@@ -679,7 +686,8 @@ td.actions button {
   color: var(--color-heading);
 }
 
-/* A photograph in a document wears the Yard's frame: a deep teal border, a gold hairline, a soft shadow. */
+/* Images in a document get a frame that matches the panel style: a deep teal border, a thin
+   gold outline drawn with box-shadow, and a soft drop shadow. */
 .docs article img {
   max-width: 100%;
   height: auto;
@@ -740,8 +748,9 @@ td.actions button {
     max-height: 30vh;
   }
 
-  /* On a phone the table becomes a list: the name on one line, size and date under it, the
-     actions on their own row at thumb size, so a long name is never squeezed by four buttons. */
+  /* On a narrow screen the table becomes a stacked list. Each row shows the name on its own
+     line, the size and date below it, and the action buttons on their own line at a size easy
+     to tap. Four buttons beside the name would leave a long file name too little room. */
   thead {
     display: none;
   }
@@ -793,7 +802,8 @@ td.actions button {
 /* #endregion phone */
 
 /* #region views */
-/* The two views inside the dialog fill it; hidden wins over the flex display. */
+/* The file browser and the Docs tab each fill the dialog's remaining height. The [hidden] rule
+   is needed because the display: flex set here would otherwise override the hidden attribute. */
 #browser {
   flex: 1;
   min-height: 0;

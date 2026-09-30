@@ -10,10 +10,12 @@ using TestProject.Domain;
 namespace TestProject.Tests;
 
 /// <summary>
-/// The real host booted in memory over a temporary home (ADR-004): every route,
-/// the snake_case wire, and the problem document on every failure. What the
-/// browser tests cannot see, this does: the disk adapter, the JSON options and
-/// the exception handler working together.
+/// Runs the real app in memory over a temporary home folder and calls every API route over HTTP.
+/// It checks that the JSON the API sends uses snake_case field names, and that every failure
+/// returns a problem document (application/problem+json) with a status, a detail and a trace id.
+/// FileBrowserTests uses an in-memory store, so only these tests cover the class that reads and
+/// writes real files, the JSON settings and the exception handler working together.
+/// (more in docs/ADR-004-the-wire.md)
 /// </summary>
 public sealed class FilesApiTests : IDisposable
 {
@@ -30,13 +32,14 @@ public sealed class FilesApiTests : IDisposable
         _home.File("apple.txt", "apple");
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
-            // Production, so the HTTPS redirect the starter had stays out of the way (ADR-001).
+            // Run as Production. In Development the app redirects HTTP to HTTPS, and the test
+            // client would get that redirect instead of the API's answer.
             builder.UseEnvironment("Production");
             builder.UseSetting("Files:Home", _home.Root);
             builder.UseSetting("Files:MaxUploadBytes", "64");
             builder.UseSetting("Files:SearchLimit", "2");
-            // The home and the limits are bound from settings, so no service is
-            // replaced and the wiring under test is the wiring that ships.
+            // The home folder and the limits go in as ordinary settings. No service is
+            // replaced, so the test runs the same setup code the deployed app runs.
         });
         _client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
     }
@@ -180,14 +183,15 @@ public sealed class FilesApiTests : IDisposable
     public async Task The_filesystem_refusing_a_delete_is_a_problem_document_not_a_500()
     {
         string locked = _home.File("Archive/keep.txt", "keep");
-        // On Windows a read-only file inside a folder makes Directory.Delete throw; elsewhere
-        // an open handle with no sharing is the nearest equivalent the test can make.
+        // Make the folder delete fail, to check that the error becomes a 409 or 403 problem
+        // document rather than an unhandled 500. On Windows a read-only file inside the folder is
+        // enough. Elsewhere the test also holds the file open with no sharing, the nearest match.
         File.SetAttributes(locked, FileAttributes.ReadOnly);
         using FileStream? hold = OperatingSystem.IsWindows() ? null : new FileStream(locked, FileMode.Open, FileAccess.Read, FileShare.None);
         HttpResponseMessage response = await _client.DeleteAsync("/api/files?path=Archive");
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
-            return; // This operating system let the delete through; nothing to refuse.
+            return; // This OS allowed the delete anyway, so there is no refusal to check.
         }
         Assert.True(response.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.Forbidden, $"expected 409 or 403, got {(int)response.StatusCode}");
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);

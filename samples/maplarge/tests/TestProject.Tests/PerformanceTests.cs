@@ -8,11 +8,11 @@ using Xunit.Abstractions;
 namespace TestProject.Tests;
 
 /// <summary>
-/// Performance, measured rather than claimed (ADR-008). A tree of 10,000 files
-/// in 100 folders is generated once per run under temp, and the use cases are
-/// timed over the real disk adapter. The bars are loose on purpose (a laptop
-/// with a virus scanner is the target machine); the numbers printed are what
-/// the record quotes.
+/// Measures browse and search speed on a real disk instead of assuming it. The test writes
+/// 10,000 files in 100 folders under temp, then times a folder browse, a capped search, a
+/// whole-tree search and a root browse through the class that reads real files. The time limits
+/// are loose on purpose, so a slow laptop running a virus scanner still passes. The timings the
+/// test prints are the figures quoted in docs/ADR-008-performance-measured.md.
 /// </summary>
 public sealed class PerformanceTests(ITestOutputHelper output) : IDisposable
 {
@@ -42,7 +42,8 @@ public sealed class PerformanceTests(ITestOutputHelper output) : IDisposable
 
         var browser = new FileBrowser(new HomePath(_home.Root), new PhysicalFileStore(), new FilesOptions());
 
-        // Warm the operating system's directory cache once, the way a second visitor finds it.
+        // Browse once before timing to warm the OS directory cache, so the timings match a
+        // repeat visit rather than the first read of a cold disk.
         browser.Browse("folder-000");
 
         long browseMs = Time(() => browser.Browse("folder-042"), out int browsed);

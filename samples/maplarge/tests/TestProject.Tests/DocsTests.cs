@@ -7,11 +7,14 @@ using TestProject.Library;
 namespace TestProject.Tests;
 
 /// <summary>
-/// The records are served, whole, numbered and current (ADR-012, ADR-009): the
-/// catalogue offers every ADR file and nothing unnumbered, the numbers run from
-/// one with no gap, every record keeps its shape, every live fence resolves,
-/// every repository link lands on a file, and the version the API reports is
-/// the changelog's newest line.
+/// Checks the project's documents and how the app serves them. The decision records in docs
+/// (files named ADR-NNN-*.md) must be numbered from 1 with no gap and share one layout. The
+/// document list at /api/docs must offer every record and guide, and each must load as markdown.
+/// Every code block that pulls in live source must find its file and region, every GitHub link
+/// must point at a file that exists with the same letter case, every listed document must be
+/// published with the app, and /api/version must report the newest changelog line. The documents
+/// describe the code, so these checks fail the build when the two drift apart.
+/// (more in docs/ADR-012-documents-served-by-the-app.md)
 /// </summary>
 public sealed partial class DocsTests : IDisposable
 {
@@ -116,8 +119,9 @@ public sealed partial class DocsTests : IDisposable
         {
             foreach (Match link in RepoLink().Matches(File.ReadAllText(file)))
             {
-                // Exact case, segment by segment: Windows would say a link with the wrong case exists,
-                // and GitHub, which serves the link, would not (1.0.0.2 learned this the hard way).
+                // Compare each path segment with exact case. Windows finds a file whatever the
+                // case, but GitHub, which serves these links, does not, so a wrong-case link would
+                // pass a plain File.Exists check on Windows and still be broken online.
                 if (!ExistsExact(Repo.Root(), link.Groups["path"].Value))
                 {
                     broken.Add($"{Path.GetFileName(file)} -> {link.Groups["path"].Value}");
@@ -170,9 +174,11 @@ public sealed partial class DocsTests : IDisposable
     [Fact]
     public void Every_document_the_catalogue_serves_is_published_with_the_app()
     {
-        // The container is the content root at runtime, so a document the project file does not
-        // publish is missing there and nowhere else: README.md was, and the live site answered
-        // its slug with a 409 while every test here, reading the source folder, passed (1.0.0.10).
+        // The deployed app reads documents from its published output, not the source folder.
+        // A document the project file does not copy on publish passes every other test here,
+        // because they read the source folder, yet is missing on the live site. So this reads the
+        // Content items in TestProject.csproj and checks that each listed document matches one of
+        // their Include patterns. The patterns use backslashes, so the paths are converted first.
         string root = Repo.Root();
         List<Regex> published = System.Xml.Linq.XDocument.Load(Path.Combine(root, "TestProject.csproj"))
             .Descendants("Content")
