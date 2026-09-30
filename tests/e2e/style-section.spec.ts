@@ -44,8 +44,8 @@ test('the Site traffic page opens its sub-pages in the same window, its tiles dr
   await page.setViewportSize({ width: 1280, height: 900 });
   await openTheYard(page, '/?doc=site-traffic');
   const tiles = page.locator('dialog[open] [data-testid="style-tiles"] a');
-  await expect(tiles).toHaveCount(3, { timeout: 30_000 });
-  await expect(page.locator('dialog[open] [data-glyph] svg')).toHaveCount(3);
+  await expect(tiles).toHaveCount(4, { timeout: 30_000 });
+  await expect(page.locator('dialog[open] [data-glyph] svg')).toHaveCount(4);
   const readouts = await page
     .locator('dialog[open] [data-testid="style-readout"]')
     .allTextContents();

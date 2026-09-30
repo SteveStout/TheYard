@@ -604,6 +604,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/traffic-search-console</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/style</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

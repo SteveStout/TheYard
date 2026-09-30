@@ -10,6 +10,7 @@ The site counts its own traffic and shows it on the Admin tab, to anybody. That 
 traffic-who | Who comes | People, scanners and crawlers, and the site reading itself, told apart and counted. | author
 traffic-kept | What is kept | What a visit leaves behind, where it is kept, for how long, and what is never kept. | records
 traffic-found | Being found | Robots, the sitemap, the page about the author and the data search engines read. | about
+traffic-search-console | Search Console, step by step | The site put into Google Search Console one screen at a time, with the code behind each step. | practices
 ```
 
 ## The standing rules
@@ -38,6 +39,10 @@ Sitemap | sitemap.xml | The list of every address the site wants found, read by 
 Structured data | application/ld+json | Facts about a page written for machines in schema.org's vocabulary: who the author is and where the code lives. | traffic-found#structured-data | Being found
 llms.txt | /llms.txt | A plain index of the site for AI tools, pointing at the documents as markdown they can read without running the app. | traffic-found#for-ai-tools | Being found
 Canonical | rel="canonical" | The one address a page wants to be listed under, so the two sites do not compete for it. | traffic-found#the-page-about-the-author | Being found
+Search Console |  | Google's report on what its crawler sees: what is indexed, under which address, and what people searched to find it. | traffic-search-console | Search Console
+Property |  | The unit Search Console reports on: a whole domain, proven by DNS, or one address and everything under it. | traffic-search-console#step-1-add-a-property | Search Console
+Verification token | GOOGLE_SITE_VERIFICATION | The value Google issues to prove ownership. Here it is a repository variable the image build writes into the home page. | traffic-search-console#step-2-prove-ownership | Search Console
+URL inspection |  | Search Console's answer for one address: whether it is indexed, how Google found it, and which canonical it chose. | traffic-search-console#step-4-inspect-a-url-and-ask-for-indexing | Search Console
 ```
 
 ## How it is enforced

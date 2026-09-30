@@ -82,6 +82,7 @@
       title line, the two profiles that are him, and his city. Nothing else
       about him goes here, and never a street.
     -->
+    <!-- #region structured-data -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -117,6 +118,8 @@
         ]
       }
     </script>
+    <!-- #endregion structured-data -->
+    <!-- #region search-console-slot -->
     <!--
       Search Console's HTML-tag check. The token is a GitHub repository variable,
       GOOGLE_SITE_VERIFICATION, public by design, passed to the image build, and
@@ -124,6 +127,7 @@
       is set; unset, the line stays a comment and nothing is claimed.
     -->
     <!-- google-site-verification -->
+    <!-- #endregion search-console-slot -->
   </head>
   <body>
     <div id="root"></div>

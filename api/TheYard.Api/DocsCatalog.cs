@@ -130,6 +130,7 @@ public static class DocsCatalog
         ["traffic-who"] = "docs/TRAFFIC-WHO.md",
         ["traffic-kept"] = "docs/TRAFFIC-KEPT.md",
         ["traffic-found"] = "docs/TRAFFIC-FOUND.md",
+        ["traffic-search-console"] = "docs/TRAFFIC-SEARCH-CONSOLE.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };

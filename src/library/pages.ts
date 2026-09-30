@@ -176,5 +176,11 @@ export const PAGES = {
     url: '/api/docs/traffic-found',
     kind: 'overview',
   },
+  trafficSearchConsole: {
+    title: 'Search Console, step by step',
+    menuLabel: 'Search Console',
+    url: '/api/docs/traffic-search-console',
+    kind: 'overview',
+  },
 } as const satisfies Record<string, PageEntry>;
 // #endregion pages

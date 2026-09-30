@@ -82,6 +82,7 @@ public class DockerBuildInputsTests
         // The build's day replaces the sitemap's placeholder, and a placeholder left behind stops the build.
         Assert.Contains("s/__BUILD_DATE__/$(date -u +%Y-%m-%d)/", dockerfile, StringComparison.Ordinal);
         Assert.Contains("if grep -q \"__BUILD_DATE__\" dist/sitemap.xml; then", dockerfile, StringComparison.Ordinal);
+        // #region verification-tag
         // The tag is written in place of index.html's comment, only when the variable is set, and only if it is a token.
         Assert.Contains("ARG GOOGLE_SITE_VERIFICATION=", dockerfile, StringComparison.Ordinal);
         Assert.Contains("if [ -n \"${GOOGLE_SITE_VERIFICATION}\" ]", dockerfile, StringComparison.Ordinal);
@@ -91,5 +92,6 @@ public class DockerBuildInputsTests
         // the cache export included, so the cached layers match the pushed ones.
         Assert.Equal(2, Regex.Matches(deploy, @"GOOGLE_SITE_VERIFICATION=\$\{\{ vars\.GOOGLE_SITE_VERIFICATION \}\}").Count);
         Assert.DoesNotContain("secrets.GOOGLE_SITE_VERIFICATION", deploy, StringComparison.Ordinal);
+        // #endregion verification-tag
     }
 }

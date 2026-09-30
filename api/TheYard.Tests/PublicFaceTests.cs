@@ -277,6 +277,7 @@ public class PublicFaceTests
         Assert.DoesNotContain("streetAddress", head, StringComparison.Ordinal);
         Assert.DoesNotContain("postalCode", head, StringComparison.Ordinal);
     }
+    // #region sitemap-both-ways
     [Fact]
     public void The_sitemap_lists_every_document_the_site_serves_and_nothing_it_does_not()
     {
@@ -292,6 +293,7 @@ public class PublicFaceTests
         Assert.True(unlisted.Length == 0, $"public/sitemap.xml does not list {string.Join(", ", unlisted)}");
         Assert.True(gone.Length == 0, $"public/sitemap.xml lists {string.Join(", ", gone)}, which the site no longer serves");
     }
+    // #endregion sitemap-both-ways
 
     [Fact]
     public void Llms_txt_names_the_author_and_links_only_to_what_the_site_serves()

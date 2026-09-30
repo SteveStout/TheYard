@@ -28,7 +28,7 @@ Both `/about` and the home page describe the author in schema.org's vocabulary a
 
 ## Search Console
 
-Google's Search Console proves ownership of a site with a meta tag. The home page keeps a slot for it, and the image build writes the tag into the slot when the repository variable `GOOGLE_SITE_VERIFICATION` is set, and leaves the slot empty when it is not. The token is public by design, so it is a variable and not a secret.
+Google's Search Console proves ownership of a site with a meta tag. The home page keeps a slot for it, and the image build writes the tag into the slot when the repository variable `GOOGLE_SITE_VERIFICATION` is set, and leaves the slot empty when it is not. The token is public by design, so it is a variable and not a secret. The site was verified on 30 September 2026, its sitemap submitted, and `/about` indexed about ten minutes after it was requested; [Search Console, step by step](https://theyard.stevenstout.biz/?doc=traffic-search-console) walks through each screen with the code behind it.
 
 ## How it will show
 

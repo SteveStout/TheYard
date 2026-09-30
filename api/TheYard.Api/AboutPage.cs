@@ -43,6 +43,7 @@ public static class AboutPage
         string site = siteUrl.TrimEnd('/');
         string canonical = site + "/about";
         string e(string value) => WebUtility.HtmlEncode(value);
+        // #region person-json-ld
         string person = JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["@context"] = "https://schema.org",
@@ -60,6 +61,7 @@ public static class AboutPage
                 ["addressCountry"] = "US",
             },
         });
+        // #endregion person-json-ld
         return $$"""
             <!doctype html>
             <html lang="en">
