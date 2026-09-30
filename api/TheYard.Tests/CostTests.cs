@@ -161,6 +161,16 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
         Assert.DoesNotContain("subscriptions", CostReader.NoteFor(status), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(CostOutcome.Read, 60)]
+    [InlineData(CostOutcome.NoRole, 60)]
+    [InlineData(CostOutcome.Refused, 60)]
+    [InlineData(CostOutcome.Failed, 5)]
+    public void A_read_that_did_not_finish_is_tried_again_in_five_minutes_and_anything_else_in_an_hour(CostOutcome outcome, int minutes)
+    {
+        Assert.Equal(TimeSpan.FromMinutes(minutes), CostRecorder.WaitAfter(outcome));
+    }
+
     [Fact]
     public async Task The_reader_answers_a_minute_from_its_cache_and_reads_again_after()
     {

@@ -238,7 +238,10 @@ public sealed record CostRead(CostOutcome Outcome, string? Note, IReadOnlyList<C
 /// </summary>
 public sealed class CostReader(string subscriptionId, string clientId, bool configured)
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
+    // A minute, not the usual few seconds: the first read of 1.0.3.55 on the
+    // Cosmos DB site took longer than twenty seconds and was cancelled, on a
+    // plan still busy loading the catalogue (ADR: What Azure charges, addendum).
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
 
     /// <summary>What the card says on a run that is not on Azure.</summary>
     public const string NotConfigured = "the cost reader runs only on Azure, where the site has an identity to ask with; a local run reads nothing";
@@ -333,7 +336,7 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
         HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => NoRoleNote,
         HttpStatusCode.TooManyRequests => "Cost Management asked this site to slow down; the next read is in an hour",
         HttpStatusCode.BadRequest or HttpStatusCode.Conflict => "Cost Management refused the read, which it does while a billing account is being set up; the next read is in an hour",
-        _ => $"Cost Management answered {(int)status}; the next read is in an hour",
+        _ => $"Cost Management answered {(int)status}; the next read is in five minutes",
     };
 }
 
@@ -391,21 +394,36 @@ public sealed class CostRecorder(
     /// <summary>How often the bill is read.</summary>
     public static readonly TimeSpan Every = TimeSpan.FromHours(1);
 
-    /// <summary>One read, public so the suite can run one without waiting an hour.</summary>
-    public async Task RecordOnceAsync(CancellationToken cancellation)
+    /// <summary>How soon a read that did not finish is tried again.</summary>
+    public static readonly TimeSpan Retry = TimeSpan.FromMinutes(5);
+
+    // #region cost-retry
+    /// <summary>
+    /// How long to wait after a read. An hour after one that went through,
+    /// and after one Azure refused: a missing role does not appear in five
+    /// minutes, and a request to slow down is a request to slow down. Five
+    /// minutes after one that did not finish, because a timeout says nothing
+    /// about the next answer, and an hour of an empty card for one slow answer
+    /// is the wrong trade (ADR: What Azure charges, addendum).
+    /// </summary>
+    public static TimeSpan WaitAfter(CostOutcome outcome) => outcome == CostOutcome.Failed ? Retry : Every;
+    // #endregion cost-retry
+
+    /// <summary>One read, public so the suite can run one without waiting an hour; says how it went.</summary>
+    public async Task<CostOutcome> RecordOnceAsync(CancellationToken cancellation)
     {
         var now = clock.GetUtcNow();
         if (!reader.Configured)
         {
             status.Set(now, false, CostReader.NotConfigured);
-            return;
+            return CostOutcome.Failed;
         }
 
         var availability = await history.AvailabilityAsync(cancellation);
         if (!availability.Available)
         {
             status.Set(now, false, availability.Reason);
-            return;
+            return CostOutcome.Failed;
         }
 
         var today = DateOnly.FromDateTime(now.UtcDateTime);
@@ -416,6 +434,7 @@ public sealed class CostRecorder(
         }
 
         status.Set(now, read.Outcome == CostOutcome.Read, read.Note);
+        return read.Outcome;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stopping)
@@ -425,9 +444,10 @@ public sealed class CostRecorder(
         await Task.Delay(TimeSpan.FromSeconds(30), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         while (!stopping.IsCancellationRequested)
         {
+            var outcome = CostOutcome.Failed;
             try
             {
-                await RecordOnceAsync(stopping);
+                outcome = await RecordOnceAsync(stopping);
                 if (!reader.Configured)
                 {
                     return;
@@ -442,10 +462,10 @@ public sealed class CostRecorder(
                 // The type, never the message: a message from the identity
                 // endpoint or the service names the resource it refused.
                 logger.LogWarning("The bill could not be read ({Exception})", ex.GetType().Name);
-                status.Set(clock.GetUtcNow(), false, $"the last read did not finish ({ex.GetType().Name}); the next is in an hour");
+                status.Set(clock.GetUtcNow(), false, $"the last read did not finish ({ex.GetType().Name}); the next is in five minutes");
             }
 
-            await Task.Delay(Every, stopping).ContinueWith(_ => { }, TaskScheduler.Default);
+            await Task.Delay(WaitAfter(outcome), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         }
     }
 }

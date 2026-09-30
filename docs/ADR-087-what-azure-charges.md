@@ -59,6 +59,15 @@ The tests that hold the view:
 ```live path=api/TheYard.Tests/CostTests.cs region=cost-view-tests
 ```
 
+## Addendum, 2026-09-30: the first read on the Cosmos DB site
+
+Read live at 17:00 CDT, a minute after 1.0.3.55 rolled, uncached on both domains: the SQL site's card drew September at $47.24 with $49.03 forecast (aci-theyard-ss $21.97, aci-theyard-cosmos-ss $13.11, the registry $4.97, the same figures as the portal), and no answer carried the subscription's id. The Cosmos DB site's card said "the last read did not finish (TaskCanceledException); the next is in an hour": its first read, thirty seconds after the start, ran past the twenty seconds the reader allowed while the plan was still loading that site's catalogue, and the recorder then waited the full hour.
+
+So from 1.0.3.56 the reader allows a minute, and a read that did not finish is tried again in five minutes. A read that went through, or one Azure refused, still waits the hour: a missing role does not appear in five minutes, and a request to slow down is a request to slow down.
+
+```live path=api/TheYard.Api/Costs.cs region=cost-retry
+```
+
 ## Files
 
 - [`api/TheYard.Api/Costs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Costs.cs): the two questions, the shaping, the reader and the recorder.
