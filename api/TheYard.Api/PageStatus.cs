@@ -122,11 +122,11 @@ public static class ServedAddresses
             addresses.InsertRange(0, FromTheBuild);
         }
 
-        addresses.AddRange(DocsCatalog.Files
+        addresses.AddRange(DocumentationCatalog.Files
             .OrderBy(entry => entry.Key, StringComparer.Ordinal)
             .Select(entry => new ServedAddress($"/api/docs/{entry.Key}", entry.Value, "document")));
 
-        addresses.AddRange(DocsCatalog.Diagrams
+        addresses.AddRange(DocumentationCatalog.Diagrams
             .OrderBy(entry => entry.Key, StringComparer.Ordinal)
             .Select(entry => new ServedAddress($"/api/docs/diagrams/{entry.Key}", entry.Value.Title, "drawing")));
 

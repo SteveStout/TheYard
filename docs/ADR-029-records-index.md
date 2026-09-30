@@ -69,7 +69,7 @@ One shell for both kinds of section (`src/components/layout/SideNav/SideNav.tsx`
 - [`src/library/records.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/records.ts): the numbers.
 - [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): the section shell and the disclosure.
 - [`src/components/layout/SideNav/SideNav.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.module.css): the summary's marker and the number's tabular figures.
-- [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the test that still holds the sidebar and the served catalog to the same slugs, unchanged by the move.
+- [`api/TheYard.Tests/DocumentationCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocumentationCatalogTests.cs): the test that still holds the sidebar and the served catalog to the same slugs, unchanged by the move.
 - [`docs/ADR-022-app-architecture-group.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-022-app-architecture-group.md): the grouping this replaces, and why it was right at the time.
 
 ## Addendum, 2026-09-09: what is not a record

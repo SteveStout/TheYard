@@ -6,7 +6,7 @@ namespace TheYard.Api;
 /// A diagram on its own page (ADR-020): the SVG from the repository inlined in
 /// a small HTML document with the title in the tab, the palette, and a viewport
 /// line, so a phone can pinch to zoom and a laptop can Ctrl+scroll, with the
-/// text left selectable. DocsCatalog.Diagrams names the drawings.
+/// text left selectable. DocumentationCatalog.Diagrams names the drawings.
 /// </summary>
 public static class DiagramPage
 {

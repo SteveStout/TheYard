@@ -84,7 +84,7 @@ The mechanical style rules (`.editorconfig`):
 - The rail is taller by one section. At 1024 pixels and up it scrolls
   inside itself, which it already did; on a phone the drawer scrolls.
 - Moving a record between sections does not change its address. The slug
-  in `DocsCatalog.cs` is the identity; the menu is presentation only, and
+  in `DocumentationCatalog.cs` is the identity; the menu is presentation only, and
   the cross-check test still holds the two lists together (ADR: The staff
   review).
 
@@ -92,7 +92,7 @@ The mechanical style rules (`.editorconfig`):
 
 - [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the sections and their order.
 - [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): the document record.
-- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the two new slugs.
+- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the two new slugs.
 - [`docs/ARCHITECTURE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ARCHITECTURE.md) and [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the two documents this section was made for.
 - [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/.editorconfig): the mechanical rules.
 - [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts), [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts), [`tests/e2e/smoke.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/smoke.spec.ts): the section names and the two new pages, checked in a browser.

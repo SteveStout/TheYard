@@ -71,7 +71,7 @@ only sample that cannot possibly be stale:
 The one endpoint every document goes through, since ADR: The staff review
 folded the per-document routes into a catalog
 ([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs),
-[`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs)):
+[`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs)):
 
 ```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=docs-endpoint
 ```
@@ -118,7 +118,7 @@ hour ago.
 
 - [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the whitelist and the expander.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs) and
-  [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the one endpoint and the slugs
+  [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the one endpoint and the slugs
   it serves through the expander.
 - [`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs): the rejection cases and
   the served-record checks.

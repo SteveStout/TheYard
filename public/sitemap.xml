@@ -4,7 +4,7 @@
   the interesting ones can be listed here rather than hidden behind a router
   that a crawler cannot drive. The documents are served as markdown from the
   API and are worth listing for the same reason: they are the substance.
-  Every document in the catalogue (DocsCatalog.cs) is listed at the address it
+  Every document in the catalogue (DocumentationCatalog.cs) is listed at the address it
   is served from as markdown, which a crawler reads without running the app;
   PublicFaceTests holds this list to the catalogue in both directions.
   /about is who built it, for a reader who searched his name. Its lastmod is

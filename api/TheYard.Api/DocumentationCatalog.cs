@@ -6,11 +6,11 @@ namespace TheYard.Api;
 /// <summary>
 /// Every document the site serves, by the slug the sidebar asks for (ADR-017).
 /// src/library/records.ts and src/library/pages.ts carry the same slugs with titles, so
-/// a new record is one line here and one line there, and DocsCatalogTests holds
+/// a new record is one line here and one line there, and DocumentationCatalogTests holds
 /// the two lists to each other. A slug missing from this table is a 404 at
 /// /api/docs/{slug}, never a file read.
 /// </summary>
-public static class DocsCatalog
+public static class DocumentationCatalog
 {
     // #region docs-catalog
     /// <summary>Slug to file, relative to the repo root. Every one goes through the live-sample expander (ADR-014).</summary>

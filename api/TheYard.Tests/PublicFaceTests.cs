@@ -20,7 +20,7 @@ public class PublicFaceTests
     /// <summary>How many records the site serves, which is the only number any
     /// of these claims is allowed to be.</summary>
     private static int Records() =>
-        DocsCatalog.Files.Keys.Count(slug => slug.StartsWith("adr-", StringComparison.Ordinal));
+        DocumentationCatalog.Files.Keys.Count(slug => slug.StartsWith("adr-", StringComparison.Ordinal));
 
     /// <summary>
     /// The documents that describe this project as it is now. Records and the
@@ -29,7 +29,7 @@ public class PublicFaceTests
     /// what it says forever is the whole point of a decision record.
     /// </summary>
     private static IEnumerable<string> LivingDocuments() =>
-        DocsCatalog.Files
+        DocumentationCatalog.Files
             .Where(entry => !entry.Key.StartsWith("adr-", StringComparison.Ordinal))
             .Where(entry => entry.Key != "changelog")
             .Select(entry => entry.Value)
@@ -288,8 +288,8 @@ public class PublicFaceTests
             .ToHashSet(StringComparer.Ordinal);
 
         // Both directions, so a document cannot be added without being listed or listed after it is gone.
-        string[] unlisted = DocsCatalog.Files.Keys.Where(slug => !listed.Contains(slug)).ToArray();
-        string[] gone = listed.Where(slug => !DocsCatalog.Files.ContainsKey(slug)).ToArray();
+        string[] unlisted = DocumentationCatalog.Files.Keys.Where(slug => !listed.Contains(slug)).ToArray();
+        string[] gone = listed.Where(slug => !DocumentationCatalog.Files.ContainsKey(slug)).ToArray();
         Assert.True(unlisted.Length == 0, $"public/sitemap.xml does not list {string.Join(", ", unlisted)}");
         Assert.True(gone.Length == 0, $"public/sitemap.xml lists {string.Join(", ", gone)}, which the site no longer serves");
     }
@@ -307,7 +307,7 @@ public class PublicFaceTests
         foreach (Match link in Regex.Matches(llms, @"https://theyard\.stevenstout\.biz/api/docs/([a-z0-9-]+)\)"))
         {
             string slug = link.Groups[1].Value;
-            Assert.True(slug == "resume" || DocsCatalog.Files.ContainsKey(slug), $"public/llms.txt links /api/docs/{slug}, which the site does not serve");
+            Assert.True(slug == "resume" || DocumentationCatalog.Files.ContainsKey(slug), $"public/llms.txt links /api/docs/{slug}, which the site does not serve");
         }
         Assert.DoesNotContain("\u2014", llms, StringComparison.Ordinal);
     }

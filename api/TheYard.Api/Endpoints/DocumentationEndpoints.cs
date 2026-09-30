@@ -15,7 +15,7 @@ public static class DocumentationEndpoints
     {
         #region docs-endpoint
         // One route for every document (ADR-017): the slug is looked up in the catalog
-        // (DocsCatalog.cs, the same slugs src/library/records.ts and pages.ts carry), the file
+        // (DocumentationCatalog.cs, the same slugs src/library/records.ts and pages.ts carry), the file
         // is read from the repo root and its live blocks are expanded (ADR-014). A slug
         // missing from the catalog is a 404, never a file read. The Bicep file and the
         // resume keep their own routes below because they are not markdown; a literal
@@ -31,7 +31,7 @@ public static class DocumentationEndpoints
         #endregion docs-endpoint
 
         #region docs-images-endpoint
-        // A document's picture, from the repository (DocsCatalog.cs, DocImages). The
+        // A document's picture, from the repository (DocumentationCatalog.cs, DocImages). The
         // name is held to one shape, so an address cannot climb out of docs/images, and
         // a name that is not there is a 404 with nothing read. Cached for a day, the
         // same as the photographs: a drawing changes with a commit, and a day is the
@@ -82,9 +82,9 @@ public static class DocumentationEndpoints
     }
 
     private static Results<ContentHttpResult, ProblemHttpResult> Document(string slug, HostPaths paths, BuildInfo build) =>
-        DocsCatalog.Files.TryGetValue(slug, out var file)
+        DocumentationCatalog.Files.TryGetValue(slug, out var file)
             ? TypedResults.Text(
-                // The pictures are named here rather than on GitHub's raw host (DocsCatalog.cs, DocImages).
+                // The pictures are named here rather than on GitHub's raw host (DocumentationCatalog.cs, DocImages).
                 DocImages.Rewrite(LiveCounts.Expand(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot), paths.RepoRoot),
                 "text/markdown")
             : TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document");
@@ -102,7 +102,7 @@ public static class DocumentationEndpoints
     }
 
     private static Results<ContentHttpResult, ProblemHttpResult> Diagram(string name, HostPaths paths) =>
-        DocsCatalog.Diagrams.TryGetValue(name, out var diagram)
+        DocumentationCatalog.Diagrams.TryGetValue(name, out var diagram)
             ? TypedResults.Content(
                 DiagramPage.Render(diagram.Title, File.ReadAllText(Path.Combine(paths.RepoRoot, diagram.File)), diagram.File),
                 "text/html; charset=utf-8")

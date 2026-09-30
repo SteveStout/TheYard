@@ -45,12 +45,12 @@ own tab away from the app.
 ## In the code
 
 The endpoint, in `api/TheYard.Api/Program.cs`, and the catalog beside the
-documents in `api/TheYard.Api/DocsCatalog.cs`:
+documents in `api/TheYard.Api/DocumentationCatalog.cs`:
 
 ```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=diagram-page
 ```
 
-```live path=api/TheYard.Api/DocsCatalog.cs region=diagrams
+```live path=api/TheYard.Api/DocumentationCatalog.cs region=diagrams
 ```
 
 The page itself, `api/TheYard.Api/DiagramPage.cs`. The palette is repeated
@@ -91,7 +91,7 @@ and the XML prolog a standalone SVG may carry never reaches the page:
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the `/api/docs/diagrams/{name}` endpoint.
-- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the diagram catalog beside the documents.
+- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the diagram catalog beside the documents.
 - [`api/TheYard.Api/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DiagramPage.cs): the HTML page around an SVG.
 - [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the page tests.
 - [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.ts): the link hook, beside the renderer it belongs to.
@@ -126,7 +126,7 @@ has a Diagrams section near the top: one row per page, each a link
 that opens in a new tab the way the preview links already do, in the order a
 reader meets the system (the whole, the data, the schema, the two sites, the
 two stores). The list lives beside the menus in `src/library/sections.ts`, the server's
-`DocsCatalog.Diagrams` stays the authority for which drawings exist, and a
+`DocumentationCatalog.Diagrams` stays the authority for which drawings exist, and a
 test holds the two equal, so a drawing cannot gain a page without a row or a
 row without a page; the browser suite reads the section and every row's
 address. The rows are links rather than documents on purpose: a drawing is

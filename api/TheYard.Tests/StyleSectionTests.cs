@@ -19,7 +19,7 @@ public class StyleSectionTests
 
     private static string Root => Repo.Root();
 
-    private static string Markdown(string slug) => File.ReadAllText(Path.Combine(Root, DocsCatalog.Files[slug]));
+    private static string Markdown(string slug) => File.ReadAllText(Path.Combine(Root, DocumentationCatalog.Files[slug]));
 
     /// <summary>A page's own words: every fenced block left out, since a fence is code or data, and inline code left out.</summary>
     private static string Prose(string markdown)
@@ -39,8 +39,8 @@ public class StyleSectionTests
         Assert.Equal(["styleGuide", "colorStyle", "backgroundRibbon", "uiArchitecture"], keys);
         foreach (string slug in Pages)
         {
-            Assert.True(DocsCatalog.Files.ContainsKey(slug), $"{slug} is not in DocsCatalog.Files");
-            Assert.True(File.Exists(Path.Combine(Root, DocsCatalog.Files[slug])), $"{DocsCatalog.Files[slug]} does not exist");
+            Assert.True(DocumentationCatalog.Files.ContainsKey(slug), $"{slug} is not in DocumentationCatalog.Files");
+            Assert.True(File.Exists(Path.Combine(Root, DocumentationCatalog.Files[slug])), $"{DocumentationCatalog.Files[slug]} does not exist");
             Assert.Contains($"url: '/api/docs/{slug}'", pages, StringComparison.Ordinal);
         }
     }

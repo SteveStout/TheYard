@@ -28,13 +28,13 @@ pass gets its own dated addendum here.
   per document, each naming its file, and three of them bypassed the
   live-sample expander. They are one route over a catalog now: the slug in
   the address is looked up in
-  [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs),
+  [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs),
   the file is read from the repo root, and every document goes through
   the expander. A slug that is not in the catalog is a 404, never a file
   read. Adding a record is one line in the catalog and one in
   [`src/library/pages.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/pages.ts) or [`src/library/records.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/records.ts),
   and
-  [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs)
+  [`api/TheYard.Tests/DocumentationCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocumentationCatalogTests.cs)
   fails the build when the two lists disagree, when a file is missing, or
   when any slug serves a live fence unexpanded. The directory walk that
   found the docs folder on every request is gone; the repo root is
@@ -120,12 +120,12 @@ pass gets its own dated addendum here.
 The endpoint and the catalog, read from this build
 ([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)
 and
-[`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs)):
+[`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs)):
 
 ```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=docs-endpoint
 ```
 
-```live path=api/TheYard.Api/DocsCatalog.cs region=docs-catalog
+```live path=api/TheYard.Api/DocumentationCatalog.cs region=docs-catalog
 ```
 
 ## Consequences
@@ -173,14 +173,14 @@ the mentor notes and rerunning before any review.
 
 Every markdown file names its pictures on GitHub's raw host, so the files read on GitHub as they are. Read here, through the sidebar, that meant every document's pictures came from a third host, and the README on a phone was 1,402 KB by the responses' own headers, 985 KB of it `infrastructure.png`, a render of the `infrastructure.svg` this site already serves at 17 KB (measured at 390 in Chrome on 1.0.3.4, three runs). Four of the drawings have an SVG source beside their PNG, and twenty served documents name a picture on that host.
 
-So the served markdown names them here instead (`DocImages` in DocsCatalog.cs): the raw address becomes `/api/docs/images/{name}`, a PNG whose SVG source stands beside it is served as that SVG, and the new route reads a name held to one shape from `docs/images` and nowhere else, cached for a day like the photographs. The markdown files are untouched, which is what keeps them right on GitHub. The renderer marks every picture in a document lazy, so a document's text is not sharing the connection with a screenshot below its first screen. `DocsCatalogTests` holds the rewrite, the route, and that every picture a served document names is in the repository.
+So the served markdown names them here instead (`DocImages` in DocumentationCatalog.cs): the raw address becomes `/api/docs/images/{name}`, a PNG whose SVG source stands beside it is served as that SVG, and the new route reads a name held to one shape from `docs/images` and nowhere else, cached for a day like the photographs. The markdown files are untouched, which is what keeps them right on GitHub. The renderer marks every picture in a document lazy, so a document's text is not sharing the connection with a screenshot below its first screen. `DocumentationCatalogTests` holds the rewrite, the route, and that every picture a served document names is in the repository.
 
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the host, with one endpoint serving every document instead of twenty routes.
-- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the slug-to-file catalog that endpoint reads.
+- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the slug-to-file catalog that endpoint reads.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health and build types this review moved out of the host file.
-- [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the test that holds the catalog and the sidebar to the same list.
+- [`api/TheYard.Tests/DocumentationCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocumentationCatalogTests.cs): the test that holds the catalog and the sidebar to the same list.
 - [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): the sidebar's copy of that list, and the one brand mark this review deduplicated.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the timeout and the readiness check this review added to the pipeline.
 - [`docs/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): the record that made this section a rule rather than a habit.

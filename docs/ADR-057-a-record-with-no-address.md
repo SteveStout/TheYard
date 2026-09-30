@@ -92,4 +92,4 @@ where you were.
 - [`src/app/hooks/useNavigation.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useNavigation.ts): the pushed entry, and the close that knows whether it pushed one.
 - [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): what is left of it, which is turning a key into a request.
 - [`tests/e2e/records.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/records.spec.ts): the link, the Back button, the keyboard, the copy button, and the address that names nothing.
-- [`api/TheYard.Tests/DocsCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsCatalogTests.cs): the slugs the address bar borrows, held to the catalogue.
+- [`api/TheYard.Tests/DocumentationCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocumentationCatalogTests.cs): the slugs the address bar borrows, held to the catalogue.

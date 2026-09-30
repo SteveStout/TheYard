@@ -160,7 +160,7 @@ real file with index.html, so a missing bundle file is a 404 and never a page dr
 - **A new service:** one line in the registration step it belongs to, `AddSingleton` unless it holds
   per-request state.
 - **A new piece of middleware:** in `RequestPipeline.cs`, at the place its order demands, with the reason beside it.
-- **A new document:** one line in `DocsCatalog.cs` and one in `src/library/records.ts` or `pages.ts`; a
+- **A new document:** one line in `DocumentationCatalog.cs` and one in `src/library/records.ts` or `pages.ts`; a
   test fails if the two disagree.
 
 ## Addendum, 2026-09-08: two stores in one file
@@ -238,7 +238,9 @@ Steve, naming the same kind of file in The Shed: "Docs" was an abbreviation and 
 does. The endpoints that serve the records, their pictures and diagrams, the Bicep, the resume and
 /about are now `Endpoints/DocumentationEndpoints.cs`, mapped by `app.MapDocumentationEndpoints()`.
 The version is not among them here (`/api/version` is in `HealthEndpoints`), so the name says
-documentation and nothing more. Routes and behaviour are unchanged.
+documentation and nothing more. Routes and behaviour are unchanged. The catalog those endpoints
+read, slug to file and the diagrams, is `DocumentationCatalog.cs` for the same reason, held by
+`DocumentationCatalogTests`.
 
 ## Files
 
@@ -249,7 +251,7 @@ documentation and nothing more. Routes and behaviour are unchanged.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): `net10.0`, nullable reference types on, implicit usings on (which is why the file has so few `using` lines).
 - [`api/TheYard.Api/VehicleQueryParams.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleQueryParams.cs), [`api/TheYard.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Clocks.cs), [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): binding, the clock anchor, and the outgoing shape.
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the `Lazy` that makes the singleton registration matter.
-- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs), [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs), [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the pieces the host wires.
+- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs), [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs), [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the pieces the host wires.
 - [`api/TheYard.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminEndpointTests.cs) and the tests beside it: every one boots this file through `WebApplicationFactory<Program>`.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the port, the provenance arguments, the HEALTHCHECK, and the files copied for the walk to find.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Verify step that asks `/readyz`.

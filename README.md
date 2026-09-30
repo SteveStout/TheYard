@@ -397,8 +397,8 @@ each with its own changelog line and, where it decided something, its own record
   regions read out of the running container at request time, not pasted, and every
   record ends with a map of the files it decided. A test holds the document catalog to
   the sidebar's menu, another holds the changelog to the version being shipped.
-  *Where:* `api/TheYard.Api/LiveSamples.cs`, `DocsCatalog.cs`,
-  `api/TheYard.Tests/LiveSamplesTests.cs`, `DocsCatalogTests.cs`, `ChangelogTests.cs`.
+  *Where:* `api/TheYard.Api/LiveSamples.cs`, `DocumentationCatalog.cs`,
+  `api/TheYard.Tests/LiveSamplesTests.cs`, `DocumentationCatalogTests.cs`, `ChangelogTests.cs`.
 
 ## Notable Decisions
 

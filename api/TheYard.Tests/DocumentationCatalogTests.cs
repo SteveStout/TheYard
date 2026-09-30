@@ -10,7 +10,7 @@ namespace TheYard.Tests;
 /// blocks expanded, an unknown slug is a 404, and the catalog and the sidebar's
 /// record name exactly the same slugs.
 /// </summary>
-public class DocsCatalogTests(WebApplicationFactory<Program> factory)
+public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client = factory.CreateClient();
@@ -18,7 +18,7 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task Every_catalog_slug_serves_markdown_with_no_live_fence_left()
     {
-        foreach (string slug in DocsCatalog.Files.Keys)
+        foreach (string slug in DocumentationCatalog.Files.Keys)
         {
             var response = await _client.GetAsync($"/api/docs/{slug}");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -50,12 +50,12 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
             .Select(m => m.Groups[1].Value)
             .Where(slug => slug is not "bicep") // the Bicep file has its own route: it is not markdown
             .ToHashSet(StringComparer.Ordinal);
-        var inCatalog = DocsCatalog.Files.Keys.ToHashSet(StringComparer.Ordinal);
+        var inCatalog = DocumentationCatalog.Files.Keys.ToHashSet(StringComparer.Ordinal);
 
         Assert.True(inMenu.SetEquals(inCatalog),
             "sidebar only: [" + string.Join(", ", inMenu.Except(inCatalog)) +
             "]; catalog only: [" + string.Join(", ", inCatalog.Except(inMenu)) + "]");
-        foreach (string file in DocsCatalog.Files.Values)
+        foreach (string file in DocumentationCatalog.Files.Values)
         {
             Assert.True(File.Exists(Path.Combine(root, file)), $"{file} is missing from the checkout");
         }
@@ -118,7 +118,7 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
     {
         string root = Repo.Root();
         var named = new SortedSet<string>(StringComparer.Ordinal);
-        foreach (string file in DocsCatalog.Files.Values.Distinct())
+        foreach (string file in DocumentationCatalog.Files.Values.Distinct())
         {
             string served = DocImages.Rewrite(File.ReadAllText(Path.Combine(root, file)), root);
             foreach (Match match in Regex.Matches(served, @"/api/docs/images/([A-Za-z0-9-]+\.(?:png|jpg|jpeg|svg|webp))"))
@@ -163,7 +163,7 @@ public class DocsCatalogTests(WebApplicationFactory<Program> factory)
         var inMenu = Regex.Matches(menu, @"href: '/api/docs/diagrams/([a-z0-9-]+)'")
             .Select(m => m.Groups[1].Value)
             .ToHashSet(StringComparer.Ordinal);
-        var inCatalog = DocsCatalog.Diagrams.Keys.ToHashSet(StringComparer.Ordinal);
+        var inCatalog = DocumentationCatalog.Diagrams.Keys.ToHashSet(StringComparer.Ordinal);
 
         Assert.True(inMenu.Count > 0, "the sidebar should list the diagram pages");
         Assert.True(inMenu.SetEquals(inCatalog),

@@ -59,11 +59,11 @@ Ceremony per ship: one line in one file, inside the commit that earns it.
 
 The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The two entries in the documents catalog
-([`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs),
+([`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs),
 served by the one endpoint in
 [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
 
-```live path=api/TheYard.Api/DocsCatalog.cs region=docs-changelog
+```live path=api/TheYard.Api/DocumentationCatalog.cs region=docs-changelog
 ```
 
 The menu, one item on purpose, in
@@ -110,7 +110,7 @@ reads like a person wrote it.
 ## Files
 
 - [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): the file, one sentence per version.
-- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): its two entries (region
+- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): its two entries (region
   docs-changelog above).
 - [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the one-item menu (region
   menu-changelog above).

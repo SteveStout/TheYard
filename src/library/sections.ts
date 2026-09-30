@@ -41,7 +41,7 @@ export const API_REFERENCE: readonly MenuLink[] = [
  * Every drawing in the catalogue, on its own page (ADR: Every diagram opens on
  * its own page, the addendum on the section). The order is the order a reader
  * meets the system: the whole, the data, the schema, the two sites, the two
- * stores, then the look. The server's DocsCatalog.Diagrams is the authority for which
+ * stores, then the look. The server's DocumentationCatalog.Diagrams is the authority for which
  * drawings exist, and a test holds this list to it, so a drawing cannot have a
  * page without a row or a row without a page.
  */

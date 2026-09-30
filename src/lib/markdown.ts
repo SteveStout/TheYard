@@ -55,7 +55,7 @@ marked.use({
 // A document's pictures load when the reader reaches them (1.0.3.5): the
 // README carries a screenshot and a drawing below its first screen, and the
 // text should not be sharing the connection with them. The address they carry
-// is this site's own since the same version (DocsCatalog.cs, DocImages).
+// is this site's own since the same version (DocumentationCatalog.cs, DocImages).
 marked.use({
   renderer: {
     image({ href, title, text }) {

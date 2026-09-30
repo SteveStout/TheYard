@@ -59,7 +59,7 @@ public class SideBySidePageTests
             .Distinct()
             .ToList();
         Assert.True(slugs.Count >= 10, $"only {slugs.Count} records are linked from the comparison");
-        var unknown = slugs.Where(slug => !DocsCatalog.Files.ContainsKey(slug)).ToList();
+        var unknown = slugs.Where(slug => !DocumentationCatalog.Files.ContainsKey(slug)).ToList();
         Assert.True(unknown.Count == 0, "linked as records, served by nothing: " + string.Join(", ", unknown));
 
         foreach (string slug in new[]
@@ -72,7 +72,7 @@ public class SideBySidePageTests
             Assert.Contains(slug, slugs);
         }
 
-        Assert.True(DocsCatalog.Diagrams.ContainsKey("sql-vs-cosmos"), "the side-by-side drawing should open on its own page");
+        Assert.True(DocumentationCatalog.Diagrams.ContainsKey("sql-vs-cosmos"), "the side-by-side drawing should open on its own page");
         Assert.Contains("/api/docs/diagrams/sql-vs-cosmos", markdown);
         Assert.Contains("docs/images/sql-vs-cosmos.png", markdown);
     }

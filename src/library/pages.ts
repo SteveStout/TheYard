@@ -10,8 +10,8 @@ type PageEntry = DocEntry & { kind: 'overview' | 'infra' | 'changelog' };
 
 // #region pages
 // Every other document the sidebar can open. The same shape as the records:
-// each URL ends in the slug the API serves it under, and DocsCatalogTests
-// holds this file and records.ts to DocsCatalog.cs in both directions.
+// each URL ends in the slug the API serves it under, and DocumentationCatalogTests
+// holds this file and records.ts to DocumentationCatalog.cs in both directions.
 export const PAGES = {
   readme: {
     title: 'README',

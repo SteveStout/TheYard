@@ -37,7 +37,7 @@ for each address four at a time, and the report is what the Admin tab shows.
 
 ## The three rules that make it worth having
 
-**The list is derived, never kept.** Every document and every drawing comes out of `DocsCatalog`,
+**The list is derived, never kept.** Every document and every drawing comes out of `DocumentationCatalog`,
 which is the same dictionary the server serves from and the sidebar is held to. A document added
 tomorrow is swept tomorrow with nothing to remember. Only the addresses that are not documents are
 written out: the app, the API's front pages, and the three files the build copies to the root of the
@@ -95,7 +95,7 @@ Two things, both mechanical. **A second look:** an address that did not answer o
 
 - [`api/TheYard.Api/PageStatus.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PageStatus.cs): the derived list, the sweep, and what it reports.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the sweep at startup, the two endpoints, and the request hook that drops its header.
-- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): the dictionary the list is built from.
+- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the dictionary the list is built from.
 - [`src/components/admin/PagesCard/PagesCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/PagesCard/PagesCard.tsx): the card, failures first.
 - [`api/TheYard.Tests/PageStatusTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PageStatusTests.cs): the list against the catalogue, every address answering, the types, and the header that keeps a sweep out of the ring.
 - [`api/TheYard.Tests/RecordLinksTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RecordLinksTests.cs): the rule that put the README's links right, shipped as 1.0.0.147.

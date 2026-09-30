@@ -19,8 +19,8 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task Every_diagram_in_the_catalog_opens_as_a_page_with_its_svg_inlined()
     {
-        Assert.NotEmpty(DocsCatalog.Diagrams);
-        foreach (var (name, diagram) in DocsCatalog.Diagrams)
+        Assert.NotEmpty(DocumentationCatalog.Diagrams);
+        foreach (var (name, diagram) in DocumentationCatalog.Diagrams)
         {
             var response = await _client.GetAsync($"/api/docs/diagrams/{name}");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);

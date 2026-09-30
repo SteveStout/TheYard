@@ -23,9 +23,9 @@ public class PageStatusTests(WebApplicationFactory<Program> factory)
     {
         var addresses = ServedAddresses.All(true).Select(address => address.Address).ToHashSet(StringComparer.Ordinal);
 
-        var missing = DocsCatalog.Files.Keys
+        var missing = DocumentationCatalog.Files.Keys
             .Select(slug => $"/api/docs/{slug}")
-            .Concat(DocsCatalog.Diagrams.Keys.Select(name => $"/api/docs/diagrams/{name}"))
+            .Concat(DocumentationCatalog.Diagrams.Keys.Select(name => $"/api/docs/diagrams/{name}"))
             .Where(address => !addresses.Contains(address))
             .ToList();
 

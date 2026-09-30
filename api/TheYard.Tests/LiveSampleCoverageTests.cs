@@ -34,7 +34,7 @@ public class LiveSampleCoverageTests
     {
         var fence = new Regex("^``" + "`live[ \\t]+path=(?<path>\\S+)[ \\t]+region=(?<region>\\S+)", RegexOptions.Multiline);
         var blocks = new List<(string, string, string)>();
-        foreach (string relative in DocsCatalog.Files.Values.Distinct().OrderBy(file => file, StringComparer.Ordinal))
+        foreach (string relative in DocumentationCatalog.Files.Values.Distinct().OrderBy(file => file, StringComparer.Ordinal))
         {
             string markdown = File.ReadAllText(Path.Combine(root, relative));
             foreach (Match match in fence.Matches(markdown))
@@ -53,7 +53,7 @@ public class LiveSampleCoverageTests
         Assert.True(blocks.Count > 50, $"only {blocks.Count} live blocks were found across the catalogue");
 
         var notes = new List<string>();
-        foreach (string relative in DocsCatalog.Files.Values.Distinct())
+        foreach (string relative in DocumentationCatalog.Files.Values.Distinct())
         {
             string expanded = LiveSamples.Expand(File.ReadAllText(Path.Combine(root, relative)), root, "local");
             foreach (string line in expanded.Split('\n').Where(text => text.Contains(Unavailable, StringComparison.Ordinal)))

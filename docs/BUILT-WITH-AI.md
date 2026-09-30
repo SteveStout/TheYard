@@ -93,6 +93,6 @@ default cost 16.07 request units a document on the bulk seed against 8.84 tuned,
 ```live path=.github/workflows/ci.yml region=ci-jobs
 ```
 
-- [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs): every document this page sits beside, served from the checkout by slug.
+- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): every document this page sits beside, served from the checkout by slug.
 - [`api/TheYard.Tests/PublicFaceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PublicFaceTests.cs): the test that holds the record count in every living document, this page included, and the README's test counts to what the suites declare.
 - [`docs/ADR-068-the-five-minute-gate.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-068-the-five-minute-gate.md), [`docs/ADR-027-competing-bidders.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-027-competing-bidders.md), [`docs/ADR-070-three-readers-with-no-memory.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-070-three-readers-with-no-memory.md), [`docs/ADR-067-same-performance-proven.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-067-same-performance-proven.md), [`docs/ADR-059-a-second-store-priced.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md): the records the numbers above come from.

@@ -53,7 +53,7 @@ public static partial class LiveCounts
                 "headers" => $"{Number(HeaderScope(repoRoot).Count(file => HasHeader(file)))} of {Number(HeaderScope(repoRoot).Count)}",
                 "over-300" => Number(HeaderScope(repoRoot).Count(file => File.ReadAllLines(file).Length > 300)),
                 "array" when path is not null => Number(ArrayLength(repoRoot, "src/lib/ribbons.ts", path)),
-                "documents" => Number(DocsCatalog.Files.Count),
+                "documents" => Number(DocumentationCatalog.Files.Count),
                 _ => $"(no live measure named '{measure}')",
             };
         }

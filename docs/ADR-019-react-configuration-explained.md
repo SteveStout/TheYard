@@ -348,7 +348,7 @@ where the two lists are joined.
   `useNavigation.ts`, one branch in `App.tsx`.
 - **Something the whole app knows:** a hook in `src/app/hooks`, named for what it
   gives back, with the header.
-- **A new document:** the markdown in `docs/`, its slug in `DocsCatalog.cs`, its entry
+- **A new document:** the markdown in `docs/`, its slug in `DocumentationCatalog.cs`, its entry
   in `records.ts` or `pages.ts`, and its row in `sections.ts`.
 
 ## Files

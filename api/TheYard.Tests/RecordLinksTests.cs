@@ -71,7 +71,7 @@ public class RecordLinksTests
     public void Every_record_the_sidebar_offers_has_a_file_and_every_file_is_offered()
     {
         string root = Repo.Root();
-        var served = DocsCatalog.Files.Values
+        var served = DocumentationCatalog.Files.Values
             .Where(path => path.StartsWith("docs/ADR-", StringComparison.Ordinal))
             .Select(path => Path.GetFileName(path))
             .ToHashSet(StringComparer.Ordinal);
@@ -150,15 +150,15 @@ public class RecordLinksTests
                 var drawing = Regex.Match(rest, @"^/api/docs/diagrams/(?<name>[a-z0-9-]+)$");
                 var address = Regex.Match(rest, @"[?&]doc=(?<slug>[a-z0-9-]+)");
 
-                if (document.Success && DocsCatalog.Files.ContainsKey(document.Groups["slug"].Value))
+                if (document.Success && DocumentationCatalog.Files.ContainsKey(document.Groups["slug"].Value))
                 {
                     wrong.Add($"{name} links {rest}, which serves raw markdown; link /?doc={document.Groups["slug"].Value}");
                 }
-                else if (drawing.Success && !DocsCatalog.Diagrams.ContainsKey(drawing.Groups["name"].Value))
+                else if (drawing.Success && !DocumentationCatalog.Diagrams.ContainsKey(drawing.Groups["name"].Value))
                 {
                     wrong.Add($"{name} links the drawing '{drawing.Groups["name"].Value}', which the catalogue does not draw");
                 }
-                else if (address.Success && !DocsCatalog.Files.ContainsKey(address.Groups["slug"].Value))
+                else if (address.Success && !DocumentationCatalog.Files.ContainsKey(address.Groups["slug"].Value))
                 {
                     wrong.Add($"{name} links ?doc={address.Groups["slug"].Value}, which the catalogue does not serve");
                 }

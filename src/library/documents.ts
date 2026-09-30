@@ -35,7 +35,7 @@ export const NO_NAME_IN_BOTH: [Extract<keyof typeof RECORDS, keyof typeof PAGES>
 
 // #region docs-record
 // One record, one place. The URL's last segment is the slug the API looks up
-// in DocsCatalog.cs, and a test fails if the two lists ever disagree, so a
+// in DocumentationCatalog.cs, and a test fails if the two lists ever disagree, so a
 // document can never appear in the menu without being servable, or the other
 // way around (ADR-017). The documents themselves are in records.ts and
 // pages.ts; this is the one list both are read through.

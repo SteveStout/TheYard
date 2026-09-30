@@ -380,7 +380,7 @@ deploy without them (ADR: The tests, explained).
 | A new API call from the browser | one function in `src/lib/data.ts` |
 | A new view state | the URL, through `filtersToSearchParams` |
 | A visitor preference (not a view) | `localStorage`, like the collapsed rail |
-| A new document or record | `docs/`, then `DocsCatalog.cs`, and `src/library/records.ts` or `pages.ts` |
+| A new document or record | `docs/`, then `DocumentationCatalog.cs`, and `src/library/records.ts` or `pages.ts` |
 | A new sidebar section's contents | `src/library/sections.ts`; its order and icon in `src/lib/siteMap.ts` |
 | Something the whole app knows (a view, the list, the account) | a hook in `src/app/hooks/`, named for what it gives back, with its header |
 | A new colour or spacing value | `src/styles/colors.css` or `sizes.css`, never a literal |

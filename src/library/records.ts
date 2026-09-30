@@ -14,7 +14,7 @@ type RecordEntry = DocEntry & { kind: 'adr'; number: string };
 
 // #region records
 // Every decision record, in number order. Each one's URL ends in the slug the
-// API serves it under (api/TheYard.Api/DocsCatalog.cs), and DocsCatalogTests
+// API serves it under (api/TheYard.Api/DocumentationCatalog.cs), and DocumentationCatalogTests
 // reads this file and pages.ts to hold the two lists to each other (ADR-017).
 // The keys are the documents' names in code: DocKey is worked out from them in
 // documents.ts, so adding a record here is the whole of adding its name.
