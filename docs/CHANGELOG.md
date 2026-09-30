@@ -10,6 +10,7 @@ footer cannot disagree (ADR: The version comes from the changelog). One number
 is missing, 1.0.0.39, skipped under the older formula when a red build consumed
 a deploy run number.
 
+- **1.0.3.53** (2026-09-30): On About Steven a Modding block follows Games, in Steve's own words: Republic Commando brought up to date with Claude at the controls, and The Witcher 3 next.
 - **1.0.3.52** (2026-09-30): The catalog of every document and diagram the site serves is api/TheYard.Api/DocumentationCatalog.cs, spelled out rather than "Docs", and its test is DocumentationCatalogTests; slugs, routes and behaviour are unchanged.
 - **1.0.3.51** (2026-09-30): The endpoints that serve the records, their pictures and diagrams, the Bicep, the resume and /about are Endpoints/DocumentationEndpoints.cs, spelled out rather than "Docs"; routes and behaviour are unchanged.
 - **1.0.3.50** (2026-09-30): Search Console, step by step: a fifth page in Site traffic that walks through how the site was put into Google Search Console on 30 September (the property, the proof of ownership, the sitemap, URL inspection and the structured data), each step with its screenshot and the code behind it read live from the build, and how the same job runs at a company with many sites; the site is verified, its sitemap read with 119 addresses, and /about indexed (ADR: The public face, the addendum of 30 September).
