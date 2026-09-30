@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.21 The Shed, explained shows every item of the brief with the code that answers it (A to H), and every item, every piece and every step of Taking it further links to the page where TheYard does the same at full size; it is nine pages.
 - 1.0.0.20 The comments on HomePath and LayeringTests, ADR-002 and ADR-003 name the design: onion architecture, with the business rules pulled into the innermost layer so they are tested with no disk, no web server and no database.
 - 1.0.0.19 The Shed, explained rewraps each piece's comments to the full page width, so a comment reads as a paragraph and the code keeps its own lines; every piece is laid out the same way.
 - 1.0.0.18 The Shed, explained shows every piece of code whole, with its comments as the repository has them, laid out the same way for all nine pieces; it is six pages. A stray copy of the PDF that 1.0.0.17 put at the project root is removed.

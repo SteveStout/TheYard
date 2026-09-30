@@ -8,8 +8,9 @@ method of [TheYard](https://theyard.stevenstout.biz).
 
 ## Three things a reviewer opens first
 
-- [The Shed, explained](/the-shed-explained.pdf): six pages, the numbers, the quick start, the
-  choices and why, where it goes next, and the code in nine pieces.
+- [The Shed, explained](/the-shed-explained.pdf): nine pages, the numbers, the quick start, the
+  choices and why, where it goes next, every item of the brief with its code, and the code in nine
+  pieces, each linked to where TheYard does the same at full size.
 - [About Steven](?view=docs&doc=about): who built it.
 - [Resume](/resume.pdf).
 
