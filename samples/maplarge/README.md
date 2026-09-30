@@ -12,8 +12,8 @@ commit: [/api/version](https://theshed.stevenstout.biz/api/version).
 
 **Reviewing it?** Three things, one click each, all served by the site itself:
 
-- [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): two pages, the
-  numbers, the quick start, the choices and why, where it goes next, and the code in six pieces.
+- [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): three pages, the
+  numbers, the quick start, the choices and why, where it goes next, and the code in seven pieces.
 - [About Steven](https://theshed.stevenstout.biz/?view=docs&doc=about): who built it.
 - [Resume](https://theshed.stevenstout.biz/resume.pdf).
 
@@ -94,12 +94,13 @@ the build at request time. Three to read first:
 ## Layout
 
 ```
-Program.cs            the host, a table of contents
+Program.cs            the host, a table of contents: one line per part, each naming its file
 Data/                 the wire: sealed records, no behaviour
 Domain/               the rules: HomePath, NamePattern, ViewTotals (pure)
 Application/          FileBrowser, the use cases, behind IFileStore
 Infrastructure/       PhysicalFileStore, the disk
 Controllers/          FilesController, DocsController, BrowserProblemHandler
+Composition/          the registrations and the pipeline Program.cs calls, as TheYard's are
 Library/              DocsCatalog, LiveSamples, VersionReader: the documents the app serves
 src/                  the page, TypeScript: lib (pure), ui (renders), main.ts (the shell)
 wwwroot/              index.html, css/tokens.css, css/app.css, js (what tsc wrote from src)

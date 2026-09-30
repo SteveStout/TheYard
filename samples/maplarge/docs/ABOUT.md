@@ -84,7 +84,7 @@ If any of this sounds like someone you would want on your team, I would enjoy th
 
 - [Message me on LinkedIn](https://www.linkedin.com/in/stevenwstout)
 - [Read my resume](/resume.pdf)
-- [The Shed, explained](/the-shed-explained.pdf): the quick start, the choices and why, where this goes next, and the code in six pieces
+- [The Shed, explained](/the-shed-explained.pdf): the quick start, the choices and why, where this goes next, and the code in seven pieces
 
 ---
 

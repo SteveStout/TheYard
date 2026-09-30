@@ -8,8 +8,8 @@ method of [TheYard](https://theyard.stevenstout.biz).
 
 ## Three things a reviewer opens first
 
-- [The Shed, explained](/the-shed-explained.pdf): two pages, the numbers, the quick start, the
-  choices and why, where it goes next, and the code in six pieces.
+- [The Shed, explained](/the-shed-explained.pdf): three pages, the numbers, the quick start, the
+  choices and why, where it goes next, and the code in seven pieces.
 - [About Steven](?view=docs&doc=about): who built it.
 - [Resume](/resume.pdf).
 
@@ -33,6 +33,7 @@ method of [TheYard](https://theyard.stevenstout.biz).
 | `Application/` | The use cases behind one port, `IFileStore`. |
 | `Infrastructure/` | The disk, behind the port. |
 | `Controllers/` | The routes, a line or three each, and the problem-document handler. |
+| `Composition/` | The registrations and the pipeline that `Program.cs` calls, one line each, as TheYard's are. |
 | `Library/` | The documents the app serves: the catalogue, the live-sample expander, the version reader. |
 | `src/` | The page, in TypeScript: `lib` (pure), `ui` (renders), `main.ts` (the shell). |
 | `wwwroot/` | What the browser loads: `index.html`, two stylesheets, and `js`, which `tsc` wrote from `src/`. |

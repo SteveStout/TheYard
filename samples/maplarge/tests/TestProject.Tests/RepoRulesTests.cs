@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using TestProject.Application;
+using TestProject.Composition;
 using TestProject.Library;
 using TestProject.Domain;
 
@@ -45,11 +46,11 @@ public sealed class SealedByDefaultTests
     }
 }
 
-/// <summary>Dependencies point inward: Data, Domain, Application, Infrastructure, Controllers (ADR-002).</summary>
+/// <summary>Dependencies point inward: Data, Domain, Application, Infrastructure, Controllers, Composition (ADR-002).</summary>
 public sealed partial class LayeringTests
 {
     // A folder may use itself and anything to its left, never anything to its right.
-    private static readonly string[] Order = ["Data", "Domain", "Application", "Infrastructure", "Controllers"];
+    private static readonly string[] Order = ["Data", "Domain", "Application", "Infrastructure", "Controllers", "Composition"];
 
     [Fact]
     public void A_folder_uses_only_the_folders_inside_it()
@@ -64,7 +65,7 @@ public sealed partial class LayeringTests
                 {
                     string used = match.Groups["folder"].Value;
                     int index = Array.IndexOf(Order, used);
-                    if (index > i || (used == "Library" && Order[i] != "Controllers"))
+                    if (index > i || (used == "Library" && Order[i] is not ("Controllers" or "Composition")))
                     {
                         outward.Add($"{Repo.Relative(file)} uses TestProject.{used}");
                     }
@@ -99,7 +100,7 @@ public sealed partial class LayeringTests
     public void Program_maps_nothing_itself_and_stays_short()
     {
         string[] lines = File.ReadAllLines(Path.Combine(Repo.Root(), "Program.cs"));
-        Assert.True(lines.Length <= 100, $"Program.cs is {lines.Length} lines; the host is a table of contents");
+        Assert.True(lines.Length <= 40, $"Program.cs is {lines.Length} lines; the host is a table of contents");
         Assert.DoesNotContain(lines, line => line.Contains("MapGet(", StringComparison.Ordinal) || line.Contains("MapPost(", StringComparison.Ordinal));
     }
 
@@ -321,14 +322,14 @@ public sealed class VersionReaderTests
     }
 }
 
-/// <summary>The home directory's guard is the one the app runs with: Program builds it from the same options (ADR-003).</summary>
+/// <summary>The home directory's guard is the one the app runs with: FilesRegistration builds it from the same options (ADR-003).</summary>
 public sealed class HomeForTests
 {
     [Fact]
     public void Empty_configuration_means_the_sample_home_beside_the_project()
     {
         using var root = new TempHome();
-        HomePath home = Program.HomeFor(new FilesOptions(), root.Root);
+        HomePath home = FilesRegistration.HomeFor(new FilesOptions(), root.Root);
         Assert.Equal(Path.Combine(root.Root, "sample-home"), home.Root);
         Assert.True(Directory.Exists(home.Root));
     }
@@ -337,7 +338,7 @@ public sealed class HomeForTests
     public void An_absolute_home_is_used_as_given_and_a_relative_one_is_under_the_content_root()
     {
         using var root = new TempHome();
-        Assert.Equal(root.Root, Program.HomeFor(new FilesOptions { Home = root.Root }, "/elsewhere").Root);
-        Assert.Equal(Path.Combine(root.Root, "data"), Program.HomeFor(new FilesOptions { Home = "data" }, root.Root).Root);
+        Assert.Equal(root.Root, FilesRegistration.HomeFor(new FilesOptions { Home = root.Root }, "/elsewhere").Root);
+        Assert.Equal(Path.Combine(root.Root, "data"), FilesRegistration.HomeFor(new FilesOptions { Home = "data" }, root.Root).Root);
     }
 }

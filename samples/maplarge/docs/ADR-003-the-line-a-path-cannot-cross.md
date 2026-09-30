@@ -52,7 +52,7 @@ refuses the result.
 
 - [`Domain/HomePath.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Domain/HomePath.cs): the guard.
 - [`Application/FilesOptions.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/FilesOptions.cs): the settings.
-- [`Program.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Program.cs): `HomeFor`, where configuration becomes a `HomePath`.
+- [`Composition/FilesRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Composition/FilesRegistration.cs): `HomeFor`, where configuration becomes a `HomePath`.
 - [`tests/TestProject.Tests/HomePathTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/HomePathTests.cs): the refusals, on both operating systems.
 
 The guard, as it is in this build:
