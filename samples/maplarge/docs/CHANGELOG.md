@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.14 The file store's comments say where the files belong in production, Azure Blob Storage or another cloud file storage service, because a container's disk does not last; "The Shed, explained" walks the code in eight pieces, with the file browser's registration second, after Program.cs.
 - 1.0.0.13 Every comment in the code says what the code does, how and why, in plain words that stand on their own; no line of code changed.
 - 1.0.0.12 "The Shed, explained" names every file by its path: each code piece carries its full repository path, and the brief's table says where each item lives under samples/maplarge.
 - 1.0.0.11 Program.cs reads as a table of contents the way TheYard's does: the registrations and the request pipeline move, unchanged, into Composition/, Program.cs calls each one on a line that names its file, and "The Shed, explained" shows it as the first of the code's seven pieces.

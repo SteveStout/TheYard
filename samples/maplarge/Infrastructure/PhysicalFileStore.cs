@@ -11,6 +11,9 @@ namespace TestProject.Infrastructure;
 /// folder tree is walked: entries are returned one at a time as they are found, and
 /// anything that cannot be read is skipped. That lets a search stop as soon as it has
 /// enough matches, and lets a folder with one locked subfolder still be listed.
+/// Keeping files on the server's disk keeps the sample simple. In production this class
+/// would be replaced by one that stores files in Azure Blob Storage or another cloud file
+/// storage service, because a container's disk does not survive a restart or a redeploy.
 /// </summary>
 public sealed class PhysicalFileStore : IFileStore
 {

@@ -31,6 +31,12 @@ public static class FilesRegistration
         // IFileStore is the interface the rules use to touch the disk, and PhysicalFileStore is
         // the class that reads and writes real files. FileBrowser holds the rules and depends only
         // on the interface, so tests can swap in a different store.
+        //
+        // This sample keeps files on the server's own disk to stay simple. For production, store
+        // them in Azure Blob Storage or another cloud file storage service, the way TheYard keeps
+        // its data in managed Azure services rather than on a server. A container's disk is wiped
+        // when the app restarts or redeploys and is not shared between instances, so uploads here
+        // do not last. The move is one new class that implements IFileStore and this one line.
         builder.Services.AddSingleton<IFileStore, PhysicalFileStore>();
         builder.Services.AddSingleton<FileBrowser>();
 

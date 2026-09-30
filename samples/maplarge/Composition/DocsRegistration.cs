@@ -10,8 +10,11 @@ namespace TestProject.Composition;
 public static class DocsRegistration
 {
     /// <summary>
-    /// Adds the DocsCatalog, which lists and finds the documents, and the VersionInfo read from
-    /// the changelog and the git folder. Both are singletons rooted at the content root.
+    /// Adds the DocsCatalog, which lists and finds the documents, and the VersionInfo shown in
+    /// the footer. The version is the newest line of docs/CHANGELOG.md. The commit comes from the
+    /// SHED_COMMIT environment variable when it is set, which is how the deployed container gets
+    /// it, and otherwise from the .git folder of a local clone. Both are singletons rooted at the
+    /// content root.
     /// </summary>
     /// <param name="builder">The host being built.</param>
     public static void AddTheShedDocs(this WebApplicationBuilder builder)
