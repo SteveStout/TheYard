@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.18 The Shed, explained shows every piece of code whole, with its comments as the repository has them, laid out the same way for all nine pieces; it is six pages. A stray copy of the PDF that 1.0.0.17 put at the project root is removed.
 - 1.0.0.17 The refusal the API throws is ApiRefusalException and the handler that turns every refusal into a problem document is ProblemResponseHandler; "Browser" could mean the web browser or the file browser, and the documentation controller throws it too; routes, JSON and behaviour are unchanged.
 - 1.0.0.16 Every name says what it is: DocsController is DocumentationAndVersionController, the Library folder is Documentation with DocumentationCatalog in it, Data/Entries.cs is split into ApiResponses.cs, ApiRequests.cs and FileStoreEntry.cs, and the page's src/ui/dom.ts is elements.ts with buildElement, buildFromMarkdown and replaceContents; the tests follow (DocumentationTests, ProjectRulesTests, ProjectFolder, NoEmDashTests); routes, JSON and behaviour are unchanged.
 - 1.0.0.15 The registration for the Docs tab and the footer's version is DocumentationAndVersionRegistration, named for both things it sets up, and its comments say where each value really comes from; "The Shed, explained" shows it as piece 3 of nine.
