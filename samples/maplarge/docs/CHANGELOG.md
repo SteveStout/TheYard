@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.15 The registration for the Docs tab and the footer's version is DocumentationAndVersionRegistration, named for both things it sets up, and its comments say where each value really comes from; "The Shed, explained" shows it as piece 3 of nine.
 - 1.0.0.14 The file store's comments say where the files belong in production, Azure Blob Storage or another cloud file storage service, because a container's disk does not last; "The Shed, explained" walks the code in eight pieces, with the file browser's registration second, after Program.cs.
 - 1.0.0.13 Every comment in the code says what the code does, how and why, in plain words that stand on their own; no line of code changed.
 - 1.0.0.12 "The Shed, explained" names every file by its path: each code piece carries its full repository path, and the brief's table says where each item lives under samples/maplarge.

@@ -75,6 +75,11 @@ and every response takes back out:
 ```live path=Composition/RequestPipeline.cs region=request-pipeline
 ```
 
+The file that sets up the Docs tab and the footer's version is
+`DocumentationAndVersionRegistration.cs`, named for both things it registers: "Docs" was an
+abbreviation, and it hid the version. Its comments say where each value is really set (the top of
+the changelog, the deploy, the docs folder), because the registration itself sets none of them.
+
 ## Files
 
 - [`Program.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Program.cs): the table of contents.

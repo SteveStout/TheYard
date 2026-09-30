@@ -16,13 +16,13 @@ public sealed class Program
         // #region composition
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.AddTheShedFiles();          // Composition/FilesRegistration.cs
-        builder.AddTheShedDocs();           // Composition/DocsRegistration.cs
-        builder.AddTheShedApi();            // Composition/ApiRegistration.cs
+        builder.AddTheShedFiles();                    // Composition/FilesRegistration.cs
+        builder.AddTheShedDocumentationAndVersion();  // Composition/DocumentationAndVersionRegistration.cs
+        builder.AddTheShedApi();                      // Composition/ApiRegistration.cs
 
         var app = builder.Build();
-        app.UseTheShedRequestPipeline();    // Composition/RequestPipeline.cs
-        app.MapControllers();               // Controllers/: Files, Docs, Health
+        app.UseTheShedRequestPipeline();              // Composition/RequestPipeline.cs
+        app.MapControllers();                         // Controllers/: Files, Docs, Health
         // #endregion composition
 
         app.Run();
