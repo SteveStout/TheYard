@@ -152,5 +152,29 @@ export const PAGES = {
     url: '/api/docs/performance',
     kind: 'overview',
   },
+  siteTraffic: {
+    title: 'Site traffic',
+    menuLabel: 'Site traffic',
+    url: '/api/docs/site-traffic',
+    kind: 'overview',
+  },
+  trafficWho: {
+    title: 'Who comes',
+    menuLabel: 'Who comes',
+    url: '/api/docs/traffic-who',
+    kind: 'overview',
+  },
+  trafficKept: {
+    title: 'What is kept',
+    menuLabel: 'What is kept',
+    url: '/api/docs/traffic-kept',
+    kind: 'overview',
+  },
+  trafficFound: {
+    title: 'Being found',
+    menuLabel: 'Being found',
+    url: '/api/docs/traffic-found',
+    kind: 'overview',
+  },
 } as const satisfies Record<string, PageEntry>;
 // #endregion pages

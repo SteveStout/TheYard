@@ -150,6 +150,20 @@ export const MENUS: Record<
     ],
   },
   // #endregion look-menu
+  /**
+   * Who comes, what is kept about them and how the site is found, as a section of its own
+   * on the Style section's pattern (ADR-071 and ADR-053, the addenda of 29 September): the
+   * landing page on top, then its three pages.
+   */
+  traffic: {
+    label: 'Site traffic',
+    items: [
+      { key: 'siteTraffic' },
+      { key: 'trafficWho', sub: true },
+      { key: 'trafficKept', sub: true },
+      { key: 'trafficFound', sub: true },
+    ],
+  },
   hosting: {
     label: 'Hosting',
     items: [{ key: 'hosting' }, { key: 'bicep', sub: true }],

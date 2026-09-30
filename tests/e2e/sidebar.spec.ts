@@ -186,12 +186,12 @@ test.describe('the docked rail', () => {
     const rail = page.getByTestId('side-rail');
     const sections = rail.locator('details');
 
-    // Fourteen headings and nothing else: the rail arrives as a table of contents
+    // Fifteen headings and nothing else: the rail arrives as a table of contents
     // rather than as a hundred rows (ADR: The sidebar, the addendum on
     // collapsing every section; the twelfth is the API reference, 1.0.0.137,
-    // the thirteenth is Style, 1.0.0.170, and the fourteenth is Author,
-    // 1.0.0.171).
-    await expect(sections).toHaveCount(14);
+    // the thirteenth is Style, 1.0.0.170, the fourteenth is Author, 1.0.0.171,
+    // and the fifteenth is Site traffic, 1.0.3.48).
+    await expect(sections).toHaveCount(15);
     await expect(rail.locator('details[open]')).toHaveCount(0);
     await expect(rail.getByRole('button', { name: 'Hosting overview' })).toHaveCount(0);
 

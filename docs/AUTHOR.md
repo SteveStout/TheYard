@@ -50,14 +50,6 @@ My most ambitious home project so far was replacing every interior door in the h
 
 ![Steve in a navy suit and Katie in a white dress smiling at each other under a weeping willow, sunlight through the leaves](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-under-willow-960.jpg)
 
-### Too many house plants
-
-Mostly pothos, plus a peace lily holding its own. The corner crew lives under a grow light. The one in the kitchen started on the top shelf and is working its way down to the light switch.
-
-![A peace lily and two pothos in white pots on wooden stands, leaning toward a clip-on grow light in a corner](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/house-plants-under-grow-light-960.jpg)
-
-![A pothos in a blue and white pot trailing from the top kitchen shelf past the canisters, a cross-stitched fox on the wall beside it](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/pothos-down-kitchen-shelves-960.jpg)
-
 ### Freya and Vincent
 
 Katie and I have two rabbits, Freya and Vincent, our little white snowballs. Think vegetarian cats more than hamsters: they are litter box trained, they can live ten years or more, and they need room to run.
@@ -67,6 +59,14 @@ Katie and I have two rabbits, Freya and Vincent, our little white snowballs. Thi
 ![Two white rabbits asleep side by side on a grey rug](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/rabbits-both-lying-on-runner-960.jpg "Fun fact: a rabbit in deep sleep looks alarmingly like this. They are fine.")
 
 ![A white lop-eared rabbit sitting on a blue rug, a white rabbit with upright ears behind](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/rabbits-lop-on-blue-rug-960.jpg "Rabbits see almost all the way around them, with one small blind spot right in front of the nose.")
+
+### Too many house plants
+
+I have too many house plants. I try to con my wife into watering them, and my rabbit into not nibbling them.
+
+![A peace lily and two pothos in white pots on wooden stands, leaning toward a clip-on grow light in a corner](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/house-plants-under-grow-light-960.jpg)
+
+![A pothos in a blue and white pot trailing from the top kitchen shelf past the canisters, a cross-stitched fox on the wall beside it](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/pothos-down-kitchen-shelves-960.jpg)
 
 ### St. Charles
 

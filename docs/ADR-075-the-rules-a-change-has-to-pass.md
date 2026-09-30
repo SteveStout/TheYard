@@ -42,6 +42,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every rule in this table names a test that exists, and every record it cites exists | This record | RuleTableTests |
 | Code shown in a document is read from the build at request time, never pasted | ADR: Live code samples | LiveSamplesTests, LiveSampleCoverageTests |
 | Every count a living document states is the count | ADR: The public face | PublicFaceTests |
+| The sitemap lists every document the catalogue serves and nothing else, and llms.txt links only to what the site serves | ADR: The public face | PublicFaceTests |
 | /about is a served page with its own head, its Person names only his name, title, profiles and city, the sitemap lists it with the build's day, and the verification tag is written only when it is given | ADR: Every diagram opens on its own page, ADR: The public face | DiagramPageTests, PublicFaceTests, DockerBuildInputsTests |
 | The slug, the catalog and the sidebar offer the same documents | ADR: The staff review | DocsCatalogTests |
 | Every file in `src/app` and `src/library`, and every stylesheet under `src`, opens with what it does, what it does not, and which files use it; the last is read against the files that import it, and no file there runs past 300 lines but the ones named with why | ADR: The React configuration, explained for a new developer | FileHeaderTests |

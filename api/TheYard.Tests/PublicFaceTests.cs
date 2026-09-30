@@ -277,6 +277,38 @@ public class PublicFaceTests
         Assert.DoesNotContain("streetAddress", head, StringComparison.Ordinal);
         Assert.DoesNotContain("postalCode", head, StringComparison.Ordinal);
     }
+    [Fact]
+    public void The_sitemap_lists_every_document_the_site_serves_and_nothing_it_does_not()
+    {
+        string sitemap = File.ReadAllText(Path.Combine(Repo.Root(), "public", "sitemap.xml"));
+        var listed = Regex.Matches(sitemap, @"<loc>https://theyard\.stevenstout\.biz/api/docs/([a-z0-9-]+)</loc>")
+            .Select(match => match.Groups[1].Value)
+            .Where(slug => slug != "resume" && slug != "bicep")
+            .ToHashSet(StringComparer.Ordinal);
+
+        // Both directions, so a document cannot be added without being listed or listed after it is gone.
+        string[] unlisted = DocsCatalog.Files.Keys.Where(slug => !listed.Contains(slug)).ToArray();
+        string[] gone = listed.Where(slug => !DocsCatalog.Files.ContainsKey(slug)).ToArray();
+        Assert.True(unlisted.Length == 0, $"public/sitemap.xml does not list {string.Join(", ", unlisted)}");
+        Assert.True(gone.Length == 0, $"public/sitemap.xml lists {string.Join(", ", gone)}, which the site no longer serves");
+    }
+
+    [Fact]
+    public void Llms_txt_names_the_author_and_links_only_to_what_the_site_serves()
+    {
+        string llms = File.ReadAllText(Path.Combine(Repo.Root(), "public", "llms.txt"));
+
+        // The shape the format asks for: a title, then a one-paragraph summary as a quote.
+        Assert.StartsWith("# TheYard, by Steven Stout", llms, StringComparison.Ordinal);
+        Assert.Contains("\n> ", llms, StringComparison.Ordinal);
+        Assert.Contains("https://theyard.stevenstout.biz/about", llms, StringComparison.Ordinal);
+        foreach (Match link in Regex.Matches(llms, @"https://theyard\.stevenstout\.biz/api/docs/([a-z0-9-]+)\)"))
+        {
+            string slug = link.Groups[1].Value;
+            Assert.True(slug == "resume" || DocsCatalog.Files.ContainsKey(slug), $"public/llms.txt links /api/docs/{slug}, which the site does not serve");
+        }
+        Assert.DoesNotContain("\u2014", llms, StringComparison.Ordinal);
+    }
     // #endregion head
 
     /// <summary>Number words, as far as this README needs to count.</summary>

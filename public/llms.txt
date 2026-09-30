@@ -1,0 +1,36 @@
+# TheYard, by Steven Stout
+
+> TheYard is a used-vehicle auction platform that Steven Stout, a Lead / Staff .NET engineer, built and runs on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database and on Azure Cosmos DB, in .NET 10 and React. Every decision behind it is written down as a record and served from inside the app. Each document below is plain markdown, readable without running the app.
+
+## About the author
+
+- [Steven Stout](https://theyard.stevenstout.biz/about): who he is, the resume's title line, and what TheYard proves
+- [About Steven](https://theyard.stevenstout.biz/api/docs/author): the longer version, away from the keyboard
+- [Resume (PDF)](https://theyard.stevenstout.biz/api/docs/resume)
+- [LinkedIn](https://www.linkedin.com/in/stevenwstout/)
+- [The repository on GitHub](https://github.com/SteveStout/TheYard)
+
+## Start here
+
+- [README](https://theyard.stevenstout.biz/api/docs/readme): what the site is, how it is tested, and how to run it
+- [Start here](https://theyard.stevenstout.biz/api/docs/start-here): the short tour
+- [Architecture](https://theyard.stevenstout.biz/api/docs/architecture): the onion, the two stores, the frontend
+- [Performance](https://theyard.stevenstout.biz/api/docs/performance): what the site measures and how fast it answers
+- [SQL Server vs Cosmos DB](https://theyard.stevenstout.biz/api/docs/sql-vs-cosmos): one app on two stores, compared
+
+## How it is built and run
+
+- [Built with AI](https://theyard.stevenstout.biz/api/docs/built-with-ai): what the AI wrote, what the owner decided, and what governed it
+- [AI development](https://theyard.stevenstout.biz/api/docs/ai-development)
+- [Hosting](https://theyard.stevenstout.biz/api/docs/hosting): where the two sites run, and what they cost
+- [CI/CD](https://theyard.stevenstout.biz/api/docs/cicd): the gate and the deploy
+- [Best practices](https://theyard.stevenstout.biz/api/docs/practices)
+- [Security](https://theyard.stevenstout.biz/api/docs/security)
+- [Style guide](https://theyard.stevenstout.biz/api/docs/style-guide): the look and the rules the build enforces
+- [Site traffic](https://theyard.stevenstout.biz/api/docs/site-traffic): who comes, what is kept, and how the site is found
+- [Changelog](https://theyard.stevenstout.biz/api/docs/changelog): every version that reached the live site
+
+## Optional
+
+- [The API reference](https://theyard.stevenstout.biz/api/reference)
+- [Every document, in the sitemap](https://theyard.stevenstout.biz/sitemap.xml)

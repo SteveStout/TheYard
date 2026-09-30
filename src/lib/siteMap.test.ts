@@ -9,6 +9,7 @@ const EVERY_SECTION: Record<MenuVariant, true> = {
   apiReference: true,
   stores: true,
   performance: true,
+  traffic: true,
   diagrams: true,
   look: true,
   hosting: true,
@@ -58,6 +59,7 @@ describe('the site map', () => {
       'look',
       'builtWithAi',
       'performance',
+      'traffic',
       'hosting',
       'cicd',
       'practices',
@@ -85,7 +87,7 @@ describe('the site map', () => {
         'How it is built',
         ['architecture', 'apiReference', 'stores', 'diagrams', 'look', 'builtWithAi'],
       ],
-      ['How it is run', ['performance', 'hosting', 'cicd', 'practices']],
+      ['How it is run', ['performance', 'traffic', 'hosting', 'cicd', 'practices']],
       ['Who and why', ['records', 'changelog', 'about']],
     ]);
     // Sign in, Admin and GitHub last.
@@ -99,7 +101,7 @@ describe('the site map', () => {
       'admin',
       'repo',
     ]);
-    expect(grid).toHaveLength(16);
+    expect(grid).toHaveLength(17);
     // The two large tiles carry a photograph in the badge, and nothing else does.
     expect(
       featured.map(

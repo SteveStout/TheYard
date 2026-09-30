@@ -24,6 +24,7 @@ export type MenuVariant =
   | 'apiReference'
   | 'stores'
   | 'performance'
+  | 'traffic'
   | 'diagrams'
   | 'look'
   | 'hosting'
@@ -42,6 +43,7 @@ export type NavIcon =
   | 'api'
   | 'stores'
   | 'performance'
+  | 'traffic'
   | 'diagrams'
   | 'style'
   | 'hosting'
@@ -158,6 +160,12 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       icon: 'performance',
       group: 'run',
       blurb: 'What the site measures and how fast it answers.',
+    },
+    {
+      menu: 'traffic',
+      icon: 'traffic',
+      group: 'run',
+      blurb: 'Who comes, what is kept about them, and how the site is found.',
     },
     {
       menu: 'hosting',

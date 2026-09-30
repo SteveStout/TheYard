@@ -32,3 +32,29 @@ test('the Style guide opens its sub-pages in the same window, and Background and
     })
     .toBeGreaterThan(10);
 });
+
+/**
+ * The Site traffic section is built from the same blocks (ADR: Site activity, the
+ * addendum of 29 September): its landing page's tiles carry their icons and open
+ * their pages in the same window, and its readouts hold numbers the API counted.
+ */
+test('the Site traffic page opens its sub-pages in the same window, its tiles drawn and its readouts counted', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?doc=site-traffic');
+  const tiles = page.locator('dialog[open] [data-testid="style-tiles"] a');
+  await expect(tiles).toHaveCount(3, { timeout: 30_000 });
+  await expect(page.locator('dialog[open] [data-glyph] svg')).toHaveCount(3);
+  const readouts = await page
+    .locator('dialog[open] [data-testid="style-readout"]')
+    .allTextContents();
+  expect(readouts).toHaveLength(4);
+  expect(readouts.every((value) => /^\d[\d,]*$/.test(value.trim()))).toBe(true);
+
+  await tiles.nth(2).click();
+  await expect(page.locator('dialog[open] h2').first()).toHaveText('Being found', {
+    timeout: 30_000,
+  });
+  expect(page.url()).toContain('doc=traffic-found');
+});

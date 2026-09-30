@@ -50,8 +50,8 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
 
   // Every picture is on the page, in its place: the vineyard beside the words, the lake and the
   // Pantheon in their blocks, the stream after History and the bridge after Games each on its own
-  // row, the game's art, the grill and the doors in their blocks, the two house plant pictures and
-  // the two rabbit pictures side by side, and the photographer's credit under the panels.
+  // row, the game's art, the grill and the doors in their blocks, the two rabbit pictures and
+  // the two house plant pictures side by side, and the photographer's credit under the panels.
   await expect(async () => {
     const places = await doc.locator('.author-photo').evaluateAll((figures) =>
       figures.map((figure) => ({
@@ -71,10 +71,10 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       { name: 'grill-flames-on-driveway', hero: false, opens: false, paired: false },
       { name: 'interior-door-in-new-frame', hero: false, opens: false, paired: false },
       { name: 'couple-under-willow', hero: false, opens: false, paired: false },
-      { name: 'house-plants-under-grow-light', hero: false, opens: false, paired: true },
-      { name: 'pothos-down-kitchen-shelves', hero: false, opens: false, paired: true },
       { name: 'rabbits-both-lying-on-runner', hero: false, opens: false, paired: true },
       { name: 'rabbits-lop-on-blue-rug', hero: false, opens: false, paired: true },
+      { name: 'house-plants-under-grow-light', hero: false, opens: false, paired: true },
+      { name: 'pothos-down-kitchen-shelves', hero: false, opens: false, paired: true },
       { name: 'st-charles-main-street-christmas', hero: false, opens: false, paired: false },
       { name: 'rabbits-under-hay-rack', hero: false, opens: false, paired: false },
     ]);

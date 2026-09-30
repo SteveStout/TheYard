@@ -66,7 +66,7 @@ public class DockerBuildInputsTests
         // the only thing that puts a file at the root of the built site is
         // Vite's publicDir.
         string root = Path.Combine(Repo.Root(), "public");
-        foreach (string name in new[] { "robots.txt", "sitemap.xml", "og.png" })
+        foreach (string name in new[] { "robots.txt", "sitemap.xml", "og.png", "llms.txt" })
         {
             Assert.True(File.Exists(Path.Combine(root, name)), $"public/{name} is what serves /{name}");
         }

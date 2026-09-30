@@ -127,6 +127,30 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      For a reader that does not run JavaScript, which is most AI tools and some
+      crawlers: who built this, what it is, and where the words are, as plain HTML.
+      Every link is an address the site serves without the app.
+    -->
+    <noscript>
+      <main>
+        <h1>TheYard, by Steven Stout</h1>
+        <p>
+          A used-vehicle auction platform that Steven Stout, a Lead / Staff .NET engineer, built and
+          runs on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database and
+          on Azure Cosmos DB, in .NET 10 and React.
+        </p>
+        <ul>
+          <li><a href="/about">About Steven Stout</a></li>
+          <li><a href="/api/docs/readme">The README</a></li>
+          <li><a href="/api/docs/architecture">Architecture</a></li>
+          <li><a href="/api/docs/performance">Performance</a></li>
+          <li><a href="/api/reference">The API reference</a></li>
+          <li><a href="/llms.txt">An index of every document, for AI tools</a></li>
+          <li><a href="https://github.com/SteveStout/TheYard">The code on GitHub</a></li>
+        </ul>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

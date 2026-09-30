@@ -126,6 +126,10 @@ public static class DocsCatalog
         ["infrastructure-overview"] = "docs/INFRASTRUCTURE-OVERVIEW.md",
         ["web-overview"] = "docs/WEB-OVERVIEW.md",
         ["performance"] = "docs/PERFORMANCE.md",
+        ["site-traffic"] = "docs/SITE-TRAFFIC.md",
+        ["traffic-who"] = "docs/TRAFFIC-WHO.md",
+        ["traffic-kept"] = "docs/TRAFFIC-KEPT.md",
+        ["traffic-found"] = "docs/TRAFFIC-FOUND.md",
         ["architecture"] = "docs/ARCHITECTURE.md",
         ["style"] = "docs/STYLE.md",
     };
