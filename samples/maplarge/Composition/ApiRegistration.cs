@@ -23,6 +23,6 @@ public static class ApiRegistration
             json.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
         });
         builder.Services.AddProblemDetails();
-        builder.Services.AddExceptionHandler<BrowserProblemHandler>();
+        builder.Services.AddExceptionHandler<ProblemResponseHandler>();
     }
 }

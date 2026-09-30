@@ -8,7 +8,7 @@ namespace TestProject.Controllers;
 
 /// <summary>
 /// Turns a refused request into an RFC 9457 problem document. A
-/// <see cref="BrowserProblemException"/> carries its own status and title. A
+/// <see cref="ApiRefusalException"/> carries its own status and title. A
 /// <see cref="PathRefusedException"/> from the home directory check is always a 400.
 /// Refusals from the filesystem itself, such as a read-only file inside a folder being
 /// deleted or a file another process holds open, become a 403 or a 409 carrying the
@@ -17,7 +17,7 @@ namespace TestProject.Controllers;
 /// Any other exception is left unhandled here, so a real bug still reaches the default
 /// handler as a 500 with a trace id and is never reported as a client error.
 /// </summary>
-public sealed class BrowserProblemHandler(IProblemDetailsService problems) : IExceptionHandler
+public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IExceptionHandler
 {
     // #region handle
     /// <inheritdoc />
@@ -25,7 +25,7 @@ public sealed class BrowserProblemHandler(IProblemDetailsService problems) : IEx
     {
         (int status, string title) = exception switch
         {
-            BrowserProblemException problem => (problem.Status, problem.Title),
+            ApiRefusalException problem => (problem.Status, problem.Title),
             PathRefusedException => (StatusCodes.Status400BadRequest, "The path was refused"),
             UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "The filesystem refused"),
             IOException => (StatusCodes.Status409Conflict, "The filesystem refused"),

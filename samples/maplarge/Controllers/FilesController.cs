@@ -7,7 +7,7 @@ namespace TestProject.Controllers;
 /// <summary>
 /// The file API: browse, search, download, upload, create folder, delete, move and copy.
 /// Each action is only a few lines, because every rule lives in <see cref="FileBrowser"/>.
-/// When a rule refuses a request it throws a <see cref="BrowserProblemException"/>, and
+/// When a rule refuses a request it throws a <see cref="ApiRefusalException"/>, and
 /// the exception handler turns that into a problem document.
 /// </summary>
 // Every path parameter is nullable on purpose. With a non-nullable parameter, [ApiController]
@@ -61,7 +61,7 @@ public sealed class FilesController(FileBrowser browser) : ControllerBase
     {
         if (!Request.HasFormContentType || Request.Form.Files.Count == 0)
         {
-            throw BrowserProblemException.Refused("An upload needs at least one file.");
+            throw ApiRefusalException.Refused("An upload needs at least one file.");
         }
         var written = new List<FileEntry>(Request.Form.Files.Count);
         foreach (IFormFile file in Request.Form.Files)

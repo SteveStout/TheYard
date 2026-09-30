@@ -56,7 +56,7 @@ public sealed class FileBrowserTests
     [Fact]
     public void Browse_of_a_missing_folder_is_404()
     {
-        var problem = Assert.Throws<BrowserProblemException>(() => _browser.Browse("nowhere"));
+        var problem = Assert.Throws<ApiRefusalException>(() => _browser.Browse("nowhere"));
         Assert.Equal(404, problem.Status);
         Assert.Contains("nowhere", problem.Message, StringComparison.Ordinal);
     }
@@ -64,7 +64,7 @@ public sealed class FileBrowserTests
     [Fact]
     public void Browse_of_a_file_is_404_because_a_file_is_not_a_folder()
     {
-        Assert.Equal(404, Assert.Throws<BrowserProblemException>(() => _browser.Browse("apple.txt")).Status);
+        Assert.Equal(404, Assert.Throws<ApiRefusalException>(() => _browser.Browse("apple.txt")).Status);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class FileBrowserTests
     [Fact]
     public void Search_with_nothing_to_look_for_is_400()
     {
-        Assert.Equal(400, Assert.Throws<BrowserProblemException>(() => _browser.Search("", "  ", null)).Status);
+        Assert.Equal(400, Assert.Throws<ApiRefusalException>(() => _browser.Search("", "  ", null)).Status);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class FileBrowserTests
         (string absolute, FileEntry entry) = _browser.Download("docs/readme.md");
         Assert.EndsWith("readme.md", absolute, StringComparison.Ordinal);
         Assert.Equal("md", entry.Extension);
-        Assert.Equal(404, Assert.Throws<BrowserProblemException>(() => _browser.Download("docs")).Status);
+        Assert.Equal(404, Assert.Throws<ApiRefusalException>(() => _browser.Download("docs")).Status);
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public sealed class FileBrowserTests
     public async Task Upload_refuses_an_existing_name_unless_told_to_overwrite()
     {
         using var content = new MemoryStream(new byte[5]);
-        var problem = await Assert.ThrowsAsync<BrowserProblemException>(() => _browser.UploadAsync("docs", "readme.md", 5, content, overwrite: false));
+        var problem = await Assert.ThrowsAsync<ApiRefusalException>(() => _browser.UploadAsync("docs", "readme.md", 5, content, overwrite: false));
         Assert.Equal(409, problem.Status);
         content.Position = 0;
         FileEntry entry = await _browser.UploadAsync("docs", "readme.md", 5, content, overwrite: true);
@@ -144,7 +144,7 @@ public sealed class FileBrowserTests
         var options = new FilesOptions { MaxUploadBytes = 4 };
         var browser = new FileBrowser(new HomePath(Root), _store, options);
         using var content = new MemoryStream(new byte[5]);
-        var problem = await Assert.ThrowsAsync<BrowserProblemException>(() => browser.UploadAsync("", "big.bin", 5, content, overwrite: false));
+        var problem = await Assert.ThrowsAsync<ApiRefusalException>(() => browser.UploadAsync("", "big.bin", 5, content, overwrite: false));
         Assert.Equal(413, problem.Status);
         Assert.Equal(0, content.Position);
     }
@@ -154,7 +154,7 @@ public sealed class FileBrowserTests
     {
         FolderEntry created = _browser.CreateFolder("docs", "drafts");
         Assert.Equal("docs/drafts", created.Path);
-        Assert.Equal(409, Assert.Throws<BrowserProblemException>(() => _browser.CreateFolder("docs", "drafts")).Status);
+        Assert.Equal(409, Assert.Throws<ApiRefusalException>(() => _browser.CreateFolder("docs", "drafts")).Status);
         _browser.Delete("docs/drafts");
         Assert.Equal(EntryKind.None, _store.KindOf(Path.Combine(Root, "docs", "drafts")));
     }
@@ -162,8 +162,8 @@ public sealed class FileBrowserTests
     [Fact]
     public void Delete_refuses_the_home_and_404s_the_missing()
     {
-        Assert.Equal(400, Assert.Throws<BrowserProblemException>(() => _browser.Delete("")).Status);
-        Assert.Equal(404, Assert.Throws<BrowserProblemException>(() => _browser.Delete("ghost")).Status);
+        Assert.Equal(400, Assert.Throws<ApiRefusalException>(() => _browser.Delete("")).Status);
+        Assert.Equal(404, Assert.Throws<ApiRefusalException>(() => _browser.Delete("ghost")).Status);
     }
 
     [Fact]
@@ -186,18 +186,18 @@ public sealed class FileBrowserTests
     [Fact]
     public void A_folder_cannot_be_moved_or_copied_into_itself()
     {
-        Assert.Equal(400, Assert.Throws<BrowserProblemException>(() => _browser.Move("docs", "docs/notes/docs")).Status);
-        Assert.Equal(400, Assert.Throws<BrowserProblemException>(() => _browser.Copy("docs", "docs/inner")).Status);
+        Assert.Equal(400, Assert.Throws<ApiRefusalException>(() => _browser.Move("docs", "docs/notes/docs")).Status);
+        Assert.Equal(400, Assert.Throws<ApiRefusalException>(() => _browser.Copy("docs", "docs/inner")).Status);
     }
 
     [Fact]
     public void A_transfer_needs_an_existing_parent_and_a_free_destination()
     {
-        Assert.Equal(404, Assert.Throws<BrowserProblemException>(() => _browser.Move("apple.txt", "nowhere/apple.txt")).Status);
-        Assert.Equal(409, Assert.Throws<BrowserProblemException>(() => _browser.Move("apple.txt", "zebra.txt")).Status);
-        Assert.Equal(404, Assert.Throws<BrowserProblemException>(() => _browser.Move("ghost.txt", "x.txt")).Status);
-        Assert.Equal(400, Assert.Throws<BrowserProblemException>(() => _browser.Move("", "x")).Status);
-        Assert.Equal(400, Assert.Throws<BrowserProblemException>(() => _browser.Move("apple.txt", "")).Status);
+        Assert.Equal(404, Assert.Throws<ApiRefusalException>(() => _browser.Move("apple.txt", "nowhere/apple.txt")).Status);
+        Assert.Equal(409, Assert.Throws<ApiRefusalException>(() => _browser.Move("apple.txt", "zebra.txt")).Status);
+        Assert.Equal(404, Assert.Throws<ApiRefusalException>(() => _browser.Move("ghost.txt", "x.txt")).Status);
+        Assert.Equal(400, Assert.Throws<ApiRefusalException>(() => _browser.Move("", "x")).Status);
+        Assert.Equal(400, Assert.Throws<ApiRefusalException>(() => _browser.Move("apple.txt", "")).Status);
     }
 
     [Fact]

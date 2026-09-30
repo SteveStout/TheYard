@@ -99,7 +99,7 @@ Data/                 ApiResponses, ApiRequests, FileStoreEntry: sealed records,
 Domain/               the rules: HomePath, NamePattern, ViewTotals (pure)
 Application/          FileBrowser, the use cases, behind IFileStore
 Infrastructure/       PhysicalFileStore, the disk
-Controllers/          FilesController, DocumentationAndVersionController, BrowserProblemHandler
+Controllers/          FilesController, DocumentationAndVersionController, ProblemResponseHandler
 Composition/          the registrations and the pipeline Program.cs calls, as TheYard's are
 Documentation/        DocumentationCatalog, LiveSamples, VersionReader: the documents the app serves
 src/                  the page, TypeScript: lib (pure), ui (renders), main.ts (the shell)

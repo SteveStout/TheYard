@@ -33,9 +33,9 @@ browse, the matches of a search. The page never adds up a column it might have s
 shows in its corner is the server's own (ADR-008).
 
 **Every failure is an RFC 9457 problem document**, `application/problem+json`, with `status`,
-`title`, `detail` and the framework's `traceId`. A use case throws `BrowserProblemException` with
+`title`, `detail` and the framework's `traceId`. A use case throws `ApiRefusalException` with
 the status it means (404 nothing there, 400 refused, 409 already exists, 413 too large); the home
-throws `PathRefusedException`, always a 400; `BrowserProblemHandler` turns either into the document
+throws `PathRefusedException`, always a 400; `ProblemResponseHandler` turns either into the document
 and lets anything else through to the default handler, so an actual bug is still a 500 and never
 dressed as a client error. An unknown route under `/api` is a problem document too
 (`UseStatusCodePages` with the problem details service). The page reads `detail` first and shows the
@@ -64,14 +64,14 @@ it is worth.
 
 - [`Data/ApiResponses.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Data/ApiResponses.cs): every reply the API sends.
 - [`Data/ApiRequests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Data/ApiRequests.cs): the move and copy body the page sends.
-- [`Application/BrowserProblemException.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/BrowserProblemException.cs): a refusal with its status.
-- [`Controllers/BrowserProblemHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/BrowserProblemHandler.cs): the problem document.
+- [`Application/ApiRefusalException.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/ApiRefusalException.cs): a refusal with its status.
+- [`Controllers/ProblemResponseHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/ProblemResponseHandler.cs): the problem document.
 - [`Controllers/FilesController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/FilesController.cs): the routes.
 - [`tests/TestProject.Tests/FilesApiTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/FilesApiTests.cs): every route and every refusal through the real host.
 
 The handler:
 
-```live path=Controllers/BrowserProblemHandler.cs region=handle
+```live path=Controllers/ProblemResponseHandler.cs region=handle
 ```
 
 The two read routes, which is all a controller action should be:

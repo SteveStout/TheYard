@@ -61,7 +61,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         var pattern = new NamePattern(query);
         if (pattern.IsEmpty)
         {
-            throw BrowserProblemException.Refused("A search needs something to look for.");
+            throw ApiRefusalException.Refused("A search needs something to look for.");
         }
         int cap = Math.Clamp(limit ?? options.SearchLimit, 1, options.SearchCeiling);
         string absolute = Folder(path);
@@ -97,7 +97,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         string absolute = Home.Resolve(path);
         if (store.KindOf(absolute) != EntryKind.File)
         {
-            throw BrowserProblemException.NotFound($"There is no file at '{Home.Relative(absolute)}'.");
+            throw ApiRefusalException.NotFound($"There is no file at '{Home.Relative(absolute)}'.");
         }
         return (absolute, File(store.Describe(absolute)));
     }
@@ -121,17 +121,17 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     {
         if (length > options.MaxUploadBytes)
         {
-            throw BrowserProblemException.TooLarge($"'{name}' is {length:N0} bytes; the limit is {options.MaxUploadBytes:N0}.");
+            throw ApiRefusalException.TooLarge($"'{name}' is {length:N0} bytes; the limit is {options.MaxUploadBytes:N0}.");
         }
         string absoluteFolder = Folder(folder);
         string target = Path.Combine(absoluteFolder, HomePath.ValidName(Path.GetFileName(name)));
         if (!overwrite && store.KindOf(target) != EntryKind.None)
         {
-            throw BrowserProblemException.Conflict($"'{Home.Relative(target)}' already exists.");
+            throw ApiRefusalException.Conflict($"'{Home.Relative(target)}' already exists.");
         }
         if (store.KindOf(target) == EntryKind.Folder)
         {
-            throw BrowserProblemException.Conflict($"'{Home.Relative(target)}' is a folder.");
+            throw ApiRefusalException.Conflict($"'{Home.Relative(target)}' is a folder.");
         }
         await using (Stream file = store.Create(target, overwrite))
         {
@@ -152,7 +152,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         string target = Path.Combine(Folder(parent), HomePath.ValidName(name));
         if (store.KindOf(target) != EntryKind.None)
         {
-            throw BrowserProblemException.Conflict($"'{Home.Relative(target)}' already exists.");
+            throw ApiRefusalException.Conflict($"'{Home.Relative(target)}' already exists.");
         }
         store.CreateFolder(target);
         return Folder(store.Describe(target));
@@ -168,7 +168,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         string absolute = Existing(path);
         if (absolute == Home.Root)
         {
-            throw BrowserProblemException.Refused("The home directory cannot be deleted.");
+            throw ApiRefusalException.Refused("The home directory cannot be deleted.");
         }
         store.Delete(absolute);
     }
@@ -222,25 +222,25 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         string source = Existing(from);
         if (source == Home.Root)
         {
-            throw BrowserProblemException.Refused("The home directory cannot be moved or copied.");
+            throw ApiRefusalException.Refused("The home directory cannot be moved or copied.");
         }
         string target = Home.Resolve(to);
         if (target == Home.Root)
         {
-            throw BrowserProblemException.Refused("A destination needs a name.");
+            throw ApiRefusalException.Refused("A destination needs a name.");
         }
         string? parent = Path.GetDirectoryName(target);
         if (parent is null || store.KindOf(parent) != EntryKind.Folder)
         {
-            throw BrowserProblemException.NotFound($"There is no folder to put '{Home.Relative(target)}' in.");
+            throw ApiRefusalException.NotFound($"There is no folder to put '{Home.Relative(target)}' in.");
         }
         if (store.KindOf(target) != EntryKind.None)
         {
-            throw BrowserProblemException.Conflict($"'{Home.Relative(target)}' already exists.");
+            throw ApiRefusalException.Conflict($"'{Home.Relative(target)}' already exists.");
         }
         if (store.KindOf(source) == EntryKind.Folder && new HomePath(source).IsInside(target))
         {
-            throw BrowserProblemException.Refused("A folder cannot be moved or copied into itself.");
+            throw ApiRefusalException.Refused("A folder cannot be moved or copied into itself.");
         }
         return (source, target);
     }
@@ -251,7 +251,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         string absolute = Home.Resolve(path);
         if (store.KindOf(absolute) != EntryKind.Folder)
         {
-            throw BrowserProblemException.NotFound($"There is no folder at '{Home.Relative(absolute)}'.");
+            throw ApiRefusalException.NotFound($"There is no folder at '{Home.Relative(absolute)}'.");
         }
         return absolute;
     }
@@ -261,7 +261,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         string absolute = Home.Resolve(path);
         if (store.KindOf(absolute) == EntryKind.None)
         {
-            throw BrowserProblemException.NotFound($"There is nothing at '{Home.Relative(absolute)}'.");
+            throw ApiRefusalException.NotFound($"There is nothing at '{Home.Relative(absolute)}'.");
         }
         return absolute;
     }

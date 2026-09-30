@@ -31,7 +31,7 @@ public sealed class DocumentationAndVersionController(DocumentationCatalog catal
         string? file = catalog.FileFor(slug.ToLowerInvariant());
         if (file is null)
         {
-            throw BrowserProblemException.NotFound($"There is no document called '{slug}'.");
+            throw ApiRefusalException.NotFound($"There is no document called '{slug}'.");
         }
         string markdown = LiveSamples.Expand(System.IO.File.ReadAllText(file), environment.ContentRootPath);
         return Content(markdown, "text/markdown; charset=utf-8");
