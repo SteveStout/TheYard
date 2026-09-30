@@ -4,14 +4,16 @@ using Microsoft.Extensions.FileProviders;
 namespace TheYard.Api;
 
 /// <summary>
-/// The middleware, in the one order that works, with the reason beside each piece:
-/// timing outermost, then the problem shape, logging, the user, the session's renewal,
-/// the store's warmth, the error record, the cache rules and the files last.
+/// The request pipeline, in ASP.NET Core's own term: the middleware every request passes
+/// through in this order, and every response passes back through in reverse, with the
+/// reason beside each piece: timing outermost, then the problem shape, logging, the user,
+/// the session's renewal, the store's warmth, the error record, the cache rules and the
+/// files last.
 /// </summary>
-public static class Pipeline
+public static class RequestPipeline
 {
     /// <summary>Adds TheYard's middleware in its required order.</summary>
-    public static WebApplication UseTheYardPipeline(this WebApplication app, YardComposition host)
+    public static WebApplication UseTheYardRequestPipeline(this WebApplication app, YardComposition host)
     {
         var tokens = host.Tokens;
         var errorLog = host.ErrorRings.Server;

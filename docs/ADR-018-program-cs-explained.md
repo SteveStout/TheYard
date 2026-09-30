@@ -104,16 +104,17 @@ learn it than a 500 on the first visitor.
 
 ### Middleware order, the part that bites
 
-`app.UseTheYardPipeline` (Composition/Pipeline.cs) holds every piece of middleware in one method, in the
-order it runs, with the reason beside each. Timing is outermost, so a failed request is recorded with the
-status that was actually sent; then the problem shape, the request log, the user, the session's renewal,
-the store's warmth, the error record, the cache rules, and the files last. Endpoints run at the end of the
-pipeline whichever line maps them, so the order that matters is the order in this one file.
+`app.UseTheYardRequestPipeline` (Composition/RequestPipeline.cs) holds every piece of middleware in one
+method, in the order it runs, with the reason beside each. Timing is outermost, so a failed request is
+recorded with the status that was actually sent; then the problem shape, the request log, the user, the
+session's renewal, the store's warmth, the error record, the cache rules, and the files last. Endpoints
+run at the end of the pipeline whichever line maps them, so the order that matters is the order in this
+one file.
 
-```live path=api/TheYard.Api/Composition/Pipeline.cs region=request-timing
+```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=request-timing
 ```
 
-```live path=api/TheYard.Api/Composition/Pipeline.cs region=error-log
+```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=error-log
 ```
 
 ### Endpoints: binding, then delegation
@@ -158,7 +159,7 @@ real file with index.html, so a missing bundle file is a 404 and never a page dr
   and a test in `api/TheYard.Tests` that boots the host and calls it.
 - **A new service:** one line in the registration step it belongs to, `AddSingleton` unless it holds
   per-request state.
-- **A new piece of middleware:** in `Pipeline.cs`, at the place its order demands, with the reason beside it.
+- **A new piece of middleware:** in `RequestPipeline.cs`, at the place its order demands, with the reason beside it.
 - **A new document:** one line in `DocsCatalog.cs` and one in `src/library/records.ts` or `pages.ts`; a
   test fails if the two disagree.
 
@@ -222,6 +223,14 @@ response type into the document where `TypedResults.Json` carries nothing.
 `wireFormat` stays for the `Results.Json` calls the operator endpoints still
 make, and both paths apply the one policy. The names, the values and their
 order on the wire did not change.
+
+## Addendum, 2026-09-30: the request pipeline, by name
+
+Steve, naming the same file in The Shed: "pipeline can mean too many things and it's not clear". This
+site alone serves ADR: The deploy pipeline beside this record. The middleware file is now
+`Composition/RequestPipeline.cs` and the call `app.UseTheYardRequestPipeline(host)`, ASP.NET Core's own
+name for it ("The ASP.NET Core request pipeline consists of a sequence of request delegates", Microsoft
+Learn, ASP.NET Core Middleware). Nothing in the order changed; the file moved and its type was renamed.
 
 ## Files
 

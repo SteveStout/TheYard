@@ -31,7 +31,7 @@ builder.AddTheYardAdmin(host);                // Composition/AdminRegistration.c
 
 var app = builder.Build();
 await app.StartTheYardAsync(host);            // Composition/Startup.cs
-app.UseTheYardPipeline(host);                 // Composition/Pipeline.cs
+app.UseTheYardRequestPipeline(host);          // Composition/RequestPipeline.cs
 #endregion composition
 
 app.MapReferenceEndpoints();                  // Endpoints/ReferenceEndpoints.cs
