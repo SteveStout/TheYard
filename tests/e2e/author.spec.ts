@@ -68,6 +68,8 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       { name: 'couple-crossing-stream', hero: false, opens: false, paired: false },
       { name: 'mass-effect-legendary-edition', hero: false, opens: false, paired: false },
       { name: 'couple-on-wooden-bridge-wide', hero: false, opens: false, paired: false },
+      { name: 'republic-commando-modded', hero: false, opens: false, paired: true },
+      { name: 'witcher-three-next', hero: false, opens: false, paired: true },
       { name: 'grill-flames-on-driveway', hero: false, opens: false, paired: false },
       { name: 'interior-door-in-new-frame', hero: false, opens: false, paired: false },
       { name: 'couple-under-willow', hero: false, opens: false, paired: false },
@@ -86,7 +88,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   // Every photograph is served from this site, in the one frame, with words for it and its box reserved,
   // and a phone is never handed a file wider than 960.
   const photos = doc.locator('.author-photo img');
-  await expect(photos).toHaveCount(15);
+  await expect(photos).toHaveCount(17);
   const count = await photos.count();
   for (let index = 0; index < count; index++) {
     // Read as one retried step: the drawer that opened this document lets go of it as it closes, and

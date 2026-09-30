@@ -52,6 +52,20 @@
     "credit": "Mass Effect Legendary Edition key art © Electronic Arts."
   },
   {
+    "name": "republic-commando-modded",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 1080,
+    "sizes": "(max-width: 767.98px) 92vw, 480px"
+  },
+  {
+    "name": "witcher-three-next",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 1080,
+    "sizes": "(max-width: 767.98px) 92vw, 480px"
+  },
+  {
     "name": "grill-flames-on-driveway",
     "widths": [480, 960, 1920],
     "width": 1920,

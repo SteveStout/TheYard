@@ -40,6 +40,10 @@ Mass Effect, Hades and Star Wars: Republic Commando. I will defend all three.
 
 I enjoyed this one more than I expected. Republic Commando is from 2005 and has never heard of a modern controller, so this week I put Claude in the driver's seat of my PC: the crash fix, a 4K texture pack, and a Steam Input layout where every D-pad tap is a squad order and every hold is Use. It failed three ways before it worked, and the fix that mattered was reading every setting back after writing it. Same rule I run at work, better soundtrack. The Witcher 3 remaster is next: mods backed up, fresh start, only the graphical ones going back in.
 
+![A placeholder card in teal and gold that reads Republic Commando, modded, until Steve's own screenshot is in](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/republic-commando-modded-960.jpg "Placeholder: Steve's screenshot of Republic Commando, modded, goes here.")
+
+![A placeholder card in teal and gold that reads The Witcher 3, next, until Steve's own screenshot is in](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/witcher-three-next-960.jpg "Placeholder: Steve's screenshot of The Witcher 3 goes here.")
+
 ### Food
 
 I am a soft foodie, always looking for a new place to try. Steak, sushi or Mexican and I am in. Recommendations are welcome.
