@@ -7,14 +7,14 @@ Status: accepted, 2026-09-29.
 A record that describes code drifts from it the week after it is written, unless the code it quotes
 is read from the build rather than pasted. TheYard serves its records from inside the running app
 and expands a `live` fence into the current lines of a named region at request time. The same
-here, in about a hundred lines, because it is the mechanism that keeps these twelve documents
+here, in about a hundred lines, because it is the mechanism that keeps these twelve records
 honest.
 
 ## Decision
 
 **The catalogue.** `DocsCatalog` lists what the Docs tab shows, in order: Start here, the README,
-the records by number, then the guides (Style, Built with AI, Changelog). A slug is a lower-case
-file name; `GET /api/docs` is the list and `GET /api/docs/{slug}` is one document as
+About Steven, the records by number, then the guides (Style, Built with AI, Changelog). A slug is a
+lower-case file name; `GET /api/docs` is the list and `GET /api/docs/{slug}` is one document as
 `text/markdown`. The files are read from `docs/` at request time, so editing a record and reloading
 is enough.
 

@@ -62,6 +62,14 @@ Katie and I have two rabbits, Freya and Vincent, our little white snowballs. Thi
 
 ![A white lop-eared rabbit sitting on a blue rug, a white rabbit with upright ears behind](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/rabbits-lop-on-blue-rug-960.jpg "Rabbits see almost all the way around them, with one small blind spot right in front of the nose.")
 
+### Too many house plants
+
+I have too many house plants. I try to con my wife into watering them, and my rabbit into not nibbling them.
+
+![A peace lily and two pothos in white pots on wooden stands, leaning toward a clip-on grow light in a corner](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/house-plants-under-grow-light-960.jpg)
+
+![A pothos in a blue and white pot trailing from the top kitchen shelf past the canisters, a cross-stitched fox on the wall beside it](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/pothos-down-kitchen-shelves-960.jpg)
+
 ### St. Charles
 
 I live in St. Charles, Missouri. It was the first state capital of Missouri and is now a glorified suburb of St. Louis. Main Street is still brick, and from the day after Thanksgiving to Christmas Eve it turns into Christmas Traditions: carolers in Victorian dress and Santas from around the world. In 2024 the Today Show called it the Merriest Main Street in America. I have no plans to argue.

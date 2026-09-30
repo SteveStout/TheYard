@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.9 About Steven carries the Yard's house-plants section, below the rabbits as on the Yard, so the two About pages read the same; Start here names `src/` and ADR-012 names About Steven in the catalogue.
 - 1.0.0.8 Leaving the Docs tab drops the document from the address, so a link copied from the Files tab says only what that tab shows.
 - 1.0.0.7 The page's comments follow TheYard's standard: a doc block opens every file, the regions the records show carry teaching comments, and ADR-006 opens with the instruction that produced it.
 - 1.0.0.6 "The Shed, explained" is two pages: the second is the code in six pieces, read from the repository at 1.0.0.5.

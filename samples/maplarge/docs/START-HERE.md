@@ -34,7 +34,8 @@ method of [TheYard](https://theyard.stevenstout.biz).
 | `Infrastructure/` | The disk, behind the port. |
 | `Controllers/` | The routes, a line or three each, and the problem-document handler. |
 | `Library/` | The documents the app serves: the catalogue, the live-sample expander, the version reader. |
-| `wwwroot/` | The page: `index.html`, two stylesheets, `js/lib` (pure) and `js/ui` (renders). |
+| `src/` | The page, in TypeScript: `lib` (pure), `ui` (renders), `main.ts` (the shell). |
+| `wwwroot/` | What the browser loads: `index.html`, two stylesheets, and `js`, which `tsc` wrote from `src/`. |
 | `tests/` | xUnit under `TestProject.Tests`, `node --test` under `js`. |
 | `docs/` | These documents. |
 | `sample-home/` | What is browsed when nothing else is configured. |
