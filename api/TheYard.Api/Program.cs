@@ -37,7 +37,7 @@ app.UseTheYardRequestPipeline(host);          // Composition/RequestPipeline.cs
 app.MapReferenceEndpoints();                  // Endpoints/ReferenceEndpoints.cs
 app.MapVehicleEndpoints();                    // Endpoints/VehicleEndpoints.cs
 app.MapBidEndpoints();                        // Endpoints/BidEndpoints.cs
-app.MapDocsEndpoints();                       // Endpoints/DocsEndpoints.cs
+app.MapDocumentationEndpoints();              // Endpoints/DocumentationEndpoints.cs
 app.MapHealthEndpoints();                     // Endpoints/HealthEndpoints.cs
 app.MapErrorEndpoints();                      // Endpoints/ErrorEndpoints.cs
 app.MapAdminEndpoints();                      // Endpoints/AdminEndpoints.cs

@@ -8,10 +8,10 @@ namespace TheYard.Api;
 /// from the repository root this process found at startup, never from an
 /// address a caller supplies.
 /// </summary>
-public static class DocsEndpoints
+public static class DocumentationEndpoints
 {
     /// <summary>Maps the document routes under /api/docs.</summary>
-    public static IEndpointRouteBuilder MapDocsEndpoints(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapDocumentationEndpoints(this IEndpointRouteBuilder app)
     {
         #region docs-endpoint
         // One route for every document (ADR-017): the slug is looked up in the catalog

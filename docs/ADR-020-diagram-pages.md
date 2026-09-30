@@ -47,7 +47,7 @@ own tab away from the app.
 The endpoint, in `api/TheYard.Api/Program.cs`, and the catalog beside the
 documents in `api/TheYard.Api/DocsCatalog.cs`:
 
-```live path=api/TheYard.Api/Endpoints/DocsEndpoints.cs region=diagram-page
+```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=diagram-page
 ```
 
 ```live path=api/TheYard.Api/DocsCatalog.cs region=diagrams

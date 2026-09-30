@@ -73,7 +73,7 @@ folded the per-document routes into a catalog
 ([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs),
 [`api/TheYard.Api/DocsCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocsCatalog.cs)):
 
-```live path=api/TheYard.Api/Endpoints/DocsEndpoints.cs region=docs-endpoint
+```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=docs-endpoint
 ```
 
 The rejection cases the tests hold the whitelist to, read from this build

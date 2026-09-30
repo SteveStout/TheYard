@@ -120,7 +120,7 @@ one file.
 ### Endpoints: binding, then delegation
 
 Each feature is a static class under `Endpoints/` with one `Map...Endpoints` method and private, named
-handlers: `VehicleEndpoints`, `BidEndpoints`, `DocsEndpoints`, `HealthEndpoints`, `ErrorEndpoints`,
+handlers: `VehicleEndpoints`, `BidEndpoints`, `DocumentationEndpoints`, `HealthEndpoints`, `ErrorEndpoints`,
 `AdminEndpoints`, `AccountEndpoints`, and `ReferenceEndpoints` for the OpenAPI document and its page. A
 handler binds the request, calls the service that owns the rule, and shapes the reply; the rules live in
 Domain and Application. A handler's return type is a `Results<...>` union or a typed result, which is what
@@ -231,6 +231,14 @@ site alone serves ADR: The deploy pipeline beside this record. The middleware fi
 `Composition/RequestPipeline.cs` and the call `app.UseTheYardRequestPipeline(host)`, ASP.NET Core's own
 name for it ("The ASP.NET Core request pipeline consists of a sequence of request delegates", Microsoft
 Learn, ASP.NET Core Middleware). Nothing in the order changed; the file moved and its type was renamed.
+
+## Addendum, 2026-09-30: documentation, spelled out
+
+Steve, naming the same kind of file in The Shed: "Docs" was an abbreviation and hid what the file
+does. The endpoints that serve the records, their pictures and diagrams, the Bicep, the resume and
+/about are now `Endpoints/DocumentationEndpoints.cs`, mapped by `app.MapDocumentationEndpoints()`.
+The version is not among them here (`/api/version` is in `HealthEndpoints`), so the name says
+documentation and nothing more. Routes and behaviour are unchanged.
 
 ## Files
 
