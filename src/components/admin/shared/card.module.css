@@ -5,8 +5,8 @@
  *            glass).
  * Used by:   ActivityCard.tsx, AdminPanel.tsx, AzureCard.tsx, BackendsCard.tsx, DataTable.tsx, ErrorsCard.tsx,
  *            ExperimentCard.tsx, HealthCard.tsx, KeptLogsCard.tsx, LogCard.tsx, MachinesCard.tsx, OperatorCard.tsx,
- *            PagesCard.tsx, ProofCard.tsx, ResetLinkCard.tsx, SqlCard.tsx, StoreCard.tsx, TelemetryCard.tsx,
- *            TestsCard.tsx, TimingCard.tsx, TrafficCard.tsx, charts.tsx, common.tsx.
+ *            PagesCard.tsx, ProofCard.tsx, ResetLinkCard.tsx, SpendCard.tsx, SqlCard.tsx, StoreCard.tsx,
+ *            TelemetryCard.tsx, TestsCard.tsx, TimingCard.tsx, TrafficCard.tsx, charts.tsx, common.tsx.
  */
 /* The pieces every Admin card is built from: the card itself, its title, its quiet text, its
    back pill and filter row, its check lists and status rows, and the mono type of a reading.

@@ -79,6 +79,7 @@ const CARD_CHUNKS = {
   TimingCard: () => import('../TimingCard/TimingCard'),
   BackendsCard: () => import('../BackendsCard/BackendsCard'),
   ProofCard: () => import('../ProofCard/ProofCard'),
+  SpendCard: () => import('../SpendCard/SpendCard'),
   MachinesCard: () => import('../MachinesCard/MachinesCard'),
   ExperimentCard: () => import('../ExperimentCard/ExperimentCard'),
   SqlCard: () => import('../SqlCard/SqlCard'),
@@ -99,6 +100,7 @@ const TelemetryCard = lazy(CARD_CHUNKS.TelemetryCard);
 const TimingCard = lazy(CARD_CHUNKS.TimingCard);
 const BackendsCard = lazy(CARD_CHUNKS.BackendsCard);
 const ProofCard = lazy(CARD_CHUNKS.ProofCard);
+const SpendCard = lazy(CARD_CHUNKS.SpendCard);
 const MachinesCard = lazy(CARD_CHUNKS.MachinesCard);
 const ExperimentCard = lazy(CARD_CHUNKS.ExperimentCard);
 const SqlCard = lazy(CARD_CHUNKS.SqlCard);
@@ -392,6 +394,14 @@ export function AdminPanel({
           return <BackendsCard tick={tick} />;
         case 'proof':
           return <ProofCard tick={tick} signedIn={signedIn} onOpenAccount={onOpenAccount} />;
+        case 'spend':
+          return (
+            <SpendCard
+              tick={tick}
+              window={machineWindow}
+              toolbar={windowToolbar('on the cost card', 'spend-window')}
+            />
+          );
         case 'machines':
           return (
             <MachinesCard

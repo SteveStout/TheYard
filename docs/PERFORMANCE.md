@@ -24,7 +24,11 @@ registry**, read off the Azure Retail Prices API on 20 September. Until that day
 Azure Container Instances, one per site at $34.44 each, and the same bill was $78.85; the move took
 $56.47 a month off it, 72 per cent, and the record prices every option that was on the table
 ([One plan, two sites](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-079-one-plan-two-sites.md)). This page quoted
-$73.78 until then, which left the registry out; it has been $5.07 a month all along. The
+$73.78 until then, which left the registry out; it has been $5.07 a month all along. What the
+subscription is actually charged, day by day with Azure's forecast for the month, is on the Admin tab's
+[cost card](https://theyard.stevenstout.biz/?view=admin&card=spend), read from Azure Cost Management once an
+hour: $47.18 for September by the 30th, more than the list price because the two container groups ran until
+the 20th ([What Azure charges](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-087-what-azure-charges.md)). The
 [Infrastructure overview](https://github.com/SteveStout/TheYard/blob/main/docs/INFRASTRUCTURE-OVERVIEW.md) prices every hop and says
 what each adds to the clock, and the [Web overview](https://github.com/SteveStout/TheYard/blob/main/docs/WEB-OVERVIEW.md) is the page
 they serve and the order a first visit loads it in.

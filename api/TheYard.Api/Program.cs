@@ -28,6 +28,7 @@ builder.AddTheYardAccounts(host);             // Composition/AuthRegistration.cs
 builder.AddTheYardApi(host);                  // Composition/ApiRegistration.cs
 builder.AddTheYardTelemetry();                // Composition/TelemetryRegistration.cs
 builder.AddTheYardAdmin(host);                // Composition/AdminRegistration.cs
+builder.AddTheYardCosts();                    // Composition/CostRegistration.cs
 
 var app = builder.Build();
 await app.StartTheYardAsync(host);            // Composition/Startup.cs

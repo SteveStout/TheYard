@@ -1368,3 +1368,88 @@ test('the store and the log never scroll sideways on a desk: a table too wide fo
     }
   }
 });
+
+// #region spend-card
+test('the cost card draws the spend with its forecast, the cost by resource and the resources by type (ADR: What Azure charges)', async ({
+  page,
+}) => {
+  // A local run is not on Azure and reads no bill, so the card is held to a fixed answer in the
+  // endpoint's shape: two reported days, the newest still partial, and one forecast day.
+  await page.route('**/api/admin/costs?*', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        window: '30d',
+        windows: ['24h', '7d', '30d'],
+        available: true,
+        note: null,
+        currency: 'USD',
+        read_at_ms: 1_790_000_000_000,
+        newest_day: '2026-09-29',
+        newest_partial: true,
+        month: '2026-09',
+        month_to_date: 47.18,
+        forecast_month: 49.03,
+        window_total: 1.62,
+        days: [
+          { day: '2026-09-28', cost: 0.77, total: 0.77, partial: false },
+          { day: '2026-09-29', cost: 0.85, total: 1.62, partial: true },
+        ],
+        forecast: [{ day: '2026-09-30', cost: 1.62, total: 3.24, partial: false }],
+        resources: [
+          {
+            name: 'plan-theyard-ss',
+            type: 'microsoft.web/serverfarms',
+            cost: 0.82,
+            share: 50.6,
+            count: 1,
+          },
+          {
+            name: 'crtheyardss',
+            type: 'microsoft.containerregistry/registries',
+            cost: 0.33,
+            share: 20.4,
+            count: 1,
+          },
+          {
+            name: 'sqldb-theyard-ss-basic',
+            type: 'microsoft.sql/servers/databases',
+            cost: 0.32,
+            share: 19.8,
+            count: 1,
+          },
+          {
+            name: 'cosmos-theyard-ss',
+            type: 'microsoft.documentdb/databaseaccounts',
+            cost: 0.1,
+            share: 6.2,
+            count: 1,
+          },
+          { name: 'Others', type: 'others', cost: 0.05, share: 3.1, count: 3 },
+        ],
+        types: [
+          { type: 'microsoft.web/sites', label: 'App Service apps', resources: 3, cost: 0 },
+          {
+            type: 'microsoft.web/serverfarms',
+            label: 'App Service plans',
+            resources: 1,
+            cost: 0.82,
+          },
+        ],
+      }),
+    })
+  );
+  await openTheYard(page, '/?view=admin&card=spend');
+  const card = page.getByTestId('spend-card');
+  await expect(card).toBeVisible({ timeout: 60_000 });
+  await expect(card.getByTestId('spend-headline')).toContainText('September so far: $47.18.');
+  await expect(card.getByTestId('spend-headline')).toContainText('Azure forecasts $49.03');
+  await expect(card.getByTestId('spend-partial')).toBeAttached();
+  await expect(card.getByTestId('spend-resource')).toHaveCount(5);
+  await expect(card.getByTestId('spend-resource').last()).toContainText('Others (3 resources)');
+  await expect(card.getByTestId('spend-type-0')).toContainText('App Service apps');
+  // The forecast is dashed on the month, where its end is inside the chart.
+  await card.getByTestId('spend-window-30d').click();
+  await expect(card.getByTestId('spend-forecast')).toBeAttached();
+});
+// #endregion spend-card

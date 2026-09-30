@@ -184,6 +184,18 @@ public static class AdminEndpoints
         app.MapGet("/api/admin/experiment", ExperimentRun);
         // #endregion experiment-endpoint
 
+        // #region costs-endpoint
+        // What Azure charges for the site, over a day, a week or a month (ADR: What
+        // Azure charges). Public like the rest of this tab, on Steve's word that the
+        // bill is nothing to hide: the dollar figure belongs beside the millisecond
+        // one. Served from the kept days, never from Azure on the request: the recorder
+        // asks Cost Management once an hour. The window is a name from a fixed list.
+        app.MapGet("/api/admin/costs", Costs)
+            .WithName("GetCosts")
+            .WithTags("Admin")
+            .WithSummary("What Azure charges for the site over 24h, 7d or 30d: the spend and forecast, each resource, and the resources by type");
+        // #endregion costs-endpoint
+
         #region telemetry-endpoint
         // The last hour as Application Insights has it, for the Admin tab (ADR-024).
         // Answers a shape the card can render even when telemetry is off or the query
@@ -486,6 +498,9 @@ public static class AdminEndpoints
             ? Results.Json(new { available = false, reason = "this container is not on Azure Cosmos DB", rows = Array.Empty<object>() })
             : Results.Json(await Experiment.RunAsync(cosmos));
     }
+
+    private static async Task<IResult> Costs(string? window, CostHistoryReader costs, CancellationToken cancellation) =>
+        Results.Json(await costs.ReadAsync(window, cancellation));
 
     private static async Task<IResult> Telemetry(TelemetryReader telemetry) =>
         Results.Json(await telemetry.GetRecentAsync());

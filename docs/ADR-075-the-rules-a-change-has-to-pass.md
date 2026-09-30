@@ -73,6 +73,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | A shipped test-results file is one only a green gate writes, every suite in it with its counts equal to its rows and nothing failed or skipped, the two passes on Cosmos DB the only ones a gate may carry forward and then only from a named version, and the Admin tab's endpoint serves it or says there is none | ADR: The five-minute gate | TestResultsTests |
 | Program.cs is a table of contents under eighty lines that maps no route itself, every route is mapped from a file under `Endpoints/` or `Composition/`, and every class in those two folders is static | ADR: The composition root, split by job | CompositionRootTests |
 | Every public class and record in the solution says what it is for in an XML summary, and every positional record names each parameter; only the generated migrations are excused, by name | ADR: The composition root, split by job | XmlSummaryTests |
+| The bill on the Admin tab is read from Azure once an hour and never on a request, a resource path is cut to its name and type before anything reaches the wire, the donut names four resources and folds the rest into Others, and a reading that is absent is a sentence and never a zero | ADR: What Azure charges | CostTests |
 
 ## How the table is read
 

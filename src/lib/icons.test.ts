@@ -68,6 +68,9 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   // between bands, and the halo round a band's name; and the crosshair (1.0.3.14), a
   // hairline down the day and a ringed dot on each band. Drawings, not icons.
   'ActivityCard.module.css': ['.bandEdge', '.bandLabel', '.crosshair line', '.crossDot'],
+  // The cost card (ADR: What Azure charges): the ringed dot on the newest day, and the
+  // hairline of the card's ground between the donut's slices. Drawings, not icons.
+  'SpendCard.module.css': ['.newest', '.arc'],
   'Ring.module.css': ['.tick', '.tickMajor'],
   'Watermark.module.css': ['.rows'],
 };

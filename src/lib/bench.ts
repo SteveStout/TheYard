@@ -53,6 +53,7 @@ export const BENCH_CARDS: BenchCard[] = [
   card('timing', 'Timing', 'fast'),
   card('backends', 'Backends, side by side', 'fast'),
   card('proof', 'Same performance, proven', 'fast'),
+  card('spend', 'What Azure charges', 'cost'),
   card('machines', 'What the machines are doing', 'cost'),
   card('experiment', 'The partition key, live', 'cost'),
   card('sql', 'The SQL this application ran', 'cost'),

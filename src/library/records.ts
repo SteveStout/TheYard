@@ -621,5 +621,12 @@ export const RECORDS = {
     kind: 'adr',
     number: '086',
   },
+  adrAzureCosts: {
+    title: 'ADR: What Azure charges',
+    menuLabel: 'ADR: What Azure charges',
+    url: '/api/docs/adr-azure-costs',
+    kind: 'adr',
+    number: '087',
+  },
 } as const satisfies Record<string, RecordEntry>;
 // #endregion records

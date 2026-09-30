@@ -10,6 +10,7 @@ footer cannot disagree (ADR: The version comes from the changelog). One number
 is missing, 1.0.0.39, skipped under the older formula when a red build consumed
 a deploy run number.
 
+- **1.0.3.55** (2026-09-30): What Azure charges, a card on the Admin tab in public: the spend over the window with Azure's forecast dashed to the month's end, the cost by resource as a donut that names four and folds the rest into Others, and the resources by type as bars, read from Azure Cost Management once an hour with the site's own identity and never on a request, so the dollar figure sits beside the millisecond one; September read $47.18 to date with $49.03 forecast (ADR: What Azure charges).
 - **1.0.3.54** (2026-09-30): On About Steven the Modding block shows two placeholder pictures side by side, Republic Commando modded and The Witcher 3 next, until Steve's own screenshots replace them.
 - **1.0.3.53** (2026-09-30): On About Steven a Modding block follows Games, in Steve's own words: Republic Commando brought up to date with Claude at the controls, and The Witcher 3 next.
 - **1.0.3.52** (2026-09-30): The catalog of every document and diagram the site serves is api/TheYard.Api/DocumentationCatalog.cs, spelled out rather than "Docs", and its test is DocumentationCatalogTests; slugs, routes and behaviour are unchanged.

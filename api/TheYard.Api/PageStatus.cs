@@ -113,6 +113,8 @@ public static class ServedAddresses
             // A card's window is a query in the store behind a public address, which is two ways to be down.
             new("/api/admin/kept?card=errors&window=24h", "Recent errors, the last 24 hours as kept", "api"),
             new("/api/admin/pages", "This check itself", "api"),
+            // What Azure charges is read from the kept days, so a store that has gone away is a card that is down.
+            new("/api/admin/costs?window=30d", "What Azure charges, the last 30 days", "api"),
             new("/api/docs/resume", "Steven's resume (PDF)", "file"),
             new("/api/docs/bicep", "Infrastructure (Bicep)", "document"),
         };

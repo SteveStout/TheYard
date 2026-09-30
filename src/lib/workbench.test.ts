@@ -15,7 +15,7 @@ import { CARD_SLUGS, cardFromAddress, pinFromAddress } from './workbench';
 describe('the workbench (ADR: The Admin tab, as a product, the addendum on the workbench)', () => {
   it('has every card once, under one of the five questions, in the order the slugs are listed', () => {
     expect(BENCH_CARDS.map((card) => card.slug)).toEqual([...CARD_SLUGS]);
-    expect(new Set(CARD_SLUGS).size).toBe(19);
+    expect(new Set(CARD_SLUGS).size).toBe(20);
     const questions = BENCH_QUESTIONS.map((question) => question.key);
     expect(questions).toEqual(['up', 'fast', 'cost', 'broke', 'desk']);
     // The rail's groups never interleave: a question's cards sit together, in the questions' order.
@@ -57,7 +57,7 @@ describe('the workbench (ADR: The Admin tab, as a product, the addendum on the w
   });
 
   it('finds cards by every word typed, in the name, the slug or the question', () => {
-    expect(findCards('').length).toBe(19);
+    expect(findCards('').length).toBe(20);
     expect(findCards('timing').map((card) => card.slug)).toEqual(['timing']);
     expect(findCards('SQL').map((card) => card.slug)).toContain('sql');
     expect(findCards('what broke').map((card) => card.slug)).toEqual(['errors', 'log', 'kept']);

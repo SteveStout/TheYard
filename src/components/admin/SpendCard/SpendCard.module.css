@@ -1,0 +1,97 @@
+/**
+ * Does:      Lays out the cost card's three pictures side by side, and gives the forecast its dashes and the donut
+ *            its tones.
+ * Does not:  Draw the card, its title or its quiet text (card.module.css does), or the axes, lines and legend the
+ *            other charts share (charts.module.css does).
+ * Used by:   SpendCard.tsx.
+ */
+/* The cost card (ADR: What Azure charges): three pictures that wrap onto one another on a narrow screen. */
+.parts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.part {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* The spend line runs the card's full width, above the two it explains. */
+.whole {
+  grid-column: 1 / -1;
+}
+
+.headline {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.figure {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+/* The forecast is the same line, dashed: it has not happened yet. */
+.forecastLine {
+  stroke-dasharray: 6 5;
+}
+
+.newest {
+  fill: var(--color-surface);
+  stroke: var(--color-series-1);
+  stroke-width: 2;
+}
+
+.donut {
+  width: 100%;
+  max-width: 12rem;
+  height: auto;
+  display: block;
+}
+
+/* The donut's tones: the first resource in the series colour, the next three mixed lighter from it, so the
+   largest charge reads as the strongest mark, and Others in the neutral grey a third series takes. */
+.tone1 {
+  color: var(--color-series-1);
+}
+
+.tone2 {
+  color: color-mix(in srgb, var(--color-series-1) 72%, var(--color-surface));
+}
+
+.tone3 {
+  color: color-mix(in srgb, var(--color-series-1) 50%, var(--color-surface));
+}
+
+.tone4 {
+  color: color-mix(in srgb, var(--color-series-1) 32%, var(--color-surface));
+}
+
+.tone0 {
+  color: var(--color-series-3);
+}
+
+.arc {
+  fill: currentColor;
+  stroke: var(--color-surface);
+  stroke-width: 1;
+}
+
+.legendRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.legendName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

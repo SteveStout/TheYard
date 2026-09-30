@@ -23,6 +23,7 @@ export const CARD_SLUGS = [
   'timing',
   'backends',
   'proof',
+  'spend',
   'machines',
   'experiment',
   'sql',

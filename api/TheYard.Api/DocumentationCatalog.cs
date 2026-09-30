@@ -115,6 +115,7 @@ public static class DocumentationCatalog
         ["adr-component-folders"] = "docs/ADR-084-one-folder-per-component.md",
         ["adr-kept-awake"] = "docs/ADR-085-kept-awake.md",
         ["adr-composition-root"] = "docs/ADR-086-the-composition-root-split-by-job.md",
+        ["adr-azure-costs"] = "docs/ADR-087-what-azure-charges.md",
         ["style-guide"] = "docs/STYLE-GUIDE.md",
         ["color-style"] = "docs/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/BACKGROUND-RIBBON.md",
