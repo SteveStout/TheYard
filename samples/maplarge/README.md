@@ -117,13 +117,20 @@ Dependencies point inward, left to right in the list above, and a test holds it 
 The Shed is a sample, and the parts worth keeping go back to the project it sits in:
 
 - `HomePath`, `PhysicalFileStore` and the capped search become a Files card on TheYard's Admin tab,
-  browsing the container's own logs, data and documents behind the operator's key.
+  browsing the container's own logs, data and documents behind the operator's key. The Admin tab is
+  already a product of cards: [The Admin tab, as a product](https://theyard.stevenstout.biz/?doc=adr-admin-product).
 - ADR-003, the line a path cannot cross, becomes a Best Practices page there, the way its
-  sealed-by-default page is.
+  [sealed-by-default page](https://theyard.stevenstout.biz/?doc=sealed) is.
 - TheYard's sidebar gets a Code Samples section that links this one, so the two read as one way of
   working on two problems.
 - A committed browser test for this page (the eight steps the build's headless pass runs) is the
-  first thing to add here.
+  first thing to add here. TheYard's gate already runs 143 Playwright specs, with axe holding eleven
+  views to WCAG 2.1 AA: [The accessibility check](https://theyard.stevenstout.biz/?doc=adr-a11y-check).
+
+Each step is something TheYard already does at full size (.NET 10 and React, Azure SQL and Cosmos
+DB, 86 records, about 1,950 test runs per gate): paging 100,000 vehicles behind Load more
+([the API reference](https://theyard.stevenstout.biz/api/reference)), and keeping every request and
+error for three years ([Logs that outlive the container](https://theyard.stevenstout.biz/?doc=adr-kept-logs)).
 
 ## Built with AI
 
