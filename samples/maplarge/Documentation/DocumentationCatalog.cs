@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using TestProject.Data;
 
-namespace TestProject.Library;
+namespace TestProject.Documentation;
 
 /// <summary>
 /// Lists and finds the markdown documents the app serves about itself. They are read from the
@@ -10,7 +10,7 @@ namespace TestProject.Library;
 /// start page, the README and the about page first, then the decision records by number, then
 /// the guides.
 /// </summary>
-public sealed partial class DocsCatalog(string contentRoot)
+public sealed partial class DocumentationCatalog(string contentRoot)
 {
     /// <summary>The sidebar group name for the decision records.</summary>
     public const string RecordsGroup = "Decision records";
@@ -21,28 +21,28 @@ public sealed partial class DocsCatalog(string contentRoot)
     private static readonly string[] Guides = ["STYLE", "BUILT-WITH-AI", "CHANGELOG"];
 
     /// <summary>The docs folder the documents are read from.</summary>
-    public string DocsFolder { get; } = Path.Combine(contentRoot, "docs");
+    public string DocumentsFolder { get; } = Path.Combine(contentRoot, "docs");
 
     // #region catalogue
     /// <summary>
     /// Returns every document in sidebar order. Each title is the first "# " heading in its file,
     /// read fresh on each call.
     /// </summary>
-    public IReadOnlyList<DocEntry> List()
+    public IReadOnlyList<DocumentEntry> List()
     {
-        var entries = new List<DocEntry>
+        var entries = new List<DocumentEntry>
         {
-            new("start-here", TitleOf(Path.Combine(DocsFolder, "START-HERE.md")), "Start here"),
+            new("start-here", TitleOf(Path.Combine(DocumentsFolder, "START-HERE.md")), "Start here"),
             new("readme", TitleOf(Path.Combine(contentRoot, "README.md")), "Start here"),
-            new("about", TitleOf(Path.Combine(DocsFolder, "ABOUT.md")), "Start here"),
+            new("about", TitleOf(Path.Combine(DocumentsFolder, "ABOUT.md")), "Start here"),
         };
-        foreach (string file in Directory.EnumerateFiles(DocsFolder, "ADR-*.md").OrderBy(RecordNumber))
+        foreach (string file in Directory.EnumerateFiles(DocumentsFolder, "ADR-*.md").OrderBy(RecordNumber))
         {
-            entries.Add(new DocEntry(SlugOf(file), TitleOf(file), RecordsGroup));
+            entries.Add(new DocumentEntry(SlugOf(file), TitleOf(file), RecordsGroup));
         }
         foreach (string guide in Guides)
         {
-            entries.Add(new DocEntry(guide.ToLowerInvariant(), TitleOf(Path.Combine(DocsFolder, guide + ".md")), GuidesGroup));
+            entries.Add(new DocumentEntry(guide.ToLowerInvariant(), TitleOf(Path.Combine(DocumentsFolder, guide + ".md")), GuidesGroup));
         }
         return entries;
     }
@@ -60,7 +60,7 @@ public sealed partial class DocsCatalog(string contentRoot)
             return Path.Combine(contentRoot, "README.md");
         }
         return List().Any(entry => entry.Slug == slug)
-            ? Directory.EnumerateFiles(DocsFolder, "*.md").FirstOrDefault(file => SlugOf(file) == slug)
+            ? Directory.EnumerateFiles(DocumentsFolder, "*.md").FirstOrDefault(file => SlugOf(file) == slug)
             : null;
     }
     // #endregion catalogue

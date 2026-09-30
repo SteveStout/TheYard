@@ -1,33 +1,12 @@
 namespace TestProject.Data;
 
-// The records the app passes between its layers and sends as JSON. They hold values
-// only: no behaviour and no references to other parts of the app, so every other
-// folder can use them without pulling anything else in.
-// Two conventions hold for every record here. A path sent to or from the API is
-// relative to the home directory, uses forward slashes, and "" means home itself.
-// A time is a count of milliseconds since 1 January 1970 UTC, because that is the
-// number a browser's Date already uses, so the page needs no parsing.
-
-/// <summary>What a path points at in the file store.</summary>
-public enum EntryKind
-{
-    /// <summary>Nothing exists at the path.</summary>
-    None,
-    /// <summary>The path is a file.</summary>
-    File,
-    /// <summary>The path is a folder.</summary>
-    Folder,
-}
-
-/// <summary>
-/// One file or folder as the file store reports it: its absolute path on the machine and
-/// its basic facts. It stays inside the server; the API sends the relative-path records below.
-/// </summary>
-/// <param name="Absolute">The full absolute path on the machine.</param>
-/// <param name="Kind">Whether it is a file or a folder.</param>
-/// <param name="SizeBytes">The size in bytes; zero for a folder.</param>
-/// <param name="ModifiedMs">When it last changed, in milliseconds since 1 January 1970 UTC.</param>
-public sealed record StoreEntry(string Absolute, EntryKind Kind, long SizeBytes, long ModifiedMs);
+// The shapes of the JSON the API sends back to the page, one record per kind of reply.
+// They hold values only: no behaviour and no references to other parts of the app, so
+// every other folder can use them without pulling anything else in.
+// Two conventions hold for every record here. A path is relative to the home directory,
+// uses forward slashes, and "" means home itself. A time is a count of milliseconds since
+// 1 January 1970 UTC, because that is the number a browser's Date already uses, so the
+// page needs no parsing. src/lib/types.ts declares the same shapes for the page.
 
 /// <summary>A folder as the API sends it to the page.</summary>
 /// <param name="Name">The folder's own name, without the folders above it.</param>
@@ -92,11 +71,6 @@ public sealed record SearchResult(
 /// <param name="Totals">The receiving folder's counts and total size after the upload.</param>
 public sealed record TransferResult(IReadOnlyList<FileEntry> Entries, Totals Totals);
 
-/// <summary>The JSON body of a move or copy request.</summary>
-/// <param name="From">The file or folder to move or copy, relative to home.</param>
-/// <param name="To">The full path it goes to, relative to home, new name included.</param>
-public sealed record MoveRequest(string From, string To);
-
 /// <summary>The version and commit shown in the page footer.</summary>
 /// <param name="Version">The four-part version from the top entry of docs/CHANGELOG.md.</param>
 /// <param name="Commit">The short commit hash, or "unknown" when there is no .git to read.</param>
@@ -106,4 +80,4 @@ public sealed record VersionInfo(string Version, string Commit);
 /// <param name="Slug">The name used in the document's address under /api/docs/.</param>
 /// <param name="Title">The document's first heading.</param>
 /// <param name="Group">The sidebar group the document is listed under.</param>
-public sealed record DocEntry(string Slug, string Title, string Group);
+public sealed record DocumentEntry(string Slug, string Title, string Group);

@@ -13,8 +13,8 @@
 import * as api from './lib/api.js';
 import { DEFAULTS, isOpen, parse, serialize, VIEWS } from './lib/urlState.js';
 import { createBrowser } from './ui/browser.js';
-import { createDocs } from './ui/docs.js';
-import { h, replace } from './ui/dom.js';
+import { createDocumentation } from './ui/documentation.js';
+import { buildElement, replaceContents } from './ui/elements.js';
 /**
  * Finds an element the page cannot run without, or throws. These elements are
  * written by hand in index.html, so a missing one is a mistake in that file and
@@ -34,12 +34,12 @@ const dialog = need('dialog.shed');
 const trigger = need('#open-shed');
 const tabs = need('#tabs');
 const browserRoot = need('#browser');
-const docsRoot = need('#docs');
+const documentationRoot = need('#docs');
 const closeButton = need('#close-shed');
 const footer = need('#version');
 let state = parse(window.location.search);
 const browser = createBrowser(browserRoot, navigate);
-const docs = createDocs(docsRoot, navigate);
+const documentation = createDocumentation(documentationRoot, navigate);
 // #region navigate
 /**
  * Changes the page state. It merges the changed keys into the current state,
@@ -99,8 +99,8 @@ function render() {
         button.setAttribute('aria-pressed', button.dataset['view'] === state.view ? 'true' : 'false');
     }
     browserRoot.hidden = state.view !== 'browse';
-    docsRoot.hidden = state.view !== 'docs';
-    void (state.view === 'docs' ? docs.render(state) : browser.render(state));
+    documentationRoot.hidden = state.view !== 'docs';
+    void (state.view === 'docs' ? documentation.render(state) : browser.render(state));
 }
 // #endregion render
 trigger.addEventListener('click', () => navigate({ view: 'browse' }));
@@ -132,7 +132,7 @@ dialog.addEventListener('close', () => {
 api.version().then((version) => {
     // Show the build version in the footer with a link to the readme. It is a real link, so it
     // works from the keyboard and in a new tab; a normal click navigates without a reload.
-    const about = h('a', { href: '?view=docs&doc=readme', onclick: (event) => { event.preventDefault(); navigate({ view: 'docs', doc: 'readme' }); } }, 'about this build');
-    replace(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', about);
-}).catch(() => replace(footer, 'The Shed'));
+    const about = buildElement('a', { href: '?view=docs&doc=readme', onclick: (event) => { event.preventDefault(); navigate({ view: 'docs', doc: 'readme' }); } }, 'about this build');
+    replaceContents(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', about);
+}).catch(() => replaceContents(footer, 'The Shed'));
 render();

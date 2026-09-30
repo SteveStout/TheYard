@@ -29,7 +29,7 @@ Data  <-  Domain  <-  Application  <-  Infrastructure  <-  Controllers  <-  Comp
   is.
 - `Infrastructure/` is the disk, behind the port: `PhysicalFileStore`, thin calls into `System.IO`.
 - `Controllers/` is HTTP: an action per route, each a line or three, and the handler that turns a
-  refusal into a problem document. `Library/` sits beside it for the documents the app serves
+  refusal into a problem document. `Documentation/` sits beside it for the documents the app serves
   about itself and is used only by the controllers and the host.
 - `Composition/` is the host's own folder, the outermost ring: one registration file per part of
   the app and the pipeline in its order. `Program.cs` calls them one line each, with the file
@@ -87,7 +87,7 @@ the changelog, the deploy, the docs folder), because the registration itself set
 - [`Application/IFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/IFileStore.cs): the port.
 - [`Application/FileBrowser.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/FileBrowser.cs): the use cases.
 - [`Infrastructure/PhysicalFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Infrastructure/PhysicalFileStore.cs): the disk.
-- [`tests/TestProject.Tests/RepoRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/RepoRulesTests.cs): `LayeringTests`.
+- [`tests/TestProject.Tests/ProjectRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/ProjectRulesTests.cs): `LayeringTests`.
 - [`tests/TestProject.Tests/FileBrowserTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/FileBrowserTests.cs): the use cases over the fake store.
 
 The port, as it is in this build:

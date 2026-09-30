@@ -1,7 +1,7 @@
 /**
  * The Docs tab: a list of the documents the app serves about itself, grouped by
  * section, beside the open document drawn from its markdown. The markdown is
- * parsed by lib/markdown.ts and turned into DOM nodes by ui/dom.ts.
+ * parsed by lib/markdown.ts and turned into page elements by ui/elements.ts.
  *
  * The open document is part of the page address, as ?view=docs&doc=<slug>, so a
  * link to a document reopens that document. The list of documents is fetched
@@ -11,10 +11,10 @@
 
 import * as api from '../lib/api.js';
 import { parse } from '../lib/markdown.js';
-import type { DocEntry } from '../lib/types.js';
+import type { DocumentEntry } from '../lib/types.js';
 import type { Navigate, State } from '../lib/urlState.js';
 import type { View } from './browser.js';
-import { h, replace, toDom } from './dom.js';
+import { buildElement, buildFromMarkdown, replaceContents } from './elements.js';
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -26,30 +26,30 @@ function messageOf(error: unknown): string {
  * @param root the element the Docs tab fills; it replaces everything inside it
  * @param navigate the function to call to change the State and the page address
  */
-export function createDocs(root: HTMLElement, navigate: Navigate): View {
-  let catalogue: DocEntry[] | null = null;
+export function createDocumentation(root: HTMLElement, navigate: Navigate): View {
+  let catalogue: DocumentEntry[] | null = null;
   let current = '';
-  const nav = h('nav', { 'aria-label': 'Documents' });
-  const article = h('article', { 'aria-live': 'polite' });
-  replace(root, nav, article);
+  const nav = buildElement('nav', { 'aria-label': 'Documents' });
+  const article = buildElement('article', { 'aria-live': 'polite' });
+  replaceContents(root, nav, article);
 
   async function render(state: State): Promise<void> {
     if (!catalogue) {
       try {
-        catalogue = await api.docs();
+        catalogue = await api.listDocuments();
       } catch (error) {
-        replace(article, h('p', { class: 'notice error' }, messageOf(error)));
+        replaceContents(article, buildElement('p', { class: 'notice error' }, messageOf(error)));
         return;
       }
     }
     const slug = state.doc || catalogue[0]?.slug || '';
     current = slug;
     renderNav(catalogue, slug);
-    await renderDoc(slug);
+    await renderDocument(slug);
   }
 
-  function renderNav(entries: DocEntry[], slug: string): void {
-    const groups = new Map<string, DocEntry[]>();
+  function renderNav(entries: DocumentEntry[], slug: string): void {
+    const groups = new Map<string, DocumentEntry[]>();
     for (const entry of entries) {
       const group = groups.get(entry.group);
       if (group) {
@@ -60,26 +60,26 @@ export function createDocs(root: HTMLElement, navigate: Navigate): View {
     }
     const nodes: Node[] = [];
     for (const [group, members] of groups) {
-      nodes.push(h('h3', {}, group));
+      nodes.push(buildElement('h3', {}, group));
       for (const entry of members) {
-        nodes.push(h('button', {
+        nodes.push(buildElement('button', {
           type: 'button',
           'aria-current': entry.slug === slug ? 'page' : false,
           onclick: () => navigate({ view: 'docs', doc: entry.slug }),
         }, entry.title));
       }
     }
-    replace(nav, ...nodes);
+    replaceContents(nav, ...nodes);
   }
 
-  async function renderDoc(slug: string): Promise<void> {
-    replace(article, h('p', {}, 'Loading'));
+  async function renderDocument(slug: string): Promise<void> {
+    replaceContents(article, buildElement('p', {}, 'Loading'));
     try {
-      const markdown = await api.doc(slug);
+      const markdown = await api.fetchDocument(slug);
       if (slug !== current) {
         return; // Another document is now selected; its own render will draw it.
       }
-      replace(article, toDom(parse(markdown)));
+      replaceContents(article, buildFromMarkdown(parse(markdown)));
       article.scrollTop = 0;
       // Move focus to the first heading, so a screen reader starts at the document title
       // rather than the top of the panel. tabindex -1 makes a heading focusable from code.
@@ -89,7 +89,7 @@ export function createDocs(root: HTMLElement, navigate: Navigate): View {
         heading.focus();
       }
     } catch (error) {
-      replace(article, h('p', { class: 'notice error' }, messageOf(error)));
+      replaceContents(article, buildElement('p', { class: 'notice error' }, messageOf(error)));
     }
   }
 

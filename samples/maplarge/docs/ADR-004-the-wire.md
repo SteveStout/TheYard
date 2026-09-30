@@ -14,8 +14,8 @@ policy on the serializer, no mapping layer, and the TypeScript declares the same
 (`src/lib/types.ts`). The choice is TheYard's habit, kept so a reader moving between the two
 projects sees one wire.
 
-**Records, sealed.** Every reply type is a positional record in `Data/Entries.cs`, sealed, with a
-summary and a description of every field. A reply is a value; two listings with the same contents
+**Records, sealed.** Every reply type is a positional record in `Data/ApiResponses.cs`, sealed, with
+a summary and a description of every field. A reply is a value; two listings with the same contents
 are equal, which the tests use.
 
 **Empty is valid, null is the error.** A folder with nothing in it answers `folders: []` and
@@ -62,7 +62,8 @@ it is worth.
 
 ## Files
 
-- [`Data/Entries.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Data/Entries.cs): every wire type.
+- [`Data/ApiResponses.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Data/ApiResponses.cs): every reply the API sends.
+- [`Data/ApiRequests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Data/ApiRequests.cs): the move and copy body the page sends.
 - [`Application/BrowserProblemException.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/BrowserProblemException.cs): a refusal with its status.
 - [`Controllers/BrowserProblemHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/BrowserProblemHandler.cs): the problem document.
 - [`Controllers/FilesController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/FilesController.cs): the routes.

@@ -1,6 +1,6 @@
 /**
  * TypeScript types for the JSON the API sends. Each interface matches a C# record in
- * Data/Entries.cs field for field, using the same snake_case names the JSON uses, so the
+ * Data/ApiResponses.cs field for field, using the same snake_case names the JSON uses, so the
  * two files can be compared side by side. This module only declares shapes and computes
  * nothing: every value, such as totals and timings, comes from the server.
  * (More in docs/ADR-004-the-wire.md.)

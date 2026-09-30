@@ -1,7 +1,7 @@
 /**
  * A small markdown parser for the documents the app serves in its Docs tab.
  * It turns markdown text into a tree of plain objects: {tag, attrs, children}
- * for an element and {text} for text. The code in ui/dom.ts then builds real
+ * for an element and {text} for text. The code in ui/elements.ts then builds real
  * DOM nodes from that tree with createElement and text nodes.
  *
  * The parser never produces an HTML string and nothing is assigned to innerHTML,

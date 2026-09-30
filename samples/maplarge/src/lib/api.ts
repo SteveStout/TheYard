@@ -13,7 +13,7 @@
  * after it changes. (More in docs/ADR-004-the-wire.md.)
  */
 
-import { ApiError, type DocEntry, type FileEntry, type FolderEntry, type Listing, type SearchResult, type TransferResult, type VersionInfo } from './types.js';
+import { ApiError, type DocumentEntry, type FileEntry, type FolderEntry, type Listing, type SearchResult, type TransferResult, type VersionInfo } from './types.js';
 
 const listings = new Map<string, Promise<Listing>>();
 
@@ -176,11 +176,11 @@ export function upload(path: string, file: File, overwrite: boolean, onProgress:
 }
 // #endregion upload
 
-export function docs(): Promise<DocEntry[]> {
-  return get<DocEntry[]>('/api/docs');
+export function listDocuments(): Promise<DocumentEntry[]> {
+  return get<DocumentEntry[]>('/api/docs');
 }
 
-export async function doc(slug: string): Promise<string> {
+export async function fetchDocument(slug: string): Promise<string> {
   const response = await fetch(`/api/docs/${encodeURIComponent(slug)}`);
   if (!response.ok) {
     throw await problemOf(response);

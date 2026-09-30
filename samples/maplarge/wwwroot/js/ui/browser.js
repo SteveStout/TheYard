@@ -16,7 +16,7 @@ import * as api from '../lib/api.js';
 import { bytes, plural, when } from '../lib/format.js';
 import { ApiError } from '../lib/types.js';
 import { crumbs } from '../lib/urlState.js';
-import { h, replace } from './dom.js';
+import { buildElement, replaceContents } from './elements.js';
 const SEARCH_DEBOUNCE_MS = 250;
 function isSearch(reply) {
     return 'query' in reply;
@@ -38,13 +38,13 @@ export function createBrowser(root, navigate) {
     let state = { open: true, view: 'browse', path: '', q: '', sort: 'name', dir: 'asc', doc: '' };
     let reply = null;
     let debounce = 0;
-    const toolbar = h('div', { class: 'toolbar' });
-    const readout = h('div', { class: 'readout', role: 'status', 'aria-live': 'polite' });
-    const noticeBox = h('div');
-    const grid = h('div', { class: 'grid' });
-    const actions = h('div', { class: 'actions-row' });
-    const fileInput = h('input', { type: 'file', multiple: true, class: 'visually-hidden', 'aria-label': 'Choose files to upload', onchange: () => void uploadFiles([...(fileInput.files ?? [])]) });
-    replace(root, toolbar, readout, noticeBox, grid, actions, fileInput);
+    const toolbar = buildElement('div', { class: 'toolbar' });
+    const readout = buildElement('div', { class: 'readout', role: 'status', 'aria-live': 'polite' });
+    const noticeBox = buildElement('div');
+    const grid = buildElement('div', { class: 'grid' });
+    const actions = buildElement('div', { class: 'actions-row' });
+    const fileInput = buildElement('input', { type: 'file', multiple: true, class: 'visually-hidden', 'aria-label': 'Choose files to upload', onchange: () => void uploadFiles([...(fileInput.files ?? [])]) });
+    replaceContents(root, toolbar, readout, noticeBox, grid, actions, fileInput);
     grid.addEventListener('click', onRowAction);
     grid.addEventListener('dragover', (event) => {
         event.preventDefault();
@@ -76,14 +76,14 @@ export function createBrowser(root, navigate) {
     async function render(next) {
         state = next;
         renderToolbar();
-        replace(grid, h('div', { class: 'empty' }, 'Loading'));
+        replaceContents(grid, buildElement('div', { class: 'empty' }, 'Loading'));
         try {
             reply = state.q ? await api.search(state.path, state.q) : await api.browse(state.path);
         }
         catch (error) {
             reply = null;
-            replace(readout);
-            replace(grid, h('div', { class: 'empty' }, messageOf(error)));
+            replaceContents(readout);
+            replaceContents(grid, buildElement('div', { class: 'empty' }, messageOf(error)));
             renderActions();
             return;
         }
@@ -96,7 +96,7 @@ export function createBrowser(root, navigate) {
     }
     // The search box is created once and reused on every render. Rebuilding it would move the
     // keyboard focus and the text cursor away from a person who is still typing.
-    const searchInput = h('input', { type: 'search', name: 'q', placeholder: 'Search this folder and below: name, *.md, report?', 'aria-label': 'Search' });
+    const searchInput = buildElement('input', { type: 'search', name: 'q', placeholder: 'Search this folder and below: name, *.md, report?', 'aria-label': 'Search' });
     searchInput.addEventListener('input', () => {
         clearTimeout(debounce);
         // Wait until typing pauses, then search. The first search adds a history entry, so Back
@@ -104,29 +104,29 @@ export function createBrowser(root, navigate) {
         // does not step back through the search one letter at a time.
         debounce = window.setTimeout(() => navigate({ q: searchInput.value.trim() }, state.q !== ''), SEARCH_DEBOUNCE_MS);
     });
-    const clearButton = h('button', { type: 'button', class: 'small', onclick: () => navigate({ q: '' }) }, 'Clear');
-    const searchForm = h('form', {
+    const clearButton = buildElement('button', { type: 'button', class: 'small', onclick: () => navigate({ q: '' }) }, 'Clear');
+    const searchForm = buildElement('form', {
         onsubmit: (event) => {
             event.preventDefault();
             clearTimeout(debounce);
             navigate({ q: searchInput.value.trim() });
         },
-    }, searchInput, h('button', { type: 'submit', class: 'small' }, 'Search'), clearButton);
-    const trail = h('nav', { class: 'crumbs', 'aria-label': 'Folder path' });
-    replace(toolbar, trail, searchForm);
+    }, searchInput, buildElement('button', { type: 'submit', class: 'small' }, 'Search'), clearButton);
+    const trail = buildElement('nav', { class: 'crumbs', 'aria-label': 'Folder path' });
+    replaceContents(toolbar, trail, searchForm);
     function renderToolbar() {
         const parts = crumbs(state.path);
         const nodes = [];
         parts.forEach((crumb, index) => {
             const last = index === parts.length - 1;
             if (index > 0) {
-                nodes.push(h('span', { class: 'sep', 'aria-hidden': 'true' }, '/'));
+                nodes.push(buildElement('span', { class: 'sep', 'aria-hidden': 'true' }, '/'));
             }
             nodes.push(last && !state.q
-                ? h('span', { class: 'here', 'aria-current': 'location' }, crumb.name)
-                : h('button', { type: 'button', onclick: () => navigate({ path: crumb.path, q: '' }) }, crumb.name));
+                ? buildElement('span', { class: 'here', 'aria-current': 'location' }, crumb.name)
+                : buildElement('button', { type: 'button', onclick: () => navigate({ path: crumb.path, q: '' }) }, crumb.name));
         });
-        replace(trail, ...nodes);
+        replaceContents(trail, ...nodes);
         if (document.activeElement !== searchInput) {
             searchInput.value = state.q;
         }
@@ -135,17 +135,17 @@ export function createBrowser(root, navigate) {
     function renderReadout(current) {
         const totals = current.totals;
         const items = [
-            h('span', {}, h('strong', {}, totals.folder_count.toLocaleString()), plural(totals.folder_count, 'folder').replace(/^\S+ /, '')),
-            h('span', {}, h('strong', {}, totals.file_count.toLocaleString()), plural(totals.file_count, 'file').replace(/^\S+ /, '')),
-            h('span', {}, h('strong', {}, bytes(totals.total_bytes)), 'in files'),
+            buildElement('span', {}, buildElement('strong', {}, totals.folder_count.toLocaleString()), plural(totals.folder_count, 'folder').replace(/^\S+ /, '')),
+            buildElement('span', {}, buildElement('strong', {}, totals.file_count.toLocaleString()), plural(totals.file_count, 'file').replace(/^\S+ /, '')),
+            buildElement('span', {}, buildElement('strong', {}, bytes(totals.total_bytes)), 'in files'),
         ];
         if (isSearch(current)) {
-            items.unshift(h('span', {}, h('strong', {}, 'search'), `for ${current.query}`));
+            items.unshift(buildElement('span', {}, buildElement('strong', {}, 'search'), `for ${current.query}`));
             if (current.truncated) {
-                items.push(h('span', { class: 'warn' }, 'stopped at the limit; narrow the search'));
+                items.push(buildElement('span', { class: 'warn' }, 'stopped at the limit; narrow the search'));
             }
         }
-        replace(readout, ...items);
+        replaceContents(readout, ...items);
     }
     function sorted(entries) {
         const dir = state.dir === 'desc' ? -1 : 1;
@@ -166,13 +166,13 @@ export function createBrowser(root, navigate) {
     }
     function header(label, sort) {
         const current = state.sort === sort;
-        return h('th', { scope: 'col', 'aria-sort': current ? (state.dir === 'desc' ? 'descending' : 'ascending') : false }, h('button', { type: 'button', onclick: () => navigate({ sort, dir: current && state.dir === 'asc' ? 'desc' : 'asc' }) }, label));
+        return buildElement('th', { scope: 'col', 'aria-sort': current ? (state.dir === 'desc' ? 'descending' : 'ascending') : false }, buildElement('button', { type: 'button', onclick: () => navigate({ sort, dir: current && state.dir === 'asc' ? 'desc' : 'asc' }) }, label));
     }
     function renderTable(current) {
         const folders = sorted(current.folders);
         const files = sorted(current.files);
         if (folders.length + files.length === 0) {
-            replace(grid, h('div', { class: 'empty' }, state.q ? 'Nothing matches.' : 'This folder is empty. Upload something, or make a folder.'));
+            replaceContents(grid, buildElement('div', { class: 'empty' }, state.q ? 'Nothing matches.' : 'This folder is empty. Upload something, or make a folder.'));
             return;
         }
         const rows = [];
@@ -182,19 +182,19 @@ export function createBrowser(root, navigate) {
         for (const file of files) {
             rows.push(row(file, false));
         }
-        const table = h('table', {}, h('thead', {}, h('tr', {}, header('Name', 'name'), header('Size', 'size'), header('Modified', 'modified'), h('th', { scope: 'col' }, h('span', { class: 'visually-hidden' }, 'Actions')))), h('tbody', {}, rows));
-        replace(grid, table);
+        const table = buildElement('table', {}, buildElement('thead', {}, buildElement('tr', {}, header('Name', 'name'), header('Size', 'size'), header('Modified', 'modified'), buildElement('th', { scope: 'col' }, buildElement('span', { class: 'visually-hidden' }, 'Actions')))), buildElement('tbody', {}, rows));
+        replaceContents(grid, table);
     }
     function row(entry, isFolder) {
         const label = state.q ? entry.path : entry.name;
         const name = isFolder
-            ? h('button', { type: 'button', 'data-action': 'open' }, h('span', { class: 'kind', 'aria-hidden': 'true' }, '▸'), label)
-            : h('a', { href: api.downloadUrl(entry.path), download: entry.name }, h('span', { class: 'kind', 'aria-hidden': 'true' }, '•'), label);
-        return h('tr', { 'data-path': entry.path, 'data-kind': isFolder ? 'folder' : 'file' }, h('td', { class: 'name' }, name), h('td', { class: 'num' }, 'size_bytes' in entry ? bytes(entry.size_bytes) : ''), h('td', { class: 'num' }, when(entry.modified_ms)), h('td', { class: 'actions' }, isFolder ? null : h('button', { type: 'button', 'data-action': 'download', 'aria-label': `Download ${entry.name}` }, 'Download'), h('button', { type: 'button', 'data-action': 'copy', 'aria-label': `Copy ${entry.name}` }, 'Copy'), h('button', { type: 'button', 'data-action': 'move', 'aria-label': `Move ${entry.name}` }, 'Move'), h('button', { type: 'button', 'data-action': 'delete', class: 'danger', 'aria-label': `Delete ${entry.name}` }, 'Delete')));
+            ? buildElement('button', { type: 'button', 'data-action': 'open' }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, '▸'), label)
+            : buildElement('a', { href: api.downloadUrl(entry.path), download: entry.name }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, '•'), label);
+        return buildElement('tr', { 'data-path': entry.path, 'data-kind': isFolder ? 'folder' : 'file' }, buildElement('td', { class: 'name' }, name), buildElement('td', { class: 'num' }, 'size_bytes' in entry ? bytes(entry.size_bytes) : ''), buildElement('td', { class: 'num' }, when(entry.modified_ms)), buildElement('td', { class: 'actions' }, isFolder ? null : buildElement('button', { type: 'button', 'data-action': 'download', 'aria-label': `Download ${entry.name}` }, 'Download'), buildElement('button', { type: 'button', 'data-action': 'copy', 'aria-label': `Copy ${entry.name}` }, 'Copy'), buildElement('button', { type: 'button', 'data-action': 'move', 'aria-label': `Move ${entry.name}` }, 'Move'), buildElement('button', { type: 'button', 'data-action': 'delete', class: 'danger', 'aria-label': `Delete ${entry.name}` }, 'Delete')));
     }
     function renderActions() {
-        const took = reply ? h('span', { class: 'took' }, `served in ${reply.took_ms} ms`) : null;
-        replace(actions, state.q ? null : h('button', { type: 'button', class: 'primary', onclick: () => fileInput.click() }, 'Upload files'), state.q ? null : h('button', { type: 'button', onclick: newFolder }, 'New folder'), took);
+        const took = reply ? buildElement('span', { class: 'took' }, `served in ${reply.took_ms} ms`) : null;
+        replaceContents(actions, state.q ? null : buildElement('button', { type: 'button', class: 'primary', onclick: () => fileInput.click() }, 'Upload files'), state.q ? null : buildElement('button', { type: 'button', onclick: newFolder }, 'New folder'), took);
     }
     // #endregion render
     // #region writes
@@ -255,9 +255,9 @@ export function createBrowser(root, navigate) {
             return;
         }
         const previous = [...cell.childNodes];
-        const restore = () => replace(cell, ...previous);
-        const confirm = h('button', { type: 'button', class: 'danger', onclick: () => void run(act, restore) }, verb);
-        replace(cell, h('span', {}, question, ' '), confirm, h('button', { type: 'button', onclick: restore }, 'Cancel'));
+        const restore = () => replaceContents(cell, ...previous);
+        const confirm = buildElement('button', { type: 'button', class: 'danger', onclick: () => void run(act, restore) }, verb);
+        replaceContents(cell, buildElement('span', {}, question, ' '), confirm, buildElement('button', { type: 'button', onclick: restore }, 'Cancel'));
         confirm.focus();
     }
     /**
@@ -271,10 +271,10 @@ export function createBrowser(root, navigate) {
             return;
         }
         const previous = [...cell.childNodes];
-        const restore = () => replace(cell, ...previous);
-        const input = h('input', { type: 'text', value, 'aria-label': label, size: '32' });
-        const form = h('form', { onsubmit: (event) => { event.preventDefault(); void run(() => act(input.value.trim()), restore); } }, input, ' ', h('button', { type: 'submit' }, verb), ' ', h('button', { type: 'button', onclick: restore }, 'Cancel'));
-        replace(cell, form);
+        const restore = () => replaceContents(cell, ...previous);
+        const input = buildElement('input', { type: 'text', value, 'aria-label': label, size: '32' });
+        const form = buildElement('form', { onsubmit: (event) => { event.preventDefault(); void run(() => act(input.value.trim()), restore); } }, input, ' ', buildElement('button', { type: 'submit' }, verb), ' ', buildElement('button', { type: 'button', onclick: restore }, 'Cancel'));
+        replaceContents(cell, form);
         input.focus();
         input.select();
     }
@@ -289,8 +289,8 @@ export function createBrowser(root, navigate) {
         }
     }
     function newFolder() {
-        const input = h('input', { type: 'text', placeholder: 'Folder name', 'aria-label': 'New folder name' });
-        const form = h('form', {
+        const input = buildElement('input', { type: 'text', placeholder: 'Folder name', 'aria-label': 'New folder name' });
+        const form = buildElement('form', {
             onsubmit: (event) => {
                 event.preventDefault();
                 void (async () => {
@@ -304,8 +304,8 @@ export function createBrowser(root, navigate) {
                     }
                 })();
             },
-        }, input, ' ', h('button', { type: 'submit', class: 'small' }, 'Create'), ' ', h('button', { type: 'button', class: 'small', onclick: () => renderActions() }, 'Cancel'));
-        replace(actions, form);
+        }, input, ' ', buildElement('button', { type: 'submit', class: 'small' }, 'Create'), ' ', buildElement('button', { type: 'button', class: 'small', onclick: () => renderActions() }, 'Cancel'));
+        replaceContents(actions, form);
         input.focus();
     }
     /**
@@ -345,8 +345,8 @@ export function createBrowser(root, navigate) {
         await render(state);
     }
     function uploadOne(file, overwrite) {
-        const bar = h('div', {});
-        replace(noticeBox, h('div', { class: 'notice' }, `Uploading ${file.name} (${bytes(file.size)})`, h('div', { class: 'progress' }, bar)));
+        const bar = buildElement('div', {});
+        replaceContents(noticeBox, buildElement('div', { class: 'notice' }, `Uploading ${file.name} (${bytes(file.size)})`, buildElement('div', { class: 'progress' }, bar)));
         return api.upload(state.path, file, overwrite, (fraction) => { bar.style.width = `${Math.round(fraction * 100)}%`; });
     }
     /**
@@ -356,12 +356,12 @@ export function createBrowser(root, navigate) {
      */
     function askOverwrite(message) {
         return new Promise((resolve) => {
-            replace(noticeBox, h('div', { class: 'notice' }, `${message} `, h('button', { type: 'button', class: 'small', onclick: () => resolve(true) }, 'Overwrite'), ' ', h('button', { type: 'button', class: 'small', onclick: () => resolve(false) }, 'Skip')));
+            replaceContents(noticeBox, buildElement('div', { class: 'notice' }, `${message} `, buildElement('button', { type: 'button', class: 'small', onclick: () => resolve(true) }, 'Overwrite'), ' ', buildElement('button', { type: 'button', class: 'small', onclick: () => resolve(false) }, 'Skip')));
         });
     }
     function say(kind, text) {
-        const notice = h('div', { class: `notice ${kind}`, role: 'status' }, text, ' ', h('button', { type: 'button', class: 'small', onclick: () => replace(noticeBox) }, 'Dismiss'));
-        replace(noticeBox, notice);
+        const notice = buildElement('div', { class: `notice ${kind}`, role: 'status' }, text, ' ', buildElement('button', { type: 'button', class: 'small', onclick: () => replaceContents(noticeBox) }, 'Dismiss'));
+        replaceContents(noticeBox, notice);
     }
     // #endregion writes
     return { render };

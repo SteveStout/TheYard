@@ -28,13 +28,13 @@ method of [TheYard](https://theyard.stevenstout.biz).
 
 | Folder | What is in it |
 | --- | --- |
-| `Data/` | The wire: records, no behaviour. |
+| `Data/` | The JSON the API sends (`ApiResponses.cs`) and receives (`ApiRequests.cs`), and what the file store reports (`FileStoreEntry.cs`): records, no behaviour. |
 | `Domain/` | The rules: the home directory's guard, the search pattern, the totals. Pure. |
 | `Application/` | The use cases behind one port, `IFileStore`. |
 | `Infrastructure/` | The disk, behind the port. |
 | `Controllers/` | The routes, a line or three each, and the problem-document handler. |
 | `Composition/` | The registrations and the pipeline that `Program.cs` calls, one line each, as TheYard's are. |
-| `Library/` | The documents the app serves: the catalogue, the live-sample expander, the version reader. |
+| `Documentation/` | The documents the app serves: the catalogue, the live-sample expander, the version reader. |
 | `src/` | The page, in TypeScript: `lib` (pure), `ui` (renders), `main.ts` (the shell). |
 | `wwwroot/` | What the browser loads: `index.html`, two stylesheets, and `js`, which `tsc` wrote from `src/`. |
 | `tests/` | xUnit under `TestProject.Tests`, `node --test` under `js`. |

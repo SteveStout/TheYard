@@ -22,7 +22,7 @@ public sealed class Program
 
         var app = builder.Build();
         app.UseTheShedRequestPipeline();              // Composition/RequestPipeline.cs
-        app.MapControllers();                         // Controllers/: Files, Docs, Health
+        app.MapControllers();                         // Controllers/: Files, DocumentationAndVersion, Health
         // #endregion composition
 
         app.Run();

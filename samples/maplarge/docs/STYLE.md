@@ -56,8 +56,8 @@ Four habits:
   `WebApplicationFactory`; anything pure in TypeScript gets `node --test` over the compiled module.
 - Time is anchored, never `Now`. A test that needs a disk gets a `TempHome` of its own and deletes
   it.
-- A test that reads the repository (the records, the stylesheet) walks it through `Repo`, so the
-  list of folders to skip is written once.
+- A test that reads the repository (the records, the stylesheet) walks it through `ProjectFolder`,
+  so the list of folders to skip is written once.
 
 ## Formatting
 
@@ -65,8 +65,8 @@ Four habits:
   compiler's four. UTF-8, LF, final newline.
 - Lines wrap around 120 characters in C# and 100 in TypeScript and markdown.
 - One statement per line; braces always.
-- Prose in this project, records and commit messages included, uses no em dashes. That is the
-  house voice, and `HouseVoiceTests` counts them.
+- Prose in this project, records and commit messages included, uses no em dashes. `NoEmDashTests`
+  counts them.
 
 ## Files
 

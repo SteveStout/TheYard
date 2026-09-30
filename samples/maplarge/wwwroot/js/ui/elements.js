@@ -1,7 +1,7 @@
 /**
- * Helpers that build DOM elements. h() builds the elements the page code
- * describes, and toDom() builds elements from the tree the markdown parser in
- * lib/markdown.ts produces.
+ * Helpers that build page elements. buildElement() builds the elements the page
+ * code describes, and buildFromMarkdown() builds elements from the tree the
+ * markdown parser in lib/markdown.ts produces.
  *
  * Both create elements with createElement and put text in text nodes. Neither
  * ever assigns an HTML string through innerHTML, so text from a file name or a
@@ -17,7 +17,7 @@ import { isElement } from '../lib/markdown.js';
  *   and undefined leave the attribute out
  * @param children child nodes; strings become text nodes and empty values are skipped
  */
-export function h(tag, attrs = {}, ...children) {
+export function buildElement(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
     for (const [key, value] of Object.entries(attrs)) {
         if (value === false || value === null || value === undefined) {
@@ -59,7 +59,7 @@ function append(node, children) {
  * with createElement and text with text nodes, so a document's text is always
  * shown as text. Attributes with an empty value are left out.
  */
-export function toDom(nodes) {
+export function buildFromMarkdown(nodes) {
     const fragment = document.createDocumentFragment();
     for (const node of nodes) {
         if (!isElement(node)) {
@@ -72,7 +72,7 @@ export function toDom(nodes) {
                 element.setAttribute(key, value);
             }
         }
-        element.append(toDom(node.children));
+        element.append(buildFromMarkdown(node.children));
         fragment.append(element);
     }
     return fragment;
@@ -82,7 +82,7 @@ export function toDom(nodes) {
  * step means the browser lays out the result once, so a person never sees a
  * half-drawn table.
  */
-export function replace(container, ...children) {
+export function replaceContents(container, ...children) {
     container.replaceChildren();
     append(container, children);
 }

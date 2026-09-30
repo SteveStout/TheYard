@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using TestProject.Data;
 
-namespace TestProject.Library;
+namespace TestProject.Documentation;
 
 /// <summary>
 /// Reads the version and commit shown in the page footer, once at startup. The version comes

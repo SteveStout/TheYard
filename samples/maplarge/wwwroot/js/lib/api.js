@@ -162,10 +162,10 @@ export function upload(path, file, overwrite, onProgress) {
     });
 }
 // #endregion upload
-export function docs() {
+export function listDocuments() {
     return get('/api/docs');
 }
-export async function doc(slug) {
+export async function fetchDocument(slug) {
     const response = await fetch(`/api/docs/${encodeURIComponent(slug)}`);
     if (!response.ok) {
         throw await problemOf(response);

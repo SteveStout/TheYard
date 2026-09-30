@@ -1,7 +1,7 @@
 /**
  * A small markdown parser for the documents the app serves in its Docs tab.
  * It turns markdown text into a tree of plain objects: {tag, attrs, children}
- * for an element and {text} for text. The code in ui/dom.ts then builds real
+ * for an element and {text} for text. The code in ui/elements.ts then builds real
  * DOM nodes from that tree with createElement and text nodes.
  *
  * The parser never produces an HTML string and nothing is assigned to innerHTML,
@@ -22,16 +22,16 @@ export interface TextNode {
 export interface ElementNode {
   tag: string;
   attrs: Record<string, string>;
-  children: MdNode[];
+  children: MarkdownNode[];
 }
 
-export type MdNode = TextNode | ElementNode;
+export type MarkdownNode = TextNode | ElementNode;
 
-export function isElement(node: MdNode): node is ElementNode {
+export function isElement(node: MarkdownNode): node is ElementNode {
   return 'tag' in node;
 }
 
-function element(tag: string, children: MdNode[], attrs: Record<string, string> = {}): ElementNode {
+function element(tag: string, children: MarkdownNode[], attrs: Record<string, string> = {}): ElementNode {
   return { tag, attrs, children };
 }
 
@@ -41,9 +41,9 @@ function element(tag: string, children: MdNode[], attrs: Record<string, string> 
  * and at each line tries the block types in a fixed order (fence, heading, rule,
  * quote, table, list); a line that starts none of them begins a paragraph.
  */
-export function parse(markdown: string): MdNode[] {
+export function parse(markdown: string): MarkdownNode[] {
   const lines = markdown.replace(/\r\n?/g, '\n').split('\n');
-  const blocks: MdNode[] = [];
+  const blocks: MarkdownNode[] = [];
   let i = 0;
   while (i < lines.length) {
     const line = lines[i] ?? '';
@@ -165,7 +165,7 @@ function table(rows: string[]): ElementNode {
 }
 
 function codeBlock(language: string, caption: string, code: string): ElementNode {
-  const children: MdNode[] = [];
+  const children: MarkdownNode[] = [];
   if (caption) {
     children.push(element('span', [{ text: caption }], { class: 'caption' }));
   }
@@ -181,8 +181,8 @@ function codeBlock(language: string, caption: string, code: string): ElementNode
  * marks becomes plain text nodes. Code spans come first in the pattern so that
  * nothing inside backticks is read as another mark.
  */
-export function inline(text: string): MdNode[] {
-  const out: MdNode[] = [];
+export function inline(text: string): MarkdownNode[] {
+  const out: MarkdownNode[] = [];
   const pattern = /(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)|!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)|\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
   let last = 0;
   let match: RegExpExecArray | null;
@@ -236,12 +236,12 @@ const KEYWORDS: Record<string, readonly string[]> = {
  * needs to help reading. Anything it does not recognise is left uncoloured.
  * Code in any other language is returned as a single text node.
  */
-export function highlight(code: string, language: string): MdNode[] {
+export function highlight(code: string, language: string): MarkdownNode[] {
   const words = KEYWORDS[language];
   if (!words) {
     return [{ text: code }];
   }
-  const out: MdNode[] = [];
+  const out: MarkdownNode[] = [];
   const pattern = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|@"(?:[^"]|"")*")|\b([A-Za-z_]\w*)\b/g;
   let last = 0;
   let match: RegExpExecArray | null;

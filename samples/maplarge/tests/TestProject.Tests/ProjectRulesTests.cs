@@ -1,9 +1,5 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
-using TestProject.Application;
-using TestProject.Composition;
-using TestProject.Library;
-using TestProject.Domain;
 
 namespace TestProject.Tests;
 
@@ -13,7 +9,7 @@ namespace TestProject.Tests;
 /// project's writing style bans the character, and a test is the only way to keep a later change
 /// from slipping one back in. (more in docs/STYLE.md)
 /// </summary>
-public sealed class HouseVoiceTests
+public sealed class NoEmDashTests
 {
     // Built from its numeric code point, so this file never contains the character itself
     // and passes its own scan.
@@ -22,9 +18,9 @@ public sealed class HouseVoiceTests
     [Fact]
     public void No_file_we_wrote_contains_an_em_dash()
     {
-        List<string> offenders = Repo.FilesWith(".cs", ".ts", ".js", ".css", ".html", ".md", ".json", ".csproj", ".yml", ".bicep", ".editorconfig")
+        List<string> offenders = ProjectFolder.FilesWith(".cs", ".ts", ".js", ".css", ".html", ".md", ".json", ".csproj", ".yml", ".bicep", ".editorconfig")
             .Where(file => File.ReadAllText(file).Contains(EmDash))
-            .Select(Repo.Relative)
+            .Select(ProjectFolder.Relative)
             .ToList();
         Assert.Empty(offenders);
     }
@@ -52,9 +48,9 @@ public sealed class SealedByDefaultTests
     [Fact]
     public void The_analyzer_that_holds_the_internal_half_is_a_warning()
     {
-        string editorconfig = File.ReadAllText(Path.Combine(Repo.Root(), ".editorconfig"));
+        string editorconfig = File.ReadAllText(Path.Combine(ProjectFolder.Root(), ".editorconfig"));
         Assert.Contains("dotnet_diagnostic.CA1852.severity = warning", editorconfig, StringComparison.Ordinal);
-        Assert.Contains("<TreatWarningsAsErrors>true</TreatWarningsAsErrors>", File.ReadAllText(Path.Combine(Repo.Root(), "TestProject.csproj")), StringComparison.Ordinal);
+        Assert.Contains("<TreatWarningsAsErrors>true</TreatWarningsAsErrors>", File.ReadAllText(Path.Combine(ProjectFolder.Root(), "TestProject.csproj")), StringComparison.Ordinal);
     }
 }
 
@@ -69,7 +65,7 @@ public sealed class SealedByDefaultTests
 public sealed partial class LayeringTests
 {
     // Innermost first. A folder may use itself and any folder earlier in this list, never a later
-    // one. The Library folder is allowed only in Controllers and Composition.
+    // one. The Documentation folder is allowed only in Controllers and Composition.
     private static readonly string[] Order = ["Data", "Domain", "Application", "Infrastructure", "Controllers", "Composition"];
 
     [Fact]
@@ -78,16 +74,16 @@ public sealed partial class LayeringTests
         var outward = new List<string>();
         for (int i = 0; i < Order.Length; i++)
         {
-            string folder = Path.Combine(Repo.Root(), Order[i]);
+            string folder = Path.Combine(ProjectFolder.Root(), Order[i]);
             foreach (string file in Directory.EnumerateFiles(folder, "*.cs"))
             {
                 foreach (Match match in Using().Matches(File.ReadAllText(file)))
                 {
                     string used = match.Groups["folder"].Value;
                     int index = Array.IndexOf(Order, used);
-                    if (index > i || (used == "Library" && Order[i] is not ("Controllers" or "Composition")))
+                    if (index > i || (used == "Documentation" && Order[i] is not ("Controllers" or "Composition")))
                     {
-                        outward.Add($"{Repo.Relative(file)} uses TestProject.{used}");
+                        outward.Add($"{ProjectFolder.Relative(file)} uses TestProject.{used}");
                     }
                 }
             }
@@ -101,14 +97,14 @@ public sealed partial class LayeringTests
         var impure = new List<string>();
         foreach (string folder in new[] { "Data", "Domain" })
         {
-            foreach (string file in Directory.EnumerateFiles(Path.Combine(Repo.Root(), folder), "*.cs"))
+            foreach (string file in Directory.EnumerateFiles(Path.Combine(ProjectFolder.Root(), folder), "*.cs"))
             {
                 string source = File.ReadAllText(file);
                 foreach (string forbidden in new[] { "File.", "Directory.", "DateTime.Now", "DateTime.UtcNow", "HttpContext" })
                 {
                     if (source.Contains(forbidden, StringComparison.Ordinal))
                     {
-                        impure.Add($"{Repo.Relative(file)} mentions {forbidden}");
+                        impure.Add($"{ProjectFolder.Relative(file)} mentions {forbidden}");
                     }
                 }
             }
@@ -119,7 +115,7 @@ public sealed partial class LayeringTests
     [Fact]
     public void Program_maps_nothing_itself_and_stays_short()
     {
-        string[] lines = File.ReadAllLines(Path.Combine(Repo.Root(), "Program.cs"));
+        string[] lines = File.ReadAllLines(Path.Combine(ProjectFolder.Root(), "Program.cs"));
         Assert.True(lines.Length <= 40, $"Program.cs is {lines.Length} lines; the host is a table of contents");
         Assert.DoesNotContain(lines, line => line.Contains("MapGet(", StringComparison.Ordinal) || line.Contains("MapPost(", StringComparison.Ordinal));
     }
@@ -138,14 +134,14 @@ public sealed partial class LayeringTests
 /// </summary>
 public sealed partial class FrontEndRulesTests
 {
-    private static string Src => Path.Combine(Repo.Root(), "src");
+    private static string Src => Path.Combine(ProjectFolder.Root(), "src");
 
     [Fact]
     public void Every_source_module_has_its_compiled_module_beside_the_page()
     {
         List<string> missing = Directory.EnumerateFiles(Src, "*.ts", SearchOption.AllDirectories)
             .Select(file => Path.ChangeExtension(Path.GetRelativePath(Src, file), ".js"))
-            .Where(relative => !File.Exists(Path.Combine(Repo.Root(), "wwwroot", "js", relative)))
+            .Where(relative => !File.Exists(Path.Combine(ProjectFolder.Root(), "wwwroot", "js", relative)))
             .ToList();
         Assert.Empty(missing);
     }
@@ -160,7 +156,7 @@ public sealed partial class FrontEndRulesTests
             {
                 if (match.Groups["from"].Value.Contains("/ui/", StringComparison.Ordinal))
                 {
-                    outward.Add($"{Repo.Relative(file)} imports {match.Groups["from"].Value}");
+                    outward.Add($"{ProjectFolder.Relative(file)} imports {match.Groups["from"].Value}");
                 }
             }
         }
@@ -172,10 +168,10 @@ public sealed partial class FrontEndRulesTests
     {
         List<string> offenders = Directory.EnumerateFiles(Src, "*.ts", SearchOption.AllDirectories)
             .Where(file => File.ReadAllText(file).Contains(".innerHTML", StringComparison.Ordinal))
-            .Select(Repo.Relative)
+            .Select(ProjectFolder.Relative)
             .ToList();
         Assert.Empty(offenders);
-        string package = File.ReadAllText(Path.Combine(Repo.Root(), "package.json"));
+        string package = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "package.json"));
         Assert.DoesNotContain("\"dependencies\"", package, StringComparison.Ordinal);
         Assert.Contains("\"typescript\"", package, StringComparison.Ordinal);
     }
@@ -197,7 +193,7 @@ public sealed partial class StyleRulesTests
     [Fact]
     public void App_css_writes_no_colour_of_its_own()
     {
-        string css = File.ReadAllText(Path.Combine(Repo.Root(), "wwwroot", "css", "app.css"));
+        string css = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "wwwroot", "css", "app.css"));
         List<string> literals = ColourLiteral().Matches(css).Select(m => m.Value).Distinct().ToList();
         Assert.Empty(literals);
     }
@@ -205,8 +201,8 @@ public sealed partial class StyleRulesTests
     [Fact]
     public void Every_token_app_css_uses_is_declared_in_tokens_css()
     {
-        string tokens = File.ReadAllText(Path.Combine(Repo.Root(), "wwwroot", "css", "tokens.css"));
-        string app = File.ReadAllText(Path.Combine(Repo.Root(), "wwwroot", "css", "app.css"));
+        string tokens = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "wwwroot", "css", "tokens.css"));
+        string app = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "wwwroot", "css", "app.css"));
         HashSet<string> declared = Declared().Matches(tokens).Select(m => m.Groups["name"].Value).ToHashSet(StringComparer.Ordinal);
         declared.UnionWith(Declared().Matches(app).Select(m => m.Groups["name"].Value));
         List<string> missing = Used().Matches(app).Select(m => m.Groups["name"].Value).Distinct().Where(name => !declared.Contains(name)).ToList();
@@ -216,9 +212,9 @@ public sealed partial class StyleRulesTests
     [Fact]
     public void The_font_is_served_from_this_site()
     {
-        Assert.True(File.Exists(Path.Combine(Repo.Root(), "wwwroot", "fonts", "ibm-plex-sans-latin.woff2")));
-        Assert.True(File.Exists(Path.Combine(Repo.Root(), "wwwroot", "fonts", "OFL.txt")));
-        string html = File.ReadAllText(Path.Combine(Repo.Root(), "wwwroot", "index.html"));
+        Assert.True(File.Exists(Path.Combine(ProjectFolder.Root(), "wwwroot", "fonts", "ibm-plex-sans-latin.woff2")));
+        Assert.True(File.Exists(Path.Combine(ProjectFolder.Root(), "wwwroot", "fonts", "OFL.txt")));
+        string html = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "wwwroot", "index.html"));
         Assert.DoesNotContain("fonts.googleapis", html, StringComparison.Ordinal);
         Assert.DoesNotContain("cdn.", html, StringComparison.Ordinal);
     }
@@ -244,7 +240,7 @@ public sealed partial class RuleTableTests
     [Fact]
     public void Every_test_the_table_names_is_a_class_with_a_test_in_it()
     {
-        string record = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "ADR-009-the-rules-a-change-has-to-pass.md"));
+        string record = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "docs", "ADR-009-the-rules-a-change-has-to-pass.md"));
         // Keep only table rows, the lines that start with a pipe. The Files section below the
         // table lists RepoRulesTests.cs, which fits the name pattern but is a file, not a rule.
         string table = string.Join('\n', record.Split('\n').Where(line => line.StartsWith('|')));
@@ -266,11 +262,11 @@ public sealed partial class RuleTableTests
     [Fact]
     public void Every_record_the_table_cites_exists()
     {
-        string record = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "ADR-009-the-rules-a-change-has-to-pass.md"));
+        string record = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "docs", "ADR-009-the-rules-a-change-has-to-pass.md"));
         var missing = new List<string>();
         foreach (Match cited in Citation().Matches(record))
         {
-            if (!Directory.EnumerateFiles(Path.Combine(Repo.Root(), "docs"), $"{cited.Value}-*.md").Any())
+            if (!Directory.EnumerateFiles(Path.Combine(ProjectFolder.Root(), "docs"), $"{cited.Value}-*.md").Any())
             {
                 missing.Add(cited.Value);
             }
@@ -283,122 +279,4 @@ public sealed partial class RuleTableTests
 
     [GeneratedRegex(@"\bADR-\d{3}\b")]
     private static partial Regex Citation();
-}
-
-/// <summary>
-/// Checks LiveSamples, which pastes real source code into the served documents. A document can
-/// hold an empty code block that names a file and a region, and the app fills it with the lines
-/// between that region's start and end markers. The tests cover which paths may be read, how a
-/// region is cut out, and what a bad block becomes. The path check uses the same rules as the file
-/// browser's home guard on a shorter list of folders, because the document picks the path and must
-/// never reach a file such as the development settings.
-/// (more in docs/ADR-012-documents-served-by-the-app.md)
-/// </summary>
-public sealed class LiveSamplesTests
-{
-    [Theory]
-    [InlineData("Domain/HomePath.cs", true)]
-    [InlineData("Program.cs", true)]
-    [InlineData("src/lib/urlState.ts", true)]
-    [InlineData("wwwroot/js/lib/urlState.js", true)]
-    [InlineData("../secrets.txt", false)]
-    [InlineData("Domain/../Program.cs", false)]
-    [InlineData("appsettings.Development.json", false)]
-    [InlineData("Domain/", false)]
-    [InlineData("", false)]
-    public void Only_a_plain_path_under_an_allowed_root_may_be_read(string path, bool allowed)
-    {
-        Assert.Equal(allowed, LiveSamples.IsAllowedPath(path));
-    }
-
-    [Fact]
-    public void A_region_is_cut_between_its_markers_and_nested_regions_are_kept_whole()
-    {
-        string[] source =
-        [
-            "a",
-            "// #region outer",
-            "b",
-            "// #region inner",
-            "c",
-            "// #endregion",
-            "d",
-            "// #endregion",
-            "e",
-        ];
-        string[] expected1 = ["b", "// #region inner", "c", "// #endregion", "d"];
-        Assert.Equal(expected1, LiveSamples.Region(source, "outer"));
-        string[] expected2 = ["c"];
-        Assert.Equal(expected2, LiveSamples.Region(source, "inner"));
-        Assert.Empty(LiveSamples.Region(source, "absent"));
-    }
-
-    [Fact]
-    public void A_fence_expands_to_the_region_and_a_bad_one_to_a_note()
-    {
-        string expanded = LiveSamples.Expand("before\n```live path=Domain/HomePath.cs region=guard\n```\nafter", Repo.Root());
-        Assert.Contains("```csharp Domain/HomePath.cs", expanded, StringComparison.Ordinal);
-        Assert.Contains("public string Resolve(string? relative)", expanded, StringComparison.Ordinal);
-        Assert.DoesNotContain("#region guard", expanded, StringComparison.Ordinal);
-        Assert.StartsWith("before\n", expanded, StringComparison.Ordinal);
-        Assert.EndsWith("\nafter", expanded, StringComparison.Ordinal);
-        string note = LiveSamples.Expand("```live path=../x.cs region=y\n```", Repo.Root());
-        Assert.StartsWith("> Sample unavailable", note, StringComparison.Ordinal);
-    }
-}
-
-/// <summary>
-/// Checks how the app finds the version and commit it reports. The version is the first bulleted
-/// line of the changelog, and the commit is read from the .git folder by following HEAD to its
-/// branch file. When either source is missing the answer is "unknown", because a guessed value
-/// would mislead anyone checking which build is running.
-/// (more in docs/ADR-012-documents-served-by-the-app.md)
-/// </summary>
-public sealed class VersionReaderTests
-{
-    [Fact]
-    public void The_first_listed_version_wins_and_a_missing_log_is_unknown()
-    {
-        using var home = new TempHome();
-        string log = home.File("CHANGELOG.md", "# Changelog\n\nintro 9.9.9.9 in prose is not a line\n\n- 1.0.0.3 newest.\n- 1.0.0.2 older.\n");
-        Assert.Equal("1.0.0.3", VersionReader.VersionFrom(log));
-        Assert.Equal(VersionReader.Unknown, VersionReader.VersionFrom(Path.Combine(home.Root, "missing.md")));
-    }
-
-    [Fact]
-    public void A_folder_with_no_git_reports_unknown_and_a_ref_is_followed()
-    {
-        using var home = new TempHome();
-        Assert.Equal(VersionReader.Unknown, VersionReader.CommitFrom(home.Root));
-        home.File(".git/HEAD", "ref: refs/heads/main\n");
-        home.File(".git/refs/heads/main", "0123456789abcdef0123456789abcdef01234567\n");
-        Assert.Equal("0123456", VersionReader.CommitFrom(home.Root));
-    }
-}
-
-/// <summary>
-/// Checks how the app picks its home directory from configuration. The tests call
-/// FilesRegistration.HomeFor, the same method the running app uses, so they cover the real setup.
-/// No setting means the sample-home folder beside the project, created if missing, so a fresh
-/// copy runs with no setup. An absolute setting is used as given; a relative one goes under the
-/// content root. (more in docs/ADR-003-the-line-a-path-cannot-cross.md)
-/// </summary>
-public sealed class HomeForTests
-{
-    [Fact]
-    public void Empty_configuration_means_the_sample_home_beside_the_project()
-    {
-        using var root = new TempHome();
-        HomePath home = FilesRegistration.HomeFor(new FilesOptions(), root.Root);
-        Assert.Equal(Path.Combine(root.Root, "sample-home"), home.Root);
-        Assert.True(Directory.Exists(home.Root));
-    }
-
-    [Fact]
-    public void An_absolute_home_is_used_as_given_and_a_relative_one_is_under_the_content_root()
-    {
-        using var root = new TempHome();
-        Assert.Equal(root.Root, FilesRegistration.HomeFor(new FilesOptions { Home = root.Root }, "/elsewhere").Root);
-        Assert.Equal(Path.Combine(root.Root, "data"), FilesRegistration.HomeFor(new FilesOptions { Home = "data" }, root.Root).Root);
-    }
 }

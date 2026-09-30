@@ -1,4 +1,4 @@
-using TestProject.Library;
+using TestProject.Documentation;
 
 namespace TestProject.Composition;
 
@@ -12,21 +12,22 @@ namespace TestProject.Composition;
 /// <item>The commit is set by the deploy, which puts it in the SHED_COMMIT environment
 /// variable of the container. A local run reads it from the .git folder instead.</item>
 /// <item>The documentation is the markdown files in the docs folder (the decision records
-/// and the guides) plus README.md. DocsController serves them to the Docs tab.</item>
+/// and the guides) plus README.md. DocumentationAndVersionController serves them to the
+/// Docs tab.</item>
 /// </list>
 /// </summary>
 public static class DocumentationAndVersionRegistration
 {
     /// <summary>
-    /// Adds DocsCatalog, which lists the documents in sidebar order and finds one by name,
-    /// reading them from disk on every request so an edited file shows on the next page
+    /// Adds DocumentationCatalog, which lists the documents in sidebar order and finds one by
+    /// name, reading them from disk on every request so an edited file shows on the next page
     /// load. Adds VersionInfo, which VersionReader reads once at startup from the changelog
     /// and the commit sources above. Both are singletons rooted at the content root.
     /// </summary>
     /// <param name="builder">The host being built.</param>
     public static void AddTheShedDocumentationAndVersion(this WebApplicationBuilder builder)
     {
-        builder.Services.AddSingleton(new DocsCatalog(builder.Environment.ContentRootPath));
+        builder.Services.AddSingleton(new DocumentationCatalog(builder.Environment.ContentRootPath));
         builder.Services.AddSingleton(VersionReader.Read(builder.Environment.ContentRootPath));
     }
 }

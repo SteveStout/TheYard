@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TestProject.Application;
 using TestProject.Data;
-using TestProject.Library;
+using TestProject.Documentation;
 
 namespace TestProject.Controllers;
 
@@ -13,11 +13,11 @@ namespace TestProject.Controllers;
 /// </summary>
 [ApiController]
 [Route("api")]
-public sealed class DocsController(DocsCatalog catalog, VersionInfo version, IWebHostEnvironment environment) : ControllerBase
+public sealed class DocumentationAndVersionController(DocumentationCatalog catalog, VersionInfo version, IWebHostEnvironment environment) : ControllerBase
 {
     /// <summary>Lists each document's slug, title and sidebar group. GET /api/docs</summary>
     [HttpGet("docs")]
-    public IReadOnlyList<DocEntry> List() => catalog.List();
+    public IReadOnlyList<DocumentEntry> List() => catalog.List();
 
     /// <summary>
     /// Returns one document as text/markdown, with each live code block replaced by the current

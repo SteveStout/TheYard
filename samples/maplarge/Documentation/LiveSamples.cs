@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace TestProject.Library;
+namespace TestProject.Documentation;
 
 /// <summary>
 /// Fills in live code samples in a served document. A document may contain an empty fenced
@@ -16,7 +16,7 @@ public static partial class LiveSamples
 {
     // #region allowed
     /// <summary>The only folders a live block may read, relative to the project root.</summary>
-    public static readonly string[] AllowedRoots = ["Data/", "Domain/", "Application/", "Infrastructure/", "Controllers/", "Composition/", "Library/", "src/", "wwwroot/", "tests/", "docs/", "infra/"];
+    public static readonly string[] AllowedRoots = ["Data/", "Domain/", "Application/", "Infrastructure/", "Controllers/", "Composition/", "Documentation/", "src/", "wwwroot/", "tests/", "docs/", "infra/"];
 
     /// <summary>The only files at the project root a live block may read.</summary>
     public static readonly string[] AllowedFiles = ["Program.cs", "TestProject.csproj", ".editorconfig", "Dockerfile", "appsettings.json"];

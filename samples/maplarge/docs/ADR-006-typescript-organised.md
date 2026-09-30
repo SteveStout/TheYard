@@ -19,16 +19,18 @@ compiler. The compiled output is committed, so `dotnet run` works with the .NET 
 reviewer without Node still sees the page; `npm run build` regenerates it, and the compiler is
 strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused locals and
 parameters as errors). The shapes on the wire are declared once in `src/lib/types.ts`, in the same
-snake_case as `Data/Entries.cs`, so the two can be read side by side (ADR-004).
+snake_case as `Data/ApiResponses.cs`, so the two can be read side by side (ADR-004).
 
 **Modules, in two folders, with the same inward rule as the C#.** `src/lib/` is pure: `types`,
 `urlState`, `format`, `markdown`, `api`. Nothing in `lib` touches the document, which is why three
-of them run under `node --test` as compiled. `src/ui/` renders: `dom` (the two ways HTML is made),
-`browser`, `docs`, and `main.ts` is the shell that reads the address and hands the state to a view.
-`ui` may import `lib`; `lib` never imports `ui`. A test holds the line.
+of them run under `node --test` as compiled. `src/ui/` renders: `elements` (the two ways page
+elements are made), `browser`, `documentation`, and `main.ts` is the shell that reads the address
+and hands the state to a view. `ui` may import `lib`; `lib` never imports `ui`. A test holds the
+line.
 
-**Two ways to make HTML, neither of them `innerHTML`.** `h(tag, attrs, ...children)` builds what the
-code writes, with text as text nodes; `toDom(tree)` builds what the markdown reader read. A file
+**Two ways to make HTML, neither of them `innerHTML`.** `buildElement(tag, attrs, ...children)`
+builds what the code writes, with text as text nodes; `buildFromMarkdown(tree)` builds what the
+markdown reader read. A file
 name, a folder name, a document's contents: none of it can become markup, because nothing is ever
 parsed as markup. `markdown.test.js` checks that a `<script>` in a document arrives as text, and a
 test checks that no source uses `.innerHTML` at all.
@@ -69,7 +71,7 @@ reviewer who wants to run the thing.
 
 ## Files
 
-- [`src/ui/dom.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/dom.ts): `h` and `toDom`.
+- [`src/ui/elements.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/elements.ts): `buildElement`, `buildFromMarkdown` and `replaceContents`.
 - [`src/ui/browser.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/browser.ts): the file browser.
 - [`src/lib/api.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/api.ts): every call, and the cache.
 - [`src/lib/types.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/types.ts): the wire, as TypeScript sees it.
