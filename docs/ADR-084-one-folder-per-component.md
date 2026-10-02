@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-28. Steve's plan for the frontend's layout, in his words: "one folder per component", grouped by section, "an index.ts that re-exports it, so imports read components/<section>/<Name>", and "src/lib and src/hooks do not move". Shipped as 1.0.3.35 with the Admin stylesheet split, the edge warm-up, the prefetch, the first activity read and the keep-warm loop.
 
+## In plain words
+
+This page decides how the site's screen code (React components) is filed: each component gets a folder of its own holding its code and styles, and the folders are grouped by the part of the site that draws them. A piece that two parts both draw goes in a shared folder.
+
+What that is worth: a developer finds a component and its stylesheet by walking folders instead of knowing file names, and the organization's code can grow section by section without one flat folder holding everything.
+
 ## Context
 
 By 1.0.3.34 `src/components` held 49 files in one flat folder, and the Admin tab's twenty-four files in a second flat folder under it. A component and its stylesheet sat next to each other only because their names sorted together, the badges a vehicle card draws sat beside the Admin workbench, and a reader looking for the inventory had to know its file names to find them. The Admin tab's one stylesheet, 1,766 lines and 164 classes, had no folder its classes could move into.
@@ -27,11 +33,11 @@ The plan put the vehicle's badges in `vehicle` and the sheet icons in `layout`. 
 
 ## What held it
 
-The move changed no value, selector, class name or behaviour; `App.tsx` draws `<Background />` where it drew the ribbons and then the watermark, and `Background` is a fragment of those two in that order, so the page's markup is the same. The tests that read components as text read every folder: `icons.test.ts` globs `components/**`, the unit-test build reads any component sheet as text wherever it sits (`vite.config.ts`), and `StyleRulesTests` reads the Admin tab's files recursively. Every link, live sample and test that named a file by its path names the new one.
+The move changed no value, selector, class name or behaviour; `App.tsx` draws `<Background />` where it drew the ribbons and then the watermark, and `Background` is a fragment of those two in that order, so the page's markup is the same. The tests that read components as text read every folder: `icons.test.ts` globs `components/**`, the unit-test build reads any component sheet as text wherever it sits (`vite.config.ts`), and `StyleRulesTests` reads the Admin tab's files recursively. Every link and live sample that named a file by its path names the new one, and so does every test.
 
 ## Addendum, 2026-09-28 (1.0.3.36): DocsMenu leaves `docs`, and the shell leaves `src`
 
-The same day, the two largest files were split by job (ADR: The React configuration, explained, the addendum on the split). `DocsMenu` was not a component: most of it was data, the documents and what each section holds, with the document window at the end. It is now `src/library`, a folder beside `components` rather than a section in it, and `src/components/docs` is gone; the sections are `layout`, `inventory`, `vehicle`, `account`, `landing`, `shared` and `admin`. `App.tsx` and its stylesheet moved the same way, to `src/app`, with the hooks that hold what the app knows under `src/app/hooks`. Neither folder is a component folder, so neither has an `index.ts`: an import names the file, `library/sections` or `app/hooks/useAddressBar`, and every file in both opens with a header saying what it does, what it does not, and which files use it. The rule above is unchanged for everything under `src/components`, and `icons.test.ts` and the unit-test build now read `src/app` and `src/library` too.
+The same day, the two largest files were split by job (ADR: The React configuration, explained, the addendum on the split). `DocsMenu` was not a component: most of it was data (the documents and what each section holds), with the document window at the end. It is now `src/library`, a folder beside `components` rather than a section in it, and `src/components/docs` is gone; the sections are `layout`, `inventory`, `vehicle`, `account`, `landing`, `shared` and `admin`. `App.tsx` and its stylesheet moved the same way, to `src/app`, with the hooks that hold what the app knows under `src/app/hooks`. Neither folder is a component folder, so neither has an `index.ts`: an import names the file, `library/sections` or `app/hooks/useAddressBar`, and every file in both opens with a header saying what it does, what it does not, and which files use it. The rule above is unchanged for everything under `src/components`, and `icons.test.ts` and the unit-test build now read `src/app` and `src/library` too.
 
 ## Files
 

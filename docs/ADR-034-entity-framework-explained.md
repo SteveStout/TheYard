@@ -9,6 +9,12 @@ It exists for the same reason ADR: Program.cs, explained does. Generated
 configuration is the easiest place in a project to carry things nobody can
 account for, and a data layer is the worst place for that to be true.
 
+## In plain words
+
+This page walks through how the code talks to the database (Entity Framework Core), one file at a time, for a developer meeting it for the first time. Every generated file is explained, so nothing in the data layer is there without a reason someone can state.
+
+What that is worth: a developer new to EF Core can change the schema safely after one read, and the organization's data layer carries no setup that nobody can account for.
+
 ## The five pieces
 
 **A `DbContext` is a session with the database.** `YardDbContext` is a class
@@ -170,7 +176,7 @@ version:
 6. Publish the SQL project with SqlPackage when it ships.
 
 Two things in the original wording are now wrong and are worth naming rather
-than quietly deleting. The migrations project is
+than deleting without a note. The migrations project is
 `api/TheYard.Migrations.Sqlite` and not `api/TheYard.Infrastructure`, because
 two providers produce two models and EF Core keeps one snapshot per assembly.
 And "there is no step for applying it, the application does that on start" is

@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03, shipped as 1.0.0.49. Steve's ask: "make sure we
 have a SQL backend implemented correctly in SQL Server with Entity Framework,
 with clear diagrams, that is ready to expand."
 
+## In plain words
+
+This page moves the site's data into Microsoft's managed SQL Server (Azure SQL Database), so a bid now survives a deploy as well as a restart. The site signs in to the database with its own Azure identity (a managed identity), so the connection string carries no password, and laptops and CI keep using a single-file database (SQLite).
+
+What that is worth: a developer can clone and test the code with no Azure credential, and the organization has no database password to leak or rotate, with a site that still comes up when the database is paused.
+
 ## The connection string that is not a credential
 
 Steve's second instruction that day was "when possible we want to avoid standard
@@ -366,12 +372,13 @@ composite key 768 bytes. The ids this application creates are GUIDs, so 128 is
 generous, and the widths are declared in the DDL and asserted against the model
 by the conformance test.
 
-The fix then failed once, quietly, and the way it failed is worth more than the
-fix. The DDL was changed, the solution was built, the tests passed, the schema
-was published, and the database came back with the same four warnings and the
-same 450-byte columns. `dotnet build` on the solution does not build a SQL
-project. It reported success, the DACPAC on disk was the previous one, and the
-publish shipped a schema that did not contain the change.
+The fix then failed once, with every step reporting success, and the way it
+failed is worth more than the fix. The DDL was changed, the solution was built,
+the tests passed, the schema was published, and the database came back with the
+same four warnings and the same 450-byte columns. `dotnet build` on the
+solution does not build a SQL project. It reported success, the DACPAC on disk
+was the previous one, and the publish shipped a schema that did not contain the
+change.
 
 Nothing in that sequence looked wrong. The lesson is the one this repository
 keeps relearning: the gate is an independent read of the thing itself, not a

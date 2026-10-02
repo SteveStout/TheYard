@@ -4,6 +4,12 @@ Status: accepted, 2026-09-19, shipped as 1.0.0.149. Asked for in one sentence: t
 performance of the relational store, the document store and the container, on the Admin tab, kept
 the way the site activity is kept.
 
+## In plain words
+
+This page decides how the Admin tab shows what the machines under the site are doing: the container's memory and processor sampled on a timer, and each database asked for the reading it keeps about itself. Each resource gets its own chart, with every minute kept for a month so a restart cannot empty it.
+
+What that is worth: a developer can see whether a container's memory is climbing toward its limit, and the organization can check the claim that one small container serves the whole site, with nothing added to the bill.
+
 ## Context
 
 The Admin tab could already say what the application did: every SQL statement with its milliseconds,

@@ -22,7 +22,7 @@ I grew up at Lake of the Ozarks, Missouri, and neither my parents nor I have eve
 
 ### History
 
-I read a lot about Ancient Rome and European history, which had more to do with the American Revolution and the Louisiana Purchase than most people expect. Fun fact: Lewis and Clark set out from St. Charles, Missouri, which is my part of the world.
+I read a lot about Ancient Rome and European history, which had more to do with the American Revolution and the Louisiana Purchase than you might expect. Fun fact: Lewis and Clark set out from St. Charles, Missouri, which is my part of the world.
 
 ![The Pantheon in Rome at dusk, its columned portico lit gold beside the obelisk fountain of the Piazza della Rotonda](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/pantheon-at-dusk-480.jpg "Pantheon photograph from fullsuitcase.com.")
 

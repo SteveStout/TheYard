@@ -3,10 +3,16 @@
 Status: accepted, 2026-09-02, shipped through the new pipeline as its first
 real passenger.
 
+## In plain words
+
+On a phone the header's dropdown menus did not fit, so below 640 pixels they give way to one button that opens a full-height list of every menu. Both views draw from the same menu data, so they cannot drift apart.
+
+What that is worth: a developer changes a menu in one place and a phone-sized test proves it still works, and the organization's site reads as well on a phone as on a laptop.
+
 ## Context
 
 The header grew four dropdown menus and an Admin tab in two days, and on a
-phone they did not fit. The site is on the resume, so a recruiter's first
+phone they did not fit. The site is on the resume, so a visitor's first
 look is as likely to be a phone as a laptop. His words on the problem: the
 UI is not mobile friendly with all the dropdowns and must be fixed.
 

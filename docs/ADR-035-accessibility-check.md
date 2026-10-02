@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03, shipped as 1.0.0.44. Steve's ask, as part of the
 performance and accessibility pass: "an axe or Playwright accessibility check
 that runs in CI."
 
+## In plain words
+
+This page adds an automated accessibility check (axe-core through Playwright) that scans seven views of the site against the WCAG 2.1 AA standard in CI and allows zero failures. Its first run found two serious contrast failures, and the fix darkened the two colours instead of lowering the bar.
+
+What that is worth: a developer learns that a colour fails the standard before it ships, and the organization has its site checked by machine against a published accessibility standard on every change.
+
 ## Context
 
 There were already two things here that looked like accessibility coverage.

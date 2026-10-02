@@ -6,6 +6,12 @@ Teal fills, dark green draws, gold trims, frosted glass over a light ground, and
 
 Every colour, size and width is a design token: a named CSS custom property (a CSS variable) holding one design decision. This section explains how the site looks and why, and the build enforces every rule on these pages, so a change that breaks one does not ship.
 
+## In plain words
+
+This section explains how the site looks and why. Every colour and size is a named value declared once (a design token), and the build stops a change that breaks a rule here from shipping.
+
+What that is worth: a developer changes a colour in one place and every page follows, and the organization ships no page off-brand because the build checks every one.
+
 ## In this section
 
 ```tiles

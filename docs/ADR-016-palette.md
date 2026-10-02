@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-02, shipped as 1.0.0.21.
 
+## In plain words
+
+This page records where the site's colours come from: a small set of chosen colours (a palette), with every colour in the code taken from it. Where a shade was too light to read, it was deepened until it passed the contrast standard (WCAG AA), and a unit test fails the build if a text colour falls short.
+
+What that is worth: a developer changes the look of the whole site in one file and learns at build time if a colour is unreadable, and the organization ships no text that fails the contrast bar.
+
 ## Context
 
 The site had shipped in a navy and electric blue it inherited from the
@@ -142,8 +148,8 @@ visit, at the price of a first visit that never shows Poppins at all. A
 path, and it needs the hashed file names that only the build knows, which
 means a plugin or a hand-typed name that goes stale on the next build; the
 stylesheet is same-origin and first in the head, so the files are discovered
-early enough without it. Poppins itself covers latin, latin-ext and
-devanagari; the other two subsets were never fetched by an English page and
+early enough without it. Poppins itself covers latin-ext and devanagari as
+well as latin; those two subsets were never fetched by an English page and
 are not carried. One place still names the Google stylesheet, and is left on
 purpose: the diagram pages under `/diagrams` are HTML the server writes with
 no build step to hash a file for them (ADR: Every diagram opens on its own page), and they are not
@@ -228,11 +234,11 @@ bluer, `#03505a`.
   header teal, because left to right could not be seen. It is the phone's header and the rail's
   brand block. White text is 14.41 at its top and 9.13 at its bottom.
 - **The series order is fixed**: dark green, bright teal, neutral grey, so a colour means the same
-  place on every chart. 1.0.0.168 gave the series tokens of their own for exactly this, and this
+  place on every chart. 1.0.0.168 gave the series tokens of their own for exactly this; this
   ship changed their values and touched no chart.
 
-**The status colours did not change and are reserved.** They mean a state, always with a word beside
-them, and a series never takes one (ADR: The Admin tab, as a product, the addendum on the traffic
+**The status colours did not change and are reserved.** They mean a state and always carry a word beside
+them; a series never takes one (ADR: The Admin tab, as a product, the addendum on the traffic
 card in plain words).
 
 **The two store colours stay for now**, slate blue and the deepened taupe, on the comparison cards,

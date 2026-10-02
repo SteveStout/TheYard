@@ -2,6 +2,12 @@
 
 Status: accepted in practice since the first image; written down 2026-09-01.
 
+## In plain words
+
+The site's container runs on Linux even though the app is built on a Windows machine. Nothing in the app needs Windows, and the Linux image is a fraction of the size of a Windows one.
+
+What that is worth: a developer gets one image that runs the same on the laptop as in production, and the organization moved the site to a new host without changing the build file (Dockerfile).
+
 ## Context
 
 The application is built on a Windows machine, so Windows containers were
@@ -37,8 +43,8 @@ Linux containers, everywhere the image runs.
 
 - The dev machine needed WSL2, installed on provisioning day, a one-time
   cost.
-- Anything Windows-specific can never quietly creep into the runtime; the
-  container would refuse it. That constraint is a feature.
+- Anything Windows-specific that creeps into the runtime is refused by the
+  container. That constraint is a feature.
 
 ## Addendum, 2026-09-20: the same image, on a different host
 

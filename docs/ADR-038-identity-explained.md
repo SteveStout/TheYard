@@ -9,6 +9,12 @@ was decided. This one says what the words mean.
 Read it beside `api/TheYard.Api/Program.cs` and `api/TheYard.Api/Tokens.cs`.
 The samples below are those files, read from this build.
 
+## In plain words
+
+This page explains, for a developer new to ASP.NET Core, how the site knows who is calling it. Accounts and password hashes live in a library (ASP.NET Core Identity), and a signed proof of who you are (a token) travels in a cookie the page's scripts cannot read.
+
+What that is worth: a developer can add a protected endpoint or a user field by following the page's own checklist, and the organization's sign-in code can be maintained by its newest hire, with the signing key kept out of the repository.
+
 ## Context
 
 Before this change the API had no idea who was calling it. There was one set of

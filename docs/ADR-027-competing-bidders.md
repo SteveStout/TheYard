@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03, shipped as 1.0.0.37. The README listed this as
 open work: "simulated competing bidders so the high-bidder state can be lost,
 with outbid alerts."
 
+## In plain words
+
+This page adds pretend rival bidders (a simulated room), so a visitor can now be outbid. The room bids through the same rules as everyone else, and the server alone decides who is winning. The browser asks for a new round every eight seconds (polling rather than Server-Sent Events).
+
+What that is worth: a developer sees the bidding rules exercised by what a visitor does, and the organization's demo shows an auction that can be lost while costing nothing when nobody has a tab open.
+
 ## Context
 
 The demo had one buyer, and that buyer could not lose. Place a bid and you hold

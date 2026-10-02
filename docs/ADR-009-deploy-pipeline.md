@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-02, the morning it shipped. The first automated
 deploy rolled 1.0.0.12 onto the live site with no hands on the runner.
 
+## In plain words
+
+A change reaches the live site with no person involved. When the tests pass on the main branch, a second automated job (GitHub Actions) builds and ships the new image, then checks that the live site reports the new version. It signs in to Azure with a short-lived token (OIDC), so no password or key is stored anywhere.
+
+What that is worth: a developer merges and the deploy follows on its own with nothing to rotate or leak, and the organization gets releases that need neither a laptop nor a stored credential.
+
 ## Context
 
 Until this morning every ship was a scripted manual pipeline: run the three

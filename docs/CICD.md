@@ -1,7 +1,13 @@
 # CI/CD
 
 How code gets from a laptop to https://theyard.stevenstout.biz, written for a
-hiring manager or anyone learning how small projects ship safely.
+reviewer or anyone learning how small projects ship safely.
+
+## In plain words
+
+This page shows how a code change gets from a laptop to the live site. Every test runs before a version can ship (the ship's gate), and a push to the main branch then builds the container image and rolls it onto both sites with no human step.
+
+What that is worth: a developer can merge knowing a failing test stops the change before it reaches anyone, and the organization ships often with no Azure password or key stored anywhere to leak.
 
 ## What runs today
 

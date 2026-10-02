@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-01. The first build carrying it is 1.0.0.9.
 
+## In plain words
+
+The bottom of every page shows which build is running: a version number and a short code (the commit hash) that links to the exact change on GitHub. The number is read from the running container itself, so it cannot drift from what is deployed.
+
+What that is worth: a developer confirms a deploy by looking at the page, and the organization can always say which code a visitor saw.
+
 ## Context
 
 Eight images had shipped before the page could say which build a visitor was

@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03, shipped as 1.0.0.36. The README listed this as
 open work: "focus management on view switches (the detail page should receive
 keyboard focus), plus a fuller accessibility audit."
 
+## In plain words
+
+This page makes the site work for people using a keyboard or a screen reader instead of a mouse. A hidden link on the first Tab jumps straight past the sidebar (a skip link). Focus now moves to each new view as it opens, and a hidden line tells a screen reader what changed (a live region).
+
+What that is worth: a developer has browser tests that fail if a change breaks the keyboard path, and the organization's site can be used end to end by a visitor who never touches a mouse.
+
 ## Context
 
 The app was already better than its starting point in the parts a component

@@ -2,6 +2,12 @@
 
 Eleven pieces, listed inside-out. Each may only depend on the ones above it.
 
+## In plain words
+
+This page lists the eleven pieces the code is split into (the .NET projects and the React front end), from the innermost out, and says what each one holds. Each piece may only depend on the ones listed above it.
+
+What that is worth: a developer can tell where a change belongs and what it may touch before opening a file, and the organization can swap a storage adapter without rewriting the rules above it.
+
 ## TheYard.Data
 
 The innermost ring and the language every other layer speaks: the pure data records,
@@ -130,7 +136,7 @@ that one file.
 ## Beside the projects: samples/
 
 `samples/maplarge` is The Shed, a sample that is not one of the eleven pieces: its own
-solution (`TestProject.sln`, net8.0, controllers, a page in plain JavaScript), its own tests,
+solution (`TestProject.sln`, net10.0, controllers, a page in TypeScript compiled by tsc alone), its own tests,
 its own twelve records served from its own running app, and its own deploy to a third web app
 on the plan the two sites share. It was built for MapLarge's developer test project in
 September 2026 on the starter they sent, in this project's working method: dependencies

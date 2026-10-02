@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-03, shipped as 1.0.0.42. Steve's ask: "document the
 AI-assisted development methodology."
 
+## In plain words
+
+This page explains why the site carries its own account of how it was built with heavy AI help (`docs/AI-DEVELOPMENT.md`). That document answers the questions a reviewer would ask, each with a place in the repository to look, and most of its evidence is mistakes found and written down.
+
+What that is worth: a developer can check each claim against the code instead of taking it on trust, and the organization says plainly that it builds with AI and hands a reviewer the evidence to judge it by.
+
 ## Context
 
 This application was written with heavy AI assistance, and a reader who works
@@ -76,5 +82,5 @@ pipeline's own account of itself.
 - [`docs/AI-DEVELOPMENT.md`](https://github.com/SteveStout/TheYard/blob/main/docs/AI-DEVELOPMENT.md): the document.
 - [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the About menu entry.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the slug that serves it.
-- [`docs/ADR-014-live-samples.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-014-live-samples.md): why a document here cannot quietly drift from the code it describes.
+- [`docs/ADR-014-live-samples.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-014-live-samples.md): why a document here cannot drift from the code it describes without a test failing.
 - [`docs/ADR-027-competing-bidders.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-027-competing-bidders.md): the eleven defects the document cites.

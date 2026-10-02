@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-03. The projects are `TheYard.*` now. They were
 `TheBlock.*`, and that name came from somewhere worth being straight about.
 
+## In plain words
+
+Every project in the code was renamed from TheBlock to TheYard, so the code now says the same name as the live site. The rename moved 208 files in a way that keeps each file's history (git recorded every move as a rename) and rewrote the text without damaging any file's encoding.
+
+What that is worth: a developer can still follow any file back to its first day (`git log --follow`), and the organization shows a reader one consistent name, which keeps their trust before they read a line of code.
+
 ## Where the old name came from
 
 This application began as a submission to OPENLANE's hiring challenge, in a fork
@@ -66,9 +72,9 @@ is missed. Four are strings, where a mistake is silent until runtime:
   migrations by name, not by reference: `MigrationsAssembly("TheYard.Migrations.Sqlite")`.
   Wrong, and the application starts and then cannot find a single migration.
 - **The DACPAC.** The SQL project builds `TheYard.Database.dacpac` now, and CI
-  asserts that exact filename exists, because a build that quietly leaves the
-  previous package on disk has already caught this project out once (ADR: Data
-  first, and the database in source control).
+  asserts that exact filename exists, because a build that reports success while
+  leaving the previous package on disk has already caught this project out once
+  (ADR: Data first, and the database in source control).
 - **The live code samples.** Records here quote source by path from the running
   build (ADR: Live code samples), and every one of those paths changed. A missed
   one renders as "Sample unavailable" rather than failing, which is why the

@@ -8,6 +8,12 @@ containers shipped in 1.0.0.89 and the numbers this record owed were
 measured at 1.0.0.92.
 Parent: ADR: A second store on Cosmos DB, and what it costs.
 
+## In plain words
+
+This page chooses how the vehicle catalogue is split up inside the second database (the Cosmos DB partition key), a choice that cannot be changed later. It picks the vehicle's make, which spreads the data with no hot spot and matches the first filter a visitor reaches for, then measures what each query costs.
+
+What that is worth: a developer who knows SQL Server sees how a partition key differs from a clustered index, with real numbers per query, and the organization gets a choice that is costed before it becomes permanent.
+
 ## What the key is, for a reader who knows SQL Server
 
 A SQL Server table has a clustered index that decides its physical order, and
@@ -195,7 +201,8 @@ within half a request unit of the tuned container on every row (6.26 against
 against the default policy also did not finish: 8,407 documents were refused
 after the SDK's thirty retries over two minutes on a 1000 RU/s database that
 was being asked for twice that, which is what throttling looks like from the
-client, and the record keeps the number rather than re-running it quietly.
+client, and the record keeps the number rather than re-running it until it
+finishes.
 
 Both seeds ran faster than the throughput arithmetic allows. 884,479 RU at
 1000 RU/s is 14.7 minutes and the tuned seed took 12.8; the service lets an

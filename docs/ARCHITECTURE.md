@@ -14,6 +14,12 @@ would exist and be enforced rather than remembered.
 *A preview. [Open the data flow diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/dataflow)
 to zoom in and follow it. The infrastructure has [its own drawing](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure).*
 
+## In plain words
+
+This page is the map of the whole application: which part owns what, and which way the parts depend on each other. The server code is built in rings (an onion architecture) where every dependency points inward, and a short set of rules keeps it that way, such as working facts out from stable ids instead of storing them.
+
+What that is worth: a developer can tell where a change belongs before writing it, and the organization can swap a piece at its seam, as when the catalogue moved from JSON files to SQLite without one line changing in the inner layers.
+
 ## The topology, in the document
 
 The two drawings above are pictures. This one is text: it lives in this file,
@@ -99,7 +105,7 @@ diagram a wish rather than a map.
 What the database actually holds, which is four tables of this application's own
 plus the seven ASP.NET Core Identity brings with it. The authority for this
 picture is `api/TheYard.Database`, and a conformance test holds the Entity
-Framework model to it, so this diagram cannot quietly stop being true without
+Framework model to it, so this diagram cannot stop being true without
 something failing (ADR: Data first, and the database in source control).
 
 [![TheYard's database: the four tables this application owns with every column and type, Identity's seven, and the two relationships deliberately left unenforced](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/erd.svg)](https://theyard.stevenstout.biz/api/docs/diagrams/erd)

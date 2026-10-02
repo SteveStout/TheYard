@@ -2,7 +2,13 @@
 
 **Who comes to this site, what it keeps about them, and how it gets found: {{live:facts api/TheYard.Tests/ActivityTests.cs}} activity tests and {{live:facts api/TheYard.Tests/LogTests.cs}} kept-log tests hold every rule on these pages.**
 
-The site counts its own traffic and shows it on the Admin tab, to anybody. That is only safe because of what a visit is allowed to leave behind: a daily token, three octets of a network, the page asked for and the store that answered, and nothing that names a person. This section explains the counting, the keeping and the finding, and every rule on it is one a test enforces.
+The site counts its own traffic and shows it on the Admin tab, to anybody. That is only safe because of what a visit is allowed to leave behind: a daily token, three octets of a network, the page asked for and the store that answered, and nothing that names a person. This section explains how visits are counted and kept and how the site is found. Every rule on it is one a test enforces.
+
+## In plain words
+
+This section explains how the site counts its own visitors and shows the totals to anyone on the Admin tab. That is safe because a visit keeps nothing that names a person, and a test holds every rule here. It also covers how search engines find the site.
+
+What that is worth: a developer sees how to measure traffic without keeping personal data, and the organization can publish its numbers openly because nothing in them names a person.
 
 ## In this section
 

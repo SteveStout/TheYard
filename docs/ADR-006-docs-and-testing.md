@@ -4,6 +4,12 @@ Status: accepted, 2026-09-01. A full review of the ADR set and the test
 suites is planned future work; this record captures the decisions as they
 stand so nothing is lost before that review happens.
 
+## In plain words
+
+This page records how the project is documented and tested. The documents are served from the running site's menus, so a reader never has to open the code, and every release must first pass the three test suites, including a browser test for every menu of documents.
+
+What that is worth: a developer finds each decision in one place and knows a green run means the same thing on a laptop as in a deploy, and the organization can check the site's claims against a picture or a test.
+
 ## Context
 
 The project doubles as a portfolio piece. The decisions about how it is
@@ -16,8 +22,8 @@ records. This ADR closes that gap.
 - Docs are served by the running app, from header menus, so everything is
   exposed without opening the repository. The site tells its whole story
   standalone.
-- The audience is a hiring manager or a person trying to learn. Plain
-  language wins over jargon every time.
+- The audience is a busy reviewer or a person trying to learn. Plain
+language comes before jargon every time.
 - Menus are organized parent over children. About holds the project docs
   and the resume. Hosting holds the hosting overview with its ADRs and the
   Bicep file. CI/CD holds the pipeline story. Best Practices holds the

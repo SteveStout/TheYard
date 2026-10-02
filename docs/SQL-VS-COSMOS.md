@@ -8,6 +8,12 @@ reading behind it. Read ADR: Cosmos DB, explained for someone who knows SQL
 Server first; it teaches the vocabulary, and this page is the comparison a
 reader makes after learning it.
 
+## In plain words
+
+The site runs on two kinds of database at once: a relational one (Azure SQL Database) and a document one (Azure Cosmos DB). This page sets them side by side, from a bid at rest to the monthly bill. Measured here, the gap between them is distance to the server; with that taken out, they answer in the same time.
+
+What that is worth: a developer who knows one of these databases well can learn the other from one page, and the organization can choose between them on numbers measured on its own application.
+
 ## Why this page exists
 
 TheYard runs on two stores at once, Azure SQL Database and Azure Cosmos DB,

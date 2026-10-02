@@ -6,6 +6,12 @@ https://theyard-cosmos.stevenstout.biz, with HTTPS from the same certificate
 authority the live site uses, through the same edge. Parent: ADR: One
 container, both stores.
 
+## In plain words
+
+The second site, the one that runs on the document database (Azure Cosmos DB), gets a permanent web address under the site's own domain, with a padlock (HTTPS). It goes through the same free edge as the live site (Netlify), so nothing new is created on Azure.
+
+What that is worth: a developer can link the two sites to each other over HTTPS without a browser warning, and the organization gets an address a person can type and a resume can carry, for $0 on Azure.
+
 ## Context
 
 Steve's words on the morning of 2026-09-09, after his first look at the two

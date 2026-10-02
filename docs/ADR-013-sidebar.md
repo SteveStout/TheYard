@@ -3,12 +3,18 @@
 Status: accepted, 2026-09-02, shipped as 1.0.0.15. Supersedes the desktop
 half of ADR: The phone header; the phone half lives on inside this one.
 
+## In plain words
+
+The site's menus live in one side panel (the sidebar) at every screen width. At 1024 pixels and wider it stays open beside the page and can shrink to a column of icons; on a phone or tablet the same panel slides in as a drawer, and the old dropdown menus are gone.
+
+What that is worth: a developer adds a page to the menu with one line of data and it appears in both shapes, and the organization keeps every document one glance away for a visitor on a wide screen.
+
 ## Context
 
 The header had grown five dropdown menus (Hosting, CI/CD, Best Practices,
 Changelog, About) plus an Admin button, and on a phone they gave way to a
 drawer. Two navigation surfaces for one site, and the desktop one was the
-weaker: a hiring manager landing on a laptop had to guess which of five
+weaker: a visitor landing on a laptop had to guess which of five
 small words hid the decision records. Steve's words, with a reference
 attached: "I wanted a sidebar instead of dropdowns", and "the dropdowns
 look horrible on mobile". The reference was the Dribbble mobile-sidebar
@@ -89,7 +95,7 @@ already was the sidebar, only shown on phones.
 The alternative considered was a hamburger at every width with no docked
 rail. It matches the reference shots more literally and costs a breakpoint
 less, but it hides the documents behind a tap on the widest screens, which
-is where a hiring manager lands first. The rail keeps them one glance away.
+is where a reviewer lands first. The rail keeps them one glance away.
 
 ## Consequences
 
@@ -228,7 +234,7 @@ files.
 ## Addendum, 2026-09-21: a fourteenth section, for the author, shipped as 1.0.0.171
 
 Everything in the sidebar was about the site, and nothing was about the person who built it. The
-reader this site is for is a recruiter or a hiring manager deciding whether to start a
+reader this site is for is someone deciding whether to start a
 conversation, and a conversation is with somebody. So the last section, right under About, is
 **Author**, with one page in it, **About Steven**: who he is at work in three sentences, three ways
 to reach him, the rest of his life in small headed blocks, a closing line. The intro strip over the

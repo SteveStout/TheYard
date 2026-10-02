@@ -1,8 +1,14 @@
 # ADR: Reset is one person's start-over
 
 Status: accepted, 2026-09-03. `DELETE /api/bids` took no user and deleted
-everybody's rows. It was documented, deliberate, and had quietly stopped being
-defensible two versions earlier.
+everybody's rows. It was documented, deliberate, and had stopped being
+defensible two versions earlier without its comment changing.
+
+## In plain words
+
+The demo's reset button used to delete every visitor's bids, which let any signed-in user wipe out other people's data (broken access control). Now a reset removes only the caller's own bids, and a stranger who bid on the same car keeps their bid and their lead.
+
+What that is worth: a developer sees how a comment that was once right can expire while the code still reads as settled, and the organization's users can no longer erase each other's work with one button.
 
 ## What it did
 
@@ -79,12 +85,12 @@ the person bid on. `BidService` does not reach into `MarketService`; it reports,
 and the composition root connects them.
 
 **It recomputes each vehicle's standing rather than deleting it.** Deleting the
-standing would hand the vehicle back to its opening ask, which quietly discards a
-third person's bid on the same car: the same defect, one size smaller. Instead
-the top remaining bid across the other users becomes the new standing, so a
-stranger who bid on that car keeps their bid and keeps the lead they earned. The
-scan is over users and their bids, which is small, rather than over the hundred
-thousand vehicles, which is not.
+standing would hand the vehicle back to its opening ask, which discards a third
+person's bid on the same car as a side effect: the same defect, one size
+smaller. Instead the top remaining bid across the other users becomes the new
+standing, so a stranger who bid on that car keeps their bid and keeps the lead
+they earned. The scan is over users and their bids, which is small, rather than
+over the hundred thousand vehicles, which is not.
 
 **The store deletes one person's rows**, `WHERE UserId = @userId`, rather than
 truncating the table.

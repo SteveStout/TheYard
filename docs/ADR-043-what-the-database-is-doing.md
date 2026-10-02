@@ -5,6 +5,12 @@ application sends, its own log, and how long both take. The interesting decision
 is not that it shows them. It is that the SQL table has nowhere to put a
 parameter value.
 
+## In plain words
+
+This page adds a live view of every database query the site sends, and how long each takes, to the public Admin tab. Because anyone can open that page, the record that holds each query has no field for the values sent with it (parameter values), so an email address has nowhere to appear.
+
+What that is worth: a developer can see which request caused each query and read the slowest endpoint as a number, and the organization can show its data access in public without exposing anyone's data.
+
 ## Context
 
 The Admin tab already showed health, Azure's view of the container, an hour of

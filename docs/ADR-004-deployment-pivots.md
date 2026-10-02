@@ -3,6 +3,12 @@
 Date: 2026-08-31
 Status: Accepted
 
+## In plain words
+
+This page records how the site got hosted when the free trial refused the planned setup. The smallest hosting that would accept the container went first, and the full production design stays as settings in one template file (Bicep) that can be switched on later.
+
+What that is worth: a developer sees each refusal measured and worked around without rewriting the app, and the organization can change hosting by changing a subscription and a few parameters, because the same container image runs anywhere.
+
 ## Context
 
 The author's framing, day one: the plan is a quick push first and the true

@@ -5,6 +5,12 @@ Status: accepted, 2026-09-20. Asked for in one sentence, which is this record's 
 when I get a new job I want to advocate the admin portal we have at the new job, to make it easier
 to maintain the site statuses."
 
+## In plain words
+
+This page decides how the operator's page (the Admin tab) is built so someone new can read it in seconds: a strip of status tiles across the top, and every card filed under the plain question it answers, such as "is it up?". Its charts are drawn by the site's own code, with no added library.
+
+What that is worth: a developer gets charts and thresholds written as small tested files they can read or lift, and the organization gets a status page anyone on the team can open without an Azure sign-in.
+
 ## Context
 
 The Admin tab grew a card at a time, each one answering the question of the week it was written in:
@@ -14,7 +20,7 @@ every page checked, what the machines are doing. Every one of them is correct, a
 paragraphs and tables. A person who built it reads it easily. A person who did not, which is the
 person this record is for, meets several paragraphs before the first picture.
 
-The bar is a hiring manager looking at it and wanting one. That reader gives a page a few seconds,
+The bar is a reviewer looking at it and wanting one. That reader gives a page a few seconds,
 and in those seconds the page has to answer four questions in the order they would be asked at
 three in the morning: is it up, is it fast, is it costing anything, what broke.
 

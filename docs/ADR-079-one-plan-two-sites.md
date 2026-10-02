@@ -5,6 +5,12 @@ sentences, reading the machines card the evening it went live: "We're using abou
 there any way to reduce our SQL cost?", then "Can't we use one container?", then "Is there any way
 for them to share an App Service plan instead, which would be cleaner?", then "or share compute."
 
+## In plain words
+
+This page moves the site's two copies, one for each database, off two separate rented machines (Azure Container Instances) onto one shared machine that runs both (an Azure App Service plan, Linux B1). It records the prices and the memory measured on the new machine, along with the way back.
+
+What that is worth: a developer sees a hosting choice made from measured memory and list prices instead of guesses, and the organization's monthly bill drops from $78.85 to $22.38 for the same two sites.
+
 ## Context
 
 The machines card (ADR: What the machines are doing) put three readings on one page for the first

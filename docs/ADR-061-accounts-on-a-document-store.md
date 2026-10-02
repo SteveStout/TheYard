@@ -6,6 +6,12 @@ account id. Parent: ADR: A second store on Cosmos DB, and what it costs. The
 relational side is unchanged and is described in ADR: Accounts and per-user
 bids and ADR: Identity and the session token, explained.
 
+## In plain words
+
+User accounts on the document database (Azure Cosmos DB) are stored as one document per account, plus a second, tiny document per email address that keeps each address unique. Signing in is two direct lookups by id (point reads), and the page lists what this design costs next to SQL Server.
+
+What that is worth: a developer sees how to keep an address unique on a store with no unique index, and the organization gets sign-in at about two request units with every trade-off written down before a user finds it.
+
 ## Context
 
 Identity's relational shape is seven tables: a user row plus claims, logins,

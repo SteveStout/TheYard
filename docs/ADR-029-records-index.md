@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-03, shipped as 1.0.0.39. Steve's ask, in full: "add a
 new tab for ADRs."
 
+## In plain words
+
+This page puts every decision record in one sidebar section (the Decision Records index), in the order the decisions were made and numbered to match the file on disk. The section starts closed, using the browser's own open and close element (`details`).
+
+What that is worth: a developer reaches any record in two clicks and can name it by number, and the organization's decisions can be counted at a glance instead of across four sections.
+
 ## Context
 
 The records were filed by topic, which was the right answer at eight of them

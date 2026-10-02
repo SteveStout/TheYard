@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-30, shipped as 1.0.3.55. Steve asked for the portal's subscription overview on the Admin tab, in public: "this is nothing to hide from the public". A reader who sees how fast the site answers should see what it costs to run in the same place.
 
+## In plain words
+
+This page puts the site's real Azure bill on the Admin tab for anyone to see: spending over time with Azure's forecast, and the cost broken down by resource and by type. The site's own identity asks the billing service (Azure Cost Management) once an hour and holds no key.
+
+What that is worth: a developer sees what each part of the site costs beside how fast it answers, and the organization can show its running cost in public without exposing its subscription id.
+
 ## Context
 
 The Azure portal opens a subscription on four cards: the spending rate with a forecast, the cost by resource, the top resource types, and Defender coverage. The Admin tab already showed the milliseconds (the traffic, timing and machines cards) and the request units the document store charged, and the dollar figure lived only in the portal and on the Performance page, where it was typed from a price list on 20 September.

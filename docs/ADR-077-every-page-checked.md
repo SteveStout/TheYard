@@ -4,6 +4,12 @@ Status: accepted, 2026-09-19, shipped as 1.0.0.148. Written the morning Steve op
 inside the app and found it broken, an hour after a link to one of its pages went into a LinkedIn
 post.
 
+## In plain words
+
+This page decides that the running site checks every address it serves each time a new version starts, and again whenever asked (a self-check sweep). An address counts as up only when it answers with content of the right type, and the checks before release (the gate) run the same list.
+
+What that is worth: a developer learns about a renamed document or a missing drawing from the Admin tab instead of from a visitor, and the organization gets a check that runs itself at every release with nothing added to the bill.
+
 ## Context
 
 The README linked two documents at `/api/docs/built-with-ai` and `/api/docs/performance`. Those are

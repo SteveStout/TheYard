@@ -4,6 +4,12 @@ Status: written for a developer who has used an ORM but never hooked one, 2026-0
 Companion to ADR: What the database is actually doing, which is the decision.
 This one is the walkthrough.
 
+## In plain words
+
+This page shows a developer how to see the SQL the code's data mapper sends, by asking it to hand over each command (an EF Core interceptor) instead of parsing log text. It also shows how a type with no field for parameter values keeps email addresses off a public page.
+
+What that is worth: a developer learns to build a type that has no place for a secret, and the organization gets query timings on a public page without a metrics library.
+
 ## The problem, in one sentence
 
 You want to see the SQL your ORM sends, and you cannot see it by reading your own

@@ -25,6 +25,12 @@ layout are as they were. The teals moved to hue 193, blue with enough green to s
 `--gradient-gold`, the bar itself, which draws every page title's underline and every stat tile's top rule.
 Why each value is what it is, and the three that moved from the brief, is in ADR-016's addendum of the same day.
 
+## In plain words
+
+This page lists every colour and size on the site with the job each one does. Teal is for fills, for example, while gold is for trim only. Each swatch is painted live from the named values the site uses (design tokens), and tests hold every text colour to a readable contrast before anything ships.
+
+What that is worth: a developer changes a colour in one file and the build says at once if it breaks a rule, and the organization gets one look held to the same contrast bars on every page.
+
 ## Brand colours
 
 ```swatches

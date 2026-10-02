@@ -3,6 +3,12 @@
 Date: 2026-08-31
 Status: Accepted
 
+## In plain words
+
+This page decides how the site meets the internet: one global front gate (Azure Front Door) takes every request, and the server behind it (Azure App Service) refuses anything that did not come through that gate. The trial subscription refused the gate, so the site runs without it for now and the page says so.
+
+What that is worth: a developer sees the production design and the gap between it and what runs, written side by side, and the organization can see the security trade it made and revisit it before the site holds other people's data.
+
 ## Context
 
 TheYard deploys as one container serving both the React SPA and the .NET API.
@@ -96,9 +102,9 @@ which means those accounts and every bid outlive the container.
 So the origin now fronts persistent user data, and the argument that made an
 unlocked origin acceptable no longer holds on its own terms.
 
-What is written down about a system is part of the system. A record that quietly
-becomes wrong is worse than one that says plainly when it stopped being right,
-because the second kind can be read. This is the second kind.
+What is written down about a system is part of the system. A record that becomes
+wrong without saying so is worse than one that says plainly when it stopped being
+right, because the second kind can be read. This is the second kind.
 
 ### What actually stands between the internet and that data today
 

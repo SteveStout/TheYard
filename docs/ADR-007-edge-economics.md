@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-01, the evening the meter was read.
 
+## In plain words
+
+The site's secure entry point (the Netlify edge) runs on a free plan with a monthly credit allowance, and on its first full day, app changes that never touched the edge used over half of it by rebuilding the edge. One line of settings (netlify.toml) now rebuilds the edge only when its own files change.
+
+What that is worth: a developer learns to read a platform's meter in the first week, and the organization keeps the edge free with no paid plan.
+
 ## Context
 
 The HTTPS edge runs on Netlify's free plan, which allots 300 credits a

@@ -6,21 +6,27 @@ A used-vehicle auction platform I built and run on Azure: browse 100,000 vehicle
 
 [![Deploy](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml/badge.svg)](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml)
 
+## In plain words
+
+TheYard is a used-vehicle auction site on Azure where you can browse 100,000 vehicles and bid against a simulated room of other bidders. The same code runs on two kinds of database at once (Azure SQL Database and Azure Cosmos DB). Every version must pass one set of tests (the gate) before it ships.
+
+What that is worth: a developer can read each choice beside the code and the test that hold it, and the organization gets a live system where no version reaches users without passing the same checks.
+
 ## Tests, and the gate every version passes
 
-The suites hold 744 xUnit tests, 371 Vitest tests at 1.0.3.59 and 143 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.59 hold 2,000 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 747 xUnit tests, 387 Vitest tests at 1.0.3.64 and 143 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.64 hold 2,068 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
-| API | xUnit | 744 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
-| Frontend | Vitest | 371 at 1.0.3.59 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
+| API | xUnit | 747 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
+| Frontend | Vitest | 387 at 1.0.3.64 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
 | End to end | Playwright | 143 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe holding nine views to WCAG 2.1 AA. |
 
-**How 2,000 is counted**, from the gate's own results file for 1.0.3.59 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 371 Vitest tests, 716 xUnit tests on SQLite and the same 716 booted on Cosmos DB, carried forward from 1.0.3.58, the 7 that need the live Cosmos DB account, 144 browser runs on SQLite (the 143 declared tests, three of them declared once inside a loop that runs them twice) and 46 of those again on Cosmos DB, carried forward from 1.0.3.58, which is 2,000. The xUnit and browser counts above are read from the source; a test written after 1.0.3.59 first runs in the gate of the version that ships it.
+**How 2,068 is counted**, from the gate's own results file for 1.0.3.64 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 387 Vitest tests, 740 xUnit tests on SQLite and the same 740 booted on Cosmos DB, the 7 that need the live Cosmos DB account, 146 browser runs on SQLite from the 143 declared tests (a loop runs one of them more than once) and 48 of those again on Cosmos DB, which is 2,068. The xUnit and browser counts above are read from the source; a test written after 1.0.3.64 first runs in the gate of the version that ships it.
 
 **The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The gate runs on the machine that ships: format, lint and type checks, the SQL project, xUnit on SQLite, the seven live Cosmos DB tests, and then Vitest and the browser suite, one side after the other. Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml) build the image and roll both sites, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites on a pull request, which has had no gate.
 
-**The time.** The target is five minutes (ADR-068), and every gate quoted here is over it: 831 seconds on 1.0.3.36 with every pass run, 657 seconds on 1.0.3.38 with the two store passes carried forward, 973 seconds on 1.0.3.39 with every pass run and 641 seconds on 1.0.3.59 with the two store passes carried forward, on a four-core laptop shared with the browser I work in. Every result, test by test with its milliseconds, ships with the version and is on the Admin tab. [ADR-021](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-021-tests-explained.md) walks the three suites for a developer new to the stack.
+**The time.** The target is five minutes (ADR-068), and every gate quoted here is over it: 831 seconds on 1.0.3.36 with every pass run, 657 seconds on 1.0.3.38 with the two store passes carried forward, 973 seconds on 1.0.3.39 with every pass run and 641 seconds on 1.0.3.59 with the two store passes carried forward, on a four-core laptop shared with the browser I work in. Every result ships with the version, test by test with its milliseconds; the Admin tab shows it. [ADR-021](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-021-tests-explained.md) walks the three suites for a developer new to the stack.
 
 ## Architecture and decisions
 
@@ -94,7 +100,7 @@ rather than pasted, so a record cannot drift from the code it describes. The sha
 
 On Windows the two tools install with
 `winget install OpenJS.NodeJS.LTS Microsoft.DotNet.SDK.10`, and `npm run api` and `npm run dev` run the
-two halves in separate terminals. With `npm start` running, open `http://localhost:5173`. The dev server proxies `/api` to the .NET API, which serves
+two halves in separate terminals. With `npm start` running, open `http://localhost:5173`. The dev server proxies `/api` to the .NET API that serves
 the inventory and the vehicle photos (`/api/images/...`). The inventory is **100,000
 records**, deterministically synthesized at startup from the 200-record seed dataset
 (`Inventory:TargetCount` in `api/TheYard.Api/appsettings.json`), so there is no giant
@@ -159,7 +165,7 @@ shape matters more than the total, and it is the shape the architecture predicts
 | `TheYard.Api` | 78.2% | 64.1% |
 
 The rules and the use cases are the parts worth being sure about. The host is lowest
-because two of its classes talk to Azure with a managed identity, and CI has no Azure
+because two of its classes talk to Azure with a managed identity. CI has no Azure
 credential and is never getting one; what is worth asserting about those two is that they
 degrade rather than throw when the identity endpoint is not there, and that is tested
 (ADR: Counting what the tests cover).
@@ -175,13 +181,13 @@ server-side filtering, sorting and paging over a 100,000-record synthetic datase
 server-owned bidding rules, three test suites, CI, a container, a live host, and a
 written architecture the code is reviewed against.
 
-The work was pair-built with Claude Code throughout. I directed the scope, the
-architecture, and every product decision, and I am happy to walk through the reasoning
+The work was pair-built with Claude Code throughout. I directed the scope and
+the architecture and every product decision, and I am happy to walk through the reasoning
 behind any line of it.
 
 ## Workflow
 
-AI-assisted, verification-driven. I directed scope, architecture, and product decisions;
+AI-assisted, verification-driven. I directed scope and architecture and the product decisions;
 Claude Code implemented against tests I specified first, and nothing merged on trust: every change
 ran the typechecker and all three suites, UI work was verified against real screenshots
 at desktop, tablet and mobile widths, and features were driven end to end in a headless
@@ -231,7 +237,7 @@ each with its own changelog line and, where it decided something, its own record
   listings would use real lot photography; credits in
   `api/TheYard.Api/wwwroot/images/CREDITS.md`.
 - **The API owns everything**: data, filtering, sorting, paging, photo mapping, auction
-  scheduling, and bid validation. The browser formats, counts down, and relays actions.
+  scheduling, and bid validation. The browser formats and counts down; it also relays actions.
 - Out of scope by design: seller tooling, checkout, payments, and real-time push;
   accounts, a database and per-user bids arrived on 2026-09-03 and are described below.
 
@@ -259,7 +265,7 @@ each with its own changelog line and, where it decided something, its own record
   Registry, and two web apps for containers, one per site, sharing one Linux B1 App Service
   plan at $12.41 a month, with Netlify's free tier as the TLS edge in front of them
   (ADR: One plan, two sites). GitHub Actions builds the image and rolls both sites on every green push.
-  `infra/main.bicep` is what runs, the plan and the two sites with every setting, with Azure
+  `infra/main.bicep` is what runs: the plan and the two sites with every setting, with Azure
   Front Door and the origin lock behind a parameter that stays off while the subscription
   refuses Front Door; the Hosting page explains both.
 - **Database:** Azure SQL Database through EF Core, behind the same ports the JSON
@@ -273,11 +279,11 @@ each with its own changelog line and, where it decided something, its own record
   goes first, and the numbers in the records. There is no password anywhere: the
   server was created Entra-only, so it has no SQL login to have one, and the container
   authenticates as the managed identity it already carried. The Cosmos DB account has local
-  auth disabled, so no key exists either, and an account there is one document plus one
+  auth disabled, so no key exists either. An account there is one document plus one
   address document, so an email stays unique without a cross-partition unique index
   (ADR: Accounts on a document store). The schema is a SQL project
   of hand-written DDL that compiles to a DACPAC and is the authority; EF maps to it and a
-  conformance test fails the build when the two disagree, and the running application
+  conformance test fails the build when the two disagree. The running application
   holds read and write and cannot alter a table. The catalogue is read once into memory,
   so the database is not on the path a request takes, and a container that cannot reach
   it serves the catalogue from files and says so. ADR: The SQL Server backend, ADR: Data
@@ -352,7 +358,7 @@ each with its own changelog line and, where it decided something, its own record
   index; the suite holds the weaker, repeatable claim, that the indexed scan is never
   slower than the rebuilt one, because a benchmark that asserts a millisecond is a test
   that fails on a busy machine. The
-  auction status stays out of the index on purpose, because the clock decides it, and
+  auction status stays out of the index on purpose because the clock decides it, and
   it is computed only for tokens the static text did not already satisfy.
   *Where:* `api/TheYard.Domain/VehicleSearchIndex.cs`, `VehicleFilter.cs`
   (`Compile`), `api/TheYard.Application/InventoryService.cs` (built with the
@@ -372,7 +378,7 @@ each with its own changelog line and, where it decided something, its own record
   `VehicleFilter`, `BidState`, `SearchResult`) is a `sealed record`: records give
   value-based comparison, and sealing keeps that trustworthy, because record equality
   includes a hidden runtime-type check (`EqualityContract`) that inheritance would
-  quietly poison. Sealing also states intent (a wire contract is not an extension point),
+  poison without a compile error. Sealing also states intent (a wire contract is not an extension point),
   lets the JIT devirtualize the generated `Equals` and `GetHashCode`, and is the
   low-regret default: unsealing later is non-breaking, sealing later is not. The payoff
   shows up in practice: determinism tests compare whole vehicle lists by value, and
@@ -415,11 +421,11 @@ each with its own changelog line and, where it decided something, its own record
 - **Buy Now is a purchase, not a bid**: it does not inflate the bid count, the vehicle
   presents as "Sold" with a purchase price everywhere and to everybody, and it takes no
   further bid from anyone.
-- **Simultaneous bids are serialized.** Bidding is read, decide, write, and each step being
+- **Simultaneous bids are serialized.** Bidding is read, decide, write; each step being
   atomic does not make the sequence atomic: two bids on the same vehicle could both pass the
   rules and the lower one land second. One gate lets one bid through at a time, held across
   the store's answer (ADR: The ports learn to wait).
-- **One clock at the app root** (`useNow`) drives every countdown and status, so a card
+- **One clock at the app root** (`useNow`) drives every countdown and status so that a card
   and its detail view can never disagree about liveness.
 - **Query requests are debounced (500 ms) and cached (5 min, per query string,
   bounded)** in the data seam. Refresh paths (retry buttons, the periodic status-filter
@@ -469,7 +475,7 @@ each with its own changelog line and, where it decided something, its own record
   watcher in `vite.config.ts`.
 - **`npm start` raced its own browser tab.** Vite opens the browser in about 0.4 s while
   the API takes seconds to boot, so first paint could show a dead-API error. The initial
-  load now retries quietly for up to 30 s, and the fix carries a regression test written
+  load now retries without showing an error for up to 30 s, and the fix carries a regression test written
   from the actual bug report.
 - **The deploy's first run failed on its own identity.** The federated credential subject
   GitHub presents is not the one the portal suggests; one `az` update fixed it, and the
@@ -477,11 +483,11 @@ each with its own changelog line and, where it decided something, its own record
   pipeline.
 - **A phone would not pick up a new stylesheet.** The old trick of appending a date to an
   import does not apply to a hashed bundle; the real answer was cache headers, measured
-  before and after. Recorded in ADR: Cache headers.
+  on both sides of the change. Recorded in ADR: Cache headers.
 
 ## Testing
 
-**API (744 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (747 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -500,7 +506,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (371 Vitest tests at 1.0.3.59):** presentation logic only, since the API owns the rules.
+**Frontend (387 Vitest tests at 1.0.3.64):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,
@@ -568,7 +574,7 @@ Four more came off the list afterwards, on time that was no longer the deadline'
 What is genuinely still open, in priority order:
 
 - Real-time updates (Server-Sent Events) rather than the eight-second poll the
-  competing bidders use now. The phase-one edge is a Netlify rewrite proxy, which
+  competing bidders use now. The phase-one edge is a Netlify rewrite proxy that
   buffers a streaming response, and the edge is not mine to change on a free tier;
   the reasoning is in ADR: Competing bidders
 - Real people at the other end of a bid: accounts and per-user bids exist, and the

@@ -1,10 +1,7 @@
-// The composition root. It lists what the app is made of, in the order it is
-// made; each call leads to the file that shows how (ADR: Program.cs, explained).
-// Inventory and bidding, composed onion-style: Domain (entities, photo
-// selection, auction schedule, filter and bid rules) <- Application
-// (InventoryService and BidService use cases) <- Infrastructure (the stores'
-// adapters, the synthetic scale-up) <- this host. The React app consumes it
-// through Vite's /api proxy, so no CORS is needed.
+// The entry point. It builds the web host and starts it. Each step below is one call, and the
+// comment beside the call names the file that holds the details, so this file stays a short
+// list of what the app is made of. The rules live in Domain, the use cases in Application, the
+// stores in Infrastructure, and this project only wires them together (ADR: Program.cs, explained).
 using TheYard.Api;
 
 #region composition

@@ -3,6 +3,12 @@
 Date: 2026-08-31
 Status: Accepted (standard approved by the author the same day)
 
+## In plain words
+
+This page sets how every cloud resource is named: type first, project second, in capitals wherever Azure allows, for example RG-THEYARD-SS for the resource group. A fixed suffix (uniqueString) is added only where a name must be unique across all of Azure, and no name carries a region.
+
+What that is worth: a developer can tell what a resource is from its name, and the organization can move to another region without renaming anything, which matters because Azure resources cannot be renamed, only recreated.
+
 ## The pattern
 
 TYPE-WORKLOAD-OWNER(-SUFFIX), uppercase. Rendered for this project:

@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03. The security page has said there is no rate
 limiter since it was written. This is not the limiter it meant, and that is the
 point.
 
+## In plain words
+
+Creating an account was the only thing a stranger could do that the database kept, and each one costs about 120 ms of CPU to hash the password. Registration is now capped at 120 accounts per sliding hour across the whole site, counted without telling one visitor from another.
+
+What that is worth: a developer sees a limit that works behind the edge because it never needs to know who is asking, and the organization bounds its bill and keeps the container responsive while everything other than registration keeps working.
+
 ## Context
 
 Ask a narrow question instead of a broad one: what can somebody with no account

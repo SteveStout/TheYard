@@ -12,6 +12,12 @@ and the compiler settings, not by review: indentation, line endings, using
 order, `var` usage, unused locals and parameters. Review is for the half a
 tool cannot check.
 
+## In plain words
+
+This page sets the rules the code here is written to, from naming to where each piece may live. A comment explains why the code is written as it is, because the code already shows what it does. A settings file the editor and compiler read (.editorconfig) checks the mechanical rules.
+
+What that is worth: a developer can predict what a file is called and where it goes before opening it, and the organization gets code a reviewer can check against written rules instead of rules that live in someone's head.
+
 ## Naming
 
 - C#: `PascalCase` for types, methods and properties, `camelCase` for

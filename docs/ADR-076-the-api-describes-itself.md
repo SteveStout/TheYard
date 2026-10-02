@@ -1,7 +1,7 @@
 # ADR: The API describes itself
 
-Status: accepted, 2026-09-15, shipped as 1.0.0.137. Written on the day a hiring manager said,
-through a recruiter, that the first thing they wanted to see was how deep the REST API goes. The API
+Status: accepted, 2026-09-15, shipped as 1.0.0.137. Written on the day a reviewer said that
+the first thing they wanted to see was how deep the REST API goes. The API
 was forty-one endpoints and no document. This is the document, and the rules that keep it true.
 
 ## In plain words

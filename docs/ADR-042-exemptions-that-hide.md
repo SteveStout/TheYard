@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03. Not a feature. Five defects found in one
 afternoon, all of the same species: a check that answered an easier question
 than the one it was written for.
 
+## In plain words
+
+This page records five test defects found in one afternoon, each a check that answered an easier question than the one it was written for. The first was a colour contrast test that held one colour to a lower bar on the page background, which let a too-faint countdown label ship; the fix removed the exemption and darkened the colour.
+
+What that is worth: a developer learns to ask whether a passing check tests the real question, and the organization gets gates that fail on the defect itself, starting with an accessibility failure removed from the vehicle page.
+
 ## What happened
 
 The browser suite went red on CI and could not say why. Fixing that (ADR: The SQL
@@ -284,13 +290,13 @@ best evidence, it was the only evidence.
 
 The patterns are read back out of `ci.yml` by a test, translated from POSIX to
 .NET (only the two character classes the workflow actually uses, and anything
-else is refused rather than quietly compiled into something that means something
-different), and run over real failing transcripts from both suites kept as
-fixtures. The assertions are written as what a reader needs: the failing test's
-name, the assertion message, the stack trace and the totals for .NET; the spec,
-the locator, the timeout headline and the thrown message for the browser suite.
-A second pair asserts what must stay out, because GitHub shows a handful of
-annotations and forty passing specs would push both failures off the top.
+else is refused rather than compiled, with no error, into something that means
+something different), and run over real failing transcripts from both suites
+kept as fixtures. The assertions are written as what a reader needs: the failing
+test's name, the assertion message, the stack trace and the totals for .NET; the
+spec, the locator, the timeout headline and the thrown message for the browser
+suite. A second pair asserts what must stay out, because GitHub shows a handful
+of annotations and forty passing specs would push both failures off the top.
 
 Two of the nine fail against the patterns as they were. The other seven were
 already passing and are held anyway, which is the point: the line that names the

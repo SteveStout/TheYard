@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-15, shipped as 1.0.0.133.
 
+## In plain words
+
+This page decides how the code samples on the site's pages get coloured by meaning (syntax highlighting): one small library (highlight.js) carrying only the languages the pages use, drawn in the site's own palette, with a test holding every colour to a readable contrast.
+
+What that is worth: a developer reads a sample the way an editor would show it, with keywords told apart from comments. The organization shows code worth reading on its public pages without slowing the inventory page, because the renderer arrives with the first document.
+
 ## The problem, measured before it was solved
 
 Every document this site serves renders through `marked`, which hands a fenced block back as plain

@@ -7,6 +7,12 @@ chose. The second container stays, running the same image with the other
 store as its default. Parent: ADR: A second store on Cosmos DB, and what it
 costs.
 
+## In plain words
+
+One running copy of the site (a container) now holds both databases at once (SQL and the document database, Azure Cosmos DB) and serves each request from one of them. A toggle at the top of every page lets a visitor pick the store.
+
+What that is worth: a developer can measure the two stores against each other inside one process where only the store differs, and the organization gets a performance comparison with the network taken out.
+
 ## Context
 
 Two containers, two tabs, and a card that read the other container through

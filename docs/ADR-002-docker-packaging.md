@@ -3,6 +3,12 @@
 Date: 2026-08-31
 Status: Accepted
 
+## In plain words
+
+The site ships as one container image (Docker) that runs both the server code and the web pages. The image is built in stages, so the final one carries only the runtime and runs as a user without admin rights (non-root), and its health check asks the app a real question.
+
+What that is worth: a developer runs the whole site with one command and can explain every line of the build, and the organization ships an image with no build tools in it, which leaves less to attack.
+
 ## Context
 
 The application is a .NET 10 minimal API plus a Vite React SPA. Development

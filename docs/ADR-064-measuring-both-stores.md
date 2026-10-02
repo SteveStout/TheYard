@@ -6,6 +6,12 @@ with the request charge beside every millisecond the document store can put
 one on. Parent: ADR: A second store on Cosmos DB, and what it costs. The
 partition key's own numbers are in ADR: The partition key.
 
+## In plain words
+
+This page measures the same visitor actions against both databases (the SQL one and the document one, Azure Cosmos DB) in twenty paired rounds from one machine. Pages served from memory came out equal; every action that touches a store was faster on the document side, because that store sits in the container's own region.
+
+What that is worth: a developer gets a method that measures the difference between two stores instead of the network, and the organization gets numbers it can defend, at a cost of 1,096 request units on the free tier.
+
 ## The method
 
 Not a stopwatch and not a vibe. This repository learned the lesson twice
@@ -96,17 +102,17 @@ the geography and the driver rather than the engine.** A bid write is 135 ms
 against 219, a registration 216 against 319. The Azure SQL Database is in West
 US 3 because West US 2 refused to create one (ADR: The SQL Server backend), so
 every SQL statement pays a hop between regions that the Cosmos DB account, in
-the container's own region, does not. A bid is two operations on both sides, a
-read and a write, so the difference is the hop and the driver rather than the
+the container's own region, does not. A bid is two operations on both sides (a
+read and a write), so the difference is the hop and the driver rather than the
 shape of the work. The honest reading is that the second container's store is
 next door and the first's is one region away, and the numbers say what that
 costs: about 80 ms on a write, about 35 on a sign-in.
 
 **The cold starts are a wash and both are dominated by the same thing.** Six
 seconds against four and a half, and in both cases most of it is the store
-check, the connection being established and the identity token acquired,
-and the catalogue being expanded to 100,000 in memory, which is the same code
-on both sides. The Cosmos DB container's check had been 48,793 ms on 1.0.0.90,
+check (the connection being established and the identity token acquired) and
+the catalogue being expanded to 100,000 in memory, which is the same code on
+both sides. The Cosmos DB container's check had been 48,793 ms on 1.0.0.90,
 before the identity library was pinned (ADR: A second store on Cosmos DB, and
 what it costs, addendum), and that number is the reason cold start is measured
 rather than assumed.

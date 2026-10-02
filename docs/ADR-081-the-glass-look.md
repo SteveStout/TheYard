@@ -1,25 +1,28 @@
 # ADR: The glass look
 
-Status: accepted, 2026-09-21. Asked for in a few sentences over one morning. On the palette: "I like
-the color scheme we have but it feels a little bland." On the surfaces, with a still from a film's
-heads-up display as a mood and nothing more: "Can we keep the colours but make the UI a little more
-modern?" Then, and this is the specification: "Slightly transparent and modern, maybe some sort of
-soft watermark in the background, but all images and text are zero transparency." And on who it is
-for: "The goal is to drive recruiter and hiring manager engagement, along with people becoming more
-engaged with my website through LinkedIn posts, so this has to look pretty."
+Status: accepted, 2026-09-21. Asked for over one morning: keep the colour scheme but make it less
+bland, and make the interface more modern, with a still from a film's heads-up display as a mood and
+nothing more. The specification: slightly transparent surfaces over a soft watermark, with every image
+and every line of text fully opaque. The site has to look good, because people arrive from LinkedIn
+posts and are meant to stay and read.
+
+## In plain words
+
+This page sets the site's look: panels you can partly see through (glass) over one faint drawing behind the page (a watermark), while everything that is read, from words to photographs, stays fully solid. Text colours are measured against the darkest thing that can sit behind them, and tests hold both rules.
+
+What that is worth: a developer gets a look built from shared style values (tokens) with tests that fail when a word is faded or too faint, and the organization's site looks finished to a visitor with ten seconds on a phone.
 
 ## Context
 
-The reader this record is for is not an engineer at a desk. It is a recruiter or a hiring manager
-who tapped a link in a post, most likely on a phone, inside an in-app browser, with about ten
-seconds. That reader was landing on a white header, a store switch and a column of eight filters.
-Nothing on the first screen said what the site is, who built it or where the resume is, and not one
-vehicle was in it. The site was correct and it was plain, and to that reader plain reads as
-unfinished.
+The reader this record is for is not an engineer at a desk. It is a reviewer who tapped a link in a post, most likely on a phone, inside an in-app browser, with about ten
+seconds. That reader was landing on a white header and a store switch over a column of eight
+filters. Nothing on the first screen said what the site is or who built it. Nor did it say where
+the resume is, and not one vehicle was in it. The site was correct and it was plain, and to that
+reader plain reads as unfinished.
 
 The colours are their own decision and are in the palette's record (ADR: The palette, the addendum
-on teal, dark green and gold). This record is the surfaces: what a panel is, what is behind it, and
-what the first screen says.
+on teal, dark green and gold). This record is the surfaces: what a panel is and what is behind it,
+then what the first screen says.
 
 ## What was considered
 
@@ -50,20 +53,20 @@ is what helps somebody with ten seconds, and each piece had to earn its place ag
 **Panels are glass, the page has one soft watermark behind it, and everything that is read is
 solid.**
 
-**The watermark** is ONE inline SVG (`src/components/layout/Background/Watermark.tsx`), fixed behind the page's
-content at a tenth of the strength of its inks: concentric rings in the teal, dotted rows in the
-lighter teal, and the site's own lightning mark in gold. It is a drawing and not a picture, so it
-costs no request, and it does not move, so it costs no frame. It holds no words and no image, which
-is why it may be faint. The side rail is solid and sits over it. A page that asked for less
-transparency, a page in forced colours and a printed page get no watermark at all.
+**The watermark** is ONE inline SVG (`src/components/layout/Background/Watermark.tsx`), fixed behind
+the page's content at a tenth of the strength of its inks: concentric rings in the teal, dotted rows
+in the lighter teal, and the site's own lightning mark in gold. It is a drawing and not a picture,
+so it costs no request. It does not move, so it costs no frame. It holds no words and no image,
+which is why it may be faint. The side rail is solid and sits over it. A printed page gets no
+watermark at all, and neither does a page in forced colours or one that asked for less transparency.
 
-**A panel** is white at about two thirds, with a hairline teal border, a soft teal shadow and a ten
-pixel radius. The see-through is in the BACKGROUND COLOUR and never in an `opacity` on the
-container, because an opacity fades everything inside it: the rule is that a panel's words, numbers
-and photographs are always at full strength, and `tests/e2e/glass.spec.ts` holds it against the
-rendered page by finding every element drawn at less than full strength and failing if one of them
-holds a word or an image. Two disabled buttons had said "not yet" with an opacity of 0.6; they say
-it with the colours of a thing that is not pressable now.
+**A panel** is white at about two thirds. It has a hairline teal border and a soft teal shadow, and
+its radius is ten pixels. The see-through is in the BACKGROUND COLOUR and never in an `opacity` on
+the container, because an opacity fades everything inside it: the rule is that a panel's words,
+numbers and photographs are always at full strength, and `tests/e2e/glass.spec.ts` holds it against
+the rendered page by finding every element drawn at less than full strength and failing if one of
+them holds a word or an image. Two disabled buttons had said "not yet" with an opacity of 0.6; they
+say it with the colours of a thing that is not pressable now.
 
 **The blur is spent where it is cheap.** A backdrop blur is paid for by the pixel on a phone. The
 tiles, the small cards, the window buttons, the filter bar and the intro strip carry it. The Admin
@@ -108,18 +111,18 @@ least 44 pixels, the title of the inventory is under the strip and not behind it
 survives a reload. The store switch's two halves are 44 pixels tall on a phone as well.
 
 **The link preview** is the first impression before the first screen: on a post, `public/og.png` is
-seen before the site is. It is drawn by `docs/images/og.mjs` on the header's own gradient, with the
+seen before the site is. It is drawn by `docs/images/og.mjs` on the header's own gradient with the
 gold mark and the name at a size that reads when the card is four hundred pixels wide, and one line
 saying what this is. The version and the count of records on it are still read from the repository,
 and the tests that hold them are unchanged.
 
 ## What it cost on the wire
 
-From the build's own output, before and after, the precheck's build of this version against
+From the build's own output before and after, the precheck's build of this version against
 1.0.0.168's: the stylesheet went from 55.07 kB to 61.02 kB, 9.41 kB to 10.50 kB compressed, and the
 script from 359.63 kB to 365.96 kB, 106.12 kB to 108.17 kB compressed. That is about three
 kilobytes more on the wire for a first visit, and it is the watermark's drawing, the intro strip,
-the rings and the readout. No dependency was added, no image is requested, no font was added, and
+the rings and the readout. No dependency was added; no image is requested; no font was added; and
 nothing on the page moves. The blur is the cost that does not show in a byte count, which is why it
 is spent only on the small panels.
 
@@ -165,9 +168,9 @@ ground is see-through and the card itself is at full strength.
 
 Steve, on reading the library after the Author page was rebuilt: "our documentation isn't formatted like the author section with the nice background and formatting". He was right, and the difference was not a style anybody chose. The Author page had a layout of its own, `layoutAuthor()`, that put its words on glass panels over the ribbon ground; every other document, the decision records among them, was a single column of markdown on the dialog's white.
 
-**Decision: every document takes the same panels, and the same ground.** `src/lib/docLayout.ts` is twenty lines: the title and whatever comes before the first second-level heading open the page, and each second-level heading after it starts a panel that runs to the next one, which is the shape every document in this repository already has. The dialog carries its own copy of the ribbons for every document, not only for the author's, and the panels carry the words so nothing is ever read off the drawing. The panel rule itself is now one rule for both, so a change to the Author page's panels is a change to the library's.
+**Decision: every document takes the same panels, and the same ground.** `src/lib/docLayout.ts` is twenty lines: the title and whatever comes before the first second-level heading open the page, and each second-level heading after it starts a panel that runs to the next one, which is the shape every document in this repository already has. The dialog carries its own copy of the ribbons for every document and not only for the author's. The panels carry the words so nothing is ever read off the drawing. The panel rule itself is now one rule for both, so a change to the Author page's panels is a change to the library's.
 
-What it does not do: it does not reflow a document, rename a heading or move a word. A document with no second-level heading is one panel, and a heading inside a code sample is escaped markup by the time this sees it, so it opens nothing.
+What it does not do: it does not reflow a document or move a word, and it renames no heading. A document with no second-level heading is one panel, and a heading inside a code sample is escaped markup by the time this sees it, so it opens nothing.
 
 **1.0.2.2, measured after it shipped:** a phone could still slide a document sideways, and the panels were not the cause. At 375 the README's dialog body was 375 wide and scrolled to 460, pushed by the long unbroken tokens inline code carries in prose and in lists, a file path 396 px wide in a 306 px column; code blocks were innocent, because a block keeps its sideways scroll inside its own box. A word that cannot fit now breaks (`overflow-wrap: anywhere`, which also shrinks the minimum a grid column measures), a table too wide for a phone scrolls inside itself, and `mobile.spec.ts` holds four documents to a dialog that never scrolls sideways.
 
@@ -183,9 +186,9 @@ Steve, on the drawings for the Admin tab: "more iron man", "make it seem futuris
 
 ## Addendum, 2026-09-25 (1.0.3.20): the frost, and the ribbons back in Chrome
 
-Steve sent two pictures of frosted glass as the model "only on the transparency": panels you can see through, where what is behind reads as soft colour and light, never as shapes, with a bright rim on the edge. So the glass keeps its share of white (42 per cent, 50 on a phone, and every contrast figure above stands on that share) and its blur goes from 7 px to 20 px with the saturation from 1.2 to 1.5, and the shadow gains a light inner rim. The blur is still spent only where it was: a vehicle card and the Admin tab's wide cards stay glass without it. `tokens.test.ts` holds the frost (a blur of 16 px or more, a saturation over one) beside the three fallbacks that turn a panel solid.
+Steve sent two pictures of frosted glass as the model "only on the transparency": panels you can see through, where what is behind reads as soft colour and light, never as shapes, with a bright rim on the edge. So the glass keeps its share of white (42 per cent, 50 on a phone; every contrast figure above stands on that share) and its blur goes from 7 px to 20 px with the saturation from 1.2 to 1.5, and the shadow gains a light inner rim. The blur is still spent only where it was: a vehicle card and the Admin tab's wide cards stay glass without it. `tokens.test.ts` holds the frost (a blur of 16 px or more, a saturation over one) beside the three fallbacks that turn a panel solid.
 
-The same day he asked for "the original background image" back. The ribbons had been blank in Chrome, on 1.0.3.17 and on 1.0.3.19 alike: the page's drawing and the document dialog's copy named their gradients and filters alike, a reference finds the first element with the name, and that one was inside the closed dialog, which Chrome does not paint from; WebKit drew them, which is why the pictures in WebKit showed ribbons and the ones in Chrome did not. Each copy names its own now, and `coverage.spec` holds every page the site lists to one use of an id and every reference inside a drawing to an element of its own drawing.
+The same day he asked for "the original background image" back. The ribbons had been blank in Chrome on 1.0.3.17 and on 1.0.3.19 alike: the page's drawing and the document dialog's copy named their gradients and filters alike, a reference finds the first element with the name, and that one was inside the closed dialog, which Chrome does not paint from; WebKit drew them, which is why the pictures in WebKit showed ribbons and the ones in Chrome did not. Each copy names its own now, and `coverage.spec` holds every page the site lists to one use of an id and every reference inside a drawing to an element of its own drawing.
 
 ## Files
 
@@ -221,13 +224,13 @@ else. The panels, the words, the pictures, the header, the rail and the watermar
 and the watermark stays in front of the ribbons.
 
 **It is code, never an image.** The ground is one token, `--gradient-ground`, on the body. The
-ribbons are one inline SVG in `Ribbons.tsx`, mounted once in the app shell beside the watermark,
-fixed, hidden from assistive technology and deaf to the pointer. Their numbers are the approved
-drawing's, in `src/lib/ribbons.ts`; their colours are eleven tokens, set on the gradients' stops
-by the stylesheet, and with the ground's four they are on the style page under Background. They start at the rail's right edge:
-the rail's width token when it is docked, its collapsed width when it is collapsed, and the
-screen's edge when it is the drawer, read from the shell's own `data-rail` state rather than from
-a second copy of its breakpoint.
+ribbons are one inline SVG in `Ribbons.tsx`, mounted once in the app shell beside the watermark. It
+is fixed in place and hidden from assistive technology, and the pointer passes through it. Their
+numbers are the approved drawing's, in `src/lib/ribbons.ts`; their colours are eleven tokens, set on
+the gradients' stops by the stylesheet, and with the ground's four they are on the style page under
+Background. They start at the rail's right edge: the rail's width token when it is docked, its
+collapsed width when it is collapsed, and the screen's edge when it is the drawer, read from the
+shell's own `data-rail` state rather than from a second copy of its breakpoint.
 
 **It is cheap to draw, and a test holds each part of that.** The whole drawing drifts on one
 transform with `will-change`; inside it only opacity moves, on the sparks and the two flares.

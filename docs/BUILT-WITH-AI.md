@@ -1,13 +1,19 @@
 # Built with AI
 
 TheYard was built by one engineer using AI as a force multiplier. This page says what that meant in
-practice: what the AI wrote, what I decided, what governed the result, what it cost, and what went wrong.
-Everything here links to the record or the file that proves it.
+practice: what the AI wrote and what I decided. It also covers what governed the result and what it cost,
+and then what went wrong. Everything here links to the record or the file that proves it.
+
+## In plain words
+
+This page says how the site was built: one engineer used AI to write most first drafts and kept the choices a tool cannot make. It also lists what the work cost and what went wrong, and links each item to the record or file that proves it.
+
+What that is worth: a developer sees which parts a person decided and which tests held the AI's output, and the organization gets a way of using AI where every claim points at its proof.
 
 ## What the AI wrote
 
-The first draft of most of the code, most of the decision records, the deployment scripts and the tests.
-Commits carry the co-author trailer and the repository carries CLAUDE.md, the standing instructions the AI
+The first draft of most of the code and most of the decision records. The deployment scripts and the tests
+too. Commits carry the co-author trailer and the repository carries CLAUDE.md, the standing instructions the AI
 worked under. None of that is hidden and no history has been rewritten.
 
 ## What I decided
@@ -23,7 +29,7 @@ The choices a tool cannot make, each with its record.
   fast as SQL Server on a different data structure at the lowest cost (ADR-058, ADR-059).
 - One container running both stores with a store toggle at the top of every page, then a permanent address
   for the second site (ADR-066, ADR-069).
-- The sidebar over dropdowns, the palette, and the rule that every diagram opens on its own page
+- The sidebar over dropdowns and the palette, then the rule that every diagram opens on its own page
   (ADR-013, ADR-016, ADR-020).
 - The one gate: every check once per version, on both stores, before anything rolls (ADR-068 and its addendum).
 - Every test, specified before the code it holds was written (test driven development).
@@ -31,7 +37,7 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 744 xUnit tests, 371 Vitest tests at 1.0.3.59 and 143 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 747 xUnit tests, 387 Vitest tests at 1.0.3.64 and 143 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the gate on 1.0.0.182 took 493 seconds, and the gate on 1.0.3.59, with both store passes carried forward from 1.0.3.58, took 641. A push that fails the gate does not roll.
 

@@ -5,6 +5,12 @@ section I want an overall site activity by IP address and if it was cosmos or
 sql and a graph showing site activity at the top, but we cannot display user
 emails as that is private information."
 
+## In plain words
+
+The Admin tab now shows a graph of site activity, split by which database served each visit (Azure SQL or Azure Cosmos DB), kept in durable rows that survive a restart. No email address is ever recorded, and a visitor's address is kept only as a daily keyed hash plus its network (the first three octets).
+
+What that is worth: a developer sees a privacy rule kept by a data shape that has no field for the private thing, and the organization can publish its traffic on a public page without exposing who visited.
+
 ## Context
 
 The Admin tab could say what the container had served in the last few hundred
@@ -24,7 +30,7 @@ and that is by design: the page is the running system reporting on itself,
 and the reasoning is on the Best Practices page. So "site activity by
 visitor" is not a private log the owner reads. It is a page any stranger can
 read, and a network range beside a timestamp on a public page is often enough
-to name an employer, which is a thing a recruiter reading a portfolio at nine
+to name an employer, which is a thing a visitor reading a portfolio at nine
 at night did not sign up for. Truncating the address does not fix that; it
 only shortens the sentence.
 
@@ -326,7 +332,7 @@ whole; the operator no longer needs it to.
 
 ## Addendum, 2026-09-13: the rows are off
 
-Steve, at the end of the day: "I guess disable the per visitor data for
+Steve, late that day: "I guess disable the per visitor data for
 now." Done as one setting rather than a removal, because the day's evidence
 is that this decision moves: `Admin:VisitorRows`, off by default. Off, the
 visitor table and the kept log answer 404 to everybody, with the key as

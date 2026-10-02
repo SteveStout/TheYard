@@ -4,7 +4,7 @@ namespace TheYard.Tests;
 
 /// <summary>
 /// The counts the landing page shows (ADR: The landing page and the site map,
-/// the addendum on the recruiter's first minute). The strip is an argument
+/// the addendum on the reviewer's first minute). The strip is an argument
 /// made with numbers, so the numbers are the gate's own file added up and
 /// nothing else: a suite the gate skipped and carried forward keeps the
 /// version whose gate ran it, and a file with no suites is not an invented

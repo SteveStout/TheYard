@@ -1,8 +1,14 @@
 # Search Console, step by step
 
-**How this site was put into Google Search Console on 30 September 2026, one screen at a time, with the code behind each step, and how the same job runs at a company with many sites and many people.**
+**How this site was put into Google Search Console on 30 September 2026, one screen at a time, with the code behind each step, and how the same job runs at a company with many sites and many teams.**
 
 Search Console is Google's report on what its crawler sees. It shows whether a page is in the index, which address Google chose for it, what people searched before they clicked, and anything that is broken. Nothing in it moves a ranking. It replaces guesswork about crawling and indexing with Google's own answer. [Being found](https://theyard.stevenstout.biz/?doc=traffic-found) covers what the site offers a crawler. This page covers the other half, where Google reports what it made of it.
+
+## In plain words
+
+This page walks through putting the site into Google's report on what its crawler sees (Google Search Console), one screen at a time, with the code behind each step. Ownership is proven by a tag the build writes into the home page, and a test keeps it there. It ends with how the same job runs at a company.
+
+What that is worth: a developer can repeat every step from the screenshots and the live code, and the organization gets a plan for running it with shared owners, so one departure never takes the property away.
 
 ## The order it was done in
 

@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03, shipped as 1.0.0.39. Steve's ask: "turn implicit
 conventions into enforced standards so every later change has a rule to build
 against."
 
+## In plain words
+
+This page turns the project's written style rules into four checks that fail the build (a style job in CI), run first because they are the cheapest. A different linter (oxlint) stands in for the usual one (ESLint), which does not run on this TypeScript version.
+
+What that is worth: a developer stops debating formatting in review because the build settles it on every machine, and the organization gets one standard that holds the same on Windows and on the Linux runner.
+
 ## Context
 
 The written half of this already existed. ADR: App Architecture section shipped

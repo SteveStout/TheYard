@@ -6,6 +6,12 @@
 A live strip, drawn by the same component the page uses, from the same data in src/lib/ribbons.ts. Its gradient and filter ids are its own.
 ```
 
+## In plain words
+
+This page describes the background behind every page: a colour gradient with ribbons on it, drawn in code (an inline SVG) with no image file to fetch. It stands still on purpose, because moving it cost the front page 6.9 s of main-thread work in every 20 s against 0.6 s when still.
+
+What that is worth: a developer changes a colour by editing one named value (a design token) while tests guard contrast and stillness, and the organization gets a background that costs one paint and then nothing.
+
 ## The ground
 
 A gradient from green-grey on the left to white on the right, so the side rail sits on the darker end and the reading side stays bright. Where no ribbon is drawn, the page ground is the light grey. Every value is a design token: a named CSS custom property (a CSS variable) holding one design decision.

@@ -4,6 +4,12 @@ Status: roughed in 2026-09-01, the evening it was asked for. A polish pass
 is planned for the Thursday build day; this records the shape and the
 reasoning so the rough-in is a decision, not an accident.
 
+## In plain words
+
+The site has a public Admin tab that shows its own condition: the health checks with how long each took, and what Azure reports about the running container. A third card lists recent server errors, kept in memory and cleared on each deploy.
+
+What that is worth: a developer sees a slow check or a restart without opening the Azure portal, and the organization can show that the site reads its own state but can change nothing (Reader scope).
+
 ## Context
 
 The site could report its version but not its condition. The ask, verbatim:

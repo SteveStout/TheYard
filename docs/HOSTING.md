@@ -1,11 +1,17 @@
 # Hosting
 
 TheYard is on the internet at https://theyard.stevenstout.biz. This page is the
-parent record for how that works, written for a hiring manager or anyone
+parent record for how that works, written for a reviewer or anyone
 learning how a small production setup fits together. The records under it in
 this menu are its children: read this page for the shape, open a child for the
 full reasoning behind one decision. Everything, the infrastructure code
 included, is served from these menus; nothing requires opening the repository.
+
+## In plain words
+
+This page explains how the site reaches the internet: a domain name and a free edge service (Netlify) that handles the secure connection, in front of two web apps on one Azure machine (an App Service plan). The piece still waiting is a production edge (Azure Front Door) that the free trial refuses to create.
+
+What that is worth: a developer sees how a small production setup fits together, with its infrastructure code served on the site, and the organization runs it on free services and one small plan while the full design waits behind one parameter.
 
 ## The picture
 

@@ -13,6 +13,12 @@ shipped in 1.0.0.89.
 This record is the parent. The partition key, which is the one decision that
 cannot be changed later, has its own record (ADR: The partition key).
 
+## In plain words
+
+This page designs and prices a second, complete backend for the site on a different kind of database (Azure Cosmos DB), running beside the SQL one so the two can be compared in two tabs. The database itself costs $0.00 a month on the free tier; the second container that runs it is the part that costs money.
+
+What that is worth: a developer sees every cost and trade-off of a document store written down before building on one, and the organization gets a priced decision it can approve or stop before any money is spent.
+
 ## Context: where the database actually is
 
 Before designing for speed it is worth knowing where the database sits in the
@@ -384,7 +390,8 @@ visitor, so both interview questions have a number behind them.
 - The records that describe a two-provider world, ADR: The relational store, ADR:
   Entity Framework explained, ADR: The SQL Server backend, ADR: Data first and
   ADR: Two providers explained, each get an addendum narrowing them to the
-  relational side and pointing here, rather than being left to disagree quietly.
+  relational side and pointing here, rather than being left to disagree with
+  this record without saying so.
 
 ## Addendum, 2026-09-08: the estimates against the measurements
 

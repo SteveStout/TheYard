@@ -8,6 +8,12 @@ The claim this page makes is narrow and checkable: **a hundred thousand vehicles
 engines, and page work measured in milliseconds, on free-tier data stores and the smallest machine that
 will hold it: since 20 September 2026, one Linux B1 App Service plan carrying both sites for $12.41 a month.**
 
+## In plain words
+
+This page measures how fast the site runs on the smallest Azure machine that will hold it, with a hundred thousand vehicles in two different databases (Azure SQL Database and Azure Cosmos DB). The two answer in the same time once the trip to each one is taken off, so any gap comes from where each one sits.
+
+What that is worth: a developer gets methods and numbers they can rerun from the Admin tab, and the organization sees the whole bill, $22.38 a month at list price, next to the speed it buys.
+
 ## What it runs on
 
 | Resource | What it is | What it costs |
@@ -262,8 +268,8 @@ Measuring is not free either, and the bill is small enough to print: the whole t
 session cost the document store **1,096 request units**, which is about a twenty-seventh of a cent on
 serverless pricing.
 
-On the edge, eleven production deploys had quietly eaten **165 of the 300 free credits in a month at 15
-each**, while actually serving the site cost almost nothing. Application pushes no longer redeploy the
+On the edge, eleven production deploys had each redeployed the edge too and eaten **165 of the 300 free
+credits in a month at 15 each**, while actually serving the site cost almost nothing. Application pushes no longer redeploy the
 edge, so they cost **zero credits**. ([Edge economics](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-007-edge-economics.md))
 
 ## What the free tier taught on the fourteenth

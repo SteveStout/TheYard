@@ -37,8 +37,8 @@ serves a file asks for it as a parameter.
 What the file is today:
 
 ```
-55 total
-  10 comment
+52 total
+  7 comment
   6 blank
   39 code, across 0 endpoints
 ```
@@ -193,7 +193,7 @@ once from the request's header, cookie or the container's default.
 ```live path=api/TheYard.Api/Composition/StoreRegistration.cs region=cosmos-backend
 ```
 
-Identity is registered once, unconditionally, and its store is the one thing
+Identity is registered once and unconditionally; its store is the one thing
 about it chosen per request. The health check runs one database probe per
 store. The metrics endpoint answers the store the request is on at the top
 level, as it always did, and lists every store below it. And two endpoints
@@ -227,8 +227,8 @@ serialises with the host's own options, the same snake_case policy that
 `ConfigureHttpJsonOptions` sets for request bodies, and which carries the
 response type into the document where `TypedResults.Json` carries nothing.
 `wireFormat` stays for the `Results.Json` calls the operator endpoints still
-make, and both paths apply the one policy. The names, the values and their
-order on the wire did not change.
+make, and both paths apply the one policy. Neither the names nor the order
+of the values on the wire changed.
 
 ## Addendum, 2026-09-30: the request pipeline, by name
 
@@ -245,7 +245,7 @@ does. The endpoints that serve the records, their pictures and diagrams, the Bic
 /about are now `Endpoints/DocumentationEndpoints.cs`, mapped by `app.MapDocumentationEndpoints()`.
 The version is not among them here (`/api/version` is in `HealthEndpoints`), so the name says
 documentation and nothing more. Routes and behaviour are unchanged. The catalog those endpoints
-read, slug to file and the diagrams, is `DocumentationCatalog.cs` for the same reason, held by
+read (slug to file, plus the diagrams) is `DocumentationCatalog.cs` for the same reason, held by
 `DocumentationCatalogTests`.
 
 ## Files

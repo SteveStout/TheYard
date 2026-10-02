@@ -8,6 +8,12 @@ what it costs. The decision and the arithmetic are in ADR: A second store on
 Cosmos DB, and what it costs; the numbers below come from ADR: Measuring both
 stores and ADR: The partition key, and say so where they do.
 
+## In plain words
+
+This page explains the document database behind the second store (Azure Cosmos DB) to a reader who already knows SQL Server, one term at a time, organised around what each operation costs (request units). It ends with which store fits this workload: SQL Server's guarantees are the ones this application actually uses.
+
+What that is worth: a developer who knows SQL Server can read the document store's code and its costs after one page, and the organization can explain its choice of store with measured numbers behind it.
+
 ## What is actually running
 
 Two containers, one image, and since 1.0.0.94 each opens both stores and
@@ -25,8 +31,8 @@ That is the whole reason the comparison is fair.
 ## The vocabulary, in the order you will meet it
 
 **Account.** The thing you create in Azure, like a logical server. It has an
-endpoint, a default consistency level, and one or more regions. Ours has one
-region, West US 2, and no keys.
+endpoint and a default consistency level, and its own list of regions. Ours has
+one region (West US 2) and no keys.
 
 **Database.** A namespace with a throughput budget. Ours holds 1000 RU/s, shared
 by every container in it, which is the whole of the free tier's allowance.
@@ -89,7 +95,7 @@ The distinction the whole store is built around, and the one a SQL Server
 reader has least reason to have met.
 
 A point read is `ReadItem(id, partitionKey)`. The service goes straight to the
-partition, straight to the document, and charges about 1 RU per kilobyte. A
+partition and the document, and charges about 1 RU per kilobyte. A
 query, even `SELECT * FROM c WHERE c.id = @id`, is a query: it is parsed,
 planned, sent to each physical partition it could touch, answered by the index,
 and charged for the index lookup and the documents loaded. On this application

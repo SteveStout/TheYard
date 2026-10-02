@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03, shipped as 1.0.0.40. This extends
 ADR: Error handling rather than replacing it: that record decided the shape,
 this one decides what goes in it when nobody wrote the failure.
 
+## In plain words
+
+This page decides what the API says when code fails in a way nobody planned for (an unhandled exception). The caller gets one fixed sentence and a trace id, while the full details go to one log line with the same id. A deliberate failure endpoint proves the whole path works in production.
+
+What that is worth: a developer can find any crash from the id a reader quotes, and the organization's error messages never draw a map of the inside of the process for whoever asks.
+
 ## Context
 
 ADR: Error handling shipped `AddProblemDetails`, `UseExceptionHandler()` and a

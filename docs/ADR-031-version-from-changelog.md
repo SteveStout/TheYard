@@ -5,6 +5,12 @@ formula in ADR: Version in the footer, ADR: The deploy pipeline and
 ADR: The changelog. Those records keep their reasoning; the number is computed
 differently now.
 
+## In plain words
+
+This page makes the top line of the changelog the site's version number. The deploy reads the number from that line, which means the footer cannot disagree with the changelog. A deploy whose line is missing or not above the line below it fails instead of shipping.
+
+What that is worth: a developer never has to remember a number or an offset, and the organization's live footer always matches the file that documents it.
+
 ## Context
 
 The displayed version was `1.0.0.(11 + deploy run number)`. The changelog's top

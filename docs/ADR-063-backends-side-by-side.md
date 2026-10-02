@@ -6,6 +6,12 @@ start, the seed and what it cost, and how long the things a visitor does take
 on each, with the request charge beside every number the document store can put
 one on. Parent: ADR: A second store on Cosmos DB, and what it costs.
 
+## In plain words
+
+One card on the Admin tab puts the two backends side by side (the SQL database and the document database, Azure Cosmos DB) and shows how long each thing a visitor does takes on each. Each site reads its partner's numbers through its own API, so either tab shows both.
+
+What that is worth: a developer can compare the two stores row by row on live numbers, and the organization can show the comparison on its own site instead of in a pasted document.
+
 ## Context
 
 Steve wanted the comparison built into the product rather than pasted into a

@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-03. A rule this project has enforced since 1.0.0.30
 was being checked by a script on one laptop.
 
+## In plain words
+
+The house rule against em dashes was checked only by a script on one developer's laptop, so any change made elsewhere skipped it. The check is now a test in the .NET suite (HouseVoiceTests), so it runs in CI and for anyone who clones the repository.
+
+What that is worth: a developer gets a failure that names the file and the line wherever the code is, and the organization's rules hold for every contributor instead of depending on one person's workflow.
+
 ## Context
 
 The house rule is that nothing written here contains an em dash. It is a real

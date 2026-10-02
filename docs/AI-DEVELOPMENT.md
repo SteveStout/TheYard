@@ -9,6 +9,12 @@ implementation, and every change had to survive a gate before it could reach
 the live site. What follows is where to look if you want to decide for yourself
 whether that produced engineering or output.
 
+## In plain words
+
+This page says how the site was built with heavy AI help. A person set the direction and the limits and an AI agent wrote the code, and every change had to pass a gate of checks (the ship gate) before it reached the live site. The rest of the page shows where to check that claim, mistakes included.
+
+What that is worth: a developer can test each claim against the code instead of taking it on trust, and the organization gets a way of building with AI that writes down its reasoning and its mistakes.
+
 ## What is being claimed
 
 AI wrote a large application quickly. On its own that is worth very little,
@@ -33,9 +39,9 @@ carry things nobody can account for.
 **Do the documents track the code, or drift from it?**
 Code shown in a record is read from the build, never pasted. A fence marked
 `live` names a file and a `#region`, and the API expands it from the working
-tree when you open the document (ADR: Live code samples). A sample that goes stale cannot go stale
-quietly; it either shows the current code or renders a visible "sample
-unavailable" line. There is a test for both.
+tree when you open the document (ADR: Live code samples). A sample that goes
+stale cannot go stale without a reader seeing it; it either shows the current
+code or renders a visible "sample unavailable" line. There is a test for both.
 
 **Is there judgment, or only generation?**
 The clearest evidence is the decisions that went the other way. Mermaid

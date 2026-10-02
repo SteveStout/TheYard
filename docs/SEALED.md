@@ -6,6 +6,12 @@ That is the default rather than a decision taken class by class, and the one cla
 past it was found by counting, not by review, which is the argument for the test at the bottom of this
 page.
 
+## In plain words
+
+Every class in this code is locked against being extended (sealed, in C#) unless something in the solution actually extends it. A test counts every class on each build and fails on one left open with nothing deriving from it. The page shows why this matters most for records, the classes compared by their values.
+
+What that is worth: a developer can trust that two records with the same values compare as equal, and the organization has that held by the build instead of by a reviewer's memory.
+
 ## What `sealed` says
 
 `sealed` on a class stops any other class deriving from it. The C# reference puts it in one line:

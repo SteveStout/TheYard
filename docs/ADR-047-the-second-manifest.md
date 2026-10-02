@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-03. A deploy shipped an image missing three files that
 were in the repository, in the build output, and in every green check.
 
+## In plain words
+
+A deploy shipped without the files that let crawlers and link previews read the site, because the container's build recipe (the Dockerfile) keeps its own hand-written list of inputs and that list missed the `public/` folder. A test now compares that list with the folders that actually exist.
+
+What that is worth: a developer who adds a build input and forgets the Dockerfile gets a failing test in about a millisecond, and the organization finds the mistake in the test suite instead of on the live site after a deploy.
+
 ## What happened
 
 1.0.0.58 added `public/robots.txt`, `public/sitemap.xml` and `public/og.png`, so

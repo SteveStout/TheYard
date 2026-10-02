@@ -32,6 +32,12 @@ walks that file top to bottom.
 | `GET /healthz` · `/readyz` | liveness and readiness |
 | `GET /api/health` · `/api/errors` · `/api/admin/azure` | the Admin tab (ADR-010) |
 
+## In plain words
+
+This page follows one vehicle from a data file on disk to a card on screen, and one bid on its way back. The rule behind it is to work facts out from stable ids each time (derive, don't store) instead of saving them, and to keep every auction rule on the server.
+
+What that is worth: a developer can trace any request to the file that handles it, because every step names its path. The organization gets one home for the auction rules, so the screen shows what the server decided.
+
 ## The read path
 
 1. **Seed.** The catalogue is read once at startup from the store, Azure SQL Database,

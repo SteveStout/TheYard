@@ -7,6 +7,12 @@ source controlled", and then, when the two branches were priced: "I like the SQL
 project first and Entity Framework as a mapper; that way, if you decide to change
 technologies, you still keep your data structure."
 
+## In plain words
+
+This page makes a hand-written database project (a SQL project compiled to a DACPAC) the single source of truth for the database's shape, kept in source control. The code's data mapper (Entity Framework) reads that shape and is not allowed to create or change it.
+
+What that is worth: a developer sees every schema change as plain SQL in a pull request, and the organization keeps its data structure if it ever changes the technology that reads it.
+
 ## The decision
 
 **`api/TheYard.Database` is the authority for the SQL Server schema.** It is a

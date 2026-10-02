@@ -10,10 +10,10 @@ ADR: The SQL Server backend and ADR: Data first, and the database in source
 control.
 
 Everything below is left as it was written rather than edited into agreement with
-today. A record that quietly becomes true again is worse than one that says when
-it stopped being true, and the measurements in here are measurements of SQLite
-and should keep saying so. Where a sentence is in the present tense and no longer
-is, read it as "as of 1.0.0.43".
+today. A record that is edited until it reads as true again, with no note of the
+edit, is worse than one that says when it stopped being true, and the
+measurements in here are measurements of SQLite and should keep saying so. Where
+a sentence is in the present tense and no longer is, read it as "as of 1.0.0.43".
 
 The one paragraph worth carrying forward without a caveat is the fallback. A
 container that cannot reach its store serves the catalogue from files and says so
@@ -26,6 +26,12 @@ was invisible to everyone using the site.
 Status: accepted, 2026-09-03, shipped as 1.0.0.43. Steve's ask: "swap the
 in-memory or file-backed data layer for a real relational store behind the
 existing ports, with migrations, seeding, and a bid that survives a restart."
+
+## In plain words
+
+This page is the decision to keep the vehicle catalogue and the bids in a real database (SQLite through EF Core) behind the existing ports, so a bid survives a restart. If the database cannot be opened, the site serves the catalogue from files and says so on the health check.
+
+What that is worth: a developer can change where data is kept without touching the bidding rules, and the organization keeps its bids through a restart, with a site that degrades instead of going down when storage fails.
 
 ## Context
 
@@ -102,9 +108,10 @@ through seeding is not left half seeded forever.
 `ConnectionStrings:Yard` names the database. Without it the process gets a
 uniquely named file in the temp directory, logs a warning saying so, and
 deletes it on shutdown. That is what every test wants, and it is a better
-answer for a misconfigured deploy than quietly writing somewhere nobody thinks
-to look. The container sets it to `/app/state/yard.db`, in a directory the
-Dockerfile creates and chowns because `/app` itself belongs to root.
+answer for a misconfigured deploy than writing, with no warning, somewhere
+nobody thinks to look. The container sets it to `/app/state/yard.db`, in a
+directory the Dockerfile creates and chowns because `/app` itself belongs to
+root.
 
 ## The numbers
 
@@ -171,8 +178,9 @@ restart test passes and always did. The test that asks about the file on disk
 now counts both, since between them they are the data.
 
 The record kept the wrong explanation for about ten minutes. It is written down
-here rather than quietly replaced because "the first explanation that fits" is
-the most expensive habit in debugging, and this is a cheap example of it.
+here rather than replaced without a trace because "the first explanation that
+fits" is the most expensive habit in debugging, and this is a cheap example of
+it.
 
 ## What happens when the store will not open
 
@@ -213,7 +221,7 @@ which is what the test proves and what the record claims. It does not survive
 the container group being replaced, which is what a deploy does. Fixing that
 means an Azure Files share mounted at `/app/state`, which is a new resource in
 a subscription this project is deliberately not allowed to add to, so it is
-written down here rather than done quietly.
+written down here rather than added without permission.
 
 That is the honest shape of it: the persistence layer is real, the storage it
 writes to is not durable, and the two are separate problems with separate
@@ -343,7 +351,8 @@ be compared side by side (ADR: A second store on Cosmos DB, and what it costs).
 
 Read this record as "how the relational backend works", which is what it always
 was. Three things in it stopped being general truths and became relational ones,
-and are named here so the record does not quietly disagree with the one beside it:
+and are named here so the record does not disagree with the one beside it without
+saying so:
 
 - **"Migrations, not `EnsureCreated`."** True of SQLite. The document store has
   no schema and no migrations; what it has instead is a container definition,

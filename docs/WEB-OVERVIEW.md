@@ -5,6 +5,12 @@ request crosses. This page is what those machines send a browser, and the order 
 loads it in. The [Performance overview](https://github.com/SteveStout/TheYard/blob/main/docs/PERFORMANCE.md) holds what each change
 to the page moved; this one is the page as it stands at 1.0.0.144.
 
+## In plain words
+
+This page lists what the site sends a browser and the order a first visit loads it in, measured on both live sites. Every file comes from the site's own domain. The first paint waits only on the page itself and one small stylesheet (8.5 KB).
+
+What that is worth: a developer can see why the page draws fast and rerun the same measurement from a checkout, and the organization gets a site that loads nothing from a third-party host.
+
 ## What the page is made of
 
 | Piece | What it is | On the wire | How long a browser may keep it |

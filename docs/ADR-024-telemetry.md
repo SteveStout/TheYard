@@ -6,13 +6,19 @@ and error, and every React error. Application Insights, please, if it is on
 the solo version." It is: the free trial includes it, and the first 5 GB a month
 of ingestion costs nothing.
 
+## In plain words
+
+This page sends the site's requests and errors to a store in Azure that keeps them when the container is replaced (Application Insights), on the free tier with a daily cap so it cannot generate a charge. The Admin tab reads the last hour back from it, and the key that sends the data never enters the repository.
+
+What that is worth: a developer can see which route is slowest or what threw an hour ago, and the organization gets lasting monitoring at no cost that never blocks a deploy.
+
 ## Context
 
 ADR: Observability built the Admin tab on an in-memory ring buffer of fifty
 entries, and said out loud what that costs: the buffer resets on every roll,
 holds nothing older than the current container, and cannot answer a question
 about last Tuesday. ADR: Error handling then routed browser errors into the
-same buffer, which made it more useful and no more durable.
+same buffer. That made it more useful and no more durable.
 
 Structured request logs go to the container's stdout, where Azure keeps
 them for a container group's lifetime and nobody reads them. Neither the
@@ -31,7 +37,7 @@ the resource cannot generate a charge even if something goes wrong.
 **The API sends with the Azure Monitor OpenTelemetry distro.** One call in
 Program.cs gives requests, dependencies and exceptions with their durations,
 correlated by trace id. It is registered only when a connection string is
-present, so a local run and every test are untouched and need no fake.
+present. So a local run and every test are untouched and need no fake.
 
 **The connection string never enters the repository.** It is an ingestion
 key. The deploy workflow reads it from Azure at roll time with the federated
@@ -42,7 +48,7 @@ as absent, so a manual rollback with the committed file runs clean instead
 of sending telemetry to nowhere.
 
 That read is allowed to fail. If Azure does not answer, the roll leaves the
-placeholder in place, logs a workflow warning and ships anyway. Telemetry is
+placeholder in place and logs a workflow warning, then ships anyway. Telemetry is
 an addition to this system, not a dependency of it, and a delivery pipeline
 that a monitoring resource can block is a worse trade than an hour of
 missing traces.

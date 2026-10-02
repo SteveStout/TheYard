@@ -7,6 +7,12 @@ fanned out, and the request charge beside the milliseconds. Parent: ADR: A
 second store on Cosmos DB, and what it costs. The record this one sits beside,
 ADR: What the database is actually doing, has an addendum pointing here.
 
+## In plain words
+
+This page adds a live log of every operation the site sends to its document database (Azure Cosmos DB), shown on the Admin tab with what each one cost in request units beside its milliseconds. Like the SQL log beside it, it never shows a value such as an email address.
+
+What that is worth: a developer can see which request caused each operation and whether it touched one partition or all of them, and the organization can show anyone its database costs on a public page with no login.
+
 ## Context
 
 The Admin tab's most valuable card for a data-access reviewer is the one that
@@ -25,16 +31,17 @@ they are. A second port, `IStoreLog`, records a `StoreOperation`:
 ```live path=api/TheYard.Application/StoreLog.cs region=store-log-port
 ```
 
-The two record different things. A SQL statement has text, parameters and a
-duration. A store operation has a container, a kind, a partition, a request
+The two record different things. A SQL statement has its text and parameters
+plus a duration. A store operation has a container, a kind, a partition, a request
 charge and a duration, and only sometimes any text. One type for both would
 carry nulls on every row on both sides, and the Admin card would be reading a
 type to find out which half of it to believe.
 
 **The adapter writes the log, not an interceptor.** There is no command to
 intercept: the SDK is called directly (ADR: A second store on Cosmos DB, and
-what it costs), and every call goes through one wrapper that times it, reads
-the charge off the response, and records it whether it succeeded or failed:
+what it costs), and every call goes through one wrapper that times it and reads
+the charge off the response. It records the operation whether the call succeeded
+or failed:
 
 ```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.cs region=operations
 ```
@@ -71,7 +78,7 @@ the card would show nothing but the act of reading it.
 
 On the Cosmos container the SQL card is replaced by this one. On the relational
 container this endpoint answers an empty list and the SQL card stays. One
-image, one page, and the page shows whichever store it is on:
+image and one page, and the page shows whichever store it is on:
 
 ```live path=src/components/admin/StoreCard/StoreCard.tsx region=store-card
 ```
@@ -79,7 +86,7 @@ image, one page, and the page shows whichever store it is on:
 The cold start is the first thing in the log: four `ReadContainer` metadata
 reads, then the count queries that decide whether to seed, then the two
 cross-partition `SELECT * FROM c` loads of the catalogue and the bids, each with
-its charge. After that, an idle container records nothing, and a visitor's bid
+its charge. After that an idle container records nothing, and a visitor's bid
 records a point read and a point write pinned to the buyer, about six request
 units between them.
 

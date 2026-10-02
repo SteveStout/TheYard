@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-03. `POST /api/auth/login` had a lockout policy on
 paper and none in practice, for as long as it has existed.
 
+## In plain words
+
+The sign-in endpoint let anyone guess a password as fast as the server could answer, because nothing counted failed attempts even though the database had columns for it. Now five wrong guesses lock an account for five minutes (ASP.NET Core Identity lockout), and the refusal reads the same as a wrong password.
+
+What that is worth: a developer learns to check that a control in the schema is also in the code path, and the organization's accounts can no longer be worked through with an endless wordlist.
+
 ## What was there
 
 The login endpoint is public, which it has to be, and it does the right things
@@ -96,12 +102,11 @@ found this also found `POST /api/errors/client` and `POST /api/auth/register`
 unmetered, and `GET /api/admin/selftest/exception` a free way to evict the public
 error ring. A limiter is worth adding.
 
-It is worth noting why one was not added here instead. Behind the edge, the
-origin sees the edge's address for every visitor, so an IP-partitioned limiter is
-a global cap rather than a per-attacker one, and the origin is directly reachable
-in any case because the origin lock is still owed (ADR: Azure Front Door,
-addendum), so an attacker can bypass the edge and forge whatever address they
-like. A limiter here would be worth having and it would not be the control this
+Why one was not added here instead: behind the edge, the origin sees the edge's
+address for every visitor, so an IP-partitioned limiter is a global cap rather
+than a per-attacker one, and the origin is directly reachable in any case because
+the origin lock is still owed (ADR: Azure Front Door, addendum), so an attacker
+can bypass the edge and forge whatever address they like. A limiter here would be worth having and it would not be the control this
 needed. Lockout does not depend on knowing who is asking.
 
 ## Consequences

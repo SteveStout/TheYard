@@ -6,6 +6,12 @@ now returns a `Task`, `BidService` holds a semaphore where it held a lock, and
 the host warms the catalogue and the bids before it serves. Parent: ADR: A
 second store on Cosmos DB, and what it costs.
 
+## In plain words
+
+The parts of the code that read and write data (the ports) now wait for the database without holding a thread (every port returns a `Task`). The new store has no way to answer without waiting, and on a one-CPU container a blocked thread stalls every request behind it.
+
+What that is worth: a developer can add another store later without a slow database freezing the site, and the organization gets a site where a slow store slows bidding and nothing else.
+
 ## Context
 
 `IVehicleSource.Load()`, `IPhotoManifestSource.Load()` and the three members

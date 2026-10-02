@@ -119,23 +119,22 @@ public static class RequestPipeline
             }
             catch (Exception ex)
             {
-                // The type, not the message.
-                //
-                // This buffer is served at /api/errors, unauthenticated, and an
-                // exception message is where a framework writes a filesystem path, a
-                // connection detail, or the value that broke a constraint. The
-                // ProblemDetails handler two regions up already refuses to put one in a
-                // response for exactly that reason, and this line was quietly putting
-                // the same text on a public page through a different door.
-                //
-                // The message is not lost. It goes to the console and to Application
-                // Insights as a structured exception, where it is behind a sign-in
-                // (ADR: Reviewing my own work, which caught the same defect in the log
-                // buffer and missed this one).
-                // The type and the frames, never the message: the frames are source
-                // locations this repository publishes, and the message is not
-                // (ADR: Error handling, the addendum on frames).
-                errorLog.Record(context.Request.Path, 500, ex.GetType().Name, StackFrames.Of(ex));
+                // A caller who hung up is not a server error: the exception handler
+                // answers it 499 and logs it at Information, so it is left out of
+                // this record too, and the Admin tab's error count stays green.
+                if (!ProblemHandler.CallerLeft(context, ex))
+                {
+                    // The type and the frames, never the message. This record is
+                    // served at /api/errors with no sign-in, and an exception message
+                    // is where a framework writes a filesystem path, a connection
+                    // detail, or the value that broke a constraint; the exception
+                    // handler keeps it out of a response for the same reason. The
+                    // frames are source locations this repository already publishes.
+                    // The message is not lost: it goes to the console and to
+                    // Application Insights as a structured exception, behind a sign-in
+                    // (ADR: Error handling, the addendum on frames).
+                    errorLog.Record(context.Request.Path, 500, ex.GetType().Name, StackFrames.Of(ex));
+                }
                 throw;
             }
         });

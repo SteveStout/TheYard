@@ -4,6 +4,12 @@ Status: accepted, 2026-09-04. Asked for by name. Written with this repository's
 own week as the evidence, because a record about discipline that cites nothing
 is the exact thing it is warning about.
 
+## In plain words
+
+A broken window is a small, visible flaw that gets tolerated, such as a stale comment or a check that cannot fail, and leaving one makes the next easier. The rule adopted: fix it in place when it is small and on the same subject, otherwise ship it as its own version with a test that keeps it fixed.
+
+What that is worth: a developer gets a clear line between cleanup that belongs in a change and cleanup that needs its own, and the organization fixes a false comment or a dead check before it teaches the next reader a lower standard.
+
 ## Two ideas with almost the same name
 
 The **broken window fallacy** is Bastiat, 1850, and it is about economics: a

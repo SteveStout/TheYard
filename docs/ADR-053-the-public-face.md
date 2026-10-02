@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03, shipped as 1.0.0.58 and written down now. The
 record was owed from the day the work shipped, and a test had been citing it by
 name for five versions.
 
+## In plain words
+
+This page covers what the site says to readers that are not people: search engines, chat apps unfurling a link, crawlers and applicant tracking systems. It gives the page head a description sized for search results and a preview card generated from the code, and a test holds every count the site states to the real number.
+
+What that is worth: a developer sees how a number typed into prose drifts unless a test holds it, and the organization's link shows a real card and a full sentence wherever it is shared or searched.
+
 ## Context
 
 Most of what this project says about itself is written for a person who has
@@ -16,7 +22,7 @@ human does:
 - a search engine, which shows the description and nothing else
 - a chat client unfurling the link in Slack or iMessage
 - a crawler deciding what to fetch
-- an applicant tracking system or a recruiter's parser, reading the head of a
+- an applicant tracking system or a resume parser, reading the head of a
   page somebody pasted into a field
 
 None of them scroll. All of them read the same twenty lines.
@@ -111,7 +117,7 @@ nothing without a test. The card had the test. The head did not: the count
 scan reads the living documents in the docs catalog, and `index.html` is not
 in it, so the description drifted for twenty-five records and fifty-five
 versions while every check stayed green. Found by reading the page as a
-recruiter's parser would, from outside.
+resume parser would, from outside.
 
 Two fixes were open. Generating the number into the head at build time is the
 obvious one, and it is the wrong one here: the image builds the frontend from

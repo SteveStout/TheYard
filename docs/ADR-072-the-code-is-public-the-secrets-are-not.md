@@ -14,8 +14,8 @@ What that is worth: a developer can clone, build and run the whole project witho
 
 ## Context
 
-This repository is public and always has been. Anybody can read every line,
-clone it, build it and run it, and the site's own docs sidebar serves the
+This repository is public and always has been. Anybody can read every line
+and run it, and the site's own docs sidebar serves the
 source of every decision back to the visitor. That is the point of a
 portfolio, and it sets the one security question the project has to get
 right: **what does a person who holds the whole repository not hold?** The

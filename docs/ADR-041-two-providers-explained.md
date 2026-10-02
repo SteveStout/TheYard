@@ -10,6 +10,12 @@ decisions.
 Nothing here is new information. It is the same setup, told at the level of what
 each piece is for.
 
+## In plain words
+
+This page explains, for a developer new to the setup, why one application runs on two databases: Microsoft's managed SQL Server on the deployed site (Azure SQL Database) and a single-file database on a laptop and in CI (SQLite). On SQL Server the schema is written by hand as SQL, and the code's data mapper (Entity Framework) only maps to it.
+
+What that is worth: a developer can clone the code and run the tests without an Azure subscription, and the organization keeps one set of data classes working against both engines.
+
 ## What is actually running
 
 This application keeps four kinds of thing in a database: vehicles, photos,

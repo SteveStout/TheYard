@@ -1,15 +1,21 @@
 # Best Practices
 
 The record of engineering practices this project holds itself to, written for
-a hiring manager or anyone learning from the code. Nothing here is just
+a reviewer or anyone learning from the code. Nothing here is just
 claimed: every practice is visible in the running site or the repository.
 Decision records live under this menu as it grows.
+
+## In plain words
+
+This page lists the engineering habits the project holds itself to, each with the record that explains it, such as tests that must pass before anything ships and failures that all answer in one shape. Every habit can be seen in the running site or in the code.
+
+What that is worth: a developer gets a checklist of habits with working examples to copy, and the organization can check each claim against the live site instead of a promise.
 
 ## Show it, don't say it
 
 Everything this project asserts about itself is served by the project. The
-docs, the decision records, the infrastructure code, and the resume all come
-from menus in the running app. The version number in the page footer follows
+docs and the decision records come from menus in the running app, and so do
+the infrastructure code and the resume. The version number in the page footer follows
 the same rule: the running container reports which build it is, and the
 footer displays exactly that.
 
@@ -35,8 +41,8 @@ footer displays exactly that.
   under the Hosting menu, deployable by flipping parameters.
 - **Containers run hardened.** Multi-stage build, a non-root user, a real
   HTTP healthcheck, and no SDK in the runtime image.
-- **Every failure has one shape.** Rejected queries, rejected bids and
-  unhandled exceptions all answer RFC 9457 ProblemDetails with the message
+- **Every failure has one shape.** Every rejected query or bid, and every
+  unhandled exception, answers RFC 9457 ProblemDetails with the message
   in `detail` and a trace identifier; every request is logged as
   structured JSON; a React error boundary turns a render crash into a page
   with a way out, and reports it to the same list the Admin tab reads.
@@ -79,12 +85,12 @@ footer displays exactly that.
   the deploy that mints the number. Served as the Changelog menu; recorded in
   ADR: The changelog.
 - **The docs show the code that runs.** A decision record's samples are
-  read from this build's own source files at request time, so the words and
-  the code cannot drift apart. Recorded in ADR: Live code samples.
+  read from this build's own source files at request time, so the words
+  cannot drift apart from the code. Recorded in ADR: Live code samples.
 - **Nothing stale reaches a browser.** Bundle files are named by their own
-  contents and cached for a year; the page, the API and the documents say
-  no-cache, so a new version shows on the next load on any device. Recorded
-  in ADR: Cache headers.
+  contents and cached for a year; the page and the API say no-cache, and so
+  do the documents, so a new version shows on the next load on any device.
+  Recorded in ADR: Cache headers.
 - **Color is measured, not eyeballed.** Every text and ground pair in the
   palette is held to WCAG AA by a unit test that reads the tokens file, so
   a shade that fails contrast fails the build. Recorded in ADR: The
@@ -141,7 +147,7 @@ footer displays exactly that.
   failed in CI on the command that had just passed locally, a guard that failed
   the day after it was chosen. Recorded in ADR: Saying how it was built.
 - **The build cannot ship a version nothing describes.** The changelog's top
-  line is where the deploy reads the version, so the footer and the file that
-  documents the footer are the same string, and a ship that forgets its line
-  fails rather than displaying a number with no sentence attached. Recorded
-  in ADR: The version comes from the changelog.
+  line is where the deploy reads the version. The footer and the file that
+  documents the footer are then the same string, and a ship that forgets its
+  line fails rather than displaying a number with no sentence attached.
+  Recorded in ADR: The version comes from the changelog.

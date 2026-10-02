@@ -2,9 +2,15 @@
 
 Status: accepted, 2026-09-25. Steve approved every item on one drawn page of before and after pairs between 06:50 and 06:54 CDT ("all of this looks good"), and asked for it fast and in one push. Shipped as 1.0.3.23, with the eight fixes to the Site activity card (ADR: Site activity, and the line an address does not cross, the addendum of 25 September).
 
+## In plain words
+
+This page records a round of small fixes to the site's look, each approved from a drawn page of before and after pairs; the look itself stays as it was. Among them: tables that never break a word, and a phone layout that shows a vehicle's bid before its photos.
+
+What that is worth: a developer finds each fix beside the test that holds it, and the organization's site reads cleanly on a phone as well as on a desk.
+
 ## Context
 
-The operator's look (ADR: The glass look, its addenda of 24 and 25 September) put every page on one glass, one rule, two brackets and one face in five versions over two days. Read again the next morning with a designer's eye, the look held and a dozen details did not: glass that still read as a sheet rather than frost, a document's page that went solid white on a phone, tables that broke "Resource" into "Resou rce", a strip of Admin tiles with labels three lines tall at 390, a full ring that read as a plain circle, a store note cut with an ellipsis, a vehicle page that put the bid 2,000 px down on a phone, and charts drawn with a web grid where the rest of the tab was an instrument.
+The operator's look (ADR: The glass look, its addenda of 24 and 25 September) put every page on one glass, one rule, two brackets and one face in five versions over two days. Read again the next morning with a designer's eye, the look held while a dozen details did not: glass that still read as a sheet rather than frost, a document's page that went solid white on a phone, tables that broke "Resource" into "Resou rce", a strip of Admin tiles with labels three lines tall at 390, a full ring that read as a plain circle, a store note cut with an ellipsis, a vehicle page that put the bid 2,000 px down on a phone, and charts drawn with a web grid where the rest of the tab was an instrument.
 
 This record is the refinement, not a redesign: the palette, the header, the ribbon ground, IBM Plex Sans, the glass, the brackets and rules, the rings and the pills all stay. Nothing was added beyond the list he approved.
 
@@ -107,7 +113,7 @@ Steve: "on Monday I want to review the styling architecture as that is ready to 
 - **Sizes, weights, corners, tracking and layers are tokens.** A chart's writing (`--chart-text-*`), a ring's reading (`--ring-text-*`), a chip's corner (`--radius-xs`), a display title's tracking (`--title-tracking`), the stacking order (`--layer-*`) and how strongly a chart's fill is laid down (`--mark-*-opacity`, as `fill-opacity` on the drawing rather than `opacity`, so no fill makes a compositing layer of its own).
 - **Held by the gate.** Three new rules in `StyleRulesTests`: a colour is written once and a tint is mixed; every width is a step on the scale and a component asks only through the constants; every size, weight, corner, tracking and layer comes from the sheet. `ADR: The rules a change has to pass` carries them as one row.
 - **Found on Steve's phone while it was being built, and fixed in the same version.** A vehicle's page on a phone drew the bid panel, the specifications and the seller at the width of their content, about half the screen: 1.0.3.26 made the phone order a CSS order in the desk's grid, and that grid aligns its items to the start, which in a column shrinks them. The column stretches every section now, and `mobile.spec` fails a section narrower than it. The picture of that page was in 1438's set and was not looked at; every phone picture is read by eye before this version closes. The Admin strip's details were cut to one line with an ellipsis on a phone; they take two lines like the desk's. The request-units tile no longer sets the ring's total against the free tier's rate. And a page left open across a deploy loads itself again rather than showing an error (ADR-023's addendum).
-- **What a visitor sees differently.** The rail's text is the body ink (`#524b48`, where it had kept `#5e5653`). Between 600 and 639 px a phone now gets the phone layout it gets at 599, and between 721 and 767 the Author page's single column. The Account page's subheading is 17 px where it was 16.
+- **What a visitor sees differently.** The rail's text is the body ink (`#524b48`, where it had kept `#5e5653`). Between 600 and 639 px a phone now gets the phone layout it gets at 599. Between 721 and 767 it gets the Author page's single column. The Account page's subheading is 17 px where it was 16.
 
 ## Addendum, 2026-09-25 (1.0.3.29): the styling pass, reviewed by a reader who had not seen it
 
@@ -133,7 +139,7 @@ const stacks = columns.length >= STACK_FROM_COLUMNS;
 const label = at === 0 ? undefined : column.name;
 ```
 
-- **Charts at their width.** `fitBox` in `src/lib/plotFrame.ts` and the `useFittedBox` hook in `charts.tsx` measure the drawing before paint and on resize, and the geometry in `machineChart.ts` and `activity.ts` takes that box. The box is never wider than the desk's 720, so a desk draws as before and a phone keeps 10 px words. The callout clamps inside a narrow box.
+- **Charts at their width.** `fitBox` in `src/lib/plotFrame.ts` and the `useFittedBox` hook in `charts.tsx` measure the drawing before paint and on resize, and the geometry in `machineChart.ts` and `activity.ts` takes that box. The box is never wider than the desk's 720: a desk draws as before and a phone keeps 10 px words. The callout clamps inside a narrow box.
 - **Whole tile lines.** A tile's `detail` is short enough for two lines on the narrowest tile, measured in IBM Plex from 340 to 1440, and a new `more` field carries the rest of the sentence to screen readers and the tile's title; `tileSentence()` joins them.
 - **Under 1 ms.** `millisecondsWords()` gives the traffic card's typical and slow blocks "under 1 ms" where they said "0 ms".
 - **The reset card without the key** is an Absent card, so Previous from Health no longer lands on an empty bench.
@@ -157,7 +163,7 @@ export function stacksAt(boxWidth: number, wide: number, narrow = 0): boolean {
 }
 ```
 
-- **A document on a desk** opens in the page's own column, right of the rail and under the store bar. Centred on the whole screen it sat over half the rail at 1024 and 1280 and cut the rail's words, and its top edge sliced the store bar. The page behind stays clear, as Steve chose in the tweaks pass (B1b); the readers asked for a scrim, which is his call and is not added.
+- **A document on a desk** opens in the page's own column: right of the rail and under the store bar. Centred on the whole screen it sat over half the rail at 1024 and 1280 and cut the rail's words, and its top edge sliced the store bar. The page behind stays clear, as Steve chose in the tweaks pass (B1b); the readers asked for a scrim, which is his call; it is not added.
 - **One clock on the Machines card.** `sys.dm_db_resource_stats` gives `end_time` in UTC with no kind, the wire wrote it with no offset, and a browser read it as its own time: the database drew at 20:16 beside a container at 15:55 in Chicago. `ResourceStats.InUtc` marks it UTC, and it goes out with its Z.
 - **The telemetry card says why an hour is empty.** It said "0 requests" while the strip counted hundreds. Measured on 25 September: Application Insights held 20,879 requests between 12:00 and 18:00 UTC, 819 in the six hours from 18:00, and none in the hour the card read at 21:53 UTC; the component's daily cap is 0.1 GB, which stops ingestion until midnight UTC. The query now returns the newest request of the day, and an empty hour reads as a sentence naming it and the cap as the likeliest reason (`src/lib/telemetryCard.ts`). The cap itself is a cost control and is unchanged.
 - **WebKit's bold and glass, measured before touching anything.** In Playwright's WebKit on the build machine, against the live site, the page's glass computes `blur(6px)`, both `backdrop-filter` spellings are supported, and IBM Plex lays out at three widths for 400, 600 and 700 (480.8, 495.6 and 501.6 px for one line, the same as Chromium). The stylesheet gives WebKit the right values; whether a real Safari paints them is for a real iPhone to say, and nothing was changed on the strength of the test browser's pictures.
@@ -192,7 +198,7 @@ The findings still open from the two picture reviews of 1.0.3.29, each read on t
 - **The tests tile and the tests card.** The landing page counts each test once (1,146 on 1.0.3.31); the card counted every run, the second store's reruns included (1,850). Both are right; the card now says how many of its runs are reruns and what the landing page counts.
 - **Chart units** sit above the plot, off the top tick, so "1" and "errors / min" no longer read as one phrase.
 - **One marker per line.** A legend is the swatch list without bullets, and a line in a list that starts with its own swatch or a details toggle gets no bullet as well.
-- **No lone items.** Four window pills on a phone are two rows of two. A landing group of four is two by two, three and six are threes, and an odd last tile on a phone takes its row. The Author page's buttons under a desk share their line. A rail heading balances its lines rather than leaving one word.
+- **No lone items.** Four window pills on a phone are two rows of two. A landing group of four is two by two and groups of three and six are threes; an odd last tile on a phone takes its row. The Author page's buttons under a desk share their line. A rail heading balances its lines rather than leaving one word.
 - **Readable at every width.** The recruiter's path and the sources are laid out at the width their card gives, up to 560, so their words stay the chart size on a desk (they had grown to about 20 px). A label sits 8 px above its input.
 - **The countdown ring on a photo** sits on a see-through disc with the glass's hairline, not a white one, and without a blur, because a hundred cards each blurring cost a phone frames.
 - **An ended lot** with bids says "Final bid", on its card and its page.

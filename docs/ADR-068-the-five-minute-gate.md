@@ -4,6 +4,12 @@ Status: accepted, 2026-09-09. The whole test wall, every suite on both
 stores, runs in under five minutes on the machine that ships, and the numbers
 that say so are in this record. Parent: ADR: The tests, explained for a new developer.
 
+## In plain words
+
+The full test run, every suite on both databases, was cut from about twenty minutes to under five on the machine that ships. Test applications now boot a thousand vehicles instead of a hundred thousand, and the gate runs each suite once per store with its two sides at the same time.
+
+What that is worth: a developer gets a verdict on every change in minutes with nothing skipped, and the organization ships more often without testing less.
+
 ## Context
 
 Steve's ask, in his words: "the tests in total should not run more than five
@@ -45,8 +51,8 @@ back in through a `FullCatalogue` fixture. A thousand is enough for every
 other test because the schedule spreads a thousand auctions across a week:
 there are live, upcoming and ended vehicles on every page and every path the
 tests walk is the same path. A test holds the number, so a change to how the
-host reads its configuration cannot quietly put a hundred thousand vehicles
-back into every test application.
+host reads its configuration cannot put a hundred thousand vehicles back into
+every test application without that test failing.
 
 ```live path=api/TheYard.Tests/TestCatalogue.cs region=test-catalogue
 ```

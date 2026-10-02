@@ -3,8 +3,10 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api;
 
 namespace TheYard.Tests;
@@ -134,4 +136,56 @@ public class ExceptionHandlerTests(ProductionApi factory) : IClassFixture<Produc
         Assert.Equal(rejectedFields, crashFields);
     }
     // #endregion exception-tests
+
+    [Fact]
+    public async Task A_caller_who_hung_up_is_answered_499_and_never_counted_as_an_error()
+    {
+        // A visitor who closes the tab while the activity report is being built cancels the
+        // wait with the request's own token. That must not turn the Admin tab's Errors card red.
+        using var gone = new CancellationTokenSource();
+        await gone.CancelAsync();
+        var context = new DefaultHttpContext { RequestAborted = gone.Token };
+        var writer = new RecordingWriter();
+        var handler = new ProblemHandler(writer, NullLogger<ProblemHandler>.Instance);
+
+        bool handled = await handler.TryHandleAsync(context, new TaskCanceledException("wait", null, gone.Token), CancellationToken.None);
+
+        Assert.True(handled);
+        Assert.Equal(ProblemHandler.ClientClosedRequest, context.Response.StatusCode);
+        Assert.False(writer.Wrote);
+        Assert.True(ProblemHandler.CallerLeft(context, new OperationCanceledException(gone.Token)));
+    }
+
+    [Fact]
+    public void A_cancellation_the_caller_did_not_cause_is_still_a_server_failure()
+    {
+        // A timeout of the server's own raises a cancellation from another token while the
+        // caller is still waiting. That is a fault to count, not a visitor leaving.
+        using var waiting = new CancellationTokenSource();
+        using var timeout = new CancellationTokenSource();
+        timeout.Cancel();
+        var context = new DefaultHttpContext { RequestAborted = waiting.Token };
+
+        Assert.False(ProblemHandler.CallerLeft(context, new TaskCanceledException("timed out", null, timeout.Token)));
+        Assert.False(ProblemHandler.CallerLeft(context, new TaskCanceledException("no token")));
+        Assert.False(ProblemHandler.CallerLeft(new DefaultHttpContext(), new OperationCanceledException()));
+        Assert.False(ProblemHandler.CallerLeft(context, new InvalidOperationException("not a cancellation")));
+    }
+
+    /// <summary>
+    /// A problem details writer that only notes whether it was asked to write, so a test can
+    /// prove the handler wrote nothing for a caller who already left.
+    /// </summary>
+    private sealed class RecordingWriter : IProblemDetailsService
+    {
+        /// <summary>True once anything asked this writer to write.</summary>
+        public bool Wrote { get; private set; }
+
+        /// <summary>Records the request and writes nothing.</summary>
+        public ValueTask WriteAsync(ProblemDetailsContext context)
+        {
+            Wrote = true;
+            return ValueTask.CompletedTask;
+        }
+    }
 }

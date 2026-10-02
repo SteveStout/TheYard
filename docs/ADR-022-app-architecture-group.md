@@ -4,6 +4,12 @@ Status: accepted, 2026-09-02, shipped as 1.0.0.28. Steve's ask: "make sure
 everything on the UI is grouped and well organized; we need a new header,
 App Architecture, for the code ADRs."
 
+## In plain words
+
+This page moved every document about how the application is built into one sidebar section of its own (App Architecture), placed first. Decisions about how the work is done stay in their own section, so each section holds one kind of thing.
+
+What that is worth: a developer asking how this is built finds the answer in the first section instead of split across two, and the organization's newest writing is no longer hidden at the bottom of a long menu.
+
 ## Context
 
 The sidebar grew by accretion. Best Practices ended the day holding
@@ -13,12 +19,12 @@ samples, cache headers, the palette, the staff review, diagram pages, and
 then the three records that walk the code for a new developer. Two
 different kinds of thing were filed together: decisions about how the
 project is run, and explanations of how the application is built. About
-held the README, the data flow and the project structure, which are the
-second kind, filed under a heading that suggests the first.
+held the README with the data flow and the project structure. All three are
+the second kind, filed under a heading that suggests the first.
 
 A visitor looking for "how is this built" had to know that the answer was
 split across About and the bottom of Best Practices. That is a grouping
-problem, and it hid the newest and most useful writing in the repository.
+problem. It hid the newest and most useful writing in the repository.
 
 Two documents the README promised at the start of the build were also
 still missing: a written architecture (the onion, the wire contract, the

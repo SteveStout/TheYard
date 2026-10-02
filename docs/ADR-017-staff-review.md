@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-02, shipped as 1.0.0.22.
 
+## In plain words
+
+This page reviews a whole day's code as one body of work (a staff review), looking for duplication between files and for the seams where one change assumed another. Every finding is written down with a verdict, the ones deliberately left alone included. The review repeats whenever a day's work is large enough to need it.
+
+What that is worth: a developer starts the next review from the same page instead of rediscovering old choices, and the organization gets a written record of what was fixed and what was knowingly put off.
+
 ## Context
 
 Ten versions shipped in one day, each reviewed on its own before its push.

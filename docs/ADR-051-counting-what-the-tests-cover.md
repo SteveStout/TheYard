@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-03. 276 tests is a number about the tests. This is the
 number about the code.
 
+## In plain words
+
+This page measures how much of the code the tests actually run (code coverage), alongside the number of tests. The suite covers 89.6% of lines, and the build now fails if coverage drops below 85 per cent of lines or 68 per cent of branches.
+
+What that is worth: a developer finds out in the build when a change stops testing something, and the organization can show anyone without a login what its tests touch, project by project.
+
 ## Context
 
 This repository says how many tests it has in several places, and until today
@@ -62,8 +68,8 @@ Collect coverage in CI, publish it where somebody without a login can read it,
 and hold it to a floor of 85 per cent of lines and 68 per cent of branches.
 
 **The floor is a ratchet, not a target.** It sits just under where the suites
-actually are, which makes it a detector for a change that quietly stops testing
-something, and keeps it clear of the number where people start writing tests that
+actually are, which makes it a detector for a change that stops testing something
+without any test failing, and keeps it clear of the number where people start writing tests that
 execute a line without asserting anything about it. A coverage figure chased for
 its own sake buys nothing and costs a suite that is slower and harder to read.
 

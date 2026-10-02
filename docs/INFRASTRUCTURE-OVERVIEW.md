@@ -1,10 +1,16 @@
 # Infrastructure overview
 
 The Performance section opens with two overviews. This one is the machines a request crosses: what
-each is, where it sits, what it costs and what it adds to the clock. The
+each is and where it sits. For each it also gives the cost and what it adds to the clock. The
 [Web overview](https://github.com/SteveStout/TheYard/blob/main/docs/WEB-OVERVIEW.md) beside it is the page those machines serve and
 the order it loads in. [Hosting](https://github.com/SteveStout/TheYard/blob/main/docs/HOSTING.md) holds the reasoning behind each
 choice; this page is the performance reading of the same chain.
+
+## In plain words
+
+This page follows a web request through each machine it crosses, from the name lookup (DNS) to the databases, with the cost of each. Both sites share one small Azure machine (a Linux B1 App Service plan), and the whole bill at list price is $22.38 a month.
+
+What that is worth: a developer can see that distance between regions is the largest delay, and the organization can read the whole running cost and where it goes on one page.
 
 ## The chain, hop by hop
 
@@ -18,11 +24,11 @@ choice; this page is the performance reading of the same chain.
 | Document store | Azure Cosmos DB, free tier, 1000 RU/s shared, no key exists | westus2, one region from the plan since 20 September | $0.00 | 38 to 40 ms a round trip, where it was 2 from West US 2; a bid is two operations, 89 ms |
 | The catalogue | 100,000 vehicles, 82 MB against a 25 GB allowance | in the stores, loaded into each site's memory at start | $0.00 | reads that never leave the process |
 
-**The whole bill at list price, with both sites running: $22.38 a month.** $12.41 of it is the plan,
-$4.90 the database and $5.07 the registry, read off the Azure Retail Prices API on 20 September. Until
-that day the compute was two container groups at $34.44 a month each and the same bill was $78.85 a month; this page
-quoted $73.78, which left the registry out. The move took $56.47 a month off it, and what was priced,
-what was measured and why it is B1 are
+**The whole bill at list price, with both sites running: $22.38 a month.** $12.41 of it is the plan;
+the database is $4.90 and the registry $5.07, read off the Azure Retail Prices API on 20 September.
+Until that day the compute was two container groups at $34.44 a month each and the same bill was
+$78.85 a month; this page quoted $73.78, which left the registry out. The move took $56.47 a month off
+it. What was priced and measured, and why it is B1, are
 [One plan, two sites](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-079-one-plan-two-sites.md). Crossing a region costs
 $0.02 a gigabyte in either direction, and what crosses one is an image pull and one catalogue read
 per roll, which is under a cent. The timings are the plan's own, from the proof run on both sites at

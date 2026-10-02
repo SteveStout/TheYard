@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03. Not a feature. A record of an adversarial review o
 a single day's changes, the seven defects it found, and the one property that
 made it worth doing.
 
+## In plain words
+
+This page records a second reader, one with no memory of writing the code, checking a day's changes for defects. It found seven, including database error text that could reach a public page (an exception message in the log) and timing that recorded every failed request as a success.
+
+What that is worth: a developer sees a fresh reviewer catch what the author was too sure of to check, and the organization gets a record of its code being checked by something that did not write it, with the findings shown.
+
 ## Why this is written down
 
 Everything in this repository was written by an AI agent, which is stated plainly
@@ -12,7 +18,7 @@ of. The most useful answer to that suspicion is not a claim about care. It is a
 record of the work being checked by something that did not write it, and of what
 the check found.
 
-So at the end of the day's work the whole diff, `a162238..c54262f`, went to a
+So when the day's work was done the whole diff, `a162238..c54262f`, went to a
 reviewer with no memory of writing any of it, with instructions to be skeptical,
 to ignore style, and to hunt specifically for concurrency, re-entrancy, leaks,
 privacy and arithmetic.
@@ -175,14 +181,15 @@ It is worth being precise about why it was missed. The review was asked to check
 `/api/admin/logs`, and it checked it thoroughly. `/api/errors` was older than the
 change under review, so it was outside the diff, and a review scoped to a diff
 sees a change rather than a system. That is usually the right scope. It is the
-wrong scope for a question of the form "can this kind of thing reach that kind of
-reader", because the answer depends on every path into the reader and not on the
-one that changed.
+wrong scope for a question of the form "can this class of thing reach that class
+of reader", because the answer depends on every path into the reader and not on
+the one that changed.
 
 The type only, now, with the message going to the console and Application
 Insights as a structured exception. The `ProblemDetails` handler two regions away
 has refused to put an exception message in a response since the day it was
-written, for exactly this reason, and it had two neighbours quietly doing it.
+written, for exactly this reason, and it had two neighbours doing it with no
+check to notice.
 
 The second finding in the same pass is smaller and the same shape. `POST
 /api/errors/client` is anonymous on purpose, so that a crash in the page reaches

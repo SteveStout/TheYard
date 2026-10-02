@@ -7,6 +7,12 @@ learning from or reviewing my work". The review was run that afternoon, its
 findings were verified against the code, and the decisions taken on each are
 this record. Three versions carry them: 1.0.0.109, 1.0.0.110 and 1.0.0.111.
 
+## In plain words
+
+Three reviewers with no memory of the project (separate agents) each read the code as a different kind of reader. Eight of their findings held up against the code, and this page records what was done about each one, from a sale shown to its buyer only to a sign-in key invented on every restart.
+
+What that is worth: a developer sees how a stranger reads this code and which defects that reading caught, and the organization gets a review step that finds what the authors cannot see.
+
 ## Context
 
 Every review this project had run before was made by the session that wrote
@@ -16,8 +22,7 @@ does. The ask was for the opposite: readers who would meet the checkout the
 way a stranger meets it.
 
 Three were run, as separate agents with no memory of any session, each given
-the checkout at 1.0.0.108 and one persona. A hiring manager screening the
-repository before a final round. A junior developer a year into a first job,
+the checkout at 1.0.0.108 and one persona. A reviewer screening the repository before a final round. A junior developer a year into a first job,
 told to learn from it. A principal architect deciding whether it becomes a
 team's reference. None was told what the others were asked. Their reports
 are kept outside the repository; every claim in them was then read against
@@ -62,7 +67,7 @@ nobody; `anchor_ms` leaves the API and the page; the windows re-seed at
 00:00 UTC rather than at each visitor's midnight, which on the live site is
 seven in the evening for its owner; and the browser keeps doing what it does
 now, formatting the instants the server sends and counting down to them. One
-auction, one clock, and no request can name a day. It ships as its own
+auction and one clock: no request can name a day. It ships as its own
 version with the tests that hold it, and this record gets the addendum; until
 then the CLAUDE.md rule stands as written.
 
@@ -183,8 +188,8 @@ Little. One number in the verification pass was wrong rather than any of
 theirs: it said the proof's tolerance would let a 12 ms row and a 29 ms row
 read the same, and it would not; the allowance is fifteen milliseconds or
 fifteen per cent of the slower row, whichever is more, which is fifteen here
-against a difference of seventeen. The architect's wider point stands, that
-eight samples a path and a correction that subtracts one round trip per
+against a difference of seventeen. The architect's wider point stands: eight
+samples a path and a correction that subtracts one round trip per
 operation assume much of what they conclude, and the proof record says as
 much about throughput and contention. Nothing any of the three called broken
 was found to be working.
@@ -197,7 +202,7 @@ was found to be working.
 - The wire carries two new facts, `sold` on every vehicle and a `store`
   claim in every token, and both are refusals the server makes rather than
   facts the browser is trusted with.
-- One secret exists in the pipeline where none did. It is a session key, it
+- One secret exists in the pipeline where none did. It is a session key that
   lives in GitHub's secret store and the container's environment and
   nowhere else, and a roll without it degrades to what every roll did before.
 - Two designs were owed and named: the server's clock (finding 2), which

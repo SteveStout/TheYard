@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03. Steve's ask: "replace the single anonymous
 in-memory buyer with authenticated users whose bids persist." The decision he
 had already made, and which this follows: ASP.NET Core Identity with a JWT.
 
+## In plain words
+
+This page gives every visitor their own account and their own bids (ASP.NET Core Identity), so two people can bid against each other and the site can tell them apart. The sign-in is a signed token kept in a cookie the page's scripts cannot read (a JWT in an httpOnly cookie), and browsing stays open without an account.
+
+What that is worth: a developer has a small, readable example of token sign-in done safely, and the organization's auction makes its central claim true: a bid belongs to someone and survives a restart.
+
 ## Context
 
 ADR: The relational store gave bids somewhere to live. It did not give them an

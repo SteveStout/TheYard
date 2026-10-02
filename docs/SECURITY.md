@@ -18,7 +18,7 @@ What that is worth: a developer knows the rules before touching anything sensiti
 
 Open an issue on [the repository](https://github.com/SteveStout/TheYard/issues),
 or email the address on the resume the site serves. There is no bounty and no
-formal window, and anything real will be fixed and written down in a record here
+formal window. Anything real will be fixed and written down in a record here
 with what it allowed.
 
 ## What is protected, and by what
@@ -31,7 +31,7 @@ authentication mode. There is nothing in it to leak
 (ADR: The SQL Server backend).
 
 **That identity can read and write rows, and nothing else.** It holds
-`db_datareader` and `db_datawriter`. It cannot create, alter or drop a table,
+`db_datareader` and `db_datawriter`. It has no right to change the shape of any table,
 which is why the schema is a SQL project published separately from the
 application (ADR: Data first, and the database in source control). An
 application that cannot change its own schema cannot be made to.
@@ -45,7 +45,7 @@ one and logs that it did, and every session ends with it. A session is a year
 long and is re-issued once a day while it is in use, so a login lasts a year
 past the last visit and a sign-out still ends it at once (the accounts record's
 addendum of 13 September). A password reset link is minted by the operator behind
-the admin key, lives an hour, works once, and stands for a signed token that
+the admin key, lives an hour and works once; it stands for a signed token that
 carries a fingerprint of the password hash so it cannot be replayed after the
 password changes; the link itself carries only a GUID, the token is kept under
 it on the document store for the hour and deleted on use, and the link is

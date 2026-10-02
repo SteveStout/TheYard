@@ -6,18 +6,24 @@ long logs, any way to capture those in SQL?", then "do whatever you think is
 best for the logs, SQL or Cosmos DB, is Cosmos better since it's
 unstructured?"
 
+## In plain words
+
+This page decides where the site keeps its logs for the long term: one record per event in the document database (Azure Cosmos DB), set to expire on its own after a fixed time (time-to-live). Events are written in batches once a minute so no request waits, and the operator reads them on the Admin tab behind a key.
+
+What that is worth: a developer can see what the site served last month even after the container has restarted many times, and the organization keeps a record of its errors for years at no extra cost on the free tier.
+
 ## Context
 
 Three things this site calls a log, and how long each lasted before today.
 The Admin tab's rings (the last five hundred requests, the last three hundred
 log lines, the last fifty errors) are this process's memory and empty on
 every roll, which the page says out loud (ADR: Observability). Application
-Insights keeps every request and exception for thirty days on the free tier,
-behind a sign-in, and does not know which store served a request (ADR:
-Telemetry). The activity counters from this
-morning last thirty-five days on the document store and indefinitely on the
-relational one, but they are counters: they can say how many, never which
-(ADR: Site activity, and the line an address does not cross).
+Insights keeps every request and exception for thirty days on the free tier
+behind a sign-in. It does not know which store served a request (ADR:
+Telemetry). The activity counters from this morning last thirty-five days on
+the document store and indefinitely on the relational one, but they are
+counters: they can say how many, never which (ADR: Site activity, and the
+line an address does not cross).
 
 So the honest answer to "do we have long logs" was no. After a roll the
 operator could not say what the site had served an hour earlier, and after a
@@ -34,21 +40,21 @@ bounded stack in the detail) and an `app` line (a warning this application
 wrote). The container's time-to-live is the retention policy: a document
 expires a year after it is written and nothing runs to delete it.
 
-**Why the document store, and what "unstructured" actually buys.** The word
-is close and the reason is more specific. A log is append-only, written all
-day and read now and then, and its three kinds of line have three shapes. A
-document takes each shape as it arrives, so a fourth kind next year is a new
-value in one field, with no migration behind it. A write is a create and never a
-merge, so a hundred of them go in one transactional batch for a few request
-units. Retention is a number on the container. And a writer that runs once a
-minute never keeps a database awake, which matters on the relational side:
-Azure SQL Database here is the serverless free offer, metered in vCore
-seconds, and a log that wrote every minute would spend that allowance keeping
-the database from pausing. The relational store keeps the counters the graph
-is drawn from, which is the query that wants a table and an index; this is
-the other kind of data, and it goes to the other store. Both containers write
-to the same container with a `store` field saying which engine served the
-request, so the split the activity graph shows is in the log too.
+**Why the document store, and what "unstructured" actually buys.** The word is
+close and the reason is more specific. A log is append-only: written all day and
+read now and then. Its three kinds of line have three shapes. A document takes
+each shape as it arrives, so a fourth kind next year is a new value in one
+field, with no migration behind it. A write is a create and never a merge, so a
+hundred of them go in one transactional batch for a few request units. Retention
+is a number on the container. And a writer that runs once a minute never keeps a
+database awake, which matters on the relational side: Azure SQL Database here is
+the serverless free offer metered in vCore seconds, and a log that wrote every
+minute would spend that allowance keeping the database from pausing. The
+relational store keeps the counters the graph is drawn from, which is the query
+that wants a table and an index; this is the other kind of data, and it goes to
+the other store. Both containers write to the same container with a `store`
+field saying which engine served the request, so the split the activity graph
+shows is in the log too.
 
 **Nothing waits on the store.** The same shape as the activity collector and
 for the same reasons: a request offers its event to a bounded channel and
@@ -84,20 +90,21 @@ too, because the same text was going to the public errors ring unchanged.
 
 **Read back from the site, behind the key.** `GET /api/admin/logs/kept`
 answers to the operator's key like the visitor rows do, and is a 404 without
-it. It takes a window (24h, 7d, 30d) and optionally a kind, a status and a
-fragment of the path, which travel to the store as query parameters and never
-as syntax, and returns the newest two hundred with the window's counts by
-kind and what the feature has cost. The Admin tab's Kept log card sits under
-the activity card: a window, three filters, and the lines grouped by day.
+it. It takes a window (24h, 7d, 30d) and optionally a kind and a status. A
+fragment of the path can narrow it further. The filters travel to the store
+as query parameters and never as syntax, and the endpoint returns the newest
+two hundred with the window's counts by kind and what the feature has cost.
+The Admin tab's Kept log card sits under the activity card: a window and
+three filters, then the lines grouped by day.
 
 ## Alternatives
 
 **Tables in Azure SQL Database.** The first reading of the ask, and rejected
-for the reasons above: the free offer's meter, a purge job instead of a
-time-to-live, and three shapes in one table or three tables for one log.
-Nothing here needs a join or a cross-cutting query that the counters do not
-already answer. If a query ever does, the document store's own SQL answers
-it, and a table is one adapter away behind the same port.
+for the reasons above: the free offer's meter and a purge job instead of a
+time-to-live. It would also mean three shapes in one table or three tables
+for one log. Nothing here needs a join or a cross-cutting query that the
+counters do not already answer. If a query ever does, the document store's
+own SQL answers it, and a table is one adapter away behind the same port.
 
 **Application Insights, longer.** Retention can be raised to two years for a
 charge per gigabyte per month, and the query language is better than any
@@ -176,12 +183,12 @@ against `tests-logs`.
 **The collector.** Bounded channel, drop-oldest, one drain in flight at a
 time on its own clock, a manual drain for the tests, no logger inside it.
 The provider takes Warning and above on the ring's allow-list plus the
-framework's unhandled-exception category, reads the store and the path off
-the current request when there is one, and cannot recurse: nothing it
-writes is logged.
+framework's unhandled-exception category. It reads the store and the path
+off the current request when there is one, and it cannot recurse: nothing
+it writes is logged.
 
 **The hook.** One change came out of the review and shipped with this
-addendum: the request hook computed the visitor token twice per request,
+addendum: the request hook computed the visitor token twice per request:
 once for the activity hit and once for the kept event. It computes it once
 now and hands both the same token, network and store, which is one keyed
 hash per request instead of two and one place for the address to be read.
@@ -208,20 +215,20 @@ the lack and need of foreign keys for logs, I'm thinking all log data should be 
 then "and we have an option to filter between 7 days, 30 days and 24 hours".
 
 **The question had been answered once, and the answer holds.** The decision above put the log in the
-document store for the reasons he gives: nothing joins to a log line, its kinds have different
-shapes, a write is a create, and retention is a number on the container. What the question found is
-what that decision left out. Requests, errors and warnings were kept, behind the operator's key. The
-four lists a visitor can see, recent errors, the log as the console got it, the SQL the application
-ran and what the document store ran, were still rings in the process's memory, and the tab's own
-words for them were "empties on every deploy". On the day the site rolled nine times, that is what
-they did.
+document store for the reasons he gives: nothing joins to a log line; its kinds have different
+shapes; a write is a create; and retention is a number on the container. What the question found is
+what that decision left out. Requests and errors were kept behind the operator's key, and so were
+warnings. The four lists a visitor can see, recent errors, the log as the console got it, the SQL
+the application ran and what the document store ran, were still rings in the process's memory, and
+the tab's own words for them were "empties on every deploy". On the day the site rolled nine times,
+that is what they did.
 
 **Decision: every entry a public ring takes is also kept, in the same container, as the entry the
 ring serves.** Four more kinds under the same spine, `ring-errors`, `ring-log`, `ring-sql` and
 `ring-store`. Each document carries the entry as the JSON the ring's own endpoint answers with, and
 nothing else: the spine's private fields, the visitor, the network, the message and the detail, are
-empty on these kinds. The same collector takes them, so there is still one channel, one drain a
-minute and one transactional batch a day partition, and no request waits on the store.
+empty on these kinds. The same collector takes them, so there is still one channel and one drain a
+minute. Each day partition still gets one transactional batch, and no request waits on the store.
 
 | Option | What it buys | What it costs |
 | --- | --- | --- |
@@ -234,7 +241,7 @@ minute and one transactional batch a day partition, and no request waits on the 
 public. An error entry is a type and its frames and never a message. A statement has parameter names
 and types and no field a value could be put in. An operation describes its partition and does not
 name it. Those rules live in the types the rings are made of, and a kept entry is one of those types
-written out. The keyed log keeps more, the message, the token, the network, and stays behind the key.
+written out. The keyed log keeps more (the message, the token, the network) and stays behind the key.
 The at-sign rule is the keyed log's and does not apply here on purpose: a parameter is called `@p0`,
 and cleaning it would make a kept statement different from the one the ring showed.
 
@@ -255,10 +262,10 @@ as it always was. The tiles and the timing card go on reading the rings whatever
 **What it costs.** Nothing on the bill: the account is on the free tier's thousand request units a
 second, and a batch of a hundred small creates into a container that indexes five paths is a few
 hundred units once a minute on a busy minute. The log ring takes a line for every statement and every
-operation, so those are kept twice, once as a line and once as what they were, which is what the two
+operation, so those are kept twice: once as a line and once as what they were, which is what the two
 cards show today and is left alone. Timing has no window of its own because it does not need one: the
-traffic card's day, week and month are drawn from the minutes each site keeps
-(ADR: What the machines are doing).
+traffic card's day, week and month are drawn from the minutes each site keeps (ADR: What the machines
+are doing).
 
 ### Files, this addendum
 

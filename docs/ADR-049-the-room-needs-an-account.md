@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03. `POST /api/market/tick` was anonymous, and it
 drove shared state from everybody's bids. A stranger with `curl` could outbid
 every signed-in visitor on the site.
 
+## In plain words
+
+The simulated bidders that compete with visitors are moved forward by a request from the page (the market tick endpoint), and anyone could send it without an account, raising prices on every auction a signed-in visitor was winning. That request now needs an account, and what the bidders bid against is unchanged.
+
+What that is worth: a developer sees that who may trigger an action is its own question, separate from what the action does, and the organization no longer has an endpoint a stranger can use to change what everybody else sees.
+
 ## Context
 
 The simulated room (ADR: Competing bidders) is driven by the page rather than by

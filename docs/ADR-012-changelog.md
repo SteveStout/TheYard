@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-02, shipped with 1.0.0.14, the first version to
 write its own line.
 
+## In plain words
+
+The site keeps one file listing every shipped version, newest first, each with its date and a one-sentence summary (docs/CHANGELOG.md). The deploy reads the version number from that file's top line and refuses to ship if the line is missing.
+
+What that is worth: a developer writes one line per change inside the commit that ships it, and the organization can show what changed between any two versions in a quick read.
+
 ## Context
 
 Fourteen versions reached the live site in three days, and the only record
@@ -20,7 +26,7 @@ standing there to write the sentence when it becomes known.
 ## Decision
 
 - **One file, docs/CHANGELOG.md**, newest first, one line per shipped
-  version: the number, the date, one sentence. A hiring manager scans it in
+  version: the number, the date, one sentence. A busy reviewer scans it in
   thirty seconds, and that is the whole design.
 - **One sentence, high level.** The commit history holds the detail and the
   decision records hold the why. A line that needs a second sentence is a

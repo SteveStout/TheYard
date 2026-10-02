@@ -43,7 +43,7 @@ same way:
 
 The 404 for an unknown vehicle stays an empty 404: there is nothing to
 say that the status code does not. (That sentence stopped being true
-quietly, and the addendum at the end of this record says when and what
+without a test noticing, and the addendum at the end of this record says when and what
 replaced it.)
 
 **The browser reads `detail` first.** `src/lib/data.ts` prefers `detail`,
