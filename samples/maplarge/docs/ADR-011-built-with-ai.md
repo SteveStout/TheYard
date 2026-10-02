@@ -30,7 +30,7 @@ questions with `window.prompt`; the shipped one keeps the input and asks in the 
 green on a machine, not in the assistant's head, before anything was committed.
 
 **Read by a person before it is sent.** Every file, with the assistant's own three-reader review
-(a tester, a hiring manager, a staff engineer) beside it as a checklist. The recording is that
+(a tester, a reviewer, a staff engineer) beside it as a checklist. The recording is that
 walk-through.
 
 How the same assistant is used day to day: the first draft of a class against a test that was
