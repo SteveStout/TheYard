@@ -26,7 +26,7 @@ public static class StoreRegistration
         // SQLite through EF Core (ADR: The relational store). The connection string is
         // configuration, and without one this process gets a scratch file it deletes on
         // the way out: that is what every test wants, and it is a better answer for a
-        // misconfigured deploy than quietly writing somewhere nobody will look.
+        // misconfigured deploy than writing, unannounced, somewhere nobody will look.
         string? configuredDatabase = builder.Configuration.GetConnectionString("Yard");
         // Azure SQL Database, when there is one to talk to (ADR: The SQL Server
         // backend). A separate setting rather than a second meaning for the one above,
@@ -37,27 +37,23 @@ public static class StoreRegistration
         string? configuredSqlServer = builder.Configuration.GetConnectionString("YardSql");
         // Azure Cosmos DB, when there is an account to talk to (ADR: A second store on
         // Cosmos DB, and what it costs). A URL and not a credential: the account has no
-        // keys, and the container authenticates as the managed identity it already
-        // carries. Not instead of the relational store: beside it. A container with
-        // both settings runs both stores and a visitor picks one with the toggle at
-        // the top of the page (ADR: One container, both stores). The same placeholder
-        // rule as the SQL setting: a failed substitution at roll time reads as "no
-        // Cosmos DB here", never as an address.
+        // keys, and the container authenticates as its managed identity. Beside the
+        // relational store, not instead of it: a container with both settings runs both
+        // (ADR: One container, both stores). The same placeholder rule as the SQL
+        // setting: a failed substitution reads as "no Cosmos DB here", never an address.
         string? configuredCosmos = builder.Configuration["Cosmos:AccountEndpoint"];
         bool cosmosConfigured = !string.IsNullOrWhiteSpace(configuredCosmos)
             && !configuredCosmos.StartsWith("__", StringComparison.Ordinal);
         // Which store a request gets when it names none: "sql" or "cosmos". The live
-        // site says sql; the second container says cosmos; a developer or a test
-        // run that configured the document store and said nothing gets it, which is
-        // what "the whole suite booted on Cosmos DB" has meant since 1.0.0.89.
+        // site says sql; the second container says cosmos; a developer or a test run
+        // that configured the document store and said nothing gets the document store.
         string? configuredDefaultStore = builder.Configuration["Store:Default"];
         string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
         // Pooling off for a scratch database, which is what makes it deletable
         // without a process-wide ClearAllPools. That call empties the pool for every
         // connection in the process, and a test run holds ten applications at once
-        // against ten different databases, so one of them tidying up on shutdown was
-        // pulling connections out from under the others (the staff review, 2026-09-03,
-        // confirmed by a test that passed alone and failed in the suite).
+        // against ten different databases, so one of them tidying up on shutdown would
+        // pull connections out from under the others.
         string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase};Pooling=False";
         // The relational store is always one of the two: SQL Server when the deploy
         // gave one, SQLite otherwise, and "yard" keeps its name because most of this
@@ -82,11 +78,10 @@ public static class StoreRegistration
         #region migrate-and-seed
         // The schema and the contents, before anything is registered, because the
         // answer decides what gets registered. Migrate rather than EnsureCreated: the
-        // schema's history is a set of files in this repository, so a container
-        // starting against an older database brings it forward instead of finding a
-        // shape it half recognises. The JSON readers are still where a fresh database
-        // gets its contents, which keeps `npm run data` the way the dataset is
-        // regenerated and means the seed cannot drift from the file it came from.
+        // schema's history is files in this repository, so a container starting against
+        // an older database brings it forward instead of finding a shape it half
+        // recognises. A fresh database gets its contents from the JSON readers, so
+        // `npm run data` regenerates the dataset and the seed cannot drift from it.
         //
         // Two stores, two of everything below: each store is brought up on its own,
         // timed on its own, and stands behind its own catalogue, bids, room and
@@ -99,20 +94,18 @@ public static class StoreRegistration
         // #region sql-backend
         // The relational store, on SQL Server or SQLite. A factory rather than a
         // scoped context: the two sources and the bid store are singletons that each
-        // want a context for the length of one operation, and there is no request
-        // scope at startup when the catalogue is read. The interceptor is what puts
-        // every statement on the Admin tab, and it is attached here rather than inside
-        // YardConnection so that the connection type stays a description of where the
+        // want a context for one operation, and there is no request scope at startup
+        // when the catalogue is read. The interceptor puts every statement on the Admin
+        // tab; it is attached here so YardConnection stays a description of where the
         // database is.
         var sqlStartup = new StartupTimings();
         var sqlState = await sqlStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos)));
         // The backend stands on the files until its store is attached: the same two
-        // ports answered out of the JSON, the null bid store, no accounts. The
-        // synthetic scale-up still decorates the vehicle source, and nothing above
-        // this line can tell that the catalogue stopped being a file (ADR: The
-        // relational store). Attached at once below when the store came up, or by the
-        // second chance when it comes up later (ADR: The relational store, the
-        // addendum on the second chance).
+        // ports answered out of the JSON, the null bid store, no accounts, with the
+        // synthetic scale-up still decorating the vehicle source (ADR: The relational
+        // store). Attached at once below when the store came up, or by the second
+        // chance when it comes up later (ADR: The relational store, the addendum on
+        // the second chance).
         var sqlBackend = new Backend
         {
             Key = "sql",
@@ -245,7 +238,7 @@ public static class StoreRegistration
         // #endregion cosmos-backend
 
         // Which one a request gets when it names none, and the answer every request
-        // reads from its own cookie or header (ADR: One container, both stores).
+        // reads from its own header (ADR: One container, both stores).
         // Peer:Site is the other container as a visitor reaches it, which behind the
         // edge is the domain and not the origin the peer endpoint reads (ADR: One
         // container, both stores, addendum). Unset everywhere but the deployed groups.

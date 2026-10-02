@@ -1,3 +1,11 @@
+// The three ports, answered from the database: the seed catalogue, the photo manifest, and the
+// bids. These are the adapters the composition root wires when the relational store opens.
+// The rest of the relational plumbing has a file of its own beside this one:
+//   VehicleRows.cs     row to domain and back
+//   DatabaseState.cs   whether the store is usable, and one sentence about why
+//   YardDatabase.cs    bringing the database up once at startup
+//   SeedResult.cs      what the first boot found
+//   YardSeed.cs        filling an empty catalogue from the JSON files
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application;
 using TheYard.Data;
@@ -5,90 +13,14 @@ using TheYard.Data;
 namespace TheYard.Infrastructure;
 
 /// <summary>
-/// Row to domain and back. The mapping is dull on purpose and lives in one
-/// place, because the interesting failure mode of a persistence layer is a
-/// field that quietly stops being copied.
-/// </summary>
-public static class VehicleRows
-{
-    // #region mapping
-    public static Vehicle ToVehicle(this VehicleRow row) => new()
-    {
-        Id = row.Id,
-        Vin = row.Vin,
-        Year = row.Year,
-        Make = row.Make,
-        Model = row.Model,
-        Trim = row.Trim,
-        BodyStyle = row.BodyStyle,
-        ExteriorColor = row.ExteriorColor,
-        InteriorColor = row.InteriorColor,
-        Engine = row.Engine,
-        Transmission = row.Transmission,
-        Drivetrain = row.Drivetrain,
-        OdometerKm = row.OdometerKm,
-        FuelType = row.FuelType,
-        ConditionGrade = row.ConditionGrade,
-        ConditionReport = row.ConditionReport,
-        DamageNotes = row.DamageNotes,
-        TitleStatus = row.TitleStatus,
-        Province = row.Province,
-        City = row.City,
-        AuctionStart = row.AuctionStart,
-        StartingBid = row.StartingBid,
-        ReservePrice = row.ReservePrice,
-        BuyNowPrice = row.BuyNowPrice,
-        Images = row.Images,
-        SellingDealership = row.SellingDealership,
-        Lot = row.Lot,
-        CurrentBid = row.CurrentBid,
-        BidCount = row.BidCount,
-    };
-
-    public static VehicleRow ToRow(this Vehicle vehicle, int seq) => new()
-    {
-        Seq = seq,
-        Id = vehicle.Id,
-        Vin = vehicle.Vin,
-        Year = vehicle.Year,
-        Make = vehicle.Make,
-        Model = vehicle.Model,
-        Trim = vehicle.Trim,
-        BodyStyle = vehicle.BodyStyle,
-        ExteriorColor = vehicle.ExteriorColor,
-        InteriorColor = vehicle.InteriorColor,
-        Engine = vehicle.Engine,
-        Transmission = vehicle.Transmission,
-        Drivetrain = vehicle.Drivetrain,
-        OdometerKm = vehicle.OdometerKm,
-        FuelType = vehicle.FuelType,
-        ConditionGrade = vehicle.ConditionGrade,
-        ConditionReport = vehicle.ConditionReport,
-        DamageNotes = [.. vehicle.DamageNotes],
-        TitleStatus = vehicle.TitleStatus,
-        Province = vehicle.Province,
-        City = vehicle.City,
-        AuctionStart = vehicle.AuctionStart,
-        StartingBid = vehicle.StartingBid,
-        ReservePrice = vehicle.ReservePrice,
-        BuyNowPrice = vehicle.BuyNowPrice,
-        Images = [.. vehicle.Images],
-        SellingDealership = vehicle.SellingDealership,
-        Lot = vehicle.Lot,
-        CurrentBid = vehicle.CurrentBid,
-        BidCount = vehicle.BidCount,
-    };
-    // #endregion mapping
-}
-
-/// <summary>
 /// Adapter: the seed catalogue, out of the database. Same port the JSON file
 /// reader implements, and the synthetic scale-up still wraps it, so nothing
-/// above this line changed when the storage did.
+/// above this layer depends on which storage is underneath.
 /// </summary>
 public sealed class EfVehicleSource(IDbContextFactory<YardDbContext> factory) : IVehicleSource
 {
     // #region ef-sources
+    /// <summary>Every seed vehicle, in the order it was seeded, read once without change tracking.</summary>
     public async Task<IReadOnlyList<Vehicle>> LoadAsync()
     {
         using var db = await factory.CreateDbContextAsync();
@@ -102,6 +34,7 @@ public sealed class EfVehicleSource(IDbContextFactory<YardDbContext> factory) : 
 /// <summary>Adapter: the photo manifest, out of the database.</summary>
 public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> factory) : IPhotoManifestSource
 {
+    /// <summary>Every photo entry, in manifest order, read once without change tracking.</summary>
     public async Task<IReadOnlyList<PhotoEntry>> LoadAsync()
     {
         using var db = await factory.CreateDbContextAsync();
@@ -118,6 +51,7 @@ public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> facto
 public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidStore
 {
     // #region bid-store
+    /// <summary>Every stored bid, for BidService to replay into its indexes at startup.</summary>
     public async Task<IReadOnlyList<StoredBid>> LoadAsync()
     {
         using var db = await factory.CreateDbContextAsync();
@@ -162,6 +96,11 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
         }
     }
 
+    /// <summary>
+    /// One attempt at the write: insert the buyer's row for this vehicle, or
+    /// update it in place, on a fresh context, and move the concurrency token
+    /// where the provider does not move it itself.
+    /// </summary>
     private async Task WriteAsync(string userId, string vehicleId, BidState state)
     {
         using var db = await factory.CreateDbContextAsync();
@@ -199,197 +138,14 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
         await db.SaveChangesAsync();
     }
 
+    /// <summary>Deletes one buyer's bids, every vehicle, in one statement.</summary>
     public async Task ClearAsync(string userId)
     {
         using var db = await factory.CreateDbContextAsync();
-        // One person's rows. ExecuteDelete over the whole table was what this
-        // did, which on a site two strangers can be looking at meant either of
-        // them could delete the other's (ADR: Reset is one person's start-over).
+        // One person's rows and nobody else's. A delete over the whole table,
+        // on a site two strangers can be looking at, would let either of them
+        // delete the other's bids (ADR: Reset is one person's start-over).
         await db.Bids.Where(bid => bid.UserId == userId).ExecuteDeleteAsync();
     }
     // #endregion bid-store
-}
-
-/// <summary>
-/// Whether the store is usable, and one sentence about why. The composition
-/// root asks this before it registers anything, so a database that will not
-/// open changes which adapters are wired rather than becoming a 500 on the
-/// first request (ADR: The relational store).
-/// </summary>
-/// <param name="Ready">True when the store opened and can be used.</param>
-/// <param name="Note">One sentence about why the store is or is not ready.</param>
-/// <param name="Failure">The exception that kept the store from opening, or null when it opened.</param>
-public sealed record DatabaseState(bool Ready, string Note, Exception? Failure = null)
-{
-    /// <summary>How long bringing the schema up, or checking it was there, took. For the Admin tab's comparison card.</summary>
-    public long SchemaMs { get; init; }
-
-    /// <summary>How long the first-boot seed took, zero when there was nothing to seed.</summary>
-    public long SeedMs { get; init; }
-
-    /// <summary>What the seed cost in request units, which only the document store can say.</summary>
-    public double? SeedRequestUnits { get; init; }
-
-    /// <summary>
-    /// One sentence safe to put anywhere, including a public page.
-    ///
-    /// <para><see cref="Note"/> names the engine and, on a failure, the type of
-    /// exception. It never carries the exception's message, because a provider
-    /// writes the server name, the login name, the database name and the
-    /// caller's IP address into that message, and because a caller who has one
-    /// of these sentences cannot know where it will be printed. The message
-    /// travels as <see cref="Failure"/> instead, so a logger can record it in
-    /// full while a surface that must not publish it can take the type alone
-    /// (the staff review, 2026-09-03).</para>
-    /// </summary>
-    public string Note { get; } = Note;
-}
-
-/// <summary>
-/// Bring the database up, or report that it could not be brought up. Called
-/// once, before the container is built, because the answer decides what gets
-/// registered.
-/// </summary>
-public static class YardDatabase
-{
-    // #region prepare
-    public static async Task<DatabaseState> PrepareAsync(
-        YardConnection connection,
-        IVehicleSource seedVehicles,
-        IPhotoManifestSource seedPhotos)
-    {
-        try
-        {
-            using var db = new YardDbContext(connection.Options());
-
-            // Both halves are timed because both are new work on every cold
-            // start, and a container that takes longer to answer its first
-            // request is a cost this change has to be able to state.
-            var migrating = System.Diagnostics.Stopwatch.StartNew();
-            string schemaNote = await BringSchemaUpAsync(db, connection);
-            migrating.Stop();
-            var seeding = System.Diagnostics.Stopwatch.StartNew();
-            var seeded = await YardSeed.EnsureSeededAsync(db, seedVehicles, seedPhotos);
-            seeding.Stop();
-
-            return new DatabaseState(
-                true,
-                $"{connection.Describe()}, {schemaNote} in {migrating.ElapsedMilliseconds} ms "
-                + $"and seeded in {seeding.ElapsedMilliseconds} ms, "
-                + $"inserting {seeded.VehiclesInserted} vehicles and {seeded.PhotosInserted} photos, "
-                + $"now holding {seeded.VehiclesTotal} and {seeded.PhotosTotal}")
-            {
-                SchemaMs = migrating.ElapsedMilliseconds,
-                SeedMs = seeding.ElapsedMilliseconds,
-            };
-        }
-        catch (Exception ex)
-        {
-            // Deliberately every exception. The caller's job is to keep serving
-            // without a store, and it cannot do that if this throws. What went
-            // wrong travels back as a sentence, is logged as an error, and shows
-            // up as a failed health check on the Admin tab.
-            // The type, not the message. See DatabaseState.Note: the message
-            // goes back as the exception so a log can have it and a public page
-            // cannot.
-            return new DatabaseState(false, $"{connection.Describe()}: {ex.GetType().Name}", ex);
-        }
-    }
-    // #endregion prepare
-
-    // #region schema
-    /// <summary>
-    /// How the schema gets there, which is different per provider and is the
-    /// whole of the difference (ADR: Data first, and the database in source
-    /// control).
-    ///
-    /// On SQL Server it does not get there from here at all. The schema is
-    /// `api/TheYard.Database`, published by SqlPackage, and this process holds
-    /// `db_datareader` and `db_datawriter` and nothing else: it cannot create a
-    /// table, so the only honest thing it can do is check that the schema it
-    /// maps to is present and refuse the store if it is not. A container that
-    /// silently created its own tables would be a second authority for the
-    /// schema, and two authorities is the drift you cannot test your way out of.
-    ///
-    /// On SQLite it applies its own migrations, because a SQLite database here
-    /// is created and thrown away by the process that uses it: a scratch file
-    /// per test, and a container-lifetime file in the fallback. Nothing
-    /// publishes to it and nothing else reads it.
-    /// </summary>
-    private static async Task<string> BringSchemaUpAsync(YardDbContext db, YardConnection connection)
-    {
-        if (connection.Provider == YardProvider.Sqlite)
-        {
-            await db.Database.MigrateAsync();
-            return "migrated";
-        }
-
-        // The names are listed once. An earlier version had them in the array
-        // and again inside the SQL, which is two lists that can drift, on a
-        // check whose whole job is to notice drift.
-        string[] required = ["Vehicles", "Photos", "Bids", "AspNetUsers"];
-        var present = await db.Database.SqlQuery<string>($"SELECT name AS Value FROM sys.tables").ToListAsync();
-        var missing = required.Where(table => !present.Contains(table, StringComparer.OrdinalIgnoreCase)).ToList();
-        return missing.Count == 0
-            ? "found the published schema"
-            : throw new InvalidOperationException(
-                $"the published schema is missing {string.Join(", ", missing)}. "
-                + "Publish api/TheYard.Database before pointing a container at this database.");
-    }
-    // #endregion schema
-}
-
-/// <summary>What the first boot found, so the log line can say it.</summary>
-/// <param name="VehiclesInserted">How many vehicle rows the seed wrote.</param>
-/// <param name="PhotosInserted">How many photo rows the seed wrote.</param>
-/// <param name="VehiclesTotal">How many vehicle rows the table holds after the seed.</param>
-/// <param name="PhotosTotal">How many photo rows the table holds after the seed.</param>
-public sealed record SeedResult(int VehiclesInserted, int PhotosInserted, int VehiclesTotal, int PhotosTotal);
-
-/// <summary>
-/// First boot fills the catalogue tables from the files that used to be the
-/// catalogue. The JSON readers are still the source of truth for what a fresh
-/// database contains, which keeps `npm run data` the way the dataset is
-/// regenerated and means the seed cannot drift from the file it came from.
-/// </summary>
-public static class YardSeed
-{
-    // #region seed
-    public static async Task<SeedResult> EnsureSeededAsync(YardDbContext db, IVehicleSource vehicles, IPhotoManifestSource photos)
-    {
-        int vehiclesAdded = 0;
-        int photosAdded = 0;
-
-        // "Empty" rather than "new", so a database that half-filled because a
-        // process died mid-seed is not left half-filled forever.
-        if (!await db.Vehicles.AnyAsync())
-        {
-            var rows = (await vehicles.LoadAsync()).Select((vehicle, index) => vehicle.ToRow(index)).ToList();
-            db.Vehicles.AddRange(rows);
-            vehiclesAdded = rows.Count;
-        }
-
-        if (!await db.Photos.AnyAsync())
-        {
-            var rows = (await photos.LoadAsync())
-                .Select((photo, index) => new PhotoRow
-                {
-                    Seq = index,
-                    File = photo.File,
-                    Style = photo.Style,
-                    Title = photo.Title,
-                })
-                .ToList();
-            db.Photos.AddRange(rows);
-            photosAdded = rows.Count;
-        }
-
-        if (vehiclesAdded > 0 || photosAdded > 0)
-        {
-            await db.SaveChangesAsync();
-        }
-
-        return new SeedResult(vehiclesAdded, photosAdded, await db.Vehicles.CountAsync(), await db.Photos.CountAsync());
-    }
-    // #endregion seed
 }

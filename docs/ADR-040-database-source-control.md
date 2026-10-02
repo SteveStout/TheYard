@@ -109,7 +109,7 @@ a policy that it does not; it is not permitted to.
 What follows from that is in `YardDatabase.BringSchemaUp`, which is the whole of
 the difference between the two providers:
 
-```live path=api/TheYard.Infrastructure/EfSources.cs region=schema
+```live path=api/TheYard.Infrastructure/YardDatabase.cs region=schema
 ```
 
 On SQL Server it asks whether the schema it maps to is present and refuses the

@@ -52,6 +52,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | /about is a served page with its own head, its Person names only his name, title, profiles and city, the sitemap lists it with the build's day, and the verification tag is written only when it is given | ADR: Every diagram opens on its own page, ADR: The public face | DiagramPageTests, PublicFaceTests, DockerBuildInputsTests |
 | The slug, the catalog and the sidebar offer the same documents | ADR: The staff review | DocumentationCatalogTests |
 | Every file in `src/app` and `src/library`, and every stylesheet under `src`, opens with what it does, what it does not, and which files use it; the last is read against the files that import it, and no file there runs past 300 lines but the ones named with why | ADR: The React configuration, explained for a new developer | FileHeaderTests |
+| No production C# file under `api/` and no TypeScript file under `src/` runs past 300 lines; a longer file is split by job and the file that keeps the name lists its parts (tests, migrations and generated files are left out) | ADR: The rules a change has to pass | FileShapeTests |
 | The four Style pages are served and are the Style section's rows, say "design token" and never a bare "token" (as do the design token files' comments), carry no em dash, and every live number and live fence on them is one the build can count or read, and every tile and glossary link lands on a real section | ADR: The palette | StyleSectionTests |
 | One changelog line per shipped version, newest first, and the deploy reads the version from it | ADR: The changelog, ADR: The version comes from the changelog | ChangelogTests |
 | Nothing this repository ships or serves contains an em dash | ADR: Style, enforced | HouseVoiceTests |
@@ -120,5 +121,6 @@ is how the decision survives a busy month.
 - [`api/TheYard.Tests/RecordShapeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RecordShapeTests.cs): the shape every record keeps.
 - [`api/TheYard.Tests/RecordLinksTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RecordLinksTests.cs): the links and citations, in both directions.
 - [`api/TheYard.Tests/FileHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/FileHeaderTests.cs): the header every file in the app shell and the document library opens with.
+- [`api/TheYard.Tests/FileShapeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/FileShapeTests.cs): the 300-line rule for every production source file.
 - [`CLAUDE.md`](https://github.com/SteveStout/TheYard/blob/main/CLAUDE.md): what an agent reads before it changes anything, which now points here.
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the rules no test holds (served as Coding and Commenting Style under App Architecture).

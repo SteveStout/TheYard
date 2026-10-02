@@ -57,7 +57,7 @@ section on purpose: the store is written first and memory second, so a store
 that throws leaves nothing behind (ADR: The relational store). Same guarantee,
 same shape, one bidder at a time:
 
-```live path=api/TheYard.Application/BidService.cs region=place
+```live path=api/TheYard.Application/BidService.Bidding.cs region=place
 ```
 
 **The constructor stopped reading the store.** A constructor cannot wait, and

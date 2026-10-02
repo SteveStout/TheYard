@@ -43,7 +43,7 @@ what it costs), and every call goes through one wrapper that times it and reads
 the charge off the response. It records the operation whether the call succeeded
 or failed:
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.cs region=operations
+```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.Operations.cs region=operations
 ```
 
 **The no-values rule carries over exactly.** A parameter is a
@@ -163,7 +163,7 @@ request served by the document store and reads the line back under the
 store's own category, and checks the address it looked up is nowhere on the
 page.
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.cs region=record
+```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.Operations.cs region=record
 ```
 
 ## Files

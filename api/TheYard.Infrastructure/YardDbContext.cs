@@ -1,3 +1,6 @@
+// YardDbContext is one class in two files. This one holds the tables and the model: how each
+// row maps to its table on either provider, and why the two providers differ where they do.
+//   YardDbContext.Columns.cs   the named column widths and the auction-start converter
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +27,7 @@ namespace TheYard.Infrastructure;
 /// also why migrations are generated per provider into their own assemblies:
 /// the two models are not the same model, so they cannot share one snapshot.
 /// </summary>
-public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
+public sealed partial class YardDbContext(DbContextOptions<YardDbContext> options)
     : IdentityDbContext<YardUser>(options)
 {
     /// <summary>The 200-record seed catalogue. Read whole, once, at startup.</summary>
@@ -43,6 +46,11 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
     public DbSet<ActivityVisitorRow> ActivityVisitors => Set<ActivityVisitorRow>();
 
     // #region model
+    /// <summary>
+    /// The model for both providers: Identity's tables with their keys
+    /// narrowed, the catalogue, the photos, the bids and the activity
+    /// counters, with the SQL Server only parts behind one flag.
+    /// </summary>
     protected override void OnModelCreating(ModelBuilder model)
     {
         // Identity's own tables first. Skipping this call is the classic way to
@@ -57,9 +65,9 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
         // Identity's key columns, narrowed from its default of 450. A clustered
         // index key is capped at 900 bytes on SQL Server and nvarchar(450) is
         // 900 bytes on its own, so Identity's own composite keys are over the
-        // cap out of the box: the first publish of this schema warned that
-        // PK_AspNetUserTokens was 2,700 bytes and PK_Bids was 1,028, each of
-        // which fails an insert on a long enough value. The ids this
+        // cap out of the box: at the default widths PK_AspNetUserTokens is
+        // 2,700 bytes and PK_Bids is 1,028, each of which fails an insert on a
+        // long enough value. The ids this
         // application creates are GUIDs. The widths here exist to match
         // api/TheYard.Database, which is the authority, and a test holds them
         // to it (ADR: Data first, and the database in source control).
@@ -194,8 +202,8 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
 
             // A real foreign key, and the only one this model can honestly
             // carry. Deleting an account takes its bids with it, which is the
-            // right answer and is now the database's answer rather than
-            // something the application has to remember to do.
+            // right answer and is the database's answer rather than something
+            // the application has to remember to do.
             bid.HasOne<YardUser>()
                 .WithMany()
                 .HasForeignKey(row => row.UserId)
@@ -212,8 +220,8 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
 
             // No index on UserId either, and its absence is the point: the
             // primary key is (UserId, VehicleId), so its leading column already
-            // answers every "what has this person bid on" query. The index that
-            // used to be here was a second copy of the first half of the key,
+            // answers every "what has this person bid on" query. An index on
+            // UserId would be a second copy of the first half of the key,
             // costing a write on every bid and earning nothing.
 
             // The concurrency token. Two containers, or two requests that get
@@ -271,43 +279,4 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
         // #endregion activity-model
     }
     // #endregion model
-
-    /// <summary>"sql" and "cosmos" are the keys; the width leaves room for a third store and not for a sentence.</summary>
-    public const int StoreKeyLength = 16;
-
-    /// <summary>An IPv4 network cut to three octets and an x is at most 12 characters; an IPv6 prefix cut the same way fits in 32.</summary>
-    public const int NetworkLength = 40;
-
-    /// <summary>Twenty paths of two hundred characters and their counts, as JSON, fit with room to spare.</summary>
-    public const int PathsLength = 4000;
-
-    /// <summary>
-    /// Room for a seed vehicle's id (36 characters today) and for the synthetic
-    /// ids the scale-up derives from them, which add six more. Bids reference
-    /// those, so the two columns are sized together.
-    /// </summary>
-    public const int IdLength = 64;
-
-    /// <summary>
-    /// What this application uses for Identity's key columns, narrowed from
-    /// Identity's own default of 450 so that composite keys built from them stay
-    /// inside SQL Server's 900-byte clustered index limit.
-    /// </summary>
-    public const int IdentityKeyLength = 128;
-
-    /// <summary>The dataset's timestamp format: a local wall-clock instant to the second, with no zone.</summary>
-    public const string AuctionStartFormat = "yyyy-MM-ddTHH:mm:ss";
-
-    // #region auction-start
-    /// <summary>
-    /// The catalogue's `auction_start` on the wire is a string and in the
-    /// database is a `datetime2(0)`. Round-tripping through this converter is
-    /// exact for every row in the dataset, which a test asserts over all two
-    /// hundred of them rather than over an example.
-    /// </summary>
-    public static readonly Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<string, DateTime>
-        AuctionStartToDateTime = new(
-            text => DateTime.ParseExact(text, AuctionStartFormat, System.Globalization.CultureInfo.InvariantCulture),
-            moment => moment.ToString(AuctionStartFormat, System.Globalization.CultureInfo.InvariantCulture));
-    // #endregion auction-start
 }

@@ -1,151 +1,15 @@
+// The page sweep starts here: the runner that asks this container for every address it serves,
+// and the report it keeps. Its two helpers live beside it:
+//   ServedAddresses.cs - the list of addresses to check, built from the catalogue
+//   SelfAddress.cs     - the address this container dials itself on
 using System.Diagnostics;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 
 namespace TheYard.Api;
 
-// #region self-address
-/// <summary>
-/// The address this container can dial itself on, read from the server rather
-/// than from a variable somebody set earlier.
-///
-/// <para>Earlier is the word that matters. The proof reads the bound address
-/// in a callback on <c>ApplicationStarted</c>, and the first cut of this sweep
-/// read the variable that callback fills. It was always null: a
-/// <c>CancellationToken</c> runs its callbacks in the reverse of the order
-/// they were registered, so the sweep, registered last, ran first, before the
-/// address had been read. It was the browser suite that found it, and the
-/// fix is not to register in the other order but to stop depending on the
-/// order at all. The server knows what it is listening on, and this asks
-/// it.</para>
-///
-/// <para>A bound address is not always one a client can dial: Kestrel reports
-/// the wildcard it bound, and `localhost` inside a container resolves to a
-/// stack that may not be the one it bound. Both become the loopback. HTTPS
-/// addresses are skipped: this container serves plain HTTP behind the edge,
-/// and a self-signed hop would be a certificate question rather than a page
-/// check.</para>
-/// </summary>
-public static class SelfAddress
-{
-    public static string? Of(IServiceProvider services)
-    {
-        var addresses = services.GetService<IServer>()?.Features.Get<IServerAddressesFeature>()?.Addresses;
-        foreach (string address in addresses ?? (IEnumerable<string>)[])
-        {
-            if (Dialable(address) is { } dialable)
-            {
-                return dialable;
-            }
-        }
-        return null;
-    }
-
-    /// <summary>One bound address as something a client can dial, or null when it is not one this can use.</summary>
-    public static string? Dialable(string address)
-    {
-        if (!address.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        string normalized = address
-            .Replace("://+:", "://127.0.0.1:", StringComparison.Ordinal)
-            .Replace("://*:", "://127.0.0.1:", StringComparison.Ordinal)
-            .Replace("://[::]:", "://127.0.0.1:", StringComparison.Ordinal)
-            .Replace("://0.0.0.0:", "://127.0.0.1:", StringComparison.Ordinal)
-            .Replace("://localhost:", "://127.0.0.1:", StringComparison.Ordinal);
-
-        return Uri.TryCreate(normalized, UriKind.Absolute, out var parsed)
-            ? parsed.GetLeftPart(UriPartial.Authority)
-            : null;
-    }
-}
-// #endregion self-address
-
-// #region served-addresses
-/// <summary>
-/// Every address this container answers a page, a document or a drawing at,
-/// derived from the catalogue rather than written out beside it (ADR: Every
-/// page, checked at every roll). A list would be a second place to remember,
-/// and the first document somebody adds without remembering is the one that
-/// goes out broken, which is exactly the shape the README's two raw-markdown
-/// links had: every link answered, and nothing asked what it answered with.
-/// The fixed rows below are the addresses that are not documents: the app
-/// itself, the API's own front pages, and the three files the build copies to
-/// the root of the domain.
-///
-/// <para>The four that come out of the frontend build are checked only when
-/// the frontend is in this container. In the image it always is; on a
-/// developer's machine and under the test host the API runs on its own with
-/// the dev server in front of it, and calling four addresses this container
-/// was never given down would be a false reading rather than a strict one.</para>
-/// </summary>
-public static class ServedAddresses
-{
-    /// <summary>The addresses the frontend build puts in this container's web root.</summary>
-    public static readonly IReadOnlyList<ServedAddress> FromTheBuild =
-    [
-        new("/", "The app", "page"),
-        new("/robots.txt", "robots.txt", "file"),
-        new("/sitemap.xml", "sitemap.xml", "file"),
-        new("/og.png", "The preview card", "file"),
-    ];
-
-    public static IReadOnlyList<ServedAddress> All(bool frontendServed)
-    {
-        var addresses = new List<ServedAddress>
-        {
-            new("/api/reference", "API reference", "page"),
-            new("/about", "About Steven Stout", "page"),
-            new("/api/version", "The build this container was made from", "api"),
-            new("/api/health", "Health, both stores", "api"),
-            new("/api/vehicles?limit=1", "The listing", "api"),
-            new("/api/facets", "The filter values", "api"),
-            new("/api/stores", "The stores this container runs", "api"),
-            // The Admin tab's own readings, because an endpoint that throws is
-            // a page that is down: /api/admin/machines answered 500 on both
-            // live sites for four minutes on 2026-09-19 and this sweep, which
-            // had not been asking, did not notice (ADR: What the machines are
-            // doing, the addendum on the cast).
-            new("/api/admin/machines", "What the machines are doing", "api"),
-            new("/api/admin/metrics", "Timing", "api"),
-            // A card's window is a query in the store behind a public address, which is two ways to be down.
-            new("/api/admin/kept?card=errors&window=24h", "Recent errors, the last 24 hours as kept", "api"),
-            new("/api/admin/pages", "This check itself", "api"),
-            // What Azure charges is read from the kept days, so a store that has gone away is a card that is down.
-            new("/api/admin/costs?window=30d", "What Azure charges, the last 30 days", "api"),
-            new("/api/docs/resume", "Steven's resume (PDF)", "file"),
-            new("/api/docs/bicep", "Infrastructure (Bicep)", "document"),
-        };
-
-        if (frontendServed)
-        {
-            addresses.InsertRange(0, FromTheBuild);
-        }
-
-        addresses.AddRange(DocumentationCatalog.Files
-            .OrderBy(entry => entry.Key, StringComparer.Ordinal)
-            .Select(entry => new ServedAddress($"/api/docs/{entry.Key}", entry.Value, "document")));
-
-        addresses.AddRange(DocumentationCatalog.Diagrams
-            .OrderBy(entry => entry.Key, StringComparer.Ordinal)
-            .Select(entry => new ServedAddress($"/api/docs/diagrams/{entry.Key}", entry.Value.Title, "drawing")));
-
-        return addresses;
-    }
-}
-
-/// <summary>One address the sweep checks: where it is, what a reader would call it, and which kind of thing it is.</summary>
-/// <param name="Address">The path the sweep requests.</param>
-/// <param name="What">What a reader would call the address.</param>
-/// <param name="Kind">Which kind of thing it is, such as page, api, document or drawing.</param>
-public sealed record ServedAddress(string Address, string What, string Kind);
-// #endregion served-addresses
-
 // #region page-status
 /// <summary>
-/// The sweep: this container asks itself for every address above and records
+/// The sweep: this container asks itself for every address in
+/// <see cref="ServedAddresses"/> and records
 /// what came back. It runs once at startup, which makes every roll carry a
 /// check of the thing that was just rolled, and again whenever the Admin tab
 /// asks for one.
@@ -171,15 +35,22 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
     /// <summary>How long after one sweep the next may start, so a card left open cannot ask for one a second.</summary>
     public static readonly TimeSpan Cooldown = TimeSpan.FromSeconds(20);
 
-    /// <summary>How long after a roll's sweep the settled process sweeps itself again (1.0.3.8): the first sweep runs in the busiest second the process has.</summary>
+    /// <summary>How long after a roll's sweep the settled process sweeps itself again, because the first sweep runs in the busiest second the process has.</summary>
     public static readonly TimeSpan SecondSweep = TimeSpan.FromMinutes(3);
 
+    /// <summary>The one-at-a-time gate: a sweep holds it from start to finish.</summary>
     private readonly SemaphoreSlim _gate = new(1, 1);
+
+    /// <summary>The report of the last sweep that finished or stopped, or null before the first.</summary>
     private PageStatusReport? _last;
+
+    /// <summary>Whether a sweep is on right now; read from request threads while the sweep's own thread writes it.</summary>
     private volatile bool _running;
 
+    /// <summary>Whether a sweep is on right now.</summary>
     public bool Running => _running;
 
+    /// <summary>The last sweep's report, or null when no sweep has finished yet.</summary>
     public PageStatusReport? Last => _last;
 
     /// <summary>What the card reads: whether a sweep is on, and the last one if there has been one.</summary>
@@ -255,12 +126,11 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
 
         // #region second-look
         // An address that did not answer gets a second look, alone, once the
-        // first pass is over (1.0.3.8). The roll's sweep runs in the busiest
-        // second a process has, four addresses at once while both containers
-        // warm their catalogues on the one core they share, and on 2026-09-23
-        // /api/health, /api/admin/machines and /api/admin/kept each took past
-        // the thirty seconds and were reported down on both sites, on a tile
-        // that then said "3 down, needs attention" until the next roll. An
+        // first pass is over. The roll's sweep runs in the busiest second a
+        // process has, four addresses at once while both containers warm their
+        // catalogues on the one core they share, and in that second a slow
+        // address such as /api/health can take past the thirty seconds and be
+        // reported down on a tile that keeps saying so until the next roll. An
         // address that answers on its own a moment later was never down.
         for (int index = 0; index < entries.Length; index++)
         {
@@ -284,6 +154,11 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
             entries);
     }
 
+    /// <summary>
+    /// Ask for one address, marked as a check so the request hook drops it,
+    /// and record what it answered. A request that fails or times out is an
+    /// entry that is down with the exception's type name, never a throw.
+    /// </summary>
     private static async Task<PageStatusEntry> CheckAsync(HttpClient client, ServedAddress address, CancellationToken cancellation)
     {
         var timer = Stopwatch.StartNew();

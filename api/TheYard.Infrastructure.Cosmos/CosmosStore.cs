@@ -1,9 +1,14 @@
-using System.Diagnostics;
-using System.Net;
+// The one connection to Azure Cosmos DB. This file holds what the store is made of: its fields,
+// its containers and the settings the host attaches. Each job it does is a part of its own:
+//   CosmosStore.Connect.cs      the client and the credential (region connect)
+//   CosmosStore.Startup.cs      the container check, the seed and the health probe
+//                               (regions prepare, seed, probe)
+//   CosmosStore.Operations.cs   every read, write and query, and the log line each one writes
+//                               (regions operations, record)
+// The small result types live one per file: MeasuredItem.cs, MeasuredQuery.cs, Cost.cs, Costs.cs,
+// CosmosSeedResult.cs and StartupCost.cs.
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Azure.Core;
-using Azure.Identity;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -22,14 +27,27 @@ namespace TheYard.Infrastructure.Cosmos;
 /// container it has touched, and a second client is a second copy of all of
 /// that plus a second warm-up.</para>
 /// </summary>
-public sealed class CosmosStore
+public sealed partial class CosmosStore
 {
+    /// <summary>The SDK client, one per process, holding the connections and the routing map.</summary>
     private readonly CosmosClient _client;
+
+    /// <summary>The database every container of this store lives in.</summary>
     private readonly Database _database;
+
+    /// <summary>What goes in front of every catalog name to make the real container name.</summary>
     private readonly string _prefix;
+
+    /// <summary>The store log every operation's charge and duration is written to.</summary>
     private readonly IStoreLog _log;
+
+    /// <summary>How many physical partitions each container had at startup, by catalog name.</summary>
     private readonly Dictionary<string, int> _physicalPartitions = new(StringComparer.Ordinal);
+
+    /// <summary>The id and make of one seed vehicle, remembered so the probe can point-read it.</summary>
     private (string Id, string Make)? _firstVehicle;
+
+    /// <summary>The id and style of one seed photo, remembered so the probe can point-read it.</summary>
     private (string Id, string Style)? _firstPhoto;
 
     /// <summary>The wire shape: snake case, like the dataset and the API.</summary>
@@ -40,65 +58,10 @@ public sealed class CosmosStore
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    // #region connect
     /// <summary>
-    /// Connect as the container's managed identity, or as whoever is signed in
-    /// to the Azure CLI on a developer's machine, and the configuration says
-    /// which. There is no third way in, because the account has no keys: local
-    /// authentication was disabled when it was created, so there is nothing to
-    /// put in a connection string and nothing to leak (ADR: A second store on
-    /// Cosmos DB, and what it costs).
-    ///
-    /// <para>Chosen by a setting rather than probed. The first draft chained
-    /// the two and let the identity fail over to the CLI, and the store tests
-    /// found out how that fails on a machine with no identity endpoint: the
-    /// probe of the instance metadata service retries for seconds and then
-    /// reports an authentication failure rather than an absence, which no chain
-    /// falls through. A deployed container says "managed-identity" in its
-    /// environment and a developer's machine says nothing, and each gets one
-    /// credential that either works or says why.</para>
+    /// Wrap a client that is already built. <see cref="Connect"/> builds one
+    /// from settings; a test can hand in its own.
     /// </summary>
-    public static CosmosStore Connect(string accountEndpoint, string databaseName, string containerPrefix, string credentialKind, string managedIdentityClientId, IStoreLog log)
-    {
-        TokenCredential credential = CredentialFor(credentialKind, managedIdentityClientId);
-        var options = new CosmosClientOptions
-        {
-            ApplicationName = "TheYard",
-            // Session consistency is the account default and what this
-            // application needs; the option is set here so the choice is in
-            // the code and not only in the portal (ADR: A second store on
-            // Cosmos DB, and what it costs).
-            ConsistencyLevel = ConsistencyLevel.Session,
-            UseSystemTextJsonSerializerWithOptions = Json,
-            // The SDK retries a 429 on its own. Nine tries over thirty seconds
-            // is what a seed against a 1000 RU/s database needs; a request that
-            // is still being throttled after that is a request worth failing.
-            MaxRetryAttemptsOnRateLimitedRequests = 9,
-            MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30),
-        };
-        var client = new CosmosClient(accountEndpoint, credential, options);
-        return new CosmosStore(client, databaseName, containerPrefix, log);
-    }
-
-    /// <summary>
-    /// The one rule above, on its own so the other Azure client in this
-    /// application (the email sender, ADR: Accounts and per-user bids,
-    /// addendum) authenticates the same way as the store, as the same identity.
-    /// The credential types are named here and nowhere else on purpose: this
-    /// project's graph holds the one Azure.Identity the container was proven on
-    /// (the pin in the project file, and the test that holds it), while a
-    /// newer Azure.Core elsewhere in the application carries a second copy of
-    /// the same types and naming one there is ambiguous.
-    /// </summary>
-    public static TokenCredential CredentialFor(string credentialKind, string managedIdentityClientId) =>
-        string.Equals(credentialKind, ManagedIdentity, StringComparison.OrdinalIgnoreCase)
-            ? new ManagedIdentityCredential(ManagedIdentityId.FromUserAssignedClientId(managedIdentityClientId))
-            : new AzureCliCredential();
-
-    /// <summary>The value of <c>Cosmos:Credential</c> that means the container's own identity. Anything else means the Azure CLI.</summary>
-    public const string ManagedIdentity = "managed-identity";
-    // #endregion connect
-
     public CosmosStore(CosmosClient client, string databaseName, string containerPrefix, IStoreLog log)
     {
         _client = client;
@@ -131,9 +94,16 @@ public sealed class CosmosStore
     /// <summary>Any container of this database by its catalog name, prefixed like the rest. The experiment reads the catalogue through this.</summary>
     public Container ContainerNamed(string name) => _database.GetContainer(_prefix + name);
 
+    /// <summary>The seed vehicles, partitioned on the make.</summary>
     public Container Vehicles => _database.GetContainer(_prefix + Containers.Vehicles);
+
+    /// <summary>The photo manifest, partitioned on the body style.</summary>
     public Container Photos => _database.GetContainer(_prefix + Containers.Photos);
+
+    /// <summary>Every buyer's standing on every vehicle, partitioned on the buyer.</summary>
     public Container Bids => _database.GetContainer(_prefix + Containers.Bids);
+
+    /// <summary>The accounts and the email claims, partitioned on the document id.</summary>
     public Container Users => _database.GetContainer(_prefix + Containers.Users);
 
     /// <summary>What this process may say about its store: the engine, and nothing else.</summary>
@@ -142,388 +112,11 @@ public sealed class CosmosStore
     /// <summary>How the seed and the cold start paid, for the Admin tab's comparison card.</summary>
     public StartupCost Startup { get; private set; } = new(0, 0, 0, 0, 0);
 
-    // #region prepare
-    /// <summary>
-    /// Bring the store up, or report that it could not be brought up, in the
-    /// same shape as the relational side. This process holds a data-plane role
-    /// and cannot create a container, so the only honest thing it can do is
-    /// check that the containers it maps to are there, with the partition keys
-    /// the code was written for, and refuse the store if they are not
-    /// (ADR: Data first, and the database in source control, addendum).
-    /// </summary>
-    public async Task<DatabaseState> PrepareAsync(IVehicleSource seedVehicles, IPhotoManifestSource seedPhotos)
-    {
-        try
-        {
-            var checking = Stopwatch.StartNew();
-            foreach (string name in Containers.Required)
-            {
-                string expectedKey = Containers.PartitionKeyPaths[name];
-                var container = _database.GetContainer(_prefix + name);
-                var response = await Timed(container, StoreOperationKind.Metadata, "ReadContainer", [], "n/a", 0,
-                    () => container.ReadContainerAsync(), r => r.Cost());
-                string actualKey = response.Resource.PartitionKeyPath;
-                if (!string.Equals(actualKey, expectedKey, StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        $"container {name} is partitioned on {actualKey} and the code was written for {expectedKey}. "
-                        + "Apply infra/cosmos before pointing a container at this account.");
-                }
-                var ranges = await container.GetFeedRangesAsync();
-                _physicalPartitions[name] = ranges.Count;
-            }
-            checking.Stop();
-
-            var seeding = Stopwatch.StartNew();
-            var seeded = await EnsureSeededAsync(seedVehicles, seedPhotos);
-            seeding.Stop();
-            Startup = new StartupCost(checking.ElapsedMilliseconds, seeding.ElapsedMilliseconds, seeded.SeedCharge, seeded.VehiclesInserted, seeded.PhotosInserted);
-
-            return new DatabaseState(
-                true,
-                $"{Describe()}, found {Containers.Required.Count} containers in {checking.ElapsedMilliseconds} ms "
-                + $"and seeded in {seeding.ElapsedMilliseconds} ms for {seeded.SeedCharge:0.#} RU, "
-                + $"inserting {seeded.VehiclesInserted} vehicles and {seeded.PhotosInserted} photos, "
-                + $"now holding {seeded.VehiclesTotal} and {seeded.PhotosTotal}")
-            {
-                SchemaMs = checking.ElapsedMilliseconds,
-                SeedMs = seeding.ElapsedMilliseconds,
-                SeedRequestUnits = Math.Round(seeded.SeedCharge, 2),
-            };
-        }
-        catch (Exception ex)
-        {
-            // Deliberately every exception, for the same reason as the
-            // relational side: the caller keeps serving from files, and it
-            // cannot do that if this throws. The type travels; the message,
-            // which names the account, does not (ADR: The relational store).
-            return new DatabaseState(false, $"{Describe()}: {ex.GetType().Name}", ex);
-        }
-    }
-    // #endregion prepare
-
-    // #region seed
-    /// <summary>
-    /// First boot fills the containers from the files that used to be the
-    /// catalogue, exactly as the relational seed does. "Short" rather than
-    /// "empty": the relational seed is one transaction and is either all there
-    /// or not there, but these are two hundred and fifty point writes one at a
-    /// time, and a process that died after a hundred of them would have left a
-    /// container that was not empty and not seeded either. The first version
-    /// checked for empty, said in its comment that it did not, and the second
-    /// review caught the difference (ADR: Reviewing my own work, the second
-    /// pass). So a container holding fewer documents than the seed file is
-    /// seeded again with upserts, which put back what is missing and rewrite
-    /// what is there at about the cost of a create each. Each one's charge is
-    /// added up: the sum is the number the comparison card shows as the seed
-    /// cost, and it is measured rather than estimated
-    /// (ADR: A second store on Cosmos DB, and what it costs).
-    /// </summary>
-    public async Task<CosmosSeedResult> EnsureSeededAsync(IVehicleSource vehicles, IPhotoManifestSource photos)
-    {
-        double charge = 0;
-        int vehiclesAdded = 0;
-        int photosAdded = 0;
-
-        int vehicleCount = await CountAsync(Vehicles);
-        var seedVehicles = await vehicles.LoadAsync();
-        if (vehicleCount < seedVehicles.Count)
-        {
-            int seq = 0;
-            foreach (var vehicle in seedVehicles)
-            {
-                var document = vehicle.ToDocument(seq++);
-                var response = await Timed(Vehicles, StoreOperationKind.PointWrite, "UpsertItem (seed)", [], "pinned to the make", 1,
-                    () => Vehicles.UpsertItemAsync(document, new PartitionKey(document.Make)), r => r.Cost());
-                charge += response.RequestCharge;
-                vehiclesAdded++;
-            }
-            _firstVehicle = null;
-        }
-
-        int photoCount = await CountAsync(Photos);
-        var seedPhotos = await photos.LoadAsync();
-        if (photoCount < seedPhotos.Count)
-        {
-            int seq = 0;
-            foreach (var photo in seedPhotos)
-            {
-                var document = photo.ToDocument(seq++);
-                var response = await Timed(Photos, StoreOperationKind.PointWrite, "UpsertItem (seed)", [], "pinned to the style", 1,
-                    () => Photos.UpsertItemAsync(document, new PartitionKey(document.Style)), r => r.Cost());
-                charge += response.RequestCharge;
-                photosAdded++;
-            }
-            _firstPhoto = null;
-        }
-
-        return new CosmosSeedResult(vehiclesAdded, photosAdded, vehiclesAdded > 0 ? vehiclesAdded : vehicleCount, photosAdded > 0 ? photosAdded : photoCount, charge);
-    }
-    // #endregion seed
-
-    // #region probe
-    /// <summary>
-    /// The health check's question: is the seed catalogue in the store. Two
-    /// point reads, about a request unit each, rather than two count queries,
-    /// because an open Admin tab asks every thirty seconds and a count is a scan
-    /// of the container every time it is asked.
-    /// </summary>
-    public async Task<bool> ProbeAsync()
-    {
-        _firstVehicle ??= await FirstAsync<VehicleDocument, (string, string)>(Vehicles, d => (d.Id, d.Make));
-        _firstPhoto ??= await FirstAsync<PhotoDocument, (string, string)>(Photos, d => (d.Id, d.Style));
-        if (_firstVehicle is null || _firstPhoto is null)
-        {
-            return false;
-        }
-
-        var vehicle = await ReadAsync<VehicleDocument>(Vehicles, _firstVehicle.Value.Id, _firstVehicle.Value.Make, "pinned to the make");
-        var photo = await ReadAsync<PhotoDocument>(Photos, _firstPhoto.Value.Id, _firstPhoto.Value.Style, "pinned to the style");
-        return vehicle is not null && photo is not null;
-    }
-
-    private async Task<TResult?> FirstAsync<TDocument, TResult>(Container container, Func<TDocument, TResult> pick)
-        where TResult : struct
-    {
-        var page = await QueryAsync<TDocument>(container, new QueryDefinition("SELECT TOP 1 * FROM c"), partitionKey: null, "cross-partition");
-        return page.Count == 0 ? null : pick(page[0]);
-    }
-    // #endregion probe
-
     /// <summary>How many physical partitions a container has, read once at startup. One, at this size (ADR: The partition key).</summary>
     public int PhysicalPartitionsOf(string containerName) =>
         _physicalPartitions.TryGetValue(containerName, out int count) ? count : 1;
 
+    /// <summary>A container's catalog name: its real name with the prefix taken off, which is the name the store log shows.</summary>
     private string NameOf(Container container) =>
         container.Id.StartsWith(_prefix, StringComparison.Ordinal) ? container.Id[_prefix.Length..] : container.Id;
-
-    // #region operations
-    /// <summary>A point read that answers null on 404 rather than throwing, because a missing document is an ordinary answer.</summary>
-    public async Task<T?> ReadAsync<T>(Container container, string id, string partitionKey, string partitionLabel) where T : class =>
-        (await ReadMeasuredAsync<T>(container, id, partitionKey, partitionLabel)).Item;
-
-    /// <summary>The same point read, with what it cost handed back to the caller as well as to the log. The experiment card reads through this.</summary>
-    public async Task<MeasuredItem<T>> ReadMeasuredAsync<T>(Container container, string id, string partitionKey, string partitionLabel) where T : class
-    {
-        var clock = Stopwatch.StartNew();
-        try
-        {
-            var response = await Timed(container, StoreOperationKind.PointRead, "ReadItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
-                () => container.ReadItemAsync<T>(id, new PartitionKey(partitionKey)), r => r.Cost());
-            return new MeasuredItem<T>(response.Resource, Math.Round(response.RequestCharge, 2), clock.ElapsedMilliseconds);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            return new MeasuredItem<T>(null, Math.Round(ex.RequestCharge, 2), clock.ElapsedMilliseconds);
-        }
-    }
-
-    public Task<ItemResponse<T>> CreateAsync<T>(Container container, T document, string partitionKey, string partitionLabel, string what = "CreateItem") =>
-        Timed(container, StoreOperationKind.PointWrite, what, [], partitionLabel, 1,
-            () => container.CreateItemAsync(document, new PartitionKey(partitionKey)), r => r.Cost());
-
-    /// <summary>A replace that carries the etag it read, so a stale write is refused with 412 rather than winning.</summary>
-    public Task<ItemResponse<T>> ReplaceAsync<T>(Container container, T document, string id, string partitionKey, string? etag, string partitionLabel) =>
-        Timed(container, StoreOperationKind.PointWrite, "ReplaceItem (If-Match)", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
-            () => container.ReplaceItemAsync(document, id, new PartitionKey(partitionKey), new ItemRequestOptions { IfMatchEtag = etag }), r => r.Cost());
-
-    public Task<ItemResponse<T>> DeleteAsync<T>(Container container, string id, string partitionKey, string partitionLabel) =>
-        Timed(container, StoreOperationKind.PointDelete, "DeleteItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
-            () => container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey)), r => r.Cost());
-
-    /// <summary>
-    /// A query, every page of it, with the charge of every page added up and
-    /// one line in the store log saying how many pages it took. Pinned to one
-    /// partition when the caller can name it, and a fan-out across every
-    /// physical partition when it cannot, which is the difference the Admin tab
-    /// exists to show (ADR: The partition key).
-    /// </summary>
-    public async Task<IReadOnlyList<T>> QueryAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel) =>
-        (await QueryMeasuredAsync<T>(container, query, partitionKey, partitionLabel)).Items;
-
-    /// <summary>The same query, with the summed charge, the page count and the time handed back as well as logged.</summary>
-    public async Task<MeasuredQuery<T>> QueryMeasuredAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel)
-    {
-        var parameters = query.GetQueryParameters()
-            .Select(p => new SqlParameterShape(p.Name, p.Value?.GetType().Name ?? "null", p.Value is string s ? s.Length : null))
-            .ToList();
-        var options = new QueryRequestOptions { MaxItemCount = -1 };
-        if (partitionKey is not null)
-        {
-            options.PartitionKey = new PartitionKey(partitionKey);
-        }
-        int physical = partitionKey is null ? PhysicalPartitionsOf(NameOf(container)) : 1;
-
-        var results = new List<T>();
-        double charge = 0;
-        int pages = 0;
-        var clock = Stopwatch.StartNew();
-        string outcome;
-        try
-        {
-            using var iterator = container.GetItemQueryIterator<T>(query, requestOptions: options);
-            while (iterator.HasMoreResults)
-            {
-                var page = await iterator.ReadNextAsync();
-                charge += page.RequestCharge;
-                pages++;
-                results.AddRange(page);
-            }
-            outcome = $"{results.Count} document(s) in {pages} page(s)";
-        }
-        catch (CosmosException ex)
-        {
-            charge += ex.RequestCharge;
-            outcome = "failed: " + ex.StatusCode;
-            Record(container, StoreOperationKind.Query, query.QueryText, parameters, partitionLabel, physical, charge, clock.Elapsed, outcome);
-            throw;
-        }
-        Record(container, StoreOperationKind.Query, query.QueryText, parameters, partitionLabel, physical, charge, clock.Elapsed, outcome);
-        return new MeasuredQuery<T>(results, Math.Round(charge, 2), pages, clock.ElapsedMilliseconds);
-    }
-
-    /// <summary>One partition's deletes, at most a hundred at a time, as one atomic batch.</summary>
-    public async Task<double> DeleteBatchAsync(Container container, string partitionKey, IReadOnlyList<string> ids, string partitionLabel)
-    {
-        double charge = 0;
-        for (int start = 0; start < ids.Count; start += 100)
-        {
-            var slice = ids.Skip(start).Take(100).ToList();
-            var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
-            foreach (string id in slice)
-            {
-                batch.DeleteItem(id);
-            }
-            var response = await Timed(container, StoreOperationKind.Batch, $"TransactionalBatch: {slice.Count} DeleteItem", [], partitionLabel, 1,
-                async () =>
-                {
-                    var r = await batch.ExecuteAsync();
-                    if (!r.IsSuccessStatusCode)
-                    {
-                        throw new InvalidOperationException($"the batch was refused with {r.StatusCode}");
-                    }
-                    return r;
-                }, r => r.Cost());
-            charge += response.RequestCharge;
-        }
-        return charge;
-    }
-
-    private async Task<int> CountAsync(Container container)
-    {
-        var counts = await QueryAsync<int>(container, new QueryDefinition("SELECT VALUE COUNT(1) FROM c"), null, "cross-partition");
-        return counts.Count == 0 ? 0 : counts[0];
-    }
-
-    /// <summary>
-    /// Run one operation and write its charge and its duration to the store
-    /// log, whether it succeeded or not. The store log is a public page: this
-    /// records the kind, the container, the shape of the parameters and the
-    /// charge, and never an id that could be an address or a value that could
-    /// be anything (ADR: What the store is actually doing).
-    /// </summary>
-    private async Task<TResponse> Timed<TResponse>(Container container, string kind, string text, IReadOnlyList<SqlParameterShape> parameters, string partitionLabel, int physical, Func<Task<TResponse>> operation, Func<TResponse, Cost> cost)
-    {
-        var clock = Stopwatch.StartNew();
-        try
-        {
-            var response = await operation();
-            var paid = cost(response);
-            Record(container, kind, text, parameters, partitionLabel, physical, paid.Charge, clock.Elapsed, paid.Status.ToString());
-            return response;
-        }
-        catch (CosmosException ex)
-        {
-            Record(container, kind, text, parameters, partitionLabel, physical, ex.RequestCharge, clock.Elapsed, "failed: " + (int)ex.StatusCode);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            // A refused batch throws its own exception, and the first version
-            // let it pass unrecorded: the one operation that failed was the one
-            // operation the page could not show (the second review).
-            Record(container, kind, text, parameters, partitionLabel, physical, 0, clock.Elapsed, "failed: " + ex.GetType().Name);
-            throw;
-        }
-    }
-
-    // #region record
-    private void Record(Container container, string kind, string text, IReadOnlyList<SqlParameterShape> parameters, string partitionLabel, int physical, double charge, TimeSpan elapsed, string outcome)
-    {
-        // Nothing in here may break the operation it observed
-        // (ADR: What the database is actually doing).
-        try
-        {
-            string name = NameOf(container);
-            double rounded = Math.Round(charge, 2);
-            long ms = (long)elapsed.TotalMilliseconds;
-            _log.Record(new StoreOperation(
-                DateTimeOffset.UtcNow,
-                name,
-                kind,
-                text,
-                parameters,
-                partitionLabel,
-                physical,
-                rounded,
-                ms,
-                outcome,
-                CurrentRequest.Describe(),
-                CurrentRequest.Identify()));
-            // The same operation as one console line, the shape Entity
-            // Framework gives a statement: what ran, what it cost, how long,
-            // and the query with its parameters by name and never by value.
-            Logger.LogInformation(
-                "Executed Cosmos DB {Kind} on {Container} ({Charge} RU, {Ms} ms, {Partition}) {Outcome}: {Text}",
-                kind, name, rounded, ms, partitionLabel, outcome, text);
-        }
-        catch
-        {
-            // Deliberately silent, for the reason the SQL interceptor gives.
-        }
-    }
-    // #endregion record
-    // #endregion operations
 }
-
-/// <summary>A point read's answer with its cost, for a caller that wants the number and not only the document.</summary>
-/// <param name="Item">The document read, or null when it was not found.</param>
-/// <param name="Charge">What the read cost, in request units.</param>
-/// <param name="DurationMs">How long the read took, in milliseconds.</param>
-public sealed record MeasuredItem<T>(T? Item, double Charge, long DurationMs) where T : class;
-
-/// <summary>A query's answer with its cost: every page's charge added up, the page count, and the wall clock.</summary>
-/// <param name="Items">Every item the query returned, across all pages.</param>
-/// <param name="Charge">What all pages cost together, in request units.</param>
-/// <param name="Pages">How many pages the query took.</param>
-/// <param name="DurationMs">How long the query took end to end, in milliseconds.</param>
-public sealed record MeasuredQuery<T>(IReadOnlyList<T> Items, double Charge, int Pages, long DurationMs);
-
-/// <summary>What one response cost, in request units and as a status code, read off whichever response type the SDK answered with.</summary>
-/// <param name="Charge">What the response cost, in request units.</param>
-/// <param name="Status">The HTTP status code of the response.</param>
-public readonly record struct Cost(double Charge, int Status);
-
-/// <summary>Reads the request charge and status code off each response type the SDK returns.</summary>
-public static class Costs
-{
-    public static Cost Cost<T>(this Response<T> response) => new(response.RequestCharge, (int)response.StatusCode);
-
-    public static Cost Cost(this TransactionalBatchResponse response) => new(response.RequestCharge, (int)response.StatusCode);
-}
-
-/// <summary>What the first boot found and paid, so the log line and the comparison card can say it.</summary>
-/// <param name="VehiclesInserted">How many vehicle documents the seed wrote.</param>
-/// <param name="PhotosInserted">How many photo documents the seed wrote.</param>
-/// <param name="VehiclesTotal">How many vehicle documents the container holds after the seed.</param>
-/// <param name="PhotosTotal">How many photo documents the container holds after the seed.</param>
-/// <param name="SeedCharge">What the seed cost, in request units.</param>
-public sealed record CosmosSeedResult(int VehiclesInserted, int PhotosInserted, int VehiclesTotal, int PhotosTotal, double SeedCharge);
-
-/// <summary>The startup numbers the Admin tab's comparison card shows: how long the containers took to check, how long the seed took and what it cost.</summary>
-/// <param name="CheckMs">How long checking the containers took, in milliseconds.</param>
-/// <param name="SeedMs">How long the seed took, in milliseconds.</param>
-/// <param name="SeedRequestUnits">What the seed cost, in request units.</param>
-/// <param name="VehiclesSeeded">How many vehicle documents the seed wrote.</param>
-/// <param name="PhotosSeeded">How many photo documents the seed wrote.</param>
-public sealed record StartupCost(long CheckMs, long SeedMs, double SeedRequestUnits, int VehiclesSeeded, int PhotosSeeded);

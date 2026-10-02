@@ -80,7 +80,7 @@ The registration, and the reader it hands the Admin tab
 One query answers the whole card, because three questions in three round
 trips is three chances to time out (`api/TheYard.Api/Telemetry.cs`):
 
-```live path=api/TheYard.Api/Telemetry.cs region=kql
+```live path=api/TheYard.Api/Telemetry.Kql.cs region=kql
 ```
 
 ```live path=api/TheYard.Api/Telemetry.cs region=read
@@ -90,7 +90,7 @@ Kusto answers in columns and rows; the card wants objects. Reading each row
 by column name rather than position is what keeps a query edit from shifting
 every value silently:
 
-```live path=api/TheYard.Api/Telemetry.cs region=shape
+```live path=api/TheYard.Api/Telemetry.Shape.cs region=shape
 ```
 
 The card, which renders every state the reader can answer with

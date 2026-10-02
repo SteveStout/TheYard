@@ -254,7 +254,7 @@ now rather than only in C#. The property stays a string for the same reason the
 grade stays a double, and the converter is asserted to round-trip every one of
 the 200 rows in the dataset rather than an example:
 
-```live path=api/TheYard.Infrastructure/YardDbContext.cs region=auction-start
+```live path=api/TheYard.Infrastructure/YardDbContext.Columns.cs region=auction-start
 ```
 
 **Damage notes and images stay JSON columns.** They are read and written whole

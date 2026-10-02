@@ -52,7 +52,7 @@ The shaping, the one method a subscription path passes through:
 
 The recorder, which is the only caller of Azure:
 
-```live path=api/TheYard.Api/Costs.cs region=cost-recorder
+```live path=api/TheYard.Api/CostRecorder.cs region=cost-recorder
 ```
 
 The view the cards are drawn from, and the cache in front of it:
@@ -71,7 +71,7 @@ Read live at 17:00 CDT, a minute after 1.0.3.55 rolled, uncached on both domains
 
 So from 1.0.3.56 the reader allows a minute, and a read that did not finish is tried again in five minutes. A read that went through, or one Azure refused, still waits the hour: a missing role does not appear in five minutes, and a request to slow down is a request to slow down.
 
-```live path=api/TheYard.Api/Costs.cs region=cost-retry
+```live path=api/TheYard.Api/CostRecorder.cs region=cost-retry
 ```
 
 ## Addendum, 2026-09-30: the bars measure dollars

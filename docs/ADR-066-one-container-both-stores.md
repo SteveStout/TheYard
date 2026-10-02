@@ -38,7 +38,7 @@ room and accounts. Nothing is shared between them, and that is the point: a
 listing served by the Cosmos DB backend was loaded from Cosmos DB, and the
 cold start beside it is that store's own.
 
-```live path=api/TheYard.Api/Stores.cs region=backend
+```live path=api/TheYard.Api/Backend.cs region=backend
 ```
 
 **Which store serves a request is decided per request.** As first shipped,
@@ -92,7 +92,7 @@ with its peer, so the second container and its card keep working unchanged.
 The request ring records which store served each request, which is what lets
 one ring be split two ways.
 
-```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=backends-metrics
+```live path=api/TheYard.Api/Endpoints/AdminEndpoints.Observability.cs region=backends-metrics
 ```
 
 **The health check names every store.** One check per store, the default's

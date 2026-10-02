@@ -41,7 +41,7 @@ a raise, and a reset. Every request is timed around the whole exchange,
 body included, and the two rings are read for what it caused: how many
 statements or operations, and what the document store charged.
 
-```live path=api/TheYard.Api/Proof.cs region=rounds
+```live path=api/TheYard.Api/ProofRunner.Rounds.cs region=rounds
 ```
 
 **The round trip to each store is measured on its own.** After the rounds,
@@ -50,7 +50,7 @@ five round trips to each store doing as little as a round trip can: a
 document side, the median kept. That number is what lets the card say
 whether a difference is the store or the distance to it.
 
-```live path=api/TheYard.Api/Proof.cs region=timed
+```live path=api/TheYard.Api/ProofRunner.Requests.cs region=timed
 ```
 
 **The verdict is arithmetic, not adjectives.** Per path: the median of each
@@ -63,7 +63,7 @@ not the same, the card names the leader and by how much, and then takes one
 round trip per operation off each side: if what is left is within the
 tolerance, the card says the difference is all round trip.
 
-```live path=api/TheYard.Api/Proof.cs region=verdict
+```live path=api/TheYard.Api/ProofResult.cs region=verdict
 ```
 
 **The card says the whole thing in one sentence**, computed from the rows:

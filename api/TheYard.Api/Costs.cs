@@ -1,5 +1,9 @@
+// The Azure bill behind the three cost cards on the Admin tab (ADR: What Azure charges).
+// This file holds CostQuery: the two questions asked of Cost Management and how each answer is
+// cut down to days. The rest of the cost reading lives beside it, one job per file:
+//   CostReader.cs   - CostOutcome, CostRead, CostReader, CostStatus: one read and how it went
+//   CostRecorder.cs - CostRecorder: the background service that reads once an hour
 using System.Globalization;
-using System.Net;
 using System.Text.Json;
 using TheYard.Application;
 
@@ -51,6 +55,7 @@ public static class CostQuery
         includeFreshPartialCost = false,
     };
 
+    /// <summary>The window both questions cover, from the first day's midnight to the last day's end, UTC.</summary>
     private static object Period(DateOnly from, DateOnly to) => new
     {
         from = from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "T00:00:00Z",
@@ -164,6 +169,10 @@ public static class CostQuery
         return (parts[^1], string.Join('/', types));
     }
 
+    /// <summary>
+    /// Each column's place in a row, by the column's name in any case, so a row is read by name and
+    /// not by position.
+    /// </summary>
     private static Dictionary<string, int> ColumnsOf(JsonElement properties) =>
         properties.TryGetProperty("columns", out var columns)
             ? columns.EnumerateArray()
@@ -172,11 +181,16 @@ public static class CostQuery
                 .ToDictionary(group => group.Key, group => group.First().Index, StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The rows of an answer, or none when the answer carries no row array.</summary>
     private static IEnumerable<JsonElement> RowsOf(JsonElement properties) =>
         properties.TryGetProperty("rows", out var rows) && rows.ValueKind == JsonValueKind.Array
             ? rows.EnumerateArray()
             : [];
 
+    /// <summary>
+    /// The place of the first of <paramref name="names"/> the answer has, or -1 when it has none of
+    /// them.
+    /// </summary>
     private static int Find(Dictionary<string, int> columns, params string[] names)
     {
         foreach (string name in names)
@@ -190,6 +204,10 @@ public static class CostQuery
         return -1;
     }
 
+    /// <summary>
+    /// A cost cell as a number; the service sends a number or a numeric string, and anything else
+    /// counts as zero.
+    /// </summary>
     private static double Number(JsonElement value) => value.ValueKind switch
     {
         JsonValueKind.Number => value.GetDouble(),
@@ -212,261 +230,3 @@ public static class CostQuery
     }
     // #endregion cost-shape
 }
-
-// #region cost-read
-/// <summary>How a read of Cost Management went: read, refused for want of a role, refused by the billing account, or failed.</summary>
-public enum CostOutcome
-{
-    Read,
-    NoRole,
-    Refused,
-    Failed,
-}
-
-/// <summary>One hour's read of Cost Management, or why there was none.</summary>
-/// <param name="Outcome">How the read went.</param>
-/// <param name="Note">Why there is nothing, in words the card can show; null on a clean read.</param>
-/// <param name="Days">The charges by resource by day; empty unless the read went through.</param>
-/// <param name="Forecast">The forecast days; empty when the forecast could not be had, which does not spoil the actuals.</param>
-public sealed record CostRead(CostOutcome Outcome, string? Note, IReadOnlyList<CostDay> Days, IReadOnlyList<CostForecastDay> Forecast);
-
-/// <summary>
-/// Reads Cost Management with the site's own identity, the way the telemetry
-/// reader reads Application Insights (ADR-024): a token asked of whichever door
-/// this host has, for the management endpoint, and no key anywhere. The
-/// identity needs Cost Management Reader on the subscription and nothing more.
-/// </summary>
-public sealed class CostReader(string subscriptionId, string clientId, bool configured)
-{
-    // A minute, not the usual few seconds: the first read of 1.0.3.55 on the
-    // Cosmos DB site took longer than twenty seconds and was cancelled, on a
-    // plan still busy loading the catalogue (ADR: What Azure charges, addendum).
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
-
-    /// <summary>What the card says on a run that is not on Azure.</summary>
-    public const string NotConfigured = "the cost reader runs only on Azure, where the site has an identity to ask with; a local run reads nothing";
-
-    /// <summary>What the card says when the identity has no role to read costs with.</summary>
-    public const string NoRoleNote = "this site's identity does not hold Cost Management Reader on the subscription yet, so Azure will not tell it what it costs";
-
-    /// <summary>True only on Azure, where an identity exists to ask with.</summary>
-    public bool Configured => configured && !string.IsNullOrWhiteSpace(subscriptionId);
-
-    /// <summary>The actuals from <paramref name="from"/> to <paramref name="to"/>, and the forecast for the month <paramref name="to"/> falls in.</summary>
-    public async Task<CostRead> ReadAsync(DateOnly from, DateOnly to, CancellationToken cancellation)
-    {
-        if (!Configured)
-        {
-            return new CostRead(CostOutcome.Failed, NotConfigured, [], []);
-        }
-
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId);
-        var actuals = await PostAsync(token, "query", CostQuery.Actuals(from, to), cancellation);
-        if (actuals.Outcome != CostOutcome.Read)
-        {
-            return new CostRead(actuals.Outcome, actuals.Note, [], []);
-        }
-
-        var days = new List<CostDay>();
-        foreach (var page in actuals.Pages)
-        {
-            days.AddRange(CostQuery.DaysFrom(page));
-        }
-
-        // The forecast is a second opinion beside the bill: if it fails, the
-        // days still go in and the card says only that there is no forecast.
-        // It is asked for the whole month, so its billed days and its days to
-        // come add up to the figure the portal shows.
-        var monthStart = new DateOnly(to.Year, to.Month, 1);
-        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-        var forecast = new List<CostForecastDay>();
-        var ahead = await PostAsync(token, "forecast", CostQuery.Forecast(monthStart, monthEnd), cancellation);
-        if (ahead.Outcome == CostOutcome.Read)
-        {
-            foreach (var page in ahead.Pages)
-            {
-                forecast.AddRange(CostQuery.ForecastFrom(page));
-            }
-        }
-
-        return new CostRead(CostOutcome.Read, null, days, forecast);
-    }
-
-    private async Task<(CostOutcome Outcome, string? Note, List<JsonElement> Pages)> PostAsync(string token, string action, object body, CancellationToken cancellation)
-    {
-        var pages = new List<JsonElement>();
-        string? address = $"{CostQuery.Scope(subscriptionId)}/{action}?api-version={CostQuery.ApiVersion}";
-        // A month of daily rows by resource is a few hundred rows, one page;
-        // the cap is there so a service that keeps answering with a next page
-        // cannot hold the recorder.
-        for (int page = 0; address is not null && page < 5; page++)
-        {
-            using var request = new HttpRequestMessage(HttpMethod.Post, address) { Content = JsonContent.Create(body) };
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            using var response = await Http.SendAsync(request, cancellation);
-            if (!response.IsSuccessStatusCode)
-            {
-                return (OutcomeOf(response.StatusCode), NoteFor(response.StatusCode), pages);
-            }
-
-            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
-            var properties = document.RootElement.GetProperty("properties");
-            pages.Add(properties.Clone());
-            address = properties.TryGetProperty("nextLink", out var next) && next.ValueKind == JsonValueKind.String ? next.GetString() : null;
-        }
-
-        return (CostOutcome.Read, null, pages);
-    }
-
-    /// <summary>Which of the four a status is.</summary>
-    public static CostOutcome OutcomeOf(HttpStatusCode status) => status switch
-    {
-        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => CostOutcome.NoRole,
-        HttpStatusCode.BadRequest or HttpStatusCode.Conflict or HttpStatusCode.TooManyRequests => CostOutcome.Refused,
-        _ => CostOutcome.Failed,
-    };
-
-    /// <summary>
-    /// What to say on a public card about a read that did not happen. The
-    /// service's own words are not printed: an error from Cost Management names
-    /// the scope it refused, and the scope is the subscription's path.
-    /// </summary>
-    public static string NoteFor(HttpStatusCode status) => status switch
-    {
-        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => NoRoleNote,
-        HttpStatusCode.TooManyRequests => "Cost Management asked this site to slow down; the next read is in an hour",
-        HttpStatusCode.BadRequest or HttpStatusCode.Conflict => "Cost Management refused the read, which it does while a billing account is being set up; the next read is in an hour",
-        _ => $"Cost Management answered {(int)status}; the next read is in five minutes",
-    };
-}
-
-/// <summary>What the recorder last found, which is how the card tells "no role" from "nothing kept yet".</summary>
-public sealed class CostStatus
-{
-    private readonly object _gate = new();
-
-    /// <summary>When the last read was tried, or null before the first.</summary>
-    public DateTimeOffset? At { get; private set; }
-
-    /// <summary>True when the last read went through.</summary>
-    public bool Read { get; private set; }
-
-    /// <summary>Why the last read did not go through, or null when it did.</summary>
-    public string? Note { get; private set; }
-
-    public void Set(DateTimeOffset at, bool read, string? note)
-    {
-        lock (_gate)
-        {
-            At = at;
-            Read = read;
-            Note = note;
-        }
-    }
-
-    /// <summary>The three at once, so a reader never sees one read's time beside another's note.</summary>
-    public (DateTimeOffset? At, bool Read, string? Note) Snapshot()
-    {
-        lock (_gate)
-        {
-            return (At, Read, Note);
-        }
-    }
-}
-// #endregion cost-read
-
-// #region cost-recorder
-/// <summary>
-/// Reads Cost Management once an hour and holds the answer (ADR: What Azure
-/// charges). Never on a request: the service is rate limited, lags the day by
-/// eight to twenty four hours, and a card that asked it on every open would
-/// spend the allowance on the same answer. Thirty-five days each time, the
-/// month window and five more, because a day is revised after it ends and the
-/// next read is how the revision lands.
-/// </summary>
-public sealed class CostRecorder(
-    CostReader reader,
-    ICostHistory history,
-    CostStatus status,
-    TimeProvider clock,
-    ILogger<CostRecorder> logger) : BackgroundService
-{
-    /// <summary>How often the bill is read.</summary>
-    public static readonly TimeSpan Every = TimeSpan.FromHours(1);
-
-    /// <summary>How soon a read that did not finish is tried again.</summary>
-    public static readonly TimeSpan Retry = TimeSpan.FromMinutes(5);
-
-    // #region cost-retry
-    /// <summary>
-    /// How long to wait after a read. An hour after one that went through,
-    /// and after one Azure refused: a missing role does not appear in five
-    /// minutes, and a request to slow down is a request to slow down. Five
-    /// minutes after one that did not finish, because a timeout says nothing
-    /// about the next answer, and an hour of an empty card for one slow answer
-    /// is the wrong trade (ADR: What Azure charges, addendum).
-    /// </summary>
-    public static TimeSpan WaitAfter(CostOutcome outcome) => outcome == CostOutcome.Failed ? Retry : Every;
-    // #endregion cost-retry
-
-    /// <summary>One read, public so the suite can run one without waiting an hour; says how it went.</summary>
-    public async Task<CostOutcome> RecordOnceAsync(CancellationToken cancellation)
-    {
-        var now = clock.GetUtcNow();
-        if (!reader.Configured)
-        {
-            status.Set(now, false, CostReader.NotConfigured);
-            return CostOutcome.Failed;
-        }
-
-        var availability = await history.AvailabilityAsync(cancellation);
-        if (!availability.Available)
-        {
-            status.Set(now, false, availability.Reason);
-            return CostOutcome.Failed;
-        }
-
-        var today = DateOnly.FromDateTime(now.UtcDateTime);
-        var read = await reader.ReadAsync(today.AddDays(-(CostWindows.ReadDays - 1)), today, cancellation);
-        if (read.Outcome == CostOutcome.Read)
-        {
-            await history.KeepAsync(read.Days, read.Forecast, cancellation);
-        }
-
-        status.Set(now, read.Outcome == CostOutcome.Read, read.Note);
-        return read.Outcome;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stopping)
-    {
-        // Half a minute after the start, so the first read never competes
-        // with the catalogue this process loads before it answers anybody.
-        await Task.Delay(TimeSpan.FromSeconds(30), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
-        while (!stopping.IsCancellationRequested)
-        {
-            var outcome = CostOutcome.Failed;
-            try
-            {
-                outcome = await RecordOnceAsync(stopping);
-                if (!reader.Configured)
-                {
-                    return;
-                }
-            }
-            catch (OperationCanceledException) when (stopping.IsCancellationRequested)
-            {
-                return;
-            }
-            catch (Exception ex)
-            {
-                // The type, never the message: a message from the identity
-                // endpoint or the service names the resource it refused.
-                logger.LogWarning("The bill could not be read ({Exception})", ex.GetType().Name);
-                status.Set(clock.GetUtcNow(), false, $"the last read did not finish ({ex.GetType().Name}); the next is in five minutes");
-            }
-
-            await Task.Delay(WaitAfter(outcome), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
-        }
-    }
-}
-// #endregion cost-recorder

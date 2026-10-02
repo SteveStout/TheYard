@@ -1,38 +1,13 @@
+// BidService is one class in three files. This one holds the two indexes, the load from the
+// store, the reads every listing makes, and Record, which every write ends in.
+//   BidService.Bidding.cs   placing a bid and buying now, under the gate
+//   BidService.Reset.cs     one person's start-over
+// The records it hands out have a file each beside it: BidState.cs, VehicleStanding.cs and
+// StoredBid.cs.
 using System.Collections.Concurrent;
 using TheYard.Data;
-using TheYard.Domain;
 
 namespace TheYard.Application;
-
-/// <summary>
-/// One buyer's standing on one vehicle. AtMs is when the bid was placed, which
-/// the simulated room reads to decide whether enough time has passed to answer
-/// it (ADR: Competing bidders).
-/// </summary>
-/// <param name="Amount">The buyer's bid, in whole dollars.</param>
-/// <param name="BidCount">How many bids the vehicle had once this one was placed, counting everybody's.</param>
-/// <param name="WonBuyNow">True when the bid bought the vehicle outright at or above its buy-now price.</param>
-/// <param name="AtMs">When the bid was placed, in milliseconds since the epoch, UTC.</param>
-public sealed record BidState(int Amount, int BidCount, bool WonBuyNow, long AtMs);
-
-/// <summary>
-/// One vehicle's bidding, across everybody: what it stands at, how many bids
-/// got it there, and who holds it. This is what the listing overlay reads and
-/// what "you have been outbid" is measured against
-/// (ADR: Accounts and per-user bids).
-/// </summary>
-/// <param name="Amount">The highest bid on the vehicle, in whole dollars.</param>
-/// <param name="BidCount">How many bids the vehicle has had, counting everybody's.</param>
-/// <param name="HighBidderId">The user id of the buyer holding the highest bid.</param>
-/// <param name="SoldBuyNow">True once any buyer has bought the vehicle outright.</param>
-/// <param name="AtMs">When the standing bid was placed, in milliseconds since the epoch, UTC.</param>
-public sealed record VehicleStanding(int Amount, int BidCount, string HighBidderId, bool SoldBuyNow, long AtMs);
-
-/// <summary>One stored bid, as the store hands it back.</summary>
-/// <param name="UserId">The id of the buyer who placed the bid.</param>
-/// <param name="VehicleId">The id of the vehicle the bid is on.</param>
-/// <param name="State">The buyer's standing on that vehicle.</param>
-public sealed record StoredBid(string UserId, string VehicleId, BidState State);
 
 /// <summary>
 /// Everybody's bids, read from the store once at startup and written through on
@@ -41,7 +16,7 @@ public sealed record StoredBid(string UserId, string VehicleId, BidState State);
 /// asked a hundred thousand times per listing request, and what have I bid,
 /// which is asked once.
 /// </summary>
-public sealed class BidService
+public sealed partial class BidService
 {
     /// <summary>By vehicle. The hot path: Apply does one lookup per vehicle.</summary>
     private readonly ConcurrentDictionary<string, VehicleStanding> _standing;
@@ -49,6 +24,7 @@ public sealed class BidService
     /// <summary>By user, then by vehicle. Asked once per page, not once per row.</summary>
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, BidState>> _byUser;
 
+    /// <summary>Where bids are kept between restarts: read once at load, written on every accepted bid.</summary>
     private readonly IBidStore _store;
 
     /// <summary>Bids that live exactly as long as this process does.</summary>
@@ -64,8 +40,8 @@ public sealed class BidService
     /// request, and a per-row query would end the feature rather than persist
     /// it (ADR: The relational store).
     ///
-    /// The constructor no longer reads the store, because a constructor cannot
-    /// wait and the store now has to be waited for (ADR: The ports learn to
+    /// The constructor does not read the store, because a constructor cannot
+    /// wait and the store has to be waited for (ADR: The ports learn to
     /// wait). The host calls LoadAsync once at startup; the writing methods
     /// call it too, so a service nobody warmed loads itself on its first bid.
     /// </summary>
@@ -76,7 +52,10 @@ public sealed class BidService
         _byUser = new ConcurrentDictionary<string, ConcurrentDictionary<string, BidState>>(StringComparer.Ordinal);
     }
 
+    /// <summary>Held only while deciding whether a load has to start, so two first callers share one replay.</summary>
     private readonly object _loadGate = new();
+
+    /// <summary>The replay in flight or finished, or null before anybody has asked for one.</summary>
     private Task? _loaded;
 
     /// <summary>
@@ -99,6 +78,7 @@ public sealed class BidService
         }
     }
 
+    /// <summary>Every stored bid, recorded into both indexes in the order the store returns them.</summary>
     private async Task LoadFromStoreAsync()
     {
         foreach (var bid in await _store.LoadAsync())
@@ -124,6 +104,7 @@ public sealed class BidService
     /// </summary>
     private readonly SemaphoreSlim _gate = new(1, 1);
 
+    /// <summary>True when nobody has a standing bid on any vehicle.</summary>
     public bool IsEmpty => _standing.IsEmpty;
 
     /// <summary>One user's bids, for the badges and the history.</summary>
@@ -140,10 +121,10 @@ public sealed class BidService
     /// <summary>
     /// Whether anybody has bought this vehicle outright. One dictionary read,
     /// because it is asked once per vehicle on every listing answer, the way
-    /// Apply is. The fact itself has been in the standing since bids got
-    /// owners; what was missing until 1.0.0.110 was anybody asking it before
-    /// taking the next bid (ADR: Accounts and per-user bids, the addendum on
-    /// the second buyer).
+    /// Apply is. The fact lives in the standing, and what makes it a rule is
+    /// that it is asked before the next bid is taken, so a sold vehicle has no
+    /// second buyer (ADR: Accounts and per-user bids, the addendum on the
+    /// second buyer).
     /// </summary>
     public bool IsSold(string vehicleId) =>
         _standing.TryGetValue(vehicleId, out var held) && held.SoldBuyNow;
@@ -186,155 +167,6 @@ public sealed class BidService
             ? vehicle with { CurrentBid = held.Amount, BidCount = Math.Max(vehicle.BidCount, held.BidCount) }
             : vehicle;
     // #endregion apply
-
-    // #region place
-    public async Task<BidOutcome> PlaceBidAsync(Vehicle vehicle, int amount, AuctionClock clock, string userId)
-    {
-        await LoadAsync();
-        await _gate.WaitAsync();
-        try
-        {
-            var merged = Apply(vehicle);
-            // Sold is read under the same gate as the write that makes it true,
-            // so two buyers cannot both find it false.
-            var outcome = BidRules.ResolveBid(merged, amount, clock, IsSold(vehicle.Id));
-            if (outcome.Kind != BidOutcomeKind.Rejected)
-            {
-                var state = new BidState(
-                    outcome.Amount,
-                    merged.BidCount + 1,
-                    WonBuyNow: outcome.Kind == BidOutcomeKind.Won,
-                    AtMs: clock.NowMs);
-                // The store first, then memory. The other order looks harmless
-                // and is not: a store that throws would leave the dictionaries
-                // holding a bid the caller was just told had failed, shown as
-                // winning until the next restart deleted it. This way a failed
-                // write means the bid did not happen anywhere, which is the
-                // answer the caller already has.
-                await _store.SaveAsync(userId, vehicle.Id, state);
-                Record(userId, vehicle.Id, state);
-            }
-            return outcome;
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-    // #endregion place
-
-    /// <summary>
-    /// Buy Now is a purchase, not a bid, so the bid count stays as-is. It is
-    /// also the end of the auction for everybody: the second buyer is refused
-    /// with the same sentence a bid gets.
-    /// </summary>
-    public async Task<BidOutcome> BuyNowAsync(Vehicle vehicle, AuctionClock clock, string userId)
-    {
-        await LoadAsync();
-        await _gate.WaitAsync();
-        try
-        {
-            var merged = Apply(vehicle);
-            var outcome = BidRules.ResolveBuyNow(merged, clock, IsSold(vehicle.Id));
-            if (outcome.Kind == BidOutcomeKind.Won)
-            {
-                var state = new BidState(outcome.Amount, merged.BidCount, WonBuyNow: true, AtMs: clock.NowMs);
-                await _store.SaveAsync(userId, vehicle.Id, state);
-                Record(userId, vehicle.Id, state);
-            }
-            return outcome;
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    // #region reset
-    /// <summary>
-    /// One person's start-over.
-    ///
-    /// <para>This used to clear everybody, and the comment explaining why was
-    /// honest about it: the room's bids are shared, and a reset that took away
-    /// your bid while leaving the room's counter-bid standing reads as a bug
-    /// however carefully it is explained. That was written when a bid belonged
-    /// to a browser. Since bids got owners and a database, it meant any signed
-    /// in visitor could delete every other visitor's rows, on a site whose own
-    /// changelog says two visitors can outbid each other and both be told the
-    /// truth (ADR: Reset is one person's start-over).</para>
-    ///
-    /// <para>The original reasoning survives, narrowed to the vehicles the
-    /// caller actually touched: their bids go, the room's answers on those same
-    /// vehicles go with them, and each of those vehicles gets its standing
-    /// recomputed from whoever is left rather than deleted, so a stranger who
-    /// bid on the same car keeps their bid and keeps the lead they earned.</para>
-    ///
-    /// <para>Returns the vehicles that have nobody bidding on them any more,
-    /// which the caller passes to the room. Not every vehicle the caller
-    /// touched: the first version of this returned all of them, and "vehicles
-    /// this person bid on" is not "vehicles only this person bid on", so
-    /// clearing the room's answer on a shared car took away a stranger's outbid
-    /// badge and dropped the price a stranger was competing at. The room is a
-    /// separate service and this one does not reach into it.</para>
-    /// </summary>
-    public async Task<IReadOnlyList<string>> ResetAsync(string userId)
-    {
-        await LoadAsync();
-        await _gate.WaitAsync();
-        try
-        {
-            if (!_byUser.TryGetValue(userId, out var mine))
-            {
-                return [];
-            }
-
-            string[] touched = mine.Keys.ToArray();
-            var orphaned = new List<string>();
-            // The store first, then memory: the bid path's rule, applied to the
-            // one write that broke it. Until 1.0.0.111 the dictionaries were
-            // cleared before the store was asked, so a store that refused left
-            // the caller told their bids were gone while the rows stayed to be
-            // replayed at the next start (ADR: Three readers with no memory of
-            // the project). The gate is held, so nothing of this caller's can
-            // arrive between the two.
-            await _store.ClearAsync(userId);
-            _byUser.TryRemove(userId, out _);
-
-            foreach (string vehicleId in touched)
-            {
-                // Recomputed, not removed. Removing it would hand the vehicle
-                // back to its opening ask and quietly delete a third person's
-                // bid, which is the same defect one size smaller.
-                var best = _byUser
-                    .Select(user => user.Value.TryGetValue(vehicleId, out var state) ? (user.Key, state) : (null, null))
-                    .Where(pair => pair.Item2 is not null)
-                    .OrderByDescending(pair => pair.Item2!.Amount)
-                    .ThenBy(pair => pair.Item2!.AtMs)
-                    .FirstOrDefault();
-
-                if (best.Item1 is null)
-                {
-                    // Nobody left on this one, so the room's answer to it has
-                    // nothing to be an answer to. These are the only vehicles
-                    // the caller gets to clear the room on.
-                    _standing.TryRemove(vehicleId, out _);
-                    orphaned.Add(vehicleId);
-                    continue;
-                }
-
-                var state = best.Item2!;
-                _standing[vehicleId] = new VehicleStanding(
-                    state.Amount, state.BidCount, best.Item1, state.WonBuyNow, state.AtMs);
-            }
-
-            return orphaned;
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-    // #endregion reset
 
     // #region record
     /// <summary>

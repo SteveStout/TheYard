@@ -1,11 +1,3 @@
-using System.Collections.Concurrent;
-using System.Text.Json;
-using System.Threading.Channels;
-using Microsoft.Extensions.Logging.Abstractions;
-using TheYard.Application;
-
-namespace TheYard.Api;
-
 // Logs that outlive the container (ADR: Logs that outlive the container).
 // Three sources feed one collector: the request hook beside the request ring,
 // a logging provider that takes this application's warnings and errors, and
@@ -13,11 +5,26 @@ namespace TheYard.Api;
 // arrival. The collector writes to the document store off the request path,
 // once a minute or when five hundred are waiting, and the keyed endpoint
 // reads them back for the Admin tab.
+//
+// This file holds how an event is made and the collector that carries it to
+// the store. The other parts have a file each beside it:
+//   CollectorLoggerProvider.cs   the logging provider that feeds the collector
+//   LogReport.cs                 the keyed endpoint's answer
+//   KeptRingWriterReader.cs      the Admin tab's four public lists, kept and read back
+using System.Threading.Channels;
+using TheYard.Application;
+
+namespace TheYard.Api;
 
 // #region events
 /// <summary>How a request, an exception or a log line becomes an event, and the cleaning every field gets on the way.</summary>
 public static class LogEvents
 {
+    /// <summary>
+    /// A request as an event. Its level follows the status code (5xx is an
+    /// error, 4xx a warning, the rest information), and every text field is
+    /// cleaned and bounded before it is kept.
+    /// </summary>
     public static LogEvent Request(DateTimeOffset at, string method, string path, int status, long durationMs, string store, string visitor, string network, string traceId) =>
         new(
             at,
@@ -40,7 +47,7 @@ public static class LogEvents
     /// below is an app event. The exception's type, message and stack go in
     /// the detail, bounded and cleaned like everything else: this log is
     /// behind the operator's key, which is why the message can be kept here
-    /// and not on the public ring (the staff review, 2026-09-03).
+    /// and not on the public ring.
     /// </summary>
     public static LogEvent Line(DateTimeOffset at, LogLevel level, string category, string message, Exception? exception, string store, string path, string traceId)
     {
@@ -78,20 +85,41 @@ public static class LogEvents
 /// </summary>
 public sealed class LogCollector : BackgroundService
 {
+    /// <summary>How many events the channel holds before the oldest is dropped.</summary>
     public const int Capacity = 10_000;
+
+    /// <summary>Seconds between drains when configuration does not say otherwise: a minute.</summary>
     public const int DefaultIntervalSeconds = 60;
+
+    /// <summary>How many waiting events wake the drain before its interval is up.</summary>
     private const int DrainAt = 500;
 
+    /// <summary>The bounded queue between a request and the store; when it is full the oldest event goes.</summary>
     private readonly Channel<LogEvent> _channel = Channel.CreateBounded<LogEvent>(
         new BoundedChannelOptions(Capacity) { FullMode = BoundedChannelFullMode.DropOldest });
 
+    /// <summary>Where drained events are written, and where the readers query them back from.</summary>
     private readonly ILogStore _store;
+
+    /// <summary>How long the drain waits between passes.</summary>
     private readonly TimeSpan _interval;
+
+    /// <summary>Events offered since the last drain, which is what wakes it early.</summary>
     private int _pending;
+
+    /// <summary>Events taken into the channel since the process started.</summary>
     private long _offered;
+
+    /// <summary>Events the store accepted since the process started.</summary>
     private long _written;
+
+    /// <summary>Drains whose write to the store threw.</summary>
     private long _failedBatches;
+
+    /// <summary>When the store last accepted a batch, or null before the first.</summary>
     private DateTimeOffset? _lastWrite;
+
+    /// <summary>Completed to wake the drain early; replaced with a fresh one after every wake.</summary>
     private volatile TaskCompletionSource _wake = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>The interval is configuration (Logs:DrainSeconds) so the browser suite can shorten it; a minute is the default and the deployed value.</summary>
@@ -101,8 +129,10 @@ public sealed class LogCollector : BackgroundService
         _interval = TimeSpan.FromSeconds(Math.Clamp(intervalSeconds, 1, 3_600));
     }
 
+    /// <summary>The store this collector writes to, which the keyed endpoint and the card readers query.</summary>
     public ILogStore Store => _store;
 
+    /// <summary>The time between drains, held between one second and one hour.</summary>
     public TimeSpan Interval => _interval;
 
     /// <summary>What has passed through: offered, written, batches that failed, and the last time anything was written.</summary>
@@ -122,6 +152,10 @@ public sealed class LogCollector : BackgroundService
         }
     }
 
+    /// <summary>
+    /// The drain loop: wait for the interval or an early wake, drain, and
+    /// repeat until the host stops, then drain once more on the way out.
+    /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
         while (!stopping.IsCancellationRequested)
@@ -173,186 +207,3 @@ public sealed class LogCollector : BackgroundService
     }
 }
 // #endregion collector
-
-// #region provider
-/// <summary>
-/// The logging provider that feeds the collector. The same allow-list of
-/// categories as the Admin tab's ring, plus the one framework category that
-/// reports an unhandled exception, and only from Warning up: an Information
-/// line is the request log's job, and the request hook already keeps one
-/// event per request. Which store and which request a line belongs to are
-/// read from the current request when there is one.
-/// </summary>
-public sealed class CollectorLoggerProvider(LogCollector collector, Func<(string Store, string Path, string TraceId)> current) : ILoggerProvider
-{
-    public const string UnhandledCategory = "Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware";
-
-    public static bool Captured(string category) =>
-        RingBufferLoggerProvider.Captured(category) || category == UnhandledCategory;
-
-    public ILogger CreateLogger(string categoryName) =>
-        Captured(categoryName) ? new CollectorLogger(collector, current, categoryName) : NullLogger.Instance;
-
-    public void Dispose() { }
-
-    private sealed class CollectorLogger(LogCollector collector, Func<(string Store, string Path, string TraceId)> current, string category) : ILogger
-    {
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
-
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception, string> formatter)
-        {
-            if (!IsEnabled(logLevel))
-            {
-                return;
-            }
-
-            var (store, path, traceId) = current();
-            collector.Offer(LogEvents.Line(DateTimeOffset.UtcNow, logLevel, category, formatter(state, exception!), exception, store, path, traceId));
-        }
-    }
-}
-// #endregion provider
-
-// #region report
-/// <summary>The keyed endpoint's answer: whether the store keeps anything, what the window holds by kind, the events, and what reading and writing them has cost.</summary>
-public static class LogReport
-{
-    public static async Task<object> QueryAsync(LogCollector collector, string window, string? kind, int? status, string? path, DateTimeOffset now, CancellationToken cancellation)
-    {
-        var chosen = ActivityWindows.Parse(window)!.Value;
-        DateTimeOffset since = now - chosen.Length;
-        var availability = await collector.Store.AvailabilityAsync(cancellation);
-        var query = new LogQuery(since, kind, status, LogText.Clean(path, 80), 200);
-        IReadOnlyList<LogEvent> events = availability.Available ? await collector.Store.QueryAsync(query, cancellation) : [];
-        IReadOnlyList<LogCount> counts = availability.Available ? await collector.Store.CountAsync(since, cancellation) : [];
-        var counters = collector.Counters;
-        return new
-        {
-            window = chosen.Name,
-            since,
-            until = now,
-            kept = new { available = availability.Available, reason = availability.Reason },
-            counts = LogEvent.Kinds.Select(k => new { kind = k, count = counts.FirstOrDefault(c => c.Kind == k)?.Count ?? 0 }).ToList(),
-            query = new { kind = query.Kind ?? "", status = query.Status, path = query.PathContains ?? "" },
-            count = events.Count,
-            // Cleaned once more on the way out, so the rule holds even for a
-            // document written by an older build.
-            events = events.Select(e => new
-            {
-                at = e.At,
-                kind = e.Kind,
-                store = e.Store,
-                level = e.Level,
-                category = e.Category,
-                method = e.Method,
-                path = LogText.Clean(e.Path, LogText.PathLength),
-                status = e.Status,
-                duration_ms = e.DurationMs,
-                visitor = e.Visitor,
-                network = e.Network,
-                message = LogText.Clean(e.Message, LogText.MessageLength),
-                detail = LogText.Clean(e.Detail, LogText.DetailLength),
-                trace_id = e.TraceId,
-            }).ToList(),
-            collector = new
-            {
-                offered = counters.Offered,
-                written = counters.Written,
-                failed_batches = counters.FailedBatches,
-                last_write = counters.LastWrite,
-                interval_seconds = (int)collector.Interval.TotalSeconds,
-            },
-        };
-    }
-}
-// #endregion report
-
-// #region kept-rings
-/// <summary>
-/// The Admin tab's four public lists, kept where a roll cannot empty them
-/// (ADR: Logs that outlive the container, the addendum on the cards). Each ring hands every entry it takes to
-/// <see cref="Keep{T}"/>, which writes it as the JSON the ring's own endpoint
-/// serves and offers it to the same collector the kept log uses: one channel,
-/// one drain a minute, one transactional batch a day partition, and nothing on
-/// a request thread waits for the store.
-/// </summary>
-public sealed class KeptRingWriter(LogCollector collector, string site)
-{
-    /// <summary>Snake case, as every endpoint on this site answers, so a kept entry and a ring entry are the same text.</summary>
-    public static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
-
-    public void Keep<T>(string kind, DateTimeOffset at, T entry)
-    {
-        string json = JsonSerializer.Serialize(entry, Wire);
-        if (json.Length <= KeptRings.MostCharacters)
-        {
-            collector.Offer(KeptRings.Entry(kind, site, at, json));
-        }
-    }
-}
-
-/// <summary>
-/// A card's window read back. Public, like the rings, because it serves what
-/// the rings serve; cached for half a minute a card and window, because a
-/// public endpoint that runs a query in the store on every call is an
-/// invitation, and thirty seconds is the rate the tab refreshes at anyway.
-/// </summary>
-public sealed class KeptRingReader(LogCollector collector, string site, string storeName)
-{
-    public const int Most = 200;
-    // Half a minute, or the collector's own interval where that is shorter:
-    // an answer cannot change faster than the store is written to, and the
-    // browser suite writes every two seconds so that it can wait for a line.
-    private TimeSpan Fresh => TimeSpan.FromSeconds(Math.Min(30, collector.Interval.TotalSeconds));
-    private readonly ConcurrentDictionary<string, (DateTimeOffset At, object Answer)> _cache = new(StringComparer.Ordinal);
-
-    public async Task<object?> ReadAsync(string? card, string? window, DateTimeOffset now, CancellationToken cancellation)
-    {
-        if (card is null || !KeptRings.ByCard.TryGetValue(card, out string? kind) || ActivityWindows.Parse(window) is not { } chosen)
-        {
-            return null;
-        }
-
-        string key = card + ":" + chosen.Name;
-        if (_cache.TryGetValue(key, out var held) && now - held.At < Fresh)
-        {
-            return held.Answer;
-        }
-
-        DateTimeOffset since = now - chosen.Length;
-        var availability = await collector.Store.AvailabilityAsync(cancellation);
-        var page = availability.Available
-            ? await collector.Store.RingAsync(kind, site, since, Most, cancellation)
-            : new KeptRingPage([], 0);
-        object answer = new
-        {
-            card,
-            window = chosen.Name,
-            site,
-            store = storeName,
-            since,
-            until = now,
-            // The container keeps the keyed log for years; a ring entry carries
-            // its own, shorter life, and that is the one this card is about.
-            kept = new
-            {
-                available = availability.Available,
-                note = availability.Available ? $"kept in Azure Cosmos DB for {KeptRings.RetentionSeconds / 86_400} days" : availability.Reason,
-            },
-            total = page.Total,
-            shown = page.Entries.Count,
-            entries = page.Entries.Select(Parsed).ToList(),
-        };
-        _cache[key] = (now, answer);
-        return answer;
-    }
-
-    private static JsonElement Parsed(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.Clone();
-    }
-}
-// #endregion kept-rings

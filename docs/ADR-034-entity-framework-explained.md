@@ -140,7 +140,7 @@ The context and its model (`api/TheYard.Infrastructure/YardDbContext.cs`):
 
 The seed (`api/TheYard.Infrastructure/EfSources.cs`):
 
-```live path=api/TheYard.Infrastructure/EfSources.cs region=seed
+```live path=api/TheYard.Infrastructure/YardSeed.cs region=seed
 ```
 
 The bid store, which is the only thing here that writes

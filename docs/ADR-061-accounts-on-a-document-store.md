@@ -49,7 +49,7 @@ address, and the next sign-in finds whichever it finds.
 
 **One container, `users`, partition key `/id`.** Two document shapes in it.
 
-```live path=api/TheYard.Infrastructure.Cosmos/Documents.cs region=documents
+```live path=api/TheYard.Infrastructure.Cosmos/Documents.Users.cs region=documents
 ```
 
 **The account is one document**, id and partition key both the account id, so

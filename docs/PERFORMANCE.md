@@ -96,7 +96,7 @@ The pages that never touch a store are the same on both, to the millisecond.
 The rounds themselves, from the code that runs them: one account per store for the life of the process,
 the same paths in the same order, and the store that goes first alternating every round.
 
-```live path=api/TheYard.Api/Proof.cs region=rounds
+```live path=api/TheYard.Api/ProofRunner.Rounds.cs region=rounds
 ```
 
 Source: [The same performance, proven](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-067-same-performance-proven.md),
@@ -154,7 +154,7 @@ The verdict is arithmetic, and here it is: the median of the paired differences,
 operation taken off each side, and the rule for how far apart two medians may sit and still be called
 the same.
 
-```live path=api/TheYard.Api/Proof.cs region=verdict
+```live path=api/TheYard.Api/ProofResult.cs region=verdict
 ```
 
 Read again on 13 September, off both containers' own cards from runs on 1.0.0.114 made within a quarter of

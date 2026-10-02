@@ -194,7 +194,7 @@ reading is arithmetic over a ring the container already keeps. No tier, no resou
 - [`docs/ADR-077-every-page-checked.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-077-every-page-checked.md): the other card this morning added, and the sweep whose requests this one's numbers include.
 - [`docs/PERFORMANCE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/PERFORMANCE.md): the claim about one small container that this card is the running proof of.
 
-```live path=api/TheYard.Api/Machines.cs region=machine-recorder
+```live path=api/TheYard.Api/MachineRecorder.cs region=machine-recorder
 ```
 
 ```live path=api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs region=grouped-query

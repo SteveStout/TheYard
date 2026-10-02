@@ -238,7 +238,7 @@ strategy).
 Bringing the store up, or reporting that it could not be brought up
 (`api/TheYard.Infrastructure/EfSources.cs`):
 
-```live path=api/TheYard.Infrastructure/EfSources.cs region=prepare
+```live path=api/TheYard.Infrastructure/YardDatabase.cs region=prepare
 ```
 
 The model, and why the ordering column exists
