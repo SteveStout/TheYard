@@ -4,10 +4,10 @@
  * site TheYard (src/styles/colors.css, sizes.css, typography.css, effects.css), so
  * the two sites look alike.
  *
- * This is the only stylesheet allowed to write a colour value. app.css uses these
- * properties through var(), and the StyleRulesTests test class fails the build if
- * app.css contains a hex, rgb or hsl colour. Changing the palette therefore means
- * editing this one file.
+ * This is the only stylesheet allowed to write a colour value. Every other sheet in
+ * this folder uses these properties through var(), and the StyleRulesTests test class
+ * fails the build if one of them contains a hex, rgb or hsl colour. Changing the
+ * palette therefore means editing this one file.
  *
  * Tokens for frosted glass, ribbons and chart marks are left out because this page
  * has none of those elements. A number after a colour, such as "white on it 6.42",

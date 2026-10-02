@@ -11,8 +11,11 @@
  * The module uses no DOM and makes no network calls, so its compiled output can
  * be tested directly with `node --test`. (More in docs/ADR-005-state-lives-in-the-url.md.)
  */
+/** The columns the file table can sort by; anything else in the address falls back to name. */
 export const SORTS = ['name', 'size', 'modified'];
+/** The two sort directions. */
 export const DIRS = ['asc', 'desc'];
+/** The two views inside the dialog: the file browser and the Docs tab. */
 export const VIEWS = ['browse', 'docs'];
 /**
  * The value of each key when the address does not set it: the file browser view,
@@ -28,6 +31,10 @@ export const DEFAULTS = Object.freeze({
     doc: '',
 });
 const KEYS = Object.keys(DEFAULTS);
+/**
+ * Returns a value from the address only when it is on the allowed list, and the fallback otherwise,
+ * so a hand-edited or old link can never put the page in a state it does not have.
+ */
 function pick(value, allowed, fallback) {
     return allowed.includes(value ?? '') ? value : fallback;
 }

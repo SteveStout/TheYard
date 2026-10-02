@@ -1,0 +1,170 @@
+/*
+ * The Docs view: the list of documents on the left and the document on the right, with its
+ * headings, code blocks and their captions, code colouring, tables, quotes and images. Used by
+ * the Docs view in the dialog.
+ * Colours, fonts and spacing come from the custom properties in tokens.css; this file
+ * never writes a colour value (StyleRulesTests). More in
+ * docs/ADR-010-the-palette-borrowed-from-theyard.md.
+ */
+
+/* #region docs */
+.docs {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-4);
+}
+
+.docs nav {
+  overflow: auto;
+  border-right: 1px solid var(--color-border);
+  padding-right: var(--space-3);
+}
+
+.docs nav h3 {
+  font-size: var(--readout-size);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.docs nav button {
+  all: unset;
+  display: block;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  width: 100%;
+}
+
+.docs nav button:hover,
+.docs nav button[aria-current='page'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.docs nav button:focus-visible {
+  outline: var(--focus-ring);
+}
+
+.docs article {
+  overflow: auto;
+  padding-right: var(--space-3);
+  max-width: 80ch;
+}
+
+.docs article h1 {
+  font-size: var(--text-2xl);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--rule-width) solid var(--color-gold);
+  border-image: var(--gradient-gold) 1;
+  display: block;
+  width: fit-content;
+}
+
+/* Document headings sit on their own line. The .panel h2 rule in page.css makes h2 inline-block
+   for the dialog title, and a document is inside the panel, so this rule sets it back. */
+.docs article h2 {
+  font-size: var(--text-lg);
+  margin-top: var(--space-6);
+  display: block;
+  width: fit-content;
+}
+
+.docs article h3 {
+  font-size: var(--text-md);
+  margin-top: var(--space-4);
+}
+
+.docs article pre {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  overflow: auto;
+  font-family: var(--font-code);
+  font-size: var(--text-sm);
+  color: var(--color-code-text);
+  line-height: 1.45;
+}
+
+.docs article pre .caption {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.docs article code {
+  font-family: var(--font-code);
+  font-size: 0.95em;
+  background: var(--color-surface-muted);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-xs);
+}
+
+.docs article pre code {
+  background: none;
+  padding: 0;
+}
+
+.docs article .tok-comment {
+  color: var(--color-code-comment);
+}
+
+.docs article .tok-keyword {
+  color: var(--color-code-keyword);
+}
+
+.docs article .tok-string {
+  color: var(--color-code-string);
+}
+
+.docs article table {
+  margin: var(--space-3) 0;
+}
+
+.docs article th,
+.docs article td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  white-space: normal;
+}
+
+.docs article th {
+  position: static;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--text-sm);
+  color: var(--color-heading);
+}
+
+/* Images in a document get a frame that matches the panel style: a deep teal border, a thin
+   gold outline drawn with box-shadow, and a soft drop shadow. */
+.docs article img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 3px solid var(--color-teal-deep);
+  box-shadow: 0 0 0 1.5px var(--color-gold), var(--shadow-md);
+  border-radius: var(--radius-sm);
+}
+
+.docs article p.figure {
+  margin: var(--space-4) 0;
+}
+
+.docs article blockquote {
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: var(--rule-width) solid var(--color-gold);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+/* #endregion docs */

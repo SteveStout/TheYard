@@ -13,6 +13,7 @@ public sealed class NoEmDashTests
 {
     // Built from its numeric code point, so this file never contains the character itself
     // and passes its own scan.
+    /// <summary>The em dash, written by its code so this file can name it without carrying one.</summary>
     private const char EmDash = (char)0x2014;
 
     [Fact]
@@ -121,6 +122,7 @@ public sealed partial class LayeringTests
         Assert.DoesNotContain(lines, line => line.Contains("MapGet(", StringComparison.Ordinal) || line.Contains("MapPost(", StringComparison.Ordinal));
     }
 
+    /// <summary>A using line that names one of the project's folders, which is how one folder depends on another.</summary>
     [GeneratedRegex(@"^using TestProject\.(?<folder>\w+);", RegexOptions.Multiline)]
     private static partial Regex Using();
 }
@@ -135,6 +137,7 @@ public sealed partial class LayeringTests
 /// </summary>
 public sealed partial class FrontEndRulesTests
 {
+    /// <summary>The TypeScript source folder.</summary>
     private static string Src => Path.Combine(ProjectFolder.Root(), "src");
 
     [Fact]
@@ -177,57 +180,9 @@ public sealed partial class FrontEndRulesTests
         Assert.Contains("\"typescript\"", package, StringComparison.Ordinal);
     }
 
+    /// <summary>The module path in an import line, so a rule can see which folder a file reaches into.</summary>
     [GeneratedRegex(@"from\s+'(?<from>[^']+)'")]
     private static partial Regex Import();
-}
-
-/// <summary>
-/// Checks the stylesheet rules. app.css may not write a colour value (hex, rgb or hsl); every
-/// colour comes from a CSS custom property, so the palette is changed in one file, tokens.css.
-/// Every custom property app.css uses must be declared, so a typo cannot silently leave an element
-/// with no colour. The font and its licence must be served from this site with no link to Google
-/// Fonts or a CDN, so the page loads without calling any other server.
-/// (more in docs/ADR-010-the-palette-borrowed-from-theyard.md)
-/// </summary>
-public sealed partial class StyleRulesTests
-{
-    [Fact]
-    public void App_css_writes_no_colour_of_its_own()
-    {
-        string css = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "wwwroot", "css", "app.css"));
-        List<string> literals = ColourLiteral().Matches(css).Select(m => m.Value).Distinct().ToList();
-        Assert.Empty(literals);
-    }
-
-    [Fact]
-    public void Every_token_app_css_uses_is_declared_in_tokens_css()
-    {
-        string tokens = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "wwwroot", "css", "tokens.css"));
-        string app = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "wwwroot", "css", "app.css"));
-        HashSet<string> declared = Declared().Matches(tokens).Select(m => m.Groups["name"].Value).ToHashSet(StringComparer.Ordinal);
-        declared.UnionWith(Declared().Matches(app).Select(m => m.Groups["name"].Value));
-        List<string> missing = Used().Matches(app).Select(m => m.Groups["name"].Value).Distinct().Where(name => !declared.Contains(name)).ToList();
-        Assert.Empty(missing);
-    }
-
-    [Fact]
-    public void The_font_is_served_from_this_site()
-    {
-        Assert.True(File.Exists(Path.Combine(ProjectFolder.Root(), "wwwroot", "fonts", "ibm-plex-sans-latin.woff2")));
-        Assert.True(File.Exists(Path.Combine(ProjectFolder.Root(), "wwwroot", "fonts", "OFL.txt")));
-        string html = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "wwwroot", "index.html"));
-        Assert.DoesNotContain("fonts.googleapis", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("cdn.", html, StringComparison.Ordinal);
-    }
-
-    [GeneratedRegex(@"#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(")]
-    private static partial Regex ColourLiteral();
-
-    [GeneratedRegex(@"(?<name>--[a-z0-9-]+)\s*:")]
-    private static partial Regex Declared();
-
-    [GeneratedRegex(@"var\((?<name>--[a-z0-9-]+)")]
-    private static partial Regex Used();
 }
 
 /// <summary>
@@ -275,9 +230,11 @@ public sealed partial class RuleTableTests
         Assert.Empty(missing);
     }
 
+    /// <summary>A test class name in the rules table, a capitalised word ending in Tests.</summary>
     [GeneratedRegex(@"\b[A-Z][A-Za-z]+Tests\b")]
     private static partial Regex TestName();
 
+    /// <summary>A record cited by number in the rules table.</summary>
     [GeneratedRegex(@"\bADR-\d{3}\b")]
     private static partial Regex Citation();
 }

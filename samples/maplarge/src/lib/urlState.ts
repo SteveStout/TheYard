@@ -12,12 +12,18 @@
  * be tested directly with `node --test`. (More in docs/ADR-005-state-lives-in-the-url.md.)
  */
 
+/** The columns the file table can sort by; anything else in the address falls back to name. */
 export const SORTS = ['name', 'size', 'modified'] as const;
+/** The two sort directions. */
 export const DIRS = ['asc', 'desc'] as const;
+/** The two views inside the dialog: the file browser and the Docs tab. */
 export const VIEWS = ['browse', 'docs'] as const;
 
+/** One of SORTS, as a type, so a misspelt column fails to compile. */
 export type Sort = (typeof SORTS)[number];
+/** One of DIRS, as a type. */
 export type Dir = (typeof DIRS)[number];
+/** One of VIEWS, as a type. */
 export type View = (typeof VIEWS)[number];
 
 export interface State {
@@ -55,6 +61,10 @@ export const DEFAULTS: Readonly<Omit<State, 'open'>> = Object.freeze({
 });
 const KEYS = Object.keys(DEFAULTS) as Keys[];
 
+/**
+ * Returns a value from the address only when it is on the allowed list, and the fallback otherwise,
+ * so a hand-edited or old link can never put the page in a state it does not have.
+ */
 function pick<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
   return (allowed as readonly string[]).includes(value ?? '') ? (value as T) : fallback;
 }
@@ -126,6 +136,7 @@ export function cleanPath(path: string | null | undefined): string {
     .join('/');
 }
 
+/** One step in the folder trail: the name shown and the path it opens. */
 export interface Crumb {
   name: string;
   path: string;

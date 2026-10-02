@@ -8,7 +8,17 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preload" href="/fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/css/tokens.css" />
-  <link rel="stylesheet" href="/css/app.css" />
+  <!-- One stylesheet per part of the page, in cascade order: tokens first, the phone layout and
+       the view switch last so their rules win. Each sheet opens with what it styles. -->
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/header.css" />
+  <link rel="stylesheet" href="/css/page.css" />
+  <link rel="stylesheet" href="/css/controls.css" />
+  <link rel="stylesheet" href="/css/dialog.css" />
+  <link rel="stylesheet" href="/css/browser.css" />
+  <link rel="stylesheet" href="/css/documents.css" />
+  <link rel="stylesheet" href="/css/phone.css" />
+  <link rel="stylesheet" href="/css/views.css" />
 </head>
 <body>
   <!-- The page is this file and nothing more: a header, one panel with the trigger, the
@@ -25,7 +35,7 @@
       <p>Files and folders, browsed and searched. A small building in <a href="https://theyard.stevenstout.biz">the Yard</a>.</p>
     </div>
     <nav class="site-nav" aria-label="About the author">
-      <a href="?view=docs&amp;doc=about" data-view="docs" data-doc="about">About Steven</a>
+      <a href="https://theyard.stevenstout.biz/?doc=author">About Steven</a>
       <a href="/resume.pdf">Resume</a>
       <a href="/the-shed-explained.pdf">The Shed, explained</a>
     </nav>
@@ -33,7 +43,7 @@
 
   <main>
     <section class="panel">
-      <h2>A file browser in a dialog</h2>
+      <h2>A file browser, one button away</h2>
       <p>
         One button opens it. Inside: browse a home directory on the server, search it by name or
         wildcard, upload and download, make folders, move, copy and delete. The address bar holds
@@ -51,7 +61,7 @@
       <p>
         Reviewing it? <a href="/the-shed-explained.pdf">The Shed, explained</a> is nine pages: the numbers, the quick start,
         the choices and why, where it goes next, every item of the brief with its code, and the code in ten pieces, each
-        linked to where TheYard does the same at full size. <a href="?view=docs&amp;doc=about" data-view="docs" data-doc="about">About Steven</a>
+        linked to where TheYard does the same at full size. <a href="https://theyard.stevenstout.biz/?doc=author">About Steven</a>
         and the <a href="/resume.pdf">resume</a> are one click each.
       </p>
     </section>

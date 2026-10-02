@@ -124,7 +124,8 @@ part.
 - [`Application/FileBrowser.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/FileBrowser.cs): the use cases.
 - [`Infrastructure/PhysicalFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Infrastructure/PhysicalFileStore.cs): the disk.
 - [`tests/TestProject.Tests/ProjectRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/ProjectRulesTests.cs): `LayeringTests`.
-- [`tests/TestProject.Tests/FileBrowserTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/FileBrowserTests.cs): the use cases over the fake store.
+- [`tests/TestProject.Tests/FileBrowserTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/FileBrowserTests.cs): browsing and search over the fake store; transfers and uploads have a file each beside it.
+- [`tests/TestProject.Tests/SampleTree.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/SampleTree.cs): the fake store and the tree every use-case test starts from.
 
 The port, as it is in this build:
 

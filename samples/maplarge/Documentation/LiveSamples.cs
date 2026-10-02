@@ -194,15 +194,19 @@ public static partial class LiveSamples
         return attrs;
     }
 
+    /// <summary>A path made only of letters, digits, dots, dashes, underscores and forward slashes; anything else is refused before a file is opened.</summary>
     [GeneratedRegex(@"^[A-Za-z0-9_./-]+$")]
     private static partial Regex PlainPath();
 
+    /// <summary>The opening line of a live block, with its path and region captured as attributes.</summary>
     [GeneratedRegex(@"^```live(?:[ \t]+(?<attrs>.*))?$")]
     private static partial Regex OpenFence();
 
+    /// <summary>A region start marker in any language's comment, with the region's name captured.</summary>
     [GeneratedRegex(@"(?<![A-Za-z0-9_])#region[ \t]+(?<name>[A-Za-z0-9_.-]+)")]
     private static partial Regex RegionStart();
 
+    /// <summary>A region end marker; regions nest, so the reader counts these against the starts.</summary>
     [GeneratedRegex(@"(?<![A-Za-z0-9_])#endregion")]
     private static partial Regex RegionEnd();
 }

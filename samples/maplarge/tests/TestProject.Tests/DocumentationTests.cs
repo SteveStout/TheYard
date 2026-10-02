@@ -11,22 +11,26 @@ namespace TestProject.Tests;
 /// (files named ADR-NNN-*.md) must be numbered from 1 with no gap and share one layout. The
 /// document list at /api/docs must offer every record and guide, and each must load as markdown.
 /// Every code block that pulls in live source must find its file and region, every GitHub link
-/// must point at a file that exists with the same letter case, every listed document must be
-/// published with the app, and /api/version must report the newest changelog line. The documents
-/// describe the code, so these checks fail the build when the two drift apart.
+/// must point at a file that exists with the same letter case, and /api/version must report the
+/// newest changelog line. The documents describe the code, so these checks fail the build when
+/// the two drift apart. What a publish carries is checked in PublishListTests.
 /// (more in docs/ADR-012-documents-served-by-the-app.md)
 /// </summary>
 public sealed partial class DocumentationTests : IDisposable
 {
+    /// <summary>The app booted in memory, so a test requests documents the way the Docs tab does.</summary>
     private readonly WebApplicationFactory<Program> _factory = new();
+    /// <summary>The docs folder of this build.</summary>
     private readonly string _docs = Path.Combine(ProjectFolder.Root(), "docs");
 
+    /// <summary>Shuts the in-memory app down after each test.</summary>
     public void Dispose()
     {
         _factory.Dispose();
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>Every decision record file, in number order.</summary>
     private static List<string> Records() =>
         Directory.EnumerateFiles(Path.Combine(ProjectFolder.Root(), "docs"), "ADR-*.md").OrderBy(DocumentationCatalog.RecordNumber).ToList();
 
@@ -154,6 +158,7 @@ public sealed partial class DocumentationTests : IDisposable
         Assert.Equal(versions.Distinct().Count(), versions.Count);
     }
 
+    /// <summary>Whether a relative path exists with exactly this letter case, one segment at a time.</summary>
     private static bool ExistsExact(string root, string relative)
     {
         string current = root;
@@ -171,129 +176,15 @@ public sealed partial class DocumentationTests : IDisposable
         return true;
     }
 
-    [Fact]
-    public void Every_document_the_catalogue_serves_is_published_with_the_app()
-    {
-        // The deployed app reads documents from its published output, not the source folder.
-        // A document the project file does not copy on publish passes every other test here,
-        // because they read the source folder, yet is missing on the live site. So this reads the
-        // Content items in TestProject.csproj and checks that each listed document matches one of
-        // their Include patterns. The patterns use backslashes, so the paths are converted first.
-        string root = ProjectFolder.Root();
-        List<Regex> published = System.Xml.Linq.XDocument.Load(Path.Combine(root, "TestProject.csproj"))
-            .Descendants("Content")
-            .Where(item => item.Attribute("CopyToPublishDirectory") is not null && item.Attribute("Include") is not null)
-            .SelectMany(item => item.Attribute("Include")!.Value.Split(';'))
-            .Select(GlobToRegex)
-            .ToList();
-        var catalogue = new DocumentationCatalog(root);
-        List<string> unpublished = catalogue.List()
-            .Select(entry => Path.GetRelativePath(root, catalogue.FileFor(entry.Slug)!).Replace('/', '\\'))
-            .Where(path => !published.Any(glob => glob.IsMatch(path)))
-            .ToList();
-        Assert.Empty(unpublished);
-    }
-
-    private static Regex GlobToRegex(string glob) =>
-        new("^" + Regex.Escape(glob.Trim()).Replace(@"\*\*\\", @"(.*\\)?", StringComparison.Ordinal).Replace(@"\*", @"[^\\]*", StringComparison.Ordinal) + "$", RegexOptions.IgnoreCase);
-
+    /// <summary>The note a live block becomes when its file or region cannot be found.</summary>
     [GeneratedRegex(@"> Sample unavailable: [^\n]*")]
     private static partial Regex SampleUnavailable();
 
+    /// <summary>A link to a file of this sample on GitHub, with the path inside the sample captured.</summary>
     [GeneratedRegex(@"https://github\.com/SteveStout/TheYard/(?:blob|tree)/main/samples/maplarge/(?<path>[^)\s#]+)")]
     private static partial Regex RepoLink();
 
+    /// <summary>A four-number version such as 1.0.0.28.</summary>
     [GeneratedRegex(@"\d+\.\d+\.\d+\.\d+")]
     private static partial Regex FourNumbers();
-}
-
-/// <summary>
-/// Checks LiveSamples, which pastes real source code into the served documents. A document can
-/// hold an empty code block that names a file and a region, and the app fills it with the lines
-/// between that region's start and end markers. The tests cover which paths may be read, how a
-/// region is cut out, and what a bad block becomes. The path check uses the same rules as the file
-/// browser's home guard on a shorter list of folders, because the document picks the path and must
-/// never reach a file such as the development settings.
-/// (more in docs/ADR-012-documents-served-by-the-app.md)
-/// </summary>
-public sealed class LiveSamplesTests
-{
-    [Theory]
-    [InlineData("Domain/HomePath.cs", true)]
-    [InlineData("Program.cs", true)]
-    [InlineData("src/lib/urlState.ts", true)]
-    [InlineData("wwwroot/js/lib/urlState.js", true)]
-    [InlineData("../secrets.txt", false)]
-    [InlineData("Domain/../Program.cs", false)]
-    [InlineData("appsettings.Development.json", false)]
-    [InlineData("Domain/", false)]
-    [InlineData("", false)]
-    public void Only_a_plain_path_under_an_allowed_root_may_be_read(string path, bool allowed)
-    {
-        Assert.Equal(allowed, LiveSamples.IsAllowedPath(path));
-    }
-
-    [Fact]
-    public void A_region_is_cut_between_its_markers_and_nested_regions_are_kept_whole()
-    {
-        string[] source =
-        [
-            "a",
-            "// #region outer",
-            "b",
-            "// #region inner",
-            "c",
-            "// #endregion",
-            "d",
-            "// #endregion",
-            "e",
-        ];
-        string[] expected1 = ["b", "// #region inner", "c", "// #endregion", "d"];
-        Assert.Equal(expected1, LiveSamples.Region(source, "outer"));
-        string[] expected2 = ["c"];
-        Assert.Equal(expected2, LiveSamples.Region(source, "inner"));
-        Assert.Empty(LiveSamples.Region(source, "absent"));
-    }
-
-    [Fact]
-    public void A_fence_expands_to_the_region_and_a_bad_one_to_a_note()
-    {
-        string expanded = LiveSamples.Expand("before\n```live path=Domain/HomePath.cs region=guard\n```\nafter", ProjectFolder.Root());
-        Assert.Contains("```csharp Domain/HomePath.cs", expanded, StringComparison.Ordinal);
-        Assert.Contains("public string Resolve(string? relative)", expanded, StringComparison.Ordinal);
-        Assert.DoesNotContain("#region guard", expanded, StringComparison.Ordinal);
-        Assert.StartsWith("before\n", expanded, StringComparison.Ordinal);
-        Assert.EndsWith("\nafter", expanded, StringComparison.Ordinal);
-        string note = LiveSamples.Expand("```live path=../x.cs region=y\n```", ProjectFolder.Root());
-        Assert.StartsWith("> Sample unavailable", note, StringComparison.Ordinal);
-    }
-}
-
-/// <summary>
-/// Checks how the app finds the version and commit it reports. The version is the first bulleted
-/// line of the changelog, and the commit is read from the .git folder by following HEAD to its
-/// branch file. When either source is missing the answer is "unknown", because a guessed value
-/// would mislead anyone checking which build is running.
-/// (more in docs/ADR-012-documents-served-by-the-app.md)
-/// </summary>
-public sealed class VersionReaderTests
-{
-    [Fact]
-    public void The_first_listed_version_wins_and_a_missing_log_is_unknown()
-    {
-        using var home = new TempHome();
-        string log = home.File("CHANGELOG.md", "# Changelog\n\nintro 9.9.9.9 in prose is not a line\n\n- 1.0.0.3 newest.\n- 1.0.0.2 older.\n");
-        Assert.Equal("1.0.0.3", VersionReader.VersionFrom(log));
-        Assert.Equal(VersionReader.Unknown, VersionReader.VersionFrom(Path.Combine(home.Root, "missing.md")));
-    }
-
-    [Fact]
-    public void A_folder_with_no_git_reports_unknown_and_a_ref_is_followed()
-    {
-        using var home = new TempHome();
-        Assert.Equal(VersionReader.Unknown, VersionReader.CommitFrom(home.Root));
-        home.File(".git/HEAD", "ref: refs/heads/main\n");
-        home.File(".git/refs/heads/main", "0123456789abcdef0123456789abcdef01234567\n");
-        Assert.Equal("0123456", VersionReader.CommitFrom(home.Root));
-    }
 }

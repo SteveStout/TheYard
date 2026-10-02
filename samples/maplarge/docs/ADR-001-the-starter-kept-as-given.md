@@ -12,7 +12,7 @@ result: simple beats boilerplate, delete what is not used, and spend the time on
 rather than on framework or template.
 
 The author's other project, [TheYard](https://theyard.stevenstout.biz), is a React and .NET 10 site
-with two databases, a Docker image, Bicep, a deploy pipeline and eighty-six of these records. Almost
+with two databases, a Docker image, Bicep, a deploy pipeline and eighty-seven of these records. Almost
 none of that belongs here, and the temptation to bring it anyway is the thing this record refuses.
 
 ## Decision

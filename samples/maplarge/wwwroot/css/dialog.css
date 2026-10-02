@@ -1,0 +1,58 @@
+/*
+ * The dialog the file browser and the Docs tab open in: its panel, its backdrop, its title row
+ * and the close button. Used whenever the file browser is open.
+ * Colours, fonts and spacing come from the custom properties in tokens.css; this file
+ * never writes a colour value (StyleRulesTests). More in
+ * docs/ADR-010-the-palette-borrowed-from-theyard.md.
+ */
+
+/* #region dialog */
+dialog.shed {
+  width: min(1100px, calc(100vw - var(--space-6)));
+  max-width: none;
+  height: min(88vh, 900px);
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-glass);
+  background: transparent;
+  overflow: visible;
+}
+
+dialog.shed::backdrop {
+  background: var(--scrim);
+}
+
+dialog.shed .panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.dialog-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.dialog-head h2 {
+  font-size: var(--text-xl);
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.dialog-head .spacer {
+  flex: 1;
+}
+
+.close {
+  width: var(--control-height);
+  padding: 0;
+  font-size: var(--text-xl);
+  line-height: 1;
+}
+/* #endregion dialog */

@@ -7,8 +7,8 @@ namespace TestProject.Documentation;
 /// Lists and finds the markdown documents the app serves about itself. They are read from the
 /// <c>docs</c> folder beside the project on every request, not copied or cached, so the served
 /// text always matches the files in this build. This class also fixes the sidebar order: the
-/// start page, the README and the about page first, then the decision records by number, then
-/// the guides.
+/// start page and the README first, then the decision records by number, then the guides. The
+/// author's page lives on TheYard, and the header links there.
 /// </summary>
 public sealed partial class DocumentationCatalog(string contentRoot)
 {
@@ -34,7 +34,6 @@ public sealed partial class DocumentationCatalog(string contentRoot)
         {
             new("start-here", TitleOf(Path.Combine(DocumentsFolder, "START-HERE.md")), "Start here"),
             new("readme", TitleOf(Path.Combine(contentRoot, "README.md")), "Start here"),
-            new("about", TitleOf(Path.Combine(DocumentsFolder, "ABOUT.md")), "Start here"),
         };
         foreach (string file in Directory.EnumerateFiles(DocumentsFolder, "ADR-*.md").OrderBy(RecordNumber))
         {
@@ -77,8 +76,10 @@ public sealed partial class DocumentationCatalog(string contentRoot)
         return match.Success ? int.Parse(match.Groups["n"].Value, System.Globalization.CultureInfo.InvariantCulture) : int.MaxValue;
     }
 
+    /// <summary>The address of a document: its file name in lower case without .md, so a slug never changes unless the file is renamed.</summary>
     private static string SlugOf(string file) => Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
 
+    /// <summary>The title the sidebar shows: the file's first "# " heading without the "ADR: " prefix, or the file name when it has none.</summary>
     private static string TitleOf(string file)
     {
         if (!File.Exists(file))
@@ -95,6 +96,7 @@ public sealed partial class DocumentationCatalog(string contentRoot)
         return Path.GetFileNameWithoutExtension(file);
     }
 
+    /// <summary>The record number at the start of a file name such as ADR-012-documents.md.</summary>
     [GeneratedRegex(@"^ADR-(?<n>\d+)-", RegexOptions.IgnoreCase)]
     private static partial Regex Number();
 }

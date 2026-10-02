@@ -14,9 +14,11 @@
  * code, bold, italic, links and images. Anything else is treated as a paragraph.
  * (More in docs/ADR-012-documents-served-by-the-app.md.)
  */
+/** Tells an element from a run of text, so callers can walk the tree with the right type. */
 export function isElement(node) {
     return 'tag' in node;
 }
+/** Makes one element node; a short name so the block parsers read as the structure they build. */
 function element(tag, children, attrs = {}) {
     return { tag, attrs, children };
 }
@@ -123,6 +125,7 @@ export function parse(markdown) {
     }
     return blocks;
 }
+/** Reads a line as a list item ("- ", "* ", "+ " or "1. "), or returns null when it is not one. */
 function listItem(line) {
     const bullet = /^\s{0,3}[-*+]\s+(.*)$/.exec(line);
     if (bullet) {
@@ -134,10 +137,12 @@ function listItem(line) {
     }
     return null;
 }
+/** Whether a pipe table starts here: a row of cells with a dashed separator line under it. */
 function isTableStart(lines, i) {
     const next = lines[i + 1];
     return (lines[i] ?? '').trim().startsWith('|') && next !== undefined && /^\s*\|?\s*:?-{3,}/.test(next);
 }
+/** Builds a table from its rows: the first row is the header, the second (the dashes) is skipped. */
 function table(rows) {
     const cells = (row) => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
     const head = cells(rows[0] ?? '');
@@ -147,6 +152,7 @@ function table(rows) {
         element('tbody', body.map((row) => element('tr', row.map((cell) => element('td', inline(cell)))))),
     ]);
 }
+/** Builds a code block with its caption (the file path a live sample came from) and its coloured code. */
 function codeBlock(language, caption, code) {
     const children = [];
     if (caption) {

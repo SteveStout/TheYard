@@ -1,8 +1,8 @@
 namespace TestProject.Tests;
 
 /// <summary>
-/// Checks that a reader can open any file and see what it is for. No C# or TypeScript file runs
-/// past 300 lines, because a longer file is usually doing more than one job and is split by job
+/// Checks that a reader can open any file and see what it is for. No C#, TypeScript or stylesheet
+/// file runs past 300 lines, because a longer file is usually doing more than one job and is split by job
 /// instead. The page's entry file, src/main.ts, stays a short list the way Program.cs does (the
 /// layering tests hold Program.cs): every line that starts a part names, in a comment beside it,
 /// the file that holds the details. (more in docs/ADR-002-one-project-four-folders-dependencies-inward.md)
@@ -18,7 +18,7 @@ public sealed class FileShapeTests
     [Fact]
     public void No_source_file_runs_past_three_hundred_lines()
     {
-        List<string> tooLong = ProjectFolder.FilesWith(".cs", ".ts")
+        List<string> tooLong = ProjectFolder.FilesWith(".cs", ".ts", ".css")
             .Select(file => (file, lines: File.ReadAllLines(file).Length))
             .Where(entry => entry.lines > LongestFile)
             .Select(entry => $"{ProjectFolder.Relative(entry.file)} is {entry.lines} lines; split it by job")

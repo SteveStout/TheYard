@@ -15,22 +15,27 @@
  * (More in docs/ADR-012-documents-served-by-the-app.md.)
  */
 
+/** A run of plain text in the tree; the page writes it as a text node, never as markup. */
 export interface TextNode {
   text: string;
 }
 
+/** An element in the tree: its tag, its attributes and what it holds, built later with createElement. */
 export interface ElementNode {
   tag: string;
   attrs: Record<string, string>;
   children: MarkdownNode[];
 }
 
+/** Anything the parser produces: an element or a run of text. */
 export type MarkdownNode = TextNode | ElementNode;
 
+/** Tells an element from a run of text, so callers can walk the tree with the right type. */
 export function isElement(node: MarkdownNode): node is ElementNode {
   return 'tag' in node;
 }
 
+/** Makes one element node; a short name so the block parsers read as the structure they build. */
 function element(tag: string, children: MarkdownNode[], attrs: Record<string, string> = {}): ElementNode {
   return { tag, attrs, children };
 }
@@ -137,6 +142,7 @@ export function parse(markdown: string): MarkdownNode[] {
   return blocks;
 }
 
+/** Reads a line as a list item ("- ", "* ", "+ " or "1. "), or returns null when it is not one. */
 function listItem(line: string): { ordered: boolean; text: string } | null {
   const bullet = /^\s{0,3}[-*+]\s+(.*)$/.exec(line);
   if (bullet) {
@@ -149,11 +155,13 @@ function listItem(line: string): { ordered: boolean; text: string } | null {
   return null;
 }
 
+/** Whether a pipe table starts here: a row of cells with a dashed separator line under it. */
 function isTableStart(lines: string[], i: number): boolean {
   const next = lines[i + 1];
   return (lines[i] ?? '').trim().startsWith('|') && next !== undefined && /^\s*\|?\s*:?-{3,}/.test(next);
 }
 
+/** Builds a table from its rows: the first row is the header, the second (the dashes) is skipped. */
 function table(rows: string[]): ElementNode {
   const cells = (row: string) => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
   const head = cells(rows[0] ?? '');
@@ -164,6 +172,7 @@ function table(rows: string[]): ElementNode {
   ]);
 }
 
+/** Builds a code block with its caption (the file path a live sample came from) and its coloured code. */
 function codeBlock(language: string, caption: string, code: string): ElementNode {
   const children: MarkdownNode[] = [];
   if (caption) {

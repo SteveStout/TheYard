@@ -291,5 +291,6 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         return new FileEntry(name, relative, entry.SizeBytes, entry.ModifiedMs, Path.GetExtension(name).TrimStart('.').ToLowerInvariant());
     }
 
+    /// <summary>Milliseconds since a Stopwatch timestamp, the took_ms every answer reports so a slow folder shows itself.</summary>
     private static long Elapsed(long started) => (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds;
 }

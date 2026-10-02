@@ -15,7 +15,7 @@ commit: [/api/version](https://theshed.stevenstout.biz/api/version).
 - [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): nine pages, the
   numbers, the quick start, the choices and why, where it goes next, every item of the brief with its
   code, and the code in ten pieces, each linked to where TheYard does the same at full size.
-- [About Steven](https://theshed.stevenstout.biz/?view=docs&doc=about): who built it.
+- [About Steven](https://theyard.stevenstout.biz/?doc=author): who built it, on TheYard.
 - [Resume](https://theshed.stevenstout.biz/resume.pdf).
 
 ## Run it
@@ -53,7 +53,7 @@ npm run build
 
 | Suite | Count | What it covers |
 | --- | --- | --- |
-| xUnit | 114 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (layering, sealed, no em dash, no raw colour, the rules table, the front end); a measured search over 10,000 files. |
+| xUnit | 116 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (layering, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the front end); a measured search over 10,000 files. |
 | node --test | 21 | The address parser and serializer, the byte and date formatting, the markdown reader (a `<script>` arrives as text, an image keeps its alt text). |
 
 The build treats warnings as errors and a public member without a summary is a warning.
@@ -104,7 +104,7 @@ Controllers/          FilesController, DocumentationAndVersionController, Proble
 Composition/          the registrations and the pipeline Program.cs calls, as TheYard's are
 Documentation/        DocumentationCatalog, LiveSamples, VersionReader: the documents the app serves
 src/                  the page, TypeScript: main.ts (the list of parts), navigation.ts, lib (pure), ui (renders)
-wwwroot/              index.html, css/tokens.css, css/app.css, js (what tsc wrote from src)
+wwwroot/              index.html, css (tokens.css, then one sheet per part), js (what tsc wrote from src)
 tests/                TestProject.Tests (xUnit), js (node --test)
 docs/                 the records and the guides
 sample-home/          what is browsed until Files:Home is set
@@ -128,7 +128,7 @@ The Shed is a sample, and the parts worth keeping go back to the project it sits
   views to WCAG 2.1 AA: [The accessibility check](https://theyard.stevenstout.biz/?doc=adr-a11y-check).
 
 Each step is something TheYard already does at full size (.NET 10 and React, Azure SQL and Cosmos
-DB, 86 records, about 1,950 test runs per gate): paging 100,000 vehicles behind Load more
+DB, 87 records, about 2,000 test runs per gate): paging 100,000 vehicles behind Load more
 ([the API reference](https://theyard.stevenstout.biz/api/reference)), and keeping every request and
 error for three years ([Logs that outlive the container](https://theyard.stevenstout.biz/?doc=adr-kept-logs)).
 

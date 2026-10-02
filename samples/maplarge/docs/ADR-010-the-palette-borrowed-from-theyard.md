@@ -41,14 +41,24 @@ Two hundred lines of tokens for a page that uses forty of them. The unused ones 
 sheet is recognisably the same document as its source, and so a later change can reach for a token
 that is already there rather than inventing a near match.
 
+## Addendum, 2 October: one stylesheet per part of the page
+
+The single `app.css` grew to more than eight hundred lines, which is the kind of file the 300-line
+rule exists to stop, so it is split by part of the page: `base.css`, `header.css`, `page.css`,
+`controls.css`, `dialog.css`, `browser.css`, `documents.css`, `phone.css` and `views.css`, linked
+from `index.html` in that order after `tokens.css`. Each sheet opens with what it styles and which
+view uses it. The rules above now apply to every sheet but `tokens.css`: none writes a colour,
+every token it uses is declared, and every sheet closes each brace it opens. `StyleRulesTests`
+holds all three, and `FileShapeTests` holds stylesheets to 300 lines.
+
 ## Files
 
 - [`wwwroot/css/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/css/tokens.css): the tokens, and the `@font-face`.
-- [`wwwroot/css/app.css`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/css/app.css): everything else, in tokens.
+- [`wwwroot/css/`](https://github.com/SteveStout/TheYard/tree/main/samples/maplarge/wwwroot/css): everything else, one sheet per part of the page, in tokens.
 - [`wwwroot/fonts/OFL.txt`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/fonts/OFL.txt): the font's licence.
 - [TheYard's `src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the source of the values.
 
 The panel, with its rule and brackets:
 
-```live path=wwwroot/css/app.css region=page
+```live path=wwwroot/css/page.css region=page
 ```

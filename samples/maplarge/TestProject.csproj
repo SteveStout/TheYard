@@ -17,17 +17,21 @@
   <ItemGroup>
     <None Include="wwwroot\index.html" />
     <!-- What a publish carries beyond the binaries: the records, the README the Docs tab serves, the
-         sample home, and the source files the live samples read at request time (ADR-012).
-         appsettings.json already travels. DocumentationTests holds it for every document the
-         catalogue lists. -->
+         sample home, and the source files the live samples read at request time (ADR-012), this
+         project file and the test sources among them. appsettings.json already travels.
+         PublishListTests holds it for every document the catalogue lists and every file a live
+         code block in a document names. -->
     <Content Include="docs\**\*.md;README.md;sample-home\**\*" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="Data\**\*.cs;Domain\**\*.cs;Application\**\*.cs;Infrastructure\**\*.cs;Controllers\**\*.cs;Composition\**\*.cs;Documentation\**\*.cs;Program.cs;.editorconfig;Dockerfile" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Data\**\*.cs;Domain\**\*.cs;Application\**\*.cs;Infrastructure\**\*.cs;Controllers\**\*.cs;Composition\**\*.cs;Documentation\**\*.cs;Program.cs;TestProject.csproj;.editorconfig;Dockerfile" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="src\**\*.ts" CopyToPublishDirectory="PreserveNewest" />
     <Content Update="tsconfig.json" CopyToPublishDirectory="PreserveNewest" />
     <Content Remove="package.json;package-lock.json" />
+    <!-- The tests never compile into the app and their build output never ships. Their source files
+         travel as text, after the removal, because two records quote them (ADR-001, ADR-008). -->
     <Compile Remove="tests\**" />
     <Content Remove="tests\**" />
     <None Remove="tests\**" />
+    <Content Include="tests\TestProject.Tests\**\*.cs" Exclude="tests\**\bin\**;tests\**\obj\**" CopyToPublishDirectory="PreserveNewest" />
     <!-- The compiler's own folder is not content; the Web SDK skips it for wwwroot, this says so for the root too. -->
     <Content Remove="node_modules\**" />
     <None Remove="node_modules\**" />

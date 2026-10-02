@@ -47,6 +47,18 @@ A markdown reader of a hundred and fifty lines that a library would replace. It 
 the brief asked for original code over libraries, because it is the reason a document cannot carry
 markup into the page, and because it is a reasonable thing to talk about in a code review.
 
+## Addendum, 2 October: one About page, and every quoted file is published
+
+About Steven is no longer in the catalogue. The page lives on TheYard, and the header, Start here
+and the README link to it there, so there is one copy to keep current instead of two that drift
+apart. The Docs tab now opens with Start here and the README.
+
+Two records quoted files the publish left out: ADR-001 quotes `TestProject.csproj` and ADR-008
+quotes `tests/TestProject.Tests/PerformanceTests.cs`. Every test passed, because the tests read the
+source folder, while the live site reads the published output and showed the missing-sample note
+in both. The project file now publishes both, and `PublishListTests` holds every file a live block
+names to the publish list, so the gap fails the build instead of reaching a reader.
+
 ## Files
 
 - [`Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Documentation/DocumentationCatalog.cs): the list and the slugs.
@@ -55,6 +67,7 @@ markup into the page, and because it is a reasonable thing to talk about in a co
 - [`Controllers/DocumentationAndVersionController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/DocumentationAndVersionController.cs): the three routes.
 - [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/markdown.ts): the reader.
 - [`tests/TestProject.Tests/DocumentationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/DocumentationTests.cs): every fence resolves, every link lands.
+- [`tests/TestProject.Tests/PublishListTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/PublishListTests.cs): every document and every quoted file travels with a publish.
 
 The allowed roots, and the check:
 

@@ -15,6 +15,7 @@
 
 import { ApiError, type DocumentEntry, type FileEntry, type FolderEntry, type Listing, type SearchResult, type TransferResult, type VersionInfo } from './types.js';
 
+/** Folder listings already asked for, by folder path. Holds the promise, so two callers share one request. */
 const listings = new Map<string, Promise<Listing>>();
 
 /**
@@ -34,6 +35,10 @@ export async function problemOf(response: Response): Promise<ApiError> {
   return new ApiError(detail, response.status);
 }
 
+/**
+ * Asks the server for JSON with a GET and returns it as the given type. A failure becomes an
+ * ApiError carrying the server's own sentence, so every reader shows the same kind of message.
+ */
 async function get<T>(url: string): Promise<T> {
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) {
@@ -42,6 +47,10 @@ async function get<T>(url: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+/**
+ * Sends a write (POST or DELETE) and returns the JSON answer, or null when the server answers 204
+ * with no body. A failure becomes an ApiError, the same as get.
+ */
 async function send<T>(url: string, options: RequestInit): Promise<T | null> {
   const response = await fetch(url, options);
   if (!response.ok) {
@@ -95,6 +104,10 @@ export function forgetAround(path: string): void {
 }
 // #endregion cache
 
+/**
+ * Asks the server for every name under a folder that matches the query, at any depth. Searches
+ * are not cached, because a search is typed once and the next keystroke asks again.
+ */
 export function search(path: string, q: string, limit?: number): Promise<SearchResult> {
   const params = new URLSearchParams({ path, q });
   if (limit) {
@@ -103,23 +116,37 @@ export function search(path: string, q: string, limit?: number): Promise<SearchR
   return get<SearchResult>(`/api/files/search?${params}`);
 }
 
+/** The address that downloads one file. The browser follows it as a plain link, so nothing is held in the page. */
 export function downloadUrl(path: string): string {
   return `/api/files/download?path=${encodeURIComponent(path)}`;
 }
 
+/**
+ * Asks the server to make a folder and returns the new entry. The parent's listing is forgotten,
+ * so the next look at that folder shows the new one.
+ */
 export async function createFolder(path: string, name: string): Promise<FolderEntry> {
   const result = await send<FolderEntry>(`/api/files/folder?path=${encodeURIComponent(path)}&name=${encodeURIComponent(name)}`, { method: 'POST' });
   forget(path);
   return result as FolderEntry;
 }
 
+/**
+ * Asks the server to delete a file or a folder with everything in it. The parent's listing and the
+ * path's own listings are forgotten, because both just changed.
+ */
 export async function remove(path: string): Promise<void> {
   await send(`/api/files?path=${encodeURIComponent(path)}`, { method: 'DELETE' });
   forgetAround(path);
 }
 
+/** The header every JSON body is sent with. */
 const json = { 'Content-Type': 'application/json' };
 
+/**
+ * Asks the server to move or rename a file or folder and returns where it now is. The listings
+ * around both the old and the new place are forgotten, because the entry left one and joined the other.
+ */
 export async function move(from: string, to: string): Promise<FolderEntry | FileEntry> {
   const result = await send<FolderEntry | FileEntry>('/api/files/move', { method: 'POST', headers: json, body: JSON.stringify({ from, to }) });
   forgetAround(from);
@@ -127,6 +154,10 @@ export async function move(from: string, to: string): Promise<FolderEntry | File
   return result as FolderEntry | FileEntry;
 }
 
+/**
+ * Asks the server to copy a file or folder and returns the copy. Only the listings around the new
+ * place are forgotten, because the original did not change.
+ */
 export async function copy(from: string, to: string): Promise<FolderEntry | FileEntry> {
   const result = await send<FolderEntry | FileEntry>('/api/files/copy', { method: 'POST', headers: json, body: JSON.stringify({ from, to }) });
   forgetAround(to);
@@ -176,10 +207,15 @@ export function upload(path: string, file: File, overwrite: boolean, onProgress:
 }
 // #endregion upload
 
+/** Asks the server for the list of documents the Docs tab shows, in sidebar order. */
 export function listDocuments(): Promise<DocumentEntry[]> {
   return get<DocumentEntry[]>('/api/docs');
 }
 
+/**
+ * Asks the server for one document as markdown text. It is read as text, not JSON, because the
+ * page renders the markdown itself.
+ */
 export async function fetchDocument(slug: string): Promise<string> {
   const response = await fetch(`/api/docs/${encodeURIComponent(slug)}`);
   if (!response.ok) {
@@ -188,6 +224,7 @@ export async function fetchDocument(slug: string): Promise<string> {
   return response.text();
 }
 
+/** Asks the server which version and commit it is running, for the footer. */
 export function version(): Promise<VersionInfo> {
   return get<VersionInfo>('/api/version');
 }

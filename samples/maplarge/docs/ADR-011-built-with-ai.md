@@ -12,7 +12,7 @@ none.
 ## Decision
 
 The project was built with an AI assistant (Claude) in the working method TheYard was built with:
-the shape is decided and the tests are listed before any code, the assistant drafts against that
+the shape is decided and the tests are listed before any code. The assistant drafts against that
 list, and a person reads the result before it goes anywhere.
 
 **Decided by a person, before code.** What the brief was asking for and how it would be read; that

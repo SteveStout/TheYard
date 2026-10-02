@@ -6,12 +6,14 @@
  * (More in docs/ADR-004-the-wire.md.)
  */
 
+/** One folder in a listing or a search result; sent by GET /api/files and GET /api/files/search. */
 export interface FolderEntry {
   name: string;
   path: string;
   modified_ms: number;
 }
 
+/** One file in a listing, a search result or an upload answer; sent by the same routes and by POST /api/files/upload. */
 export interface FileEntry {
   name: string;
   path: string;
@@ -20,12 +22,14 @@ export interface FileEntry {
   extension: string;
 }
 
+/** The counts and the bytes under the view, computed by the server so the page never adds them up itself. */
 export interface Totals {
   folder_count: number;
   file_count: number;
   total_bytes: number;
 }
 
+/** The answer to GET /api/files: one folder's contents, its parent, its totals and how long it took. */
 export interface Listing {
   path: string;
   parent: string | null;
@@ -35,6 +39,7 @@ export interface Listing {
   took_ms: number;
 }
 
+/** The answer to GET /api/files/search: every match under a folder, and whether the limit cut the list short. */
 export interface SearchResult {
   query: string;
   path: string;
@@ -45,17 +50,20 @@ export interface SearchResult {
   took_ms: number;
 }
 
+/** The answer to POST /api/files/upload: the files written and the folder's new totals. */
 export interface TransferResult {
   entries: FileEntry[];
   totals: Totals;
 }
 
+/** One document in GET /api/docs, the list the Docs tab shows. */
 export interface DocumentEntry {
   slug: string;
   title: string;
   group: string;
 }
 
+/** The answer to GET /api/version: the version from the changelog and the commit it was built from. */
 export interface VersionInfo {
   version: string;
   commit: string;

@@ -1,0 +1,99 @@
+/*
+ * The phone layout: below a set width the dialog fills the screen, the toolbar stacks and the
+ * table drops its less useful columns. Used on small screens by every view, and linked after the
+ * other sheets so its rules win.
+ * Colours, fonts and spacing come from the custom properties in tokens.css; this file
+ * never writes a colour value (StyleRulesTests). More in
+ * docs/ADR-010-the-palette-borrowed-from-theyard.md.
+ */
+
+/* #region phone */
+@media (max-width: 720px) {
+  .site-header {
+    padding: var(--space-3) var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .site-nav {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  main {
+    width: calc(100% - var(--space-6));
+    margin: var(--space-4) auto;
+  }
+
+  dialog.shed {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  dialog.shed .panel {
+    border-radius: 0;
+    padding: var(--space-3);
+  }
+
+  .docs {
+    grid-template-columns: 1fr;
+  }
+
+  .docs nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+    max-height: 30vh;
+  }
+
+  /* On a narrow screen the table becomes a stacked list. Each row shows the name on its own
+     line, the size and date below it, and the action buttons on their own line at a size easy
+     to tap. Four buttons beside the name would leave a long file name too little room. */
+  thead {
+    display: none;
+  }
+
+  table,
+  tbody,
+  tr,
+  td {
+    display: block;
+  }
+
+  tbody tr {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  tbody td {
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  td.name {
+    width: auto;
+    font-size: var(--text-md);
+  }
+
+  td.num {
+    display: inline-block;
+    margin-right: var(--space-3);
+    font-size: var(--text-xs);
+  }
+
+  td.num:empty {
+    display: none;
+  }
+
+  td.actions {
+    text-align: left;
+    margin-top: var(--space-2);
+  }
+
+  td.actions button {
+    height: auto;
+    min-height: var(--touch-target);
+    margin: 0 var(--space-1) var(--space-1) 0;
+  }
+}
+/* #endregion phone */

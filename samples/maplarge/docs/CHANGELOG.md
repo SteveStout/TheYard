@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.28 Every record shows its code on the live site: the publish carries TestProject.csproj and the test sources that ADR-001 and ADR-008 quote, and PublishListTests holds every quoted file to the publish list. About Steven links to the page on TheYard instead of keeping a copy; Start here says ten pieces; the stylesheet is one sheet per part of the page; the two largest test files are split by job; every helper, wire type and API call in the page and the tests says what it does and why.
 - 1.0.0.27 The Shed, explained gains piece 8, src/main.ts, where the page's TypeScript starts, read like Program.cs; the code tour is ten pieces.
 - 1.0.0.26 Every file shows its intention: main.ts reads like Program.cs, one line per part beside its file; browser.ts is split by job; no source file passes 300 lines (FileShapeTests); ProblemResponseHandler comments each step; brief item E is Pure TypeScript.
 - 1.0.0.25 Easy folder configuration: how the app picks the folder it shows, and what that is worth to a developer and an organization, in plain words in the code, ADR-003 and The Shed, explained.

@@ -1,0 +1,71 @@
+/*
+ * The glass content panel with its corner brackets, the main column and the footer that shows
+ * the version. Used by the home page and inside the dialog, which reuses the panel.
+ * Colours, fonts and spacing come from the custom properties in tokens.css; this file
+ * never writes a colour value (StyleRulesTests). More in
+ * docs/ADR-010-the-palette-borrowed-from-theyard.md.
+ */
+
+/* #region page */
+main {
+  flex: 1;
+  width: min(960px, 100% - var(--space-8));
+  margin: var(--space-7) auto;
+}
+
+.panel {
+  position: relative;
+  background: var(--color-surface);
+  border: var(--panel-border);
+  border-top: var(--rule-panel);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+}
+
+/* Corner brackets drawn with the ::before and ::after pseudo-elements: one sits on the thick
+   top line at the top left corner, the other on the border at the bottom right corner. */
+.panel::before,
+.panel::after {
+  content: '';
+  position: absolute;
+  width: var(--bracket-size);
+  height: var(--bracket-size);
+  border-color: var(--rule-panel-color);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.panel::before {
+  left: -1px;
+  top: calc(-1 * var(--rule-width));
+  border-width: var(--rule-width) 0 0 var(--bracket-stroke);
+  border-top-left-radius: var(--radius-glass);
+}
+
+.panel::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 var(--bracket-stroke) var(--bracket-stroke) 0;
+  border-bottom-right-radius: var(--radius-glass);
+}
+
+.panel h2 {
+  font-size: var(--text-2xl);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--rule-width) solid var(--color-gold);
+  border-image: var(--gradient-gold) 1;
+  display: inline-block;
+}
+
+.panel p {
+  max-width: 64ch;
+}
+
+.site-footer {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  padding: var(--space-4);
+}
+/* #endregion page */

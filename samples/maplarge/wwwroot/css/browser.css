@@ -1,0 +1,236 @@
+/*
+ * The file browser view: the toolbar with search, the folder trail, the totals readout, the file
+ * table with its sort headers and row actions, the drop target for uploads and the questions
+ * asked inside a row. Used by the Files view in the dialog.
+ * Colours, fonts and spacing come from the custom properties in tokens.css; this file
+ * never writes a colour value (StyleRulesTests). More in
+ * docs/ADR-010-the-palette-borrowed-from-theyard.md.
+ */
+
+/* #region browser */
+.toolbar {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toolbar form {
+  display: flex;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 260px;
+}
+
+.toolbar form input {
+  flex: 1;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-md);
+  min-height: var(--pill-height);
+}
+
+.crumbs button {
+  height: auto;
+  border: 0;
+  padding: var(--space-1) var(--space-2);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-sm);
+}
+
+.crumbs .here {
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+  padding: var(--space-1) var(--space-2);
+}
+
+.crumbs .sep {
+  color: var(--color-text-muted);
+}
+
+.readout {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: var(--readout-size);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+
+.readout strong {
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  letter-spacing: 0;
+  margin-right: var(--space-1);
+}
+
+.readout .warn {
+  color: var(--color-warning);
+}
+
+.grid {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.grid.dropping {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+  background: var(--color-accent-soft);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface-muted);
+  text-align: left;
+  font-size: var(--readout-size);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+thead th button {
+  all: unset;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+thead th button:focus-visible {
+  outline: var(--focus-ring);
+}
+
+thead th[aria-sort] button::after {
+  content: ' \2191';
+}
+
+thead th[aria-sort='descending'] button::after {
+  content: ' \2193';
+}
+
+tbody td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+tbody tr:hover {
+  background: var(--color-accent-soft);
+}
+
+td.name {
+  white-space: normal;
+  word-break: break-word;
+  width: 100%;
+}
+
+td.name button {
+  all: unset;
+  cursor: pointer;
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+}
+
+td.name button:focus-visible {
+  outline: var(--focus-ring);
+}
+
+td.name .kind {
+  display: inline-block;
+  width: var(--icon-sm);
+  margin-right: var(--space-2);
+  color: var(--color-teal-deep);
+  vertical-align: -2px;
+}
+
+td.num {
+  text-align: right;
+  color: var(--color-text-muted);
+}
+
+td.actions {
+  text-align: right;
+}
+
+td.actions button {
+  height: 28px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  border-width: 1px;
+  margin-left: var(--space-1);
+}
+
+.empty {
+  padding: var(--space-7);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.notice {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+  font-size: var(--text-sm);
+}
+
+.notice.error {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.notice.ok {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.progress {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+
+.progress > div {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width var(--transition-fast);
+}
+
+.actions-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.actions-row .took {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+/* #endregion browser */

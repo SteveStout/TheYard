@@ -1,0 +1,24 @@
+/*
+ * Which view shows: the file browser and the Docs view each fill the dialog's remaining height,
+ * and a view marked hidden takes no space. Used by both views, linked last so nothing overrides it.
+ * Colours, fonts and spacing come from the custom properties in tokens.css; this file
+ * never writes a colour value (StyleRulesTests). More in
+ * docs/ADR-010-the-palette-borrowed-from-theyard.md.
+ */
+
+/* #region views */
+/* The file browser and the Docs tab each fill the dialog's remaining height. The [hidden] rule
+   is needed because the display: flex set here would otherwise override the hidden attribute. */
+#browser {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+#browser[hidden],
+#docs[hidden] {
+  display: none;
+}
+/* #endregion views */
