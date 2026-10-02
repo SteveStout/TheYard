@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.27 The Shed, explained gains piece 8, src/main.ts, where the page's TypeScript starts, read like Program.cs; the code tour is ten pieces.
 - 1.0.0.26 Every file shows its intention: main.ts reads like Program.cs, one line per part beside its file; browser.ts is split by job; no source file passes 300 lines (FileShapeTests); ProblemResponseHandler comments each step; brief item E is Pure TypeScript.
 - 1.0.0.25 Easy folder configuration: how the app picks the folder it shows, and what that is worth to a developer and an organization, in plain words in the code, ADR-003 and The Shed, explained.
 - 1.0.0.24 Every link to TheYard in The Shed, explained names the page it opens and opens a different page, 23 in all.

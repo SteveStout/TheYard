@@ -14,7 +14,7 @@ commit: [/api/version](https://theshed.stevenstout.biz/api/version).
 
 - [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): nine pages, the
   numbers, the quick start, the choices and why, where it goes next, every item of the brief with its
-  code, and the code in nine pieces, each linked to where TheYard does the same at full size.
+  code, and the code in ten pieces, each linked to where TheYard does the same at full size.
 - [About Steven](https://theshed.stevenstout.biz/?view=docs&doc=about): who built it.
 - [Resume](https://theshed.stevenstout.biz/resume.pdf).
 
