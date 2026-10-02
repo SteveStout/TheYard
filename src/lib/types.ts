@@ -1,7 +1,11 @@
+/** Whether a vehicle's reserve is met, as the server works it out. */
+export type ReserveState = 'no-reserve' | 'met' | 'not-met';
+
 /**
- * A vehicle listing exactly as it appears in data/vehicles.json, the shape a
- * real inventory API would return. Field names stay snake_case to match the
- * payload, so the seam in data.ts needs no mapping layer.
+ * A vehicle listing as the API sends it: the fields of data/vehicles.json,
+ * less the reserve price, which stays on the server, plus the facts the
+ * server derives. Field names stay snake_case to match the payload, so the
+ * seam in data.ts needs no mapping layer.
  */
 export interface Vehicle {
   id: string;
@@ -30,8 +34,6 @@ export interface Vehicle {
   /** The dataset's own date string, passed through; the real window is the epoch instants below, derived by the server. */
   auction_start: string;
   starting_bid: number;
-  /** null means no reserve. Never displayed; the UI shows only the reserve state. */
-  reserve_price: number | null;
   /** null → no Buy Now option. */
   buy_now_price: number | null;
   images: string[];
@@ -49,6 +51,11 @@ export interface Vehicle {
   auction_status: 'upcoming' | 'live' | 'ended';
   /** The minimum acceptable bid right now, per the server's rules. */
   min_next_bid: number;
+  /**
+   * Whether the standing bid has reached the seller's reserve, worked out by
+   * the server. The reserve amount itself never leaves the server.
+   */
+  reserve_state: ReserveState;
   /**
    * Somebody bought this vehicle outright, so it takes no bid from anybody,
    * whatever the window says (ADR: Accounts and per-user bids, the addendum

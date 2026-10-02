@@ -12,6 +12,7 @@ import {
   labelSpot,
   partialDay,
   todayNote,
+  totalsSentence,
   pathShares,
   stackBands,
   stackCeiling,
@@ -26,6 +27,7 @@ import {
   type ActivityDay,
   type ActivitySeries,
   type ActivityVisitor,
+  type ActivityWhoEntry,
 } from './activity';
 
 /**
@@ -230,7 +232,35 @@ describe('unique visitors per day', () => {
     expect(partialDay(days, now)).toEqual({ index: 1, hours: 16 });
     expect(partialDay(days, new Date('2026-09-14T01:00:00Z'))).toBeNull();
     expect(partialDay([], now)).toBeNull();
-    expect(todayNote(16)).toBe('today, 16 h in');
+    expect(todayNote(16)).toBe('today (UTC), 16 h in');
+  });
+
+  it("calls only the hour rows' count the window's, and a kind's count the count over its whole days", () => {
+    const entry = (visitorDays: number, requests: number): ActivityWhoEntry => ({
+      visitor_days: visitorDays,
+      requests,
+      top_paths: [],
+      path: [],
+      sources: [],
+      by_store: [],
+    });
+    // A day window that opens at 14:00 UTC: the people's rows for yesterday
+    // carry their morning too, so their count is more than the window's.
+    const report = {
+      totals: { requests: 120, bots: 30, humans: 90 },
+      who: {
+        people: entry(4, 150),
+        scanners: entry(2, 20),
+        self: entry(1, 10),
+        all: entry(7, 180),
+      },
+    };
+    expect(totalsSentence(report, 'people')).toBe(
+      '4 visitor-days that looked like people across the days in the window, with 150 requests over those whole days; 120 requests in the window from everyone.'
+    );
+    expect(totalsSentence(report, 'all')).toBe(
+      "7 visitor-days across the days in the window: 4 people, 2 scanners and crawlers, 1 the site's own reads; 120 requests in the window."
+    );
   });
 
   it('reads the day under a pointer, the nearest point, never off either end', () => {

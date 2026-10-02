@@ -65,8 +65,8 @@ delegation.
 One suite per ring: Domain rules with fixed clocks, Application services with in-memory
 fakes at the ports, Infrastructure against both fixtures and the real dataset, and
 integration tests that boot the actual host in-memory (`WebApplicationFactory`) to
-verify routes, parameters, error paths, and the full bid lifecycle: 588 tests, no
-running server required.
+verify routes, parameters, error paths, and the full bid lifecycle, with no
+running server required. How many tests there are is counted in the README.
 
 ## Frontend (src/)
 

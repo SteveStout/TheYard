@@ -70,7 +70,7 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
     [Fact]
     public void The_query_avoids_the_three_things_that_made_the_first_one_a_400()
     {
-        // 1.0.0.34's query did not parse, and none of the three causes is
+        // The first query did not parse, and none of the three causes is
         // visible in C#: they are Kusto's rules. Holding them here is cheaper
         // than another deploy to find out (ADR-024, second pass).
         string kql = ReadQuery();
@@ -93,7 +93,7 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
     }
 
     /// <summary>
-    /// An empty hour says how old the newest request is (1.0.3.31), so the card
+    /// An empty hour says how old the newest request is, so the card
     /// can tell a component that stopped taking data from a quiet site.
     /// </summary>
     [Fact]
@@ -107,10 +107,69 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
         var shape = typeof(TelemetryReader).GetMethod("Shape", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.NotNull(shape);
 
-        string json = JsonSerializer.Serialize(shape!.Invoke(null, [body]));
+        string json = JsonSerializer.Serialize(shape!.Invoke(null, [body, null]));
 
         Assert.Contains("\"newest_request_at\":\"2026-09-25T18:04:11.52Z\"", json, StringComparison.Ordinal);
         Assert.Contains("\"total\":0", json, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Both sites send to one Application Insights component, so a query with
+    /// no filter counted the two together and both cards showed the same
+    /// figure. With the site's name, every table is filtered to that site's
+    /// cloud_RoleName; without one, nothing is filtered. Counts add up
+    /// itemCount, because the distro samples and a kept row stands for more
+    /// than one request.
+    /// </summary>
+    [Fact]
+    public void The_query_counts_this_site_alone_when_its_name_is_known_and_adds_up_sampled_rows()
+    {
+        string named = InvokePrivate<string>("QueryFor", "theyard-cosmos");
+        string unnamed = InvokePrivate<string>("QueryFor", [null]);
+
+        Assert.Contains("let site_role = \"theyard-cosmos\";", named, StringComparison.Ordinal);
+        Assert.Contains("let site_role = \"\";", unnamed, StringComparison.Ordinal);
+        // One filter for each of the five blocks: summary, slowest, exceptions, browser and newest.
+        Assert.Equal(5, named.Split("cloud_RoleName =~ site_role").Length - 1);
+        Assert.DoesNotContain("count()", named, StringComparison.Ordinal);
+        Assert.Contains("total = sum(itemCount)", named, StringComparison.Ordinal);
+        Assert.Contains("calls = sum(itemCount)", named, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("theyard", "theyard")]
+    [InlineData("theyard-cosmos", "theyard-cosmos")]
+    [InlineData("the\"yard", null)]
+    [InlineData("theyard | take 1", null)]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void Only_a_site_name_ever_goes_into_the_query(string? given, string? kept) =>
+        Assert.Equal(kept, InvokePrivate<string?>("SiteNameOrNull", [given]));
+
+    [Fact]
+    public void The_card_is_told_whose_requests_the_figures_count()
+    {
+        using var body = JsonDocument.Parse("""
+            {"tables":[{"name":"PrimaryResult",
+              "columns":[{"name":"part"},{"name":"total"},{"name":"failed"},{"name":"p50"},{"name":"p95"}],
+              "rows":[["requests",12,0,4.5,9.1]]}]}
+            """);
+
+        string mine = JsonSerializer.Serialize(InvokePrivate<object>("Shape", body, "theyard"));
+        string both = JsonSerializer.Serialize(InvokePrivate<object>("Shape", body, null));
+
+        Assert.Contains("\"site\":\"theyard\"", mine, StringComparison.Ordinal);
+        Assert.Contains("Counts theyard only", mine, StringComparison.Ordinal);
+        Assert.Contains("\"site\":null", both, StringComparison.Ordinal);
+        Assert.Contains("both sites together", both, StringComparison.Ordinal);
+    }
+
+    /// <summary>One of the reader's private static helpers, called by name, for the same reason the query is read by reflection.</summary>
+    private static T InvokePrivate<T>(string name, params object?[] arguments)
+    {
+        var method = typeof(TelemetryReader).GetMethod(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.NotNull(method);
+        return (T)method!.Invoke(null, arguments)!;
     }
 
     /// <summary>

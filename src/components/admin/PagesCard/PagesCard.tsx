@@ -6,7 +6,8 @@ import styles from '../shared/card.module.css';
 import type { PageEntry, PageStatus, Fetched } from '../shared/types';
 import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
-import { formatNumber, formatDateTime } from '../../../lib/format';
+import { formatDateTime } from '../../../lib/format';
+import { durationWords } from '../../../lib/duration';
 
 /** An address: what it is, what kind, what it answered, and how much and how fast. */
 const PAGE_COLUMNS: Column<PageEntry>[] = [
@@ -20,7 +21,7 @@ const PAGE_COLUMNS: Column<PageEntry>[] = [
   },
   { name: 'Type', mono: true, cell: (entry) => entry.content_type ?? 'none' },
   { name: 'Bytes', mono: true, num: true, cell: (entry) => entry.bytes.toLocaleString() },
-  { name: 'Took', mono: true, num: true, cell: (entry) => `${formatNumber(entry.ms)} ms` },
+  { name: 'Took', mono: true, num: true, cell: (entry) => durationWords(entry.ms) },
 ];
 
 /**
@@ -155,7 +156,7 @@ export default function PagesCard({
                 <strong>
                   {report.up} of {report.checked} addresses answered
                 </strong>{' '}
-                in {report.ms} ms, checked for {report.version} at {report.commit},{' '}
+                in {durationWords(report.ms)}, checked for {report.version} at {report.commit},{' '}
                 {report.trigger === 'roll' ? 'on the roll' : 'when asked'}, at{' '}
                 {formatDateTime(report.at)}.
               </p>

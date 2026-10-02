@@ -61,7 +61,7 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
             Operation(at.AddMinutes(1), 6, 10),
         };
 
-        var view = DocumentLoad.From(operations, "Azure Cosmos DB");
+        var view = DocumentLoad.From(operations, "Azure Cosmos DB", at.AddMinutes(3).AddSeconds(10));
 
         Assert.True(view.Available);
         Assert.Equal(12, view.RequestUnits);
@@ -69,9 +69,13 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
         Assert.Equal(2, view.Minutes.Count);
         Assert.Equal(6, view.Minutes[0].RequestUnits);
         Assert.Equal(2, view.Minutes[0].Operations);
-        // Six request units in a minute is a hundredth of one second's free
-        // allowance, which is the comparison the card makes.
+        // Six request units in a minute is a tenth of a request unit a second
+        // on average, a hundredth of a per cent of the free thousand a second.
         Assert.Equal(Math.Round(6d / 60 / DocumentLoad.FreeRequestUnitsPerSecond * 100, 3), view.Minutes[0].ShareOfFreePercent);
+        Assert.Equal(0.01, view.Minutes[0].ShareOfFreePercent);
+        // The oldest operation is three minutes and ten seconds back, so the
+        // ring's total is said to cover the last four minutes, rounded up.
+        Assert.Equal(4, view.SpanMinutes);
         // Nearest rank over three samples: the median is the second of them.
         Assert.Equal(6, view.P50Ms);
         Assert.Equal(10, view.P95Ms);
@@ -80,11 +84,12 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
     [Fact]
     public void An_empty_operations_ring_says_so_rather_than_drawing_a_zero()
     {
-        var view = DocumentLoad.From([], "Azure Cosmos DB");
+        var view = DocumentLoad.From([], "Azure Cosmos DB", DateTimeOffset.UtcNow);
 
         Assert.False(view.Available);
         Assert.NotNull(view.Note);
         Assert.Empty(view.Minutes);
+        Assert.Null(view.SpanMinutes);
     }
 
     /// <summary>
@@ -169,6 +174,8 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
         var document = body.RootElement.GetProperty("document");
         Assert.True(document.TryGetProperty("free_request_units_per_second", out var allowance));
         Assert.Equal(DocumentLoad.FreeRequestUnitsPerSecond, allowance.GetInt32());
+        // The ring's total always travels with the stretch it covers, null while it holds nothing.
+        Assert.True(document.TryGetProperty("span_minutes", out _));
     }
 
     // #region traffic-minutes
@@ -207,6 +214,34 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
         Assert.Equal(55, minutes[1].P50Ms);
         Assert.Equal(new long[] { 55 }, minutes[1].DurationsMs);
         Assert.Empty(TrafficMinutes.From([]));
+    }
+
+    /// <summary>
+    /// The ring holds a number of requests, not an hour. When it is full, the
+    /// minute it stops at is marked, so the page says how many minutes its
+    /// figures reach back rather than calling them the last hour; a ring with
+    /// room left holds everything since the process started, and nothing is marked.
+    /// </summary>
+    [Fact]
+    public void A_full_request_ring_marks_the_minute_it_stops_at_and_a_ring_with_room_marks_none()
+    {
+        var at = new DateTimeOffset(2026, 9, 20, 11, 30, 0, TimeSpan.Zero);
+        var requests = new List<RequestEntry>
+        {
+            new(at.AddSeconds(40), "GET", "/api/vehicles", 200, 4),
+            new(at.AddMinutes(1), "GET", "/api/facets", 200, 2),
+            new(at.AddMinutes(4), "GET", "/api/vehicles", 500, 9),
+        };
+
+        var full = TrafficMinutes.OfRing(requests, 3);
+        var roomy = TrafficMinutes.OfRing(requests, 4);
+
+        Assert.Equal(3, full.Count);
+        Assert.True(full[0].Clipped);
+        Assert.False(full[1].Clipped);
+        Assert.False(full[2].Clipped);
+        Assert.All(roomy, minute => Assert.False(minute.Clipped));
+        Assert.Empty(TrafficMinutes.OfRing([], 3));
     }
     // #endregion traffic-minutes
 

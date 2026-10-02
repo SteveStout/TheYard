@@ -199,9 +199,9 @@ Colour is half of a style guide. The other half is size, and it is held the same
 **One width scale, six steps.** A media query cannot read a CSS variable, so the steps live in
 [`src/lib/breakpoints.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/breakpoints.ts),
 and every media query in the site is written on them. Open the
-[inventory](https://theyard.stevenstout.biz/) and narrow the window to watch them change the page.
+[inventory](https://theyard.stevenstout.biz/?view=inventory) and narrow the window to watch them change the page.
 
-| Step | What starts there |
+| Step, CSS pixels wide | What starts there |
 | --- | --- |
 | 480 | A phone held upright |
 | 640 | Past a phone: pills drop to desk height |

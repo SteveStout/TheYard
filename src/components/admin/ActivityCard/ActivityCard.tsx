@@ -32,6 +32,7 @@ import {
   stackBands,
   stackCeiling,
   todayNote,
+  totalsSentence,
   xAt,
   yAt,
   type ActivityDay,
@@ -659,15 +660,13 @@ function ActivityGraph({ report, who }: { report: ActivityReport; who: ActivityW
           {view === 'store' && (
             <span className={`${chartStyles.swatch} ${chartStyles.allLine}`} aria-hidden="true" />
           )}
-          {who === 'people'
-            ? `${people.visitor_days.toLocaleString()} visitor-days that looked like people across the days in the window, ${people.requests.toLocaleString()} requests in the window.`
-            : `${shown.visitor_days.toLocaleString()} visitor-days across the days in the window: ${people.visitor_days.toLocaleString()} people, ${scanners.visitor_days.toLocaleString()} scanners and crawlers, ${self.visitor_days.toLocaleString()} the site's own reads; ${shown.requests.toLocaleString()} requests in the window.`}
+          {totalsSentence(report, who)}
         </li>
         {shown.by_store.map((store) => (
           <li key={store.store}>
             <span className={`${chartStyles.swatch} ${colour(store.store)}`} aria-hidden="true" />
             {nameOf(store.store)}: {store.visitor_days.toLocaleString()} visitor-days,{' '}
-            {store.requests.toLocaleString()} requests.
+            {store.requests.toLocaleString()} requests over those days.
           </li>
         ))}
         {report.retention !== null && (

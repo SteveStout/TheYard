@@ -70,11 +70,13 @@ export default function ErrorsCard({
       ) : errorRows.length === 0 ? (
         cardWindows.errors !== 'now' ? null : (
           <p className={cardStyles.muted}>
-            None recorded since the container started, from the server or the browser. The buffer
-            holds the last 50 and resets on every deploy; Application Insights keeps the durable
-            copy (ADR: Telemetry). A server error carries its stack, file and line beside it; the
-            exception&rsquo;s message is deliberately not here, because a message is where a
-            framework writes a connection detail and this page is public.
+            None recorded since the container started, from the server or the browser. The list
+            keeps the server&rsquo;s last 50 and the browser&rsquo;s last 50, in two rings so a
+            flood of browser reports cannot push out the server&rsquo;s, and resets on every deploy;
+            Application Insights keeps the durable copy (ADR: Telemetry). A server error carries its
+            stack, file and line beside it; the exception&rsquo;s message is deliberately not here,
+            because a message is where a framework writes a connection detail and this page is
+            public.
           </p>
         )
       ) : (

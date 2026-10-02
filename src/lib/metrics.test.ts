@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   documentStore,
   documentStoreLine,
+  percentileWords,
   sqlLine,
   timingWindow,
   type StoreWindow,
@@ -75,6 +76,36 @@ describe('the lines', () => {
       ],
     };
     expect(documentStoreLine(quiet)).toContain('no operations yet');
+  });
+
+  it('says an empty window has nothing to time, and an answer under a millisecond as one, never 0 ms', () => {
+    const empty: TimingMetrics = {
+      ...both,
+      sql: { window: 0, p50_ms: null, p95_ms: null, max_ms: null },
+      backends: [
+        { store_metrics: null },
+        {
+          store_metrics: {
+            ...ops,
+            window: 0,
+            p50_ms: null,
+            p95_ms: null,
+            max_ms: null,
+            ru_total: 0,
+            cross_partition: 0,
+          },
+        },
+      ],
+    };
+    expect(sqlLine(empty)).toBe('SQL: no statements in the ring yet, so there is nothing to time.');
+    expect(documentStoreLine(empty)).toBe(
+      'Document store: nothing to time, 0 RU over the window, no operations yet.'
+    );
+    expect(sqlLine({ ...both, sql: { window: 9, p50_ms: 0, p95_ms: 2, max_ms: 0 } })).toBe(
+      'SQL: p50 under 1 ms, p95 2 ms, slowest under 1 ms.'
+    );
+    expect(percentileWords(null, null)).toBe('no requests');
+    expect(percentileWords(0, 14)).toBe('p50 under 1 ms, p95 14 ms');
   });
 
   it('names every ring the window sentence is measured over', () => {

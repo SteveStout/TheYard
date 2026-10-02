@@ -15,6 +15,7 @@ import type {
 } from '../shared/types';
 import { useRead, failed, About, ms, msAndRu } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
+import { percentileWords } from '../../../lib/metrics';
 
 // #region comparison
 /** The rows the comparison card puts side by side: the paths a visitor actually takes (ADR: Backends, side by side). */
@@ -28,22 +29,31 @@ const COMPARED_ROUTES: { route: string; label: string }[] = [
   { route: 'POST /api/market/tick', label: 'Room tick' },
 ];
 
-/** One column of the comparison: a store, wherever it runs, on the rows the card draws. */
+/**
+ * One column of the comparison: a store, wherever it runs, on the rows the card
+ * draws. A timing is null when the store's window is empty, which the column
+ * says in words rather than as a zero.
+ */
 type StoreColumn = {
   title: string;
   store: string;
   startup: Startup;
-  requests: { window: number; p50_ms: number; p95_ms: number; by_route: RouteTiming[] };
+  requests: {
+    window: number;
+    p50_ms: number | null;
+    p95_ms: number | null;
+    by_route: RouteTiming[];
+  };
   charges: RouteCharge[];
   storeOps: string;
 };
 
 function storeOpsLine(store: StoreSummary | null, sql: SqlSummary | null): string {
   if (store !== null) {
-    return `p50 ${store.p50_ms} ms, p95 ${store.p95_ms} ms, ${store.ru_total} RU over ${store.window}, ${store.cross_partition} cross-partition`;
+    return `${percentileWords(store.p50_ms, store.p95_ms, 'no operations yet')}, ${store.ru_total} RU over ${store.window}, ${store.cross_partition} cross-partition`;
   }
   if (sql !== null) {
-    return `p50 ${sql.p50_ms} ms, p95 ${sql.p95_ms} ms over ${sql.window} statements`;
+    return `${percentileWords(sql.p50_ms, sql.p95_ms, 'no statements yet')} over ${sql.window} statements`;
   }
   return '';
 }
@@ -115,7 +125,7 @@ function columns(
       catalogue_ms: null,
       bids_ms: null,
     },
-    requests: { window: 0, p50_ms: 0, p95_ms: 0, by_route: [] },
+    requests: { window: 0, p50_ms: null, p95_ms: null, by_route: [] },
     charges: [],
     storeOps: '',
   };
@@ -140,7 +150,7 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
     const timing = column.requests.by_route.find((r) => r.route === route);
     if (timing === undefined) return 'not seen yet';
     const charge = column.charges.find((r) => r.route === route);
-    const time = `p50 ${timing.p50_ms} ms, p95 ${timing.p95_ms} ms (${timing.count})`;
+    const time = `${percentileWords(timing.p50_ms, timing.p95_ms)} (${timing.count})`;
     return charge === undefined ? time : `${time} · ${charge.ru_p50} RU`;
   };
 
@@ -165,7 +175,7 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
       cells: (c) =>
         blank(c)
           ? ''
-          : `p50 ${c.requests.p50_ms} ms, p95 ${c.requests.p95_ms} ms (${c.requests.window})`,
+          : `${percentileWords(c.requests.p50_ms, c.requests.p95_ms)} (${c.requests.window})`,
     },
     ...COMPARED_ROUTES.map((entry) => ({
       label: entry.label,

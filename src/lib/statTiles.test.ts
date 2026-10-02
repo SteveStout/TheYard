@@ -4,6 +4,8 @@ import {
   COLD_START_MINUTES,
   hourTiming,
   QUIET_BELOW_REQUESTS,
+  ringStretch,
+  ringStretchInFull,
   sparkCaption,
   sparkRuns,
   tileSentence,
@@ -135,9 +137,9 @@ describe('the stat tiles', () => {
         'errors'
       )
     ).toMatchObject({
-      value: '3',
-      detail: '3 answered 5xx, 1 reported',
-      more: "; the 5xx are the last hour's",
+      value: '1',
+      detail: '1 listed, 3 answered 5xx',
+      more: '; the list is the most recent from the server and the browser, the 5xx are from the last hour',
       tone: 'bad',
     });
     // A check that fails while the site still calls itself healthy is the fallback serving: amber.
@@ -191,6 +193,67 @@ describe('the stat tiles', () => {
     expect(tiles.find((t) => t.key === 'speed')?.spark).toEqual([1, 2]);
     expect(tiles.find((t) => t.key === 'memory')?.spark).toEqual([3, 4]);
     expect(tiles.find((t) => t.key === 'version')?.spark).toBeUndefined();
+  });
+
+  it('names each error count with its own window, and never takes the larger of the two', () => {
+    // Before the error list is read, the number is the 5xx count, and the line says so.
+    expect(
+      tile(
+        { ...quietDay, traffic: { ...quietDay.traffic!, server_errors: 2 }, errors: null },
+        'errors'
+      )
+    ).toMatchObject({
+      value: '2',
+      detail: '2 answered 5xx',
+      more: '; the 5xx are from the last hour',
+      tone: 'bad',
+    });
+    // A list longer than the 5xx count is still the list's number, not the larger one by accident.
+    expect(
+      tile(
+        { ...quietDay, traffic: { ...quietDay.traffic!, server_errors: 9 }, errors: 4 },
+        'errors'
+      ).value
+    ).toBe('4');
+    expect(tile(quietDay, 'errors')).toMatchObject({
+      value: '0',
+      detail: 'no 5xx answered and none listed',
+      tone: 'good',
+    });
+  });
+
+  it('says how far back the request ring reaches when it stops short of the hour', () => {
+    const short = { ...quietDay, traffic: { ...quietDay.traffic!, ring_minutes: 6 } };
+    expect(tileSentence(tile(short, 'speed'))).toBe(
+      '95th 180 ms over 240 requests in the last 6 minutes, all the request ring holds'
+    );
+    expect(tile(short, 'errors').more).toBe(
+      '; the list is the most recent from the server and the browser, the 5xx are from the last 6 minutes'
+    );
+    expect(ringStretch(null)).toBe('last hour');
+    expect(ringStretch(1)).toBe('last minute');
+    expect(ringStretchInFull(6)).toBe('last 6 minutes, all the request ring holds');
+    expect(ringStretchInFull(undefined)).toBe('last hour');
+  });
+
+  it('says the stretch a request unit total covers, when the server says it', () => {
+    expect(
+      tile(
+        { ...quietDay, charged: { request_units: 22.2, free_per_second: 1000, span_minutes: 4 } },
+        'charged'
+      )
+    ).toMatchObject({
+      value: '22.2',
+      detail: 'RU over the last 4 min',
+      more: '; 1,000 a second is free',
+    });
+  });
+
+  it('says the visitors day is the UTC one the server counts', () => {
+    expect(tile(quietDay, 'visitors')).toMatchObject({
+      label: 'Visitors today',
+      detail: 'since midnight UTC, bots left out',
+    });
   });
 
   it('says there is no document store where there is none, and does not wait for one', () => {

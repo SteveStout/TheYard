@@ -1,7 +1,7 @@
 /**
  * Does:      Lists every decision record the site serves, numbered, as data.
  * Does not:  Hold any other document, say which sidebar section shows a record, or draw anything.
- * Used by:   documents.ts.
+ * Used by:   documents.ts, sections.test.ts.
  */
 import type { DocEntry } from './documents';
 

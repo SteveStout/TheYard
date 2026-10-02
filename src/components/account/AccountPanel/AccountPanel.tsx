@@ -9,7 +9,7 @@ import {
   type Account,
   type HistoryEntry,
 } from '../../../lib/auth';
-import { formatCurrency } from '../../../lib/format';
+import { formatCurrency, formatDate } from '../../../lib/format';
 import styles from './AccountPanel.module.css';
 
 interface AccountPanelProps {
@@ -275,9 +275,7 @@ function SignedIn({
         <div>
           <h2 className={styles.heading}>{account.email}</h2>
           {account.memberSinceMs !== null && (
-            <p className={styles.lede}>
-              Signed up {new Date(account.memberSinceMs).toLocaleDateString()}
-            </p>
+            <p className={styles.lede}>Signed up {formatDate(account.memberSinceMs)}</p>
           )}
         </div>
         <button

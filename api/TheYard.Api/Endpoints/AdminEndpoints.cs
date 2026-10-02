@@ -243,8 +243,8 @@ public static class AdminEndpoints
             requests = new
             {
                 window = requests.Count,
-                p50_ms = Percentiles.Of(requestDurations, 50),
-                p95_ms = Percentiles.Of(requestDurations, 95),
+                p50_ms = Percentiles.OfOrNull(requestDurations, 50),
+                p95_ms = Percentiles.OfOrNull(requestDurations, 95),
                 by_path = Percentiles.ByPath(requests),
                 // The same window by route, for the comparison card: a bid on one
                 // vehicle and a bid on another are one row (ADR: Backends, side by side).
@@ -262,9 +262,9 @@ public static class AdminEndpoints
             sql = new
             {
                 window = statements.Count,
-                p50_ms = Percentiles.Of(sqlDurations, 50),
-                p95_ms = Percentiles.Of(sqlDurations, 95),
-                max_ms = sqlDurations.Length == 0 ? 0 : sqlDurations.Max(),
+                p50_ms = Percentiles.OfOrNull(sqlDurations, 50),
+                p95_ms = Percentiles.OfOrNull(sqlDurations, 95),
+                max_ms = sqlDurations.Length == 0 ? (long?)null : sqlDurations.Max(),
             },
             // #region store-metrics
             // The same window over the document store, with what the window cost:
@@ -304,9 +304,9 @@ public static class AdminEndpoints
                     : new
                     {
                         window = statements.Count,
-                        p50_ms = Percentiles.Of(sqlDurations, 50),
-                        p95_ms = Percentiles.Of(sqlDurations, 95),
-                        max_ms = sqlDurations.Length == 0 ? 0 : sqlDurations.Max(),
+                        p50_ms = Percentiles.OfOrNull(sqlDurations, 50),
+                        p95_ms = Percentiles.OfOrNull(sqlDurations, 95),
+                        max_ms = sqlDurations.Length == 0 ? (long?)null : sqlDurations.Max(),
                     },
             }).ToArray(),
             // #endregion backends-metrics
@@ -324,8 +324,8 @@ public static class AdminEndpoints
             return new
             {
                 window = served.Count,
-                p50_ms = Percentiles.Of(durations, 50),
-                p95_ms = Percentiles.Of(durations, 95),
+                p50_ms = Percentiles.OfOrNull(durations, 50),
+                p95_ms = Percentiles.OfOrNull(durations, 95),
                 by_route = Routes.ByRoute(served),
             };
         }
@@ -403,21 +403,24 @@ public static class AdminEndpoints
         var startedAt = start.At;
         var relational = backends.Named("sql");
         var load = await ResourceStats.ReadAsync(relational, RingSizes.MachineSamples, cancellation, loggers.CreateLogger(environment.ApplicationName));
-        var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB");
+        var now = DateTimeOffset.UtcNow;
+        var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB", now);
         return Results.Json(new
         {
             // The hour below is this process's own memory and is always here. A
             // wider window is read from the store, in buckets sized to it.
             windows = MachineWindows.Names,
-            history = await kept.ReadAsync(window, DateTimeOffset.UtcNow, cancellation),
+            history = await kept.ReadAsync(window, now, cancellation),
             // The request ring a minute at a time, in the unit a kept minute is
-            // written in, so the hour and the month are one chart.
-            traffic = new { ring = RingSizes.RequestRing, minutes = TrafficMinutes.From(requestLog.Snapshot()) },
+            // written in, so the hour and the month are one chart. The ring is
+            // a number of requests and not an hour: when it is full its oldest
+            // minute is marked, and the page says how many minutes it reaches.
+            traffic = new { ring = RingSizes.RequestRing, minutes = TrafficMinutes.OfRing(requestLog.Snapshot(), RingSizes.RequestRing) },
             container = new
             {
                 memory_limit_mb = MachineSampler.MemoryLimitMb,
                 processors = MachineSampler.Processors,
-                uptime_seconds = (long)(DateTimeOffset.UtcNow - startedAt).TotalSeconds,
+                uptime_seconds = (long)(now - startedAt).TotalSeconds,
                 every_seconds = (int)MachineSampler.Every.TotalSeconds,
                 samples = sampler.Snapshot(),
                 // Which catalogues this process is holding right now, because a
@@ -446,6 +449,9 @@ public static class AdminEndpoints
                 p50_ms = document.P50Ms,
                 p95_ms = document.P95Ms,
                 free_request_units_per_second = DocumentLoad.FreeRequestUnitsPerSecond,
+                // How many minutes back the operations ring reaches, so the
+                // request units above are a total over a stated stretch.
+                span_minutes = document.SpanMinutes,
                 minutes = document.Minutes,
             },
         });

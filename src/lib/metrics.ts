@@ -5,20 +5,50 @@
  * document store, and where a container has no document store the card says
  * so in words rather than leaving the line out.
  */
+import { millisecondsWords } from './statTiles';
 
-/** The document store's window as /api/admin/metrics answers it, per backend and at the top level. */
+/**
+ * The document store's window as /api/admin/metrics answers it, per backend and
+ * at the top level. A timing is null when the window is empty: there is no
+ * median of nothing, and a zero would read as an answer in no time.
+ */
 export type StoreWindow = {
   store: string;
   window: number;
-  p50_ms: number;
-  p95_ms: number;
-  max_ms: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  max_ms: number | null;
   ru_total: number;
   cross_partition: number;
 };
 
-/** The relational store's window: the SQL ring's percentiles. */
-export type SqlWindow = { window: number; p50_ms: number; p95_ms: number; max_ms: number };
+/** The relational store's window: the SQL ring's percentiles, null when the ring is empty. */
+export type SqlWindow = {
+  window: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  max_ms: number | null;
+};
+
+/**
+ * A window's median and ninety-fifth in words, "p50 4 ms, p95 under 1 ms", or
+ * `none` when the window held nothing to time. The rings keep whole
+ * milliseconds, so a zero is an answer under a millisecond and is said so.
+ */
+export function percentileWords(
+  p50: number | null,
+  p95: number | null,
+  none = 'no requests'
+): string {
+  return p50 === null || p95 === null
+    ? none
+    : `p50 ${millisecondsWords(p50)}, p95 ${millisecondsWords(p95)}`;
+}
+
+/** A timing that may be missing, in words: the empty window's word, or the milliseconds. */
+function timingWords(ms: number | null, none: string): string {
+  return ms === null ? none : millisecondsWords(ms);
+}
 
 /** As much of the metrics answer as the Timing card reads. */
 export type TimingMetrics = {
@@ -59,9 +89,13 @@ export function timingWindow(metrics: TimingMetrics): string {
   return `Measured in this process, over the last ${rings[0]}, ${rings[1]} and ${rings[2]}, with the endpoints this page reads left out so it does not fill with the act of being read.`;
 }
 
-/** The relational store's line: the same three numbers it has always shown. */
+/** The relational store's line: the same three numbers it has always shown, or that it has none yet. */
 export function sqlLine(metrics: TimingMetrics): string {
-  return `SQL: p50 ${metrics.sql.p50_ms} ms, p95 ${metrics.sql.p95_ms} ms, slowest ${metrics.sql.max_ms} ms.`;
+  const sql = metrics.sql;
+  if (sql.p50_ms === null || sql.p95_ms === null) {
+    return 'SQL: no statements in the ring yet, so there is nothing to time.';
+  }
+  return `SQL: ${percentileWords(sql.p50_ms, sql.p95_ms)}, slowest ${timingWords(sql.max_ms, 'none')}.`;
 }
 
 /**
@@ -78,6 +112,10 @@ export function documentStoreLine(metrics: TimingMetrics): string {
     store.window === 0
       ? 'no operations yet'
       : `${store.cross_partition} of ${store.window} operations fanned out across partitions`;
-  return `Document store: p50 ${store.p50_ms} ms, p95 ${store.p95_ms} ms, slowest ${store.max_ms} ms, ${store.ru_total} RU over the window, ${fanned}.`;
+  const timing =
+    store.p50_ms === null || store.p95_ms === null
+      ? 'nothing to time'
+      : `${percentileWords(store.p50_ms, store.p95_ms)}, slowest ${timingWords(store.max_ms, 'none')}`;
+  return `Document store: ${timing}, ${store.ru_total} RU over the window, ${fanned}.`;
 }
 // #endregion document-store-window

@@ -5,12 +5,11 @@ using TheYard.Domain;
 namespace TheYard.Api;
 
 /// <summary>
-/// The vehicle as the wire carries it: the dataset's twenty-nine fields, by
-/// the dataset's names, and then the five facts the server derives so the
-/// browser never has to (ADR: The API describes itself). Until 1.0.0.137 this
-/// was a JSON node with five keys appended, which the wire did not mind and
-/// the document could only describe as an object; the names, the values and
-/// the order are the same as they were.
+/// The vehicle as the wire carries it: the dataset's fields, by the dataset's
+/// names, and then the six facts the server derives so the browser never has
+/// to (ADR: The API describes itself). The one dataset field it leaves out is
+/// the reserve price: the site shows whether the reserve is met and never the
+/// amount, so the amount stays on the server and the wire carries the state.
 /// </summary>
 /// <param name="Id">The vehicle's id, a GUID.</param>
 /// <param name="Vin">The vehicle identification number.</param>
@@ -34,7 +33,6 @@ namespace TheYard.Api;
 /// <param name="City">The city the vehicle is in.</param>
 /// <param name="AuctionStart">The dataset's own date string, passed through; nothing is derived from it.</param>
 /// <param name="StartingBid">The opening bid, in whole dollars.</param>
-/// <param name="ReservePrice">The reserve price in whole dollars; null means no reserve.</param>
 /// <param name="BuyNowPrice">The buy-now price in whole dollars; null means no buy-now option.</param>
 /// <param name="Images">Gallery paths under /api/images, chosen for the body style.</param>
 /// <param name="SellingDealership">The dealership selling the vehicle.</param>
@@ -45,6 +43,7 @@ namespace TheYard.Api;
 /// <param name="AuctionEndsAt">When the auction closes, in milliseconds since the epoch, UTC.</param>
 /// <param name="AuctionStatus">live, upcoming or ended, on the server's clock at the moment of the response.</param>
 /// <param name="MinNextBid">The smallest bid the rules will accept next, in whole dollars.</param>
+/// <param name="ReserveState">no-reserve, met or not-met: whether the standing bid has reached the seller's reserve. The reserve amount is never sent.</param>
 /// <param name="Sold">True once anybody has bought the vehicle outright; a sold vehicle takes no more bids from anyone.</param>
 public sealed record VehicleView(
     string Id,
@@ -69,7 +68,6 @@ public sealed record VehicleView(
     string City,
     [property: Description("The dataset's own date string, passed through; nothing is derived from it.")] string AuctionStart,
     int StartingBid,
-    [property: Description("null means no reserve.")] int? ReservePrice,
     [property: Description("null means no buy-now option.")] int? BuyNowPrice,
     [property: Description("Gallery paths under /api/images, chosen for the body style.")] IReadOnlyList<string> Images,
     string SellingDealership,
@@ -80,16 +78,44 @@ public sealed record VehicleView(
     [property: Description("When the auction closes, in milliseconds since the epoch, UTC.")] long AuctionEndsAt,
     [property: Description("live, upcoming or ended, on the server's clock at the moment of the response.")] string AuctionStatus,
     [property: Description("The smallest bid the rules will accept next, in whole dollars.")] int MinNextBid,
+    [property: Description("no-reserve, met or not-met: whether the standing bid has reached the seller's reserve. The reserve amount is never sent.")] string ReserveState,
     [property: Description("True once anybody has bought the vehicle outright; a sold vehicle takes no more bids from anyone.")] bool Sold);
 
 /// <summary>
 /// The wire shape of a vehicle: the dataset fields plus the server-derived
-/// auction facts (window, status, minimum next bid, and whether it is sold).
-/// Deriving these once, server-side, keeps the client from re-implementing
-/// schedule math. The browser only formats and counts down.
+/// auction facts (window, status, minimum next bid, reserve state, and whether
+/// it is sold). Deriving these once, server-side, keeps the client from
+/// re-implementing schedule math and keeps the reserve amount off the wire.
+/// The browser only formats and counts down.
 /// </summary>
 public static class VehicleWire
 {
+    // #region reserve-state
+    /// <summary>The vehicle has no reserve, so it sells at any price.</summary>
+    public const string NoReserve = "no-reserve";
+
+    /// <summary>The standing bid is at or above the reserve.</summary>
+    public const string ReserveMet = "met";
+
+    /// <summary>The standing bid is below the reserve, or nobody has bid yet.</summary>
+    public const string ReserveNotMet = "not-met";
+
+    /// <summary>
+    /// Whether the reserve is met, from the reserve and the standing bid. A
+    /// null reserve means no reserve. A reserve is met once the standing bid
+    /// reaches it, exactly counting; with no bid yet it cannot be met. The
+    /// browser shows this state and is never sent the amount it comes from.
+    /// </summary>
+    public static string ReserveState(int? reservePrice, int? currentBid)
+    {
+        if (reservePrice is not { } reserve)
+        {
+            return NoReserve;
+        }
+        return currentBid is { } bid && bid >= reserve ? ReserveMet : ReserveNotMet;
+    }
+    // #endregion reserve-state
+
     // #region sold
     /// <summary>
     /// <paramref name="sold"/> is not a default parameter on purpose: every
@@ -124,7 +150,6 @@ public static class VehicleWire
             vehicle.City,
             vehicle.AuctionStart,
             vehicle.StartingBid,
-            vehicle.ReservePrice,
             vehicle.BuyNowPrice,
             vehicle.Images,
             vehicle.SellingDealership,
@@ -138,6 +163,9 @@ public static class VehicleWire
             // said otherwise. Sold rides beside it as its own fact.
             AuctionSchedule.Status(window, clock.NowMs).ToString().ToLowerInvariant(),
             BidRules.MinNextBid(vehicle),
+            // From the vehicle after the overlays, so the state matches the
+            // standing bid this same answer carries.
+            ReserveState(vehicle.ReservePrice, vehicle.CurrentBid),
             sold);
     }
     // #endregion sold

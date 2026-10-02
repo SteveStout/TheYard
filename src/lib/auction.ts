@@ -1,11 +1,13 @@
-import type { Vehicle } from './types';
+import type { ReserveState, Vehicle } from './types';
+
+export type { ReserveState };
 
 /**
  * Client-side auction presentation logic. The API owns all auction math:
- * windows, status, minimum bids, and bid validation arrive on the wire
- * (auction_starts_at / auction_ends_at / auction_status / min_next_bid).
- * The browser's only jobs are recomputing status from the window as the
- * clock ticks, and showing reserve state.
+ * windows, status, minimum bids, reserve state and bid validation arrive on
+ * the wire (auction_starts_at / auction_ends_at / auction_status /
+ * min_next_bid / reserve_state). The browser's only jobs are recomputing
+ * status from the window as the clock ticks, and showing reserve state.
  */
 
 export type AuctionStatus = 'upcoming' | 'live' | 'ended';
@@ -116,8 +118,6 @@ function urgencyRank(
 // Reserve state
 // ---------------------------------------------------------------------------
 
-export type ReserveState = 'no-reserve' | 'met' | 'not-met';
-
 /** UI copy for each reserve state. The reserve amount itself is never shown. */
 export const RESERVE_STATE_LABELS: Record<ReserveState, string> = {
   'no-reserve': 'No reserve',
@@ -126,14 +126,14 @@ export const RESERVE_STATE_LABELS: Record<ReserveState, string> = {
 };
 
 /**
- * Rule: a null reserve_price means the vehicle sells at any price; otherwise
- * the reserve is met once the high bid reaches it. With no bids yet
- * (current_bid === null) a reserve cannot be met.
+ * The reserve state the server worked out from the reserve and the standing
+ * bid. The browser is never sent the reserve amount, so it cannot work the
+ * state out itself: it shows the server's answer. After a bid the page takes
+ * the vehicle the bid response carries, or refetches the listing, so the
+ * state is the server's for the new standing bid.
  */
 export function reserveState(vehicle: Vehicle): ReserveState {
-  if (vehicle.reserve_price === null) return 'no-reserve';
-  if (vehicle.current_bid !== null && vehicle.current_bid >= vehicle.reserve_price) return 'met';
-  return 'not-met';
+  return vehicle.reserve_state;
 }
 
 /** The price a buyer competes against: the high bid, or the opening ask before any bids. */

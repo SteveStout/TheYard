@@ -1,19 +1,42 @@
 /**
  * Application Insights, read back through the container's own identity (ADR-024).
  */
+import { durationWords } from '../../../lib/duration';
 import { emptyHourWords } from '../../../lib/telemetryCard';
 import styles from '../shared/card.module.css';
 import type { Telemetry } from '../shared/types';
+import { useRead, pill, failed } from '../shared/common';
+
+/**
+ * The reading as the server sends it, with whose requests it counts: the
+ * site's name when the server knows it, and the sentence that says so.
+ */
+type ScopedTelemetry = Telemetry & { site?: string | null; scope?: string };
 
 /** The newest request's time, in the reader's own clock, as the log card writes its times. */
 const timeOf = (iso: string) => {
   const when = new Date(iso);
   return Number.isNaN(when.getTime()) ? '' : when.toLocaleTimeString();
 };
-import { useRead, pill, failed } from '../shared/common';
+
+/** A reading that may be missing, in words: a missing one says none, never 0 ms. */
+const reading = (value: number | null | undefined) =>
+  value === null || value === undefined ? 'none' : durationWords(value);
+
+/**
+ * Whose requests the figures count, as the server words it. Both sites send
+ * to one Application Insights component, so a figure with no site named could
+ * be either site's or both together.
+ */
+const scopeLine = (telemetry: ScopedTelemetry) =>
+  telemetry.scope === undefined ? null : (
+    <p className={styles.muted} data-testid="telemetry-scope">
+      {telemetry.scope}
+    </p>
+  );
 
 export default function TelemetryCard({ tick }: { tick: number }) {
-  const telemetry = useRead<Telemetry>('/api/admin/telemetry', tick);
+  const telemetry = useRead<ScopedTelemetry>('/api/admin/telemetry', tick);
   const emptyHour =
     telemetry === null || telemetry === 'failed'
       ? null
@@ -37,19 +60,23 @@ export default function TelemetryCard({ tick }: { tick: number }) {
             {telemetry.note}
           </p>
         ) : emptyHour !== null ? (
-          <p className={styles.muted} data-testid="telemetry-empty">
-            {emptyHour}
-          </p>
+          <>
+            {scopeLine(telemetry)}
+            <p className={styles.muted} data-testid="telemetry-empty">
+              {emptyHour}
+            </p>
+          </>
         ) : (
           <>
+            {scopeLine(telemetry)}
             <div className={styles.statusRow}>
               <span className={pill((telemetry.summary?.failed ?? 0) === 0)}>
                 {telemetry.summary?.total ?? 0} request
                 {(telemetry.summary?.total ?? 0) === 1 ? '' : 's'}
               </span>
               <span className={styles.muted}>{telemetry.summary?.failed ?? 0} failed</span>
-              <span className={styles.mono}>p50 {telemetry.summary?.p50_ms ?? 0} ms</span>
-              <span className={styles.mono}>p95 {telemetry.summary?.p95_ms ?? 0} ms</span>
+              <span className={styles.mono}>p50 {reading(telemetry.summary?.p50_ms)}</span>
+              <span className={styles.mono}>p95 {reading(telemetry.summary?.p95_ms)}</span>
               {/* Steve asked for every React error, so the count of them is
                           on the card rather than only in the portal. */}
               <span className={pill((telemetry.browser?.count ?? 0) === 0)}>
@@ -57,13 +84,13 @@ export default function TelemetryCard({ tick }: { tick: number }) {
               </span>
             </div>
             {telemetry.slowest && telemetry.slowest.length > 0 && (
-              <p className={styles.muted}>Slowest routes</p>
+              <p className={styles.muted}>Slowest routes, by average time</p>
             )}
             <ul className={styles.checkList}>
               {telemetry.slowest?.map((route) => (
                 <li key={route.name} className={styles.checkRow} data-testid="telemetry-route">
                   <span className={styles.mono}>{route.name}</span>
-                  <span className={styles.duration}>{route.avg_ms} ms</span>
+                  <span className={styles.duration}>avg {reading(route.avg_ms)}</span>
                   <span className={styles.muted}>
                     {route.calls} call{route.calls === 1 ? '' : 's'}
                   </span>

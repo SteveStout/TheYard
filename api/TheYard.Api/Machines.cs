@@ -291,6 +291,25 @@ public static class TrafficMinutes
                     durations);
             })
             .ToList();
+
+    /// <summary>
+    /// The request ring as the card's hour, with the oldest minute marked when
+    /// the ring is full. The ring holds a fixed number of requests, not an hour,
+    /// so on a busy hour it reaches back only part of the way: a full ring has
+    /// pushed out what came before its oldest request, that minute's counts are
+    /// short, and nothing older is held. The mark is how the page knows to say
+    /// how many minutes its figures cover instead of calling them the hour.
+    /// </summary>
+    public static IReadOnlyList<TrafficMinute> OfRing(IReadOnlyList<RequestEntry> requests, int capacity)
+    {
+        var minutes = From(requests);
+        if (minutes.Count == 0 || requests.Count < capacity)
+        {
+            return minutes;
+        }
+
+        return [minutes[0] with { Clipped = true }, .. minutes.Skip(1)];
+    }
 }
 
 /// <summary>
@@ -311,6 +330,7 @@ public static class TrafficMinutes
 /// <param name="Redirects">How many requests answered with a 3xx status.</param>
 /// <param name="Ok">How many requests answered with a status below 300.</param>
 /// <param name="DurationsMs">Every request duration in the minute, sorted, in milliseconds.</param>
+/// <param name="Clipped">True on the oldest minute of a full ring: requests earlier in it were pushed out, so its counts are short and nothing before it is held.</param>
 public sealed record TrafficMinute(
     DateTimeOffset At,
     int Requests,
@@ -320,7 +340,8 @@ public sealed record TrafficMinute(
     int ClientErrors,
     int Redirects,
     int Ok,
-    IReadOnlyList<long> DurationsMs);
+    IReadOnlyList<long> DurationsMs,
+    bool Clipped = false);
 // #endregion traffic-minutes
 
 // #region machine-recorder
@@ -493,6 +514,9 @@ public sealed class MachineHistoryReader(IMachineHistory history, string site)
             // The instant the window ends at, so the page lays its timeline out
             // from the server's clock and not the browser's.
             as_of = now,
+            // The window's counts, added up from the buckets' own counts. The
+            // charts draw rates; the numbers over them are these.
+            totals = MachineFolding.Totals(buckets),
             buckets,
         };
         lock (_gate)
@@ -518,11 +542,11 @@ public static class DocumentLoad
     /// <summary>The free tier's allowance, which every number here is a share of.</summary>
     public const int FreeRequestUnitsPerSecond = 1000;
 
-    public static DocumentLoadView From(IReadOnlyList<StoreOperation> operations, string store)
+    public static DocumentLoadView From(IReadOnlyList<StoreOperation> operations, string store, DateTimeOffset now)
     {
         if (operations.Count == 0)
         {
-            return new DocumentLoadView(store, false, "nothing has been sent to the document store in this container yet", 0, 0, null, null, []);
+            return new DocumentLoadView(store, false, "nothing has been sent to the document store in this container yet", 0, 0, null, null, [], null);
         }
 
         var minutes = operations
@@ -532,14 +556,20 @@ public static class DocumentLoad
                 group.Key,
                 Math.Round(group.Sum(operation => operation.RequestCharge), 2),
                 group.Count(),
-                // The share of a second's free allowance this minute's charge
-                // would be if it had all arrived in one second, which is the
-                // number that matters: the allowance is per second, and a
-                // minute of steady reads is nowhere near it.
+                // The minute's charge spread over its sixty seconds, as a share
+                // of the thousand request units a second the free tier allows:
+                // the average rate the minute ran at against an allowance that
+                // is itself a rate. A burst inside the minute runs higher than
+                // this for its few seconds, and the store says nothing finer.
                 Math.Round(group.Sum(operation => operation.RequestCharge) / 60 / FreeRequestUnitsPerSecond * 100, 3)))
             .ToList();
 
         long[] durations = operations.Select(operation => operation.DurationMs).ToArray();
+        // How far back the ring reaches, in whole minutes up to now: the ring
+        // holds a number of operations and not a stretch of time, so a total
+        // over it means nothing until it says what stretch it covers.
+        var oldest = operations.Min(operation => operation.At);
+        int spanMinutes = Math.Max(1, (int)Math.Ceiling((now - oldest).TotalMinutes));
         return new DocumentLoadView(
             store,
             true,
@@ -548,15 +578,16 @@ public static class DocumentLoad
             operations.Count,
             Percentiles.Of(durations, 50),
             Percentiles.Of(durations, 95),
-            minutes);
+            minutes,
+            spanMinutes);
     }
 }
 
-/// <summary>One minute of the operations ring: what it cost, how many operations, and what share of a second of the free allowance that would be.</summary>
+/// <summary>One minute of the operations ring: what it cost, how many operations, and its average rate as a share of the free allowance.</summary>
 /// <param name="At">The start of the minute, UTC.</param>
 /// <param name="RequestUnits">The request units spent in the minute, rounded to two places.</param>
 /// <param name="Operations">How many operations ran in the minute.</param>
-/// <param name="ShareOfFreePercent">The minute's charge as a percentage of one second of the free allowance, as if it had all arrived in one second.</param>
+/// <param name="ShareOfFreePercent">The minute's average request units a second, its charge over sixty, as a percentage of the free 1,000 a second.</param>
 public sealed record DocumentMinute(DateTimeOffset At, double RequestUnits, int Operations, double ShareOfFreePercent);
 
 /// <summary>The document store's side of the card.</summary>
@@ -568,6 +599,7 @@ public sealed record DocumentMinute(DateTimeOffset At, double RequestUnits, int 
 /// <param name="P50Ms">The median operation duration, in milliseconds; null when there is no reading.</param>
 /// <param name="P95Ms">The 95th percentile operation duration, in milliseconds; null when there is no reading.</param>
 /// <param name="Minutes">The ring folded a minute at a time.</param>
+/// <param name="SpanMinutes">How many minutes back from now the ring reaches, rounded up; null when it holds nothing.</param>
 public sealed record DocumentLoadView(
     string Store,
     bool Available,
@@ -576,5 +608,6 @@ public sealed record DocumentLoadView(
     int Operations,
     long? P50Ms,
     long? P95Ms,
-    IReadOnlyList<DocumentMinute> Minutes);
+    IReadOnlyList<DocumentMinute> Minutes,
+    int? SpanMinutes);
 // #endregion document-load

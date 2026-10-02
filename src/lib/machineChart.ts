@@ -380,6 +380,12 @@ export type TrafficMinute = {
   client_errors: number;
   /** Every request's time in the minute, sorted, for the hour's own percentiles (statTiles.ts, hourTiming). */
   durations_ms?: number[];
+  /**
+   * True on the oldest minute of a full request ring: the ring pushed out what
+   * came before it, so its counts are short and nothing older is held. The ring
+   * is a number of requests, not an hour, and this is where it stops reaching.
+   */
+  clipped?: boolean;
 };
 
 export type TrafficSlot = {
@@ -392,6 +398,8 @@ export type TrafficSlot = {
   client_errors: number | null;
   /** The minute's request times, sorted; absent on a kept bucket, which holds only its percentiles. */
   durations_ms?: number[];
+  /** The minute the request ring stops reaching back at, when it is full (TrafficMinute.clipped). */
+  clipped?: boolean;
 };
 
 /**
@@ -422,6 +430,7 @@ export function hourOfTraffic(minutes: TrafficMinute[], asOf: Date): TrafficSlot
       server_errors: minute?.server_errors ?? 0,
       client_errors: minute?.client_errors ?? 0,
       durations_ms: minute?.durations_ms ?? [],
+      ...(minute?.clipped === true ? { clipped: true } : {}),
     });
   }
   return slots;
@@ -467,7 +476,17 @@ export function keptSparks(slots: { at: string; bucket: KeptBucket | null }[]): 
   };
 }
 
-/** The sentence over the charts: what the slots add up to, from the slots themselves. */
+/**
+ * What the hour's minutes add up to, from the slots themselves. A slot is one
+ * minute of the ring, so `minutesPerSlot` is 1. A kept window's totals do not
+ * come from here: its slots are rates over the minutes each bucket holds, and a
+ * rate times the bucket's width overstates the newest bucket, which holds only
+ * the minutes kept so far, so the server adds the counts up (keptWindowTotals).
+ *
+ * `ring_minutes` is how many minutes the figures reach back when the request
+ * ring stops short of the hour, counted from the minute the server marked, and
+ * null when the slots are the whole hour or everything since the process began.
+ */
 export function trafficTotals(slots: TrafficSlot[], minutesPerSlot: number) {
   let requests = 0;
   let serverErrors = 0;
@@ -483,6 +502,7 @@ export function trafficTotals(slots: TrafficSlot[], minutesPerSlot: number) {
       slowestAt = slot.at;
     }
   }
+  const clippedAt = slots.findIndex((slot) => slot.clipped === true);
   return {
     requests: Math.round(requests),
     server_errors: Math.round(serverErrors),
@@ -490,6 +510,33 @@ export function trafficTotals(slots: TrafficSlot[], minutesPerSlot: number) {
     slowest_p95_ms: slowest,
     // Where to look: a tile that says "slow" and not "when" sends somebody through an hour of rows.
     slowest_at: slowestAt,
+    ring_minutes: clippedAt < 0 ? null : (slots.length - clippedAt) * minutesPerSlot,
+  };
+}
+
+/** A kept window's totals as the endpoint sends them, counted on the server from the buckets' own counts. */
+export type KeptTotals = {
+  requests: number;
+  server_errors: number;
+  client_errors: number;
+  /** The worst single minute's 95th percentile in the window, or null when no minute had a request. */
+  worst_minute_p95_ms: number | null;
+};
+
+/**
+ * The totals over a kept window's charts, from what the server counted, in the
+ * shape the hour's come in. Null when the answer carries none, which a window
+ * the store could not read never does.
+ */
+export function keptWindowTotals(history: { window: string; totals?: KeptTotals | null }) {
+  const totals = history.totals;
+  if (totals === undefined || totals === null) return null;
+  return {
+    requests: totals.requests,
+    server_errors: totals.server_errors,
+    client_errors: totals.client_errors,
+    slowest_p95_ms: totals.worst_minute_p95_ms,
+    ring_minutes: null,
   };
 }
 

@@ -177,6 +177,28 @@ public class MachineHistoryTests(WebApplicationFactory<Program> factory)
         Assert.Null(buckets[1].P50Ms);
     }
 
+    /// <summary>
+    /// A kept window's totals are the buckets' own counts added up. The page
+    /// draws each bucket as a rate a minute, and a rate times the bucket's
+    /// width turned one error in the newest bucket, one minute old, into
+    /// two hundred and forty on a month's card.
+    /// </summary>
+    [Fact]
+    public void A_windows_totals_are_the_buckets_counts_added_up_and_the_worst_minutes_ninety_fifth()
+    {
+        var minutes = new List<MachineMinute>
+        {
+            new(Nine, "sql", 1000, 300, 310, 120, null, null, null, null, null, 0, 0, 10, 20, 200, 0, 2),
+            new(Nine.AddMinutes(1), "sql", 1000, 300, 310, 120, null, null, null, null, null, 0, 0, 30, 40, 90, 0, 1),
+            new(Nine.AddHours(4), "sql", 1000, 300, 310, 120, null, null, null, null, null, 0, 0, 1, 15, 15, 1, 0),
+        };
+
+        var totals = MachineFolding.Totals(MachineFolding.Buckets(minutes, MachineGrain.FourHours));
+
+        Assert.Equal(new MachineTotals(41, 1, 3, 200), totals);
+        Assert.Equal(new MachineTotals(0, 0, 0, null), MachineFolding.Totals([]));
+    }
+
     // #region minute-document
     [Fact]
     public void A_minute_becomes_a_document_keyed_by_site_and_minute_and_a_figure_nobody_read_is_left_out_of_it()

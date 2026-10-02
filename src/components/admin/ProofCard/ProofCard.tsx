@@ -11,8 +11,22 @@ import type { Fetched, Proof, ProofResult, ProofRow } from '../shared/types';
 import { useRead, About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
 
+/**
+ * The result as the server sends it, with the order both differences are
+ * taken in, such as "Azure Cosmos DB minus Azure SQL Database".
+ */
+type OrderedProofResult = ProofResult & { difference_order?: string };
+
+/**
+ * A difference column's header with the server's order in it, because a
+ * signed number cannot be read without knowing which store it was taken from.
+ */
+function differenceHeader(name: string, order: string | undefined): string {
+  return order === undefined || order === '' ? name : `${name}, ${order}`;
+}
+
 /** A path: its reading on each store, the difference, the difference without the round trips, and the verdict. */
-const proofColumns = (result: ProofResult): Column<ProofRow>[] => [
+const proofColumns = (result: OrderedProofResult): Column<ProofRow>[] => [
   { name: 'Path', cell: (row) => row.label },
   // A row's cells come in the stores' order, one for each.
   ...result.stores.map((store, place): Column<ProofRow> => ({
@@ -30,12 +44,12 @@ const proofColumns = (result: ProofResult): Column<ProofRow>[] => [
     },
   })),
   {
-    name: 'Difference',
+    name: differenceHeader('Difference', result.difference_order),
     mono: true,
     cell: (row) => (row.median_difference_ms === null ? '' : signed(row.median_difference_ms)),
   },
   {
-    name: 'Without the round trips',
+    name: differenceHeader('Without the round trips', result.difference_order),
     mono: true,
     cell: (row) =>
       row.difference_without_hops_ms === null ? '' : signed(row.difference_without_hops_ms),

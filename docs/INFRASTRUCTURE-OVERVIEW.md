@@ -11,16 +11,16 @@ choice; this page is the performance reading of the same chain.
 | Hop | What it is | Where | Cost at list price | What it adds |
 | --- | --- | --- | --- | --- |
 | DNS | Two CNAME records at the registrar, both names pointing at one edge | Wix | $0.00 | one lookup on a cold visit |
-| Edge | Netlify free plan: terminates HTTPS on one Let's Encrypt certificate, serves everything text-shaped as Brotli, keeps the hashed bundle files, forwards every API request unchanged, over HTTPS since 1.0.0.156 | Netlify's network, HTTP/2 to the browser | $0.00 | the document's first byte came back in 272 to 302 ms on five of six cold visits on 19 September |
+| Edge | Netlify free plan: terminates HTTPS on one Let's Encrypt certificate, serves everything text-shaped as Brotli, keeps the hashed bundle files, forwards every API request unchanged, over HTTPS since 1.0.0.156 | Netlify's network, HTTP/2 to the browser | $0.00 | the document's first byte came back in 272 to 302 ms on five of six cold visits on 19 September, measured on the container-group origin the day before the move to this plan |
 | Compute | One Linux B1 App Service plan carrying both sites as two web apps for containers, 1 vCPU and 1.75 GB shared, the same Docker image, HTTPS from the edge | westus3, because westus2 refuses App Service on this subscription | $12.41 a month for both ($0.017 an hour, 730 hours) | open a vehicle 0 ms, the filter values 0 ms, the listing page of 100 of 100,000 122 to 160 ms on the plan's shared core, where a container group's own core read 51 |
-| Registry | Azure Container Registry, Basic: one image tag per version, 8.7 GiB of the 10 GiB included | westus2 | $5.07 a month ($0.1666 a day) | nothing on a request; an image pull on a roll, across one region |
+| Registry | Azure Container Registry, Basic: one image tag per version, 8.7 GiB on 20 September of the 10 GiB included | westus2 | $5.07 a month ($0.1666 a day) | nothing on a request; an image pull on a roll, across one region |
 | Relational store | Azure SQL Database, Basic, 5 DTU, 2 GB, Entra-only | westus3, the plan's own region since 20 September, and there because West US 2 refused to create a server | $4.90 a month ($0.161 a day) | 1 to 2 ms a round trip, where it was 39 from West US 2; a bid is two statements, 28 ms |
 | Document store | Azure Cosmos DB, free tier, 1000 RU/s shared, no key exists | westus2, one region from the plan since 20 September | $0.00 | 38 to 40 ms a round trip, where it was 2 from West US 2; a bid is two operations, 89 ms |
 | The catalogue | 100,000 vehicles, 82 MB against a 25 GB allowance | in the stores, loaded into each site's memory at start | $0.00 | reads that never leave the process |
 
 **The whole bill at list price, with both sites running: $22.38 a month.** $12.41 of it is the plan,
 $4.90 the database and $5.07 the registry, read off the Azure Retail Prices API on 20 September. Until
-that day the compute was two container groups at $34.44 each and the same bill was $78.85; this page
+that day the compute was two container groups at $34.44 a month each and the same bill was $78.85 a month; this page
 quoted $73.78, which left the registry out. The move took $56.47 a month off it, and what was priced,
 what was measured and why it is B1 are
 [One plan, two sites](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-079-one-plan-two-sites.md). Crossing a region costs

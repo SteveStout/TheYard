@@ -78,6 +78,27 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         Assert.EndsWith("all of it the round trip to the store", bid.Verdict, StringComparison.Ordinal);
         Assert.Contains("the difference is the round trip to the store", result.Sentence, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// A signed difference cannot be read without its direction, so the result
+    /// names it, the second store minus the first, and it goes on the wire
+    /// where the card's column header reads it. A run with one store has no
+    /// difference and names none.
+    /// </summary>
+    [Fact]
+    public void The_result_names_which_way_round_the_difference_is_taken()
+    {
+        var sql = Run("sql", "Azure SQL Database", 1, ("bid", 100, 2));
+        var cosmos = Run("cosmos", "Azure Cosmos DB", 1, ("bid", 20, 2));
+
+        var result = ProofResult.Of(DateTimeOffset.UtcNow, 1, [sql, cosmos]);
+        string wire = JsonSerializer.Serialize(result, KeptRingWriter.Wire);
+
+        Assert.Equal("Azure Cosmos DB minus Azure SQL Database", result.DifferenceOrder);
+        Assert.Contains("\"difference_order\":\"Azure Cosmos DB minus Azure SQL Database\"", wire, StringComparison.Ordinal);
+        Assert.True(Assert.Single(result.Rows, row => row.Path == "bid").MedianDifferenceMs < 0);
+        Assert.Equal("", ProofResult.Failed("one store", new Backends([FakeBackend.Named("sql", "SQLite")], "sql")).DifferenceOrder);
+    }
     // #endregion verdict-tests
 
     // #region canned-run

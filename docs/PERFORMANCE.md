@@ -15,13 +15,13 @@ will hold it: since 20 September 2026, one Linux B1 App Service plan carrying bo
 | Azure Cosmos DB | Free tier, 1000 RU/s shared, local auth disabled so no key exists | **$0.00 a month** |
 | Azure SQL Database | Basic, 5 DTU, 2 GB, Entra-only (the serverless free database beside it paused on 14 September, below) | $4.90 a month |
 | Compute | One Linux B1 App Service plan, 1 vCPU and 1.75 GB, shared by both sites as two web apps for containers | **$12.41 a month** for both at list price in westus3, $0.017 an hour over 730 hours |
-| Registry | Azure Container Registry, Basic, one image tag per version, 8.7 GiB of the 10 GiB the tier includes | $5.07 a month ($0.1666 a day) |
+| Registry | Azure Container Registry, Basic, one image tag per version, 8.7 GiB on 20 September of the 10 GiB the tier includes | $5.07 a month ($0.1666 a day) |
 | Edge and TLS | Netlify free plan, 300 build credits a month | **$0.00 a month** |
 | Storage, 100,000 vehicles | 82 MB against a 25 GB allowance | **$0.00** |
 
 **The whole bill at list price is $22.38 a month: $12.41 of compute, $4.90 of database and $5.07 of
 registry**, read off the Azure Retail Prices API on 20 September. Until that day the compute was two
-Azure Container Instances, one per site at $34.44 each, and the same bill was $78.85; the move took
+Azure Container Instances, one per site at $34.44 a month each, and the same bill was $78.85 a month; the move took
 $56.47 a month off it, 72 per cent, and the record prices every option that was on the table
 ([One plan, two sites](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-079-one-plan-two-sites.md)). This page quoted
 $73.78 until then, which left the registry out; it has been $5.07 a month all along. What the
@@ -46,7 +46,7 @@ Sources: [A second store, priced](https://github.com/SteveStout/TheYard/blob/mai
 
 ## What a first visit costs, and what 1.0.3.0 took off it
 
-Measured on both live sites on 2026-09-22 with a cold cache, a phone at 375 on a throttled connection and a desk at 1280:
+Measured on both live sites on 2026-09-22 with a cold cache, a phone 375 pixels wide on a throttled connection and a desk 1280 pixels wide:
 
 | View | Requests | Over the wire | Load event |
 | --- | --- | --- | --- |

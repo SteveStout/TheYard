@@ -2,21 +2,25 @@
  * Timing: the requests' percentiles and every path's, with both stores on the same
  * two lines (ADR: Backends, side by side, the addendum on parity).
  */
-import { documentStoreLine, sqlLine, timingWindow } from '../../../lib/metrics';
+import { documentStoreLine, percentileWords, sqlLine, timingWindow } from '../../../lib/metrics';
+import { millisecondsWords } from '../../../lib/statTiles';
 import chartStyles from '../charts/charts.module.css';
 import cardStyles from '../shared/card.module.css';
 import type { EndpointTiming, Metrics } from '../shared/types';
 import { useRead, failed } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
-import { formatNumber } from '../../../lib/format';
 
-/** A path: how often it was asked for, and how long it took at the middle, the ninety-fifth and the worst. */
+/**
+ * A path: how often it was asked for, and how long it took at the middle, the
+ * ninety-fifth and the worst. The ring keeps whole milliseconds, so a zero is
+ * an answer under a millisecond and is written that way.
+ */
 const TIMING_COLUMNS: Column<EndpointTiming>[] = [
   { name: 'Path', mono: true, cell: (timing) => timing.path },
   { name: 'Calls', num: true, cell: (timing) => timing.count },
-  { name: 'p50', num: true, cell: (timing) => `${formatNumber(timing.p50_ms)} ms` },
-  { name: 'p95', num: true, cell: (timing) => `${formatNumber(timing.p95_ms)} ms` },
-  { name: 'Slowest', num: true, cell: (timing) => `${formatNumber(timing.max_ms)} ms` },
+  { name: 'p50', num: true, cell: (timing) => millisecondsWords(timing.p50_ms) },
+  { name: 'p95', num: true, cell: (timing) => millisecondsWords(timing.p95_ms) },
+  { name: 'Slowest', num: true, cell: (timing) => millisecondsWords(timing.max_ms) },
 ];
 
 export default function TimingCard({ tick }: { tick: number }) {
@@ -35,7 +39,7 @@ export default function TimingCard({ tick }: { tick: number }) {
             <p className={cardStyles.muted}>{timingWindow(metrics)}</p>
             <ul className={chartStyles.summaryList}>
               <li>
-                Requests: p50 {metrics.requests.p50_ms} ms, p95 {metrics.requests.p95_ms} ms.
+                Requests: {percentileWords(metrics.requests.p50_ms, metrics.requests.p95_ms)}.
               </li>
               {/* The two stores on the same two lines, whichever one serves this
                         visit (ADR: Backends, side by side, the addendum on parity). */}

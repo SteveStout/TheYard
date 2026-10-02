@@ -11,16 +11,32 @@ const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
-const currencyFormat = new Intl.NumberFormat(LOCALE, {
+/**
+ * The locale prices are written in. en-CA writes Canadian dollars as a bare
+ * "$", which a reader outside Canada takes for US dollars. en-US writes the
+ * same currency as "CA$", so the unit is on every price the site shows.
+ */
+const CURRENCY_LOCALE = 'en-US';
+
+const currencyFormat = new Intl.NumberFormat(CURRENCY_LOCALE, {
   style: 'currency',
   currency: CURRENCY,
   maximumFractionDigits: 0,
 });
 
-/** "$22,800", whole dollars only. */
+/** "CA$22,800", whole dollars only, the currency named on the figure. */
 export function formatCurrency(amount: number): string {
   return currencyFormat.format(amount);
 }
+
+/**
+ * "CA$", the symbol formatCurrency puts in front of a price, for the places
+ * that name the currency without a figure: the price filter's label and the
+ * prefix inside the bid box. Read from the same formatter, so the two cannot
+ * disagree.
+ */
+export const CURRENCY_SYMBOL =
+  currencyFormat.formatToParts(0).find((part) => part.type === 'currency')?.value ?? CURRENCY;
 
 const integerFormat = new Intl.NumberFormat(LOCALE);
 
@@ -55,19 +71,49 @@ const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, {
   minute: '2-digit',
 });
 
-/** "Apr. 5, 2:00 p.m.", for auction start and end stamps. */
+/**
+ * The auction stamp names the time zone it is written in. Auctions turn over
+ * at midnight UTC, which is evening in North America, so an end time with no
+ * zone on it reads as a different hour to every visitor who assumes another
+ * zone. The stamp stays in the viewer's own zone and says which one that is.
+ */
+const auctionDateTimeFormat = new Intl.DateTimeFormat(LOCALE, {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short',
+});
+
+/** "Apr. 5, 2:00 p.m. CDT", for auction start and end stamps, in the viewer's zone. */
 export function formatAuctionDateTime(epochMs: number): string {
-  return dateTimeFormat.format(epochMs);
+  return auctionDateTimeFormat.format(epochMs);
 }
 
 /**
- * The same "Apr. 5, 2:00 p.m." for any moment the site states with its date:
- * a test run, a page sweep, a visitor's first and last visit. One format for
- * a date and a time, wherever it appears.
+ * "Apr. 5, 2:00 p.m." for any moment the site states with its date: a test
+ * run, a page sweep, a visitor's first and last visit. One format for a date
+ * and a time, wherever it appears outside an auction.
  */
 export function formatDateTime(when: number | string): string {
   const date = new Date(when);
   return Number.isNaN(date.getTime()) ? '' : dateTimeFormat.format(date);
+}
+
+const dateFormat = new Intl.DateTimeFormat(LOCALE, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+
+/**
+ * "Apr. 5, 2026", a day with no time on it, such as the day an account was
+ * opened. The same locale as every other date, rather than the browser's
+ * default, so one site writes its dates one way. Empty for a bad date.
+ */
+export function formatDate(when: number | string): string {
+  const date = new Date(when);
+  return Number.isNaN(date.getTime()) ? '' : dateFormat.format(date);
 }
 
 /**

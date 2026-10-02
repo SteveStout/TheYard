@@ -2,7 +2,12 @@ import { useState } from 'react';
 import type { Vehicle } from '../../../lib/types';
 import { auctionTiming, currentPrice, reserveState } from '../../../lib/auction';
 import type { BidOutcome } from '../../../lib/data';
-import { formatAuctionDateTime, formatCountdown, formatCurrency } from '../../../lib/format';
+import {
+  CURRENCY_SYMBOL,
+  formatAuctionDateTime,
+  formatCountdown,
+  formatCurrency,
+} from '../../../lib/format';
 import { AuctionCountdown } from '../../shared/AuctionCountdown';
 import { Readout } from '../../shared/Readout';
 import { ReserveBadge } from '../../shared/ReserveBadge';
@@ -244,7 +249,7 @@ export function BidPanel({
             <div className={styles.inputRow}>
               <div className={styles.amountWrap}>
                 <span className={styles.currencySign} aria-hidden="true">
-                  $
+                  {CURRENCY_SYMBOL}
                 </span>
                 <input
                   id="bid-amount"

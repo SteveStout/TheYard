@@ -106,13 +106,22 @@ export type TileReadings = {
     slowest_label?: string | null;
     /** The minute of a cold start that was left out, as a clock time. Absent if none. */
     cold_start_label?: string | null;
+    /**
+     * How many minutes the figures reach back when the request ring stops short
+     * of the hour (trafficTotals in machineChart.ts). Null or absent is the hour.
+     */
+    ring_minutes?: number | null;
   } | null;
   memory: { working_set_mb: number; limit_mb: number } | null;
   /**
    * What the document store (Cosmos DB) charged in request units over the ring,
-   * and how many units a second are free. 'none' when no document store is in use.
+   * how many minutes back the ring reaches (the server's span_minutes), and how
+   * many units a second are free. 'none' when no document store is in use.
    */
-  charged: { request_units: number; free_per_second: number } | 'none' | null;
+  charged:
+    | { request_units: number; free_per_second: number; span_minutes?: number | null }
+    | 'none'
+    | null;
   /** Errors the server and the browser reported, over the ring. */
   errors: number | null;
   visitorsToday: number | null;
@@ -144,6 +153,27 @@ export function millisecondsWords(ms: number): string {
   return ms === 0 ? 'under 1 ms' : `${ms.toLocaleString('en-US')} ms`;
 }
 
+/**
+ * The stretch the hour's traffic figures cover, worded to follow "in the". The
+ * request ring holds a number of requests, not an hour, so on a busy hour it
+ * reaches back only some minutes, and `ringMinutes` says how many; null or
+ * absent means the figures are the whole hour.
+ */
+export function ringStretch(ringMinutes: number | null | undefined): string {
+  if (ringMinutes === null || ringMinutes === undefined) return 'last hour';
+  return ringMinutes === 1 ? 'last minute' : `last ${ringMinutes} minutes`;
+}
+
+/** The words a stretch short of the hour needs after it, so nobody reads it as the hour cut off by mistake. */
+export const RING_HOLDS = ', all the request ring holds';
+
+/** The stretch in full: the short form, and the reason it is short when it is. */
+export function ringStretchInFull(ringMinutes: number | null | undefined): string {
+  return (
+    ringStretch(ringMinutes) + (ringMinutes === null || ringMinutes === undefined ? '' : RING_HOLDS)
+  );
+}
+
 /** A tile's whole sentence: the line under its number plus the part left out. */
 export function tileSentence(tile: Pick<StatTile, 'detail' | 'more'>): string {
   return tile.detail + (tile.more ?? '');
@@ -160,24 +190,27 @@ function speedLine(
   judged: boolean,
   both: string
 ): { detail: string; more?: string } {
+  const stretch = ringStretch(t.ring_minutes);
+  const short = t.ring_minutes === null || t.ring_minutes === undefined ? '' : RING_HOLDS;
   const tail =
     (t.slowest_label ? `, slowest at ${t.slowest_label}` : '') +
     (t.cold_start_label ? `; the start at ${t.cold_start_label} is left out` : '');
   if (judged && t.p95_ms !== null) {
     return {
-      detail: `95th ${formatNumber(t.p95_ms)} ms over ${formatNumber(t.warm_requests)} requests`,
-      more: ` in the last hour${tail}`,
+      detail: `95th ${millisecondsWords(t.p95_ms)} over ${formatNumber(t.warm_requests)} requests`,
+      more: ` in the ${stretch}${short}${tail}`,
     };
   }
   if (t.warm_requests > 0) {
     return {
-      detail: `${t.warm_requests} requests in the last hour`,
-      more: `, too few to judge${both === '' ? '' : `; ${both}`}${tail}`,
+      detail: `${t.warm_requests} requests in the ${stretch}`,
+      more: `${short}, too few to judge${both === '' ? '' : `; ${both}`}${tail}`,
     };
   }
+  const rest = short + tail;
   return {
-    detail: `${t.requests} requests in the last hour`,
-    ...(tail === '' ? {} : { more: tail }),
+    detail: `${t.requests} requests in the ${stretch}`,
+    ...(rest === '' ? {} : { more: rest }),
   };
 }
 
@@ -273,7 +306,7 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
   const percentiles = (t: NonNullable<TileReadings['traffic']>) =>
     t.p50_ms === null || t.p95_ms === null
       ? ''
-      : `typical ${formatNumber(t.p50_ms)} ms, 95th ${formatNumber(t.p95_ms)} ms`;
+      : `typical ${millisecondsWords(t.p50_ms)}, 95th ${millisecondsWords(t.p95_ms)}`;
   tiles.push(
     traffic === null
       ? waiting('speed', 'fast', 'Typical answer')
@@ -337,31 +370,44 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
             value: `${Math.round(charged.request_units * 10) / 10}`,
             // This is a total, not a rate, so it is never coloured against the free
             // allowance per second. The machines card compares the busiest minute.
-            detail: `in the ring; ${formatNumber(charged.free_per_second)} a second is free`,
+            // A total says the stretch it covers, which the server measures.
+            ...(charged.span_minutes === null || charged.span_minutes === undefined
+              ? { detail: `in the ring; ${formatNumber(charged.free_per_second)} a second is free` }
+              : {
+                  detail: `RU over the last ${formatNumber(charged.span_minutes)} min`,
+                  more: `; ${formatNumber(charged.free_per_second)} a second is free`,
+                }),
             tone: 'plain',
             spark: sparks?.charged,
           }
   );
 
-  // Errors: the big number is the larger of two counts, the server's 5xx answers
-  // this hour and the errors reported over the ring. The line shows both. Any
-  // error at all is red.
+  // Errors: two counts over two different windows, so each is named with its
+  // own. The big number is the error list the tile links to, the server's and
+  // the browser's most recent errors; the 5xx answers are the traffic's
+  // stretch. Before the list is read, the big number is the 5xx count, and the
+  // line says so. Any error at all is red.
   if (errors === null && traffic === null) {
     tiles.push(waiting('errors', 'broke', 'Errors'));
   } else {
     const failing = traffic?.server_errors ?? 0;
     const reported = errors ?? 0;
+    const stretch = ringStretch(traffic?.ring_minutes);
+    const clean = failing === 0 && reported === 0;
     tiles.push({
       key: 'errors',
       question: 'broke',
       label: 'Errors',
-      value: `${Math.max(failing, reported)}`,
-      detail:
-        failing === 0 && reported === 0
-          ? 'no 5xx answered and none reported'
-          : `${failing} answered 5xx, ${reported} reported`,
-      ...(failing === 0 && reported === 0 ? {} : { more: "; the 5xx are the last hour's" }),
-      tone: failing > 0 || reported > 0 ? 'bad' : 'good',
+      value: `${errors === null ? failing : reported}`,
+      detail: clean
+        ? 'no 5xx answered and none listed'
+        : errors === null
+          ? `${failing} answered 5xx`
+          : `${reported} listed, ${failing} answered 5xx`,
+      more:
+        (errors === null ? '' : '; the list is the most recent from the server and the browser') +
+        (traffic === null ? '' : `${errors === null ? ';' : ','} the 5xx are from the ${stretch}`),
+      tone: clean ? 'good' : 'bad',
       spark: sparks?.errors,
     });
   }
@@ -374,7 +420,8 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           question: 'fast',
           label: 'Visitors today',
           value: `${visitorsToday}`,
-          detail: 'counted by a daily hash, bots left out',
+          detail: 'since midnight UTC, bots left out',
+          more: '; counted by a daily hash, the day the server keeps',
           tone: 'plain',
         }
   );
@@ -384,10 +431,11 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
 // #endregion tile-rules
 
 /**
- * Today's visitor count from an activity report's list of days. No row for
- * today means zero. Prefer `people`: the older `humans` count also included
- * App Service's own requests from the loopback address, so it is only a
- * fallback for a report that has no `people` field.
+ * Today's visitor count from an activity report's list of days. The report's
+ * days are UTC days, so "today" is the UTC date, which is why the tile says
+ * UTC. No row for today means zero. Prefer `people`: the older `humans` count
+ * also included App Service's own requests from the loopback address, so it
+ * is only a fallback for a report that has no `people` field.
  */
 export function visitorsOn(
   days: { day: string; humans: number; people?: number }[],

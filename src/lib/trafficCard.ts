@@ -51,9 +51,14 @@ export const TRAFFIC_CHARTS = {
   timing: {
     title: 'How fast does it answer?',
     read: 'Milliseconds to answer, lower is better. The typical request, and the slow ones: 19 in 20 requests were faster than the upper line.',
+    /** A kept window's point is a stretch of minutes, and its two readings are folded from theirs. */
+    readKept:
+      'Milliseconds to answer, lower is better. Each point is a stretch of minutes: the lower line is their typical request, the upper line their worst minute, in which 19 in 20 requests were faster.',
     unit: 'ms',
     typical: 'Typical request (median)',
     slow: 'Slow requests (95th percentile)',
+    typicalKept: 'Typical request (mean of the minutes’ medians)',
+    slowKept: 'Slow requests (worst minute’s 95th percentile)',
   },
 } as const;
 
@@ -78,9 +83,12 @@ const count = (value: number, one: string, many: string) =>
 
 /**
  * The four blocks over the charts. `stretch` is the window in words, lower
- * case, "last hour". Only a state takes a status colour: no server errors is
- * good news and any is bad news; an answer under the speed tile's own amber
- * line is fast. A slow stretch is left plain here, because the alarm is the
+ * case, "last hour", or the minutes the request ring reaches when it stops
+ * short of the hour. The slow block is the worst minute's 95th percentile,
+ * for the hour and for a kept window alike, and says so: a percentile over
+ * the whole window is not something either can give. Only a state takes a
+ * status colour: no server errors is good news and any is bad news; an answer
+ * under the speed tile's own amber line is fast. A slow stretch is left plain here, because the alarm is the
  * speed tile's, which knows about a cold start and this block does not.
  */
 export function trafficBlocks(
@@ -124,7 +132,7 @@ export function trafficBlocks(
       detail:
         slow === null
           ? 'nobody asked for anything'
-          : `19 in 20 requests beat this, in the slowest ${each}`,
+          : '19 in 20 requests beat this, in the worst minute',
       tone: fast(slow) ? 'good' : 'plain',
       word: fast(slow) ? 'fast' : null,
     },

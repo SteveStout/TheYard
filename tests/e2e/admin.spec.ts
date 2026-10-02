@@ -54,15 +54,22 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
   // store says so in words rather than leaving the line out (ADR: Backends,
   // side by side, the addendum on parity). The ship gate runs this on both
   // shapes: SQLite alone, and both stores with the document one the default.
+  // A time the ring kept as zero whole milliseconds reads "under 1 ms", and an
+  // empty window says it has nothing to time rather than printing a zero.
+  const ms = '(under 1 ms|[\\d,]+ ms)';
   await expect(page.getByTestId('timing-sql')).toHaveText(
-    /^SQL: p50 \d+ ms, p95 \d+ ms, slowest \d+ ms\.$/
+    new RegExp(
+      `^SQL: (p50 ${ms}, p95 ${ms}, slowest ${ms}|no statements in the ring yet, so there is nothing to time)\\.$`
+    )
   );
   const shape = (await (await request.get('http://localhost:5210/api/stores')).json()) as {
     stores: unknown[];
   };
   await expect(page.getByTestId('timing-store')).toHaveText(
     shape.stores.length > 1
-      ? /^Document store: p50 \d+ ms, p95 \d+ ms, slowest \d+ ms, [\d.]+ RU over the window, /
+      ? new RegExp(
+          `^Document store: (p50 ${ms}, p95 ${ms}, slowest ${ms}|nothing to time), [\\d.]+ RU over the window, `
+        )
       : /^Document store: none on this container/
   );
   // The SQL card on a relational container, the operations card on the
@@ -253,7 +260,9 @@ test('the traffic card draws how busy, how fast and how many errors, a minute at
   const card = page.getByTestId('traffic-card');
   // Four numbers in plain words, in place of one sentence in status codes and percentiles.
   const requests = card.getByTestId('traffic-stat-requests');
-  await expect(requests).toContainText('requests in the last hour', { timeout: 60_000 });
+  await expect(requests).toContainText(/requests in the last (hour|minute|\d+ minutes)/, {
+    timeout: 60_000,
+  });
   await expect(requests).toContainText(/\d/);
   await expect(card.getByTestId('traffic-stat-typical')).toContainText('Typical answer');
   await expect(card.getByTestId('traffic-stat-slow')).toContainText('Slow answers');
@@ -292,10 +301,13 @@ test('the traffic card asks its three questions as headings, and says a clean ru
     await expect(block.locator('span').nth(1)).toHaveText(clean ? '0' : /^[1-9][\d,]*$/, {
       timeout: 2_000,
     });
+    // The hour is the request ring, which on a busy run reaches back fewer
+    // minutes than sixty and says how many.
+    const stretch = 'hour|(minute|\\d+ minutes), all the request ring holds';
     await expect(fail).toHaveText(
       clean
-        ? 'goodNo server errors in the last hour.'
-        : /^needs attention[\d,]+ server errors? in the last hour\.$/,
+        ? new RegExp(`^goodNo server errors in the last (${stretch})\\.$`)
+        : new RegExp(`^needs attention[\\d,]+ server errors? in the last (${stretch})\\.$`),
       { timeout: 2_000 }
     );
   }).toPass({ timeout: 30_000 });
@@ -673,8 +685,10 @@ test('the comparison card stands when there is no peer to compare with (ADR: Bac
   }
   // The label and the number are neighbouring cells, and a cell boundary is
   // no whitespace at all in the text Playwright reads, so \s* rather than \s+.
-  await expect(card).toContainText(/Cold start, process start to ready\s*\d+ ms/);
-  await expect(card).toContainText(/Catalogue load\s*\d+ ms/);
+  // A duration is grouped by thousands and written in seconds from ten
+  // seconds up (src/lib/duration.ts), so the reading is "1,183 ms" or "68.5 s".
+  await expect(card).toContainText(/Cold start, process start to ready\s*(under 1 ms|[\d,.]+ m?s)/);
+  await expect(card).toContainText(/Catalogue load\s*(under 1 ms|[\d,.]+ m?s)/);
   await expect(card).toContainText('Bid write');
   await expect(card).toContainText('Sign in');
   // And the card pinned beside it is untouched by the empty peer column.
@@ -683,6 +697,92 @@ test('the comparison card stands when there is no peer to compare with (ADR: Bac
   );
 });
 // #endregion backends-card
+
+// #region telemetry-proof-words
+// A local run has no Application Insights, so the card's figures are held here
+// in the live shape: whose requests they count, an average labelled as one, and
+// a long duration written in seconds rather than as six raw digits.
+test('the telemetry card names the site it counts, labels the average, and writes long times in seconds', async ({
+  page,
+}) => {
+  await page.route('**/api/admin/telemetry', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        configured: true,
+        available: true,
+        window: 'the last hour',
+        site: 'theyard-cosmos',
+        scope: 'Counts theyard-cosmos only. The other site is left out.',
+        summary: { total: 2106, failed: 0, p50_ms: 12.5, p95_ms: 194912 },
+        slowest: [{ name: 'GET /api/admin/costs', calls: 3, avg_ms: 68479.1 }],
+        exceptions: [],
+        browser: { count: 0, last_at: '' },
+        newest_request_at: '2026-10-02T13:00:00Z',
+      }),
+    })
+  );
+  await openTheYard(page, '/?view=admin&card=telemetry');
+  const card = page.getByTestId('telemetry-card');
+  await expect(card.getByTestId('telemetry-scope')).toContainText('Counts theyard-cosmos only');
+  await expect(card).toContainText('p95 194.9 s');
+  await expect(card).toContainText('Slowest routes, by average time');
+  await expect(card.getByTestId('telemetry-route')).toContainText('avg 68.5 s');
+});
+
+// The proof's differences are signed, so the header says which store was taken from which.
+test('the proof card says which way round its differences are taken', async ({ page }) => {
+  const cell = (store: string, p50: number) => ({
+    store,
+    samples: 4,
+    p50_ms: p50,
+    p95_ms: p50 + 6,
+    operations_per_request: 1,
+    request_units_per_request: null,
+    failures: 0,
+  });
+  await page.route('**/api/admin/proof', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'done',
+        result: {
+          status: 'done',
+          reason: null,
+          started_at: '2026-10-02T13:00:00Z',
+          finished_at: '2026-10-02T13:00:30Z',
+          rounds: 4,
+          stores: [
+            { key: 'sql', name: 'Azure SQL Database', hop_ms: 3 },
+            { key: 'cosmos', name: 'Azure Cosmos DB', hop_ms: 2 },
+          ],
+          rows: [
+            {
+              path: 'listing',
+              label: 'Listing',
+              cells: [cell('Azure SQL Database', 40), cell('Azure Cosmos DB', 35)],
+              median_difference_ms: -5,
+              difference_without_hops_ms: -4,
+              verdict: 'the same',
+            },
+          ],
+          sentence: 'Both stores answer in the same time.',
+          difference_order: 'Azure Cosmos DB minus Azure SQL Database',
+        },
+      }),
+    })
+  );
+  await openTheYard(page, '/?view=admin&card=proof');
+  const card = page.getByTestId('proof-card');
+  await expect(
+    card.getByRole('columnheader', {
+      name: 'Difference, Azure Cosmos DB minus Azure SQL Database',
+      exact: true,
+    })
+  ).toHaveCount(1);
+  await expect(card).toContainText('-5 ms');
+});
+// #endregion telemetry-proof-words
 
 // #region experiment-card
 test('the partition key card explains itself when there is no catalogue to query (ADR: The partition key)', async ({
@@ -830,7 +930,7 @@ test('the activity graph draws at the top of the tab and its response names nobo
   });
   expect(axis.count).toBeGreaterThan(1);
   expect(axis.overlaps).toBe(0);
-  await expect(card.getByTestId('activity-today-note')).toContainText(/today, \d+ h in/);
+  await expect(card.getByTestId('activity-today-note')).toContainText(/today \(UTC\), \d+ h in/);
   await card.getByTestId('activity-graph').hover();
   await expect(card.getByTestId('activity-crosshair')).toHaveCount(1);
   await expect(card.getByTestId('activity-tooltip')).toContainText('People');
@@ -1103,7 +1203,9 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
   await expect(strip.getByTestId('tile-memory')).toContainText(/[\d,]+ of [\d,]+ MB/, {
     timeout: 60_000,
   });
-  await expect(strip.getByTestId('tile-speed')).toContainText('requests in the last hour');
+  await expect(strip.getByTestId('tile-speed')).toContainText(
+    /requests in the last (hour|minute|\d+ minutes)/
+  );
   // The tone is a word as well as a colour.
   await expect(strip.getByTestId('tile-health')).toContainText('fine');
   // The questions are the rail's headings, in the order somebody asks them, and every card is under one.

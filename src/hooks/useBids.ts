@@ -27,8 +27,9 @@ export function applyBidRecord(vehicle: Vehicle, record: BidRecord | undefined):
   }
   // != null, not !== null: an API mid-roll can answer outbid without the
   // amount, and undefined slipping through here becomes current_bid:
-  // undefined, which reads as "reserve not met" on a vehicle whose reserve is
-  // met (reserveState tests for null, and undefined is not null).
+  // undefined, which the price reads as no bid (currentPrice falls back to the
+  // starting bid) while the panel's label reads it as a bid (undefined is not
+  // null), so the page would call the opening ask the current bid.
   const winning =
     record.outbid && record.market_amount != null ? record.market_amount : record.amount;
   return { ...vehicle, current_bid: winning, bid_count: record.bid_count };

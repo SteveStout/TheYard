@@ -1,7 +1,7 @@
 /**
  * Does:      Says what each sidebar section holds: its documents in order (MENUS), and the rows that open in a new tab (LINKS, ABOUT_PAGE, API_REFERENCE, DIAGRAMS).
  * Does not:  Order the sections or pick their icons (src/lib/siteMap.ts does), or hold a document itself (records.ts and pages.ts do).
- * Used by:   SideNav.tsx, Landing.tsx, Header.tsx.
+ * Used by:   SideNav.tsx, Landing.tsx, Header.tsx, sections.test.ts.
  */
 import type { MenuVariant } from '../lib/siteMap';
 import type { DocKey } from './documents';
@@ -285,6 +285,7 @@ export const MENUS: Record<
       { key: 'adrComponentFolders' },
       { key: 'adrKeptAwake' },
       { key: 'adrCompositionRoot' },
+      { key: 'adrAzureCosts' },
     ],
   },
   // #endregion records-menu

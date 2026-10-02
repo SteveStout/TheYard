@@ -46,7 +46,7 @@ describe('trafficBlocks', () => {
     expect(blocks[2]).toMatchObject({
       label: 'Slow answers',
       value: '139 ms',
-      detail: '19 in 20 requests beat this, in the slowest minute',
+      detail: '19 in 20 requests beat this, in the worst minute',
     });
     expect(blocks[3]).toMatchObject({
       label: 'Server errors',
@@ -113,10 +113,26 @@ describe('trafficBlocks', () => {
     expect(none[3].detail).toBe('none were turned away');
   });
 
-  it('calls a kept window’s slot a stretch, because it is not a minute', () => {
+  it('calls a kept window’s slot a stretch, and its slow answer the worst minute’s, which it is', () => {
     const blocks = trafficBlocks([slot(12, 139)], quiet, 'last 30 days', false);
     expect(blocks[1].detail).toBe('half of requests were faster, in the typical stretch');
-    expect(blocks[2].detail).toBe('19 in 20 requests beat this, in the slowest stretch');
+    // A kept bucket's slow reading is the worst of its minutes', so the block names the minute.
+    expect(blocks[2].detail).toBe('19 in 20 requests beat this, in the worst minute');
+  });
+
+  it('says how far back the ring reaches when it stops short of the hour', () => {
+    const blocks = trafficBlocks(
+      [slot(12, 139)],
+      { ...quiet, requests: 500 },
+      'last 6 minutes, all the request ring holds',
+      true
+    );
+    expect(blocks[0].detail).toBe(
+      'requests in the last 6 minutes, all the request ring holds: pages and API calls'
+    );
+    expect(failSentence(quiet, 'last 6 minutes, all the request ring holds').text).toBe(
+      'No server errors in the last 6 minutes, all the request ring holds.'
+    );
   });
 });
 

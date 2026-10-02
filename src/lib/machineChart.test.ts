@@ -10,6 +10,7 @@ import {
   type KeptBucket,
   keptSparks,
   keptTraffic,
+  keptWindowTotals,
   LEAST_SLOTS,
   MACHINE_CHART,
   MACHINE_WINDOWS,
@@ -217,6 +218,33 @@ describe('kept windows', () => {
     expect(hourOfTraffic([], asOf)).toHaveLength(1);
   });
 
+  it('says how many minutes a full ring reaches, and calls a ring that reaches the hour the hour', () => {
+    const asOf = new Date('2026-09-20T12:05:30Z');
+    const minute = (at: string, requests: number, clipped?: boolean) => ({
+      at,
+      requests,
+      p50_ms: 4,
+      p95_ms: 30,
+      server_errors: 0,
+      client_errors: 0,
+      ...(clipped === undefined ? {} : { clipped }),
+    });
+    // The server marked 12:00 as where the full ring stops: six minutes, 12:00 to 12:05.
+    const short = hourOfTraffic(
+      [minute('2026-09-20T12:00:00Z', 300, true), minute('2026-09-20T12:04:00Z', 200)],
+      asOf
+    );
+    expect(short[0].clipped).toBe(true);
+    expect(trafficTotals(short, 1)).toMatchObject({ requests: 500, ring_minutes: 6 });
+    // A marked minute older than the hour is not drawn, so what is drawn is the whole hour.
+    const whole = hourOfTraffic(
+      [minute('2026-09-20T10:00:00Z', 1, true), minute('2026-09-20T12:04:00Z', 2)],
+      asOf
+    );
+    expect(whole).toHaveLength(60);
+    expect(trafficTotals(whole, 1).ring_minutes).toBeNull();
+  });
+
   it('turns a kept bucket into a rate a minute and leaves a bucket nobody kept as a gap', () => {
     const slots = keptTraffic([
       {
@@ -235,13 +263,27 @@ describe('kept windows', () => {
       server_errors: null,
       client_errors: null,
     });
-    expect(trafficTotals(slots, 4)).toEqual({
-      requests: 20,
-      server_errors: 0,
-      client_errors: 2,
+  });
+
+  it('takes a kept window’s totals from the server, never a rate times the bucket’s width', () => {
+    // The newest bucket of a month holds one kept minute with one server error.
+    // Its rate is one a minute; times the four-hour width that would read as 240 errors.
+    const newest = bucket('2026-09-20T12:00:00Z', { minutes: 1, server_errors: 1, requests: 3 });
+    const rates = keptTraffic([{ at: 'a', bucket: newest }]);
+    expect(rates[0]).toMatchObject({ requests: 3, server_errors: 1 });
+    expect(
+      keptWindowTotals({
+        window: '30d',
+        totals: { requests: 3, server_errors: 1, client_errors: 0, worst_minute_p95_ms: 60 },
+      })
+    ).toEqual({
+      requests: 3,
+      server_errors: 1,
+      client_errors: 0,
       slowest_p95_ms: 60,
-      slowest_at: 'a',
+      ring_minutes: null,
     });
+    expect(keptWindowTotals({ window: '30d' })).toBeNull();
   });
 
   it('hands the tiles a kept window as four lines, with a gap where the store holds nothing', () => {

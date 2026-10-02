@@ -148,10 +148,10 @@ made visible.
 
 This application reads its catalogue once at startup and serves everything from
 memory, writes one document per accepted bid, and signs people in. Measured
-from Missouri, a bid takes 135 ms on the document store and 219 on the
-relational one, a sign-in 221 against 249, and the pages a visitor spends most
-of their time on are equal to within a few milliseconds because neither store
-is on their path (ADR: Measuring both stores). The document store's lead is
+from Missouri on 8 September, before the move to the App Service plan, a bid
+took 135 ms on the document store and 219 on the relational one, a sign-in 221
+against 249, and the pages a visitor spends most of their time on are equal
+to within a few milliseconds because neither store is on their path (ADR: Measuring both stores). The document store's lead is
 geography: its account is in the container's own region and the SQL server is
 one region away, because that region refused to create one. Both cost $0.00.
 On this workload the honest answer is that the store is not the performance

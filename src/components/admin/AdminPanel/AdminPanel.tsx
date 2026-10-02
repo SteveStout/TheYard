@@ -230,9 +230,11 @@ export function AdminPanel({
     };
   }, [tick]);
 
-  // Read the activity report once when the tab opens, for today's visitors
-  // and for `rowsServed`. The Activity card, when open, does its own read and
-  // passes the result back through onActivity.
+  // Read the activity report when the tab opens and again on every tick, for
+  // today's visitors and for `rowsServed`, so the visitors tile moves with the
+  // rest of the strip instead of keeping the count it had when the tab opened.
+  // The Activity card, when open, does its own read and passes the result
+  // back through onActivity.
   useEffect(() => {
     let live = true;
     void fetch('/api/admin/activity?window=7d')
@@ -246,7 +248,7 @@ export function AdminPanel({
     return () => {
       live = false;
     };
-  }, [onActivity]);
+  }, [onActivity, tick]);
 
   // #region tiles
   // Build the tiles from data already read above, using the rules in

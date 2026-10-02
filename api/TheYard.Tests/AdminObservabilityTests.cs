@@ -333,6 +333,19 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
     public void An_empty_sample_has_no_percentile_rather_than_an_exception() =>
         Assert.Equal(0, Percentiles.Of([], 95));
 
+    /// <summary>
+    /// A window the page prints has no percentile when it is empty, rather
+    /// than a zero that reads as "answered in no time"; the page says "no
+    /// requests" for it. A window with something in it reads as before.
+    /// </summary>
+    [Fact]
+    public void An_empty_window_the_page_prints_has_a_null_percentile_and_a_full_one_the_nearest_rank()
+    {
+        Assert.Null(Percentiles.OfOrNull([], 50));
+        Assert.Equal(2L, Percentiles.OfOrNull([1L, 2L], 95));
+        Assert.Null(StoreMetrics.Of("Azure Cosmos DB", []).P50Ms);
+    }
+
     [Fact]
     public void Paths_are_ordered_busiest_first()
     {

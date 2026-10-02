@@ -70,8 +70,8 @@ public sealed record MachineMinute(
 /// <param name="RequestUnits">What the document store charged, in request units, summed over the bucket.</param>
 /// <param name="Operations">How many operations went to the document store, summed over the bucket.</param>
 /// <param name="Requests">How many HTTP requests the site answered, summed over the bucket.</param>
-/// <param name="P50Ms">The median request duration, in milliseconds; null when not read.</param>
-/// <param name="P95Ms">The 95th percentile request duration, in milliseconds; null when not read.</param>
+/// <param name="P50Ms">The mean of the minutes' median request durations, in milliseconds; null when not read.</param>
+/// <param name="P95Ms">The worst minute's 95th percentile request duration, in milliseconds; null when not read.</param>
 /// <param name="ServerErrors">How many requests answered with a 5xx status, summed over the bucket.</param>
 /// <param name="ClientErrors">How many requests answered with a 4xx status, summed over the bucket.</param>
 public sealed record MachineBucket(
@@ -93,6 +93,18 @@ public sealed record MachineBucket(
     double? P95Ms = null,
     int ServerErrors = 0,
     int ClientErrors = 0);
+
+/// <summary>
+/// What a kept window adds up to, from the counts its buckets carry. The page
+/// draws a bucket as a rate a minute, and a rate times the bucket's width
+/// overstates a bucket that holds fewer minutes than its width, which the
+/// newest one nearly always does, so the totals are counted here and sent.
+/// </summary>
+/// <param name="Requests">How many HTTP requests the site answered in the window.</param>
+/// <param name="ServerErrors">How many of them answered with a 5xx status.</param>
+/// <param name="ClientErrors">How many of them answered with a 4xx status.</param>
+/// <param name="WorstMinuteP95Ms">The worst single minute's 95th percentile request duration in the window, in milliseconds; null when no minute had a request.</param>
+public sealed record MachineTotals(int Requests, int ServerErrors, int ClientErrors, double? WorstMinuteP95Ms);
 
 /// <summary>Whether minutes can be kept right now, and if not, why, in words the card can show.</summary>
 /// <param name="Available">True when minutes can be kept now.</param>
@@ -211,6 +223,14 @@ public static class MachineFolding
                 group.Sum(minute => minute.ServerErrors),
                 group.Sum(minute => minute.ClientErrors)))
             .ToList();
+
+    /// <summary>A window's totals: the buckets' counts added up, and the worst minute's ninety-fifth among them.</summary>
+    public static MachineTotals Totals(IReadOnlyList<MachineBucket> buckets) =>
+        new(
+            buckets.Sum(bucket => bucket.Requests),
+            buckets.Sum(bucket => bucket.ServerErrors),
+            buckets.Sum(bucket => bucket.ClientErrors),
+            MaxOf(buckets.Select(bucket => bucket.P95Ms)));
 }
 // #endregion folding
 

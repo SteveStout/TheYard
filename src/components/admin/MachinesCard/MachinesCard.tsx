@@ -25,6 +25,7 @@ import { About } from '../shared/common';
 import { BarGauge, MachineChart, youngRecord } from '../charts';
 import { type Column, DataTable } from '../DataTable';
 import { formatNumber } from '../../../lib/format';
+import { millisecondsWords } from '../../../lib/statTiles';
 
 /** The container every fifteen seconds: memory three ways, the processor and the threads. */
 const CONTAINER_COLUMNS: Column<MachineSample>[] = [
@@ -66,7 +67,11 @@ const RELATIONAL_COLUMNS: Column<ResourceStatRow>[] = [
   { name: 'Workers', mono: true, num: true, cell: (row) => `${row.worker_percent}%` },
 ];
 
-/** The document store a minute at a time: what it charged, for how many operations, against a free second. */
+/**
+ * The document store a minute at a time: what it charged, for how many
+ * operations, and the minute's average rate, its charge over sixty seconds, as
+ * a share of the free request units a second.
+ */
 const DOCUMENT_COLUMNS: Column<DocumentMinute>[] = [
   {
     name: 'Minute',
@@ -82,7 +87,7 @@ const DOCUMENT_COLUMNS: Column<DocumentMinute>[] = [
   },
   { name: 'Operations', mono: true, num: true, cell: (minute) => minute.operations },
   {
-    name: 'Share of a free second',
+    name: 'Average a second, share of free',
     mono: true,
     num: true,
     cell: (minute) => `${minute.share_of_free_percent}%`,
@@ -133,6 +138,13 @@ function MachinesBody({
     (most, row) => Math.max(most, row.cpu_percent, row.data_io_percent, row.log_write_percent),
     0
   );
+  // How many minutes back the operations ring reaches, as the server measured
+  // it, so the request units below are a total over a stated stretch.
+  const operationsRing: { store: string; span_minutes?: number | null } = machines.document;
+  const ringSpan =
+    operationsRing.span_minutes === null || operationsRing.span_minutes === undefined
+      ? 'in the ring'
+      : `over the last ${formatNumber(operationsRing.span_minutes)} min, all the ring holds`;
 
   return (
     <article className={`${styles.wide} op-glass`} data-testid="machines-card">
@@ -298,11 +310,15 @@ function MachinesBody({
         <>
           <p data-testid="machines-document-line">
             <strong>{machines.document.request_units} request units</strong> across{' '}
-            {machines.document.operations} operations in the ring, {machines.document.p50_ms} ms at
-            the median and {machines.document.p95_ms} ms at the ninety-fifth. The free tier allows{' '}
-            {machines.document.free_request_units_per_second} request units a second, and the gauge
-            below is the busiest minute in the ring as a rate against that allowance. There is no
-            memory or processor reading here: the store is sold by request unit and reports neither.
+            {machines.document.operations} operations {ringSpan},{' '}
+            {machines.document.p50_ms === null || machines.document.p95_ms === null
+              ? 'none of them timed'
+              : `${millisecondsWords(machines.document.p50_ms)} at the median and ${millisecondsWords(machines.document.p95_ms)} at the ninety-fifth`}
+            . The free tier allows {machines.document.free_request_units_per_second} request units a
+            second, and the gauge below is the busiest minute in the ring as a rate against that
+            allowance; the table&rsquo;s last column is each minute&rsquo;s average rate against it.
+            There is no memory or processor reading here: the store is sold by request unit and
+            reports neither.
           </p>
           <BarGauge
             testId="machines-ru-gauge"

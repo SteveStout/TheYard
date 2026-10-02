@@ -434,12 +434,13 @@ export function partialDay(
 }
 
 /**
- * What a part-day says of itself (1.0.3.15): above the drawing at its right
- * end, and in the crosshair's box, never on the axis, where at a week it ran
- * into the day before it.
+ * What a part-day says of itself: above the drawing at its right end, and in
+ * the crosshair's box, never on the axis, where at a week it ran into the day
+ * before it. The day is a UTC day and the hours are UTC hours, so the words
+ * say UTC: at 8 am in Central time the day is already 13 hours in.
  */
 export function todayNote(hours: number): string {
-  return `today, ${hours} h in`;
+  return `today (UTC), ${hours} h in`;
 }
 
 /** The day nearest a point along the drawing, in the drawing's own units, never off either end. */
@@ -491,6 +492,28 @@ export function sortVisitors(
   return descending ? sorted.reverse() : sorted;
 }
 // #endregion visitor-order
+
+// #region totals-words
+/**
+ * The totals line under the chart. The report carries two request counts that
+ * measure different things. `totals.requests` is summed from the hour rows,
+ * which start at `since`, so it is the window's own count, of everyone. A
+ * kind's `requests` is summed from its visitor-day rows, and a visitor-day row
+ * is a whole UTC day: on the first day of the window it also carries the
+ * requests that came before `since`. So only the hour rows' count is called
+ * the window's, and a kind's count is said to be over its visitor-days.
+ */
+export function totalsSentence(
+  report: Pick<ActivityReport, 'totals' | 'who'>,
+  who: ActivityWho
+): string {
+  const { people, scanners, self, all } = report.who;
+  const inWindow = `${report.totals.requests.toLocaleString()} requests in the window`;
+  return who === 'people'
+    ? `${people.visitor_days.toLocaleString()} visitor-days that looked like people across the days in the window, with ${people.requests.toLocaleString()} requests over those whole days; ${inWindow} from everyone.`
+    : `${all.visitor_days.toLocaleString()} visitor-days across the days in the window: ${people.visitor_days.toLocaleString()} people, ${scanners.visitor_days.toLocaleString()} scanners and crawlers, ${self.visitor_days.toLocaleString()} the site's own reads; ${inWindow}.`;
+}
+// #endregion totals-words
 
 // #region collector-words
 /** The collector's one line: fine, or what went wrong first (failed batches outrank drops). */

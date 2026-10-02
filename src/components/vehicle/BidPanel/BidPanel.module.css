@@ -141,7 +141,8 @@
 
 .amountInput {
   width: 100%;
-  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 14px);
+  /* Room on the left for the "CA$" prefix drawn over the box, three characters wide. */
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 3.5ch);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   font-size: var(--text-md);

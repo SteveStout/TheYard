@@ -73,6 +73,12 @@ Each line is one request in the order it was sent: when it was sent, when its fi
 last arrived, what it is, the priority the browser gave it, its bytes on the wire, and what asked
 for it.
 
+The script rounds both times the same way, to the millisecond, so the order on a line is Chrome's
+own. "First byte" is the timestamp on Chrome's `Network.responseReceived` event and "done" the one
+on `Network.loadingFinished`. They are two events stamped separately, and on a small file Chrome
+can stamp the response after the last byte has landed: on 16 of these 29 lines "done" reads 1 to 5
+ms before "first byte". The lines are printed as the script logged them.
+
 ```
   round 2: ttfb 278 ms, first paint 332 ms, FCP 528 ms, DOMContentLoaded 440 ms, load 441 ms, LCP 1824 ms; 29 requests
      1 sent     0 ms, first byte   280, done   279 | Document   VeryHigh    2143 B 200 h2 | /?nocache=N | by other

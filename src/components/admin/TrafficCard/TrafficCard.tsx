@@ -5,13 +5,16 @@
 import type { ReactNode } from 'react';
 import {
   fromFirstReading,
+  type KeptTotals,
   keptTraffic,
+  keptWindowTotals,
   type MachineWindow,
   timeline,
   type TrafficSlot,
   trafficTotals,
   windowName,
 } from '../../../lib/machineChart';
+import { ringStretchInFull } from '../../../lib/statTiles';
 import { TRAFFIC_CHARTS, failSentence, trafficBlocks } from '../../../lib/trafficCard';
 import styles from './TrafficCard.module.css';
 import cardStyles from '../shared/card.module.css';
@@ -37,14 +40,27 @@ function TrafficCard({
   const keptSlots = wholeSlots === null ? null : fromFirstReading(wholeSlots);
   const slots: TrafficSlot[] | null =
     window_ === '1h' ? hourSlots(machines) : keptSlots === null ? null : keptTraffic(keptSlots);
-  const minutesPerSlot = window_ === '1h' ? 1 : (history?.bucket_minutes ?? 1);
-  const totals = slots === null ? null : trafficTotals(slots, minutesPerSlot);
+  // The hour adds its own minutes up. A kept window's slots are rates, so its
+  // totals are the ones the server counted from the buckets (keptWindowTotals).
+  const counted: { window: string; totals?: KeptTotals | null } | undefined = history;
+  const totals =
+    slots === null
+      ? null
+      : window_ === '1h'
+        ? trafficTotals(slots, 1)
+        : counted === undefined
+          ? null
+          : keptWindowTotals(counted);
   const series = (key: string, name: string, pick: (slot: TrafficSlot) => number | null) => ({
     key,
     name,
     points: (slots ?? []).map((slot) => ({ at: slot.at, value: pick(slot) })),
   });
-  const stretch = windowName(window_).toLowerCase();
+  // The hour is the request ring, which holds a number of requests and not an
+  // hour: when it stops short, the words say how many minutes it reaches.
+  const stretch =
+    window_ === '1h' ? ringStretchInFull(totals?.ring_minutes) : windowName(window_).toLowerCase();
+  const kept = window_ !== '1h';
   const failed = totals === null ? null : failSentence(totals, stretch);
   // A block's tone is a state: good news, bad news, or neither. Never an identity.
   const blockTone = {
@@ -59,9 +75,10 @@ function TrafficCard({
       <About>
         How busy the site is, how fast it is answering and whether anything is failing, over the
         window chosen here, which the machines card below follows. The last hour is the request ring
-        this process keeps, {machines.traffic?.ring ?? 500} requests deep, a minute at a time; the
-        wider windows are the minutes each site keeps in Azure Cosmos DB. This tab&rsquo;s own reads
-        and the page sweep are not counted in either.
+        this process keeps, {machines.traffic?.ring ?? 500} requests deep, a minute at a time; on a
+        busy hour that is fewer minutes than sixty, and the numbers say how many. The wider windows
+        are the minutes each site keeps in Azure Cosmos DB, counted on the server. This tab&rsquo;s
+        own reads and the page sweep are not counted in either.
       </About>
       {toolbar}
       {slots === null || totals === null || failed === null ? (
@@ -154,16 +171,30 @@ function TrafficCard({
               </span>
               <h3 className={styles.chartTitle}>{TRAFFIC_CHARTS.timing.title}</h3>
             </div>
-            <p className={styles.chartRead}>{TRAFFIC_CHARTS.timing.read}</p>
+            <p className={styles.chartRead}>
+              {kept ? TRAFFIC_CHARTS.timing.readKept : TRAFFIC_CHARTS.timing.read}
+            </p>
             <MachineChart
               testId="traffic-chart-timing"
-              label={`How fast requests were answered over the ${stretch}: the median and the ninety-fifth, in milliseconds`}
+              label={
+                kept
+                  ? `How fast requests were answered over the ${stretch}, each point a stretch of minutes: the mean of their medians and the worst minute's ninety-fifth, in milliseconds`
+                  : `How fast requests were answered over the ${stretch}: the median and the ninety-fifth, in milliseconds`
+              }
               axisUnit={TRAFFIC_CHARTS.timing.unit}
               window={window_}
               tones={['first', 'second']}
               series={[
-                series('p50', TRAFFIC_CHARTS.timing.typical, (slot) => slot.p50_ms),
-                series('p95', TRAFFIC_CHARTS.timing.slow, (slot) => slot.p95_ms),
+                series(
+                  'p50',
+                  kept ? TRAFFIC_CHARTS.timing.typicalKept : TRAFFIC_CHARTS.timing.typical,
+                  (slot) => slot.p50_ms
+                ),
+                series(
+                  'p95',
+                  kept ? TRAFFIC_CHARTS.timing.slowKept : TRAFFIC_CHARTS.timing.slow,
+                  (slot) => slot.p95_ms
+                ),
               ]}
             />
           </section>

@@ -97,6 +97,38 @@ public class ApiIntegrationTests(FullCatalogue factory)
         Assert.True(vehicle.GetProperty("min_next_bid").GetInt32() > 0);
     }
 
+    // #region reserve-state
+    [Fact]
+    public async Task Vehicles_carry_the_reserve_state_and_never_the_reserve_amount()
+    {
+        using var json = await GetAsync("/api/vehicles?limit=100");
+
+        foreach (var vehicle in json.RootElement.GetProperty("vehicles").EnumerateArray())
+        {
+            Assert.False(vehicle.TryGetProperty("reserve_price", out _), "the reserve amount stays on the server");
+            string? state = vehicle.GetProperty("reserve_state").GetString();
+            Assert.Contains(state, new[] { "no-reserve", "met", "not-met" });
+            if (vehicle.GetProperty("current_bid").ValueKind == JsonValueKind.Null)
+            {
+                Assert.NotEqual("met", state);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(null, null, "no-reserve")]
+    [InlineData(null, 5_000, "no-reserve")]
+    [InlineData(25_000, null, "not-met")]
+    [InlineData(25_000, 22_800, "not-met")]
+    [InlineData(25_000, 25_000, "met")]
+    [InlineData(25_000, 26_000, "met")]
+    public void The_reserve_state_is_met_once_the_standing_bid_reaches_the_reserve(
+        int? reservePrice, int? currentBid, string expected)
+    {
+        Assert.Equal(expected, TheYard.Api.VehicleWire.ReserveState(reservePrice, currentBid));
+    }
+    // #endregion reserve-state
+
     [Fact]
     public async Task Sort_by_price_ascending_orders_the_page()
     {

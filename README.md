@@ -8,19 +8,19 @@ A used-vehicle auction platform I built and run on Azure: browse 100,000 vehicle
 
 ## Tests, and the gate every version passes
 
-The suites hold 725 xUnit tests, 356 Vitest tests at 1.0.3.39 and 141 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.39 hold 1,907 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 744 xUnit tests, 371 Vitest tests at 1.0.3.59 and 143 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.59 hold 2,000 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
-| API | xUnit | 702 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
-| Frontend | Vitest | 356 at 1.0.3.39 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
-| End to end | Playwright | 140 declared, 141 run | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe holding nine views to WCAG 2.1 AA. |
+| API | xUnit | 744 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
+| Frontend | Vitest | 371 at 1.0.3.59 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
+| End to end | Playwright | 143 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe holding nine views to WCAG 2.1 AA. |
 
-**How 1,907 is counted**, from the gate's own results file for 1.0.3.39 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 356 Vitest tests, 680 xUnit tests on SQLite and the same 680 booted again on Cosmos DB, the 7 that need the live Cosmos DB account, 139 browser runs on SQLite (a few specs are declared once inside a loop that runs them more than once) and 45 of those again on Cosmos DB, which is 1,907. The tests added since, the stylesheet header on every sheet, the Style section's pages and the ground that scrolls with the page, first run in the gate that ships 1.0.3.42.
+**How 2,000 is counted**, from the gate's own results file for 1.0.3.59 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 371 Vitest tests, 716 xUnit tests on SQLite and the same 716 booted on Cosmos DB, carried forward from 1.0.3.58, the 7 that need the live Cosmos DB account, 144 browser runs on SQLite (the 143 declared tests, three of them declared once inside a loop that runs them twice) and 46 of those again on Cosmos DB, carried forward from 1.0.3.58, which is 2,000. The xUnit and browser counts above are read from the source; a test written after 1.0.3.59 first runs in the gate of the version that ships it.
 
 **The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The gate runs on the machine that ships: format, lint and type checks, the SQL project, xUnit on SQLite, the seven live Cosmos DB tests, and then Vitest and the browser suite, one side after the other. Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml) build the image and roll both sites, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites on a pull request, which has had no gate.
 
-**The time.** The target is five minutes (ADR-068), and the gate is over it today: it measured 831 seconds on 1.0.3.36 with every pass run, 657 seconds on 1.0.3.38 with the two store passes carried forward and 973 seconds on 1.0.3.39 with every pass run, on a four-core laptop shared with the browser I work in. Every result, test by test with its milliseconds, ships with the version and is on the Admin tab. [ADR-021](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-021-tests-explained.md) walks the three suites for a developer new to the stack.
+**The time.** The target is five minutes (ADR-068), and every gate quoted here is over it: 831 seconds on 1.0.3.36 with every pass run, 657 seconds on 1.0.3.38 with the two store passes carried forward, 973 seconds on 1.0.3.39 with every pass run and 641 seconds on 1.0.3.59 with the two store passes carried forward, on a four-core laptop shared with the browser I work in. Every result, test by test with its milliseconds, ships with the version and is on the Admin tab. [ADR-021](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-021-tests-explained.md) walks the three suites for a developer new to the stack.
 
 ## Architecture and decisions
 
@@ -99,7 +99,7 @@ the inventory and the vehicle photos (`/api/images/...`). The inventory is **100
 records**, deterministically synthesized at startup from the 200-record seed dataset
 (`Inventory:TargetCount` in `api/TheYard.Api/appsettings.json`), so there is no giant
 file in the repo. All filtering, sorting, and paging are server-side via LINQ over GET
-parameters; the landing page is the top 100 by auction time (live, ending soonest first):
+parameters; the inventory view opens on the top 100 by auction time (live, ending soonest first):
 
 ```
 GET /api/vehicles?make=Ford&status=live&sort=price-asc&limit=100
@@ -404,13 +404,12 @@ each with its own changelog line and, where it decided something, its own record
 
 - **Domain rules live in pure functions**, fully separate from any framework: window
   derivation, increments, validation, and bid resolution in `api/TheYard.Domain`
-  (unit-tested without hosting anything), reserve display and status recomputation in
+  (unit-tested without hosting anything), status recomputation in
   `src/lib/auction.ts` (unit-tested without rendering anything). Components stay thin.
-- **The reserve amount is never rendered**, only its state (No reserve, Reserve met,
-  Reserve not met). The number is on the wire because the dataset carries it and the
-  panel derives the state from it, so this is a presentation rule rather than a guard
-  on seller data; hiding it would mean the server deriving one more fact, which is the
-  direction the rest of the design points.
+- **The reserve amount never leaves the server**, only its state (No reserve, Reserve met,
+  Reserve not met). The server works the state out from the reserve and the current bid
+  and sends `reserve_state` on every vehicle, so the seller's number is not on the wire
+  and the panel shows what the server said.
 - **Price filtering and sorting use the competing price**, the high bid or the opening
   ask when there are no bids, so unbid vehicles do not sort as free.
 - **Buy Now is a purchase, not a bid**: it does not inflate the bid count, the vehicle
@@ -482,7 +481,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (725 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (744 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -501,7 +500,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (356 Vitest tests at 1.0.3.39):** presentation logic only, since the API owns the rules.
+**Frontend (371 Vitest tests at 1.0.3.59):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,
@@ -509,7 +508,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (141 Playwright tests):** the real stack. The landing page shows 100 of
+**End-to-end (143 Playwright tests):** the real stack. The inventory view shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a

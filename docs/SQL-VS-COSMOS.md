@@ -78,8 +78,8 @@ follow its address.
 | Indexes, and what a query costs | Indexes chosen per query in the DACPAC, a plan the engine picks, and a cost that shows up as compute time against the free limit. | An indexing policy per container as JSON, every path excluded here because the site reads by id, and a cost in request units per call. The experiment: 8.84 RU per seeded document under the tuned policy, 16.07 under the default, and nothing bought on any of seven queries. | [ADR-040](https://theyard.stevenstout.biz/?doc=adr-data-first), [ADR-058](https://theyard.stevenstout.biz/?doc=adr-partition-key) |
 | Consistency and transactions | ACID across any number of tables in one transaction; row versioning keeps readers off writers; the database is the arbiter. | Session consistency; a transactional batch is atomic inside one partition, which is how a reset deletes one buyer's bids as one call. Nothing spans partitions atomically, and the application is arranged so nothing needs to. | [ADR-060](https://theyard.stevenstout.biz/?doc=adr-ports-wait), [ADR-065](https://theyard.stevenstout.biz/?doc=adr-cosmos-explained) |
 | What the Admin tab shows | Every statement with its milliseconds and its parameters by name, on the SQL card and in the console log under `Microsoft.EntityFrameworkCore.Database.Command`. | Every operation with its request units, its milliseconds and whether it named a partition, on the operations card and, since 1.0.0.103, as one console line each under `TheYard.Infrastructure.Cosmos.CosmosStore`. | [ADR-043](https://theyard.stevenstout.biz/?doc=adr-sql-visible), [ADR-062](https://theyard.stevenstout.biz/?doc=adr-store-visible), [ADR-063](https://theyard.stevenstout.biz/?doc=adr-backends) |
-| Measured on this application | From Missouri, p50: bid write 219 ms, sign in 249 ms, register 319 ms. From the container, in West US 2 until 20 September: bid write 84 ms, and 39 ms of every operation is the round trip to a server one region away. From the App Service plan in West US 3 since: bid write 28 ms, a 1 to 2 ms round trip. | From Missouri, p50: bid write 135 ms, sign in 221 ms, register 216 ms. From the container, in West US 2 until 20 September: bid write 10 ms, 6.52 RU, a 2 ms round trip, and every sign-in exactly 2 RU. From the plan in West US 3 since: bid write 89 ms, the same 6.52 RU, a 38 to 40 ms round trip. | [ADR-064](https://theyard.stevenstout.biz/?doc=adr-measuring-stores), [ADR-067](https://theyard.stevenstout.biz/?doc=adr-proof) |
-| What it costs this month | $0.00 on the free limit: 100,000 vCore-seconds and 32 GB a month. Serverless compute pauses when nobody visits, and the first request after a quiet stretch waits for it. The allowance ran out on 14 September, and the sites have run on a Basic database beside it since, a fixed $4.90 a month. | $0.00 on the free tier: 1000 RU/s and 25 GB for the life of the account, never paused. The second site that serves it shares the first site's App Service plan, $12.41 a month for both, where it had a container group of its own at $34.44. | [ADR-039](https://theyard.stevenstout.biz/?doc=adr-sql-server), [ADR-059](https://theyard.stevenstout.biz/?doc=adr-second-store) |
+| Measured on this application | From Missouri, p50, on 8 September before the move: bid write 219 ms, sign in 249 ms, register 319 ms. From the container, in West US 2 until 20 September: bid write 84 ms, and 39 ms of every operation is the round trip to a server one region away. From the App Service plan in West US 3 since: bid write 28 ms, a 1 to 2 ms round trip. | From Missouri, p50, on 8 September before the move: bid write 135 ms, sign in 221 ms, register 216 ms. From the container, in West US 2 until 20 September: bid write 10 ms, 6.52 RU, a 2 ms round trip, and every sign-in exactly 2 RU. From the plan in West US 3 since: bid write 89 ms, the same 6.52 RU, a 38 to 40 ms round trip. | [ADR-064](https://theyard.stevenstout.biz/?doc=adr-measuring-stores), [ADR-067](https://theyard.stevenstout.biz/?doc=adr-proof) |
+| What it costs a month | $4.90 a month at list price since 14 September: the sites run on a Basic database, priced by the day whatever it does. Before that, $0.00 a month on the serverless free limit, 100,000 vCore-seconds and 32 GB a month, which paused when nobody visited and made the first request after a quiet stretch wait for it; the allowance ran out on 14 September. | $0.00 a month on the free tier: 1000 RU/s and 25 GB for the life of the account, never paused. The second site that serves it shares the first site's App Service plan, $12.41 a month for both since 20 September, where it had a container group of its own at $34.44 a month. | [ADR-039](https://theyard.stevenstout.biz/?doc=adr-sql-server), [ADR-059](https://theyard.stevenstout.biz/?doc=adr-second-store) |
 
 The proof's verdict, from the container itself rather than from a client
 (ADR: Same performance, proven): on three of eight paths the two stores
@@ -135,7 +135,9 @@ both sides; `BidService` serializes simultaneous bids the same way whichever
 store is underneath; a sign-in is Identity's own code on both, with a
 different `IUserStore` behind it. Both are reached with a managed identity
 and no secret. Both are logged, statement for operation, into the same ring
-the Admin tab reads. Both cost nothing this month. And on the pages a visitor
+the Admin tab reads. Both cost nothing until 14 September, when the relational
+side's free allowance ran out and the sites moved to a Basic database at $4.90
+a month. And on the pages a visitor
 spends most of their time on, the listing, the vehicle and the filter values,
 neither store is on the path at all, because the catalogue is served from
 memory, so those pages measure the same to within a few milliseconds on both
@@ -148,7 +150,7 @@ takes an account's bids with it, a unique index that is nobody's job to
 remember, a transaction that can touch every table, a schema in source control
 as DDL, and a planner that will sort by anything. The document side buys a
 cost model you can see on every response, point reads at single-digit
-milliseconds in the container's own region, a shape you can change without a
+milliseconds from compute in the account's own region, a shape you can change without a
 migration, and the freedom to add regions if the site ever needed them. What
 the document side charges for those is visible on this page: the claim
 document that stands in for a unique index, the cascade that does not exist,
@@ -156,8 +158,9 @@ the sort that needs an index on the sorted path, and the synchronous port that
 had to learn to wait (ADR: The ports learn to wait).
 
 The measured difference between them on this workload is geography, not
-engine: the SQL server is one region away because that region refused to
-create one, and the Cosmos DB account is next door. With the round trips taken
+engine: until 20 September the SQL server was one region away because that
+region refused to create one, and the Cosmos DB account was next door; since
+the move to the App Service plan the two have traded places. With the round trips taken
 out the two are the same, which is the sentence the proof record was written
 to be able to say (ADR: Same performance, proven). The honest choice for a
 used-vehicle auction whose catalogue fits in memory and whose writes are bids
@@ -175,7 +178,7 @@ guides that compare them.
 Azure SQL Database and Entity Framework Core:
 
 - [What is Azure SQL Database](https://learn.microsoft.com/en-us/azure/azure-sql/database/sql-database-paas-overview)
-- [The free offer for Azure SQL Database](https://learn.microsoft.com/en-us/azure/azure-sql/database/free-offer): the 100,000 vCore-seconds and 32 GB this site runs on, and what happens when they run out.
+- [The free offer for Azure SQL Database](https://learn.microsoft.com/en-us/azure/azure-sql/database/free-offer): the 100,000 vCore-seconds and 32 GB this site ran on until 14 September, and what happens when they run out.
 - [Serverless compute tier](https://learn.microsoft.com/en-us/azure/azure-sql/database/serverless-tier-overview): auto-pause and the resume the application budgets for.
 - [Microsoft Entra authentication for Azure SQL](https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-aad-overview): how a managed identity signs in without a password.
 - [Primary and foreign key constraints](https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints) and [clustered and nonclustered indexes](https://learn.microsoft.com/en-us/sql/relational-databases/indexes/clustered-and-nonclustered-indexes-described).

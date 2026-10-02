@@ -5,6 +5,7 @@
  */
 import { type ReactNode, useEffect, useState } from 'react';
 import { hourOfTraffic, type TrafficSlot } from '../../../lib/machineChart';
+import { durationWords } from '../../../lib/duration';
 import {
   CARD_WINDOWS,
   type CardWindow,
@@ -187,9 +188,9 @@ export function describeParameters(parameters: SqlParameterShape[]): string {
         .join(', ');
 }
 
-/** A number of milliseconds, or the word for not having one. */
+/** A number of milliseconds in words (src/lib/duration.ts), or the word for not having one. */
 export function ms(value: number | null | undefined): string {
-  return value === null || value === undefined ? 'not measured' : `${value} ms`;
+  return value === null || value === undefined ? 'not measured' : durationWords(value);
 }
 
 /** Milliseconds with the request charge beside them, when there is one (ADR: Backends, side by side). */

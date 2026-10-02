@@ -35,7 +35,6 @@ const baseVehicle: Vehicle = {
   city: 'Toronto',
   auction_start: '2026-04-05T14:00:00',
   starting_bid: 14500,
-  reserve_price: 25000,
   buy_now_price: null,
   images: ['/api/images/suv-01.jpg'],
   selling_dealership: 'King City Auto',
@@ -46,6 +45,7 @@ const baseVehicle: Vehicle = {
   auction_ends_at: NOW + DAY_MS,
   auction_status: 'live',
   min_next_bid: 23300,
+  reserve_state: 'not-met',
   sold: false,
 };
 
@@ -75,18 +75,17 @@ describe('auctionTiming', () => {
 });
 
 describe('reserveState', () => {
-  it('is "no-reserve" when reserve_price is null', () => {
-    expect(reserveState(makeVehicle({ reserve_price: null }))).toBe('no-reserve');
+  it('shows the state the server sent, for each of the three', () => {
+    expect(reserveState(makeVehicle({ reserve_state: 'no-reserve' }))).toBe('no-reserve');
+    expect(reserveState(makeVehicle({ reserve_state: 'met' }))).toBe('met');
+    expect(reserveState(makeVehicle({ reserve_state: 'not-met' }))).toBe('not-met');
   });
 
-  it('is "met" when the high bid reaches the reserve, including exactly', () => {
-    expect(reserveState(makeVehicle({ current_bid: 25000 }))).toBe('met');
-    expect(reserveState(makeVehicle({ current_bid: 26000 }))).toBe('met');
-  });
-
-  it('is "not-met" below the reserve or before any bids exist', () => {
-    expect(reserveState(makeVehicle({ current_bid: 22800 }))).toBe('not-met');
-    expect(reserveState(makeVehicle({ current_bid: null, bid_count: 0 }))).toBe('not-met');
+  it('does not work the state out from the standing bid', () => {
+    // A bid this high would clear any reserve, and the state is still the server's.
+    expect(reserveState(makeVehicle({ current_bid: 1_000_000, reserve_state: 'not-met' }))).toBe(
+      'not-met'
+    );
   });
 });
 

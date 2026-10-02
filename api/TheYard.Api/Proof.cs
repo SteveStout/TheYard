@@ -455,6 +455,16 @@ public sealed record ProofResult(
     IReadOnlyList<ProofRow> Rows,
     string Sentence)
 {
+    /// <summary>
+    /// Which way round both difference columns are taken, in words, such as
+    /// "Azure Cosmos DB minus Azure SQL Database": the second store's time
+    /// minus the first's, so a negative difference means the second store
+    /// answered faster. The card puts it in the column's header, because a
+    /// signed number with no direction cannot be read. Empty when the run
+    /// names fewer than two stores and so has no difference.
+    /// </summary>
+    public string DifferenceOrder => Stores.Count < 2 ? "" : $"{Stores[1].Name} minus {Stores[0].Name}";
+
     public static ProofResult Failed(string reason, Backends backends) => new(
         "failed",
         reason,

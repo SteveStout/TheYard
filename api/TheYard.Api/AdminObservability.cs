@@ -265,7 +265,15 @@ public sealed record EndpointTiming(string Path, int Count, long P50Ms, long P95
 /// </summary>
 public static class Percentiles
 {
-    /// <summary>The nearest-rank percentile of a sample. Empty gives zero.</summary>
+    /// <summary>
+    /// The nearest-rank percentile of a window the page shows as a number, or
+    /// null when the window is empty: a zero there reads as "answered in no
+    /// time", and the page says "no requests" for a null instead.
+    /// </summary>
+    public static long? OfOrNull(IReadOnlyList<long> values, int percentile) =>
+        values.Count == 0 ? null : Of(values, percentile);
+
+    /// <summary>The nearest-rank percentile of a sample. Empty gives zero, which is why a window that can be empty reads <see cref="OfOrNull"/>.</summary>
     public static long Of(IReadOnlyList<long> values, int percentile)
     {
         if (values.Count == 0)
@@ -359,9 +367,9 @@ public sealed class StoreRingBuffer(int capacity) : IStoreLog
 /// <summary>The store window's numbers, computed on read like the request percentiles.</summary>
 /// <param name="Store">The key of the store the numbers are for.</param>
 /// <param name="Window">How many store operations the numbers cover.</param>
-/// <param name="P50Ms">The median operation duration, in milliseconds.</param>
-/// <param name="P95Ms">The 95th percentile operation duration, in milliseconds.</param>
-/// <param name="MaxMs">The slowest operation, in milliseconds.</param>
+/// <param name="P50Ms">The median operation duration, in milliseconds; null when the window is empty.</param>
+/// <param name="P95Ms">The 95th percentile operation duration, in milliseconds; null when the window is empty.</param>
+/// <param name="MaxMs">The slowest operation, in milliseconds; null when the window is empty.</param>
 /// <param name="RuTotal">The request units spent across the window, rounded to two places.</param>
 /// <param name="RuP50">The median request units per operation.</param>
 /// <param name="RuMax">The most request units any one operation spent.</param>
@@ -370,9 +378,9 @@ public sealed class StoreRingBuffer(int capacity) : IStoreLog
 public sealed record StoreMetrics(
     string Store,
     int Window,
-    long P50Ms,
-    long P95Ms,
-    long MaxMs,
+    long? P50Ms,
+    long? P95Ms,
+    long? MaxMs,
     double RuTotal,
     double RuP50,
     double RuMax,
@@ -386,9 +394,9 @@ public sealed record StoreMetrics(
         return new StoreMetrics(
             store,
             operations.Count,
-            Percentiles.Of(durations, 50),
-            Percentiles.Of(durations, 95),
-            durations.Length == 0 ? 0 : durations.Max(),
+            Percentiles.OfOrNull(durations, 50),
+            Percentiles.OfOrNull(durations, 95),
+            durations.Length == 0 ? null : durations.Max(),
             Math.Round(charges.Sum(), 2),
             charges.Length == 0 ? 0 : charges[(int)Math.Ceiling(charges.Length * 0.5) - 1],
             charges.Length == 0 ? 0 : charges[^1],

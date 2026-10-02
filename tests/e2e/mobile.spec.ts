@@ -513,7 +513,9 @@ test.describe('the Admin tab on the narrowest phone', () => {
       );
     expect(cut).toEqual([]);
     // The typical answer's line names what it is over, and the rest of the sentence is heard.
-    await expect(strip.getByTestId('tile-speed')).toContainText('requests in the last hour');
+    await expect(strip.getByTestId('tile-speed')).toContainText(
+      /requests in the last (hour|minute|\d+ minutes)/
+    );
   });
 
   test('a table too wide for the phone stacks its rows, each value behind its column name, and none scrolls sideways (1.0.3.30)', async ({

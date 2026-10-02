@@ -6,7 +6,7 @@ import {
   type SortKey,
 } from '../../../lib/inventory';
 import type { AuctionStatus } from '../../../lib/auction';
-import { capitalize, formatInteger } from '../../../lib/format';
+import { capitalize, CURRENCY_SYMBOL, formatInteger } from '../../../lib/format';
 import styles from './FilterBar.module.css';
 import { ICON } from '../../../lib/icons';
 
@@ -208,7 +208,7 @@ export function FilterBar({
 
         <div className={`${styles.field} ${styles.priceField}`}>
           <span className={styles.fieldLabel} id={`${id}-price`}>
-            Price ($)
+            Price ({CURRENCY_SYMBOL})
           </span>
           <div className={styles.priceInputs} role="group" aria-labelledby={`${id}-price`}>
             <input
@@ -239,8 +239,8 @@ export function FilterBar({
       <div className={styles.footer}>
         <p className={styles.count} role="status" data-testid="result-count">
           {totalCount > shownCount
-            ? `Showing ${shownCount} of ${formatInteger(totalCount)} vehicles`
-            : `${totalCount} ${totalCount === 1 ? 'vehicle' : 'vehicles'}`}
+            ? `Showing ${formatInteger(shownCount)} of ${formatInteger(totalCount)} vehicles`
+            : `${formatInteger(totalCount)} ${totalCount === 1 ? 'vehicle' : 'vehicles'}`}
         </p>
         {activeCount > 0 && (
           <button type="button" className={styles.clear} onClick={onClear}>

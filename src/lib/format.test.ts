@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CURRENCY_SYMBOL,
+  formatAuctionDateTime,
   formatCountdown,
   formatCurrency,
+  formatDate,
   formatDateTime,
   formatNumber,
   formatOdometer,
@@ -14,8 +17,13 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
 describe('formatCurrency', () => {
-  it('renders whole dollars with grouping', () => {
-    expect(formatCurrency(22800)).toBe('$22,800');
+  it('renders whole Canadian dollars with grouping, the currency named on the figure', () => {
+    expect(formatCurrency(22800)).toBe('CA$22,800');
+  });
+
+  it('names the same symbol on its own for a label or an input prefix', () => {
+    expect(CURRENCY_SYMBOL).toBe('CA$');
+    expect(formatCurrency(500).startsWith(CURRENCY_SYMBOL)).toBe(true);
   });
 });
 
@@ -81,10 +89,32 @@ describe('formatNumber', () => {
 });
 
 describe('formatDateTime', () => {
-  it('writes a date and a time the way an auction stamp does, and nothing for a bad date', () => {
+  it('writes a date and a time, and nothing for a bad date', () => {
     const when = Date.UTC(2026, 8, 25, 17, 4);
     expect(formatDateTime(when)).toBe(formatDateTime(new Date(when).toISOString()));
     expect(formatDateTime(when)).toMatch(/^Sep\.? 25, \d{1,2}:04/);
     expect(formatDateTime('not a date')).toBe('');
+  });
+});
+
+describe('formatAuctionDateTime', () => {
+  it('writes the date and time and then names the time zone of the viewer', () => {
+    const when = Date.UTC(2026, 9, 2, 13, 43);
+    const zone = new Intl.DateTimeFormat('en-CA', { timeZoneName: 'short' })
+      .formatToParts(when)
+      .find((part) => part.type === 'timeZoneName')?.value;
+    const stamp = formatAuctionDateTime(when);
+    expect(zone).toBeTruthy();
+    expect(stamp.startsWith(formatDateTime(when))).toBe(true);
+    expect(stamp.endsWith(` ${zone}`)).toBe(true);
+  });
+});
+
+describe('formatDate', () => {
+  it('writes a day with its year and no time, and nothing for a bad date', () => {
+    const noonUtc = Date.UTC(2026, 8, 25, 12);
+    expect(formatDate(noonUtc)).toMatch(/^Sep\.? 25, 2026$/);
+    expect(formatDate(new Date(noonUtc).toISOString())).toBe(formatDate(noonUtc));
+    expect(formatDate('not a date')).toBe('');
   });
 });
