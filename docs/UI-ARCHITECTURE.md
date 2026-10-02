@@ -6,6 +6,12 @@
 
 *[Open the UI architecture diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/ui-architecture). It reads down, never up.*
 
+## In plain words
+
+The look is built in layers: a few files of named colours and sizes at the bottom, shared styles above them, then one small style file per component, and one site map that feeds the menus. Each layer uses only the ones below it, and each has a test.
+
+What that is worth: a developer changes a colour in one place and it changes everywhere, and the organization can restyle the whole site without touching every screen.
+
 ## The layers
 
 | Layer | Where it lives |

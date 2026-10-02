@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-04. Fifty-six records, and no way to send anybody one
 of them.
 
+## In plain words
+
+Every decision record has its own web address, so one can be sent as a link or bookmarked, the same as every other page on the site.
+
+What that is worth: a reviewer opens the exact record they were sent, and the organization's decisions can be cited in a ticket or an interview with one link.
+
 ## Context
 
 This project's argument is its decision records. They are what a reviewer is

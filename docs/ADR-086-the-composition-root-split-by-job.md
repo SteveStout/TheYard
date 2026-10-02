@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-28, shipped as 1.0.3.39. Steve approved the target shape on 28 September: Program.cs a table of contents, one file per concern, one static class per feature.
 
+## In plain words
+
+Program.cs used to be 2,667 lines. Now it is a short list, and each part of the app is set up in a file of its own: one file for each kind of setup, and one file for each feature's routes.
+
+What that is worth: a developer goes straight to the one file that matters, and two people can change two features without editing the same file.
+
 ## Context
 
 ADR: Program.cs, explained kept the host in one file on purpose, and named what would change its mind: the composition and the routes no longer fitting in a reader's head together. Measured at 1.0.3.36, before anything moved:

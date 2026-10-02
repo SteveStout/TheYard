@@ -5,6 +5,12 @@ request for a developer new to React and Vite, or new to this codebase,
 who opens the root of the repository and wants to know what every
 configuration file is for and why the source is laid out the way it is.
 
+## In plain words
+
+This page walks every configuration file at the root of the front end, in the order a request meets them, and says why each one is there. There is no router and no state library, and the page says what does those jobs instead.
+
+What that is worth: a developer new to React or to this code learns the setup in one read instead of by trial and error, and the organization spends less senior time onboarding each new hire.
+
 ## Context
 
 The root of the repository holds a package.json with a page of scripts

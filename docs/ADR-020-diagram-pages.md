@@ -4,6 +4,12 @@ Status: accepted, 2026-09-02, shipped as 1.0.0.25. Steve's ask, from his
 phone, after reading the day's records: "All diagrams should be separate
 and open in a new page, so you can zoom in and follow."
 
+## In plain words
+
+Every diagram opens on a page of its own, where you can zoom in on a phone and search its text, and every link in a document opens in a new tab so the site stays open behind it.
+
+What that is worth: a reader can follow a drawing on any screen, and the organization's architecture pictures work on a phone as well as on a big monitor.
+
 ## Context
 
 The infrastructure diagram (ADR: Docs and testing, addendum) sat inside the

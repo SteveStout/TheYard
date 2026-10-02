@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-02, shipped as 1.0.0.16.
 
+## In plain words
+
+The code shown in these documents is not pasted in. It is read from the running build every time a page opens, with a link to the exact lines on GitHub.
+
+What that is worth: a reader never sees out-of-date code, and the organization's documentation stays true without anyone remembering to update it.
+
 ## Context
 
 Steve's standing rule for this project: every change ships with its

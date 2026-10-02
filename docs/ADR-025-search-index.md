@@ -4,6 +4,12 @@ Status: accepted, 2026-09-03, shipped as 1.0.0.35. The README listed this as
 open work: "precompute each vehicle's lowercase haystack at startup instead of
 rebuilding it per request."
 
+## In plain words
+
+Search used to rebuild the text it searches for every row on every request. Now each row's searchable text is built once when the site starts, so a search only compares. A test that ships with it measures the difference, and the record says plainly that a visitor saw no change end to end.
+
+What that is worth: search does less work on every request, and because the record reports what changed and what did not, the organization knows which speedups are worth paying for.
+
 ## Context
 
 Free-text search is a full scan. Every one of the hundred thousand rows is

@@ -4,6 +4,12 @@ Status: accepted, 2026-09-15, shipped as 1.0.0.137. Written on the day a hiring 
 through a recruiter, that the first thing they wanted to see was how deep the REST API goes. The API
 was forty-one endpoints and no document. This is the document, and the rules that keep it true.
 
+## In plain words
+
+The API publishes its own description in the standard OpenAPI format, and the site shows it as a page you can read and try requests from (API Reference in the sidebar). It is generated from the code, so it cannot drift from what the API really does, and the operator-only routes are left out.
+
+What that is worth: a developer can call the API without reading the code or asking anyone, another team can generate a client from it, and the private admin routes stay off the public map.
+
 ## Context
 
 Every other part of this project explains itself from inside the running app: the records, the

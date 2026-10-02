@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-02, shipped as 1.0.0.20.
 
+## In plain words
+
+Browsers keep copies of files so pages load faster. This decides what they may keep: the code files, whose names change whenever their contents change, are kept for a year, and the page itself is checked with the server on every visit, so a new version reaches every visitor the next time they load the site.
+
+What that is worth: users get fast pages and never a stale mix of old and new, and the organization ships a fix knowing every visitor sees it, with no support calls asking people to clear their cache.
+
 ## Context
 
 Steve's phone kept showing the dark sidebar after the light one had

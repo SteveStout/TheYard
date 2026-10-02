@@ -5,6 +5,12 @@ at Steve's request for a developer new to the stack: the first two walk
 Program.cs and the React configuration; this one walks the three test
 suites, how each is built, and why there are three.
 
+## In plain words
+
+There are three kinds of tests, and this page says which one to reach for: unit tests for plain rules, integration tests for anything that needs the running server, and browser tests for anything a user clicks. Every push runs all three, and nothing reaches the live site without them.
+
+What that is worth: a developer knows where a new test goes and can trust a green build, and the organization ships changes without a manual test pass.
+
 ## Context
 
 The repository carried 139 xunit tests under `api/TheYard.Tests`, 36

@@ -8,6 +8,12 @@ This document says what is protected and how, what is deliberately not, and what
 went wrong and got fixed. The third section is the useful one. A threat model
 with no findings in it has usually not been applied.
 
+## In plain words
+
+This page says what is protected and how, what is deliberately left open, and what went wrong and was fixed. For example, the database has no password because nothing logs in with one: the site reaches it with an Azure identity.
+
+What that is worth: a developer knows the rules before touching anything sensitive, and the organization can show a reviewer or an auditor its security on one page, mistakes included.
+
 ## Reporting something
 
 Open an issue on [the repository](https://github.com/SteveStout/TheYard/issues),

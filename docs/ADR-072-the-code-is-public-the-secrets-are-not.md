@@ -6,6 +6,12 @@ the code, it should all be managed in other ways", so that "anyone who has
 the code doesn't have full access to the data", and then, on the key itself:
 "do that as long as I can see the table from the deployed website."
 
+## In plain words
+
+The code is on GitHub for anyone to read, so it holds no passwords and no keys. Each secret is a name in the code, and its value lives in GitHub's secret store and in the site's Azure settings, where only the deploy and the running site can read it. Settings that change from one machine to the next work the same way: the code reads them from configuration, and each server fills in its own.
+
+What that is worth: a developer can clone, build and run the whole project without being trusted with anything, and an organization can publish its code or hand it to a contractor without a key leaving with it. Changing a key means changing the secret and rolling the same build, never editing the code.
+
 ## Context
 
 This repository is public and always has been. Anybody can read every line,

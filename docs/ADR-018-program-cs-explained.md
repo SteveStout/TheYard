@@ -5,6 +5,12 @@ became a composition root and its parts moved to files of their own (ADR: The co
 job). Written at Steve's request for a developer new to ASP.NET Core, or new to this codebase, who opens
 the host file and wants to know what each part does and why it is the way it is.
 
+## In plain words
+
+Program.cs is the file that starts the API. It reads like a table of contents, one line per part of the app, and this page walks each line and the file it leads to, with the code shown live from the running build.
+
+What that is worth: a developer new to ASP.NET Core or to this code finds their way in one read, and the organization's newest hire can find where a change belongs without asking.
+
 ## Context
 
 Program.cs is the file that starts the API. It is now a table of contents: the builder, one line per

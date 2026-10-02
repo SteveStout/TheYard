@@ -2,6 +2,12 @@
 
 Status: accepted, 2026-09-15, shipped as 1.0.0.136.
 
+## In plain words
+
+Every rule this project lives by that a machine can check is listed here, next to the test that checks it, and another test checks the list itself. Break a rule and the build fails and names it.
+
+What that is worth: a new developer finds a rule before breaking it, not after, and the organization keeps its standards when people come and go, because the rules live in the build instead of in someone's head.
+
 ## Context
 
 Seventy-five records hold the decisions this project has made, and most of the standing ones are already

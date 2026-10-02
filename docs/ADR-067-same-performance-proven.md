@@ -6,6 +6,12 @@ and says on each path whether the two stores answer in the same time, and
 when they do not, whether the difference is the stores or their distance.
 Parent: ADR: One container, both stores.
 
+## In plain words
+
+A card on the Admin tab sends the same requests a visitor makes to both databases, SQL and Cosmos DB, from inside the same server, and shows whether they answer in the same time. Running both from one place takes the network out of the comparison, so only the database differs.
+
+What that is worth: a claim about speed is backed by a measurement anyone can run again, and the organization can choose a database on evidence instead of opinion.
+
 ## Context
 
 Steve's ask, in his words: "prove SQL and Cosmos DB have the same

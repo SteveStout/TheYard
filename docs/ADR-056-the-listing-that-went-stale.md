@@ -3,6 +3,12 @@
 Status: accepted, 2026-09-04. Found by taking a screenshot of the front page at
 three widths and looking at it, which nothing else in this project does.
 
+## In plain words
+
+The front page lists the auctions ending soonest, so a minute after it loaded, the top rows had all ended and the page looked dead. Now the page asks the server again at the moment a card is due to change, at most four times a minute, and not at all while the tab is hidden.
+
+What that is worth: a visitor always sees live auctions at the top instead of a wall of ended ones, and the server is asked only when the answer can have changed, which keeps hosting cheap.
+
 ## What it looked like
 
 Two screenshots of the live site, seconds apart. The first, at 1440 pixels:

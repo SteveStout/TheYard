@@ -5,6 +5,12 @@ message as the telemetry: "hook up error handling and log every API call
 and error, and every React error." The README also promised this at the
 start of the build and it was still open.
 
+## In plain words
+
+Every error the site returns, from any endpoint, has the same shape (the RFC 9457 standard) with a plain message and a trace id, and a crash in one part of the page no longer blanks the whole screen. Every error, from the server or the browser, shows up on the Admin tab.
+
+What that is worth: a developer handles errors one way everywhere and can find any one from its trace id, and the organization hears about a problem from its own dashboard before a customer reports it.
+
 ## Context
 
 Three gaps, all of them honest ones the README already listed:
