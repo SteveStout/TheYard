@@ -1,6 +1,6 @@
 /**
  * A short list of bars, each a label, a bar and a count, drawn as one SVG at the width
- * the card gives it. The activity card draws the recruiter's path and where visitors
+ * the card gives it. The activity card draws the path to the resume and where visitors
  * came from with it; it is its own component because both tiles share it.
  */
 import { useFittedBox } from '../charts';

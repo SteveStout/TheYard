@@ -41,8 +41,8 @@ function buttons(html: string): string {
  */
 function photographs(html: string): string {
   return html.replace(
-    // The renderer adds loading and decoding attributes after the title (1.0.3.5,
-    // src/lib/markdown.ts), and this reads past whatever follows the title to the
+    // The renderer adds loading and decoding attributes after the title
+    // (src/lib/markdown.ts), and this reads past whatever follows the title to the
     // tag's end: the photographs went missing from the page when it did not.
     /(?:<p>)?<img src="([^"]*)" alt="([^"]*)"(?: title="([^"]*)")?[^>]*>(?:<\/p>)?/g,
     (_image, address: string, alt: string, title: string | undefined) => {
@@ -55,8 +55,8 @@ function photographs(html: string): string {
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
           .replace(/&amp;/g, '&');
-      // Every photograph on this page loads eagerly (Steve, 2026-09-22, iPhone Chrome and
-      // Safari: the lazy ones flickered while the page scrolled, and the first, the only eager
+      // Every photograph on this page loads eagerly: on a phone, in Chrome and Safari,
+      // the lazy ones flickered while the page scrolled, and the first, the only eager
       // one, never did; nor do the vehicle photographs, which scroll the page, not a scroller
       // inside a dialog). The page is a dozen cuts no wider than 960 on a phone.
       const figure = photoFigure(
@@ -110,8 +110,8 @@ function blocks(section: string): string {
   const plain = pictured.filter((has) => !has).length;
   const lastPlain = pictured.lastIndexOf(false);
   // Two neighbouring blocks with one photograph each, and no photograph standing between
-  // them, share a row as halves, their photographs cut to one size (Steve, 2026-09-22:
-  // the lake beside History, the food beside the doors).
+  // them, share a row as halves, their photographs cut to one size (the lake
+  // beside History, the food beside the doors).
   const photos = headed.map((block) => (standAlone(block)[0].match(FIGURE) ?? []).length);
   const betweenAfter = headed.map((block) => standAlone(block)[1].length > 0);
   const half = headed.map(() => false);

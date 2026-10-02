@@ -5,7 +5,7 @@
 
 export * from './activityTypes'; // the wire shapes and the names the card shows for them
 export * from './activityDays'; // a day's count, the lines per UTC day, the rows by day
-export * from './activityPages'; // page names, the recruiter's path bars, where visitors came from
+export * from './activityPages'; // page names, the path to the resume bars, where visitors came from
 export * from './activityChart'; // the chart's drawing area, lines, stacked bands and labels
 export * from './activityVisitorOrder'; // the visitor table's sort
 export * from './activityWords'; // the totals line, the collector's line, the cost sentence

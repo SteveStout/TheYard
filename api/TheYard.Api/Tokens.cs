@@ -52,7 +52,7 @@ public sealed class TokenIssuer
     // #region renewal
     /// <summary>
     /// How often a session is re-signed while it is in use: once a day. A
-    /// session is a year long (Steve, 13 September: "keep logins permanent"),
+    /// session is a year long (the owner's rule: "keep logins permanent"),
     /// and a year-long token that was never re-issued would end on a day the
     /// visitor did not choose; a token re-issued on the first request of each
     /// day it is used lasts a year past the last visit instead. Once a day
@@ -248,8 +248,8 @@ public static class Principals
     /// request, would write a bid under an account the other store does not
     /// have: on the relational side the foreign key refused it as a 500, on
     /// the document side nothing refused it at all (ADR: Three readers with no
-    /// memory of the project). A token with no store claim, which no token
-    /// minted since 1.0.0.111 lacks, is on no store.
+    /// memory of the project). A token with no store claim, which every token
+    /// minted here carries, is on no store.
     /// </summary>
     public static bool SessionIsOn(this HttpContext context, Backend backend) =>
         string.Equals(context.User.FindFirstValue(TokenIssuer.StoreClaim), backend.Key, StringComparison.Ordinal);

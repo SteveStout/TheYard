@@ -17,7 +17,7 @@ export default function ResetLinkCard({ adminKey }: { adminKey: string | null })
   const [busy, setBusy] = useState(false);
   const [made, setMade] = useState<{ email: string; url: string; expires_at: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  // Without the key the card still stands and says whose it is (1.0.3.30): Previous and
+  // Without the key the card still stands and says whose it is: Previous and
   // Next walk every card, and a visitor walked onto an empty bench here.
   if (adminKey === null) {
     return (

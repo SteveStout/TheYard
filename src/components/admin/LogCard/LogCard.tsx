@@ -16,7 +16,7 @@ const logColumns = (window_: CardWindow): Column<LogEntry>[] => [
   {
     name: 'Category',
     mono: true,
-    // A narrow column breaks the category at a dot, never inside a word (1.0.3.31).
+    // A narrow column breaks the category at a dot, never inside a word.
     cell: (entry) =>
       dottedParts(entry.category).map((part, at) => (
         <Fragment key={at}>

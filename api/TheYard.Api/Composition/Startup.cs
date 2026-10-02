@@ -196,7 +196,7 @@ public static class Startup
         // they were registered, so this one runs first, and the first cut of it never
         // swept anything (SelfAddress, and the browser suite that found it).
         app.Lifetime.ApplicationStarted.Register(() => pageStatus.TryStart("roll"));
-        // And once more when the process has settled (1.0.3.8): the roll's sweep runs
+        // And once more when the process has settled: the roll's sweep runs
         // while the catalogues are warming, and a reading taken then is a reading of
         // the start, not of the site. The second is what the tile shows until
         // somebody asks for another.

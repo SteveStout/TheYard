@@ -132,9 +132,9 @@ public static class HealthEndpoints
                 // point of the fallback. A container with no database still serves
                 // the catalogue, the filters, the photos and the bidding; the only
                 // thing it loses is bids outliving the process. Reporting itself
-                // not ready would take a working site out of service, and it did:
-                // the 1.0.0.51 deploy failed on `curl -fsS /readyz` while the site
-                // it was checking was serving 100,000 vehicles perfectly well.
+                // not ready would take a working site out of service, and it did once:
+                // a deploy failed on `curl -fsS /readyz` while the site it was
+                // checking was serving 100,000 vehicles perfectly well.
                 gatesReadiness: false));
         }
         return checks.ToArray();

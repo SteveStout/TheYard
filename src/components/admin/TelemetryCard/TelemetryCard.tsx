@@ -77,8 +77,8 @@ export default function TelemetryCard({ tick }: { tick: number }) {
               <span className={styles.muted}>{telemetry.summary?.failed ?? 0} failed</span>
               <span className={styles.mono}>p50 {reading(telemetry.summary?.p50_ms)}</span>
               <span className={styles.mono}>p95 {reading(telemetry.summary?.p95_ms)}</span>
-              {/* Steve asked for every React error, so the count of them is
-                          on the card rather than only in the portal. */}
+              {/* Every React error counts, so the count of them is on the card
+                          rather than only in the portal. */}
               <span className={pill((telemetry.browser?.count ?? 0) === 0)}>
                 {telemetry.browser?.count ?? 0} browser
               </span>

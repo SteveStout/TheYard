@@ -82,9 +82,9 @@ public static class BidEndpoints
 
         // One round of bidding by the room, driven by the page rather than a timer
         // (ADR-027). The room bids on the server's clock, the same one every visitor
-        // is served, so the set it can see is the set the visitor sees; until
-        // 1.0.0.112 the page sent its own midnight here, and a round from a page in
-        // another zone bid on a different set (ADR: Three readers with no memory of
+        // is served, so the set it can see is the set the visitor sees; a page
+        // that sent its own midnight here had a round from another zone bid on a
+        // different set (ADR: Three readers with no memory of
         // the project, the addendum on the clock).
         app.MapPost("/api/market/tick", Tick)
             .RequireAuthorization()

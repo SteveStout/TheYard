@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.67** (2026-10-02): The Admin tab's path tile is The path to the resume, and no page, comment or test says who the reader is by title; every code comment says what, how and why on its own, with no version number or date standing in for the reason.
 - **1.0.3.66** (2026-10-02): No C# file passes 300 lines either: the activity, machines, proof, store, cost, log and Cosmos DB code and the admin and account endpoints are split by job into their own files or parts, every member says what it is for, and FileShapeTests holds every production source file to 300 lines from now on.
 - **1.0.3.65** (2026-10-02): No TypeScript file passes 300 lines: the Admin tab, its activity, machines and chart parts, the rail, the account page, the decision records and five libraries are split by job, each original file now the short list of its parts, and every part says what it is for and why.
 - **1.0.3.64** (2026-10-02): Every page opens with what it is about in plain words and what that is worth to a developer and to the organization; a visitor who closes the tab mid-request is answered 499 and no longer turns the Admin tab's Errors card red; the Projects page describes The Shed as .NET 10 and TypeScript; the prose reads plainer throughout.

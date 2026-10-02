@@ -43,10 +43,10 @@ export type ActivityDay = ActivityKinds & {
   by_store: ({ store: string; visitors: number } & ActivityKinds)[];
 };
 
-/** The recruiter's path: the four steps the site exists for, in the order they are walked. */
+/** The path to the resume: the four steps the site exists for, in the order they are walked. */
 export type ActivityStep = 'site' | 'inventory' | 'author' | 'resume';
 
-/** Each step of the recruiter's path as the card names it. */
+/** Each step of the path to the resume as the card names it. */
 export const STEP_NAMES: Readonly<Record<ActivityStep, string>> = {
   site: 'Opened the site',
   inventory: 'The inventory',

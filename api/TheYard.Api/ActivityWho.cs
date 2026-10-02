@@ -1,5 +1,5 @@
 // Who a visitor-day was: a person, a scanner or crawler, or the site reading
-// itself, and the summaries built on that split (the recruiter's path, the
+// itself, and the summaries built on that split (the path to the resume, the
 // referring hosts, the top paths). Its own file because it is the one rule the
 // report, the days and the card all count by; Activity.cs lists the other parts.
 using TheYard.Application;
@@ -131,7 +131,7 @@ public static class ActivityWho
     }
 
     /// <summary>
-    /// The recruiter's path, the four steps the site exists for, and
+    /// The path to the resume, the four steps the site exists for, and
     /// the paths each is asked for by: the page itself (every address the site
     /// serves is the one document, kept as /index.html), the inventory's
     /// listing, About Steven, and the resume, which the page links as

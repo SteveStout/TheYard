@@ -1,6 +1,6 @@
 /**
- * The Admin tile's one live reading on the landing page (Steve, 2026-09-22,
- * 1.0.1.4: "a Healthy dot on the Admin tile only"): /api/health, read once
+ * The Admin tile's one live reading on the landing page (the owner's rule:
+ * "a Healthy dot on the Admin tile only"): /api/health, read once
  * when the landing page opens, as a word and a tone. No React here.
  */
 export type LandingHealth = 'reading' | 'healthy' | 'degraded' | 'unreachable';

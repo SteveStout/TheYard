@@ -3,9 +3,9 @@ using System.ComponentModel;
 namespace TheYard.Api;
 
 // What the endpoints answer with, as named shapes (ADR: The API describes
-// itself). Until 1.0.0.137 each of these was an anonymous object inside its
-// handler, which the wire did not mind and the document could only describe
-// as "an object". The names are the wire's names, snake_cased by the
+// itself). An anonymous object inside a handler is a shape the wire does not
+// mind and the document can only describe as "an object"; a named one is
+// described in full. The names are the wire's names, snake_cased by the
 // serializer like everything else here; the field order is the order the
 // anonymous objects had, so nothing on the wire moved.
 

@@ -215,7 +215,7 @@ describe('unique visitors per day', () => {
     expect(labelSpot(scanners, 3, CHART, 1000)).toBeNull();
   });
 
-  it("draws each step of the recruiter's path as a share of the widest, never thinner than a sliver once reached", () => {
+  it('draws each step of the path to the resume as a share of the widest, never thinner than a sliver once reached', () => {
     expect(
       pathShares([
         { visitor_days: 400 },

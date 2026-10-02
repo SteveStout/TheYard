@@ -1,5 +1,5 @@
 /**
- * The two tiles under the activity totals: the recruiter's path from the site to the
+ * The two tiles under the activity totals: the path to the resume from the site to the
  * resume, and where visitors came from, grouped by the kind of site and then listed by
  * host. Both are bars over the same visitor-days, so they sit together in their own file.
  */
@@ -29,7 +29,7 @@ const SOURCE_COLUMNS: Column<{ host: string; visitor_days: number }>[] = [
 ];
 
 /**
- * The recruiter's path and where they came from, for the people alone or for all traffic,
+ * The path to the resume and where they came from, for the people alone or for all traffic,
  * as the card's toggle says. The bars take the people's colour under Visitors only and
  * the everybody colour otherwise.
  */
@@ -39,7 +39,7 @@ export function ActivityPathTiles({ report, who }: { report: ActivityReport; who
   return (
     <>
       <section className={styles.pathTile} data-testid="activity-path">
-        <h3 className={cardStyles.cardTitle}>The recruiter's path</h3>
+        <h3 className={cardStyles.cardTitle}>The path to the resume</h3>
         <PathBars
           rows={shown.path.map((step, index) => ({
             key: step.step,
@@ -48,7 +48,7 @@ export function ActivityPathTiles({ report, who }: { report: ActivityReport; who
             share: pathShares(shown.path)[index],
             testId: `activity-path-${step.step}`,
           }))}
-          label={`The recruiter's path over the ${report.window} window: ${shown.path
+          label={`The path to the resume over the ${report.window} window: ${shown.path
             .map((step) => `${STEP_NAMES[step.step]} ${step.visitor_days}`)
             .join(', ')}`}
           tone={tone}

@@ -32,8 +32,8 @@ function cardCopy(src: string): string | undefined {
 
 /**
  * The AVIF and WebP pairs the same script writes beside the JPEG pair,
- * `coupe-01.avif` and `coupe-01-480.avif` since 1.0.3.3, `coupe-01.webp` and
- * `coupe-01-480.webp` since 1.0.0.143. They are offered in that order through
+ * `coupe-01.avif` and `coupe-01-480.avif`, `coupe-01.webp` and
+ * `coupe-01-480.webp`. They are offered in that order through
  * a `picture` element: a browser takes the first it can read, and one that
  * reads neither falls through to the `img` and the JPEGs exactly as before.
  * The same test holds every pair to the manifest, so a missing file fails the

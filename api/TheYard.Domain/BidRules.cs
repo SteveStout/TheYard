@@ -53,8 +53,8 @@ public static class BidRules
     /// outright, which the rules cannot know from the vehicle alone: the
     /// dataset has no such field and the schedule has no such state. The caller
     /// that holds everybody's standing says so, and it is asked before the
-    /// clock and before the buy-now shortcut: until 1.0.0.110 the shortcut came
-    /// first, and a second account bidding the buy-now price on a vehicle
+    /// clock and before the buy-now shortcut, because with the shortcut
+    /// first a second account bidding the buy-now price on a vehicle
     /// already bought was told it had won it too (ADR: Accounts and per-user
     /// bids, the addendum on the second buyer).
     /// </summary>

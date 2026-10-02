@@ -36,7 +36,7 @@ export function resolveAdminKey(search: string, storage: KeyStorage | null): str
 
 // #region capture-at-startup
 // The key is read before React draws anything (main.tsx), and not by the Admin
-// tab itself. Since 1.0.3.0 the Admin tab arrives in a chunk of its own, which
+// tab itself. The Admin tab arrives in a chunk of its own, which
 // means it mounts a moment after the first render, and the first render is what
 // takes `key` out of the address bar: a keyed link would have handed its key to
 // a module that loaded after the key was gone.

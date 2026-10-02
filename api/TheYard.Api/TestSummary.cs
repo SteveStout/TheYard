@@ -4,7 +4,7 @@ namespace TheYard.Api;
 
 // #region test-summary
 /// <summary>
-/// The gate's counts for this build, without the tests themselves (1.0.2.0).
+/// The gate's counts for this build, without the tests themselves.
 ///
 /// <para>The landing page's evidence strip is the first thing a reader who has
 /// never seen this project is asked to believe: every version runs three

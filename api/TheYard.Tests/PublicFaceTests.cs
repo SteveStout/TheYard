@@ -216,7 +216,7 @@ public class PublicFaceTests
 
     // #region head
     [Theory]
-    // The description is what a search result and a recruiter's parser show.
+    // The description is what a search result and an applicant tracking system show.
     [InlineData("name=\"description\"")]
     // Absolute, because a relative og:image is silently dropped by most unfurlers.
     [InlineData("content=\"https://theyard.stevenstout.biz/og.png\"")]

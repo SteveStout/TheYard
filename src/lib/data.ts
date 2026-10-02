@@ -91,9 +91,9 @@ export function clearVehicleCache(): void {
  * clock is the server's: every window derives from the UTC midnight that
  * began the day, the same instant for every visitor, and nothing about it is
  * sent from here (ADR: Three readers with no memory of the project, the
- * addendum on the clock). Until 1.0.0.112 every schedule-dependent request
- * carried the browser's own local midnight as `anchor_ms`, which put two
- * visitors in different zones in different auctions. The day still belongs
+ * addendum on the clock). A request that carried the browser's own local
+ * midnight as `anchor_ms` put two visitors in different zones in different
+ * auctions, so none does. The day still belongs
  * in the cache key, because the server re-seeds the windows at UTC midnight
  * and a page cached just before it must not be served just after.
  */

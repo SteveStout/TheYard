@@ -70,7 +70,7 @@ export function filtersToSearchParams(
 
 /**
  * Whether an address opens the inventory rather than the landing page (the
- * landing page is home since 1.0.1.0). An address that already meant the
+ * landing page is home). An address that already meant the
  * inventory keeps meaning it, so every link shared before the landing page
  * existed still lands where it did: any filter or sort, an open vehicle, or
  * ?view=inventory itself.

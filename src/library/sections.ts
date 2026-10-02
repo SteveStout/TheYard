@@ -118,7 +118,7 @@ export const MENUS: Record<
    * The lowest resources and the millisecond speeds, as a section of its own
    * for the same reason the stores have one: it is the subject a reader asks
    * about first, and it should not have to be found inside a record. Two
-   * overviews open it since 1.0.0.145, the machines and then the page they
+   * overviews open it, the machines and then the page they
    * serve, ahead of the page that holds what each change moved.
    */
   performance: {
@@ -153,7 +153,7 @@ export const MENUS: Record<
   /**
    * Who comes, what is kept about them and how the site is found, as a section of its own
    * on the Style section's pattern (ADR-071 and ADR-053, the addenda of 29 September): the
-   * landing page on top, then its pages; the fourth, Search Console step by step, since 1.0.3.50.
+   * landing page on top, then its pages; the fourth, Search Console step by step.
    */
   traffic: {
     label: 'Site traffic',
@@ -193,7 +193,7 @@ export const MENUS: Record<
    * the file each one serves. They used to hang off the four topic sections as
    * sub-rows, which put eighteen under Best Practices alone and turned the
    * sidebar into a wall. Twenty-seven of anything is an index, not a submenu.
-   * Since 1.0.0.135 this index is not special: every section in the sidebar is
+   * This index is not special: every section in the sidebar is
    * a closed details, and SideNav is where that happens.
    */
   records: {

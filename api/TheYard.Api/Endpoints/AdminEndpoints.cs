@@ -162,7 +162,7 @@ public static partial class AdminEndpoints
         // repository already. A build with no file says so rather than inventing one.
         // #region test-summary
         // The same file, added up: what the landing page shows a reader in its first
-        // screen (1.0.2.0). The whole results file is 160 KB and the strip needs six
+        // screen. The whole results file is 160 KB and the strip needs six
         // numbers, so this reads the counts and nothing else, and the answer is cached
         // until the file changes, which inside a container it never does.
         app.MapGet("/api/tests/summary", TestSummaryRead)
@@ -194,7 +194,7 @@ public static partial class AdminEndpoints
 
         // #region costs-endpoint
         // What Azure charges for the site, over a day, a week or a month (ADR: What
-        // Azure charges). Public like the rest of this tab, on Steve's word that the
+        // Azure charges). Public like the rest of this tab, on the owner's rule that the
         // bill is nothing to hide: the dollar figure belongs beside the millisecond
         // one. Served from the kept days, never from Azure on the request: the recorder
         // asks Cost Management once an hour. The window is a name from a fixed list.

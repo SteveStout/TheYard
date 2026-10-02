@@ -167,7 +167,7 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
     },
     {
       key: 'resume',
-      // A large tile: the first thing a recruiter looks for, and as a sidebar
+      // A large tile: the first thing a visitor looks for, and as a sidebar
       // row alone it would sit behind the menu button on a phone.
       label: "Steven's resume (PDF)",
       icon: 'resume',

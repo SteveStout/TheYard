@@ -1,8 +1,7 @@
 /**
- * A page left open across a deploy (Steve's iPhone, 25 September, on the Admin
- * tab after 1.0.3.26 rolled: "Importing a module script failed" on every card
- * he opened). The page he had was 1.0.3.25's, which asks for its own chunks by
- * their hashed names, and the roll had replaced them with 1.0.3.26's. The one
+ * A page left open across a deploy reads "Importing a module script failed"
+ * on every card it opens: the page asks for its own chunks by their hashed
+ * names, and the roll has replaced them with the new build's. The one
  * move that helps is to load the page again, which fetches the new names; this
  * decides when that is the error, and reloads once. A second failure inside a
  * minute is not a stale page, so the error is shown rather than reloading in a

@@ -166,10 +166,9 @@ public sealed class InventoryService(
         // #endregion search
         // #region page
         // The count needs every match and the page needs a hundred of them.
-        // Until 1.0.0.163 this sorted every match and then took the page, a
-        // full sort of a hundred thousand rows on every unfiltered listing,
-        // and on the plan's one shared core that was the slowest thing the
-        // site did (ADR: The Admin tab, as a product, the addendum on the
+        // Sorting every match and then taking the page would be a full sort
+        // of a hundred thousand rows on every unfiltered listing, and on the
+        // plan's one shared core that was the slowest thing the site did (ADR: The Admin tab, as a product, the addendum on the
         // first amber tile). Skip and Take straight off the ordering let the
         // runtime sort only as far as the page: the same rows in the same
         // order, ties included, because the ordering is still the stable one.
@@ -181,9 +180,9 @@ public sealed class InventoryService(
     // #region facets
     /// <summary>
     /// Distinct values feeding the UI's filter dropdowns, sorted. Built once
-    /// with the catalogue and handed back by reference: until 1.0.0.140 this
-    /// walked all hundred thousand vehicles four times on every request, 12 ms
-    /// on the live container, for an answer that cannot change after load
+    /// with the catalogue and handed back by reference, because walking all
+    /// hundred thousand vehicles four times on every request cost 12 ms on the
+    /// live container for an answer that cannot change after load
     /// (ADR: The search index, addendum).
     /// </summary>
     public InventoryFacets Facets() => Inventory.Facets;

@@ -27,7 +27,7 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
 {
     private static readonly string[] Required = ["ActivityHours", "ActivityVisitors"];
 
-    // A column this build maps that a database published before it lacks (1.0.3.17):
+    // A column this build maps that a database published before it lacks:
     // the store is refused the way a missing table refuses it, rather than
     // failing every batch on a column SQL Server has not heard of.
     private static readonly string[] RequiredColumns = ["Sources"];

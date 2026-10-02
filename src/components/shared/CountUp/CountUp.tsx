@@ -12,7 +12,7 @@ const DURATION_MS = 400;
  * behind the moving one, so nothing beside it moves while it counts.
  *
  * Each frame writes the moving figure's text straight into its node rather
- * than through React's state (1.0.3.20): a render per frame for every
+ * than through React's state: a render per frame for every
  * figure is work the count does not need. React still owns the text, and sets
  * the finished figure whenever the reading changes.
  */

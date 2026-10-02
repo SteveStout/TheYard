@@ -15,8 +15,7 @@ public static class DiagramPage
     /// The page around one SVG. The palette is repeated here on purpose: no bundle loads on this page. So is the
     /// operator's look (ADR: The glass look, the addendum on the operator's look): the drawing sits on the one panel
     /// every page wears, the glass with the dark green rule and two corner brackets, at the token sheet's values, over
-    /// the site's own ground, the green grey to white gradient, with the site's teal for a link (a flat grey and the
-    /// old slate blue until 1.0.3.20). The tab carries the site's own icon, the one index.html and the reference page
+    /// the site's own ground, the green grey to white gradient, with the site's teal for a link. The tab carries the site's own icon, the one index.html and the reference page
     /// carry, so a browser does not go looking for /favicon.ico and log a 404 (read in Chrome at 390, 1400 and 1406).
     /// </summary>
     public static string Render(string title, string svg, string sourcePath)

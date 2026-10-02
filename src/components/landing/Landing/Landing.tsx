@@ -21,15 +21,15 @@ import { NavGlyph } from '../../shared/SheetIcons';
 import styles from './Landing.module.css';
 
 /**
- * The landing page (1.0.1.0): what the address opens with no query. A tile per
+ * The landing page: what the address opens with no query. A tile per
  * place the sidebar goes, drawn from the same site map the sidebar is drawn
  * from (src/lib/siteMap.ts), so the two cannot list different things. The
  * large tiles are the map's featured entries, Inventory and Author, each with
  * a photograph in its badge; below them every other section under its group's
- * heading, as the sidebar groups them, then Sign in, Admin and GitHub (1.0.1.4).
+ * heading, as the sidebar groups them, then Sign in, Admin and GitHub.
  * The Admin tile carries the one live reading, a health dot from /api/health,
  * read once when the page opens, and under the title the evidence strip reads
- * the gate's own counts from /api/tests/summary (1.0.2.0).
+ * the gate's own counts from /api/tests/summary.
  *
  * A section's tile opens what its sidebar section opens first: its first
  * document in the dialog, or its first link in a new tab when it has no

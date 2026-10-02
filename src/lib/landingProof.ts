@@ -1,5 +1,5 @@
 /**
- * The landing page's evidence strip (1.0.2.0): the four figures a reader who
+ * The landing page's evidence strip: the four figures a reader who
  * has never seen this project is asked to believe, each one read from
  * something the build itself produced rather than typed into a page.
  *

@@ -6,7 +6,7 @@
  *   ActivityGraph/               the split toggle, legend, chart, totals, tiles and day table
  *     ActivityPlot/              the chart drawing, its crosshair and ActivityReadout/
  *     ActivityTotals/            the sentences under the chart
- *     ActivityPathTiles/         the recruiter's path and where they came from, as PathBars/
+ *     ActivityPathTiles/         the path to the resume and where they came from, as PathBars/
  *     ActivityDaysTable/         the day by day table
  *   ActivityVisitorTable/        the per-visitor rows, behind the operator's key
  */
@@ -64,7 +64,7 @@ export default function ActivityCard({
         site's own reads (App Service asking after the container from its own loopback address, and
         the site's tools, which carry a mark on their agent). Visitors only shows the people; All
         traffic shows the three together; By store splits the same days by the store that served
-        them. Under the chart: what people asked for, named by page, the recruiter's path from the
+        them. Under the chart: what people asked for, named by page, the path to the resume from the
         site to the resume, and where visitors came from by the host that linked here. Every row is
         kept in Azure Cosmos DB, one batch every few seconds written off the request path, each row
         naming the store that served it, so a paused relational database cannot take this card down

@@ -153,7 +153,7 @@ public static class DocumentationCatalog
 
 // #region docs-images
 /// <summary>
-/// The pictures a document carries (1.0.3.5). The markdown names them on
+/// The pictures a document carries. The markdown names them on
 /// GitHub's raw host so the files read on GitHub as they are; read here, that
 /// meant every document's pictures came from a third host, and the README on a
 /// phone was 1.4 MB, 985 KB of it a PNG rendered from an SVG this repository

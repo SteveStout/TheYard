@@ -80,7 +80,7 @@ describe('the site map', () => {
     const { featured, groups, rest, grid } = landingTiles();
     const name = (tile: (typeof grid)[number]) =>
       tile.kind === 'section' ? tile.section.menu : tile.action.key;
-    // Inventory, Author, then the resume: the order a recruiter reads them in (1.0.2.0).
+    // Inventory, Author, then the resume: the order a visitor reads them in (1.0.2.0).
     expect(featured.map(name)).toEqual(['inventory', 'author', 'resume']);
     expect(groups.map((group) => [group.label, group.tiles.map(name)])).toEqual([
       [

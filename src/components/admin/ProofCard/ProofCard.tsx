@@ -89,8 +89,7 @@ function ProofBody({
             stranger can make, addendum): signed out, it says what it needs
             and takes the visitor there. It sat disabled at first, a button
             that read like a call to action and did nothing, which on a phone
-            reads as broken (Steve, 13 September; ADR: Same performance,
-            proven, addendum). */}
+            reads as broken (ADR: Same performance, proven, addendum). */}
         <button
           type="button"
           className={cardStyles.back}

@@ -5,8 +5,8 @@
  * This file is the only importer of `marked` and of the highlighter, and it is
  * loaded on demand: the documents sidebar asks for it the first time a reader
  * opens a record, through a dynamic import, so the inventory page's bundle
- * carries neither library. Until 1.0.0.141 both rode in the main chunk and
- * every visitor paid for the renderer whether or not they read a document
+ * carries neither library; in the main chunk, every visitor would pay for the
+ * renderer whether or not they read a document
  * (ADR: Code that reads like code, addendum). Plain TypeScript with no React
  * import, which is the rule for everything under src/lib.
  */
@@ -52,7 +52,7 @@ marked.use({
 // #endregion doc-tables
 
 // #region doc-images
-// A document's pictures load when the reader reaches them (1.0.3.5): the
+// A document's pictures load when the reader reaches them: the
 // README carries a screenshot and a drawing below its first screen, and the
 // text should not be sharing the connection with them. The address they carry
 // is this site's own since the same version (DocumentationCatalog.cs, DocImages).

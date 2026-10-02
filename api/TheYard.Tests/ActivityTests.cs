@@ -289,7 +289,7 @@ public class ActivityTests
     }
 
     [Fact]
-    public void The_recruiters_path_counts_the_visitor_days_that_reached_each_step()
+    public void The_path_to_the_resume_counts_the_visitor_days_that_reached_each_step()
     {
         var rows = new List<ActivityVisitor>
         {

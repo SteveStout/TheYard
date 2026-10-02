@@ -76,7 +76,7 @@ public static class ActivityRegistration
         var adminKey = new AdminKey(builder.Configuration["Admin:Key"]);
         builder.Services.AddSingleton(adminKey);
         // Whether the per-visitor rows (the visitor table and the kept log) are
-        // served at all. Off by default on Steve's word of 13 September ("disable
+        // served at all. Off by default on the owner's rule ("disable
         // the per visitor data for now"): the rows keep being written, the two
         // endpoints answer 404 to everybody, key or no key, and the cards do not
         // show. Admin__VisitorRows=true turns it back on (ADR: Site activity, and

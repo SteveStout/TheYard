@@ -1,10 +1,10 @@
 /**
- * Every other document's shape (1.0.2.0), on the Author page's panels.
+ * Every other document's shape, on the Author page's panels.
  *
  * Until now the Author page was the only document with a shape: its words sat
  * on glass panels with a green edge, and every other document, the decision
  * records among them, was a single column of markdown on the dialog's white.
- * Steve, 2026-09-22: "our documentation isn't formatted like the author
+ * The owner's rule: "our documentation isn't formatted like the author
  * section with the nice background and formatting". So the same panels are
  * given to all of them, by the one thing every document in this repository
  * has: second-level headings.

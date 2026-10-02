@@ -1,5 +1,5 @@
 // What people looked at and where they came from, in words a reader knows:
-// an address turned into the page it is, the recruiter's path as bar widths,
+// an address turned into the page it is, the path to the resume as bar widths,
 // and a referring host put in one of five groups. Its own file because it is
 // naming, not counting or drawing, and its pattern lists grow on their own.
 

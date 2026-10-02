@@ -437,7 +437,7 @@ line of text, a legend for all three, and the day-by-day numbers in a
 table under the chart. The lines by store are the other view, a click
 away; the split by store stays in the line under the chart in both.
 
-The recruiter's path, from 1.0.3.13: four steps, counted in visitor-days
+The path to the resume, from 1.0.3.13: four steps, counted in visitor-days
 from the same rows, each a set of paths (the page, which every address the
 site serves is kept as; `/api/vehicles`, the inventory's listing;
 `/api/docs/author`; and the resume, `/api/docs/resume` as the page links

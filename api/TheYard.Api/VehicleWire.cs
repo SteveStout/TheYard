@@ -121,7 +121,7 @@ public static class VehicleWire
     /// <paramref name="sold"/> is not a default parameter on purpose: every
     /// caller has the bid service in hand and has to say, because a listing
     /// that forgot would show a bought vehicle as open to everybody but its
-    /// buyer, which is what every listing did until 1.0.0.110 (ADR: Accounts
+    /// buyer, which is what every listing once did (ADR: Accounts
     /// and per-user bids, the addendum on the second buyer).
     /// </summary>
     public static VehicleView ToWire(Vehicle vehicle, AuctionClock clock, bool sold)

@@ -11,9 +11,9 @@ namespace TheYard.Application;
 // not in an adapter. Seven fields: when, a visitor token that is a keyed hash
 // of the address and rotates daily, the address cut to its first three octets,
 // the path with no query string, the store, whether the request looked like a
-// bot, and on a page load the host of the page that linked here (1.0.3.17; the
-// host only, never its path or query, and not personal information in Steve's
-// words, so it is as public as the rest of the tab). No user agent, no
+// bot, and on a page load the host of the page that linked here (the
+// host only, never its path or query, and not personal information, so it is
+// as public as the rest of the tab). No user agent, no
 // account, no email, no full address, no query string. A row that has no
 // field for a thing cannot leak it.
 

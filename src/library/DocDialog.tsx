@@ -63,7 +63,7 @@ export function DocDialog({
   /** Same content as docHtml, readable inside the effect without a stale closure. */
   const cache = useRef<Partial<Record<DocKey, string>>>({});
   // #region copy-link
-  // Records got addresses in 1.0.0.78 and nothing on the page said so. A
+  // Every record has an address, and a page that did not say so hid it. A
   // feature nobody can find is a feature nobody has. The label carries the
   // whole state: idle, copied, or the browser refusing, which happens on an
   // insecure origin and when the clipboard permission is denied, and in that
@@ -113,7 +113,7 @@ export function DocDialog({
         // #endregion renderer-on-demand
         // The Author page has a shape of its own: panels, blocks, buttons and
         // photographs. Every other document takes the same panels by its
-        // headings (1.0.2.0), so one look covers the whole library.
+        // headings, so one look covers the whole library.
         const html = author !== null ? author.layoutAuthor(rendered) : layoutDocument(rendered);
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));

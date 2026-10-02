@@ -17,7 +17,7 @@ import styles from './StoreBar.module.css';
  * same path and query, so the address bar changes and the page that arrives
  * is that site's own. The band is drawn from the first paint at its full
  * height, so the page under it does not move when the answer arrives
- * (measured at 1280 on 1.0.3.4: the whole page shifted 83 px, a layout shift
+ * (measured at 1280 without it: the whole page shifted 83 px, a layout shift
  * of 0.12, when this bar appeared); the segments are drawn only once the
  * server has answered, so a container that names no other site shows the
  * other segment as not here rather than as a control that does nothing.

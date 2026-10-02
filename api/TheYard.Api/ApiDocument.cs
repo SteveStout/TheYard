@@ -53,8 +53,8 @@ public static class ApiDocument
     /// over words; each of the page's cards on the shared glass with the dark
     /// green rule and two corner brackets, the values repeated from the token
     /// sheet on purpose, as DiagramPage.cs does; and every button a pill, a link
-    /// drawn as one included (the live page's Open API Client read square after
-    /// 1.0.3.19). The page's code face is Plex too, because the page sets its
+    /// drawn as one included, since a square Open API Client button once read
+    /// as the one control the site had not styled. The page's code face is Plex too, because the page sets its
     /// paths and methods in it and those are names on the page; a sample keeps
     /// the site's monospaced stack, the one --font-code names, because code reads
     /// like code (ADR: Code that reads like code). The shape rules are marked

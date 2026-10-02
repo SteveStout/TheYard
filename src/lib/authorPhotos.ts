@@ -74,8 +74,8 @@ const escape = (text: string) =>
 
 // #region formats
 /**
- * The three formats every photograph is cut to, best first. AVIF was added in
- * 1.0.3.2 and halved the page: measured on the originals at 960 wide, the
+ * The three formats every photograph is cut to, best first. AVIF halves the
+ * page: measured on the originals at 960 wide, the
  * Christmas photograph went from 241 KB to 122, the willow from 226 to 116 and
  * the grill from 379 to 183, with no loss anybody could point at in a crop at
  * full size. WebP stays as the fallback for a browser too old for AVIF (Safari
@@ -155,8 +155,8 @@ export function photoFigure(
     `alt="${escape(alt)}" width="${largest}" height="${Math.round(largest * photo.ratio)}" ` +
     // decoding="sync": a phone throws a decoded picture away once it scrolls off and decodes it
     // again on the way back; with "async" the frame paints empty until that decode lands, which
-    // is the flash Steve saw on the lower half of the page (2026-09-22). "sync" holds the old
-    // frame instead. Measured the same day at 390 px: 31 decodes for a dozen pictures in one
+    // reads as a flash on the lower half of the page. "sync" holds the old
+    // frame instead. Measured at 390 px: 31 decodes for a dozen pictures in one
     // scroll down and back.
     `loading="${eager ? 'eager' : 'lazy'}" decoding="sync">` +
     `</picture>` +
