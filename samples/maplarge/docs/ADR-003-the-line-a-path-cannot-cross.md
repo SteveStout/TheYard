@@ -12,9 +12,15 @@ project, so it is one class, and it is the first thing a reviewer should read.
 
 ## Decision
 
-`Files:Home` in `appsettings.json`, or the `FILES__HOME` environment variable, names the home:
-absolute, or relative to the content root. Empty means `sample-home`, a small tree that ships with
-the project so a clean clone has something to browse. The folder is created if it is missing.
+The folder the app shows is a setting, not code. It is the `Files:Home` line in
+`appsettings.json`, and on a server the `FILES__HOME` environment variable replaces it. A full path
+is used as written; a short one is taken from the folder the app runs from. Left empty, the app
+shows `sample-home`, a small practice folder that ships with the project, so a fresh clone has
+something to browse. The folder is created if it is missing.
+
+What that is worth: a developer clones and runs with no setup, and an organization ships one build
+to every machine and points each at its own folder without touching the code. Whatever folder is
+set, the rest of this record is why no request can reach a file outside it.
 
 `HomePath` is the only code that turns a request path into an absolute one. It sits in `Domain/`,
 the innermost layer of the onion architecture (ADR-002): business logic pulled out of the disk and

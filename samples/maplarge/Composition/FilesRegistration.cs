@@ -21,9 +21,10 @@ public static class FilesRegistration
     public static void AddTheShedFiles(this WebApplicationBuilder builder)
     {
         // #region files
-        // Reads the "Files" section of configuration (or FILES__* environment variables) into
-        // FilesOptions, then registers the options object and the HomePath built from it as
-        // singletons, so every class receives the same home directory.
+        // Reads the "Files" section of appsettings.json into FilesOptions. An environment variable
+        // named FILES__ plus the setting (FILES__HOME, for example) replaces the value from the
+        // file, which is how a server chooses its folder without editing the code. The options and
+        // the HomePath built from them are registered once, so every class sees the same folder.
         builder.Services.Configure<FilesOptions>(builder.Configuration.GetSection(FilesOptions.Section));
         builder.Services.AddSingleton(provider => provider.GetRequiredService<IOptions<FilesOptions>>().Value);
         builder.Services.AddSingleton(provider => HomeFor(provider.GetRequiredService<FilesOptions>(), builder.Environment.ContentRootPath));
@@ -52,19 +53,31 @@ public static class FilesRegistration
         // #endregion files
     }
 
+    /// <summary>The practice folder that ships with the project, shown when no folder is set.</summary>
+    private const string PracticeFolder = "sample-home";
+
     /// <summary>
-    /// Works out the home directory from configuration. An absolute path is used as given, and a
-    /// relative path is taken from the content root. When nothing is configured, it uses the
-    /// sample-home folder that ships with the project. The folder is created if it is missing,
-    /// so a fresh copy of the project runs without any setup.
+    /// Picks the folder the app shows and hands it to HomePath, the guard that keeps every
+    /// request inside it. The folder comes from Files:Home in appsettings.json, or from the
+    /// FILES__HOME environment variable, which wins. Nothing set means the sample-home practice
+    /// folder.
     /// </summary>
     /// <param name="options">The Files section of configuration.</param>
     /// <param name="contentRoot">The folder the project runs from.</param>
     public static HomePath HomeFor(FilesOptions options, string contentRoot)
     {
-        string configured = string.IsNullOrWhiteSpace(options.Home) ? "sample-home" : options.Home;
-        string root = Path.IsPathRooted(configured) ? configured : Path.Combine(contentRoot, configured);
-        Directory.CreateDirectory(root);
-        return new HomePath(root);
+        // Which folder was chosen? Nothing chosen means the practice folder.
+        string chosen = string.IsNullOrWhiteSpace(options.Home) ? PracticeFolder : options.Home;
+
+        // A full path (C:\files or /srv/files) is used as written. A short one (my-files) is
+        // taken from the folder the project runs from.
+        string folder = Path.IsPathRooted(chosen) ? chosen : Path.Combine(contentRoot, chosen);
+
+        // Make the folder if it is not there yet, so a fresh copy runs with no setup.
+        Directory.CreateDirectory(folder);
+
+        // From here on, HomePath is the only code that turns a request into a real path on disk,
+        // and it refuses any path that would leave this folder.
+        return new HomePath(folder);
     }
 }

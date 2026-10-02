@@ -46,9 +46,10 @@ public sealed class HomePath
     /// Turns a path from a request into an absolute path under the root, or throws
     /// <see cref="PathRefusedException"/>. It first refuses three things by looking at the
     /// string alone: a rooted path (a drive letter or a leading slash), a "." or ".."
-    /// segment anywhere, and a segment containing a character the operating system does
-    /// not allow in a name. It then joins the segments onto the root, normalises the
-    /// result, and checks it still lies inside the root. That final check is the safety
+    /// segment anywhere (a segment is one name between slashes), and a segment containing
+    /// a character the operating system does not allow in a name. It then joins the
+    /// segments onto the root, lets the operating system work out the final full path,
+    /// and checks that path still lies inside the root. That final check is the safety
     /// net for any trick the first three checks do not anticipate. It is business logic in
     /// the innermost layer of the onion architecture, so it depends on nothing and its tests
     /// run with no disk.

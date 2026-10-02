@@ -11,9 +11,13 @@ public sealed class FilesOptions
     public const string Section = "Files";
 
     /// <summary>
-    /// The home directory the browser shows. It can be absolute, or relative to the
-    /// folder the app runs from. Empty means the <c>sample-home</c> folder that ships
-    /// with the project, so a fresh copy of the code runs with something to browse.
+    /// The folder the app shows. Set it on the Files:Home line in appsettings.json, or with the
+    /// FILES__HOME environment variable on a server, which wins over the file. A full path
+    /// (C:\files or /srv/files) is used as written; a short one (my-files) is taken from the
+    /// folder the app runs from. Left empty, the app shows the <c>sample-home</c> practice
+    /// folder that ships with the project, so a fresh copy has something to browse.
+    /// Keeping the folder out of the code is what lets one build run on a laptop, a test
+    /// machine and a server, each pointed at its own folder with no code change.
     /// </summary>
     public string Home { get; set; } = string.Empty;
 

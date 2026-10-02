@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.25 Easy folder configuration: how the app picks the folder it shows, and what that is worth to a developer and an organization, in plain words in the code, ADR-003 and The Shed, explained.
 - 1.0.0.24 Every link to TheYard in The Shed, explained names the page it opens and opens a different page, 23 in all.
 - 1.0.0.23 Page 1 of The Shed, explained letters each item of the brief A to H to match its code, makes every address on it a link, and adds TheYard to the addresses at the top; the README's What comes next links each step to the TheYard page that already does it.
 - 1.0.0.22 The Shed, explained draws every documentation block and XML comment as a comment, and piece 6 shows the whole handler to its last brace.
