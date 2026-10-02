@@ -14,9 +14,22 @@ export type CostWindow = '24h' | '7d' | '30d';
 
 export type CostPoint = { day: string; cost: number; total: number; partial: boolean };
 
-export type CostSlice = { name: string; type: string; cost: number; share: number; count: number };
+export type CostSlice = {
+  name: string;
+  type: string;
+  cost: number;
+  monthly: number;
+  share: number;
+  count: number;
+};
 
-export type CostKind = { type: string; label: string; resources: number; cost: number };
+export type CostKind = {
+  type: string;
+  label: string;
+  resources: number;
+  cost: number;
+  monthly: number;
+};
 
 /** GET /api/admin/costs, as the server writes it (api/TheYard.Api/CostReport.cs). */
 export type CostReport = {
@@ -32,6 +45,8 @@ export type CostReport = {
   month_to_date: number;
   forecast_month: number | null;
   window_total: number;
+  rate_days: number;
+  month_days: number;
   days: CostPoint[];
   forecast: CostPoint[];
   resources: CostSlice[];
@@ -267,20 +282,32 @@ export function donutArcs(slices: CostSlice[], radius = 80, inner = 50): DonutAr
 
 // #region spend-bars
 /**
- * Each type's bar as its cost, a share of the costliest, so the longest bar is
- * where the money went and a type the bill carries at $0.00 draws no bar. The
+ * Each type's bar as what it comes to in a month, a share of the costliest, so
+ * the longest bar is where the money goes and a type the bill carries at $0.00
+ * draws no bar. The server works out the month; this only lays it out. The
  * count rides beside it in words: a bar measures one thing.
  */
 export function typeBars(
   types: CostKind[]
-): { label: string; resources: number; cost: number; share: number }[] {
-  const most = Math.max(0, ...types.map((kind) => kind.cost));
+): { label: string; resources: number; monthly: number; share: number }[] {
+  const most = Math.max(0, ...types.map((kind) => kind.monthly));
   return types.map((kind) => ({
     label: kind.label,
     resources: kind.resources,
-    cost: kind.cost,
-    share: most === 0 ? 0 : kind.cost / most,
+    monthly: kind.monthly,
+    share: most === 0 ? 0 : kind.monthly / most,
   }));
+}
+
+/**
+ * The sentence under the resource and type pictures: every figure there is a
+ * month at the rate of the window's finished days, so a day's cents are never
+ * read as a month's bill.
+ */
+export function rateWords(report: CostReport): string {
+  const days = report.rate_days === 1 ? 'day' : `${report.rate_days} days`;
+  const month = report.month === null ? 'the month' : monthWords(report.month);
+  return `Each figure is a month at the rate of the last finished ${days}, over the ${report.month_days} days of ${month}.`;
 }
 
 /** How many of a type are on the bill, in words. */

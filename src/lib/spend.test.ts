@@ -8,6 +8,7 @@ import {
   headline,
   money,
   niceCeiling,
+  rateWords,
   resourcesWords,
   spendLine,
   typeBars,
@@ -27,6 +28,8 @@ const report = (over: Partial<CostReport> = {}): CostReport => ({
   month_to_date: 47.18,
   forecast_month: 49.03,
   window_total: 2,
+  rate_days: 1,
+  month_days: 30,
   days: [
     { day: '2026-09-28', cost: 1, total: 1, partial: false },
     { day: '2026-09-29', cost: 1, total: 2, partial: true },
@@ -37,14 +40,21 @@ const report = (over: Partial<CostReport> = {}): CostReport => ({
       name: 'aci-theyard-ss',
       type: 'microsoft.containerinstance/containergroups',
       cost: 1.5,
+      monthly: 30,
       share: 75,
       count: 1,
     },
-    { name: 'Others', type: 'others', cost: 0.5, share: 25, count: 3 },
+    { name: 'Others', type: 'others', cost: 0.5, monthly: 15, share: 25, count: 3 },
   ],
   types: [
-    { type: 'microsoft.sql/servers/databases', label: 'SQL databases', resources: 2, cost: 0.5 },
-    { type: 'microsoft.web/sites', label: 'App Service apps', resources: 3, cost: 0 },
+    {
+      type: 'microsoft.sql/servers/databases',
+      label: 'SQL databases',
+      resources: 2,
+      cost: 0.5,
+      monthly: 15,
+    },
+    { type: 'microsoft.web/sites', label: 'App Service apps', resources: 3, cost: 0, monthly: 0 },
   ],
   ...over,
 });
@@ -107,8 +117,9 @@ describe('what Azure charges (ADR: What Azure charges)', () => {
     expect(arcs.every((arc) => arc.path.startsWith('M') && arc.path.endsWith('Z'))).toBe(true);
     // A single slice is the whole ring, drawn as two halves.
     expect(
-      donutArcs([{ name: 'one', type: 't', cost: 3, share: 100, count: 1 }])[0].path.split('Z')
-        .length
+      donutArcs([
+        { name: 'one', type: 't', cost: 3, share: 100, count: 1, monthly: 3 },
+      ])[0].path.split('Z').length
     ).toBe(3);
     expect(donutArcs([])).toEqual([]);
   });
@@ -117,9 +128,21 @@ describe('what Azure charges (ADR: What Azure charges)', () => {
     // Three apps billed through their plan cost $0.00 and draw no bar, however many there are.
     expect(typeBars(report().types).map((bar) => bar.share)).toEqual([1, 0]);
     expect(typeBars(report().types).map((bar) => bar.resources)).toEqual([2, 3]);
-    expect(typeBars([{ type: 't', label: 'T', resources: 4, cost: 0 }])[0].share).toBe(0);
+    expect(typeBars(report().types).map((bar) => bar.monthly)).toEqual([15, 0]);
+    expect(typeBars([{ type: 't', label: 'T', resources: 4, cost: 0, monthly: 0 }])[0].share).toBe(
+      0
+    );
     expect(typeBars([])).toEqual([]);
     expect(resourcesWords(1)).toBe('1 resource');
     expect(resourcesWords(3)).toBe('3 resources');
+  });
+
+  it('says every resource and type figure is a month at the rate of the finished days', () => {
+    expect(rateWords(report())).toBe(
+      'Each figure is a month at the rate of the last finished day, over the 30 days of September.'
+    );
+    expect(rateWords(report({ rate_days: 29, month_days: 31, month: '2026-10' }))).toBe(
+      'Each figure is a month at the rate of the last finished 29 days, over the 31 days of October.'
+    );
   });
 });

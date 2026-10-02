@@ -74,6 +74,17 @@ Steve, on his phone at 19:28 CDT, on the Cosmos DB site's card: "The bar chart i
 
 From 1.0.3.57 a bar is a type's cost, a share of the costliest, ordered by cost; the count is in words beside the name. The apps still show, as an empty bar at $0.00 with "3 resources", which is the true picture: they are on the bill and the plan pays for them. The portal's own card counts resources; this one shows the money and keeps the count, because a reader of this tab came for what it costs.
 
+## Addendum, 2026-10-02: every figure as a month
+
+Steve, reading the card on the last day window: "our total bill is like $48 a month", and "the conversion should happen on the C# side". The resource and type figures were what the window cost, so on the last day window the App Service plan read $0.48, one day of a plan that comes to about $14 a month, on a tab where the bill is read in months.
+
+From 1.0.3.61 the server works out the month and the card only shows it. Each resource and each type carries `monthly`: what the window's finished days cost, divided by how many there are, times the days in the month. The newest day is left out while Azure is still adding to it, because part of a day counted as a whole one would pull the month down; a window with no finished day uses the days it has. The answer carries `rate_days` and `month_days`, and the card says in one sentence what rate its figures come from. The window total and the spend line stay in the window, because the line is a running total of real days.
+
+Measured on 2 October: the one finished day in the last day window, 1 October, cost $0.74, which comes to $22.94 over October's 31 days. The last 30 days cost $45.74, and $32.82 of that was the two container instances, which the bill has not carried since 20 September.
+
+```live path=api/TheYard.Api/CostReport.cs region=cost-rate
+```
+
 ## Files
 
 - [`api/TheYard.Api/Costs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Costs.cs): the two questions, the shaping, the reader and the recorder.

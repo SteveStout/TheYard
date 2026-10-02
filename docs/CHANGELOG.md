@@ -10,6 +10,7 @@ footer cannot disagree (ADR: The version comes from the changelog). One number
 is missing, 1.0.0.39, skipped under the older formula when a red build consumed
 a deploy run number.
 
+- **1.0.3.61** (2026-10-02): The cost card shows what each resource and each type of resource comes to in a month, worked out on the server from the window's finished days and the days in the month, where it had shown what the window cost, so the last day window read a plan at .48 beside a bill read in months (ADR: What Azure charges, third addendum).
 - **1.0.3.60** (2026-10-02): The Modding block on About Steven reads like the sections around it, in one line: Republic Commando brought up to date with Claude, and The Witcher 3 next.
 - **1.0.3.59** (2026-10-02): The seventeen TheYard pages that The Shed, explained links to each open with an In plain words section: what the page is about, and what it is worth to a developer and to an organization.
 - **1.0.3.58** (2026-10-02): The Modding block on About Steven shows the two games' key art side by side where the placeholder cards stood, Republic Commando credited to Lucasfilm and the fan who remastered it to 8K, The Witcher 3 credited to CD PROJEKT RED, each cut with no metadata.

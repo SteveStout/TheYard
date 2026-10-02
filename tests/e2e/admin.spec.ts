@@ -1391,6 +1391,8 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
         month_to_date: 47.18,
         forecast_month: 49.03,
         window_total: 1.62,
+        rate_days: 1,
+        month_days: 30,
         days: [
           { day: '2026-09-28', cost: 0.77, total: 0.77, partial: false },
           { day: '2026-09-29', cost: 0.85, total: 1.62, partial: true },
@@ -1401,6 +1403,7 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
             name: 'plan-theyard-ss',
             type: 'microsoft.web/serverfarms',
             cost: 0.82,
+            monthly: 23.1,
             share: 50.6,
             count: 1,
           },
@@ -1408,6 +1411,7 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
             name: 'crtheyardss',
             type: 'microsoft.containerregistry/registries',
             cost: 0.33,
+            monthly: 9.9,
             share: 20.4,
             count: 1,
           },
@@ -1415,6 +1419,7 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
             name: 'sqldb-theyard-ss-basic',
             type: 'microsoft.sql/servers/databases',
             cost: 0.32,
+            monthly: 9.6,
             share: 19.8,
             count: 1,
           },
@@ -1422,10 +1427,11 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
             name: 'cosmos-theyard-ss',
             type: 'microsoft.documentdb/databaseaccounts',
             cost: 0.1,
+            monthly: 3,
             share: 6.2,
             count: 1,
           },
-          { name: 'Others', type: 'others', cost: 0.05, share: 3.1, count: 3 },
+          { name: 'Others', type: 'others', cost: 0.05, monthly: 1.5, share: 3.1, count: 3 },
         ],
         // The costliest type first, as the server orders them.
         types: [
@@ -1434,8 +1440,15 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
             label: 'App Service plans',
             resources: 1,
             cost: 0.82,
+            monthly: 23.1,
           },
-          { type: 'microsoft.web/sites', label: 'App Service apps', resources: 3, cost: 0 },
+          {
+            type: 'microsoft.web/sites',
+            label: 'App Service apps',
+            resources: 3,
+            cost: 0,
+            monthly: 0,
+          },
         ],
       }),
     })
@@ -1448,12 +1461,19 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
   await expect(card.getByTestId('spend-partial')).toBeAttached();
   await expect(card.getByTestId('spend-resource')).toHaveCount(5);
   await expect(card.getByTestId('spend-resource').last()).toContainText('Others (3 resources)');
-  // A bar measures what a type cost: the plan's bar is the whole track and the apps' is empty,
-  // because the plan carries their bill (1.0.3.57).
+  // Every resource and type figure is a month at the window's rate, worked out by the server, and
+  // the card says so: a day's cents are never shown where a month's bill is read.
+  await expect(card.getByTestId('spend-rate')).toHaveText(
+    'Each figure is a month at the rate of the last finished day, over the 30 days of September.'
+  );
+  await expect(card.getByTestId('spend-resource').first()).toContainText('$23.10 a month');
+  // A bar measures what a type comes to in a month: the plan's bar is the whole track and the
+  // apps' is empty, because the plan carries their bill.
   await expect(card.getByTestId('spend-type-0')).toContainText('App Service plans');
+  await expect(card.getByTestId('spend-type-0')).toContainText('$23.10 a month');
   await expect(card.getByTestId('spend-type-0').getByRole('meter')).toHaveAttribute(
     'aria-valuenow',
-    '0.82'
+    '23.1'
   );
   await expect(card.getByTestId('spend-type-1')).toContainText('3 resources');
   await expect(card.getByTestId('spend-type-1').getByRole('meter')).toHaveAttribute(

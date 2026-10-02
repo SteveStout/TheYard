@@ -90,7 +90,7 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
             .Select((cost, i) => new CostDay("2026-09-29", $"r{i}", "microsoft.web/sites", cost, "USD"))
             .ToList();
 
-        var slices = CostView.Slices(days);
+        var slices = CostView.Slices(days, new MonthRate(null, 1, 30));
 
         Assert.Equal(new[] { "r0", "r1", "r2", "r3", "Others" }, slices.Select(slice => slice.Name));
         Assert.Equal(3.0, slices[^1].Cost);
@@ -140,11 +140,50 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
             new CostDay("2026-09-30", "sqldb-theyard-ss-basic", "microsoft.sql/servers/databases", 0.10, "USD"),
         };
 
-        var kinds = CostView.Kinds(days);
+        var kinds = CostView.Kinds(days, new MonthRate(null, 1, 30));
 
-        // Three apps at $0.00 led the bars on 30 September because they were ordered by count.
+        // The apps cost nothing on their own: the plan carries their bill, so they go last.
         Assert.Equal(new[] { "App Service plans", "SQL databases", "App Service apps" }, kinds.Select(kind => kind.Label));
         Assert.Equal(3, kinds[^1].Resources);
+    }
+
+    [Fact]
+    public void A_window_is_shown_as_a_month_at_the_rate_of_its_finished_days()
+    {
+        // The 24 hour window on 2 October: 1 October finished at $0.74, and 2 October still being added to.
+        var now = new DateTimeOffset(2026, 10, 2, 13, 0, 0, TimeSpan.Zero);
+        var kept = new CostKept(
+            [
+                new CostDay("2026-10-01", "plan-theyard-ss", "microsoft.web/serverfarms", 0.43, "USD"),
+                new CostDay("2026-10-01", "sqldb-theyard-ss-basic", "microsoft.sql/servers/databases", 0.16, "USD"),
+                new CostDay("2026-10-01", "crtheyardss", "microsoft.containerregistry/registries", 0.15, "USD"),
+                new CostDay("2026-10-02", "plan-theyard-ss", "microsoft.web/serverfarms", 0.08, "USD"),
+                new CostDay("2026-10-02", "app-theyard-ss", "microsoft.web/sites", 0, "USD"),
+            ],
+            []);
+
+        var report = CostView.Build("24h", kept, now, new CostHistoryAvailability(true, "kept"), (now, true, null));
+
+        // One finished day, scaled to the 31 days of October; the partial day is left out of the rate.
+        Assert.Equal(1, report.RateDays);
+        Assert.Equal(31, report.MonthDays);
+        var plan = report.Resources.Single(slice => slice.Name == "plan-theyard-ss");
+        Assert.Equal(0.51, plan.Cost);
+        Assert.Equal(13.33, plan.Monthly);
+        Assert.Equal(new[] { 13.33, 4.96, 4.65, 0 }, report.Types.Select(kind => kind.Monthly));
+        Assert.Equal(22.94, Math.Round(report.Types.Sum(kind => kind.Monthly), 2));
+    }
+
+    [Fact]
+    public void A_window_with_no_finished_day_is_scaled_from_the_days_it_has()
+    {
+        var points = new[] { new CostPoint("2026-10-02", 0.2, 0.2, true) };
+
+        var rate = MonthRate.For(points, "2026-10-02");
+
+        Assert.Null(rate.PartialDay);
+        Assert.Equal(1, rate.BilledDays);
+        Assert.Equal(6.2, CostView.Money(rate.Of([new CostDay("2026-10-02", "r", "t", 0.2, "USD")])));
     }
 
     [Fact]

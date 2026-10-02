@@ -12,6 +12,7 @@ import {
   donutArcs,
   headline,
   money,
+  rateWords,
   resourcesWords,
   SPEND_BOX,
   spendLine,
@@ -74,7 +75,7 @@ function SpendBody({ report }: { report: CostReport }) {
   const line = spendLine(report, withForecast);
   const arcs = donutArcs(report.resources);
   const bars = typeBars(report.types);
-  const most = Math.max(0, ...bars.map((bar) => bar.cost));
+  const most = Math.max(0, ...bars.map((bar) => bar.monthly));
   const [first, ...rest] = headline(report);
   return (
     <>
@@ -157,6 +158,9 @@ function SpendBody({ report }: { report: CostReport }) {
         {/* #region spend-donut-card */}
         <section className={styles.part} data-testid="spend-resources">
           <h3 className={cardStyles.cardTitle}>Cost by resource</h3>
+          <p className={cardStyles.muted} data-testid="spend-rate">
+            {rateWords(report)}
+          </p>
           <svg
             className={styles.donut}
             viewBox="0 0 160 160"
@@ -177,7 +181,7 @@ function SpendBody({ report }: { report: CostReport }) {
                   {slice.name === 'Others' ? `Others (${slice.count} resources)` : slice.name}
                 </span>
                 <span className={cardStyles.mono}>
-                  {money(slice.cost, report.currency)} · {slice.share}%
+                  {money(slice.monthly, report.currency)} a month · {slice.share}%
                 </span>
               </li>
             ))}
@@ -188,8 +192,8 @@ function SpendBody({ report }: { report: CostReport }) {
         <section className={styles.part} data-testid="spend-types">
           <h3 className={cardStyles.cardTitle}>Cost by type</h3>
           <p className={cardStyles.muted}>
-            What each type of resource cost in the window, the costliest first, and how many of each
-            are on the bill. A type at $0.00 is billed through another, as the apps are through
+            What each type of resource comes to in a month, the costliest first, and how many of
+            each are on the bill. A type at $0.00 is billed through another, as the apps are through
             their plan.
           </p>
           {bars.map((bar, index) => (
@@ -198,9 +202,9 @@ function SpendBody({ report }: { report: CostReport }) {
               testId={`spend-type-${index}`}
               name={bar.label}
               ceiling={resourcesWords(bar.resources)}
-              value={bar.cost}
+              value={bar.monthly}
               max={most}
-              reading={money(bar.cost, report.currency)}
+              reading={`${money(bar.monthly, report.currency)} a month`}
             />
           ))}
         </section>
