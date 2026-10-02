@@ -1,7 +1,7 @@
 /**
  * Does:      Declares the design tokens for font families, text sizes, weights, tracking and chart text.
  * Does not:  Load the face (fonts.css does).
- * Used by:   main.tsx, styleSheet.ts.
+ * Used by:   globalStyles.ts, styleSheet.ts.
  */
 /*
  * Typography: font families, text sizes, weights, tracking and chart text.

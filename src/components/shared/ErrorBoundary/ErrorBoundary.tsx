@@ -13,7 +13,7 @@ import styles from './ErrorBoundary.module.css';
  * It must be a class: `componentDidCatch` and `getDerivedStateFromError` have
  * no hook equivalent, and this is the one place in the app that needs them.
  * Errors thrown in event handlers and promises never reach a boundary, which
- * is why main.tsx also reports those (ADR: Error handling).
+ * is why app/reportUncaughtErrors.ts also reports those (ADR: Error handling).
  */
 export class ErrorBoundary extends Component<
   { children: ReactNode },

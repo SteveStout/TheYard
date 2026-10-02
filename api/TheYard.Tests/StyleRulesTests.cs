@@ -22,7 +22,7 @@ public class StyleRulesTests
     private static string Root => Repo.Root();
 
     /// <summary>The four token sheets, named for what they control, in the
-    /// order main.tsx loads them. Every design value is a token in one of them.</summary>
+    /// order styles/globalStyles.ts loads them. Every design value is a token in one of them.</summary>
     private static readonly string[] TokenSheets = ["colors.css", "sizes.css", "typography.css", "effects.css"];
 
     /// <summary>The four token sheets read as one, as src/lib/styleSheet.ts

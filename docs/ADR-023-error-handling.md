@@ -59,7 +59,7 @@ Insights). Static files and the SPA fallback are excluded, or the log is
 mostly bundle chunks.
 
 **A React error boundary at the root.** `ErrorBoundary` wraps `<App />`
-in `main.tsx`. A render crash shows what happened plus two ways out
+in `app/mount.tsx`. A render crash shows what happened plus two ways out
 (reload, or back to the inventory with the query string dropped) instead
 of a blank page. Errors that never reach a boundary, thrown in an event
 handler or an unhandled promise rejection, are caught by
@@ -95,9 +95,9 @@ The boundary, and the reporter every path uses:
 ```live path=src/components/shared/ErrorBoundary/ErrorBoundary.tsx region=report
 ```
 
-The two window-level handlers, in `src/main.tsx`:
+The two window-level handlers, in `src/app/reportUncaughtErrors.ts`:
 
-```live path=src/main.tsx region=bootstrap
+```live path=src/app/reportUncaughtErrors.ts region=window-handlers
 ```
 
 How the browser reads a failure:
@@ -156,7 +156,8 @@ there, and the sentence the self-test throws with is not.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the handler, the logging, the client-error endpoint, and the 400s.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the ring buffer both sides record into.
 - [`src/components/shared/ErrorBoundary/ErrorBoundary.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.tsx) and [`ErrorBoundary.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.module.css): the boundary and the reporter.
-- [`src/main.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/main.tsx): the boundary around the app and the two window handlers.
+- [`src/app/mount.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/mount.tsx): the boundary around the app.
+- [`src/app/reportUncaughtErrors.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/reportUncaughtErrors.ts): the two window handlers, started from `src/main.tsx`.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): reading `detail`.
 - [`api/TheYard.Tests/ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProblemDetailsTests.cs): every 400 carries the same shape, and a browser report reaches the errors list.
 - [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): a reported browser error appears on the Admin tab.

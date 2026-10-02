@@ -1,7 +1,7 @@
 /**
  * Does:      Gives the code in every served document this site's ink colours, one design token per kind of word.
  * Does not:  Choose the colours (colors.css does) or pick out the words (highlight.js does).
- * Used by:   main.tsx.
+ * Used by:   globalStyles.ts.
  */
 /*
  * The code theme for every served document (ADR: Code that reads like code).

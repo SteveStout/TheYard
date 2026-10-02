@@ -72,7 +72,7 @@ running server required.
 
 React + TypeScript, deliberately thin. No business math runs in the browser:
 
-- `main.tsx`: entry point. Mounts `App` inside the error boundary and imports the design tokens and the base styles once.
+- `main.tsx`: entry point, read like `Program.cs`: one line per part with its file beside it. `styles/globalStyles.ts` loads the stylesheets in order, `app/reportUncaughtErrors.ts` reports crashes no boundary sees, and `app/mount.tsx` draws `App` inside the error boundary.
 - `app/`: the app shell. `App.tsx` is the composition root and reads like a table of
   contents: one line per hook, then the view the address names inside `Shell.tsx`
   (the frame), with `Header.tsx`, `Footer.tsx` and `InventoryView.tsx` beside it.

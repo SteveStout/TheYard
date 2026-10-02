@@ -1,7 +1,7 @@
 /**
  * Does:      Loads IBM Plex Sans, the site's one face, from the site's own files.
  * Does not:  Set where the face is used (typography.css and base.css do).
- * Used by:   main.tsx.
+ * Used by:   globalStyles.ts.
  */
 /*
  * The site's own type (ADR: The palette, the addendum of 24 September on the

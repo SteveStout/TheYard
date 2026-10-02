@@ -61,15 +61,27 @@ layouts in ADR: The phone header possible at all.
 
 ### main.tsx: the lines that start React
 
-`tokens.css` is imported before the other sheets so the palette's custom
-properties exist before the first component's styles are applied (ADR:
-The palette), and `base.css`, the page's defaults, comes right after it. `createRoot` is the React 18 and 19 way to mount; the older
-`ReactDOM.render` is gone. `StrictMode` costs nothing in production; in
-development it mounts, unmounts and remounts every component once, so
-every effect's setup runs twice, which flushes out effects that leak a
-timer or a listener. The throw on a missing `#root` turns a blank page into a message.
+`main.tsx` reads like `Program.cs`: one line per part, in order, with the file that holds the
+details named beside it. It loads the stylesheets, keeps the operator's key before the address bar
+is tidied, starts reporting the crashes an error boundary never sees, and draws the site.
 
 ```live path=src/main.tsx region=*
+```
+
+The stylesheets load in one fixed order, from `styles/globalStyles.ts`: the font first, then the
+four design token files, so every variable exists before a component's styles use it, then
+`base.css`, the page's defaults, and the two shared looks.
+
+```live path=src/styles/globalStyles.ts region=load-order
+```
+
+`app/mount.tsx` draws the site. `createRoot` is the React 18 and 19 way to mount; the older
+`ReactDOM.render` is gone. `StrictMode` costs nothing in production; in development it mounts,
+unmounts and remounts every component once, so every effect's setup runs twice, which flushes out
+effects that leak a timer or a listener. The throw on a missing `#root` turns a blank page into a
+message.
+
+```live path=src/app/mount.tsx region=mount
 ```
 
 ### vite.config.ts: the dev server and the proxy
@@ -360,7 +372,8 @@ where the two lists are joined.
 ## Files
 
 - [`package.json`](https://github.com/SteveStout/TheYard/blob/main/package.json): the scripts and the dependencies.
-- [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html) and [`src/main.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/main.tsx): the entry point and the mount.
+- [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html) and [`src/main.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/main.tsx): the entry point, one line per part.
+- [`src/styles/globalStyles.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/globalStyles.ts) and [`src/app/mount.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/mount.tsx): the stylesheets in order, and the mount.
 - [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts): the plugin, the proxy, the watcher, and the Vitest settings.
 - [`tsconfig.json`](https://github.com/SteveStout/TheYard/blob/main/tsconfig.json), [`tsconfig.app.json`](https://github.com/SteveStout/TheYard/blob/main/tsconfig.app.json), [`tsconfig.node.json`](https://github.com/SteveStout/TheYard/blob/main/tsconfig.node.json), [`src/vite-env.d.ts`](https://github.com/SteveStout/TheYard/blob/main/src/vite-env.d.ts): the compiler, split by where the code runs.
 - [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css) and [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the palette and its contrast test.

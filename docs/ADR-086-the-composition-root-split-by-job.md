@@ -57,9 +57,23 @@ Every region moved with its code under its own name, and every live sample that 
 ```live path=api/TheYard.Tests/CompositionRootTests.cs region=composition-root-rules
 ```
 
+## Addendum, 2 October: the front end's entry, the same way
+
+Steve asked for the site's front-end entry, `src/main.tsx`, to read like `Program.cs`, and set the rule behind it for every file: no large, tangled files; anyone should be able to open a file and see its intention.
+
+`main.tsx` held the stylesheet list, the order those sheets load in and why, the two window-level error handlers, and the React mount with its boundary, all in one file of comments and markup. It is now the front end's table of contents: one line per part, in order, with the file that holds the details beside it.
+
+```live path=src/main.tsx region=bootstrap
+```
+
+The parts moved, unchanged in what they do, to files named for their one job: `src/styles/globalStyles.ts` loads the stylesheets in their order, `src/app/reportUncaughtErrors.ts` reports the crashes an error boundary never sees, and `src/app/mount.tsx` draws the site inside the boundary. Each opens with the Does, Does not and Used by lines that `FileHeaderTests` reads, and that test already holds every file under `src/app` to 300 lines.
+
+What that is worth: a reader opens the entry file and sees the whole start-up on one screen, and each part has one file to change.
+
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents.
+- [`src/main.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/main.tsx): the front end's table of contents.
 - [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition): the registration steps, the startup, the pipeline and the fallback.
 - [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): one static class per feature.
 - [`api/TheYard.Api/YardComposition.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/YardComposition.cs): what the steps hand one another.

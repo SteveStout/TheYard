@@ -2,7 +2,7 @@
  * Does:      Holds the shared classes every panel, tile, rail and pill group takes: the glass, the rule, the
  *            brackets, the radius.
  * Does not:  Declare a design token (effects.css and colors.css do) or lay out a component.
- * Used by:   main.tsx, panels.test.ts.
+ * Used by:   globalStyles.ts, panels.test.ts.
  */
 /*
  * The operator's look: the shared classes that frame panels, stat tiles, side

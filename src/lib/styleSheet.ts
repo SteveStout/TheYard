@@ -8,6 +8,6 @@ import effects from '../styles/effects.css?raw';
  * text: the swatches on the Colour and style page and the tests that measure
  * the tokens. The sheets are split by what they control (colors, sizes,
  * typography, effects), but a reader that wants "every token" reads them
- * together, in the order main.tsx loads them. No React here.
+ * together, in the order styles/globalStyles.ts loads them. No React here.
  */
 export const styleSheet = [colors, sizes, typography, effects].join('\n');

@@ -2,7 +2,7 @@
  * Does:      Declares the design tokens for spacing, control and reserved heights, widths, corners and layers.
  * Does not:  Hold the width steps a media query uses (src/lib/breakpoints.ts does, since a media query cannot read a
  *            design token).
- * Used by:   main.tsx, styleSheet.ts.
+ * Used by:   globalStyles.ts, styleSheet.ts.
  */
 /*
  * Sizes: spacing, control and reserved heights, widths, corners and layers.

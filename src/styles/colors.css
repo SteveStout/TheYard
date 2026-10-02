@@ -2,7 +2,7 @@
  * Does:      Declares every colour the site uses as a design token, written once: the palette, the roles, the
  *            components.
  * Does not:  Style any element; it declares design tokens and nothing else.
- * Used by:   main.tsx, styleSheet.ts.
+ * Used by:   globalStyles.ts, styleSheet.ts.
  */
 /* #region the-opening */
 /*
