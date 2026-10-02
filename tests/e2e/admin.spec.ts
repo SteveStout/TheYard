@@ -1427,14 +1427,15 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
           },
           { name: 'Others', type: 'others', cost: 0.05, share: 3.1, count: 3 },
         ],
+        // The costliest type first, as the server orders them.
         types: [
-          { type: 'microsoft.web/sites', label: 'App Service apps', resources: 3, cost: 0 },
           {
             type: 'microsoft.web/serverfarms',
             label: 'App Service plans',
             resources: 1,
             cost: 0.82,
           },
+          { type: 'microsoft.web/sites', label: 'App Service apps', resources: 3, cost: 0 },
         ],
       }),
     })
@@ -1447,7 +1448,18 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
   await expect(card.getByTestId('spend-partial')).toBeAttached();
   await expect(card.getByTestId('spend-resource')).toHaveCount(5);
   await expect(card.getByTestId('spend-resource').last()).toContainText('Others (3 resources)');
-  await expect(card.getByTestId('spend-type-0')).toContainText('App Service apps');
+  // A bar measures what a type cost: the plan's bar is the whole track and the apps' is empty,
+  // because the plan carries their bill (1.0.3.57).
+  await expect(card.getByTestId('spend-type-0')).toContainText('App Service plans');
+  await expect(card.getByTestId('spend-type-0').getByRole('meter')).toHaveAttribute(
+    'aria-valuenow',
+    '0.82'
+  );
+  await expect(card.getByTestId('spend-type-1')).toContainText('3 resources');
+  await expect(card.getByTestId('spend-type-1').getByRole('meter')).toHaveAttribute(
+    'aria-valuenow',
+    '0'
+  );
   // The forecast is dashed on the month, where its end is inside the chart.
   await card.getByTestId('spend-window-30d').click();
   await expect(card.getByTestId('spend-forecast')).toBeAttached();

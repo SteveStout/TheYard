@@ -8,7 +8,7 @@ A used-vehicle auction platform I built and run on Azure: browse 100,000 vehicle
 
 ## Tests, and the gate every version passes
 
-The suites hold 722 xUnit tests, 356 Vitest tests at 1.0.3.39 and 141 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.39 hold 1,907 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 723 xUnit tests, 356 Vitest tests at 1.0.3.39 and 141 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.39 hold 1,907 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
@@ -482,7 +482,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (722 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (723 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory

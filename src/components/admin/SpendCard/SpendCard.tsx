@@ -12,6 +12,7 @@ import {
   donutArcs,
   headline,
   money,
+  resourcesWords,
   SPEND_BOX,
   spendLine,
   typeBars,
@@ -42,9 +43,10 @@ export default function SpendCard({
       <About>
         The bill for the subscription this site runs on, as Azure Cost Management reports it: the
         spend so far and what Azure forecasts for the rest of the month, what each resource cost,
-        and how many resources of each type are on the bill. Azure reports a day eight to twenty
-        four hours late, so the newest day is still being added to. The site reads the bill once an
-        hour with its own identity and serves it from there, never asking Azure on your request.
+        and what each type of resource cost, with how many of it are on the bill. Azure reports a
+        day eight to twenty four hours late, so the newest day is still being added to. The site
+        reads the bill once an hour with its own identity and serves it from there, never asking
+        Azure on your request.
       </About>
       {toolbar}
       {chosen === '1h' && (
@@ -72,7 +74,7 @@ function SpendBody({ report }: { report: CostReport }) {
   const line = spendLine(report, withForecast);
   const arcs = donutArcs(report.resources);
   const bars = typeBars(report.types);
-  const most = Math.max(0, ...bars.map((bar) => bar.resources));
+  const most = Math.max(0, ...bars.map((bar) => bar.cost));
   const [first, ...rest] = headline(report);
   return (
     <>
@@ -184,17 +186,21 @@ function SpendBody({ report }: { report: CostReport }) {
         {/* #endregion spend-donut-card */}
         {/* #region spend-types-card */}
         <section className={styles.part} data-testid="spend-types">
-          <h3 className={cardStyles.cardTitle}>Resources by type</h3>
-          <p className={cardStyles.muted}>Every resource on the bill in the window, by type.</p>
+          <h3 className={cardStyles.cardTitle}>Cost by type</h3>
+          <p className={cardStyles.muted}>
+            What each type of resource cost in the window, the costliest first, and how many of each
+            are on the bill. A type at $0.00 is billed through another, as the apps are through
+            their plan.
+          </p>
           {bars.map((bar, index) => (
             <BarGauge
               key={bar.label}
               testId={`spend-type-${index}`}
               name={bar.label}
-              ceiling={money(bar.cost, report.currency)}
-              value={bar.resources}
+              ceiling={resourcesWords(bar.resources)}
+              value={bar.cost}
               max={most}
-              reading={`${bar.resources} resource${bar.resources === 1 ? '' : 's'}`}
+              reading={money(bar.cost, report.currency)}
             />
           ))}
         </section>

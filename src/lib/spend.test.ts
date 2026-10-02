@@ -8,6 +8,7 @@ import {
   headline,
   money,
   niceCeiling,
+  resourcesWords,
   spendLine,
   typeBars,
 } from './spend';
@@ -42,8 +43,8 @@ const report = (over: Partial<CostReport> = {}): CostReport => ({
     { name: 'Others', type: 'others', cost: 0.5, share: 25, count: 3 },
   ],
   types: [
+    { type: 'microsoft.sql/servers/databases', label: 'SQL databases', resources: 2, cost: 0.5 },
     { type: 'microsoft.web/sites', label: 'App Service apps', resources: 3, cost: 0 },
-    { type: 'microsoft.sql/servers/databases', label: 'SQL databases', resources: 1, cost: 0.5 },
   ],
   ...over,
 });
@@ -112,8 +113,13 @@ describe('what Azure charges (ADR: What Azure charges)', () => {
     expect(donutArcs([])).toEqual([]);
   });
 
-  it('draws each type as a share of the type with the most resources', () => {
-    expect(typeBars(report().types).map((bar) => bar.share)).toEqual([1, 1 / 3]);
+  it('draws each type as its cost, so the longest bar is where the money went (1.0.3.57)', () => {
+    // Three apps billed through their plan cost $0.00 and draw no bar, however many there are.
+    expect(typeBars(report().types).map((bar) => bar.share)).toEqual([1, 0]);
+    expect(typeBars(report().types).map((bar) => bar.resources)).toEqual([2, 3]);
+    expect(typeBars([{ type: 't', label: 'T', resources: 4, cost: 0 }])[0].share).toBe(0);
     expect(typeBars([])).toEqual([]);
+    expect(resourcesWords(1)).toBe('1 resource');
+    expect(resourcesWords(3)).toBe('3 resources');
   });
 });

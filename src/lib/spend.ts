@@ -266,16 +266,25 @@ export function donutArcs(slices: CostSlice[], radius = 80, inner = 50): DonutAr
 // #endregion spend-donut
 
 // #region spend-bars
-/** Each type's bar as a share of the longest, so the longest fills the track. */
+/**
+ * Each type's bar as its cost, a share of the costliest, so the longest bar is
+ * where the money went and a type the bill carries at $0.00 draws no bar. The
+ * count rides beside it in words: a bar measures one thing.
+ */
 export function typeBars(
   types: CostKind[]
 ): { label: string; resources: number; cost: number; share: number }[] {
-  const most = Math.max(0, ...types.map((kind) => kind.resources));
+  const most = Math.max(0, ...types.map((kind) => kind.cost));
   return types.map((kind) => ({
     label: kind.label,
     resources: kind.resources,
     cost: kind.cost,
-    share: most === 0 ? 0 : kind.resources / most,
+    share: most === 0 ? 0 : kind.cost / most,
   }));
+}
+
+/** How many of a type are on the bill, in words. */
+export function resourcesWords(count: number): string {
+  return `${count} resource${count === 1 ? '' : 's'}`;
 }
 // #endregion spend-bars

@@ -68,6 +68,12 @@ So from 1.0.3.56 the reader allows a minute, and a read that did not finish is t
 ```live path=api/TheYard.Api/Costs.cs region=cost-retry
 ```
 
+## Addendum, 2026-09-30: the bars measure dollars
+
+Steve, on his phone at 19:28 CDT, on the Cosmos DB site's card: "The bar chart is off". The bars measured how many resources of a type were on the bill and were ordered by that count, while each row printed the type's cost on its right. So the longest bar, at the top, was three App Service apps at $0.00, whose bill the plan carries, and a reader saw the biggest bar beside the smallest figure: two measures on one row, and the bar drew the one a bill is not read for.
+
+From 1.0.3.57 a bar is a type's cost, a share of the costliest, ordered by cost; the count is in words beside the name. The apps still show, as an empty bar at $0.00 with "3 resources", which is the true picture: they are on the bill and the plan pays for them. The portal's own card counts resources; this one shows the money and keeps the count, because a reader of this tab came for what it costs.
+
 ## Files
 
 - [`api/TheYard.Api/Costs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Costs.cs): the two questions, the shaping, the reader and the recorder.

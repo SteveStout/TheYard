@@ -123,7 +123,12 @@ public static class CostView
         return slices;
     }
 
-    /// <summary>How many resources of each type appear on the bill in the window, and what they cost, most resources first.</summary>
+    /// <summary>
+    /// What each type of resource cost in the window and how many of it are on
+    /// the bill, the costliest first. Ordered by count until 1.0.3.57, which put
+    /// three App Service apps at $0.00 (the plan carries their bill) at the top
+    /// of the bars as the longest one (ADR: What Azure charges, second addendum).
+    /// </summary>
     public static IReadOnlyList<CostKind> Kinds(IReadOnlyList<CostDay> days) =>
         days
             .GroupBy(day => day.Type)
@@ -132,8 +137,8 @@ public static class CostView
                 LabelOf(group.Key),
                 group.Select(day => day.Resource).Distinct(StringComparer.Ordinal).Count(),
                 Money(group.Sum(day => day.Cost))))
-            .OrderByDescending(kind => kind.Resources)
-            .ThenByDescending(kind => kind.Cost)
+            .OrderByDescending(kind => kind.Cost)
+            .ThenByDescending(kind => kind.Resources)
             .ThenBy(kind => kind.Label, StringComparer.Ordinal)
             .ToList();
 
@@ -225,7 +230,7 @@ public sealed class CostHistoryReader(ICostHistory history, CostReader reader, C
 /// <param name="Days">Each day in the window up to the newest reported, with its cost and the running total.</param>
 /// <param name="Forecast">Each forecast day after the newest reported, to the month's end, with the running total carried on.</param>
 /// <param name="Resources">What each resource cost in the window: the top four, then Others.</param>
-/// <param name="Types">How many resources of each type are on the bill in the window.</param>
+/// <param name="Types">What each type of resource cost in the window, the costliest first, with how many of it are on the bill.</param>
 public sealed record CostReport(
     string Window,
     IReadOnlyList<string> Windows,
@@ -264,7 +269,7 @@ public sealed record CostPoint(string Day, double Cost, double Total, bool Parti
 /// <param name="Count">How many resources the slice stands for: one, or the number folded into Others.</param>
 public sealed record CostSlice(string Name, string Type, double Cost, double Share, int Count);
 
-/// <summary>One bar: a resource type, how many of it are on the bill, and what they cost.</summary>
+/// <summary>One bar: a resource type, what it cost, and how many of it are on the bill.</summary>
 /// <param name="Type">The type as Azure names it, lower case.</param>
 /// <param name="Label">The type in the portal's words.</param>
 /// <param name="Resources">How many resources of the type appear on the bill in the window.</param>

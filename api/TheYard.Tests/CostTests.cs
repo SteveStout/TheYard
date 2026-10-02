@@ -129,6 +129,25 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
     }
 
     [Fact]
+    public void The_bars_put_the_costliest_type_first_and_a_type_billed_through_another_last()
+    {
+        var days = new[]
+        {
+            new CostDay("2026-09-30", "app-theyard-ss", "microsoft.web/sites", 0, "USD"),
+            new CostDay("2026-09-30", "app-theyard-cosmos-ss", "microsoft.web/sites", 0, "USD"),
+            new CostDay("2026-09-30", "app-theshed-ss", "microsoft.web/sites", 0, "USD"),
+            new CostDay("2026-09-30", "plan-theyard-ss", "microsoft.web/serverfarms", 0.26, "USD"),
+            new CostDay("2026-09-30", "sqldb-theyard-ss-basic", "microsoft.sql/servers/databases", 0.10, "USD"),
+        };
+
+        var kinds = CostView.Kinds(days);
+
+        // Three apps at $0.00 led the bars on 30 September because they were ordered by count.
+        Assert.Equal(new[] { "App Service plans", "SQL databases", "App Service apps" }, kinds.Select(kind => kind.Label));
+        Assert.Equal(3, kinds[^1].Resources);
+    }
+
+    [Fact]
     public void An_absent_reading_says_why_in_a_sentence_and_draws_nothing()
     {
         var now = new DateTimeOffset(2026, 9, 30, 15, 0, 0, TimeSpan.Zero);
