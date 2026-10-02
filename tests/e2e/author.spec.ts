@@ -50,7 +50,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
 
   // Every picture is on the page, in its place: the vineyard beside the words, the lake and the
   // Pantheon in their blocks, the stream after History and the bridge after Games each on its own
-  // row, the game's art, the grill and the doors in their blocks, the two rabbit pictures and
+  // row, each game's art, the grill and the doors in their blocks, the two rabbit pictures and
   // the two house plant pictures side by side, and the photographer's credit under the panels.
   await expect(async () => {
     const places = await doc.locator('.author-photo').evaluateAll((figures) =>
@@ -68,8 +68,8 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
       { name: 'couple-crossing-stream', hero: false, opens: false, paired: false },
       { name: 'mass-effect-legendary-edition', hero: false, opens: false, paired: false },
       { name: 'couple-on-wooden-bridge-wide', hero: false, opens: false, paired: false },
-      { name: 'republic-commando-modded', hero: false, opens: false, paired: true },
-      { name: 'witcher-three-next', hero: false, opens: false, paired: true },
+      { name: 'republic-commando-delta-squad', hero: false, opens: false, paired: true },
+      { name: 'witcher-three-wild-hunt', hero: false, opens: false, paired: true },
       { name: 'grill-flames-on-driveway', hero: false, opens: false, paired: false },
       { name: 'interior-door-in-new-frame', hero: false, opens: false, paired: false },
       { name: 'couple-under-willow', hero: false, opens: false, paired: false },

@@ -52,18 +52,21 @@
     "credit": "Mass Effect Legendary Edition key art © Electronic Arts."
   },
   {
-    "name": "republic-commando-modded",
+    "name": "republic-commando-delta-squad",
     "widths": [480, 960, 1920],
     "width": 1920,
     "height": 1080,
-    "sizes": "(max-width: 767.98px) 92vw, 480px"
+    "sizes": "(max-width: 767.98px) 92vw, 480px",
+    "credit": "Star Wars: Republic Commando key art © Lucasfilm, remastered to 8K by a fan on r/StarWars."
   },
   {
-    "name": "witcher-three-next",
-    "widths": [480, 960, 1920],
-    "width": 1920,
-    "height": 1080,
-    "sizes": "(max-width: 767.98px) 92vw, 480px"
+    "name": "witcher-three-wild-hunt",
+    "widths": [480, 960, 1280],
+    "width": 1280,
+    "height": 720,
+    "sizes": "(max-width: 767.98px) 92vw, 480px",
+    "narrowBecause": "the source picture is 1280 pixels wide: 1280 is every pixel it has",
+    "credit": "The Witcher 3: Wild Hunt key art © CD PROJEKT RED, from ign.com."
   },
   {
     "name": "grill-flames-on-driveway",
