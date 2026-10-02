@@ -1,99 +1,27 @@
 /**
  * What the machines are doing (ADR: What the machines are doing), over the window
- * every chart on the tab shares, which the tab hands in.
+ * every chart on the tab shares, which the tab hands in. This file is the card's
+ * frame and the list of its parts, each in the folder beside it:
+ *   MachinesKeptWindow         a day, a week or a month, from the kept minutes
+ *   MachinesContainerSection   the container: memory, processor, catalogues
+ *   MachinesRelationalSection  the relational store's own resource view
+ *   MachinesDocumentSection    the document store's request units
  */
 import type { ReactNode } from 'react';
-import {
-  busiestRate,
-  coverage,
-  fromFirstReading,
-  type MachineWindow,
-  requestUnitsAMinute,
-  shareOf,
-  timeline,
-  windowName,
-} from '../../../lib/machineChart';
+import { type MachineWindow, windowName } from '../../../lib/machineChart';
 import styles from '../shared/card.module.css';
-import type {
-  DocumentMinute,
-  Fetched,
-  MachineSample,
-  Machines,
-  ResourceStatRow,
-} from '../shared/types';
+import type { Fetched, Machines } from '../shared/types';
 import { About } from '../shared/common';
-import { BarGauge, MachineChart, youngRecord } from '../charts';
-import { type Column, DataTable } from '../DataTable';
-import { formatNumber } from '../../../lib/format';
-import { millisecondsWords } from '../../../lib/statTiles';
-
-/** The container every fifteen seconds: memory three ways, the processor and the threads. */
-const CONTAINER_COLUMNS: Column<MachineSample>[] = [
-  {
-    name: 'At',
-    mono: true,
-    short: true,
-    cell: (sample) => new Date(sample.at).toLocaleTimeString(),
-  },
-  {
-    name: 'Working set',
-    mono: true,
-    num: true,
-    cell: (sample) => `${formatNumber(sample.working_set_mb)} MB`,
-  },
-  {
-    name: 'Managed',
-    mono: true,
-    num: true,
-    cell: (sample) => `${formatNumber(sample.managed_mb)} MB`,
-  },
-  { name: 'Heap', mono: true, num: true, cell: (sample) => `${formatNumber(sample.heap_mb)} MB` },
-  {
-    name: 'Processors',
-    mono: true,
-    num: true,
-    cell: (sample) => (sample.cpu_percent === null ? 'first' : `${sample.cpu_percent}%`),
-  },
-  { name: 'Threads', mono: true, num: true, cell: (sample) => sample.threads },
-];
-
-/** The relational store's own reading: each share of what its tier allows. */
-const RELATIONAL_COLUMNS: Column<ResourceStatRow>[] = [
-  { name: 'At', mono: true, short: true, cell: (row) => new Date(row.at).toLocaleTimeString() },
-  { name: 'Processor', mono: true, num: true, cell: (row) => `${row.cpu_percent}%` },
-  { name: 'Memory', mono: true, num: true, cell: (row) => `${row.memory_percent}%` },
-  { name: 'Data', mono: true, num: true, cell: (row) => `${row.data_io_percent}%` },
-  { name: 'Log', mono: true, num: true, cell: (row) => `${row.log_write_percent}%` },
-  { name: 'Workers', mono: true, num: true, cell: (row) => `${row.worker_percent}%` },
-];
+import { MachinesKeptWindow } from '../MachinesKeptWindow';
+import { MachinesContainerSection } from '../MachinesContainerSection';
+import { MachinesRelationalSection } from '../MachinesRelationalSection';
+import { MachinesDocumentSection } from '../MachinesDocumentSection';
 
 /**
- * The document store a minute at a time: what it charged, for how many
- * operations, and the minute's average rate, its charge over sixty seconds, as
- * a share of the free request units a second.
+ * The machines card: a loading or failed line until the answer arrives, then
+ * the whole card. The toolbar is the tab's shared window buttons, drawn here
+ * in every state so the window can change while the card waits.
  */
-const DOCUMENT_COLUMNS: Column<DocumentMinute>[] = [
-  {
-    name: 'Minute',
-    mono: true,
-    short: true,
-    cell: (minute) => new Date(minute.at).toLocaleTimeString(),
-  },
-  {
-    name: 'Request units',
-    mono: true,
-    num: true,
-    cell: (minute) => `${formatNumber(minute.request_units)} RU`,
-  },
-  { name: 'Operations', mono: true, num: true, cell: (minute) => minute.operations },
-  {
-    name: 'Average a second, share of free',
-    mono: true,
-    num: true,
-    cell: (minute) => `${minute.share_of_free_percent}%`,
-  },
-];
-
 export default function MachinesCard({
   machines,
   window: window_,
@@ -121,6 +49,11 @@ export default function MachinesCard({
   return <MachinesBody machines={machines} window={window_} toolbar={toolbar} />;
 }
 
+/**
+ * The card once the machines have answered: what it shows and why, the window
+ * line, the kept window when one wider than the hour is chosen, then the
+ * three machines in turn.
+ */
 function MachinesBody({
   machines,
   window: window_,
@@ -130,22 +63,6 @@ function MachinesBody({
   window: MachineWindow;
   toolbar: ReactNode;
 }) {
-  const samples = machines.container.samples;
-  const latest = samples.length > 0 ? samples[samples.length - 1] : null;
-  const peak = samples.reduce((most, sample) => Math.max(most, sample.working_set_mb), 0);
-  const newest = machines.relational.rows.length > 0 ? machines.relational.rows[0] : null;
-  const worst = machines.relational.rows.reduce(
-    (most, row) => Math.max(most, row.cpu_percent, row.data_io_percent, row.log_write_percent),
-    0
-  );
-  // How many minutes back the operations ring reaches, as the server measured
-  // it, so the request units below are a total over a stated stretch.
-  const operationsRing: { store: string; span_minutes?: number | null } = machines.document;
-  const ringSpan =
-    operationsRing.span_minutes === null || operationsRing.span_minutes === undefined
-      ? 'in the ring'
-      : `over the last ${formatNumber(operationsRing.span_minutes)} min, all the ring holds`;
-
   return (
     <article className={`${styles.wide} op-glass`} data-testid="machines-card">
       <h2 className={styles.cardTitle}>What the machines are doing</h2>
@@ -166,308 +83,10 @@ function MachinesBody({
         Showing {windowName(window_).toLowerCase()}. One window for every chart on this tab: the
         buttons here, on the traffic card and over the tiles are the same buttons.
       </p>
-      {window_ !== '1h' && <KeptWindow machines={machines} window={window_} />}
-
-      <h3 className={styles.cardTitle}>
-        The container{window_ === '1h' ? '' : ', as this process remembers the last hour'}
-      </h3>
-      {latest === null ? (
-        <p className={styles.muted} data-testid="machines-no-samples">
-          No sample yet. One is taken every {machines.container.every_seconds} seconds.
-        </p>
-      ) : (
-        <>
-          <p data-testid="machines-container-line">
-            <strong>
-              {latest.working_set_mb} MB of {machines.container.memory_limit_mb} MB
-            </strong>{' '}
-            in use, {latest.managed_mb} MB of it managed objects,{' '}
-            {latest.cpu_percent === null
-              ? 'processor share not read yet'
-              : `${latest.cpu_percent}% of ${machines.container.processors} processor${machines.container.processors === 1 ? '' : 's'}`}
-            , {latest.threads} threads, {latest.gen0_collections} quick collections and{' '}
-            {latest.gen2_collections} full ones since this container started. Peak working set in
-            the window: {peak} MB.
-          </p>
-          <BarGauge
-            testId="machines-memory-gauge"
-            name="Memory"
-            ceiling={`${machines.container.memory_limit_mb.toLocaleString()} MB`}
-            value={latest.working_set_mb}
-            max={machines.container.memory_limit_mb}
-            reading={`${Math.round((latest.working_set_mb / Math.max(1, machines.container.memory_limit_mb)) * 100)} % · ${latest.working_set_mb.toLocaleString()} MB`}
-          />
-          {machines.container.catalogues && machines.container.catalogues.length > 0 && (
-            // Most of that memory is catalogues, a hundred thousand vehicles a
-            // store, so the card says which ones the process is holding. The
-            // store this site does not serve is loaded on demand and let go
-            // when nobody has asked for it in a while (ADR: One plan, two sites).
-            <p className={styles.muted} data-testid="machines-catalogues">
-              Catalogues in memory:{' '}
-              {machines.container.catalogues
-                .map(
-                  (catalogue) =>
-                    `${catalogue.store}, ${catalogue.serves ? 'which this site serves' : 'loaded on demand'}, ${catalogue.loaded ? 'held' : 'not held'}`
-                )
-                .join('; ')}
-              .
-            </p>
-          )}
-          <MachineChart
-            testId="machine-chart-container"
-            label="The container over the sampled window: memory as a share of its limit, and processor share"
-            percentage
-            series={[
-              {
-                key: 'memory',
-                name: `Memory, share of ${formatNumber(machines.container.memory_limit_mb)} MB`,
-                points: samples.map((sample) => ({
-                  at: sample.at,
-                  value:
-                    machines.container.memory_limit_mb > 0
-                      ? Math.round(
-                          (sample.working_set_mb / machines.container.memory_limit_mb) * 1000
-                        ) / 10
-                      : null,
-                })),
-              },
-              {
-                key: 'cpu',
-                name: `Processor, share of ${machines.container.processors}`,
-                points: samples.map((sample) => ({ at: sample.at, value: sample.cpu_percent })),
-              },
-            ]}
-          />
-          <DataTable
-            label="The container, sampled"
-            testId="machines-container-table"
-            rows={[...samples].reverse().slice(0, 20)}
-            rowKey={(sample) => sample.at}
-            columns={CONTAINER_COLUMNS}
-          />
-        </>
-      )}
-
-      <h3 className={styles.cardTitle}>{machines.relational.store}</h3>
-      {!machines.relational.available ? (
-        <p className={styles.muted} data-testid="machines-relational-note">
-          {machines.relational.note}
-        </p>
-      ) : (
-        <>
-          <p data-testid="machines-relational-line">
-            {newest === null ? (
-              'The view answered with no rows yet.'
-            ) : (
-              <>
-                <strong>
-                  {newest.cpu_percent}% processor, {newest.memory_percent}% memory
-                </strong>{' '}
-                in the last fifteen seconds, {newest.data_io_percent}% data and{' '}
-                {newest.log_write_percent}% log, {newest.worker_percent}% of the workers the tier
-                allows. Busiest reading in the window: {worst}%. Every figure is a share of what
-                this tier allows, which on Basic is five DTUs.
-              </>
-            )}
-          </p>
-          <MachineChart
-            testId="machine-chart-relational"
-            label="The relational store over the last hour, as it reports itself: processor and memory as shares of what the tier allows"
-            percentage
-            series={[
-              {
-                key: 'memory',
-                name: 'Memory, share of the tier',
-                points: [...machines.relational.rows]
-                  .reverse()
-                  .map((row) => ({ at: row.at, value: row.memory_percent })),
-              },
-              {
-                key: 'cpu',
-                name: 'Processor, share of the tier',
-                points: [...machines.relational.rows]
-                  .reverse()
-                  .map((row) => ({ at: row.at, value: row.cpu_percent })),
-              },
-            ]}
-          />
-          <DataTable
-            label="The relational store's own reading"
-            testId="machines-relational-table"
-            rows={machines.relational.rows.slice(0, 20)}
-            rowKey={(row) => row.at}
-            columns={RELATIONAL_COLUMNS}
-          />
-        </>
-      )}
-
-      <h3 className={styles.cardTitle}>{machines.document.store}</h3>
-      {!machines.document.available ? (
-        <p className={styles.muted} data-testid="machines-document-note">
-          {machines.document.note}
-        </p>
-      ) : (
-        <>
-          <p data-testid="machines-document-line">
-            <strong>{machines.document.request_units} request units</strong> across{' '}
-            {machines.document.operations} operations {ringSpan},{' '}
-            {machines.document.p50_ms === null || machines.document.p95_ms === null
-              ? 'none of them timed'
-              : `${millisecondsWords(machines.document.p50_ms)} at the median and ${millisecondsWords(machines.document.p95_ms)} at the ninety-fifth`}
-            . The free tier allows {machines.document.free_request_units_per_second} request units a
-            second, and the gauge below is the busiest minute in the ring as a rate against that
-            allowance; the table&rsquo;s last column is each minute&rsquo;s average rate against it.
-            There is no memory or processor reading here: the store is sold by request unit and
-            reports neither.
-          </p>
-          <BarGauge
-            testId="machines-ru-gauge"
-            name="Request units, busiest minute"
-            ceiling={`${machines.document.free_request_units_per_second.toLocaleString()} / s free`}
-            value={busiestRate(machines.document.minutes)}
-            max={machines.document.free_request_units_per_second}
-            reading={`${busiestRate(machines.document.minutes).toLocaleString()} / s`}
-            tone="gold"
-          />
-          <MachineChart
-            testId="machine-chart-document"
-            label="What the document store charged, request units a minute"
-            unit="request units a minute"
-            series={[
-              {
-                key: 'ru',
-                name: 'Request units a minute',
-                points: machines.document.minutes.map((minute) => ({
-                  at: minute.at,
-                  value: minute.request_units,
-                })),
-              },
-            ]}
-          />
-          <DataTable
-            label="What the document store charged"
-            testId="machines-document-table"
-            rows={[...machines.document.minutes].reverse().slice(0, 20)}
-            rowKey={(minute) => minute.at}
-            columns={DOCUMENT_COLUMNS}
-          />
-        </>
-      )}
+      {window_ !== '1h' && <MachinesKeptWindow machines={machines} window={window_} />}
+      <MachinesContainerSection container={machines.container} window={window_} />
+      <MachinesRelationalSection relational={machines.relational} />
+      <MachinesDocumentSection documentStore={machines.document} />
     </article>
   );
 }
-
-// #region kept-window
-/**
- * A day, a week or a month of the machines, from the minutes each site keeps in
- * the document store (ADR: What the machines are doing, the addendum on the
- * windows). Three charts in the units the hour uses, drawn over the whole
- * window slot by slot, so a stretch the store holds nothing for is a gap in
- * the line and not a line drawn across it. A window the store cannot answer
- * says why instead of drawing an empty chart.
- */
-function KeptWindow({ machines, window: kept }: { machines: Machines; window: MachineWindow }) {
-  const history = machines.history;
-  if (kept === '1h' || history === undefined || history.window !== kept) {
-    return null;
-  }
-  if (!history.available) {
-    return (
-      <p className={styles.muted} data-testid="machines-history-note">
-        {windowName(kept)} is not kept here: {history.note}
-      </p>
-    );
-  }
-
-  const whole = timeline(history.buckets, kept, history.bucket_minutes, new Date(history.as_of));
-  const held = coverage(whole);
-  // Counted against the whole window, drawn from the first reading.
-  const slots = fromFirstReading(whole);
-  const grain =
-    history.bucket_minutes >= 60
-      ? `${history.bucket_minutes / 60}-hour`
-      : `${history.bucket_minutes}-minute`;
-  const peak = history.buckets.reduce(
-    (most, bucket) => Math.max(most, bucket.working_set_max_mb),
-    0
-  );
-  const charged = history.buckets.reduce((sum, bucket) => sum + bucket.request_units, 0);
-
-  return (
-    <div data-testid="machines-history">
-      <p data-testid="machines-history-line">
-        <strong>{windowName(kept)}</strong>, in {grain} buckets, from the minutes the{' '}
-        {history.site === 'cosmos' ? 'Cosmos DB' : 'SQL'} site has kept: {held.held} of {held.of}{' '}
-        buckets hold a reading.{' '}
-        {slots.length < whole.length
-          ? `${youngRecord(slots)}; a gap after the first reading is drawn as the gap it is.`
-          : 'A stretch with no reading is drawn as the gap it is.'}
-        {held.held > 0 &&
-          ` Peak working set in the window: ${formatNumber(peak)} MB. The document store charged ${Math.round(charged * 100) / 100} request units in it.`}
-        {history.note !== null && held.held === 0 && ` ${history.note}.`}
-      </p>
-      <MachineChart
-        testId="machine-history-container"
-        label={`The container over the ${windowName(kept).toLowerCase()}: memory as a share of its limit, and processor share`}
-        percentage
-        window={kept}
-        series={[
-          {
-            key: 'memory',
-            name: 'Memory, share of the limit',
-            points: slots.map((slot) => ({
-              at: slot.at,
-              value:
-                slot.bucket === null
-                  ? null
-                  : shareOf(slot.bucket.working_set_mb, slot.bucket.memory_limit_mb),
-            })),
-          },
-          {
-            key: 'cpu',
-            name: 'Processor share',
-            points: slots.map((slot) => ({ at: slot.at, value: slot.bucket?.cpu_percent ?? null })),
-          },
-        ]}
-      />
-      <MachineChart
-        testId="machine-history-relational"
-        label={`The relational store over the ${windowName(kept).toLowerCase()}, as it reported itself each minute: processor and memory as shares of what the tier allows`}
-        percentage
-        window={kept}
-        series={[
-          {
-            key: 'memory',
-            name: 'Relational store: memory, share of the tier',
-            points: slots.map((slot) => ({
-              at: slot.at,
-              value: slot.bucket?.sql_memory_percent ?? null,
-            })),
-          },
-          {
-            key: 'cpu',
-            name: 'Relational store: processor, share of the tier',
-            points: slots.map((slot) => ({
-              at: slot.at,
-              value: slot.bucket?.sql_cpu_percent ?? null,
-            })),
-          },
-        ]}
-      />
-      <MachineChart
-        testId="machine-history-document"
-        label={`What the document store charged over the ${windowName(kept).toLowerCase()}, request units a minute`}
-        unit="request units a minute"
-        window={kept}
-        series={[
-          {
-            key: 'ru',
-            name: 'Document store',
-            points: slots.map((slot) => ({ at: slot.at, value: requestUnitsAMinute(slot.bucket) })),
-          },
-        ]}
-      />
-    </div>
-  );
-}
-// #endregion kept-window

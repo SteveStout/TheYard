@@ -369,6 +369,15 @@ where the two lists are joined.
 - **A new document:** the markdown in `docs/`, its slug in `DocumentationCatalog.cs`, its entry
   in `records.ts` or `pages.ts`, and its row in `sections.ts`.
 
+## Addendum, 2026-10-02: the records in three runs
+
+`records.ts` was the one file the 300-line rule let through, because it is data. It is now the list
+that joins three runs of records in number order, `src/library/decisionRecords/records001to030.ts`,
+`records031to060.ts` and `records061to087.ts`, each under the line, so no file is exempt for being
+data any more. A new record goes at the end of the last run. A type check in `records.ts` fails the
+compile if one key appears in two runs, and `DocumentationCatalogTests` reads every run, so a run
+that `records.ts` does not join fails the build too.
+
 ## Files
 
 - [`package.json`](https://github.com/SteveStout/TheYard/blob/main/package.json): the scripts and the dependencies.

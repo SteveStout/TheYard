@@ -1,58 +1,66 @@
+/**
+ * The one navigation surface (ADR: The sidebar): its two shapes, the document
+ * dialog it owns, and the rows it lists. Each piece it draws sits in a folder
+ * beside it, and this file names them and puts them in order:
+ *   railStorage.ts      the docked rail's collapsed state, kept per browser
+ *   RailBrandBar        the site's name, home, and the collapse or close button
+ *   RailSectionShell    one section, a disclosure that starts closed
+ *   RailDocRow          a row that opens a document
+ *   RailLinkRow         a row that is a link out
+ *   RailPinnedRows      the site map's actions at the foot, with Reset bids
+ *   RailPinnedRow       one of those actions
+ *   RailResetBidsRow    Reset bids, under Admin while there are bids
+ */
 import { useEffect, useMemo, useRef } from 'react';
 import { DocDialog, type DocRequest } from '../../../library/DocDialog';
 import { DOCS, type DocKey } from '../../../library/documents';
 import { LINKS, MENUS } from '../../../library/sections';
-import { NavGlyph, RowIcon } from '../../shared/SheetIcons';
-import { SITE_GROUPS, SITE_MAP, sectionsIn, type SiteAction } from '../../../lib/siteMap';
-import { BrandMark } from '../BrandMark';
+import { SITE_GROUPS, sectionsIn } from '../../../lib/siteMap';
+import { RailBrandBar, type RailBuild } from '../RailBrandBar';
+import { RailSectionShell } from '../RailSectionShell';
+import { RailDocRow } from '../RailDocRow';
+import { RailLinkRow } from '../RailLinkRow';
+import { RailPinnedRows } from '../RailPinnedRows';
 import styles from './SideNav.module.css';
-import { ICON } from '../../../lib/icons';
 
-/** The rail's collapsed state survives reloads per browser; a missing or blocked store means open. */
-const RAIL_KEY = 'theyard.rail';
+export { readRailCollapsed, storeRailCollapsed } from './railStorage';
 
-export function readRailCollapsed(): boolean {
-  try {
-    return window.localStorage.getItem(RAIL_KEY) === 'collapsed';
-  } catch {
-    return false;
-  }
-}
-
-export function storeRailCollapsed(collapsed: boolean): void {
-  try {
-    window.localStorage.setItem(RAIL_KEY, collapsed ? 'collapsed' : 'open');
-  } catch {
-    // Private mode or a blocked store: the rail simply starts open next time.
-  }
-}
-
-type Build = { version: string; commit: string } | null;
-
+/** Everything the shell hands the sidebar: its shape, which view is showing, and what each row does. */
 export type SideNavProps = {
   /** At 1024px and up the panel docks beside the page; below, it is a drawer. */
   docked: boolean;
   /** Docked only: icons-only rail. */
   collapsed: boolean;
+  /** Collapses the docked rail to icons, or expands it again. */
   onToggleCollapsed: () => void;
   /** Drawer only: useRail owns the open flag; the hamburger in the header sets it. */
   drawerOpen: boolean;
+  /** Called when the drawer closes, whatever closed it. */
   onDrawerClose: () => void;
+  /** Goes to the landing page. */
   onHome: () => void;
-  /** The inventory list is the view (the landing page is home since 1.0.1.0). */
   /** The landing page is what shows: the Home row reads as current. */
   homeOpen: boolean;
+  /** The inventory list is the view: the Inventory row reads as current. */
   inventoryOpen: boolean;
+  /** Opens the inventory list. */
   onOpenInventory: () => void;
+  /** The Admin tab is the view: the Admin row reads as current. */
   adminOpen: boolean;
+  /** Opens the Admin tab. */
   onOpenAdmin: () => void;
+  /** The account page is the view: the account row reads as current. */
   accountOpen: boolean;
+  /** Opens the account page. */
   onOpenAccount: () => void;
   /** The signed-in address, or null. The row's label either way. */
   accountEmail: string | null;
+  /** How many bids this visitor has; Reset bids shows only above zero. */
   bidCount: number;
+  /** Clears this visitor's bids. */
   onResetBids: () => void;
-  build: Build;
+  /** The running build, shown under the site's name. */
+  build: RailBuild;
   /**
    * The record showing, or null. useAddressBar owns it because it owns the
    * address bar (ADR: A record with no address): a document is a view, and
@@ -68,14 +76,15 @@ export type SideNavProps = {
 };
 
 /**
- * The one navigation surface (ADR-013): every header menu as a headed section
- * of icon rows, then the site map's actions pinned at the foot (the inventory,
- * the account, Admin, Reset bids, the resume and the repository). The sections'
- * order and the pinned rows both come from SITE_MAP (src/lib/siteMap.ts), the
- * structure the landing page is drawn from too. Built from the same MENUS record for both shapes it takes: a
- * docked left rail that collapses to icons on wide screens, or the slide-out
- * drawer on phones and narrow windows. Owns the one doc dialog; a row stays
- * marked current while its doc is open.
+ * The one navigation surface (ADR: The sidebar): every header menu as a headed
+ * section of icon rows, then the site map's actions pinned at the foot (the
+ * inventory, the account, Admin, Reset bids, the resume and the repository).
+ * The sections' order and the pinned rows both come from SITE_MAP
+ * (src/lib/siteMap.ts), the structure the landing page is drawn from too.
+ * Built from the same MENUS record for both shapes it takes: a docked left rail
+ * that collapses to icons on wide screens, or the slide-out drawer on phones
+ * and narrow windows. Owns the one doc dialog; a row stays marked current while
+ * its doc is open.
  */
 export function SideNav(props: SideNavProps) {
   const { docked, collapsed, drawerOpen, onDrawerClose, openDocKey, onDocChange } = props;
@@ -144,70 +153,18 @@ export function SideNav(props: SideNavProps) {
   );
 }
 
-// #region section-shell
-/**
- * A sidebar section: a native `details`, closed until somebody asks for it.
- *
- * Every section works this way since 1.0.0.135, on the owner's instruction.
- * Before it, only the records index collapsed and the other ten sections were
- * always open, which meant the rail opened on about a hundred rows and the
- * reader's own section was somewhere inside them. Closed by default turns the
- * sidebar back into a table of contents: eleven headings, and the one you want
- * is one click away. The keyboard and screen-reader behaviour comes from the
- * element rather than from a reimplementation of it, which is why this is a
- * `details` and not a button and a piece of state.
- *
- * The icons-only rail is the exception, and it is the case that nearly went out
- * wrong once before (the staff review, 2026-09-03). There are no headings on
- * that rail: the rows are icons and the words are hidden, so a closed section
- * would be a triangle with nothing to read and nothing to aim at. It keeps the
- * rows.
- */
-function SectionShell({
-  label,
-  iconsOnly,
-  children,
-}: {
-  label: string;
-  iconsOnly: boolean;
-  children: React.ReactNode;
-}) {
-  if (iconsOnly) {
-    return (
-      <section className={styles.section}>
-        <h2 className={styles.srOnly}>{label}</h2>
-        {children}
-      </section>
-    );
-  }
-  return (
-    <details
-      className={styles.section}
-      onToggle={(event) => {
-        if (event.currentTarget.open) {
-          event.currentTarget.scrollIntoView({ block: 'nearest' });
-        }
-      }}
-    >
-      <summary className={styles.sectionToggle}>
-        {/* The label stays a heading inside the summary, which HTML allows and
-            which keeps the eleven section names in the document outline where a
-            screen reader's heading list finds them; the summary is what makes
-            it a disclosure. */}
-        <h2 className={styles.sectionHeading}>{label}</h2>
-      </summary>
-      {children}
-    </details>
-  );
-}
-// #endregion section-shell
-
+/** The sidebar's props plus what SideNav itself works out: the open key and the two drawer-aware callbacks. */
 type ContentProps = SideNavProps & {
   openKey: DocKey | null;
   onOpenDoc: (key: DocKey) => void;
   onCloseDrawer: () => void;
 };
 
+/**
+ * What both shapes hold: the brand bar, the sections of document rows in the
+ * site map's groups, and the pinned actions at the foot. Every row closes the
+ * drawer before it acts, so a phone reader lands on what they chose.
+ */
 function NavContent({
   docked,
   collapsed,
@@ -228,242 +185,70 @@ function NavContent({
   onOpenDoc,
   onCloseDrawer,
 }: ContentProps) {
-  const versionLabel = build ? (build.version === 'dev' ? 'dev build' : `v${build.version}`) : '';
   const iconsOnly = docked && collapsed;
 
   return (
     <>
-      <div className={styles.brandBlock}>
-        <button
-          type="button"
-          className={styles.brand}
-          onClick={() => {
-            onCloseDrawer();
-            onHome();
-          }}
-          title="The Yard: home"
-        >
-          <BrandMark size={22} className={styles.brandMark} />
-          <span className={iconsOnly ? styles.srOnly : styles.brandText}>
-            The Yard
-            <small className={styles.brandSub}>{versionLabel || '\u00a0'}</small>
-          </span>
-        </button>
-        {docked ? (
-          <button
-            type="button"
-            className={styles.toggle}
-            onClick={onToggleCollapsed}
-            aria-label={collapsed ? 'Expand the sidebar' : 'Collapse the sidebar'}
-            aria-expanded={!collapsed}
-          >
-            <svg viewBox="0 0 20 20" width={ICON.md} height={ICON.md} aria-hidden="true">
-              <path
-                d={collapsed ? 'M6 4l6 6-6 6M11 4l6 6-6 6' : 'M14 4l-6 6 6 6M9 4l-6 6 6 6'}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={ICON.stroke}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className={styles.toggle}
-            onClick={onCloseDrawer}
-            aria-label="Close"
-          >
-            <svg viewBox="0 0 14 14" width={ICON.sm} height={ICON.sm} aria-hidden="true">
-              <path
-                d="M2 2l10 10M12 2 2 12"
-                stroke="currentColor"
-                strokeWidth={ICON.stroke}
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        )}
-      </div>
+      <RailBrandBar
+        docked={docked}
+        collapsed={collapsed}
+        iconsOnly={iconsOnly}
+        build={build}
+        onHome={onHome}
+        onToggleCollapsed={onToggleCollapsed}
+        onCloseDrawer={onCloseDrawer}
+      />
 
       <nav className={styles.sections} aria-label="Project documents">
         <div className={styles.scroll}>
           {/* #region rows */}
-          {/* The site map's groups, each heading above its sections (1.0.1.4);
-              the sections inside a group keep MENU_ORDER's order. */}
+          {/* The site map's groups, each heading above its sections; the
+              sections inside a group keep MENU_ORDER's order. */}
           {SITE_GROUPS.map((group) => (
             <div key={group.key} className={styles.group} data-testid={`rail-group-${group.key}`}>
               <p className={iconsOnly ? styles.srOnly : styles.groupTitle}>{group.label}</p>
               {sectionsIn(group.key).map(({ menu: variant }) => (
-                <SectionShell key={variant} label={MENUS[variant].label} iconsOnly={iconsOnly}>
+                <RailSectionShell key={variant} label={MENUS[variant].label} iconsOnly={iconsOnly}>
                   {MENUS[variant].lead?.map((link) => (
-                    <LinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
+                    <RailLinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
                   ))}
                   {MENUS[variant].items.map(({ key, sub }) => (
-                    <button
+                    <RailDocRow
                       key={key}
-                      type="button"
-                      className={sub ? `${styles.row} ${styles.subRow}` : styles.row}
-                      onClick={() => onOpenDoc(key)}
-                      aria-current={openKey === key ? 'page' : undefined}
-                      title={iconsOnly ? DOCS[key].menuLabel : undefined}
-                    >
-                      <RowIcon kind={DOCS[key].kind} className={styles.icon} />
-                      <span className={iconsOnly ? styles.srOnly : styles.label}>
-                        {DOCS[key].number ? (
-                          <>
-                            <span className={styles.recordNumber}>{DOCS[key].number}</span>{' '}
-                          </>
-                        ) : null}
-                        {DOCS[key].menuLabel}
-                      </span>
-                    </button>
+                      label={DOCS[key].menuLabel}
+                      number={DOCS[key].number}
+                      kind={DOCS[key].kind}
+                      sub={sub}
+                      current={openKey === key}
+                      iconsOnly={iconsOnly}
+                      onOpen={() => onOpenDoc(key)}
+                    />
                   ))}
                   {MENUS[variant].links?.map((link) => (
-                    <LinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
+                    <RailLinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
                   ))}
-                </SectionShell>
+                </RailSectionShell>
               ))}
             </div>
           ))}
           {/* #endregion rows */}
         </div>
 
-        <div className={styles.pinned}>
-          {/* #region pinned-rows */}
-          {/* The site map's actions, in its order. The account row's label is
-              the signed-in address when there is one, which is also how a
-              visitor checks who they are without opening anything; .label
-              already truncates, so a long address does not widen the rail.
-              Reset bids is not in the map, because it is not a place: it
-              appears after Admin only while there are bids to reset. */}
-          {SITE_MAP.actions
-            .filter((action) => action.inRail)
-            .map((action) => (
-              <PinnedRow
-                key={action.key}
-                action={action}
-                iconsOnly={iconsOnly}
-                current={
-                  action.key === 'home'
-                    ? homeOpen
-                    : action.key === 'inventory'
-                      ? inventoryOpen
-                      : action.key === 'account'
-                        ? accountOpen
-                        : action.key === 'admin'
-                          ? adminOpen
-                          : false
-                }
-                label={action.key === 'account' ? (accountEmail ?? action.label) : action.label}
-                onOpen={() => {
-                  onCloseDrawer();
-                  if (action.key === 'home') onHome();
-                  if (action.key === 'inventory') onOpenInventory();
-                  if (action.key === 'account') onOpenAccount();
-                  if (action.key === 'admin') onOpenAdmin();
-                }}
-                after={
-                  action.key === 'admin' && bidCount > 0 ? (
-                    <button
-                      type="button"
-                      className={styles.row}
-                      onClick={() => {
-                        onCloseDrawer();
-                        onResetBids();
-                      }}
-                      title={iconsOnly ? `Reset bids (${bidCount})` : undefined}
-                    >
-                      <RowIcon kind="reset" className={styles.icon} />
-                      <span className={iconsOnly ? styles.srOnly : styles.label}>
-                        Reset bids ({bidCount})
-                      </span>
-                    </button>
-                  ) : null
-                }
-              />
-            ))}
-          {/* #endregion pinned-rows */}
-        </div>
+        <RailPinnedRows
+          iconsOnly={iconsOnly}
+          views={{
+            home: { current: homeOpen, open: onHome },
+            inventory: { current: inventoryOpen, open: onOpenInventory },
+            account: { current: accountOpen, open: onOpenAccount },
+            admin: { current: adminOpen, open: onOpenAdmin },
+          }}
+          links={{ resume: LINKS.resume.href, repo: LINKS.repo.href }}
+          accountEmail={accountEmail}
+          bidCount={bidCount}
+          onResetBids={onResetBids}
+          onCloseDrawer={onCloseDrawer}
+        />
       </nav>
-    </>
-  );
-}
-
-/** A link drawn as a row, the same icon and label rules as a doc row; opens in a new tab. */
-function LinkRow({
-  link,
-  iconsOnly,
-}: {
-  link: { href: string; label: string };
-  iconsOnly: boolean;
-}) {
-  return (
-    <a
-      className={styles.row}
-      href={link.href}
-      target="_blank"
-      rel="noreferrer"
-      title={iconsOnly ? link.label : undefined}
-    >
-      <RowIcon kind="external" className={styles.icon} />
-      <span className={iconsOnly ? styles.srOnly : styles.label}>{link.label}</span>
-    </a>
-  );
-}
-
-/**
- * One of the site map's actions as a pinned row: a view the app opens, or a link
- * out (the resume and the repository) in a new tab.
- */
-function PinnedRow({
-  action,
-  iconsOnly,
-  current,
-  label,
-  onOpen,
-  after,
-}: {
-  action: SiteAction;
-  iconsOnly: boolean;
-  current: boolean;
-  label: string;
-  onOpen: () => void;
-  after: React.ReactNode;
-}) {
-  const inner = (
-    <>
-      <NavGlyph icon={action.icon} className={styles.icon} />
-      <span className={iconsOnly ? styles.srOnly : styles.label}>{label}</span>
-    </>
-  );
-  const row =
-    action.key === 'resume' || action.key === 'repo' ? (
-      <a
-        className={styles.row}
-        href={LINKS[action.key].href}
-        target="_blank"
-        rel="noreferrer"
-        title={iconsOnly ? label : undefined}
-      >
-        {inner}
-      </a>
-    ) : (
-      <button
-        type="button"
-        className={styles.row}
-        onClick={onOpen}
-        aria-current={current ? 'page' : undefined}
-        title={iconsOnly ? label : undefined}
-      >
-        {inner}
-      </button>
-    );
-  return (
-    <>
-      {row}
-      {after}
     </>
   );
 }

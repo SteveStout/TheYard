@@ -39,6 +39,16 @@ The move changed no value, selector, class name or behaviour; `App.tsx` draws `<
 
 The same day, the two largest files were split by job (ADR: The React configuration, explained, the addendum on the split). `DocsMenu` was not a component: most of it was data (the documents and what each section holds), with the document window at the end. It is now `src/library`, a folder beside `components` rather than a section in it, and `src/components/docs` is gone; the sections are `layout`, `inventory`, `vehicle`, `account`, `landing`, `shared` and `admin`. `App.tsx` and its stylesheet moved the same way, to `src/app`, with the hooks that hold what the app knows under `src/app/hooks`. Neither folder is a component folder, so neither has an `index.ts`: an import names the file, `library/sections` or `app/hooks/useAddressBar`, and every file in both opens with a header saying what it does, what it does not, and which files use it. The rule above is unchanged for everything under `src/components`, and `icons.test.ts` and the unit-test build now read `src/app` and `src/library` too.
 
+## Addendum, 2026-10-02: the large components split by job
+
+Eight files of the Admin tab, the rail and the account page ran past 300 lines. Each is split by job,
+and the part a file's own header already named became a component with a folder of its own under the
+same section, the way this record lays out every component: for example `AdminWorkbench/`,
+`AdminStatStrip/`, `ActivityPlot/`, `MachinesKeptWindow/`, `RailSectionShell/` and `SignInForm/`. The
+file that kept the original name is now the short list that composes its parts, so nothing that
+imported it changed. A part keeps reading the original component's stylesheet rather than splitting
+it, and that sheet's "Used by" line names every part, which `FileHeaderTests` checks.
+
 ## Files
 
 - [`src/components`](https://github.com/SteveStout/TheYard/tree/main/src/components): the sections and their folders.

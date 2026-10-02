@@ -1,0 +1,203 @@
+/**
+ * Does:      Lists the decision records numbered 061 to 087, in number order, as data.
+ * Does not:  Hold any other record or document, say which sidebar section shows a record, or draw anything.
+ * Used by:   records.ts.
+ */
+// One run of the decision records, kept whole as written: a title, a sidebar label, the
+// address the API serves it at, and its number. Every record sits in one sidebar section,
+// so the list is split by number rather than by section, a run of thirty or so to a file,
+// and records.ts joins the runs back into one list in number order.
+import type { RecordEntry } from '../records';
+
+/** The decision records numbered 061 to 087, keyed by each one's name in code. */
+export const RECORDS_061_TO_087 = {
+  adrAccountsDocuments: {
+    title: 'ADR: Accounts on a document store',
+    menuLabel: 'ADR: Accounts on a document store',
+    url: '/api/docs/adr-accounts-documents',
+    kind: 'adr',
+    number: '061',
+  },
+  adrStoreVisible: {
+    title: 'ADR: What the store is actually doing',
+    menuLabel: 'ADR: What the store is actually doing',
+    url: '/api/docs/adr-store-visible',
+    kind: 'adr',
+    number: '062',
+  },
+  adrBackends: {
+    title: 'ADR: Backends, side by side',
+    menuLabel: 'ADR: Backends, side by side',
+    url: '/api/docs/adr-backends',
+    kind: 'adr',
+    number: '063',
+  },
+  adrMeasuringStores: {
+    title: 'ADR: Measuring both stores',
+    menuLabel: 'ADR: Measuring both stores',
+    url: '/api/docs/adr-measuring-stores',
+    kind: 'adr',
+    number: '064',
+  },
+  adrCosmosExplained: {
+    title: 'ADR: Cosmos DB, explained for someone who knows SQL Server',
+    menuLabel: 'ADR: Cosmos DB, explained',
+    url: '/api/docs/adr-cosmos-explained',
+    kind: 'adr',
+    number: '065',
+  },
+  adrOneContainer: {
+    title: 'ADR: One container, both stores',
+    menuLabel: 'ADR: One container, both stores',
+    url: '/api/docs/adr-one-container',
+    kind: 'adr',
+    number: '066',
+  },
+  adrProof: {
+    title: 'ADR: Same performance, proven',
+    menuLabel: 'ADR: Same performance, proven',
+    url: '/api/docs/adr-proof',
+    kind: 'adr',
+    number: '067',
+  },
+  adrFiveMinuteGate: {
+    title: 'ADR: The five-minute gate',
+    menuLabel: 'ADR: The five-minute gate',
+    url: '/api/docs/adr-five-minute-gate',
+    kind: 'adr',
+    number: '068',
+  },
+  adrSecondAddress: {
+    title: 'ADR: A permanent address for the second site',
+    menuLabel: 'ADR: A permanent address for the second site',
+    url: '/api/docs/adr-second-address',
+    kind: 'adr',
+    number: '069',
+  },
+  adrThreeReaders: {
+    title: 'ADR: Three readers with no memory of the project',
+    menuLabel: 'ADR: Three readers with no memory of the project',
+    url: '/api/docs/adr-three-readers',
+    kind: 'adr',
+    number: '070',
+  },
+  adrActivity: {
+    title: 'ADR: Site activity, and the line an address does not cross',
+    menuLabel: 'ADR: Site activity, and the line an address does not cross',
+    url: '/api/docs/adr-activity',
+    kind: 'adr',
+    number: '071',
+  },
+  adrSecrets: {
+    title: 'ADR: The code is public and the secrets are not',
+    menuLabel: 'ADR: The code is public and the secrets are not',
+    url: '/api/docs/adr-secrets',
+    kind: 'adr',
+    number: '072',
+  },
+  adrKeptLogs: {
+    title: 'ADR: Logs that outlive the container',
+    menuLabel: 'ADR: Logs that outlive the container',
+    url: '/api/docs/adr-kept-logs',
+    kind: 'adr',
+    number: '073',
+  },
+  adrHighlighting: {
+    title: 'ADR: Code that reads like code',
+    menuLabel: 'ADR: Code that reads like code',
+    url: '/api/docs/adr-highlighting',
+    kind: 'adr',
+    number: '074',
+  },
+  adrRules: {
+    title: 'ADR: The rules a change has to pass',
+    menuLabel: 'ADR: The rules a change has to pass',
+    url: '/api/docs/adr-rules',
+    kind: 'adr',
+    number: '075',
+  },
+  adrOpenApi: {
+    title: 'ADR: The API describes itself',
+    menuLabel: 'ADR: The API describes itself',
+    url: '/api/docs/adr-openapi',
+    kind: 'adr',
+    number: '076',
+  },
+  adrPageStatus: {
+    title: 'ADR: Every page, checked at every roll',
+    menuLabel: 'ADR: Every page, checked at every roll',
+    url: '/api/docs/adr-page-status',
+    kind: 'adr',
+    number: '077',
+  },
+  adrMachines: {
+    title: 'ADR: What the machines are doing',
+    menuLabel: 'ADR: What the machines are doing',
+    url: '/api/docs/adr-machines',
+    kind: 'adr',
+    number: '078',
+  },
+  adrOnePlan: {
+    title: 'ADR: One plan, two sites',
+    menuLabel: 'ADR: One plan, two sites',
+    url: '/api/docs/adr-one-plan',
+    kind: 'adr',
+    number: '079',
+  },
+  adrAdminProduct: {
+    title: 'ADR: The Admin tab, as a product',
+    menuLabel: 'ADR: The Admin tab, as a product',
+    url: '/api/docs/adr-admin-product',
+    kind: 'adr',
+    number: '080',
+  },
+  adrGlassLook: {
+    title: 'ADR: The glass look',
+    menuLabel: 'ADR: The glass look',
+    url: '/api/docs/adr-glass-look',
+    kind: 'adr',
+    number: '081',
+  },
+  adrLandingPage: {
+    title: 'ADR: The landing page and the site map',
+    menuLabel: 'ADR: The landing page and the site map',
+    url: '/api/docs/adr-landing-page',
+    kind: 'adr',
+    number: '082',
+  },
+  adrTweaks: {
+    title: 'ADR: The tweaks pass',
+    menuLabel: 'ADR: The tweaks pass',
+    url: '/api/docs/adr-tweaks',
+    kind: 'adr',
+    number: '083',
+  },
+  adrComponentFolders: {
+    title: 'ADR: One folder per component',
+    menuLabel: 'ADR: One folder per component',
+    url: '/api/docs/adr-component-folders',
+    kind: 'adr',
+    number: '084',
+  },
+  adrKeptAwake: {
+    title: 'ADR: Kept awake',
+    menuLabel: 'ADR: Kept awake',
+    url: '/api/docs/adr-kept-awake',
+    kind: 'adr',
+    number: '085',
+  },
+  adrCompositionRoot: {
+    title: 'ADR: The composition root, split by job',
+    menuLabel: 'ADR: The composition root, split by job',
+    url: '/api/docs/adr-composition-root',
+    kind: 'adr',
+    number: '086',
+  },
+  adrAzureCosts: {
+    title: 'ADR: What Azure charges',
+    menuLabel: 'ADR: What Azure charges',
+    url: '/api/docs/adr-azure-costs',
+    kind: 'adr',
+    number: '087',
+  },
+} as const satisfies Record<string, RecordEntry>;

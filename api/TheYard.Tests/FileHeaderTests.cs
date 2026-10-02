@@ -30,17 +30,16 @@ public class FileHeaderTests
 
     /// <summary>
     /// Past three hundred lines, each with why. One job per file keeps a file
-    /// short; a list of data is as long as the list. The four component
-    /// sheets named here each hold one component's look and are over the
-    /// line because that component is; each is split with its component by
-    /// the lane named beside it, and comes off this list when it does.
+    /// short. The four component sheets named here each hold one
+    /// component's look, shared by that component and the parts split out of
+    /// it, and are over the line because the look is one piece; each comes
+    /// off this list when its sheet is split by job.
     /// </summary>
     private static readonly Dictionary<string, string> LongAllowed = new(StringComparer.Ordinal)
     {
-        ["src/library/records.ts"] = "every decision record, as data",
         ["src/components/landing/Landing/Landing.module.css"] = "the landing page's one look (hero, featured tiles, section tiles); split with Landing.tsx in the component split lane",
-        ["src/components/layout/SideNav/SideNav.module.css"] = "the side rail's two shapes, one set of rows; split with SideNav.tsx (466 lines) in the component split lane",
-        ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin workbench's frame; split with AdminPanel.tsx (1,081 lines) in the component split lane",
+        ["src/components/layout/SideNav/SideNav.module.css"] = "the side rail's two shapes, one set of rows: one sheet shared by SideNav.tsx and the rows split out of it",
+        ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin workbench's frame: one sheet shared by AdminPanel.tsx and the parts split out of it",
         ["src/components/vehicle/VehicleDetail/VehicleDetail.module.css"] = "a vehicle's own page; split with VehicleDetail.tsx in the component split lane",
     };
     // #endregion the-header-rule

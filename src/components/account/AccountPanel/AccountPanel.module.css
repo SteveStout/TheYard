@@ -3,7 +3,7 @@
  *            of this visitor's bids.
  * Does not:  Style the header's account button, or hold a colour of its own (every colour is a design token from
  *            src/styles).
- * Used by:   AccountPanel.tsx.
+ * Used by:   AccountPanel.tsx, ResetPasswordForm.tsx, SignInForm.tsx, SignedInAccount.tsx.
  */
 /* The account view. One card, the same surface the Admin tab and the detail
    view sit on, so signing in does not look like a different application. */

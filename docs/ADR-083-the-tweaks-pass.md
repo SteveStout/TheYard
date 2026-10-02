@@ -59,7 +59,7 @@ The inventory's welcome banner is gone from the inventory, since the landing pag
 
 - A chart has no grid, carries a legend for two series and none for one, and calls out its peak; a bar gauge puts its reading inside from 40 %: `charts.test.ts`, on the rendered drawing.
 
-```live path=src/lib/machineChart.ts region=mark-vii
+```live path=src/lib/machineChartFrame.ts region=mark-vii
 ```
 
 - The dialog's clear sheet and frosted panel: `glass.spec` and `mobile.spec`. The strip two across and on one baseline: `coverage.spec`. The vehicle's order on a phone: `mobile.spec`. No ellipsis in the store bar at 1024, 1280 and 1440: `store-toggle.spec`. Pin and This hour: `admin.spec`.

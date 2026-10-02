@@ -25,7 +25,7 @@ What that is worth: a developer changes a colour in one place and it changes eve
 
 [`src/lib/siteMap.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/siteMap.ts) feeds both the side rail and the landing page, so a section added there shows up in both places. What each section holds lives in [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts); the documents themselves in [`records.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/records.ts) and [`pages.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/pages.ts).
 
-```live path=src/lib/siteMap.ts region=look-row
+```live path=src/lib/siteMapEntries.ts region=look-row
 ```
 
 ```live path=src/library/sections.ts region=look-menu

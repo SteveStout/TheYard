@@ -227,7 +227,7 @@ and none open again after a reload. Every spec that opens a document now names t
 in, through one helper in `tests/e2e/app.ts`, which is the part of this change that touched ten
 files.
 
-```live path=src/components/layout/SideNav/SideNav.tsx region=section-shell
+```live path=src/components/layout/RailSectionShell/RailSectionShell.tsx region=section-shell
 ```
 
 

@@ -2,10 +2,10 @@
  * Does:      Styles every Admin chart: the plot, its axes and marks, the lines and their swatches, the readout, the
  *            gauges and the summary list.
  * Does not:  Choose a series colour (the chart design tokens do) or style the card a chart sits in.
- * Used by:   ActivityCard.tsx, ProofCard.tsx, SpendCard.tsx, TimingCard.tsx, charts.tsx.
+ * Used by:   ActivityGraph.tsx, ActivityPathTiles.tsx, ActivityPlot.tsx, ActivityReadout.tsx, ActivityTotals.tsx,
+ *            BarGauge.tsx, ChartReadout.tsx, MachineChart.tsx, PeakCallout.tsx, PlotFrame.tsx, ProofCard.tsx,
+ *            SpendCard.tsx, TimingCard.tsx, activitySeriesLook.ts.
  */
-/* The Admin charts: the plot, its axes and marks, the lines and their swatches, the readout,
-   the gauges, and the summary list under a chart (ADR: One folder per component). */
 
 /* The three summary lines above the timing table: a list, because they are one. */
 .summaryList {

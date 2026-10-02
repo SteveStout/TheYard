@@ -2,7 +2,8 @@
  * Does:      Styles the Site activity card's own pieces: the stacked who-came chart, its bands and crosshair, the
  *            paths list and the scanner line.
  * Does not:  Style the parts every Admin card shares (card.module.css) or every chart shares (charts.module.css).
- * Used by:   ActivityCard.tsx.
+ * Used by:   ActivityGraph.tsx, ActivityPathTiles.tsx, ActivityPlot.tsx, ActivityReadout.tsx,
+ *            ActivityTotals.tsx, PathBars.tsx, activitySeriesLook.ts.
  */
 /* #region activity-card */
 

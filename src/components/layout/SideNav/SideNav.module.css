@@ -2,7 +2,8 @@
  * Does:      Styles the side rail in both shapes, docked and collapsed or a drawer: its brand block, groups, rows,
  *            icons and record numbers.
  * Does not:  Decide which rows exist (siteMap.ts and sections.ts do) or open a document (DocDialog.tsx does).
- * Used by:   SideNav.tsx.
+ * Used by:   SideNav.tsx, RailBrandBar.tsx, RailSectionShell.tsx, RailDocRow.tsx, RailLinkRow.tsx,
+ *            RailPinnedRow.tsx, RailPinnedRows.tsx, RailResetBidsRow.tsx.
  */
 /*
  * The one navigation surface (ADR-013). Two shapes, one set of rows:

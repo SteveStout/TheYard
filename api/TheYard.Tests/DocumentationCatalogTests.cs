@@ -44,8 +44,26 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
     {
         string root = RepoRoot();
         // The documents are two lists, the decision records and every other page (src/library).
-        string menu = File.ReadAllText(Path.Combine(root, "src", "library", "records.ts"))
-            + File.ReadAllText(Path.Combine(root, "src", "library", "pages.ts"));
+        // The records are joined in records.ts from runs in src/library/decisionRecords, so every
+        // run is read, and every run must be one records.ts joins: a run left out of the join
+        // would put slugs in this text that the sidebar never shows.
+        string library = Path.Combine(root, "src", "library");
+        string records = File.ReadAllText(Path.Combine(library, "records.ts"));
+        var runs = Directory.EnumerateFiles(Path.Combine(library, "decisionRecords"), "*.ts")
+            .Where(path => !path.EndsWith(".test.ts", StringComparison.Ordinal))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        Assert.True(runs.Count > 0, "src/library/decisionRecords holds no runs of decision records");
+        foreach (string run in runs)
+        {
+            string name = Path.GetFileNameWithoutExtension(run);
+            Assert.True(records.Contains($"from './decisionRecords/{name}'", StringComparison.Ordinal),
+                $"records.ts does not join src/library/decisionRecords/{name}.ts");
+        }
+
+        string menu = records
+            + string.Concat(runs.Select(run => File.ReadAllText(run)))
+            + File.ReadAllText(Path.Combine(library, "pages.ts"));
         var inMenu = Regex.Matches(menu, @"url: '/api/docs/([a-z0-9-]+)'")
             .Select(m => m.Groups[1].Value)
             .Where(slug => slug is not "bicep") // the Bicep file has its own route: it is not markdown

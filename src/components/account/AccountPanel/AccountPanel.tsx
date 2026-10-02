@@ -1,23 +1,21 @@
-import { useEffect, useState } from 'react';
-import {
-  fetchHistory,
-  forgotRequest,
-  loginRequest,
-  logoutRequest,
-  registerRequest,
-  resetRequest,
-  type Account,
-  type HistoryEntry,
-} from '../../../lib/auth';
-import { formatCurrency, formatDate } from '../../../lib/format';
+/**
+ * The account view, at ?view=account: the page head, then one of three parts,
+ * each in its own folder beside this one. This file only chooses which part to
+ * show, so it reads as the list of what the account view can be.
+ */
+import type { Account } from '../../../lib/auth';
+import { ResetPasswordForm } from '../ResetPasswordForm'; // a reset link was followed: choose a new password
+import { SignedInAccount } from '../SignedInAccount'; // signed in: who you are, sign out, your bids
+import { SignInForm } from '../SignInForm'; // signed out: sign in, register, or ask for a reset link
 import styles from './AccountPanel.module.css';
 
+/** What the account view needs from the app: the account, the ways to change it and leave, and any reset token. */
 interface AccountPanelProps {
   account: Account;
   onAccountChange: (account: Account) => void;
   onOpenVehicle: (vehicleId: string) => void;
   onBack: () => void;
-  /** Where the back button goes, as its label says (1.0.3.9). */
+  /** Where the back button goes, as its label says. */
   backTo?: 'home' | 'inventory';
   /** A reset link's token, read from the address bar when the page loaded; null when there is none. */
   resetToken?: string | null;
@@ -50,275 +48,16 @@ export function AccountPanel({
         </button>
       </div>
       {account.signedIn ? (
-        <SignedIn
+        <SignedInAccount
           account={account}
           onAccountChange={onAccountChange}
           onOpenVehicle={onOpenVehicle}
         />
       ) : resetToken !== null ? (
-        <ResetForm token={resetToken} onAccountChange={onAccountChange} />
+        <ResetPasswordForm token={resetToken} onAccountChange={onAccountChange} />
       ) : (
         <SignInForm onAccountChange={onAccountChange} />
       )}
     </section>
   );
 }
-
-// #region sign-in
-function SignInForm({ onAccountChange }: { onAccountChange: (account: Account) => void }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  // "Forgot password": the same email field, one more button, one sentence back.
-  const [forgotNote, setForgotNote] = useState<string | null>(null);
-
-  async function attempt(mode: 'register' | 'login') {
-    setBusy(true);
-    setMessage(null);
-    const result = await (mode === 'register'
-      ? registerRequest(email, password)
-      : loginRequest(email, password));
-    setBusy(false);
-    if (result.ok) {
-      onAccountChange(result.account);
-      return;
-    }
-    setMessage(result.message);
-  }
-
-  return (
-    <div className={`${styles.panel} op-glass`}>
-      <h2 className={styles.heading}>Sign in to bid</h2>
-      <p className={styles.lede}>
-        Bids belong to an account, so the auction can tell two people apart. Nothing is emailed and
-        nothing is shared; this is a showcase, and the address is only the name your bids are under.
-      </p>
-
-      <form
-        className={styles.form}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void attempt('login');
-        }}
-      >
-        <label className={styles.field}>
-          <span className={styles.label}>Email</span>
-          <input
-            className={styles.input}
-            type="email"
-            autoComplete="username"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </label>
-        <label className={styles.field}>
-          <span className={styles.label}>Password</span>
-          <input
-            className={styles.input}
-            type="password"
-            autoComplete="current-password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          <span className={styles.hint}>Eight characters or more.</span>
-        </label>
-
-        {message && (
-          <p className={styles.error} role="alert">
-            {message}
-          </p>
-        )}
-
-        <div className={styles.actions}>
-          <button className={styles.primary} type="submit" disabled={busy}>
-            Sign in
-          </button>
-          <button
-            className={styles.secondary}
-            type="button"
-            disabled={busy}
-            onClick={() => void attempt('register')}
-          >
-            Create an account
-          </button>
-          <button
-            className={styles.secondary}
-            type="button"
-            disabled={busy || email.length === 0}
-            data-testid="forgot-password"
-            onClick={() => {
-              setBusy(true);
-              setForgotNote(null);
-              void forgotRequest(email).then((result) => {
-                setBusy(false);
-                setForgotNote(result.message);
-              });
-            }}
-          >
-            Forgot your password?
-          </button>
-        </div>
-        {forgotNote && (
-          <p className={styles.hint} role="status" data-testid="forgot-note">
-            {forgotNote}
-          </p>
-        )}
-      </form>
-    </div>
-  );
-}
-// #endregion sign-in
-
-// #region reset
-/**
- * The second half of a password reset (ADR: Accounts and per-user bids,
- * addendum): the link carried a token, the visitor chooses a new password,
- * and the server signs them in. One field, because the link already said
- * who they are; a wrong or spent link is one sentence from the server.
- */
-function ResetForm({
-  token,
-  onAccountChange,
-}: {
-  token: string;
-  onAccountChange: (account: Account) => void;
-}) {
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  return (
-    <div className={`${styles.panel} op-glass`}>
-      <h2 className={styles.heading}>Choose a new password</h2>
-      <p className={styles.lede}>
-        This link was made for your account and works once, for an hour. Choose a new password and
-        you are signed in.
-      </p>
-      <form
-        className={styles.form}
-        onSubmit={(event) => {
-          event.preventDefault();
-          setBusy(true);
-          setMessage(null);
-          void resetRequest(token, password).then((result) => {
-            setBusy(false);
-            if (result.ok) {
-              onAccountChange(result.account);
-              return;
-            }
-            setMessage(result.message);
-          });
-        }}
-      >
-        <label className={styles.field}>
-          <span className={styles.label}>New password</span>
-          <input
-            className={styles.input}
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            data-testid="reset-password"
-          />
-          <span className={styles.hint}>Eight characters or more.</span>
-        </label>
-        {message && (
-          <p className={styles.error} role="alert">
-            {message}
-          </p>
-        )}
-        <div className={styles.actions}>
-          <button
-            className={styles.primary}
-            type="submit"
-            disabled={busy}
-            data-testid="reset-submit"
-          >
-            Set the password and sign in
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-// #endregion reset
-
-// #region signed-in
-function SignedIn({
-  account,
-  onAccountChange,
-  onOpenVehicle,
-}: {
-  account: Account;
-  onAccountChange: (account: Account) => void;
-  onOpenVehicle: (vehicleId: string) => void;
-}) {
-  const [history, setHistory] = useState<HistoryEntry[] | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchHistory(controller.signal)
-      .then(setHistory)
-      .catch(() => setHistory([]));
-    return () => controller.abort();
-  }, [account.email]);
-
-  return (
-    <div className={`${styles.panel} op-glass`}>
-      <div className={styles.identity}>
-        <div>
-          <h2 className={styles.heading}>{account.email}</h2>
-          {account.memberSinceMs !== null && (
-            <p className={styles.lede}>Signed up {formatDate(account.memberSinceMs)}</p>
-          )}
-        </div>
-        <button
-          className={styles.secondary}
-          type="button"
-          onClick={() => {
-            void logoutRequest().then(onAccountChange);
-          }}
-        >
-          Sign out
-        </button>
-      </div>
-
-      <h3 className={styles.subheading}>Your bids</h3>
-      {history === null && <p className={styles.lede}>Loading.</p>}
-      {history !== null && history.length === 0 && (
-        <p className={styles.lede}>Nothing yet. Open a live auction and place one.</p>
-      )}
-      {history !== null && history.length > 0 && (
-        <ul className={styles.history}>
-          {history.map((entry) => (
-            <li key={entry.vehicleId} className={styles.entry}>
-              <button
-                className={styles.entryButton}
-                type="button"
-                data-testid="history-entry"
-                onClick={() => onOpenVehicle(entry.vehicleId)}
-              >
-                <span className={styles.entryTitle}>{entry.title}</span>
-                <span className={styles.entryAmount}>{formatCurrency(entry.amount)}</span>
-              </button>
-              <span className={entry.outbid ? styles.outbid : styles.winning}>
-                {entry.wonBuyNow
-                  ? 'Bought'
-                  : entry.outbid
-                    ? `Outbid, now ${formatCurrency(entry.highestAmount)}`
-                    : 'High bidder'}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-// #endregion signed-in

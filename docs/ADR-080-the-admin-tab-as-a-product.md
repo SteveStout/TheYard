@@ -387,16 +387,16 @@ Two things change at run time and nothing else does. A card whose sheet is its o
 - [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the request ring folded into minutes, once, for the hour on the card and for the minute that is kept.
 - [`docs/ADR-078-what-the-machines-are-doing.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-078-what-the-machines-are-doing.md): the first charts, and the windows these are drawn over.
 
-```live path=src/lib/machineChart.ts region=traffic
+```live path=src/lib/trafficSlots.ts region=traffic
 ```
 
-```live path=api/TheYard.Api/Machines.cs region=traffic-minutes
+```live path=api/TheYard.Api/TrafficMinutes.cs region=traffic-minutes
 ```
 
-```live path=src/lib/statTiles.ts region=tile-rules
+```live path=src/lib/statTiles/tileRules.ts region=tile-rules
 ```
 
-```live path=src/lib/statTiles.ts region=hour-timing
+```live path=src/lib/statTiles/hourTiming.ts region=hour-timing
 ```
 
 ```live path=src/lib/trafficCard.ts region=traffic-words

@@ -52,7 +52,7 @@ The section, and its order (`src/library/sections.ts`; the numbers are in `src/l
 
 One shell for both kinds of section (`src/components/layout/SideNav/SideNav.tsx`):
 
-```live path=src/components/layout/SideNav/SideNav.tsx region=section-shell
+```live path=src/components/layout/RailSectionShell/RailSectionShell.tsx region=section-shell
 ```
 
 ## Consequences

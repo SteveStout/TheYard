@@ -211,7 +211,7 @@ The same day he asked for "the original background image" back. The ribbons had 
 ```live path=src/components/layout/Background/Watermark.tsx region=*
 ```
 
-```live path=src/lib/statTiles.ts region=tile-rules
+```live path=src/lib/statTiles/tileRules.ts region=tile-rules
 ```
 
 ## Addendum, 2026-09-21 (1.0.0.175): the ribbon ground

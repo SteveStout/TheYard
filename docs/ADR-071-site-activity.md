@@ -139,7 +139,7 @@ rows behind a key only he holds, or aggregate only and no rows. He was away;
 the key-protected shape is the default because it exposes nothing and keeps
 the view he asked for, and he can rule the other way by deleting one endpoint.
 
-```live path=api/TheYard.Api/Activity.cs region=report
+```live path=api/TheYard.Api/ActivityReport.cs region=report
 ```
 
 ### The graph
@@ -153,7 +153,7 @@ are hand-drawn SVG and this is drawn the same way, with the geometry in a
 module a unit test can hold. Three windows, the last day by the hour, the last
 week by six hours, the last month by the day.
 
-```live path=src/lib/activity.ts region=chart-geometry
+```live path=src/lib/activityChart.ts region=chart-geometry
 ```
 
 ### What the feature costs the stores
@@ -273,7 +273,7 @@ which is the reading this addendum keeps until he says otherwise: the tab is
 public, and a network beside a timestamp is the thing the record above
 decided not to publish. The graph, the day counts and the split need no key.
 
-```live path=src/lib/activity.ts region=days
+```live path=src/lib/activityDays.ts region=days
 ```
 
 ## Addendum, 2026-09-13: the counters are kept for good
