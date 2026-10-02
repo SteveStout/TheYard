@@ -36,7 +36,7 @@ method of [TheYard](https://theyard.stevenstout.biz).
 | `Controllers/` | The routes, a line or three each, and the problem-document handler. |
 | `Composition/` | The registrations and the pipeline that `Program.cs` calls, one line each, as TheYard's are. |
 | `Documentation/` | The documents the app serves: the catalogue, the live-sample expander, the version reader. |
-| `src/` | The page, in TypeScript: `lib` (pure), `ui` (renders), `main.ts` (the shell). |
+| `src/` | The page, in TypeScript: `main.ts` (a list of the page's parts, read like `Program.cs`), `navigation.ts` (the one way the page changes), `lib` (pure), `ui` (renders). |
 | `wwwroot/` | What the browser loads: `index.html`, two stylesheets, and `js`, which `tsc` wrote from `src/`. |
 | `tests/` | xUnit under `TestProject.Tests`, `node --test` under `js`. |
 | `docs/` | These documents. |

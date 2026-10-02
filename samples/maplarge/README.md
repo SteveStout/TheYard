@@ -53,7 +53,7 @@ npm run build
 
 | Suite | Count | What it covers |
 | --- | --- | --- |
-| xUnit | 112 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (layering, sealed, no em dash, no raw colour, the rules table, the front end); a measured search over 10,000 files. |
+| xUnit | 114 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (layering, sealed, no em dash, no raw colour, the rules table, the front end); a measured search over 10,000 files. |
 | node --test | 21 | The address parser and serializer, the byte and date formatting, the markdown reader (a `<script>` arrives as text, an image keeps its alt text). |
 
 The build treats warnings as errors and a public member without a summary is a warning.
@@ -103,7 +103,7 @@ Infrastructure/       PhysicalFileStore, the disk
 Controllers/          FilesController, DocumentationAndVersionController, ProblemResponseHandler
 Composition/          the registrations and the pipeline Program.cs calls, as TheYard's are
 Documentation/        DocumentationCatalog, LiveSamples, VersionReader: the documents the app serves
-src/                  the page, TypeScript: lib (pure), ui (renders), main.ts (the shell)
+src/                  the page, TypeScript: main.ts (the list of parts), navigation.ts, lib (pure), ui (renders)
 wwwroot/              index.html, css/tokens.css, css/app.css, js (what tsc wrote from src)
 tests/                TestProject.Tests (xUnit), js (node --test)
 docs/                 the records and the guides

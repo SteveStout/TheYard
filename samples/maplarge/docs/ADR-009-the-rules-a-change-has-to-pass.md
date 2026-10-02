@@ -29,6 +29,7 @@ table is a rule the next change will break.
 | Nothing in the project carries an em dash | STYLE.md | NoEmDashTests |
 | Every class is sealed, static or abstract, and the analyzer that holds the internal half is a warning with warnings as errors | ADR-001 | SealedByDefaultTests |
 | A folder uses only the folders inside it; Data and Domain touch no filesystem and no clock; Program maps no route itself | ADR-002 | LayeringTests |
+| No C# or TypeScript file runs past 300 lines; `src/main.ts` is a short list, each line naming the file that holds its part | ADR-002 | FileShapeTests |
 | No stylesheet but the token sheet writes a colour; every token used is declared; the font is served from this site | ADR-010 | StyleRulesTests |
 | Every TypeScript module has its compiled module beside the page; `lib` never imports `ui`; no source uses `.innerHTML`; the compiler is the only dependency | ADR-006 | FrontEndRulesTests |
 | Every test this table names exists with a test in it, and every record it cites exists | This record | RuleTableTests |

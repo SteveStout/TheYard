@@ -7,27 +7,21 @@
  * State. Every change of folder, search or sort goes through navigate(), so the
  * page address always describes what is on screen.
  *
- * One click listener on the table handles the buttons of every row. Each row
+ * The parts live in files of their own: fileTable.ts draws the table, rowPrompts.ts
+ * asks questions inside a row, uploads.ts sends files, and notices.ts shows what
+ * happened. One click listener here handles the buttons of every row; each row
  * stores its path in a data-path attribute, so the listener finds which entry was
  * clicked without keeping a listener per row. (More in
  * docs/ADR-005-state-lives-in-the-url.md and docs/ADR-006-typescript-organised.md.)
  */
 import * as api from '../lib/api.js';
-import { bytes, plural, when } from '../lib/format.js';
-import { ApiError } from '../lib/types.js';
 import { crumbs } from '../lib/urlState.js';
 import { buildElement, replaceContents } from './elements.js';
+import { renderReadout, renderTable } from './fileTable.js';
+import { createNotices, messageOf } from './notices.js';
+import { askInRow, confirmInRow } from './rowPrompts.js';
+import { createUploader } from './uploads.js';
 const SEARCH_DEBOUNCE_MS = 250;
-function isSearch(reply) {
-    return 'query' in reply;
-}
-/**
- * The message to show for a caught error: the server's sentence for an ApiError,
- * the browser's message for any other Error, or the value as text otherwise.
- */
-function messageOf(error) {
-    return error instanceof Error ? error.message : String(error);
-}
 /**
  * Builds the file browser inside a container element and returns an object whose
  * render() draws it for a given State.
@@ -38,6 +32,8 @@ export function createBrowser(root, navigate) {
     let state = { open: true, view: 'browse', path: '', q: '', sort: 'name', dir: 'asc', doc: '' };
     let reply = null;
     let debounce = 0;
+    // The browser's parts, top to bottom: the path and search box, the totals line, the notice
+    // line, the table, and the row of buttons under it. The file picker stays hidden.
     const toolbar = buildElement('div', { class: 'toolbar' });
     const readout = buildElement('div', { class: 'readout', role: 'status', 'aria-live': 'polite' });
     const noticeBox = buildElement('div');
@@ -45,6 +41,9 @@ export function createBrowser(root, navigate) {
     const actions = buildElement('div', { class: 'actions-row' });
     const fileInput = buildElement('input', { type: 'file', multiple: true, class: 'visually-hidden', 'aria-label': 'Choose files to upload', onchange: () => void uploadFiles([...(fileInput.files ?? [])]) });
     replaceContents(root, toolbar, readout, noticeBox, grid, actions, fileInput);
+    const say = createNotices(noticeBox);
+    const uploadFiles = createUploader({ noticeBox, fileInput, folder: () => state.path, say, refresh: () => render(state) });
+    // One listener answers every row's buttons, and dropping files on the table uploads them.
     grid.addEventListener('click', onRowAction);
     grid.addEventListener('dragover', (event) => {
         event.preventDefault();
@@ -90,8 +89,8 @@ export function createBrowser(root, navigate) {
         if (next !== state) {
             return; // A newer render started during this fetch; let the newer one draw.
         }
-        renderReadout(reply);
-        renderTable(reply);
+        renderReadout(readout, reply);
+        renderTable(grid, reply, state, navigate);
         renderActions();
     }
     // The search box is created once and reused on every render. Rebuilding it would move the
@@ -114,6 +113,7 @@ export function createBrowser(root, navigate) {
     }, searchInput, buildElement('button', { type: 'submit', class: 'small' }, 'Search'), clearButton);
     const trail = buildElement('nav', { class: 'crumbs', 'aria-label': 'Folder path' });
     replaceContents(toolbar, trail, searchForm);
+    /** Draws the folder path as buttons, and keeps the search box in step with the address. */
     function renderToolbar() {
         const parts = crumbs(state.path);
         const nodes = [];
@@ -132,66 +132,7 @@ export function createBrowser(root, navigate) {
         }
         clearButton.hidden = !state.q;
     }
-    function renderReadout(current) {
-        const totals = current.totals;
-        const items = [
-            buildElement('span', {}, buildElement('strong', {}, totals.folder_count.toLocaleString()), plural(totals.folder_count, 'folder').replace(/^\S+ /, '')),
-            buildElement('span', {}, buildElement('strong', {}, totals.file_count.toLocaleString()), plural(totals.file_count, 'file').replace(/^\S+ /, '')),
-            buildElement('span', {}, buildElement('strong', {}, bytes(totals.total_bytes)), 'in files'),
-        ];
-        if (isSearch(current)) {
-            items.unshift(buildElement('span', {}, buildElement('strong', {}, 'search'), `for ${current.query}`));
-            if (current.truncated) {
-                items.push(buildElement('span', { class: 'warn' }, 'stopped at the limit; narrow the search'));
-            }
-        }
-        replaceContents(readout, ...items);
-    }
-    function sorted(entries) {
-        const dir = state.dir === 'desc' ? -1 : 1;
-        const key = (entry) => {
-            if (state.sort === 'size') {
-                return 'size_bytes' in entry ? entry.size_bytes : 0;
-            }
-            if (state.sort === 'modified') {
-                return entry.modified_ms;
-            }
-            return (state.q ? entry.path : entry.name).toLowerCase();
-        };
-        return [...entries].sort((a, b) => {
-            const ka = key(a);
-            const kb = key(b);
-            return (ka < kb ? -1 : ka > kb ? 1 : 0) * dir;
-        });
-    }
-    function header(label, sort) {
-        const current = state.sort === sort;
-        return buildElement('th', { scope: 'col', 'aria-sort': current ? (state.dir === 'desc' ? 'descending' : 'ascending') : false }, buildElement('button', { type: 'button', onclick: () => navigate({ sort, dir: current && state.dir === 'asc' ? 'desc' : 'asc' }) }, label));
-    }
-    function renderTable(current) {
-        const folders = sorted(current.folders);
-        const files = sorted(current.files);
-        if (folders.length + files.length === 0) {
-            replaceContents(grid, buildElement('div', { class: 'empty' }, state.q ? 'Nothing matches.' : 'This folder is empty. Upload something, or make a folder.'));
-            return;
-        }
-        const rows = [];
-        for (const folder of folders) {
-            rows.push(row(folder, true));
-        }
-        for (const file of files) {
-            rows.push(row(file, false));
-        }
-        const table = buildElement('table', {}, buildElement('thead', {}, buildElement('tr', {}, header('Name', 'name'), header('Size', 'size'), header('Modified', 'modified'), buildElement('th', { scope: 'col' }, buildElement('span', { class: 'visually-hidden' }, 'Actions')))), buildElement('tbody', {}, rows));
-        replaceContents(grid, table);
-    }
-    function row(entry, isFolder) {
-        const label = state.q ? entry.path : entry.name;
-        const name = isFolder
-            ? buildElement('button', { type: 'button', 'data-action': 'open' }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, '▸'), label)
-            : buildElement('a', { href: api.downloadUrl(entry.path), download: entry.name }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, '•'), label);
-        return buildElement('tr', { 'data-path': entry.path, 'data-kind': isFolder ? 'folder' : 'file' }, buildElement('td', { class: 'name' }, name), buildElement('td', { class: 'num' }, 'size_bytes' in entry ? bytes(entry.size_bytes) : ''), buildElement('td', { class: 'num' }, when(entry.modified_ms)), buildElement('td', { class: 'actions' }, isFolder ? null : buildElement('button', { type: 'button', 'data-action': 'download', 'aria-label': `Download ${entry.name}` }, 'Download'), buildElement('button', { type: 'button', 'data-action': 'copy', 'aria-label': `Copy ${entry.name}` }, 'Copy'), buildElement('button', { type: 'button', 'data-action': 'move', 'aria-label': `Move ${entry.name}` }, 'Move'), buildElement('button', { type: 'button', 'data-action': 'delete', class: 'danger', 'aria-label': `Delete ${entry.name}` }, 'Delete')));
-    }
+    /** Draws the buttons under the table, and how long the server took to answer. */
     function renderActions() {
         const took = reply ? buildElement('span', { class: 'took' }, `served in ${reply.took_ms} ms`) : null;
         replaceContents(actions, state.q ? null : buildElement('button', { type: 'button', class: 'primary', onclick: () => fileInput.click() }, 'Upload files'), state.q ? null : buildElement('button', { type: 'button', onclick: newFolder }, 'New folder'), took);
@@ -221,63 +162,31 @@ export function createBrowser(root, navigate) {
                 confirmInRow(tr, `Delete ${isFolder ? 'folder' : 'file'} "${path}"${isFolder ? ' and everything in it' : ''}?`, 'Delete', async () => {
                     await api.remove(path);
                     say('ok', `Deleted ${path}.`);
-                });
+                }, run);
                 break;
             case 'move':
                 askInRow(tr, 'Move to (path with the new name)', path, 'Move', async (to) => {
                     await api.move(path, to);
                     say('ok', `Moved ${path} to ${to}.`);
-                });
+                }, run);
                 break;
             case 'copy':
                 askInRow(tr, 'Copy to (path with the new name)', suggestCopyName(path), 'Copy', async (to) => {
                     await api.copy(path, to);
                     say('ok', `Copied ${path} to ${to}.`);
-                });
+                }, run);
                 break;
             default:
                 break;
         }
     }
+    /** The name a copy starts with: report.csv becomes report-copy.csv. */
     function suggestCopyName(path) {
         const dot = path.lastIndexOf('.');
         const slash = path.lastIndexOf('/');
         return dot > slash ? `${path.slice(0, dot)}-copy${path.slice(dot)}` : `${path}-copy`;
     }
-    /**
-     * Replaces a row's action buttons with a question, a confirm button and a
-     * Cancel button. Cancel, or a failed action, puts the original buttons back.
-     * Asking inside the row keeps the question next to the entry it is about.
-     */
-    function confirmInRow(tr, question, verb, act) {
-        const cell = tr.querySelector('td.actions');
-        if (!cell) {
-            return;
-        }
-        const previous = [...cell.childNodes];
-        const restore = () => replaceContents(cell, ...previous);
-        const confirm = buildElement('button', { type: 'button', class: 'danger', onclick: () => void run(act, restore) }, verb);
-        replaceContents(cell, buildElement('span', {}, question, ' '), confirm, buildElement('button', { type: 'button', onclick: restore }, 'Cancel'));
-        confirm.focus();
-    }
-    /**
-     * Replaces a row's action buttons with a text box, a confirm button and a
-     * Cancel button, for actions that need a destination path (move and copy).
-     * Cancel, or a failed action, puts the original buttons back.
-     */
-    function askInRow(tr, label, value, verb, act) {
-        const cell = tr.querySelector('td.actions');
-        if (!cell) {
-            return;
-        }
-        const previous = [...cell.childNodes];
-        const restore = () => replaceContents(cell, ...previous);
-        const input = buildElement('input', { type: 'text', value, 'aria-label': label, size: '32' });
-        const form = buildElement('form', { onsubmit: (event) => { event.preventDefault(); void run(() => act(input.value.trim()), restore); } }, input, ' ', buildElement('button', { type: 'submit' }, verb), ' ', buildElement('button', { type: 'button', onclick: restore }, 'Cancel'));
-        replaceContents(cell, form);
-        input.focus();
-        input.select();
-    }
+    /** Runs a row action, then redraws; a failure puts the row back and shows the message. */
     async function run(act, restore) {
         try {
             await act();
@@ -288,6 +197,7 @@ export function createBrowser(root, navigate) {
             say('error', messageOf(error));
         }
     }
+    /** Swaps the buttons under the table for a box that names a new folder in the folder on screen. */
     function newFolder() {
         const input = buildElement('input', { type: 'text', placeholder: 'Folder name', 'aria-label': 'New folder name' });
         const form = buildElement('form', {
@@ -307,61 +217,6 @@ export function createBrowser(root, navigate) {
         }, input, ' ', buildElement('button', { type: 'submit', class: 'small' }, 'Create'), ' ', buildElement('button', { type: 'button', class: 'small', onclick: () => renderActions() }, 'Cancel'));
         replaceContents(actions, form);
         input.focus();
-    }
-    /**
-     * Uploads files one at a time, each with its own progress bar. When the server
-     * answers 409 (a file with that name already exists), the batch pauses and asks
-     * the person. Overwrite sends that file again with overwrite turned on; Skip
-     * leaves it. Either way the remaining files continue. Any other error stops the
-     * batch and shows the message.
-     */
-    async function uploadFiles(files) {
-        if (files.length === 0) {
-            return;
-        }
-        for (const file of files) {
-            try {
-                await uploadOne(file, false);
-            }
-            catch (error) {
-                if (!(error instanceof ApiError) || error.status !== 409) {
-                    say('error', messageOf(error));
-                    return;
-                }
-                const overwrite = await askOverwrite(error.message);
-                if (overwrite) {
-                    try {
-                        await uploadOne(file, true);
-                    }
-                    catch (again) {
-                        say('error', messageOf(again));
-                        return;
-                    }
-                }
-            }
-        }
-        fileInput.value = '';
-        say('ok', files.length === 1 ? `Uploaded ${files[0]?.name ?? ''}.` : `Uploaded ${files.length} files.`);
-        await render(state);
-    }
-    function uploadOne(file, overwrite) {
-        const bar = buildElement('div', {});
-        replaceContents(noticeBox, buildElement('div', { class: 'notice' }, `Uploading ${file.name} (${bytes(file.size)})`, buildElement('div', { class: 'progress' }, bar)));
-        return api.upload(state.path, file, overwrite, (fraction) => { bar.style.width = `${Math.round(fraction * 100)}%`; });
-    }
-    /**
-     * Shows the "name already exists" question with Overwrite and Skip buttons, and
-     * returns a promise that resolves to true for Overwrite or false for Skip, so
-     * the upload loop can wait for the answer.
-     */
-    function askOverwrite(message) {
-        return new Promise((resolve) => {
-            replaceContents(noticeBox, buildElement('div', { class: 'notice' }, `${message} `, buildElement('button', { type: 'button', class: 'small', onclick: () => resolve(true) }, 'Overwrite'), ' ', buildElement('button', { type: 'button', class: 'small', onclick: () => resolve(false) }, 'Skip')));
-        });
-    }
-    function say(kind, text) {
-        const notice = buildElement('div', { class: `notice ${kind}`, role: 'status' }, text, ' ', buildElement('button', { type: 'button', class: 'small', onclick: () => replaceContents(noticeBox) }, 'Dismiss'));
-        replaceContents(noticeBox, notice);
     }
     // #endregion writes
     return { render };

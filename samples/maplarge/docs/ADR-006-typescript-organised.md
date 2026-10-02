@@ -24,8 +24,9 @@ snake_case as `Data/ApiResponses.cs`, so the two can be read side by side (ADR-0
 **Modules, in two folders, with the same inward rule as the C#.** `src/lib/` is pure: `types`,
 `urlState`, `format`, `markdown`, `api`. Nothing in `lib` touches the document, which is why three
 of them run under `node --test` as compiled. `src/ui/` renders: `elements` (the two ways page
-elements are made), `browser`, `documentation`, and `main.ts` is the shell that reads the address
-and hands the state to a view. `ui` may import `lib`; `lib` never imports `ui`. A test holds the
+elements are made), `pageElements`, `controls`, `versionFooter`, `browser`, `documentation`. `navigation.ts`
+is the shell that reads the address and hands the state to a view, and `main.ts` is a short list of
+the page's parts, one line each with the file beside it, read the same way as `Program.cs`. `ui` may import `lib`; `lib` never imports `ui`. A test holds the
 line.
 
 **Two ways to make HTML, neither of them `innerHTML`.** `buildElement(tag, attrs, ...children)`
@@ -71,6 +72,7 @@ reviewer who wants to run the thing.
 
 ## Files
 
+- [`src/main.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/main.ts): the page's parts, in order, one line each.
 - [`src/ui/elements.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/elements.ts): `buildElement`, `buildFromMarkdown` and `replaceContents`.
 - [`src/ui/browser.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/browser.ts): the file browser.
 - [`src/lib/api.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/api.ts): every call, and the cache.

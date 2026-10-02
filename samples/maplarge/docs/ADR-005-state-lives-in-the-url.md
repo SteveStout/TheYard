@@ -31,7 +31,7 @@ address shows the page with the dialog closed; a link with `?path=reports/2026` 
 that folder. Opening the browser from its button writes `?view=browse`, the shortest open state, so
 the address always says what the page shows.
 
-Every change goes through one function, `navigate` in `main.ts`: merge the change into the state,
+Every change goes through one function, `navigate` in `navigation.ts`: merge the change into the state,
 write the address with `pushState`, then redraw from the address. Back and forward fire `popstate`,
 which redraws from the address the same way. Closing the dialog navigates to the bare address, so
 Back from a closed page reopens it where it was. The first keystroke of a search pushes an entry and
@@ -51,7 +51,7 @@ the rule is that every view has a link on the front page.
 ## Files
 
 - [`src/lib/urlState.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/urlState.ts): the parser and the serializer.
-- [`src/main.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/main.ts): `navigate`, the one way state changes.
+- [`src/navigation.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/navigation.ts): `navigate`, the one way state changes.
 - [`tests/js/urlState.test.js`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/js/urlState.test.js): the round trip and the fallbacks.
 
 The parser:
@@ -61,5 +61,5 @@ The parser:
 
 The one way the state changes:
 
-```live path=src/main.ts region=navigate
+```live path=src/navigation.ts region=navigate
 ```

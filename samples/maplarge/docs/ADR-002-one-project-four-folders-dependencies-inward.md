@@ -88,9 +88,37 @@ The file that sets up the Docs tab and the footer's version is
 abbreviation, and it hid the version. Its comments say where each value is really set (the top of
 the changelog, the deploy, the docs folder), because the registration itself sets none of them.
 
+## Addendum, 2 October: every file shows its intention
+
+Steve, reading `src/main.ts`, asked for it to read like `Program.cs`, because a file a reader
+cannot follow at a glance hides what it is for. He set the rule behind it at the same time: no
+large, tangled files; anyone should be able to open a file and see its intention.
+
+`src/main.ts` had grown to 148 lines that found the page's elements, kept the state, wrote the
+address, drew the dialog, wired every button and filled in the footer. It is now the page's table
+of contents, the same shape as `Program.cs`: one line per part, in order, with the file that holds
+the details beside it.
+
+```live path=src/main.ts region=composition
+```
+
+The parts moved, unchanged in what they do, to files named for their one job:
+`src/navigation.ts` (the one way the page changes, and the only file that writes the address),
+`src/ui/pageElements.ts`, `src/ui/controls.ts` and `src/ui/versionFooter.ts`. The same pass split
+`src/ui/browser.ts`, the largest file at 414 lines, by job: `fileTable.ts` draws the table,
+`rowPrompts.ts` asks questions inside a row, `uploads.ts` sends files and `notices.ts` shows what
+happened, which leaves `browser.ts` to wire them together.
+
+What that is worth: a reader opens any file and sees what it is for before reading how, and a
+change to one job touches the one file that holds it. `FileShapeTests` holds the line: no C# or
+TypeScript file runs past 300 lines, and every line of `src/main.ts` names the file that holds its
+part.
+
 ## Files
 
 - [`Program.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Program.cs): the table of contents.
+- [`src/main.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/main.ts): the page's table of contents.
+- [`tests/TestProject.Tests/FileShapeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/FileShapeTests.cs): no file past 300 lines, and the entry file a list.
 - [`Composition/FilesRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Composition/FilesRegistration.cs): the port and the use cases, registered.
 - [`Application/IFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/IFileStore.cs): the port.
 - [`Application/FileBrowser.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/FileBrowser.cs): the use cases.

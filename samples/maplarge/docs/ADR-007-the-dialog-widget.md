@@ -37,12 +37,13 @@ render checks `dialog.open` before either. The one browser behaviour worth knowi
 ## Files
 
 - [`wwwroot/index.html`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/index.html): the dialog and the trigger.
-- [`src/main.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/main.ts): open and close as navigation.
+- [`src/navigation.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/navigation.ts): open and close as navigation.
+- [`src/ui/controls.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/controls.ts): the open and close buttons, and Escape.
 - [`wwwroot/css/app.css`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/css/app.css): the dialog's panel, full screen on a phone.
 
 The render that opens and closes it:
 
-```live path=src/main.ts region=render
+```live path=src/navigation.ts region=render
 ```
 
 Its styles:
