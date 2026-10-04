@@ -160,8 +160,8 @@ The kept log copies the activity layout: LogEvent, LogText and the ILogStore por
 
 ## Addendum, 2026-09-13: three years
 
-Steve, an hour after this shipped: "But I want long term logs ... CosmosDB
-for logs." The year above was chosen for the reason given, an old log with no
+An hour after this shipped, Steve asked for long-term logs, kept in Cosmos
+DB. The year above was chosen for the reason given, an old log with no
 reader; his reading is that the log is the record and the record is worth
 keeping, and it is his site. The `logs` container's default time-to-live is
 now three years (94,608,000 seconds), applied to the live account and read
@@ -173,8 +173,8 @@ addendum). Reversible in one number on each definition.
 
 ## Addendum, 2026-09-13: the self review
 
-Steve's standing instruction, repeated the same evening: "make sure and code
-review and test your self." What was read again, line by line, after the
+Steve's standing instruction, repeated the same evening, is that the author
+reviews and tests the code before it ships. What was read again, line by line, after the
 day's four versions had shipped, and what came of it.
 
 **The store.** The batch write is one transactional batch per day partition
@@ -214,10 +214,10 @@ involved.
 
 ## Addendum, 2026-09-20 (1.0.0.164): the public cards, kept for a month
 
-Steve, looking at the Admin tab the day it got its tiles: "all of these logs should be a minimum of
-30 days even if we have to store them on our side, would SQL or Cosmos DB be better for logs? Due to
-the lack and need of foreign keys for logs, I'm thinking all log data should be in Cosmos DB", and
-then "and we have an option to filter between 7 days, 30 days and 24 hours".
+Looking at the Admin tab the day it got its tiles, Steve asked for every log to reach back at least
+30 days, kept on the site's side if need be, and asked whether SQL or Cosmos DB suits logs better.
+Since logs need no foreign keys, he leaned toward Cosmos DB for all of them, and he asked for a
+choice of 24 hours, 7 days and 30 days.
 
 **The question had been answered once, and the answer holds.** The decision above put the log in the
 document store for the reasons he gives: nothing joins to a log line; its kinds have different

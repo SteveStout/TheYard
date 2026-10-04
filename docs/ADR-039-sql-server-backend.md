@@ -1,8 +1,8 @@
 # ADR: The SQL Server backend
 
-Status: accepted, 2026-09-03, shipped as 1.0.0.49. Steve's ask: "make sure we
-have a SQL backend implemented correctly in SQL Server with Entity Framework,
-with clear diagrams, that is ready to expand."
+Status: accepted, 2026-09-03, shipped as 1.0.0.49. Steve asked for
+a SQL backend built correctly on SQL Server with Entity Framework, with clear
+diagrams, ready to expand.
 
 ## In plain words
 
@@ -12,8 +12,8 @@ What that is worth: a developer can clone and test the code with no Azure creden
 
 ## The connection string that is not a credential
 
-Steve's second instruction that day was "when possible we want to avoid standard
-connection strings as they are a security risk", and this is the part of the
+Steve's second instruction that day was to avoid standard connection strings
+wherever possible, because they are a security risk, and this is the part of the
 work that answers it, so it goes first.
 
 A standard connection string is a security risk because it carries a password.

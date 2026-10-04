@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application;
-using TheYard.Data;
 using TheYard.Domain;
 
 namespace TheYard.Api;
@@ -106,18 +105,8 @@ public static class BidEndpoints
     private static Ok<IReadOnlyDictionary<string, BidView>> MyBids(CurrentBackend current, HttpContext http) =>
         TypedResults.Ok(BidsOf(current.Auction, http));
 
-    private static Ok<BidHistory> History(CurrentBackend current, HttpContext http)
-    {
-        var auction = current.Auction;
-        var history = auction.BidsOf(http.UserId())
-            .OrderByDescending(entry => entry.Value.AtMs)
-            .Select(entry => new BidHistoryEntry(
-                entry.Key,
-                auction.Find(entry.Key) is { } v ? $"{v.Year} {v.Make} {v.Model}" : "(withdrawn)",
-                entry.Value))
-            .ToList();
-        return TypedResults.Ok(new BidHistory(history.Count, history));
-    }
+    private static Ok<BidHistory> History(CurrentBackend current, HttpContext http) =>
+        TypedResults.Ok(current.Auction.HistoryOf(http.UserId()));
 
     // The room's round, and the caller's own badges riding back with it, so a page does not need
     // a second request to find out it has been outbid.
@@ -147,7 +136,7 @@ public static class BidEndpoints
     // on this store, does the vehicle exist, does the domain accept the action on the server's
     // clock. The status codes are the contract the browser relies on: 401, 404, then 400.
     private static async Task<Results<Ok<BidResult>, ProblemHttpResult>> HandleBid(
-        CurrentBackend current, HttpContext http, string id, Func<Auction, Vehicle, AuctionClock, Task<BidOutcome>> action)
+        CurrentBackend current, HttpContext http, string id, Func<Auction, StandingVehicle, AuctionClock, Task<BidOutcome>> action)
     {
         string userId = http.UserId();
         // #region session-per-store
@@ -180,7 +169,8 @@ public static class BidEndpoints
                 // response lands. TryGetValue rather than the indexer, because a reset from the
                 // same account in a second tab can land between the bid and this read.
                 auction.BidsOf(userId).TryGetValue(id, out var view) ? view : null,
-                VehicleWire.ToWire(auction.AsItStands(vehicle), clock, auction.IsSold(vehicle.Id))));
+                // Read again after the bid, so the price and the sold flag are the ones it left.
+                VehicleWire.ToWire(auction.Find(id) ?? vehicle, clock)));
     }
     #endregion bid-handling
 }

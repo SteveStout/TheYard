@@ -14,8 +14,8 @@ What that is worth: a claim about speed is backed by a measurement anyone can ru
 
 ## Context
 
-Steve's ask, in his words: "prove SQL and Cosmos DB have the same
-performance". The measurement record (ADR: Measuring both stores) had
+Steve asked for proof that SQL and Cosmos DB perform
+the same. The measurement record (ADR: Measuring both stores) had
 already compared the two containers from a laptop in Missouri, twenty
 paired rounds, and found the pages that never touch a store equal to within
 a few milliseconds and every write path faster on Cosmos DB by about eighty.
@@ -226,8 +226,8 @@ second run registers nothing.
 
 ## Addendum, 2026-09-13: the sign-in button goes somewhere
 
-Steve, from his phone: "the button sign in to see comparison doesn't work."
-It did not: signed out, the button read "Sign in to run the proof" and sat
+Steve reported from his phone that the sign-in button on the comparison did
+not work. It did not: signed out, the button read "Sign in to run the proof" and sat
 disabled, on the reasoning that a write the visitor cannot make should not
 be a button that fails after the click. That reasoning held for the failure
 and missed the person: a control that reads like a call to action and does

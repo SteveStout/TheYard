@@ -311,12 +311,13 @@ The API is an onion: every arrow points inward, and the innermost layer
 knows nothing about the ones around it.
 
 The build holds that direction. `api/TheYard.Tests/OnionTests.cs` reads the
-compiled assemblies with NetArchTest and runs eight rules: each ring depends
-only on the rings inside it, the document store's adapter borrows only the
+compiled assemblies with NetArchTest and runs ten rules: each ring depends
+only on the rings inside it, Domain never reaches the disk, the network or the
+clock, Application never reaches the disk or the network, the document store's adapter borrows only the
 shared user from the relational one, an endpoint never reaches a store or the service container and reaches the
 auction only through Application, the host never queries a database itself,
-and services are registered only in `Composition/`. A break fails the build
-and names the type that broke it. The rings, the eight rules and where each
+and services are registered only in `Composition/`. A break fails the gate
+and names the type that broke it. The rings, the ten rules and where each
 SOLID principle shows are in
 [ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid),
 and the rings are drawn on [their own page](https://theyard.stevenstout.biz/api/docs/diagrams/rings).
@@ -425,7 +426,7 @@ and the Hosting page cover the hosting side of the same question.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents for the composition root, walked line by line in ADR: Program.cs, explained.
 - [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition) and [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): the registrations and middleware, and the handlers.
 - [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.
-- [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the eight rules that hold the rings.
+- [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the ten rules that hold the rings.
 - [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the derived facts that make the browser's job formatting.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts) and [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): the one seam and the URL state.
 - [`docs/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/DATAFLOW.md): the same shape as a walk, step by step.

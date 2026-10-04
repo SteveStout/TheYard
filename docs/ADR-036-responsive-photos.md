@@ -111,7 +111,7 @@ The test that makes the convention safe
 
 ## Addendum, 2026-09-22 (1.0.3.2): AVIF first, on the Author page
 
-Steve, on the page's weight: "Keep the originals but you can compress the originals". The originals are untouched; the cuts are what changed.
+On the page's weight, Steve asked for the originals to be kept, compressed if need be. The originals are untouched; the cuts are what changed.
 
 The Author page was 755 KB on a phone and 1,535 KB on a desk, all of it photographs already cut per width and served as WebP before JPEG. Lowering the WebP quality was not worth it: measured on the originals at 960 wide, quality 78 to 58 took the Christmas photograph from 243 KB only to 189, and the loss was visible in the sky. AVIF at quality 50 took the same picture to 122 KB, the willow from 226 to 116 and the grill from 379 to 183, and a crop at full size was if anything cleaner, because the format holds a night sky's gradient where WebP bands it.
 

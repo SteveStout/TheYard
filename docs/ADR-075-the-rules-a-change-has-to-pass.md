@@ -44,13 +44,14 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | An identity token is asked for at whichever door the host has, and a web app's card claims no restart count it was never given | ADR: One plan, two sites | AzureSelfTests |
 | Every setting a container group carried is a setting the two sites carry, and nothing deploys a template in complete mode | ADR: One plan, two sites | AppServiceTemplateTests |
 | A catalogue a site does not serve is let go when nobody has asked for it in a while, never while it is in use or loading, and the one a site serves never | ADR: One plan, two sites | WarmthTests |
-| Every record opens with its title, says what became of it, says where it sits in the rings above its Files section, and ends with its Files section | This record, ADR: Onion and SOLID, how this codebase holds them | RecordShapeTests |
+| Every record opens with its title, says what became of it, says where it sits in the rings above its Files section, and has a Files section with at least one link | This record, ADR: Onion and SOLID, how this codebase holds them | RecordShapeTests |
 | Every rule in this table names a test that exists, and every record it cites exists | This record | RuleTableTests |
-| Dependencies point inward: Data and Domain use nothing outside the BCL, Application uses only Domain and Data, and the document store adapter borrows only the shared user from the relational one | ADR: Onion and SOLID, how this codebase holds them | OnionTests |
+| Dependencies point inward: Data and Domain use nothing outside .NET's base class library, Application uses only Domain and Data, and the document store adapter borrows only the shared user from the relational one | ADR: Onion and SOLID, how this codebase holds them | OnionTests |
 | Endpoints never reach a store or the service container, reach the auction only through Application, the host never queries a database itself, and services are registered only in the composition root | ADR: Onion and SOLID, how this codebase holds them | OnionTests |
+| Domain never reads a file, calls the network or reads the system clock or a random number itself, and Application never reads a file or calls the network | ADR: Onion and SOLID, how this codebase holds them | OnionTests |
 | Every package the build uses has a row in the versions record with the version in use, and a row that is behind says why | ADR: Technology versions | TechnologyVersionsTests |
 | Code shown in a document is read from the build at request time, never pasted | ADR: Live code samples | LiveSamplesTests, LiveSampleCoverageTests |
-| Every count a living document states is the count | ADR: The public face | PublicFaceTests |
+| The record count on every living document, and the README's xUnit and Playwright counts, are the counts the build declares | ADR: The public face | PublicFaceTests |
 | The sitemap lists every document the catalogue serves and nothing else, and llms.txt links only to what the site serves | ADR: The public face | PublicFaceTests |
 | /about is a served page with its own head, its Person names only his name, title, profiles and city, the sitemap lists it with the build's day, and the verification tag is written only when it is given | ADR: Every diagram opens on its own page, ADR: The public face | DiagramPageTests, PublicFaceTests, DockerBuildInputsTests |
 | The slug, the catalog and the sidebar offer the same documents | ADR: The staff review | DocumentationCatalogTests |
@@ -119,7 +120,7 @@ is how the decision survives a busy month.
 
 ## Where it sits
 
-No ring: this is a process decision about the rules table and the tests in TheYard.Tests that check it, which sit beside the onion, so the rings and SOLID do not apply to it.
+Beside the onion, in TheYard.Tests. RuleTableTests reads this table, and three of its rows are the OnionTests rules that hold the rings themselves.
 
 ## Files
 

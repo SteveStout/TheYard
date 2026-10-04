@@ -53,10 +53,9 @@ public static class BidRules
     /// outright, which the rules cannot know from the vehicle alone: the
     /// dataset has no such field and the schedule has no such state. The caller
     /// that holds everybody's standing says so, and it is asked before the
-    /// clock and before the buy-now shortcut, because with the shortcut
-    /// first a second account bidding the buy-now price on a vehicle
-    /// already bought was told it had won it too (ADR: Accounts and per-user
-    /// bids, the addendum on the second buyer).
+    /// clock and before the buy-now shortcut, so a second account bidding the
+    /// buy-now price on a vehicle already bought is refused, not told it has
+    /// won (ADR: Accounts and per-user bids, the addendum on the second buyer).
     /// </summary>
     public static BidOutcome ResolveBid(Vehicle vehicle, int amount, AuctionClock clock, bool sold)
     {

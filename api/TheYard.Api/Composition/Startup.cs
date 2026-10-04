@@ -135,8 +135,8 @@ public static class Startup
         // be that store's own. Off by default and on in the deploy, because a test
         // run boots ten applications at once and ten second expansions nobody asks
         // for is memory the machine running the suite does not have to give; a store
-        // nobody warmed warms itself on its first request, which is the Lazy the
-        // inventory service has always had (ADR: One container, both stores).
+        // nobody warmed warms itself on its first request (the warm region of
+        // InventoryService; ADR: One container, both stores).
         await backends.Default.Startup.Time("catalogue", backends.Default.Inventory.WarmAsync);
         await backends.Default.Startup.Time("bids", backends.Default.Bids.LoadAsync);
         backends.Default.Startup.Ready();
@@ -166,14 +166,11 @@ public static class Startup
         var errorLog = errorRings.Server;
         // #region two-rings
         // Browser reports get their own fifty slots rather than sharing the server's.
-        //
-        // One list was the decision (ADR: Error handling, one shape everywhere)
-        // and it still is: the Admin tab shows them merged, because one place to look is
-        // the point. What changed is where they are kept. POST /api/errors/client is
-        // anonymous by design, and while the message and the stack were bounded, the
-        // number of reports was not, so fifty posts from anybody evicted every real
-        // server error from the page an operator would use to diagnose an outage. A
-        // separate ring means a flood of reports can only push out other reports.
+        // POST /api/errors/client is anonymous, so in a shared ring fifty posts from
+        // anybody would push every server error off the page an operator diagnoses
+        // an outage from; in their own ring, a flood of reports can only push out
+        // other reports. The Admin tab still shows the two merged, because one place
+        // to look is the point (ADR: Error handling, one shape everywhere).
         var browserErrors = errorRings.Browser;
         // #endregion two-rings
         errorLog.Kept = entry => keptRings.Keep(KeptRings.Errors, entry.At, entry);

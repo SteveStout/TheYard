@@ -32,20 +32,6 @@ public sealed record BidResult(
     [property: Description("The caller's standing on this vehicle after the bid, or null if a reset landed between the bid and this read.")] BidView? Bid,
     VehicleView Vehicle);
 
-/// <summary>One line of the account page's history: the vehicle, its title, and the caller's bid on it.</summary>
-/// <param name="VehicleId">The id of the vehicle bid on.</param>
-/// <param name="Title">Year, make and model, or (withdrawn) if the vehicle has left the catalogue.</param>
-/// <param name="Bid">The caller's standing on the vehicle.</param>
-public sealed record BidHistoryEntry(
-    string VehicleId,
-    [property: Description("Year, make and model, or (withdrawn) if the vehicle has left the catalogue.")] string Title,
-    BidView Bid);
-
-/// <summary>The account page's history, newest first.</summary>
-/// <param name="Count">How many vehicles the caller has bid on.</param>
-/// <param name="Bids">One entry per vehicle, newest first.</param>
-public sealed record BidHistory(int Count, IReadOnlyList<BidHistoryEntry> Bids);
-
 /// <summary>One round of the room's bidding: how many auctions it raised, and the caller's badges afterwards.</summary>
 /// <param name="Raised">How many auctions the room raised this round.</param>
 /// <param name="Bids">The caller's standing on every vehicle they have bid on, keyed by vehicle id.</param>

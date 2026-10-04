@@ -49,7 +49,7 @@ public static class StandingRules
     /// with no bid yet it cannot be met. The amount itself never leaves the server; only this
     /// answer does.
     /// </summary>
-    public static ReserveStatus ReserveOf(int? reservePrice, int? currentBid)
+    private static ReserveStatus ReserveOf(int? reservePrice, int? currentBid)
     {
         if (reservePrice is not { } reserve)
         {

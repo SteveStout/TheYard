@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using TheYard.Domain;
 
 namespace TheYard.Tests;
 
@@ -125,7 +126,8 @@ public class ApiIntegrationTests(FullCatalogue factory)
     public void The_reserve_state_is_met_once_the_standing_bid_reaches_the_reserve(
         int? reservePrice, int? currentBid, string expected)
     {
-        Assert.Equal(expected, TheYard.Api.VehicleWire.ReserveState(TheYard.Domain.StandingRules.ReserveOf(reservePrice, currentBid)));
+        var vehicle = TestData.Vehicle(currentBid: currentBid) with { ReservePrice = reservePrice };
+        Assert.Equal(expected, TheYard.Api.VehicleWire.ReserveState(vehicle.Reserve));
     }
     // #endregion reserve-state
 

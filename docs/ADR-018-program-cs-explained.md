@@ -232,7 +232,7 @@ of the values on the wire changed.
 
 ## Addendum, 2026-09-30: the request pipeline, by name
 
-Steve, naming the same file in The Shed: "pipeline can mean too many things and it's not clear". This
+Naming the same file in The Shed, Steve pointed out that the word pipeline can mean too many things to be clear. This
 site alone serves ADR: The deploy pipeline beside this record. The middleware file is now
 `Composition/RequestPipeline.cs` and the call `app.UseTheYardRequestPipeline(host)`, ASP.NET Core's own
 name for it ("The ASP.NET Core request pipeline consists of a sequence of request delegates", Microsoft
@@ -240,8 +240,8 @@ Learn, ASP.NET Core Middleware). Nothing in the order changed; the file moved an
 
 ## Addendum, 2026-09-30: documentation, spelled out
 
-Steve, naming the same kind of file in The Shed: "Docs" was an abbreviation and hid what the file
-does. The endpoints that serve the records, their pictures and diagrams, the Bicep, the resume and
+Naming the same kind of file in The Shed, Steve pointed out that "Docs" was an abbreviation and hid
+what the file does. The endpoints that serve the records, their pictures and diagrams, the Bicep, the resume and
 /about are now `Endpoints/DocumentationEndpoints.cs`, mapped by `app.MapDocumentationEndpoints()`.
 The version is not among them here (`/api/version` is in `HealthEndpoints`), so the name says
 documentation and nothing more. Routes and behaviour are unchanged. The catalog those endpoints

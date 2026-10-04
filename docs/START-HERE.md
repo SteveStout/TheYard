@@ -21,13 +21,13 @@ Three more commands, one for each suite the ship's gate runs (the gate adds a st
 
 ```
 npm test           # Vitest, the presentation logic
-npm run test:api   # xUnit, the domain, the application and the API
+npm run test:api   # xUnit on SQLite; the seven live Cosmos DB tests run on the build machine
 npx playwright test  # the browser suite, which starts both servers itself
 ```
 
 ## The shape, in one minute
 
-The back end is an onion and its dependencies point inward only. `TheYard.Data` holds records with no behaviour; `TheYard.Domain` holds the rules; `TheYard.Application` holds the use cases and the ports they read through; `TheYard.Infrastructure` and `TheYard.Infrastructure.Cosmos` implement those ports over Azure SQL Database, SQLite and Azure Cosmos DB; `TheYard.Api` is the host, with its handlers in `Endpoints/` and the composition root in `Composition/`. `OnionTests` fails the build when a dependency points outward ([ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid)). One process serves both stores and picks one per request, which is why the site has two public addresses and one codebase.
+The back end is an onion and its dependencies point inward only. `TheYard.Data` holds records with no behaviour; `TheYard.Domain` holds the rules; `TheYard.Application` holds the use cases and the ports they read through; `TheYard.Infrastructure` and `TheYard.Infrastructure.Cosmos` implement those ports over Azure SQL Database, SQLite and Azure Cosmos DB; `TheYard.Api` is the host, with its handlers in `Endpoints/` and the composition root in `Composition/`. `OnionTests` fails the gate when a dependency points outward ([ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid)). One process serves both stores and picks one per request, which is why the site has two public addresses and one codebase.
 
 The front end keeps the same discipline: `components` use `hooks` use `lib`, and **`src/lib` imports nothing from React**, which is what lets the arithmetic be tested without a browser.
 

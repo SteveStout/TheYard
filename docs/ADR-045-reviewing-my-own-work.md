@@ -216,8 +216,8 @@ and still is; what changed is that a flood can only push out other floods.
 
 ## Addendum, 2026-09-09: the second pass, over the document store
 
-Steve's brief for the night ended with "make sure to code review and test
-yourself", so the day's new code, the Cosmos DB adapters, the account store,
+Steve's brief for the night ended by asking for a code review and a test
+pass by the author, so the day's new code, the Cosmos DB adapters, the account store,
 the peer read and the composition root, got the same pass the first review
 gave the rest. What it found, in the order of what it would have cost:
 

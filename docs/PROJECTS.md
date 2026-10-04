@@ -25,7 +25,7 @@ The business rules, as pure functions over Data: `AuctionSchedule` derives each
 vehicle's auction window from its id, `BidRules` owns increments, validation, and the
 buy-now override, `VehicleFilter` is the search predicate, `VehicleOrdering` ranks
 results, `StandingRules` holds the one rule for raising a vehicle's shown price over a bid
-(`RaisedTo`) and whether its reserve is met (`ReserveOf`), and `PhotoGallery` picks
+(`RaisedTo`) and whether its reserve is met (`Reserve`), and `PhotoGallery` picks
 deterministic galleries. Everything takes its clock as
 an argument (`AuctionClock`), so every rule is testable with a fixed timestamp and no
 mocking.
@@ -82,7 +82,7 @@ One suite per ring: Domain rules with fixed clocks, Application services with in
 fakes at the ports, Infrastructure against both fixtures and the real dataset, and
 integration tests that boot the actual host in-memory (`WebApplicationFactory`) to
 verify routes, parameters, error paths, and the full bid lifecycle, with no
-running server required. `OnionTests` reads the compiled assemblies and fails the build
+running server required. `OnionTests` reads the compiled assemblies and fails the gate
 when a dependency points outward (ADR: Onion and SOLID, how this codebase holds them). How many tests there are is counted in the README.
 
 ## Frontend (src/)

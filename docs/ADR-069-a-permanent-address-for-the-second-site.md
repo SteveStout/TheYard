@@ -43,8 +43,8 @@ Any answer for the second site has to live inside the same two walls.
 [![TheYard's two sites: three CNAME records and one A record at Wix pointing at one Netlify edge; the edge's certificate and its rules picking the origin by the name; two container groups on Azure, each with its default store and its Peer__Site, both opening Azure SQL Database and Azure Cosmos DB](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/two-sites.png)](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
 
 *A preview. [Open the two-sites diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
-to zoom in and follow it. Steve asked for this one in as many words: "make
-sure we have a diagram of how the DNS maps these two sites to Azure". The source is [`docs/images/two-sites.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/two-sites.svg),
+to zoom in and follow it. Steve asked for this one directly: a diagram
+of how DNS maps these two sites to Azure. The source is [`docs/images/two-sites.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/two-sites.svg),
 drawn by [`docs/images/two-sites.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/two-sites.mjs).*
 
 ## The options, priced

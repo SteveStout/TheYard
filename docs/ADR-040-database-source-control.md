@@ -1,11 +1,10 @@
 # ADR: Data first, and the database in source control
 
-Status: accepted, 2026-09-03, shipped as 1.0.0.49. Steve's ask, in his words:
-"we are doing data first for Entity Framework, and if needed we'll create a
-database project or source control for the database, but the database must be
-source controlled", and then, when the two branches were priced: "I like the SQL
-project first and Entity Framework as a mapper; that way, if you decide to change
-technologies, you still keep your data structure."
+Status: accepted, 2026-09-03, shipped as 1.0.0.49. Steve set data first for
+Entity Framework, with a database project or other source control for the
+database if needed, and required the database to be source controlled. When the
+two branches were priced, he chose the SQL project first with Entity Framework
+as a mapper, so that a change of technology keeps the data structure.
 
 ## In plain words
 
@@ -23,8 +22,8 @@ right.
 
 The alternative was on the table and was rejected with a reason. Model-first with
 EF migrations, plus a generated `schema.sql` checked in and a drift test, would
-have shipped hours earlier and would have satisfied the literal words "the
-database must be source controlled". Steve's reason for the other branch is the
+have shipped hours earlier and would have met the letter of the rule that the
+database be source controlled. Steve's reason for the other branch is the
 one that decides it: the data structure outlives the framework that reads it. A
 schema expressed as C# attributes and a chain of migration classes is portable to
 exactly one technology. A schema expressed as DDL is portable to anything that

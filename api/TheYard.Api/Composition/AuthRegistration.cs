@@ -74,7 +74,7 @@ public static class AuthRegistration
                 // #region lockout
                 // Five wrong passwords buys five minutes off.
                 //
-                // Without this, and without it there was nothing, POST /api/auth/login
+                // Without this, POST /api/auth/login
                 // is an unmetered password oracle against real accounts: the endpoint
                 // is public, there is no throttle in front of it, and every attempt
                 // costs an attacker one request. Five and five is the usual shape and

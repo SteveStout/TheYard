@@ -31,7 +31,7 @@ public static class TelemetryRegistration
         // tab queries with the container's managed identity.
         var telemetry = new TelemetryReader(
             builder.Configuration["Azure:AppInsightsAppId"] ?? "6ff89351-7fcc-4a41-8238-db65c5903c36",
-            builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
+            YardComposition.AzureClientId(builder.Configuration),
             // Wired only where the connection string is: the app id has a default and
             // is therefore no evidence at all that this build can read anything.
             enabled: telemetryOn);

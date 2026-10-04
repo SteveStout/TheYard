@@ -1,13 +1,12 @@
-using TheYard.Application;
 using TheYard.Domain;
 
 namespace TheYard.Tests;
 
 /// <summary>
-/// The one rule for raising a vehicle's shown price, the reserve state read from it, and the UTC
-/// buckets every kept reading is filed under. Each has one copy in the code, held here once.
+/// The one rule for raising a vehicle's shown price, and the reserve state read from it. Each
+/// has one copy in the code (StandingRules), held here once.
 /// </summary>
-public class StandingRulesTests
+public sealed class StandingRulesTests
 {
     [Fact]
     public void A_bid_raises_the_price_only_when_it_is_higher_and_keeps_the_larger_count()
@@ -32,17 +31,6 @@ public class StandingRulesTests
     {
         var vehicle = TestData.Vehicle(currentBid: standing) with { ReservePrice = reserve };
 
-        Assert.Equal(expected, StandingRules.ReserveOf(reserve, standing));
         Assert.Equal(expected, vehicle.Reserve);
-    }
-
-    [Fact]
-    public void An_instant_falls_in_its_UTC_day_hour_and_minute_whatever_its_offset()
-    {
-        var late = new DateTimeOffset(2026, 10, 3, 21, 47, 33, TimeSpan.FromHours(-5));
-
-        Assert.Equal("2026-10-04", late.UtcDay);
-        Assert.Equal(new DateTimeOffset(2026, 10, 4, 2, 0, 0, TimeSpan.Zero), late.UtcHour);
-        Assert.Equal(new DateTimeOffset(2026, 10, 4, 2, 47, 0, TimeSpan.Zero), late.UtcMinute);
     }
 }

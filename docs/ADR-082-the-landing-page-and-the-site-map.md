@@ -1,6 +1,6 @@
 # ADR: The landing page and the site map
 
-Status: accepted, 2026-09-22. Asked for over one morning: "I want a landing page for when you hit our URL ... it should have icons for each of our navigation bar", "I want the author section at the Top next to Inventory in bigger buttons", and on how it is built: "one data structure in react that feeds the navigation and the dashboard so this is more configurable". Shipped as 1.0.1.0, the release Steve called the first polished one.
+Status: accepted, 2026-09-22. Asked for over one morning: a landing page at the site's address with an icon for each entry in the navigation, the Author section at the top beside Inventory in larger buttons, and, on how it is built, one data structure in React that feeds both the navigation and the landing page so it is easier to configure. Shipped as 1.0.1.0, the release Steve called the first polished one.
 
 ## In plain words
 
@@ -35,7 +35,7 @@ Every address shared before 1.0.1.0 opened the inventory, so the rule is that an
 
 ## Addendum, 2026-09-22 (1.0.1.1): a Home row
 
-Steve: "you also need the dashboard on the navigation". The site map's first action is Home: a sidebar row and not a tile. It opens the landing page and is the current row while it shows, so the rail says where the reader is on the landing page as it does everywhere else. The brand still goes home too. He chose the label Home over Dashboard, which could read as the Admin tab's figures.
+Steve asked for the landing page to be on the navigation too. The site map's first action is Home: a sidebar row and not a tile. It opens the landing page and is the current row while it shows, so the rail says where the reader is on the landing page as it does everywhere else. The brand still goes home too. He chose the label Home over Dashboard, which could read as the Admin tab's figures.
 
 ## Addendum, 2026-09-22 (1.0.1.4): three groups, two photographs and one live reading
 

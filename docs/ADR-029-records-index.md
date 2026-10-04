@@ -1,7 +1,7 @@
 # ADR: The Decision Records index
 
-Status: accepted, 2026-09-03, shipped as 1.0.0.39. Steve's ask, in full: "add a
-new tab for ADRs."
+Status: accepted, 2026-09-03, shipped as 1.0.0.39. Steve asked for a
+new tab for the decision records.
 
 ## In plain words
 

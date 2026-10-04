@@ -2,12 +2,12 @@
 
 Status: proposed, 2026-09-08, written before the code so that Steve can read the
 design and the arithmetic before anything is built on them. Steve's ask: a second,
-complete backend on Cosmos DB, "the full stack", catalogue, bids and accounts,
+complete backend on Cosmos DB, the full stack of catalogue, bids and accounts,
 running the same image in a second container beside the Azure SQL one, so the
-two can be opened in two tabs and compared. The bar: "as fast as SQL Server, on
-a different data structure", at the cheapest cost that still hits it. And the
-personal goal behind it, in his words: "learn cosmos DB and make sure I learn
-how to performance tune it". Accepted as written and built: the second store
+two can be opened in two tabs and compared. The bar: as fast as SQL Server, on
+a different data structure, at the cheapest cost that still hits it. And the
+personal goal behind it: to learn Cosmos DB, and how to tune its
+performance. Accepted as written and built: the second store
 shipped in 1.0.0.89.
 
 This record is the parent. The partition key, which is the one decision that

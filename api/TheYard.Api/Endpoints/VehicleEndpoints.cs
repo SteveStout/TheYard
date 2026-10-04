@@ -55,14 +55,10 @@ public static class VehicleEndpoints
             // `detail`, never in a key only this endpoint uses.
             return TypedResults.Problem(detail: error, statusCode: 400, title: "The query could not be read");
         }
-        // The auction composes the bids over the catalogue in the order the rules need, so a
-        // listing never decides that order itself.
-        var auction = current.Auction;
-        var result = auction.Search(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset);
-        return TypedResults.Ok(
-            new VehiclePage(
-                result.Total,
-                [.. result.Vehicles.Select(v => VehicleWire.ToWire(v, clock, auction.IsSold(v.Id)))]));
+        // The auction hands back each vehicle at its standing price with its sold flag, so a
+        // listing never composes the bids, the room or the sale itself.
+        var result = current.Auction.Search(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset);
+        return TypedResults.Ok(new VehiclePage(result.Total, [.. result.Vehicles.Select(v => VehicleWire.ToWire(v, clock))]));
     }
     #endregion inventory-endpoint
 
@@ -71,10 +67,8 @@ public static class VehicleEndpoints
 
     private static Results<Ok<VehicleView>, ProblemHttpResult> One(CurrentBackend current, string id)
     {
-        var auction = current.Auction;
-        var clock = Clocks.Now();
-        return auction.Find(id) is { } vehicle
-            ? TypedResults.Ok(VehicleWire.ToWire(auction.AsItStands(vehicle), clock, auction.IsSold(vehicle.Id)))
+        return current.Auction.Find(id) is { } vehicle
+            ? TypedResults.Ok(VehicleWire.ToWire(vehicle, Clocks.Now()))
             : TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
     }
 }

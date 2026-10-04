@@ -15,8 +15,8 @@ Fourteen versions reached the live site in three days, and the only record
 of what each one was lived in the commit history and the day's session
 logs. The footer says which build is running (ADR: Version in the footer),
 but a visitor who wants to know what changed between 1.0.0.9 and 1.0.0.13
-had to read commits. His ask, in his words: just one file with the change
-version number and a single sentence summary.
+had to read commits. He asked for one file with each version number and a
+one-sentence summary of the change.
 
 The complication is where the number comes from. Since ADR: The deploy
 pipeline, a version is minted by the deploy counter, 1.0.0.(11 + Deploy run

@@ -19,7 +19,7 @@ namespace TheYard.Tests;
 /// cycle, so that line needs no test of its own.
 /// (ADR: Onion and SOLID, how this codebase holds them)
 /// </summary>
-public class OnionTests
+public sealed class OnionTests
 {
     // #region rings
     /// <summary>The namespaces every ring may use: the .NET base class library and nothing else.</summary>
@@ -30,6 +30,13 @@ public class OnionTests
     /// tests with coverage on, so without this the rings would fail on code nobody wrote.
     /// </summary>
     private const string CoverageTracker = "Coverlet.Core.Instrumentation";
+
+    /// <summary>
+    /// The parts of the base class library that reach the disk, the network or a database. The
+    /// rules above allow the whole library, so these are held out of the inner rings by name.
+    /// </summary>
+    private static readonly string[] TheDiskAndTheNetwork =
+        ["System.IO.File", "System.IO.Directory", "System.IO.FileStream", "System.IO.StreamReader", "System.IO.StreamWriter", "System.Net", "System.Data"];
 
     [Fact]
     public void Data_depends_on_nothing_outside_the_BCL()
@@ -54,6 +61,29 @@ public class OnionTests
     {
         var result = InRing(typeof(Auction), "TheYard.Application")
             .ShouldNot().HaveDependencyOtherThan(BaseClassLibrary, CoverageTracker, "TheYard.Data", "TheYard.Domain", "TheYard.Application")
+            .GetResult();
+        Assert.True(result.IsSuccessful, Explain(result));
+    }
+
+    [Fact]
+    public void Domain_never_reaches_the_disk_the_network_or_the_clock()
+    {
+        // A rule is a function of what it is handed: the vehicle, the bids and the clock. Reading
+        // the time, a random number or a file itself would make it untestable with a fixed clock.
+        var result = InRing(typeof(BidRules), "TheYard.Domain")
+            .ShouldNot().HaveDependencyOnAny([.. TheDiskAndTheNetwork, "System.Random", "System.TimeProvider", "System.Environment"])
+            .GetResult();
+        Assert.True(result.IsSuccessful, Explain(result));
+        Assert.Empty(ClockReads(typeof(BidRules).Assembly.Location, "TheYard.Domain"));
+    }
+
+    [Fact]
+    public void Application_never_reaches_the_disk_or_the_network()
+    {
+        // A use case reaches a store or a service through a port; the disk and the network belong
+        // to the adapters behind those ports.
+        var result = InRing(typeof(Auction), "TheYard.Application")
+            .ShouldNot().HaveDependencyOnAny(TheDiskAndTheNetwork)
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
     }
@@ -154,6 +184,25 @@ public class OnionTests
     /// </summary>
     private static PredicateList InRing(Type marker, string ring) =>
         Types.InAssembly(marker.Assembly).That().MeetCustomRule(type => InNamespace(Outermost(type).Namespace, ring));
+
+    /// <summary>
+    /// Every place a ring's method bodies read the system clock (DateTime.Now, DateTime.UtcNow,
+    /// DateTime.Today and the DateTimeOffset ones). The type is allowed, because a rule takes the
+    /// time as a value; reading it is not, and only a scan of the calls can tell the two apart.
+    /// </summary>
+    private static List<string> ClockReads(string assemblyPath, string ring)
+    {
+        using var module = ModuleDefinition.ReadModule(assemblyPath);
+        return [.. module.GetTypes()
+            .Where(type => InNamespace(Outermost(type).Namespace, ring))
+            .SelectMany(type => type.Methods.Where(method => method.HasBody))
+            .SelectMany(method => method.Body.Instructions
+                .Select(instruction => instruction.Operand)
+                .OfType<MethodReference>()
+                .Where(called => called.DeclaringType.FullName is "System.DateTime" or "System.DateTimeOffset"
+                    && called.Name is "get_Now" or "get_UtcNow" or "get_Today")
+                .Select(called => $"{method.DeclaringType.FullName}.{method.Name} reads {called.DeclaringType.Name}.{called.Name[4..]}"))];
+    }
 
     /// <summary>True for the ring's namespace and every namespace under it.</summary>
     private static bool InNamespace(string name, string ring) =>

@@ -1,6 +1,6 @@
 # ADR: What Azure charges
 
-Status: accepted, 2026-09-30, shipped as 1.0.3.55. Steve asked for the portal's subscription overview on the Admin tab, in public: "this is nothing to hide from the public". A reader who sees how fast the site answers should see what it costs to run in the same place.
+Status: accepted, 2026-09-30, shipped as 1.0.3.55. Steve asked for the portal's subscription overview on the Admin tab, in public, since the bill is nothing to hide. A reader who sees how fast the site answers should see what it costs to run in the same place.
 
 ## In plain words
 
@@ -76,13 +76,13 @@ So from 1.0.3.56 the reader allows a minute, and a read that did not finish is t
 
 ## Addendum, 2026-09-30: the bars measure dollars
 
-Steve, on his phone at 19:28 CDT, on the Cosmos DB site's card: "The bar chart is off". The bars measured how many resources of a type were on the bill and were ordered by that count, while each row printed the type's cost on its right. So the longest bar, at the top, was three App Service apps at $0.00, whose bill the plan carries, and a reader saw the biggest bar beside the smallest figure: two measures on one row, and the bar drew the one a bill is not read for.
+At 19:28 CDT, on his phone, Steve reported that the bar chart on the Cosmos DB site's card was off. The bars measured how many resources of a type were on the bill and were ordered by that count, while each row printed the type's cost on its right. So the longest bar, at the top, was three App Service apps at $0.00, whose bill the plan carries, and a reader saw the biggest bar beside the smallest figure: two measures on one row, and the bar drew the one a bill is not read for.
 
 From 1.0.3.57 a bar is a type's cost, a share of the costliest, ordered by cost; the count is in words beside the name. The apps still show, as an empty bar at $0.00 with "3 resources", which is the true picture: they are on the bill and the plan pays for them. The portal's own card counts resources; this one shows the money and keeps the count, because a reader of this tab came for what it costs.
 
 ## Addendum, 2026-10-02: every figure as a month
 
-Steve, reading the card on the last day window: "our total bill is like $48 a month", and "the conversion should happen on the C# side". The resource and type figures were what the window cost, so on the last day window the App Service plan read $0.48, one day of a plan that comes to about $14 a month, on a tab where the bill is read in months.
+Reading the card on the last day window, Steve pointed out that the total bill is about $48 a month, and asked for the conversion to happen in the C# code. The resource and type figures were what the window cost, so on the last day window the App Service plan read $0.48, one day of a plan that comes to about $14 a month, on a tab where the bill is read in months.
 
 From 1.0.3.61 the server works out the month and the card only shows it. Each resource and each type carries `monthly`: what the window's finished days cost, divided by how many there are, times the days in the month. The newest day is left out while Azure is still adding to it, because part of a day counted as a whole one would pull the month down; a window with no finished day uses the days it has. The answer carries `rate_days` and `month_days`, and the card says in one sentence what rate its figures come from. The window total and the spend line stay in the window, because the line is a running total of real days.
 
@@ -93,7 +93,7 @@ Measured on 2 October: the one finished day in the last day window, 1 October, c
 
 ## Where it sits
 
-The bill card spans three rings: CostHistory.cs in Application holds the ICostHistory port with its day and window types, the host Api holds the reader, the recorder and the shaping that strips the subscription id, and src/lib/spend.ts lays out the card. Dependency inversion (the inner ring defines the interface and the outer ring supplies it) means CostRecorder writes through ICostHistory, whose only implementation today is CostsInMemory, so a kept history would be one more adapter. It cost a Cost Management Reader role on the subscription and up to an hour of staleness by design. A request for a year of bills on the card would justify that adapter, likely a Cosmos DB container beside the logs.
+The bill card spans three rings: CostHistory.cs in Application holds the ICostHistory port and, for now, its only implementation, CostsInMemory; the host holds the reader, the recorder and the shaping that strips the subscription id; src/lib/spend.ts lays out the card. Because CostRecorder writes through the port, a kept history would be one adapter and one line in Composition/CostRegistration.cs. It cost a Cost Management Reader role and up to an hour of staleness by design. A year of bills on the card would justify that adapter.
 
 ## Files
 

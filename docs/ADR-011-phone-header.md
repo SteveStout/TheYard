@@ -171,8 +171,8 @@ that shipped them, so they keep resolving.
 
 ## Note, 2026-09-02, evening: the dark palette retired
 
-1.0.0.19 made the sidebar light at Steve's request ("the side panel is too
-dark, keep everything light and modern"); ADR: The sidebar records the new
+1.0.0.19 made the sidebar light at Steve's request: he found the side panel
+too dark and asked for everything light and modern; ADR: The sidebar records the new
 palette. The icon rows, the 48-pixel targets and the measure-before-choosing
 rule from the addendum above stand; only the colors changed.
 

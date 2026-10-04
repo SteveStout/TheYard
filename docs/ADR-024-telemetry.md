@@ -1,9 +1,9 @@
 # ADR: Telemetry that outlives the container
 
-Status: accepted, 2026-09-03, shipped as 1.0.0.34. Steve's ask: "hook up
-Azure error handling and show it on the admin page, and log every API call
-and error, and every React error. Application Insights, please, if it is on
-the solo version." It is: the free trial includes it, and the first 5 GB a month
+Status: accepted, 2026-09-03, shipped as 1.0.0.34. Steve asked for
+Azure error handling shown on the admin page, with every API call, every API
+error and every React error logged, in Application Insights if the solo
+subscription includes it. It does: the free trial includes it, and the first 5 GB a month
 of ingestion costs nothing.
 
 ## In plain words

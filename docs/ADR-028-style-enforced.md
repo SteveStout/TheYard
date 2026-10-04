@@ -1,8 +1,8 @@
 # ADR: Style, enforced
 
-Status: accepted, 2026-09-03, shipped as 1.0.0.39. Steve's ask: "turn implicit
-conventions into enforced standards so every later change has a rule to build
-against."
+Status: accepted, 2026-09-03, shipped as 1.0.0.39. Steve asked for the
+implicit conventions to become enforced standards, so every later change has a
+rule to build against.
 
 ## In plain words
 

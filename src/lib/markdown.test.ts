@@ -9,6 +9,12 @@ describe('renderDocument', () => {
     expect(html).toContain('hljs-keyword');
   });
 
+  it('lets the keyboard reach a code block, so a long line can be scrolled without a mouse', async () => {
+    const html = await renderDocument('```text\n' + 'x'.repeat(400) + '\n```\n');
+
+    expect(html).toContain('<pre tabindex="0"><code');
+  });
+
   it('escapes a fence in a language nobody here reads, with no grammar class', async () => {
     const html = await renderDocument('```bicep\n<script>alert(1)</script>\n```\n');
 

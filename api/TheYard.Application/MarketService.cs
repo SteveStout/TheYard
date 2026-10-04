@@ -111,9 +111,8 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
             .Where(v => buyerBids.ContainsKey(v.Id))
             .OrderBy(v => For(v.Id)?.AtMs ?? 0);
         // Shuffled, because the candidates arrive in a stable order and the
-        // room takes the first few every round. Left in order, the same three
-        // soonest-ending cars were raised on every tick and doubled in about
-        // two minutes while the other thirty-seven never moved.
+        // room takes the first few every round; in order, the same few cars
+        // would rise every round and the rest never.
         var rest = candidates
             .Where(v => !buyerBids.ContainsKey(v.Id))
             .OrderBy(_ => Random.Shared.Next());
@@ -133,9 +132,8 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
         }
         // The grace period applies to every vehicle, not only the contested
         // ones: it is measured from the room's own last move here, or from the
-        // buyer's if the room has not moved here yet. Applying it only to the
-        // buyer's vehicles let the room raise an uncontested car on every
-        // single tick, which is how one listing doubled in two minutes.
+        // buyer's if the room has not moved here yet, so an uncontested car
+        // cannot rise on every round.
         long? since = For(vehicle.Id)?.AtMs ?? buyer?.AtMs;
         if (since is { } last && clock.NowMs - last < Grace.TotalMilliseconds)
         {

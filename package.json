@@ -9,7 +9,7 @@
     "api": "dotnet run --project api/TheYard.Api",
     "docker": "docker build -t theyard:local . && docker run --rm -d -p 8080:8080 --name theyard theyard:local",
     "docker:stop": "docker stop theyard",
-    "test:api": "dotnet test api",
+    "test:api": "dotnet test api --filter Store!=cosmos",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",

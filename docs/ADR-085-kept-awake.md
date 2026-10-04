@@ -1,6 +1,6 @@
 # ADR: Kept awake
 
-Status: accepted, 2026-09-28. Steve's goal for it, in his words: "no visitor ever meets a cold read, on either site, at any hour." Shipped as 1.0.3.35.
+Status: accepted, 2026-09-28. Steve's goal for it: no visitor ever meets a cold read, on either site, at any hour. Shipped as 1.0.3.35.
 
 ## In plain words
 
@@ -24,7 +24,7 @@ The chunks are the edge's (ADR: Cache headers, the addendum of the same day). Th
 
 **The container keeps its own reads warm.** `KeepWarm` in `api/TheYard.Api/KeepWarm.cs` is a loop inside the process that, every four minutes for as long as the container runs, sends every public read a visitor can open through the app's own HTTP pipeline, once for each store (the `X-Yard-Store` header): the listing, the filter values, one vehicle from that listing, the health report, the stores, the version, the tests summary, the activity report for each of its three windows, the machines, the page sweep, the metrics, the SQL and store logs, the log, Azure's view of the container, the peer, the tests, the proof, the experiment, the telemetry and the errors. Each read carries the site's own mark on its agent, `TheYard-SelfRead/1 (keep-warm)`, so the activity card counts it as the site reading itself and never as a person. It also carries a header of its own, which keeps it out of the request ring and the kept log: two hundred slots of the container reading itself every four minutes would be the speed tile timing the loop, not a visitor.
 
-- **In the process, not on a schedule outside it.** A scheduled workflow starts when a runner is free, not when it was asked (Steve: "scheduled runners start late and are not dependable"). A loop inside the container runs exactly as long as there is something to keep warm, including the minutes after a roll.
+- **In the process, not on a schedule outside it.** A scheduled workflow starts when a runner is free, not when it was asked (Steve's experience is that scheduled runners start late and are not dependable). A loop inside the container runs exactly as long as there is something to keep warm, including the minutes after a roll.
 - **Staggered.** The first pass waits a random part of a minute, so the two sites' containers do not fire together on the one plan.
 - **Never overlapping, never throwing.** A pass is awaited before the next is timed, so a pass that runs long pushes the next back rather than running beside it. A read that fails or answers anything but 200 is counted and logged as a warning, and the pass goes on; a pass that throws is logged and the next one still comes.
 - **On where it is deployed, off everywhere else.** It runs where App Service runs the site (`WEBSITE_SITE_NAME` is App Service's own setting) and nowhere else, the test host included. `KeepWarm:Enabled` turns it off on a site, or on anywhere, as an app setting.

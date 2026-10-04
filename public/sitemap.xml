@@ -6,7 +6,8 @@
   API and are worth listing for the same reason: they are the substance.
   Every document in the catalogue (DocumentationCatalog.cs) is listed at the address it
   is served from as markdown, which a crawler reads without running the app;
-  PublicFaceTests holds this list to the catalogue in both directions.
+  PublicFaceTests holds this list to the catalogue in both directions. Every
+  diagram the catalogue draws is listed too, at the page it opens on.
   /about is who built it, for a reader who searched his name. Its lastmod is
   the day the image was built: the Dockerfile writes it in place of the
   placeholder, so this file never carries a date somebody typed.
@@ -55,6 +56,31 @@
   </url>
   <url>
     <loc>https://theyard.stevenstout.biz/api/docs/diagrams/erd</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/diagrams/dataflow</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/diagrams/two-sites</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/diagrams/sql-vs-cosmos</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/diagrams/ui-architecture</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/diagrams/rings</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

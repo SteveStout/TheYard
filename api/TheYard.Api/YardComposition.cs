@@ -94,4 +94,18 @@ public sealed class YardComposition
 
     /// <summary>When the process finished starting.</summary>
     public HostStart Start { get; set; } = null!;
+
+    /// <summary>
+    /// The managed identity's client id: the deploy's setting when it gives one, otherwise the
+    /// identity both web apps run as. Read here once so the five steps that sign in to Azure
+    /// cannot disagree about who they are.
+    /// </summary>
+    /// <param name="configuration">The app's configuration.</param>
+    public static string AzureClientId(IConfiguration configuration) =>
+        configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5";
+
+    /// <summary>The subscription the site's resources live in, from the deploy's setting or the default.</summary>
+    /// <param name="configuration">The app's configuration.</param>
+    public static string AzureSubscriptionId(IConfiguration configuration) =>
+        configuration["Azure:SubscriptionId"] ?? "df3b718c-6d99-4904-8102-6f865941f640";
 }

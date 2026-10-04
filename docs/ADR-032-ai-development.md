@@ -1,7 +1,7 @@
 # ADR: Saying how it was built
 
-Status: accepted, 2026-09-03, shipped as 1.0.0.42. Steve's ask: "document the
-AI-assisted development methodology."
+Status: accepted, 2026-09-03, shipped as 1.0.0.42. Steve asked for the
+AI-assisted development method to be documented.
 
 ## In plain words
 

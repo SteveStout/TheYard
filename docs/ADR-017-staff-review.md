@@ -14,9 +14,9 @@ Ten versions shipped in one day, each reviewed on its own before its push.
 Nobody had yet read the day's work as one body of code the way a staff
 engineer reads a pull request: for duplication between files, for the
 seams where one change assumed another, for the small things a fast day
-leaves behind. Steve's instruction, in his words: "play the role of
-architect and staff engineer, code review yourself, and make corrections and
-an ADR on improvements." This record is that review. Every finding is listed,
+leaves behind. Steve asked for a review in the role of
+architect and staff engineer: review the code, make the corrections, and
+write a record of the improvements. This record is that review. Every finding is listed,
 including the ones deliberately left alone, so the next reviewer starts
 from the same page.
 
@@ -147,8 +147,8 @@ and
 
 ## Addendum, 2026-09-02: the documents audited against the code
 
-Steve's ask, at the end of the second build day: "make sure every document
-matches the code." A mechanical pass over all thirty-two served documents,
+At the end of the second build day, Steve asked for every document to
+match the code. A mechanical pass over all thirty-two served documents,
 checked in six classes rather than by reading: every count (tests, records,
 endpoints, projects, entries), every backticked file path, every route,
 every named identifier, every stated fact that could be measured, and every

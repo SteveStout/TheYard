@@ -136,6 +136,12 @@ jobs:
       # with a credential. Lowering the floor would have hidden the same gap in
       # every other project; naming the assembly hides only the one this runner
       # cannot reach, with the reason beside it.
+      # And code a source generator writes is left out by its GeneratedCode
+      # attribute: the regular expressions and the OpenAPI comment readers are
+      # written by the compiler at build time, nobody here writes or reviews
+      # them, and they were a third of every branch counted. Counted, they held
+      # the number down; dropped, the floor measures the code people write
+      # (ADR: Counting what the tests cover, the addendum on generated code).
       - name: Run the .NET suites
         run: |
           set -o pipefail
@@ -143,6 +149,7 @@ jobs:
             --filter "Store!=cosmos" \
             --logger 'console;verbosity=normal' \
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[TheYard.Infrastructure.Cosmos]*" \
+               DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByAttribute="GeneratedCodeAttribute" \
             2>&1 | tee "$RUNNER_TEMP/dotnet-output.txt"
       - name: Say which test failed, on the run page
         if: failure()
@@ -179,7 +186,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Count what the tests cover
         if: always()
-        run: python3 .github/coverage.py TestResults 85.0 68.0
+        run: python3 .github/coverage.py TestResults 90.0 75.0
 
   # #region database-job
   # The database is compiled like everything else. api/TheYard.Database is the

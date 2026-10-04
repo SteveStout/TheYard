@@ -77,7 +77,9 @@ marked.use({
 // (ADR: Code that reads like code). marked hands back the code and the name on
 // the fence; the name is checked against the grammars this bundle carries
 // before it reaches a class attribute, so a fence cannot write markup of its
-// own, and the highlighter escapes everything it does not tokenize.
+// own, and the highlighter escapes everything it does not tokenize. A block is
+// reachable from the keyboard, like a table's scroller, because a long line
+// scrolls sideways and a reader without a mouse has to be able to scroll it.
 marked.use({
   renderer: {
     code({ text, lang }) {
@@ -91,7 +93,7 @@ marked.use({
         return styleBlock(name as StyleFence, text);
       const grammar = grammarFor(name);
       const className = grammar ? `hljs language-${grammar}` : 'hljs';
-      return `<pre><code class="${className}">${highlight(text, name)}</code></pre>\n`;
+      return `<pre tabindex="0"><code class="${className}">${highlight(text, name)}</code></pre>\n`;
     },
   },
 });

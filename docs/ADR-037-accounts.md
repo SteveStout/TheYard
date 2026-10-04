@@ -1,7 +1,7 @@
 # ADR: Accounts and per-user bids
 
-Status: accepted, 2026-09-03. Steve's ask: "replace the single anonymous
-in-memory buyer with authenticated users whose bids persist." The decision he
+Status: accepted, 2026-09-03. Steve asked for the single anonymous
+in-memory buyer to be replaced by signed-in users whose bids persist. The decision he
 had already made, and which this follows: ASP.NET Core Identity with a JWT.
 
 ## In plain words
@@ -309,7 +309,7 @@ Accounts reach most of the onion: Tokens.cs and the account endpoints in the hos
 
 ## Addendum, 2026-09-13: a login lasts a year past the last visit
 
-Steve: "we need to keep logins permanent." A cookie has to expire somewhere,
+Steve asked for sign-ins to be permanent. A cookie has to expire somewhere,
 so "permanent" is made of two numbers rather than one: the session token is
 a year long, and the first request on any day a token is more than a day
 into its life gets a fresh token with the same claims and a fresh year. A
@@ -326,7 +326,7 @@ and nothing else.
 
 ## Addendum, 2026-09-13: a password reset, in two halves
 
-Steve, the same message: "and have password reset." A reset is two halves.
+The same message asked for a password reset. A reset is two halves.
 The second half, choosing a new password from a link, is the same whoever
 hands the link over; the first half, handing it over, is where an email
 sender would go, and a sender is a new Azure resource, which is his to
@@ -359,8 +359,8 @@ once and signs the visitor in, the old password stops working, the new one
 works, the same link a second time is refused; a session token is not a
 reset token and a reset token is not a session.
 
-**The emailed half, the same evening.** Steve: "the email on the password
-reset should be simple ish don't over architect." So: one Azure
+**The emailed half, the same evening.** Steve asked for the password
+reset email to stay simple and not be over-built. So: one Azure
 Communication Services resource with its Email service and an Azure-managed
 sender domain, created by the runner in the resource group; the containers'
 own identity (the one that already reads both stores) allowed to send

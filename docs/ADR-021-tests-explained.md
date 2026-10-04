@@ -150,7 +150,7 @@ here asserts less.
 
 ## Where it sits
 
-The tests sit outside the onion, in TheYard.Tests and beside the front end code, and check each ring at its own level: Domain with fixed clocks, Application with hand-written fakes, and the host through WebApplicationFactory. The fakes at the ports show dependency inversion and Liskov substitution: InventoryService depends on IVehicleSource, so any implementation can stand in for another and a tiny fake replaces the JSON adapter with no surprises; OnionTests also holds the rings' inward direction in the build. The cost is three runners and their vocabularies for a newcomer to learn, and a browser suite that runs serially because bids are shared state. A mocking framework would earn its place only if the ports grew too wide to fake by hand.
+The tests sit outside the onion, in TheYard.Tests and beside the front end code, and check each ring at its own level: Domain with fixed clocks, Application with hand-written fakes, and the host through WebApplicationFactory. The fakes at the ports show dependency inversion and Liskov substitution: InventoryService depends on IVehicleSource, so any implementation can stand in for another and a tiny fake replaces the JSON adapter with no surprises; OnionTests also holds the rings' inward direction in the gate. The cost is three runners and their vocabularies for a newcomer to learn, and browser tests that must keep their bids apart, because four browser workers share one set of bids. A mocking framework would earn its place only if the ports grew too wide to fake by hand.
 
 ## Files
 

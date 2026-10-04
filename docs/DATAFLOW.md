@@ -23,7 +23,7 @@ Program.cs, explained walks the entry point top to bottom.
 | Route | Handled by |
 | --- | --- |
 | `GET /api/vehicles` (filter/sort/page params) | `Auction.Search` → `InventoryService.Search` |
-| `GET /api/vehicles/{id}` | `Auction.Find` and `Auction.AsItStands` |
+| `GET /api/vehicles/{id}` | `Auction.Find`, which hands the vehicle back at its standing price with its sold flag |
 | `GET /api/facets` | `Auction.Facets` |
 | `POST /api/vehicles/{id}/bids` | `Auction.PlaceBidAsync` → `BidService` → `BidRules` |
 | `POST /api/vehicles/{id}/buy-now` | `Auction.BuyNowAsync` → `BidService` → `BidRules` |

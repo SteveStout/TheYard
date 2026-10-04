@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using TheYard.Data;
+using TheYard.Application;
 using TheYard.Domain;
 
 namespace TheYard.Api;
@@ -91,37 +91,30 @@ public sealed record VehicleView(
 public static class VehicleWire
 {
     // #region reserve-state
-    /// <summary>The vehicle has no reserve, so it sells at any price.</summary>
-    public const string NoReserve = "no-reserve";
-
-    /// <summary>The standing bid is at or above the reserve.</summary>
-    public const string ReserveMet = "met";
-
-    /// <summary>The standing bid is below the reserve, or nobody has bid yet.</summary>
-    public const string ReserveNotMet = "not-met";
-
     /// <summary>
-    /// The wire's word for whether the reserve is met. The rule itself is the domain's
-    /// (StandingRules, read as vehicle.Reserve); this only spells its answer the way the
-    /// browser reads it.
+    /// The wire's word for whether the reserve is met: no-reserve (it sells at any price), met
+    /// (the standing bid has reached it) or not-met (below it, or nobody has bid yet). The rule
+    /// itself is the domain's (StandingRules, read as vehicle.Reserve); this only spells its
+    /// answer the way the browser reads it.
     /// </summary>
     public static string ReserveState(ReserveStatus status) =>
         status switch
         {
-            ReserveStatus.NoReserve => NoReserve,
-            ReserveStatus.Met => ReserveMet,
-            _ => ReserveNotMet,
+            ReserveStatus.NoReserve => "no-reserve",
+            ReserveStatus.Met => "met",
+            _ => "not-met",
         };
     // #endregion reserve-state
 
     // #region sold
     /// <summary>
-    /// <paramref name="sold"/> is not a default parameter on purpose: every
-    /// caller has the auction in hand and has to say, because a listing that
-    /// forgot would show a bought vehicle as open to everybody but its buyer.
+    /// A vehicle as the auction hands it out, already at its standing price and with its sold
+    /// flag (Auction.Find and Auction.Search), so a caller cannot show a price without the room
+    /// or a bought vehicle as open to everybody but its buyer.
     /// </summary>
-    public static VehicleView ToWire(Vehicle vehicle, AuctionClock clock, bool sold)
+    public static VehicleView ToWire(StandingVehicle standing, AuctionClock clock)
     {
+        var vehicle = standing.Vehicle;
         var window = AuctionSchedule.Window(vehicle.Id, clock.AnchorMs);
         return new VehicleView(
             vehicle.Id,
@@ -162,7 +155,7 @@ public static class VehicleWire
             // From the vehicle after the overlays, so the state matches the
             // standing bid this same answer carries.
             ReserveState(vehicle.Reserve),
-            sold);
+            standing.Sold);
     }
     // #endregion sold
 }

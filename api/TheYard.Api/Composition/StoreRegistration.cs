@@ -178,7 +178,7 @@ public static class StoreRegistration
                 // is what a developer's machine and the test runner have, means the
                 // signed-in Azure CLI session.
                 builder.Configuration["Cosmos:Credential"] ?? "azure-cli",
-                builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
+                YardComposition.AzureClientId(builder.Configuration),
                 storeLog);
             // Filed under the request that caused it from the first operation on: the
             // describer exists before the store does now, so no operation is

@@ -9,11 +9,9 @@ namespace TheYard.Application;
 // and the 100,000-record scale-up is a decorator over IVehicleSource that
 // nothing above it can see.
 //
-// Every member returns a Task. The first store was a file and the ports were
-// synchronous because reading a file is; the second store was a database with
-// a synchronous driver; the third has no synchronous driver at all, and a port
-// that blocks a request thread while a cloud store answers is a performance
-// defect on a one-vCPU container (ADR: The ports learn to wait).
+// Every member returns a Task, because the document store has no synchronous
+// driver, and a port that held a request thread while a cloud store answered
+// would stall a one-vCPU container (ADR: The ports learn to wait).
 /// <summary>Port: where the vehicle dataset comes from.</summary>
 public interface IVehicleSource
 {
@@ -48,9 +46,9 @@ public interface IBidStore
 }
 
 /// <summary>
-/// The port wired to nothing. Bidding works without a store and forgets at the
-/// end of the process, which is what the unit tests want and what this
-/// application did before it had anywhere to write.
+/// The port wired to nothing: bids live in memory and end with the process.
+/// The unit tests use it, and so does a backend whose store has not come up
+/// yet; those bids are dropped when the store attaches.
 /// </summary>
 public sealed class NullBidStore : IBidStore
 {

@@ -1,9 +1,9 @@
 # ADR: Site activity, and the line an address does not cross
 
-Status: accepted, 2026-09-13, shipped as 1.0.0.114. Steve's ask: "in the admin
-section I want an overall site activity by IP address and if it was cosmos or
-sql and a graph showing site activity at the top, but we cannot display user
-emails as that is private information."
+Status: accepted, 2026-09-13, shipped as 1.0.0.114. Steve asked for
+overall site activity on the Admin tab, by IP address and by store, Cosmos DB
+or SQL, with a graph of activity at the top, and ruled that user email
+addresses are private and never shown.
 
 ## In plain words
 
@@ -203,7 +203,7 @@ and a guess that is right often enough does not need it.
 
 ## Where it sits
 
-Site activity runs through five rings: ActivityHit and the IActivityStore port sit in Application, EfActivityStore in Infrastructure and CosmosActivityStore in Infrastructure.Cosmos implement that port, the collector and visitor token live in the host Api, and the chart geometry is React-free code in src/lib. That is dependency inversion, where the inner ring owns the interface and the outer rings fill it in, and the 14 September move to a single keeper leaned on Liskov substitution, since the Cosmos DB adapter took every row without the collector changing. It cost a second schema to publish by hand and a top-paths field that can lose a batch when both containers write in the same five seconds. Application Insights would be the better home if the serving store could travel as a custom dimension and the gate had no need to exercise the card.
+Site activity crosses the back end from Application outward, and the front end: ActivityHit and the IActivityStore port sit in Application, EfActivityStore in Infrastructure and CosmosActivityStore in Infrastructure.Cosmos implement that port, the collector and visitor token live in the host Api, and the chart geometry is React-free code in src/lib. Application owns the port and both adapters fill it in (dependency inversion), which is why one keeper can take every row without the collector changing. It cost a second schema to publish by hand and a top-paths field that can lose a batch when both containers write in the same five seconds. Application Insights would be the better home if the serving store could travel as a custom dimension and the gate had no need to exercise the card.
 
 ## Files
 
@@ -259,10 +259,9 @@ the repository secret `ADMIN_KEY` exists. The graph does not need it.
 
 ## Addendum, 2026-09-13: unique visitors per day, and the table grouped by day
 
-Steve, on seeing the first version: "on the graph I want it per all unique
-ips per day with a table below of each users interaction, grouped by day on
-the user interaction, so I get a feel for how people are using it, and it
-should be at the top."
+On seeing the first version, Steve asked for the graph to count unique
+addresses per day, with a table below of each visitor's activity grouped by
+day, at the top of the tab, so he can see how people use the site.
 
 The graph now draws unique visitors per UTC day: everybody as one line in the
 heading colour, and one line per store under it in the store colours, on a
@@ -285,8 +284,8 @@ decided not to publish. The graph, the day counts and the split need no key.
 
 ## Addendum, 2026-09-13: the counters are kept for good
 
-Steve, the same afternoon, after the kept log shipped: "But I want long term
-logs. Of site activity for sure." The thirty-five days above were chosen to
+The same afternoon, after the kept log shipped, Steve asked for long-term
+logs, of site activity above all. The thirty-five days above were chosen to
 match the graph's longest window and nothing else, and the documents are
 small: one per store per hour and one per visitor per store per day, a few
 hundred a day at today's traffic and a few tens of megabytes a year. So the
@@ -302,8 +301,8 @@ with a separate cost if he wants one.
 
 ## Addendum, 2026-09-13: the browser remembers the key
 
-Steve, from his phone, an hour after the retention change: "I can't see the
-kept log on the public site, you should be able to see it there." Measured
+An hour after the retention change, Steve reported from his phone that the
+kept log did not show on the public site, where he expected to see it. Measured
 before anything was changed: the runner opened the keyed URL in the repo's
 own headless Chromium and the card rendered with 130 lines, and the same
 page without the key showed the one-line note. The key was in a file on his
@@ -339,8 +338,8 @@ whole; the operator no longer needs it to.
 
 ## Addendum, 2026-09-13: the rows are off
 
-Steve, late that day: "I guess disable the per visitor data for
-now." Done as one setting rather than a removal, because the day's evidence
+Late that day, Steve asked for the per-visitor data to be switched off for
+now. Done as one setting rather than a removal, because the day's evidence
 is that this decision moves: `Admin:VisitorRows`, off by default. Off, the
 visitor table and the kept log answer 404 to everybody, with the key as
 without it, the public report says `visitor_rows: false`, and the page
@@ -554,4 +553,4 @@ One read of each window cost 312 request units, nearly all of it the visitor row
 
 ## Addendum, 2026-09-29 (1.0.3.48): a Site traffic section
 
-Steve: "should we add a section to the documentation on site traffic like we did for styling?", and then "Go". The counting, the keeping and the finding were told only in two records and on the Admin tab's cards, and nothing tied them together for a reader who is not reading records. The Site traffic section, under How it is run beside Performance, is four pages on the Style section's pattern: a landing page with three tiles, the standing rules, a glossary and readouts counted from the build, then Who comes (what a visit carries, the three kinds, where readers came from, the path through), What is kept (the counters, the kept log, how long, public and keyed, what is never kept) and Being found (robots, the sitemap, /about, the structured data, llms.txt, Search Console). Every sentence on them is drawn from this record, ADR-073, ADR-053 and the code, and the pages show the code itself where it decides (the hit's fields and the visitor token, as live blocks). Nothing about how a visit is counted changed.
+Steve proposed a section of the documentation on site traffic, like the one for styling, and then gave the go-ahead. The counting, the keeping and the finding were told only in two records and on the Admin tab's cards, and nothing tied them together for a reader who is not reading records. The Site traffic section, under How it is run beside Performance, is four pages on the Style section's pattern: a landing page with three tiles, the standing rules, a glossary and readouts counted from the build, then Who comes (what a visit carries, the three kinds, where readers came from, the path through), What is kept (the counters, the kept log, how long, public and keyed, what is never kept) and Being found (robots, the sitemap, /about, the structured data, llms.txt, Search Console). Every sentence on them is drawn from this record, ADR-073, ADR-053 and the code, and the pages show the code itself where it decides (the hit's fields and the visitor token, as live blocks). Nothing about how a visit is counted changed.

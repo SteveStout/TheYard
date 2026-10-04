@@ -136,9 +136,9 @@ measurement with no network in it.
 
 ## Addendum, 2026-09-09: parity, every number for both stores
 
-Steve's words, the morning after both stores went into every container:
-"make sure the Admin tab has all of the same stats for Cosmos DB as we have
-for SQL Server". The Admin tab was inventoried card by card on both sites before
+The morning after both stores went into every container, Steve asked for the
+Admin tab to show every figure for Cosmos DB that it shows for SQL Server.
+The Admin tab was inventoried card by card on both sites before
 anything changed, from the page's source and from each site's own answers
 to the endpoints behind it, and each number marked as belonging to one
 store, to both, or to the container:

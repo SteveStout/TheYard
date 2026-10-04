@@ -20,8 +20,8 @@ public static class CostRegistration
         // nothing and say so. The last read is held in memory: Azure keeps the bill,
         // so a copy in a database here would be a second truth that could drift.
         var reader = new CostReader(
-            builder.Configuration["Azure:SubscriptionId"] ?? "df3b718c-6d99-4904-8102-6f865941f640",
-            builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
+            YardComposition.AzureSubscriptionId(builder.Configuration),
+            YardComposition.AzureClientId(builder.Configuration),
             configured: IdentityTokens.OnAppService);
         ICostHistory history = new CostsInMemory();
         var status = new CostStatus();

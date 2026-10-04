@@ -46,7 +46,7 @@ public static class ObservabilityRegistration
         // the card says so. The provider reads the store and the request a line
         // belongs to from the current request when there is one.
         ILogStore logStore = cosmos is not null ? new CosmosLogStore(cosmos) : NullLogStore.Instance;
-        // Reset links (ADR: Accounts and per-user bids, addendum of 14 September):
+        // Reset links (ADR: Accounts and per-user bids, the addendum on what the link looks like):
         // the GUID a link carries is kept in the document store for the hour and
         // forgotten on use; without one, in this process's memory, which is what
         // the test host and a developer's machine get.

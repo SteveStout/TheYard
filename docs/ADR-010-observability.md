@@ -55,8 +55,8 @@ pattern as the undeployed production design.
 
 ## Addendum, 2026-09-02: second pass, shipped as 1.0.0.17
 
-Steve's words after the first pass: "I like a screen where you can easily
-see health checks". The second pass makes the screen say more without
+After the first pass, Steve said he liked a screen where the health checks
+are easy to see. The second pass makes the screen say more without
 saying it louder.
 
 - **Every health check reports its duration.** Each probe is timed with a
@@ -101,7 +101,7 @@ Azure can ask about itself.
 
 ## Where it sits
 
-Everything this record built lives in the host Api and the front end: the probes in Endpoints/HealthEndpoints.cs, the ErrorRingBuffer and the AzureSelf reader in Observability.cs, and the cards under src/components/admin. Single responsibility means one reason to change per class; here each type does one job and each card fetches and fails on its own without taking the others down. No port was needed because the container reads its own memory and its own Azure resource, and the price is an error buffer that empties on every deploy. Errors that must survive a roll are the reason to choose differently, and that is the job ILogStore, an Application port, now does for logs that outlive the container.
+Everything this record built lives in the host Api and the front end: the probes in Endpoints/HealthEndpoints.cs, the ErrorRingBuffer and the AzureSelf reader in Observability.cs, and the cards under src/components/admin. Each card fetches and fails on its own, so one broken reading never blanks the tab. No port was needed because the container reads its own memory and its own Azure resource, and the price is an error buffer that empties on every deploy. Errors that must survive a roll are the reason to choose differently, and that is the job ILogStore, an Application port, now does for logs that outlive the container.
 
 ## Files
 

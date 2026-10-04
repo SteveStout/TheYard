@@ -111,8 +111,8 @@ is where a reviewer lands first. The rail keeps them one glance away.
 
 ## Addendum, 2026-09-02: light, on Steve's word, shipped as 1.0.0.19
 
-Steve's words, from his phone, after seeing 1.0.0.17: "the side panel is
-too dark, keep everything light and modern". The dark navy panel came from
+After seeing 1.0.0.17 on his phone, Steve found the side panel too dark and
+asked for everything light and modern. The dark navy panel came from
 the reference in ADR: The phone header's addendum; the rest of the site
 never followed it, so the sidebar was the one dark surface on a light
 page. It is light now.

@@ -3,11 +3,6 @@
 A used-vehicle auction platform. React + TypeScript (Vite) frontend, .NET minimal API
 backend in onion architecture.
 
-This line said "an industrial and farm equipment auction marketplace" until 2026-09-03.
-That rename was considered on the first day and deliberately not done, and the file that
-tells an agent what it is working on was left describing the version that never happened,
-which is the worst place in a repository for a sentence to be wrong.
-
 ## Before you change anything
 
 Read the record that governs it. The decisions are `docs/ADR-*.md`, served from the running app under
@@ -19,9 +14,10 @@ green before anything rolls (ADR-068). Any build warning is red.
 
 ## Architecture, and it is not negotiable
 
-Ten projects; among the five that form the onion, dependencies point INWARD only, and
-`api/TheYard.Tests/OnionTests.cs` fails the build when one points outward (ADR: Onion and SOLID, how
-this codebase holds them):
+Ten projects; six form the onion, and among them dependencies point INWARD only.
+`api/TheYard.Tests/OnionTests.cs` fails the gate when one points outward, or when Domain or
+Application reach the disk, the network or (Domain) the clock (ADR: Onion and SOLID, how this
+codebase holds them):
 
 - `api/TheYard.Data` - pure records, ZERO dependencies, ZERO behavior. If it computes anything it does
   not belong here.
@@ -31,17 +27,17 @@ this codebase holds them):
   operator's ports (`IActivityStore`, `ILogStore`, `IStoreExperiment` and the rest). Depends on Domain.
 - `api/TheYard.Infrastructure` - the relational adapters: EF Core over Azure SQL Database or SQLite, the
   JSON seed readers, the synthetic scale-up decorator, the Identity user entity. Implements the ports.
+- `api/TheYard.Infrastructure.Cosmos` - the second adapter in the same ring: the same ports and an
+  Identity user store over Azure Cosmos DB on the SDK, referencing Infrastructure only for the shared
+  user entity.
 - `api/TheYard.Api` - host and endpoints. Handlers in `Endpoints/`, the composition root in
   `Composition/`, and `Program.cs` a table of contents for both. NO business logic in endpoints.
 
-Beside the five: `api/TheYard.Infrastructure.Cosmos` (the second adapter in Infrastructure's ring: the
-same ports and an Identity user store over Azure Cosmos DB on the SDK, referencing Infrastructure only
-for the shared user entity),
-`api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
+Beside the six: `api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
 `api/TheYard.Migrations.Sqlite` (the SQLite schema's history), `api/TheYard.Experiment` (a console tool
 for the partition key experiment), and `api/TheYard.Tests`. One process runs BOTH stores side by side and
 picks one per request from the `X-Yard-Store` header or the container's default (ADR-066); the two
-container groups default to different stores and each is one site.
+web apps default to different stores and each is one site.
 
 Frontend keeps the same discipline: `components` -> `hooks` -> `lib`. **`src/lib` imports nothing from
 React.** Every component has a folder of its own, `src/components/<section>/<Name>/`, holding its `.tsx`,
@@ -60,11 +56,13 @@ split).
   the window and the clock. Nothing schedule-related is persisted.
 - **The server owns every derived fact, and the clock.** The server computes windows, status and
   `min_next_bid` on its own clock: now, and the UTC midnight that began the day, one anchor for every
-  visitor (`AuctionClock.Utc`). No request names a day; `anchor_ms` left the API in 1.0.0.112 and is
-  ignored if an old page sends it. **Never re-implement auction math in TypeScript.** This rule exists
-  because an earlier version derived it on both sides and drifted on a daylight-saving transition, and a
-  later one let the caller choose the anchor (ADR: Three readers with no memory of the project).
-- **The wire is snake_case** and matches the dataset exactly. No mapping layer.
+  visitor (`AuctionClock.Utc`). No request names a day; an `anchor_ms` from an old page is ignored.
+  **Never re-implement auction math in TypeScript**: two copies of the schedule drift apart, first on a
+  daylight-saving change, and a caller that picks the anchor sees a different auction from everybody
+  else (ADR: Three readers with no memory of the project).
+- **The wire is snake_case** under the dataset's own names. A vehicle goes out as `VehicleView`
+  (`VehicleWire.cs`): every dataset field except the reserve amount, plus the six facts the server
+  derives. A field added to `Vehicle` is added there too; `VehicleWireTests` fails until it is.
 - **Empty is valid, null is the error.** Never return null for a collection.
 - **Money is whole dollars as `int`**, because the dataset's prices are whole dollars and every rule adds
   whole-dollar increments; nothing needs cents. **Every derived or recorded instant is milliseconds since
@@ -74,10 +72,10 @@ split).
 - Bid rules live only in `TheYard.Domain/BidRules.cs`. A bid at or above buy-now wins AT the buy-now
   price, and that check runs BEFORE the increment check. A vehicle anybody has bought is SOLD, to
   everybody: that check runs before all the others, the caller that holds everybody's standing
-  (`BidService.IsSold`, asked through `Auction.IsSold`) supplies it, and the wire says `sold` on every
-  vehicle. A listing or a rule that forgets it recreates the second buyer (ADR: Accounts and per-user
+  (`BidService.IsSold`) supplies it, `Auction.Find` and `Auction.Search` hand every vehicle out with its
+  sold flag beside it, and the wire says `sold` on every vehicle. A listing or a rule that forgets it recreates the second buyer (ADR: Accounts and per-user
   bids, addendum). Raising a vehicle's shown price over a bid, and whether the reserve is met, live only
-  in `TheYard.Domain/StandingRules.cs` (`RaisedTo`, `ReserveOf`).
+  in `TheYard.Domain/StandingRules.cs` (`RaisedTo`, `Reserve`).
 
 ## Testing
 

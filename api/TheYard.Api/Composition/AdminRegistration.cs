@@ -30,7 +30,7 @@ public static class AdminRegistration
 
         // Identifiers, not secrets: the identity's client id and this group's ARM path.
         var azureSelf = new AzureSelf(
-            builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
+            YardComposition.AzureClientId(builder.Configuration),
             builder.Configuration["Azure:SelfResourceId"]
                 ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
         builder.Services.AddSingleton(azureSelf);

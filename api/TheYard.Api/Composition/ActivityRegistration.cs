@@ -28,9 +28,8 @@ public static class ActivityRegistration
         // batch every five seconds, to one keeper: Azure Cosmos DB wherever it came
         // up, whichever store served the request, because it keeps the rows without
         // expiry and because writing a serverless relational database every five
-        // seconds kept it from ever pausing and spent September's free amount on the
-        // fourteenth (ADR: Site activity, and the line an address does not cross,
-        // addendum). Without Cosmos DB the default store keeps its own rows. The
+        // seconds keeps it from pausing and spends its free monthly allowance (ADR:
+        // Site activity, and the line an address does not cross, addendum). Without Cosmos DB the default store keeps its own rows. The
         // admin key guards the visitor rows; unset, that endpoint is a 404, which is
         // the default and the safe one.
         host.VisitorTokens = new VisitorTokens(signingKey);
@@ -86,7 +85,8 @@ public static class ActivityRegistration
         builder.Services.AddSingleton(new AdminSettings(visitorRows));
         // A report is kept thirty seconds and rebuilt behind the next read for ten
         // minutes after that, so a reader never waits on the visitor rows being counted
-        // (ActivityReportCache, the addendum of 28 September).
+        // (ActivityReportCache; ADR: Site activity, and the line an address does not
+        // cross, the addendum on the first read).
         builder.Services.AddSingleton(new ActivityReportCache(TimeProvider.System));
 
         // #endregion activity-wiring

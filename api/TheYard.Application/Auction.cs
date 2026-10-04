@@ -1,7 +1,8 @@
 // One store's auction as a visitor meets it: the catalogue, everybody's bids and the simulated
-// room, composed in the one order the rules need. Endpoints ask this class and never compose the
-// three services themselves, so the order (the buyer's bids first, the room's second) and the
-// price a bid is measured against each have one copy.
+// room, composed here and nowhere else. Endpoints ask this class and never compose the three
+// services themselves. A vehicle leaves it already standing (the highest of the dataset, the bids
+// and the room) with its sold flag beside it, so no handler can show a price without the room or
+// a bought vehicle as open, and the price a bid is measured against has one copy.
 using TheYard.Data;
 using TheYard.Domain;
 
@@ -17,7 +18,7 @@ namespace TheYard.Application;
 public sealed class Auction(InventoryService inventory, BidService bids, MarketService market)
 {
     /// <summary>How many live auctions the room looks at in one round, beside the ones somebody is bidding on.</summary>
-    public const int RoomRoundLiveCount = 40;
+    private const int RoomRoundLiveCount = 40;
 
     // #region overlays
     /// <summary>
@@ -27,7 +28,7 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     /// nobody has bid at all, so a cold listing pays for neither. IsEmpty rather than a snapshot
     /// count, because a snapshot copies the whole dictionary just to ask whether it is empty.
     /// </summary>
-    public Func<Vehicle, Vehicle>? Overlay() => (bids.IsEmpty, market.IsEmpty) switch
+    private Func<Vehicle, Vehicle>? Overlay() => (bids.IsEmpty, market.IsEmpty) switch
     {
         (true, true) => null,
         (false, true) => bids.Apply,
@@ -36,11 +37,12 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     };
 
     /// <summary>The vehicle at the price it stands at: the dataset, then everybody's bids, then the room's.</summary>
-    public Vehicle AsItStands(Vehicle vehicle) => market.Apply(bids.Apply(vehicle));
+    private Vehicle AsItStands(Vehicle vehicle) => market.Apply(bids.Apply(vehicle));
     // #endregion overlays
 
-    /// <summary>One vehicle by id, or null when the catalogue has no such id.</summary>
-    public Vehicle? Find(string vehicleId) => inventory.GetById(vehicleId);
+    /// <summary>One vehicle by id, standing at its price and with its sold flag, or null when the catalogue has no such id.</summary>
+    public StandingVehicle? Find(string vehicleId) =>
+        inventory.GetById(vehicleId) is { } vehicle ? new StandingVehicle(AsItStands(vehicle), bids.IsSold(vehicleId)) : null;
 
     /// <summary>Whether anybody has bought this vehicle outright, which closes it to everybody.</summary>
     public bool IsSold(string vehicleId) => bids.IsSold(vehicleId);
@@ -48,9 +50,12 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     /// <summary>The values behind the catalogue's filters: every make, body style, province and the rest.</summary>
     public InventoryFacets Facets() => inventory.Facets();
 
-    /// <summary>One page of the catalogue, filtered and sorted, at the price each vehicle stands at.</summary>
-    public SearchResult Search(VehicleFilter filter, AuctionClock clock, VehicleSort sort, int limit, int offset) =>
-        inventory.Search(filter, clock, sort, limit, offset, Overlay());
+    /// <summary>One page of the catalogue, filtered and sorted, each vehicle at the price it stands at and with its sold flag.</summary>
+    public StandingPage Search(VehicleFilter filter, AuctionClock clock, VehicleSort sort, int limit, int offset)
+    {
+        var page = inventory.Search(filter, clock, sort, limit, offset, Overlay());
+        return new StandingPage(page.Total, [.. page.Vehicles.Select(vehicle => new StandingVehicle(vehicle, bids.IsSold(vehicle.Id)))]);
+    }
 
     // #region bidding
     /// <summary>
@@ -58,12 +63,12 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     /// bids. Measuring against the dataset's figure alone would let a buyer retake the lead with a
     /// bid below the going rate.
     /// </summary>
-    public Task<BidOutcome> PlaceBidAsync(Vehicle vehicle, int amount, AuctionClock clock, string userId) =>
-        bids.PlaceBidAsync(market.Apply(vehicle), amount, clock, userId);
+    public Task<BidOutcome> PlaceBidAsync(StandingVehicle vehicle, int amount, AuctionClock clock, string userId) =>
+        bids.PlaceBidAsync(vehicle.Vehicle, amount, clock, userId);
 
     /// <summary>A buy-now purchase from one buyer, at the vehicle's buy-now price, against the same standing.</summary>
-    public Task<BidOutcome> BuyNowAsync(Vehicle vehicle, AuctionClock clock, string userId) =>
-        bids.BuyNowAsync(market.Apply(vehicle), clock, userId);
+    public Task<BidOutcome> BuyNowAsync(StandingVehicle vehicle, AuctionClock clock, string userId) =>
+        bids.BuyNowAsync(vehicle.Vehicle, clock, userId);
 
     /// <summary>
     /// One buyer's start-over: their bids go, and so do the room's answers on the vehicles nobody
@@ -133,6 +138,22 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
                 highest);
         }
         return views;
+    }
+
+    /// <summary>
+    /// One buyer's history for the account page, newest first: each vehicle's title beside the
+    /// buyer's standing on it, or "(withdrawn)" when the vehicle has left the catalogue.
+    /// </summary>
+    public BidHistory HistoryOf(string userId)
+    {
+        var entries = BidsOf(userId)
+            .OrderByDescending(entry => entry.Value.AtMs)
+            .Select(entry => new BidHistoryEntry(
+                entry.Key,
+                inventory.GetById(entry.Key) is { } v ? $"{v.Year} {v.Make} {v.Model}" : "(withdrawn)",
+                entry.Value))
+            .ToList();
+        return new BidHistory(entries.Count, entries);
     }
     // #endregion views
 }

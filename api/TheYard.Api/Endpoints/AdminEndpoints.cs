@@ -66,7 +66,8 @@ public static partial class AdminEndpoints
         // and not a number, so a caller cannot ask for a year.
         // A report is kept thirty seconds and rebuilt behind the next read for ten
         // minutes after that, so a reader never waits on the visitor rows being counted
-        // (ActivityReportCache, the addendum of 28 September).
+        // (ActivityReportCache; ADR: Site activity, and the line an address does not
+        // cross, the addendum on the first read).
         app.MapGet("/api/admin/activity", Activity);
 
         // The visitor rows, behind the operator's key: a token that rotates daily,

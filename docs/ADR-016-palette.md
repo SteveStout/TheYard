@@ -17,8 +17,8 @@ colors in gray, brown and blue. Figma's line on it: "this color scheme
 pulls from foggy cityscapes to evoke a sense of calm and sophistication.
 The combination of light and dark shades creates a sense of depth and
 contrast, while the overall color scheme maintains a serene and
-professional aesthetic." Steve's instruction, in full: "Use this one. Make
-it all match."
+professional aesthetic." Steve chose it and asked
+for everything to match it.
 
 The five, as Figma prints them: #E9E6E7 (a light warm gray), #5E5653 (a
 dark brown-gray), #7B7F8A (a slate gray), #AB978C (a warm taupe) and
@@ -190,9 +190,8 @@ and that neither is the value of a status token.
 
 ## Addendum, 2026-09-21 (1.0.0.169): teal, dark green and gold
 
-Steve, of the five colours this record chose: "I like the color scheme we have but it feels a little
-bland." He gave two reference pictures and one condition, "I loved the background of white and light
-grey", and the palette that came out of them is an accent and not a repaint: **teal fills, dark green
+Steve liked the five colours this record chose but found them a little bland. He gave two
+reference pictures and one condition, that the white and light grey background stay, and the palette that came out of them is an accent and not a repaint: **teal fills, dark green
 draws, gold trims, and the grounds and the text colours are exactly as they were.**
 
 Every value was read off the pixels of his pictures and not off their captions, because the first
@@ -262,8 +261,8 @@ both grounds and apart from each other, and that neither gold could pass as text
 
 ## Addendum, 2026-09-21 (1.0.0.170): the style section, and rules that hold themselves
 
-Steve, the day the new colours shipped: "We should have a new section on style that should include
-the colour swatches and the colour style document, where these rules are always followed."
+The day the new colours shipped, Steve asked for a new section on style holding the colour swatches
+and the colour style document, with these rules always followed.
 
 Two halves. The first is a page a person reads. The second is what makes "always followed" true, and
 it is tests, because a rule on a page is followed until the first session that does not read the
@@ -319,7 +318,7 @@ rules a change has to pass). Each fails with a sentence that says what to do.
 
 ## Addendum, 2026-09-24: the one face is IBM Plex Sans
 
-Steve compared Poppins with IBM Plex Sans and two others on one page, every view of the site set in each, and chose Plex: "lets go with this as it'll be the best for phones and tablets". It replaces Poppins everywhere and there is no second face. Google Fonts' own stylesheet, asked for 400, 500, 600 and 700 the way the Poppins files were fetched, names one variable latin file for all four (45,712 bytes): four static cuts of it would weigh 86 KB against Poppins' 31 KB, so the variable file is cut on the build machine to the four weights, the latin range and the layout features running text uses instead (kerning, the ligatures and the marks; the fraction forms go, which nothing on the site asks for), one file of 29,144 bytes, kept in `src/assets/fonts` with the font's licence (the SIL Open Font License, IBM's copyright and its reserved name), declared once in `fonts.css` for weights 400 to 700 with the same latin range, preloaded from the head as 1.0.3.1 set up, and named first in `--font-sans`; the first screen carries 2.3 KB less type than it did. Plex sits a little smaller on the em than Poppins, so every size was read again in the pictures after the swap rather than raised on a guess. **Readings take the one face with tabular figures**, set once on the body so a column of numbers lines up without a rule per component; the monospaced face that the Admin tab's small labels, the chart readouts, the index chips, a vehicle's VIN and the footer's commit used is gone from all of them. **Code keeps a monospaced face and only code**: a document's samples, the SQL the Admin tab shows and an error's stack take `--font-code`, because code reads like code (ADR: Code that reads like code). `StyleRulesTests` holds it: the token names Plex first, no sheet or component names Poppins outside a comment, and the code token goes only to code. The palette does not change.
+Steve compared Poppins with IBM Plex Sans and two others on one page, every view of the site set in each, and chose Plex as the best of them for phones and tablets. It replaces Poppins everywhere and there is no second face. Google Fonts' own stylesheet, asked for 400, 500, 600 and 700 the way the Poppins files were fetched, names one variable latin file for all four (45,712 bytes): four static cuts of it would weigh 86 KB against Poppins' 31 KB, so the variable file is cut on the build machine to the four weights, the latin range and the layout features running text uses instead (kerning, the ligatures and the marks; the fraction forms go, which nothing on the site asks for), one file of 29,144 bytes, kept in `src/assets/fonts` with the font's licence (the SIL Open Font License, IBM's copyright and its reserved name), declared once in `fonts.css` for weights 400 to 700 with the same latin range, preloaded from the head as 1.0.3.1 set up, and named first in `--font-sans`; the first screen carries 2.3 KB less type than it did. Plex sits a little smaller on the em than Poppins, so every size was read again in the pictures after the swap rather than raised on a guess. **Readings take the one face with tabular figures**, set once on the body so a column of numbers lines up without a rule per component; the monospaced face that the Admin tab's small labels, the chart readouts, the index chips, a vehicle's VIN and the footer's commit used is gone from all of them. **Code keeps a monospaced face and only code**: a document's samples, the SQL the Admin tab shows and an error's stack take `--font-code`, because code reads like code (ADR: Code that reads like code). `StyleRulesTests` holds it: the token names Plex first, no sheet or component names Poppins outside a comment, and the code token goes only to code. The palette does not change.
 
 ## Addendum, 2026-09-25 (1.0.3.23): one secondary grey
 

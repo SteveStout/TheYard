@@ -12,8 +12,8 @@ What that is worth: a developer gets a verdict on every change in minutes with n
 
 ## Context
 
-Steve's ask, in his words: "the tests in total should not run more than five
-minutes". The ship gate at 1.0.0.96 took about twenty minutes: xUnit on SQLite,
+Steve asked for the tests in total to run in no more than five
+minutes. The ship gate at 1.0.0.96 took about twenty minutes: xUnit on SQLite,
 the six live store tests, the whole xUnit suite booted on Cosmos DB, the
 browser suite twice on SQLite and once on Cosmos DB, and in front of them
 prettier, lint, tsc, dotnet format, the SQL project, vitest and the em dash
@@ -222,9 +222,9 @@ scheduled task runs at Normal from now on.
 
 ## Addendum, 2026-09-21: every check runs once, and every result is on the Admin tab
 
-Steve, on the time a version took to reach the live site: "Each check should
-only run once" and "every test should run and you should focus on optimizing
-the tests that do run". Measured on 1.0.0.172 before anything changed, one
+On the time a version took to reach the live site, Steve asked for each check
+to run only once, for every test to keep running, and for the effort to go into
+making the tests that run faster. Measured on 1.0.0.172 before anything changed, one
 version cost about twenty-four minutes: a precheck of about five minutes on
 the machine that ships, the gate at 417 seconds on the same tree, CI at 4
 minutes 37 seconds on GitHub's runners, Deploy at 3 minutes 49, Deploy
@@ -284,9 +284,9 @@ browser, more work at once is slower work, which the record's first
 section already said about the two sides of the gate. Both changes are
 taken back; nothing was committed by that take.
 
-Steve, on the card itself: "when we pass or fail lets make sure we have a
-little graphic that is plus sign or red x something that makes it obvious
-and in your face". A tick in a green disc or a cross in a red one, from the
+On the card itself, Steve asked for a small mark on a pass or a fail, a plus
+sign or a red cross, something that makes the result obvious at a
+glance. A tick in a green disc or a cross in a red one, from the
 status tokens because passed and failed are states, 44 pixels beside the
 card's sentence and 16 on every suite, check and test; a mark carries its
 own label only where no word beside it already says the same.
@@ -382,7 +382,7 @@ there is what one page costs to read at the phone width.
 
 ## Addendum, 2026-09-29: stack, gate once, push once
 
-Steve, 29 September: "we can stack releases so we don't have to release each one at a time, the pipeline should always grab the latest push." With the deploy group cancelling the run in flight (ADR: The deploy pipeline, addendum of 29 September), the rule for every lane that ships:
+On 29 September Steve asked for releases to stack instead of shipping one at a time, with the pipeline always taking the latest push. With the deploy group cancelling the run in flight (ADR: The deploy pipeline, addendum of 29 September), the rule for every lane that ships:
 
 - **Stack.** A lane's changes are local commits in order, each checked with the quick check only (the type check, the unit tests, the lint and the .NET tests that read what moved; about two minutes). No commit is rolled on its own.
 - **Gate once.** The full gate runs once, on the stacked head. A commit that turns it red is fixed on top; the whole gate is never run again per commit.

@@ -1,6 +1,6 @@
 # ADR: One folder per component
 
-Status: accepted, 2026-09-28. Steve's plan for the frontend's layout, in his words: "one folder per component", grouped by section, "an index.ts that re-exports it, so imports read components/<section>/<Name>", and "src/lib and src/hooks do not move". Shipped as 1.0.3.35 with the Admin stylesheet split, the edge warm-up, the prefetch, the first activity read and the keep-warm loop.
+Status: accepted, 2026-09-28. Steve's plan for the frontend's layout: one folder per component, grouped by section, with an `index.ts` that re-exports it so imports read `components/<section>/<Name>`, and `src/lib` and `src/hooks` left where they are. Shipped as 1.0.3.35 with the Admin stylesheet split, the edge warm-up, the prefetch, the first activity read and the keep-warm loop.
 
 ## In plain words
 

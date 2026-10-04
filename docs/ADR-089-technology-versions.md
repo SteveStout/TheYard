@@ -1,12 +1,12 @@
 # ADR: Technology versions
 
-Status: accepted, 2026-10-03. Every package and image this repository names, the version in use, the newest stable version on the day it was read, and the reason when the two differ.
+Status: accepted, 2026-10-03. Every NuGet and npm package this repository names, the .NET SDK and runtime, the SQL build tool and Node.js: the version in use, the newest stable version on the day it was read, and the reason when the two differ.
 
 ## In plain words
 
-This page lists every library and tool the site is built from, which version it uses, and the newest stable version available when the list was checked. Where the site is behind, the reason is written beside it. A test reads this table against the project files, so the table cannot say one version while the code uses another.
+This page lists the libraries, the runtime and the build tools the site is built from, which version each uses, and the newest stable version available when the list was checked. Where the site is behind, the reason is written beside it. A test reads this table against the project files, so the table cannot say one version while the code uses another.
 
-What that is worth: a developer can see in one place what the site runs on and why anything is held back, and the organization can answer "are you patched?" from a page instead of a search.
+What that is worth: a developer and the organization can see from one page what the site runs on, what was current on 3 October 2026, and why anything was held back. The Latest stable column is only as fresh as the last read.
 
 ## How the list was read
 
@@ -30,7 +30,7 @@ Every "latest stable" below was read live on 2026-10-03 from nuget.org, the npm 
 | Azure.Communication.Email | 1.1.0 | 1.1.0 | |
 | Azure.Monitor.OpenTelemetry.AspNetCore | 1.6.0 | 1.6.0 | |
 | Microsoft.NET.Test.Sdk | 18.10.1 | 18.10.1 | |
-| coverlet.collector | 6.0.4 | 10.1.0 | Measured both on the same code: 10.1.0 counts branches differently and reports 66.0% where 6.0.4 reports 67.4%, which would move CI's coverage floor with no change to a test. Moving it is its own change, with the floor set again from a measured run. |
+| coverlet.collector | 6.0.4 | 10.1.0 | Measured both on the same code: 10.1.0 counts branches differently and reported 66.0% where 6.0.4 reported 67.4%, which would move CI's coverage floor with no change to a test. Run by hand on 3 October, CI read 67.7% of branches on 6.0.4, under its 68% floor; the floor is now 90% of lines and 75% of branches with generated code left out (ADR: Counting what the tests cover, the addendum on generated code). Moving to 10.1.0 is its own change, with the floor set again from a measured run. |
 | xunit | 2.9.3 | 2.9.3 | The last v2 release. xUnit v3 is 4.0.1 and changes the test platform (ADR: Staying on .NET 10, and on xUnit v2 for now). |
 | xunit.runner.visualstudio | 3.1.5 | 4.0.0 | 4.0.0 is the runner for xUnit v3; 3.1.5 is the newest for v2. |
 | NetArchTest.eNhancedEdition | 1.4.5 | 1.4.5 | |
@@ -41,7 +41,7 @@ Every "latest stable" below was read live on 2026-10-03 from nuget.org, the npm 
 | --- | --- | --- | --- |
 | .NET SDK and runtime | 10.0 (10.0.12) | 10.0.12 | 11.0 is a release candidate (ADR: Staying on .NET 10, and on xUnit v2 for now). |
 | Microsoft.Build.Sql | 2.3.0 | 2.3.0 | |
-| node (Docker build stage and CI) | 24 | 24 | 24 is Active LTS until 20 October 2026; 26 becomes LTS on 28 October 2026. |
+| node (Docker build stage and CI) | 24 | 26 (Current); 24 is the newest LTS | The build stays on a long-term support line; 26 becomes LTS on 28 October 2026. |
 
 ## Front-end packages
 
@@ -74,7 +74,7 @@ The language moved with .NET 10. Each feature was used only where it removes cod
 
 ## Where it sits
 
-No ring: this is a dependency and tooling record, so the onion and SOLID do not apply to it. It cost a live read of four registries and a test that keeps the table honest. A package with a reason to stay behind gets a row that says why, and a new release changes the right-hand column the next time the list is read.
+Outside the code: the project files, package.json and the Dockerfile, which TechnologyVersionsTests reads against this table. It cost a live read of five sources and one test. A package with a reason to stay behind gets a row that says why, and a new release changes the right-hand column the next time the list is read.
 
 ## Files
 

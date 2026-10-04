@@ -41,7 +41,7 @@ What that is worth: a developer can predict what a file is called and where it g
   `TheYard.Domain` may reference Data; Application talks to
   Infrastructure only through ports. If a file needs a `using` that points
   outward, the code is in the wrong project, and `OnionTests` fails the
-  build (ADR: Onion and SOLID, how this codebase holds them).
+  gate (ADR: Onion and SOLID, how this codebase holds them).
 - Domain code is pure: no `DateTime.Now`, no filesystem, no HTTP. Time
   arrives as an `AuctionClock` the caller built, which is why the tests
   can anchor it.

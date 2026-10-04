@@ -23,7 +23,7 @@ public static class EmailRegistration
             // The same identity the stores use, chosen by the same setting.
             () => CosmosStore.CredentialFor(
                 builder.Configuration["Cosmos:Credential"] ?? "azure-cli",
-                builder.Configuration["Azure:ClientId"] ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5"),
+                YardComposition.AzureClientId(builder.Configuration)),
             services.GetRequiredService<ILogger<AcsEmailSender>>()));
         builder.Services.AddSingleton(new ForgotLimit(ForgotLimit.DefaultSpacing, () => DateTimeOffset.UtcNow));
         // #endregion email-wiring

@@ -1,12 +1,12 @@
 # ADR: The accessibility check
 
-Status: accepted, 2026-09-03, shipped as 1.0.0.44. Steve's ask, as part of the
-performance and accessibility pass: "an axe or Playwright accessibility check
-that runs in CI."
+Status: accepted, 2026-09-03, shipped as 1.0.0.44. As part of the performance
+and accessibility pass, Steve asked for an axe or Playwright accessibility
+check that runs in CI.
 
 ## In plain words
 
-This page adds an automated accessibility check (axe-core through Playwright) that scans seven views of the site against the WCAG 2.1 AA standard in CI and allows zero failures. Its first run found two serious contrast failures, and the fix darkened the two colours instead of lowering the bar.
+This page adds an automated accessibility check (axe-core through Playwright) that runs eleven scans across nine views of the site against the WCAG 2.1 AA standard in CI and allows zero failures. Its first run found two serious contrast failures, and the fix darkened the two colours instead of lowering the bar.
 
 What that is worth: a developer learns that a colour fails the standard before it ships, and the organization has its site checked by machine against a published accessibility standard on every change.
 
@@ -53,10 +53,11 @@ and a stylesheet combines whatever it likes.
 
 ## Decision
 
-**axe-core through Playwright, on seven views, at WCAG 2.1 AA, with zero
-tolerance.** The inventory and a vehicle at desktop width, the Admin tab, an
-open document dialog, the records index open, and the inventory and drawer on a
-phone. Each is its own test so a failure names the view. It runs inside the
+**axe-core through Playwright, at WCAG 2.1 AA, with zero tolerance, in eleven
+scans across nine views.** The inventory and a vehicle at desktop width, the
+Admin tab on three of its cards, an open document dialog, the records index
+open, the account view signed out and signed in, and the inventory and drawer
+on a phone. Each is its own test so a failure names the view. It runs inside the
 existing browser job, so it is in CI without a new job or a new runner.
 
 Two of those tests were wrong when they were written, and the staff review the
@@ -138,3 +139,7 @@ The check is test code beside the onion in tests/e2e/axe.spec.ts, and the fix is
 - [`tests/e2e/a11y.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/a11y.spec.ts): the keyboard path, which is the half a machine cannot check for you.
 - [`docs/ADR-016-palette.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-016-palette.md): where the palette and its measurement came from.
 - [`docs/ADR-026-keyboard.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-026-keyboard.md): the focus work this sits beside.
+
+## Addendum, 2026-10-03: a code block can be reached from the keyboard
+
+The check went red on the CI runner, on the README open in its dialog: "scrollable-region-focusable" on one code block. A block whose line is wider than the dialog scrolls sideways, and a region that scrolls has to be reachable from the keyboard, or a reader without a mouse cannot see the end of the line. It passed on the build machine because its fonts made the same line fit. Every code block a document renders now carries `tabindex="0"`, the same thing every table's scroller already carried (`src/lib/markdown.ts`, region code-renderer), and a Vitest case holds it.

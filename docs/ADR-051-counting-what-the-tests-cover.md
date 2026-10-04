@@ -5,7 +5,7 @@ number about the code.
 
 ## In plain words
 
-This page measures how much of the code the tests actually run (code coverage), alongside the number of tests. The suite covers 89.6% of lines, and the build now fails if coverage drops below 85 per cent of lines or 68 per cent of branches.
+This page measures how much of the code the tests actually run (code coverage), alongside the number of tests. Counting the code people write and leaving out what the compiler generates, the suite covers 91.5% of lines and 76.7% of branches (3 October 2026), and CI fails if coverage drops below 90 per cent of lines or 75 per cent of branches.
 
 What that is worth: a developer finds out in the build when a change stops testing something, and the organization can show anyone without a login what its tests touch, project by project.
 
@@ -104,10 +104,19 @@ cover a different 44 and 48 things and are not measured here.
 
 ## Where it sits
 
-No ring: this is a CI and testing-process decision about measuring coverage with `.github/coverage.py` and holding it to a floor, so the onion and SOLID do not apply to it.
+Outside the code, in CI: `.github/coverage.py` reads the coverage the .NET suites write and holds it to the floor `ci.yml` names. It cost one flag on the test run and a script; a floor that moves without a measured run behind it would change it.
 
 ## Files
 
 - [`.github/coverage.py`](https://github.com/SteveStout/TheYard/blob/main/.github/coverage.py): the report, the table, the annotations and the floor.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): where it runs, and why the floor is where it is.
 - [`docs/ADR-021-tests-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-021-tests-explained.md): what the tests are for, which is the question this one does not answer.
+
+## Addendum, 2026-10-03: generated code left out, and the floor set again
+
+CI had not run since 21 September, because the ship's gate on the build machine runs the suites and CI runs only on pull requests and by hand. Run by hand on 3 October on the commit then live, the coverage step was red: 85.3% of lines and 67.7% of branches against floors of 85 and 68. The fall had come a little at a time and nothing had read it.
+
+Reading the coverage file showed why the number sat so low. 2,102 of the 6,730 branches it counted were code a source generator writes at build time: the regular expressions compiled by `[GeneratedRegex]` (1,690 branches) and the OpenAPI document's comment readers (412). Nobody here writes or reviews that code, and most of it is paths a regular expression engine keeps for inputs this site never sees. It was holding the number down, and so the floor, which is supposed to notice a change that stops testing the code people write.
+
+So the test run now leaves out anything carrying the `GeneratedCode` attribute, which those generators put on everything they write, and the floor was set again from a measured run on the same commit: 91.5% of lines and 76.7% of branches, against new floors of 90 and 75. The margin is a point and a half rather than a few tenths because this is the first measurement under the new rule and the CI runner has not yet counted it; the next pass tightens it from the runner's own figure. The floor was raised, not lowered, and the code that holds it is the same script.
+

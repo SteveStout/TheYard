@@ -1,9 +1,9 @@
 # ADR: Three readers with no memory of the project
 
-Status: accepted, 2026-09-09. Steve's ask, at the end of a day of shipping:
-"before you stop, remove all context and look at our code, and play devil's
-advocate as if you were an interviewer, a junior developer or an architect
-learning from or reviewing my work". The review was run that afternoon, its
+Status: accepted, 2026-09-09. At the end of a day of shipping, Steve asked
+for the code to be read with no context, by a devil's advocate in three seats:
+an interviewer, a junior developer learning from it, and an architect
+reviewing it. The review was run that afternoon, its
 findings were verified against the code, and the decisions taken on each are
 this record. Three versions carry them: 1.0.0.109, 1.0.0.110 and 1.0.0.111.
 

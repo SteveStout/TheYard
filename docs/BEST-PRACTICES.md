@@ -32,8 +32,8 @@ footer displays exactly that.
   layers and the rules that keep them, one for naming, layering and
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
-  walk the code. The layers are also checked: eight architecture tests read
-  the compiled code and fail the build when a dependency points outward.
+  walk the code. The layers are also checked: ten architecture tests read
+  the compiled code and fail the gate when a dependency points outward.
   Recorded in ADR: Onion and SOLID, how this codebase holds them.
 - **Decisions get written down.** Ninety ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
@@ -124,7 +124,7 @@ footer displays exactly that.
   test holds the manifest and the image directory to the naming the browser
   relies on. Recorded in ADR: Responsive photos.
 - **The accessibility rules a machine can check are checked on every run.**
-  axe holds nine views to WCAG 2.1 AA inside the browser suite. Its first run
+  axe runs eleven scans across nine views at WCAG 2.1 AA inside the browser suite. Its first run
   found two serious contrast failures on the busiest elements on the page, in
   a repository that already had a passing contrast test, because that test
   holds the colour pairs somebody listed and a stylesheet composes whatever it
