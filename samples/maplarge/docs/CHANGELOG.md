@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.31 The Shed, explained is rebuilt from the current code: downloads through the file store, 151 tests, fourteen records, and the search times measured again (ADR-008).
 - 1.0.0.30 The rings are held by the build: OnionTests reads the compiled app, downloads stream through the file store so no disk path leaves the use cases, home is recognised with or without a trailing separator so it can never be deleted, every record says where it sits, two new records (Onion and SOLID, Technology versions), and `npm test` names its test files, because Node 22 and later read `node --test tests/js` as a file name and fail without running a test.
 - 1.0.0.29 ADR-011 names the assistant's three readers by what they check, not by a job title.
 - 1.0.0.28 Every record shows its code on the live site: the publish carries TestProject.csproj and the test sources that ADR-001 and ADR-008 quote, and PublishListTests holds every quoted file to the publish list. About Steven links to the page on TheYard instead of keeping a copy; Start here says ten pieces; the stylesheet is one sheet per part of the page; the two largest test files are split by job; every helper, wire type and API call in the page and the tests says what it does and why.
