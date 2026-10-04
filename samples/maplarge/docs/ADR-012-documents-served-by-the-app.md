@@ -7,7 +7,7 @@ Status: accepted, 2026-09-29.
 A record that describes code drifts from it the week after it is written, unless the code it quotes
 is read from the build rather than pasted. TheYard serves its records from inside the running app
 and expands a `live` fence into the current lines of a named region at request time. The same
-here, in about a hundred lines, because it is the mechanism that keeps these twelve records
+here, in about a hundred lines, because it is the mechanism that keeps the records
 honest.
 
 ## Decision

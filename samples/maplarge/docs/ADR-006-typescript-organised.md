@@ -5,8 +5,8 @@ Status: accepted, 2026-09-29.
 ## Context
 
 The brief: build the UI in vanilla JavaScript or TypeScript, no React, no Angular, no UI library;
-render all HTML client side. Steve, 29 September, on the first version's plain JavaScript: "Keep all
-of this simple, and make it all TypeScript; no one uses JavaScript anymore." A page with no
+render all HTML client side. On 29 September, reading the first version's plain JavaScript, Steve asked for
+it to stay simple and move to TypeScript. A page with no
 framework can still be organised, and the organisation is what a reviewer will judge, so it is
 written down.
 

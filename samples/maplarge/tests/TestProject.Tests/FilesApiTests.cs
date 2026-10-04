@@ -222,6 +222,32 @@ public sealed class FilesApiTests : IDisposable
         Assert.Equal(64, _factory.Services.GetRequiredService<FilesOptions>().MaxUploadBytes);
     }
 
+    [Fact]
+    public async Task The_health_check_says_whether_home_is_there_and_never_where_it_is()
+    {
+        using HttpResponseMessage response = await _client.GetAsync("/healthz");
+        string body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("healthy", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("home", body, StringComparison.Ordinal);
+        Assert.DoesNotContain(Path.GetFileName(_home.Root), body, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_refusal_from_the_disk_never_carries_the_path_the_disk_named(bool readOnly)
+    {
+        // The operating system's own message names the full path; the reply's reason must not.
+        string path = Path.Combine(_home.Root, "docs", "readme.md");
+        Exception refused = readOnly
+            ? new UnauthorizedAccessException($"Access to the path '{path}' is denied.")
+            : new IOException($"The process cannot access the file '{path}' because it is being used by another process.");
+        string reason = TestProject.Controllers.ProblemResponseHandler.ReasonFor(refused);
+        Assert.DoesNotContain(_home.Root, reason, StringComparison.Ordinal);
+        Assert.StartsWith("The disk refused", reason, StringComparison.Ordinal);
+    }
+
     private async Task<JsonElement> Get(string url)
     {
         HttpResponseMessage response = await _client.GetAsync(url);

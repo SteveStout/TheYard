@@ -53,7 +53,7 @@ npm run build
 
 | Suite | Count | What it covers |
 | --- | --- | --- |
-| xUnit | 130 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
+| xUnit | 135 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
 | node --test | 21 | The address parser and serializer, the byte and date formatting, the markdown reader (a `<script>` arrives as text, an image keeps its alt text). |
 
 The build treats warnings as errors and a public member without a summary is a warning.
@@ -131,7 +131,7 @@ The Shed is a sample, and the parts worth keeping go back to the project it sits
   views to WCAG 2.1 AA: [The accessibility check](https://theyard.stevenstout.biz/?doc=adr-a11y-check).
 
 Each step is something TheYard already does at full size (.NET 10 and React, Azure SQL and Cosmos
-DB, 90 records, about 2,000 test runs per gate): paging 100,000 vehicles behind Load more
+DB, 90 records, about 2,100 test runs per gate): paging 100,000 vehicles behind Load more
 ([the API reference](https://theyard.stevenstout.biz/api/reference)), and keeping every request and
 error for three years ([Logs that outlive the container](https://theyard.stevenstout.biz/?doc=adr-kept-logs)).
 

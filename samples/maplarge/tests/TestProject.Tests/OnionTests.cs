@@ -21,7 +21,8 @@ public sealed class OnionTests
     private static readonly string[] DomainMayUse = ["System", Coverage, "TestProject.Data", "TestProject.Domain"];
     private static readonly string[] ApplicationMayUse = ["System", Coverage, "TestProject.Data", "TestProject.Domain", "TestProject.Application"];
     private static readonly string[] InfrastructureMustNotUse = ["TestProject.Controllers", "TestProject.Composition", "TestProject.Documentation", "Microsoft.AspNetCore"];
-    private static readonly string[] ControllersMustNotUse = ["TestProject.Infrastructure", "TestProject.Composition", "System.IO.File", "System.IO.Directory", "System.IO.FileInfo", "System.IO.DirectoryInfo", "System.IO.FileStream"];
+    private static readonly string[] TheDisk = ["System.IO.File", "System.IO.Directory", "System.IO.FileInfo", "System.IO.DirectoryInfo", "System.IO.FileStream", "System.IO.FileSystemInfo", "System.IO.StreamReader", "System.IO.StreamWriter"];
+    private static readonly string[] ControllersMustNotUse = [.. TheDisk, "TestProject.Infrastructure", "TestProject.Composition", "TestProject.Application.IFileStore", "TestProject.Domain.HomePath", "Microsoft.AspNetCore.Mvc.PhysicalFileResult"];
     private static readonly string[] DocumentationMustNotUse = ["TestProject.Controllers", "TestProject.Composition", "TestProject.Infrastructure", "Microsoft.AspNetCore"];
     private static readonly string[] Registration = ["Microsoft.Extensions.DependencyInjection.IServiceCollection", "Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions"];
 
@@ -37,6 +38,10 @@ public sealed class OnionTests
     [Fact]
     public void Application_depends_only_on_Domain_Data_and_the_BCL() =>
         AssertHolds(InRing("TestProject.Application").ShouldNot().HaveDependencyOtherThan(ApplicationMayUse).GetResult());
+
+    [Fact]
+    public void Application_never_touches_the_disk_itself() =>
+        AssertHolds(InRing("TestProject.Application").ShouldNot().HaveDependencyOnAny(TheDisk).GetResult());
 
     [Fact]
     public void Infrastructure_depends_on_nothing_outside_it() =>
@@ -56,14 +61,38 @@ public sealed class OnionTests
             .That().MeetCustomRule(type => Outermost(type).Namespace != "TestProject.Composition")
             .ShouldNot().HaveDependencyOnAny(Registration)
             .GetResult());
+
+    [Fact]
+    public void Every_type_sits_in_one_of_the_folders_the_rings_name()
+    {
+        // A type in a namespace no rule names (a new folder, a typo, a missing namespace line)
+        // would be checked by none of the rules above. The compiler's own helpers are skipped:
+        // their names start with "<", and the attributes it writes sit under System or Microsoft.
+        // Program alone sits in the project's own namespace, above every folder.
+        using var module = ModuleDefinition.ReadModule(typeof(HomePath).Assembly.Location);
+        var strays = module.Types
+            .Where(type => !type.Name.StartsWith('<'))
+            .Where(type => !type.Namespace.StartsWith("System", StringComparison.Ordinal) && !type.Namespace.StartsWith("Microsoft", StringComparison.Ordinal) && !type.Namespace.StartsWith("Coverlet", StringComparison.Ordinal))
+            .Where(type => type.Namespace != "TestProject" && !Folders.Any(ring => InNamespace(type.Namespace, ring)))
+            .Select(type => type.FullName)
+            .ToList();
+        Assert.True(strays.Count == 0, "outside every ring: " + string.Join(", ", strays));
+    }
     // #endregion rings
+
+    /// <summary>The folders, each one a ring and a namespace.</summary>
+    private static readonly string[] Folders = ["TestProject.Data", "TestProject.Domain", "TestProject.Application", "TestProject.Infrastructure", "TestProject.Controllers", "TestProject.Documentation", "TestProject.Composition"];
 
     /// <summary>
     /// Every type in one ring, including the ones the compiler writes inside them. A ring is a
-    /// folder, and each folder is a namespace.
+    /// folder, and each folder is a namespace; a folder inside it belongs to the same ring.
     /// </summary>
     private static PredicateList InRing(string ring) =>
-        Types.InAssembly(typeof(HomePath).Assembly).That().MeetCustomRule(type => Outermost(type).Namespace == ring);
+        Types.InAssembly(typeof(HomePath).Assembly).That().MeetCustomRule(type => InNamespace(Outermost(type).Namespace, ring));
+
+    /// <summary>True for the ring's namespace and every namespace under it.</summary>
+    private static bool InNamespace(string name, string ring) =>
+        name == ring || name.StartsWith(ring + ".", StringComparison.Ordinal);
 
     /// <summary>The type a nested or compiler-written type sits inside, all the way out.</summary>
     private static TypeDefinition Outermost(TypeDefinition type)

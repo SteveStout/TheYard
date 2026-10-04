@@ -29,7 +29,7 @@ table is a rule the next change will break.
 | The version comes from the changelog and the commit from `.git`, and each says "unknown" rather than guessing | ADR-012 | VersionReaderTests |
 | Nothing in the project carries an em dash | STYLE.md | NoEmDashTests |
 | Every class is sealed, static or abstract, and the analyzer that holds the internal half is a warning with warnings as errors | ADR-001 | SealedByDefaultTests |
-| A folder uses only the folders inside it, read from the compiled app: Data and Domain use nothing outside .NET itself, Application uses only Domain and Data, Infrastructure never reaches outward, Controllers never touch the disk, the file store or Composition, Documentation reaches nothing outside itself, and only Composition registers services | ADR-013 | OnionTests |
+| A folder uses only the folders inside it, read from the compiled app: Data uses nothing outside .NET itself and Domain only Data, Application uses only Domain and Data and never touches the disk itself, Infrastructure never reaches outward, Controllers never touch the disk, the file store port, HomePath or Composition, Documentation never reaches Controllers, Composition, Infrastructure or ASP.NET Core, only Composition registers services, and every type sits in a folder a ring names | ADR-013 | OnionTests |
 | Data and Domain touch no filesystem and no clock; Program maps no route itself | ADR-002 | LayeringTests |
 | No C#, TypeScript or stylesheet file runs past 300 lines; `src/main.ts` is a short list, each line naming the file that holds its part | ADR-002 | FileShapeTests |
 | No stylesheet but the token sheet writes a colour; every token used is declared; the font is served from this site | ADR-010 | StyleRulesTests |
@@ -61,7 +61,7 @@ error), and no `using` is unused (IDE0005 as a warning, same reason).
 
 ## Where it sits
 
-This record is about process and touches no ring: it lists each standing rule beside the test that keeps it true.
+Beside the folders, in the test project. RuleTableTests reads this table, and one row is OnionTests, which holds the rings.
 
 ## Files
 

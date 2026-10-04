@@ -16,10 +16,9 @@ namespace TestProject.Controllers;
 /// - The app's own refusals (ApiRefusalException) carry their status and title with them.
 /// - A path that tries to leave the home folder (PathRefusedException) is always a 400.
 /// - A file the disk will not let us touch, because it is read-only or another program has it
-///   open, is a 403 or a 409 with the operating system's own message. The request asked for
+///   open, is a 403 or a 409 with a fixed reason that names no path. The request asked for
 ///   something the disk cannot do; the server is not broken.
-/// - Anything else is a real bug. It is left alone here, so it still reaches the default
-///   handler as a 500 and is never passed off as the caller's mistake.
+/// - Anything else is a real bug, left alone so it reaches the default handler as a 500.
 /// </remarks>
 public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IExceptionHandler
 {
@@ -50,8 +49,8 @@ public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IE
         // 3. Set the status code on the response.
         httpContext.Response.StatusCode = status;
 
-        // 4. Write the error reply. The reason is the exception's own sentence, and the trace id
-        //    is the same one the logs carry, so a failure a user reports can be found there.
+        // 4. Write the reply: the reason from ReasonFor, and the trace id the logs carry, so a
+        //    failure a user reports can be found there.
         return await problems.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
@@ -59,10 +58,22 @@ public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IE
             {
                 Status = status,
                 Title = title,
-                Detail = exception.Message,
+                Detail = ReasonFor(exception),
                 Extensions = { ["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier },
             },
         });
     }
     // #endregion handle
+
+    /// <summary>
+    /// The sentence a reply gives as its reason. The app's refusals are written for the reader
+    /// and pass through; the disk's own messages carry the absolute path, so they are replaced.
+    /// </summary>
+    /// <param name="exception">The refusal being answered.</param>
+    public static string ReasonFor(Exception exception) => exception switch
+    {
+        UnauthorizedAccessException => "The disk refused: the file or folder is read-only or locked against changes.",
+        IOException => "The disk refused: the file is in use by another program, or it changed while this ran.",
+        _ => exception.Message,
+    };
 }

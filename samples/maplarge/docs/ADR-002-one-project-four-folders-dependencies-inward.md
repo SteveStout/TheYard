@@ -61,8 +61,8 @@ what is there, refuse home) over all of them.
 
 ## Addendum, 30 September: why Program.cs is so short
 
-Steve, reading the host before the review: `Program.cs` "should be high level like the yard", so
-that it is readable at a glance. It had grown to 90 lines of registrations, each with its reason.
+Steve, reading the host before the review, asked for `Program.cs` to stay high level, as it is in
+TheYard, so that it is readable at a glance. It had grown to 90 lines of registrations, each with its reason.
 The registrations moved, unchanged, into `Composition/`, the way TheYard's `Composition/` holds its
 own, and `Program.cs` is now the list of calls in the order the app is made:
 
