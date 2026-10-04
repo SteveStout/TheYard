@@ -20,7 +20,6 @@ public sealed class NamePattern
     private static readonly char[] Wildcards = ['*', '?'];
 
     private readonly Regex? _glob;
-    private readonly string _substring;
 
     /// <summary>
     /// The query with spaces at the ends removed, for the search reply to repeat.
@@ -28,7 +27,7 @@ public sealed class NamePattern
     public string Query { get; }
 
     /// <summary>True when the query is empty, in which case the pattern matches nothing.</summary>
-    public bool IsEmpty => _glob is null && _substring.Length == 0;
+    public bool IsEmpty => _glob is null && Query.Length == 0;
 
     /// <summary>
     /// Builds the pattern from a query. Spaces at the ends are removed first. When the
@@ -39,7 +38,6 @@ public sealed class NamePattern
     public NamePattern(string? query)
     {
         Query = (query ?? string.Empty).Trim();
-        _substring = Query;
         if (Query.IndexOfAny(Wildcards) >= 0)
         {
             _glob = new Regex(
@@ -58,7 +56,7 @@ public sealed class NamePattern
             return false;
         }
         return _glob is null
-            ? name.Contains(_substring, StringComparison.OrdinalIgnoreCase)
+            ? name.Contains(Query, StringComparison.OrdinalIgnoreCase)
             : _glob.IsMatch(name);
     }
 }

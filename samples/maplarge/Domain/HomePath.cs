@@ -28,8 +28,9 @@ public sealed class HomePath
 
     /// <summary>
     /// Creates the home from an absolute directory path, normalised and with any trailing
-    /// separator removed. The root is not checked further, because it comes from
-    /// configuration and never from a request.
+    /// separator removed. The top of a drive or of the filesystem is refused, because a
+    /// home there would put every file on the machine in reach. The root is not checked
+    /// further, because it comes from configuration and never from a request.
     /// </summary>
     /// <param name="root">The absolute path of the directory to use as home.</param>
     public HomePath(string root)
@@ -38,7 +39,12 @@ public sealed class HomePath
         {
             throw new ArgumentException("The home directory must be an absolute path.", nameof(root));
         }
-        Root = System.IO.Path.GetFullPath(root).TrimEnd(Separators);
+        string full = System.IO.Path.GetFullPath(root);
+        if (string.Equals(full, System.IO.Path.GetPathRoot(full), StringComparison.Ordinal))
+        {
+            throw new ArgumentException("The home directory cannot be the top of a drive or of the filesystem.", nameof(root));
+        }
+        Root = full.TrimEnd(Separators);
         _comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
     }
 
@@ -78,13 +84,23 @@ public sealed class HomePath
                 throw new PathRefusedException($"'{segment}' is not a valid name.");
             }
         }
-        string joined = System.IO.Path.GetFullPath(System.IO.Path.Combine(Root, System.IO.Path.Combine(segments)));
+        // Windows drops trailing dots and spaces from a name, so "..." or "x " can come back as
+        // the root with a separator on the end. Trimming the separators hands back the root in
+        // the one spelling every caller compares against, so home is always recognised as home.
+        string joined = System.IO.Path.GetFullPath(System.IO.Path.Combine(Root, System.IO.Path.Combine(segments))).TrimEnd(Separators);
         if (!IsInside(joined))
         {
             throw new PathRefusedException("A path must stay inside the home directory.");
         }
-        return joined;
+        return IsRoot(joined) ? Root : joined;
     }
+
+    /// <summary>
+    /// Returns true when an absolute path is the home directory itself, with or without a
+    /// separator on the end, compared the way this operating system compares paths.
+    /// </summary>
+    /// <param name="absolute">An absolute, normalised path.</param>
+    public bool IsRoot(string absolute) => string.Equals(absolute.TrimEnd(Separators), Root, _comparison);
 
     /// <summary>
     /// Returns true when an absolute path is the root itself or lies under it. The root is

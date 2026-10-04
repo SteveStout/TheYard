@@ -187,6 +187,10 @@ workload the performance question is where the store is. A relational server
 in the container's region would close the gap the document store currently
 enjoys, and nothing in the rows says the document store would keep it.
 
+## Where it sits
+
+No ring: this is a teaching document that explains Cosmos DB to a reader who knows SQL Server and decides nothing of its own, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`docs/ADR-059-a-second-store-priced.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md): the decision and the arithmetic.

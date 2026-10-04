@@ -60,6 +60,10 @@ it is worth.
 | `GET /api/docs`, `GET /api/docs/{slug}` | the catalogue; a document as markdown | 404 |
 | `GET /api/version` | `{version, commit}` | |
 
+## Where it sits
+
+The reply records live in Data at the center of the onion; a refusal is thrown from Domain or Application and leaves through Controllers as a problem document. It follows the I in SOLID: each reply fits the one screen that reads it, with nothing extra for the page to ignore. The cost is that Move and Copy hand back their record typed as object; a file keeps its size, yet the compiler cannot name the reply. If other teams generated clients from the API, a shared base record with a type field would be worth the extra code.
+
 ## Files
 
 - [`Data/ApiResponses.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Data/ApiResponses.cs): every reply the API sends.

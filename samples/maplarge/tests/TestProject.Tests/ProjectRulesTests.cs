@@ -56,43 +56,13 @@ public sealed class SealedByDefaultTests
 }
 
 /// <summary>
-/// Checks that the app's folders depend only inward, in the order Data, Domain, Application,
-/// Infrastructure, Controllers, Composition. The tests read source files as text: the using
-/// lines in each folder, any call to the disk, the clock or the HTTP context in Data and Domain,
-/// and the size of Program.cs. Keeping dependencies one way lets the inner rules be tested with
-/// no web server and no disk. This is onion architecture: the business rules are in the middle,
-/// everything else depends on them, and these tests are what keep it that way.
+/// Checks the two layering rules that read best as text: Data and Domain never mention the disk,
+/// the clock or the HTTP context, and Program.cs stays a short list that maps no route itself.
+/// Which folder may use which is held by OnionTests, which reads the compiled app.
 /// (more in docs/ADR-002-one-project-four-folders-dependencies-inward.md)
 /// </summary>
-public sealed partial class LayeringTests
+public sealed class LayeringTests
 {
-    // Innermost first. A folder may use itself and any folder earlier in this list, never a later
-    // one. The Documentation folder is allowed only in Controllers and Composition.
-    private static readonly string[] Order = ["Data", "Domain", "Application", "Infrastructure", "Controllers", "Composition"];
-
-    [Fact]
-    public void A_folder_uses_only_the_folders_inside_it()
-    {
-        var outward = new List<string>();
-        for (int i = 0; i < Order.Length; i++)
-        {
-            string folder = Path.Combine(ProjectFolder.Root(), Order[i]);
-            foreach (string file in Directory.EnumerateFiles(folder, "*.cs"))
-            {
-                foreach (Match match in Using().Matches(File.ReadAllText(file)))
-                {
-                    string used = match.Groups["folder"].Value;
-                    int index = Array.IndexOf(Order, used);
-                    if (index > i || (used == "Documentation" && Order[i] is not ("Controllers" or "Composition")))
-                    {
-                        outward.Add($"{ProjectFolder.Relative(file)} uses TestProject.{used}");
-                    }
-                }
-            }
-        }
-        Assert.Empty(outward);
-    }
-
     [Fact]
     public void Data_and_Domain_touch_no_filesystem_and_no_clock()
     {
@@ -121,10 +91,6 @@ public sealed partial class LayeringTests
         Assert.True(lines.Length <= 40, $"Program.cs is {lines.Length} lines; the host is a table of contents");
         Assert.DoesNotContain(lines, line => line.Contains("MapGet(", StringComparison.Ordinal) || line.Contains("MapPost(", StringComparison.Ordinal));
     }
-
-    /// <summary>A using line that names one of the project's folders, which is how one folder depends on another.</summary>
-    [GeneratedRegex(@"^using TestProject\.(?<folder>\w+);", RegexOptions.Multiline)]
-    private static partial Regex Using();
 }
 
 /// <summary>

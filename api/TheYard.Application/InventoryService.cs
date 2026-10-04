@@ -35,7 +35,7 @@ public sealed class InventoryService(
     // task is what is shared rather than the result, so two callers arriving
     // together wait on the same load instead of running two.
     //
-    // The host awaits WarmAsync before it serves anything (Program.cs), so on a
+    // The host awaits WarmAsync before it serves anything (Composition/Startup.cs), so on a
     // running site the accessors below read a task that finished at startup and
     // never block. A caller that skips the warm-up, which is what a unit test
     // over an in-memory source does, blocks on a task that a memory source has
@@ -43,13 +43,11 @@ public sealed class InventoryService(
     // thread here for real is to skip the warm-up against a store that has to
     // go over the network, and the host does not (ADR: The ports learn to wait).
     //
-    // A load that failed is not kept. This was a Lazy once, and a Lazy keeps a
-    // faulted task forever, so a store that was unreachable for one second at
-    // startup would have answered every request until the next roll with that
-    // second's exception while the host said its first visitor would try again
-    // (ADR: The ports learn to wait, addendum). Now the next caller after a
-    // failure starts a fresh load; a load in flight or finished is shared as
-    // before, and the lock is what makes the start single.
+    // A load that failed is not kept. A Lazy would keep a faulted task forever, so
+    // a store that was unreachable for one second at startup would answer every
+    // request until the next roll with that second's exception. Here the next
+    // caller after a failure starts a fresh load; a load in flight or finished is
+    // shared, and the lock is what makes the start single.
     private readonly object _warmGate = new();
     private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index, InventoryFacets Facets)>? _inventory;
 

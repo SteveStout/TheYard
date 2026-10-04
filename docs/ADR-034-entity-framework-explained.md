@@ -201,6 +201,10 @@ adapters implement are asynchronous now (ADR: The ports learn to wait), so an
 adapter's `Load()` is `LoadAsync()` and the calls inside it are the
 `...Async` forms Entity Framework has always had.
 
+## Where it sits
+
+This walkthrough explains Infrastructure code, YardDbContext and YardSeed, along with the design-time factory that now lives in the host's DesignTime.cs and the SQLite history in its own project beside the onion. The principle it teaches is single responsibility: VehicleRow changes when storage changes, the Data record Vehicle changes when the domain does, and VehicleRows is the one file that maps between them. That separation is paid for as extra edits on every new field. A team willing to let EF shape its records directly would save those edits and accept a domain record with mutable members.
+
 ## Files
 
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs)

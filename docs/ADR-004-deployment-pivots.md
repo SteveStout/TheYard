@@ -141,6 +141,10 @@ was a parameter set, and two of its three branches described platforms nothing r
 Instances, stopped that day, and Container Apps, which never got a revision to start. Both branches
 are removed, and the file is the plan, the two sites, and Front Door behind a parameter that is off.
 
+## Where it sits
+
+No ring: this is a deployment record about which Azure service runs the container and how the phases were sequenced around the trial's limits, so the onion and SOLID do not apply.
+
 ## Files
 
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): what runs, the container group template

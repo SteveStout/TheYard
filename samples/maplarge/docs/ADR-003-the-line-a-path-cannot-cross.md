@@ -55,6 +55,14 @@ does not second-guess; the containment check still holds. Reserved device names 
 not refused by name; on Windows `GetFullPath` maps them out of the home and the containment check
 refuses the result.
 
+## Addendum, 2026-10-03: home itself
+
+`HomePath` now refuses a home at the top of a drive or of the filesystem, such as `C:\` or `/`, with an `ArgumentException` when it is built, because a home there would put every file on the machine in reach. `IsRoot` says whether a path is home itself, with or without a slash on the end. `Resolve` always hands back home in one spelling, so a path that Windows trims back to home (such as `...`) is still home, and home still cannot be deleted or moved.
+
+## Where it sits
+
+HomePath lives in Domain, the innermost ring, and every path from a request walks through it before anything can touch a file. It follows the S in SOLID: its one job is deciding whether a path stays inside home, so a change to that rule touches one class. Because it only reads strings, it cannot see where a symbolic link inside home really points, and it follows the link. If strangers could make links in the home folder, a second check on the disk in Infrastructure would earn its place.
+
 ## Files
 
 - [`Domain/HomePath.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Domain/HomePath.cs): the guard.

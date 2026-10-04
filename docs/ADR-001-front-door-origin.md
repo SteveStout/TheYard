@@ -149,6 +149,10 @@ per site because there are two origins. `enableFrontDoor` defaults off. The orig
 directly today, exactly as the addendum of 3 September describes for the container groups, and that
 trade is unchanged by the move.
 
+## Where it sits
+
+No ring: this is a hosting decision about what stands in front of the App Service origin, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the target as code. `enableFrontDoor` and

@@ -116,6 +116,9 @@ public static class DocumentationCatalog
         ["adr-kept-awake"] = "docs/ADR-085-kept-awake.md",
         ["adr-composition-root"] = "docs/ADR-086-the-composition-root-split-by-job.md",
         ["adr-azure-costs"] = "docs/ADR-087-what-azure-charges.md",
+        ["adr-onion-and-solid"] = "docs/ADR-088-onion-and-solid.md",
+        ["adr-technology-versions"] = "docs/ADR-089-technology-versions.md",
+        ["adr-dotnet-10"] = "docs/ADR-090-staying-on-dotnet-10.md",
         ["style-guide"] = "docs/STYLE-GUIDE.md",
         ["color-style"] = "docs/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/BACKGROUND-RIBBON.md",
@@ -147,6 +150,7 @@ public static class DocumentationCatalog
         ["two-sites"] = ("docs/images/two-sites.svg", "TheYard's two sites"),
         ["sql-vs-cosmos"] = ("docs/images/sql-vs-cosmos.svg", "SQL Server and Cosmos DB, side by side"),
         ["ui-architecture"] = ("docs/images/ui-architecture.svg", "TheYard's UI, layer by layer"),
+        ["rings"] = ("docs/images/rings.svg", "TheYard's rings"),
     };
     // #endregion diagrams
 }

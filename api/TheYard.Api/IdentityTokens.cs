@@ -13,8 +13,8 @@ namespace TheYard.Api;
 ///
 /// <para>App Service names its door in two environment variables: an endpoint
 /// on the loopback, and a header value that proves the caller is inside the
-/// sandbox. When both are present they are used; otherwise the metadata
-/// address is, exactly as before. The request is built by a pure function so a
+/// sandbox. When both are present they are used; otherwise the instance metadata
+/// address is used. The request is built by a pure function so a
 /// test can hold both shapes without either host existing.</para>
 /// </summary>
 public static class IdentityTokens

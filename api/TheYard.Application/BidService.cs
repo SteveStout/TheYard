@@ -6,6 +6,7 @@
 // StoredBid.cs.
 using System.Collections.Concurrent;
 using TheYard.Data;
+using TheYard.Domain;
 
 namespace TheYard.Application;
 
@@ -163,9 +164,7 @@ public sealed partial class BidService
     /// per visitor.
     /// </summary>
     public Vehicle Apply(Vehicle vehicle) =>
-        _standing.TryGetValue(vehicle.Id, out var held) && held.Amount > (vehicle.CurrentBid ?? 0)
-            ? vehicle with { CurrentBid = held.Amount, BidCount = Math.Max(vehicle.BidCount, held.BidCount) }
-            : vehicle;
+        _standing.TryGetValue(vehicle.Id, out var held) ? vehicle.RaisedTo(held.Amount, held.BidCount) : vehicle;
     // #endregion apply
 
     // #region record

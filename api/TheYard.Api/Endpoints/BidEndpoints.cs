@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Microsoft.AspNetCore.Http.HttpResults;
+using TheYard.Application;
 using TheYard.Data;
 using TheYard.Domain;
 
@@ -16,18 +17,9 @@ public static class BidEndpoints
     public static IEndpointRouteBuilder MapBidEndpoints(this IEndpointRouteBuilder app)
     {
         #region bid-endpoints
-        // ---------------------------------------------------------------------------
-        // Bidding, validated server-side by the domain's BidRules.
-        //
-        // This used to say "single anonymous buyer; state lives in API memory (isolated
-        // demo)", and every clause of it became false without the sentence changing. A
-        // bid belongs to an account (ADR: Accounts and per-user bids) and lives in Azure
-        // SQL Database (ADR: The SQL Server backend), so nothing in this region is
-        // consequence-free and none of it is only the caller's to change. Two places
-        // still read as though it were, and both are recorded: ADR: Reset is one
-        // person's start-over, and ADR: The room needs an account too.
-        // ---------------------------------------------------------------------------
-
+        // Bidding. Every write needs a signed-in bidder, and the domain's BidRules decide on the
+        // server's clock. Nothing here is only the caller's to change: a bid moves the price
+        // everybody sees, and it is kept in the store.
         app.MapPost("/api/vehicles/{id}/bids", PlaceBid)
             .RequireAuthorization()
             .WithName("PlaceBid")
@@ -41,9 +33,6 @@ public static class BidEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         // No body: a purchase names the vehicle in its address and nothing else.
-        // Until 1.0.0.112 it carried the caller's clock anchor, and a page from then
-        // that still sends one is not read (ADR: Three readers with no memory of the
-        // project, the addendum on the clock).
         app.MapPost("/api/vehicles/{id}/buy-now", BuyNow)
             .RequireAuthorization()
             .WithName("BuyNow")
@@ -80,12 +69,9 @@ public static class BidEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized);
         #endregion history
 
-        // One round of bidding by the room, driven by the page rather than a timer
-        // (ADR-027). The room bids on the server's clock, the same one every visitor
-        // is served, so the set it can see is the set the visitor sees; a page
-        // that sent its own midnight here had a round from another zone bid on a
-        // different set (ADR: Three readers with no memory of
-        // the project, the addendum on the clock).
+        // One round of bidding by the room, driven by the page rather than a timer. The room
+        // bids on the server's clock, the same one every visitor is served, so the auctions it
+        // can see are the ones the visitor sees.
         app.MapPost("/api/market/tick", Tick)
             .RequireAuthorization()
             .WithName("TickRoom")
@@ -111,116 +97,63 @@ public static class BidEndpoints
 
     private static Task<Results<Ok<BidResult>, ProblemHttpResult>> PlaceBid(CurrentBackend current, HttpContext http, string id, BidRequest request) =>
         HandleBid(current, http, id,
-            // The room's standing price is what the minimum next bid is measured
-            // against (ADR-027). Handing BidRules the dataset's figure instead
-            // would let the buyer retake the lead with a bid below the going rate.
-            (vehicle, clock) => current.Bids.PlaceBidAsync(current.Market.Apply(vehicle), request.Amount, clock, http.UserId()));
+            (auction, vehicle, clock) => auction.PlaceBidAsync(vehicle, request.Amount, clock, http.UserId()));
 
     private static Task<Results<Ok<BidResult>, ProblemHttpResult>> BuyNow(CurrentBackend current, HttpContext http, string id) =>
         HandleBid(current, http, id,
-            (vehicle, clock) => current.Bids.BuyNowAsync(current.Market.Apply(vehicle), clock, http.UserId()));
+            (auction, vehicle, clock) => auction.BuyNowAsync(vehicle, clock, http.UserId()));
 
     private static Ok<IReadOnlyDictionary<string, BidView>> MyBids(CurrentBackend current, HttpContext http) =>
-        TypedResults.Ok(
-            http.UserIdOrNull() is { } me
-                ? BidViews.For(current.Bids, current.Market, me)
-                : new Dictionary<string, BidView>(StringComparer.Ordinal));
+        TypedResults.Ok(BidsOf(current.Auction, http));
 
     private static Ok<BidHistory> History(CurrentBackend current, HttpContext http)
     {
-        var (inventory, bids, market) = current;
-        var mine = BidViews.For(bids, market, http.UserId());
-        var history = mine
+        var auction = current.Auction;
+        var history = auction.BidsOf(http.UserId())
             .OrderByDescending(entry => entry.Value.AtMs)
             .Select(entry => new BidHistoryEntry(
                 entry.Key,
-                inventory.GetById(entry.Key) is { } v ? $"{v.Year} {v.Make} {v.Model}" : "(withdrawn)",
+                auction.Find(entry.Key) is { } v ? $"{v.Year} {v.Make} {v.Model}" : "(withdrawn)",
                 entry.Value))
             .ToList();
         return TypedResults.Ok(new BidHistory(history.Count, history));
     }
 
+    // The room's round, and the caller's own badges riding back with it, so a page does not need
+    // a second request to find out it has been outbid.
     private static Ok<TickResult> Tick(CurrentBackend current, HttpContext http)
     {
-        var (inventory, bids, market) = current;
-        var clock = Clocks.Now();
-        // Everybody's high-water marks, not one account's. The room answers a
-        // price rather than a person, and a room that only responded to whoever
-        // happened to be looking would stop being a room the moment there were two
-        // of them.
-        //
-        // That is still the right rule for what the room bids against. It is not a
-        // reason for anybody at all to be allowed to advance it, which is what this
-        // endpoint used to permit: no account, no cookie, and a loop of these
-        // raises the price on every auction any signed-in visitor is winning, from
-        // a stranger with curl, with nothing in the request ring to attribute it to
-        // (ADR: The room needs an account too). Signing in is now the price of
-        // moving the room, which is the same price as bidding.
-        var buyerBids = bids.StandingAsBids();
-        // Candidates: everything the buyer is in on, plus a page of live auctions
-        // so the grid moves even when the visitor has bid on nothing.
-        var contested = buyerBids.Keys
-            .Select(inventory.GetById)
-            .Where(v => v is not null)
-            .Select(v => v!);
-        // Take the first forty live auctions rather than searching for them.
-        // Search would derive a status for all hundred thousand rows and then sort
-        // the forty-odd thousand matches to keep forty of them, every eight
-        // seconds, for every open tab. Nothing here needs the soonest-ending ones;
-        // it needs forty live ones, and the room shuffles them anyway.
-        var live = inventory.GetAll()
-            .Where(v => AuctionSchedule.StatusFor(v.Id, clock) == AuctionStatus.Live)
-            .Take(40);
-        var candidates = contested.Concat(live).DistinctBy(v => v.Id).ToList();
-        var raised = market.Tick(candidates, buyerBids, clock);
-        return TypedResults.Ok(
-            new TickResult(
-                raised.Count,
-                // The caller's own badges ride back with the tick, so a page does
-                // not need a second request to find out it has been outbid. There
-                // is always a caller now: the endpoint requires one.
-                http.UserIdOrNull() is { } me
-                    ? BidViews.For(bids, market, me)
-                    : new Dictionary<string, BidView>(StringComparer.Ordinal)));
+        var auction = current.Auction;
+        var raised = auction.RoomRound(Clocks.Now());
+        return TypedResults.Ok(new TickResult(raised.Count, BidsOf(auction, http)));
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> ResetMine(CurrentBackend current, HttpContext http)
     {
-        var (_, bids, market) = current;
         if (http.UserIdOrNull() is not { } userId)
         {
             return TypedResults.Problem(detail: "Sign in to reset your bids.", statusCode: 401, title: "Not signed in");
         }
-
-        // The caller's bids, and the room's answers on the vehicles the caller
-        // touched. The room resets with the buyer, because leaving its bids
-        // standing would mean the reset button clears your side of an auction and
-        // not the other one. What it no longer does is clear anybody else's: this
-        // endpoint used to take no user at all (ADR: Reset is one person's
-        // start-over).
-        market.Forget(await bids.ResetAsync(userId));
+        await current.Auction.ResetAsync(userId);
         return TypedResults.NoContent();
     }
 
+    /// <summary>The caller's badges, or an empty map for a visitor with no session: no bids is the true answer for them.</summary>
+    private static IReadOnlyDictionary<string, BidView> BidsOf(Auction auction, HttpContext http) =>
+        http.UserIdOrNull() is { } me ? auction.BidsOf(me) : new Dictionary<string, BidView>(StringComparer.Ordinal);
+
     #region bid-handling
-    // One local function behind both bid endpoints, answering three questions in
-    // order: is this session on this store, does the vehicle exist, does the
-    // domain accept the action, on the server's clock. Until 1.0.0.112 the first
-    // question was whether the caller's clock anchor was plausible; there is no
-    // anchor to ask about now. The status codes are the contract the browser
-    // relies on (ADR-023).
+    // One handler behind both bid endpoints, answering three questions in order: is this session
+    // on this store, does the vehicle exist, does the domain accept the action on the server's
+    // clock. The status codes are the contract the browser relies on: 401, 404, then 400.
     private static async Task<Results<Ok<BidResult>, ProblemHttpResult>> HandleBid(
-        CurrentBackend current, HttpContext http, string id, Func<Vehicle, AuctionClock, Task<BidOutcome>> action)
+        CurrentBackend current, HttpContext http, string id, Func<Auction, Vehicle, AuctionClock, Task<BidOutcome>> action)
     {
-        var (inventory, bids, market) = current;
         string userId = http.UserId();
         // #region session-per-store
-        // A session bids where its account is. The header can put one request on
-        // the other store, and a bid there would be a row under an id that store
-        // has no account for: the relational store's foreign key answered that
-        // with a 500, the document store with nothing. The token says which store
-        // opened it, so this costs no lookup (ADR: Three readers with no memory of
-        // the project).
+        // A session bids where its account is. The header can put one request on the other
+        // store, and a bid there would be a row under an id that store has no account for. The
+        // token names the store that opened it, so this check costs no lookup.
         if (!http.SessionIsOn(current.Backend))
         {
             return TypedResults.Problem(
@@ -228,12 +161,13 @@ public static class BidEndpoints
                 statusCode: 401, title: "The bid was rejected");
         }
         // #endregion session-per-store
+        var auction = current.Auction;
         var clock = Clocks.Now();
-        if (inventory.GetById(id) is not { } vehicle)
+        if (auction.Find(id) is not { } vehicle)
         {
             return TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
         }
-        var outcome = await action(vehicle, clock);
+        var outcome = await action(auction, vehicle, clock);
         if (outcome.Kind == BidOutcomeKind.Rejected)
         {
             return TypedResults.Problem(detail: outcome.Reason, statusCode: 400, title: "The bid was rejected");
@@ -242,23 +176,18 @@ public static class BidEndpoints
             new BidResult(
                 outcome.Kind.ToString().ToLowerInvariant(),
                 outcome.Amount,
-                // The room's answer rides back with the bid, so the badge is right
-                // the moment the response lands rather than at the next tick.
-                // TryGetValue, not the indexer: a reset can land between the bid being
-                // recorded and this line reading it back. That used to be any visitor's
-                // reset, because DELETE /api/bids took no user at all; it is now only
-                // this account's, from a second tab, which is rarer and just as real.
-                BidViews.For(bids, market, userId).TryGetValue(id, out var view) ? view : null,
-                VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, bids.IsSold(vehicle.Id))));
+                // The room's answer rides back with the bid, so the badge is right the moment the
+                // response lands. TryGetValue rather than the indexer, because a reset from the
+                // same account in a second tab can land between the bid and this read.
+                auction.BidsOf(userId).TryGetValue(id, out var view) ? view : null,
+                VehicleWire.ToWire(auction.AsItStands(vehicle), clock, auction.IsSold(vehicle.Id))));
     }
     #endregion bid-handling
 }
 
 /// <summary>
-/// Bid submission: the amount, and nothing else. The clock anchor the page sent
-/// until 1.0.0.112 is ignored if a page from then still sends it; the schedule
-/// is the server's (ADR: Three readers with no memory of the project, the
-/// addendum on the clock).
+/// Bid submission: the amount, and nothing else. The schedule is the server's, so a request
+/// never names a time.
 /// </summary>
 /// <param name="Amount">Whole dollars, at or above the vehicle's min_next_bid.</param>
 public sealed record BidRequest([property: Description("Whole dollars, at or above the vehicle's min_next_bid.")] int Amount);

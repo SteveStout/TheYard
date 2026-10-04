@@ -161,12 +161,17 @@ widening of `ISqlLog`, for reasons given where the sibling is decided
 and the canary test in this record now reads whichever card the container it is
 running on has.
 
+## Where it sits
+
+Each ring holds one piece: Application/SqlLog.cs declares ISqlLog, ICurrentRequest and SqlParameterShape, Infrastructure's SqlLogInterceptor records each command, and the host Api answers ICurrentRequest from HttpContext in HttpCurrentRequest.cs and keeps the rings in AdminObservability.cs. Dependency inversion is plain to see here, because Infrastructure needs the request in flight and gets it by asking a port Application defines, so it never sees an HttpContext. ICurrentRequest has a single method, which is interface segregation at its smallest. The cost is about a megabyte of memory and a history that empties on every roll; several instances or a need to look back past a deploy would justify a real log store.
+
 ## Files
 
 - [`api/TheYard.Application/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/SqlLog.cs): the types with nowhere to put a value, and the two ports.
 - [`api/TheYard.Infrastructure/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SqlLogInterceptor.cs): reading the command instead of the log line.
-- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the three rings, the logging provider, and the percentiles.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): where they are wired, and the timing middleware.
+- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs), [`api/TheYard.Api/LogRingBuffer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LogRingBuffer.cs) and [`api/TheYard.Api/RequestTimings.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/RequestTimings.cs): the three rings, the logging provider, and the percentiles.
+- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): where they are wired (region admin-rings).
+- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the timing middleware (region request-timing).
 - [`api/TheYard.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminObservabilityTests.cs): the canary, the shape check, and the percentile table.
 - [`src/components/admin/SqlCard/SqlCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/SqlCard/SqlCard.tsx): the three sections.
 - [`docs/ADR-010-observability.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-010-observability.md): why this page is public in the first place.

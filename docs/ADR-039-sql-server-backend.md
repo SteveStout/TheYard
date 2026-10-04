@@ -670,6 +670,10 @@ The `YardProvider` enumeration this record introduced has a third member,
 `Cosmos`, chosen by the presence of an endpoint, and `Configure` throws for it
 because there is no Entity Framework provider behind it.
 
+## Where it sits
+
+YardConnection in Infrastructure is the one class that knows which engine sits underneath, and the schema it maps to lives in TheYard.Database beside the onion. Single responsibility gives that choice one home, and Liskov substitution is why it works: the same EF adapters behind IVehicleSource and IBidStore run on SQL Server or SQLite, and the inner rings cannot tell which. It cost a second Azure region for the database, a length on every new text column and, since the free month ran out on 14 September, $4.90 a month for the Basic tier. A second writer or a private network path would change the design, because both need resources this project was not cleared to add.
+
 ## Files
 
 - [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the provider choice, the retry policy, and what may be said about the database.

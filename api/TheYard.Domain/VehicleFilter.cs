@@ -36,9 +36,9 @@ public sealed record VehicleFilter
     /// row scanned, which on the synthetic 100,000-row dataset is 100,000
     /// copies of a string the user typed once (ADR: The search index).
     ///
-    /// <paramref name="index"/> is optional so that every existing caller and
-    /// test still reads <c>filter.Matches(vehicle, clock)</c>. Without it the
-    /// searchable text is computed per vehicle, exactly as before.
+    /// <paramref name="index"/> is optional so that a caller with one vehicle
+    /// can read <c>filter.Matches(vehicle, clock)</c>. Without it the searchable
+    /// text is computed per vehicle.
     /// </summary>
     public Func<Vehicle, bool> Compile(AuctionClock clock, VehicleSearchIndex? index = null)
     {

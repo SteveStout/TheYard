@@ -124,7 +124,7 @@ pass gets its own dated addendum here.
 ## In the code
 
 The endpoint and the catalog, read from this build
-([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)
+([`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs)
 and
 [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs)):
 
@@ -181,11 +181,15 @@ Every markdown file names its pictures on GitHub's raw host, so the files read o
 
 So the served markdown names them here instead (`DocImages` in DocumentationCatalog.cs): the raw address becomes `/api/docs/images/{name}`, a PNG whose SVG source stands beside it is served as that SVG, and the new route reads a name held to one shape from `docs/images` and nowhere else, cached for a day like the photographs. The markdown files are untouched, which is what keeps them right on GitHub. The renderer marks every picture in a document lazy, so a document's text is not sharing the connection with a screenshot below its first screen. `DocumentationCatalogTests` holds the rewrite, the route, and that every picture a served document names is in the repository.
 
+## Where it sits
+
+The review's fixes land in the host Api and the front end: one documents endpoint now reads DocumentationCatalog.cs, the health and Azure types moved out of Program.cs into Observability.cs, and on the browser side one BrandMark and one home function. Moving those types out is single responsibility, so the host file only wires things up, and the catalog follows the open/closed principle because a new record is one line of data instead of a new route. The cost is a slug list kept in two places (the catalog and src/library) that DocumentationCatalogTests holds equal. A second client reading the same documents would justify serving the catalog from the API and dropping the copy.
+
 ## Files
 
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the host, with one endpoint serving every document instead of twenty routes.
+- [`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs): one endpoint serving every document instead of twenty routes.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the slug-to-file catalog that endpoint reads.
-- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health and build types this review moved out of the host file.
+- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs) and [`api/TheYard.Api/Replies.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Replies.cs): the health and build types this review moved out of the host file.
 - [`api/TheYard.Tests/DocumentationCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocumentationCatalogTests.cs): the test that holds the catalog and the sidebar to the same list.
 - [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): the sidebar's copy of that list, and the one brand mark this review deduplicated.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the timeout and the readiness check this review added to the pipeline.

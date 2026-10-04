@@ -164,6 +164,10 @@ looks like the cause, which is how a correct change gets reverted.
   every vehicle on the site to its opening ask, only the ones you bid on. That is
   what the button always claimed to do.
 
+## Where it sits
+
+The reset now runs through Application, where `Auction.ResetAsync` asks `BidService.ResetAsync` for the vehicles one user touched and hands that list to `MarketService.Forget`, and the `IBidStore.ClearAsync(userId)` port is implemented by the relational adapter in Infrastructure and the Cosmos adapter in Infrastructure.Cosmos. Application owns the port and both adapters implement it, and because the port demands a user id, neither store offers a way to wipe the whole table. It cost the old feel of the button, which no longer sends every vehicle back to its opening ask, and it exposed a race in `smoke.spec` that needed a shared retry helper. If an operator ever needed a full wipe, that would be a separate admin-only action and this one would stay scoped to the caller.
+
 ## Files
 
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the reset, and the recompute.
@@ -172,3 +176,7 @@ looks like the cause, which is how a correct change gets reverted.
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): one person's rows.
 - [`api/TheYard.Tests/BidServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidServiceTests.cs): the stranger who keeps their bid.
 - [`docs/ADR-037-accounts.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-037-accounts.md): the change that made this wrong.
+
+## Addendum, 2026-10-03: who connects the reset to the room
+
+The Decision says the endpoint hands what the reset touched to the room and the composition root connects them. That connection now lives in the Application ring: `Auction.ResetAsync` (`api/TheYard.Application/Auction.cs`) asks `BidService` for the vehicles it touched and tells `MarketService` to forget its answers on those. The endpoint only checks the session and calls it. `BidService` still does not reach into `MarketService`.

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TheYard.Api;
 using TheYard.Application;
+using TheYard.Infrastructure;
 using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
@@ -52,7 +53,7 @@ public class MachineHistoryTests(WebApplicationFactory<Program> factory)
         Assert.Equal("2026-09-20T09:05", MachineWindows.KeyOf(at, MachineGrain.FiveMinutes));
         Assert.Equal("2026-09-20T09:00", MachineWindows.KeyOf(at, MachineGrain.Hour));
         Assert.Equal("2026-09-20T08:00", MachineWindows.KeyOf(at, MachineGrain.FourHours));
-        Assert.Equal("2026-09-20", MachineWindows.DayOf(at));
+        Assert.Equal("2026-09-20", at.UtcDay);
         // An offset is a way of writing the same instant, not a different bucket.
         Assert.Equal("2026-09-20T09:05", MachineWindows.KeyOf(at.ToOffset(TimeSpan.FromHours(-5)), MachineGrain.FiveMinutes));
     }
@@ -328,7 +329,7 @@ public class MachineHistoryLiveTests
 
         // A site name nobody else writes under, so a run reads only its own minutes.
         string site = $"test-{Guid.NewGuid():N}";
-        var start = MachineFolding.MinuteOf(DateTimeOffset.UtcNow).AddMinutes(-30);
+        var start = DateTimeOffset.UtcNow.UtcMinute.AddMinutes(-30);
         start = start.AddMinutes(-(start.Minute % 5));
         var minutes = new List<MachineMinute>
         {

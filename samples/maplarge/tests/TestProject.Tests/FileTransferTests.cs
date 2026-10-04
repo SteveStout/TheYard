@@ -15,8 +15,12 @@ public sealed class FileTransferTests : SampleTree
     [Fact]
     public void Download_names_the_file_and_refuses_a_folder()
     {
-        (string absolute, FileEntry entry) = Browser.Download("docs/readme.md");
-        Assert.EndsWith("readme.md", absolute, StringComparison.Ordinal);
+        (Stream content, FileEntry entry) = Browser.Download("docs/readme.md");
+        using (content)
+        {
+            Assert.True(content.CanRead);
+        }
+        Assert.Equal("readme.md", entry.Name);
         Assert.Equal("md", entry.Extension);
         Assert.Equal(404, Assert.Throws<ApiRefusalException>(() => Browser.Download("docs")).Status);
     }
@@ -41,8 +45,8 @@ public sealed class FileTransferTests : SampleTree
     [Fact]
     public void Move_renames_and_relocates()
     {
-        StoreEntry moved = Browser.Move("apple.txt", "Archive/apple-old.txt");
-        Assert.Equal(EntryKind.File, moved.Kind);
+        var moved = Assert.IsType<FileEntry>(Browser.Move("apple.txt", "Archive/apple-old.txt"));
+        Assert.Equal("Archive/apple-old.txt", moved.Path);
         Assert.Equal(EntryKind.None, Store.KindOf(Path.Combine(Root, "apple.txt")));
         Assert.Equal(EntryKind.File, Store.KindOf(Path.Combine(Root, "Archive", "apple-old.txt")));
     }

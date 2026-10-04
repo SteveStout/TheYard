@@ -94,9 +94,13 @@ and the XML prolog a standalone SVG may carry never reaches the page:
   and path the text had; the text version stays in the history at
   1.0.0.24 if anyone misses it.
 
+## Where it sits
+
+Diagram pages are served by the host Api, where DiagramPage.cs builds the HTML around an SVG and DocumentationCatalog.Diagrams names which drawings exist; the link hook sits in the front end in src/lib/markdown.ts. DiagramPage has one job, wrapping a drawing in a page, which is single responsibility, and the catalog is the one authority the sidebar's list is tested against. The cost is the palette repeated in the page and in each SVG, since the page loads no bundle. Drawings that had to be interactive would belong inside the React app instead of on a page of their own.
+
 ## Files
 
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the `/api/docs/diagrams/{name}` endpoint.
+- [`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs): the `/api/docs/diagrams/{name}` endpoint.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the diagram catalog beside the documents.
 - [`api/TheYard.Api/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DiagramPage.cs): the HTML page around an SVG.
 - [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the page tests.

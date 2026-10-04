@@ -131,6 +131,10 @@ something checking it.
 - One more test that reads a file it does not own, which is a small ongoing cost
   and the reason this record explains itself.
 
+## Where it sits
+
+No ring: this is a build decision about which folders the Dockerfile copies into the image, held in place by `DockerBuildInputsTests`, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the frontend stage and the line that was missing.

@@ -209,6 +209,10 @@ Both seeds ran faster than the throughput arithmetic allows. 884,479 RU at
 idle database accumulate burst capacity and spend it, which is worth knowing
 before reading any short measurement against a provisioned account.
 
+## Where it sits
+
+The key paths are declared in `Containers.PartitionKeyPaths` in Infrastructure.Cosmos and in the definitions under `infra/cosmos/`, and the seven measured queries now run in `PartitionExperiment`, which implements Application's `IStoreExperiment` port so the Admin tab asks for rows without knowing Cosmos DB exists. Dependency inversion, where the inner ring owns the interface and the outer ring supplies the code, is what lets a container with no document store answer through `NoStoreExperiment` instead. The cost is permanent: `/make` means a vehicle page that carries only an id pays 2.83 RU for a cross-partition query where a point read would cost 1.00. If one make outgrew a physical partition, or pages were served from this container, the answer would shift to a hierarchical key or to addresses that carry the make.
+
 ## Files
 
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): one definition per container, with the key path and the indexing policy, which a person applies and the application maps to.

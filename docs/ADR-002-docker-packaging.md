@@ -59,12 +59,17 @@ A .dockerignore keeps node_modules, bin, obj and .git out of the build context.
 - Visitors run the whole thing with `npm run docker` and stop it with
   `npm run docker:stop`.
 
+## Where it sits
+
+No ring applies here: the record is a packaging decision about how the Dockerfile builds one image for the API and the SPA, and SOLID has nothing to say about it.
+
 ## Files
 
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the three stages, each shown live below.
 - [`.dockerignore`](https://github.com/SteveStout/TheYard/blob/main/.dockerignore): what never enters the build context.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the one process the image runs,
-  serving the API and the built SPA from wwwroot with the fallback route.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the one process the image runs.
+- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs) and [`api/TheYard.Api/Composition/SpaRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/SpaRegistration.cs): serving the
+  built SPA from wwwroot, and the fallback route.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the build that passes the two
   provenance arguments and pushes the image (ADR: The deploy pipeline).
 
@@ -83,3 +88,7 @@ samples read (ADR: Live code samples):
 
 ```live path=Dockerfile region=runtime
 ```
+
+## Addendum, 2026-10-03: the build stage is Node 24
+
+The build stage moved from `node:22-alpine` to `node:24-alpine`, and CI from Node 22 to Node 24, because 22 is in maintenance and 24 is the active long-term release (ADR: Technology versions). Nothing else in the stage changed.

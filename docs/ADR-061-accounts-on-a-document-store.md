@@ -153,11 +153,15 @@ costs).
 - The address is unique by construction and the construction is visible.
 - The costs above are real and are written here rather than found later.
 
+## Where it sits
+
+The accounts code sits in Infrastructure.Cosmos, where `CosmosUserStore` and the user and email-claim documents in `Documents.Users.cs` live, and it borrows `YardUser` from Infrastructure, which is the one reason that project references Infrastructure at all; the host's composition root hands it to Identity in place of the Entity Framework store. Interface segregation, small interfaces shaped to what a caller needs, is the principle at work, because Identity splits its store into narrow interfaces and this one implements only the five the application calls, leaving roles, claims, logins and tokens unimplemented. The cost is that email uniqueness is a document the code writes, and a crash between the two writes can leave a claim with no account until a later lookup clears it, with no cascade to take a user's bids when the account goes. An application that needed roles or a delete-account feature would be better served keeping Identity on SQL Server.
+
 ## Files
 
 - [`api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs): the five interfaces, the claim, the etag.
 - [`api/TheYard.Infrastructure.Cosmos/Documents.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Documents.cs): the two document shapes.
 - [`infra/cosmos/users.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/users.json): the container, partitioned on the id, indexing nothing.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): where Identity is given this store instead of the Entity Framework one.
+- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): where Identity is given this store instead of the Entity Framework one (region user-store-per-request).
 - [`api/TheYard.Tests/CosmosStoreTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CosmosStoreTests.cs): the proof, against the real account.
 - [`docs/ADR-037-accounts.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-037-accounts.md): the relational side, and the endpoints both sides serve.

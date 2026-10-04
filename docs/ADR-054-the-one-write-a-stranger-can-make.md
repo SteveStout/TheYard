@@ -131,10 +131,15 @@ paid subscription, and those two are one piece of work.
 - The security page's rate limiter paragraph is now half true, and its addendum
   says which half.
 
+## Where it sits
+
+The limit lives in the Api host: `RegistrationLimit` holds the sliding hour, and the register endpoint in `Endpoints/AccountEndpoints.SignIn.cs` calls `TryTake` after reading the request and `GiveBack` when Identity refuses the account. Single responsibility, one reason to change per class, fits here because the window logic sits in its own class and the endpoint only asks it for a slot. The cost is that a real visitor cannot register while somebody else spends the hour's 120 slots. The window also lives in one process's memory, so running a second instance, or adding the origin lock that a durable counter would need, is when this should move into a shared store.
+
 ## Files
 
 - [`api/TheYard.Api/RegistrationLimit.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/RegistrationLimit.cs): the window, and why it slides.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): where it is taken, between reading the request and hashing the password.
+- [`api/TheYard.Api/Endpoints/AccountEndpoints.SignIn.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.SignIn.cs): where it is taken, between reading the request and hashing the password.
+- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): where it is registered with its hourly allowance.
 - [`api/TheYard.Tests/RegistrationLimitTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RegistrationLimitTests.cs): the window, the refusal, and the site that keeps working behind it.
 - [`docs/SECURITY.md`](https://github.com/SteveStout/TheYard/blob/main/docs/SECURITY.md): what is protected, what is not, and what this changes.
 - [`docs/ADR-050-a-password-guess-should-cost-something.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-050-a-password-guess-should-cost-something.md): the other half of making an endpoint cost something.

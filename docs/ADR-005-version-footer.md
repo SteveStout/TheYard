@@ -49,6 +49,10 @@ second claim is the one the footer makes.
 - The automated pipeline planned under the CI/CD menu inherits the same two
   build arguments; nothing in this design is specific to the manual scripts.
 
+## Where it sits
+
+The version line touches two places: the host Api, where HealthEndpoints.cs maps /api/version from values read once at startup, and the front end, where useRunningBuild.ts asks for them and Footer.tsx draws what it is handed. That split follows single responsibility, the rule that a piece of code has one reason to change: the hook owns the question and the footer owns the drawing, so the rail reuses the same hook to show the build. The cost is one small request on each load, and a workstation run shows "dev build" by design. A site with no server behind it would have to compile the version into the bundle instead, and accept that it reports what was built rather than what runs.
+
 ## Files
 
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the two build arguments become environment
@@ -57,7 +61,7 @@ second claim is the one the footer makes.
   from the changelog's top line and passes both arguments (region
   compute-version in ADR: The deploy pipeline, and ADR: The version comes from
   the changelog for why it is no longer a run counter).
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the endpoint that reports them.
+- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the endpoint that reports them (region version-endpoint).
 - [`src/app/Footer.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/Footer.tsx): the footer that renders them, linking the commit to
   GitHub.
 - [`tests/e2e/practices.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/practices.spec.ts): the check that the footer reports

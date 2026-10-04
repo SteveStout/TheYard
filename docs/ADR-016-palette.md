@@ -86,6 +86,10 @@ WCAG AA, so a shade that fails contrast fails the build.
 - A future palette is the same exercise: replace the values in the region
   above, run the unit test, ship.
 
+## Where it sits
+
+The palette is front end only: every colour is a design token in src/styles/colors.css, with sizes, type and effects in their own token files beside it, and colors.test.ts holds each text and ground pair to WCAG AA. SOLID speaks to classes more than stylesheets, though the four token files each have one reason to change, which is the single responsibility idea carried over to CSS. The cost was deepening three of the five printed colours, and every component giving up colours of its own. A brand guide handed down from outside, with fixed values that fail contrast, would force a different trade.
+
 ## Files
 
 - [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): every color token (regions palette and

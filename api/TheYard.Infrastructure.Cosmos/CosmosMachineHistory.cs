@@ -110,7 +110,7 @@ public sealed class CosmosMachineHistory(CosmosStore store) : IMachineHistory
                 + "AVG(c.sql_data_io) AS sql_data_io, SUM(c.ru) AS ru, SUM(c.operations) AS operations, SUM(c.requests) AS requests, "
                 + "AVG(c.p50_ms) AS p50_ms, MAX(c.p95_ms) AS p95_ms, SUM(c.errors_5xx) AS errors_5xx, SUM(c.errors_4xx) AS errors_4xx "
                 + $"FROM c WHERE c.day >= @day AND c.site = @site AND c.at >= @at GROUP BY c.{key}")
-            .WithParameter("@day", MachineWindows.DayOf(since))
+            .WithParameter("@day", since.UtcDay)
             .WithParameter("@site", site)
             .WithParameter("@at", since.ToUniversalTime().ToString("O"));
 

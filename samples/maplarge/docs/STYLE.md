@@ -22,8 +22,9 @@ a tool cannot check.
 
 ## Layering
 
-- Dependencies point inward: Data, Domain, Application, Infrastructure, Controllers. A `using`
-  that points outward is code in the wrong folder, and `LayeringTests` says so.
+- Dependencies point inward: Data, Domain, Application, Infrastructure, then Documentation,
+  Controllers and Composition on the outside. A reference that points outward is code in the wrong
+  folder, and `OnionTests` says so by reading the compiled app (ADR-013).
 - Domain code is pure: no `DateTime.Now`, no filesystem, no HTTP.
 - The host binds and delegates. A rule in `Program.cs` is a bug in layering.
 - The browser holds no business rules. Totals, sort order within a reply, and every refusal come
@@ -45,7 +46,8 @@ line by saying why this way, what breaks otherwise, or what a reader could not k
 Four habits:
 
 - A public C# member gets a `<summary>` always; the build fails without one.
-- A file that implements a decision names the record: `(ADR-003)`.
+- A file that implements a decision names the record by its file:
+  `(more in docs/ADR-003-the-line-a-path-cannot-cross.md)`.
 - A comment that explains a workaround says what would happen without it.
 - Code shown in a record is documented by that record, and carries teaching comments for a reader
   meeting the pattern for the first time.
@@ -53,7 +55,8 @@ Four habits:
 ## Tests
 
 - Pure rules get xunit unit tests; anything needing the host gets a test through
-  `WebApplicationFactory`; anything pure in TypeScript gets `node --test` over the compiled module.
+  `WebApplicationFactory`; the folder rings get NetArchTest over the compiled app; anything pure in
+  TypeScript gets `node --test` over the compiled module.
 - Time is anchored, never `Now`. A test that needs a disk gets a `TempHome` of its own and deletes
   it.
 - A test that reads the repository (the records, the stylesheet) walks it through `ProjectFolder`,

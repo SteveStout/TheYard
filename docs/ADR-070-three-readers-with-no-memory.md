@@ -245,11 +245,17 @@ window with no anchor, yesterday's, and a nonsense one.
 The measurement script and the proof stopped sending the anchor too, so the
 next proof run measures the same requests the page makes.
 
+## Where it sits
+
+This review reached four rings: Domain gained AuctionClock.Utc and the sold check at the top of BidRules, Application's BidService now asks the store before it clears a reset, the host Api keeps the signing key and the store claim in Tokens.cs, and the front end's data.ts stopped sending a midnight. Single responsibility, one reason to change per class, is the principle behind the clock fix, since Clocks.Now is the one place the host asks the time and AuctionClock is the one class that decides when a day begins. The price was a repository secret to manage and an auction day that turns over at 00:00 UTC, seven in the evening for the owner, while each vehicle's standing still lives in each container's memory. More than one container writing bids at real volume would force the store-owned standing that finding 5 designed and left unbuilt.
+
 ## Files
 
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the configured key's rule, the store claim, and the session-per-store check.
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): the warm before any read.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the key from configuration, the warming middleware, the bid endpoints' refusal.
+- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): the key from configuration.
+- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the warming middleware (region warm-before-reading).
+- [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the bid endpoints' refusal (region session-per-store).
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the reset, store first.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml), [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml), [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml): the one secret, substituted at roll time.
 - [`api/TheYard.Tests/WarmthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/WarmthTests.cs), [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs) and [`api/TheYard.Tests/BidServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidServiceTests.cs): the three holds.

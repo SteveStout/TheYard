@@ -29,8 +29,8 @@ public static class CostView
     public static CostReport Build(string? window, CostKept kept, DateTimeOffset now, CostHistoryAvailability availability, (DateTimeOffset? At, bool Read, string? Note) last)
     {
         var (name, length) = CostWindows.Parse(window);
-        string today = CostWindows.DayOf(now);
-        string first = CostWindows.DayOf(now.AddDays(-(length - 1)));
+        string today = now.UtcDay;
+        string first = now.AddDays(-(length - 1)).UtcDay;
         string month = CostWindows.MonthOf(today);
         string currency = kept.Days.FirstOrDefault()?.Currency ?? kept.Forecast.FirstOrDefault()?.Currency ?? "USD";
         long? readAt = last.At?.ToUnixTimeMilliseconds();
@@ -48,7 +48,7 @@ public static class CostView
         string newest = kept.Days.Max(day => day.Day)!;
         // Azure lags the day by eight to twenty four hours, so the newest day
         // it has reported is still being added to until it is two days old.
-        bool partial = string.CompareOrdinal(newest, CostWindows.DayOf(now.AddDays(-1))) >= 0;
+        bool partial = string.CompareOrdinal(newest, now.AddDays(-1).UtcDay) >= 0;
 
         var inWindow = kept.Days.Where(day => string.CompareOrdinal(day.Day, first) >= 0 && string.CompareOrdinal(day.Day, today) <= 0).ToList();
         var byDay = inWindow.GroupBy(day => day.Day).ToDictionary(group => group.Key, group => group.Sum(day => day.Cost), StringComparer.Ordinal);
@@ -226,7 +226,7 @@ public sealed class CostHistoryReader(ICostHistory history, CostReader reader, C
         {
             var availability = await history.AvailabilityAsync(cancellation);
             var kept = availability.Available
-                ? await history.ReadAsync(CostWindows.DayOf(now.AddDays(-(CostWindows.ReadDays - 1))), cancellation)
+                ? await history.ReadAsync(now.AddDays(-(CostWindows.ReadDays - 1)).UtcDay, cancellation)
                 : CostKept.Empty;
             view = CostView.Build(name, kept, now, availability, status.Snapshot());
         }

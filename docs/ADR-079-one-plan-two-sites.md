@@ -290,6 +290,10 @@ catalogue being read again. A visitor never pays it, because a visitor is served
 site serves, and that one is never let go. The proof's other seven paths read as they did in the
 proof section above.
 
+## Where it sits
+
+Most of this is a hosting decision about the App Service plan that sits outside the onion; two pieces of code moved with it: IdentityTokens in the host Api asks for a managed identity token at whichever door the host has, and InventoryService in Application gained ReleaseIfIdle so CatalogueKeeper, a host service in Stores.cs, can let an unused catalogue go. That split follows single responsibility, one reason to change per class, because InventoryService owns the catalogue's life and the keeper owns only the timing of the question. It cost a shared machine, so a plan restart takes both sites down, and a slow first read for whoever touches a released catalogue. Memory readings showing B1 paging under normal traffic would be the signal to move to B2.
+
 ## Files
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): what runs, with Front Door and the origin lock behind a parameter that stays off.

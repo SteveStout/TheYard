@@ -1,7 +1,8 @@
-// The answer the startup check gives about the relational store: usable or not, and why. It has
-// a file of its own because the composition root, the health check and the Admin tab all read
-// it, and the rule about what its sentence may carry is worth finding in one place.
-namespace TheYard.Infrastructure;
+// The answer the startup check gives about a store: usable or not, and why. It sits in the
+// Application ring because both adapters (the relational store and the document store) answer
+// with it and the host reads it, and the rule about what its sentence may carry is worth finding
+// in one place.
+namespace TheYard.Application;
 
 /// <summary>
 /// Whether the store is usable, and one sentence about why. The composition

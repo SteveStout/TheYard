@@ -52,13 +52,10 @@ public sealed class SyntheticVehicleSource(IVehicleSource seedSource, int target
             // #region grade-stays-with-its-words
             // Inside the seed's own band, not rolled across the whole scale.
             //
-            // This used to be `1.0 + hash % 41 / 10.0`, a grade drawn with no
-            // reference to anything else about the vehicle, while the condition
-            // report, the damage notes and the title status all came from the
-            // seed unchanged. So a variant could show "2.0 Rough" above
-            // "Vehicle shows average wear for its age and mileage. Mechanically
-            // sound." and "No damage reported.", which is three fields
-            // disagreeing on one page.
+            // The condition report, the damage notes and the title status all come
+            // from the seed unchanged, so a grade drawn across the whole scale could
+            // show "2.0 Rough" above "Mechanically sound." and "No damage
+            // reported.", three fields disagreeing on one page.
             //
             // The seed dataset already correlates them: band 1 reads as
             // salvage, band 2 as rough with damage, band 3 as average, band 4

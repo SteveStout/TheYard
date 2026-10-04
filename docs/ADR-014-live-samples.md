@@ -76,7 +76,7 @@ only sample that cannot possibly be stale:
 
 The one endpoint every document goes through, since ADR: The staff review
 folded the per-document routes into a catalog
-([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs),
+([`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs),
 [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs)):
 
 ```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=docs-endpoint
@@ -120,10 +120,14 @@ hour ago.
   whitelisted text files inside the image, writes nothing, and answers with
   a note on every failure, and the tests hold it to that.
 
+## Where it sits
+
+Live samples are a host concern and sit in the Api: LiveSamples.cs holds the whitelist and the expander, and DocumentationEndpoints.cs passes every served document through it. LiveSamples has one reason to change (how a fenced block becomes source text), which is single responsibility; the endpoint stays a caller that knows nothing about regions. The price is source code shipped inside the runtime image and a parser on a public endpoint; LiveSamplesTests and LiveSampleCoverageTests hold both to their limits. A private codebase would change the call, since this design publishes its own source to anyone who opens a record.
+
 ## Files
 
 - [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the whitelist and the expander.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs) and
+- [`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs) and
   [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the one endpoint and the slugs
   it serves through the expander.
 - [`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs): the rejection cases and

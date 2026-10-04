@@ -51,6 +51,10 @@ view uses it. The rules above now apply to every sheet but `tokens.css`: none wr
 every token it uses is declared, and every sheet closes each brace it opens. `StyleRulesTests`
 holds all three, and `FileShapeTests` holds stylesheets to 300 lines.
 
+## Where it sits
+
+This record is about the palette and touches no ring: it sets the colours, sizes and font that the stylesheets read.
+
 ## Files
 
 - [`wwwroot/css/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/css/tokens.css): the tokens, and the `@font-face`.

@@ -114,6 +114,14 @@ change to one job touches the one file that holds it. `FileShapeTests` holds the
 TypeScript file runs past 300 lines, and every line of `src/main.ts` names the file that holds its
 part.
 
+## Addendum, 2026-10-03: the rings, checked in the compiled app
+
+The title says four folders. The code has six rings, plus `Documentation/` beside Controllers, as the decision above says; the title stays as it was written. `LayeringTests` no longer reads `using` lines. `OnionTests` now checks the rings by reading the compiled app, so a fully written name is caught too (ADR-013), and `LayeringTests` keeps the Data and Domain purity check and the `Program.cs` check. One line is tighter than the diagram: Controllers may not use Infrastructure or Composition or touch the disk, so downloads and the health check now go through `FileBrowser`, and Documentation reaches nothing outside itself. `FileBrowser` is 298 lines, not about 260, just under the 300-line cap.
+
+## Where it sits
+
+This record draws every ring, from Data in the middle out to Composition at the edge, and a folder may only use the folders inside it. It follows the D in SOLID: Application owns the IFileStore interface and Infrastructure plugs the disk into it, so the rules never call the disk by name. The cost is that the compiler cannot hold a folder line, so a test does, and FileBrowser carries every rule in one file of about 300 lines. With a bigger team or a second app reusing the rules, each ring would become its own project so the compiler stops a wrong reference.
+
 ## Files
 
 - [`Program.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Program.cs): the table of contents.

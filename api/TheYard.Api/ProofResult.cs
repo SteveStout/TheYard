@@ -146,7 +146,7 @@ public sealed record ProofResult(
             Percentiles.Of(ms, 50),
             Percentiles.Of(ms, 95),
             ok.Length == 0 ? 0 : Math.Round(ok.Average(s => s.Operations), 1),
-            store.Backend.Cosmos is null || ok.Length == 0 ? null : Math.Round(ok.Average(s => s.RequestUnits), 2),
+            !store.Backend.LogsOperations || ok.Length == 0 ? null : Math.Round(ok.Average(s => s.RequestUnits), 2),
             all.Length - ok.Length);
     }
 

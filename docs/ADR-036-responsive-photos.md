@@ -119,6 +119,10 @@ The Author page was 755 KB on a phone and 1,535 KB on a desk, all of it photogra
 
 **1.0.3.3: the vehicle photographs too.** Steve asked for them the same hour. `scripts/resize_photos.mjs` writes an AVIF pair beside the WebP and JPEG pairs, each encoded from the 1280 original rather than from another copy, and `VehicleImage` offers AVIF, then WebP, then the JPEG the `img` carries. Measured across the fifty photographs: 8,131 KB to 4,500 at 1280 and 1,281 KB to 711 at 480, both about 45 per cent under the WebP. `PhotoSizeTests` holds the new pair to the manifest like the others and holds the AVIF set to at least a third under the WebP, so an encode that did nothing and reported no error fails rather than ships.
 
+## Where it sits
+
+This is front end and build tooling: VehicleImage in src/components/shared derives the smaller file's name and writes srcset and sizes, while scripts/resize_photos.mjs makes the copies and PhotoSizeTests holds the manifest to them. The naming rule stays off the wire because it is presentation, and no SOLID principle is at stake. The repository and image grew by about 1.3 MB for the first copies and more again with WebP and AVIF, in exchange for a much lighter page on a phone. A photo library that visitors upload to would move resizing into an upload pipeline instead of a script run by hand.
+
 ## Files
 
 - [`scripts/resize_photos.mjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/resize_photos.mjs): the resizer.

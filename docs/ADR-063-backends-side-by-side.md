@@ -208,11 +208,16 @@ line with the request units and the fan-out count beside the percentiles:
 
 ![The Timing card on the second site after: the same two store lines](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/timing-cosmos-after.png)
 
+## Where it sits
+
+The comparison is a host and front end job: `Peer.cs` in the Api reads the other site's `/api/admin/metrics` server side and groups timings by route template, `AdminObservability.cs` records each container's own cold start, and `BackendsCard` with `src/lib/metrics.ts` draws the two columns in the browser. Single responsibility, one reason to change per class, shows in `Peer.cs` owning the peer and nothing else, including the four ways a peer can fail to answer, so the rest of the Admin tab never has to know a second site exists. It cost a `Peer:Url` setting on each site, a two and a half second wait before a slow peer counts as down, and a comparison that is never on equal traffic because the two sites have different visitors. Since both stores now run in one process (the 2026-09-08 addendum), a team starting fresh could rely on the in-process columns alone and keep the peer read only for sites that run one store.
+
 ## Files
 
 - [`api/TheYard.Api/Peer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Peer.cs): the peer reader and the route grouping.
 - [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the startup timings and the store window.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the endpoint and the metrics it relays.
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the endpoint (region peer-endpoint).
+- [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the metrics it relays.
 - [`src/components/admin/BackendsCard/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard/BackendsCard.tsx) and [`src/components/admin/TimingCard/TimingCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TimingCard/TimingCard.tsx): the card, and the Timing card's two store lines.
 - [`src/lib/metrics.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.ts): the Timing card's words, with [`src/lib/metrics.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.test.ts) beside it.
 - [`api/TheYard.Tests/PeerTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PeerTests.cs): down first, up last.

@@ -1,7 +1,7 @@
 // The store tried again after startup, for a backend whose store refused all five asks.
 // Its own file because it is a background service with its own loop and its own test, and
 // it runs long after the rest of the store wiring has finished.
-using TheYard.Infrastructure;
+using TheYard.Application;
 
 namespace TheYard.Api;
 

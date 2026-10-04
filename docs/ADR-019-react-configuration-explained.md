@@ -378,6 +378,10 @@ data any more. A new record goes at the end of the last run. A type check in `re
 compile if one key appears in two runs, and `DocumentationCatalogTests` reads every run, so a run
 that `records.ts` does not join fails the build too.
 
+## Where it sits
+
+The React configuration is the front end, layered: components render, hooks hold state, and src/lib is plain TypeScript that imports nothing from React, so dependencies point inward the same way the server's onion does. One job per file under src/app and src/library is single responsibility, held by FileHeaderTests with a 300-line cap; data.ts, the one seam for inventory fetches, keeps components from knowing how the API is called. The cost is more small files, each carrying a three-line header that a test checks against its real importers. A site with many pages of its own would earn a router and retire the address-bar-as-state functions.
+
 ## Files
 
 - [`package.json`](https://github.com/SteveStout/TheYard/blob/main/package.json): the scripts and the dependencies.
@@ -412,3 +416,7 @@ Every rule moved byte for byte; only the headers are new. Each document sheet sc
 ```
 
 The next lane is the components that have the disease the split cured in `src/app`: `AdminPanel.tsx`, `ActivityCard.tsx` and `SideNav.tsx`, and their sheets with them.
+
+## Addendum, 2026-10-03: Node 24
+
+The front end is built on Node 24 in the Docker image and in CI where this record says Node 22 (ADR: Technology versions).

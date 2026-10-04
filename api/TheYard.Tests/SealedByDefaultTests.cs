@@ -26,13 +26,14 @@ public class SealedByDefaultTests
 {
     // #region practice
     /// <summary>
-    /// The five projects that make up the application. The test project is not
+    /// The six projects that make up the application. The test project is not
     /// one of them: a test class is instantiated by a runner that needs no help
     /// from the type system, and three of them do inherit a shared base on
     /// purpose.
     /// </summary>
     private static readonly string[] Projects =
     [
+        "TheYard.Data",
         "TheYard.Domain",
         "TheYard.Application",
         "TheYard.Infrastructure",

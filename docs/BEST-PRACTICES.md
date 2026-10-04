@@ -32,8 +32,10 @@ footer displays exactly that.
   layers and the rules that keep them, one for naming, layering and
   commenting, and an `.editorconfig` doing the mechanical half. Both are
   served under App Architecture in the sidebar, beside the records that
-  walk the code.
-- **Decisions get written down.** Eighty-six ADRs record why the architecture is
+  walk the code. The layers are also checked: eight architecture tests read
+  the compiled code and fail the build when a dependency points outward.
+  Recorded in ADR: Onion and SOLID, how this codebase holds them.
+- **Decisions get written down.** Ninety ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules
   themselves.

@@ -48,7 +48,7 @@ superseded by ADR: The sidebar the same day, so what follows is the part
 that still stands, shown as it is today.
 
 The sidebar renders its sections from the same record the dropdowns once
-used ([`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts)):
+used ([`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts), in the order [`src/lib/siteMap.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/siteMap.ts) sets):
 
 ```live path=src/lib/siteMap.ts region=MENU_ORDER
 ```
@@ -175,6 +175,10 @@ that shipped them, so they keep resolving.
 dark, keep everything light and modern"); ADR: The sidebar records the new
 palette. The icon rows, the 48-pixel targets and the measure-before-choosing
 rule from the addendum above stand; only the colors changed.
+
+## Where it sits
+
+This is front end work only: SideNav.tsx draws the drawer, DocDialog.tsx is the one viewer, and the rows come from the data in src/library/sections.ts with the section order in src/lib/siteMap.ts. It follows the open/closed principle, adding behaviour by adding to the edges instead of editing the core, because a new document reaches the phone as one entry in the data while the drawer's code stays untouched. The cost is one more tap, since opening a document closes the drawer first. A phone that needed a different menu from the laptop would break the one-source rule and justify a second list.
 
 ## Files
 

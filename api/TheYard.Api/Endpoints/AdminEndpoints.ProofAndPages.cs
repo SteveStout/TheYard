@@ -2,7 +2,7 @@
 // proof and the partition key experiment. Its own file because each of these reads or starts
 // a check of the site rather than a reading of the running process.
 
-using TheYard.Infrastructure.Cosmos;
+using TheYard.Application;
 
 namespace TheYard.Api;
 
@@ -70,11 +70,6 @@ public static partial class AdminEndpoints
     /// Answers the partition key experiment's queries with the request charge beside each, or an empty answer on a
     /// container with no document store.
     /// </summary>
-    private static async Task<IResult> ExperimentRun(IServiceProvider services)
-    {
-        var cosmos = services.GetService<CosmosStore>();
-        return cosmos is null
-            ? Results.Json(new { available = false, reason = "this container is not on Azure Cosmos DB", rows = Array.Empty<object>() })
-            : Results.Json(await Experiment.RunAsync(cosmos));
-    }
+    private static async Task<IResult> ExperimentRun(IStoreExperiment experiment) =>
+        Results.Json(await experiment.RunAsync());
 }

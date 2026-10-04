@@ -143,6 +143,10 @@ workflow rather than about the repository.
   directory passes silently and that is the shape of defect this record exists
   to remove.
 
+## Where it sits
+
+No ring: this is a process decision that moved the house em dash rule from one laptop's ship script into `HouseVoiceTests`, so the onion and SOLID have no bearing on it.
+
 ## Files
 
 - [`api/TheYard.Tests/HouseVoiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/HouseVoiceTests.cs): the scan, what it reads and what it skips.

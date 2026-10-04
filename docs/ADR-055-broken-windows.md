@@ -132,6 +132,10 @@ The first is free and the fiftieth is a rewrite.
 - One habit is written down rather than carried: when a system gains users or
   persistence, its "only a demo" comments are the work list.
 
+## Where it sits
+
+No ring: this is a working-practice decision about when to fix a small flaw in place and when to ship it as its own version, enforced by `BrokenWindowsTests`, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`api/TheYard.Tests/BrokenWindowsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BrokenWindowsTests.cs): the half a machine can see.

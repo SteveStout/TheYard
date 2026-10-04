@@ -4,7 +4,7 @@
 // rounds read as the visitor's path and this reads as how each step is measured.
 using System.Diagnostics;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
+using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 
@@ -37,10 +37,10 @@ public sealed partial class ProofRunner
         await response.Content.LoadIntoBufferAsync();
         long elapsedMs = (long)Stopwatch.GetElapsedTime(start).TotalMilliseconds;
 
-        int statements = store.Backend.Contexts is null ? 0 : sqlLog.Snapshot().Count(statement => statement.At >= at);
-        var operations = store.Backend.Cosmos is null
-            ? []
-            : storeLog.Snapshot().Where(operation => operation.At >= at).ToArray();
+        int statements = store.Backend.LogsStatements ? sqlLog.Snapshot().Count(statement => statement.At >= at) : 0;
+        var operations = store.Backend.LogsOperations
+            ? storeLog.Snapshot().Where(operation => operation.At >= at).ToArray()
+            : [];
         store.Samples.Add(new Sample(path, elapsedMs, (int)response.StatusCode, statements + operations.Length, operations.Sum(operation => operation.RequestCharge)));
         return response;
     }
@@ -150,8 +150,7 @@ public sealed partial class ProofRunner
             }
             else if (backend.Contexts is { } contexts)
             {
-                using var db = contexts.CreateDbContext();
-                await db.Database.ExecuteSqlRawAsync("SELECT 1");
+                await YardDatabase.PingAsync(contexts);
                 samples.Add((long)Stopwatch.GetElapsedTime(start).TotalMilliseconds);
             }
             else

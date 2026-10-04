@@ -53,6 +53,14 @@ a little more ceremony than the .NET 8 template writes. It is kept because the i
 names `Program` as its entry point either way, and because a reviewer who opened the zip should find
 the file they sent.
 
+## Addendum, 2026-10-03: one more test package, two more records
+
+The test project now also references NetArchTest, which reads the compiled app to check which folder may use which (ADR-013). Its version is the one TheYard pins, like the others. There are fourteen records now, not twelve: ADR-013 and ADR-014 are new.
+
+## Where it sits
+
+This record touches no ring: it sets the project file and the starter's shape, which every folder sits inside.
+
 ## Files
 
 - [`TestProject.csproj`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/TestProject.csproj): the starter's project file plus three lines.

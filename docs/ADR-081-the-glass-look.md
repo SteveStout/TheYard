@@ -190,6 +190,10 @@ Steve sent two pictures of frosted glass as the model "only on the transparency"
 
 The same day he asked for "the original background image" back. The ribbons had been blank in Chrome on 1.0.3.17 and on 1.0.3.19 alike: the page's drawing and the document dialog's copy named their gradients and filters alike, a reference finds the first element with the name, and that one was inside the closed dialog, which Chrome does not paint from; WebKit drew them, which is why the pictures in WebKit showed ribbons and the ones in Chrome did not. Each copy names its own now, and `coverage.spec` holds every page the site lists to one use of an id and every reference inside a drawing to an element of its own drawing.
 
+## Where it sits
+
+This decision lives in the front end alone: the glass tokens in src/styles/effects.css, the Watermark component, and the Ring and Readout components in src/components/shared. SOLID does not apply to a stylesheet; the nearest thing is the one --glass-bg token that every panel and its fallbacks read. It cost backdrop blur paid by the pixel on phones, which is why the hundred vehicle cards and the wide Admin cards go without it, plus a browser test that hunts for any faded word. Measured frame drops on low-end phones, or readers asking for a dark theme, would reopen it.
+
 ## Files
 
 - [`src/styles/effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css): the glass tokens and their three fallbacks, beside the palette.

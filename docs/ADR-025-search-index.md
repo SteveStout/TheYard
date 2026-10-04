@@ -156,6 +156,10 @@ Where the two meet (`api/TheYard.Application/InventoryService.cs`):
   that keeps using it gets the old cost, so the scan is the one place that
   matters and the one place that was changed.
 
+## Where it sits
+
+The work is Domain code (VehicleSearchIndex.cs and VehicleFilter.Compile), built once by Application's InventoryService when the catalogue loads. It follows single responsibility, meaning a class has one reason to change: the index only holds each row's lowercase text, while the auction status stays outside it because the clock decides that value. The price is a few megabytes held for the life of the process, for a speedup no visitor could measure on the live site. A catalogue that changes after load, or one ten times larger, would need an index that updates with its rows or a real inverted index.
+
 ## Files
 
 - [`api/TheYard.Domain/VehicleSearchIndex.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleSearchIndex.cs): the index, its text and its fallback.

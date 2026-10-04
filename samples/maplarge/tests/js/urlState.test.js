@@ -1,5 +1,5 @@
 // Tests how the page state is read from and written to the address bar query string (run with:
-// node --test tests/js). No browser is needed, because the parser works on plain strings. The
+// npm test). No browser is needed, because the parser works on plain strings. The
 // page keeps its state in the address so a link or a reload reopens the same view, which means
 // unknown keys and bad values must fall back to defaults and a parse then write must round-trip.
 import { test } from 'node:test';

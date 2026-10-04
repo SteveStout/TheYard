@@ -128,7 +128,7 @@ public static class ObservabilityRegistration
         // fourteen requests a minute of /api/admin/* and enough health-check SELECTs to
         // push every real statement out of a two-hundred slot ring inside an hour. The
         // section would show nothing but itself, which is the observer effect with a
-        // literal implementation (the staff review, 2026-09-03).
+        // literal implementation.
         void RecordRequest(HttpContext context, TimeSpan elapsed)
         {
             string path = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";

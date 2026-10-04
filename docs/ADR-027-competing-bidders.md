@@ -117,20 +117,20 @@ One round of bidding, and the three limits:
 ```live path=api/TheYard.Application/MarketService.cs region=tick
 ```
 
-Where the two overlays are composed (`api/TheYard.Api/Program.cs`):
+Where the two overlays are composed (`api/TheYard.Application/Auction.cs`):
 
-```live path=api/TheYard.Api/Endpoints/VehicleEndpoints.cs region=overlays
+```live path=api/TheYard.Application/Auction.cs region=overlays
 ```
 
-The endpoints (`api/TheYard.Api/Program.cs`):
+The endpoints (`api/TheYard.Api/Endpoints/BidEndpoints.cs`):
 
 ```live path=api/TheYard.Api/Endpoints/BidEndpoints.cs region=market-endpoints
 ```
 
 The answer the badge needs, derived server-side
-(`api/TheYard.Api/BidViews.cs`):
+(`api/TheYard.Application/Auction.cs`):
 
-```live path=api/TheYard.Api/BidViews.cs region=views
+```live path=api/TheYard.Application/Auction.cs region=views
 ```
 
 The browser's half: the round it asks for, and the sentence it shows
@@ -218,13 +218,22 @@ now exists.
   people rather than a simulation, and the streaming transport above once the
   edge can carry it.
 
+## Where it sits
+
+The room is Application code: MarketService holds the competing bids and runs a round, and Auction in Application/Auction.cs lays the buyer's bids and then the room's over each vehicle through StandingRules.RaisedTo in Domain. The host's BidEndpoints only expose the tick, and the front end's useBids hook asks for a round every eight seconds without doing any auction math itself. Single responsibility keeps the competitor and the overlay order apart, so MarketService changes when the room's behaviour does and Auction changes only if the order does. It costs one small request every eight seconds per open tab and a room that stands still when nobody is watching, and an edge that can carry a stream would make Server-Sent Events the better transport.
+
 ## Files
 
 - [`api/TheYard.Application/MarketService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MarketService.cs): the room, its overlay and its three limits.
-- [`api/TheYard.Api/BidViews.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/BidViews.cs): whether the buyer is still ahead, decided server-side.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composed overlays, the tick endpoint, and bidding against the room's price.
+- [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the overlay order, the room's round and whether the buyer is still ahead, decided server-side.
+- [`api/TheYard.Domain/StandingRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/StandingRules.cs): the one rule both overlays raise a price with.
+- [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the tick endpoint, and the bid endpoints that ask `Auction` to bid against the room's price.
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the buyer's side, now stamped with when each bid was placed.
 - [`src/hooks/useBids.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useBids.ts) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the round the page asks for.
 - [`src/components/vehicle/BidPanel/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/vehicle/BidPanel/BidPanel.tsx) and [`VehicleCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/inventory/VehicleCard/VehicleCard.tsx): the sentence and the chip.
 - [`api/TheYard.Tests/MarketServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MarketServiceTests.cs): every limit, held.
 - [`tests/e2e/market.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/market.spec.ts): a bid, a round, and the badge changing hands in a browser.
+
+## Addendum, 2026-10-03: the composition moved into Application
+
+The two overlays were composed by the endpoints and the badge's answer was worked out in `BidViews.cs` in the host. Both now live in the Application ring, in `Auction` (`api/TheYard.Application/Auction.cs`): `Overlay()` and `AsItStands` hold the order (the buyer's bids first, the room's second), `RoomRound` picks the room's candidates, and `BidsOf` answers the badge. The rule both overlays use to raise a price, only when higher and keeping the larger bid count, is `StandingRules.RaisedTo` in Domain, so it has one copy where it had three. The sentence above that says the overlays are composed at the composition root describes the earlier shape. Endpoints now ask `Auction` and never hold the three services, and `OnionTests.Endpoints_reach_the_auction_only_through_the_Application_ring` fails the build if one does (ADR: Onion and SOLID, how this codebase holds them).

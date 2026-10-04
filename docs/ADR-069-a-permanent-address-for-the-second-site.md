@@ -231,6 +231,10 @@ what the domain layer in front of the origin was for. The container groups' addr
 answering while the groups are stopped, and the rules file carries them in a comment for the week
 they remain the way back.
 
+## Where it sits
+
+No ring: this is a hosting decision about the DNS name and the Netlify edge in front of the second site, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the two new lines, above the catch-all, shown live above.

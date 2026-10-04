@@ -129,6 +129,10 @@ the bidding tests await their bids. 325 tests, all green, after the change.
   gains is the one place a health check awaits a store, and the health record
   says how.
 
+## Where it sits
+
+This decision starts in Application, where every member of `IVehicleSource`, `IPhotoManifestSource` and `IBidStore` in `Ports.cs` now returns a `Task` and `BidService` guards its writes with a `SemaphoreSlim`, then spreads outward to the async adapters in Infrastructure and to the host, which awaits `WarmAsync` and `LoadAsync` from `Composition/Startup.cs` before serving. Liskov substitution says any implementation of an interface should stand in for another without surprises, and a Cosmos adapter forced to block behind a synchronous port would have been exactly that surprise, a stalled thread on a one-vCPU container. The change cost every adapter, fake and test a mechanical rewrite, and the shared warm-up task later needed fixing so a failed load could be retried. A store that only ever read local files on a many-core host would not have needed this, though any network store makes it the right shape.
+
 ## Files
 
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the three seams, awaitable.
@@ -136,7 +140,8 @@ the bidding tests await their bids. 325 tests, all green, after the change.
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the warm-up.
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the relational adapters, asynchronous.
 - [`api/TheYard.Infrastructure/JsonFileSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/JsonFileSources.cs): the file readers, the same.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the two awaits before the pipeline, and the bid endpoints.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the two awaits before the pipeline.
+- [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the bid endpoints.
 - [`api/TheYard.Tests/PortsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PortsTests.cs): the shape and the gate.
 
 ## Addendum, 2026-09-09: a failed warm is tried again

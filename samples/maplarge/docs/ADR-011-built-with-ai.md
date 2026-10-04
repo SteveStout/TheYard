@@ -44,6 +44,10 @@ be right and the parts a reviewer asks about.
 Reading everything before shipping it, which is slower than trusting it and faster than typing it.
 The records exist partly so the next reader can tell which choices were made on purpose and why.
 
+## Where it sits
+
+This record is about how the project was built and touches no ring of the code.
+
 ## Files
 
 - [`docs/BUILT-WITH-AI.md`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/BUILT-WITH-AI.md): the working method, as a guide.

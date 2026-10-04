@@ -77,7 +77,7 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IAc
 
         foreach (var delta in ActivityFolding.Hours(hits))
         {
-            string day = ActivityFolding.DayOf(delta.Hour);
+            string day = delta.Hour.UtcDay;
             string id = ActivityHourDocument.IdFor(delta.Store, delta.Hour);
             await MoveAsync(
                 id,
@@ -216,8 +216,8 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IAc
 
         var query = new QueryDefinition("SELECT * FROM c WHERE c.kind = @kind AND c.day >= @day AND c.hour >= @hour")
             .WithParameter("@kind", ActivityHourDocument.KindName)
-            .WithParameter("@day", ActivityFolding.DayOf(since))
-            .WithParameter("@hour", ActivityFolding.HourOf(since).ToString("O"));
+            .WithParameter("@day", since.UtcDay)
+            .WithParameter("@hour", since.UtcHour.ToString("O"));
         var documents = await ReadAllAsync<ActivityHourDocument>(query, cancellation);
         return documents
             .Select(d => new ActivityHour(d.Store, DateTimeOffset.Parse(d.Hour, null, System.Globalization.DateTimeStyles.RoundtripKind), d.Requests, d.Bots, d.Paths))
@@ -235,7 +235,7 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IAc
 
         var query = new QueryDefinition("SELECT * FROM c WHERE c.kind = @kind AND c.day >= @day")
             .WithParameter("@kind", ActivityVisitorDocument.KindName)
-            .WithParameter("@day", ActivityFolding.DayOf(since));
+            .WithParameter("@day", since.UtcDay);
         var documents = await ReadAllAsync<ActivityVisitorDocument>(query, cancellation);
         return documents
             .Select(d => new ActivityVisitor(d.Store, d.Day, d.Visitor, d.Network, d.FirstSeen, d.LastSeen, d.Requests, d.Bots, d.Paths, d.Sources))

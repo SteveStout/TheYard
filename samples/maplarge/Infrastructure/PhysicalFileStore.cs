@@ -83,7 +83,7 @@ public sealed class PhysicalFileStore : IFileStore
 
     /// <inheritdoc />
     public Stream OpenRead(string absoluteFile) =>
-        new FileStream(absoluteFile, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        new FileStream(absoluteFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 64 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
 
     /// <inheritdoc />
     public Stream Create(string absoluteFile, bool overwrite) =>

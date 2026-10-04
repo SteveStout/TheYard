@@ -136,12 +136,16 @@ checks that against.
   to keep out of screenshots and bookmarks he shares. The page reads it once
   at load and drops it from the address bar on the first render.
 
+## Where it sits
+
+The only ring involved is the host Api, where the Composition steps read Admin:Key and Auth:SigningKey by name and hand them to AdminKey and TokenIssuer; the rest is the deploy workflow and the container manifests. No SOLID principle is at stake, because this rule governs where secret values live and says nothing about how classes depend on each other. A lost secret shrinks the site, and rotating the signing key signs every visitor out. A third consumer of secrets outside this one deploy step would justify Azure Key Vault and a role for the site's identity.
+
 ## Files
 
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml): the OIDC sign-in, the substitution, and the checks that a placeholder never ships unnoticed.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the placeholders as `secureValue`, the identity settings as plain values, and the comment beside each saying which is which.
-- [`api/TheYard.Api/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Activity.cs): the admin key compared in constant time, and 404 when there is none.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the two settings read by name.
+- [`api/TheYard.Api/AdminKey.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminKey.cs): the admin key compared in constant time, and 404 when there is none.
+- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs) and [`api/TheYard.Api/Composition/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ActivityRegistration.cs): the two settings read by name, `Auth:SigningKey` and `Admin:Key`.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts) and [`api/TheYard.Tests/ActivityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ActivityTests.cs): the two fixture keys, and why they are allowed to be in the open.
 
 ```live path=.github/workflows/deploy.yml region=secrets

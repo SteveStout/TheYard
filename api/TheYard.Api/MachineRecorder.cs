@@ -3,6 +3,7 @@
 // They are their own file because they are the only part of the Machines card that outlives a
 // roll of the container. The rest of the card starts in Machines.cs.
 using TheYard.Application;
+using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 
@@ -46,7 +47,7 @@ public sealed class MachineRecorder(
         IReadOnlyList<StoreOperation> operations,
         IReadOnlyList<RequestEntry>? requests = null)
     {
-        var start = MachineFolding.MinuteOf(minute);
+        var start = minute.UtcMinute;
         var end = start.AddMinutes(1);
         var taken = samples.Where(sample => sample.At >= start && sample.At < end).ToList();
         if (taken.Count == 0)
@@ -104,9 +105,9 @@ public sealed class MachineRecorder(
                 }
 
                 var now = DateTimeOffset.UtcNow;
-                await Task.Delay(MachineFolding.MinuteOf(now).AddMinutes(1).Add(Settle) - now, stopping);
+                await Task.Delay(now.UtcMinute.AddMinutes(1).Add(Settle) - now, stopping);
 
-                var minute = MachineFolding.MinuteOf(DateTimeOffset.UtcNow).AddMinutes(-1);
+                var minute = DateTimeOffset.UtcNow.UtcMinute.AddMinutes(-1);
                 var load = await relational(stopping);
                 var folded = Fold(minute, site, MachineSampler.MemoryLimitMb, sampler.Snapshot(), load.Rows, operations(), requests());
                 if (folded is not null)

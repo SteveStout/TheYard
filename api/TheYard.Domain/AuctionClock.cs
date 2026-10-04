@@ -4,11 +4,9 @@ namespace TheYard.Domain;
 /// The two instants auction scheduling needs: the current moment, and the
 /// midnight the schedule anchors to. The anchor is the server's, the current
 /// UTC day's midnight, so every visitor is in the same auction and no request
-/// can name a day. It was the caller's local midnight until 1.0.0.112, which
-/// put two visitors in different zones in different auctions and let a client
-/// that sent yesterday's midnight bid on a vehicle that had ended for everyone
-/// else (ADR: Three readers with no memory of the project, the addendum on
-/// the clock).
+/// can name a day. An anchor the caller chose would put two visitors in
+/// different zones in different auctions, and would let a caller that sent
+/// yesterday's midnight bid on a vehicle that has ended for everyone else.
 /// </summary>
 /// <param name="NowMs">The current moment, as Unix epoch milliseconds.</param>
 /// <param name="AnchorMs">The UTC midnight the schedule anchors to, as Unix epoch milliseconds.</param>

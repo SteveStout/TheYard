@@ -306,7 +306,8 @@ writer spends it whether or not a visitor is there.
 
 ## Files
 
-- [`api/TheYard.Api/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Proof.cs): the paired rounds, alternating which store goes first.
+- [`api/TheYard.Api/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Proof.cs) and [`api/TheYard.Api/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofRunner.Rounds.cs): the runner, and its paired rounds, alternating which store goes first.
+- [`api/TheYard.Infrastructure/YardDatabase.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDatabase.cs): `PingAsync`, the round trip to the relational store the proof measures.
 - [`src/components/admin/BackendsCard/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard/BackendsCard.tsx) and [`src/components/admin/ProofCard/ProofCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ProofCard/ProofCard.tsx): the comparison card and the proof card the numbers above are read from.
 - [`infra/cosmos`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions, indexing policy and partition key included.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites, 1 vCPU and 1.75 GB between them.

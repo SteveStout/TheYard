@@ -150,6 +150,10 @@ name rather than ones a demo finds:
   memory on both sides; it is written here because the experiment made it
   visible (ADR: The partition key).
 
+## Where it sits
+
+No ring: this is a measurement decision about how `scripts/measure_stores.py` compares the two stores in paired rounds, so the onion and SOLID have nothing to say about it.
+
 ## Files
 
 - [`scripts/measure_stores.py`](https://github.com/SteveStout/TheYard/blob/main/scripts/measure_stores.py): the method, runnable.

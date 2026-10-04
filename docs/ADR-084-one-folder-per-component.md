@@ -49,6 +49,10 @@ file that kept the original name is now the short list that composes its parts, 
 imported it changed. A part keeps reading the original component's stylesheet rather than splitting
 it, and that sheet's "Used by" line names every part, which `FileHeaderTests` checks.
 
+## Where it sits
+
+This is a front end decision about src/components, where each component gets a folder with its .tsx, its stylesheet and an index.ts, while src/lib and src/hooks stay put. It supports single responsibility, one reason to change, at the folder level: a folder holds one component, and sending any piece two sections draw to shared keeps each section's folder about that section. It cost an index.ts per folder and longer import paths to walk. A codebase small enough to read in one flat folder would not need it.
+
 ## Files
 
 - [`src/components`](https://github.com/SteveStout/TheYard/tree/main/src/components): the sections and their folders.

@@ -166,12 +166,17 @@ page.
 ```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.Operations.cs region=record
 ```
 
+## Where it sits
+
+Three rings share this one: Application owns the `IStoreLog` port and the `StoreOperation` record in `StoreLog.cs`, Infrastructure.Cosmos fills it from the one wrapper in `CosmosStore.Operations.cs` that times every SDK call and reads its charge, and the Api host keeps the ring the Admin tab's `StoreCard` reads from. Interface segregation, small interfaces shaped to what a caller needs, is the plain reason for a parallel port: `ISqlLog` stayed as it was, so a container on SQL Server never meets a type full of request charges and partitions it has no use for. Dependency inversion follows too, since the adapter writes to an interface Application defined and the host decides where the lines end up. The price is one more fixed ring of two hundred operations in memory and a second card to keep in step with the SQL one, and a system with many store types would probably push this into OpenTelemetry spans instead of a hand-built ring per store.
+
 ## Files
 
 - [`api/TheYard.Application/StoreLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StoreLog.cs): the type with nowhere to put a value, and the port.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): the wrapper every operation goes through.
 - [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the ring and the window's numbers.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the endpoint, and the request charge in the metrics.
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the endpoint (region store-endpoint).
+- [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the request charge in the metrics.
 - [`src/components/admin/StoreCard/StoreCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/StoreCard/StoreCard.tsx): the card.
 - [`api/TheYard.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminObservabilityTests.cs): the canary, on both stores.
 - [`docs/ADR-043-what-the-database-is-doing.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-043-what-the-database-is-doing.md): the SQL card this one is the sibling of.

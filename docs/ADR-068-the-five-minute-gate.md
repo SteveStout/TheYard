@@ -149,6 +149,10 @@ suite that takes sixteen seconds alone took seventy-nine beside the browser
 suite, which is the price of the two sides sharing four cores and still
 the cheaper shape: the sides in a row would be about six minutes.
 
+## Where it sits
+
+No ring: this is a process decision about the test gate and the test assembly beside the onion, so the rings and SOLID do not apply to it.
+
 ## Files
 
 - [`api/TheYard.Tests/TestCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TestCatalogue.cs): the thousand, the hundred thousand by name, and the test that holds the number.
@@ -156,7 +160,7 @@ the cheaper shape: the sides in a row would be about six minutes.
 - [`tests/e2e/axe.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/axe.spec.ts): the scans, declared parallel.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the account tests, three classes over one base.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts): the prebuilt server on the gate.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): where `Inventory:TargetCount` is read.
+- [`api/TheYard.Api/Composition/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/StoreRegistration.cs): where `Inventory:TargetCount` is read.
 
 ## Addendum, 2026-09-09: the gate on a loaded machine, and the scans declared slow
 

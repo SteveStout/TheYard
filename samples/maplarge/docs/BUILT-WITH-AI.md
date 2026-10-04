@@ -13,7 +13,7 @@ ADR-011; this page is the practice.
 3. **Draft against the list.** The assistant (Claude) writes the first version of each file from
    the plan and the tests. Tests included.
 4. **Build and run on a real machine.** Nothing is committed on the strength of the draft. The
-   build is warnings-as-errors; the suites are `dotnet test` and `node --test tests/js`.
+   build is warnings-as-errors; the suites are `dotnet test` and `npm test`.
 5. **Read everything.** The assistant reviews its own draft as three readers (a tester, a hiring
    manager, a staff engineer) and corrects; a person reads every file before the project is sent.
 6. **Write the record.** Each decision gets its ADR with the code it decided about quoted live from

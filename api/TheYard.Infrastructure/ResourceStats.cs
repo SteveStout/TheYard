@@ -1,14 +1,14 @@
-// The relational store's own reading of itself, for the Machines card on the Admin tab. It is its
-// own file because it is the one part of that card that talks to the database: the statement, the
-// two ways in, and the sentence a public card shows when the read does not happen. The rest of the
-// card starts in Machines.cs.
+// The relational store's own reading of itself, for the Machines card on the Admin tab: the
+// statement, the read, and the sentence a public card shows when the read does not happen. It
+// sits with the relational adapters because it is a raw query against the database; the host's
+// Machines card (TheYard.Api/Machines.cs) only asks it for a reading.
 using System.Data.Common;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using TheYard.Infrastructure;
+using Microsoft.Extensions.Logging;
 
-namespace TheYard.Api;
+namespace TheYard.Infrastructure;
 
 // #region resource-stats
 /// <summary>
@@ -45,13 +45,9 @@ public static class ResourceStats
         ORDER BY end_time DESC
         """;
 
-    /// <summary>The read over a backend's own contexts, or an absent reading when there is no relational backend.</summary>
-    public static Task<StoreLoad> ReadAsync(Backend? relational, int rows, CancellationToken cancellation, ILogger? logger = null) =>
-        ReadAsync(relational?.Contexts, relational?.Name ?? "absent", rows, cancellation, logger);
-
     /// <summary>
-    /// The same read over any context factory. The recorder that keeps a
-    /// minute at a time hands in the quiet one, with no interceptor and no
+    /// The read over a store's context factory, or an absent reading when there is no
+    /// relational store. The recorder that keeps a minute at a time hands in the quiet one, with no interceptor and no
     /// command logging, for the reason the activity counters use it: a read a
     /// minute, outside any request, would otherwise be the newest statement on
     /// the SQL card for ever (ADR: What the machines are doing).

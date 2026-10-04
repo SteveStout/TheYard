@@ -5,12 +5,11 @@ namespace TheYard.Tests;
 /// <summary>
 /// The shape every decision record keeps (ADR: The rules a change has to pass).
 ///
-/// <para>Seventy-four records held the same shape by habit: a title the index
-/// can read, a status line saying what became of the decision, and a Files
-/// section pointing at the code it decided about. The seventy-fourth broke it,
-/// thirteen days after the convention settled, with a bold status line in a
-/// date format no other record uses. Nothing failed, because nothing was
-/// looking, and it was found by a review rather than by the build.</para>
+/// <para>Every record keeps one shape: a title the index can read, a status
+/// line saying what became of the decision, a Where it sits section naming the
+/// ring it touches, and a Files section pointing at the code it decided about.
+/// A shape held only by habit drifts the first time someone writes in a hurry,
+/// and nothing fails when it does.</para>
 ///
 /// <para>A record is the one artifact here that is read by somebody who has
 /// never seen the code, so the cost of drift is paid by exactly the reader this
@@ -118,8 +117,7 @@ public class RecordShapeTests
     /// the documentation that takes a reader from the argument to the code.
     /// RecordLinksTests already holds those links to files that exist; this
     /// holds the section itself, because a record with no Files section has no
-    /// links for that test to check and passes it in silence. One record did:
-    /// the staff review, from 2 September until this was written.
+    /// links for that test to check and would pass it in silence.
     /// </summary>
     [Fact]
     public void Every_record_ends_with_the_files_it_decided_about()
@@ -139,6 +137,43 @@ public class RecordShapeTests
             if (!linked)
             {
                 wrong.Add($"{name} has a Files section with nothing linked under it");
+            }
+        }
+
+        NoneOf(wrong);
+    }
+
+    /// <summary>
+    /// Every record says where it sits: which ring of the onion it touches, which SOLID principle
+    /// it serves, what it cost and what would change the choice, or in one line that it touches no
+    /// ring. The section sits above Files, one paragraph of plain sentences, so a reader can tell
+    /// where a decision lives without opening the code (ADR: Onion and SOLID, how this codebase
+    /// holds them). No record is excused.
+    /// </summary>
+    [Fact]
+    public void Every_record_says_where_it_sits_above_its_files()
+    {
+        var wrong = new List<string>();
+
+        foreach ((string name, string[] lines) in Records())
+        {
+            int[] sits = [.. lines.Select((line, i) => (line, i)).Where(entry => entry.line.Trim() == "## Where it sits").Select(entry => entry.i)];
+            int files = Array.FindIndex(lines, line => line.StartsWith("## Files", StringComparison.Ordinal));
+            if (sits.Length != 1)
+            {
+                wrong.Add($"{name} has {sits.Length} Where it sits sections; it needs exactly one");
+                continue;
+            }
+
+            if (files >= 0 && sits[0] > files)
+            {
+                wrong.Add($"{name} says where it sits below its Files section");
+            }
+
+            string paragraph = string.Join(" ", lines.Skip(sits[0] + 1).TakeWhile(line => !line.StartsWith("## ", StringComparison.Ordinal))).Trim();
+            if (paragraph.Length < 40)
+            {
+                wrong.Add($"{name} has a Where it sits heading with nothing said under it");
             }
         }
 

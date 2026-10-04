@@ -1,6 +1,6 @@
 // What the machines are doing, read for the Admin tab. This file holds the container's own
 // sampler and its reading; the other parts each have a file of their own beside it:
-// ResourceStats.cs (the relational store's resource view), TrafficMinutes.cs (the request ring a
+// TheYard.Infrastructure/ResourceStats.cs (the relational store's resource view), TrafficMinutes.cs (the request ring a
 // minute at a time), MachineRecorder.cs (the minute kept for the day, week and month, and the reader
 // that serves them back) and DocumentLoad.cs (the document store's request units).
 using System.Diagnostics;

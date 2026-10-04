@@ -135,6 +135,10 @@ files which say what this project is agree about what it is. All three were foun
 by reading the root directory, which no check had ever done, and which is a
 reminder that a repository has a front door as well as a source tree.
 
+## Where it sits
+
+No ring: this is a naming decision carried through every project, namespace and assembly in one move, so the onion and SOLID have nothing to say about it.
+
 ## Files
 
 - [`api/TheYard.slnx`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.slnx): eight projects, all renamed.

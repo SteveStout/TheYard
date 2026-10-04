@@ -135,7 +135,7 @@ public static class ActivityFolding
     public const int PathsStored = 20;
 
     public static IReadOnlyList<ActivityHourDelta> Hours(IEnumerable<ActivityHit> hits) =>
-        hits.GroupBy(hit => (hit.Store, Hour: HourOf(hit.At)))
+        hits.GroupBy(hit => (hit.Store, Hour: hit.At.UtcHour))
             .Select(group => new ActivityHourDelta(
                 group.Key.Store,
                 group.Key.Hour,
@@ -147,7 +147,7 @@ public static class ActivityFolding
             .ToList();
 
     public static IReadOnlyList<ActivityVisitorDelta> Visitors(IEnumerable<ActivityHit> hits) =>
-        hits.GroupBy(hit => (hit.Store, Day: DayOf(hit.At), hit.Visitor))
+        hits.GroupBy(hit => (hit.Store, Day: hit.At.UtcDay, hit.Visitor))
             .Select(group => new ActivityVisitorDelta(
                 group.Key.Store,
                 group.Key.Day,
@@ -179,15 +179,6 @@ public static class ActivityFolding
             .Take(PathsStored)
             .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
     }
-
-    public static DateTimeOffset HourOf(DateTimeOffset at)
-    {
-        var utc = at.ToUniversalTime();
-        return new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, 0, 0, TimeSpan.Zero);
-    }
-
-    /// <summary>The UTC day as text, which is what both stores key and partition a visitor on.</summary>
-    public static string DayOf(DateTimeOffset at) => at.ToUniversalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>The hosts that linked here, by page loads, kept to the top few like the paths.</summary>
     private static IReadOnlyList<KeyValuePair<string, int>> TopSources(IEnumerable<ActivityHit> hits) =>

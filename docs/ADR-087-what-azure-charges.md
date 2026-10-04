@@ -91,6 +91,10 @@ Measured on 2 October: the one finished day in the last day window, 1 October, c
 ```live path=api/TheYard.Api/CostReport.cs region=cost-rate
 ```
 
+## Where it sits
+
+The bill card spans three rings: CostHistory.cs in Application holds the ICostHistory port with its day and window types, the host Api holds the reader, the recorder and the shaping that strips the subscription id, and src/lib/spend.ts lays out the card. Dependency inversion (the inner ring defines the interface and the outer ring supplies it) means CostRecorder writes through ICostHistory, whose only implementation today is CostsInMemory, so a kept history would be one more adapter. It cost a Cost Management Reader role on the subscription and up to an hour of staleness by design. A request for a year of bills on the card would justify that adapter, likely a Cosmos DB container beside the logs.
+
 ## Files
 
 - [`api/TheYard.Api/Costs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Costs.cs): the two questions, the shaping, the reader and the recorder.

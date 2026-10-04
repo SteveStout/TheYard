@@ -267,9 +267,15 @@ sibling for endpoints where signing in is optional.
   from a secret store. Nothing else changes, and nothing about the key ever
   enters the repository.
 
+## Where it sits
+
+This walkthrough covers host Api code, AddIdentityCore in Composition/AuthRegistration.cs and TokenIssuer in Tokens.cs, plus YardUser and the Identity tables in Infrastructure. Choosing AddIdentityCore over AddIdentity keeps the host small: the JSON API takes the user store it needs and leaves out a cookie scheme and login redirects it would have to fight. A missing Auth:SigningKey costs a sign-out for everyone on restart, which the deploy now avoids by passing one key to both sites. A system that had to revoke a session mid-flight would choose server-side sessions over a self-contained token.
+
 ## Files
 
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composition root, the pipeline, and the four auth endpoints.
+- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): the composition root's part, Identity and the token registered.
+- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the pipeline.
+- [`api/TheYard.Api/Endpoints/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.cs): the four auth endpoints.
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): issuing, validating, the cookie attributes, and reading the caller back out.
 - [`api/TheYard.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Accounts.cs): the request and response shapes, and the translation of Identity's error codes into a sentence.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the user row and its one extra column.
@@ -277,3 +283,7 @@ sibling for endpoints where signing in is optional.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the suite that holds all of this to its claims, including that the token never appears in a response body.
 - [`docs/ADR-037-accounts.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-037-accounts.md): the decisions this record explains.
 - [`docs/ADR-018-program-cs-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-018-program-cs-explained.md): the rest of the host file, walked the same way.
+
+## Addendum, 2026-10-03: a second scoped registration
+
+This registration is no longer the only scoped one. `RequestAccounts` (`api/TheYard.Api/RequestAccounts.cs`) is registered per request beside it in `Composition/AuthRegistration.cs`, so the account handlers take it as a parameter instead of reaching into the service container. It asks whether the request's store came up before it opens `UserManager`, which means no handler ever meets the throw in the user store factory.

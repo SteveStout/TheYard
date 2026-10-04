@@ -60,6 +60,10 @@ applied to it unchanged: push, read the deploys page, force a build if the
 cold-cache trap skipped it. The record it belongs to carries the meter's
 reading before and after.
 
+## Where it sits
+
+No ring is involved, because this is a hosting cost decision about when the Netlify edge rebuilds, settled by one ignore line in netlify.toml.
+
 ## Files
 
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml): the ignore rule that stops app-only pushes from

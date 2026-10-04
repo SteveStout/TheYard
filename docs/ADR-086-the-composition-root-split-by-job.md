@@ -70,6 +70,10 @@ The parts moved, unchanged in what they do, to files named for their one job: `s
 
 What that is worth: a reader opens the entry file and sees the whole start-up on one screen, and each part has one file to change.
 
+## Where it sits
+
+This is a host Api decision: Program.cs became a table of contents, with one static class per registration step in Composition/ and one per feature in Endpoints/, and no inner ring moved. Single responsibility, one reason to change, is the whole idea, since changing how bids are mapped means opening BidEndpoints.cs and nothing that wires the stores. It cost YardComposition, a small stateful object that hands the signing key and the stores from one step to the next, and twenty-nine files across Composition/ and Endpoints/ where there was one. A host small enough to read on one screen would be clearer as one file again.
+
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents.

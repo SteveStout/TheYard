@@ -1,4 +1,4 @@
-// Tests the markdown reader (run with: node --test tests/js). It turns a document into a tree of
+// Tests the markdown reader (run with: npm test). It turns a document into a tree of
 // plain objects (tag, attributes, children, text) that the page turns into elements, never into
 // an HTML string. The tests cover each block and inline form, and check that a script tag stays
 // text and a javascript: link becomes "#", so a served document can never run code in the page.

@@ -3,7 +3,6 @@
 // does; the routes are mapped in AccountEndpoints.cs.
 
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity;
 using TheYard.Infrastructure;
 
 namespace TheYard.Api;
@@ -14,13 +13,11 @@ public static partial class AccountEndpoints
     /// <summary>
     /// Creates an account on this request's store and signs it in, within the hour's registration allowance.
     /// </summary>
-    private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Register(IServiceProvider services, CurrentBackend current, TokenIssuer issuer, RegistrationLimit limit, HttpContext http, Credentials request)
+    private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Register(RequestAccounts accounts, CurrentBackend current, TokenIssuer issuer, RegistrationLimit limit, HttpContext http, Credentials request)
     {
-        // The store this request is on keeps no accounts: the relational fallback
-        // (ADR: The relational store) or a document store that did not come up.
-        // Asked before UserManager is, because UserManager's store is built from
-        // this same answer and would throw where this returns a sentence.
-        if (!current.Backend.Ready || services.GetService<UserManager<YardUser>>() is not { } users)
+        // No users means the store this request is on keeps no accounts: the relational
+        // fallback, or a document store that did not come up.
+        if (accounts.Users is not { } users)
         {
             return Accounts.Unavailable();
         }
@@ -71,20 +68,17 @@ public static partial class AccountEndpoints
     /// <summary>
     /// Signs in with an email address and a password, answering one sentence for every way that can fail.
     /// </summary>
-    private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Login(IServiceProvider services, CurrentBackend current, TokenIssuer issuer, HttpContext http, Credentials request)
+    private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Login(RequestAccounts accounts, CurrentBackend current, TokenIssuer issuer, HttpContext http, Credentials request)
     {
-        if (!current.Backend.Ready || services.GetService<UserManager<YardUser>>() is not { } users)
+        if (accounts.Users is not { } users)
         {
             return Accounts.Unavailable();
         }
 
         var user = request.Email is null ? null : await users.FindByEmailAsync(request.Email);
-        // One message for "no such account" and for "wrong password", because two
-        // messages are an endpoint that tells a stranger which email addresses are
-        // registered here.
-        // One sentence for every way this can fail, including a locked account. See
-        // the lockout options: a reply that distinguishes them is a reply that tells
-        // a stranger which addresses are registered here.
+        // One sentence for every way this can fail: no such account, a wrong password, or a
+        // locked account. A reply that told them apart would tell a stranger which email
+        // addresses are registered here.
         var refused = TypedResults.Problem(
             detail: "That email address and password do not match an account.",
             statusCode: 401, title: "Not signed in");
@@ -104,9 +98,9 @@ public static partial class AccountEndpoints
 
         if (!await users.CheckPasswordAsync(user, request.Password))
         {
-            // The count is the whole mechanism. CheckPasswordAsync on its own does
-            // not touch it, which is why this endpoint had a lockout policy on paper
-            // and none in practice for as long as it has existed.
+            // The count is the whole lockout mechanism. CheckPasswordAsync on its own
+            // does not touch it, so without this call the lockout policy would be on paper
+            // only.
             await users.AccessFailedAsync(user);
             return refused;
         }
@@ -134,14 +128,12 @@ public static partial class AccountEndpoints
     /// <summary>
     /// Answers the account the session belongs to on this store, or the anonymous account when there is none here.
     /// </summary>
-    private static async Task<Ok<AccountView>> WhoAmI(IServiceProvider services, CurrentBackend current, HttpContext http)
+    private static async Task<Ok<AccountView>> WhoAmI(RequestAccounts accounts, HttpContext http)
     {
-        // An account is a row or a document in one store, so a session opened on
-        // the other store reads as signed out here, and signs back in when the
-        // toggle goes back. The page says so beside the toggle.
+        // An account is a row or a document in one store, so a session opened on the
+        // other store reads as signed out here and as signed in on that store's site.
         if (http.UserIdOrNull() is not { } id
-            || !current.Backend.Ready
-            || services.GetService<UserManager<YardUser>>() is not { } users
+            || accounts.Users is not { } users
             || await users.FindByIdAsync(id) is not { } user)
         {
             return TypedResults.Ok(Accounts.Anonymous);

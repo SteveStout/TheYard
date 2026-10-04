@@ -33,10 +33,7 @@ public static class Startup
         // (ADR: What the store is actually doing, addendum).
         host.HostLoggers = app.Services.GetRequiredService<ILoggerFactory>();
         (sqlBackend.Contexts as ContextFactory)?.Attach(host.HostLoggers);
-        if (cosmos is not null)
-        {
-            cosmos.Logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<CosmosStore>();
-        }
+        cosmos?.Logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<CosmosStore>();
         // The promise the accounts record makes: an invented signing key is said out
         // loud, because its consequence is every session ending when this process does
         // (ADR: Accounts and per-user bids). Nothing about the key itself is logged.
@@ -74,7 +71,7 @@ public static class Startup
                 // "The store" rather than "the database": Prepare also reads the seed
                 // files, so this line covers a missing dataset as well as a database that
                 // will not open, and naming only one of them sends the next person to the
-                // wrong place (the staff review, 2026-09-03).
+                // wrong place.
                 // The exception goes in the exception slot, not into the template. What is
                 // in the template reaches the Admin tab's log section, which is public; what
                 // is in the exception slot reaches the console and Application Insights,
@@ -103,8 +100,7 @@ public static class Startup
                 // SQLite writes three files, not one: the database, the write-ahead log
                 // and the shared-memory index. Deleting only the first leaves the other
                 // two behind, and this runs whether or not the store came up, because
-                // the half-created file is exactly the case that used to leak (the
-                // staff review, 2026-09-03).
+                // a half-created file is the case most likely to be left behind.
                 foreach (string leftover in new[]
                          {
                              scratchDatabase,
@@ -193,8 +189,8 @@ public static class Startup
         // Every roll carries a check of the thing that was just rolled. The address
         // is read from the server when the sweep runs rather than from the variable
         // the proof's callback fills: these callbacks run in the reverse of the order
-        // they were registered, so this one runs first, and the first cut of it never
-        // swept anything (SelfAddress, and the browser suite that found it).
+        // they were registered, so this one runs first, before the variable is filled,
+        // and reading the variable would sweep nothing (SelfAddress).
         app.Lifetime.ApplicationStarted.Register(() => pageStatus.TryStart("roll"));
         // And once more when the process has settled: the roll's sweep runs
         // while the catalogues are warming, and a reading taken then is a reading of

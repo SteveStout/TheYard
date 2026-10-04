@@ -204,6 +204,10 @@ The style job (`.github/workflows/ci.yml`):
   see. The numbering and the ordering are what make an index work, and both are
   already there.
 
+## Where it sits
+
+No ring: this is a build and tooling decision about the checks CI runs on formatting and lint, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the style job.

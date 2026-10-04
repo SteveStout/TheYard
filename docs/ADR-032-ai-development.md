@@ -77,6 +77,10 @@ pipeline's own account of itself.
 - It gives an interviewer a set of questions to ask. That is intended. The
   document is only worth anything if the conversation it invites goes well.
 
+## Where it sits
+
+No ring: this is a documentation decision about telling a reader how the project was built, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`docs/AI-DEVELOPMENT.md`](https://github.com/SteveStout/TheYard/blob/main/docs/AI-DEVELOPMENT.md): the document.

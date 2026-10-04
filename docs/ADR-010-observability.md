@@ -77,7 +77,7 @@ saying it louder.
 
 The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The timed checks
-([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
+([`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs)):
 
 ```live path=api/TheYard.Api/Endpoints/HealthEndpoints.cs region=health-checks
 ```
@@ -99,11 +99,17 @@ and [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main
 The events list is proven by the live site, since only the container on
 Azure can ask about itself.
 
+## Where it sits
+
+Everything this record built lives in the host Api and the front end: the probes in Endpoints/HealthEndpoints.cs, the ErrorRingBuffer and the AzureSelf reader in Observability.cs, and the cards under src/components/admin. Single responsibility means one reason to change per class; here each type does one job and each card fetches and fails on its own without taking the others down. No port was needed because the container reads its own memory and its own Azure resource, and the price is an error buffer that empties on every deploy. Errors that must survive a roll are the reason to choose differently, and that is the job ILogStore, an Application port, now does for logs that outlive the container.
+
 ## Files
 
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the probes (region health-checks),
-  `/healthz`, `/readyz`, `/api/health`, `/api/errors`, `/api/admin/azure`,
-  and the middleware that records server errors.
+- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the probes (region health-checks),
+  `/healthz`, `/readyz` and `/api/health`.
+- [`api/TheYard.Api/Endpoints/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ErrorEndpoints.cs) and [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): `/api/errors` and
+  `/api/admin/azure`.
+- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the middleware that records server errors (region error-log).
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health record, the error
   ring buffer and the Azure reader (region azure-events).
 - [`src/components/admin/HealthCard/HealthCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/HealthCard/HealthCard.tsx), [`src/components/admin/ErrorsCard/ErrorsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ErrorsCard/ErrorsCard.tsx) and

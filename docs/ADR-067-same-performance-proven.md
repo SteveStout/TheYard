@@ -189,10 +189,16 @@ state on the free tier.
 - The interview sentence is the card's sentence, and the numbers behind it
   are on the page it is said from.
 
+## Where it sits
+
+The proof sits in the host Api (ProofRunner and ProofResult) because it drives the app over HTTP the same way a visitor does; its one reach inward is the round trip that calls YardDatabase.PingAsync in Infrastructure and the probe in Infrastructure.Cosmos. Single responsibility, a class having one reason to change, shapes the split: ProofClients decides where the requests go, ProofRunner times them, and ProofResult holds the verdict arithmetic that ProofTests checks with no store at all. It cost two kept accounts per store per process, and it measures one request at a time, so it says nothing about load. A question about capacity under many visitors would call for a separate load harness run from outside the container.
+
 ## Files
 
-- [`api/TheYard.Api/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Proof.cs): the runner, the samples, the verdict.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the two endpoints, the loopback address, the client the proof uses.
+- [`api/TheYard.Api/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Proof.cs), [`api/TheYard.Api/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofRunner.Rounds.cs), [`api/TheYard.Api/ProofRunner.Requests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofRunner.Requests.cs) and [`api/TheYard.Api/ProofResult.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofResult.cs): the runner, the samples, the verdict.
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the two endpoints (region proof-endpoints).
+- [`api/TheYard.Api/SelfAddress.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/SelfAddress.cs): the loopback address.
+- [`api/TheYard.Api/Composition/AdminRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AdminRegistration.cs): the client the proof uses (region proof-clients).
 - [`api/TheYard.Tests/ProofTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProofTests.cs): the arithmetic without a store, and the endpoints with whichever stores the run has.
 - [`src/components/admin/ProofCard/ProofCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ProofCard/ProofCard.tsx): the card.
 - [`docs/ADR-064-measuring-both-stores.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-064-measuring-both-stores.md): the measurement from the visitor's side, which this one completes.
@@ -231,3 +237,6 @@ account view, which is where the site signs a visitor in; signed in, it
 starts the run as before. The browser test holds both halves: the click goes
 to `?view=account`, and after a sign-in the label offers the run.
 
+## Addendum, 2026-10-03: the relational round trip
+
+The relational side's `SELECT 1` is now `YardDatabase.PingAsync` in the relational adapter, so the proof runner in the host asks the adapter for a round trip instead of running a statement itself. The document side does two point reads and halves the time, which the paragraph above calls one point read; the arithmetic it reports is the same.

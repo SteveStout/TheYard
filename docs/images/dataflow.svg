@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1715" viewBox="0 0 1400 1715" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1749" viewBox="0 0 1400 1749" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>TheYard data flow: a vehicle from a JSON file on disk to a card in the browser, and a bid back</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
@@ -24,19 +24,19 @@
     </style>
   </defs>
 
-  <rect width="1400" height="1715" fill="#e9e6e7"/>
+  <rect width="1400" height="1749" fill="#e9e6e7"/>
   <text x="40" y="44" class="heading">TheYard data flow: a vehicle from a JSON file to a card in the browser, and a bid back</text>
   <text x="40" y="68" class="caption">Every box is a file; the path under each title is where that step lives. Domain, Application, Infrastructure and Api are the projects under api/.</text>
 
   <!-- ===================== Lane 1: the read path ===================== -->
-  <rect x="40" y="92" width="800" height="1551" class="lane"/>
+  <rect x="40" y="92" width="800" height="1585" class="lane"/>
   <text x="60" y="120" class="lane-title">The read path, top to bottom</text>
   <text x="60" y="140" class="lane-sub">The first four boxes run once at startup; the rest run for every request.</text>
 
   <!-- ===================== Lane 2: the write path ===================== -->
-  <rect x="870" y="92" width="490" height="858" class="lane"/>
+  <rect x="870" y="92" width="490" height="1063" class="lane"/>
   <text x="890" y="120" class="lane-title">The write path: a bid</text>
-  <text x="890" y="140" class="lane-sub">One anonymous buyer, state in API memory; the domain decides.</text>
+  <text x="890" y="140" class="lane-sub">A signed-in buyer, bids kept in the store; the domain decides.</text>
 
   <rect x="60" y="170" width="760" height="101" class="box"/>
   <text x="75" y="196" class="title">The seed file</text>
@@ -57,97 +57,110 @@
   <text x="75" y="514" class="body">api/TheYard.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state while</text>
   <text x="75" y="531" class="body">keeping the seed's make, model and trim mix.</text>
   <path d="M120 545 L120 579" class="flow"/>
-  <rect x="60" y="581" width="760" height="118" class="box"/>
+  <rect x="60" y="581" width="760" height="135" class="box"/>
   <text x="75" y="607" class="title">InventoryService</text>
   <text x="75" y="629" class="mono">api/TheYard.Application/InventoryService.cs</text>
   <text x="75" y="651" class="body">Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the</text>
-  <text x="75" y="668" class="body">pools in api/TheYard.Api/photo-manifest.json) and materializes the list plus an id</text>
-  <text x="75" y="685" class="body">index, once, in a Lazy that Program.cs forces at startup.</text>
-  <path d="M120 699 L120 733" class="flow"/>
-  <text x="132" y="721" class="flow-label">then, for every request</text>
-  <rect x="60" y="735" width="760" height="118" class="box"/>
-  <text x="75" y="761" class="title">GET /api/vehicles</text>
-  <text x="75" y="783" class="mono">api/TheYard.Api/Program.cs</text>
-  <text x="75" y="805" class="body">api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a filter,</text>
-  <text x="75" y="822" class="body">a sort and a clock. api/TheYard.Api/Clocks.cs turns the browser's anchor_ms (its local</text>
-  <text x="75" y="839" class="body">midnight) into that clock, so the schedule math agrees with the buyer in any time zone.</text>
-  <path d="M120 853 L120 887" class="flow"/>
-  <rect x="60" y="889" width="760" height="169" class="box"/>
-  <text x="75" y="915" class="title">Search, in InventoryService.Search</text>
-  <text x="75" y="937" class="mono">api/TheYard.Application/InventoryService.cs</text>
-  <text x="75" y="959" class="body">1. The buyer's bids are overlaid first (api/TheYard.Application/BidService.cs), so price</text>
-  <text x="75" y="976" class="body">bounds see the figures the page shows.</text>
-  <text x="75" y="993" class="body">2. Where: api/TheYard.Domain/VehicleFilter.cs</text>
-  <text x="75" y="1010" class="body">3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs</text>
-  <text x="75" y="1027" class="body">4. Skip and Take for the page. Auction windows come from</text>
-  <text x="75" y="1044" class="body">api/TheYard.Domain/AuctionSchedule.cs, all in memory.</text>
-  <path d="M120 1058 L120 1092" class="flow"/>
-  <rect x="60" y="1094" width="760" height="101" class="box"/>
-  <text x="75" y="1120" class="title">VehicleWire</text>
-  <text x="75" y="1142" class="mono">api/TheYard.Api/VehicleWire.cs</text>
-  <text x="75" y="1164" class="body">Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at,</text>
-  <text x="75" y="1181" class="body">auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.</text>
-  <path d="M120 1195 L120 1229" class="flow"/>
-  <text x="132" y="1217" class="flow-label">{ total, vehicles } as JSON</text>
-  <rect x="60" y="1231" width="760" height="118" class="box"/>
-  <text x="75" y="1257" class="title">The fetch seam</text>
-  <text x="75" y="1279" class="mono">src/lib/data.ts</text>
-  <text x="75" y="1301" class="body">Debounces filter changes (500 ms), caches responses per query string for five minutes (a</text>
-  <text x="75" y="1318" class="body">hit skips the debounce) and aborts superseded requests. The query string comes from</text>
-  <text x="75" y="1335" class="body">src/lib/inventory.ts, the same serializer that feeds the address bar.</text>
-  <path d="M120 1349 L120 1383" class="flow"/>
-  <rect x="60" y="1385" width="760" height="101" class="box"/>
-  <text x="75" y="1411" class="title">App state and the address bar</text>
-  <text x="75" y="1433" class="mono">src/app/hooks/useAddressBar.ts</text>
-  <text x="75" y="1455" class="body">Holds the page. Filters, sort, ?vehicle and ?view are mirrored into the URL, and Back</text>
-  <text x="75" y="1472" class="body">and Forward re-read it.</text>
-  <path d="M120 1486 L120 1520" class="flow"/>
-  <rect x="60" y="1522" width="760" height="101" class="box"/>
-  <text x="75" y="1548" class="title">Cards, detail, bid panel</text>
-  <text x="75" y="1570" class="mono">src/components/*</text>
-  <text x="75" y="1592" class="body">Format currency (src/lib/format.ts) and tick the countdowns from the server's window</text>
-  <text x="75" y="1609" class="body">(src/lib/auction.ts). No business math runs in the browser.</text>
+  <text x="75" y="668" class="body">pools in api/TheYard.Api/photo-manifest.json) and materializes the list plus an id index</text>
+  <text x="75" y="685" class="body">once. The host awaits that load in api/TheYard.Api/Composition/Startup.cs before it</text>
+  <text x="75" y="702" class="body">serves.</text>
+  <path d="M120 716 L120 750" class="flow"/>
+  <text x="132" y="738" class="flow-label">then, for every request</text>
+  <rect x="60" y="752" width="760" height="118" class="box"/>
+  <text x="75" y="778" class="title">GET /api/vehicles</text>
+  <text x="75" y="800" class="mono">api/TheYard.Api/Endpoints/VehicleEndpoints.cs</text>
+  <text x="75" y="822" class="body">api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a filter</text>
+  <text x="75" y="839" class="body">and a sort. The clock is the server's (api/TheYard.Api/Clocks.cs): now, and the UTC</text>
+  <text x="75" y="856" class="body">midnight that began the day, the same for every visitor.</text>
+  <path d="M120 870 L120 904" class="flow"/>
+  <rect x="60" y="906" width="760" height="186" class="box"/>
+  <text x="75" y="932" class="title">Search, through Auction.Search</text>
+  <text x="75" y="954" class="mono">api/TheYard.Application/Auction.cs</text>
+  <text x="75" y="976" class="body">1. Everybody's bids, then the room's, are laid over each vehicle (Auction.Overlay,</text>
+  <text x="75" y="993" class="body">raising a price through api/TheYard.Domain/StandingRules.cs), so price bounds see the</text>
+  <text x="75" y="1010" class="body">figures the page shows.</text>
+  <text x="75" y="1027" class="body">2. Where: api/TheYard.Domain/VehicleFilter.cs</text>
+  <text x="75" y="1044" class="body">3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs</text>
+  <text x="75" y="1061" class="body">4. Skip and Take for the page. Auction windows come from</text>
+  <text x="75" y="1078" class="body">api/TheYard.Domain/AuctionSchedule.cs, all in memory.</text>
+  <path d="M120 1092 L120 1126" class="flow"/>
+  <rect x="60" y="1128" width="760" height="101" class="box"/>
+  <text x="75" y="1154" class="title">VehicleWire</text>
+  <text x="75" y="1176" class="mono">api/TheYard.Api/VehicleWire.cs</text>
+  <text x="75" y="1198" class="body">Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at,</text>
+  <text x="75" y="1215" class="body">auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.</text>
+  <path d="M120 1229 L120 1263" class="flow"/>
+  <text x="132" y="1251" class="flow-label">{ total, vehicles } as JSON</text>
+  <rect x="60" y="1265" width="760" height="118" class="box"/>
+  <text x="75" y="1291" class="title">The fetch seam</text>
+  <text x="75" y="1313" class="mono">src/lib/data.ts</text>
+  <text x="75" y="1335" class="body">Debounces filter changes (500 ms), caches responses per query string for five minutes (a</text>
+  <text x="75" y="1352" class="body">hit skips the debounce) and aborts superseded requests. The query string comes from</text>
+  <text x="75" y="1369" class="body">src/lib/inventory.ts, the same serializer that feeds the address bar.</text>
+  <path d="M120 1383 L120 1417" class="flow"/>
+  <rect x="60" y="1419" width="760" height="101" class="box"/>
+  <text x="75" y="1445" class="title">App state and the address bar</text>
+  <text x="75" y="1467" class="mono">src/app/hooks/useAddressBar.ts</text>
+  <text x="75" y="1489" class="body">Holds the page. Filters, sort, ?vehicle and ?view are mirrored into the URL, and Back</text>
+  <text x="75" y="1506" class="body">and Forward re-read it.</text>
+  <path d="M120 1520 L120 1554" class="flow"/>
+  <rect x="60" y="1556" width="760" height="101" class="box"/>
+  <text x="75" y="1582" class="title">Cards, detail, bid panel</text>
+  <text x="75" y="1604" class="mono">src/components/*</text>
+  <text x="75" y="1626" class="body">Format currency (src/lib/format.ts) and tick the countdowns from the server's window</text>
+  <text x="75" y="1643" class="body">(src/lib/auction.ts). No business math runs in the browser.</text>
   <rect x="890" y="170" width="450" height="118" class="box"/>
   <text x="905" y="196" class="title">BidPanel</text>
   <text x="905" y="218" class="mono">src/components/vehicle/BidPanel/BidPanel.tsx</text>
-  <text x="905" y="240" class="body">Posts { amount, anchor_ms } to POST</text>
-  <text x="905" y="257" class="body">/api/vehicles/{id}/bids through src/lib/data.ts; buy now</text>
-  <text x="905" y="274" class="body">posts to /buy-now.</text>
+  <text x="905" y="240" class="body">Posts { amount } to POST /api/vehicles/{id}/bids through</text>
+  <text x="905" y="257" class="body">src/lib/data.ts; buy now posts to /buy-now. Only a</text>
+  <text x="905" y="274" class="body">signed-in buyer can.</text>
   <path d="M950 288 L950 322" class="flow"/>
   <text x="962" y="310" class="flow-label">POST</text>
-  <rect x="890" y="324" width="450" height="118" class="box"/>
+  <rect x="890" y="324" width="450" height="135" class="box"/>
   <text x="905" y="350" class="title">HandleBid</text>
-  <text x="905" y="372" class="mono">api/TheYard.Api/Program.cs</text>
-  <text x="905" y="394" class="body">Three questions in order: is the clock anchor valid (400</text>
-  <text x="905" y="411" class="body">if not), does the vehicle exist (404 if not), does the</text>
-  <text x="905" y="428" class="body">domain accept the action (400 with the reason if not).</text>
-  <path d="M950 442 L950 476" class="flow"/>
-  <text x="962" y="464" class="flow-label">the domain decides</text>
-  <rect x="890" y="478" width="450" height="118" class="box"/>
-  <text x="905" y="504" class="title">BidRules</text>
-  <text x="905" y="526" class="mono">api/TheYard.Domain/BidRules.cs</text>
-  <text x="905" y="548" class="body">The sole authority: the live window, the tiered minimum</text>
-  <text x="905" y="565" class="body">increment, and the buy-now override (a bid at or above</text>
-  <text x="905" y="582" class="body">buy_now_price wins outright at that price).</text>
-  <path d="M950 596 L950 630" class="flow"/>
-  <text x="962" y="618" class="flow-label">accepted, won, or rejected</text>
-  <rect x="890" y="632" width="450" height="118" class="box"/>
-  <text x="905" y="658" class="title">BidService</text>
-  <text x="905" y="680" class="mono">api/TheYard.Application/BidService.cs</text>
-  <text x="905" y="702" class="body">Accepted and won bids land in an in-memory map, one</text>
-  <text x="905" y="719" class="body">anonymous buyer. The response carries the updated</text>
-  <text x="905" y="736" class="body">vehicle with a fresh min_next_bid.</text>
-  <path d="M950 750 L950 784" class="flow"/>
-  <text x="962" y="772" class="flow-label">the updated vehicle</text>
-  <rect x="890" y="786" width="450" height="118" class="box"/>
-  <text x="905" y="812" class="title">useBids</text>
-  <text x="905" y="834" class="mono">src/hooks/useBids.ts</text>
-  <text x="905" y="856" class="body">Clears the query cache and refetches, so every list,</text>
-  <text x="905" y="873" class="body">filter and total reflects the bid through the same read</text>
-  <text x="905" y="890" class="body">path.</text>
-  <path d="M920 904 L920 924 L855 924 L855 1290 L822 1290" class="loop"/>
-  <text x="930" y="920" class="loop-label">refetch, through the same read path</text>
+  <text x="905" y="372" class="mono">api/TheYard.Api/Endpoints/BidEndpoints.cs</text>
+  <text x="905" y="394" class="body">Three questions in order: is this session on this store</text>
+  <text x="905" y="411" class="body">(401 if not), does the vehicle exist (404 if not), does</text>
+  <text x="905" y="428" class="body">the domain accept the action (400 with the reason if</text>
+  <text x="905" y="445" class="body">not).</text>
+  <path d="M950 459 L950 493" class="flow"/>
+  <text x="962" y="481" class="flow-label">the Application ring</text>
+  <rect x="890" y="495" width="450" height="118" class="box"/>
+  <text x="905" y="521" class="title">Auction.PlaceBidAsync</text>
+  <text x="905" y="543" class="mono">api/TheYard.Application/Auction.cs</text>
+  <text x="905" y="565" class="body">Measures the bid against the room's standing price as</text>
+  <text x="905" y="582" class="body">well as everybody's bids, so nobody retakes a lead below</text>
+  <text x="905" y="599" class="body">the going rate.</text>
+  <path d="M950 613 L950 647" class="flow"/>
+  <text x="962" y="635" class="flow-label">the domain decides</text>
+  <rect x="890" y="649" width="450" height="118" class="box"/>
+  <text x="905" y="675" class="title">BidRules</text>
+  <text x="905" y="697" class="mono">api/TheYard.Domain/BidRules.cs</text>
+  <text x="905" y="719" class="body">The sole authority: the live window, the tiered minimum</text>
+  <text x="905" y="736" class="body">increment, and the buy-now override (a bid at or above</text>
+  <text x="905" y="753" class="body">buy_now_price wins outright at that price).</text>
+  <path d="M950 767 L950 801" class="flow"/>
+  <text x="962" y="789" class="flow-label">accepted, won, or rejected</text>
+  <rect x="890" y="803" width="450" height="152" class="box"/>
+  <text x="905" y="829" class="title">BidService</text>
+  <text x="905" y="851" class="mono">api/TheYard.Application/BidService.cs</text>
+  <text x="905" y="873" class="body">Under one gate: an accepted or won bid is written to the</text>
+  <text x="905" y="890" class="body">store (Azure SQL Database or Cosmos DB, through the</text>
+  <text x="905" y="907" class="body">IBidStore port) and then to memory, under the buyer's</text>
+  <text x="905" y="924" class="body">account. The response carries the updated vehicle with a</text>
+  <text x="905" y="941" class="body">fresh min_next_bid.</text>
+  <path d="M950 955 L950 989" class="flow"/>
+  <text x="962" y="977" class="flow-label">the updated vehicle</text>
+  <rect x="890" y="991" width="450" height="118" class="box"/>
+  <text x="905" y="1017" class="title">useBids</text>
+  <text x="905" y="1039" class="mono">src/hooks/useBids.ts</text>
+  <text x="905" y="1061" class="body">Clears the query cache and refetches, so every list,</text>
+  <text x="905" y="1078" class="body">filter and total reflects the bid through the same read</text>
+  <text x="905" y="1095" class="body">path.</text>
+  <path d="M920 1109 L920 1129 L855 1129 L855 1324 L822 1324" class="loop"/>
+  <text x="930" y="1125" class="loop-label">refetch, through the same read path</text>
 
-  <text x="40" y="1669" class="caption">One rule shapes everything: derive, do not store. Windows, statuses, galleries and the 100,000 inventory are computed from stable ids, never persisted.</text>
-  <text x="40" y="1689" class="caption">Source: docs/images/dataflow.svg in the repository, drawn by docs/images/dataflow.mjs and redrawn when a box moves.</text>
+  <text x="40" y="1703" class="caption">One rule shapes everything: derive, do not store. Windows, statuses, galleries and the 100,000 inventory are computed from stable ids, never persisted.</text>
+  <text x="40" y="1723" class="caption">Source: docs/images/dataflow.svg in the repository, drawn by docs/images/dataflow.mjs and redrawn when a box moves.</text>
 </svg>

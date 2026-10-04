@@ -20,7 +20,7 @@ public static class TrafficMinutes
     /// <summary>The given requests grouped by the minute they were answered in, oldest minute first, each with its counts and sorted durations.</summary>
     public static IReadOnlyList<TrafficMinute> From(IReadOnlyList<RequestEntry> requests) =>
         requests
-            .GroupBy(request => MachineFolding.MinuteOf(request.At))
+            .GroupBy(request => request.At.UtcMinute)
             .OrderBy(group => group.Key)
             .Select(group =>
             {

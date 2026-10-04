@@ -66,8 +66,8 @@ public static class ErrorEndpoints
         // from an unauthenticated POST and end up on a public page, in Application
         // Insights and now in the kept log, and a browser report that quotes an
         // address must not become a public line that names it (ADR: Logs that
-        // outlive the container). The stack was not bounded here at first, only
-        // the message was (the staff review, 2026-09-03).
+        // outlive the container). The stack is bounded for the same reason as the
+        // message.
         string message = LogText.Clean(report.Message, LogText.MessageLength);
         string stack = LogText.Clean(report.Stack, LogText.DetailLength);
         string where = string.IsNullOrWhiteSpace(report.Path) ? "(browser)" : report.Path;

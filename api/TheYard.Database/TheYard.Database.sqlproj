@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.Build.Sql/2.2.0">
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
 
   <!-- The database, as the database (ADR: Data first, and the database in
        source control).

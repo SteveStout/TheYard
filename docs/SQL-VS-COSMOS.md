@@ -53,10 +53,10 @@ picture (ADR: Docs and testing).*
 
 ## The same application, both stores
 
-Nothing above the adapters knows which store it is on. The Application layer
-speaks to three ports, a vehicle source, a photo manifest source and a bid
-store, and Identity speaks to a user store; each side implements all four
-(ADR: The ports learn to wait). One container
+Nothing above the adapters knows which store it is on. The auction in the
+Application layer speaks to three ports, a vehicle source, a photo manifest
+source and a bid store, and Identity speaks to a user store; each side
+implements all four (ADR: The ports learn to wait). One container
 image runs both adapters in one process, brought up side by side, and each
 site serves one of them by default: the live site,
 https://theyard.stevenstout.biz, serves Azure SQL Database, and the second

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api;
-using TheYard.Infrastructure;
+using TheYard.Application;
 
 namespace TheYard.Tests;
 

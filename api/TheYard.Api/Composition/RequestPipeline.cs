@@ -25,14 +25,11 @@ public static class RequestPipeline
         #region request-timing
         // Timing, and it has to be the outermost thing here.
         //
-        // The first version of this sat further down the pipeline, below
-        // UseExceptionHandler, and its comment claimed it measured "the whole cost a
-        // caller waited for, including the time spent turning an exception into a
-        // ProblemDetails". Both halves were false. Unwinding runs inner to outer, so a
-        // request that threw reached this finally before the handler had written
-        // anything, and every failed request was recorded as a 200 with the handler's
-        // time excluded. /api/admin/selftest/exception answers 500 to its caller and
-        // was appearing in the metrics as 200 (the staff review, 2026-09-03).
+        // Outermost, above UseExceptionHandler, because unwinding runs inner to outer.
+        // Placed below the handler, a request that threw would reach this finally
+        // before the handler had written anything, so every failed request would be
+        // recorded as a 200 with the handler's time left out. Here it records the
+        // status the caller actually received and the whole time they waited.
         //
         // Above the handler it sees the status that was actually sent. Above
         // UseAuthentication too, so a request rejected with 401 is counted rather than

@@ -102,6 +102,10 @@ The same rule from the other side (`api/TheYard.Tests/ChangelogTests.cs`):
   is already mandatory, already tested, and already served to the reader, so it
   is the artefact with the fewest ways to be wrong.
 
+## Where it sits
+
+No ring: this is a deployment decision about where the version number comes from, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the version step and the refusal.

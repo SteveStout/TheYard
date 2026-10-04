@@ -196,7 +196,7 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
         }
 
         using var db = await factory.CreateDbContextAsync(cancellation);
-        DateTime from = ActivityFolding.HourOf(since).UtcDateTime;
+        DateTime from = since.UtcHour.UtcDateTime;
         var rows = await db.ActivityHours.AsNoTracking()
             .Where(row => row.Hour >= from)
             .OrderBy(row => row.Store)
@@ -220,7 +220,7 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
         }
 
         using var db = await factory.CreateDbContextAsync(cancellation);
-        string fromDay = ActivityFolding.DayOf(since);
+        string fromDay = since.UtcDay;
         var rows = await db.ActivityVisitors.AsNoTracking()
             .Where(row => string.Compare(row.Day, fromDay) >= 0)
             .OrderByDescending(row => row.LastSeen)

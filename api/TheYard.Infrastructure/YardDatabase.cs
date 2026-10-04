@@ -103,4 +103,21 @@ public static class YardDatabase
                 + "Publish api/TheYard.Database before pointing a container at this database.");
     }
     // #endregion schema
+
+    /// <summary>Whether the seed catalogue is in the database right now: one vehicle and one photo row.</summary>
+    public static async Task<bool> HasSeedAsync(IDbContextFactory<YardDbContext> contexts)
+    {
+        await using var db = await contexts.CreateDbContextAsync();
+        return await db.Vehicles.AnyAsync() && await db.Photos.AnyAsync();
+    }
+
+    /// <summary>
+    /// One round trip to the database doing as little work as a round trip can, for the
+    /// performance proof's measure of the network between the container and the store.
+    /// </summary>
+    public static async Task PingAsync(IDbContextFactory<YardDbContext> contexts)
+    {
+        await using var db = await contexts.CreateDbContextAsync();
+        await db.Database.ExecuteSqlRawAsync("SELECT 1");
+    }
 }

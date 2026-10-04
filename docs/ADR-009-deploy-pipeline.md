@@ -133,6 +133,10 @@ as it is today. App Service starts the new container beside the old one and move
 new one answers, so a site serves through its own roll, which a container group never did. The
 deploy identity holds Website Contributor on the two sites and nothing else new.
 
+## Where it sits
+
+The deploy pipeline is a deployment decision made in GitHub Actions workflows, outside every ring, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the whole pipeline; its trigger,

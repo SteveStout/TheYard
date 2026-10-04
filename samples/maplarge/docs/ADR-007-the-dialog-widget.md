@@ -34,6 +34,10 @@ so a screen reader hears counts change.
 render checks `dialog.open` before either. The one browser behaviour worth knowing: a form with
 `method="dialog"` would close it on submit, so none of the forms inside use that method.
 
+## Where it sits
+
+This record sits in the front end's outer ring (src/ui and navigation.ts) around the browser's own dialog element. It follows the S in SOLID: the address decides whether the dialog is open, so the dialog has one job, showing the view. The cost is a small check before every open or close, and no form inside may use the method that closes a dialog on submit. If the page needed dialogs stacked on dialogs, a small focus manager would be worth writing.
+
 ## Files
 
 - [`wwwroot/index.html`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/index.html): the dialog and the trigger.

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TheYard.Api;
 using TheYard.Application;
+using TheYard.Infrastructure;
 
 namespace TheYard.Tests;
 
@@ -135,7 +136,7 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task The_resource_view_is_absent_and_says_why_where_there_is_no_azure_sql_to_read_it_from()
     {
-        var load = await ResourceStats.ReadAsync(null, 10, CancellationToken.None);
+        var load = await ResourceStats.ReadAsync(null, "absent", 10, CancellationToken.None);
 
         Assert.False(load.Available);
         Assert.NotNull(load.Note);

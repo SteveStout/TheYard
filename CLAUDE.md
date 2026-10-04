@@ -19,19 +19,24 @@ green before anything rolls (ADR-068). Any build warning is red.
 
 ## Architecture, and it is not negotiable
 
-Nine projects; among the five that form the onion, dependencies point INWARD only:
+Ten projects; among the five that form the onion, dependencies point INWARD only, and
+`api/TheYard.Tests/OnionTests.cs` fails the build when one points outward (ADR: Onion and SOLID, how
+this codebase holds them):
 
 - `api/TheYard.Data` - pure records, ZERO dependencies, ZERO behavior. If it computes anything it does
   not belong here.
 - `api/TheYard.Domain` - the rules. Depends only on Data.
-- `api/TheYard.Application` - use cases behind three ports (`IVehicleSource`, `IPhotoManifestSource`,
-  `IBidStore`). Depends on Domain.
+- `api/TheYard.Application` - use cases and ports. `Auction` is what the endpoints ask about the auction; the
+  auction's three ports are `IVehicleSource`, `IPhotoManifestSource` and `IBidStore`, beside the
+  operator's ports (`IActivityStore`, `ILogStore`, `IStoreExperiment` and the rest). Depends on Domain.
 - `api/TheYard.Infrastructure` - the relational adapters: EF Core over Azure SQL Database or SQLite, the
   JSON seed readers, the synthetic scale-up decorator, the Identity user entity. Implements the ports.
-- `api/TheYard.Api` - host and endpoints. Composition root. NO business logic in endpoints.
+- `api/TheYard.Api` - host and endpoints. Handlers in `Endpoints/`, the composition root in
+  `Composition/`, and `Program.cs` a table of contents for both. NO business logic in endpoints.
 
-Beside the onion: `api/TheYard.Infrastructure.Cosmos` (the same ports and an Identity user store over
-Azure Cosmos DB on the SDK, referencing Infrastructure for the shared user entity),
+Beside the five: `api/TheYard.Infrastructure.Cosmos` (the second adapter in Infrastructure's ring: the
+same ports and an Identity user store over Azure Cosmos DB on the SDK, referencing Infrastructure only
+for the shared user entity),
 `api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
 `api/TheYard.Migrations.Sqlite` (the SQLite schema's history), `api/TheYard.Experiment` (a console tool
 for the partition key experiment), and `api/TheYard.Tests`. One process runs BOTH stores side by side and
@@ -69,8 +74,10 @@ split).
 - Bid rules live only in `TheYard.Domain/BidRules.cs`. A bid at or above buy-now wins AT the buy-now
   price, and that check runs BEFORE the increment check. A vehicle anybody has bought is SOLD, to
   everybody: that check runs before all the others, the caller that holds everybody's standing
-  (`BidService.IsSold`) supplies it, and the wire says `sold` on every vehicle. A listing or a rule
-  that forgets it recreates the second buyer (ADR: Accounts and per-user bids, addendum).
+  (`BidService.IsSold`, asked through `Auction.IsSold`) supplies it, and the wire says `sold` on every
+  vehicle. A listing or a rule that forgets it recreates the second buyer (ADR: Accounts and per-user
+  bids, addendum). Raising a vehicle's shown price over a bid, and whether the reserve is met, live only
+  in `TheYard.Domain/StandingRules.cs` (`RaisedTo`, `ReserveOf`).
 
 ## Testing
 

@@ -24,18 +24,25 @@ The SQL Server schema, hand written, compiled to a DACPAC. The authority for wha
 The business rules, as pure functions over Data: `AuctionSchedule` derives each
 vehicle's auction window from its id, `BidRules` owns increments, validation, and the
 buy-now override, `VehicleFilter` is the search predicate, `VehicleOrdering` ranks
-results, and `PhotoGallery` picks deterministic galleries. Everything takes its clock as
+results, `StandingRules` holds the one rule for raising a vehicle's shown price over a bid
+(`RaisedTo`) and whether its reserve is met (`ReserveOf`), and `PhotoGallery` picks
+deterministic galleries. Everything takes its clock as
 an argument (`AuctionClock`), so every rule is testable with a fixed timestamp and no
 mocking.
 
 ## TheYard.Application
 
-The use cases, and the seams. `InventoryService` loads the dataset once and answers
+The use cases, and the seams. `Auction` is what the endpoints ask about the auction: it composes one
+store's catalogue, everybody's bids and the simulated room (`MarketService`) in the one
+order the rules need, and `BidsOf` gives a buyer's bids as `BidView`s. `InventoryService` loads the dataset once and answers
 search/facet/by-id queries by composing Domain rules; `BidService` holds the buyer's
 bid state, read from the database at startup and written through on every accepted
 bid, and applies it *before* filtering so prices never disagree with the
-UI. Both consume data through ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`): the
-interfaces that make Infrastructure swappable and the tests trivial to fake.
+UI. Both consume data through the auction's three ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`): the
+interfaces that make Infrastructure swappable and the tests trivial to fake. Beside them sit the
+operator's ports, which the Admin tab and the account flows read through: `IActivityStore`,
+`ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment`
+and the rest.
 
 ## TheYard.Infrastructure
 
@@ -44,11 +51,12 @@ catalogue, the photo manifest, accounts and bids; `JsonFileVehicleSource` and
 `JsonFilePhotoManifestSource`, which deserialize the files on disk that seed a fresh database; and
 `SyntheticVehicleSource` decorates a source to expand 200 seeds into 100,000
 deterministic records, proof the port design works, since nothing above it changed when
-the dataset grew 500×.
+the dataset grew 500×. It also holds the Identity user (`YardUser`), the context factory and
+the database readings the Admin tab shows (`ResourceStats`, `YardDatabase.PingAsync`).
 
 ## TheYard.Infrastructure.Cosmos
 
-The same three ports and the account store over Azure Cosmos DB, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs).
+The auction's three ports, the operator's stores and the account store over Azure Cosmos DB, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). The partition key experiment the Admin tab runs is `PartitionExperiment`, behind `IStoreExperiment`.
 
 ## TheYard.Migrations.Sqlite
 
@@ -60,8 +68,10 @@ A console tool: seeds the 100,000-document catalogue and runs the partition key'
 
 ## TheYard.Api
 
-The composition root and nothing more: `Program.cs` wires the dependency graph and
-declares every HTTP route, `VehicleQueryParams` binds and validates GET parameters,
+The host and the composition root: `Program.cs` is a table of contents, one line per
+step with the file that holds it beside it; `Composition/` registers every service and builds
+the request pipeline; `Endpoints/` declares every API route, one file per area, and each
+handler asks Application; `VehicleQueryParams` binds and validates GET parameters,
 `Clocks` builds the request's clock (now, and the UTC midnight that began the day, the same for every caller), and `VehicleWire` stamps server-derived
 auction facts onto each outgoing vehicle. Endpoints contain no logic, only binding and
 delegation.
@@ -72,7 +82,8 @@ One suite per ring: Domain rules with fixed clocks, Application services with in
 fakes at the ports, Infrastructure against both fixtures and the real dataset, and
 integration tests that boot the actual host in-memory (`WebApplicationFactory`) to
 verify routes, parameters, error paths, and the full bid lifecycle, with no
-running server required. How many tests there are is counted in the README.
+running server required. `OnionTests` reads the compiled assemblies and fails the build
+when a dependency points outward (ADR: Onion and SOLID, how this codebase holds them). How many tests there are is counted in the README.
 
 ## Frontend (src/)
 

@@ -13,7 +13,7 @@ namespace TestProject.Controllers;
 /// </summary>
 [ApiController]
 [Route("api")]
-public sealed class DocumentationAndVersionController(DocumentationCatalog catalog, VersionInfo version, IWebHostEnvironment environment) : ControllerBase
+public sealed class DocumentationAndVersionController(DocumentationCatalog catalog, VersionInfo version) : ControllerBase
 {
     /// <summary>Lists each document's slug, title and sidebar group. GET /api/docs</summary>
     [HttpGet("docs")]
@@ -26,16 +26,10 @@ public sealed class DocumentationAndVersionController(DocumentationCatalog catal
     /// </summary>
     /// <param name="slug">The document's file name in lower case, without .md.</param>
     [HttpGet("docs/{slug}")]
-    public IActionResult Document(string slug)
-    {
-        string? file = catalog.FileFor(slug.ToLowerInvariant());
-        if (file is null)
-        {
-            throw ApiRefusalException.NotFound($"There is no document called '{slug}'.");
-        }
-        string markdown = LiveSamples.Expand(System.IO.File.ReadAllText(file), environment.ContentRootPath);
-        return Content(markdown, "text/markdown; charset=utf-8");
-    }
+    public IActionResult Document(string slug) =>
+        catalog.Read(slug.ToLowerInvariant()) is { } markdown
+            ? Content(markdown, "text/markdown; charset=utf-8")
+            : throw ApiRefusalException.NotFound($"There is no document called '{slug}'.");
 
     /// <summary>
     /// Returns the version from the changelog and the commit the app was built from, both read at

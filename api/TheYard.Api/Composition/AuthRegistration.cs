@@ -99,8 +99,17 @@ public static class AuthRegistration
         // registrations in the application, and the reason the first one exists.
         builder.Services.AddScoped<IUserStore<YardUser>>(services =>
             services.GetRequiredService<CurrentBackend>().Backend.UserStore(services)
-                ?? throw new InvalidOperationException("this request's store keeps no accounts; the endpoint should have refused it first"));
+                ?? throw new InvalidOperationException("this request's store keeps no accounts; RequestAccounts answers null before this is reached"));
+
+        // The handlers take RequestAccounts rather than UserManager, because UserManager is built
+        // over the request's store, and a store that did not come up has no accounts to build it
+        // over. RequestAccounts asks first and answers null, so no handler meets the throw above.
+        builder.Services.AddScoped(services => new RequestAccounts(() =>
+            services.GetRequiredService<CurrentBackend>().Backend.Ready
+                ? services.GetRequiredService<UserManager<YardUser>>()
+                : null));
         // #endregion user-store-per-request
+        builder.Services.AddSingleton<PasswordReset>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

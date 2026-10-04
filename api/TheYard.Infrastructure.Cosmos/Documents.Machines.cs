@@ -121,7 +121,7 @@ public sealed class MachineMinuteDocument
     public static MachineMinuteDocument From(MachineMinute minute) => new()
     {
         Id = IdFor(minute.Site, minute.At),
-        Day = MachineWindows.DayOf(minute.At),
+        Day = minute.At.UtcDay,
         Site = minute.Site,
         At = minute.At.ToUniversalTime().ToString("O"),
         B5 = MachineWindows.KeyOf(minute.At, MachineGrain.FiveMinutes),

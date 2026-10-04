@@ -5,6 +5,7 @@
 
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application;
+using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 
@@ -40,128 +41,12 @@ public static partial class AdminEndpoints
     /// Answers the timing, computed on read from the rings: request and SQL percentiles, counts by status, the
     /// document store's charges, and each store's cold start and share of the requests.
     /// </summary>
-    private static IResult Metrics(HttpContext http, Backends backends, RequestRingBuffer requestLog, SqlRingBuffer sqlLog, StoreRingBuffer storeLog, HostStart start)
-    {
-        var startedAt = start.At;
-        var requests = requestLog.Snapshot();
-        var statements = sqlLog.Snapshot();
-        long[] requestDurations = requests.Select(entry => entry.DurationMs).ToArray();
-        long[] sqlDurations = statements.Select(statement => statement.DurationMs).ToArray();
-        // The store this request is on gets the top-level numbers, which is what
-        // the comparison card on a single-store container and the peer read have
-        // always taken. Every store this container runs is listed below them, each
-        // with its own cold start and its own share of the request ring
-        // (ADR: One container, both stores).
-        var mine = backends.For(http);
-        return Results.Json(new
-        {
-            requests = new
-            {
-                window = requests.Count,
-                p50_ms = Percentiles.OfOrNull(requestDurations, 50),
-                p95_ms = Percentiles.OfOrNull(requestDurations, 95),
-                by_path = Percentiles.ByPath(requests),
-                // The same window by route, for the comparison card: a bid on one
-                // vehicle and a bid on another are one row (ADR: Backends, side by side).
-                by_route = Routes.ByRoute(requests),
-            },
-            // Counts by status, which is the aggregate that makes the timing above
-            // mean something: a p95 of eight milliseconds reads very differently
-            // when a third of the window is 500s. It also names nobody, which the
-            // per-request list it replaced could not say.
-            by_status = requests
-                .GroupBy(entry => entry.Status)
-                .OrderBy(group => group.Key)
-                .Select(group => new { status = group.Key, count = group.Count() })
-                .ToArray(),
-            sql = new
-            {
-                window = statements.Count,
-                p50_ms = Percentiles.OfOrNull(sqlDurations, 50),
-                p95_ms = Percentiles.OfOrNull(sqlDurations, 95),
-                max_ms = sqlDurations.Length == 0 ? (long?)null : sqlDurations.Max(),
-            },
-            // #region store-metrics
-            // The same window over the document store, with what the window cost:
-            // total request units, the median charge, the dearest single operation,
-            // and how many of them fanned out across partitions. These are the
-            // numbers the comparison card puts beside the milliseconds
-            // (ADR: Backends, side by side).
-            store = StoreMetrics.Of(mine.Name, storeLog.Snapshot()),
-            store_by_route = Routes.ChargesByRoute(storeLog.Snapshot()),
-            // How this container came up: how long the store took to answer, how
-            // long the catalogue and the bids took to load, when it was ready to
-            // serve, and what the seed cost. Measured on this container at this
-            // start, which is the only honest cold start there is.
-            startup = StartupView(mine),
-            // #endregion store-metrics
-            // #region backends-metrics
-            // Every store this container runs, on the same rows the peer answers
-            // with, so the card compares two stores in one process the way it
-            // compared two containers: the cold start each one had, the requests
-            // each one served, and what those cost the one that can say.
-            backends = backends.All.Select(backend => new
-            {
-                key = backend.Key,
-                store = backend.Name,
-                ready = backend.Ready,
-                @default = ReferenceEquals(backend, backends.Default),
-                startup = StartupView(backend),
-                requests = RequestsView(requests.Where(entry => entry.Store == backend.Key).ToArray()),
-                store_metrics = backend.Cosmos is null
-                    ? null
-                    : StoreMetrics.Of(backend.Name, storeLog.Snapshot()),
-                store_by_route = backend.Cosmos is null
-                    ? Array.Empty<RouteCharge>()
-                    : Routes.ChargesByRoute(storeLog.Snapshot()),
-                sql = backend.Contexts is null
-                    ? null
-                    : new
-                    {
-                        window = statements.Count,
-                        p50_ms = Percentiles.OfOrNull(sqlDurations, 50),
-                        p95_ms = Percentiles.OfOrNull(sqlDurations, 95),
-                        max_ms = sqlDurations.Length == 0 ? (long?)null : sqlDurations.Max(),
-                    },
-            }).ToArray(),
-            // #endregion backends-metrics
-            // No recent_requests list. The first version returned the whole ring,
-            // five hundred entries of method, path, status and timing, which is a
-            // near-real-time feed of what every other visitor to a public site is
-            // doing: which vehicles they opened, which filters they typed. The page
-            // never rendered it. Aggregates answer the question the section is for
-            // and name nobody (the staff review, 2026-09-03).
-        });
-
-        static object RequestsView(IReadOnlyList<RequestEntry> served)
-        {
-            long[] durations = served.Select(entry => entry.DurationMs).ToArray();
-            return new
-            {
-                window = served.Count,
-                p50_ms = Percentiles.OfOrNull(durations, 50),
-                p95_ms = Percentiles.OfOrNull(durations, 95),
-                by_route = Routes.ByRoute(served),
-            };
-        }
-
-        object StartupView(Backend backend) => new
-        {
-            store = backend.Name,
-            prepare_ms = backend.Startup.Ms("prepare"),
-            schema_ms = backend.Database.SchemaMs,
-            seed_ms = backend.Database.SeedMs,
-            seed_ru = backend.Database.SeedRequestUnits,
-            catalogue_ms = backend.Startup.Ms("catalogue"),
-            bids_ms = backend.Startup.Ms("bids"),
-            ready_ms = backend.Startup.ReadyMs,
-            started_at = startedAt,
-        };
-    }
+    private static IResult Metrics(HttpContext http, Backends backends, RequestRingBuffer requestLog, SqlRingBuffer sqlLog, StoreRingBuffer storeLog, HostStart start) =>
+        Results.Json(MetricsReport.Build(backends, backends.For(http), requestLog.Snapshot(), sqlLog.Snapshot(), storeLog.Snapshot(), start.At));
 
     /// <summary>
     /// Answers the Store bar: which stores this container runs, which one this request is on, and the other site's
-    /// address. Expires a cookie the old toggle set.
+    /// address. Expires a stale yard-store cookie.
     /// </summary>
     private static Ok<StoresView> Stores(HttpContext http, Backends backends)
     {
@@ -187,7 +72,9 @@ public static partial class AdminEndpoints
     {
         var startedAt = start.At;
         var relational = backends.Named("sql");
-        var load = await ResourceStats.ReadAsync(relational, RingSizes.MachineSamples, cancellation, loggers.CreateLogger(environment.ApplicationName));
+        var load = relational is null
+            ? StoreLoad.Absent("this container has no relational store, or it did not come up")
+            : await relational.ReadLoadAsync(RingSizes.MachineSamples, cancellation, loggers.CreateLogger(environment.ApplicationName));
         var now = DateTimeOffset.UtcNow;
         var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB", now);
         return Results.Json(new
@@ -214,7 +101,7 @@ public static partial class AdminEndpoints
                 {
                     store = backend.Name,
                     serves = ReferenceEquals(backend, backends.Default),
-                    loaded = backend.Inventory.IsWarm,
+                    loaded = backend.CatalogueLoaded,
                 }),
             },
             relational = new

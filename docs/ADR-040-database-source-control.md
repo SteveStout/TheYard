@@ -204,6 +204,10 @@ that reads it, held up in the one way it could be tested: the second store was
 built from the same domain records and the same seed files, and the relational
 schema did not move.
 
+## Where it sits
+
+The authority is TheYard.Database, a SQL project beside the onion, and Infrastructure maps to it, with YardDatabase.BringSchemaUp refusing a SQL Server store whose tables are missing. This is a decision about who owns the schema, so SOLID does not apply to it. Every column change now touches two files in a fixed order, and the seven Identity tables became this repository's to keep by hand. A project certain to stay on one framework, with nobody who reviews SQL, could let EF migrations own the schema and drop the second file.
+
 ## Files
 
 - [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the schema, and the authority.

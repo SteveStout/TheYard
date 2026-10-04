@@ -248,6 +248,10 @@ documentation and nothing more. Routes and behaviour are unchanged. The catalog 
 read (slug to file, plus the diagrams) is `DocumentationCatalog.cs` for the same reason, held by
 `DocumentationCatalogTests`.
 
+## Where it sits
+
+This record is about the host Api alone: Program.cs is a table of contents, and Composition/ is the composition root, the one place where the outer rings' classes are bound to the ports the inner rings define. That binding is dependency inversion, with Application owning the interfaces while Infrastructure and Infrastructure.Cosmos supply them through constructors, and each registration file under Composition/ has one job, which is single responsibility. The cost is more files to open than a single Program.cs, so a newcomer follows a line to its file before reading any code. A service with a handful of endpoints and one store would read better as one short Program.cs.
+
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents this record walks.
@@ -256,9 +260,13 @@ read (slug to file, plus the diagrams) is `DocumentationCatalog.cs` for the same
 - [`api/TheYard.Api/YardComposition.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/YardComposition.cs): what the steps hand one another.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): `net10.0`, nullable reference types on, implicit usings on (which is why the file has so few `using` lines).
 - [`api/TheYard.Api/VehicleQueryParams.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleQueryParams.cs), [`api/TheYard.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Clocks.cs), [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): binding, the clock anchor, and the outgoing shape.
-- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the `Lazy` that makes the singleton registration matter.
+- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the load held once and shared, which is what makes the singleton registration matter.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs), [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs), [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the pieces the host wires.
 - [`api/TheYard.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminEndpointTests.cs) and the tests beside it: every one boots this file through `WebApplicationFactory<Program>`.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the port, the provenance arguments, the HEALTHCHECK, and the files copied for the walk to find.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Verify step that asks `/readyz`.
 - [`docs/PROJECTS.md`](https://github.com/SteveStout/TheYard/blob/main/docs/PROJECTS.md): the layers the services come from (served as Project structure under About).
+
+## Addendum, 2026-10-03: endpoints ask the Application ring
+
+The section on endpoints says a handler calls the service that owns the rule. A bidding or catalogue handler now asks one Application type, `Auction` (`api/TheYard.Application/Auction.cs`), which composes the catalogue, the bids and the room in the order the rules need; the three services stay on each `Backend` and no endpoint holds them. `HandleBid` takes a function of the auction, the vehicle and the clock. The relational context factory the 2026-09-08 addendum mentions moved from the host into the relational adapter (`api/TheYard.Infrastructure/ContextFactory.cs`), because it builds `YardDbContext`; the host still creates it before the container exists and only asks it for contexts. `OnionTests` holds both changes.

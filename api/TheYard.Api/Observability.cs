@@ -2,9 +2,8 @@ using System.Text.Json;
 
 namespace TheYard.Api;
 
-// The observability types behind the Admin tab (ADR-010), moved out of
-// Program.cs verbatim in the staff review (ADR-017) so the host file stays a
-// composition root: what is wired, not how each piece works.
+// The observability types behind the Admin tab (ADR-010), in a file of their own so
+// the composition root says what is wired and this file says how each piece works.
 
 /// <summary>
 /// One health probe's outcome and how long it took, serialized snake_case for
@@ -111,12 +110,12 @@ public sealed class ErrorRingBuffer(int capacity)
 /// available=false anywhere that identity does not exist (local dev, tests),
 /// and caches success for 60 seconds.
 ///
-/// <para>The resource is whatever <c>Azure:SelfResourceId</c> names, and there
-/// have been two kinds. A container group reports a state, a container inside
+/// <para>The resource is whatever <c>Azure:SelfResourceId</c> names, and it can
+/// be one of two kinds. A container group reports a state, a container inside
 /// it, a restart count and its recent events. A web app on an App Service plan
 /// reports none of the last three: what it has instead is the plan it shares,
 /// and that is what the card shows for it, saying so rather than drawing a
-/// zero where a restart count used to be (ADR: One plan, two sites).</para>
+/// zero for a restart count it does not have.</para>
 /// </summary>
 public sealed class AzureSelf(string clientId, string resourceId)
 {

@@ -93,10 +93,10 @@ public static partial class AdminEndpoints
         // The Store bar at the top of the page (ADR: One container, both stores, and
         // its addendum on the toggle moving to the sites). What stores this container
         // runs, which one is this site's default, which one this request is on, and
-        // the other site's address. There is no switch endpoint any more: the bar's
-        // other segment is a link to the other site, so the address bar changes and
-        // each site stays one store's site. A cookie the old toggle set is expired
-        // here, on the first page load that carries it.
+        // the other site's address. There is no switch endpoint: the bar's other
+        // segment is a link to the other site, so the address bar changes and each
+        // site stays one store's site. A stale yard-store cookie is expired here, on
+        // the first page load that carries it.
         app.MapGet("/api/stores", Stores)
             .WithName("GetStores")
             .WithTags("Stores")

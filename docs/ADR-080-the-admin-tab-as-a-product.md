@@ -370,6 +370,10 @@ Every rule kept its exact text; a `@media` block whose rules went to two files b
 
 Two things change at run time and nothing else does. A card whose sheet is its own now loads that sheet with its own chunk, the first time the card opens, instead of inside the workbench's sheet. And where two sheets style one element (the traffic card's stat blocks are tiles with a look of their own), the card's sheet loads after the strip's, the same order the two rules had in the one file. Built, the tab's CSS was one file of 25,548 bytes and is nine files of 25,210 bytes in all, 338 fewer: the workbench's file, 12,979, which carries the card and stat strip sheets the workbench itself imports, then the table 4,064, the charts 3,911, the activity card 2,103, the traffic card 751, the tests card 664, the proof 597, the kept logs 104 and the errors card 37, each loaded with its own chunk. The page's first sheet is byte for byte the same file.
 
+## Where it sits
+
+This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.
+
 ## Files
 
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the arithmetic for every chart on the tab, React-free: axes, paths with their gaps, the kept windows' timelines, traffic as slots, and the proof's bars.

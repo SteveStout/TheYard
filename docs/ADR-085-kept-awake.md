@@ -52,10 +52,16 @@ Set `KeepWarm__Enabled` to `false` in a site's app settings; the site restarts w
 - `KeepWarmTests`: with a clock the test moves by hand: the first pass waits the stagger and then one pass runs every four minutes; a pass that runs past the interval delays the next and two never run at once; a pass that throws does not stop the next; inside a pass a read that fails is counted, and every other read is still sent, on both stores, with the site's own mark.
 - `keepWarm.test.ts`: the health card's line, when the loop has run, has not yet, and is off.
 
+## Where it sits
+
+KeepWarm and KeepWarmState live in the host Api, with one line on the health card in the front end, since sending reads to the app's own pipeline is a hosting concern that no inner ring should know about. Single responsibility, one reason to change, separates the schedule in KeepWarm from the reads in KeepWarmReads, and the loop takes its clock as a TimeProvider through the constructor, the dependency inversion habit that lets KeepWarmTests move time by hand. It cost a pass of reads every four minutes per container, inside capacity the plans already pay for. A plan billed per request or able to scale to zero would make the loop cost money and reopen the choice.
+
 ## Files
 
 - [`api/TheYard.Api/KeepWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/KeepWarm.cs): the loop, the reads and the pass.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the wiring (region keep-warm-wiring), the request hook that leaves its reads out of the ring and the kept log, and the health report that carries its last pass.
+- [`api/TheYard.Api/Composition/Startup.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/Startup.cs): the wiring (region keep-warm-wiring).
+- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the request hook that leaves its reads out of the ring and the kept log.
+- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the health report that carries its last pass.
 - [`api/TheYard.Tests/KeepWarmTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/KeepWarmTests.cs): the schedule, the overlap and the failures, on a clock the test moves.
 - [`src/lib/keepWarm.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/keepWarm.ts) and [`src/components/admin/HealthCard/HealthCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/HealthCard/HealthCard.tsx): the health card's line.
 

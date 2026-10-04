@@ -293,10 +293,11 @@ flowchart RL
 Every arrow points inward and none points back. `TheYard.Data` has no
 dependencies at all, which is what makes it safe for every other layer to hold
 its records. The one arrow between adapters, the Cosmos DB project's reference
-to the relational one, exists for the account entity and the database state
-record it shares (ADR: Accounts on a document store); it is a known cost, not
-a layer, and moving those two types into Application is the change that would
-remove it.
+to the relational one, exists for the one account entity it shares,
+`YardUser` (ADR: Accounts on a document store). It is a known cost, not a
+layer: `YardUser` is an Identity type, so it cannot move into Application
+without Application taking the Identity package, and a test allows that one
+type and nothing else (ADR: Onion and SOLID, how this codebase holds them).
 
 ## One picture in words
 
@@ -309,14 +310,25 @@ counts down clocks. Nothing about an auction is decided twice.
 The API is an onion: every arrow points inward, and the innermost layer
 knows nothing about the ones around it.
 
+The build holds that direction. `api/TheYard.Tests/OnionTests.cs` reads the
+compiled assemblies with NetArchTest and runs eight rules: each ring depends
+only on the rings inside it, the document store's adapter borrows only the
+shared user from the relational one, an endpoint never reaches a store or the service container and reaches the
+auction only through Application, the host never queries a database itself,
+and services are registered only in `Composition/`. A break fails the build
+and names the type that broke it. The rings, the eight rules and where each
+SOLID principle shows are in
+[ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid),
+and the rings are drawn on [their own page](https://theyard.stevenstout.biz/api/docs/diagrams/rings).
+
 | Project | Owns | Depends on |
 | --- | --- | --- |
 | `api/TheYard.Data` | The plain records: `Vehicle`, `PhotoEntry`. No logic. | nothing |
-| `api/TheYard.Domain` | The rules: auction schedule and clock, filter, ordering, bid rules, photo gallery, FNV-1a. Pure functions and records. | Data |
-| `api/TheYard.Application` | The use cases: `InventoryService`, `BidService`, and the ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`) they read through. | Domain, Data |
+| `api/TheYard.Domain` | The rules: auction schedule and clock, filter, ordering, bid rules, standing rules (the one rule for raising a price, and reserve met or not), photo gallery, FNV-1a. Pure functions and records. | Data |
+| `api/TheYard.Application` | The use cases: `Auction`, what the endpoints ask about the auction, composing `InventoryService`, `BidService` and `MarketService`; the auction's three ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`); and the operator's ports (`IActivityStore`, `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment` and the rest). | Domain, Data |
 | `api/TheYard.Database` | The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is. | nothing |
-| `api/TheYard.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator. | Application, Domain, Data |
-| `api/TheYard.Infrastructure.Cosmos` | The same three ports and the account store over Azure Cosmos DB, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). | Application, Infrastructure |
+| `api/TheYard.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator, the Identity user, and the database readings the Admin tab shows (`ResourceStats`, `YardDatabase.PingAsync`). | Application, Domain, Data |
+| `api/TheYard.Infrastructure.Cosmos` | The auction's three ports, the operator's stores and the account store over Azure Cosmos DB, plus the partition key experiment behind `IStoreExperiment`, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). | Application, Infrastructure |
 | `api/TheYard.Experiment` | A console tool: seeds the 100,000-document catalogue and runs the partition key's query set in paired rounds (ADR: The partition key). | Infrastructure, Infrastructure.Cosmos |
 | `api/TheYard.Migrations.Sqlite` | The SQLite schema's history, applied by the process that uses it. | Infrastructure |
 | `api/TheYard.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | Application, Infrastructure, Infrastructure.Cosmos, Migrations.Sqlite (Domain and Data through them) |
@@ -349,12 +361,14 @@ only formats them.
 **The wire is the contract.** snake_case in the dataset, snake_case on the
 wire, snake_case in the browser: nothing is renamed in transit. The
 envelope is `{ total, vehicles }`; a failure is a ProblemDetails body
-(ADR: Error handling). The two settings that hold that contract are in
-Program.cs (ADR: Program.cs, explained).
+(ADR: Error handling). The settings that hold that contract are in
+`api/TheYard.Api/Composition/ApiRegistration.cs` (ADR: Program.cs, explained).
 
-**Endpoints bind and delegate.** A `MapGet` validates its parameters and
-calls a service. If a rule appears in the host file, it is in the wrong
-place.
+**Endpoints bind and delegate.** A `MapGet` in `api/TheYard.Api/Endpoints/`
+validates its parameters and asks Application, the auction's handlers through
+`Auction`. If a rule appears in the host, it is in the wrong place, and
+`OnionTests` fails a handler that composes the bid services itself or reaches
+a store.
 
 **The address bar is the application state.** Filters, sort, the open
 vehicle and the Admin tab are all query parameters, mirrored by
@@ -380,8 +394,8 @@ deploy without them (ADR: The tests, explained).
 | The change | Where it goes |
 | --- | --- |
 | A new auction or bidding rule | `api/TheYard.Domain`, with a unit test first |
-| A new endpoint | one `MapGet`/`MapPost` in Program.cs, plus an integration test |
-| A new data source | a port in Application, an adapter in Infrastructure |
+| A new endpoint | one `MapGet`/`MapPost` in the matching file under `api/TheYard.Api/Endpoints/`, plus an integration test |
+| A new data source | a port in Application, an adapter in Infrastructure, its registration in `api/TheYard.Api/Composition/` |
 | A new derived fact for the browser | `api/TheYard.Api/VehicleWire.cs` |
 | A new API call from the browser | one function in `src/lib/data.ts` |
 | A new view state | the URL, through `filtersToSearchParams` |
@@ -407,8 +421,11 @@ and the Hosting page cover the hosting side of the same question.
 ## Files
 
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the naming, layering and commenting rules this page's principles turn into, and the `.editorconfig` that enforces the mechanical half.
-- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the three ports the layers meet at.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composition root, walked line by line in ADR: Program.cs, explained.
+- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's three ports the layers meet at.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents for the composition root, walked line by line in ADR: Program.cs, explained.
+- [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition) and [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): the registrations and middleware, and the handlers.
+- [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.
+- [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the eight rules that hold the rings.
 - [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the derived facts that make the browser's job formatting.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts) and [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): the one seam and the URL state.
 - [`docs/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/DATAFLOW.md): the same shape as a walk, step by step.

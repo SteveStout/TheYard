@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test tests/js"
+    "test": "node --test tests/js/*.test.js"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

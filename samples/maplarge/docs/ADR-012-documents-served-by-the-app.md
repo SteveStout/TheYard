@@ -59,6 +59,14 @@ source folder, while the live site reads the published output and showed the mis
 in both. The project file now publishes both, and `PublishListTests` holds every file a live block
 names to the publish list, so the gap fails the build instead of reaching a reader.
 
+## Addendum, 2026-10-03: fourteen records, and the catalogue reads them
+
+There are fourteen records now, not twelve. `DocumentationCatalog.Read` finds a document and fills in its live code, so the controller only answers the route and no longer reads files itself.
+
+## Where it sits
+
+This record sits in the Documentation folder, an outer ring beside Controllers that only Controllers and Composition may use. It follows the S in SOLID: the controller only answers the route, DocumentationCatalog.Read finds and fills in a document, and LiveSamples cuts out the code, so each piece changes for one reason. The cost is a markdown reader of about 150 lines that a library could replace. If the documents grew past a few dozen pages, rendering them once at build time would save reading files on every request.
+
 ## Files
 
 - [`Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Documentation/DocumentationCatalog.cs): the list and the slugs.

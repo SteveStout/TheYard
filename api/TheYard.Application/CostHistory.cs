@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace TheYard.Application;
 
 // What Azure charges for this site (ADR: What Azure charges). Azure Cost
@@ -116,10 +114,6 @@ public static class CostWindows
         "7d" => ("7d", 7),
         _ => ("30d", 30),
     };
-
-    /// <summary>A UTC day as the cards name it, yyyy-MM-dd.</summary>
-    public static string DayOf(DateTimeOffset at) =>
-        at.ToUniversalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>The UTC month a day falls in, as yyyy-MM.</summary>
     public static string MonthOf(string day) => day[..7];

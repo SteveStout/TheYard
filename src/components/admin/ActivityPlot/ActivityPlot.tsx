@@ -60,7 +60,9 @@ export function ActivityPlot({
   const labels = labelledIndexes(count);
   const innerWidth = chart.width - chart.left - chart.right;
   const step = count <= 1 ? 0 : innerWidth / (count - 1);
-  const partial = partialDay(report.days, new Date());
+  // The report's own moment, not the browser's clock: rendering stays a pure function of
+  // its props, and the part-day is the one the server counted.
+  const partial = partialDay(report.days, new Date(report.until));
   // The day under the pointer, read off the drawing's own width, so a finger
   // and a mouse land on the same day in every engine.
   const point = (event: PointerEvent<SVGSVGElement>) => {

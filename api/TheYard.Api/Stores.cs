@@ -1,13 +1,12 @@
 // The stores this container runs, and which one a request gets: the backends, the request's
-// choice, the warm before a read, the keeper that lets an idle catalogue go, and the context
-// factory. The rest of the store wiring lives in files beside this one:
+// choice, the warm before a read, and the keeper that lets an idle catalogue go. The rest of the
+// store wiring lives in files beside this one, and the relational context factory lives with the
+// relational adapters in TheYard.Infrastructure/ContextFactory.cs:
 //   Backend.cs                        one store and what stands on it (Backend, StoreAttachment)
 //   StorePrepare.cs                   the five asks a store gets at startup
 //   StoreSecondChance.cs              the store tried again after startup
 //   Composition/StoreRegistration.cs  where the stores are brought up and registered
-using Microsoft.EntityFrameworkCore;
 using TheYard.Application;
-using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 
@@ -21,14 +20,13 @@ namespace TheYard.Api;
 /// stores, the addendum on the toggle moving to the sites). A header naming a
 /// store this container does not have is the default, never an error.</para>
 ///
-/// <para>An older toggle chose the store with a cookie, which a browser may
-/// still carry. It no longer chooses anything, and the stores endpoint
-/// expires it on sight, so the browser lands where the address bar says
-/// rather than on a store the page can no longer switch away from.</para>
+/// <para>A cookie named yard-store chooses nothing. A browser may still carry
+/// one, so the stores endpoint expires it on sight, and the browser lands
+/// where the address bar says.</para>
 /// </summary>
 public sealed class Backends
 {
-    /// <summary>The cookie the toggle used to set. Read only to be expired.</summary>
+    /// <summary>A cookie that chooses nothing and is read only to be expired.</summary>
     public const string LegacyCookieName = "yard-store";
 
     /// <summary>The request header that names a store: "sql" or "cosmos".</summary>
@@ -126,22 +124,13 @@ public sealed class CurrentBackend(Backends backends, IHttpContextAccessor acces
     /// <summary>The store this request named, or the container's default.</summary>
     public Backend Backend { get; } = backends.For(accessor.HttpContext);
 
-    /// <summary>The request's catalogue.</summary>
-    public InventoryService Inventory => Backend.Inventory;
-
-    /// <summary>The request's bids.</summary>
-    public BidService Bids => Backend.Bids;
-
-    /// <summary>The request's competing bidders.</summary>
-    public MarketService Market => Backend.Market;
-
-    /// <summary>The catalogue, the bids and the competing bidders in one line, for an endpoint that wants all three.</summary>
-    public void Deconstruct(out InventoryService inventory, out BidService bids, out MarketService market)
-    {
-        inventory = Inventory;
-        bids = Bids;
-        market = Market;
-    }
+    /// <summary>
+    /// The request's auction: the catalogue, the bids and the room composed by the Application
+    /// ring. A new one per read is three references and nothing more, and it always sees the
+    /// services the backend holds right now, including after the store is attached. The services
+    /// themselves are not offered here, so an endpoint can only reach them through the auction.
+    /// </summary>
+    public Auction Auction => new(Backend.Inventory, Backend.Bids, Backend.Market);
 }
 
 // #region warm-before-reading
@@ -163,7 +152,7 @@ public sealed class CurrentBackend(Backends backends, IHttpContextAccessor acces
 /// at startup, which is no wait at all. The bid replay is awaited by the
 /// writing methods already and read by the reads as whatever has loaded, so
 /// it is not gated here; a listing during the seconds a store's bids replay
-/// shows the dataset's prices, the same as before.</para>
+/// shows the dataset's prices until the replay lands.</para>
 /// </summary>
 public static class Warmth
 {
@@ -255,32 +244,6 @@ public sealed class CatalogueKeeper(Backends backends, TimeSpan idle, ILogger<Ca
     }
 }
 // #endregion catalogue-keeper
-
-/// <summary>
-/// A context per call, from options fixed at startup. The relational backend
-/// is built before the container is, so it cannot take the factory the
-/// container would have registered; this is the same thing with no pool and
-/// no service provider behind it.
-///
-/// <para>One thing the container's factory did for free has to be done by
-/// hand: Entity Framework logs every command through the application's logger
-/// factory, which is what puts its `@p='?'` lines in the Admin tab's log
-/// section, and that factory does not exist until the application is built.
-/// <see cref="Attach"/> hands it over then, before the catalogue is read, so
-/// the first statement is logged like the last.</para>
-/// </summary>
-public sealed class ContextFactory(DbContextOptions<YardDbContext> options) : IDbContextFactory<YardDbContext>
-{
-    /// <summary>The options every context is built from; replaced once when the loggers arrive.</summary>
-    private DbContextOptions<YardDbContext> _options = options;
-
-    /// <summary>A new context for one operation; the caller disposes it.</summary>
-    public YardDbContext CreateDbContext() => new(_options);
-
-    /// <summary>The application's logging, once there is an application.</summary>
-    public void Attach(ILoggerFactory loggers) =>
-        _options = new DbContextOptionsBuilder<YardDbContext>(_options).UseLoggerFactory(loggers).Options;
-}
 
 /// <summary>One store on the toggle: its key, its name, whether it came up, and whether it is the container's default.</summary>
 /// <param name="Key">The store's key.</param>

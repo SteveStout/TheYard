@@ -21,7 +21,7 @@ commit: [/api/version](https://theshed.stevenstout.biz/api/version).
 ## Run it
 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), the same as TheYard,
-and, for the TypeScript build and its tests, Node 20 or newer.
+and, for the TypeScript build and its tests, Node 24, the version TheYard builds with.
 
 ```
 dotnet run
@@ -53,7 +53,7 @@ npm run build
 
 | Suite | Count | What it covers |
 | --- | --- | --- |
-| xUnit | 116 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (layering, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the front end); a measured search over 10,000 files. |
+| xUnit | 130 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
 | node --test | 21 | The address parser and serializer, the byte and date formatting, the markdown reader (a `<script>` arrives as text, an image keeps its alt text). |
 
 The build treats warnings as errors and a public member without a summary is a warning.
@@ -74,6 +74,7 @@ document (ADR-004).
 | `POST /api/files/move`, `POST /api/files/copy` | `{ "from": "a/b.txt", "to": "c/b.txt" }`. A folder is never put inside itself. |
 | `GET /api/docs`, `GET /api/docs/{slug}` | The documents below, as markdown with live code expanded. |
 | `GET /api/version` | The version from the changelog and the commit. |
+| `GET /healthz` | 200 when the home folder is there, 503 when it is not. |
 
 ## Deep links
 
@@ -83,7 +84,7 @@ A bare address is the page with the dialog closed; any state opens it.
 
 ## The records
 
-Twelve decision records, served from the running app under the Docs tab and readable here in
+Fourteen decision records, served from the running app under the Docs tab and readable here in
 [`docs/`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs). Each is one
 decision: what was asked, what was chosen, what it cost, and the code it decided about, read from
 the build at request time. Three to read first:
@@ -100,17 +101,19 @@ Data/                 ApiResponses, ApiRequests, FileStoreEntry: sealed records,
 Domain/               the rules: HomePath, NamePattern, ViewTotals (pure)
 Application/          FileBrowser, the use cases, behind IFileStore
 Infrastructure/       PhysicalFileStore, the disk
-Controllers/          FilesController, DocumentationAndVersionController, ProblemResponseHandler
-Composition/          the registrations and the pipeline Program.cs calls, as TheYard's are
 Documentation/        DocumentationCatalog, LiveSamples, VersionReader: the documents the app serves
+Controllers/          FilesController, DocumentationAndVersionController, HealthController, ProblemResponseHandler
+Composition/          the registrations and the pipeline Program.cs calls, as TheYard's are
 src/                  the page, TypeScript: main.ts (the list of parts), navigation.ts, lib (pure), ui (renders)
-wwwroot/              index.html, css (tokens.css, then one sheet per part), js (what tsc wrote from src)
+wwwroot/              index.html, css (tokens.css, then one sheet per part), fonts, the two PDFs, js (what tsc wrote from src)
 tests/                TestProject.Tests (xUnit), js (node --test)
 docs/                 the records and the guides
 sample-home/          what is browsed until Files:Home is set
+infra/                site.bicep: the Azure web app The Shed runs on
 ```
 
-Dependencies point inward, left to right in the list above, and a test holds it (ADR-002).
+From Data down to Composition, each folder uses only the folders above it in this list. `OnionTests`
+checks that in the compiled app (ADR-002, ADR-013).
 
 ## What comes next
 
@@ -128,7 +131,7 @@ The Shed is a sample, and the parts worth keeping go back to the project it sits
   views to WCAG 2.1 AA: [The accessibility check](https://theyard.stevenstout.biz/?doc=adr-a11y-check).
 
 Each step is something TheYard already does at full size (.NET 10 and React, Azure SQL and Cosmos
-DB, 87 records, about 2,000 test runs per gate): paging 100,000 vehicles behind Load more
+DB, 90 records, about 2,000 test runs per gate): paging 100,000 vehicles behind Load more
 ([the API reference](https://theyard.stevenstout.biz/api/reference)), and keeping every request and
 error for three years ([Logs that outlive the container](https://theyard.stevenstout.biz/?doc=adr-kept-logs)).
 

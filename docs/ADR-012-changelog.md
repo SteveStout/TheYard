@@ -67,7 +67,7 @@ The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The two entries in the documents catalog
 ([`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs),
 served by the one endpoint in
-[`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
+[`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs)):
 
 ```live path=api/TheYard.Api/DocumentationCatalog.cs region=docs-changelog
 ```
@@ -112,6 +112,10 @@ reads like a person wrote it.
 - The predicted number can be wrong by one after a red CI run. The rule
   accepts that and fixes it on the next ship rather than adding a second
   workflow to rewrite the file.
+
+## Where it sits
+
+This is a process decision about how versions are recorded, and its code footprint is two catalog entries in the host Api's DocumentationCatalog.cs and one menu entry in the front end's src/library/sections.ts. No SOLID principle is at stake in a text file and a deploy check. The cost is one hand-written line per shipped version, and a forgotten line now stops the deploy. Release notes generated from commits would be the better choice once commit subjects are written for a visitor to read.
 
 ## Files
 

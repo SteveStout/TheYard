@@ -137,10 +137,15 @@ The five tests (`api/TheYard.Tests/ExceptionHandlerTests.cs`):
   reject something returns a result instead. If that changes, the mapping goes
   here.
 
+## Where it sits
+
+ProblemHandler is an IExceptionHandler in the host Api, registered in Composition/ApiRegistration.cs, and it is the one place that decides what an unplanned failure may say. Open/closed applies directly: the framework's exception pipeline stays untouched while the application adds its answer by implementing the interface, keeping the fixed sentence beside the log line in that single class. The cost is a public self-test endpoint that fifty anonymous calls could use to flush the error ring and add Application Insights ingestion. A site with real users would put that endpoint behind authentication or a rate limit, and would map domain exceptions here if the rules ever started throwing them.
+
 ## Files
 
 - [`api/TheYard.Api/ProblemHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProblemHandler.cs): the handler.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the registration, `ThrowOnBadRequest`, and the self-test endpoint.
+- [`api/TheYard.Api/Composition/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs): the registration and `ThrowOnBadRequest`.
+- [`api/TheYard.Api/Endpoints/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ErrorEndpoints.cs): the self-test endpoint.
 - [`api/TheYard.Tests/ExceptionHandlerTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ExceptionHandlerTests.cs): the five tests, and the Production factory.
 - [`api/TheYard.Tests/ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProblemDetailsTests.cs): the deliberate failures, unchanged.
 - [`docs/ADR-023-error-handling.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-023-error-handling.md): the shape this fills in.

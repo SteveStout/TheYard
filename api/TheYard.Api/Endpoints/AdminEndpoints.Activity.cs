@@ -25,10 +25,9 @@ public static partial class AdminEndpoints
     /// Answers the visitor rows for a window, only to the operator's key; anything else is a 404, so a stranger
     /// cannot tell the route exists.
     /// </summary>
-    private static async Task<IResult> Visitors(string? window, string? key, HttpContext http, ActivityCollector collector, Backends backends, AdminKey adminKey, AdminSettings admin, CancellationToken cancellation)
+    private static async Task<IResult> Visitors(string? window, HttpContext http, ActivityCollector collector, Backends backends, AdminKey adminKey, AdminSettings admin, CancellationToken cancellation)
     {
-        string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
-        if (!admin.VisitorRows || !adminKey.Admits(presented))
+        if (!admin.VisitorRows || !adminKey.IsPresentedBy(http.Request))
         {
             return Results.NotFound();
         }
@@ -42,10 +41,9 @@ public static partial class AdminEndpoints
     /// Answers the kept log for a window, filtered by kind, status and a fragment of the path, only to the
     /// operator's key.
     /// </summary>
-    private static async Task<IResult> KeptLogs(string? window, string? kind, int? status, string? path, string? key, HttpContext http, LogCollector collector, AdminKey adminKey, AdminSettings admin, CancellationToken cancellation)
+    private static async Task<IResult> KeptLogs(string? window, string? kind, int? status, string? path, HttpContext http, LogCollector collector, AdminKey adminKey, AdminSettings admin, CancellationToken cancellation)
     {
-        string? presented = key ?? http.Request.Headers["X-Admin-Key"].FirstOrDefault();
-        if (!admin.VisitorRows || !adminKey.Admits(presented))
+        if (!admin.VisitorRows || !adminKey.IsPresentedBy(http.Request))
         {
             return Results.NotFound();
         }

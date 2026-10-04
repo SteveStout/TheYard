@@ -2,10 +2,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TheYard.Application\TheYard.Application.csproj" />
-    <!-- For YardUser and DatabaseState, which the two stores share: an account
-         is the same thing whichever store holds it, and the composition root
-         asks both stores the same question before it registers anything
-         (ADR: A second store on Cosmos DB, and what it costs). -->
+    <!-- For YardUser, the one type the two stores share: an account is the
+         same thing whichever store holds it, and OnionTests allows that type
+         and nothing else from here (ADR: Onion and SOLID, how this codebase
+         holds them). -->
     <ProjectReference Include="..\TheYard.Infrastructure\TheYard.Infrastructure.csproj" />
   </ItemGroup>
 
@@ -14,7 +14,7 @@
          response carries the request charge and the diagnostics this lane
          exists to show, and the provider surfaces neither
          (ADR: A second store on Cosmos DB, and what it costs). -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.1" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.63.2" />
     <!-- The SDK insists on an explicit reference to its own serializer even
          when, as here, the documents go through System.Text.Json. 13.0.4 is
          the version already in this application's dependency graph. -->

@@ -27,7 +27,7 @@ public static class ActivityReport
     public static async Task<object> PublicAsync(ActivityCollector collector, Backends backends, string window, DateTimeOffset now, bool visitorRows, CancellationToken cancellation)
     {
         var chosen = ActivityWindows.Parse(window)!.Value;
-        DateTimeOffset since = ActivityFolding.HourOf(now - chosen.Length);
+        DateTimeOffset since = (now - chosen.Length).UtcHour;
         var stores = new List<object>();
         var series = new List<object>();
         var paths = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -179,7 +179,7 @@ public static class ActivityReport
         var last = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
         for (var at = first; at <= last; at = at.AddDays(1))
         {
-            string day = ActivityFolding.DayOf(at);
+            string day = at.UtcDay;
             var today = rows.Where(row => row.Day == day).ToList();
             var tokens = today.Select(row => row.Visitor).Distinct(StringComparer.Ordinal).ToList();
             // A visitor is a person if any store saw a request of theirs that did not look like a bot.

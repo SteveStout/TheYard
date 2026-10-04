@@ -181,13 +181,20 @@ is one SELECT against a database already connected, excluded from the SQL card f
 the health check is, so the card cannot fill the page with the act of reading it; the document
 reading is arithmetic over a ring the container already keeps. No tier, no resource, no metrics API.
 
+## Where it sits
+
+The readings span four rings: MachineSampler and MachineRecorder sit in the host Api, the kept minute and the IMachineHistory port are in Application, CosmosMachineHistory in Infrastructure.Cosmos stores the minutes, and the SQL resource view now lives in Infrastructure as ResourceStats. Dependency inversion (the inner ring owns the interface and the outer ring implements it) means the recorder writes through IMachineHistory and a host with no document store gets NullMachineHistory instead. It cost a VIEW DATABASE STATE grant on Azure SQL and one upsert a minute per site, both inside what the bill already covers. Azure Monitor metrics would make sense once the site's identity holds a reader role and a second line on the bill is acceptable.
+
 ## Files
 
-- [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the sampler, the resource view, and the document reading.
+- [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the sampler and the document reading.
+- [`api/TheYard.Infrastructure/ResourceStats.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ResourceStats.cs): the relational store's resource view, read by the adapter that owns the database.
 - [`api/TheYard.Application/MachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MachineHistory.cs): a kept minute, a bucket, the windows, the folding and the port.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs) and [`infra/cosmos/machines.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/machines.json): the minutes in the document store, the grouped query, and the container they live in.
 - [`api/TheYard.Tests/MachineHistoryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MachineHistoryTests.cs): the folding, the document, the cache, the endpoint, and the grouped query against the real account.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the sampler registered, the endpoint, and the statement kept off the SQL card.
+- [`api/TheYard.Api/Composition/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ActivityRegistration.cs): the sampler registered (region machine-sampler-wiring).
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the endpoint (region machines-endpoint).
+- [`api/TheYard.Api/Composition/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/StoreRegistration.cs): the quiet context factory that keeps the statement off the SQL card.
 - [`src/components/admin/MachinesCard/MachinesCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/MachinesCard/MachinesCard.tsx): the card, three readings with their three honesties, and the chart each one is drawn in.
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the chart arithmetic, React-free and tested on its own.
 - [`api/TheYard.Tests/MachinesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MachinesTests.cs): the ring, the first sample, the folding, and the shape the endpoint answers with.
@@ -199,3 +206,7 @@ reading is arithmetic over a ring the container already keeps. No tier, no resou
 
 ```live path=api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs region=grouped-query
 ```
+
+## Addendum, 2026-10-03: the resource view moved to the adapter
+
+The read of `sys.dm_db_resource_stats` moved from the host into the relational adapter (`api/TheYard.Infrastructure/ResourceStats.cs`), because it is a raw statement against the database and the host should only ask for a reading. The card, the statement and the sentence a refused read shows are unchanged. `OnionTests.The_host_never_queries_a_database_itself` keeps any query out of the host from now on.

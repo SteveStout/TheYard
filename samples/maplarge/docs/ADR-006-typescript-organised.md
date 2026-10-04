@@ -70,6 +70,10 @@ is one place to forget. Committing the compiled output means two copies of every
 repository; the alternative, a build step before `dotnet run`, was judged the worse cost for a
 reviewer who wants to run the thing.
 
+## Where it sits
+
+The page has two rings of its own: src/lib holds the pure pieces and src/ui draws, and a test stops lib from ever importing ui. It follows the S in SOLID: each file has one job, such as drawing the table, asking a question in a row or sending uploads, so a change lands in one file. The cost is that no framework redraws for us, so every view redraws only when navigate tells it to, and the compiled JavaScript is committed beside its source. A page with many views sharing live data would justify a small framework.
+
 ## Files
 
 - [`src/main.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/main.ts): the page's parts, in order, one line each.

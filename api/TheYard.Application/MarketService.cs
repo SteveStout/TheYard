@@ -57,16 +57,12 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
     // #region apply
     /// <summary>
     /// The room's bid layered over whatever the vehicle already shows, and only
-    /// when it is higher. Order matters at the composition root: the buyer's
-    /// overlay goes on first and this one second, so a competitor who has since
-    /// gone higher is what the page displays, which is the whole point. Take
-    /// the two overlays in the other order and the buyer would always appear to
-    /// be winning.
+    /// when it is higher, so a competitor who has gone higher than the buyer is
+    /// what the page displays. Auction lays everybody's bids on first and this
+    /// second.
     /// </summary>
     public Vehicle Apply(Vehicle vehicle) =>
-        _bids.TryGetValue(vehicle.Id, out var bid) && bid.Amount > (vehicle.CurrentBid ?? 0)
-            ? vehicle with { CurrentBid = bid.Amount, BidCount = Math.Max(vehicle.BidCount, bid.BidCount) }
-            : vehicle;
+        _bids.TryGetValue(vehicle.Id, out var bid) ? vehicle.RaisedTo(bid.Amount, bid.BidCount) : vehicle;
     // #endregion apply
 
     // #region tick
@@ -149,15 +145,7 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
         // The price to beat is the highest of the three: the dataset's figure,
         // the buyer's bid and the room's own. Reading only its own would let
         // the room bid under the visitor and call it a raise.
-        var standing = Apply(vehicle);
-        if (buyer is { } lead && lead.Amount > (standing.CurrentBid ?? 0))
-        {
-            standing = standing with
-            {
-                CurrentBid = lead.Amount,
-                BidCount = Math.Max(standing.BidCount, lead.BidCount),
-            };
-        }
+        var standing = buyer is { } lead ? Apply(vehicle).RaisedTo(lead.Amount, lead.BidCount) : Apply(vehicle);
         if (standing.CurrentBid is { } current && current >= CeilingFor(vehicle))
         {
             return false;
@@ -196,15 +184,12 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
     /// <summary>
     /// Forget the room's answers on these vehicles only.
     ///
-    /// <para>The room's bids are shared, which is the reason the reset used to
-    /// clear everything: a reset that took away your bid and left the room's
-    /// counter-bid standing reads as a bug however carefully it is explained.
-    /// That reasoning is right and it applies to fewer vehicles than it first
-    /// appears. The caller gets to clear the room only where nobody is bidding
-    /// any more, because a car somebody else is still competing for is not the
-    /// caller's to quiet: doing that took away a stranger's outbid badge and
-    /// dropped the price they were bidding against
-    /// (ADR: Reset is one person's start-over).</para>
+    /// <para>The room's bids are shared. A reset that took away your bid and left
+    /// the room's counter-bid standing would read as a bug, so the room goes with
+    /// the buyer. It goes only where nobody else is bidding, because a car somebody
+    /// else is still competing for is not the caller's to quiet: clearing it would
+    /// take away a stranger's outbid badge and drop the price they are bidding
+    /// against.</para>
     /// </summary>
     public void Forget(IEnumerable<string> vehicleIds)
     {

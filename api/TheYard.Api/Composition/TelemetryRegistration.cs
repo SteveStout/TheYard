@@ -12,11 +12,11 @@ public static class TelemetryRegistration
     public static void AddTheYardTelemetry(this WebApplicationBuilder builder)
     {
         #region telemetry
-        // Application Insights (ADR-024). The connection string is an ingestion key,
-        // so it is never in the repository: the deploy reads it from Azure at roll
-        // time and passes it to the container as an environment variable. Absent, as
-        // it is locally and in every test, this block does nothing and the app runs
-        // exactly as before, which is why no test needs a fake for it.
+        // Application Insights. The connection string is an ingestion key, so it is
+        // never in the repository: the deploy reads it from Azure at roll time and
+        // passes it to the container as an environment variable. Absent, as it is
+        // locally and in every test, this block does nothing and the app runs without
+        // telemetry, which is why no test needs a fake for it.
         string? telemetryConnection = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
         bool telemetryOn = !string.IsNullOrWhiteSpace(telemetryConnection)
             && !telemetryConnection.StartsWith("__", StringComparison.Ordinal);

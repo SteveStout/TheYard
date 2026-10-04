@@ -68,7 +68,7 @@ public class PersistenceTests : IDisposable
             var live = page.RootElement.GetProperty("vehicles");
             // The schedule always has live auctions, so a live vehicle is
             // always there. Saying so out loud costs nothing and turns a future
-            // index-out-of-range into a sentence (the staff review).
+            // index-out-of-range into a sentence.
             Assert.True(live.GetArrayLength() > 0, "the schedule always has a live auction");
             var vehicle = live[0];
             id = vehicle.GetProperty("id").GetString()!;
@@ -99,8 +99,7 @@ public class PersistenceTests : IDisposable
 
         // Parsed rather than matched as a substring: a thirteen-digit
         // timestamp contains almost any five-digit amount somewhere inside it,
-        // so the old assertion could pass on a bid that had not survived at all
-        // (the staff review, 2026-09-03).
+        // so a substring match could pass on a bid that had not survived at all.
         using var restored = JsonDocument.Parse(bids);
         Assert.True(
             restored.RootElement.TryGetProperty(id, out var mine),

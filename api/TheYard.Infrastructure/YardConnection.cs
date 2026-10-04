@@ -99,12 +99,11 @@ public sealed record YardConnection(YardProvider Provider, string ConnectionStri
     /// which takes thirty to sixty, and three attempts mean the second and
     /// third arrive at a database the first one already woke.
     ///
-    /// The first version of this raised the connect timeout to ninety and left
-    /// maxRetryCount at four, which is five attempts of ninety seconds plus
-    /// backoff: about eight minutes, against a five minute deploy. A database
-    /// that was genuinely gone would have turned an outage into a failed deploy
-    /// as well, which is the exact failure the file-backed fallback exists to
-    /// prevent (the staff review, 2026-09-03).
+    /// A longer timeout or more retries would outrun the deploy: five attempts
+    /// of ninety seconds plus backoff is about eight minutes, against a five
+    /// minute deploy. A database that was genuinely gone would then turn an
+    /// outage into a failed deploy as well, which is the exact failure the
+    /// file-backed fallback exists to prevent.
     /// </summary>
     public DbContextOptionsBuilder Configure(DbContextOptionsBuilder builder) => Provider switch
     {

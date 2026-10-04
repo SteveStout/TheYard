@@ -40,11 +40,14 @@ What that is worth: a developer can predict what a file is called and where it g
 - Dependencies point inward. `TheYard.Data` references nothing;
   `TheYard.Domain` may reference Data; Application talks to
   Infrastructure only through ports. If a file needs a `using` that points
-  outward, the code is in the wrong project.
+  outward, the code is in the wrong project, and `OnionTests` fails the
+  build (ADR: Onion and SOLID, how this codebase holds them).
 - Domain code is pure: no `DateTime.Now`, no filesystem, no HTTP. Time
   arrives as an `AuctionClock` the caller built, which is why the tests
   can anchor it.
-- The host binds and delegates. A rule in Program.cs is a bug in layering.
+- The host binds and delegates. A handler in `api/TheYard.Api/Endpoints/`
+  reads the request and asks Application for the answer; a rule in a
+  handler or in `Composition/` is a bug in layering.
 - The browser holds no business rules. If a calculation decides money or
   eligibility, it belongs in Domain and travels on the wire.
 - `src/lib` is plain TypeScript with no React import; `src/hooks` is React

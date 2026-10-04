@@ -125,7 +125,7 @@ public class ApiIntegrationTests(FullCatalogue factory)
     public void The_reserve_state_is_met_once_the_standing_bid_reaches_the_reserve(
         int? reservePrice, int? currentBid, string expected)
     {
-        Assert.Equal(expected, TheYard.Api.VehicleWire.ReserveState(reservePrice, currentBid));
+        Assert.Equal(expected, TheYard.Api.VehicleWire.ReserveState(TheYard.Domain.StandingRules.ReserveOf(reservePrice, currentBid)));
     }
     // #endregion reserve-state
 

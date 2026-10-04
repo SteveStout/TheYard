@@ -111,9 +111,9 @@ public static class HealthEndpoints
             await Check("photo manifest", () => Task.FromResult(File.Exists(paths.ManifestPath)), "image manifest present"),
         };
         // One check per store, named by the store, so a container running both
-        // says which one is unavailable (ADR: One container, both stores). The
-        // first is still called "database" for the deploy's Verify step and the
-        // Admin tab's card, which have read that name since ADR-010.
+        // says which one is unavailable. The default store's check is called
+        // "database", because the deploy's Verify step and the Admin tab's card both
+        // read that name.
         foreach (var backend in backends.All)
         {
             checks.Add(await Check(
@@ -122,8 +122,7 @@ public static class HealthEndpoints
                 // The reason is in the log, not in this response. A health endpoint
                 // is public on purpose, and an exception message from a storage
                 // failure is typically a filesystem path: exactly the map of the
-                // inside of the process that ProblemHandler refuses to draw
-                // (the staff review, 2026-09-03).
+                // inside of the process that ProblemHandler refuses to draw.
                 backend.Database.Ready
                     ? $"the seed catalogue is in the store ({backend.Name})"
                     : $"{backend.Name} is unavailable, serving the catalogue from files; "
@@ -132,9 +131,9 @@ public static class HealthEndpoints
                 // point of the fallback. A container with no database still serves
                 // the catalogue, the filters, the photos and the bidding; the only
                 // thing it loses is bids outliving the process. Reporting itself
-                // not ready would take a working site out of service, and it did once:
-                // a deploy failed on `curl -fsS /readyz` while the site it was
-                // checking was serving 100,000 vehicles perfectly well.
+                // not ready would take a working site out of service: the deploy's
+                // `curl -fsS /readyz` would fail against a site serving every
+                // vehicle perfectly well.
                 gatesReadiness: false));
         }
         return checks.ToArray();

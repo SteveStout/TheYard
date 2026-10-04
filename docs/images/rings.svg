@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>TheYard's rings: Data at the centre, then Domain, then Application, with the host and the adapters outside, every dependency pointing inward</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <style>
+      .ring0 { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; }
+      .ring1 { fill: #ece9ea; stroke: #7b7f8a; stroke-width: 1.5; }
+      .ring2 { fill: #f7f5f6; stroke: #7b7f8a; stroke-width: 1.5; }
+      .ring3 { fill: #ffffff; stroke: #536786; stroke-width: 2; }
+      .panel { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; }
+      .title { fill: #3f3a37; font-size: 16px; font-weight: 700; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .test { fill: #25663a; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .flow-label { fill: #4a6c96; font-size: 12px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="860" fill="#e9e6e7"/>
+  <text x="40" y="48" class="heading">TheYard's rings: every dependency points inward</text>
+  <text x="40" y="72" class="caption">Each box is a project under api/. A ring may use the rings inside it and never one outside it.</text>
+
+  <rect x="40" y="100" width="880" height="660" rx="18" class="ring0"/>
+  <text x="60" y="128" class="title">Outside: the host and the adapters</text>
+  <text x="60" y="148" class="mono">api/TheYard.Api   api/TheYard.Infrastructure   api/TheYard.Infrastructure.Cosmos</text>
+  <text x="60" y="168" class="body">The host reads a request, asks Application and writes the answer (Endpoints/); Composition/ wires it all.</text>
+  <text x="60" y="185" class="body">The adapters implement the ports: EF Core over Azure SQL Database or SQLite, and the Cosmos DB SDK.</text>
+  <rect x="90" y="230" width="780" height="500" rx="18" class="ring1"/>
+  <text x="110" y="258" class="title">Application: the use cases and the ports</text>
+  <text x="110" y="278" class="mono">api/TheYard.Application</text>
+  <text x="110" y="298" class="body">Auction composes a store's catalogue, bids and room in the order the rules need.</text>
+  <text x="110" y="315" class="body">It owns the ports: IVehicleSource, IPhotoManifestSource, IBidStore, IActivityStore and the rest.</text>
+  <rect x="140" y="380" width="680" height="320" rx="18" class="ring2"/>
+  <text x="160" y="408" class="title">Domain: the rules</text>
+  <text x="160" y="428" class="mono">api/TheYard.Domain</text>
+  <text x="160" y="448" class="body">BidRules, AuctionSchedule, AuctionClock, StandingRules, VehicleFilter, VehicleOrdering.</text>
+  <text x="160" y="465" class="body">Pure functions of their inputs and the clock they are handed. No store, no web, no clock of its own.</text>
+  <rect x="190" y="530" width="580" height="140" rx="18" class="ring3"/>
+  <text x="210" y="558" class="title">Data: the dataset's shapes</text>
+  <text x="210" y="578" class="mono">api/TheYard.Data</text>
+  <text x="210" y="598" class="body">Vehicle and PhotoEntry, exactly as data/vehicles.json has them.</text>
+  <text x="210" y="615" class="body">No behaviour and no dependencies: every ring may read it, and it reads nothing.</text>
+  <path d="M700 192 L700 226" class="flow"/>
+  <text x="710" y="214" class="flow-label">uses</text>
+  <path d="M700 342 L700 376" class="flow"/>
+  <text x="710" y="364" class="flow-label">uses</text>
+  <path d="M700 492 L700 526" class="flow"/>
+  <text x="710" y="514" class="flow-label">uses</text>
+  <rect x="960" y="100" width="400" height="660" rx="14" class="panel"/>
+  <text x="980" y="128" class="title">Held by the build</text>
+  <text x="980" y="148" class="mono">api/TheYard.Tests/OnionTests.cs (NetArchTest)</text>
+  <text x="980" y="186" class="test">Data_depends_on_nothing_outside_the_BCL</text>
+  <text x="980" y="210" class="test">Domain_depends_on_nothing_outside_the_BCL_and_Data</text>
+  <text x="980" y="234" class="test">Application_depends_only_on_Domain_Data_and_the_BCL</text>
+  <text x="980" y="258" class="test">The_document_store_adapter_borrows_only_</text>
+  <text x="1000" y="282" class="test">the_shared_user_from_the_relational_one</text>
+  <text x="980" y="306" class="test">Endpoints_never_reach_a_store_or_</text>
+  <text x="1000" y="330" class="test">the_service_container</text>
+  <text x="980" y="354" class="test">Endpoints_reach_the_auction_only_through_</text>
+  <text x="1000" y="378" class="test">the_Application_ring</text>
+  <text x="980" y="402" class="test">The_host_never_queries_a_database_itself</text>
+  <text x="980" y="426" class="test">Services_are_registered_only_in_the_composition_root</text>
+  <text x="980" y="500" class="body">Each one reads the compiled assemblies, so a</text>
+  <text x="980" y="519" class="body">reference in a method body, a generic argument or</text>
+  <text x="980" y="538" class="body">a fully written name fails the build the same way</text>
+  <text x="980" y="557" class="body">a using line would. A failure names the type and</text>
+  <text x="980" y="576" class="body">the dependency it found.</text>
+  <text x="980" y="595" class="body"></text>
+  <text x="980" y="614" class="body">Beside the onion, and outside these rules:</text>
+  <text x="980" y="633" class="body">TheYard.Database (the SQL schema), the SQLite</text>
+  <text x="980" y="652" class="body">migrations, the Experiment console and the tests.</text>
+
+  <text x="40" y="810" class="caption">The front end keeps the same shape in src/: components use hooks, hooks use lib, and src/lib imports nothing from React.</text>
+  <text x="40" y="832" class="caption">Source: docs/images/rings.svg in the repository, drawn by docs/images/rings.mjs and redrawn when a ring changes.</text>
+</svg>

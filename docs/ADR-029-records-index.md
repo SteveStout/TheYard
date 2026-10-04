@@ -69,6 +69,10 @@ One shell for both kinds of section (`src/components/layout/SideNav/SideNav.tsx`
 - Adding a record is now three lines in one place instead of a decision about
   which section it belongs to.
 
+## Where it sits
+
+This sits in the front end only: the record order is data in src/library/sections.ts and records.ts, and RailSectionShell draws each sidebar section as a native `details` element. Open/closed fits it, meaning new behaviour arrives by adding code instead of editing a core class, because a new record is three lines of data and the shell does not change. The cost was six browser tests rewritten to open the index first, and the topic grouping is gone as navigation. If the index grew into the hundreds, a search box or a split by year would serve a reader better than one long disclosure.
+
 ## Files
 
 - [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the sections and the record order.

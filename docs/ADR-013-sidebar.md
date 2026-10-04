@@ -152,6 +152,10 @@ the way the drawings do: the reference page and the OpenAPI document itself. A s
 two rows inside App Architecture because a reader who came to see the API should find it in the
 table of contents without opening anything. The browser suite's count of headings is twelve now.
 
+## Where it sits
+
+The sidebar is front end code: SideNav.tsx renders both shapes, useRail.ts in src/app/hooks decides docked, collapsed or drawer, and useMediaQuery.ts in src/hooks reads the 1024 pixel line. Each file keeps one reason to change, which is single responsibility; the rows come from the sections data so a new document or section appears without editing the component, the open/closed principle at small scale. Deleting the dropdowns cost six rewritten desktop browser tests, and the collapsed rail leans on tooltips for its labels. A site read mostly on phones would have made a hamburger at every width the simpler answer.
+
 ## Files
 
 - [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx) and

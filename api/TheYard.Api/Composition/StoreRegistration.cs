@@ -145,11 +145,7 @@ public static class StoreRegistration
                 new InventoryService(new SyntheticVehicleSource(new EfVehicleSource(contexts), targetCount), new EfPhotoManifestSource(contexts)),
                 new BidService(new EfBidStore(contexts)),
                 new EfActivityStore(quietContexts),
-                async () =>
-                {
-                    using var db = contexts.CreateDbContext();
-                    return await db.Vehicles.AnyAsync() && await db.Photos.AnyAsync();
-                },
+                () => YardDatabase.HasSeedAsync(contexts),
                 // Identity's own store over the accounts tables, given a context from the
                 // request's scope. The type is the one AddEntityFrameworkStores would have
                 // registered for a user type with no roles; naming it here is what lets
@@ -281,10 +277,9 @@ public static class StoreRegistration
         }
         builder.Services.AddHostedService(services => new StoreSecondChance(secondChances, services.GetRequiredService<ILogger<StoreSecondChance>>()));
         // #endregion second-chance-wiring
-        if (cosmos is not null)
-        {
-            builder.Services.AddSingleton(cosmos);
-        }
+        // The partition key experiment needs the document store; without one it says so.
+        builder.Services.AddSingleton<IStoreExperiment>(
+            cosmos is not null ? new PartitionExperiment(cosmos, TimeProvider.System) : NoStoreExperiment.Instance);
         #endregion migrate-and-seed
         host.ConfiguredDatabase = configuredDatabase;
         host.ScratchDatabase = scratchDatabase;

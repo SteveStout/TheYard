@@ -33,14 +33,15 @@ method of [TheYard](https://theyard.stevenstout.biz).
 | `Domain/` | The rules: the home directory's guard, the search pattern, the totals. Pure. |
 | `Application/` | The use cases behind one port, `IFileStore`. |
 | `Infrastructure/` | The disk, behind the port. |
-| `Controllers/` | The routes, a line or three each, and the problem-document handler. |
+| `Controllers/` | The routes, a line or three each, the health check, and the problem-document handler. |
 | `Composition/` | The registrations and the pipeline that `Program.cs` calls, one line each, as TheYard's are. |
 | `Documentation/` | The documents the app serves: the catalogue, the live-sample expander, the version reader. |
 | `src/` | The page, in TypeScript: `main.ts` (a list of the page's parts, read like `Program.cs`), `navigation.ts` (the one way the page changes), `lib` (pure), `ui` (renders). |
-| `wwwroot/` | What the browser loads: `index.html`, two stylesheets, and `js`, which `tsc` wrote from `src/`. |
+| `wwwroot/` | What the browser loads: `index.html`, the stylesheets (`tokens.css`, then one per part of the page), the font, the two PDFs, and `js`, which `tsc` wrote from `src/`. |
 | `tests/` | xUnit under `TestProject.Tests`, `node --test` under `js`. |
 | `docs/` | These documents. |
 | `sample-home/` | What is browsed when nothing else is configured. |
+| `infra/` | The Azure web app The Shed runs on, as Bicep. |
 
 ## The records
 
@@ -56,5 +57,7 @@ method of [TheYard](https://theyard.stevenstout.biz).
 10. ADR-010 The palette, borrowed from TheYard
 11. ADR-011 Built with AI
 12. ADR-012 Documents served by the app, with live code
+13. ADR-013 Onion and SOLID, how this codebase holds them
+14. ADR-014 Technology versions
 
 If you read three: ADR-003, ADR-005 and ADR-009.

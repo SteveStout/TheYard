@@ -126,6 +126,10 @@ The two pairs the palette test now also holds
   breaks in one file. It is not fixed here, because the overlay sits on an
   image rather than a token and needs a different answer.
 
+## Where it sits
+
+The check is test code beside the onion in tests/e2e/axe.spec.ts, and the fix is front end, two colour tokens in src/styles/colors.css. No SOLID principle applies, since the decision concerns rendered colour and what the suite covers. It cost seven more browser tests and a few seconds of suite time. A project that needed labels and reading order checked would add a person with a screen reader, which axe cannot replace.
+
 ## Files
 
 - [`tests/e2e/axe.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/axe.spec.ts): the check.

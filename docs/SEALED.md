@@ -161,7 +161,7 @@ The Framework Design Guidelines say the opposite of this page: "DO NOT seal clas
 good reason"
 ([Sealing](https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/sealing)). That advice
 is written for public libraries, where a type other people derive from is part of the contract and
-sealing it later breaks strangers who already shipped. Nothing here is a library. These five projects
+sealing it later breaks strangers who already shipped. Nothing here is a library. These six projects
 are one application, everything that derives from anything is in the same solution, and unsealing a
 class the day somebody needs to is one keyword in one commit.
 
@@ -199,7 +199,7 @@ public abstract class StoreCheck
 
 ## The test that holds it
 
-One test class reads the five projects that make up the application, counts the shape of every class
+One test class reads the six projects that make up the application, counts the shape of every class
 and record the build actually has, and fails when one of them is open with nothing deriving from it:
 
 ```live path=api/TheYard.Tests/SealedByDefaultTests.cs region=*
@@ -209,15 +209,15 @@ Measured on this build:
 
 | shape | count |
 | --- | --- |
-| sealed | 101 |
-| static | 75 |
+| sealed | 106 |
+| static | 76 |
 | abstract | 0 |
 | open | 0 |
-| records | 101 |
+| records | 104 |
 | open records | 0 |
 
-101 of the 176 classes in those five projects are sealed, and the 75 that are not are static, which
-cannot be inherited either. All 101 records are sealed or record structs, so value comparison means
+106 of the 182 classes in those six projects are sealed, and the 76 that are not are static, which
+cannot be inherited either. All 104 records are sealed or record structs, so value comparison means
 what it says on every one of them. Every number in that table is read back out of this page by the
 test above, so it cannot drift from the build the way a number typed once always does.
 

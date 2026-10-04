@@ -68,6 +68,29 @@ public sealed partial class DocumentationTests : IDisposable
     }
 
     [Fact]
+    public void Every_record_says_where_it_sits_just_above_its_files()
+    {
+        // Which ring the decision touches, which SOLID idea it follows, what it cost and what
+        // would change it, in one short paragraph a reader meets before the list of files.
+        var wrong = new List<string>();
+        foreach (string file in Records())
+        {
+            string[] lines = File.ReadAllLines(file);
+            string name = Path.GetFileName(file);
+            int sits = Array.FindIndex(lines, line => line == "## Where it sits");
+            int files = Array.FindIndex(lines, line => line == "## Files");
+            bool once = lines.Count(line => line == "## Where it sits") == 1;
+            bool justAbove = sits >= 0 && files > sits && !lines.Skip(sits + 1).Take(files - sits - 1).Any(line => line.StartsWith("## ", StringComparison.Ordinal));
+            bool said = sits >= 0 && string.Join(" ", lines.Skip(sits + 1).Take(Math.Max(0, files - sits - 1))).Trim().Length >= 40;
+            if (!once || !justAbove || !said)
+            {
+                wrong.Add($"{name} needs one '## Where it sits' paragraph directly above '## Files'");
+            }
+        }
+        Assert.Empty(wrong);
+    }
+
+    [Fact]
     public async Task The_catalogue_serves_every_record_and_every_guide()
     {
         using HttpClient client = _factory.CreateClient();

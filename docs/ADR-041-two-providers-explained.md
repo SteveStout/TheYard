@@ -201,6 +201,10 @@ and what it costs.
 `Cosmos:AccountEndpoint`, and when it is set the store below is the document
 store and none of the relational machinery in this record is constructed.
 
+## Where it sits
+
+This is the newcomer's map of Infrastructure and the projects beside it: YardConnection and YardDbContext in TheYard.Infrastructure, with the SQLite history in TheYard.Migrations.Sqlite and the hand-written schema in TheYard.Database. Liskov substitution, any implementation standing in for another without surprises, is what lets one set of row classes run on Azure SQL and on a laptop's SQLite while nothing above Infrastructure knows which is there. The price is two schema paths to keep in step: a migration for SQLite beside DDL for SQL Server. If CI could reach a real SQL Server, one engine everywhere would remove the second path.
+
 ## Files
 
 - [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs)

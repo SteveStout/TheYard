@@ -101,6 +101,10 @@ palette is read on the page it ships to, not in the file it is written in.**
   fetches `/api/docs/<slug>` gets the same markdown they always did.
 - The diagram pages are SVG and are untouched.
 
+## Where it sits
+
+This sits almost entirely in the front end: src/lib/highlight.ts and src/lib/markdown.ts import nothing from React, and the host Api's only part is LiveSamples.LanguageFor naming a fence's language from a file name. Single responsibility, one reason to change, holds here because markdown.ts is the one file that imports marked and the highlighter, so a change of renderer touches one file and the dialog loads it on demand. It cost about 45 KB gzipped in its own chunk and a palette that tokens.test.ts must hold to AA contrast. If the documents were rendered at build time instead of request time, Shiki's editor-grade grammars would be worth their megabyte.
+
 ## Files
 
 - [`src/lib/highlight.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/highlight.ts): the grammars, the aliases and the one function that turns code into HTML.

@@ -102,6 +102,10 @@ on the page and says nothing false about how the file travelled, so those
 stay as they are unless the author wants them gone; a re-copy through the
 repository's own shell removes it.
 
+## Where it sits
+
+This one sits outside the rings: it is a process decision about serving the records from the site and gating every ship on the test suites, so the onion and SOLID do not apply to it.
+
 ## Files
 
 Documentation:

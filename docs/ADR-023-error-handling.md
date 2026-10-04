@@ -151,9 +151,15 @@ the card shows them behind a disclosure in a table with the time, the status and
 message stays out. A test throws on the self-test endpoint and asserts both halves: the frames are
 there, and the sentence the self-test throws with is not.
 
+## Where it sits
+
+The server half sits in the host Api: the problem-details registration in Composition/ApiRegistration.cs, the browser-report endpoint in Endpoints/ErrorEndpoints.cs and the error ring in Observability.cs. The browser half is front end: ErrorBoundary is a shared component, the `detail` reader is in src/lib/data.ts, and no inner ring changed, which suits a decision about how HTTP failures look. Single responsibility, a class with one reason to change, shows in the split: one helper in src/lib reads every failure body, and the boundary handles render crashes while the window handlers take everything else. The cost is a fifty-entry ring that empties on every roll, and a product with an audit requirement would send these errors to a durable store first.
+
 ## Files
 
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the handler, the logging, the client-error endpoint, and the 400s.
+- [`api/TheYard.Api/Composition/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs): the handler and the logging.
+- [`api/TheYard.Api/Endpoints/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ErrorEndpoints.cs): the client-error endpoint.
+- [`api/TheYard.Api/Endpoints/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/VehicleEndpoints.cs) and [`api/TheYard.Api/Endpoints/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.cs): the 400s.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the ring buffer both sides record into.
 - [`src/components/shared/ErrorBoundary/ErrorBoundary.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.tsx) and [`ErrorBoundary.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.module.css): the boundary and the reporter.
 - [`src/app/mount.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/mount.tsx): the boundary around the app.

@@ -60,6 +60,14 @@ A capped search means a search can be incomplete, and the page has to say so. It
 alternative, paging a search, would double the API for a case the cap already handles: a person
 who sees "stopped at the limit" types one more character.
 
+## Addendum, 2026-10-03: downloads come through the store
+
+A download no longer uses `PhysicalFile`. `FileBrowser.Download` asks the store for the file with `IFileStore.OpenRead`, and the controller sends that stream with range processing on. The bytes still go out a piece at a time and a paused download still resumes, and a store that is not the disk could serve downloads too.
+
+## Where it sits
+
+The speed lives in two rings: Infrastructure walks a folder in one pass, and Application stops a search as soon as it has enough matches. It follows the L in SOLID: IFileStore promises to hand entries back one at a time, so any store that stands in for the disk keeps a search fast as long as it keeps that promise. The cost is that a search can stop early, and the page has to say the list was cut off. If people needed every match in a huge tree, the search would hand back its results a page at a time.
+
 ## Files
 
 - [`Infrastructure/PhysicalFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Infrastructure/PhysicalFileStore.cs): the walk.

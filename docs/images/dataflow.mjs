@@ -36,11 +36,11 @@ const READ = [
   ['SyntheticVehicleSource', 'api/TheYard.Infrastructure/SyntheticVehicleSource.cs', [
     "Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a, api/TheYard.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state while keeping the seed's make, model and trim mix."]],
   ['InventoryService', 'api/TheYard.Application/InventoryService.cs', [
-    "Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and materializes the list plus an id index, once, in a Lazy that Program.cs forces at startup."]],
-  ['GET /api/vehicles', 'api/TheYard.Api/Program.cs', [
-    "api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a filter, a sort and a clock. api/TheYard.Api/Clocks.cs turns the browser's anchor_ms (its local midnight) into that clock, so the schedule math agrees with the buyer in any time zone."]],
-  ['Search, in InventoryService.Search', 'api/TheYard.Application/InventoryService.cs', [
-    "1. The buyer's bids are overlaid first (api/TheYard.Application/BidService.cs), so price bounds see the figures the page shows.",
+    "Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and materializes the list plus an id index once. The host awaits that load in api/TheYard.Api/Composition/Startup.cs before it serves."]],
+  ['GET /api/vehicles', 'api/TheYard.Api/Endpoints/VehicleEndpoints.cs', [
+    "api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a filter and a sort. The clock is the server's (api/TheYard.Api/Clocks.cs): now, and the UTC midnight that began the day, the same for every visitor."]],
+  ['Search, through Auction.Search', 'api/TheYard.Application/Auction.cs', [
+    "1. Everybody's bids, then the room's, are laid over each vehicle (Auction.Overlay, raising a price through api/TheYard.Domain/StandingRules.cs), so price bounds see the figures the page shows.",
     '2. Where: api/TheYard.Domain/VehicleFilter.cs',
     '3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs',
     '4. Skip and Take for the page. Auction windows come from api/TheYard.Domain/AuctionSchedule.cs, all in memory.']],
@@ -57,17 +57,19 @@ const READ_LABELS = { 0: 'once, at startup', 3: 'then, for every request', 6: '{
 
 const WRITE = [
   ['BidPanel', 'src/components/vehicle/BidPanel/BidPanel.tsx', [
-    'Posts { amount, anchor_ms } to POST /api/vehicles/{id}/bids through src/lib/data.ts; buy now posts to /buy-now.']],
-  ['HandleBid', 'api/TheYard.Api/Program.cs', [
-    'Three questions in order: is the clock anchor valid (400 if not), does the vehicle exist (404 if not), does the domain accept the action (400 with the reason if not).']],
+    'Posts { amount } to POST /api/vehicles/{id}/bids through src/lib/data.ts; buy now posts to /buy-now. Only a signed-in buyer can.']],
+  ['HandleBid', 'api/TheYard.Api/Endpoints/BidEndpoints.cs', [
+    'Three questions in order: is this session on this store (401 if not), does the vehicle exist (404 if not), does the domain accept the action (400 with the reason if not).']],
+  ['Auction.PlaceBidAsync', 'api/TheYard.Application/Auction.cs', [
+    "Measures the bid against the room's standing price as well as everybody's bids, so nobody retakes a lead below the going rate."]],
   ['BidRules', 'api/TheYard.Domain/BidRules.cs', [
     'The sole authority: the live window, the tiered minimum increment, and the buy-now override (a bid at or above buy_now_price wins outright at that price).']],
   ['BidService', 'api/TheYard.Application/BidService.cs', [
-    'Accepted and won bids land in an in-memory map, one anonymous buyer. The response carries the updated vehicle with a fresh min_next_bid.']],
+    "Under one gate: an accepted or won bid is written to the store (Azure SQL Database or Cosmos DB, through the IBidStore port) and then to memory, under the buyer's account. The response carries the updated vehicle with a fresh min_next_bid."]],
   ['useBids', 'src/hooks/useBids.ts', [
     'Clears the query cache and refetches, so every list, filter and total reflects the bid through the same read path.']],
 ];
-const WRITE_LABELS = { 0: 'POST', 1: 'the domain decides', 2: 'accepted, won, or rejected', 3: 'the updated vehicle' };
+const WRITE_LABELS = { 0: 'POST', 1: 'the Application ring', 2: 'the domain decides', 3: 'accepted, won, or rejected', 4: 'the updated vehicle' };
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -153,7 +155,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <!-- ===================== Lane 2: the write path ===================== -->
   <rect x="870" y="92" width="490" height="${writeBottom + 46 - 92}" class="lane"/>
   <text x="890" y="120" class="lane-title">The write path: a bid</text>
-  <text x="890" y="140" class="lane-sub">One anonymous buyer, state in API memory; the domain decides.</text>
+  <text x="890" y="140" class="lane-sub">A signed-in buyer, bids kept in the store; the domain decides.</text>
 
 ${body.join('\n')}
 

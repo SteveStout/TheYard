@@ -47,6 +47,10 @@ from creation; anything born before it gets recreated, which the one-command
 teardown makes cheap. Browser-visible hostnames render lowercase regardless of
 the resource name casing.
 
+## Where it sits
+
+Neither the onion nor SOLID reaches this record, which is a naming standard for Azure resources written into the Bicep template and the pipeline.
+
 ## Files
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the pattern as code, `upperTag` for the

@@ -48,6 +48,10 @@ folder name, an upload in flight. Those are transient and belong to the control 
 The rule is that anything a person would want to come back to is in the address, and the test of
 the rule is that every view has a link on the front page.
 
+## Where it sits
+
+This record sits in the front end's inner ring, where src/lib/urlState.ts reads the address with no page involved; navigation.ts is the one door every change goes through. It follows the S in SOLID: one file has the job of turning the address into state and back, so a new setting is one new key in one place. The cost is that the address holds only what fits in a link; a half-typed folder name or an upload in flight lives in its own control. If the page had to hold private or large state, such as a long list of picked files, that state would move into memory.
+
 ## Files
 
 - [`src/lib/urlState.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/urlState.ts): the parser and the serializer.

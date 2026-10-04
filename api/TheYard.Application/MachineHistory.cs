@@ -157,10 +157,6 @@ public static class MachineWindows
     /// <summary>A bucket's key as the store keeps it: sortable text, the same in every culture.</summary>
     public static string KeyOf(DateTimeOffset at, MachineGrain grain) =>
         BucketOf(at, grain).ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
-
-    /// <summary>The UTC day as text, which is what the container is partitioned on.</summary>
-    public static string DayOf(DateTimeOffset at) =>
-        at.ToUniversalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }
 // #endregion windows
 
@@ -173,13 +169,6 @@ public static class MachineWindows
 /// </summary>
 public static class MachineFolding
 {
-    /// <summary>The minute <paramref name="at"/> falls in, in UTC.</summary>
-    public static DateTimeOffset MinuteOf(DateTimeOffset at)
-    {
-        var utc = at.ToUniversalTime();
-        return new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, 0, TimeSpan.Zero);
-    }
-
     /// <summary>The mean of the readings that exist, or null when none does.</summary>
     public static double? MeanOf(IEnumerable<double?> values)
     {

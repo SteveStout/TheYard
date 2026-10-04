@@ -201,11 +201,18 @@ and a guess that is right often enough does not need it.
 - One secret to add for the visitor rows to exist on the live sites.
 - The test count moves, and so does the number on the resume that quotes it.
 
+## Where it sits
+
+Site activity runs through five rings: ActivityHit and the IActivityStore port sit in Application, EfActivityStore in Infrastructure and CosmosActivityStore in Infrastructure.Cosmos implement that port, the collector and visitor token live in the host Api, and the chart geometry is React-free code in src/lib. That is dependency inversion, where the inner ring owns the interface and the outer rings fill it in, and the 14 September move to a single keeper leaned on Liskov substitution, since the Cosmos DB adapter took every row without the collector changing. It cost a second schema to publish by hand and a top-paths field that can lose a batch when both containers write in the same five seconds. Application Insights would be the better home if the serving store could travel as a custom dimension and the gate had no need to exercise the card.
+
 ## Files
 
 - [`api/TheYard.Application/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Activity.cs): the port, the hit, and the folding of a batch into deltas.
-- [`api/TheYard.Api/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Activity.cs): the token, the bot guess, the collector, the report and the key.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the hook beside the request ring, the wiring, the two endpoints.
+- [`api/TheYard.Api/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Activity.cs): the token, the bot guess, the collector and the report.
+- [`api/TheYard.Api/AdminKey.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminKey.cs): the key, read from the query or the header in one place and compared in constant time.
+- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the hook beside the request ring (region activity-hook).
+- [`api/TheYard.Api/Composition/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ActivityRegistration.cs): the wiring.
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the two endpoints (region activity-endpoints).
 - [`api/TheYard.Infrastructure/EfActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfActivityStore.cs) and [`ActivityRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ActivityRows.cs): the relational adapter and its two rows.
 - [`api/TheYard.Database/Tables/ActivityHours.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/ActivityHours.sql) and [`ActivityVisitors.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/ActivityVisitors.sql): the schema, which is the authority.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosActivityStore.cs) and [`infra/cosmos/activity.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/activity.json): the document adapter and the container it needs.

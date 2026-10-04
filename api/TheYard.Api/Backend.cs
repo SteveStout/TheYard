@@ -73,6 +73,22 @@ public sealed class Backend
     public required Func<IServiceProvider, IUserStore<YardUser>?> UserStore { get; set; }
 
     /// <summary>
+    /// The relational store's own reading of itself for the Machines card, read by the adapter
+    /// that owns the database, or an absent reading with its reason on a store that keeps none.
+    /// </summary>
+    public Task<StoreLoad> ReadLoadAsync(int rows, CancellationToken cancellation, ILogger? logger = null) =>
+        ResourceStats.ReadAsync(Contexts, Name, rows, cancellation, logger);
+
+    /// <summary>Whether this backend's catalogue is in memory right now, for the Admin tab's memory reading.</summary>
+    public bool CatalogueLoaded => Inventory.IsWarm;
+
+    /// <summary>True on the document store, which logs each operation with its request charge.</summary>
+    public bool LogsOperations => Cosmos is not null;
+
+    /// <summary>True on an attached relational store, which logs each statement it runs.</summary>
+    public bool LogsStatements => Contexts is not null;
+
+    /// <summary>
     /// Whether this backend keeps accounts and bids across a restart. False is
     /// the fallback the relational store record describes: the catalogue is
     /// served from files, the bidding works, and nothing outlives the process.

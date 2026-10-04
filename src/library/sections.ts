@@ -52,6 +52,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'The two sites', href: '/api/docs/diagrams/two-sites' },
   { label: 'SQL Server vs Cosmos DB', href: '/api/docs/diagrams/sql-vs-cosmos' },
   { label: 'The UI, layer by layer', href: '/api/docs/diagrams/ui-architecture' },
+  { label: 'The rings', href: '/api/docs/diagrams/rings' },
 ];
 // #endregion diagrams
 
@@ -189,12 +190,9 @@ export const MENUS: Record<
   },
   // #region records-menu
   /**
-   * Every decision record, in the order they were decided, numbered to match
-   * the file each one serves. They used to hang off the four topic sections as
-   * sub-rows, which put eighteen under Best Practices alone and turned the
-   * sidebar into a wall. Twenty-seven of anything is an index, not a submenu.
-   * This index is not special: every section in the sidebar is
-   * a closed details, and SideNav is where that happens.
+   * Every decision record, in the order they were decided, numbered to match the file
+   * each one serves: a section of its own, because ninety rows under the topic sections
+   * would be a wall. Every section in the sidebar is a closed details (SideNav.tsx).
    */
   records: {
     label: 'Decision Records',
@@ -286,6 +284,9 @@ export const MENUS: Record<
       { key: 'adrKeptAwake' },
       { key: 'adrCompositionRoot' },
       { key: 'adrAzureCosts' },
+      { key: 'adrOnionAndSolid' },
+      { key: 'adrTechnologyVersions' },
+      { key: 'adrDotnet10' },
     ],
   },
   // #endregion records-menu

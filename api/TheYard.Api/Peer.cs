@@ -123,9 +123,8 @@ public static partial class Routes
     /// log attributes to it: how many operations a request runs and the request
     /// units they add up to, as the median over the requests seen. Requests are
     /// told apart by their trace identifier, so twenty sign-ins are twenty
-    /// samples and not one sum. The first version grouped by the path string
-    /// and reported twenty sign-ins as one 34 RU request, which the first
-    /// measurement caught (ADR: Measuring both stores).
+    /// samples and not one sum. Grouping by the path string instead would
+    /// report twenty sign-ins as one request costing the sum of all twenty.
     /// </summary>
     public static IReadOnlyList<RouteCharge> ChargesByRoute(IReadOnlyList<StoreOperation> operations) =>
         operations

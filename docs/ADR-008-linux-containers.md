@@ -56,6 +56,10 @@ reasons above moved with it. The registry pull still rides the user-assigned ide
 Service that is two properties on the site, `acrUseManagedIdentityCreds` and the identity's client
 id, rather than a capability of Linux container groups.
 
+## Where it sits
+
+No ring: choosing Linux for the container is a hosting decision about the base images, and the code's layering and SOLID are untouched by it.
+
 ## Files
 
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): Linux base images in every stage; the runtime stage
@@ -67,3 +71,7 @@ id, rather than a capability of Linux container groups.
 
 ```live path=Dockerfile region=runtime
 ```
+
+## Addendum, 2026-10-03: the build stage is Node 24
+
+The build stage moved from `node:22-alpine` to `node:24-alpine`, and CI from Node 22 to Node 24, because 22 is in maintenance and 24 is the active long-term release (ADR: Technology versions). Nothing else in the stage changed.

@@ -124,7 +124,7 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         // therefore one ring, xUnit orders them by a hash of their names, and an
         // earlier test's registration puts its own statements in there. An
         // assertion that every entry came from this request would pass today and
-        // break when somebody renames a test (the staff review, 2026-09-03).
+        // break when somebody renames a test.
     }
 
     [Fact]
@@ -285,9 +285,8 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
 
         // This is the assertion that pins the middleware's position. Below the
         // exception handler, the finally reads the status before the handler
-        // writes one, and this request is filed as a 200: the first version of
-        // the timing section did exactly that, so the endpoint that exists to
-        // prove the failure path works was reported as a success.
+        // writes one, and this request would be filed as a 200, so the endpoint
+        // that exists to prove the failure path works would read as a success.
         Assert.True(
             statuses.TryGetValue(500, out int failures) && failures >= 1,
             "a request that threw should be counted as a 500, saw: "

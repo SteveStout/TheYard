@@ -14,15 +14,15 @@ What that is worth: a developer can read each choice beside the code and the tes
 
 ## Tests, and the gate every version passes
 
-The suites hold 748 xUnit tests, 387 Vitest tests at 1.0.3.67 and 143 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.67 hold 2,070 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 773 xUnit tests, 387 Vitest tests at 1.0.3.68 and 143 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.68 hold 2,120 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
-| API | xUnit | 748 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
-| Frontend | Vitest | 387 at 1.0.3.67 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
+| API | xUnit | 773 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
+| Frontend | Vitest | 387 at 1.0.3.68 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
 | End to end | Playwright | 143 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe holding nine views to WCAG 2.1 AA. |
 
-**How 2,070 is counted**, from the gate's own results file for 1.0.3.67 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 387 Vitest tests, 741 xUnit tests on SQLite and the same 741 booted on Cosmos DB, the 7 that need the live Cosmos DB account, 146 browser runs on SQLite from the 143 declared tests (a loop runs one of them more than once) and 48 of those again on Cosmos DB, which is 2,070. The xUnit and browser counts above are read from the source; a test written after 1.0.3.67 first runs in the gate of the version that ships it.
+**How 2,120 is counted**, from the gate's own results file for 1.0.3.68 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 387 Vitest tests, 766 xUnit tests on SQLite and the same 766 booted on Cosmos DB, the 7 that need the live Cosmos DB account, 146 browser runs on SQLite from the 143 declared tests (a loop runs one of them more than once) and 48 of those again on Cosmos DB, which is 2,120. The xUnit and browser counts above are read from the source; a test written after 1.0.3.68 first runs in the gate of the version that ships it.
 
 **The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The gate runs on the machine that ships: format, lint and type checks, the SQL project, xUnit on SQLite, the seven live Cosmos DB tests, and then Vitest and the browser suite, one side after the other. Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml) build the image and roll both sites, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites on a pull request, which has had no gate.
 
@@ -30,8 +30,9 @@ The suites hold 748 xUnit tests, 387 Vitest tests at 1.0.3.67 and 143 Playwright
 
 ## Architecture and decisions
 
-Eighty-seven decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Five to read first:
+Ninety decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Six to read first:
 
+- [ADR-088, onion and SOLID, how this codebase holds them](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-088-onion-and-solid.md): the rings, the eight tests that fail the build when a dependency points outward, and what is kept simple on purpose.
 - [ADR-075, the rules a change has to pass](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): every standing rule beside the test that holds it.
 - [ADR-068, the five-minute gate](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-068-the-five-minute-gate.md): what runs before anything rolls, and what it costs.
 - [ADR-066, one container, both stores](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-066-one-container-both-stores.md): the store toggle, Azure SQL and Cosmos DB behind one set of ports.
@@ -40,7 +41,7 @@ Eighty-seven decision records carry the trade-off and the number behind each cho
 
 ## Stack
 
-- **API:** .NET 10 and C#, minimal APIs in an onion (Data, Domain, Application, Infrastructure, Api).
+- **API:** .NET 10 and C#, minimal APIs in an onion (Data, Domain, Application, Infrastructure, Api), its rings held by tests the build runs ([ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid)).
 - **Front end:** React and TypeScript on Vite.
 - **Stores:** Azure SQL Database and Azure Cosmos DB, chosen per request; SQLite locally.
 - **Hosting:** Azure, described in Bicep.
@@ -48,7 +49,7 @@ Eighty-seven decision records carry the trade-off and the number behind each cho
 
 ## Run it locally
 
-Requires [Node 20+](https://nodejs.org) and the [.NET 10 SDK](https://dotnet.microsoft.com/download), and Chrome for the browser suite. From a clean clone:
+Requires [Node 24](https://nodejs.org) and the [.NET 10 SDK](https://dotnet.microsoft.com/download), and Chrome for the browser suite. From a clean clone:
 
 ```
 npm ci
@@ -64,7 +65,7 @@ npm run test:e2e
 
 Built by one engineer with AI as a force multiplier, test driven: I specify every test before the AI writes
 the first draft of the code against it, three suites of tests run once per version inside the one gate before anything rolls (the counts are at the top of this page, held to the suites
-by a test), and eighty-seven decision records carry the trade-off and the number behind each choice. What went
+by a test), and ninety decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
 millisecond speeds on free-tier stores and one small container, in
@@ -89,7 +90,7 @@ it has sent and how long the database took.
 
 Everything about how it is built and hosted is served from inside the running app, under
 App Architecture, API Reference, SQL vs Cosmos DB, Performance, Diagrams, Style, Hosting, Built with AI, CI/CD
-and Best Practices in the sidebar. Eighty-seven decision records explain each choice, and the code samples in them are read from the running build
+and Best Practices in the sidebar. Ninety decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
@@ -255,10 +256,12 @@ each with its own changelog line and, where it decided something, its own record
   swatches drawn from the token sheet and the rules held by `StyleRulesTests` in the gate, and IBM Plex Sans, the one face since 1.0.3.19, served from the site's own `/assets`, with a system fallback; no external asset.
 - **Backend:** .NET 10 minimal API in onion architecture (`api/`): `TheYard.Data`
   (the pure data records, no dependencies), `TheYard.Domain` (photo selection, auction
-  schedule, filter and bid rules), `TheYard.Application` (the `InventoryService` and
-  `BidService` use cases behind source ports), `TheYard.Infrastructure` (the EF Core
-  adapters over Azure SQL Database or SQLite, the JSON readers that seed them, the synthetic scale-up), `TheYard.Api` (host, endpoints, static images, the
-  served documents, observability). Filtering is LINQ over GET parameters, including
+  schedule, filter, bid and standing rules), `TheYard.Application` (`Auction`, the use
+  cases the endpoints ask, composing `InventoryService`, `BidService` and `MarketService`
+  behind the auction's ports, and the operator's ports beside them), `TheYard.Infrastructure` (the EF Core
+  adapters over Azure SQL Database or SQLite, the JSON readers that seed them, the synthetic scale-up), `TheYard.Api` (host,
+  handlers in `Endpoints/`, every registration in `Composition/`, static images, the
+  served documents, observability). `OnionTests` holds the direction in the build. Filtering is LINQ over GET parameters, including
   auction status; all auction math lives in Domain and travels on the wire, so the
   browser only formats. `src/lib/data.ts` is the frontend's single data seam.
 - **Hosting:** a hand-authored multi-stage Dockerfile, an image in Azure Container
@@ -314,8 +317,8 @@ each with its own changelog line and, where it decided something, its own record
   Cosmos DB, Performance, Diagrams, Style, Hosting, Built with AI, CI/CD, Best Practices, Decision
   Records, Changelog, About and Author, holding the
   architecture and style pages, the two stores side by side, the data flow,
-  infrastructure, entity relationship, two-sites and store comparison diagrams on their
-  own zoomable pages, eighty-seven decision records in one numbered index, the Bicep
+  infrastructure, entity relationship, two-sites, store comparison and rings diagrams on their
+  own zoomable pages, ninety decision records in one numbered index, the Bicep
   infrastructure, my resume, and How this was built, which says plainly that an AI agent
   wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -342,7 +345,7 @@ each with its own changelog line and, where it decided something, its own record
   Cache hits skip the debounce entirely: the delay only exists to protect the server,
   and a hit never touches it.
   *Where:* `src/lib/data.ts` (cache, `peekVehicles`), `src/app/hooks/useInventory.ts` (the debounced
-  fetch effect), `api/TheYard.Api/Program.cs` (cache headers).
+  fetch effect), `api/TheYard.Api/Composition/RequestPipeline.cs` (cache headers).
 - **Server-side pagination at scale.** 100,000 records, but the wire only ever carries a
   page: an envelope of `{ total, vehicles }` with `limit` and `offset`, a landing page of
   the top 100 by auction time, and Load More to walk deeper.
@@ -384,20 +387,24 @@ each with its own changelog line and, where it decided something, its own record
   shows up in practice: determinism tests compare whole vehicle lists by value, and
   non-destructive `with` mutations power the bid overlay and the synthetic variants.
   *Where:* `api/TheYard.Data/Vehicle.cs`; `with` usage in
-  `api/TheYard.Application/BidService.cs` and
+  `api/TheYard.Domain/StandingRules.cs` (the bid overlay), `api/TheYard.Application/BidService.cs` and
   `api/TheYard.Infrastructure/SyntheticVehicleSource.cs`; value-equality assertions in
   `api/TheYard.Tests/SyntheticVehicleSourceTests.cs`.
 - **Onion architecture that earns its layers.** Data (the pure records) has zero
   dependencies; Domain (the rules) depends only on Data; Application talks through ports
   (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`); Infrastructure and its Cosmos DB twin
   adapt the stores and the files; the host only
-  binds and serializes. The proof it is not ceremony: the 100k scale-up is a decorator on
+  binds, asks `Auction` and serializes. The proof it is not ceremony: the 100k scale-up is a decorator on
   a port (`SyntheticVehicleSource`) and nothing above it changed, and the test suite
-  swaps in-memory fakes at the same seams.
+  swaps in-memory fakes at the same seams. The build holds the rings: `OnionTests` reads
+  the compiled assemblies with NetArchTest and fails on any dependency that points outward
+  or an endpoint that reaches a store, eight rules in all ([ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid)).
   *Where:* `api/TheYard.Data/` to `api/TheYard.Domain/` to
-  `api/TheYard.Application/` (`Ports.cs`, `InventoryService.cs`, `BidService.cs`) to
-  `api/TheYard.Infrastructure/` to `api/TheYard.Api/Program.cs` (composition root);
-  fakes in `api/TheYard.Tests/InventoryServiceTests.cs`. The whole picture is written
+  `api/TheYard.Application/` (`Ports.cs`, `Auction.cs`, `InventoryService.cs`, `BidService.cs`) to
+  `api/TheYard.Infrastructure/` to `api/TheYard.Api/Composition/` (composition root, with
+  `Program.cs` its table of contents) and `api/TheYard.Api/Endpoints/` (the handlers);
+  fakes in `api/TheYard.Tests/InventoryServiceTests.cs`; the rules in
+  `api/TheYard.Tests/OnionTests.cs`. The whole picture is written
   down in `docs/ARCHITECTURE.md`, served as Architecture overview.
 - **The documentation cannot drift from the code.** A record's samples are marked
   regions read out of the running container at request time, not pasted, and every
@@ -487,7 +494,7 @@ each with its own changelog line and, where it decided something, its own record
 
 ## Testing
 
-**API (748 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (773 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -506,7 +513,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (387 Vitest tests at 1.0.3.67):** presentation logic only, since the API owns the rules.
+**Frontend (387 Vitest tests at 1.0.3.68):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,

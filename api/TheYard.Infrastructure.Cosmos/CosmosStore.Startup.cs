@@ -73,8 +73,8 @@ public sealed partial class CosmosStore
 
     // #region seed
     /// <summary>
-    /// First boot fills the containers from the files that used to be the
-    /// catalogue, exactly as the relational seed does. "Short" rather than
+    /// First boot fills the containers from the seed files in the repository,
+    /// exactly as the relational seed does. "Short" rather than
     /// "empty": the relational seed is one transaction and is either all there
     /// or not there, but these are two hundred and fifty point writes one at a
     /// time, and a process that died after a hundred of them would have left a

@@ -143,6 +143,10 @@ documents a count can live in was one short.
   That is its own record (ADR: The second manifest); it is named here because
   this work is what exposed it.
 
+## Where it sits
+
+No ring: this is a publishing decision about what the static head of `index.html` and the crawler files under `public/` tell search engines and link unfurlers, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the head, and everything in it that is not for a person.

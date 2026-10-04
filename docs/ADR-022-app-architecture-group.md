@@ -94,6 +94,10 @@ The mechanical style rules (`.editorconfig`):
   the cross-check test still holds the two lists together (ADR: The staff
   review).
 
+## Where it sits
+
+No ring: regrouping the sidebar is a documentation decision whose only code is data in src/library/sections.ts, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the sections and their order.

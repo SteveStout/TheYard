@@ -111,6 +111,35 @@ public sealed class HomePathTests
         Assert.Equal("notes", HomePath.ValidName("  notes "));
     }
 
+    [Theory]
+    [InlineData("...")]
+    [InlineData("docs/...")]
+    public void A_name_the_system_trims_away_never_comes_back_as_home_with_a_separator(string path)
+    {
+        // Windows drops trailing dots and spaces from a name, so "..." resolves to the folder
+        // above it. Home must then come back spelled exactly as Root, or a check such as
+        // "is this home?" would miss it and let a delete through.
+        string resolved = _home.Resolve(path);
+        Assert.False(resolved.EndsWith('/') || resolved.EndsWith('\\'), resolved);
+        Assert.True(_home.IsInside(resolved));
+        Assert.Equal(_home.IsRoot(resolved), resolved == _home.Root);
+    }
+
+    [Fact]
+    public void Home_is_recognised_with_or_without_a_separator_on_the_end()
+    {
+        Assert.True(_home.IsRoot(_home.Root));
+        Assert.True(_home.IsRoot(_home.Root + Path.DirectorySeparatorChar));
+        Assert.False(_home.IsRoot(Path.Combine(_home.Root, "docs")));
+    }
+
+    [Fact]
+    public void The_top_of_the_filesystem_cannot_be_home()
+    {
+        string top = OperatingSystem.IsWindows() ? @"C:\" : "/";
+        Assert.Throws<ArgumentException>(() => new HomePath(top));
+    }
+
     [Fact]
     public void The_root_must_be_absolute()
     {

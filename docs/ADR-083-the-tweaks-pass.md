@@ -64,6 +64,10 @@ The inventory's welcome banner is gone from the inventory, since the landing pag
 
 - The dialog's clear sheet and frosted panel: `glass.spec` and `mobile.spec`. The strip two across and on one baseline: `coverage.spec`. The vehicle's order on a phone: `mobile.spec`. No ellipsis in the store bar at 1024, 1280 and 1440: `store-toggle.spec`. Pin and This hour: `admin.spec`.
 
+## Where it sits
+
+Every change here is in the front end, across the token sheets, the chart and ring code in src/lib, and components such as VehicleDetail and StoreBar. SOLID has little to say about colours and spacing; the closest fit is single responsibility, one reason to change, in sending every figure with a unit through formatNumber in src/lib/format.ts so a format changes in one place. The cost is a growing set of browser and token tests, coverage.spec among them, that each fix had to add. A full redesign would start from new mock-ups and retire this list.
+
 ## Files
 
 - [`src/styles/effects.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/effects.css): the glass, the dialog's sheet and page, the grid, the Mark VII marks.

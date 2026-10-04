@@ -62,6 +62,14 @@ public sealed partial class DocumentationCatalog(string contentRoot)
             ? Directory.EnumerateFiles(DocumentsFolder, "*.md").FirstOrDefault(file => SlugOf(file) == slug)
             : null;
     }
+
+    /// <summary>
+    /// Returns one document as markdown with each live code block filled in from this build, or
+    /// null when no listed document has that slug.
+    /// </summary>
+    /// <param name="slug">The slug from the request: a lower-case file name without .md.</param>
+    public string? Read(string slug) =>
+        FileFor(slug) is { } file ? LiveSamples.Expand(File.ReadAllText(file), contentRoot) : null;
     // #endregion catalogue
 
     /// <summary>

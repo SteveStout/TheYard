@@ -94,6 +94,10 @@ The two rules that make a hidden thing audible and a focused thing visible
   job and not a checklist's. The keyboard path is now walkable end to end,
   which is the part a test can hold.
 
+## Where it sits
+
+Everything here is front end: the skip link and the live region live in src/app/Shell.tsx, and the focus effect and the announcement text live in src/app/hooks/useNavigation.ts. Single responsibility fits at the hook level: useNavigation owns both where focus goes and what a screen reader hears, and because the announcement is derived from view state there is no second copy to go stale. The price is a hidden paragraph in the DOM that no sighted visitor sees, plus browser tests to keep the path walkable. An audit with a real screen reader is still open, and what it finds could push this work into components the hook does not reach.
+
 ## Files
 
 - [`src/app/Shell.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/Shell.tsx): the skip link and the live region.

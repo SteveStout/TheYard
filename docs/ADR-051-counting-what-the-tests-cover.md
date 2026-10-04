@@ -102,6 +102,10 @@ cover a different 44 and 48 things and are not measured here.
 - One more thing to keep true: the floor has to be raised deliberately if the
   suites get much better, or it stops detecting anything.
 
+## Where it sits
+
+No ring: this is a CI and testing-process decision about measuring coverage with `.github/coverage.py` and holding it to a floor, so the onion and SOLID do not apply to it.
+
 ## Files
 
 - [`.github/coverage.py`](https://github.com/SteveStout/TheYard/blob/main/.github/coverage.py): the report, the table, the annotations and the floor.

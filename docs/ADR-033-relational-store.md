@@ -375,14 +375,20 @@ So a store is asked five times at startup before it is written off (`StorePrepar
 
 **Not proven live.** A roll onto 1.0.3.6 whose store comes up at once never runs the loop, and there is no honest way to make Azure SQL refuse a login on purpose; the loop is held by its tests, and the next transient at the wrong second is what proves it, in a log line that reads "came up on the second chance".
 
+## Where it sits
+
+The store is Infrastructure code (EfSources.cs, YardDbContext.cs and the row types in Rows.cs) implementing ports that Application declares in Ports.cs, including the IBidStore this record added, and the host's composition root registers the file readers and NullBidStore when the store will not open. Dependency inversion is the heart of it: BidService depends on IBidStore, which its own ring defines, so it never learns that a database exists. Liskov substitution makes the fallback safe: NullBidStore with the JSON readers stands in for the EF adapters without the rest of the app noticing. It cost about 1.4 seconds of cold start plus a doubled API suite, and bids that had to outlive a deploy are what moved the deployed site to Azure SQL in ADR-039.
+
 ## Files
 
-- [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the context, the model, and the design-time factory.
+- [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the context and the model.
+- [`api/TheYard.Api/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DesignTime.cs): the design-time factory.
 - [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs): the three row types.
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the adapters, the mapping, and the seed.
 - [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the schema's history. It lived beside the context when there was one provider, and moved to a project of its own when there were two, because a migrations assembly holds one model snapshot (ADR: The SQL Server backend). This link pointed at the old folder from that day until a test started checking.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the third port, and the null store.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the registration, the migrate and seed block, and the health check.
+- [`api/TheYard.Api/Composition/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/StoreRegistration.cs): the registration, and the migrate and seed block.
+- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the health check.
 - [`api/TheYard.Tests/PersistenceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PersistenceTests.cs): the restart, the seeding, the migration history, and the file on disk.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the writable directory and the connection string.
 - [`docs/ADR-034-entity-framework-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-034-entity-framework-explained.md): the same setup, walked at a new developer's level.

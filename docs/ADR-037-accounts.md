@@ -101,9 +101,9 @@ Two indexes, one fact (`api/TheYard.Application/BidService.cs`):
 ```live path=api/TheYard.Application/BidService.cs region=record
 ```
 
-What a badge is told (`api/TheYard.Api/BidViews.cs`):
+What a badge is told (`api/TheYard.Application/Auction.cs`):
 
-```live path=api/TheYard.Api/BidViews.cs region=views
+```live path=api/TheYard.Application/Auction.cs region=views
 ```
 
 The tests, including the two accounts and the restart
@@ -284,11 +284,17 @@ gate, which two containers running the same store do not share (ADR: One
 container, both stores). Both are the same shape as the retry that overwrites,
 and belong to the record that takes that on.
 
+## Where it sits
+
+Accounts reach most of the onion: Tokens.cs and the account endpoints in the host Api, YardUser in Infrastructure, BidService's two indexes and the IBidStore port in Application, and the sold check in Domain's BidRules, with src/lib/auth.ts and BidPanel in the front end. The handlers receive RequestAccounts as a parameter instead of reaching into the service container, which OnionTests holds. The cost is a signing key to keep secret and a sign-in with no roles (Identity's lockout, five tries then five minutes, arrived later in ADR: A password guess should cost something), and a container on the file fallback cannot sign anyone in. A real deployment would hand authentication to the organization's SSO and keep none of this code.
+
 ## Files
 
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the token, the cookie, and who is asking.
 - [`api/TheYard.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Accounts.cs): what a register or login answers with.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the composition, the endpoints, and the three that refuse.
+- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): the composition.
+- [`api/TheYard.Api/Endpoints/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.cs): the endpoints.
+- [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the three that refuse.
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the two indexes.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the store port, now keyed on the pair.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the one field Identity does not already have.
@@ -451,3 +457,7 @@ Auction has no amount field, no Place bid and no Buy now, the one control
 reads "Sign in to bid" and clicking it lands on `?view=account`; after a
 registration through the form the same vehicle offers the amount field and
 the control is gone. Shipped as 1.0.0.139.
+
+## Addendum, 2026-10-03: where the account code sits now
+
+The badge's answer moved from `BidViews.cs` in the host to `Auction.BidsOf` in the Application ring, and the live block above follows it. The account handlers no longer look `UserManager` up from the service container: they take `RequestAccounts` (`api/TheYard.Api/RequestAccounts.cs`), which answers null when the request's store keeps no accounts. The password reset's steps moved out of the handler into `PasswordReset` (`api/TheYard.Api/PasswordReset.cs`), in the same order this record describes, so the handler only reads the request and writes the answer. The behaviour is unchanged and the tests that hold it are the same ones.

@@ -321,6 +321,10 @@ pattern matching nothing makes one silent. All three are green.
 - The suite is slower by nothing measurable: waiting for a response returns as
   soon as the response arrives, which is faster than waiting out a fixed budget.
 
+## Where it sits
+
+Most of this is test code and CI beside the onion, and the one product change is front end, the --color-text-faint token in src/styles/colors.css. SOLID does not apply, since the record is about checks that asked an easier question than the one they were written for. The cost was a slightly darker faint colour across the site and a new test that reads the annotation patterns back out of ci.yml. A label that is truly large text could earn a lighter colour later, through an assertion of its own.
+
 ## Files
 
 - [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the colour, and the measurement in the comment beside it.

@@ -145,12 +145,17 @@ the secrets are not is where that question is answered.
 
 The reference page came with Scalar's own extras: a telemetry call on every visit, an AI chat button, an MCP link, a developer toolbar on a local run, and a dark mode the stylesheet the site hands the page (the operator's look, 1.0.3.19) is not written in. All of them are off in the page's options, so it offers what the site offers and fetches from nothing but this host and the one font. `sidebar.spec` opens the page and holds it there: no Ask AI, no developer toolbar, no dark mode button, no request to any other host.
 
+## Where it sits
+
+The work sits in the host Api: ApiDocument.cs configures the framework's generator and its two transformers, Replies.cs and VehicleWire.cs hold the named records the endpoints answer with, and no inner ring changed. SOLID barely reaches this one; the nearest fit is single responsibility, meaning one reason to change: the public-surface filter and the bearer marking live in ApiDocument.cs alone. It cost a pass over every handler to swap anonymous objects for named records, and a newer generator with fewer worked examples than Swashbuckle. A promise of a stable, versioned API to outside teams would call for a version policy and a document per version.
+
 ## Files
 
 - [`api/TheYard.Api/ApiDocument.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ApiDocument.cs): the document's name, title and routes, the public-surface filter, and the two transformers.
 - [`api/TheYard.Api/Replies.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Replies.cs): the named shapes the endpoints answer with.
 - [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): `VehicleView`, the vehicle as the wire carries it.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the generator and the reference page wired, and every public endpoint named, summarised and typed.
+- [`api/TheYard.Api/Composition/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs) and [`api/TheYard.Api/Endpoints/ReferenceEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ReferenceEndpoints.cs): the generator and the reference page wired.
+- [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): every public endpoint named, summarised and typed.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the two packages, pinned.
 - [`api/TheYard.Tests/ApiDocumentTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ApiDocumentTests.cs): the four rules, held.
 - [`docs/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): the rules table, with this record's row.

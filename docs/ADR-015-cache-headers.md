@@ -52,7 +52,7 @@ name is the same idea, done by the build, for every file, every time.
 ## In the code
 
 The rules, read from this build
-([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
+([`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs)):
 
 ```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=cache-headers
 ```
@@ -75,11 +75,15 @@ says no-cache rather than immutable; a photo keeps its day.
 - The Admin tab, the version endpoint and the documents are fetched fresh
   every time. They are small, and being current is their whole job.
 
+## Where it sits
+
+The cache rules live in the host Api, in one inline middleware in Composition/RequestPipeline.cs (region cache-headers) that picks a rule from the shape of the address. That is single responsibility in practice: the rule for every address is read in one place, with the photo set's one-day rule as the one exception. The cost is a round trip on every visit for the page and the API, answered with a 304 when nothing changed. A bundler that did not hash file names would force versioned addresses back into the page.
+
 ## Files
 
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the middleware (region
-  cache-headers above), the photo set's own rule, and the SPA fallback that
-  answers only app routes.
+- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the middleware (region
+  cache-headers above) and the photo set's own rule (region static-files).
+- [`api/TheYard.Api/Composition/SpaRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/SpaRegistration.cs): the SPA fallback that answers only app routes.
 - [`api/TheYard.Tests/CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CacheHeaderTests.cs): the proof, header by
   header.
 - [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts) and [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the build that names
@@ -89,7 +93,7 @@ says no-cache rather than immutable; a photo keeps its day.
 ## More of the code
 
 The static file middleware, the photo set's own rule, and the fallback that
-answers only app routes ([`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs)):
+answers only app routes ([`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs)):
 
 ```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=static-files
 ```

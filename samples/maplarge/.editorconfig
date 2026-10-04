@@ -1,14 +1,14 @@
 # The mechanical half of docs/STYLE.md, applied by the editor and the
-# compiler instead of by review, copied from TheYard's root with the
-# TypeScript block removed (ADR-010). Rules a tool cannot check (naming that
-# reads well, comments that say why) stay in that document.
+# compiler instead of by review, so the same rules hold on every machine.
+# Rules a tool cannot check (naming that reads well, comments that say why)
+# stay in that document.
 root = true
 
 [*]
 charset = utf-8
-# LF, which is what git has stored for every file here since the first commit.
-# .gitattributes is what makes that true in the working tree as well, on every
-# machine rather than only on the ones whose core.autocrlf agrees (ADR-028).
+# LF on every machine. .gitattributes makes git store and check out LF too,
+# whatever core.autocrlf says, so a file never changes just by moving between
+# Windows and Linux.
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true

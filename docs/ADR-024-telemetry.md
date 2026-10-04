@@ -137,10 +137,16 @@ the connection string.
   needs, and would not put the Admin tab on a public route at all
   (ADR: Observability says why this one is).
 
+## Where it sits
+
+Telemetry is a host concern and stays in the host Api, where Composition/TelemetryRegistration.cs adds the exporter only when a connection string is present and TelemetryReader in Telemetry.cs reads the last hour back for the Admin tab's TelemetryCard in the front end. Application and Domain never learn that Application Insights exists, which is the onion's dependency rule at work, and no SOLID principle is in play beyond that. It cost two Azure resources held to a 0.1 GB daily cap and one Monitoring Reader grant, plus a deploy that can ship with telemetry switched off. A site with real traffic would size retention and the cap to its load and take these readings off a public route.
+
 ## Files
 
 - [`api/TheYard.Api/Telemetry.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Telemetry.cs): the reader, its query and its shaping.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the registration, the browser-error log, and the Admin endpoint.
+- [`api/TheYard.Api/Composition/TelemetryRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/TelemetryRegistration.cs): the registration.
+- [`api/TheYard.Api/Endpoints/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ErrorEndpoints.cs): the browser-error log.
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the Admin endpoint (region telemetry-endpoint).
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the one package this added.
 - [`src/components/admin/TelemetryCard/TelemetryCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TelemetryCard/TelemetryCard.tsx): the card and its three states.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the placeholder and the roll-time substitution.

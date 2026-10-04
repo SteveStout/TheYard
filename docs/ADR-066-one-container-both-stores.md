@@ -92,7 +92,7 @@ with its peer, so the second container and its card keep working unchanged.
 The request ring records which store served each request, which is what lets
 one ring be split two ways.
 
-```live path=api/TheYard.Api/Endpoints/AdminEndpoints.Observability.cs region=backends-metrics
+```live path=api/TheYard.Api/MetricsReport.cs region=backends-metrics
 ```
 
 **The health check names every store.** One check per store, the default's
@@ -344,11 +344,24 @@ since 1.0.0.158 gives it back when nothing has asked that store for anything in
 store is never let go, a load in flight is never dropped, and the setting defaults to zero, which is
 never, so a developer's machine and the suite behave as they always have.
 
+## Where it sits
+
+Most of this lives in the Api host, where `Backend.cs` holds one store's catalogue, bids and room, `Backends.For` in `Stores.cs` picks a store from the `X-Yard-Store` header or the default, and `CurrentBackend` hands each request an Application `Auction` composed over that backend's services; the front end's `src/lib/stores.ts` turns the choice into a link to the other site. A second store per process works because endpoints and `UserManager` receive the request's backend and its `IUserStore<YardUser>` and never name a store themselves. The cost is two catalogues of a hundred thousand vehicles in one process while both are in use, which is why the second now loads on first request and is let go after ten idle minutes, and bids placed in one process stay invisible to the other until it restarts. A site that needed one store only, or a machine with too little memory for two catalogues, would go back to one store per process and compare across sites instead.
+
 ## Files
 
-- [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a backend, the backends, the request's choice, and the context factory.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): two stores brought up, the endpoints on the request's store, the health check per store, the metrics per store, the toggle's endpoints.
+- [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): the backends, the request's choice, and the warm before a read.
+- [`api/TheYard.Infrastructure/ContextFactory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ContextFactory.cs): the relational context factory.
+- [`api/TheYard.Api/Composition/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/StoreRegistration.cs): two stores brought up.
+- [`api/TheYard.Api/Endpoints/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/VehicleEndpoints.cs) and [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the endpoints on the request's store.
+- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the health check per store.
+- [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the metrics per store.
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the toggle's endpoints (region stores-endpoints).
 - [`api/TheYard.Tests/StoreToggleTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreToggleTests.cs): the rule, the endpoints, the ring.
 - [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts) and [`src/components/layout/StoreBar/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/StoreBar/StoreBar.tsx): the toggle.
 - [`tests/e2e/store-toggle.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/store-toggle.spec.ts): the toggle in a browser, on one store and on two.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two groups, three variables apart.
+
+## Addendum, 2026-10-03: endpoints ask the auction
+
+An endpoint still takes `CurrentBackend`, as this record decided, and now reads the store through `CurrentBackend.Auction`, the Application type that composes the catalogue, the bids and the room for that store. The timing card's shape moved from the endpoint into `MetricsReport` (`api/TheYard.Api/MetricsReport.cs`), and the live block above follows it. The context factory moved to the relational adapter.

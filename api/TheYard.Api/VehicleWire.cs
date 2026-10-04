@@ -101,28 +101,24 @@ public static class VehicleWire
     public const string ReserveNotMet = "not-met";
 
     /// <summary>
-    /// Whether the reserve is met, from the reserve and the standing bid. A
-    /// null reserve means no reserve. A reserve is met once the standing bid
-    /// reaches it, exactly counting; with no bid yet it cannot be met. The
-    /// browser shows this state and is never sent the amount it comes from.
+    /// The wire's word for whether the reserve is met. The rule itself is the domain's
+    /// (StandingRules, read as vehicle.Reserve); this only spells its answer the way the
+    /// browser reads it.
     /// </summary>
-    public static string ReserveState(int? reservePrice, int? currentBid)
-    {
-        if (reservePrice is not { } reserve)
+    public static string ReserveState(ReserveStatus status) =>
+        status switch
         {
-            return NoReserve;
-        }
-        return currentBid is { } bid && bid >= reserve ? ReserveMet : ReserveNotMet;
-    }
+            ReserveStatus.NoReserve => NoReserve,
+            ReserveStatus.Met => ReserveMet,
+            _ => ReserveNotMet,
+        };
     // #endregion reserve-state
 
     // #region sold
     /// <summary>
     /// <paramref name="sold"/> is not a default parameter on purpose: every
-    /// caller has the bid service in hand and has to say, because a listing
-    /// that forgot would show a bought vehicle as open to everybody but its
-    /// buyer, which is what every listing once did (ADR: Accounts
-    /// and per-user bids, the addendum on the second buyer).
+    /// caller has the auction in hand and has to say, because a listing that
+    /// forgot would show a bought vehicle as open to everybody but its buyer.
     /// </summary>
     public static VehicleView ToWire(Vehicle vehicle, AuctionClock clock, bool sold)
     {
@@ -165,7 +161,7 @@ public static class VehicleWire
             BidRules.MinNextBid(vehicle),
             // From the vehicle after the overlays, so the state matches the
             // standing bid this same answer carries.
-            ReserveState(vehicle.ReservePrice, vehicle.CurrentBid),
+            ReserveState(vehicle.Reserve),
             sold);
     }
     // #endregion sold

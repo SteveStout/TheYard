@@ -1,4 +1,5 @@
 using TheYard.Application;
+using TheYard.Infrastructure;
 using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Api;

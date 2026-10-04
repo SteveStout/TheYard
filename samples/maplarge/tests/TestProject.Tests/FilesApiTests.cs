@@ -128,6 +128,14 @@ public sealed class FilesApiTests : IDisposable
         Assert.Equal("blob.bin", download.Content.Headers.ContentDisposition?.FileNameStar ?? download.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
         Assert.Equal(bytes, await download.Content.ReadAsByteArrayAsync());
         Assert.Equal("bytes", download.Headers.AcceptRanges.Single());
+        Assert.NotNull(download.Content.Headers.LastModified);
+
+        // A resumed download asks for the bytes it is missing and gets only those.
+        using var resume = new HttpRequestMessage(HttpMethod.Get, "/api/files/download?path=docs/blob.bin");
+        resume.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, 3);
+        HttpResponseMessage part = await _client.SendAsync(resume);
+        Assert.Equal(HttpStatusCode.PartialContent, part.StatusCode);
+        Assert.Equal(bytes[..4], await part.Content.ReadAsByteArrayAsync());
     }
 
     [Fact]

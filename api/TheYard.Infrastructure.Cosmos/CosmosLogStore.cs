@@ -74,7 +74,7 @@ public sealed class CosmosLogStore(CosmosStore store) : ILogStore
             return;
         }
 
-        foreach (var day in events.GroupBy(e => ActivityFolding.DayOf(e.At), StringComparer.Ordinal))
+        foreach (var day in events.GroupBy(e => e.At.UtcDay, StringComparer.Ordinal))
         {
             var partition = new PartitionKey(day.Key);
             foreach (var chunk in day.Chunk(BatchSize))
@@ -118,7 +118,7 @@ public sealed class CosmosLogStore(CosmosStore store) : ILogStore
         string text = "SELECT TOP @take * FROM c WHERE c.day >= @day AND c.at >= @at";
         var definition = new QueryDefinition(text)
             .WithParameter("@take", Math.Clamp(query.Take, 1, 1_000))
-            .WithParameter("@day", ActivityFolding.DayOf(query.Since))
+            .WithParameter("@day", query.Since.UtcDay)
             .WithParameter("@at", query.Since.ToUniversalTime().ToString("O"));
         if (!string.IsNullOrEmpty(query.Kind))
         {
@@ -167,7 +167,7 @@ public sealed class CosmosLogStore(CosmosStore store) : ILogStore
         }
 
         var definition = new QueryDefinition("SELECT c.kind, COUNT(1) AS count FROM c WHERE c.day >= @day AND c.at >= @at GROUP BY c.kind")
-            .WithParameter("@day", ActivityFolding.DayOf(since))
+            .WithParameter("@day", since.UtcDay)
             .WithParameter("@at", since.ToUniversalTime().ToString("O"));
         var counts = new List<LogCount>();
         using var feed = _container.GetItemQueryIterator<LogCountRow>(definition);
@@ -196,7 +196,7 @@ public sealed class CosmosLogStore(CosmosStore store) : ILogStore
 
         const string Where = " FROM c WHERE c.day >= @day AND c.at >= @at AND c.kind = @kind AND c.store = @site";
         QueryDefinition With(string text) => new QueryDefinition(text)
-            .WithParameter("@day", ActivityFolding.DayOf(since))
+            .WithParameter("@day", since.UtcDay)
             .WithParameter("@at", since.ToUniversalTime().ToString("O"))
             .WithParameter("@kind", kind)
             .WithParameter("@site", site);

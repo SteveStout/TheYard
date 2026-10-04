@@ -44,8 +44,11 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | An identity token is asked for at whichever door the host has, and a web app's card claims no restart count it was never given | ADR: One plan, two sites | AzureSelfTests |
 | Every setting a container group carried is a setting the two sites carry, and nothing deploys a template in complete mode | ADR: One plan, two sites | AppServiceTemplateTests |
 | A catalogue a site does not serve is let go when nobody has asked for it in a while, never while it is in use or loading, and the one a site serves never | ADR: One plan, two sites | WarmthTests |
-| Every record opens with its title, says what became of it, and ends with its Files section | This record | RecordShapeTests |
+| Every record opens with its title, says what became of it, says where it sits in the rings above its Files section, and ends with its Files section | This record, ADR: Onion and SOLID, how this codebase holds them | RecordShapeTests |
 | Every rule in this table names a test that exists, and every record it cites exists | This record | RuleTableTests |
+| Dependencies point inward: Data and Domain use nothing outside the BCL, Application uses only Domain and Data, and the document store adapter borrows only the shared user from the relational one | ADR: Onion and SOLID, how this codebase holds them | OnionTests |
+| Endpoints never reach a store or the service container, reach the auction only through Application, the host never queries a database itself, and services are registered only in the composition root | ADR: Onion and SOLID, how this codebase holds them | OnionTests |
+| Every package the build uses has a row in the versions record with the version in use, and a row that is behind says why | ADR: Technology versions | TechnologyVersionsTests |
 | Code shown in a document is read from the build at request time, never pasted | ADR: Live code samples | LiveSamplesTests, LiveSampleCoverageTests |
 | Every count a living document states is the count | ADR: The public face | PublicFaceTests |
 | The sitemap lists every document the catalogue serves and nothing else, and llms.txt links only to what the site serves | ADR: The public face | PublicFaceTests |
@@ -114,6 +117,10 @@ the floor, not the ceiling.
 Nor does it claim the tests are the decisions. A rule is decided in a record, for a reason, and the test
 is how the decision survives a busy month.
 
+## Where it sits
+
+No ring: this is a process decision about the rules table and the tests in TheYard.Tests that check it, which sit beside the onion, so the rings and SOLID do not apply to it.
+
 ## Files
 
 - [`docs/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): this record, which the table below it is read from.
@@ -124,3 +131,7 @@ is how the decision survives a busy month.
 - [`api/TheYard.Tests/FileShapeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/FileShapeTests.cs): the 300-line rule for every production source file.
 - [`CLAUDE.md`](https://github.com/SteveStout/TheYard/blob/main/CLAUDE.md): what an agent reads before it changes anything, which now points here.
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the rules no test holds (served as Coding and Commenting Style under App Architecture).
+
+## Addendum, 2026-10-03: three more rules
+
+Three rows joined the table with the pass that put the rings under test: two for `OnionTests`, which reads the compiled assemblies and fails the build when a dependency points outward, and one for `TechnologyVersionsTests`, which holds the versions record to the project files. `RecordShapeTests` also requires every record to say where it sits (ADR: Onion and SOLID, how this codebase holds them).

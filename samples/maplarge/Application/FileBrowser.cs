@@ -15,9 +15,6 @@ namespace TestProject.Application;
 /// </summary>
 public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions options)
 {
-    /// <summary>The home directory every operation is kept inside.</summary>
-    public HomePath Home { get; } = home;
-
     // #region browse
     /// <summary>
     /// Lists one folder's direct contents with totals and timing. Folders come first,
@@ -36,7 +33,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         }
         folders.Sort((a, b) => ViewTotals.NameOrder.Compare(a.Name, b.Name));
         files.Sort((a, b) => ViewTotals.NameOrder.Compare(a.Name, b.Name));
-        string relative = Home.Relative(absolute);
+        string relative = home.Relative(absolute);
         return new Listing(relative, HomePath.ParentOf(relative), folders, files, ViewTotals.Of(folders, files), Elapsed(started));
     }
     // #endregion browse
@@ -83,24 +80,26 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         }
         folders.Sort((a, b) => ViewTotals.NameOrder.Compare(a.Path, b.Path));
         files.Sort((a, b) => ViewTotals.NameOrder.Compare(a.Path, b.Path));
-        return new SearchResult(pattern.Query, Home.Relative(absolute), folders, files, ViewTotals.Of(folders, files), truncated, Elapsed(started));
+        return new SearchResult(pattern.Query, home.Relative(absolute), folders, files, ViewTotals.Of(folders, files), truncated, Elapsed(started));
     }
     // #endregion search
 
-    /// <summary>
-    /// Checks that a path names a file and returns what the controller needs to send it:
-    /// the absolute path to stream from, and the file's entry for the response headers.
-    /// </summary>
+    /// <summary>Checks that a path names a file and opens it through the store, so any store can
+    /// serve downloads and no absolute path leaves this class. Returns the bytes and the entry.</summary>
     /// <param name="path">The file, relative to home.</param>
-    public (string Absolute, FileEntry Entry) Download(string? path)
+    public (Stream Content, FileEntry Entry) Download(string? path)
     {
-        string absolute = Home.Resolve(path);
+        string absolute = home.Resolve(path);
         if (store.KindOf(absolute) != EntryKind.File)
         {
-            throw ApiRefusalException.NotFound($"There is no file at '{Home.Relative(absolute)}'.");
+            throw ApiRefusalException.NotFound($"There is no file at '{home.Relative(absolute)}'.");
         }
-        return (absolute, File(store.Describe(absolute)));
+        FileEntry entry = File(store.Describe(absolute));
+        return (store.OpenRead(absolute), entry);
     }
+
+    /// <summary>Returns true when the home directory is there to browse, for the health check.</summary>
+    public bool HomeIsThere() => store.KindOf(home.Root) == EntryKind.Folder;
 
     // #region upload
     /// <summary>
@@ -127,11 +126,11 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         string target = Path.Combine(absoluteFolder, HomePath.ValidName(Path.GetFileName(name)));
         if (!overwrite && store.KindOf(target) != EntryKind.None)
         {
-            throw ApiRefusalException.Conflict($"'{Home.Relative(target)}' already exists.");
+            throw ApiRefusalException.Conflict($"'{home.Relative(target)}' already exists.");
         }
         if (store.KindOf(target) == EntryKind.Folder)
         {
-            throw ApiRefusalException.Conflict($"'{Home.Relative(target)}' is a folder.");
+            throw ApiRefusalException.Conflict($"'{home.Relative(target)}' is a folder.");
         }
         await using (Stream file = store.Create(target, overwrite))
         {
@@ -152,7 +151,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         string target = Path.Combine(Folder(parent), HomePath.ValidName(name));
         if (store.KindOf(target) != EntryKind.None)
         {
-            throw ApiRefusalException.Conflict($"'{Home.Relative(target)}' already exists.");
+            throw ApiRefusalException.Conflict($"'{home.Relative(target)}' already exists.");
         }
         store.CreateFolder(target);
         return Folder(store.Describe(target));
@@ -166,7 +165,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     public void Delete(string? path)
     {
         string absolute = Existing(path);
-        if (absolute == Home.Root)
+        if (home.IsRoot(absolute))
         {
             throw ApiRefusalException.Refused("The home directory cannot be deleted.");
         }
@@ -174,39 +173,42 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     }
 
     /// <summary>
-    /// Moves a file or folder to a new location, which can also give it a new name.
-    /// The checks it shares with copy run first (see <see cref="Transfer"/>).
+    /// Moves a file or folder to a new location, which can also give it a new name, and
+    /// returns it as the API sends it. The checks it shares with copy run first
+    /// (see <see cref="Transfer"/>).
     /// </summary>
     /// <param name="from">What to move, relative to home.</param>
     /// <param name="to">The full new path, relative to home, new name included.</param>
-    public StoreEntry Move(string? from, string? to)
+    public object Move(string? from, string? to)
     {
         (string source, string target) = Transfer(from, to);
         store.Move(source, target);
-        return store.Describe(target);
+        return Describe(store.Describe(target));
     }
 
     /// <summary>
     /// Copies a file, or a folder with everything inside it, to a new location, which can
-    /// also give the copy a new name. The checks it shares with move run first
-    /// (see <see cref="Transfer"/>).
+    /// also give the copy a new name, and returns the copy as the API sends it. The checks
+    /// it shares with move run first (see <see cref="Transfer"/>).
     /// </summary>
     /// <param name="from">What to copy, relative to home.</param>
     /// <param name="to">The full path of the copy, relative to home, new name included.</param>
-    public StoreEntry Copy(string? from, string? to)
+    public object Copy(string? from, string? to)
     {
         (string source, string target) = Transfer(from, to);
         store.Copy(source, target);
-        return store.Describe(target);
+        return Describe(store.Describe(target));
     }
 
     /// <summary>
     /// Converts a store entry, which holds an absolute path, into the record the API
     /// returns: a <see cref="FolderEntry"/> for a folder or a <see cref="FileEntry"/> for
-    /// a file, both with paths relative to home.
+    /// a file, both with paths relative to home. The answer is typed as object because the
+    /// JSON writer writes the runtime type, so a file keeps its size and extension; a
+    /// shared base record would drop them.
     /// </summary>
     /// <param name="entry">The entry the store described.</param>
-    public object Describe(StoreEntry entry) => entry.Kind == EntryKind.Folder ? Folder(entry) : File(entry);
+    private object Describe(StoreEntry entry) => entry.Kind == EntryKind.Folder ? Folder(entry) : File(entry);
 
     // #region transfer-rules
     /// <summary>
@@ -220,23 +222,23 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     private (string Source, string Target) Transfer(string? from, string? to)
     {
         string source = Existing(from);
-        if (source == Home.Root)
+        if (home.IsRoot(source))
         {
             throw ApiRefusalException.Refused("The home directory cannot be moved or copied.");
         }
-        string target = Home.Resolve(to);
-        if (target == Home.Root)
+        string target = home.Resolve(to);
+        if (home.IsRoot(target))
         {
             throw ApiRefusalException.Refused("A destination needs a name.");
         }
         string? parent = Path.GetDirectoryName(target);
         if (parent is null || store.KindOf(parent) != EntryKind.Folder)
         {
-            throw ApiRefusalException.NotFound($"There is no folder to put '{Home.Relative(target)}' in.");
+            throw ApiRefusalException.NotFound($"There is no folder to put '{home.Relative(target)}' in.");
         }
         if (store.KindOf(target) != EntryKind.None)
         {
-            throw ApiRefusalException.Conflict($"'{Home.Relative(target)}' already exists.");
+            throw ApiRefusalException.Conflict($"'{home.Relative(target)}' already exists.");
         }
         if (store.KindOf(source) == EntryKind.Folder && new HomePath(source).IsInside(target))
         {
@@ -248,20 +250,20 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
 
     private string Folder(string? path)
     {
-        string absolute = Home.Resolve(path);
+        string absolute = home.Resolve(path);
         if (store.KindOf(absolute) != EntryKind.Folder)
         {
-            throw ApiRefusalException.NotFound($"There is no folder at '{Home.Relative(absolute)}'.");
+            throw ApiRefusalException.NotFound($"There is no folder at '{home.Relative(absolute)}'.");
         }
         return absolute;
     }
 
     private string Existing(string? path)
     {
-        string absolute = Home.Resolve(path);
+        string absolute = home.Resolve(path);
         if (store.KindOf(absolute) == EntryKind.None)
         {
-            throw ApiRefusalException.NotFound($"There is nothing at '{Home.Relative(absolute)}'.");
+            throw ApiRefusalException.NotFound($"There is nothing at '{home.Relative(absolute)}'.");
         }
         return absolute;
     }
@@ -280,13 +282,13 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
 
     private FolderEntry Folder(StoreEntry entry)
     {
-        string relative = Home.Relative(entry.Absolute);
+        string relative = home.Relative(entry.Absolute);
         return new FolderEntry(HomePath.NameOf(relative), relative, entry.ModifiedMs);
     }
 
     private FileEntry File(StoreEntry entry)
     {
-        string relative = Home.Relative(entry.Absolute);
+        string relative = home.Relative(entry.Absolute);
         string name = HomePath.NameOf(relative);
         return new FileEntry(name, relative, entry.SizeBytes, entry.ModifiedMs, Path.GetExtension(name).TrimStart('.').ToLowerInvariant());
     }

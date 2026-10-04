@@ -97,10 +97,16 @@ Steve, 12:0x CDT: "we have 3 reported pages down, focus on that ASAP." The roll 
 
 Two things, both mechanical. **A second look:** an address that did not answer on the first pass is asked again, alone, once the pass is over, and an address that answers then is up, with "answered on a second look" as its reason, so the card still says it was slow the first time. **A second sweep:** three minutes after the roll's sweep the settled process sweeps itself again (`PageStatusRunner.SecondSweep`, trigger "settled"), and that is the reading the tile shows until somebody asks for another. `PageStatusTests` holds both: a handler that times out once is up on the second look with its reason, one that times out twice is down with its reason, and the second sweep's delay. The ship script reads the Admin section on both sites after every roll now (`staging\polishlane\admin-after-roll.py`): health, pages, machines, kept, metrics, and it asks for a sweep itself when the roll's reading has anything down, so the after-ship log carries the settled reading and not the start's.
 
+## Where it sits
+
+The sweep lives in the host Api, with the Pages card on the front end, because checking what the site serves is a host concern and touches no auction rule. Single responsibility, one reason to change, divides it cleanly: ServedAddresses builds the list from DocumentationCatalog, SelfAddress asks the server where it is listening, and PageStatusRunner makes the requests and judges each answer. It cost a header the request hook must honour (X-Yard-Page-Check) and a reading taken at the origin that cannot see what the edge has cached. A site with paying users would justify an outside uptime service with alerts, since a container cannot report its own outage.
+
 ## Files
 
 - [`api/TheYard.Api/PageStatus.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PageStatus.cs): the derived list, the sweep, and what it reports.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the sweep at startup, the two endpoints, and the request hook that drops its header.
+- [`api/TheYard.Api/Composition/Startup.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/Startup.cs): the sweep at startup (region page-status-wiring).
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the two endpoints (region page-status-endpoints).
+- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the request hook that drops its header.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the dictionary the list is built from.
 - [`src/components/admin/PagesCard/PagesCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/PagesCard/PagesCard.tsx): the card, failures first.
 - [`api/TheYard.Tests/PageStatusTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PageStatusTests.cs): the list against the catalogue, every address answering, the types, and the header that keeps a sweep out of the ring.

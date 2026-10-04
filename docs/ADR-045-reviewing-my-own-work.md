@@ -266,11 +266,20 @@ The pass took an hour, found three defects in code that had passed every
 test written for it, and fixed the tests that had passed: a check that
 cannot fail is not a check, and the seed's own comment was the reminder.
 
+## Where it sits
+
+The review reached two rings: the database failure now travels as an `Exception` on `DatabaseState` in Infrastructure, while the log ring's category allow-list and the outermost timing middleware (now in `Composition/RequestPipeline.cs`) belong to the Api host. Single responsibility, meaning a class has one reason to change, is what the main fix follows, since the message template now serves the public page and the exception slot serves the console, so neither has to decide which text is safe to print. The cost was an hour of skeptical reading per pass and an Admin tab that shows fewer framework lines than it used to. A team with a human reviewer on every pull request would rely on that reviewer and keep a pass like this for the diffs that touch public pages.
+
 ## Files
 
-- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): `DatabaseState` carrying the failure as an exception rather than as text.
-- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the category allow-list, the self-observation filter, the capacity guards.
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the timing middleware where it belongs, and readiness that runs only what it needs.
+- [`api/TheYard.Application/DatabaseState.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/DatabaseState.cs): `DatabaseState` carrying the failure as an exception rather than as text.
+- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs) and [`api/TheYard.Api/LogRingBuffer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LogRingBuffer.cs): the self-observation filter and the capacity guards, and the category allow-list in the log ring.
+- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the timing middleware where it belongs.
+- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): readiness that runs only what it needs.
 - [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the connect budget and the retry policy read together.
 - [`tests/e2e/app.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/app.ts): a wait for something that is there.
 - [`docs/ADR-042-exemptions-that-hide.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-042-exemptions-that-hide.md): the checks that asked easier questions, which this is the sequel to.
+
+## Addendum, 2026-10-03: the experiment cache is per instance
+
+The item above that names the partition key experiment's static cache is done. `PartitionExperiment` (`api/TheYard.Infrastructure.Cosmos/Experiment.cs`) keeps its last result in an instance field, measures the minute on an injected `TimeProvider`, and sits behind the `IStoreExperiment` port in Application, so the Admin endpoint asks the port and never looks the Cosmos DB store up from the service container. Two hosts in one test run no longer share a result.

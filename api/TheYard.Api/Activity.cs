@@ -41,7 +41,7 @@ public sealed class VisitorTokens(string key)
     /// <summary>Thirty-two hex characters: the first sixteen bytes of the keyed hash.</summary>
     public string TokenFor(string address, DateTimeOffset at)
     {
-        byte[] hash = HMACSHA256.HashData(_key, Encoding.UTF8.GetBytes(ActivityFolding.DayOf(at) + "|" + address));
+        byte[] hash = HMACSHA256.HashData(_key, Encoding.UTF8.GetBytes(at.UtcDay + "|" + address));
         return Convert.ToHexStringLower(hash.AsSpan(0, 16));
     }
 

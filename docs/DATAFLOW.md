@@ -12,19 +12,22 @@ The source is [`docs/images/dataflow.svg`](https://github.com/SteveStout/TheYard
 
 Every box in the diagram is a file; each step below names its path.
 
-**All HTTP endpoints live in one place: `api/TheYard.Api/Program.cs`.** It is the
-composition root: it wires the dependency graph (sources, then services), then declares
-every route and hands straight off to the Application layer. ADR: Program.cs, explained
-walks that file top to bottom.
+**Every HTTP endpoint lives in `api/TheYard.Api/Endpoints/`, one file per area.**
+`api/TheYard.Api/Program.cs` is the table of contents: it calls the registrations in
+`api/TheYard.Api/Composition/` (sources, then services), then maps each endpoint file. A
+handler binds the request and hands straight off to the Application layer; the auction's
+handlers ask `Auction` (`api/TheYard.Application/Auction.cs`), which composes the
+catalogue, everybody's bids and the simulated room in the one order the rules need. ADR:
+Program.cs, explained walks the entry point top to bottom.
 
 | Route | Handled by |
 | --- | --- |
-| `GET /api/vehicles` (filter/sort/page params) | `InventoryService.Search` |
-| `GET /api/vehicles/{id}` | `InventoryService.GetById` |
-| `GET /api/facets` | `InventoryService.Facets` |
-| `POST /api/vehicles/{id}/bids` | `BidService.PlaceBidAsync` → `BidRules` |
-| `POST /api/vehicles/{id}/buy-now` | `BidService.BuyNowAsync` → `BidRules` |
-| `GET` / `DELETE /api/bids` | `BidService.SnapshotFor` / `ResetAsync` |
+| `GET /api/vehicles` (filter/sort/page params) | `Auction.Search` → `InventoryService.Search` |
+| `GET /api/vehicles/{id}` | `Auction.Find` and `Auction.AsItStands` |
+| `GET /api/facets` | `Auction.Facets` |
+| `POST /api/vehicles/{id}/bids` | `Auction.PlaceBidAsync` → `BidService` → `BidRules` |
+| `POST /api/vehicles/{id}/buy-now` | `Auction.BuyNowAsync` → `BidService` → `BidRules` |
+| `GET` / `DELETE /api/bids` | `Auction.BidsOf` / `Auction.ResetAsync` |
 | `GET /api/docs/{slug}` · `/api/docs/diagrams/{name}` | the documents catalog and the diagram pages (ADR-017, ADR-020) |
 | `GET /api/docs/bicep` · `/api/docs/resume` | files on disk |
 | `GET /api/images/{file}` | static files (day-long `Cache-Control`) |
@@ -58,15 +61,16 @@ What that is worth: a developer can trace any request to the file that handles i
    a filter, a sort, and a clock (`api/TheYard.Api/Clocks.cs`): now, and the UTC
    midnight that began the day, the same for every caller, so schedule math
    (`api/TheYard.Domain/AuctionSchedule.cs`, `AuctionClock.cs`) puts every visitor in
-   the same auction. The buyer's bids overlay **before** filtering
-   (`api/TheYard.Application/BidService.cs`), so price bounds see the same figures the
-   UI shows. Then `Where` → `OrderBy` → `Skip/Take`, all in memory:
+   the same auction. Everybody's bids, then the simulated room's, overlay **before**
+   filtering (`Auction.Overlay` in `api/TheYard.Application/Auction.cs`, each raise made by
+   `StandingRules.RaisedTo` in `api/TheYard.Domain/StandingRules.cs`), so price bounds see
+   the same figures the UI shows. Then `Where` → `OrderBy` → `Skip/Take`, all in memory:
    `api/TheYard.Domain/VehicleFilter.cs` and `VehicleOrdering.cs`, applied in
    `InventoryService.Search`.
 5. **Wire.** `api/TheYard.Api/VehicleWire.cs` stamps the server-derived auction facts
    onto each vehicle (`auction_starts_at`, `auction_ends_at`, `auction_status`,
    `min_next_bid`, and `sold`, from everybody's standing), and the endpoint
-   (`api/TheYard.Api/Program.cs`) responds with a snake_case envelope
+   (`api/TheYard.Api/Endpoints/VehicleEndpoints.cs`) responds with a snake_case envelope
    `{ total, vehicles }`.
 6. **Fetch.** `src/lib/data.ts` is the browser's single seam: it debounces filter
    changes (500 ms), caches responses per query string (5-minute TTL; hits skip the
@@ -82,6 +86,8 @@ What that is worth: a developer can trace any request to the file that handles i
 
 1. `src/components/vehicle/BidPanel/BidPanel.tsx` posts `{ amount }` to
    `POST /api/vehicles/{id}/bids` via `src/lib/data.ts`; the clock is the server's.
+   `api/TheYard.Api/Endpoints/BidEndpoints.cs` hands it to `Auction.PlaceBidAsync`, which
+   measures it against the room's standing price as well as everybody's bids.
 2. `api/TheYard.Domain/BidRules.cs` is the sole authority: sold first (a vehicle anybody
    has bought takes no bid and no second purchase, a fact `BidService` supplies from
    everybody's standing), then the live-window check, the tiered minimum increment, and

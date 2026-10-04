@@ -565,6 +565,10 @@ beside the relational server and one region from this account, and the health pa
 document store, two point reads, went from about 4 ms to about 90 ms. Every catalogue read is
 still served from the process's own memory and never reaches the account at all.
 
+## Where it sits
+
+The second store is a new outer project, Infrastructure.Cosmos, written on the Cosmos DB SDK against the same Application ports the relational adapters in Infrastructure already serve, plus `CosmosUserStore`, which gives Identity an `IUserStore<YardUser>` over one document per account. Open/closed, adding behaviour by adding classes behind an interface instead of editing the core, is the principle this record leans on hardest, because `BidService` and `InventoryService` gained a store without gaining a branch. Liskov substitution comes with it, since the whole suite booted on either store is the check that one adapter can stand in for the other. The store itself is $0.00 on the free tier, but the real price is a second adapter set to maintain and an email uniqueness rule written as a document, so a team whose accounts needed joins and cascades would keep them on SQL Server, the first option this record turned down.
+
 ## Files
 
 - The written pre-approval is in the lane's notes outside the repository, because it names principals.

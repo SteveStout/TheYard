@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application;
-using TheYard.Data;
 
 namespace TheYard.Api;
 
@@ -50,50 +49,32 @@ public static class VehicleEndpoints
         CurrentBackend current,
         [AsParameters] VehicleQueryParams query)
     {
-        // The store this request chose, and everything that stands on it
-        // (ADR: One container, both stores).
-        var (inventory, bids, market) = current;
         if (!query.TryBuildFilter(out var filter, out var clock, out var sort, out var error))
         {
-            // One failure shape for the whole API (ADR-023): the message a person
-            // can act on goes in `detail`, never in a key only this endpoint uses.
+            // One failure shape for the whole API: the message a person can act on goes in
+            // `detail`, never in a key only this endpoint uses.
             return TypedResults.Problem(detail: error, statusCode: 400, title: "The query could not be read");
         }
-        // #region overlays
-        // The buyer's bids first, the room's second, and the room only wins where
-        // it is actually higher (ADR-027). In the other order the buyer would
-        // always look like the high bidder, which is the bug this feature exists
-        // to make impossible. Both are skipped entirely when nobody has bid, so
-        // the common cold request pays for neither.
-        // IsEmpty, not Snapshot().Count: a snapshot is a full dictionary copy, and
-        // copying both of them on every inventory request to ask whether they are
-        // empty is work that grows with the number of bids ever placed.
-        Func<Vehicle, Vehicle>? overlay = (bids.IsEmpty, market.IsEmpty) switch
-        {
-            (true, true) => null,
-            (false, true) => bids.Apply,
-            (true, false) => market.Apply,
-            _ => vehicle => market.Apply(bids.Apply(vehicle)),
-        };
-        // #endregion overlays
-        var result = inventory.Search(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset, overlay);
+        // The auction composes the bids over the catalogue in the order the rules need, so a
+        // listing never decides that order itself.
+        var auction = current.Auction;
+        var result = auction.Search(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset);
         return TypedResults.Ok(
             new VehiclePage(
                 result.Total,
-                [.. result.Vehicles.Select(v => VehicleWire.ToWire(v, clock, bids.IsSold(v.Id)))]));
+                [.. result.Vehicles.Select(v => VehicleWire.ToWire(v, clock, auction.IsSold(v.Id)))]));
     }
     #endregion inventory-endpoint
 
     private static Ok<InventoryFacets> Facets(CurrentBackend current) =>
-        TypedResults.Ok(current.Inventory.Facets());
+        TypedResults.Ok(current.Auction.Facets());
 
     private static Results<Ok<VehicleView>, ProblemHttpResult> One(CurrentBackend current, string id)
     {
-        var (inventory, bids, market) = current;
+        var auction = current.Auction;
         var clock = Clocks.Now();
-        return inventory.GetById(id) is { } vehicle
-            ? TypedResults.Ok(
-                VehicleWire.ToWire(market.Apply(bids.Apply(vehicle)), clock, bids.IsSold(vehicle.Id)))
+        return auction.Find(id) is { } vehicle
+            ? TypedResults.Ok(VehicleWire.ToWire(auction.AsItStands(vehicle), clock, auction.IsSold(vehicle.Id)))
             : TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
     }
 }
