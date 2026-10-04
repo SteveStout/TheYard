@@ -142,10 +142,24 @@ public sealed class PhysicalFileStore : IFileStore
         }
     }
 
+    /// <summary>
+    /// One listed entry as the store reports it. A file that vanished between the listing and
+    /// this read (another visitor's delete) counts as empty rather than failing the whole listing;
+    /// the next read no longer lists it.
+    /// </summary>
+    /// <param name="info">The entry as the directory listing handed it back.</param>
     private static StoreEntry From(FileSystemInfo info)
     {
         bool isFolder = (info.Attributes & FileAttributes.Directory) != 0;
-        long size = isFolder ? 0 : ((FileInfo)info).Length;
+        long size;
+        try
+        {
+            size = isFolder ? 0 : ((FileInfo)info).Length;
+        }
+        catch (FileNotFoundException)
+        {
+            size = 0;
+        }
         return new StoreEntry(info.FullName, isFolder ? EntryKind.Folder : EntryKind.File, size, new DateTimeOffset(info.LastWriteTimeUtc).ToUnixTimeMilliseconds());
     }
 }

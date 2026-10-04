@@ -12,7 +12,7 @@ call without reading every file.
 
 ## Decision
 
-One project, six folders, the same names and the same rule. A folder may use itself and anything
+One project, seven folders (six rings and `Documentation/` beside Controllers), the same names and the same rule. A folder may use itself and anything
 to its left, never anything to its right:
 
 ```

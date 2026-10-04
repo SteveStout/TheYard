@@ -103,8 +103,8 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
 
     // #region upload
     /// <summary>
-    /// Writes one uploaded file into a folder. The bytes are copied straight from the
-    /// request stream to the file stream, so a large upload is never held in memory.
+    /// Writes one uploaded file into a folder. The bytes are copied from the form reader's
+    /// buffered copy to the file stream, so this class never holds a file whole.
     /// The declared size is checked before the file is written into home; the form parser
     /// has read the body by then, and the web server cuts off a request past its own limit
     /// with a 413.

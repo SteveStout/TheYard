@@ -35,9 +35,10 @@ shows in its corner is the server's own (ADR-008).
 **Every failure is an RFC 9457 problem document**, `application/problem+json`, with `status`,
 `title`, `detail` and the framework's `traceId`. A use case throws `ApiRefusalException` with
 the status it means (404 nothing there, 400 refused, 409 already exists, 413 too large); the home
-throws `PathRefusedException`, always a 400; `ProblemResponseHandler` turns either into the document
-and lets anything else through to the default handler, so an actual bug is still a 500 and never
-dressed as a client error. An unknown route under `/api` is a problem document too
+throws `PathRefusedException`, always a 400; `ProblemResponseHandler` turns either into the document,
+keeps the web server's own status when it cut a request off, gives the disk's refusals a 403 or 409
+that names no path (ADR-013), and lets anything else through to the default handler, so an actual
+bug is still a 500 and never dressed as a client error. An unknown route under `/api` is a problem document too
 (`UseStatusCodePages` with the problem details service). The page reads `detail` first and shows the
 server's sentence.
 

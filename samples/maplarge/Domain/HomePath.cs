@@ -9,7 +9,7 @@ namespace TestProject.Domain;
 /// The project follows onion architecture: business rules sit in the innermost layer,
 /// Domain, and depend on nothing outside it, while the disk and HTTP sit in the outer
 /// layers. This class is that business logic pulled out on its own, which is why it can
-/// be tested with no disk, no web server and no database
+/// be tested with no disk and no web server
 /// (more in docs/ADR-003-the-line-a-path-cannot-cross.md).
 /// </summary>
 public sealed class HomePath

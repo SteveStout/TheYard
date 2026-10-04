@@ -54,7 +54,7 @@ npm run build
 
 | Suite | Count | What it covers |
 | --- | --- | --- |
-| xUnit | 135 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
+| xUnit | 144 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
 | node --test | 21 | The address parser and serializer, the byte and date formatting, the markdown reader (a `<script>` arrives as text, an image keeps its alt text). |
 
 The build treats warnings as errors and a public member without a summary is a warning.
@@ -130,7 +130,7 @@ The Shed is a sample, and the parts worth keeping go back to the project it sits
 - Folder sizes and a browse cap: a folder's row has no size yet, because totals count file bytes
   only, and Browse lists every entry while Search is capped. Those are the two next in the code.
 - A committed browser test for this page (the eight steps the headless pass runs before each ship)
-  is the first thing to add here. TheYard's gate already runs 143 Playwright specs, with axe holding eleven
+  is the first thing to add here. TheYard's gate already runs 144 Playwright specs, with axe holding eleven
   views to WCAG 2.1 AA: [The accessibility check](https://theyard.stevenstout.biz/?doc=adr-a11y-check).
 
 Each step is something TheYard already does at full size (.NET 10 and React, Azure SQL and Cosmos

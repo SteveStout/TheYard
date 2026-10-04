@@ -141,14 +141,14 @@ export async function remove(path: string): Promise<void> {
 }
 
 /** The header every JSON body is sent with. */
-const json = { 'Content-Type': 'application/json' };
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 /**
  * Asks the server to move or rename a file or folder and returns where it now is. The listings
  * around both the old and the new place are forgotten, because the entry left one and joined the other.
  */
 export async function move(from: string, to: string): Promise<FolderEntry | FileEntry> {
-  const result = await send<FolderEntry | FileEntry>('/api/files/move', { method: 'POST', headers: json, body: JSON.stringify({ from, to }) });
+  const result = await send<FolderEntry | FileEntry>('/api/files/move', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ from, to }) });
   forgetAround(from);
   forgetAround(to);
   return result as FolderEntry | FileEntry;
@@ -159,7 +159,7 @@ export async function move(from: string, to: string): Promise<FolderEntry | File
  * place are forgotten, because the original did not change.
  */
 export async function copy(from: string, to: string): Promise<FolderEntry | FileEntry> {
-  const result = await send<FolderEntry | FileEntry>('/api/files/copy', { method: 'POST', headers: json, body: JSON.stringify({ from, to }) });
+  const result = await send<FolderEntry | FileEntry>('/api/files/copy', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ from, to }) });
   forgetAround(to);
   return result as FolderEntry | FileEntry;
 }

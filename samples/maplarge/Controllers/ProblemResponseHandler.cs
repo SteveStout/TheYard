@@ -12,11 +12,10 @@ namespace TestProject.Controllers;
 /// shape, so no controller needs a try/catch.
 /// </summary>
 /// <remarks>
-/// The app's own refusals carry their status; a path that tries to leave home is a 400; a request
-/// the web server cut off keeps the server's status (413 past its size limit), and a form past the
-/// form reader's limit is a 413; a file the disk will not let us touch (read-only, or open in
-/// another program) is a 403 or a 409 with a reason that names no path. Anything else is a real
-/// bug, left alone so it reaches the default handler as a 500.
+/// The app's own refusals carry their status; a path that leaves home is a 400; a request the web
+/// server cut off keeps its status (413 past the size limit); the form reader's refusal is a 413
+/// when it names a limit, else a 400; a file the disk will not let us touch (locked, read-only,
+/// gone, a full disk) is a 403 or a 409 naming no path. Anything else is a real bug, a 500.
 /// </remarks>
 public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IExceptionHandler
 {
@@ -34,7 +33,8 @@ public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IE
             ApiRefusalException problem => (problem.Status, problem.Title),
             PathRefusedException => (StatusCodes.Status400BadRequest, "The path was refused"),
             BadHttpRequestException bad => (bad.StatusCode, "The request was refused"),
-            InvalidDataException => (StatusCodes.Status413PayloadTooLarge, "The upload is too large"),
+            InvalidDataException invalid when NamesALimit(invalid) => (StatusCodes.Status413PayloadTooLarge, "The upload is too large"),
+            InvalidDataException => (StatusCodes.Status400BadRequest, "The upload could not be read"),
             UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "The filesystem refused"),
             IOException => (StatusCodes.Status409Conflict, "The filesystem refused"),
             _ => (0, string.Empty),
@@ -72,9 +72,19 @@ public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IE
     public static string ReasonFor(Exception exception) => exception switch
     {
         BadHttpRequestException bad => bad.Message,
-        InvalidDataException => "The upload is larger than the server accepts.",
+        InvalidDataException invalid when NamesALimit(invalid) => "The upload is larger than the server accepts.",
+        InvalidDataException => "The upload's body was cut short or is not a form the server can read.",
         UnauthorizedAccessException => "The disk refused: the file or folder is read-only or locked against changes.",
-        IOException => "The disk refused: the file is in use by another program, or it changed while this ran.",
+        IOException => "The disk refused: the file is in use by another program, it is gone, or the disk is full.",
         _ => exception.Message,
     };
+
+    /// <summary>
+    /// True when the form reader's refusal is about a size or count limit ("Multipart body length
+    /// limit 1048576 exceeded"), which is the only InvalidDataException that means too large; the
+    /// same type also reports a body cut short or a missing boundary.
+    /// </summary>
+    /// <param name="invalid">The form reader's refusal.</param>
+    private static bool NamesALimit(InvalidDataException invalid) =>
+        invalid.Message.Contains("limit", StringComparison.OrdinalIgnoreCase);
 }

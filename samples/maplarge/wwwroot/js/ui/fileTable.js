@@ -72,6 +72,6 @@ function row(entry, isFolder, state) {
     const label = state.q ? entry.path : entry.name;
     const name = isFolder
         ? buildElement('button', { type: 'button', 'data-action': 'open' }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, '▸'), label)
-        : buildElement('a', { href: api.downloadUrl(entry.path), download: entry.name }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, '•'), label);
+        : buildElement('a', { href: api.downloadUrl(entry.path), download: entry.name }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, ''), label);
     return buildElement('tr', { 'data-path': entry.path, 'data-kind': isFolder ? 'folder' : 'file' }, buildElement('td', { class: 'name' }, name), buildElement('td', { class: 'num' }, 'size_bytes' in entry ? bytes(entry.size_bytes) : ''), buildElement('td', { class: 'num' }, when(entry.modified_ms)), buildElement('td', { class: 'actions' }, isFolder ? null : buildElement('button', { type: 'button', 'data-action': 'download', 'aria-label': `Download ${entry.name}` }, 'Download'), buildElement('button', { type: 'button', 'data-action': 'copy', 'aria-label': `Copy ${entry.name}` }, 'Copy'), buildElement('button', { type: 'button', 'data-action': 'move', 'aria-label': `Move ${entry.name}` }, 'Move'), buildElement('button', { type: 'button', 'data-action': 'delete', class: 'danger', 'aria-label': `Delete ${entry.name}` }, 'Delete')));
 }

@@ -12,8 +12,9 @@ prints the numbers on every run so the next reader can compare.
 
 **Enumerate, do not stat.** `PhysicalFileStore` walks a folder with
 `DirectoryInfo.EnumerateFileSystemInfos`, which hands back each entry with its attributes and size
-already read from the directory listing. A folder of ten thousand files is one enumeration, not
-ten thousand `stat` calls, and hidden and system entries are skipped by the enumeration options
+already read from the directory listing on Windows. A folder of ten thousand files is one enumeration
+there, not ten thousand `stat` calls; on Linux, where the live site runs, each entry still costs one
+lookup inside that single pass. Hidden and system entries are skipped by the enumeration options
 rather than filtered afterwards.
 
 **Search walks lazily and stops at a cap.** `Descendants` is an `IEnumerable` over a recursive

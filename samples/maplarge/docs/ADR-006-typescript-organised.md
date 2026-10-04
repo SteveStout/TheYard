@@ -24,7 +24,8 @@ snake_case as `Data/ApiResponses.cs`, so the two can be read side by side (ADR-0
 **Modules, in two folders, with the same inward rule as the C#.** `src/lib/` is pure: `types`,
 `urlState`, `format`, `markdown`, `api`. Nothing in `lib` touches the document, which is why three
 of them run under `node --test` as compiled. `src/ui/` renders: `elements` (the two ways page
-elements are made), `pageElements`, `controls`, `versionFooter`, `browser`, `documentation`. `navigation.ts`
+elements are made), `pageElements`, `controls`, `versionFooter`, `browser`, `fileTable`, `rowPrompts`,
+`uploads`, `notices`, `documentation`. `navigation.ts`
 is the shell that reads the address and hands the state to a view, and `main.ts` is a short list of
 the page's parts, one line each with the file beside it, read the same way as `Program.cs`. `ui` may import `lib`; `lib` never imports `ui`. A test holds the
 line.

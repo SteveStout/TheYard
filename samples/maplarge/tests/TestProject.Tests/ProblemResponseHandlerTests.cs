@@ -8,11 +8,12 @@ using TestProject.Controllers;
 namespace TestProject.Tests;
 
 /// <summary>
-/// Checks the two refusals that come from the web server rather than from the app or the disk. A
+/// Checks the refusals that come from the web server rather than from the app or the disk. A
 /// request body past the server's own limit throws BadHttpRequestException, which is a kind of
-/// IOException; without its own rule it would be answered as a locked file. A form past the form
-/// reader's limit throws InvalidDataException, which would otherwise be a 500. The handler runs
-/// with the app's real problem-document writer. (more in docs/ADR-004-the-wire.md)
+/// IOException; without its own rule it would be answered as a locked file. The form reader throws
+/// InvalidDataException both for a form past its limit (a 413) and for a body it could not read, cut
+/// short or missing its boundary (a 400); either would otherwise be a 500. The handler runs with
+/// the app's real problem-document writer. (more in docs/ADR-004-the-wire.md)
 /// </summary>
 public sealed class ProblemResponseHandlerTests : IDisposable
 {
@@ -51,6 +52,15 @@ public sealed class ProblemResponseHandlerTests : IDisposable
         Assert.Equal(StatusCodes.Status413PayloadTooLarge, status);
         Assert.Equal("The upload is too large", problem.GetProperty("title").GetString());
         Assert.Equal("The upload is larger than the server accepts.", problem.GetProperty("detail").GetString());
+    }
+
+    [Fact]
+    public async Task A_form_the_reader_could_not_read_is_a_400_not_a_413()
+    {
+        (int status, JsonElement problem) = await Handled(new InvalidDataException("Unexpected end of Stream, the content may have already been read by another component."));
+        Assert.Equal(StatusCodes.Status400BadRequest, status);
+        Assert.Equal("The upload could not be read", problem.GetProperty("title").GetString());
+        Assert.Equal("The upload's body was cut short or is not a form the server can read.", problem.GetProperty("detail").GetString());
     }
 
     /// <summary>Runs the handler on one exception and reads back the status and the problem document it wrote.</summary>

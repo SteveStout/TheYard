@@ -164,7 +164,7 @@ public sealed partial class RuleTableTests
     {
         string record = File.ReadAllText(Path.Combine(ProjectFolder.Root(), "docs", "ADR-009-the-rules-a-change-has-to-pass.md"));
         // Keep only table rows, the lines that start with a pipe. The Files section below the
-        // table lists RepoRulesTests.cs, which fits the name pattern but is a file, not a rule.
+        // table lists test files by name, which fit the name pattern but are files, not rules.
         string table = string.Join('\n', record.Split('\n').Where(line => line.StartsWith('|')));
         List<string> named = TestName().Matches(table).Select(m => m.Value).Distinct().ToList();
         Assert.True(named.Count >= 8, $"the table names only {named.Count} tests");

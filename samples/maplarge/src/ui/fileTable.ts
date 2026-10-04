@@ -87,7 +87,7 @@ function row(entry: Entry, isFolder: boolean, state: State): HTMLTableRowElement
   const label = state.q ? entry.path : entry.name;
   const name = isFolder
     ? buildElement('button', { type: 'button', 'data-action': 'open' }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, '▸'), label)
-    : buildElement('a', { href: api.downloadUrl(entry.path), download: entry.name }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, '•'), label);
+    : buildElement('a', { href: api.downloadUrl(entry.path), download: entry.name }, buildElement('span', { class: 'kind', 'aria-hidden': 'true' }, ''), label);
   return buildElement('tr', { 'data-path': entry.path, 'data-kind': isFolder ? 'folder' : 'file' },
     buildElement('td', { class: 'name' }, name),
     buildElement('td', { class: 'num' }, 'size_bytes' in entry ? bytes(entry.size_bytes) : ''),

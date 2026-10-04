@@ -33,7 +33,7 @@ public sealed class FileUploadTests : SampleTree
     }
 
     [Fact]
-    public async Task Upload_past_the_limit_is_413_before_a_byte_is_read()
+    public async Task Upload_past_the_limit_is_413_before_the_file_is_written()
     {
         var options = new FilesOptions { MaxUploadBytes = 4 };
         var browser = new FileBrowser(new HomePath(Root), Store, options);

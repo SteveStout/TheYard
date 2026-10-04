@@ -7,7 +7,7 @@ Status: accepted, 2026-09-29.
 A record that describes code drifts from it the week after it is written, unless the code it quotes
 is read from the build rather than pasted. TheYard serves its records from inside the running app
 and expands a `live` fence into the current lines of a named region at request time. The same
-here, in about a hundred lines, because it is the mechanism that keeps the records
+here, in about two hundred lines, because it is the mechanism that keeps the records
 honest.
 
 ## Decision
@@ -43,7 +43,7 @@ a container is handed the hash in `SHED_COMMIT`.
 
 ## What it cost
 
-A markdown reader of a hundred and fifty lines that a library would replace. It is kept because
+A markdown reader of about three hundred lines that a library would replace. It is kept because
 the brief asked for original code over libraries, because it is the reason a document cannot carry
 markup into the page, and because it is a reasonable thing to talk about in a code review.
 

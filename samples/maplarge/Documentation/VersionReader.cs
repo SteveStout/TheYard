@@ -103,7 +103,7 @@ public static partial class VersionReader
     /// <summary>The first seven characters of a commit hash, the length GitHub shows, or "unknown" when there is none.</summary>
     private static string Short(string? hash) => hash is { Length: >= 7 } ? hash[..7] : Unknown;
 
-    /// <summary>A four-number version such as 1.0.0.28, the shape of every changelog line.</summary>
+    /// <summary>A four-number version such as 1.2.3.4, the shape of every changelog line.</summary>
     [GeneratedRegex(@"\d+\.\d+\.\d+\.\d+")]
     private static partial Regex FourNumbers();
 }

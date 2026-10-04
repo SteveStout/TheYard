@@ -88,8 +88,9 @@ export function createBrowser(root: HTMLElement, navigate: Navigate): View {
     state = next;
     renderToolbar();
     replaceContents(grid, buildElement('div', { class: 'empty' }, 'Loading'));
+    let fetched: Reply;
     try {
-      reply = state.q ? await api.search(state.path, state.q) : await api.browse(state.path);
+      fetched = state.q ? await api.search(state.path, state.q) : await api.browse(state.path);
     } catch (error) {
       if (next !== state) {
         return; // A newer render started during this fetch; an old failure must not cover it.
@@ -101,8 +102,9 @@ export function createBrowser(root: HTMLElement, navigate: Navigate): View {
       return;
     }
     if (next !== state) {
-      return; // A newer render started during this fetch; let the newer one draw.
+      return; // A newer render started during this fetch; let the newer one draw and keep its reply.
     }
+    reply = fetched;
     renderReadout(readout, reply);
     renderTable(grid, reply, state, navigate);
     renderActions();

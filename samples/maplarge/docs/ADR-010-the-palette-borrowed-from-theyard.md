@@ -37,7 +37,7 @@ header carries the name and a one-line description, nothing else from the other 
 
 ## What it cost
 
-Two hundred lines of tokens for a page that uses forty of them. The unused ones are kept so the
+About a hundred and sixty lines of tokens for a page that uses forty of them. The unused ones are kept so the
 sheet is recognisably the same document as its source, and so a later change can reach for a token
 that is already there rather than inventing a near match.
 

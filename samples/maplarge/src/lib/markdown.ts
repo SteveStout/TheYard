@@ -278,8 +278,8 @@ export function highlight(code: string, language: string): MarkdownNode[] {
 
 /**
  * Builds the id for a heading: lower case, with runs of other characters turned
- * into single hyphens. A link such as "?doc=x#the-decision" can then jump
- * straight to the heading "The decision".
+ * into single hyphens, so a heading has an address an anchor link could land on;
+ * nothing reads the hash yet, the dialog opens a document at its top.
  */
 export function slug(text: string): string {
   return text

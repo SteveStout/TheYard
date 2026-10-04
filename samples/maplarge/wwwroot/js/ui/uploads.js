@@ -59,11 +59,14 @@ export function createUploader(parts) {
             }
         }
         finally {
-            // Cleared on every way out, so picking the same file again after a failure still fires a change.
+            // Cleared on every way out, so picking the same file again after a failure still fires a change,
+            // and the files written before a failure are drawn, not left for the next visit.
             parts.fileInput.value = '';
+            if (written.length > 0) {
+                await parts.refresh();
+            }
         }
         // Only files actually written are counted; a file the person chose to skip is not.
         parts.say('ok', written.length === 1 ? `Uploaded ${written[0] ?? ''}.` : `Uploaded ${written.length} files.`);
-        await parts.refresh();
     };
 }

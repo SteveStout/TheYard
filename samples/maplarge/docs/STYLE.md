@@ -17,7 +17,7 @@ a tool cannot check.
   (`SEARCH_DEBOUNCE_MS`, `DEFAULTS`).
 - The wire is snake_case end to end (`folder_count`, `took_ms`). Nothing is renamed in transit.
 - A test name is a sentence: `A_folder_cannot_be_moved_or_copied_into_itself`,
-  `Upload_past_the_limit_is_413_before_a_byte_is_read`. A failing run should read like a report.
+  `Upload_past_the_limit_is_413_before_the_file_is_written`. A failing run should read like a report.
 - Files are named for what they hold, one main type each: `HomePath.cs`, `urlState.ts`.
 
 ## Layering
@@ -27,8 +27,8 @@ a tool cannot check.
   folder, and `OnionTests` says so by reading the compiled app (ADR-013).
 - Domain code is pure: no `DateTime.Now`, no filesystem, no HTTP.
 - The host binds and delegates. A rule in `Program.cs` is a bug in layering.
-- The browser holds no business rules. Totals, sort order within a reply, and every refusal come
-  from the server.
+- The browser holds no business rules. Totals and every refusal come from the server, which
+  orders a reply by name; the page re-sorts the reply it already holds when the address asks.
 - `src/lib` is pure TypeScript with no document; `src/ui` renders; `wwwroot/js` is what `tsc` wrote
   and is not edited by hand.
 
@@ -66,7 +66,8 @@ Four habits:
 
 - Four spaces in C#, two in TypeScript, CSS, JSON and YAML; the compiled JavaScript keeps the
   compiler's four. UTF-8, LF, final newline.
-- Lines wrap around 120 characters in C# and 100 in TypeScript and markdown.
+- Prose and comments wrap around 100 characters; a line of code may run long rather than break a
+  statement or a string in two.
 - One statement per line; braces always.
 - Prose in this project, records and commit messages included, uses no em dashes. `NoEmDashTests`
   counts them.

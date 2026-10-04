@@ -52,7 +52,7 @@ public sealed class OnionTests
         AssertHolds(InRing("TestProject.Controllers").ShouldNot().HaveDependencyOnAny(ControllersMustNotUse).GetResult());
 
     [Fact]
-    public void Documentation_reads_its_own_files_and_reaches_nothing_outside_it() =>
+    public void Documentation_reaches_only_Data_and_the_framework() =>
         AssertHolds(InRing("TestProject.Documentation").ShouldNot().HaveDependencyOnAny(DocumentationMustNotUse).GetResult());
 
     [Fact]
