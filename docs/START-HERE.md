@@ -6,7 +6,7 @@ This page is for a developer who has just been handed this repository and has an
 
 This page gets a developer new to this code running in two commands and reading in the right order. It also says where each kind of change goes and what the tests that run before every release (the gate) ask of it.
 
-What that is worth: a developer can make a first change within the hour without asking anyone where it goes, and the organization can hand this repository to a new hire with no walkthrough.
+Why it matters: a developer can make a first change within the hour without asking anyone where it goes, and the organization can hand this repository to a new hire with no walkthrough.
 
 ## Run it
 

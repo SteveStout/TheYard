@@ -198,7 +198,7 @@ export function Landing({
         {featured.map((entry) => tile(entry, true))}
       </ul>
       {/* The strip stands at its full height from the first paint, four blank
-          figures until the gate's counts arrive (1.0.3.7): drawn only once they
+          figures until the gate's counts arrive: drawn only once they
           had, it pushed every group below it down 124 px on a desk, the last
           layout shift the landing page had. */}
       <ul

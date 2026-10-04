@@ -12,7 +12,7 @@ with no findings in it has usually not been applied.
 
 This page says what is protected and how, what is deliberately left open, and what went wrong and was fixed. For example, the database has no password because nothing logs in with one: the site reaches it with an Azure identity.
 
-What that is worth: a developer knows the rules before touching anything sensitive, and the organization can show a reviewer or an auditor its security on one page, mistakes included.
+What it buys: a developer knows the rules before touching anything sensitive, and the organization can show a reviewer or an auditor its security on one page, mistakes included.
 
 ## Reporting something
 
@@ -135,7 +135,10 @@ the same missing subscription named above.
 **`POST /api/errors/client` is anonymous.** A crash in the page should reach the
 same place a crash in the server does. Its message and stack are bounded, and
 browser reports keep their own ring so a flood of them cannot push real server
-errors off the page an operator would read during an outage.
+errors off the page an operator would read during an outage. Each report is also
+one Application Insights line under the workspace's 0.1 GB daily cap, so a
+flood of reports can close the day's telemetry; the ring keeps the page
+readable when that happens.
 
 **The bidding data is invented.** Every vehicle is synthetic and every bid is
 play money. This lowers the stakes; it does not change the shape of any of the

@@ -103,7 +103,7 @@
   --color-teal-header: #125568; /* the bottom of the header gradient and nothing else; white on it 8.32; gold light on it 5.23 */
   --color-gold: #b8923f; /* the gold bar's mid tone: badge rings, the rail's group rules, the flat fallback under the bar; 2.91 on white, so never text and never data */
   --color-gold-light: #e6cb7e; /* the gold bar's highlight, trim on the header: 6.71 on the dark green, 5.23 on the header teal */
-  /* The gold bar (2026-09-29, to match the resume): dark at both ends, the
+  /* The gold bar (to match the resume): dark at both ends, the
      highlight in the middle. A page title's underline and a stat tile's top
      rule are drawn as this bar with border-image; the flat --color-gold stays
      for the rings and the rail's group rules, and is what a browser without

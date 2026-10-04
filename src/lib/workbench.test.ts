@@ -90,7 +90,7 @@ describe('the hour at a glance, beside the open card', () => {
       ['Ninety-fifth', '6 ms'],
       ['Requests', '1,234'],
       ['Server errors', '0'],
-      ['Turned away', '3'],
+      ['Turned away (4xx)', '3'],
     ]);
     expect(glance.label).toContain('against 10 ms');
   });

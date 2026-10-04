@@ -2,7 +2,7 @@
 // one shape everywhere). A browser error often quotes an address, a module URL
 // or a file path, one long run of characters with no space in it; set as a
 // word, it sized its column past the card and the table scrolled sideways on a
-// desk (found running the browser suite from a clean clone on 28 September).
+// desk.
 // An address is an identifier, not a word, so it is marked as one and may break
 // at any character, the way the .mono cells do; the words around it still
 // break only between words.

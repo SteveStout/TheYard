@@ -62,7 +62,7 @@ public sealed class ActivityCollector : BackgroundService
     /// the request; the row keeps the serving store's key as data. Azure
     /// Cosmos DB wherever it is configured, because it never expires the
     /// activity rows (ADR: Site activity, and the line an address does not
-    /// cross, addendum of 14 September) and because a serverless relational
+    /// cross, addendum) and because a serverless relational
     /// database written every five seconds never pauses, which is what spent
     /// the free amount in fourteen days. With no Cosmos DB on the container,
     /// the default store keeps its own rows, which is what the tests run on.

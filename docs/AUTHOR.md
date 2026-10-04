@@ -2,7 +2,7 @@
 
 ## Hi, I'm Steve.
 
-**Lead .NET engineer. St. Louis area, Central time, fully remote for seven years.**
+**Lead / Staff .NET engineer. St. Louis area, Central time, fully remote for seven years.**
 
 I have spent twelve years building full stack software in C#, SQL Server, React and Azure. I have been the only engineer on a live financial platform, where I shipped more than 200 releases with no downtime, and I have been the lead who built a team of four. I am happy in either seat.
 

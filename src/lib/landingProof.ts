@@ -47,6 +47,9 @@ export type ProofRing = { value: number; max: number; words: string };
 /** The store passes rerun the same tests on the other store, so the headline count is the gate's own once. */
 const COUNTED_ONCE = ['vitest', 'xunit-sqlite', 'xunit-live', 'browser-sqlite'];
 
+/** The gate time the project aims for (ADR-068), shown beside the measured one so a slow gate reads as slow. */
+const GATE_TARGET_SECONDS = 300;
+
 const plural = (count: number, one: string) => `${count} ${one}${count === 1 ? '' : 's'}`;
 
 /** A whole number with thousands separated, in the one locale the site writes in. */
@@ -73,7 +76,7 @@ export function proofFigures(summary: TestSummary | null, records: number): Proo
       key: 'tests',
       figure: figures(tests),
       label: failed === 0 ? 'tests green' : `tests, ${plural(failed, 'failure')}`,
-      detail: 'xUnit, Vitest and Playwright, every version',
+      detail: 'test runs in the gate, each suite once',
       ring: {
         value: tests,
         max: tests + countedFailed,
@@ -83,7 +86,9 @@ export function proofFigures(summary: TestSummary | null, records: number): Proo
     {
       key: 'gate',
       figure: `${summary.gate_seconds} s`,
-      label: 'one gate',
+      // The target sits in the label, which keeps two lines on every tile; a longer detail
+      // wrapped to a third line at 390 and moved the figures in the row off one baseline.
+      label: `one gate, target ${GATE_TARGET_SECONDS} s`,
       detail:
         carried.length === 0
           ? `every suite ran for ${summary.version}`
@@ -105,11 +110,11 @@ export function proofFigures(summary: TestSummary | null, records: number): Proo
 }
 
 /**
- * The reading inside a landing ring (the tweaks pass, A3): the stores as a count
+ * The reading inside a landing ring: the stores as a count
  * of the whole ("2/2"), the tests as a per cent ("99%"), and nothing until the
  * reading is in, so a full ring never reads as a plain circle. The per cent
  * rounds down and reads 100 only when nothing failed: 1,499 of 1,500 is 99%
- * beside its "1 failure", never 100 (the self-review of 25 September).
+ * beside its "1 failure", never 100, so a ring never claims a clean run it did not have.
  */
 export function ringReading(
   key: string,

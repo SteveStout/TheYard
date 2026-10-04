@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using TheYard.Data;
+using TheYard.Domain;
 
 namespace TheYard.Application;
 
@@ -45,7 +46,23 @@ public sealed record BidHistory(int Count, IReadOnlyList<BidHistoryEntry> Bids);
 /// </summary>
 /// <param name="Vehicle">The vehicle at its standing price.</param>
 /// <param name="Sold">True when anybody has bought it outright.</param>
-public sealed record StandingVehicle(Vehicle Vehicle, bool Sold);
+public sealed record StandingVehicle(Vehicle Vehicle, bool Sold)
+{
+    /// <summary>The vehicle's auction window on the day the clock is anchored to, from the schedule's rule.</summary>
+    /// <param name="clock">The server's clock for the request.</param>
+    public AuctionWindow WindowAt(AuctionClock clock) => AuctionSchedule.Window(Vehicle.Id, clock.AnchorMs);
+
+    /// <summary>
+    /// The auction's status at the clock: upcoming, live or ended. The clock's alone, even for a
+    /// sold vehicle, because the browser recomputes it from the window as time passes; sold is its
+    /// own fact beside it.
+    /// </summary>
+    /// <param name="clock">The server's clock for the request.</param>
+    public AuctionStatus StatusAt(AuctionClock clock) => AuctionSchedule.Status(WindowAt(clock), clock.NowMs);
+
+    /// <summary>The least the next bid may be at the price the vehicle stands at, from the bid rules.</summary>
+    public int MinNextBid => BidRules.MinNextBid(Vehicle);
+}
 
 /// <summary>One page of the catalogue as a visitor meets it, and how many vehicles matched in all.</summary>
 /// <param name="Total">How many vehicles matched the filter, across every page.</param>

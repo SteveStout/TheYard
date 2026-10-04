@@ -154,7 +154,7 @@ export const MENUS: Record<
   // #endregion look-menu
   /**
    * Who comes, what is kept about them and how the site is found, as a section of its own
-   * on the Style section's pattern (ADR-071 and ADR-053, the addenda of 29 September): the
+   * on the Style section's pattern (ADR-071 and ADR-053, the addenda): the
    * landing page on top, then its pages; the fourth, Search Console step by step.
    */
   traffic: {

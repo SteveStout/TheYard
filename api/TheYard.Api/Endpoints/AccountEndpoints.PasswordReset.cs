@@ -39,7 +39,7 @@ public static partial class AccountEndpoints
             email = user.Email,
             store = current.Backend.Key,
             url,
-            expires_at = DateTimeOffset.UtcNow + TokenIssuer.ResetLifetime,
+            expires_at = Clocks.UtcNow() + TokenIssuer.ResetLifetime,
         });
     }
 

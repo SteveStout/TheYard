@@ -77,7 +77,7 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       menu: 'hosting',
       icon: 'hosting',
       group: 'run',
-      blurb: 'Azure, Front Door and the container behind them.',
+      blurb: 'Azure, a free edge in front, and the web app behind it.',
     },
     {
       menu: 'cicd',
@@ -112,10 +112,10 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       group: 'who',
       // The resume's own words, so the tile says what he is rather than that he exists;
       // short enough to keep to two lines at 1024 beside Inventory's two.
-      blurb: 'Staff-level .NET engineer, twelve years full stack, seven fully remote.',
+      blurb: 'Lead / Staff .NET engineer, twelve years full stack, seven fully remote.',
       featured: true,
       featuredRank: 2,
-      // The author's vineyard photograph.
+      // The vineyard photograph cropped to Steve alone, so a reader knows which one is the author.
       badgePhoto: {
         src: '/api/images/badges/author-176.jpg',
         srcSet: '/api/images/badges/author-176.webp 176w, /api/images/badges/author-264.webp 264w',

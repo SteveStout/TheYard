@@ -34,7 +34,7 @@ export function Ring({
   /** What the ring says to a screen reader; null when the words beside it already say it. */
   label: string | null;
   testId?: string;
-  /** Thirty-six graduation ticks round the outside (the tweaks pass, B2): the large rings of This hour. */
+  /** Thirty-six graduation ticks round the outside, drawn on the large rings of This hour. */
   graduated?: boolean;
 }) {
   const { size: box, stroke } = RING[size];

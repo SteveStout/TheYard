@@ -169,7 +169,7 @@ export function hourGlance(hour: HourReading | null): HourGlance {
       ['Ninety-fifth', msWords(hour.p95_ms)],
       ['Requests', count(hour.requests)],
       ['Server errors', count(hour.server_errors)],
-      ['Turned away', count(hour.client_errors)],
+      ['Turned away (4xx)', count(hour.client_errors)],
     ],
   };
 }

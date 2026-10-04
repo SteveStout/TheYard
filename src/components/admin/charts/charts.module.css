@@ -39,7 +39,7 @@
 
 /* #region mark-vii */
 
-/* The Admin tab's charts in the Mark VII grammar (the tweaks pass, B2): one
+/* The Admin tab's charts in the Mark VII grammar: one
    1 px axis line in the deep teal, graduation ticks in place of a grid, labels
    in the quiet grey in small capitals, two gold bracket ticks at the plot's
    corners, and a gold leader line to the callout on a peak. */
@@ -138,7 +138,7 @@
   inset: 0 auto 0 0;
   width: var(--gauge-share, 0%);
   background: var(--color-mark-axis);
-  /* See-through like the chart fills (1.0.3.24); white on it reads 6.5 over the
+  /* See-through like the chart fills; white on it reads 6.5 over the
      track and 7.7 over the glass on a ribbon's teal stop (colors.test.ts). */
   opacity: var(--gauge-fill-opacity);
 }

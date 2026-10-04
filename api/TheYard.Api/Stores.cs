@@ -1,6 +1,6 @@
 // The stores this container runs, and which one a request gets: the backends, the request's
-// choice, the warm before a read, and the keeper that lets an idle catalogue go. The rest of the
-// store wiring lives in files beside this one, and the relational context factory lives with the
+// choice and the warm before a read. The rest of the store wiring lives in files beside this
+// one, and the relational context factory lives with the
 // relational adapters in TheYard.Infrastructure/ContextFactory.cs:
 //   Backend.cs                        one store and what stands on it (Backend, StoreAttachment)
 //   StorePrepare.cs                   the five asks a store gets at startup
@@ -156,94 +156,11 @@ public sealed class CurrentBackend(Backends backends, IHttpContextAccessor acces
 /// </summary>
 public static class Warmth
 {
-    /// <summary>Warms the backend's catalogue if it is not warm, on the real clock.</summary>
-    public static Task EnsureAsync(Backend backend) => EnsureAsync(backend, DateTimeOffset.UtcNow);
-
-    /// <summary>
-    /// The touch comes first, on purpose: a catalogue that has just been
-    /// touched cannot be let go, and one that was let go a moment ago is cold
-    /// here and gets loaded again, awaited (the let-go region of InventoryService).
-    /// </summary>
-    public static Task EnsureAsync(Backend backend, DateTimeOffset now)
-    {
-        backend.Inventory.Touch(now);
-        return backend.Inventory.IsWarm ? Task.CompletedTask : backend.Inventory.WarmAsync();
-    }
+    /// <summary>Warms the backend's catalogue if it is not warm; a warm one is a task already finished.</summary>
+    public static Task EnsureAsync(Backend backend) =>
+        backend.Inventory.IsWarm ? Task.CompletedTask : backend.Inventory.WarmAsync();
 }
 // #endregion warm-before-reading
-
-// #region catalogue-keeper
-/// <summary>
-/// Gives back the catalogue of a store this site does not serve, once nobody
-/// has asked that store for anything in a while (ADR: One plan, two sites).
-///
-/// <para>Each site serves one store and can answer for the other: the proof
-/// card drives both, and a measurement can name either with a header. The
-/// first such request loads the other store's hundred thousand vehicles, and
-/// without this they would stay loaded until the next roll. On a container
-/// group with 1.5 GB to itself that was free. On a plan two sites share it
-/// was measured as the difference between fitting and paging: about 130 MB
-/// of managed heap a site, twice, held for a card somebody pressed once.</para>
-///
-/// <para>The default store is never let go: it is what the site is. The idle
-/// time is configuration (<c>Store:ReleaseIdleMinutes</c>), and zero, which
-/// is the default, means never, so a developer's machine and the test suite
-/// behave exactly as they did. After a release the collector is asked for a
-/// full compacting collection, once: that is the difference between memory
-/// the runtime could reuse and memory the machine gets back, and the machine
-/// getting it back is the point.</para>
-/// </summary>
-public sealed class CatalogueKeeper(Backends backends, TimeSpan idle, ILogger<CatalogueKeeper> logger) : BackgroundService
-{
-    /// <summary>How often the keeper looks for an idle catalogue.</summary>
-    public static readonly TimeSpan Every = TimeSpan.FromMinutes(1);
-
-    /// <summary>The stores whose catalogues were let go on this pass, by key. Public so a test can drive a pass with its own clock.</summary>
-    public IReadOnlyList<string> Sweep(DateTimeOffset now)
-    {
-        if (idle <= TimeSpan.Zero)
-        {
-            return [];
-        }
-
-        var released = new List<string>();
-        foreach (var backend in backends.All)
-        {
-            if (!ReferenceEquals(backend, backends.Default) && backend.Inventory.ReleaseIfIdle(idle, now))
-            {
-                released.Add(backend.Key);
-            }
-        }
-
-        return released;
-    }
-
-    /// <summary>Sweeps once a minute and, after any release, asks for a full compacting collection; does nothing when the idle time is zero.</summary>
-    protected override async Task ExecuteAsync(CancellationToken stopping)
-    {
-        if (idle <= TimeSpan.Zero)
-        {
-            return;
-        }
-
-        using var timer = new PeriodicTimer(Every);
-        while (await timer.WaitForNextTickAsync(stopping))
-        {
-            var released = Sweep(DateTimeOffset.UtcNow);
-            if (released.Count == 0)
-            {
-                continue;
-            }
-
-            logger.LogInformation(
-                "Let go of the {Stores} catalogue after {Minutes} idle minutes; its next request loads it again",
-                string.Join(", ", released),
-                (int)idle.TotalMinutes);
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
-        }
-    }
-}
-// #endregion catalogue-keeper
 
 /// <summary>One store on the toggle: its key, its name, whether it came up, and whether it is the container's default.</summary>
 /// <param name="Key">The store's key.</param>

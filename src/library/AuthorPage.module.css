@@ -10,7 +10,7 @@
    The markup is written by src/lib/author.ts over a served document, so these
    names are global. The dialog is wider for this one page, because it is a
    page and not a letter; its words stand on the frosted reading panels every
-   document uses, inside the clear sheet (the tweaks pass, B1b). */
+   document uses, inside the clear sheet. */
 .prose :global(.author-page) {
   display: grid;
   gap: var(--space-4);
@@ -138,8 +138,7 @@
   grid-column: 1 / -1;
 }
 
-/* A photograph between two blocks takes the whole row, at every width (Steve, 2026-09-22:
-   "my engagement photos should always be width 100%"). */
+/* A photograph between two blocks always takes the whole row, at every width. */
 .prose :global(.author-between) {
   grid-column: 1 / -1;
 }
@@ -267,7 +266,7 @@
     grid-template-columns: 1fr;
   }
 
-  /* A phone's width goes to the words: measured at 390 px on 2026-09-22, a block's text
+  /* A phone's width goes to the words: measured at 390 px, a block's text
      started 61 px from the screen's edge; it starts at 41 now. */
   .prose :global(.author-panel),
   .prose :global(.author-block) {

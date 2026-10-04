@@ -113,7 +113,7 @@ public static class AboutPage
             <article class="op-glass">
             <h1>Steven Stout</h1>
             <p class="title">{{e(JobTitle)}}</p>
-            <p>A staff-level .NET engineer who owns platform architecture end to end, from REST API design through the deployment pipeline it ships on. Twelve years full stack .NET and seven fully remote. Most recently the first lead-level engineering hire at Storee, where I set the architecture, built the team, and consolidated four applications onto a single .NET 9 platform on Azure without interrupting production releases.</p>
+            <p>A Lead / Staff .NET engineer who owns platform architecture end to end, from REST API design through the deployment pipeline it ships on. Twelve years full stack .NET and seven fully remote. Most recently the first lead-level engineering hire at Storee, where I set the architecture, built the team, and consolidated four applications onto a single .NET 9 platform on Azure without interrupting production releases.</p>
             <p><a href="/">TheYard</a> is a used-vehicle auction platform I built and run on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database and on Azure Cosmos DB. It is the working proof of how I build: read <a href="/?doc=performance">how it performs</a>, <a href="https://github.com/SteveStout/TheYard/tree/main/docs">the decision records</a> behind each choice, <a href="/api/reference">the API reference</a> and <a href="https://github.com/SteveStout/TheYard/blob/main/data/test-results.json">the test record</a> of the gate every version passes.</p>
             <ul class="links">
               <li><a href="{{e(Profiles[0])}}" rel="me">LinkedIn</a></li>

@@ -198,6 +198,7 @@ public static class Startup
             await Task.Delay(PageStatusRunner.SecondSweep);
             pageStatus.TryStart("settled");
         }));
+        // #endregion page-status-wiring
 
         // #region keep-warm-wiring
         // Every public read, on both stores, every four minutes for as long as the
@@ -231,6 +232,5 @@ public static class Startup
             app.Lifetime.ApplicationStopping.Register(() => loop.StopAsync(CancellationToken.None).GetAwaiter().GetResult());
         }
         // #endregion keep-warm-wiring
-        // #endregion page-status-wiring
     }
 }

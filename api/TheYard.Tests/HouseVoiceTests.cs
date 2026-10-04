@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace TheYard.Tests;
 
@@ -143,6 +144,63 @@ public class HouseVoiceTests
     public void The_rule_catches_a_line_that_breaks_it(string line)
     {
         Assert.Contains(EmDashes, dash => line.Contains(dash.Written, StringComparison.Ordinal));
+    }
+    /// <summary>
+    /// The second house rule the changelog states: every production comment says
+    /// what, how and why on its own, so no version number, date or review name
+    /// stands in for a reason. Production is the six onion projects and the
+    /// frontend under src, without tests or the generated migrations.
+    ///
+    /// <para>The four allowed lines are examples of a format, not history: a UTC
+    /// day the chart reads, the month names and a day as the cost card writes
+    /// them, and the opening line of a decision record as the layout matches it.</para>
+    /// </summary>
+    [Fact]
+    public void No_production_comment_leans_on_a_version_a_date_or_a_review()
+    {
+        string root = Repo.Root();
+        string[] production =
+        [
+            Path.Combine("api", "TheYard.Data"), Path.Combine("api", "TheYard.Domain"),
+            Path.Combine("api", "TheYard.Application"), Path.Combine("api", "TheYard.Infrastructure"),
+            Path.Combine("api", "TheYard.Infrastructure.Cosmos"), Path.Combine("api", "TheYard.Api"), "src",
+        ];
+        (string File, string Fragment)[] formatExamples =
+        [
+            ("activityChart.ts", "`2026-09-13`"),
+            ("costWords.ts", "'September',"),
+            ("costWords.ts", "\"30 September\""),
+            ("docLayout.ts", "shipped as 1.0.0.21."),
+        ];
+        var history = new Regex(@"1\.0\.\d+\.\d+|September|2026-09|the staff review|the tweaks pass|the self-review");
+        var found = new List<string>();
+
+        foreach (string path in Repo.FilesWith(".cs", ".ts", ".tsx", ".css"))
+        {
+            string relative = Path.GetRelativePath(root, path);
+            bool inProduction = production.Any(folder => relative.StartsWith(folder + Path.DirectorySeparatorChar, StringComparison.Ordinal));
+            bool generatedOrTest = relative.Contains($"{Path.DirectorySeparatorChar}Migrations{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                || relative.Contains(".test.", StringComparison.Ordinal);
+            if (!inProduction || generatedOrTest)
+            {
+                continue;
+            }
+            string[] lines = File.ReadAllLines(path, Encoding.UTF8);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                bool example = formatExamples.Any(allowed =>
+                    Path.GetFileName(path) == allowed.File && lines[i].Contains(allowed.Fragment, StringComparison.Ordinal));
+                if (!example && history.IsMatch(lines[i]))
+                {
+                    found.Add($"{relative}:{i + 1}: {lines[i].Trim()}");
+                }
+            }
+        }
+
+        Assert.True(
+            found.Count == 0,
+            $"{found.Count} production lines lean on a version, a date or a review:{Environment.NewLine}"
+            + string.Join(Environment.NewLine, found.Take(20)));
     }
     // #endregion the rule
 }

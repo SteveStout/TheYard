@@ -38,9 +38,9 @@ describe('the site map', () => {
       const dash = String.fromCharCode(0x2014);
       expect(item.blurb.includes(dash)).toBe(false);
     }
-    // The Author tile says what he is, in his resume's own words (1.0.2.0).
+    // The Author tile says what he is, in the resume's own title line.
     const author = SITE_MAP.sections.find((section) => section.menu === 'author')!;
-    expect(author.blurb).toContain('Staff-level .NET engineer');
+    expect(author.blurb).toContain('Lead / Staff .NET engineer');
     const keys = SITE_MAP.actions.map((action) => action.key);
     expect(new Set(keys).size).toBe(keys.length);
   });

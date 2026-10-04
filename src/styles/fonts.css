@@ -4,12 +4,10 @@
  * Used by:   globalStyles.ts.
  */
 /*
- * The site's own type (ADR: The palette, the addendum of 24 September on the
- * face).
+ * The site's own type (ADR: The palette, the addendum on the face).
  *
- * IBM Plex Sans, the one face for the whole site since 1.0.3.19 (Steve,
- * 2026-09-24: "lets go with this as it'll be the best for phones and
- * tablets"), in the four weights the tokens name, 400 to 700. Google Fonts
+ * IBM Plex Sans, the one face for the whole site, chosen as the best for
+ * phones and tablets, in the four weights the tokens name, 400 to 700. Google Fonts
  * serves Plex Sans as one variable latin file for every weight (45,712 bytes
  * when it was fetched, the four weights' four links naming the same file), so
  * that file, fetched once the way the Poppins files were, is cut on the
@@ -19,10 +17,10 @@
  * src/assets/fonts as one file of 29,144 bytes with the font's licence beside
  * it; the four Poppins files it replaces were 31,448 bytes in all. Plex's
  * figures are tabular as drawn, so the body's tabular-nums asks for nothing
- * the file has to carry. Poppins was the face from 1.0.0.140 until 1.0.3.18. Vite names the
+ * the file has to carry. Vite names the
  * file by a hash of its contents and puts it under /assets, so the year long
  * cache rule for bundle files applies to the type too (ADR: Cache headers),
- * and the build preloads it from the head (vite.config.ts, 1.0.3.1).
+ * and the build preloads it from the head (vite.config.ts).
  *
  * The unicode-range is Google's latin subset, copied exactly: a glyph outside
  * it falls back to the next family in --font-sans. font-display: swap is what

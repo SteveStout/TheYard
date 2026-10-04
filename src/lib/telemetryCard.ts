@@ -1,8 +1,7 @@
 /**
  * What the telemetry card says when Application Insights holds no request for
- * the hour (ADR: The tweaks pass, the telemetry addendum). On 25
- * September the card said "0 requests" while the strip above it counted
- * hundreds: the component had taken 20,879 requests between 12:00 and 18:00
+ * the hour (ADR: The tweaks pass, the telemetry addendum). Once the card said
+ * "0 requests" while the strip above it counted hundreds: the component had taken 20,879 requests between 12:00 and 18:00
  * UTC against a daily data cap of 0.1 GB, and a component at its cap takes
  * nothing more until midnight UTC. Zeros
  * drawn as a reading say the site was quiet; a sentence says what is true.

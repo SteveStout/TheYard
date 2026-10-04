@@ -47,7 +47,7 @@ export function ringArc(value: number, max: number, size: number, stroke: number
 
 // #region ring-marker
 /**
- * Where the gold marker sits (the tweaks pass, A3): the end of the fill, on the
+ * Where the gold marker sits: the end of the fill, on the
  * circle's centre line, so a ring at 100 per cent still reads as a gauge that
  * came round rather than a plain circle. Null when nothing is drawn.
  */

@@ -24,9 +24,8 @@ export function contrast(a: string, b: string): number {
 /**
  * Every colour token in a stylesheet's text that comes to a six-digit hex, in
  * the order written: `--name: #rrggbb;`, and `--name: var(--other);` read
- * through to the hex the other one comes to, however many steps away (the
- * styling pass of 25 September: a token that repeats another's value is
- * written as that token). The first value a name is given is the token; the
+ * through to the hex the other one comes to, however many steps away, because
+ * a token that repeats another's value is written as that token. The first value a name is given is the token; the
  * fallback blocks under the sheet give some names a second. A name whose value
  * is anything else (a color-mix, an rgba) is left out, and so is a var() that
  * never reaches a hex, a loop included.

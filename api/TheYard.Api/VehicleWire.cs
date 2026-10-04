@@ -115,7 +115,7 @@ public static class VehicleWire
     public static VehicleView ToWire(StandingVehicle standing, AuctionClock clock)
     {
         var vehicle = standing.Vehicle;
-        var window = AuctionSchedule.Window(vehicle.Id, clock.AnchorMs);
+        var window = standing.WindowAt(clock);
         return new VehicleView(
             vehicle.Id,
             vehicle.Vin,
@@ -147,11 +147,10 @@ public static class VehicleWire
             vehicle.BidCount,
             window.StartsAtMs,
             window.EndsAtMs,
-            // The status stays the clock's, because the browser recomputes it
-            // from the window as time passes and would overwrite a status that
-            // said otherwise. Sold rides beside it as its own fact.
-            AuctionSchedule.Status(window, clock.NowMs).ToString().ToLowerInvariant(),
-            BidRules.MinNextBid(vehicle),
+            // The auction worked out the status and the next bid; the wire only
+            // copies them, and sold rides beside the status as its own fact.
+            standing.StatusAt(clock).ToString().ToLowerInvariant(),
+            standing.MinNextBid,
             // From the vehicle after the overlays, so the state matches the
             // standing bid this same answer carries.
             ReserveState(vehicle.Reserve),

@@ -91,7 +91,7 @@
   background: var(--color-danger);
 }
 
-/* The card's words on the frost (the tweaks pass, A12): the info block takes the
+/* The card's words on the frost: the info block takes the
    glass's blur over the card's own ground, so the ribbons read as colour behind
    the price and never as lines; the photograph above it is untouched. */
 .body {

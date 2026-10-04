@@ -107,7 +107,7 @@
   gap: var(--space-3);
 }
 
-/* The resume, as an icon beside the hamburger (1.0.1.0): a 44 px round target
+/* The resume, as an icon beside the hamburger: a 44 px round target
    in the header's gold, which reads on the gradient (7.98 on the dark green). */
 .headerIcon {
   width: var(--touch-target);
@@ -271,11 +271,11 @@
   text-decoration: underline;
 }
 
-/* The Admin tab arrives in a chunk of its own (1.0.3.0); this is the one frame
+/* The Admin tab arrives in a chunk of its own; this is the one frame
    between the click and the cards, in the muted voice a waiting reading uses.
    It is a screen tall, as the tab's bench is, so the footer starts below the
    first screen while the chunk is on its way (a phone that waited 1.9 s for it
-   saw the footer leave the screen when the tab arrived: 0.062 on 1.0.3.21). */
+   saw the footer leave the screen when the tab arrived: 0.062 of shift). */
 .adminLoading {
   padding: var(--space-6) 0;
   min-height: 100vh;

@@ -200,9 +200,9 @@ export function BidPanel({
 
       {/* #region signed-out */}
       {/* A bid belongs to an account, and the server refuses one from nobody
-          with a 401 (ADR-037). Until 1.0.0.139 the panel did not know who was
-          looking, so a signed-out visitor typed an amount, pressed the button
-          and learned from the server's refusal. Now the panel asks the one
+          with a 401 (ADR-037). A panel that did not know who was looking let a
+          signed-out visitor type an amount, press the button and learn from
+          the server's refusal. So the panel asks the one
           question the server will ask, and asks it first: signed out, the form
           and the buy-now button are not rendered at all, and the one control
           left says what it needs and goes there, the way the proof card's does

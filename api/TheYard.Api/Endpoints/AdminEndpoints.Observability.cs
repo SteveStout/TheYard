@@ -33,7 +33,7 @@ public static partial class AdminEndpoints
     /// the window is not one of the fixed names.
     /// </summary>
     private static async Task<IResult> Kept(string? card, string? window, KeptRingReader reader, CancellationToken cancellation) =>
-        await reader.ReadAsync(card, window, DateTimeOffset.UtcNow, cancellation) is { } answer
+        await reader.ReadAsync(card, window, Clocks.UtcNow(), cancellation) is { } answer
             ? Results.Json(answer)
             : Results.Problem(detail: "card is one of errors, logs, sql or store, and window is one of 24h, 7d or 30d.", statusCode: 400, title: "The card or the window could not be read");
 
@@ -75,7 +75,7 @@ public static partial class AdminEndpoints
         var load = relational is null
             ? StoreLoad.Absent("this container has no relational store, or it did not come up")
             : await relational.ReadLoadAsync(RingSizes.MachineSamples, cancellation, loggers.CreateLogger(environment.ApplicationName));
-        var now = DateTimeOffset.UtcNow;
+        var now = Clocks.UtcNow();
         var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB", now);
         return Results.Json(new
         {

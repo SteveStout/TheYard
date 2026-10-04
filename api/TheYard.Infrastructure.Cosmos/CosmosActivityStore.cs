@@ -29,7 +29,7 @@ public sealed class CosmosActivityStore(CosmosStore store) : IActivityStore, IAc
     private ActivityAvailability? _availability;
     // Counted from the drain thread and from every report request at once, so
     // each move is atomic: the charge is held in hundredths of a request unit
-    // so it can move by Interlocked.Add like the two counts (25 September).
+    // so it can move by Interlocked.Add like the two counts.
     private long _centiUnits;
     private int _operations;
     private int _failures;

@@ -31,8 +31,8 @@
 
 /* #region tables */
 
-/* The tables (the tweaks pass, A1, and Steve's correction the same morning:
-   "eliminate horizontal scrolling ... especially on desktop"). Words wrap
+/* The tables, with no horizontal scrolling wherever it can be avoided and
+   least of all on a desk. Words wrap
    between themselves and never inside one; an identifier (a path, an address,
    a digest, set in the small .mono type) may break at any character, the way
    code does, because it has no words to break between; a number stays on one
@@ -66,7 +66,7 @@
 
 /* A row's own name (a suite, a day) reads as the row's first cell in the heading
    colour, not as a column header: the small capitals are the columns' alone
-   (1.0.3.30; "XUNIT ON SQLITE" had worn them). */
+   ("XUNIT ON SQLITE" had worn them). */
 .table tbody th {
   text-align: left;
   padding: var(--space-2) var(--space-3);
@@ -90,7 +90,7 @@
   overflow-wrap: normal;
 }
 
-/* A short reading, a time, a level or a status, on one line (1.0.3.31): a desk
+/* A short reading, a time, a level or a status, on one line: a desk
    table broke "3:54:58 PM" a character a line and "Information" in two. */
 .table .short {
   white-space: nowrap;
@@ -101,7 +101,7 @@
   border-bottom: none;
 }
 
-/* A phone (1.0.3.25): tighter cells, and in a table that stays a table an
+/* A phone: tighter cells, and in a table that stays a table an
    identifier's column is never narrower than a short path, so "/api/version"
    reads as one line and not five. A number is not an identifier and keeps its
    own width. */
@@ -117,8 +117,8 @@
 }
 
 /* A table of three or more columns when its card cannot give each column a
-   column's room (1.0.3.30 on a phone; from 1.0.3.31 wherever the card is too
-   narrow, decided by DataTable measuring its box against src/lib/tableFit.ts):
+   column's room (wherever the card is too narrow, decided by DataTable
+   measuring its box against src/lib/tableFit.ts):
    every row a block led by its first column, and every other value on a line
    behind its column's name, so nothing is cut at the card's edge and nothing
    scrolls sideways. The header row keeps only what can be pressed, the sort
@@ -179,7 +179,7 @@
   white-space: normal;
   /* A value with no space in it (a SQL command's parameter list) wraps inside
      its line instead of pushing the row past the phone's edge; a word with
-     room is never broken (coverage's rule, the tweaks pass A1). */
+     room is never broken (coverage's rule). */
   overflow-wrap: break-word;
 }
 

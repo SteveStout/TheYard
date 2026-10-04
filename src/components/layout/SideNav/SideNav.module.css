@@ -188,7 +188,7 @@
   margin-top: var(--space-2);
 }
 
-/* The site map's three groups (1.0.1.4): a heading above each group's
+/* The site map's three groups: a heading above each group's
    sections, a step stronger than a section title, and a rule between groups. */
 .group + .group {
   margin-top: var(--space-3);
@@ -196,7 +196,7 @@
   padding-top: var(--space-1);
 }
 
-/* The rail belongs to the same instrument (the tweaks pass, B4): a group's
+/* The rail belongs to the same instrument: a group's
    heading in small capitals in the deep teal, a gold bracket tick at its left
    and a gold hairline fading to the right. */
 .groupTitle {
@@ -389,7 +389,7 @@ details[open] > .sectionToggle::after {
 }
 
 /* Kept for the icons-only rail's spacing: that rail shows rows rather than
-   sections since 1.0.0.135, so nothing renders this today and it is the one
+   sections, so nothing renders this today and it is the one
    shape to reach for if a disclosure ever returns there. */
 .sectionToggleIcons {
   display: flex;

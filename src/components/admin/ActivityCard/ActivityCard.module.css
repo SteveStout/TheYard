@@ -13,7 +13,7 @@
 }
 
 /*
- * The three kinds of traffic, stacked (1.0.3.12): people, scanners and
+ * The three kinds of traffic, stacked: people, scanners and
  * crawlers, the site's own reads, each in its own token. A band is filled
  * nearly solid, and its ceiling is drawn again in the card's ground, two
  * pixels wide, so two bands of close lightness still read as two. A band's
@@ -34,9 +34,9 @@
 
 .band {
   fill: currentColor;
-  /* Filled glass, not paint (Steve, 25 September: "not the lines, the fill"):
+  /* Filled glass, not paint, so a band reads by its fill and not its lines:
      the frost and the grid read through a band, and its top edge carries the
-     colour at full strength. 0.85 until 1.0.3.24. */
+     colour at full strength. */
   fill-opacity: var(--mark-band-opacity);
 }
 
@@ -58,7 +58,7 @@
   stroke-linejoin: round;
 }
 
-/* The recruiter's path (1.0.3.13): four bars on a track one step off the ground, the counts in the text colour. */
+/* The recruiter's path: four bars on a track one step off the ground, the counts in the text colour. */
 .pathTile {
   display: flex;
   flex-direction: column;
@@ -76,7 +76,7 @@
   fill: var(--color-mark-bar-track);
 }
 
-/* A bar's fill is see-through like a band's (1.0.3.24), on the gauges' faint teal track. */
+/* A bar's fill is see-through like a band's, on the gauges' faint teal track. */
 .pathBar {
   fill: currentColor;
   fill-opacity: var(--mark-bar-opacity);
@@ -94,7 +94,7 @@
 }
 
 /*
- * Reading one day (1.0.3.14): the axis named above the drawing, today behind
+ * Reading one day: the axis named above the drawing, today behind
  * a wash of the page ground because it is a part-day, and under a pointer a
  * hairline down the day with a dot on each band's top in its colour, ringed in
  * the card's ground, and the day's numbers in a box in the corner away from
@@ -153,7 +153,7 @@
   right: var(--space-2);
 }
 
-/* What scanners probed (1.0.3.16): a strip on the page ground, apart from what people asked for, and no alarm. */
+/* What scanners probed: a strip on the page ground, apart from what people asked for, and no alarm. */
 .scannerStrip {
   margin: 0;
   padding: var(--space-2) var(--space-3);

@@ -57,6 +57,22 @@ public sealed class AuctionTests
     // #endregion overlays
 
     [Fact]
+    public void A_standing_vehicle_carries_its_status_and_next_bid_so_the_wire_only_copies_them()
+    {
+        var vehicle = Live("a");
+        var (auction, market) = Build(vehicle);
+        market.Tick([vehicle], new Dictionary<string, BidState>(), At(Noon));
+
+        var standing = auction.Find(vehicle.Id)!;
+
+        Assert.Equal(AuctionStatus.Live, standing.StatusAt(At(Noon)));
+        Assert.Equal(AuctionSchedule.Window(vehicle.Id, At(Noon).AnchorMs), standing.WindowAt(At(Noon)));
+        // Measured from the price the room left, not the dataset's.
+        Assert.Equal(BidRules.MinNextBid(standing.Vehicle), standing.MinNextBid);
+        Assert.True(standing.MinNextBid > 23_300);
+    }
+
+    [Fact]
     public async Task A_bid_is_measured_against_the_room_and_not_the_dataset()
     {
         var vehicle = Live("a");

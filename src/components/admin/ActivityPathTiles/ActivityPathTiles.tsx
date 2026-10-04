@@ -62,7 +62,7 @@ export function ActivityPathTiles({ report, who }: { report: ActivityReport; who
         <h3 className={cardStyles.cardTitle}>Where they came from</h3>
         {shown.sources.length === 0 ? (
           <p className={cardStyles.muted}>
-            Counted from 1.0.3.17, 24 September: no page load in the window has arrived since with
+            Counted since the tiles were added: no page load in the window has arrived since with
             its referring site kept.
           </p>
         ) : (

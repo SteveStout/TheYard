@@ -17,8 +17,8 @@
    back pill and filter row, its check lists and status rows, and the mono type of a reading.
    A class here is used by more than one card (ADR: One folder per component). */
 
-/* A pill: the height and weight are the tokens' (1.0.3.9), 34 on a desk and the
-   touch target on a phone (Steve, 2026-09-22). */
+/* A pill: the height and weight are the tokens', 34 on a desk and the
+   touch target on a phone. */
 .back {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
@@ -38,8 +38,8 @@
   color: var(--color-accent);
 }
 
-/* The window a row of buttons is on. Until 1.0.0.165 the chosen button was told
-   to a screen reader and to nobody else. */
+/* The window a row of buttons is on: the chosen button shows to the eye, not
+   only to a screen reader. */
 /* The chosen one is filled with the accent and ringed in gold: the ring is
    trim, and the fill and the white words are what say it is chosen. */
 .back[aria-pressed='true'],
@@ -94,6 +94,17 @@
   flex-wrap: wrap;
 }
 
+/* A health check's row is four cells: the pill, the name, the description and the time. On a
+   phone the description wraps inside its own cell, so the time stays on the row's first line at
+   the right edge, the same place on every row, instead of wrapping under the description. */
+.healthRow {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
 .errorRow {
   display: flex;
   align-items: baseline;
@@ -140,6 +151,7 @@
 /* Long messages (an image digest, say) wrap inside the card instead of running
    past its edge. Found by the screenshot pass (ADR-006 addendum). */
 .checkRow > span,
+.healthRow > span,
 .errorRow > span {
   min-width: 0;
   overflow-wrap: anywhere;

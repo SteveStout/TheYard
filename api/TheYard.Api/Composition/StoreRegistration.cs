@@ -246,7 +246,7 @@ public static class StoreRegistration
         builder.Services.AddScoped<CurrentBackend>();
         // Identity's stores want a context per request, and the factory hands out
         // contexts rather than registering one. This is the adapter between the two
-        // and one of the two scoped registrations in the application. The factory is
+        // and one of the four scoped registrations in the application. The factory is
         // the backend's at call time, so a store attached after startup serves the
         // accounts too; nothing asks for a context while the store is on the files,
         // because the user store is null until then.

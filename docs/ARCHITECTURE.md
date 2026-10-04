@@ -18,7 +18,7 @@ to zoom in and follow it. The infrastructure has [its own drawing](https://theya
 
 This page is the map of the whole application: which part owns what, and which way the parts depend on each other. The server code is built in rings (an onion architecture) where every dependency points inward, and a short set of rules keeps it that way, such as working facts out from stable ids instead of storing them.
 
-What that is worth: a developer can tell where a change belongs before writing it, and the organization can swap a piece at its seam, as when the catalogue moved from JSON files to SQLite without one line changing in the inner layers.
+The result: a developer can tell where a change belongs before writing it, and the organization can swap a piece at its seam, as when the catalogue moved from JSON files to SQLite without one line changing in the inner layers.
 
 ## The topology, in the document
 
@@ -47,7 +47,7 @@ flowchart LR
     ACI2["Web app for containers, the second site<br/>on the same plan, the same image, Cosmos DB by default"]
   end
 
-  subgraph sql["Azure, resource group RG-THEYARD-SS, West US 3"]
+  subgraph sql["Azure SQL Database, the first site's store, West US 3"]
     SQL[("Azure SQL Database<br/>sqldb-theyard-ss-basic, Basic, 5 DTU<br/>catalogue, photo manifest, accounts, bids")]
   end
 
@@ -63,7 +63,7 @@ flowchart LR
     API["ASP.NET Core minimal API, .NET 10"]
     SPA["React 19 bundle, served as static files"]
     SEED[("data/vehicles.json<br/>200 records, seeds the database on first boot")]
-    FILE[("SQLite fallback<br/>only when the database is unreachable")]
+    FILE[("JSON seed in memory<br/>until the store attaches; no bids kept")]
   end
 
   B -->|HTTPS, session cookie| TLS
@@ -409,9 +409,10 @@ deploy without them (ADR: The tests, explained).
 ## What is deliberately not here
 
 No durable volume: the stores are outside the container, Azure SQL Database
-and Azure Cosmos DB, and SQLite in the container's own writable layer is the
-fallback a container serves from when neither is reachable, so nothing a
-visitor does depends on a disk the roll throws away (ADR: The relational
+and Azure Cosmos DB; the JSON seed, held in memory with no bid store, is
+what a container serves until its store attaches, so nothing a visitor does
+depends on a disk the roll throws away; SQLite is the store a clone runs on
+when no connection string is configured (ADR: The relational
 store; ADR: A second store on Cosmos DB, and what it costs). No password
 store of its own: accounts are ASP.NET Core Identity with a signed cookie
 (ADR: Accounts and per-user bids). No state library, router, component

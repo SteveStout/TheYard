@@ -4,7 +4,7 @@
  * Used by:   CountUp.tsx.
  */
 /* The finished figure holds the box, unseen, in the same cell as the moving
-   one, so the width never changes while it counts (1.0.3.7's rule). */
+   one, so the width never changes while it counts. */
 .count {
   display: inline-grid;
 }

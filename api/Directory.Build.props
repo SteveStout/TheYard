@@ -1,0 +1,7 @@
+<Project>
+  <!-- Every project under api/ treats a warning as an error, so the rule "any build warning is red"
+       holds in a clone and on the CI runner, not only in the ship gate that counts warnings. -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

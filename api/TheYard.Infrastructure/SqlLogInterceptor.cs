@@ -33,8 +33,7 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request) : Db
         // ring that is somehow in a bad state, would otherwise turn a healthy
         // SELECT into a failed request, and the Admin tab would have caused the
         // outage it exists to explain. An observability hook that can break the
-        // thing it observes is worse than no hook (the staff review,
-        // 2026-09-03).
+        // thing it observes is worse than no hook.
         try
         {
             RecordOrThrow(command, duration, outcome);

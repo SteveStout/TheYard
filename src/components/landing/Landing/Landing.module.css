@@ -4,10 +4,9 @@
  * Does not:  Decide which sections exist (siteMap.ts does), or draw a tile's glass (panels.css does).
  * Used by:   Landing.tsx.
  */
-/* The landing page (1.0.1.0), Example A as Steve approved it on 2026-09-22:
-   glass tiles with a round teal icon on a gold ring, the two featured tiles
-   large at the top, the sections under their group headings below them
-   (1.0.1.4). Every value is a token. Tiles are glass without the blur
+/* The landing page: glass tiles with a round teal icon on a gold ring, the
+   two featured tiles large at the top, the sections under their group
+   headings below them. Every value is a token. Tiles are glass without the blur
    (VehicleCard's reason: a blur is paid for by the pixel, and there are
    eighteen); the two large tiles take the blur, as the intro strip does. */
 .landing {
@@ -24,9 +23,9 @@
   text-align: center;
   margin-bottom: var(--space-2);
   /* The title and its sentence sit on the glass the large tiles wear, so the
-     ribbons behind them do not cross the words (Steve, 2026-09-22: "needs a
-     faint background to make this more readable"). */
-  /* As wide as the rows under it (the tweaks pass, A10): a 760 px panel over
+     ribbons behind them do not cross the words
+     and the title stays readable. */
+  /* As wide as the rows under it: a 760 px panel over
      full-width rows read as a different page's header. */
   align-self: stretch;
   padding: var(--space-4) var(--space-5);
@@ -143,7 +142,7 @@
 }
 
 /* Only a healthy thing is green: the Admin tile while /api/health says
-   healthy, as the Admin tab's own tiles (1.0.1.4: read, no longer assumed).
+   healthy, as the Admin tab's own tiles: read, never assumed.
    The shared glass draws the rule and the brackets; a tone moves both. */
 .tile[data-tone='good'] {
   border-top-color: var(--color-success);
@@ -191,7 +190,7 @@
 }
 
 /* Inventory and Author across the top, the resume a banner under them at every
-   width (1.0.2.1: three across put the Author's line in a 300 px column and
+   width (three across put the Author's line in a 300 px column and
    broke the resume's own title over three lines). */
 @container (min-width: 640px) {
   .featured > li:nth-child(3) {
@@ -199,7 +198,7 @@
   }
 }
 
-/* The evidence strip under the title (1.0.2.0): four figures the build itself
+/* The evidence strip under the title: four figures the build itself
    produced, on the same glass as the title so the ribbons stay behind them. */
 .proof {
   list-style: none;
@@ -218,7 +217,7 @@
     'figure ring'
     'detail detail';
   /* The figure's row is the ring's height on every tile, ring or not, so every
-     number in the row sits on one baseline (the tweaks pass, A2). */
+     number in the row sits on one baseline. */
   grid-template-rows: auto minmax(44px, auto) auto;
   align-items: center;
   column-gap: var(--space-3);
@@ -229,7 +228,7 @@
 
 /* A reading: the label in small spaced capitals over the figure, two lines
    reserved on every tile, so "Stores, one codebase" wrapping no longer pushes
-   its number below its neighbours' (the tweaks pass, A2). */
+   its number below its neighbours'. */
 .proofLabel {
   grid-area: label;
   align-self: start;
@@ -270,19 +269,19 @@
   color: var(--color-text-muted);
   /* Two lines reserved: a detail that wraps at 1280 with the rail open grew the
      strip by one line when the counts arrived, the last 19 px the landing page
-     moved after first paint (1.0.3.9). */
+     moved after first paint. */
   min-height: calc(2 * 1.5em);
 }
 
 /* Four across once the page is wide enough, after the two-column rule above so
-   it wins on source order (1.0.2.1: it lost to it and read two by two at 1280). */
+   it wins on source order (written before it, it lost and read two by two at 1280). */
 @container (min-width: 860px) {
   .proof {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-/* A group of sections under its heading, as the sidebar groups them (1.0.1.4). */
+/* A group of sections under its heading, as the sidebar groups them. */
 .group {
   display: flex;
   flex-direction: column;
@@ -349,7 +348,7 @@
 }
 
 /* A photograph in the badge, in place of the icon: the same round gold ring,
-   the picture filling the circle (Steve, 2026-09-22). */
+   the picture filling the circle. */
 .badgePhoto {
   overflow: hidden;
   background: var(--color-surface);

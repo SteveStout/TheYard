@@ -1,5 +1,5 @@
 /**
- * A bar gauge's numbers (the tweaks pass, B2), kept out of the component so the
+ * A bar gauge's numbers, kept out of the component so the
  * edge cases are tested: the share of the ceiling the fill draws, and the
  * meter's value for a screen reader, finite and within 0 to the ceiling
  * whatever the reading was (a negative, a NaN, a reading over its plan).

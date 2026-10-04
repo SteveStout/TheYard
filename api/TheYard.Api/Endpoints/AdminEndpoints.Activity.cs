@@ -34,7 +34,7 @@ public static partial class AdminEndpoints
 
         return ActivityWindows.Parse(window) is null
             ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-            : Results.Json(await ActivityReport.VisitorsAsync(collector, backends, window ?? "24h", DateTimeOffset.UtcNow, cancellation));
+            : Results.Json(await ActivityReport.VisitorsAsync(collector, backends, window ?? "24h", Clocks.UtcNow(), cancellation));
     }
 
     /// <summary>
@@ -58,6 +58,6 @@ public static partial class AdminEndpoints
             return Results.Problem(detail: "kind is one of request, error or app.", statusCode: 400, title: "The kind could not be read");
         }
 
-        return Results.Json(await LogReport.QueryAsync(collector, window ?? "24h", kind, status, path, DateTimeOffset.UtcNow, cancellation));
+        return Results.Json(await LogReport.QueryAsync(collector, window ?? "24h", kind, status, path, Clocks.UtcNow(), cancellation));
     }
 }

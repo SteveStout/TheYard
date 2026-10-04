@@ -73,7 +73,7 @@ public static class HealthEndpoints
         return TypedResults.Ok(
             new HealthReport(
                 checks.All(c => c.Status == "pass") ? "healthy" : "degraded",
-                (long)(DateTimeOffset.UtcNow - start.At).TotalSeconds,
+                (long)(Clocks.UtcNow() - start.At).TotalSeconds,
                 build.Version,
                 build.Commit,
                 checks,

@@ -62,7 +62,7 @@
 /* At least a screen tall, so the footer starts below the first screen and a
    card landing taller than its reservation moves nothing in view (the footer
    left the first screen when the timing and errors cards landed pinned at
-   1280: 0.025 of shift on 1.0.3.20). */
+   1280: 0.025 of shift). */
 .bench {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -134,7 +134,7 @@
   gap: var(--space-1);
 }
 
-/* A question's heading on the rail (the tweaks pass, B4): the deep teal, a gold
+/* A question's heading on the rail: the deep teal, a gold
    bracket tick at its left and a gold hairline fading to the right under it. */
 .railTitle {
   margin: 0;
@@ -226,7 +226,7 @@
   letter-spacing: var(--readout-tracking);
 }
 
-/* The card's controls in one row: Pin, then Previous and Next (the tweaks pass, A7). */
+/* The card's controls in one row: Pin, then Previous and Next. */
 .benchControls {
   display: flex;
   flex-wrap: wrap;

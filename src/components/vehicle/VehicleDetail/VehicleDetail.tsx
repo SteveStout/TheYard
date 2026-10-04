@@ -42,7 +42,7 @@ export function VehicleDetail({
   onBuyNow,
 }: VehicleDetailProps) {
   const [imageIndex, setImageIndex] = useState(0);
-  // A phone and a tablet read the bid before the photos (the tweaks pass, A5).
+  // A phone and a tablet read the bid before the photos, because a buyer reads the price first.
   // Only the header's countdown reads the width; the order below is CSS, so the
   // bid panel is never remounted (and never loses a typed amount) on a rotate.
   const narrow = !useMediaQuery(DESK);
@@ -220,8 +220,8 @@ export function VehicleDetail({
 
       {/* One tree at every width, the bid first in it: the desk places it in the right
           column, and under 1024 the columns dissolve so it reads title, bid, photos,
-          specifications, condition, seller (the tweaks pass, A5; the self-review of
-          25 September, where switching trees remounted the bid panel). */}
+          specifications, condition, seller. One tree, because switching between two
+          trees remounted the bid panel and lost a typed amount. */}
       <div className={styles.layout} data-testid="vehicle-layout">
         <aside className={styles.sidebar}>
           {bidPanel}

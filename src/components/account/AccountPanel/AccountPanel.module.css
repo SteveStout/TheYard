@@ -13,8 +13,8 @@
   gap: var(--space-4);
 }
 
-/* At 1024 and up the head and the card are one centred column (the tweaks pass,
-   A8): the title and Back sat at the canvas's left edge over a card in its
+/* At 1024 and up the head and the card are one centred column:
+   the title and Back sat at the canvas's left edge over a card in its
    middle, which read as two layouts. */
 @media (min-width: 1024px) {
   .wrap {
@@ -43,7 +43,7 @@
   font-weight: var(--title-weight);
 }
 
-/* A pill: the height and weight are the tokens' (1.0.3.9). */
+/* A pill: the height and weight are the tokens'. */
 .back {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
@@ -164,8 +164,8 @@
 .secondary {
   appearance: none;
   padding: var(--space-2) var(--space-4);
-  /* Pills, as every other button on the site is (one look, 2026-09-21), at
-     the control's height beside the inputs they stand with (1.0.3.9). */
+  /* Pills, as every other button on the site is, at
+     the control's height beside the inputs they stand with. */
   border-radius: var(--radius-full);
   min-height: var(--control-height);
   font: inherit;

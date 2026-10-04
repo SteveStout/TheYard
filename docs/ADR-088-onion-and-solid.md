@@ -6,7 +6,7 @@ Status: accepted, 2026-10-03. Written with the pass that put a test behind every
 
 The server is built in rings, like an onion. The rules of the auction sit in the middle, the use cases wrap them, and the database code and the web endpoints sit on the outside. Code may only use the rings inside it, never the ones outside it. That rule is checked by tests that read the compiled code, so breaking it fails the gate.
 
-What that is worth: a developer can change the database, the web framework or the hosting without touching the auction's rules, and the organization gets rules that are tested in milliseconds with no database, no web server and a fixed clock.
+So a developer can change the database, the web framework or the hosting without touching the auction's rules, and the organization gets rules that are tested in milliseconds with no database, no web server and a fixed clock.
 
 ## The rings
 
@@ -69,7 +69,7 @@ These were found in the review that wrote this record and left as they are. Each
 - **Host concerns live in the host.** Health checks, the Admin tab's readings, the cost card, served documents and the activity collector read what the host keeps or what Azure reports. They encode no auction rule, so they belong outside Application.
 - **Ids as strings, money as whole dollars.** No value objects for ids or amounts: the wire uses the dataset's own names and types, every amount is a whole-dollar `int` that the rules add whole increments to, and there is no repeated validation a value object would remove. A second currency or cents would change this.
 - **Exceptions where the code already uses them.** A refused bid is a typed `BidOutcome`. Infrastructure failures surface as exceptions that one handler turns into a problem document (ADR: Error handling, one shape everywhere). Rewriting either into the other would add churn and no safety.
-- **The server's clock is a static.** Endpoints read `Clocks.Now()`, the server's UTC clock, and hand it inward. Domain and Application take the clock as a value, which is what lets their tests fix time. Injecting a `TimeProvider` into every handler would add a parameter that tests do not need.
+- **The server's clock is a static.** Endpoints read the server's UTC clock through `Clocks`, `Clocks.Now()` for the auction and `Clocks.UtcNow()` for a stamp or a reporting window, and hand it inward. Domain and Application take the clock as a value, which is what lets their tests fix time. Injecting a `TimeProvider` into every handler would add a parameter that tests do not need.
 - **Two read and write ports not split.** `IActivityStore` and `ILogStore` each have one writer and one reader. Splitting them would double the interfaces and allow no new swap, so they stay whole until a caller needs only half.
 - **Known gaps in substitution, written down.** The Cosmos DB user store does not move the email claim when an address changes, and accepts and drops Identity's cancellation token. Nothing in the site changes an email address today. The catalogue's synchronous accessors wait on a load the host has already finished (ADR: The ports learn to wait).
 
@@ -82,6 +82,13 @@ The rings pay for themselves here because there are two stores behind the same r
 - **A script or a scheduled job**: no layers at all. A function that reads, changes and writes is the clearest shape.
 
 The Shed, a file browser built the same way on another company's starter project, takes the middle road: one project with its rings as folders, held by the same kind of tests by namespace.
+
+## Addendum, 2026-10-04: the wire only copies
+
+A vehicle's status and its least next bid used to be worked out in `VehicleWire`, in the host, from
+the Domain's schedule and bid rules. They now sit on `StandingVehicle` in Application, beside the
+standing price and the sold flag the auction already hands out, and `VehicleWire` copies them. The
+host composes nothing about a vehicle; `AuctionTests` holds that the two facts are the rules' own.
 
 ## Where it sits
 

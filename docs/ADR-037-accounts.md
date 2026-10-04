@@ -322,7 +322,9 @@ so signing out still ends the session. The lifetime is configuration
 (`Auth:SessionDays`, 365) so a test can shorten it. The rule is held without
 a request and the cookie is held on the wire: a token days into its life is
 re-issued, a fresh one is left alone, and a sign-out sets the empty cookie
-and nothing else.
+and nothing else. A reset does not end a session already signed in elsewhere;
+that is the revocation this record chose not to have, and a security stamp
+claim is the fix if it is ever needed.
 
 ## Addendum, 2026-09-13: a password reset, in two halves
 

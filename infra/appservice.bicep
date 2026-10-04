@@ -155,14 +155,11 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
           { name: 'Cosmos__Credential', value: 'managed-identity' }
           { name: 'Store__Default', value: s.storeDefault }
           // Off here, on in the container groups. Each site warms the store it
-          // serves and the other warms on first use: four catalogues of a hundred
-          // thousand vehicles on one 1.75 GB machine measured as paging, and two
-          // measured as fitting (ADR: One plan, two sites).
+          // serves at startup, so a roll is ready on its own store first; the
+          // keep-warm loop then loads the other within four minutes and keeps
+          // both loaded on purpose, measured at 350 to 475 MB a site with both
+          // held (ADR: Kept awake; ADR: One plan, two sites, the last addendum).
           { name: 'Store__WarmOthers', value: 'false' }
-          // And a store a site does not serve gives its catalogue back after ten
-          // minutes of nobody asking, because the proof card loads it on demand
-          // and it used to stay until the next roll.
-          { name: 'Store__ReleaseIdleMinutes', value: '10' }
           { name: 'Email__Endpoint', value: 'https://acs-theyard-ss.unitedstates.communication.azure.com' }
           { name: 'Email__From', value: 'DoNotReply@ae4d5c47-28c9-49e2-8d3a-a859abd0f7df.azurecomm.net' }
           { name: 'Peer__Url', value: s.peerUrl }

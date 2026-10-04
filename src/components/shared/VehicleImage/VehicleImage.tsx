@@ -84,7 +84,7 @@ export function VehicleImage({
 
   return (
     <picture className={styles.picture}>
-      {/* Best first: a browser takes the first source it can read (1.0.3.3). */}
+      {/* Best first: a browser takes the first source it can read, so AVIF leads and WebP follows. */}
       {(['avif', 'webp'] as const).map((format) => {
         const pair = pairOf(src, format);
         return pair === undefined ? null : (

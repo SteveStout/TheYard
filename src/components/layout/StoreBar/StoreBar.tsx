@@ -99,8 +99,8 @@ export function StoreBar() {
             label={null}
             testId="store-bar-ready"
           />
-          {/* The count in words beside the ring (the tweaks pass, A3): a full tiny ring
-              read as a plain circle. Its room is held from the first paint. */}
+          {/* The count in words beside the ring, because a full tiny ring reads as a
+              plain circle. Its room is held from the first paint. */}
           <span className={styles.readyWords} data-testid="store-bar-ready-words">
             {ready === null ? '' : `${ready.up}/${ready.of} ready`}
           </span>

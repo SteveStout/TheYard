@@ -344,6 +344,12 @@ since 1.0.0.158 gives it back when nothing has asked that store for anything in
 store is never let go, a load in flight is never dropped, and the setting defaults to zero, which is
 never, so a developer's machine and the suite behave as they always have.
 
+## Addendum, 2026-10-04: both catalogues stay loaded
+
+The give-back above is retired. The keep-warm loop keeps both stores' catalogues loaded on both
+sites, so two catalogues is again what this costs for good, chosen so a visitor who switches stores
+never meets a cold read (ADR: One plan, two sites, the addendum of 4 October).
+
 ## Where it sits
 
 Most of this lives in the Api host, where `Backend.cs` holds one store's catalogue, bids and room, `Backends.For` in `Stores.cs` picks a store from the `X-Yard-Store` header or the default, and `CurrentBackend` hands each request an Application `Auction` composed over that backend's services; the front end's `src/lib/stores.ts` turns the choice into a link to the other site. A second store per process works because endpoints and `UserManager` receive the request's backend and its `IUserStore<YardUser>` and never name a store themselves. The cost is two catalogues of a hundred thousand vehicles in one process while both are in use, which is why the second now loads on first request and is let go after ten idle minutes, and bids placed in one process stay invisible to the other until it restarts. A site that needed one store only, or a machine with too little memory for two catalogues, would go back to one store per process and compare across sites instead.

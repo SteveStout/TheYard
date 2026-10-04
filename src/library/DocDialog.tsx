@@ -95,9 +95,9 @@ export function DocDialog({
     // The document and the code that renders it are asked for together, not one
     // after the other: the renderer (marked and the highlighter, the two
     // heaviest things the frontend carries) is a chunk of its own that the
-    // inventory never needs (ADR: Code that reads like code, addendum), and on
-    // 28 September its request started only once the document's had finished,
-    // 775 ms in. Both now start at once, and the Author page's layout with them.
+    // inventory never needs (ADR: Code that reads like code, addendum), and
+    // fetched one after the other its request started only once the document's
+    // had finished, 775 ms in. Both now start at once, and the Author page's layout with them.
     // The browser keeps each chunk for a year like every other hashed file, and
     // the page fetches the renderer ahead when it is idle (src/lib/prefetch.ts).
     Promise.all([
@@ -139,7 +139,7 @@ export function DocDialog({
       }}
     >
       {/* Every document stands on the ribbon ground: the page's own, read through the clear
-          sheet since 1.0.3.23, where the dialog carried a copy of its own from 1.0.2.0. */}
+          sheet, so the dialog carries no copy of the drawing. */}
       <div className={styles.dialogHeader}>
         <h2 className={styles.dialogTitle}>{DOCS[activeDoc].title}</h2>
         <button

@@ -27,7 +27,7 @@ export default function HealthCard({ health }: { health: Fetched<Health> }) {
             </p>
             <ul className={styles.checkList}>
               {health.checks.map((check) => (
-                <li key={check.name} className={styles.checkRow}>
+                <li key={check.name} className={styles.healthRow}>
                   <span className={pill(check.status === 'pass')}>{check.status}</span>
                   <span>{check.name}</span>
                   <span className={styles.muted}>{check.detail}</span>

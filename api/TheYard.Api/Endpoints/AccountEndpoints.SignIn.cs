@@ -44,7 +44,7 @@ public static partial class AccountEndpoints
         {
             UserName = request.Email,
             Email = request.Email,
-            CreatedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            CreatedAtMs = Clocks.UtcNow().ToUnixTimeMilliseconds(),
         };
         var created = await users.CreateAsync(user, request.Password);
         if (!created.Succeeded)

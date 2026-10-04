@@ -21,8 +21,8 @@
 }
 
 /* A document's title wears the page title's gold underline, as Inventory, Admin and
-   Account do, and its sections the Admin tab's trim: one look, 2026-09-21. Bold, as those
-   titles and the Admin tab's section headings are (measured 2026-09-22: 700 there, 600 here). */
+   Account do, and its sections the Admin tab's trim, so the site has one look. Bold, as those
+   titles and the Admin tab's section headings are (measured: 700 there, 600 here). */
 .prose h1,
 .prose h2 {
   font-weight: var(--weight-bold);
@@ -68,8 +68,7 @@
 }
 
 /* #region no-sideways-scroll */
-/* A document never scrolls sideways (Steve, 2026-09-22: "the readme has this weird
-   left to right scrolling ... it shouldn't scroll left right on mobile"). Measured at
+/* A document never scrolls sideways, on a phone least of all. Measured at
    375 on the live site: the README's body was 375 wide and scrolled to 460, and what
    pushed it was not a code block, which scrolls inside itself, but the long unbroken
    tokens inline code carries in prose and in lists, a file path like
@@ -86,10 +85,10 @@
   overflow-wrap: anywhere;
 }
 
-/* A table's cells wrap between words and never inside one (the tweaks pass, A1:
-   "Resource" broke as "Resou rce" on a phone); the table sits in its own
+/* A table's cells wrap between words and never inside one
+   ("Resource" broke as "Resou rce" on a phone); the table sits in its own
    scroller (markdown.ts wraps it), so a phone scrolls it inside the panel. A link
-   in a cell is words too (the self-review of 25 September); code in a cell is an
+   in a cell is words too; code in a cell is an
    identifier and keeps breaking anywhere, as the .mono cells on the Admin tab do. */
 .prose td,
 .prose th,
@@ -134,16 +133,15 @@
 }
 
 /* #region doc-tables */
-/* A document's table (the tweaks pass, A1, and Steve's correction the same
-   morning: "as much as possible we want to eliminate horizontal scrolling ...
-   especially on desktop"). Words wrap between themselves and never inside one,
+/* A document's table, with as little horizontal scrolling as possible, least
+   of all on a desk. Words wrap between themselves and never inside one,
    every column wraps, so a table is as wide as its panel and no wider; only a
    right-aligned number stays on one line. The scroller markdown.ts puts round
    it is a last resort for a phone and a table of long unbroken names. The
    header is a 2 px rule with small capitals over it and the rows are parted by
-   a hairline, where it was a grey block over a grid of borders. 1.0.3.23 kept
-   the first column on one line, and a record whose first column is sentences
-   ran off the side of the dialog. */
+   a hairline, where it was a grey block over a grid of borders. A first column
+   kept on one line ran a record whose first column is sentences off the side
+   of the dialog. */
 .prose :global(.table-scroll) {
   max-width: 100%;
   overflow-x: auto;

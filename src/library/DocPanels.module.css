@@ -5,7 +5,7 @@
  *            (AuthorPage.module.css), or hold a colour of its own.
  * Used by:   DocDialog.tsx.
  */
-/* Every document on the Author page's panels (1.0.2.0): the same glass, the
+/* Every document on the Author page's panels: the same glass, the
    same green edge, the same trim on the headings, so the library reads as one
    thing whichever document is open. */
 .prose :global(.doc-page) {
@@ -32,7 +32,7 @@
 }
 
 /* #region reading-panel */
-/* The reading panel (the tweaks pass, B1b): inside the clear sheet, the frost
+/* The reading panel: inside the clear sheet, the frost
    is here, heavy enough that body text holds 4.5 over the brightest ribbon
    (colors.test.ts holds the pair). */
 .dialog .prose :global(.doc-panel),

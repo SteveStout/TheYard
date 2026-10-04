@@ -1,6 +1,5 @@
 /**
- * Fetching code ahead of the click (ADR: Code that reads like code, addendum of
- * 28 September). The markdown renderer, the Admin tab and every Admin card are
+ * Fetching code ahead of the click (ADR: Code that reads like code, addendum). The markdown renderer, the Admin tab and every Admin card are
  * chunks of their own so the first page does not pay for them; this fetches
  * them after the first page has loaded and the browser has nothing better to
  * do, so the click that needs one finds it already here. React-free, like the

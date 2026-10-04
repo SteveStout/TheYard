@@ -37,8 +37,8 @@ store's catalogue, everybody's bids and the simulated room (`MarketService`) in 
 order the rules need, and `BidsOf` gives a buyer's bids as `BidView`s. `InventoryService` loads the dataset once and answers
 search/facet/by-id queries by composing Domain rules; `BidService` holds the buyer's
 bid state, read from the database at startup and written through on every accepted
-bid, and applies it *before* filtering so prices never disagree with the
-UI. Both consume data through the auction's three ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`): the
+bid. `Auction` hands the bid and room overlay to `InventoryService.Search`, which
+applies it before filtering, so prices never disagree with the listing. Both consume data through the auction's three ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`): the
 interfaces that make Infrastructure swappable and the tests trivial to fake. Beside them sit the
 operator's ports, which the Admin tab and the account flows read through: `IActivityStore`,
 `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment`
@@ -89,7 +89,7 @@ when a dependency points outward (ADR: Onion and SOLID, how this codebase holds 
 
 React + TypeScript, deliberately thin. No business math runs in the browser:
 
-- `main.tsx`: entry point, read like `Program.cs`: one line per part with its file beside it. `styles/globalStyles.ts` loads the stylesheets in order, `app/reportUncaughtErrors.ts` reports crashes no boundary sees, and `app/mount.tsx` draws `App` inside the error boundary.
+- `main.tsx`: entry point, read like `Program.cs`: one line per part with its file beside it. `lib/adminKey.ts` keeps the operator's key before the address bar is tidied, `styles/globalStyles.ts` loads the stylesheets in order, `app/reportUncaughtErrors.ts` reports crashes no boundary sees, and `app/mount.tsx` draws `App` inside the error boundary.
 - `app/`: the app shell. `App.tsx` is the composition root and reads like a table of
   contents: one line per hook, then the view the address names inside `Shell.tsx`
   (the frame), with `Header.tsx`, `Footer.tsx` and `InventoryView.tsx` beside it.
@@ -108,7 +108,8 @@ React + TypeScript, deliberately thin. No business math runs in the browser:
   (`ConditionBadge`, `TitleStatusBadge`, `ReserveBadge`), `AuctionCountdown`,
   `VehicleImage` (graceful fallback).
 - `hooks/`: React-aware orchestration. `useBids` (relays bid actions to the API,
-  mirrors the bid map) and `useNow` (the one shared clock every countdown ticks on).
+  mirrors the bid map), `useNow` (the one shared clock every countdown ticks on) and
+  `useMediaQuery` (true while the window matches a media query, following resizes).
 - `lib/`: pure, framework-free modules with their unit tests beside them.
   - `types.ts`: the `Vehicle` wire shape, including the server-derived auction facts.
   - `data.ts`: the single API seam. Query building, the TTL response cache,

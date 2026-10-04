@@ -38,7 +38,7 @@
   gap: var(--space-3);
 }
 
-/* Two across under 768 and four from there (the tweaks pass, A2): four across
+/* Two across under 768 and four from there: four across
    at 390 gave each tile 80 px, a label three lines and numbers at four heights. */
 @media (min-width: 768px) {
   .strip {
@@ -117,8 +117,8 @@
   --tile-soft: var(--color-neutral-soft);
 }
 
-/* A tile's name, one line (the tweaks pass, A2: the section's question came off
-   the tile, since the rail names the section), so every number in a row starts
+/* A tile's name, one line (the section's question came off the tile, since
+   the rail names the section), so every number in a row starts
    at the same height. */
 .tileLabel {
   display: block;
@@ -144,7 +144,7 @@
 
 /* The ring's box, the tile ring's 44 (RING.tile in src/lib/ring.ts), on every
    tile from the first paint (a label squeezed when the ring landed was 0.022 of
-   shift at 1280 on 1.0.3.19). */
+   shift at 1280). */
 .tileRing {
   flex: none;
   display: block;
@@ -166,7 +166,7 @@
    two, so a tile that grew when its reading arrived moved the bench under the
    strip (0.023 of shift at 1280, then 0.018 once the store bar held still).
    Every line is written to fit two lines on the narrowest tile, 360 px and four
-   across at 768 (1.0.3.30: at 390 three tiles showed an ellipsis); what a line
+   across at 768 (at 390 three tiles showed an ellipsis); what a line
    leaves out is in the tile's title and read to a screen reader, and the clamp
    stays as the guard, never the plan. */
 .tileDetail {
@@ -238,8 +238,8 @@
   vector-effect: non-scaling-stroke;
 }
 
-/* Two to a row under 768 (the tweaks pass, A2): the name, the value row with its
-   ring, the detail on two lines like the desk's (1.0.3.27, where one line cut it
+/* Two to a row under 768: the name, the value row with its
+   ring, the detail on two lines like the desk's (one line cut it
    with an ellipsis), and the word; the line over time is the desk's alone. */
 @media (max-width: 767.98px) {
   .statStrip .tile {
@@ -252,7 +252,7 @@
   }
 
   /* A step smaller than the desk's, so "124 of 124" stands beside its ring on
-     one line (1.0.3.25; at 20 px it broke over two). */
+     one line (at 20 px it broke over two). */
   .statStrip .tileValue {
     font-size: var(--text-lg);
   }

@@ -10,8 +10,8 @@
   gap: var(--space-4);
 }
 
-/* The same pill Admin and Account go back with (1.0.3.9); until then this was a
-   text link, the one back button on the site that was not a pill. */
+/* The same pill Admin and Account go back with, so every back button on the
+   site is a pill. */
 .back {
   align-self: flex-start;
   display: inline-flex;
@@ -110,7 +110,7 @@
 
 .mainImage {
   aspect-ratio: 4 / 3;
-  /* The panels' corner, since it sits in a row with them (one look, 2026-09-21). */
+  /* The panels' corner, since it sits in a row with them. */
   border-radius: var(--radius-glass);
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -176,7 +176,7 @@
 
 .sectionTitle {
   /* The Admin tab's card title: sentence case in the heading colour, not muted
-     capitals, which on this site mark a form field's label (one look, 2026-09-21). */
+     capitals, which on this site mark a form field's label. */
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   color: var(--color-heading);
@@ -279,14 +279,14 @@
   margin-top: var(--space-3);
 }
 
-/* Under 1024 one column in the order a buyer reads (the tweaks pass, A5): the
+/* Under 1024 one column in the order a buyer reads: the
    two columns dissolve into the layout, the bid (first in the tree) stays first
    and the seller moves to the end. The same tree as the desk, so nothing
    remounts when a tablet turns. */
 @media (max-width: 1023.98px) {
   /* Every section the full width of the column: the desk's grid aligns its two
      columns to the top (align-items: start), which in a flex column shrank a
-     section to its content (Steve's iPhone on 1.0.3.26: Specifications at half
+     section to its content (on a phone, Specifications at half
      the screen). */
   .layout {
     display: flex;

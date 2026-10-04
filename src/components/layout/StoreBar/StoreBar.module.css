@@ -41,7 +41,7 @@
   gap: var(--space-2);
 }
 
-/* "2/2 ready" beside the ring (the tweaks pass, A3), in the readout's small
+/* "2/2 ready" beside the ring, in the readout's small
    spaced capitals, its width held before the answer so nothing moves. */
 .readyWords {
   display: inline-block;
@@ -55,7 +55,7 @@
   white-space: nowrap;
 }
 
-/* The control's height is reserved before the segments exist (1.0.3.7), so the
+/* The control's height is reserved before the segments exist, so the
    band is as tall on the first paint as it is once the server has answered:
    a segment's minimum plus the two pixels of padding either side. Its border,
    radius and ground are the site's pill group (.op-seg, the operator's look),
@@ -112,14 +112,13 @@ a.segment:focus-visible {
   cursor: not-allowed;
 }
 
-/* The note (the tweaks pass, A6 and A9): 13 px, the whole sentence on one line
+/* The note: 13 px, the whole sentence on one line
    from 1440, where it fits whole beside the control with the rail open, and the
    short form under 1440, "SQL site · Azure SQL Database", where the sentence was
-   cut with an ellipsis. The pass asked for the sentence from 1280; with the
-   rail open and Azure's store names it measured wider than the band there, so
-   it starts where it fits (the gate's Cosmos DB pass, ship 1418).
+   cut with an ellipsis. At 1280, with the rail open and Azure's store names,
+   the sentence measured wider than the band, so it starts where it fits.
    The band's height is set before /api/stores answers, and a note that wrapped
-   once it arrived moved every page (1.0.3.19: 29 px, 0.024 of shift at 1280),
+   once it arrived moved every page (29 px, 0.024 of shift at 1280),
    so it never wraps on a desk and never ends in an ellipsis. The whole sentence
    is its title at every width. A phone gives it a row of its own, below. */
 .note {
@@ -173,7 +172,7 @@ a.segment:focus-visible {
   }
 
   /* Its own row, at the height it will have once /api/stores answers, so
-     the page below does not move when the sentence arrives (1.0.3.10). */
+     the page below does not move when the sentence arrives. */
   .note {
     flex-basis: 100%;
     min-height: var(--store-note-height);

@@ -10,5 +10,12 @@ namespace TheYard.Api;
 /// </summary>
 public static class Clocks
 {
-    public static AuctionClock Now() => AuctionClock.Utc(DateTimeOffset.UtcNow);
+    /// <summary>The auction's clock for this request: now, and the UTC midnight that began the day.</summary>
+    public static AuctionClock Now() => AuctionClock.Utc(UtcNow());
+
+    /// <summary>
+    /// The server's UTC clock, the one place an endpoint reads the time, so a handler that
+    /// stamps a record or picks a reporting window reads the same clock the auction does.
+    /// </summary>
+    public static DateTimeOffset UtcNow() => DateTimeOffset.UtcNow;
 }

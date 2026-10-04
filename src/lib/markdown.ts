@@ -35,12 +35,11 @@ marked.use({
 // #endregion doc-links
 
 // #region doc-tables
-// Every markdown table in a scroller of its own (the tweaks pass, A1), reachable
-// from the keyboard, so a phone scrolls a wide table and never breaks a word. A
-// renderer and not a string replace (the self-review of 25 September): a raw
-// HTML table in a document is left as its author wrote it, where the replace
-// wrapped its end and not its start. A region, like every table wrapper on the
-// Admin tab.
+// Every markdown table in a scroller of its own, reachable from the keyboard,
+// so a phone scrolls a wide table and never breaks a word. It is done in the
+// renderer rather than by replacing text, so a raw HTML table in a document is
+// left as its author wrote it; a text replace wrapped such a table's end and
+// not its start. A region, like every table wrapper on the Admin tab.
 const plainRenderer = new marked.Renderer();
 marked.use({
   renderer: {

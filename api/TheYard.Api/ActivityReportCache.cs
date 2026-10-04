@@ -7,7 +7,7 @@ namespace TheYard.Api;
 // #region report
 /// <summary>
 /// The public report, kept a short while per window (ADR: Site activity, and the
-/// line an address does not cross, addendum of 28 September). Building one reads
+/// line an address does not cross, addendum). Building one reads
 /// every visitor row of the window to count them, 3,661 documents for the week
 /// the card opens on and 5,279 for the month when this was measured, and the
 /// first read after a quiet spell paid that on top of the connections waking: 2.0

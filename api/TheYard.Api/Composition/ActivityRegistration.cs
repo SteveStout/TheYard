@@ -5,13 +5,13 @@ using TheYard.Infrastructure.Cosmos;
 namespace TheYard.Api;
 
 /// <summary>
-/// Site activity, the machines card and the catalogue keeper: the collectors that
+/// Site activity and the machines card: the collectors that
 /// write off the request path, and the operator's key and switches that guard the
 /// rows (ADR: Site activity, and the line an address does not cross).
 /// </summary>
 public static class ActivityRegistration
 {
-    /// <summary>Registers the activity collector, the machine sampler and recorder, the catalogue keeper and the operator's settings.</summary>
+    /// <summary>Registers the activity collector, the machine sampler and recorder and the operator's settings.</summary>
     public static void AddTheYardActivity(this WebApplicationBuilder builder, YardComposition host)
     {
         var backends = host.Backends;
@@ -65,14 +65,6 @@ public static class ActivityRegistration
             services.GetRequiredService<ILogger<MachineRecorder>>()));
         builder.Services.AddHostedService(services => services.GetRequiredService<MachineRecorder>());
         // #endregion machine-history-wiring
-        // The catalogue of the store this site does not serve is given back once
-        // nobody has asked for it in a while. Zero minutes, the default, is never;
-        // the plan both sites share sets ten (ADR: One plan, two sites).
-        builder.Services.AddSingleton(services => new CatalogueKeeper(
-            backends,
-            TimeSpan.FromMinutes(builder.Configuration.GetValue("Store:ReleaseIdleMinutes", 0)),
-            services.GetRequiredService<ILogger<CatalogueKeeper>>()));
-        builder.Services.AddHostedService(services => services.GetRequiredService<CatalogueKeeper>());
         var adminKey = new AdminKey(builder.Configuration["Admin:Key"]);
         builder.Services.AddSingleton(adminKey);
         // Whether the per-visitor rows (the visitor table and the kept log) are

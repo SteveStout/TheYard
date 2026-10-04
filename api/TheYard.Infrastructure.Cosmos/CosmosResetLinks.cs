@@ -6,7 +6,7 @@ namespace TheYard.Infrastructure.Cosmos;
 
 /// <summary>
 /// Reset links in the document store (ADR: Accounts and per-user bids,
-/// addendum of 14 September). One container partitioned on the id, one
+/// addendum). One container partitioned on the id, one
 /// document per link, the container's time-to-live as the hour: a document
 /// expires on its own and nothing has to run to delete it. Both sites keep
 /// theirs here, so a link minted on either site is found on either, and the

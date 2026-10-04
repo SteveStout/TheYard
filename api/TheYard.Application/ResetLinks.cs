@@ -1,7 +1,7 @@
 namespace TheYard.Application;
 
 // A password reset link's public half (ADR: Accounts and per-user bids,
-// addendum of 14 September). The link a visitor receives carries a plain
+// addendum). The link a visitor receives carries a plain
 // GUID and nothing else; the signed token that names the account, the
 // store and the password's fingerprint is kept on the server under that
 // GUID for an hour, and is forgotten the moment it is used. So a link

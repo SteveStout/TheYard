@@ -60,7 +60,7 @@ describe('the landing page evidence strip', () => {
     const shown = proofFigures(summary, 82)!;
     expect(shown.map((figure) => [figure.figure, figure.label])).toEqual([
       ['905', 'tests green'],
-      ['312 s', 'one gate'],
+      ['312 s', 'one gate, target 300 s'],
       ['82', 'decision records'],
       ['2', 'stores, one codebase'],
     ]);

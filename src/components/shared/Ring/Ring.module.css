@@ -34,7 +34,7 @@
   stroke: var(--ring-fill-gold);
 }
 
-/* The gold marker at the fill's end (the tweaks pass, A3), shown once the arc
+/* The gold marker at the fill's end, shown once the arc
    has filled; on a gold arc it takes the dark green so it still reads. */
 .marker {
   fill: var(--ring-marker);

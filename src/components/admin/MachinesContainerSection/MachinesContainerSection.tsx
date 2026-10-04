@@ -91,14 +91,14 @@ export function MachinesContainerSection({
           {container.catalogues && container.catalogues.length > 0 && (
             // Most of that memory is catalogues, a hundred thousand vehicles a
             // store, so the card says which ones the process is holding. The
-            // store this site does not serve is loaded on demand and let go
-            // when nobody has asked for it in a while (ADR: One plan, two sites).
+            // store this site does not serve is loaded by the keep-warm loop and
+            // kept, so a switch to it never meets a cold read (ADR: Kept awake).
             <p className={styles.muted} data-testid="machines-catalogues">
               Catalogues in memory:{' '}
               {container.catalogues
                 .map(
                   (catalogue) =>
-                    `${catalogue.store}, ${catalogue.serves ? 'which this site serves' : 'loaded on demand'}, ${catalogue.loaded ? 'held' : 'not held'}`
+                    `${catalogue.store}, ${catalogue.serves ? 'which this site serves' : 'kept warm for a switch'}, ${catalogue.loaded ? 'held' : 'not held'}`
                 )
                 .join('; ')}
               .

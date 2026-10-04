@@ -51,13 +51,12 @@ export default function LogCard({ tick }: { tick: number }) {
         <h2 className={styles.cardTitle}>The log, as the console got it</h2>
         <About>
           This application&rsquo;s own log lines at Information and above, newest first, holding the
-          last 300 in memory. Its own, which since 1.0.0.103 includes one line per document store
-          operation with its charge and its time, and the one framework category that gives every
-          SQL statement a line of its own: the rest of the framework is left out because a healthy
-          container announces its content root and its key directory, and those are server paths on
-          a public page. An exception shows its type. Its message stays server-side, because a
-          database driver writes the server name, the login name and the caller&rsquo;s address into
-          one.
+          last 300 in memory. Its own, which includes one line per document store operation with its
+          charge and its time, and the one framework category that gives every SQL statement a line
+          of its own: the rest of the framework is left out because a healthy container announces
+          its content root and its key directory, and those are server paths on a public page. An
+          exception shows its type. Its message stays server-side, because a database driver writes
+          the server name, the login name and the caller&rsquo;s address into one.
         </About>
         {picker('logs')}
         {logRows === null ? (

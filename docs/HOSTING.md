@@ -11,7 +11,7 @@ included, is served from these menus; nothing requires opening the repository.
 
 This page explains how the site reaches the internet: a domain name and a free edge service (Netlify) that handles the secure connection, in front of two web apps on one Azure machine (an App Service plan). The piece still waiting is a production edge (Azure Front Door) that the free trial refuses to create.
 
-What that is worth: a developer sees how a small production setup fits together, with its infrastructure code served on the site, and the organization runs it on free services and one small plan while the full design waits behind one parameter.
+In practice, a developer sees how a small production setup fits together, with its infrastructure code served on the site, and the organization runs it on free services and one small plan while the full design waits behind one parameter.
 
 ## The picture
 

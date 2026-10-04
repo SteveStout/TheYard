@@ -54,6 +54,17 @@ The landing page was drawn for a reader who explores. The reader it actually get
 - **The Author tile said that he exists, not what he is.** "Steven Stout, who built it." It now carries his resume's own opening line: a staff-level .NET engineer who owns platform architecture end to end, twelve years full stack and seven fully remote. The words are the resume's so the two cannot say different things.
 - **The site's argument was behind the tiles.** Every version runs three suites in one gate and rolls only if they are green, and the only way to learn that was to open Built with AI or CI/CD. The evidence strip under the title now says it in four figures: the tests the gate ran, how long the gate took, how many decision records the site holds, and that one codebase serves two stores. The counts come from `/api/tests/summary`, the gate's own results file added up, and the record count is the site map's own list, so neither can drift from what the site actually has. A test is counted once rather than once per store, a suite the gate carried forward from an earlier version says so, and a red gate is reported as failures rather than drawn as green.
 
+## Addendum, 2026-10-04: the first screen says only what is true
+
+A cold read of the landing page found four lines a reviewer could catch out. The Hosting tile named
+Front Door, which the Hosting page says is not deployed; it now reads "Azure, a free edge in front,
+and the web app behind it." The Author tile, the About page and the Author document gave three
+levels; all three now give the resume's title line, Lead / Staff .NET engineer. The tests tile counts
+each suite once, so it says so ("test runs in the gate, each suite once"), and the gate tile names
+its target beside the time ("one gate, target 300 s"), in the label, so the detail under the number
+keeps to two lines on a phone and every number in the row stays on one baseline. The Author badge is the vineyard photograph
+cropped to Steve alone, so a reader knows which person is the author.
+
 ## Where it sits
 
 The site map lives in the front end: src/lib/siteMap.ts and its entries import nothing from React, Landing and SideNav both draw from them, and the host Api adds only TestSummary.cs for the evidence strip's counts. It follows the open/closed principle, adding behaviour without editing core code, in data form: a new section is one more entry in siteMapEntries.ts, and neither the sidebar nor the landing page needs a change. The cost is that the landing grid's order is the sidebar's order, softened only by featuredRank on the large tiles. A landing page that needed its own grouping or copy apart from the sidebar would justify a second list and a test holding the two together.

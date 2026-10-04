@@ -14,7 +14,7 @@
   left: 0;
   /* The large viewport, not the screen as it is this moment. On a phone the address
      bar comes and goes as the reader scrolls; with inset: 0 the layer's height followed
-     it (664 px to 750 px, measured 2026-09-22 at 390 px wide), and a drawing that fills
+     it (664 px to 750 px, measured at 390 px wide), and a drawing that fills
      its box by slicing was scaled by 13% every time: the ribbons danced with nothing
      animated. 100vh first for a browser without lvh, which on a phone is the same
      large height. */

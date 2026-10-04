@@ -76,7 +76,7 @@ cannot is a failure that would reach a visitor. A comment reading
 Four more habits:
 
 - A public C# member gets a `<summary>` when its name cannot carry the
-  whole contract. `IVehicleSource.Load()` needs none; `LiveSamples.Expand`
+  whole contract. `IVehicleSource.LoadAsync()` needs none; `LiveSamples.Expand`
   needs several lines.
 - A file that implements a decision names the record: `(ADR-015)`,
   `(ADR: The palette)`. That is how a reader gets from a line to the

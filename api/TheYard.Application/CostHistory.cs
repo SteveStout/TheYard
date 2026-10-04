@@ -13,7 +13,7 @@ namespace TheYard.Application;
 /// <summary>
 /// One resource's charge for one UTC day, as Cost Management reports it, cut
 /// down to what the card needs: the resource's name and type, never its full
-/// path, because the path carries the subscription's id and the card is public.
+/// path.
 /// </summary>
 /// <param name="Day">The UTC day, as yyyy-MM-dd.</param>
 /// <param name="Resource">The resource's own name, the last segment of its path, lower case.</param>

@@ -290,6 +290,21 @@ catalogue being read again. A visitor never pays it, because a visitor is served
 site serves, and that one is never let go. The proof's other seven paths read as they did in the
 proof section above.
 
+## Addendum, 2026-10-04: both catalogues stay loaded, and the keeper is retired
+
+The release measured above stopped happening a week later. The keep-warm loop (ADR: Kept awake)
+reads every public path on both stores every four minutes, and four minutes is less than the ten idle
+minutes the keeper waited for, so the catalogue a site does not serve was never idle again. Read off
+the machines endpoint on 4 October, both catalogues were held on both sites, with working sets of 410
+to 473 MB on the SQL site and 350 to 447 MB on the Cosmos DB site over the hour.
+
+Steve chose to keep both warm: a visitor who switches stores never meets the 7 to 11 second reload
+measured above, which is the goal of ADR: Kept awake. So the keeper, the let-go region of
+`InventoryService` and the `Store__ReleaseIdleMinutes` setting are gone, the template's comment says
+what each site holds, and the live sample of the let-go region that closed this page went with the
+code it quoted. If the plan ever has to hold less, the trade is the one this page measured: the first
+read of a store after a quiet spell pays the reload.
+
 ## Where it sits
 
 Most of this is a hosting decision about the App Service plan that sits outside the onion; two pieces of code moved with it: IdentityTokens in the host Api asks for a managed identity token at whichever door the host has, and InventoryService in Application gained ReleaseIfIdle so CatalogueKeeper, a host service in Stores.cs, can let an unused catalogue go. That split follows single responsibility, one reason to change per class, because InventoryService owns the catalogue's life and the keeper owns only the timing of the question. It cost a shared machine, so a plan restart takes both sites down, and a slow first read for whoever touches a released catalogue. Memory readings showing B1 paging under normal traffic would be the signal to move to B2.
@@ -301,7 +316,7 @@ Most of this is a hosting decision about the App Service plan that sits outside 
 - [`scripts/deploy-infra.ps1`](https://github.com/SteveStout/TheYard/blob/main/scripts/deploy-infra.ps1): describing the infrastructure to Azure again without changing what runs, in incremental mode.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two container groups, stopped and kept, which is the way back.
 - [`api/TheYard.Api/IdentityTokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/IdentityTokens.cs): a managed identity token from whichever door the host has.
-- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs) and [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): a catalogue that can be let go, and the keeper that asks.
+- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs) and [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): the catalogues and the warm before a read; the keeper that let one go was retired on 4 October.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the site asking Azure about itself, as a container group or as a web app on a shared plan.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml): a roll sets the image and the three values the repository does not hold.
 - [`api/TheYard.Tests/AzureSelfTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AzureSelfTests.cs) and [`api/TheYard.Tests/AppServiceTemplateTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AppServiceTemplateTests.cs): both doors, both shapes, and the template held to the files it took over from.
@@ -313,5 +328,3 @@ Most of this is a hosting decision about the App Service plan that sits outside 
 ```live path=api/TheYard.Api/IdentityTokens.cs region=identity-token
 ```
 
-```live path=api/TheYard.Application/InventoryService.cs region=let-go
-```
