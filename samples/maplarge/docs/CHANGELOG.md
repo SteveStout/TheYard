@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.36 A record's title no longer shows a bar at its right end: the heading the Docs tab focuses for a screen reader draws no focus ring, and The Shed, explained carries the new version.
 - 1.0.0.35 An upload past the web server's limit answers 413 with the server's reason instead of a 409 about a locked file, a form past the form reader's limit is a 413 instead of a 500, and the comments and records say where the size is checked. Search and upload limits that cannot work together stop the app as it starts. After a failed upload the same file can be picked again, the count names only files written, and an old failed listing never covers a newer one. The README names Visual Studio 2026, ADR-002 says seven folders, the record titles lose their stray gold bar, the home card keeps a reading width, and the phone's record list fades at its foot. The Shed, explained is rebuilt: page 1's cards fit their text and page 4 names pieces 9 and 10.
 - 1.0.0.34 Page 2 of The Shed, explained keeps to the brief and its proof, then shows how the code holds the onion rings and the five SOLID ideas.
 - 1.0.0.33 The Shed, explained gains page 2: each requirement and bonus in the brief's own words, where it is, what proves it and the page with its code. Brief item H now shows the write routes and piece 7 the test that times the search, so the PDF is ten pages.

@@ -68,6 +68,14 @@
   width: fit-content;
 }
 
+/* A document's first heading gets focus from code, so a screen reader starts at the title. It is
+   not a control, so it shows no focus ring: the ring, clipped by the scrolling article, drew a bar
+   beside the title. */
+.docs article h1:focus,
+.docs article h2:focus {
+  outline: none;
+}
+
 /* Document headings sit on their own line. The .panel h2 rule in page.css makes h2 inline-block
    for the dialog title, and a document is inside the panel, so this rule sets it back. */
 .docs article h2 {
