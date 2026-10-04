@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.33 The Shed, explained gains page 2: each requirement and bonus in the brief's own words, where it is, what proves it and the page with its code, then a check for the traps an AI-built submission falls into. Brief item H now shows the write routes and piece 7 the test that times the search, so the PDF is ten pages.
 - 1.0.0.32 No reply names a path on disk: the health check says only healthy or not, and the disk's own refusals answer with a fixed sentence. OnionTests keeps the file store port, HomePath and the disk out of the controllers and the disk out of Application, counts a folder inside a ring as that ring, and fails on a type in no ring. ADR-013 and ADR-014 open in plain words, and The Shed, explained shows its test samples whole.
 - 1.0.0.31 The Shed, explained is rebuilt from the current code: downloads through the file store, 151 tests, fourteen records, and the search times measured again (ADR-008).
 - 1.0.0.30 The rings are held by the build: OnionTests reads the compiled app, downloads stream through the file store so no disk path leaves the use cases, home is recognised with or without a trailing separator so it can never be deleted, every record says where it sits, two new records (Onion and SOLID, Technology versions), and `npm test` names its test files, because Node 22 and later read `node --test tests/js` as a file name and fail without running a test.

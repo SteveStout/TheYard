@@ -12,9 +12,10 @@ commit: [/api/version](https://theshed.stevenstout.biz/api/version).
 
 **Reviewing it?** Three things, one click each, all served by the site itself:
 
-- [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): nine pages, the
-  numbers, the quick start, the choices and why, where it goes next, every item of the brief with its
-  code, and the code in ten pieces, each linked to where TheYard does the same at full size.
+- [The Shed, explained](https://theshed.stevenstout.biz/the-shed-explained.pdf): ten pages. Page 1
+  is the pitch. Page 2 shows every requirement and bonus in the brief's words with what proves it.
+  Pages 3 to 10 show the code for each item of the brief and the code in ten pieces, each linked to
+  where TheYard does the same at full size.
 - [About Steven](https://theyard.stevenstout.biz/?doc=author): who built it, on TheYard.
 - [Resume](https://theshed.stevenstout.biz/resume.pdf).
 
