@@ -7,7 +7,8 @@ namespace TestProject.Tests;
 /// <summary>
 /// Tests FileBrowser's upload: only the file name is ever written (a path in the name is dropped),
 /// an existing name is refused unless the caller asks to overwrite, and a file past the limit is
-/// refused before a single byte is read, so a large upload costs the server nothing.
+/// refused before it is written into home. The form parser has read the body by then, and the web
+/// server cuts off a request past its own limit with a 413.
 /// </summary>
 public sealed class FileUploadTests : SampleTree
 {

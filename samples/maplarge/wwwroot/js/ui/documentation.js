@@ -11,9 +11,7 @@
 import * as api from '../lib/api.js';
 import { parse } from '../lib/markdown.js';
 import { buildElement, buildFromMarkdown, replaceContents } from './elements.js';
-function messageOf(error) {
-    return error instanceof Error ? error.message : String(error);
-}
+import { messageOf } from './notices.js';
 /**
  * Builds the Docs tab inside a container element and returns an object whose
  * render() draws it for a given State.
@@ -26,6 +24,7 @@ export function createDocumentation(root, navigate) {
     const nav = buildElement('nav', { 'aria-label': 'Documents' });
     const article = buildElement('article', { 'aria-live': 'polite' });
     replaceContents(root, nav, article);
+    /** Fetches the list of documents once, then draws the list and the document the State names. */
     async function render(state) {
         if (!catalogue) {
             try {
@@ -41,6 +40,7 @@ export function createDocumentation(root, navigate) {
         renderNav(catalogue, slug);
         await renderDocument(slug);
     }
+    /** Draws the list of documents under their group headings, marking the open one. */
     function renderNav(entries, slug) {
         const groups = new Map();
         for (const entry of entries) {
@@ -65,6 +65,7 @@ export function createDocumentation(root, navigate) {
         }
         replaceContents(nav, ...nodes);
     }
+    /** Fetches one document's markdown and draws it, unless another document was chosen meanwhile. */
     async function renderDocument(slug) {
         replaceContents(article, buildElement('p', {}, 'Loading'));
         try {

@@ -7,18 +7,16 @@ using TestProject.Domain;
 namespace TestProject.Controllers;
 
 /// <summary>
-/// Turns a refused request into a clear error reply in the RFC 9457 format, the web standard
-/// for errors: a status code, a short title, the reason in one sentence, and a trace id. This
-/// is the one place errors get their shape, so no controller needs a try/catch.
+/// Turns a refused request into an error reply in RFC 9457, the web standard for errors: a status,
+/// a short title, the reason in one sentence and a trace id. It is the one place errors get their
+/// shape, so no controller needs a try/catch.
 /// </summary>
 /// <remarks>
-/// What each kind of failure becomes, and why:
-/// - The app's own refusals (ApiRefusalException) carry their status and title with them.
-/// - A path that tries to leave the home folder (PathRefusedException) is always a 400.
-/// - A file the disk will not let us touch, because it is read-only or another program has it
-///   open, is a 403 or a 409 with a fixed reason that names no path. The request asked for
-///   something the disk cannot do; the server is not broken.
-/// - Anything else is a real bug, left alone so it reaches the default handler as a 500.
+/// The app's own refusals carry their status; a path that tries to leave home is a 400; a request
+/// the web server cut off keeps the server's status (413 past its size limit), and a form past the
+/// form reader's limit is a 413; a file the disk will not let us touch (read-only, or open in
+/// another program) is a 403 or a 409 with a reason that names no path. Anything else is a real
+/// bug, left alone so it reaches the default handler as a 500.
 /// </remarks>
 public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IExceptionHandler
 {
@@ -29,12 +27,14 @@ public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IE
     /// </summary>
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        // 1. Pick the status code and title from the kind of exception. A status of 0 means
-        //    this is not a refusal this handler knows.
+        // 1. Pick the status and title by the kind of exception, most specific first: a
+        //    BadHttpRequestException is an IOException. A status of 0 means none of these.
         (int status, string title) = exception switch
         {
             ApiRefusalException problem => (problem.Status, problem.Title),
             PathRefusedException => (StatusCodes.Status400BadRequest, "The path was refused"),
+            BadHttpRequestException bad => (bad.StatusCode, "The request was refused"),
+            InvalidDataException => (StatusCodes.Status413PayloadTooLarge, "The upload is too large"),
             UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "The filesystem refused"),
             IOException => (StatusCodes.Status409Conflict, "The filesystem refused"),
             _ => (0, string.Empty),
@@ -46,10 +46,9 @@ public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IE
             return false;
         }
 
-        // 3. Set the status code on the response.
         httpContext.Response.StatusCode = status;
 
-        // 4. Write the reply: the reason from ReasonFor, and the trace id the logs carry, so a
+        // 3. Write the reply: the reason from ReasonFor, and the trace id the logs carry, so a
         //    failure a user reports can be found there.
         return await problems.TryWriteAsync(new ProblemDetailsContext
         {
@@ -72,6 +71,8 @@ public sealed class ProblemResponseHandler(IProblemDetailsService problems) : IE
     /// <param name="exception">The refusal being answered.</param>
     public static string ReasonFor(Exception exception) => exception switch
     {
+        BadHttpRequestException bad => bad.Message,
+        InvalidDataException => "The upload is larger than the server accepts.",
         UnauthorizedAccessException => "The disk refused: the file or folder is read-only or locked against changes.",
         IOException => "The disk refused: the file is in use by another program, or it changed while this ran.",
         _ => exception.Message,

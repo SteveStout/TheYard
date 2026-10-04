@@ -105,8 +105,9 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     /// <summary>
     /// Writes one uploaded file into a folder. The bytes are copied straight from the
     /// request stream to the file stream, so a large upload is never held in memory.
-    /// The declared size is checked before any byte is read, so an upload over the limit
-    /// is refused without reading its content.
+    /// The declared size is checked before the file is written into home; the form parser
+    /// has read the body by then, and the web server cuts off a request past its own limit
+    /// with a 413.
     /// </summary>
     /// <param name="folder">The folder that receives the file, relative to home.</param>
     /// <param name="name">
@@ -248,6 +249,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     }
     // #endregion transfer-rules
 
+    /// <summary>Resolves a path from home and returns it, or refuses with a 404 when no folder is there.</summary>
     private string Folder(string? path)
     {
         string absolute = home.Resolve(path);
@@ -258,6 +260,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         return absolute;
     }
 
+    /// <summary>Resolves a path from home and returns it, or refuses with a 404 when nothing is there.</summary>
     private string Existing(string? path)
     {
         string absolute = home.Resolve(path);
@@ -268,6 +271,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         return absolute;
     }
 
+    /// <summary>Adds one entry the store handed back to the folder list or the file list, by its kind.</summary>
     private void Sort(StoreEntry entry, List<FolderEntry> folders, List<FileEntry> files)
     {
         if (entry.Kind == EntryKind.Folder)
@@ -280,12 +284,10 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         }
     }
 
-    private FolderEntry Folder(StoreEntry entry)
-    {
-        string relative = home.Relative(entry.Absolute);
-        return new FolderEntry(HomePath.NameOf(relative), relative, entry.ModifiedMs);
-    }
+    /// <summary>A folder's listing entry: its name, its path from home and when it last changed.</summary>
+    private FolderEntry Folder(StoreEntry entry) => new(HomePath.NameOf(home.Relative(entry.Absolute)), home.Relative(entry.Absolute), entry.ModifiedMs);
 
+    /// <summary>A file's listing entry: its name, path from home, size, time and lower-case extension.</summary>
     private FileEntry File(StoreEntry entry)
     {
         string relative = home.Relative(entry.Absolute);

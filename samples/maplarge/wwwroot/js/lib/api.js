@@ -10,7 +10,7 @@
  * Folder listings are cached by path for as long as the page is open. Any write
  * (upload, delete, move, copy, new folder) removes the affected paths from the
  * cache. That makes the Back button instant while still re-fetching a folder
- * after it changes. (More in docs/ADR-004-the-wire.md.)
+ * after it changes. (More in docs/ADR-006-typescript-organised.md.)
  */
 import { ApiError } from './types.js';
 /** Folder listings already asked for, by folder path. Holds the promise, so two callers share one request. */

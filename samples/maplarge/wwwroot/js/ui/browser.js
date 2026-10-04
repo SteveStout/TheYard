@@ -80,6 +80,9 @@ export function createBrowser(root, navigate) {
             reply = state.q ? await api.search(state.path, state.q) : await api.browse(state.path);
         }
         catch (error) {
+            if (next !== state) {
+                return; // A newer render started during this fetch; an old failure must not cover it.
+            }
             reply = null;
             replaceContents(readout);
             replaceContents(grid, buildElement('div', { class: 'empty' }, messageOf(error)));

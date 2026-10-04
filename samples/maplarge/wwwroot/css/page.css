@@ -23,6 +23,13 @@ main {
   padding: var(--space-6);
 }
 
+/* The home card holds a few short paragraphs, so it keeps a reading width and sits centred
+   instead of stretching across the page with its right side empty. */
+main .panel {
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
 /* Corner brackets drawn with the ::before and ::after pseudo-elements: one sits on the thick
    top line at the top left corner, the other on the border at the bottom right corner. */
 .panel::before,

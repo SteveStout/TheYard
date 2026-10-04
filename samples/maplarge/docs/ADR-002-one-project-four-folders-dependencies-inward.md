@@ -1,11 +1,11 @@
-# ADR: One project, four folders, dependencies inward
+# ADR: One project, seven folders, dependencies inward
 
 Status: accepted, 2026-09-29.
 
 ## Context
 
-TheYard is five projects in an onion: Data, Domain, Application, Infrastructure, Api, and the
-compiler stops a reference from pointing the wrong way. Five projects for a file browser would be
+TheYard is six projects in an onion: Data, Domain, Application, two Infrastructure adapters and
+Api, and the compiler stops a reference from pointing the wrong way. Six projects for a file browser would be
 the "framework and template usage" the brief asks not to see. One project with everything in one
 folder would be the other failure: a reviewer could not tell a rule from a wire type from a disk
 call without reading every file.
@@ -49,7 +49,7 @@ and Domain to no `File.`, no `Directory.`, no `DateTime.Now`.
 
 The one port is what makes the use cases testable without a temp folder. `FileBrowserTests` runs
 them over a store that lives in a dictionary and holds the rules: folders first, a move into itself
-refused, an upload past the limit refused before a byte is read. The disk adapter is then tested
+refused, an upload past the limit refused before the file is written into home. The disk adapter is then tested
 through the real host in `FilesApiTests`, where the thing under test is the wiring.
 
 ## What it cost
@@ -116,7 +116,7 @@ part.
 
 ## Addendum, 2026-10-03: the rings, checked in the compiled app
 
-The title says four folders. The code has six rings, plus `Documentation/` beside Controllers, as the decision above says; the title stays as it was written. `LayeringTests` no longer reads `using` lines. `OnionTests` now checks the rings by reading the compiled app, so a fully written name is caught too (ADR-013), and `LayeringTests` keeps the Data and Domain purity check and the `Program.cs` check. One line is tighter than the diagram: Controllers may not use Infrastructure or Composition or touch the disk, so downloads and the health check now go through `FileBrowser`, and Documentation reaches nothing outside itself. `FileBrowser` is 298 lines, not about 260, just under the 300-line cap.
+The title said four folders when it was written; the code has six rings, plus `Documentation/` beside Controllers, as the decision above says. The title changed to seven on 4 October; the file name and the address stay. `LayeringTests` no longer reads `using` lines. `OnionTests` now checks the rings by reading the compiled app, so a fully written name is caught too (ADR-013), and `LayeringTests` keeps the Data and Domain purity check and the `Program.cs` check. One line is tighter than the diagram: Controllers may not use Infrastructure or Composition or touch the disk, so downloads and the health check now go through `FileBrowser`, and Documentation reaches only Data. `FileBrowser` sits at the 300-line cap, not about 260.
 
 ## Where it sits
 

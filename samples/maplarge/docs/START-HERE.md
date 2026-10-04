@@ -47,7 +47,7 @@ method of [TheYard](https://theyard.stevenstout.biz).
 ## The records
 
 1. ADR-001 The starter, kept as given
-2. ADR-002 One project, four folders, dependencies inward
+2. ADR-002 One project, seven folders, dependencies inward
 3. ADR-003 The line a path cannot cross
 4. ADR-004 The wire
 5. ADR-005 State lives in the URL

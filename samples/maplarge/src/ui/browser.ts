@@ -25,6 +25,7 @@ import { createUploader } from './uploads.js';
 
 const SEARCH_DEBOUNCE_MS = 250;
 
+/** What each tab hands back: one render() that draws the tab for the State it is given. */
 export interface View {
   render(state: State): Promise<void>;
 }
@@ -90,6 +91,9 @@ export function createBrowser(root: HTMLElement, navigate: Navigate): View {
     try {
       reply = state.q ? await api.search(state.path, state.q) : await api.browse(state.path);
     } catch (error) {
+      if (next !== state) {
+        return; // A newer render started during this fetch; an old failure must not cover it.
+      }
       reply = null;
       replaceContents(readout);
       replaceContents(grid, buildElement('div', { class: 'empty' }, messageOf(error)));

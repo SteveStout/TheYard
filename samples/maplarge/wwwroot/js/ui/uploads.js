@@ -33,28 +33,37 @@ export function createUploader(parts) {
         if (files.length === 0) {
             return;
         }
-        for (const file of files) {
-            try {
-                await uploadOne(file, false);
-            }
-            catch (error) {
-                if (!(error instanceof ApiError) || error.status !== 409) {
-                    parts.say('error', messageOf(error));
-                    return;
+        const written = [];
+        try {
+            for (const file of files) {
+                try {
+                    await uploadOne(file, false);
+                    written.push(file.name);
                 }
-                if (await askOverwrite(error.message)) {
-                    try {
-                        await uploadOne(file, true);
-                    }
-                    catch (again) {
-                        parts.say('error', messageOf(again));
+                catch (error) {
+                    if (!(error instanceof ApiError) || error.status !== 409) {
+                        parts.say('error', messageOf(error));
                         return;
+                    }
+                    if (await askOverwrite(error.message)) {
+                        try {
+                            await uploadOne(file, true);
+                            written.push(file.name);
+                        }
+                        catch (again) {
+                            parts.say('error', messageOf(again));
+                            return;
+                        }
                     }
                 }
             }
         }
-        parts.fileInput.value = '';
-        parts.say('ok', files.length === 1 ? `Uploaded ${files[0]?.name ?? ''}.` : `Uploaded ${files.length} files.`);
+        finally {
+            // Cleared on every way out, so picking the same file again after a failure still fires a change.
+            parts.fileInput.value = '';
+        }
+        // Only files actually written are counted; a file the person chose to skip is not.
+        parts.say('ok', written.length === 1 ? `Uploaded ${written[0] ?? ''}.` : `Uploaded ${written.length} files.`);
         await parts.refresh();
     };
 }

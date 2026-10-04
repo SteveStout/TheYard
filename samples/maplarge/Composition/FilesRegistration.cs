@@ -25,19 +25,18 @@ public static class FilesRegistration
         // named FILES__ plus the setting (FILES__HOME, for example) replaces the value from the
         // file, which is how a server chooses its folder without editing the code. The options and
         // the HomePath built from them are registered once, so every class sees the same folder.
-        builder.Services.Configure<FilesOptions>(builder.Configuration.GetSection(FilesOptions.Section));
+        // The limits are checked once as the app starts (IsUsable), so a setting that cannot work
+        // stops the app with one message instead of turning a later search or upload into a 500.
+        builder.Services.AddOptions<FilesOptions>()
+            .Bind(builder.Configuration.GetSection(FilesOptions.Section))
+            .Validate(IsUsable, SettingsProblem)
+            .ValidateOnStart();
         builder.Services.AddSingleton(provider => provider.GetRequiredService<IOptions<FilesOptions>>().Value);
         builder.Services.AddSingleton(provider => HomeFor(provider.GetRequiredService<FilesOptions>(), builder.Environment.ContentRootPath));
 
         // IFileStore is the interface the rules use to touch the disk, and PhysicalFileStore is
         // the class that reads and writes real files. FileBrowser holds the rules and depends only
         // on the interface, so tests can swap in a different store.
-        //
-        // This sample keeps files on the server's own disk to stay simple. For production, store
-        // them in Azure Blob Storage or another cloud file storage service, the way TheYard keeps
-        // its data in managed Azure services rather than on a server. A container's disk is wiped
-        // when the app restarts or redeploys and is not shared between instances, so uploads here
-        // do not last. The move is one new class that implements IFileStore and this one line.
         builder.Services.AddSingleton<IFileStore, PhysicalFileStore>();
         builder.Services.AddSingleton<FileBrowser>();
 
@@ -45,7 +44,7 @@ public static class FilesRegistration
         // The web server and the form parser get that limit plus one megabyte, to allow for the
         // multipart form's own headers and boundaries. A slightly large request therefore still
         // reaches the per-file check and gets a clear message, while a far too large request is
-        // cut off by the server before it is read.
+        // cut off by the web server with a 413 once it passes that limit.
         long maxUpload = builder.Configuration.GetSection(FilesOptions.Section).GetValue("MaxUploadBytes", new FilesOptions().MaxUploadBytes);
         long slack = 1024 * 1024;
         builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = maxUpload + slack);
@@ -80,4 +79,16 @@ public static class FilesRegistration
         // and it refuses any path that would leave this folder.
         return new HomePath(folder);
     }
+
+    /// <summary>The message an unusable Files section stops the app with, naming each setting it checks.</summary>
+    public const string SettingsProblem =
+        "The Files settings cannot work together: SearchLimit must be at least 1, SearchCeiling at least SearchLimit, and MaxUploadBytes above 0.";
+
+    /// <summary>
+    /// True when the search and upload limits can work together: a search returns at least one
+    /// match, the ceiling is not below the default, and an upload may have at least one byte.
+    /// </summary>
+    /// <param name="options">The Files section of configuration.</param>
+    public static bool IsUsable(FilesOptions options) =>
+        options.SearchLimit >= 1 && options.SearchCeiling >= options.SearchLimit && options.MaxUploadBytes > 0;
 }

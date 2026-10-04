@@ -7,8 +7,7 @@ namespace TestProject.Documentation;
 /// Lists and finds the markdown documents the app serves about itself. They are read from the
 /// <c>docs</c> folder beside the project on every request, not copied or cached, so the served
 /// text always matches the files in this build. This class also fixes the sidebar order: the
-/// start page and the README first, then the decision records by number, then the guides. The
-/// author's page lives on TheYard, and the header links there.
+/// start page and the README first, then the decision records by number, then the guides.
 /// </summary>
 public sealed partial class DocumentationCatalog(string contentRoot)
 {

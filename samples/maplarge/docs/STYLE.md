@@ -34,13 +34,13 @@ a tool cannot check.
 
 ## Comments
 
-The rule is **why and how, never what**. The code already says what it does; a comment earns its
-line by saying why this way, what breaks otherwise, or what a reader could not know from the syntax.
+The rule is **what, how and why**: a comment says what the code does where the name cannot, how
+where the way is not obvious, and why this way, including what breaks otherwise.
 
 ```csharp
-// EnumerateFileSystemInfos hands back each entry with its attributes and
-// size already read from the directory listing, so a folder of ten
-// thousand files costs one enumeration, not ten thousand stat calls.
+// EnumerateFileSystemInfos walks the folder in one pass, handing entries
+// back one at a time, so a search that fills its cap early never reads
+// the rest of the tree.
 ```
 
 Four habits:

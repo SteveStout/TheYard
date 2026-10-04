@@ -26,8 +26,8 @@ seconds.
 
 **Streams for bytes.** An upload is copied from the request to a `FileStream` opened asynchronous;
 a download is `PhysicalFile` with range processing, so a paused download resumes and a large one
-never sits in memory. The size limit is checked against the declared length before a byte is read,
-so a refused upload costs nothing.
+never sits in memory. The declared size is checked before the file is written into home; the form
+parser has read the body by then, and the web server cuts off a request past its own limit with a 413.
 
 **Every browse and search reports `took_ms`**, measured around the store call, and the page shows
 it in the corner. The number is the server's own, not the round trip.

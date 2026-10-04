@@ -35,8 +35,8 @@ point it at a folder of your own:
 FILES__HOME=C:\some\folder dotnet run
 ```
 
-or set `Files:Home` in `appsettings.json`. Visual Studio 2022, Rider and VS Code open
-`TestProject.sln`.
+or set `Files:Home` in `appsettings.json`. Visual Studio 2026 or newer (the first with the .NET 10
+SDK), Rider and VS Code open `TestProject.sln`.
 
 ## Tests
 
@@ -127,8 +127,10 @@ The Shed is a sample, and the parts worth keeping go back to the project it sits
   [sealed-by-default page](https://theyard.stevenstout.biz/?doc=sealed) is.
 - TheYard's sidebar gets a Code Samples section that links this one, so the two read as one way of
   working on two problems.
-- A committed browser test for this page (the eight steps the build's headless pass runs) is the
-  first thing to add here. TheYard's gate already runs 143 Playwright specs, with axe holding eleven
+- Folder sizes and a browse cap: a folder's row has no size yet, because totals count file bytes
+  only, and Browse lists every entry while Search is capped. Those are the two next in the code.
+- A committed browser test for this page (the eight steps the headless pass runs before each ship)
+  is the first thing to add here. TheYard's gate already runs 143 Playwright specs, with axe holding eleven
   views to WCAG 2.1 AA: [The accessibility check](https://theyard.stevenstout.biz/?doc=adr-a11y-check).
 
 Each step is something TheYard already does at full size (.NET 10 and React, Azure SQL and Cosmos

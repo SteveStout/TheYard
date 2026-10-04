@@ -29,11 +29,17 @@ export type View = (typeof VIEWS)[number];
 export interface State {
   /** True when the address carries any known key, which means the dialog is open. */
   open: boolean;
+  /** The tab on show: the file browser or the documents. */
   view: View;
+  /** The folder on show, relative to home; '' is home itself. */
   path: string;
+  /** The search text; '' means the folder is listed instead of searched. */
   q: string;
+  /** The column the table is sorted by. */
   sort: Sort;
+  /** The sort direction. */
   dir: Dir;
+  /** The slug of the document open on the Docs tab; '' opens the first one. */
   doc: string;
 }
 

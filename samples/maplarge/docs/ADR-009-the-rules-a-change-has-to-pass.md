@@ -20,9 +20,10 @@ table is a rule the next change will break.
 | --- | --- | --- |
 | A path is refused before any filesystem touch if it is rooted, carries `.` or `..`, or a forbidden character, and the resolved path must stay inside the home | ADR-003 | HomePathTests |
 | A search is a substring or a glob, never case-sensitive, and an empty query matches nothing | ADR-004 | NamePatternTests |
-| Folders first, each sorted by name ignoring case; a search stops at its limit and says so; a folder is never moved or copied into itself; home is never deleted or moved; an upload past the limit is refused before a byte is read | ADR-002 | FileBrowserTests, FileTransferTests, FileUploadTests |
-| Every route answers snake_case JSON, every failure is a problem document with a detail and a trace id, and an upload round-trips its bytes | ADR-004 | FilesApiTests |
+| Folders first, each sorted by name ignoring case; a search stops at its limit and says so; a folder is never moved or copied into itself; home is never deleted or moved; an upload past the limit is refused before the file is written into home | ADR-002 | FileBrowserTests, FileTransferTests, FileUploadTests |
+| Every route answers snake_case JSON, every failure is a problem document with a detail and a trace id, and an upload round-trips its bytes; a request the web server cut off keeps the server's status, and a form past the form reader's limit is a 413 | ADR-004 | FilesApiTests, ProblemResponseHandlerTests |
 | The home the app runs with is the configured one, and empty configuration means the sample home | ADR-003 | HomeForTests, FilesApiTests |
+| Search and upload limits that cannot work together stop the app as it starts, with one message naming the settings | ADR-003 | FilesSettingsTests |
 | Record numbers run from one with no gap; every record opens with its title, carries a status line, says where it sits just above its Files section and ends with that section; the catalogue serves every record and every guide; every live fence resolves; every repository link lands on a file; the version is the changelog's top line | ADR-012 | DocumentationTests |
 | A publish carries every document the catalogue lists and every file a live code block quotes, so every record shows its code on the live site | ADR-012 | PublishListTests |
 | A live block may read only a plain path under an allowed root, and a region is cut between its markers | ADR-012 | LiveSamplesTests |

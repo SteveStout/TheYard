@@ -56,9 +56,7 @@ public sealed class HomePath
     /// a character the operating system does not allow in a name. It then joins the
     /// segments onto the root, lets the operating system work out the final full path,
     /// and checks that path still lies inside the root. That final check is the safety
-    /// net for any trick the first three checks do not anticipate. It is business logic in
-    /// the innermost layer of the onion architecture, so it depends on nothing and its tests
-    /// run with no disk.
+    /// net for any trick the first three checks do not anticipate.
     /// </summary>
     /// <param name="relative">The path the request sent; null or "" means home itself.</param>
     public string Resolve(string? relative)

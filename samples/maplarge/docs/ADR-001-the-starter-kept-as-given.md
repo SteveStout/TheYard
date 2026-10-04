@@ -26,9 +26,10 @@ brief lists Visual Studio 2022 or newer, Rider, VS Code and the command line SDK
 SDK covers the last three and Visual Studio 2026 outright. The package versions the test project
 references are the ones TheYard pins.
 
-Three lines are added to the project file: warnings are errors, the code-style analyzers run in the
-build, and the documents and the sample home travel with a publish so a container can serve them.
-No package is referenced by the app. The starter's `UseHttpsRedirection` runs in Development only:
+Five settings are added to the project file: warnings are errors, the code checkers run in the
+build (the sealed rule sits in `.editorconfig`), doc comments are generated, culture is invariant,
+and the documents, the sample home and the sources travel with a publish so a container can serve
+them. No package is referenced by the app. The starter's `UseHttpsRedirection` runs in Development only:
 behind the edge that terminates TLS the app sees HTTP, and the redirect would have nothing to
 redirect to. The test project references xunit and the in-memory test host,
 which is the least a test project can reference.
@@ -63,7 +64,7 @@ This record touches no ring: it sets the project file and the starter's shape, w
 
 ## Files
 
-- [`TestProject.csproj`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/TestProject.csproj): the starter's project file plus three lines.
+- [`TestProject.csproj`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/TestProject.csproj): the starter's project file plus five settings.
 - [`Program.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Program.cs): the host, still one class and one `Main`.
 - [`wwwroot/index.html`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/index.html): the one page.
 

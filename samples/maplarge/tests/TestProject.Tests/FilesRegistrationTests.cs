@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using TestProject.Application;
 using TestProject.Composition;
 using TestProject.Domain;
@@ -28,5 +30,43 @@ public sealed class HomeForTests
         using var root = new TempHome();
         Assert.Equal(root.Root, FilesRegistration.HomeFor(new FilesOptions { Home = root.Root }, "/elsewhere").Root);
         Assert.Equal(Path.Combine(root.Root, "data"), FilesRegistration.HomeFor(new FilesOptions { Home = "data" }, root.Root).Root);
+    }
+}
+
+/// <summary>
+/// Checks that the Files limits are checked once, as the app starts. A search limit below one, a
+/// ceiling below the default limit, or an upload limit of zero would otherwise surface later as a
+/// 500 from the first search or upload; here the app refuses to start and says which settings.
+/// (more in docs/ADR-003-the-line-a-path-cannot-cross.md)
+/// </summary>
+public sealed class FilesSettingsTests
+{
+    [Theory]
+    [InlineData(200, 1000, 1, true)]
+    [InlineData(1, 1, 1, true)]
+    [InlineData(0, 1000, 1, false)]
+    [InlineData(200, 100, 1, false)]
+    [InlineData(200, 1000, 0, false)]
+    public void Limits_are_usable_only_when_they_can_work_together(int limit, int ceiling, long maxUpload, bool usable)
+    {
+        var options = new FilesOptions { SearchLimit = limit, SearchCeiling = ceiling, MaxUploadBytes = maxUpload };
+        Assert.Equal(usable, FilesRegistration.IsUsable(options));
+    }
+
+    [Fact]
+    public void A_ceiling_below_one_stops_the_app_as_it_starts_and_names_the_settings()
+    {
+        using var home = new TempHome();
+        using WebApplicationFactory<Program> factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Production");
+            builder.UseSetting("Files:Home", home.Root);
+            builder.UseSetting("Files:SearchCeiling", "0");
+        });
+        Exception refused = Assert.ThrowsAny<Exception>(() =>
+        {
+            using HttpClient client = factory.CreateClient();
+        });
+        Assert.Contains("SearchCeiling", refused.ToString(), StringComparison.Ordinal);
     }
 }

@@ -11,9 +11,8 @@ namespace TestProject.Infrastructure;
 /// folder tree is walked: entries are returned one at a time as they are found, and
 /// anything that cannot be read is skipped. That lets a search stop as soon as it has
 /// enough matches, and lets a folder with one locked subfolder still be listed.
-/// Keeping files on the server's disk keeps the sample simple. In production this class
-/// would be replaced by one that stores files in Azure Blob Storage or another cloud file
-/// storage service, because a container's disk does not survive a restart or a redeploy.
+/// A container's disk is wiped on a restart or a redeploy, so uploads here do not last; a
+/// cloud store is one more IFileStore and one line in Composition.
 /// </summary>
 public sealed class PhysicalFileStore : IFileStore
 {
@@ -49,10 +48,9 @@ public sealed class PhysicalFileStore : IFileStore
 
     private static IEnumerable<StoreEntry> Walk(string absoluteFolder, EnumerationOptions options)
     {
-        // EnumerateFileSystemInfos returns each entry with its attributes, size and
-        // times already filled in from the directory listing itself. A folder of ten
-        // thousand files therefore costs one pass over the listing instead of ten
-        // thousand separate calls to look up each file. The yield return hands entries
+        // EnumerateFileSystemInfos walks the folder in one pass. On Windows the listing
+        // already carries each entry's size and time; on Linux each entry costs one
+        // lookup, still taken inside this single pass. The yield return hands entries
         // back one at a time, so a caller that stops early stops the walk too.
         foreach (FileSystemInfo info in new DirectoryInfo(absoluteFolder).EnumerateFileSystemInfos("*", options))
         {

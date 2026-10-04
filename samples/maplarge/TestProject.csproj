@@ -1,8 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <!-- The starter's project file, kept as MapLarge sent it (nullable, implicit usings) on net10.0, the
-       same framework as TheYard (ADR-001), with three additions: warnings are errors, the sealed-by-default analyzer is on, and the
-       documents plus the sample home travel with a publish so the container serves them (ADR-001). -->
+       same framework as TheYard (ADR-001), with five settings: warnings are errors, the code checkers
+       run in the build (the sealed rule sits in .editorconfig), doc comments are generated, culture is
+       invariant, and the documents, the sample home and the sources travel with a publish so the
+       container serves them (ADR-001). -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

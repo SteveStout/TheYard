@@ -15,10 +15,7 @@ import type { DocumentEntry } from '../lib/types.js';
 import type { Navigate, State } from '../lib/urlState.js';
 import type { View } from './browser.js';
 import { buildElement, buildFromMarkdown, replaceContents } from './elements.js';
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
+import { messageOf } from './notices.js';
 
 /**
  * Builds the Docs tab inside a container element and returns an object whose
@@ -33,6 +30,7 @@ export function createDocumentation(root: HTMLElement, navigate: Navigate): View
   const article = buildElement('article', { 'aria-live': 'polite' });
   replaceContents(root, nav, article);
 
+  /** Fetches the list of documents once, then draws the list and the document the State names. */
   async function render(state: State): Promise<void> {
     if (!catalogue) {
       try {
@@ -48,6 +46,7 @@ export function createDocumentation(root: HTMLElement, navigate: Navigate): View
     await renderDocument(slug);
   }
 
+  /** Draws the list of documents under their group headings, marking the open one. */
   function renderNav(entries: DocumentEntry[], slug: string): void {
     const groups = new Map<string, DocumentEntry[]>();
     for (const entry of entries) {
@@ -72,6 +71,7 @@ export function createDocumentation(root: HTMLElement, navigate: Navigate): View
     replaceContents(nav, ...nodes);
   }
 
+  /** Fetches one document's markdown and draws it, unless another document was chosen meanwhile. */
   async function renderDocument(slug: string): Promise<void> {
     replaceContents(article, buildElement('p', {}, 'Loading'));
     try {
