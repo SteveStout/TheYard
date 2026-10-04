@@ -63,7 +63,7 @@ levels; all three now give the resume's title line, Lead / Staff .NET engineer. 
 each suite once, so it says so ("test runs in the gate, each suite once"), and the gate tile names
 its target beside the time ("one gate, target 300 s"), in the label, so the detail under the number
 keeps to two lines on a phone and every number in the row stays on one baseline. The Author badge is the vineyard photograph
-cropped to Steve alone, so a reader knows which person is the author.
+cropped to Steve alone, so a reader knows which person is the author. The cropped badge is served under a new name (`steve-176`, `steve-264`), because the edge and the browser keep an image for a day by its address and the old name went on showing the couple.
 
 ## Where it sits
 

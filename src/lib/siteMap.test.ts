@@ -109,7 +109,7 @@ describe('the site map', () => {
       )
     ).toEqual([
       '/api/images/badges/inventory-176.jpg',
-      '/api/images/badges/author-176.jpg',
+      '/api/images/badges/steve-176.jpg',
       undefined,
     ]);
   });

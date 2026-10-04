@@ -117,8 +117,8 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       featuredRank: 2,
       // The vineyard photograph cropped to Steve alone, so a reader knows which one is the author.
       badgePhoto: {
-        src: '/api/images/badges/author-176.jpg',
-        srcSet: '/api/images/badges/author-176.webp 176w, /api/images/badges/author-264.webp 264w',
+        src: '/api/images/badges/steve-176.jpg',
+        srcSet: '/api/images/badges/steve-176.webp 176w, /api/images/badges/steve-264.webp 264w',
       },
     },
   ],
