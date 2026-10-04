@@ -16,22 +16,24 @@ const MARKET_TICK_MS = 8_000;
 
 /**
  * A vehicle with the buyer's own bid layered over the server's figures, and
- * the room's over that when the room is ahead (ADR-027). The order is the same
- * one the API composes its overlays in, for the same reason: showing the
- * buyer's figure over a higher competing bid would be showing them winning an
- * auction they are losing.
+ * the highest bid from anyone over that when the buyer is outbid, whether by
+ * the room or by another account (ADR-027). Showing the buyer's figure over a
+ * higher competing bid would be showing them winning an auction they are
+ * losing, so the server's highest_amount wins; the buyer's own figure never
+ * lowers a price the server already reports.
  */
 export function applyBidRecord(vehicle: Vehicle, record: BidRecord | undefined): Vehicle {
   if (!record) {
     return vehicle;
   }
-  // != null, not !== null: an API mid-roll can answer outbid without the
-  // amount, and undefined slipping through here becomes current_bid:
+  // ?? 0 on both, not a null check: an API mid-roll can answer outbid without
+  // an amount, and undefined slipping through here becomes current_bid:
   // undefined, which the price reads as no bid (currentPrice falls back to the
   // starting bid) while the panel's label reads it as a bid (undefined is not
   // null), so the page would call the opening ask the current bid.
-  const winning =
-    record.outbid && record.market_amount != null ? record.market_amount : record.amount;
+  const winning = record.outbid
+    ? Math.max(record.amount, record.market_amount ?? 0, record.highest_amount ?? 0)
+    : record.amount;
   return { ...vehicle, current_bid: winning, bid_count: record.bid_count };
 }
 

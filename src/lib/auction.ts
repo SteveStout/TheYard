@@ -6,8 +6,10 @@ export type { ReserveState };
  * Client-side auction presentation logic. The API owns all auction math:
  * windows, status, minimum bids, reserve state and bid validation arrive on
  * the wire (auction_starts_at / auction_ends_at / auction_status /
- * min_next_bid / reserve_state). The browser's only jobs are recomputing
- * status from the window as the clock ticks, and showing reserve state.
+ * min_next_bid / reserve_state). The browser's jobs are recomputing status
+ * from the window as the clock ticks, re-ranking the page it holds when that
+ * status moves (ADR: The listing that went stale), laying the buyer's own bid
+ * over the figures (useBids.ts), and showing reserve state.
  */
 
 export type AuctionStatus = 'upcoming' | 'live' | 'ended';

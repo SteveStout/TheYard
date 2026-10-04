@@ -95,8 +95,8 @@ public static class AuthRegistration
         // #region user-store-per-request
         // The store behind UserManager, chosen by the request: Identity's own tables
         // on the relational backend, one document per account on the document one
-        // (ADR: Accounts on a document store). The second of the two scoped
-        // registrations in the application, and the reason the first one exists.
+        // (ADR: Accounts on a document store). One of the four scoped registrations
+        // in the application, and the reason the per-request context exists.
         builder.Services.AddScoped<IUserStore<YardUser>>(services =>
             services.GetRequiredService<CurrentBackend>().Backend.UserStore(services)
                 ?? throw new InvalidOperationException("this request's store keeps no accounts; RequestAccounts answers null before this is reached"));

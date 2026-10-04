@@ -105,6 +105,18 @@
   font-size: var(--text-sm);
 }
 
+/* On a phone the name column leaves the description a sliver, so it wrapped four lines deep; there
+   the description takes the whole second line and the pill, the name and the time share the first. */
+@media (max-width: 639.98px) {
+  .healthRow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .healthRow > span:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
 .errorRow {
   display: flex;
   align-items: baseline;

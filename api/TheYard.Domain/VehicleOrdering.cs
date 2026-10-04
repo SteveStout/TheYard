@@ -14,7 +14,9 @@ public enum VehicleSort
 /// <summary>
 /// Result ordering. EndingSoonest is the order a buyer reads a sale in: live
 /// auctions first (closest to ending), then upcoming (starting soonest), then
-/// ended (most recently ended). The server sorts, so the browser never ranks.
+/// ended (most recently ended). The server sorts the page it sends; the browser
+/// re-ranks only the page it holds, by the same bands, as the clock moves a
+/// vehicle from upcoming to live (src/lib/auction.ts; ADR: The listing that went stale).
 /// </summary>
 public static class VehicleOrdering
 {

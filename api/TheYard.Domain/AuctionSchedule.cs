@@ -19,8 +19,8 @@ public readonly record struct AuctionWindow(long StartsAtMs, long EndsAtMs);
 /// midnight (AuctionClock.Utc), one for every visitor. This is the only place
 /// the window is computed; the browser receives the instants on the wire and
 /// formats them (src/lib/auction.ts recomputes the status from those instants
-/// and the clock, never the window), which is the rule that ended the
-/// daylight-saving drift.
+/// and the clock, never the window), so a daylight-saving change cannot move
+/// the two sides' windows apart.
 /// </summary>
 public static class AuctionSchedule
 {

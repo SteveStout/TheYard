@@ -6,10 +6,9 @@ namespace TheYard.Api;
 // #region keep-warm
 /// <summary>
 /// Keeps every read a visitor can open warm, on both stores, for as long as the
-/// container runs (ADR: Kept awake). Measured before this ran, the first read
-/// after a quiet spell was the slow one: 2.0 to 2.2 s for the activity report
-/// against about 260 ms warm, 736 ms for the health report against about 190.
-/// Every four minutes this sends each public read through the app's own HTTP
+/// container runs (ADR: Kept awake). Without it the first read after a quiet
+/// spell is the slow one, seconds against a few hundred milliseconds warm; the
+/// record carries the numbers. Every four minutes this sends each public read through the app's own HTTP
 /// pipeline, once per store, so the stores' connections, the caches in front of
 /// them and the report cache never go cold between visitors.
 ///

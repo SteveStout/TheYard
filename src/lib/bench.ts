@@ -27,7 +27,7 @@ export const BENCH_QUESTIONS: { key: BenchQuestion; title: string }[] = [
   { key: 'fast', title: 'Is it fast?' },
   { key: 'cost', title: 'Is it costing anything?' },
   { key: 'broke', title: 'What broke?' },
-  { key: 'desk', title: 'Who came, and the desk' },
+  { key: 'desk', title: 'Who came, and the operator' },
 ];
 
 const card = (

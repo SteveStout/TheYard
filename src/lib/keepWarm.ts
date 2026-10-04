@@ -19,12 +19,15 @@ const clock = new Intl.DateTimeFormat(LOCALE, {
   hourCycle: 'h23',
 });
 
-/** "Kept warm: last pass 12:04, 50 reads, slowest 312 ms", or what stands in for it. */
+/** "Kept warm by the site's own reads: last pass 12:04, 50 reads, slowest 312 ms on /api/... (cosmos)", or what stands in for it. */
 export function keptWarmLine(kept: KeptWarm | undefined): string {
-  if (kept === null || kept === undefined) return 'Kept warm: off on this container';
-  if (kept.last_pass === null) return 'Kept warm: the first pass is on its way';
+  if (kept === null || kept === undefined)
+    return "Kept warm by the site's own reads: off on this container";
+  if (kept.last_pass === null)
+    return "Kept warm by the site's own reads: the first pass is on its way";
   const when = new Date(kept.last_pass);
   const at = Number.isNaN(when.getTime()) ? '' : clock.format(when);
   const failed = kept.failed > 0 ? `, ${formatNumber(kept.failed)} did not answer` : '';
-  return `Kept warm: last pass ${at}, ${formatNumber(kept.reads)} reads, slowest ${formatNumber(kept.slowest_ms)} ms${failed}`;
+  const slowest = kept.slowest ? ` on ${kept.slowest}` : '';
+  return `Kept warm by the site's own reads every four minutes: last pass ${at}, ${formatNumber(kept.reads)} reads, slowest ${formatNumber(kept.slowest_ms)} ms${slowest}${failed}`;
 }

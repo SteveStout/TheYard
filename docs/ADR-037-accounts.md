@@ -163,9 +163,10 @@ else on it; the fix is the same one that record already names.
   file readers (ADR: The relational store) is browse-only. The health check says
   which mode it is in, and the account endpoints answer 503 rather than 500,
   because nothing is broken and a dependency is missing.
-- The demo's reset button clears everybody's bids, not just the caller's, since
-  the simulated room's are shared and a reset that left half an auction standing
-  reads as a bug however carefully it is explained.
+- The demo's reset button cleared everybody's bids at the time, not just the
+  caller's, since the simulated room's are shared and a reset that left half an
+  auction standing read as a bug however carefully it was explained (superseded:
+  ADR: Reset is one person's start-over).
 - `BidServiceTests` changed in one mechanical way, an account argument, and in
   no other: what those tests assert about the bidding rules did not move, which
   is the evidence that the rules and the ownership are separate things.

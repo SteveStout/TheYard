@@ -25,9 +25,10 @@ The business rules, as pure functions over Data: `AuctionSchedule` derives each
 vehicle's auction window from its id, `BidRules` owns increments, validation, and the
 buy-now override, `VehicleFilter` is the search predicate, `VehicleOrdering` ranks
 results, `StandingRules` holds the one rule for raising a vehicle's shown price over a bid
-(`RaisedTo`) and whether its reserve is met (`Reserve`), and `PhotoGallery` picks
-deterministic galleries. Everything takes its clock as
-an argument (`AuctionClock`), so every rule is testable with a fixed timestamp and no
+(`RaisedTo`) and whether its reserve is met (`Reserve`), `VehicleSearchIndex` holds the
+lowercase text a search matches against, `Fnv1a` is the hash the schedule derives from, and
+`PhotoGallery` picks deterministic galleries. Every rule that needs the time takes its clock as
+an argument (`AuctionClock`), so it is testable with a fixed timestamp and no
 mocking.
 
 ## TheYard.Application
@@ -103,7 +104,7 @@ React + TypeScript, deliberately thin. No business math runs in the browser:
   `DocKey` worked out from them), `sections.ts` (what each sidebar section holds),
   `addresses.ts` (`?doc=` both ways) and `DocDialog.tsx` (this dialog). Named `library`
   because the repository root already has `docs/` for the markdown.
-- `components/`: presentation only, one `.module.css` per component. `FilterBar`,
+- `components/`: presentation only, a folder per component with its `.module.css` when it has one. `FilterBar`,
   `InventoryGrid`, `VehicleCard`, `VehicleDetail`, `BidPanel`, the badge trio
   (`ConditionBadge`, `TitleStatusBadge`, `ReserveBadge`), `AuctionCountdown`,
   `VehicleImage` (graceful fallback).

@@ -126,13 +126,13 @@ public static class Startup
         // so no visitor's request is the one that waits for the store. This is the
         // warm-up the ports record leans on: after these two lines every synchronous
         // read in the application is reading a task that has already finished
-        // (ADR: The ports learn to wait).
-        // The default store first, before anything is served, which is the warm-up
-        // the ports record leans on. The other store is warmed after the container
-        // is ready, in the background, one after the other rather than both at once:
-        // the container has one vCPU, and two expansions of a hundred thousand
-        // records racing each other would both take longer and neither number would
-        // be that store's own. Off by default and on in the deploy, because a test
+        // (ADR: The ports learn to wait). The default store first, before anything
+        // is served. The other store can be warmed after the container is ready, in
+        // the background, one after the other rather than both at once: the
+        // container has one vCPU, and two expansions of a hundred thousand records
+        // racing each other would both take longer and neither number would be that
+        // store's own. Off by default and off on the plan too, where the keep-warm
+        // loop loads the other store within four minutes (ADR: Kept awake); a test
         // run boots ten applications at once and ten second expansions nobody asks
         // for is memory the machine running the suite does not have to give; a store
         // nobody warmed warms itself on its first request (the warm region of

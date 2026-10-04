@@ -144,12 +144,6 @@ public sealed class TokenIssuer
         });
     }
 
-    /// <summary>
-    /// Secure when the browser reached us over TLS. Behind the edge this
-    /// process is spoken to over plain HTTP, so `IsHttps` is false on a request
-    /// that was HTTPS the whole way to the visitor; the forwarded header is
-    /// what carries that fact across the hop (ADR: Edge deploy economics).
-    /// </summary>
     // #region reset-tokens
     /// <summary>
     /// A password reset link's token: the same signature as a session, a
@@ -211,6 +205,15 @@ public sealed class TokenIssuer
         Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(passwordHash ?? "")).AsSpan(0, 8));
     // #endregion reset-tokens
 
+    /// <summary>
+    /// The session cookie's options: HttpOnly, and Secure when the browser reached
+    /// us over TLS. Behind the edge this process is spoken to over plain HTTP, so
+    /// `IsHttps` is false on a request that was HTTPS the whole way to the visitor;
+    /// the forwarded header is what carries that fact across the hop (ADR: Edge
+    /// deploy economics).
+    /// </summary>
+    /// <param name="context">The request the cookie answers.</param>
+    /// <param name="lifetime">How long the cookie lives.</param>
     public static CookieOptions CookieFor(HttpContext context, TimeSpan lifetime) => new()
     {
         HttpOnly = true,

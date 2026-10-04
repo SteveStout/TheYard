@@ -67,9 +67,9 @@ public sealed class CosmosBidStore(CosmosStore store) : IBidStore
     /// again and writes this bid over what it finds, the same as the relational
     /// store (ADR: The SQL Server backend): the rules ran on this side already,
     /// and what the document held in between is not re-examined. Two buyers
-    /// racing each other are two documents and never meet here; that race is
-    /// the gap the review record names (ADR: Three readers with no memory of
-    /// the project).
+    /// racing each other are two documents and never meet here: the store keeps
+    /// no per-vehicle standing, so the join that would catch them is a decision
+    /// still open (ADR: Three readers with no memory of the project).
     /// </summary>
     public async Task SaveAsync(string userId, string vehicleId, BidState state)
     {

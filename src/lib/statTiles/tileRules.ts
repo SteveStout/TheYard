@@ -206,11 +206,11 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
             // A total says the stretch it covers, which the server measures.
             ...(charged.span_minutes === null || charged.span_minutes === undefined
               ? {
-                  detail: `none held yet; ${formatNumber(charged.free_per_second)} a second is free`,
+                  detail: `RU in memory; ${formatNumber(charged.free_per_second)} a second is free`,
                 }
               : {
                   detail: `RU over the last ${formatNumber(charged.span_minutes)} min`,
-                  more: `; ${formatNumber(charged.free_per_second)} a second is free`,
+                  more: `; the free tier includes ${formatNumber(charged.free_per_second)} a second`,
                 }),
             tone: 'plain',
             spark: sparks?.charged,

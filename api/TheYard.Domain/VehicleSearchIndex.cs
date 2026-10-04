@@ -6,9 +6,9 @@ namespace TheYard.Domain;
 /// The lowercase text a free-text query is matched against, computed once per
 /// vehicle instead of once per vehicle per request.
 ///
-/// The old path built this string inside the filter loop, so a search across
-/// the synthetic 100,000-row dataset interpolated nine fields and allocated a
-/// lowercase copy a hundred thousand times for a query the user typed once.
+/// Building this string inside the filter loop would interpolate nine fields
+/// and allocate a lowercase copy a hundred thousand times per search of the
+/// synthetic dataset, for a query the user typed once.
 /// Nothing in the text changes after startup, which makes it exactly the kind
 /// of work that belongs in a table built once (ADR: The search index).
 ///

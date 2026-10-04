@@ -21,10 +21,10 @@ CREATE TABLE [dbo].[Bids] (
     -- money.
     [RowVersion] rowversion     NULL,
     CONSTRAINT [PK_Bids] PRIMARY KEY ([UserId], [VehicleId]),
-    -- Deleting an account takes its bids with it. Before this constraint existed
-    -- a bid whose account had been deleted stayed here forever, was loaded into
-    -- BidService at every startup, and counted toward a vehicle's standing price
-    -- on behalf of nobody.
+    -- Deleting an account takes its bids with it. Without the cascade a bid whose
+    -- account was deleted would stay here forever, be loaded into BidService at
+    -- every startup, and count toward a vehicle's standing price on behalf of
+    -- nobody.
     CONSTRAINT [FK_Bids_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers] ([Id]) ON DELETE CASCADE
 );
 GO

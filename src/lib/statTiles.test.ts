@@ -245,7 +245,7 @@ describe('the stat tiles', () => {
     ).toMatchObject({
       value: '22.2',
       detail: 'RU over the last 4 min',
-      more: '; 1,000 a second is free',
+      more: '; the free tier includes 1,000 a second',
     });
   });
 

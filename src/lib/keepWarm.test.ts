@@ -10,7 +10,9 @@ describe('the kept-warm line', () => {
       slowest_ms: 1312,
       slowest: '/api/admin/activity?window=30d (cosmos)',
     });
-    expect(line).toMatch(/^Kept warm: last pass \d\d:\d\d, 48 reads, slowest 1,312 ms$/);
+    expect(line).toMatch(
+      /^Kept warm by the site's own reads every four minutes: last pass \d\d:\d\d, 48 reads, slowest 1,312 ms on \/api\/admin\/activity\?window=30d \(cosmos\)$/
+    );
   });
 
   it('names the reads that did not answer', () => {
@@ -25,10 +27,12 @@ describe('the kept-warm line', () => {
   });
 
   it('says so when the loop is off, or has not run yet', () => {
-    expect(keptWarmLine(null)).toBe('Kept warm: off on this container');
-    expect(keptWarmLine(undefined)).toBe('Kept warm: off on this container');
+    expect(keptWarmLine(null)).toBe("Kept warm by the site's own reads: off on this container");
+    expect(keptWarmLine(undefined)).toBe(
+      "Kept warm by the site's own reads: off on this container"
+    );
     expect(
       keptWarmLine({ last_pass: null, reads: 0, failed: 0, slowest_ms: 0, slowest: null })
-    ).toBe('Kept warm: the first pass is on its way');
+    ).toBe("Kept warm by the site's own reads: the first pass is on its way");
   });
 });

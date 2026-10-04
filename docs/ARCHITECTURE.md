@@ -325,7 +325,7 @@ and the rings are drawn on [their own page](https://theyard.stevenstout.biz/api/
 | Project | Owns | Depends on |
 | --- | --- | --- |
 | `api/TheYard.Data` | The plain records: `Vehicle`, `PhotoEntry`. No logic. | nothing |
-| `api/TheYard.Domain` | The rules: auction schedule and clock, filter, ordering, bid rules, standing rules (the one rule for raising a price, and reserve met or not), photo gallery, FNV-1a. Pure functions and records. | Data |
+| `api/TheYard.Domain` | The rules: auction schedule and clock, filter, ordering, the search index, bid rules, standing rules (the one rule for raising a price, and reserve met or not), photo gallery, FNV-1a. Pure functions and records. | Data |
 | `api/TheYard.Application` | The use cases: `Auction`, what the endpoints ask about the auction, composing `InventoryService`, `BidService` and `MarketService`; the auction's three ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`); and the operator's ports (`IActivityStore`, `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment` and the rest). | Domain, Data |
 | `api/TheYard.Database` | The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is. | nothing |
 | `api/TheYard.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator, the Identity user, and the database readings the Admin tab shows (`ResourceStats`, `YardDatabase.PingAsync`). | Application, Domain, Data |
@@ -397,7 +397,7 @@ deploy without them (ADR: The tests, explained).
 | A new auction or bidding rule | `api/TheYard.Domain`, with a unit test first |
 | A new endpoint | one `MapGet`/`MapPost` in the matching file under `api/TheYard.Api/Endpoints/`, plus an integration test |
 | A new data source | a port in Application, an adapter in Infrastructure, its registration in `api/TheYard.Api/Composition/` |
-| A new derived fact for the browser | `api/TheYard.Api/VehicleWire.cs` |
+| A new derived fact for the browser | `StandingVehicle` in `api/TheYard.Application/BidView.cs`, then one copied field in `api/TheYard.Api/VehicleWire.cs` |
 | A new API call from the browser | one function in `src/lib/data.ts` |
 | A new view state | the URL, through `filtersToSearchParams` |
 | A visitor preference (not a view) | `localStorage`, like the collapsed rail |
@@ -408,17 +408,18 @@ deploy without them (ADR: The tests, explained).
 
 ## What is deliberately not here
 
-No durable volume: the stores are outside the container, Azure SQL Database
-and Azure Cosmos DB; the JSON seed, held in memory with no bid store, is
-what a container serves until its store attaches, so nothing a visitor does
-depends on a disk the roll throws away; SQLite is the store a clone runs on
-when no connection string is configured (ADR: The relational
-store; ADR: A second store on Cosmos DB, and what it costs). No password
-store of its own: accounts are ASP.NET Core Identity with a signed cookie
-(ADR: Accounts and per-user bids). No state library, router, component
-library or CSS framework. No server-rendered React. Each of those is a
-decision with a record behind it, not an oversight; ADR: Deployment strategy
-and the Hosting page cover the hosting side of the same question.
+No durable volume. The stores are outside the container, Azure SQL Database
+and Azure Cosmos DB. Until its store attaches, a container serves the JSON
+seed held in memory with no bid store, so nothing a visitor does depends on
+a disk the roll throws away. SQLite is the store a clone runs on when no
+connection string is configured (ADR: The relational store; ADR: A second
+store on Cosmos DB, and what it costs).
+
+No password store of its own: accounts are ASP.NET Core Identity with a
+signed cookie (ADR: Accounts and per-user bids). No state library, router,
+component library or CSS framework. No server-rendered React. Each of those
+is a decision with a record behind it, not an oversight; ADR: Deployment
+strategy and the Hosting page cover the hosting side of the same question.
 
 ## Files
 
@@ -428,7 +429,7 @@ and the Hosting page cover the hosting side of the same question.
 - [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition) and [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): the registrations and middleware, and the handlers.
 - [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.
 - [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the ten rules that hold the rings.
-- [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the derived facts that make the browser's job formatting.
+- [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the wire shape, copying the derived facts `StandingVehicle` carries so the browser's job is formatting.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts) and [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): the one seam and the URL state.
 - [`docs/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/DATAFLOW.md): the same shape as a walk, step by step.
 - [`docs/PROJECTS.md`](https://github.com/SteveStout/TheYard/blob/main/docs/PROJECTS.md): every project and folder, one line each.

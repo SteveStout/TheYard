@@ -1,6 +1,6 @@
 # ADR: Onion and SOLID, how this codebase holds them
 
-Status: accepted, 2026-10-03. Written with the pass that put a test behind every ring, moved the auction's composition out of the endpoints, and added a Where it sits section to every record.
+Status: accepted, 2026-10-03.
 
 ## In plain words
 
@@ -26,7 +26,7 @@ The front end keeps the same shape in `src/`: components use hooks, hooks use `s
 
 ## How the build holds them
 
-`api/TheYard.Tests/OnionTests.cs` reads the compiled assemblies with NetArchTest (the maintained fork, NetArchTest.eNhancedEdition). It sees method bodies and the types the compiler writes for lambdas and async methods, so a dependency hidden in a handler's body fails as surely as a using line would. A failure names the type and the dependency it found. The ring rules select by assembly and then by namespace, so a type in a nested folder still belongs to its ring. They allow the .NET base class library (BCL), the `System` namespaces, in every ring, and two rules take the disk, the network and the clock back out of it for Domain and Application. The two endpoint rules select by name, every class whose name ends in `Endpoints`, and the registration rule allows `Program` and classes ending in `Registration`; a handler class named otherwise would escape them, which is why the naming is part of the house style.
+`api/TheYard.Tests/OnionTests.cs` reads the compiled assemblies with NetArchTest (the maintained fork, NetArchTest.eNhancedEdition). It sees method bodies and the types the compiler writes for lambdas and async methods, so a dependency hidden in a handler's body fails as surely as a using line would. A failure names the type and the dependency it found. The ring rules select by assembly and then by namespace, so a type in a nested folder still belongs to its ring. They allow the .NET base class library (BCL), the `System` namespaces, in every ring, and two rules take the disk and the network back out of it for Domain and Application, and the clock out of Domain. The two endpoint rules select by name, every class whose name ends in `Endpoints`, and the registration rule allows `Program` and classes ending in `Registration`; a handler class named otherwise would escape them, which is why the naming is part of the house style.
 
 | Rule | What it stops |
 | --- | --- |

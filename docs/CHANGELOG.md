@@ -2,7 +2,7 @@
 
 One line per shipped version, newest first. The number is the one the page footer shows. Versions are four numbers read
 as a version, not as one counter: 1.0.0.1 to 1.0.0.187 counted the builds that
-reached the live site, and 1.0.1.0 is the first release Steve called polished. How a
+reached the live site, and 1.0.1.0 is the first release I called polished. How a
 line gets here, and why there is only ever one sentence, is recorded in
 ADR: The changelog under the Decision Records index. From 1.0.0.41 the top
 line here is where the deploy reads the version from, so this file and the page
@@ -16,7 +16,8 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
-- **1.0.3.72** (2026-10-04): The Author badge on the landing page is served under a new name, so the crop to Steve alone reaches every visitor at once instead of after a day in the edge's and the browser's caches.
+- **1.0.3.73** (2026-10-04): A listing shows the highest bid from anyone when the buyer is outbid, not the buyer's own lower figure; the health card's kept-warm line names its slowest read; the request-units and Who came labels say what they count; the phone's health rows and code blocks read whole; and the comments and records say what the code does today, with no history, a stale rule row replaced and the cross-site sold gap named.
+- **1.0.3.72** (2026-10-04): The Author badge on the landing page is served under a new file name, so every visitor sees the new picture at once rather than a cached copy of the old one.
 - **1.0.3.71** (2026-10-04): No production comment leans on a version, a date or a review, and a test holds it; both stores' catalogues stay loaded on both sites, so the keeper that let one go is retired; a vehicle's status and next bid come from the auction and the wire only copies them; endpoints read the clock through `Clocks`; the landing page's Hosting tile, About Steven's title and the two proof tiles say only what is true, and the Author badge shows Steve alone; Application health keeps each check's time on its first line on a phone; warnings are errors in every API project; and the architecture, projects, style, accounts and security pages say what the code does.
 - **1.0.3.70** (2026-10-04): Onion architecture, the practices, a page under Best Practices that follows one bid through the rings and shows each practice with a drawing or a whole file from the build, with an address per section and a test that holds its headings; two new drawings (a bid's walk through the rings, and the port and its adapters); and the live samples may read the sample's test folder, so its architecture tests show whole.
 - **1.0.3.69** (2026-10-03): The auction hands every vehicle out at its standing price with its sold flag (`Auction.Find`, `Auction.Search`, `Auction.HistoryOf`), so no handler composes a price or a sale itself; two ring rules keep the disk, the network and the clock out of Domain and Application; a test holds the wire's vehicle to the dataset's; code blocks in a document are reachable from the keyboard; coverage leaves generated code out and its floor moves up to 90 and 75; and the records the Fable review found wrong or forced say what is true, in plain words.

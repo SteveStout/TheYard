@@ -77,9 +77,9 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
         // once. The retry reads the row again and writes this bid over it: the
         // rules already ran on this side against the standing this container
         // held, and what the row held in between is not re-examined. Two buyers
-        // racing each other are two rows and never meet here; that race is the
-        // gap the review record names and the compare-and-set standing it
-        // decides (ADR: Three readers with no memory of the project). A fresh
+        // racing each other are two rows and never meet here: the store keeps no
+        // per-vehicle standing, so the compare-and-set standing that would join
+        // them is a decision still open (ADR: Three readers with no memory of the project). A fresh
         // context per attempt, because a context that has just thrown a
         // concurrency exception is holding the values that lost.
         for (int attempt = 1; ; attempt++)

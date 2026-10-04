@@ -41,7 +41,7 @@ web apps default to different stores and each is one site.
 
 Frontend keeps the same discipline: `components` -> `hooks` -> `lib`. **`src/lib` imports nothing from
 React.** Every component has a folder of its own, `src/components/<section>/<Name>/`, holding its `.tsx`,
-its `.module.css` and an `index.ts` that re-exports it, so an import reads `components/<section>/<Name>`; a
+its `.module.css` when it has one, and an `index.ts` that re-exports it, so an import reads `components/<section>/<Name>`; a
 component another section renders lives in `shared/`, and `src/lib` and `src/hooks` stay where they are
 (ADR: One folder per component). `src/app` is the shell: `App.tsx` reads like a table of contents, and what
 the app knows is one hook per file in `src/app/hooks`, named for what it gives back. `src/library` is the

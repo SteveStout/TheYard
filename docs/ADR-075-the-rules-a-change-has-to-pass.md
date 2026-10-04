@@ -43,7 +43,8 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | A kept minute leaves out a figure nobody read, a window is folded into the buckets it is drawn in, and the store's grouped query answers what the folding does | ADR: What the machines are doing | MachineHistoryTests |
 | An identity token is asked for at whichever door the host has, and a web app's card claims no restart count it was never given | ADR: One plan, two sites | AzureSelfTests |
 | Every setting a container group carried is a setting the two sites carry, and nothing deploys a template in complete mode | ADR: One plan, two sites | AppServiceTemplateTests |
-| A catalogue a site does not serve is let go when nobody has asked for it in a while, never while it is in use or loading, and the one a site serves never | ADR: One plan, two sites | WarmthTests |
+| A request on a store whose catalogue is cold waits for the load without blocking a thread, and a warm store is waited on for no time at all | ADR: One container, both stores | WarmthTests |
+| No production comment leans on a version number, a date or a review to stand in for its reason | ADR: Code that reads like code | HouseVoiceTests |
 | Every record opens with its title, says what became of it, says where it sits in the rings above its Files section, and has a Files section with at least one link | This record, ADR: Onion and SOLID, how this codebase holds them | RecordShapeTests |
 | Every rule in this table names a test that exists, and every record it cites exists | This record | RuleTableTests |
 | Dependencies point inward: Data and Domain use nothing outside .NET's base class library, Application uses only Domain and Data, and the document store adapter borrows only the shared user from the relational one | ADR: Onion and SOLID, how this codebase holds them | OnionTests |
@@ -118,6 +119,10 @@ the floor, not the ceiling.
 Nor does it claim the tests are the decisions. A rule is decided in a record, for a reason, and the test
 is how the decision survives a busy month.
 
+## Addendum, 2026-10-04: two rows changed
+
+The catalogue keeper is gone (ADR: Kept awake, the addendum of 4 October), so the row that named `WarmthTests` now says what that test holds: a request on a cold store waits for the load without blocking a thread. `HouseVoiceTests` gained a second rule in 1.0.3.71, no production comment leaning on a version, a date or a review, and the table has its row.
+
 ## Where it sits
 
 Beside the onion, in TheYard.Tests. RuleTableTests reads this table, and three of its rows are the OnionTests rules that hold the rings themselves.
@@ -133,6 +138,6 @@ Beside the onion, in TheYard.Tests. RuleTableTests reads this table, and three o
 - [`CLAUDE.md`](https://github.com/SteveStout/TheYard/blob/main/CLAUDE.md): what an agent reads before it changes anything, which now points here.
 - [`docs/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the rules no test holds (served as Coding and Commenting Style under App Architecture).
 
-## Addendum, 2026-10-03: three more rules
+## Addendum, 2026-10-03: four more rules
 
-Three rows joined the table with the pass that put the rings under test: two for `OnionTests`, which reads the compiled assemblies and fails the build when a dependency points outward, and one for `TechnologyVersionsTests`, which holds the versions record to the project files. `RecordShapeTests` also requires every record to say where it sits (ADR: Onion and SOLID, how this codebase holds them).
+Four rows joined the table with the pass that put the rings under test and the fixes that followed it: three for `OnionTests`, which reads the compiled assemblies and fails the build when a dependency points outward, and one for `TechnologyVersionsTests`, which holds the versions record to the project files. `RecordShapeTests` also requires every record to say where it sits (ADR: Onion and SOLID, how this codebase holds them).

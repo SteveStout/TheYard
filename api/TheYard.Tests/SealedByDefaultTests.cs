@@ -17,10 +17,9 @@ namespace TheYard.Tests;
 /// through, which is the argument for a test rather than against one: the
 /// slip is never the class somebody thought about.</para>
 ///
-/// <para>Records are counted here and left to their own rule. A record is a
-/// value shape whose equality the compiler writes, and sealing all of them is
-/// a change to fifty-eight files rather than a practice, so the page says what
-/// the count is and does not claim more.</para>
+/// <para>Records are counted here beside the classes. A record is a value
+/// shape whose equality the compiler writes; every record in the six projects
+/// is sealed too, and the page says so.</para>
 /// </summary>
 public class SealedByDefaultTests
 {

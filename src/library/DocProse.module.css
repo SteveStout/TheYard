@@ -118,6 +118,14 @@
   margin: 0 0 var(--space-4);
 }
 
+/* On a phone most code lines run past the screen and the block scrolls sideways; a fade at the right
+   edge says so, where a scrollbar on a phone would not show until touched. */
+@media (max-width: 639.98px) {
+  .prose pre {
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  }
+}
+
 .prose pre code {
   border: 0;
   background: none;

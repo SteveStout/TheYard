@@ -115,8 +115,8 @@ public sealed class InventoryService(
         // The count needs every match and the page needs a hundred of them.
         // Sorting every match and then taking the page would be a full sort
         // of a hundred thousand rows on every unfiltered listing, and on the
-        // plan's one shared core that was the slowest thing the site did (ADR: The Admin tab, as a product, the addendum on the
-        // first amber tile). Skip and Take straight off the ordering let the
+        // plan's one shared core that is the slowest read the site has (ADR: The
+        // Admin tab, as a product, the addendum on the first amber tile). Skip and Take straight off the ordering let the
         // runtime sort only as far as the page: the same rows in the same
         // order, ties included, because the ordering is still the stable one.
         var page = VehicleOrdering.Sort(matched, sort, clock).Skip(offset).Take(limit).ToList();

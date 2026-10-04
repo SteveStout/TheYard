@@ -166,8 +166,10 @@ which is true, and the bar says why.
 
 **Not a cluster.** Two containers now open the same two stores, and each
 replays the bids into its own memory at startup, so a bid placed on one
-container is not on the other's page until that container restarts. That is
-the one-container assumption ADR: The one write a stranger can make already
+container is not on the other's page until that container restarts, and a
+vehicle bought outright on one site is still open on the other until then;
+nothing in the store marks it sold, so the "sold, to everybody" rule holds
+per process, not across the two. That is the one-container assumption ADR: The one write a stranger can make already
 states for the rate limit, and the second container inherits it; accounts,
 which are read from the store on every request, are shared between the two
 containers at once.

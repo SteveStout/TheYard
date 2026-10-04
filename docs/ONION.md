@@ -287,7 +287,7 @@ beside TheYard in this repository
 tests select a ring by namespace instead of by project: `Data`, `Domain`, `Application`,
 `Infrastructure`, `Controllers`, `Documentation` and `Composition`. The reasoning for keeping it to one
 project is its own record,
-[`samples/maplarge/docs/ADR-002-one-project-four-folders-dependencies-inward.md`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-002-one-project-four-folders-dependencies-inward.md).
+[One project, seven folders, dependencies inward](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-002-one-project-four-folders-dependencies-inward.md).
 
 One project costs one thing. Across projects, the compiler refuses a reference that would make a
 cycle, so an adapter can never use the host and nobody has to test it. Inside one project the compiler

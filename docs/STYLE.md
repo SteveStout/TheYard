@@ -55,9 +55,11 @@ What that is worth: a developer can predict what a file is called and where it g
 
 ## Comments
 
-The rule is **why and how, never what**. The code already says what it
-does; a comment earns its line by saying why this way, what breaks
-otherwise, or what a reader could not know from the syntax.
+The rule is **what, how and why, with no history**. A comment says what the
+code does where the name cannot, how where the way is not obvious, and why
+this way or what breaks otherwise; it never leans on a date, a version or a
+review to stand in for the reason, and a test holds that (ADR: The rules a
+change has to pass).
 
 ```csharp
 // The store first, then memory. The other order looks harmless

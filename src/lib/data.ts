@@ -4,12 +4,10 @@ import { filtersToSearchParams, type InventoryFilters, type SortKey } from './in
 /**
  * The single seam for API access. The .NET API (api/) owns the data AND the
  * rules: it serves paged envelopes { total, vehicles } with server-derived
- * auction facts on each vehicle, computes facets, and validates bids. In
- * dev, Vite proxies /api to http://localhost:5210 (see vite.config.ts), so
- * run `npm run api` alongside `npm run dev`.
- *
- * GET responses are cached in-memory per query string for a short TTL.
- * Mutations (bids, reset) clear the cache, since they change server data.
+ * auction facts on each vehicle, computes facets, and validates bids. In dev,
+ * Vite proxies /api to http://localhost:5210 (see vite.config.ts), so run
+ * `npm run api` alongside `npm run dev`. GET responses are cached in memory per
+ * query string for a short TTL; mutations (bids, reset) clear the cache.
  */
 
 export interface VehiclePage {
@@ -31,10 +29,12 @@ export interface BidRecord {
   won_buy_now: boolean;
   /** When the bid was placed, which the simulated room reads (ADR-027). */
   at_ms: number;
-  /** True when the room has since bid higher. The server decides this. */
+  /** True when another buyer or the room has since bid higher. The server decides this. */
   outbid: boolean;
   /** What the room is standing at, or null when it has not bid here. */
   market_amount: number | null;
+  /** The highest bid on the vehicle from anyone, which is the price to show when outbid. */
+  highest_amount: number;
 }
 
 export type BidMap = Record<string, BidRecord>;

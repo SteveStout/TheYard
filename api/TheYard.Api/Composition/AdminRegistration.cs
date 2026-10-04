@@ -28,11 +28,12 @@ public static class AdminRegistration
         }));
         // #endregion proof-clients
 
-        // Identifiers, not secrets: the identity's client id and this group's ARM path.
+        // Identifiers, not secrets: the identity's client id and this site's ARM path. The
+        // deploy sets the path for each of the two sites; the default is the first site's.
         var azureSelf = new AzureSelf(
             YardComposition.AzureClientId(builder.Configuration),
             builder.Configuration["Azure:SelfResourceId"]
-                ?? "/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.ContainerInstance/containerGroups/aci-theyard-ss");
+                ?? $"/subscriptions/{YardComposition.AzureSubscriptionId(builder.Configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-SS-ZMNETJ67BN5H2");
         builder.Services.AddSingleton(azureSelf);
         // The other container's metrics, read server side with a short patience (ADR: Backends, side by side).
         var peer = new PeerReader(
