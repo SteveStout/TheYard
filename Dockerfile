@@ -132,6 +132,9 @@ COPY --chown=app:app tests ./tests
 # coverage addendum): a live block can only show a file that is in the image, and a test holds this
 # list to every path the documents name.
 COPY --chown=app:app scripts ./scripts
+# One file from the sample beside this app: its architecture tests, which the onion practices page
+# shows whole. Only that file, because the rest of the sample is served by its own site.
+COPY --chown=app:app samples/maplarge/tests/TestProject.Tests/OnionTests.cs ./samples/maplarge/tests/TestProject.Tests/
 # The built frontend bundle is copied into wwwroot so the ASP.NET API can serve it and provide SPA fallback routing.
 COPY --chown=app:app --from=frontend-build /src/dist/ /app/wwwroot/
 

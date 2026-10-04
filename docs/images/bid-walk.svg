@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="930" viewBox="0 0 1400 930" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>One bid through TheYard's rings: the endpoint asks Application, Application asks Domain, Domain decides, Application saves through the IBidStore port, an adapter writes the store, and the endpoint answers</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#25663a"/>
+    </marker>
+    <style>
+      .ring0 { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; }
+      .ring1 { fill: #ece9ea; stroke: #7b7f8a; stroke-width: 1.5; }
+      .ring2 { fill: #f7f5f6; stroke: #7b7f8a; stroke-width: 1.5; }
+      .part { fill: #ffffff; stroke: #536786; stroke-width: 1.5; }
+      .port { fill: #ffffff; stroke: #25663a; stroke-width: 2; stroke-dasharray: 7 4; }
+      .title { fill: #3f3a37; font-size: 16px; font-weight: 700; }
+      .name { fill: #3f3a37; font-size: 14px; font-weight: 700; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .test { fill: #25663a; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .back { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .runtime { stroke: #4a6c96; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow); }
+      .implements { stroke: #25663a; stroke-width: 2; fill: none; marker-end: url(#arrow-green); }
+      .flow-label { fill: #4a6c96; font-size: 12px; font-weight: 500; }
+      .green-label { fill: #25663a; font-size: 12px; font-weight: 500; }
+      .step { fill: #4a6c96; }
+      .step-text { fill: #ffffff; font-size: 12px; font-weight: 700; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="930" fill="#e9e6e7"/>
+  <text x="40" y="48" class="heading">One bid through the rings</text>
+  <text x="40" y="72" class="caption">Left to right is outside to inside. Solid arrows are calls the code makes in order; the dashed arrow is the one call that crosses outward, at runtime, through the port.</text>
+
+  <rect x="40" y="110" width="400" height="660" rx="18" class="ring0"/>
+  <text x="60" y="138" class="title">Outside: the host and the adapters</text>
+  <text x="60" y="158" class="mono">api/TheYard.Api and the two adapter projects</text>
+  <rect x="520" y="110" width="400" height="660" rx="18" class="ring1"/>
+  <text x="540" y="138" class="title">Application: the use cases and the port</text>
+  <text x="540" y="158" class="mono">api/TheYard.Application</text>
+  <rect x="1000" y="110" width="360" height="660" rx="18" class="ring2"/>
+  <text x="1020" y="138" class="title">Domain: the rules</text>
+  <text x="1020" y="158" class="mono">api/TheYard.Domain</text>
+  <rect x="60" y="190" width="360" height="250" rx="14" class="part"/>
+  <text x="76" y="214" class="name">BidEndpoints.HandleBid</text>
+  <text x="76" y="232" class="mono">Endpoints/BidEndpoints.cs</text>
+  <text x="76" y="252" class="body">POST /api/vehicles/{id}/bids, signed in.</text>
+  <text x="76" y="269" class="body">Is this session on this store? If not, 401.</text>
+  <text x="76" y="286" class="body">Does the vehicle exist (Auction.Find)? If not, 404.</text>
+  <text x="76" y="303" class="body">Reads the server clock once: Clocks.Now().</text>
+  <text x="76" y="320" class="body">Hands the vehicle, the amount and that clock in.</text>
+  <text x="76" y="337" class="body"></text>
+  <text x="76" y="354" class="body">Writes the answer: 400 with the reason, or 200</text>
+  <text x="76" y="371" class="body">with the bid and the vehicle as it now stands.</text>
+  <rect x="60" y="570" width="360" height="180" rx="14" class="part"/>
+  <text x="76" y="594" class="name">EfBidStore or CosmosBidStore</text>
+  <text x="76" y="612" class="mono">EfSources.cs and CosmosSources.cs</text>
+  <text x="76" y="632" class="body">Each implements IBidStore against one store.</text>
+  <text x="76" y="649" class="body">EF Core: one row per buyer per vehicle, in</text>
+  <text x="76" y="666" class="body">Azure SQL Database or SQLite.</text>
+  <text x="76" y="683" class="body">Cosmos DB SDK: one document in the buyer's partition.</text>
+  <text x="76" y="700" class="body">Composition/StoreRegistration.cs picks which.</text>
+  <rect x="540" y="190" width="360" height="100" rx="14" class="part"/>
+  <text x="556" y="214" class="name">Auction.PlaceBidAsync</text>
+  <text x="556" y="232" class="mono">Auction.cs</text>
+  <text x="556" y="252" class="body">The one class endpoints ask about the auction.</text>
+  <text x="556" y="269" class="body">Passes the bid to the service that keeps bids.</text>
+  <rect x="540" y="340" width="360" height="170" rx="14" class="part"/>
+  <text x="556" y="364" class="name">BidService.PlaceBidAsync</text>
+  <text x="556" y="382" class="mono">BidService.Bidding.cs</text>
+  <text x="556" y="402" class="body">Takes the gate: one bid at a time.</text>
+  <text x="556" y="419" class="body">Folds everybody's bids into the vehicle, so the</text>
+  <text x="556" y="436" class="body">rules see the price as it stands.</text>
+  <text x="556" y="453" class="body">Asks Domain, then on yes writes the store first</text>
+  <text x="556" y="470" class="body">and memory second.</text>
+  <rect x="540" y="570" width="360" height="180" rx="14" class="port"/>
+  <text x="556" y="594" class="name">IBidStore, the port</text>
+  <text x="556" y="612" class="mono">Ports.cs</text>
+  <text x="556" y="632" class="body">Declared here, in the inner ring: the shape of</text>
+  <text x="556" y="649" class="body">what Application needs, and nothing about SQL</text>
+  <text x="556" y="666" class="body">or Cosmos DB.</text>
+  <text x="556" y="683" class="body">LoadAsync, SaveAsync(userId, vehicleId, state),</text>
+  <text x="556" y="700" class="body">ClearAsync(userId).</text>
+  <rect x="1020" y="340" width="320" height="210" rx="14" class="part"/>
+  <text x="1036" y="364" class="name">BidRules.ResolveBid</text>
+  <text x="1036" y="382" class="mono">BidRules.cs</text>
+  <text x="1036" y="402" class="body">Sold to anybody already? Refused.</text>
+  <text x="1036" y="419" class="body">Live and at or above buy-now? Won,</text>
+  <text x="1036" y="436" class="body">at the buy-now price.</text>
+  <text x="1036" y="453" class="body">Not started, or ended? Refused.</text>
+  <text x="1036" y="470" class="body">Below the minimum next bid? Refused.</text>
+  <text x="1036" y="487" class="body">Otherwise accepted, as a BidOutcome.</text>
+  <text x="1036" y="504" class="body">No store, no web, no clock of its own.</text>
+  <text x="1020" y="600" class="test">Held by OnionTests:</text>
+  <text x="1020" y="620" class="test">Domain_never_reaches_the_disk_</text>
+  <text x="1040" y="638" class="test">the_network_or_the_clock</text>
+  <text x="1020" y="662" class="test">Endpoints_reach_the_auction_only_</text>
+  <text x="1040" y="680" class="test">through_the_Application_ring</text>
+  <path d="M424 225 L536 225" class="flow"/>
+  <circle cx="480" cy="207" r="11" class="step"/>
+  <text x="480" y="211" class="step-text" text-anchor="middle">1</text>
+  <path d="M720 294 L720 336" class="flow"/>
+  <circle cx="700" cy="315" r="11" class="step"/>
+  <text x="700" y="319" class="step-text" text-anchor="middle">2</text>
+  <path d="M904 400 L1016 400" class="flow"/>
+  <circle cx="960" cy="382" r="11" class="step"/>
+  <text x="960" y="386" class="step-text" text-anchor="middle">3</text>
+  <path d="M1016 470 L904 470" class="back"/>
+  <circle cx="960" cy="452" r="11" class="step"/>
+  <text x="960" y="456" class="step-text" text-anchor="middle">4</text>
+  <path d="M720 514 L720 566" class="flow"/>
+  <circle cx="700" cy="540" r="11" class="step"/>
+  <text x="700" y="544" class="step-text" text-anchor="middle">5</text>
+  <path d="M536 630 L424 630" class="runtime"/>
+  <circle cx="480" cy="612" r="11" class="step"/>
+  <text x="480" y="616" class="step-text" text-anchor="middle">6</text>
+  <text x="446" y="652" class="flow-label">runs it</text>
+  <path d="M424 710 L536 710" class="implements"/>
+  <text x="442" y="732" class="green-label">implements</text>
+  <path d="M536 270 L424 270" class="back"/>
+  <circle cx="480" cy="252" r="11" class="step"/>
+  <text x="480" y="256" class="step-text" text-anchor="middle">7</text>
+  <circle cx="51" cy="802" r="11" class="step"/>
+  <text x="51" y="806" class="step-text" text-anchor="middle">1</text>
+  <text x="70" y="806" class="body">The endpoint asks Application, with the server clock as a value.</text>
+  <circle cx="51" cy="824" r="11" class="step"/>
+  <text x="51" y="828" class="step-text" text-anchor="middle">2</text>
+  <text x="70" y="828" class="body">Auction hands the bid to BidService, which keeps everybody's bids.</text>
+  <circle cx="51" cy="846" r="11" class="step"/>
+  <text x="51" y="850" class="step-text" text-anchor="middle">3</text>
+  <text x="70" y="850" class="body">BidService asks Domain whether the bid stands.</text>
+  <circle cx="51" cy="868" r="11" class="step"/>
+  <text x="51" y="872" class="step-text" text-anchor="middle">4</text>
+  <text x="70" y="872" class="body">Domain answers with a BidOutcome and touches nothing else.</text>
+  <circle cx="731" cy="802" r="11" class="step"/>
+  <text x="731" y="806" class="step-text" text-anchor="middle">5</text>
+  <text x="750" y="806" class="body">On yes, BidService saves through IBidStore, the port it owns.</text>
+  <circle cx="731" cy="824" r="11" class="step"/>
+  <text x="731" y="828" class="step-text" text-anchor="middle">6</text>
+  <text x="750" y="828" class="body">The call reaches whichever adapter Composition wired in at startup.</text>
+  <circle cx="731" cy="846" r="11" class="step"/>
+  <text x="731" y="850" class="step-text" text-anchor="middle">7</text>
+  <text x="750" y="850" class="body">The outcome travels back out and the endpoint writes the answer.</text>
+
+  <text x="40" y="912" class="caption">Source: docs/images/bid-walk.svg in the repository, drawn by docs/images/bid-walk.mjs and redrawn when the bid's path changes.</text>
+</svg>

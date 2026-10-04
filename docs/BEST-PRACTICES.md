@@ -34,7 +34,9 @@ footer displays exactly that.
   served under App Architecture in the sidebar, beside the records that
   walk the code. The layers are also checked: ten architecture tests read
   the compiled code and fail the gate when a dependency points outward.
-  Recorded in ADR: Onion and SOLID, how this codebase holds them.
+  Recorded in ADR: Onion and SOLID, how this codebase holds them, and
+  taught a practice at a time, with one bid followed through the rings, in
+  [Onion architecture, the practices](https://theyard.stevenstout.biz/?doc=onion).
 - **Decisions get written down.** Ninety ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules

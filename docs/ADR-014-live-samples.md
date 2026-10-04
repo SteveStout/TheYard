@@ -202,3 +202,18 @@ list that nothing compared with the thing it described.
 
 The tests are not shown live here, for the reason the whole-file addendum
 gives: their source spells out the note and the fence they look for.
+
+## Addendum, 2026-10-04: one folder from the sample beside the app
+
+The onion practices page shows The Shed's architecture tests whole, because they are the example of
+the rings drawn as folders in one project. The Shed lives under `samples/maplarge`, which none of the
+seven roots reached, so `samples/maplarge/tests/` is the eighth. It is the sample's test folder and
+nothing more: the rest of the sample is served by its own site, and the rejection tests gained
+`samples/maplarge/Program.cs` to keep it that way. The runtime stage of the Dockerfile copies the one
+file the page names, and the coverage test above already fails any live block whose file the image
+does not carry.
+
+One consequence is written down rather than fixed. A push that changes only the sample does not
+redeploy TheYard, so TheYard's sites show the sample's tests as they were at TheYard's last deploy.
+The line under the block names the commit it was read from, so the copy says how old it is.
+

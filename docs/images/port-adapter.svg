@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>The inner ring owns the interface: Application declares IBidStore and uses it, EfBidStore and CosmosBidStore implement it from the outer ring, and the composition root decides which one each store gets</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#25663a"/>
+    </marker>
+    <style>
+      .ring0 { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; }
+      .ring1 { fill: #ece9ea; stroke: #7b7f8a; stroke-width: 1.5; }
+      .part { fill: #ffffff; stroke: #536786; stroke-width: 1.5; }
+      .port { fill: #ffffff; stroke: #25663a; stroke-width: 2; stroke-dasharray: 7 4; }
+      .title { fill: #3f3a37; font-size: 16px; font-weight: 700; }
+      .name { fill: #3f3a37; font-size: 14px; font-weight: 700; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .test { fill: #25663a; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .uses { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .creates { stroke: #4a6c96; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow); }
+      .implements { stroke: #25663a; stroke-width: 2; fill: none; marker-end: url(#arrow-green); }
+      .flow-label { fill: #4a6c96; font-size: 12px; font-weight: 500; }
+      .green-label { fill: #25663a; font-size: 12px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="860" fill="#e9e6e7"/>
+  <text x="40" y="48" class="heading">The inner ring owns the interface</text>
+  <text x="40" y="72" class="caption">Every green arrow crosses a ring and points inward, at IBidStore. Application compiles with neither adapter in it; only the composition root names both sides.</text>
+
+  <rect x="40" y="110" width="600" height="600" rx="18" class="ring1"/>
+  <text x="60" y="138" class="title">Application: owns the interface</text>
+  <text x="60" y="158" class="mono">api/TheYard.Application</text>
+  <rect x="70" y="190" width="540" height="130" rx="14" class="part"/>
+  <text x="86" y="214" class="name">BidService</text>
+  <text x="86" y="232" class="mono">BidService.cs, BidService.Bidding.cs</text>
+  <text x="86" y="252" class="body">Holds everybody's bids and asks BidRules before any is kept.</text>
+  <text x="86" y="269" class="body">Receives its store through the constructor and never learns</text>
+  <text x="86" y="286" class="body">which store that is:</text>
+  <text x="86" y="307" class="mono">public BidService(IBidStore store)</text>
+  <rect x="70" y="380" width="540" height="170" rx="14" class="port"/>
+  <text x="86" y="404" class="name">IBidStore, the port</text>
+  <text x="86" y="422" class="mono">Ports.cs</text>
+  <text x="86" y="442" class="body">The shape of what Application needs from somewhere to keep bids,</text>
+  <text x="86" y="459" class="body">in Application's own words, with no SQL and no Cosmos DB in it.</text>
+  <text x="86" y="480" class="mono">Task&lt;IReadOnlyList&lt;StoredBid&gt;&gt; LoadAsync();</text>
+  <text x="86" y="497" class="mono">Task SaveAsync(string userId, string vehicleId, BidState state);</text>
+  <text x="86" y="514" class="mono">Task ClearAsync(string userId);</text>
+  <rect x="70" y="590" width="540" height="90" rx="14" class="part"/>
+  <text x="86" y="614" class="name">NullBidStore</text>
+  <text x="86" y="632" class="mono">Ports.cs</text>
+  <text x="86" y="652" class="body">The port wired to nothing: bids live in memory. The unit tests use it,</text>
+  <text x="86" y="669" class="body">and so does a store that has not come up yet.</text>
+  <rect x="760" y="110" width="600" height="600" rx="18" class="ring0"/>
+  <text x="780" y="138" class="title">Outside: implements the interface</text>
+  <text x="780" y="158" class="mono">api/TheYard.Infrastructure, .Infrastructure.Cosmos, .Api</text>
+  <rect x="790" y="190" width="540" height="110" rx="14" class="part"/>
+  <text x="806" y="214" class="name">EfBidStore</text>
+  <text x="806" y="232" class="mono">Infrastructure/EfSources.cs</text>
+  <text x="806" y="252" class="body">EF Core over Azure SQL Database or SQLite: one row per buyer per</text>
+  <text x="806" y="269" class="body">vehicle, replaced in place, three tries on a concurrency conflict.</text>
+  <text x="806" y="290" class="mono">public sealed class EfBidStore(...) : IBidStore</text>
+  <rect x="790" y="330" width="540" height="110" rx="14" class="part"/>
+  <text x="806" y="354" class="name">CosmosBidStore</text>
+  <text x="806" y="372" class="mono">Infrastructure.Cosmos/CosmosSources.cs</text>
+  <text x="806" y="392" class="body">The Cosmos DB SDK: one document per buyer per vehicle, in the buyer's</text>
+  <text x="806" y="409" class="body">partition, so every write stays inside one partition.</text>
+  <text x="806" y="430" class="mono">public sealed class CosmosBidStore(CosmosStore store) : IBidStore</text>
+  <rect x="790" y="500" width="540" height="180" rx="14" class="part"/>
+  <text x="806" y="524" class="name">The composition root</text>
+  <text x="806" y="542" class="mono">Api/Composition/StoreRegistration.cs</text>
+  <text x="806" y="562" class="body">The one place that names an adapter. It builds one backend per</text>
+  <text x="806" y="579" class="body">store at startup and hands each BidService its adapter:</text>
+  <text x="806" y="600" class="mono">new BidService(new EfBidStore(contexts))</text>
+  <text x="806" y="617" class="mono">new BidService(new CosmosBidStore(store))</text>
+  <text x="806" y="634" class="mono">new BidService(NullBidStore.Instance)</text>
+  <text x="806" y="651" class="mono">// until the store attaches</text>
+  <path d="M786 245 L700 245 L700 440 L614 440" class="implements"/>
+  <text x="650" y="300" class="green-label">implements</text>
+  <path d="M786 385 L720 385 L720 470 L614 470" class="implements"/>
+  <path d="M340 586 L340 554" class="implements"/>
+  <text x="350" y="576" class="green-label">implements</text>
+  <path d="M340 324 L340 376" class="uses"/>
+  <text x="350" y="356" class="flow-label">calls</text>
+  <path d="M786 560 L740 560 L740 160 L614 160 L614 186" class="creates"/>
+  <text x="628" y="152" class="flow-label">hands in the adapter</text>
+  <text x="40" y="748" class="test">Held by OnionTests: Application_depends_only_on_Domain_Data_and_the_BCL,</text>
+  <text x="40" y="768" class="test">Application_never_reaches_the_disk_or_the_network, Services_are_registered_only_in_the_composition_root,</text>
+  <text x="40" y="788" class="test">Endpoints_never_reach_a_store_or_the_service_container.</text>
+
+  <text x="40" y="832" class="caption">Source: docs/images/port-adapter.svg in the repository, drawn by docs/images/port-adapter.mjs and redrawn when the port or an adapter changes.</text>
+</svg>

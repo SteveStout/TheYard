@@ -40,6 +40,11 @@ public class AuctionScheduleTests
         Assert.Contains(AuctionStatus.Ended, statuses);
     }
 
+    // #region boundaries
+    // The rule is handed the moment as a number, so the test can name the exact millisecond on
+    // each side of both edges of a window: one before it opens, the one it opens, the last one
+    // before it closes, and the one it closes. A rule that read the clock for itself could not
+    // be asked about any of these four.
     [Fact]
     public void Status_boundaries_are_start_inclusive_and_end_exclusive()
     {
@@ -50,6 +55,7 @@ public class AuctionScheduleTests
         Assert.Equal(AuctionStatus.Live, AuctionSchedule.Status(window, window.EndsAtMs - 1));
         Assert.Equal(AuctionStatus.Ended, AuctionSchedule.Status(window, window.EndsAtMs));
     }
+    // #endregion boundaries
 
     // #region one-clock
     /// <summary>

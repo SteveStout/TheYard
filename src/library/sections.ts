@@ -38,12 +38,11 @@ export const API_REFERENCE: readonly MenuLink[] = [
 
 // #region diagrams
 /**
- * Every drawing in the catalogue, on its own page (ADR: Every diagram opens on
- * its own page, the addendum on the section). The order is the order a reader
- * meets the system: the whole, the data, the schema, the two sites, the two
- * stores, then the look. The server's DocumentationCatalog.Diagrams is the authority for which
- * drawings exist, and a test holds this list to it, so a drawing cannot have a
- * page without a row or a row without a page.
+ * Every drawing in the catalogue, on its own page (ADR: Every diagram opens on its own page, the
+ * addendum on the section), in the order a reader meets the system: the whole, the data, the schema,
+ * the two sites, the two stores, the look, then the rings, a bid's walk through them and the port.
+ * DocumentationCatalog.Diagrams on the server is the authority for which drawings exist, and a test
+ * holds this list to it, so a drawing cannot have a page without a row or a row without a page.
  */
 export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'Infrastructure', href: '/api/docs/diagrams/infrastructure' },
@@ -53,6 +52,8 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'SQL Server vs Cosmos DB', href: '/api/docs/diagrams/sql-vs-cosmos' },
   { label: 'The UI, layer by layer', href: '/api/docs/diagrams/ui-architecture' },
   { label: 'The rings', href: '/api/docs/diagrams/rings' },
+  { label: 'One bid through the rings', href: '/api/docs/diagrams/bid-walk' },
+  { label: 'The port and its adapters', href: '/api/docs/diagrams/port-adapter' },
 ];
 // #endregion diagrams
 
@@ -186,7 +187,7 @@ export const MENUS: Record<
   },
   practices: {
     label: 'Best Practices',
-    items: [{ key: 'practices' }, { key: 'sealed' }, { key: 'security' }],
+    items: [{ key: 'practices' }, { key: 'sealed' }, { key: 'onion' }, { key: 'security' }],
   },
   // #region records-menu
   /**
@@ -292,9 +293,6 @@ export const MENUS: Record<
   // #endregion records-menu
   // #region menu-changelog
   /** One item on purpose: one file, one sentence per version (ADR-012). */
-  changelog: {
-    label: 'Changelog',
-    items: [{ key: 'changelog' }],
-  },
+  changelog: { label: 'Changelog', items: [{ key: 'changelog' }] },
   // #endregion menu-changelog
 };

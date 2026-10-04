@@ -62,6 +62,12 @@ export const PAGES = {
     url: '/api/docs/sealed',
     kind: 'overview',
   },
+  onion: {
+    title: 'Onion architecture, the practices',
+    menuLabel: 'Onion architecture, the practices',
+    url: '/api/docs/onion',
+    kind: 'overview',
+  },
   security: {
     title: 'Security',
     menuLabel: 'Security',

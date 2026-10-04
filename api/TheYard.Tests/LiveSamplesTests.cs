@@ -50,6 +50,7 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     [InlineData("package-lock.json")]
     [InlineData("docs/CHANGELOG.md")]
     [InlineData("Dockerfile.bak")]
+    [InlineData("samples/maplarge/Program.cs")]
     public void Paths_off_the_roots_or_with_escapes_are_rejected_as_strings(string path)
     {
         Assert.False(LiveSamples.IsAllowedPath(path));
@@ -68,6 +69,7 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     [InlineData("netlify.toml")]
     [InlineData("tsconfig.app.json")]
     [InlineData(".editorconfig")]
+    [InlineData("samples/maplarge/tests/TestProject.Tests/OnionTests.cs")]
     public void Paths_under_the_roots_and_the_named_root_files_are_allowed(string path)
     {
         Assert.True(LiveSamples.IsAllowedPath(path));

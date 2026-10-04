@@ -189,6 +189,36 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
             "]; catalog only: [" + string.Join(", ", inCatalog.Except(inMenu)) + "]");
     }
 
+    /// <summary>
+    /// The onion practices page is written to be linked a section at a time: the site gives every
+    /// second-level heading an id made from its words, and a post or a comment links straight to
+    /// one. Renaming a heading would leave those links landing at the top of the page with no
+    /// error anywhere, so the headings are held here, in order. A heading that has to change
+    /// changes here too, on purpose.
+    /// </summary>
+    [Fact]
+    public void The_onion_page_keeps_the_section_headings_its_links_land_on()
+    {
+        string page = File.ReadAllText(Path.Combine(RepoRoot(), DocumentationCatalog.Files["onion"]));
+        string[] headings = Regex.Matches(page, @"^## (.+)$", RegexOptions.Multiline)
+            .Select(match => match.Groups[1].Value.TrimEnd('\r'))
+            .ToArray();
+
+        string[] expected =
+        [
+            "In plain words",
+            "The rule in one sentence",
+            "A request walks the rings",
+            "The inner ring owns the interface",
+            "The rules take the clock as a value",
+            "The build holds the rings",
+            "One project, rings as folders",
+            "When not to build it this way",
+            "References",
+        ];
+        Assert.Equal(expected, headings);
+    }
+
     /// <summary>The folder README.md and src/ sit in, found by walking up from the test binaries.</summary>
     private static string RepoRoot()
     {

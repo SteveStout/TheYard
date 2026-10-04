@@ -89,7 +89,7 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       menu: 'practices',
       icon: 'practices',
       group: 'run',
-      blurb: 'Security, observability, sealed by default.',
+      blurb: 'Onion architecture, sealed by default, security and observability.',
     },
     // Who and why. Author is the large tile at the top of the landing page,
     // and the last section of this group in the sidebar.

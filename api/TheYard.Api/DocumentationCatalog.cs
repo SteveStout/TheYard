@@ -32,6 +32,7 @@ public static class DocumentationCatalog
         ["adr-pipeline"] = "docs/ADR-009-deploy-pipeline.md",
         ["practices"] = "docs/BEST-PRACTICES.md",
         ["sealed"] = "docs/SEALED.md",
+        ["onion"] = "docs/ONION.md",
         ["adr-versioning"] = "docs/ADR-005-version-footer.md",
         ["adr-docs"] = "docs/ADR-006-docs-and-testing.md",
         ["adr-observability"] = "docs/ADR-010-observability.md",
@@ -151,6 +152,8 @@ public static class DocumentationCatalog
         ["sql-vs-cosmos"] = ("docs/images/sql-vs-cosmos.svg", "SQL Server and Cosmos DB, side by side"),
         ["ui-architecture"] = ("docs/images/ui-architecture.svg", "TheYard's UI, layer by layer"),
         ["rings"] = ("docs/images/rings.svg", "TheYard's rings"),
+        ["bid-walk"] = ("docs/images/bid-walk.svg", "One bid through the rings"),
+        ["port-adapter"] = ("docs/images/port-adapter.svg", "The inner ring owns the interface"),
     };
     // #endregion diagrams
 }
