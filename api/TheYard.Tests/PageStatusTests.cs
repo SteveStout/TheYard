@@ -41,7 +41,7 @@ public class PageStatusTests(WebApplicationFactory<Program> factory)
     }
 
     /// <summary>
-    /// The four addresses the frontend build puts in the web root are checked
+    /// The addresses the frontend build puts in the web root are checked
     /// where they exist and named nowhere else: the image has them, a checkout
     /// with the dev server in front of the API does not, and a sweep that
     /// called them down on a developer's machine would be a false reading.

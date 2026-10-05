@@ -135,6 +135,34 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         Assert.Contains("property=\"og:url\" content=\"https://theyard-cosmos.stevenstout.biz/about\"", page);
         Assert.Contains("\"url\":\"https://theyard-cosmos.stevenstout.biz/\"", page);
     }
+
+    /// <summary>
+    /// How I lead, the section in his own words: four habits, each with a link to
+    /// the place on the site or in the repository that shows it, and the picture
+    /// beside it drawn with its size, or not at all when none is named.
+    /// </summary>
+    [Fact]
+    public void The_about_page_says_how_he_leads_and_links_each_habit_to_its_proof()
+    {
+        string page = AboutPage.Render("https://theyard.stevenstout.biz/");
+
+        Assert.Contains("<h2 id=\"how-i-lead\">How I lead</h2>", page);
+        foreach (string habit in new[] { "Decisions written down.", "Tests that guard the business.", "Tradeoffs in the open.", "Coaching inside the system." })
+        {
+            Assert.Contains($"<strong>{habit}</strong>", page);
+        }
+        Assert.Contains("href=\"https://github.com/SteveStout/TheYard/tree/main/docs\"", page);
+        Assert.Contains("href=\"https://github.com/SteveStout/TheYard/blob/main/data/test-results.json\"", page);
+        Assert.Contains("href=\"https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md\"", page);
+
+        // The picture is drawn with its words and its size, so it holds its room before it arrives;
+        // with none named there is no empty frame.
+        Assert.Contains($"<img src=\"{AboutPage.LeadImage}\"", page);
+        Assert.Contains("width=\"960\" height=\"540\"", page);
+        Assert.DoesNotContain("<figure", AboutPage.Render("https://theyard.stevenstout.biz/", null));
+        string pictured = AboutPage.Render("https://theyard.stevenstout.biz/", "/about-lead.webp");
+        Assert.Contains($"<figure class=\"lead-image\"><img src=\"/about-lead.webp\" alt=\"{AboutPage.LeadImageAlt}\"", pictured);
+    }
     // #endregion about-page
     // #endregion page-tests
 

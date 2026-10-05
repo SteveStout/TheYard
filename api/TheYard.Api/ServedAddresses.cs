@@ -12,14 +12,14 @@ namespace TheYard.Api;
 /// goes out broken, which is exactly the shape the README's two raw-markdown
 /// links had: every link answered, and nothing asked what it answered with.
 /// The fixed rows below are the addresses that are not documents: the app
-/// itself, the API's own front pages, and the three files the build copies to
-/// the root of the domain.
+/// itself, the API's own front pages, and the files the build copies to the
+/// root of the domain.
 ///
-/// <para>The four that come out of the frontend build are checked only when
+/// <para>The ones that come out of the frontend build are checked only when
 /// the frontend is in this container. In the image it always is; on a
 /// developer's machine and under the test host the API runs on its own with
-/// the dev server in front of it, and calling four addresses this container
-/// was never given down would be a false reading rather than a strict one.</para>
+/// the dev server in front of it, and calling addresses this container was
+/// never given down would be a false reading rather than a strict one.</para>
 /// </summary>
 public static class ServedAddresses
 {
@@ -30,6 +30,7 @@ public static class ServedAddresses
         new("/robots.txt", "robots.txt", "file"),
         new("/sitemap.xml", "sitemap.xml", "file"),
         new("/og.png", "The preview card", "file"),
+        new("/about-lead.svg", "The drawing beside How I lead", "file"),
     ];
 
     /// <summary>

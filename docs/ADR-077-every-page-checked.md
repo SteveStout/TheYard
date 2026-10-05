@@ -112,3 +112,7 @@ The sweep lives in the host Api, with the Pages card on the front end, because c
 - [`api/TheYard.Tests/PageStatusTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PageStatusTests.cs): the list against the catalogue, every address answering, the types, and the header that keeps a sweep out of the ring.
 - [`api/TheYard.Tests/RecordLinksTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RecordLinksTests.cs): the rule that put the README's links right, shipped as 1.0.0.147.
 - [`docs/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-075-the-rules-a-change-has-to-pass.md): the rules table this record adds two rows to.
+
+## Addendum, 2026-10-05 (1.0.3.74): a fifth file from the build
+
+The page about Steve gained a drawing, `public/about-lead.svg`, and the sweep asks for it beside the preview card, so five addresses come out of the frontend build where this record names four above. They are still checked only where the web root holds them. `ServedAddresses` and `PageStatusTests` no longer state the number, so the next file added there does not make either one wrong.

@@ -9,7 +9,8 @@ namespace TheYard.Api;
 /// on the diagram pages' pattern (ADR-020): one small HTML document with the
 /// palette inline, a viewport line and selectable text, and nothing fetched
 /// from another host, not even a font. Every sentence is drawn from the served
-/// resume and the README; the page invents nothing about him.
+/// resume, the README and his own words for How I lead; the page invents
+/// nothing about him.
 /// </summary>
 public static class AboutPage
 {
@@ -30,6 +31,16 @@ public static class AboutPage
         "https://www.linkedin.com/in/stevenwstout/",
         "https://github.com/SteveStout/TheYard",
     ];
+
+    /// <summary>
+    /// The picture beside How I lead, a path the site serves (public/about-lead.svg,
+    /// an original drawing in the site's palette), or null for none. Null draws no
+    /// frame at all, so the page never shows an empty box.
+    /// </summary>
+    public const string? LeadImage = "/about-lead.svg";
+
+    /// <summary>What the picture beside How I lead shows, for a reader who cannot see it.</summary>
+    public const string LeadImageAlt = "A team drawn in teal, formed into an arrow, with one gold figure out in front";
     // #endregion words
 
     // #region page
@@ -38,11 +49,20 @@ public static class AboutPage
     /// container's Site:Url, or the request's own address where none is set.
     /// Both containers serve it, each under its own name.
     /// </summary>
-    public static string Render(string siteUrl)
+    public static string Render(string siteUrl) => Render(siteUrl, LeadImage);
+
+    /// <summary>
+    /// The same page with <paramref name="leadImage"/> as the picture beside How I
+    /// lead, or none when it is null.
+    /// </summary>
+    public static string Render(string siteUrl, string? leadImage)
     {
         string site = siteUrl.TrimEnd('/');
         string canonical = site + "/about";
         string e(string value) => WebUtility.HtmlEncode(value);
+        string figure = leadImage is null
+            ? ""
+            : $"<figure class=\"lead-image\"><img src=\"{e(leadImage)}\" alt=\"{e(LeadImageAlt)}\" width=\"960\" height=\"540\" loading=\"lazy\"></figure>";
         // #region person-json-ld
         string person = JsonSerializer.Serialize(new Dictionary<string, object>
         {
@@ -105,6 +125,14 @@ public static class AboutPage
               ul.links { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 0; padding: 0; list-style: none; }
               ul.links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1.5px solid #12677f; border-radius: 999px; text-decoration: none; font-weight: 600; }
               ul.links a:hover, ul.links a:focus-visible { background: #12677f; color: #ffffff; }
+              .lead { margin: 28px 0 0; padding-top: 20px; border-top: 1px solid rgba(16, 73, 90, 0.18); }
+              h2 { margin: 0 0 12px; font-size: 20px; line-height: 1.3; color: #3f3a37; }
+              .lede { font-weight: 600; color: #10495a; }
+              ul.tenets { margin: 0; padding: 0; list-style: none; }
+              ul.tenets li { margin: 0 0 14px; padding-left: 14px; border-left: 3px solid #b8923f; }
+              ul.tenets strong { color: #3f3a37; }
+              .lead-image { margin: 0 0 16px; }
+              .lead-image img { display: block; width: 100%; height: auto; border-radius: 8px; }
               footer { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; font-size: 13px; color: #4a4e57; }
             </style>
             </head>
@@ -115,6 +143,17 @@ public static class AboutPage
             <p class="title">{{e(JobTitle)}}</p>
             <p>A Lead / Staff .NET engineer who owns platform architecture end to end, from REST API design through the deployment pipeline it ships on. Twelve years full stack .NET and seven fully remote. Most recently the first lead-level engineering hire at Storee, where I set the architecture, built the team, and consolidated four applications onto a single .NET 9 platform on Azure without interrupting production releases.</p>
             <p><a href="/">TheYard</a> is a used-vehicle auction platform I built and run on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database and on Azure Cosmos DB. It is the working proof of how I build: read <a href="/?doc=performance">how it performs</a>, <a href="https://github.com/SteveStout/TheYard/tree/main/docs">the decision records</a> behind each choice, <a href="/api/reference">the API reference</a> and <a href="https://github.com/SteveStout/TheYard/blob/main/data/test-results.json">the test record</a> of the gate every version passes.</p>
+            <section class="lead" aria-labelledby="how-i-lead">
+            <h2 id="how-i-lead">How I lead</h2>
+            {{figure}}
+            <p class="lede">I build the systems that make delivery boring in the best way, then coach people inside them.</p>
+            <ul class="tenets">
+              <li><strong>Decisions written down.</strong> Every architectural choice in TheYard has <a href="https://github.com/SteveStout/TheYard/tree/main/docs">a decision record</a>, served from inside the running app. A new engineer reads why, not just what.</li>
+              <li><strong>Tests that guard the business.</strong> Every version passes one gate before it ships: the .NET tests on both databases and the front end's unit and browser suites. <a href="https://github.com/SteveStout/TheYard/blob/main/data/test-results.json">The test record</a> shows the last run.</li>
+              <li><strong>Tradeoffs in the open.</strong> When the roadmap is bigger than the team, I put scope and date on the table, with the cost of each, and leadership chooses. <a href="https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md">Adding a second database</a> was one of those calls, priced in writing before it shipped.</li>
+              <li><strong>Coaching inside the system.</strong> Good systems give engineers a safe place to learn fast. My favorite part of leading is helping each person on the team become the best version of themselves.</li>
+            </ul>
+            </section>
             <ul class="links">
               <li><a href="{{e(Profiles[0])}}" rel="me">LinkedIn</a></li>
               <li><a href="{{e(Profiles[1])}}" rel="me">TheYard on GitHub</a></li>
