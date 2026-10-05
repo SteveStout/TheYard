@@ -168,6 +168,9 @@ public static class RequestPipeline
                         ? "public, max-age=31536000, immutable"
                         : "no-cache";
                 }
+                // The catalogue's two reads may be kept by the edge for a few seconds when the
+                // answer is one every visitor would get; the browser's rule above is unchanged.
+                CatalogueReads.LetTheEdgeKeep(context);
                 return Task.CompletedTask;
             });
             await next();

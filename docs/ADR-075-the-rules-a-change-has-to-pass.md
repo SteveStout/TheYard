@@ -85,6 +85,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | A shipped test-results file is one only a green gate writes, every suite in it with its counts equal to its rows and nothing failed or skipped, the two passes on Cosmos DB the only ones a gate may carry forward and then only from a named version, and the Admin tab's endpoint serves it or says there is none | ADR: The five-minute gate | TestResultsTests |
 | CI runs on every push to main that touches the site, on every pull request and by hand, and a push that touches only the sample skips it | ADR: The five-minute gate | CiTriggerTests |
 | The listing and the filter values leave compressed for a caller that asks, and no other address is compressed | ADR: Cache headers | CompressionTests |
+| Only the listing and the filter values may be kept by the edge, and never for a request that carries a cookie; the browser is still told no-cache | ADR: Cache headers | CacheHeaderTests |
 | Program.cs is a table of contents under eighty lines that maps no route itself, every route is mapped from a file under `Endpoints/` or `Composition/`, and every class in those two folders is static | ADR: The composition root, split by job | CompositionRootTests |
 | Every public class and record in the solution says what it is for in an XML summary, and every positional record names each parameter; only the generated migrations are excused, by name | ADR: The composition root, split by job | XmlSummaryTests |
 | The bill on the Admin tab is read from Azure once an hour and never on a request, a resource path is cut to its name and type before anything reaches the wire, the donut names four resources and folds the rest into Others, and a reading that is absent is a sentence and never a zero | ADR: What Azure charges | CostTests |
@@ -151,3 +152,7 @@ CI runs on every push to main again (ADR: The five-minute gate, the addendum of 
 ## Addendum, 2026-10-05 (1.0.3.77): compression, and the one address list it reads
 
 The container compresses the catalogue's two reads and nothing else (ADR: Cache headers, the addendum on compression). `CompressionTests` holds both halves, so the table has its row.
+
+## Addendum, 2026-10-05 (1.0.3.79): the edge's copy
+
+The edge may keep the catalogue's two reads for a few seconds (ADR: Cache headers, the addendum on the edge's copy), and `CacheHeaderTests` holds who may be served from that copy and who may not, so the table has its row.

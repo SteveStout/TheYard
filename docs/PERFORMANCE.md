@@ -281,6 +281,8 @@ Steve asked for the site to be faster and to wake up more evenly. Before anythin
 
 **The listing through the edge.** The first hundred vehicles came back through the edge in 0.34 to 2.43 s to first byte across twenty reads, and straight from Azure in 0.32 to 0.56 s, with the whole answer, about 106 KB of JSON, in by 0.54 to 0.80 s. The edge forwards every API read and receives that answer uncompressed, then compresses it to about 16 KB for the browser. The versions after this one take that hop apart.
 
+**After 1.0.3.77, the hop carries 15 KB and the time did not move.** Read from Missouri twenty minutes after the roll, the listing straight from Azure came back as about 15.5 KB of gzip in 0.62 to 0.95 s, against 106 KB in 0.54 to 0.80 s before. The bytes fell by 85 per cent. The time stayed put because most of it is the server building the page: 406 ms at the median on the Azure SQL site and 692 ms on the Azure Cosmos DB site, by each container's own request ring. Timed on Steve's machine against the same build, compression costs under 10 ms a page: a page took 79 to 100 ms plain and 87 to 96 ms as Brotli. In the first minutes after a roll the same median read 3.9 s, which is the slow wake-up Steve noticed (`leadspeed-measure-probe-10377-warm.log`, `leadspeed-bench-compress.log`).
+
 ## What it cost to keep it honest
 
 Measuring is not free either, and the bill is small enough to print: the whole twenty-round measurement
