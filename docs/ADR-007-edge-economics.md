@@ -60,6 +60,18 @@ applied to it unchanged: push, read the deploys page, force a build if the
 cold-cache trap skipped it. The record it belongs to carries the meter's
 reading before and after.
 
+## Addendum, 2026-10-05 (1.0.3.76): what it would cost to serve the script from the edge
+
+The edge proxies every request to Azure, and a proxied file is cached per node, so a quiet site misses on its hashed script most of the time (ADR: Cache headers, the addendum of 5 October). The way to end that on Netlify is to publish the built files to the edge itself, which makes every app version a Netlify production deploy. Priced against Netlify's pricing page on 5 October:
+
+| | Credits a month | Cost a month |
+| --- | --- | --- |
+| Today: only edge changes deploy | about 0 | $0 on the free plan, 300 credits |
+| September's pace, 252 versions at 15 credits each | 3,780 | about $30 on Pro (3,000 credits for $20, then $10 for 1,500 more) |
+| October's pace so far, about 115 versions | 1,725 | about $19 on Personal (1,000 credits for $9, then $5 for each 500 more) |
+
+What it buys is about a quarter of a second on a first visit's script, once per visitor per version. The recommendation is to wait: the domain's registrar lock ends around 30 October, the edge was always going to move to Cloudflare then, and Cloudflare's free plan caches the hashed files with Smart Tiered Cache, which serves a quiet site's files from one upper tier instead of a cold cache per node. Bandwidth and requests already cost credits on today's plan and are not changed by this.
+
 ## Where it sits
 
 No ring is involved, because this is a hosting cost decision about when the Netlify edge rebuilds, settled by one ignore line in netlify.toml.

@@ -262,6 +262,25 @@ The four faces, declared once and hashed by the build like every other bundle fi
 ```live path=src/styles/fonts.css region=*
 ```
 
+## Measured again on 5 October, at 1.0.3.74
+
+Steve asked for the site to be faster and to wake up more evenly. Before anything changed, the same two tools as on 17 September were run from his machine in Missouri against the live sites: Lighthouse 12.8.2, three runs a form factor on the Azure SQL site and one on the Azure Cosmos DB site, with the median shown, and a probe that reads each response's time to first byte and its cache status (`leadspeed-measure-before-10374.log`).
+
+| Landing page, 1.0.3.74 | Score | First paint | Largest paint | Speed index | Blocking | Layout shift | Weight |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Azure SQL site, phone | 89 | 2.2 s | 2.4 s | 5.0 s | 182 ms | 0 | 221 KiB |
+| Azure SQL site, desktop | 99 | 0.5 s | 0.6 s | 1.4 s | 0 ms | 0 | 221 KiB |
+| Azure Cosmos DB site, phone | 93 | 1.7 s | 1.9 s | 5.5 s | 120 ms | 0 | 221 KiB |
+| Azure Cosmos DB site, desktop | 98 | 0.5 s | 0.6 s | 1.5 s | 2 ms | 0 | 221 KiB |
+
+**Layout shift is zero now.** The 0.175 above held through 1.0.0.143. Since then the landing page was rebuilt and the face became IBM Plex Sans, and on 1.0.3.74 Lighthouse reads 0.000 on every run, on both sites, on a phone and on a desk. The fallback-font overrides planned for the shift (`size-adjust` and the ascent and descent overrides) were left out: there is no shift for them to remove, so they would be code with nothing to show for it.
+
+**The phone's speed index is the number left high.** The largest paint lands at about 2.4 s and the page reads as finished at about 5 s. The landing figures fill in after the first paint, from readings the API serves; which reading sets the 5 s has not been measured yet, and it is the next place to look.
+
+**The script at the edge.** The hashed script was asked for ten times in a row from Missouri on each site, with no header asking for a fresh copy. Six of the twenty were edge hits, at 0.11 to 0.15 s to first byte for five of them; the other fourteen were misses at 0.19 to 0.46 s, each one marked `stored`. The headers are right: public, a year, immutable. The edge keeps a cache per node and several per location, so a site with little traffic lands on a cold one most of the time ([Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-015-cache-headers.md), the addenda of 28 September and 5 October). A miss costs a first visit about a quarter of a second on the script, once; the browser then keeps the file for a year. Serving the built files from the edge itself would end the misses, and it is priced in [Edge deploy economics](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-007-edge-economics.md), the addendum of 5 October. It is Steve's call, because it raises the bill.
+
+**The listing through the edge.** The first hundred vehicles came back through the edge in 0.34 to 2.43 s to first byte across twenty reads, and straight from Azure in 0.32 to 0.56 s, with the whole answer, about 106 KB of JSON, in by 0.54 to 0.80 s. The edge forwards every API read and receives that answer uncompressed, then compresses it to about 16 KB for the browser. The versions after this one take that hop apart.
+
 ## What it cost to keep it honest
 
 Measuring is not free either, and the bill is small enough to print: the whole twenty-round measurement
