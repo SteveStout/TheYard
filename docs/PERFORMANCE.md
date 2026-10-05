@@ -283,7 +283,35 @@ Steve asked for the site to be faster and to wake up more evenly. Before anythin
 
 **After 1.0.3.77, the hop carries 15 KB and the time did not move.** Read from Missouri twenty minutes after the roll, the listing straight from Azure came back as about 15.5 KB of gzip in 0.62 to 0.95 s, against 106 KB in 0.54 to 0.80 s before. The bytes fell by 85 per cent. The time stayed put because most of it is the server building the page: 406 ms at the median on the Azure SQL site and 692 ms on the Azure Cosmos DB site, by each container's own request ring. Timed on Steve's machine against the same build, compression costs under 10 ms a page: a page took 79 to 100 ms plain and 87 to 96 ms as Brotli. In the first minutes after a roll the same median read 3.9 s, which is the slow wake-up Steve noticed (`leadspeed-measure-probe-10377-warm.log`, `leadspeed-bench-compress.log`).
 
-**Where the server's time went, and 1.0.3.80.** Timed on Steve's machine by the shape of the query, fifteen reads each: the default listing took 90 to 100 ms, the same page sorted by price 35 to 45 ms, and one make with one row 25 to 30 ms. The default order was the cost: every request worked out all hundred thousand auction windows and sorted every match by them to keep a hundred. 1.0.3.80 builds that order once a day and reads the page off it ([The search index](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-025-search-index.md), the addendum on the schedule order). On the same machine and build the default listing went from 90 to 100 ms to 25 to 34 ms (`leadspeed-bench-listing.log`, `leadspeed-bench-listing-item5.log`); the live numbers after the roll are read next.
+**Where the server's time went, and 1.0.3.80.** Timed on Steve's machine by the shape of the query, fifteen reads each: the default listing took 90 to 100 ms, the same page sorted by price 35 to 45 ms, and one make with one row 25 to 30 ms. The default order was the cost: every request worked out all hundred thousand auction windows and sorted every match by them to keep a hundred. 1.0.3.80 builds that order once a day and reads the page off it ([The search index](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-025-search-index.md), the addendum on the schedule order). On the same machine and build the default listing went from 90 to 100 ms to 25 to 34 ms (`leadspeed-bench-listing.log`, `leadspeed-bench-listing-item5.log`); the live numbers are in the next section.
+
+## Read live after 1.0.3.80, at the same age as the reading before it
+
+A container's age moved these numbers more than any of the versions did. Every probe taken within about twenty-five minutes of a roll caught listing reads of several seconds: up to 8 s through the edge on the Azure SQL site 22 minutes after the 1.0.3.80 roll, and a longest single read of 40 s in the Azure Cosmos DB site's own ring. After 1.0.3.77 the longest was 70 s, so the wake-up was there before the edge copy and the schedule order existed. The before and after below are therefore both read about 73 minutes after a roll: 1.0.3.78, which already had compression, at 4,375 s of uptime, and 1.0.3.80 at 4,438 s (`leadspeed-measure-probe-10379-warm.log`, `leadspeed-measure-probe-10380-73min.log`).
+
+| The listing through the edge, ten reads in a row from Missouri | 1.0.3.78 | 1.0.3.80 |
+| --- | --- | --- |
+| Azure SQL site, answered from the edge's copy | 0 of 10 | 4 of 10, at 0.11 to 0.13 s |
+| Azure SQL site, forwarded to Azure | 0.22 to 0.28 s | 0.24 to 0.30 s |
+| Azure Cosmos DB site, answered from the edge's copy | 0 of 10 | 2 of 10, at 0.10 to 0.12 s |
+| Azure Cosmos DB site, forwarded to Azure | 0.24 to 0.83 s | 0.27 to 0.76 s |
+
+**What moved.** The edge copy from 1.0.3.79 is the change a visitor can feel. When the edge holds the listing, the first hundred vehicles arrive in about a tenth of a second.
+
+**What did not.** A read the edge forwards to Azure takes what it took before, about a quarter of a second. The schedule order cut the server's own work by two thirds on the build machine, but on a warm container that work was already a small part of a forwarded read. The rest is the trip from Missouri to the edge and on to Azure: the same read sent straight to Azure took 0.27 to 0.33 s on both versions. Each container's ring gave a server median of 174 ms before and 131 ms after on Azure SQL, and 97 ms before and 238 ms after on Azure Cosmos DB. The ring holds the last five hundred requests of every kind, wake-up reads included, so those two pairs are counted as neither a gain nor a loss.
+
+**Against where the day started.** At 1.0.3.74 the same ten reads through the edge took 0.34 to 1.53 s on the Azure SQL site and 0.36 to 2.43 s on the Azure Cosmos DB site, every one forwarded, with 106 KB crossing from Azure to the edge. On 1.0.3.80 they took 0.11 to 0.30 s and 0.10 to 0.76 s, with 16 KB crossing. That earlier reading did not record the container's age, so part of the difference may be warm-up.
+
+| Landing page, 1.0.3.80 | Score | First paint | Largest paint | Speed index | Blocking | Layout shift | Weight |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Azure SQL site, phone | 91 | 1.9 s | 2.2 s | 5.8 s | 135 ms | 0 | 221 KiB |
+| Azure SQL site, desktop | 99 | 0.5 s | 0.5 s | 1.2 s | 0 ms | 0 | 220 KiB |
+| Azure Cosmos DB site, phone | 92 | 1.9 s | 2.3 s | 5.8 s | 35 ms | 0 | 220 KiB |
+| Azure Cosmos DB site, desktop | 97 | 0.7 s | 0.8 s | 1.5 s | 0 ms | 0 | 221 KiB |
+
+Lighthouse 12.8.2 as before: three runs a form factor on the Azure SQL site and one on the Azure Cosmos DB site, read 17 minutes after the roll (`leadspeed-measure-after-10380.log`). Against 1.0.3.74 the scores moved by one or two points, inside the spread of three runs on a phone (87 to 92). Layout shift stayed at zero. The phone's speed index read 5.8 s against 5.0 s, and which reading sets it is still unmeasured.
+
+**The wake-up is the open problem.** For twenty minutes or more after each roll, single listing reads take seconds, and none of the five versions changed that. What the container spends those minutes on has not been measured, and it is the next thing to look at.
 
 ## What it cost to keep it honest
 
