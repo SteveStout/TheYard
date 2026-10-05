@@ -86,6 +86,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | CI runs on every push to main that touches the site, on every pull request and by hand, and a push that touches only the sample skips it | ADR: The five-minute gate | CiTriggerTests |
 | The listing and the filter values leave compressed for a caller that asks, and no other address is compressed | ADR: Cache headers | CompressionTests |
 | Only the listing and the filter values may be kept by the edge, and never for a request that carries a cookie; the browser is still told no-cache | ADR: Cache headers | CacheHeaderTests |
+| The default listing reads its page off the day's schedule order, and that order is the full ending-soonest sort at every instant, ties included | ADR: The search index | ScheduleOrderTests |
 | Program.cs is a table of contents under eighty lines that maps no route itself, every route is mapped from a file under `Endpoints/` or `Composition/`, and every class in those two folders is static | ADR: The composition root, split by job | CompositionRootTests |
 | Every public class and record in the solution says what it is for in an XML summary, and every positional record names each parameter; only the generated migrations are excused, by name | ADR: The composition root, split by job | XmlSummaryTests |
 | The bill on the Admin tab is read from Azure once an hour and never on a request, a resource path is cut to its name and type before anything reaches the wire, the donut names four resources and folds the rest into Others, and a reading that is absent is a sentence and never a zero | ADR: What Azure charges | CostTests |
@@ -156,3 +157,7 @@ The container compresses the catalogue's two reads and nothing else (ADR: Cache 
 ## Addendum, 2026-10-05 (1.0.3.79): the edge's copy
 
 The edge may keep the catalogue's two reads for a few seconds (ADR: Cache headers, the addendum on the edge's copy), and `CacheHeaderTests` holds who may be served from that copy and who may not, so the table has its row.
+
+## Addendum, 2026-10-05 (1.0.3.80): the schedule order
+
+The default listing stopped sorting the whole catalogue on every request (ADR: The search index, the addendum on the schedule order), and `ScheduleOrderTests` holds the faster path to the page the full sort gives, so the table has its row.

@@ -97,6 +97,11 @@ public sealed class InventoryService(
         int offset = 0,
         Func<Vehicle, Vehicle>? overlay = null)
     {
+        if (sort == VehicleSort.EndingSoonest)
+        {
+            return SearchEndingSoonest(filter, clock, limit, offset, overlay);
+        }
+
         IEnumerable<Vehicle> source = GetAll();
         if (overlay is not null)
         {
@@ -123,6 +128,79 @@ public sealed class InventoryService(
         return new SearchResult(matched.Count, page);
         // #endregion page
     }
+
+    // #region ending-soonest
+    // The default listing, and the one every visitor opens. Sorting all hundred
+    // thousand vehicles by their auction window on every request was most of its
+    // time: measured on the build machine, 90 to 100 ms against 35 to 45 ms for the
+    // same page sorted by price, and several times that on the plan's shared core.
+    // The windows are fixed for the day, so the order is read off a ScheduleOrder
+    // built once per anchor and the page stops at its last row (ADR: The search
+    // index, the addendum on the schedule order). The total still counts every
+    // match, so the filter still runs down every row.
+    private ScheduleOrder? _schedule;
+    private IReadOnlyList<Vehicle>? _scheduledFor;
+
+    private ScheduleOrder ScheduleFor(IReadOnlyList<Vehicle> all, long anchorMs)
+    {
+        // Built again when the day's anchor moves or the catalogue was loaded again. Two
+        // requests that arrive together at midnight may both build it, and either result
+        // is the same order, so no lock is needed.
+        ScheduleOrder? current = Volatile.Read(ref _schedule);
+        if (current is not null && current.AnchorMs == anchorMs && ReferenceEquals(Volatile.Read(ref _scheduledFor), all))
+        {
+            return current;
+        }
+
+        var built = new ScheduleOrder(all, anchorMs);
+        Volatile.Write(ref _scheduledFor, all);
+        Volatile.Write(ref _schedule, built);
+        return built;
+    }
+
+    private SearchResult SearchEndingSoonest(VehicleFilter filter, AuctionClock clock, int limit, int offset, Func<Vehicle, Vehicle>? overlay)
+    {
+        var all = GetAll();
+        var matches = filter.Compile(clock, Inventory.Index);
+        var kept = new Vehicle?[all.Count];
+        int total = 0;
+        for (int index = 0; index < all.Count; index++)
+        {
+            Vehicle vehicle = overlay is null ? all[index] : overlay(all[index]);
+            if (matches(vehicle))
+            {
+                kept[index] = vehicle;
+                total++;
+            }
+        }
+
+        var page = new List<Vehicle>(Math.Max(0, Math.Min(limit, total - offset)));
+        if (limit <= 0)
+        {
+            return new SearchResult(total, page);
+        }
+
+        int skipped = 0;
+        ScheduleFor(all, clock.AnchorMs).Visit(clock.NowMs, index =>
+        {
+            if (kept[index] is not { } vehicle)
+            {
+                return true;
+            }
+
+            if (skipped < offset)
+            {
+                skipped++;
+                return true;
+            }
+
+            page.Add(vehicle);
+            return page.Count < limit;
+        });
+
+        return new SearchResult(total, page);
+    }
+    // #endregion ending-soonest
 
     // #region facets
     /// <summary>

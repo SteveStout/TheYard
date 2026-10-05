@@ -126,6 +126,37 @@ public class InventoryServiceTests
         Assert.Equal(2, service.Search(new VehicleFilter(), now).Total);
     }
 
+    /// <summary>
+    /// The default listing reads its page off the schedule order instead of sorting every match
+    /// (ADR: The search index, the addendum on the schedule order), and gives the same page the
+    /// full sort gives for every filter, offset and instant tried, with the same total.
+    /// </summary>
+    [Theory]
+    [InlineData(null, null, 0, 100)]
+    [InlineData("Ford", null, 0, 25)]
+    [InlineData(null, AuctionStatus.Live, 10, 30)]
+    [InlineData(null, AuctionStatus.Upcoming, 0, 500)]
+    [InlineData(null, AuctionStatus.Ended, 40, 40)]
+    [InlineData("Kia", null, 900, 100)]
+    public void The_default_listing_is_the_page_the_full_sort_gives(string? make, AuctionStatus? status, int offset, int limit)
+    {
+        var seeds = Enumerable.Range(0, 1_000).Select(i => TestData.Vehicle(id: $"v-{i}", make: i % 3 == 0 ? "Ford" : "Kia")).ToArray();
+        var service = new InventoryService(new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool));
+        var filter = new VehicleFilter { Make = make, Status = status };
+
+        foreach (int hours in new[] { 0, 7, 30, 75, 140 })
+        {
+            var now = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 0, 0, 0, TimeSpan.Zero).AddHours(hours));
+            var matched = service.GetAll().Where(filter.Compile(now)).ToList();
+            var expected = VehicleOrdering.Sort(matched, VehicleSort.EndingSoonest, now).Skip(offset).Take(limit).Select(v => v.Id);
+
+            var page = service.Search(filter, now, VehicleSort.EndingSoonest, limit, offset);
+
+            Assert.Equal(matched.Count, page.Total);
+            Assert.Equal(expected, page.Vehicles.Select(v => v.Id));
+        }
+    }
+
     [Fact]
     public void Search_pages_but_still_reports_the_full_total()
     {

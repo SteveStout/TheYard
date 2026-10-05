@@ -207,3 +207,11 @@ The server-side number is read off the container's own request ring
 the idle minute is counted the same way as before; both are on the
 Performance page.
 
+
+## Addendum, 2026-10-05 (1.0.3.80): the schedule order
+
+Steve asked why the listing was uneven on a warm site. Measured on the live containers, the server's own time for a page of a hundred vehicles was 406 ms at the median on the Azure SQL site and 692 ms on the Azure Cosmos DB site, with the listing taking 0.4 to 1.4 s through the edge. Timed on his machine by the shape of the query, the default listing took 90 to 100 ms, the same page sorted by price 35 to 45 ms, and one make with one row 25 to 30 ms. The difference was the default order itself: every request worked out all hundred thousand auction windows and sorted every match by them to keep a hundred.
+
+A vehicle's window depends only on its id and the day's anchor, so for one day it never changes. What moves with the clock is which band each vehicle is in. `ScheduleOrder` holds the catalogue sorted twice, by end and by start, built once for each anchor, and reads the ending-soonest order off them at any instant: live by closest end, then upcoming by soonest start, then ended by most recent end, a tie in catalogue order. `InventoryService` keeps one per day and walks it until the page is full; the filter still runs down every row, because the total counts every match. Nothing is stored: the order is the schedule derived again and held in memory for the day it belongs to, so the rule that schedule facts are derived and never persisted still holds.
+
+On the same machine the default listing went from 90 to 100 ms to 25 to 34 ms. `ScheduleOrderTests` holds the order to the full sort at every three hours across a week, ties included, and `InventoryServiceTests` holds the page and the total to the full sort under six filters and offsets.

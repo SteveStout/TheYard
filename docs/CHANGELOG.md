@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.80** (2026-10-05): The default listing reads its page off an ending-soonest order built once a day, instead of sorting all hundred thousand vehicles on every request, and gives the same page the full sort gives; on the build machine the page went from 90 to 100 ms to 25 to 34 ms.
 - **1.0.3.79** (2026-10-05): The edge may answer the listing and the filter values from its own copy for up to thirty seconds, only for a caller with no cookie; the browser is still told to ask every time, and a vehicle's own page and its bids are always read fresh.
 - **1.0.3.78** (2026-10-05): About Steven is the one page about him: it gains the paragraph on TheYard and a How I lead panel with the drawing and the four habits, and the sidebar no longer offers About Steven Stout as a second page; /about stays for search engines and tools that do not run the app.
 - **1.0.3.77** (2026-10-05): The listing and the filter values leave the container compressed with Brotli or gzip, so the hop from Azure to the edge carries about 16 KB for a page of a hundred vehicles in place of about 106 KB; no other address is compressed, and a test holds both halves.
