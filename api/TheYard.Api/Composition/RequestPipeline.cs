@@ -7,8 +7,8 @@ namespace TheYard.Api;
 /// The request pipeline, in ASP.NET Core's own term: the middleware every request passes
 /// through in this order, and every response passes back through in reverse, with the
 /// reason beside each piece: timing outermost, then the problem shape, logging, the user,
-/// the session's renewal, the store's warmth, the error record, the cache rules and the
-/// files last.
+/// the session's renewal, the store's warmth, the error record, the catalogue's
+/// compression, the cache rules and the files last.
 /// </summary>
 public static class RequestPipeline
 {
@@ -136,6 +136,16 @@ public static class RequestPipeline
             }
         });
         #endregion error-log
+
+        #region compression
+        // The catalogue's reads are compressed here and nothing else is (ApiRegistration,
+        // the compression region). Their bodies carry no secret: a session travels in a
+        // cookie header, which this does not touch. That is what makes compressing them
+        // safe from the BREACH attack, which needs a secret and text an attacker chooses
+        // in the same compressed body, and it is why the list is two reads and not the
+        // whole API.
+        app.UseWhen(context => CatalogueReads.Covers(context.Request), branch => branch.UseResponseCompression());
+        #endregion compression
 
         #region cache-headers
         // Cache rules (ADR-015), from the shape of the address. Vite names every

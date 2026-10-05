@@ -1,16 +1,19 @@
+using System.IO.Compression;
 using System.Text.Json;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.ResponseCompression;
 
 namespace TheYard.Api;
 
 /// <summary>
 /// The shape of the wire: snake_case bodies, one ProblemDetails for every failure
-/// (ADR-023), one structured log line per request, and the OpenAPI document built
-/// from the endpoints as mapped (ADR: The API describes itself).
+/// (ADR-023), one structured log line per request, the catalogue's reads compressed,
+/// and the OpenAPI document built from the endpoints as mapped (ADR: The API
+/// describes itself).
 /// </summary>
 public static class ApiRegistration
 {
-    /// <summary>Registers the JSON options, the problem shape, request logging and the OpenAPI document.</summary>
+    /// <summary>Registers the JSON options, the problem shape, request logging, compression and the OpenAPI document.</summary>
     public static void AddTheYardApi(this WebApplicationBuilder builder, YardComposition host)
     {
         string buildVersion = host.Build.Version;
@@ -58,6 +61,28 @@ public static class ApiRegistration
         });
         builder.Logging.AddJsonConsole(options => options.IncludeScopes = false);
         #endregion problem-details
+
+        #region compression
+        // The catalogue's reads leave the container compressed (ADR: Cache headers, the
+        // addendum on compression). A page of a hundred vehicles is about 106 KB of JSON
+        // and about 16 KB as Brotli. The edge in front of the site forwards every API read
+        // to Azure, so without this the hop from Azure to the edge carried all 106 KB on
+        // every listing and the edge compressed it on the way out. The optimal level, which
+        // is Brotli's quality 4: about a millisecond for a hundred vehicles. The fastest
+        // level sent 44 KB, because the serializer writes the answer in pieces and every
+        // piece is flushed through the compressor, and the fastest level loses most of its
+        // gain at each flush. Only JSON, and only on the addresses CatalogueReads names,
+        // where RequestPipeline turns it on.
+        builder.Services.AddResponseCompression(options =>
+        {
+            options.EnableForHttps = true;
+            options.MimeTypes = ["application/json"];
+            options.Providers.Add<BrotliCompressionProvider>();
+            options.Providers.Add<GzipCompressionProvider>();
+        });
+        builder.Services.Configure<BrotliCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
+        builder.Services.Configure<GzipCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
+        #endregion compression
 
         #region api-document
         // The API's description of itself (ADR: The API describes itself): one
