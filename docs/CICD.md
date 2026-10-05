@@ -16,8 +16,9 @@ gate on the machine that ships: the API suite on both stores, the frontend
 suite, and a browser suite that clicks through the running app the way a
 person would. A change that fails any of them is not committed, so it never
 reaches GitHub. Every result, test by test, ships with the version and is on
-the Admin tab. A pull request from anybody else runs the same suites on
-GitHub's runners, because it has had no gate.
+the Admin tab. The same suites then run again on GitHub's runners for every
+push to main, where anybody can read the result without a login, and for a
+pull request from anybody else, which has had no gate.
 
 ![The CI workflow runs on GitHub Actions, every one green, forty-one of them by the end of the second day](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-ci-runs.jpg)
 
@@ -111,7 +112,7 @@ URL, and every deploy so far has been gated on it.
 
 ## Files
 
-- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the three suites and the SQL project build as four jobs behind it, on a pull request.
+- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the three suites and the SQL project build as four jobs behind it, on every push to main and on a pull request.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Deploy workflow, step by step.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites Deploy rolls (the roll sets the image and four settings).
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image Deploy builds.

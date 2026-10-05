@@ -1,11 +1,19 @@
 name: CI
 
-# On a pull request, and by hand. Not on a push to main: the only thing that
-# pushes to main is the ship's gate, which has just run every one of these
-# suites on both stores, and Steve's rule is that every check runs once
-# (ADR: The five-minute gate, addendum of 21 September). A pull request from
-# anybody else has had no gate, so it gets all of them here.
+# On every push to main, on a pull request, and by hand. The ship's gate runs
+# these suites on the build machine before it pushes; CI runs them again on a
+# clean GitHub runner, so every commit on main carries a result anybody can
+# read without a login, and a floor only CI measures (the coverage step) goes
+# red on the commit that crossed it rather than weeks later (ADR: The
+# five-minute gate, addendum of 5 October). The deploy does not wait for it.
+# A push that touches only the sample under samples/ has its own workflow
+# (deploy-shed.yml) and does not run this one.
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "samples/**"
+      - ".github/workflows/deploy-shed.yml"
   pull_request:
   workflow_dispatch:
 

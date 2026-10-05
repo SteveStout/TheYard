@@ -83,6 +83,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The Admin tab's charts and gauges are drawn in the Mark VII marks, each 3:1 on white, and every figure the style page states for them is the figure the tokens give; the glass is 30 per cent white and the secondary grey holds 4.5 over it on the ribbons' teal and gold stops (`tokens.test.ts`); no table cell breaks a word (`coverage.spec`) | ADR: The tweaks pass | StyleRulesTests |
 | A colour is written once in the token sheet, a token that repeats one is written as it, and a see-through tint is mixed from its token; every width a page asks about is a step on the one scale in `src/lib/breakpoints.ts`; every size, weight, corner, tracking and layer a stylesheet writes comes from the token sheet | ADR: The tweaks pass | StyleRulesTests |
 | A shipped test-results file is one only a green gate writes, every suite in it with its counts equal to its rows and nothing failed or skipped, the two passes on Cosmos DB the only ones a gate may carry forward and then only from a named version, and the Admin tab's endpoint serves it or says there is none | ADR: The five-minute gate | TestResultsTests |
+| CI runs on every push to main that touches the site, on every pull request and by hand, and a push that touches only the sample skips it | ADR: The five-minute gate | CiTriggerTests |
 | Program.cs is a table of contents under eighty lines that maps no route itself, every route is mapped from a file under `Endpoints/` or `Composition/`, and every class in those two folders is static | ADR: The composition root, split by job | CompositionRootTests |
 | Every public class and record in the solution says what it is for in an XML summary, and every positional record names each parameter; only the generated migrations are excused, by name | ADR: The composition root, split by job | XmlSummaryTests |
 | The bill on the Admin tab is read from Azure once an hour and never on a request, a resource path is cut to its name and type before anything reaches the wire, the donut names four resources and folds the rest into Others, and a reading that is absent is a sentence and never a zero | ADR: What Azure charges | CostTests |
@@ -141,3 +142,7 @@ Beside the onion, in TheYard.Tests. RuleTableTests reads this table, and three o
 ## Addendum, 2026-10-03: four more rules
 
 Four rows joined the table with the pass that put the rings under test and the fixes that followed it: three for `OnionTests`, which reads the compiled assemblies and fails the build when a dependency points outward, and one for `TechnologyVersionsTests`, which holds the versions record to the project files. `RecordShapeTests` also requires every record to say where it sits (ADR: Onion and SOLID, how this codebase holds them).
+
+## Addendum, 2026-10-05: one more rule
+
+CI runs on every push to main again (ADR: The five-minute gate, the addendum of 5 October), and `CiTriggerTests` holds the triggers, so the table has its row.

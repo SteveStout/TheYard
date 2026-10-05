@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.75** (2026-10-05): CI runs again on every push to main, on GitHub's runners beside the deploy, so every commit carries a public result and the coverage floor is read on the commit that crosses it; a push that touches only the sample skips it, and a test holds the triggers.
 - **1.0.3.74** (2026-10-05): The page about Steven gains How I lead, four habits in his own words, each linked to the record that shows it, beside an original drawing in the site's teal and gold of a team formed into an arrow with one gold figure out in front.
 - **1.0.3.73** (2026-10-04): A listing shows the highest bid from anyone when the buyer is outbid, not the buyer's own lower figure; the health card's kept-warm line names its slowest read; the request-units and Who came labels say what they count; the phone's health rows and code blocks read whole; and the comments and records say what the code does today, with no history, a stale rule row replaced and the cross-site sold gap named.
 - **1.0.3.72** (2026-10-04): The Author badge on the landing page is served under a new file name, so every visitor sees the new picture at once rather than a cached copy of the old one.

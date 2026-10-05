@@ -390,3 +390,9 @@ On 29 September Steve asked for releases to stack instead of shipping one at a t
 - **Never wait on a roll.** After the push the lane moves on. The proof that a version is live is the version the Actions run's own Verify step reports, not a lane polling both domains.
 
 This version is the second push of the proof: it went to main while 1.0.3.40 was rolling.
+
+## Addendum, 2026-10-05: CI runs on every push again
+
+On 21 September CI stopped running on a push to main, because the gate had just run every suite and each check was to run once. The cost showed up in a floor only CI measures: CI went unrun from 21 September to 3 October, and when it was run by hand on 3 October the coverage step was red, with branches at 67.7% against a floor of 68 (ADR: Counting what the tests cover). On 5 October, with the code under review, Steve asked for CI to run on every push again.
+
+`ci.yml` now runs on a push to main as well as on a pull request and by hand. It runs on GitHub's runners beside Deploy and Deploy Cosmos and holds neither of them up, so the time from push to live does not change. What it adds is a public result on every commit, on a clean machine, and the coverage floor read on the commit that crosses it. GitHub's runners cost nothing on a public repository. A push that touches only the sample under `samples/` skips it, as Deploy does. The gate stays the one that decides whether anything is pushed. `CiTriggerTests` holds the triggers.
