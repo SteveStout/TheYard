@@ -132,6 +132,33 @@ public class AuthorPageTests
     }
     // #endregion privacy
 
+    // #region how-he-leads
+    /// <summary>
+    /// How I lead is a panel of About Steven, the one page about him a person
+    /// reads (ADR: The sidebar, the addendum on one page about him): the drawing
+    /// on top, then the four habits in his own words, each its own block, and
+    /// each of the first three linked to the place that shows it.
+    /// </summary>
+    [Fact]
+    public void About_Steven_says_how_he_leads_and_links_each_habit_to_its_proof()
+    {
+        string words = Words();
+        int lead = words.IndexOf("\n## How I lead\n", StringComparison.Ordinal);
+        int away = words.IndexOf("\n## Away from the keyboard\n", StringComparison.Ordinal);
+        Assert.True(lead > 0 && away > lead, "docs/AUTHOR.md should hold How I lead as a panel ahead of Away from the keyboard");
+        string panel = words[lead..away];
+
+        Assert.Contains("/images/author/how-i-lead-960.jpg", panel, StringComparison.Ordinal);
+        foreach (string habit in new[] { "Decisions written down", "Tests that guard the business", "Tradeoffs in the open", "Coaching inside the system" })
+        {
+            Assert.Contains($"\n### {habit}\n", panel, StringComparison.Ordinal);
+        }
+        Assert.Contains("](https://github.com/SteveStout/TheYard/tree/main/docs)", panel, StringComparison.Ordinal);
+        Assert.Contains("](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)", panel, StringComparison.Ordinal);
+        Assert.Contains("](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md)", panel, StringComparison.Ordinal);
+    }
+    // #endregion how-he-leads
+
     // #region pictures
     private sealed record Photo(string Name, int[] Widths, int Width, int Height, string? NarrowBecause);
 

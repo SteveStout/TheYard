@@ -8,6 +8,13 @@
     "narrowBecause": "a phone selfie 1671 pixels wide: 1600 is the widest cut it can give"
   },
   {
+    "name": "how-i-lead",
+    "widths": [480, 960, 1920],
+    "width": 1920,
+    "height": 1080,
+    "sizes": "(max-width: 767.98px) 92vw, 960px"
+  },
+  {
     "name": "couple-crossing-stream",
     "widths": [480, 960, 1920],
     "width": 1920,

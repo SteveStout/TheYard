@@ -6,11 +6,35 @@
 
 I have spent twelve years building full stack software in C#, SQL Server, React and Azure. I have been the only engineer on a live financial platform, where I shipped more than 200 releases with no downtime, and I have been the lead who built a team of four. I am happy in either seat.
 
+TheYard is a used-vehicle auction platform I built and run on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database and on Azure Cosmos DB. It is the working proof of how I build: read [how it performs](https://theyard.stevenstout.biz/?doc=performance), [the decision records](https://github.com/SteveStout/TheYard/tree/main/docs) behind each choice, [the API reference](https://theyard.stevenstout.biz/api/reference) and [the test record](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json) of the gate every version passes.
+
 ![Steve and Katie smiling in sunglasses at a table on a vineyard terrace, autumn trees and a hillside behind them](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/steve-and-katie-vineyard-960.jpg)
 
 - [Read my resume](https://theyard.stevenstout.biz/api/docs/resume)
 - [LinkedIn](https://www.linkedin.com/in/stevenwstout)
 - [GitHub](https://github.com/SteveStout/TheYard)
+
+## How I lead
+
+![A team drawn in teal, formed into an arrow, with one gold figure out in front](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/how-i-lead-960.jpg)
+
+**I build the systems that make delivery boring in the best way, then coach people inside them.**
+
+### Decisions written down
+
+Every architectural choice in TheYard has [a decision record](https://github.com/SteveStout/TheYard/tree/main/docs), served from inside the running app. A new engineer reads why, not just what.
+
+### Tests that guard the business
+
+Every version passes one gate before it ships: the .NET tests on both databases and the front end's unit and browser suites. [The test record](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json) shows the last run.
+
+### Tradeoffs in the open
+
+When the roadmap is bigger than the team, I put scope and date on the table, with the cost of each, and leadership chooses. [Adding a second database](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md) was one of those calls, priced in writing before it shipped.
+
+### Coaching inside the system
+
+Good systems give engineers a safe place to learn fast. My favorite part of leading is helping each person on the team become the best version of themselves.
 
 ## Away from the keyboard
 

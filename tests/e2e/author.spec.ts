@@ -21,8 +21,10 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
 }) => {
   await openTheYard(page);
   const wide = await theAuthorPage(page, page.getByTestId('side-rail'));
-  // Panels and blocks, not a letter: who he is, the rest of his life in headed blocks, a closing line.
-  await expect(wide.locator('.author-panel')).toHaveCount(3);
+  // Panels and blocks, not a letter: who he is, how he leads, the rest of his life in headed blocks,
+  // a closing line.
+  await expect(wide.locator('.author-panel')).toHaveCount(4);
+  await expect(wide.getByRole('heading', { name: 'How I lead', exact: true })).toBeVisible();
   expect(await wide.locator('.author-block').count()).toBeGreaterThanOrEqual(4);
   await page.keyboard.press('Escape');
 
@@ -48,7 +50,8 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   }).toPass({ timeout: 20_000 });
   await expect(doc.locator('a[href^="mailto:"], form, input')).toHaveCount(0);
 
-  // Every picture is on the page, in its place: the vineyard beside the words, the lake and the
+  // Every picture is on the page, in its place: the vineyard beside the words, the drawing at the
+  // top of How I lead, the lake and the
   // Pantheon in their blocks, the stream after History and the bridge after Games each on its own
   // row, each game's art, the grill and the doors in their blocks, the two rabbit pictures and
   // the two house plant pictures side by side, and the photographer's credit under the panels.
@@ -63,6 +66,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     );
     expect(places).toEqual([
       { name: 'steve-and-katie-vineyard', hero: true, opens: false, paired: false },
+      { name: 'how-i-lead', hero: false, opens: true, paired: false },
       { name: 'ha-ha-tonka-castle-aerial', hero: false, opens: false, paired: false },
       { name: 'pantheon-at-dusk', hero: false, opens: false, paired: false },
       { name: 'couple-crossing-stream', hero: false, opens: false, paired: false },
@@ -88,7 +92,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   // Every photograph is served from this site, in the one frame, with words for it and its box reserved,
   // and a phone is never handed a file wider than 960.
   const photos = doc.locator('.author-photo img');
-  await expect(photos).toHaveCount(17);
+  await expect(photos).toHaveCount(18);
   const count = await photos.count();
   for (let index = 0; index < count; index++) {
     // Read as one retried step: the drawer that opened this document lets go of it as it closes, and

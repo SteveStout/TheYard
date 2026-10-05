@@ -133,22 +133,21 @@ test.describe('the docked rail', () => {
     expect(elsewhere).toEqual([]);
   });
 
-  test('the About section opens with the page about him, in a new tab, and it answers', async ({
+  test('the page about him is one row, About Steven, and /about still answers for search', async ({
     page,
   }) => {
     await openTheYard(page);
     const rail = page.getByTestId('side-rail');
     await openSection(rail, 'About');
-    // The first row of the section is the served page (api/TheYard.Api/AboutPage.cs), before the documents.
-    const about = rail.getByRole('link', { name: 'About Steven Stout', exact: true });
-    await expect(about).toHaveAttribute('href', '/about');
-    await expect(about).toHaveAttribute('target', '_blank');
-    const first = await about.evaluate((row) => {
-      const section = row.parentElement;
-      return section?.querySelector('a, button') === row;
-    });
-    expect(first).toBe(true);
+    // The About section is the project; the person is About Steven in the Author section, one page.
+    await expect(rail.getByRole('link', { name: 'About Steven Stout', exact: true })).toHaveCount(
+      0
+    );
+    await expect(rail.locator('a[href="/about"]')).toHaveCount(0);
+    await openSection(rail, 'Author');
+    await expect(rail.getByRole('button', { name: 'About Steven', exact: true })).toBeVisible();
 
+    // The served page stays, for a search engine or a tool that does not run the app.
     const served = await page.request.get('/about');
     expect(served.ok()).toBe(true);
     const html = await served.text();
