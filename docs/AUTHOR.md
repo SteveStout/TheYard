@@ -6,8 +6,6 @@
 
 I have spent twelve years building full stack software in C#, SQL Server, React and Azure. I have been the only engineer on a live financial platform, where I shipped more than 200 releases with no downtime, and I have been the lead who built a team of four. I am happy in either seat.
 
-TheYard is a used-vehicle auction platform I built and run on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database and on Azure Cosmos DB. It is the working proof of how I build: read [how it performs](https://theyard.stevenstout.biz/?doc=performance), [the decision records](https://github.com/SteveStout/TheYard/tree/main/docs) behind each choice, [the API reference](https://theyard.stevenstout.biz/api/reference) and [the test record](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json) of the gate every version passes.
-
 ![Steve and Katie smiling in sunglasses at a table on a vineyard terrace, autumn trees and a hillside behind them](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/steve-and-katie-vineyard-960.jpg)
 
 - [Read my resume](https://theyard.stevenstout.biz/api/docs/resume)

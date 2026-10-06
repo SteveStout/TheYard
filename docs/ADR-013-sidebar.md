@@ -323,3 +323,7 @@ Files this addendum decided about:
 The sidebar had two pages about Steve: About Steven Stout, the served page at `/about` that opened the About section in a new tab, and About Steven, the Author section's page. Steve asked for one. About Steven now carries everything. The intro keeps its words and gains the paragraph on TheYard as the proof of how he builds. A new panel, How I lead, holds the drawing of a team formed into an arrow with one gold figure out in front, his one-line lede and the four habits as headed blocks. The drawing is cut from `public/about-lead.svg` the way the photographs are cut, by `scripts/author_photos.mjs` at three widths, so it wears the same frame and passes the same checks.
 
 The About section now holds the project's README and how it was built, and has no row for `/about`. The served page itself stays: a search engine or a tool that does not run the app still reads his name and How I lead there (ADR: The public face, the addendum of 5 October). `AuthorPageTests` holds the panel and its links. `author.spec` holds the fourth panel and the drawing in its place, and `sidebar.spec` holds that the rail offers one page about him.
+
+## Addendum, 2026-10-06: the intro keeps its own words
+
+Steve asked for the paragraph on TheYard to come out of About Steven. The intro is back to the words it had before one page about him, and the How I lead panel, the photographs and the links stay as they were.
