@@ -124,6 +124,7 @@ public static class DocumentationCatalog
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",
         ["ui-architecture"] = "docs/style/UI-ARCHITECTURE.md",
+        ["document-style"] = "docs/style/DOCUMENT-STYLE.md",
         ["author"] = "docs/author/AUTHOR.md",
         ["security"] = "docs/best-practices/SECURITY.md",
         ["ai-development"] = "docs/about/AI-DEVELOPMENT.md",

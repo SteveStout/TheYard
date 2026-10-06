@@ -217,3 +217,8 @@ One consequence is written down rather than fixed. A push that changes only the 
 redeploy TheYard, so TheYard's sites show the sample's tests as they were at TheYard's last deploy.
 The line under the block names the commit it was read from, so the copy says how old it is.
 
+## Addendum, 2026-10-06 (1.0.3.85): the page that shows them
+
+Steve asked for a page that teaches how the documents are styled, for a developer who wants to copy the idea. It is How the documents are styled, under Style (`docs/style/DOCUMENT-STYLE.md`), and it shows each feature by using it: its own status line drawn as a reading, its sections as panels, a link to one of its own sections, a `swatches` fence, a `readouts` fence and five live blocks, one of them the expander this record decided on. It ends with the five steps to try the pattern in another repository, the last of which is the coverage test this record's earlier addendum added.
+
+The page opens on how many live blocks the library carries and in how many documents, and both numbers are placeholders like the Style guide's. Two measures were added for them, `live-blocks` and `live-documents` (`LiveCounts.cs`): each counts the lines that open a live fence in the documents the catalogue serves, the way the expander finds them. `StyleSectionTests` counts the same fences by hand and holds the two measures to its count.

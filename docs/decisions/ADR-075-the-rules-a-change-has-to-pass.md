@@ -59,7 +59,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every document sits in the folder of the sidebar section that offers it, the records in `docs/decisions/`, and the root of `docs/` holds only those folders, the changelog and the pictures | ADR: The sidebar | DocsFolderTests |
 | Every file in `src/app` and `src/library`, and every stylesheet under `src`, opens with what it does, what it does not, and which files use it; the last is read against the files that import it, and no file there runs past 300 lines but the ones named with why | ADR: The React configuration, explained for a new developer | FileHeaderTests |
 | No production C# file under `api/` and no TypeScript file under `src/` runs past 300 lines; a longer file is split by job and the file that keeps the name lists its parts (tests, migrations and generated files are left out) | ADR: The rules a change has to pass | FileShapeTests |
-| The four Style pages are served and are the Style section's rows, say "design token" and never a bare "token" (as do the design token files' comments), carry no em dash, and every live number and live fence on them is one the build can count or read, and every tile and glossary link lands on a real section | ADR: The palette | StyleSectionTests |
+| The five Style pages are served and are the Style section's rows, say "design token" and never a bare "token" (as do the design token files' comments), carry no em dash, and every live number and live fence on them is one the build can count or read, and every tile and glossary link lands on a real section | ADR: The palette | StyleSectionTests |
 | One changelog line per shipped version, newest first, and the deploy reads the version from it | ADR: The changelog, ADR: The version comes from the changelog | ChangelogTests |
 | Nothing this repository ships or serves contains an em dash | ADR: Style, enforced | HouseVoiceTests |
 | No marker for work that is not happening, no focused test, no console call under `src` | ADR: Broken windows, and the rule that answers them | BrokenWindowsTests |
@@ -166,3 +166,7 @@ The default listing stopped sorting the whole catalogue on every request (ADR: T
 ## Addendum, 2026-10-06 (1.0.3.84): the folders
 
 The documents moved into one folder per sidebar section (ADR: The sidebar, the addendum on the folders), and `DocsFolderTests` holds where each one sits, so the table has its row.
+
+## Addendum, 2026-10-06 (1.0.3.85): a fifth Style page
+
+The Style section gained How the documents are styled (ADR: Live code samples, the addendum on the page that shows them), so the row `StyleSectionTests` holds says five pages, and the same test holds the page's two new live numbers.

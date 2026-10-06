@@ -54,6 +54,8 @@ public static partial class LiveCounts
                 "over-300" => Number(HeaderScope(repoRoot).Count(file => File.ReadAllLines(file).Length > 300)),
                 "array" when path is not null => Number(ArrayLength(repoRoot, "src/lib/ribbons.ts", path)),
                 "documents" => Number(DocumentationCatalog.Files.Count),
+                "live-blocks" => Number(LiveBlocks(repoRoot).Sum()),
+                "live-documents" => Number(LiveBlocks(repoRoot).Count(blocks => blocks > 0)),
                 _ => $"(no live measure named '{measure}')",
             };
         }
@@ -75,6 +77,16 @@ public static partial class LiveCounts
     private static IEnumerable<string> TokenNames(string repoRoot, string file) =>
         Declaration().Matches(Comment().Replace(File.ReadAllText(Full(repoRoot, file)), ""))
             .Select(match => match.Groups["name"].Value);
+
+    /// <summary>
+    /// The live code blocks in each document the catalogue serves, found the way the expander finds them: a line that
+    /// opens a fence named live. Counted from the markdown on disk, before anything is expanded.
+    /// </summary>
+    private static List<int> LiveBlocks(string repoRoot) =>
+        DocumentationCatalog.Files.Values
+            .Distinct(StringComparer.Ordinal)
+            .Select(file => LiveFence().Matches(File.ReadAllText(Full(repoRoot, file))).Count)
+            .ToList();
 
     /// <summary>Every stylesheet under src.</summary>
     private static List<string> Sheets(string repoRoot)
@@ -119,6 +131,9 @@ public static partial class LiveCounts
         var array = Regex.Match(text, @"export const " + Regex.Escape(name) + @"\b[^=]*=\s*\[(?<body>.*?)\n\];", RegexOptions.Singleline);
         return array.Success ? Regex.Matches(array.Groups["body"].Value, @"^\s*\[", RegexOptions.Multiline).Count : 0;
     }
+
+    [GeneratedRegex(@"^```live(?:[ \t]|$)", RegexOptions.Multiline)]
+    private static partial Regex LiveFence();
 
     [GeneratedRegex(@"\{\{live:(?<measure>[^}]+)\}\}")]
     private static partial Regex Placeholder();

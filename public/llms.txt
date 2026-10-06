@@ -27,6 +27,7 @@
 - [Best practices](https://theyard.stevenstout.biz/api/docs/practices)
 - [Security](https://theyard.stevenstout.biz/api/docs/security)
 - [Style guide](https://theyard.stevenstout.biz/api/docs/style-guide): the look and the rules the build enforces
+- [How the documents are styled](https://theyard.stevenstout.biz/api/docs/document-style): plain Markdown drawn as panels, with code samples read from the running build
 - [Site traffic](https://theyard.stevenstout.biz/api/docs/site-traffic): who comes, what is kept, and how the site is found
 - [Search Console, step by step](https://theyard.stevenstout.biz/api/docs/traffic-search-console): how the site was verified, its sitemap submitted and its pages inspected, with the code behind each step
 - [Changelog](https://theyard.stevenstout.biz/api/docs/changelog): every version that reached the live site

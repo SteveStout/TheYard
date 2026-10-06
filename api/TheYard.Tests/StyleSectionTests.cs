@@ -4,9 +4,10 @@ using TheYard.Api;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The Style section's four pages (ADR: The palette, the addendum on the four
-/// pages): each is served and in the sidebar, their words keep the section's
-/// rules (no em dash, "design token" and never a bare "token", and none of the
+/// The Style section's pages (ADR: The palette, the addendum on the four
+/// pages), and the fifth, on how the documents are drawn
+/// (ADR: Live code samples, the addendum on the page that shows them): each
+/// is served and in the sidebar, their words keep the section's rules (no em dash, "design token" and never a bare "token", and none of the
 /// words the section is not written at), every live number on them is one the
 /// build can count, and every tile and glossary link lands on a page and a
 /// section that exist.
@@ -14,8 +15,8 @@ namespace TheYard.Tests;
 public class StyleSectionTests
 {
     // #region style-section
-    /// <summary>The four pages, by slug, in the order the sidebar lists them.</summary>
-    private static readonly string[] Pages = ["style-guide", "color-style", "background-ribbon", "ui-architecture"];
+    /// <summary>The pages, by slug, in the order the sidebar lists them.</summary>
+    private static readonly string[] Pages = ["style-guide", "color-style", "background-ribbon", "ui-architecture", "document-style"];
 
     private static string Root => Repo.Root();
 
@@ -29,14 +30,14 @@ public class StyleSectionTests
     }
 
     [Fact]
-    public void The_four_pages_are_served_and_are_the_Style_sections_rows()
+    public void The_pages_are_served_and_are_the_Style_sections_rows()
     {
         string sections = File.ReadAllText(Path.Combine(Root, "src", "library", "sections.ts"));
         string look = Regex.Match(sections, @"look: \{.*?\n  \},", RegexOptions.Singleline).Value;
         string pages = File.ReadAllText(Path.Combine(Root, "src", "library", "pages.ts"));
         var keys = Regex.Matches(look, @"key: '(\w+)'").Select(match => match.Groups[1].Value).ToList();
 
-        Assert.Equal(["styleGuide", "colorStyle", "backgroundRibbon", "uiArchitecture"], keys);
+        Assert.Equal(["styleGuide", "colorStyle", "backgroundRibbon", "uiArchitecture", "documentStyle"], keys);
         foreach (string slug in Pages)
         {
             Assert.True(DocumentationCatalog.Files.ContainsKey(slug), $"{slug} is not in DocumentationCatalog.Files");
@@ -133,6 +134,14 @@ public class StyleSectionTests
         string[] headers = LiveCounts.Measure("headers", Root).Split(" of ");
         Assert.Equal(headers[1], headers[0]);
         Assert.Equal("70", LiveCounts.Measure("array SPARKS", Root));
+
+        // The code samples the documents read from the build, counted by hand here the way the expander finds a fence.
+        var blocks = DocumentationCatalog.Files.Values.Distinct(StringComparer.Ordinal)
+            .Select(file => Regex.Matches(File.ReadAllText(Path.Combine(Root, file)), "^``" + "`live[ \\t]", RegexOptions.Multiline).Count)
+            .ToList();
+        Assert.True(blocks.Sum() > 300, $"only {blocks.Sum()} live code samples were found across the catalogue");
+        Assert.Equal(blocks.Sum().ToString("#,0", System.Globalization.CultureInfo.InvariantCulture), LiveCounts.Measure("live-blocks", Root));
+        Assert.Equal(blocks.Count(count => count > 0).ToString("#,0", System.Globalization.CultureInfo.InvariantCulture), LiveCounts.Measure("live-documents", Root));
     }
 
     [Fact]
@@ -141,7 +150,7 @@ public class StyleSectionTests
         string guide = Markdown("style-guide");
         var tiles = Regex.Match(guide, @"```tiles\n(.*?)```", RegexOptions.Singleline).Groups[1].Value
             .Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.Split('|')[0].Trim()).ToList();
-        Assert.Equal(["color-style", "background-ribbon", "ui-architecture"], tiles);
+        Assert.Equal(["color-style", "background-ribbon", "ui-architecture", "document-style"], tiles);
 
         var wrong = new List<string>();
         string glossary = Regex.Match(guide, @"```glossary\n(.*?)```", RegexOptions.Singleline).Groups[1].Value;

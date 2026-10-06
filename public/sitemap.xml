@@ -605,6 +605,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/document-style</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/author</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

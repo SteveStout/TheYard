@@ -18,6 +18,7 @@ What that is worth: a developer changes a colour in one place and every page fol
 color-style | Colour and style | Every colour, size and width as a design token, with live swatches and contrast. | style
 background-ribbon | Background and ribbon | The teal and gold ground, drawn in code and never moving. | ai
 ui-architecture | UI architecture | How the look is built, file by file, one job per file, and the tests that hold it. | architecture
+document-style | How the documents are styled | Plain Markdown drawn as glass panels, with code read from the running build. | records
 ```
 
 ## The standing rules

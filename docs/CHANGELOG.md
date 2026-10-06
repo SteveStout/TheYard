@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.85** (2026-10-06): A new Style page, How the documents are styled, teaches how the plain Markdown in Git becomes panels, a status reading, sections with addresses and code samples read from the running build, and shows each one by using it.
 - **1.0.3.84** (2026-10-06): The documents in docs/ move into one folder per sidebar section, with the decision records in docs/decisions, so the repository on GitHub reads the way the sidebar does; every ?doc= address is unchanged.
 - **1.0.3.83** (2026-10-06): About Steven drops the paragraph on TheYard from its intro, at Steve's request; How I lead and everything else on the page stay.
 - **1.0.3.82** (2026-10-06): The Performance page explains how the listing is compressed and why only the listing and the filter values are, and the comments beside that code say what it does, how and why. Documents and comments only.

@@ -13,8 +13,8 @@ test('the Style guide opens its sub-pages in the same window, and Background and
   await page.setViewportSize({ width: 1280, height: 900 });
   await openTheYard(page, '/?doc=style-guide');
   const tiles = page.locator('dialog[open] [data-testid="style-tiles"] a');
-  await expect(tiles).toHaveCount(3, { timeout: 30_000 });
-  await expect(page.locator('dialog[open] [data-glyph] svg')).toHaveCount(3);
+  await expect(tiles).toHaveCount(4, { timeout: 30_000 });
+  await expect(page.locator('dialog[open] [data-glyph] svg')).toHaveCount(4);
   const readouts = await page
     .locator('dialog[open] [data-testid="style-readout"]')
     .allTextContents();
@@ -31,6 +31,15 @@ test('the Style guide opens its sub-pages in the same window, and Background and
       timeout: 30_000,
     })
     .toBeGreaterThan(10);
+
+  // How the documents are styled shows each feature by using it: its status line as a reading, a swatches
+  // fence drawn from the design token sheet, and code read from the build with its caption.
+  await openTheYard(page, '/?doc=document-style');
+  const styled = page.locator('dialog[open]');
+  await expect(styled.locator('.doc-status')).toBeVisible({ timeout: 30_000 });
+  await expect(styled.locator('[data-testid="swatches"] li')).toHaveCount(3);
+  await expect(styled.locator('pre code')).not.toHaveCount(0);
+  await expect(styled.getByText('read from this build at').first()).toBeVisible();
 });
 
 /**

@@ -116,6 +116,12 @@ export const PAGES = {
     url: '/api/docs/ui-architecture',
     kind: 'overview',
   },
+  documentStyle: {
+    title: 'How the documents are styled',
+    menuLabel: 'How the documents are styled',
+    url: '/api/docs/document-style',
+    kind: 'overview',
+  },
   style: {
     title: 'Coding and Commenting Style',
     menuLabel: 'Coding and comments',

@@ -420,3 +420,7 @@ The next lane is the components that have the disease the split cured in `src/ap
 ## Addendum, 2026-10-03: Node 24
 
 The front end is built on Node 24 in the Docker image and in CI where this record says Node 22 (ADR: Technology versions).
+
+## Addendum, 2026-10-06 (1.0.3.85): the documents' look, written down
+
+How a served document gets its look was spread across three files: `src/lib/markdown.ts` (the renderer, the section ids and the fences), `src/lib/docLayout.ts` (the panels and the status reading) and `src/library/styleBlocks.ts` (the Style section's fences), with the glass itself in the stylesheets. None of them changed. A new page under Style, How the documents are styled, explains them in one place and shows the code from each file live (ADR: Live code samples, the addendum on the page that shows them), so a developer reading this record has a page to start from before opening the files.

@@ -133,9 +133,9 @@ export const MENUS: Record<
   /**
    * How the site looks, and the rules that keep it looking that way, as a
    * section of its own (ADR-016, the addenda on the style section and on its
-   * four pages): the Style guide on top, then the colours, the ground and the
-   * files the look is built from, each drawn from the design token files
-   * when the page is opened. The rules on them are held by the gate, so the
+   * four pages): the Style guide on top, then the colours, the ground, the
+   * files the look is built from, and how the documents themselves are drawn,
+   * each read from the build when the page is opened. The rules on them are held by the gate, so the
    * pages describe what the tests enforce.
    */
   // #region look-menu
@@ -146,6 +146,7 @@ export const MENUS: Record<
       { key: 'colorStyle', sub: true },
       { key: 'backgroundRibbon', sub: true },
       { key: 'uiArchitecture', sub: true },
+      { key: 'documentStyle', sub: true },
     ],
   },
   // #endregion look-menu
