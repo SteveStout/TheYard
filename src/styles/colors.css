@@ -27,7 +27,7 @@
  * write var(--that-design-token).
  *
  * Why each colour was chosen is in ADR-016 (the palette) and ADR-081 (the
- * glass look). docs/COLOR-STYLE.md shows every colour design token as a live swatch.
+ * glass look). docs/style/COLOR-STYLE.md shows every colour design token as a live swatch.
  */
 /* #endregion the-opening */
 :root {

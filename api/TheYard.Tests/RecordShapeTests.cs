@@ -39,7 +39,7 @@ public class RecordShapeTests
     private static IEnumerable<(string Name, string[] Lines)> Records()
     {
         foreach (string path in Directory
-            .EnumerateFiles(Path.Combine(Repo.Root(), "docs"), "ADR-*.md")
+            .EnumerateFiles(Path.Combine(Repo.Root(), "docs", "decisions"), "ADR-*.md")
             .OrderBy(path => path, StringComparer.Ordinal))
         {
             yield return (Path.GetFileName(path), File.ReadAllLines(path));
@@ -191,7 +191,7 @@ public class RecordShapeTests
     [Fact]
     public void The_allow_list_holds_no_record_that_has_come_into_line()
     {
-        string docs = Path.Combine(Repo.Root(), "docs");
+        string docs = Path.Combine(Repo.Root(), "docs", "decisions");
         var wrong = new List<string>();
 
         foreach (string name in Numbered)
@@ -199,7 +199,7 @@ public class RecordShapeTests
             string path = Path.Combine(docs, name);
             if (!File.Exists(path))
             {
-                wrong.Add($"{name} is on the allow-list and is not in docs/");
+                wrong.Add($"{name} is on the allow-list and is not in docs/decisions/");
                 continue;
             }
 

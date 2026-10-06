@@ -121,7 +121,7 @@ public class PublicFaceTests
         // page states it again on the way to saying what governed the build.
         // Two copies of a number are two places it can go stale, so both are
         // held here rather than one being trusted to follow the other.
-        foreach (string document in new[] { "README.md", Path.Combine("docs", "BUILT-WITH-AI.md") })
+        foreach (string document in new[] { "README.md", Path.Combine("docs", "built-with-ai", "BUILT-WITH-AI.md") })
         {
             string text = File.ReadAllText(Path.Combine(Repo.Root(), document));
             var claim = Regex.Match(text, @"(\d+) xUnit tests");
@@ -153,7 +153,7 @@ public class PublicFaceTests
             .SelectMany(File.ReadAllLines)
             .Count(line => Regex.IsMatch(line, @"^\s*test\("));
 
-        foreach (string document in new[] { "README.md", Path.Combine("docs", "BUILT-WITH-AI.md") })
+        foreach (string document in new[] { "README.md", Path.Combine("docs", "built-with-ai", "BUILT-WITH-AI.md") })
         {
             string text = File.ReadAllText(Path.Combine(root, document));
             var claim = Regex.Match(text, @"(\d+) Playwright tests");

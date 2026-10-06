@@ -17,7 +17,7 @@ public class TechnologyVersionsTests
 
     private static Dictionary<string, Row> Rows()
     {
-        string record = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "ADR-089-technology-versions.md"));
+        string record = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "decisions", "ADR-089-technology-versions.md"));
         var rows = new Dictionary<string, Row>(StringComparer.OrdinalIgnoreCase);
         foreach (Match row in Regex.Matches(record, @"^\| ([^|]+?) \| ([^|]+?) \| ([^|]+?) \| ?([^|]*?) ?\|$", RegexOptions.Multiline))
         {

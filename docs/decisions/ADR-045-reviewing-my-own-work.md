@@ -1,0 +1,285 @@
+# ADR: Reviewing my own work, and what that found
+
+Status: accepted, 2026-09-03. Not a feature. A record of an adversarial review of
+a single day's changes, the seven defects it found, and the one property that
+made it worth doing.
+
+## In plain words
+
+This page records a second reader, one with no memory of writing the code, checking a day's changes for defects. It found seven, including database error text that could reach a public page (an exception message in the log) and timing that recorded every failed request as a success.
+
+What that is worth: a developer sees a fresh reviewer catch what the author was too sure of to check, and the organization gets a record of its code being checked by something that did not write it, with the findings shown.
+
+## Why this is written down
+
+Everything in this repository was written by an AI agent, which is stated plainly
+in "How this was built" and is the thing a reader is entitled to be suspicious
+of. The most useful answer to that suspicion is not a claim about care. It is a
+record of the work being checked by something that did not write it, and of what
+the check found.
+
+So when the day's work was done the whole diff, `a162238..c54262f`, went to a
+reviewer with no memory of writing any of it, with instructions to be skeptical,
+to ignore style, and to hunt specifically for concurrency, re-entrancy, leaks,
+privacy and arithmetic.
+
+It found seven things. Two of them were serious. Both were mine at my most
+confident.
+
+## The one that mattered
+
+The change being reviewed had, hours earlier, argued at length that a parameter
+value must be structurally impossible to publish:
+
+```csharp
+/// <summary>One parameter of a SQL statement, described but never valued.</summary>
+public sealed record SqlParameterShape(string Name, string Type, int? Size);
+```
+
+The argument is good. A redaction rule is a list of what to hide, written today,
+correct only for the columns that existed then. A type with nowhere to put a
+value cannot leak one.
+
+The same change added a second section to the same public page carrying the
+application's raw log, and this line went into it:
+
+```csharp
+app.Logger.LogError(
+    "The store could not be prepared ... : {Note}", database.Note);
+```
+
+`database.Note` was built as `$"{Describe()}: {ex.GetType().Name}: {ex.Message}"`.
+`Describe()` is careful and says only "Azure SQL Database". `ex.Message` is not
+careful at all. A `SqlException` from this path says the server's hostname, the
+login name, the database name, and the IP address the connection came from.
+
+Two screens further down, the health check refuses to do exactly this:
+
+> The reason is in the log, not in this response. A health endpoint is public on
+> purpose, and an exception message from a storage failure is typically a
+> filesystem path.
+
+That sentence was written a week earlier, by me, about this same page. Then I
+made the log public and never went back to read it.
+
+The front door was reinforced and a window was left open in the same commit, and
+the note explaining why the door mattered was still taped to the door.
+
+The fix is not a rule about which messages are safe. The exception travels in the
+exception slot rather than inside the message template, and the ring already
+reduces an exception to its type:
+
+```csharp
+app.Logger.LogError(database.Failure, "... : {Note}", database.Note);
+```
+
+What is in the template reaches a public page. What is in the exception slot
+reaches the console and Application Insights. The two are now different things
+on purpose, and `DatabaseState` carries the message as an `Exception` rather than
+as text so a caller cannot accidentally print it.
+
+The reviewer also found that the log ring captured every category, including the
+framework's, and that on a completely healthy container that publishes the
+content root and the data-protection key directory. Those are server filesystem
+paths, written before anything goes wrong. The ring is an allow-list now: this
+application's own categories, plus the one Entity Framework category the SQL
+section exists to show. An allow-list rather than a deny-list, so a dependency
+added next year is silent by default instead of public by default.
+
+## The one that made the feature wrong
+
+The request timing middleware carried this comment:
+
+> Timing, outside the error middleware so the number is the whole cost a caller
+> waited for, including the time spent turning an exception into a
+> ProblemDetails.
+
+Both halves were false. The middleware sat below `UseExceptionHandler`, and
+unwinding runs inner to outer, so a request that threw reached the `finally`
+before the handler had written anything. Every failed request was recorded as a
+200, with the handler's time excluded rather than included.
+
+`/api/admin/selftest/exception` answers 500 to its caller and was appearing in
+the metrics as 200. The endpoint that exists to prove the failure path works was
+being misreported by the feature built to watch it.
+
+It is the outermost middleware now, above the exception handler and above
+authentication, so it sees the status that was actually sent and counts the
+requests that authentication rejects.
+
+The lesson is narrow and worth keeping: a comment asserting an ordering is not
+evidence of that ordering. This one was written from intent, not from reading the
+pipeline, and it was wrong in the direction that made the feature look right.
+
+## The other five, briefly
+
+- **The connect timeout multiplied.** Raising it to ninety seconds left
+  `EnableRetryOnFailure(maxRetryCount: 4)` untouched, which is five attempts of
+  ninety plus backoff: about eight minutes against a five minute deploy. A
+  database that was genuinely gone would have turned an outage into a failed
+  deploy, which is precisely what the file-backed fallback exists to prevent, and
+  precisely the failure recorded one version earlier. Sixty seconds and two
+  retries now, about three minutes, with the arithmetic written in one place and
+  a test asserting it fits.
+- **The metrics endpoint published everybody's browsing.** It returned the whole
+  five hundred entry request ring: which vehicles each visitor opened, which
+  filters they typed, in near real time, to anyone. The page never rendered it.
+  Aggregates answer the question and name nobody. The request string dropped its
+  query string for the same reason: that is the line a password reset token would
+  arrive on.
+- **The load helper did not wait.** `openTheYard` asked for forty-five seconds
+  inside a thirty second test, so it could never spend the budget it claimed to
+  give, and it waited for the absence of a loading message, which is already true
+  in the instant after `goto` resolves and before React mounts. It waited for
+  nothing and handed the next assertion back its five seconds. It waits for the
+  announcement region to exist and to stop saying "Loading inventory" now, and
+  the suite runs at sixty seconds.
+- **The feature erased its own evidence.** The health check runs two SELECTs, an
+  open Admin tab asks for it every thirty seconds, and those statements filled
+  the two hundred slot ring in under an hour. The section showed nothing but the
+  act of reading it. The observability endpoints are excluded from their own
+  rings.
+- **A test asserted an accident.** `Assert.All` on the SQL ring's contents passed
+  only because of the order xUnit happened to choose from a hash of the method
+  names, and one rename would have broken it.
+
+## What the review did not find
+
+Worth recording, because a review that finds only problems has not been read
+carefully either. The locking on all four ring buffers is correct: one private
+gate, both operations guarded, immutable snapshots, no nested locks, no lock held
+across an await or across I/O, no reachable deadlock. There is no re-entrancy:
+nothing on the logging path logs, nothing on the interceptor path issues SQL. The
+percentile arithmetic was checked against exact rational arithmetic for nine
+percentile values at every sample size from one to five thousand, with no
+divergence. And the readiness split itself was sound, including that
+`GatesReadiness` defaults to true so a check added later gates by default rather
+than being silently excluded.
+
+## Addendum, later the same day: the same defect, one buffer over
+
+The review above found that a database exception's message reached a public page
+through the log ring, and the fix was to put the exception in the exception slot
+rather than inside a message template.
+
+There were two rings. The other one:
+
+```csharp
+catch (Exception ex)
+{
+    errorLog.Record(context.Request.Path, 500, ex.GetType().Name + ": " + ex.Message);
+    throw;
+}
+```
+
+`errorLog` is served at `/api/errors`, unauthenticated, and this is the catch
+that sees every unhandled exception in the application. So the same class of
+text, from a wider set of exceptions, was reaching the same kind of reader
+through a door nobody opened during the review, including mine.
+
+It is worth being precise about why it was missed. The review was asked to check
+`/api/admin/logs`, and it checked it thoroughly. `/api/errors` was older than the
+change under review, so it was outside the diff, and a review scoped to a diff
+sees a change rather than a system. That is usually the right scope. It is the
+wrong scope for a question of the form "can this class of thing reach that class
+of reader", because the answer depends on every path into the reader and not on
+the one that changed.
+
+The type only, now, with the message going to the console and Application
+Insights as a structured exception. The `ProblemDetails` handler two regions away
+has refused to put an exception message in a response since the day it was
+written, for exactly this reason, and it had two neighbours doing it with no
+check to notice.
+
+The second finding in the same pass is smaller and the same shape. `POST
+/api/errors/client` is anonymous on purpose, so that a crash in the page reaches
+the same place a crash in the server does, and its message and stack were both
+bounded. The number of reports was not, and they shared the server's fifty slots,
+so fifty posts from anybody erased every real server error from the page an
+operator would open during an outage. Browser reports have their own fifty now.
+The Admin tab still shows one list, because one place to look was the decision
+and still is; what changed is that a flood can only push out other floods.
+
+## Consequences
+
+- Nothing a database driver writes into an exception message can reach a public
+  page through the log section, and the mechanism is a different argument slot
+  rather than a rule about content.
+- The framework's own log lines, and the server paths in them, are out.
+- The timing section is correct about failed requests, which are the ones worth
+  looking at.
+- The startup connect budget and the retry policy are one number with the
+  arithmetic beside it, and a test fails if they stop fitting the deploy.
+- The Admin tab no longer fills with the act of watching it.
+- Two tests stopped asserting accidents, and one canary now covers both public
+  sections rather than one.
+
+## Addendum, 2026-09-09: the second pass, over the document store
+
+Steve's brief for the night ended by asking for a code review and a test
+pass by the author, so the day's new code, the Cosmos DB adapters, the account store,
+the peer read and the composition root, got the same pass the first review
+gave the rest. What it found, in the order of what it would have cost:
+
+**A store seeded only when empty.** The seed's own comment said it checked
+for empty "so a process that died mid-seed is not left half seeded forever",
+and the check was `count == 0`, which is exactly the half-seeded case it
+claimed to prevent: a container holding a hundred of two hundred documents
+would never be seeded again. The relational seed cannot have this defect,
+because it is one transaction; two hundred and fifty point writes can. The
+seed now runs whenever the container holds fewer documents than the seed
+file, with upserts, and a test deletes one document and watches it come
+back.
+
+**An email claim with no account behind it.** Registration writes the claim
+first and the account second, and a process that dies between them leaves a
+claim that refuses the address forever, which the record listed as the
+honest cost of the shape. It is a cost that need not be paid: a lookup that
+finds the claim and no account now removes the claim, provided it is older
+than the longest a registration takes, so a registration still in flight is
+left alone. The claim document learned to read the service's own write time
+for that, and a test writes an orphan and watches a patient store leave it
+and an impatient one clear it.
+
+**A refused batch that went unrecorded.** The wrapper that puts every
+operation on the Admin tab caught the SDK's exception and nothing else, and
+the one operation that throws something else, a transactional batch refused
+as a whole, was the one operation the page could not show. It records any
+exception now, by type.
+
+**And one the first pass of the toggle made.** Loading both stores' catalogues
+before serving doubled the memory of every test application, and ten of
+them at once turned a two-minute suite into a thirty-minute one that a
+watcher took for a hang. The default store warms before serving, the other
+in the background on the deployed containers and on first use everywhere
+else (ADR: One container, both stores).
+
+Recorded and left: the partition key experiment caches its result in a
+static, which is one cache for the process rather than one per store, and is
+right only while a process has one document store, which it does; and two
+containers on the same stores do not see each other's bids until a restart,
+because bids are replayed into memory at startup, which is the one-container
+assumption the rate limit record already states and which the second
+container inherits.
+
+The pass took an hour, found three defects in code that had passed every
+test written for it, and fixed the tests that had passed: a check that
+cannot fail is not a check, and the seed's own comment was the reminder.
+
+## Where it sits
+
+The review reached two rings: the database failure now travels as an `Exception` on `DatabaseState` in Infrastructure, while the log ring's category allow-list and the outermost timing middleware (now in `Composition/RequestPipeline.cs`) belong to the Api host. Single responsibility, meaning a class has one reason to change, is what the main fix follows, since the message template now serves the public page and the exception slot serves the console, so neither has to decide which text is safe to print. The cost was an hour of skeptical reading per pass and an Admin tab that shows fewer framework lines than it used to. A team with a human reviewer on every pull request would rely on that reviewer and keep a pass like this for the diffs that touch public pages.
+
+## Files
+
+- [`api/TheYard.Application/DatabaseState.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/DatabaseState.cs): `DatabaseState` carrying the failure as an exception rather than as text.
+- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs) and [`api/TheYard.Api/LogRingBuffer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LogRingBuffer.cs): the self-observation filter and the capacity guards, and the category allow-list in the log ring.
+- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the timing middleware where it belongs.
+- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): readiness that runs only what it needs.
+- [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the connect budget and the retry policy read together.
+- [`tests/e2e/app.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/app.ts): a wait for something that is there.
+- [`docs/decisions/ADR-042-exemptions-that-hide.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-042-exemptions-that-hide.md): the checks that asked easier questions, which this is the sequel to.
+
+## Addendum, 2026-10-03: the experiment cache is per instance
+
+The item above that names the partition key experiment's static cache is done. `PartitionExperiment` (`api/TheYard.Infrastructure.Cosmos/Experiment.cs`) keeps its last result in an instance field, measures the minute on an injected `TimeProvider`, and sits behind the `IStoreExperiment` port in Application, so the Admin endpoint asks the port and never looks the Cosmos DB store up from the service container. Two hosts in one test run no longer share a result.

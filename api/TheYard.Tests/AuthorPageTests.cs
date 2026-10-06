@@ -23,7 +23,7 @@ public class AuthorPageTests
 {
     private static string Root => Repo.Root();
 
-    private static string Words() => File.ReadAllText(Path.Combine(Root, "docs", "AUTHOR.md"));
+    private static string Words() => File.ReadAllText(Path.Combine(Root, "docs", "author", "AUTHOR.md"));
 
     private static string PhotoList() =>
         File.ReadAllText(Path.Combine(Root, "src", "lib", "authorPhotos.json"));
@@ -145,7 +145,7 @@ public class AuthorPageTests
         string words = Words();
         int lead = words.IndexOf("\n## How I lead\n", StringComparison.Ordinal);
         int away = words.IndexOf("\n## Away from the keyboard\n", StringComparison.Ordinal);
-        Assert.True(lead > 0 && away > lead, "docs/AUTHOR.md should hold How I lead as a panel ahead of Away from the keyboard");
+        Assert.True(lead > 0 && away > lead, "docs/author/AUTHOR.md should hold How I lead as a panel ahead of Away from the keyboard");
         string panel = words[lead..away];
 
         Assert.Contains("/images/author/how-i-lead-960.jpg", panel, StringComparison.Ordinal);
@@ -155,7 +155,7 @@ public class AuthorPageTests
         }
         Assert.Contains("](https://github.com/SteveStout/TheYard/tree/main/docs)", panel, StringComparison.Ordinal);
         Assert.Contains("](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)", panel, StringComparison.Ordinal);
-        Assert.Contains("](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md)", panel, StringComparison.Ordinal);
+        Assert.Contains("](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-059-a-second-store-priced.md)", panel, StringComparison.Ordinal);
     }
     // #endregion how-he-leads
 
@@ -379,7 +379,7 @@ public class AuthorPageTests
         // Every image the document names is one of the page's photographs, with a real alt text.
         var names = Photos().Select(photo => photo.Name).ToHashSet(StringComparer.Ordinal);
         MatchCollection images = Regex.Matches(Words(), @"!\[([^\]]*)\]\(([^)\s]+)");
-        Assert.True(images.Count > 0, "docs/AUTHOR.md should show at least one photograph");
+        Assert.True(images.Count > 0, "docs/author/AUTHOR.md should show at least one photograph");
         foreach (Match image in images)
         {
             string alt = image.Groups[1].Value.Trim();
@@ -407,7 +407,7 @@ public class AuthorPageTests
                 string name = entry.GetProperty("name").GetString()!;
                 if (!shown.Contains(name))
                 {
-                    wrong.Add($"{name} is in src/lib/authorPhotos.json and docs/AUTHOR.md does not show it");
+                    wrong.Add($"{name} is in src/lib/authorPhotos.json and docs/author/AUTHOR.md does not show it");
                 }
                 if (entry.TryGetProperty("credit", out JsonElement credit) && !Words().Contains(credit.GetString()!, StringComparison.Ordinal))
                 {

@@ -153,7 +153,7 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         }
         Assert.Contains("href=\"https://github.com/SteveStout/TheYard/tree/main/docs\"", page);
         Assert.Contains("href=\"https://github.com/SteveStout/TheYard/blob/main/data/test-results.json\"", page);
-        Assert.Contains("href=\"https://github.com/SteveStout/TheYard/blob/main/docs/ADR-059-a-second-store-priced.md\"", page);
+        Assert.Contains("href=\"https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-059-a-second-store-priced.md\"", page);
 
         // The picture is drawn with its words and its size, so it holds its room before it arrives;
         // with none named there is no empty frame.

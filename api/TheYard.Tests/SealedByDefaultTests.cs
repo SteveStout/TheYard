@@ -8,7 +8,7 @@ namespace TheYard.Tests;
 /// <summary>
 /// Sealed by default, held here rather than in a review comment. The practice
 /// is written up on the Best Practices page this class is named after,
-/// docs/SEALED.md: a class in this application is sealed unless it is a base
+/// docs/best-practices/SEALED.md: a class in this application is sealed unless it is a base
 /// somebody actually derives from, and the analyzer that catches the internal
 /// half of it is on as a warning, which the gate reads as red.
 ///
@@ -232,7 +232,7 @@ public class SealedByDefaultTests
     [Fact]
     public void The_page_quotes_the_shape_this_build_has()
     {
-        string page = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "SEALED.md"));
+        string page = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "best-practices", "SEALED.md"));
         var wrong = new List<string>();
 
         foreach ((string shape, int actual) in Counted())
@@ -240,12 +240,12 @@ public class SealedByDefaultTests
             var quoted = Regex.Match(page, $@"^\| {shape} \| (\d+) \|", RegexOptions.Multiline);
             if (!quoted.Success)
             {
-                wrong.Add($"docs/SEALED.md has no row for {shape}");
+                wrong.Add($"docs/best-practices/SEALED.md has no row for {shape}");
                 continue;
             }
             if (int.Parse(quoted.Groups[1].Value) != actual)
             {
-                wrong.Add($"docs/SEALED.md says {quoted.Groups[1].Value} {shape} and this build has {actual}");
+                wrong.Add($"docs/best-practices/SEALED.md says {quoted.Groups[1].Value} {shape} and this build has {actual}");
             }
         }
 
@@ -264,7 +264,7 @@ public class SealedByDefaultTests
         string editorconfig = File.ReadAllText(Path.Combine(Repo.Root(), ".editorconfig"));
 
         Assert.Contains("dotnet_diagnostic.CA1852.severity = warning", editorconfig, StringComparison.Ordinal);
-        Assert.Contains("CA1852", File.ReadAllText(Path.Combine(Repo.Root(), "docs", "SEALED.md")), StringComparison.Ordinal);
+        Assert.Contains("CA1852", File.ReadAllText(Path.Combine(Repo.Root(), "docs", "best-practices", "SEALED.md")), StringComparison.Ordinal);
     }
     // #endregion page-numbers
 }

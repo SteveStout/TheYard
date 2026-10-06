@@ -11,7 +11,7 @@ namespace TheYard.Tests;
 ///
 /// <para>This exists because it was needed. A record written today linked to
 /// `docs/ADR-037-accounts-and-per-user-bids.md`, which has never existed; the
-/// file is `docs/ADR-037-accounts.md`. It was caught by eye, which is not a
+/// file is `docs/decisions/ADR-037-accounts.md`. It was caught by eye, which is not a
 /// method. The rename of every project the same day moved 208 files and rewrote
 /// the links in every record, and nothing checked that they landed.</para>
 /// </summary>
@@ -25,7 +25,7 @@ public class RecordLinksTests
         var broken = new List<string>();
         int checkedLinks = 0;
 
-        foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "docs"), "*.md")
+        foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "docs"), "*.md", SearchOption.AllDirectories)
             .Concat([Path.Combine(root, "README.md")]))
         {
             string text = File.ReadAllText(path);
@@ -72,11 +72,11 @@ public class RecordLinksTests
     {
         string root = Repo.Root();
         var served = DocumentationCatalog.Files.Values
-            .Where(path => path.StartsWith("docs/ADR-", StringComparison.Ordinal))
+            .Where(path => path.StartsWith("docs/decisions/ADR-", StringComparison.Ordinal))
             .Select(path => Path.GetFileName(path))
             .ToHashSet(StringComparer.Ordinal);
 
-        var onDisk = Directory.EnumerateFiles(Path.Combine(root, "docs"), "ADR-*.md")
+        var onDisk = Directory.EnumerateFiles(Path.Combine(root, "docs", "decisions"), "ADR-*.md")
             .Select(Path.GetFileName)
             .Select(name => name!)
             .ToHashSet(StringComparer.Ordinal);
@@ -94,7 +94,7 @@ public class RecordLinksTests
     public void Record_numbers_run_without_a_gap()
     {
         string root = Repo.Root();
-        int[] numbers = Directory.EnumerateFiles(Path.Combine(root, "docs"), "ADR-*.md")
+        int[] numbers = Directory.EnumerateFiles(Path.Combine(root, "docs", "decisions"), "ADR-*.md")
             .Select(path => Regex.Match(Path.GetFileName(path), @"^ADR-(\d+)"))
             .Where(match => match.Success)
             .Select(match => int.Parse(match.Groups[1].Value))
@@ -135,7 +135,7 @@ public class RecordLinksTests
         var wrong = new List<string>();
         int checkedLinks = 0;
 
-        foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "docs"), "*.md")
+        foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "docs"), "*.md", SearchOption.AllDirectories)
             .Concat([Path.Combine(root, "README.md")]))
         {
             string name = Path.GetFileName(path);
@@ -222,7 +222,7 @@ public class RecordLinksTests
 
     /// <summary>Every record's title, taken from its own first line.</summary>
     private static List<string> RecordTitles(string root) =>
-        Directory.EnumerateFiles(Path.Combine(root, "docs"), "ADR-*.md")
+        Directory.EnumerateFiles(Path.Combine(root, "docs", "decisions"), "ADR-*.md")
             .Select(path => File.ReadLines(path).First().Trim())
             .Where(heading => heading.StartsWith("# ADR: ", StringComparison.Ordinal))
             .Select(heading => heading["# ADR: ".Length..].Trim())
@@ -296,7 +296,7 @@ public class RecordLinksTests
     public void Every_record_a_comment_cites_by_number_is_a_record_that_exists()
     {
         string root = Repo.Root();
-        var onDisk = Directory.EnumerateFiles(Path.Combine(root, "docs"), "ADR-*.md")
+        var onDisk = Directory.EnumerateFiles(Path.Combine(root, "docs", "decisions"), "ADR-*.md")
             .Select(path => Regex.Match(Path.GetFileName(path), @"^ADR-(\d+)").Groups[1].Value)
             .ToHashSet(StringComparer.Ordinal);
         var wrong = new List<string>();
@@ -347,7 +347,7 @@ public class RecordLinksTests
         int endpoints = lines.Count(line => Regex.IsMatch(line, @"app\.Map(Get|Post|Delete|Put)"));
 
         string record = File.ReadAllText(
-            Path.Combine(root, "docs", "ADR-018-program-cs-explained.md"));
+            Path.Combine(root, "docs", "decisions", "ADR-018-program-cs-explained.md"));
         var quoted = Regex.Match(
             record,
             @"([\d,]+) total\s+(\d+) comment\s+(\d+) blank\s+([\d,]+) code, across (\d+) endpoints");

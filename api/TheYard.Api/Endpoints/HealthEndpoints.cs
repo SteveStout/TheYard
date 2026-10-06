@@ -107,7 +107,7 @@ public static class HealthEndpoints
         var checks = new List<HealthCheckEntry>
         {
             await Check("dataset file", () => Task.FromResult(File.Exists(paths.DataPath)), "data/vehicles.json present"),
-            await Check("docs", () => Task.FromResult(File.Exists(Path.Combine(paths.RepoRoot, "docs", "HOSTING.md"))), "served documents findable"),
+            await Check("docs", () => Task.FromResult(File.Exists(Path.Combine(paths.RepoRoot, "docs", "hosting", "HOSTING.md"))), "served documents findable"),
             await Check("photo manifest", () => Task.FromResult(File.Exists(paths.ManifestPath)), "image manifest present"),
         };
         // One check per store, named by the store, so a container running both

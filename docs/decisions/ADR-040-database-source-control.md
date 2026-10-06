@@ -1,0 +1,218 @@
+# ADR: Data first, and the database in source control
+
+Status: accepted, 2026-09-03, shipped as 1.0.0.49. Steve set data first for
+Entity Framework, with a database project or other source control for the
+database if needed, and required the database to be source controlled. When the
+two branches were priced, he chose the SQL project first with Entity Framework
+as a mapper, so that a change of technology keeps the data structure.
+
+## In plain words
+
+This page makes a hand-written database project (a SQL project compiled to a DACPAC) the single source of truth for the database's shape, kept in source control. The code's data mapper (Entity Framework) reads that shape and is not allowed to create or change it.
+
+What that is worth: a developer sees every schema change as plain SQL in a pull request, and the organization keeps its data structure if it ever changes the technology that reads it.
+
+## The decision
+
+**`api/TheYard.Database` is the authority for the SQL Server schema.** It is a
+SQL project: hand-written `CREATE TABLE` files, one per object, that `dotnet
+build` compiles into a DACPAC. Entity Framework maps to what is in there. It does
+not create it, it cannot alter it, and when the two disagree the `.sql` file is
+right.
+
+The alternative was on the table and was rejected with a reason. Model-first with
+EF migrations, plus a generated `schema.sql` checked in and a drift test, would
+have shipped hours earlier and would have met the letter of the rule that the
+database be source controlled. Steve's reason for the other branch is the
+one that decides it: the data structure outlives the framework that reads it. A
+schema expressed as C# attributes and a chain of migration classes is portable to
+exactly one technology. A schema expressed as DDL is portable to anything that
+speaks SQL, and it is reviewable by people who do not read C#.
+
+## What it costs, said plainly
+
+**Two files change when a column changes**, and in this order: the `.sql` file
+first, then the mapping. The conformance test is what makes the order stick,
+because a mapping that runs ahead of the DDL fails the build.
+
+**Identity's tables had to be transcribed.** ASP.NET Core Identity generates
+seven tables and this project now declares them by hand, which means an Identity
+upgrade that changes a column is a change this repository has to make rather than
+one a migration makes for it. The transcription came from EF's own
+`GenerateCreateScript` output, so it started correct, and the conformance test is
+what keeps it correct.
+
+**The row types stay hand-shaped rather than scaffolded.** The usual
+database-first workflow scaffolds entity classes from the schema, which would
+have overwritten `Rows.cs` and undone the separation ADR: The relational store
+built on purpose: the domain record is not the storage row, and the storage
+layer does not get to reshape the domain. So this is database-first in the sense
+that matters, the schema is the authority, and not in the sense that generates
+code. The conformance test is what replaces the generator.
+
+## The authority, and the one chain to it
+
+```
+api/TheYard.Database/Tables/*.sql        the authority
+        |  SchemaConformanceTests
+        v
+YardDbContext (SQL Server model)          the mapping, held to the authority by a test
+        |  the same OnModelCreating, minus what SQL Server alone can express
+        v
+SQLite, created by EF migrations          local development and CI
+```
+
+There is one authority and the chain to it is testable at every hop. That is the
+answer to the "two authorities" objection, which is a real one: a repository that
+holds DDL and migrations and lets both create a schema has two definitions of the
+same table and no way to tell which one the database in front of you came from.
+
+## What enforces it
+
+```live path=api/TheYard.Tests/SchemaConformanceTests.cs region=conformance
+```
+
+Six checks, all reading the `.sql` files off disk and the EF model out of memory,
+none of them opening a connection, so they run on a CI runner with no Azure
+credential:
+
+- every table the model maps is declared,
+- every column the model maps has the type and nullability the DDL gives it,
+- every column the DDL declares is mapped, because a `NOT NULL` column nothing
+  writes fails every insert on the day it is added,
+- the primary keys agree,
+- every foreign key the model believes in is declared,
+- every index the model believes in is declared.
+
+Physical design is checked separately, and against the DDL only, because the
+model does not know about it and should not:
+
+```live path=api/TheYard.Tests/SchemaConformanceTests.cs region=physical
+```
+
+The reader those tests use is not a T-SQL parser. It understands the shape the
+files in this repository are written in and throws rather than guessing when it
+meets anything else, which is affordable because the real parser runs in the
+build: `dotnet build` compiles the same files with Microsoft's SQL project SDK,
+so a column with a type that does not exist fails there, not here.
+
+## The application cannot change the schema
+
+This is the part that is a security improvement rather than a tidiness one.
+
+The container's managed identity holds `db_datareader` and `db_datawriter`. It
+does not hold `db_ddladmin`, and the grant was removed once the SQL project took
+over, so the running application cannot create, alter or drop a table. It is not
+a policy that it does not; it is not permitted to.
+
+What follows from that is in `YardDatabase.BringSchemaUp`, which is the whole of
+the difference between the two providers:
+
+```live path=api/TheYard.Infrastructure/YardDatabase.cs region=schema
+```
+
+On SQL Server it asks whether the schema it maps to is present and refuses the
+store if it is not, falling back to the file-backed catalogue that ADR: The
+relational store built. On SQLite it applies its own migrations, because a SQLite
+database here is created and thrown away by the process that uses it: a scratch
+file per test, and a container-lifetime file in the fallback. Nothing publishes
+to it and nothing else reads it, so it has no second authority to disagree with.
+
+## How the schema gets to Azure
+
+```
+dotnet build api/TheYard.Database/TheYard.Database.sqlproj
+sqlpackage /Action:Publish ^
+  /SourceFile:api/TheYard.Database/bin/Debug/TheYard.Database.dacpac ^
+  /TargetConnectionString:"Server=tcp:...;Authentication=Active Directory Default;"
+```
+
+Deliberately, by a person, and not by the deploy. A schema change and a code roll
+are different kinds of risk: a container can be rolled back by pointing at the
+previous image, and a dropped column cannot. SqlPackage compares the DACPAC to
+the live database and applies the difference, so the publish is incremental and
+repeatable rather than a script somebody has to remember not to run twice.
+
+The deploy pipeline is unchanged by this. It rolls a container that maps to a
+schema, and if the schema is not there the container says so on the Admin tab and
+serves the catalogue from files.
+
+## Consequences
+
+- The database is a reviewable artifact. A schema change shows up in a pull
+  request as SQL, and a reviewer who does not read C# can still say whether the
+  column is right.
+- The schema is portable. Every statement in `api/TheYard.Database` is standard
+  enough to be read by anything that speaks T-SQL, and the parts that are not,
+  the clustered index choices, are the parts a different engine would want to
+  make differently anyway.
+- CI compiles the database on every push, so a broken column fails the build the
+  same way a broken C# file does.
+- The application lost the right to change its own schema, which is the point.
+- The EF migrations for SQL Server were deleted. They existed for about an hour
+  and are in the history rather than the tree, because a migrations chain nobody
+  applies is a second definition of the schema waiting to be believed.
+- Identity's seven tables are now this repository's to maintain across upgrades.
+
+## Addendum, 2026-09-08: what source control means on the second store
+
+A reader who opens this record after 2026-09-08 should learn from it that a
+second store exists and that "the database in source control" means something
+different on that side.
+
+Azure Cosmos DB has no schema and no migrations. Indexes and constraints on any
+model are ignored; what a container has instead is a definition: its partition
+key path, its indexing policy, its unique keys and its time to live. Those four
+things are what goes in the repository, as one JSON file per container under
+`infra/cosmos/`, and they are the authority for that store in exactly the sense
+`api/TheYard.Database` is the authority for this one:
+
+```live path=infra/cosmos/bids.json region=*
+```
+
+**The chain is the same chain.** A person applies the definitions with the Azure
+CLI; the code carries a catalog of the same container names and partition keys;
+a conformance test reads the JSON files and the catalog and fails the build
+when they disagree; and the running application refuses the store when a
+container it maps to is missing or partitioned on a different path, falling
+back to files as it does when a table is missing here:
+
+```live path=api/TheYard.Tests/CosmosDefinitionTests.cs region=conformance
+```
+
+**The application cannot change the schema, for a different reason.** Here the
+managed identity holds `db_datareader` and `db_datawriter` and not
+`db_ddladmin`. There it holds the Cosmos DB Built-in Data Contributor role,
+which is a data-plane role, and creating a database or a container is a
+control-plane operation that a data-plane token is refused for. Same rule, same
+outcome, different mechanism, and the rule is what matters: the running
+application maps to a store a person published.
+
+**What has no counterpart.** A DACPAC's incremental publish, which diffs the
+project against the live database and applies the difference, has no equivalent:
+a partition key cannot be changed after the container exists, and an indexing
+policy change is applied by the service as a background reindex. So a change to
+a definition file is either a new container and a copy, for the key, or a
+policy update the service catches up on, for the index, and the record for the
+change says which. The Identity tables this record transcribed by hand have no
+counterpart either, because Identity on that side is two document shapes
+(ADR: Accounts on a document store).
+
+Steve's reason for this record, that the data structure outlives the framework
+that reads it, held up in the one way it could be tested: the second store was
+built from the same domain records and the same seed files, and the relational
+schema did not move.
+
+## Where it sits
+
+The authority is TheYard.Database, a SQL project beside the onion, and Infrastructure maps to it, with YardDatabase.BringSchemaUp refusing a SQL Server store whose tables are missing. This is a decision about who owns the schema, so SOLID does not apply to it. Every column change now touches two files in a fixed order, and the seven Identity tables became this repository's to keep by hand. A project certain to stay on one framework, with nobody who reviews SQL, could let EF migrations own the schema and drop the second file.
+
+## Files
+
+- [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the schema, and the authority.
+- [`api/TheYard.Database/Tables/Vehicles.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Vehicles.sql): the catalogue, with the reason beside every length.
+- [`api/TheYard.Database/Tables/Bids.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Bids.sql): the concurrency token, the foreign key, and the two things deliberately absent.
+- [`api/TheYard.Tests/SchemaConformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SchemaConformanceTests.cs): what holds the mapping to the schema.
+- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the two ways a schema arrives, and the refusal when it has not.
+- [`docs/decisions/ADR-039-sql-server-backend.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-039-sql-server-backend.md): the database itself, and the connection string that is not a credential.
+- [`docs/decisions/ADR-041-two-providers-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-041-two-providers-explained.md): the same setup, walked at a new developer's level.

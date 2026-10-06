@@ -35,7 +35,7 @@ const palette = {
   chip: '#10495a',
 };
 
-const records = readdirSync('docs').filter((name) => /^ADR-\d+/.test(name)).length;
+const records = readdirSync('docs/decisions').filter((name) => /^ADR-\d+/.test(name)).length;
 const changelog = readFileSync('docs/CHANGELOG.md', 'utf8');
 const version = changelog.match(/\*\*(\d+\.\d+\.\d+\.\d+)\*\*/)?.[1] ?? '';
 

@@ -1,0 +1,145 @@
+# ADR: The accessibility check
+
+Status: accepted, 2026-09-03, shipped as 1.0.0.44. As part of the performance
+and accessibility pass, Steve asked for an axe or Playwright accessibility
+check that runs in CI.
+
+## In plain words
+
+This page adds an automated accessibility check (axe-core through Playwright) that runs eleven scans across nine views of the site against the WCAG 2.1 AA standard in CI and allows zero failures. Its first run found two serious contrast failures, and the fix darkened the two colours instead of lowering the bar.
+
+What that is worth: a developer learns that a colour fails the standard before it ships, and the organization has its site checked by machine against a published accessibility standard on every change.
+
+## Context
+
+There were already two things here that looked like accessibility coverage.
+
+`tests/e2e/a11y.spec.ts` walks the keyboard path (ADR: The keyboard path): the
+skip link, focus moving to the view that changed, the live region naming where
+you arrived. Four tests, all passing.
+
+`src/styles/tokens.test.ts` reads `tokens.css` with `?raw` and computes the
+WCAG contrast ratio for every colour pair the palette uses, asserting 4.5:1 for
+text and 3:1 for graphics (ADR: The palette). Fifteen assertions, all passing.
+
+Both of those are real and neither of them can see the page. The keyboard suite
+tests the paths it was told about. The palette test checks the pairs somebody
+listed. Between them they had never once looked at what the browser actually
+renders.
+
+## What it found on the first run
+
+Two violations, both `color-contrast`, both rated serious, on four of the six
+views checked, and both on elements that appear on nearly every screen.
+
+| element | foreground | background | ratio | needed |
+| --- | --- | --- | --- | --- |
+| "Reserve not met" badge | `#62666f` | `#e4e0e1` | 4.39 | 4.5 |
+| the live countdown on a vehicle | `#15803d` | `#e9e6e7` | 4.04 | 4.5 |
+
+Fifty-two nodes on the inventory page alone, since the badge is on every card.
+
+**Why the palette test missed them is the interesting part.** It checks
+`--color-text-muted` against `--color-surface` and `--color-bg`, and both pass.
+The badge puts that same colour on `--color-neutral-soft`, which is a pair
+nobody wrote an assertion for. Likewise `--color-success` is checked against
+`--color-success-soft` and against white, and the countdown puts it on
+`--color-bg`.
+
+Neither of those pairs is exotic. They are just pairs that were composed by CSS
+rather than by a person writing a test, and that is the whole category the
+enumerated test cannot cover: it holds the combinations somebody thought of,
+and a stylesheet combines whatever it likes.
+
+## Decision
+
+**axe-core through Playwright, at WCAG 2.1 AA, with zero tolerance, in eleven
+scans across nine views.** The inventory and a vehicle at desktop width, the
+Admin tab on three of its cards, an open document dialog, the records index
+open, the account view signed out and signed in, and the inventory and drawer
+on a phone. Each is its own test so a failure names the view. It runs inside the
+existing browser job, so it is in CI without a new job or a new runner.
+
+Two of those tests were wrong when they were written, and the staff review the
+same night caught both. The inventory scans waited for the page heading, which
+is present before the vehicles arrive, so they could have run against a page
+with no cards on it and reported a clean result, on the exact view where both
+contrast failures were. They wait for a tile now. And the records index is a
+closed `details`, so its thirty-five rows were in no scan at all until one test
+opened it. A check that runs on less than it claims to is worse than no check,
+because it is quoted.
+
+**The tags are `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`.** Best-practice
+rules outside the standard are deliberately not included: a check that fails on
+advice rather than on a standard is a check people start ignoring.
+
+**The two colours moved rather than the threshold.**
+
+| token | before | after | on | before | after |
+| --- | --- | --- | --- | --- | --- |
+| `--color-text-muted` | `#62666f` | `#5f636c` | `--color-neutral-soft` | 4.39 | 4.60 |
+| `--color-success` | `#15803d` | `#146c34` | `--color-bg` | 4.04 | 5.25 |
+
+Both changes are darkenings, so every other pair either improves or is
+unaffected, and the existing palette assertions still hold.
+
+**The palette test keeps its job and gains the two pairs it was missing.** It
+is not made redundant by axe: it runs in under a second in the unit suite and
+fails before a browser is started. It is a floor, and the record now says so
+where the test can be read.
+
+## What this does not do
+
+Automated tooling catches a minority of accessibility problems, and the
+majority it misses are the ones that matter most: whether a label says
+something a person can act on, whether the reading order makes sense to
+somebody who cannot see the layout, whether an error is announced at a moment
+that helps. This check finds none of that.
+
+The README has said since its first version that an audit with a real screen
+reader is a person's job. That is still true, and this changes nothing about
+it. What it changes is that the mechanical half is no longer being done by
+inspection.
+
+## In the code
+
+The check (`tests/e2e/axe.spec.ts`):
+
+```live path=tests/e2e/axe.spec.ts region=axe
+```
+
+The two pairs the palette test now also holds
+(`src/styles/tokens.test.ts`):
+
+```live path=src/styles/colors.test.ts region=composed-pairs
+```
+
+## Consequences
+
+- Seven more browser tests, from 31 to 38, adding a few seconds to the suite.
+- A colour change that fails AA now fails in two places, one of them fast.
+- The live site had two serious contrast failures on it for as long as those
+  colours have existed, and both were on the busiest elements on the page.
+  That is the argument for the check, and it is worth stating plainly rather
+  than being folded into a changelog line.
+- `AuctionCountdown.module.css` still has two literal hex colours in it for the
+  text over a photo, which is a separate rule this project sets for itself and
+  breaks in one file. It is not fixed here, because the overlay sits on an
+  image rather than a token and needs a different answer.
+
+## Where it sits
+
+The check is test code beside the onion in tests/e2e/axe.spec.ts, and the fix is front end, two colour tokens in src/styles/colors.css. No SOLID principle applies, since the decision concerns rendered colour and what the suite covers. It cost seven more browser tests and a few seconds of suite time. A project that needed labels and reading order checked would add a person with a screen reader, which axe cannot replace.
+
+## Files
+
+- [`tests/e2e/axe.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/axe.spec.ts): the check.
+- [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the two colours that moved.
+- [`src/styles/colors.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.test.ts): the enumerated floor, with the two pairs it was missing.
+- [`tests/e2e/a11y.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/a11y.spec.ts): the keyboard path, which is the half a machine cannot check for you.
+- [`docs/decisions/ADR-016-palette.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-016-palette.md): where the palette and its measurement came from.
+- [`docs/decisions/ADR-026-keyboard.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-026-keyboard.md): the focus work this sits beside.
+
+## Addendum, 2026-10-03: a code block can be reached from the keyboard
+
+The check went red on the CI runner, on the README open in its dialog: "scrollable-region-focusable" on one code block. A block whose line is wider than the dialog scrolls sideways, and a region that scrolls has to be reachable from the keyboard, or a reader without a mouse cannot see the end of the line. It passed on the build machine because its fonts made the same line fit. Every code block a document renders now carries `tabindex="0"`, the same thing every table's scroller already carried (`src/lib/markdown.ts`, region code-renderer), and a Vitest case holds it.

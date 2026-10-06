@@ -1,0 +1,183 @@
+# ADR: What the store is actually doing
+
+Status: accepted, 2026-09-08. The document store's counterpart of the SQL card
+on the Admin tab: every operation this container sent to Azure Cosmos DB, with
+the container, the kind, the partition it was pinned to or the fact that it
+fanned out, and the request charge beside the milliseconds. Parent: ADR: A
+second store on Cosmos DB, and what it costs. The record this one sits beside,
+ADR: What the database is actually doing, has an addendum pointing here.
+
+## In plain words
+
+This page adds a live log of every operation the site sends to its document database (Azure Cosmos DB), shown on the Admin tab with what each one cost in request units beside its milliseconds. Like the SQL log beside it, it never shows a value such as an email address.
+
+What that is worth: a developer can see which request caused each operation and whether it touched one partition or all of them, and the organization can show anyone its database costs on a public page with no login.
+
+## Context
+
+The Admin tab's most valuable card for a data-access reviewer is the one that
+shows the raw SQL and what each statement cost in time, with nowhere to put a
+parameter value (ADR: What the database is actually doing). Cosmos DB has no
+SQL log to intercept, and the thing worth showing about it is different: a
+statement's cost on Cosmos DB is a number the service returns with every
+response, in request units, and whether an operation touched one partition or
+every partition is the difference the interview question is about.
+
+## Decision
+
+**A parallel port, not a wider one.** `ISqlLog` and `SqlStatement` are left as
+they are. A second port, `IStoreLog`, records a `StoreOperation`:
+
+```live path=api/TheYard.Application/StoreLog.cs region=store-log-port
+```
+
+The two record different things. A SQL statement has its text and parameters
+plus a duration. A store operation has a container, a kind, a partition, a request
+charge and a duration, and only sometimes any text. One type for both would
+carry nulls on every row on both sides, and the Admin card would be reading a
+type to find out which half of it to believe.
+
+**The adapter writes the log, not an interceptor.** There is no command to
+intercept: the SDK is called directly (ADR: A second store on Cosmos DB, and
+what it costs), and every call goes through one wrapper that times it and reads
+the charge off the response. It records the operation whether the call succeeded
+or failed:
+
+```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.Operations.cs region=operations
+```
+
+**The no-values rule carries over exactly.** A parameter is a
+`SqlParameterShape`, which has no field for a value. And a partition is
+described rather than named: "pinned to the buyer", "pinned to the account",
+"cross-partition". The key of an account's partition is the account's id, and
+the key of a claim document is an email address, so a log that printed the
+partition key value would print the thing the SQL card was designed never to
+print. A point read is logged as `ReadItem` with a parameter named `id` of type
+`String` and the id's length, which is the same amount of information the SQL
+card gives about `@normalizedEmail`.
+
+**Every fan-out says how far it fanned.** A query with no partition key is
+recorded as cross-partition with the container's physical partition count
+beside it, read once at startup from the SDK's feed ranges. At this size that
+count is one, and the card says one, because "cross-partition, 1 physical
+partition" is the honest description of a fan-out to a single server and the
+number will change when the data does (ADR: The partition key).
+
+**A query is one line with its pages added up.** The SDK answers a query a page
+at a time and charges per page. The log records one line per query with the
+charge of every page summed and the page count in the outcome, so a two-page
+load reads as one operation that cost what it cost, rather than two lines a
+reader has to add.
+
+**Self-observation is filtered the same way.** The health check's two point
+reads every thirty seconds, and the reads this page itself causes, are dropped
+before they reach the ring, for the reason the SQL ring drops its own: left in,
+the card would show nothing but the act of reading it.
+
+## What it looks like
+
+On the Cosmos container the SQL card is replaced by this one. On the relational
+container this endpoint answers an empty list and the SQL card stays. One
+image and one page, and the page shows whichever store it is on:
+
+```live path=src/components/admin/StoreCard/StoreCard.tsx region=store-card
+```
+
+The cold start is the first thing in the log: four `ReadContainer` metadata
+reads, then the count queries that decide whether to seed, then the two
+cross-partition `SELECT * FROM c` loads of the catalogue and the bids, each with
+its charge. After that an idle container records nothing, and a visitor's bid
+records a point read and a point write pinned to the buyer, about six request
+units between them.
+
+Here is that card on 1.0.0.92 with one visitor's whole session in it, newest
+first: a reset (a query pinned to the buyer's partition and a transactional
+batch of one delete, 7.78 RU together), a raise (a point read and a
+`ReplaceItem` with `If-Match`, 11.29 RU), a first bid (a point read that finds
+nothing, which costs the same 1 RU as one that does, and a `CreateItem`), a
+sign-in (two point reads, 2 RU), and a registration (two creates and the two
+reads that looked for a claim first, 13.04 RU):
+
+![What the document store ran: one session's reset, raise, bid, sign-in and registration as operations, each with its partition, its request charge and its time](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cosmos-cosmos-store.png)
+
+The same three minutes on the relational container, from its own card, where
+the same reset and raise are a `DELETE` with one parameter and an `UPDATE`
+guarded by `RowVersion`, at 44 and 41 ms against the document store's 6 and 6:
+
+![The SQL this application ran: the same session's reset and raise as statements, with their parameters listed by name and type and never by value](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cosmos-sql-store.png)
+
+The two cards are the same page reading the same ring, and the columns differ
+because the stores do: the relational card has nothing to say about a
+partition or a charge, and the document card has no statement to show, only
+the operation and what it cost.
+
+## What the tests hold
+
+The same canary as the SQL card, on both stores: register an address, read what
+the store ran, assert the users container is in it and the address is not, in
+the operations and in the log lines. `AdminObservabilityTests` asks the
+container which store it is on and reads the matching card, so one test holds
+the rule against both:
+
+```live path=api/TheYard.Tests/AdminObservabilityTests.cs region=what-the-store-ran
+```
+
+And against the real account, the store tests assert that every operation
+carries a charge, that the only cross-partition operations are the loads, and
+that no operation's text or partition carries the address (ADR: Accounts on a
+document store).
+
+## Consequences
+
+- A reviewer can watch the operations this container sends to Cosmos DB, see
+  which request caused each one, and see what each cost in request units, on a
+  public page, with no login and no portal.
+- The comparison card has a number to put beside every millisecond on the
+  document side, which is what makes it a comparison rather than two stopwatches.
+- One more fixed-size ring in memory, two hundred operations, emptied on every
+  roll.
+- The relational side did not change. `ISqlLog`, the interceptor and the SQL
+  card are as they were, and a container on SQL Server never sees the new type.
+
+## Addendum, 2026-09-09: one console line per operation, like every statement
+
+Looking at both Admin tabs after the two-sites lane, Steve noticed the Cosmos DB
+side had no log like the SQL side's, and asked for one, even a log of the API
+requests. He was
+reading the last card, the log as the console got it. On the relational side
+that card shows every statement, because Entity Framework logs each command
+at Information and the ring captures that one framework category. The
+document store had its own card above with every operation, its charge and
+its partition, and nothing in the console log at all, so the third place the
+page shows a store's traffic showed one store.
+
+From 1.0.0.103 the store writes one line per operation to the application's
+logger, in the shape Entity Framework gives a statement: what ran, on which
+container, what it cost in request units, how long it took, the partition
+described, the outcome and the query with its parameters by name. Never a
+value, for the reason this record already gives. The logger is attached by
+the host after the container is built, the way the relational side attaches
+Entity Framework's, so a startup operation on a developer's machine is
+silent and everything after the application exists is on the console, in
+Application Insights, and on the card. A test asks the container for a
+request served by the document store and reads the line back under the
+store's own category, and checks the address it looked up is nowhere on the
+page.
+
+```live path=api/TheYard.Infrastructure.Cosmos/CosmosStore.Operations.cs region=record
+```
+
+## Where it sits
+
+Three rings share this one: Application owns the `IStoreLog` port and the `StoreOperation` record in `StoreLog.cs`, Infrastructure.Cosmos fills it from the one wrapper in `CosmosStore.Operations.cs` that times every SDK call and reads its charge, and the Api host keeps the ring the Admin tab's `StoreCard` reads from. Interface segregation, small interfaces shaped to what a caller needs, is the plain reason for a parallel port: `ISqlLog` stayed as it was, so a container on SQL Server never meets a type full of request charges and partitions it has no use for. Dependency inversion follows too, since the adapter writes to an interface Application defined and the host decides where the lines end up. The price is one more fixed ring of two hundred operations in memory and a second card to keep in step with the SQL one, and a system with many store types would probably push this into OpenTelemetry spans instead of a hand-built ring per store.
+
+## Files
+
+- [`api/TheYard.Application/StoreLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StoreLog.cs): the type with nowhere to put a value, and the port.
+- [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): the wrapper every operation goes through.
+- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the ring and the window's numbers.
+- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the endpoint (region store-endpoint).
+- [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the request charge in the metrics.
+- [`src/components/admin/StoreCard/StoreCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/StoreCard/StoreCard.tsx): the card.
+- [`api/TheYard.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminObservabilityTests.cs): the canary, on both stores.
+- [`docs/decisions/ADR-043-what-the-database-is-doing.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-043-what-the-database-is-doing.md): the SQL card this one is the sibling of.

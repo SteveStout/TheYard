@@ -4,7 +4,7 @@ using TheYard.Api;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The side-by-side page, docs/SQL-VS-COSMOS.md, promises the same thing from
+/// The side-by-side page, docs/sql-vs-cosmos/SQL-VS-COSMOS.md, promises the same thing from
 /// each store next to the other: the same bid at rest, the same write, the
 /// same guarantee, one live sample from the relational side and one from the
 /// document side in every pair, and a link to every record it draws on. A
@@ -16,7 +16,7 @@ namespace TheYard.Tests;
 /// </summary>
 public class SideBySidePageTests
 {
-    private const string Page = "docs/SQL-VS-COSMOS.md";
+    private const string Page = "docs/sql-vs-cosmos/SQL-VS-COSMOS.md";
 
     /// <summary>Where the relational side's code and schema live.</summary>
     private static readonly string[] Relational = ["api/TheYard.Infrastructure/", "api/TheYard.Database/"];

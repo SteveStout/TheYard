@@ -29,7 +29,7 @@ public class RuleTableTests
     /// </summary>
     private static List<string[]> Rows()
     {
-        string[] lines = File.ReadAllLines(Path.Combine(Repo.Root(), "docs", Record));
+        string[] lines = File.ReadAllLines(Path.Combine(Repo.Root(), "docs", "decisions", Record));
         int header = Array.FindIndex(lines, line => line.StartsWith("| The rule |", StringComparison.Ordinal));
 
         Assert.True(header >= 0, $"{Record} should carry the rules table");
@@ -102,7 +102,7 @@ public class RuleTableTests
     public void Every_record_the_table_cites_is_a_record_that_exists()
     {
         var titles = Directory
-            .EnumerateFiles(Path.Combine(Repo.Root(), "docs"), "ADR-*.md")
+            .EnumerateFiles(Path.Combine(Repo.Root(), "docs", "decisions"), "ADR-*.md")
             .Select(path => File.ReadLines(path).First().Trim())
             .Where(heading => heading.StartsWith("# ADR: ", StringComparison.Ordinal))
             .Select(heading => heading["# ADR: ".Length..].Trim())

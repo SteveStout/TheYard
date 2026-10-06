@@ -6,7 +6,7 @@ namespace TheYard.Tests;
 /// <summary>
 /// The colour and style rules, held by the gate (ADR: The palette, the addendum
 /// on the style section). The rules are written on a page a person reads,
-/// docs/COLOR-STYLE.md, and a rule on a page is followed until the first
+/// docs/style/COLOR-STYLE.md, and a rule on a page is followed until the first
 /// session that does not read the page. Each rule here fails with a sentence
 /// that says what to do, so a change that breaks one learns the rule from the
 /// failure.
@@ -52,7 +52,7 @@ public class StyleRulesTests
     /// </summary>
     private static string StylePage() =>
         string.Join("\n", new[] { "COLOR-STYLE.md", "BACKGROUND-RIBBON.md" }
-            .Select(name => File.ReadAllText(Path.Combine(Root, "docs", name))));
+            .Select(name => File.ReadAllText(Path.Combine(Root, "docs", "style", name))));
 
     private static readonly Regex Definition =
         new(@"(--[a-z0-9-]+):\s*([^;{}]+);", RegexOptions.Compiled);
@@ -190,7 +190,7 @@ public class StyleRulesTests
                 {
                     found.Add(
                         $"{relative} has the raw colour '{match.Value}': give it a token in src/styles/colors.css, "
-                        + "list the token on docs/COLOR-STYLE.md, and use var(--the-token) here");
+                        + "list the token on docs/style/COLOR-STYLE.md, and use var(--the-token) here");
                 }
             }
         }
@@ -224,7 +224,7 @@ public class StyleRulesTests
             if (!Regex.IsMatch(page, Regex.Escape(name) + @"(?![a-z0-9-])"))
             {
                 wrong.Add(
-                    $"{name} is in src/styles/colors.css and on neither docs/COLOR-STYLE.md nor docs/BACKGROUND-RIBBON.md: "
+                    $"{name} is in src/styles/colors.css and on neither docs/style/COLOR-STYLE.md nor docs/style/BACKGROUND-RIBBON.md: "
                     + "add it to the swatches fence of the section it belongs to, with the name a person calls it");
             }
         }

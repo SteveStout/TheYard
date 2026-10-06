@@ -1,0 +1,435 @@
+# App Architecture
+
+*How the look is built, from the design tokens up, is on its own page: [UI architecture](https://theyard.stevenstout.biz/?doc=ui-architecture).*
+
+The shape of the whole application in one page: what each part owns, which
+way the dependencies point, and the rules that keep it that way. The
+records under this one in the sidebar explain the individual decisions;
+this is the map they hang from. It is also the answer to the promise the
+README made when the build started, that a written architecture and style
+would exist and be enforced rather than remembered.
+
+[![TheYard data flow: the read path from the seed file to the cards, and the write path of a bid beside it](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/dataflow.png)](https://theyard.stevenstout.biz/api/docs/diagrams/dataflow)
+
+*A preview. [Open the data flow diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/dataflow)
+to zoom in and follow it. The infrastructure has [its own drawing](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure).*
+
+## In plain words
+
+This page is the map of the whole application: which part owns what, and which way the parts depend on each other. The server code is built in rings (an onion architecture) where every dependency points inward, and a short set of rules keeps it that way, such as working facts out from stable ids instead of storing them.
+
+The result: a developer can tell where a change belongs before writing it, and the organization can swap a piece at its seam, as when the catalogue moved from JSON files to SQLite without one line changing in the inner layers.
+
+## The topology, in the document
+
+The two drawings above are pictures. This one is text: it lives in this file,
+changes in the same commit as the thing it describes, and shows up in a diff
+when the topology moves. That is the whole reason it is here in a format a
+reviewer can read as source rather than open in an editor.
+
+Solid lines are what serves a request today. Dotted lines are the deploy path
+and the identity path, which are real but not on the request's critical route.
+
+```mermaid
+flowchart LR
+  B["Browser<br/>theyard.stevenstout.biz"]
+
+  subgraph edge["Phase 1 edge: Netlify, free tier"]
+    TLS["TLS termination, Let's Encrypt<br/>rewrite proxy: /* to the origin"]
+  end
+
+  subgraph azure["Azure, resource group RG-THEYARD-SS"]
+    ACI["Web app for containers, the first site<br/>on PLAN-THEYARD-SS, Linux B1, West US 3<br/>1 vCPU and 1.75 GB shared with the second site"]
+    ACR[("Container Registry")]
+    MI["Managed identity<br/>id-theyard-ss"]
+    AI["Application Insights<br/>appi-theyard-ss"]
+    LAW[("Log Analytics<br/>log-theyard-ss, 0.1 GB cap")]
+    ACI2["Web app for containers, the second site<br/>on the same plan, the same image, Cosmos DB by default"]
+  end
+
+  subgraph sql["Azure SQL Database, the first site's store, West US 3"]
+    SQL[("Azure SQL Database<br/>sqldb-theyard-ss-basic, Basic, 5 DTU<br/>catalogue, photo manifest, accounts, bids")]
+  end
+
+  subgraph cosmos["Azure Cosmos DB, the second site's store, West US 2"]
+    COSMOS[("Azure Cosmos DB<br/>cosmos-theyard-ss, free tier, no keys<br/>the same four things, as documents")]
+  end
+
+  ACI2 -->|managed identity| COSMOS
+  ACI2 -->|managed identity| SQL
+  ACI2 <-->|/api/admin/peer, 2.5 s patience| ACI
+
+  subgraph box["Inside the container"]
+    API["ASP.NET Core minimal API, .NET 10"]
+    SPA["React 19 bundle, served as static files"]
+    SEED[("data/vehicles.json<br/>200 records, seeds the database on first boot")]
+    FILE[("JSON seed in memory<br/>until the store attaches; no bids kept")]
+  end
+
+  B -->|HTTPS, session cookie| TLS
+  TLS -->|HTTPS| ACI
+  ACI --> API
+  API --> SPA
+  API -->|read once at startup, expanded to 100,000| SQL
+  API -->|the other store, chosen per request by the toggle| COSMOS
+  API -.->|when SQL is unreachable| FILE
+  MI -.->|db_datareader, db_datawriter| SQL
+  SEED -.->|first boot only| SQL
+  ACR -.->|image pulled on every roll| ACI
+  ACI -.->|token from the plan's identity endpoint| MI
+  MI -.->|Reader, Monitoring Reader| AI
+  API -.->|requests, dependencies, exceptions| AI
+  AI --> LAW
+```
+
+*Mermaid source. It renders as a picture on GitHub, and it is kept here as text
+on purpose: it lives in this file, so it changes in the same commit as the
+topology and shows up in a diff. The drawn version of the same thing, to zoom
+in on, is the [infrastructure diagram](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure).
+Why the renderer is not in the bundle is measured in ADR: Style, enforced.*
+
+The database is reached as the managed identity, with no password anywhere in
+the connection string, and the schema it maps to is published from
+`api/TheYard.Database` rather than created by the container (ADR: The SQL Server
+backend, and ADR: Data first).
+
+The two things that are not on this picture are on it on purpose. Cloudflare
+is a staged, dormant zone that cannot take over until the registrar transfer
+(ADR: Front Door origin), and Azure Front Door is written in Bicep and
+deliberately undeployed because the free trial forbids it (ADR: Deployment
+strategy). Drawing either as though it were serving traffic would make this
+diagram a wish rather than a map.
+
+## The data, as tables
+
+What the database actually holds, which is four tables of this application's own
+plus the seven ASP.NET Core Identity brings with it. The authority for this
+picture is `api/TheYard.Database`, and a conformance test holds the Entity
+Framework model to it, so this diagram cannot stop being true without
+something failing (ADR: Data first, and the database in source control).
+
+[![TheYard's database: the four tables this application owns with every column and type, Identity's seven, and the two relationships deliberately left unenforced](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/erd.svg)](https://theyard.stevenstout.biz/api/docs/diagrams/erd)
+
+*A preview. [Open the database diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/erd)
+to zoom in and read the column types. It is drawn by
+[`docs/images/erd.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/erd.mjs)
+from a table of facts, so a column that changes is a one-line edit rather than a
+drawing exercise. There is no PNG copy beside it, unlike the older two drawings:
+raw.githubusercontent serves an SVG as an image, so a second file would be one
+more thing to keep in step for nothing.*
+
+The same thing as text, which is what shows up in a diff:
+
+```mermaid
+erDiagram
+  AspNetUsers ||--o{ Bids : places
+  AspNetUsers ||--o{ AspNetUserClaims : has
+  AspNetUsers ||--o{ AspNetUserLogins : has
+  AspNetUsers ||--o{ AspNetUserTokens : has
+  AspNetUsers ||--o{ AspNetUserRoles : joins
+  AspNetRoles ||--o{ AspNetUserRoles : joins
+  AspNetRoles ||--o{ AspNetRoleClaims : has
+  Vehicles }o..o{ Photos : "chosen by hash, never stored"
+  Vehicles ||..o{ Bids : "no constraint, see below"
+
+  Vehicles {
+    nvarchar_64 Id PK "the seed id"
+    int Seq UK "seed order, clustered"
+    varchar_17 Vin "ISO 3779"
+    int Year
+    nvarchar_64 Make
+    nvarchar_64 Model
+    nvarchar_64 Trim
+    nvarchar_32 BodyStyle
+    nvarchar_32 ExteriorColor
+    nvarchar_32 InteriorColor
+    nvarchar_128 Engine
+    nvarchar_64 Transmission
+    nvarchar_16 Drivetrain
+    int OdometerKm
+    nvarchar_32 FuelType
+    decimal_3_1 ConditionGrade
+    nvarchar_1024 ConditionReport
+    nvarchar_max DamageNotes "JSON array"
+    nvarchar_32 TitleStatus
+    nvarchar_64 Province
+    nvarchar_64 City
+    datetime2_0 AuctionStart
+    int StartingBid
+    int ReservePrice "null means no reserve"
+    int BuyNowPrice "null means no buy now"
+    nvarchar_max Images "JSON array"
+    nvarchar_128 SellingDealership
+    nvarchar_32 Lot
+    int CurrentBid "null until the first bid"
+    int BidCount
+  }
+
+  Photos {
+    nvarchar_128 File PK
+    int Seq UK "manifest order, clustered"
+    nvarchar_32 Style "the body-style pool"
+    nvarchar_256 Title "the source title"
+  }
+
+  Bids {
+    nvarchar_128 UserId PK "FK to AspNetUsers"
+    nvarchar_64 VehicleId PK "no FK, see below"
+    int Amount
+    int BidCount
+    bit WonBuyNow
+    bigint AtMs
+    rowversion RowVersion "concurrency token"
+  }
+
+  AspNetUsers {
+    nvarchar_128 Id PK
+    bigint CreatedAtMs "this application's one addition"
+    nvarchar_256 UserName
+    nvarchar_256 NormalizedUserName UK
+    nvarchar_256 Email
+    nvarchar_256 NormalizedEmail
+    nvarchar_max PasswordHash
+    nvarchar_max SecurityStamp
+    nvarchar_max ConcurrencyStamp
+    bit EmailConfirmed
+    bit TwoFactorEnabled
+    bit LockoutEnabled
+    datetimeoffset LockoutEnd
+    int AccessFailedCount
+  }
+
+  AspNetRoles {
+    nvarchar_128 Id PK
+    nvarchar_256 Name
+    nvarchar_256 NormalizedName UK
+    nvarchar_max ConcurrencyStamp
+  }
+
+  AspNetUserRoles {
+    nvarchar_128 UserId PK
+    nvarchar_128 RoleId PK
+  }
+
+  AspNetUserClaims {
+    int Id PK
+    nvarchar_128 UserId
+    nvarchar_max ClaimType
+    nvarchar_max ClaimValue
+  }
+
+  AspNetRoleClaims {
+    int Id PK
+    nvarchar_128 RoleId
+    nvarchar_max ClaimType
+    nvarchar_max ClaimValue
+  }
+
+  AspNetUserLogins {
+    nvarchar_128 LoginProvider PK
+    nvarchar_128 ProviderKey PK
+    nvarchar_max ProviderDisplayName
+    nvarchar_128 UserId
+  }
+
+  AspNetUserTokens {
+    nvarchar_128 UserId PK
+    nvarchar_128 LoginProvider PK
+    nvarchar_128 Name PK
+    nvarchar_max Value
+  }
+```
+
+*Mermaid uses underscores where SQL uses brackets and parentheses, so
+`nvarchar_64` is `nvarchar(64)` and `decimal_3_1` is `decimal(3,1)`. The types
+themselves are the ones in
+[`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database).*
+
+Two relationships on that diagram are dotted, and both are dotted because the
+database does not enforce them.
+
+**Vehicles to Bids** has no foreign key. The `Vehicles` table holds the 200-row
+seed catalogue, `SyntheticVehicleSource` expands it in memory to 100,000 by
+deriving ids from it, and a visitor bids on the expanded set. A constraint would
+reject 99.8 per cent of legitimate bids. It becomes correct the day the expansion
+is persisted, and a test asserts its absence so that day is noticed.
+
+**Vehicles to Photos** has no join table. A vehicle's gallery is chosen at
+request time by hashing its id against the pool for its body style, so the
+association is computed and never stored. `Vehicles.Images` holds the dataset's
+own image URLs, which are not manifest file names, so there is nothing to point a
+foreign key at.
+
+Everything else is a real constraint. Deleting an account cascades to its bids,
+its claims, its logins, its tokens and its role memberships.
+
+The dependency direction inside the API, which is the other half of the shape:
+
+```mermaid
+flowchart RL
+  Api["TheYard.Api<br/>host, endpoints, composition"]
+  Infra["TheYard.Infrastructure<br/>adapters"]
+  App["TheYard.Application<br/>use cases and ports"]
+  Domain["TheYard.Domain<br/>rules, pure functions"]
+  Data["TheYard.Data<br/>records, no logic"]
+
+  Cosmos["TheYard.Infrastructure.Cosmos<br/>the document store's adapters"]
+
+  Api --> Infra
+  Api --> Cosmos
+  Api --> App
+  Api --> Domain
+  Api --> Data
+  Cosmos --> Infra
+  Cosmos --> App
+  Infra --> App
+  Infra --> Domain
+  Infra --> Data
+  App --> Domain
+  App --> Data
+  Domain --> Data
+```
+
+Every arrow points inward and none points back. `TheYard.Data` has no
+dependencies at all, which is what makes it safe for every other layer to hold
+its records. The one arrow between adapters, the Cosmos DB project's reference
+to the relational one, exists for the one account entity it shares,
+`YardUser` (ADR: Accounts on a document store). It is a known cost, not a
+layer: `YardUser` is an Identity type, so it cannot move into Application
+without Application taking the Identity package, and a test allows that one
+type and nothing else (ADR: Onion and SOLID, how this codebase holds them).
+
+## One picture in words
+
+A browser asks the API for a page of vehicles. The API owns the data, the
+rules and the derived facts; the browser formats what it is given and
+counts down clocks. Nothing about an auction is decided twice.
+
+## The layers, and which way they point
+
+The API is an onion: every arrow points inward, and the innermost layer
+knows nothing about the ones around it.
+
+The build holds that direction. `api/TheYard.Tests/OnionTests.cs` reads the
+compiled assemblies with NetArchTest and runs ten rules: each ring depends
+only on the rings inside it, Domain never reaches the disk, the network or the
+clock, Application never reaches the disk or the network, the document store's adapter borrows only the
+shared user from the relational one, an endpoint never reaches a store or the service container and reaches the
+auction only through Application, the host never queries a database itself,
+and services are registered only in `Composition/`. A break fails the gate
+and names the type that broke it. The rings, the ten rules and where each
+SOLID principle shows are in
+[ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid),
+and the rings are drawn on [their own page](https://theyard.stevenstout.biz/api/docs/diagrams/rings).
+
+| Project | Owns | Depends on |
+| --- | --- | --- |
+| `api/TheYard.Data` | The plain records: `Vehicle`, `PhotoEntry`. No logic. | nothing |
+| `api/TheYard.Domain` | The rules: auction schedule and clock, filter, ordering, the search index, bid rules, standing rules (the one rule for raising a price, and reserve met or not), photo gallery, FNV-1a. Pure functions and records. | Data |
+| `api/TheYard.Application` | The use cases: `Auction`, what the endpoints ask about the auction, composing `InventoryService`, `BidService` and `MarketService`; the auction's three ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`); and the operator's ports (`IActivityStore`, `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment` and the rest). | Domain, Data |
+| `api/TheYard.Database` | The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is. | nothing |
+| `api/TheYard.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator, the Identity user, and the database readings the Admin tab shows (`ResourceStats`, `YardDatabase.PingAsync`). | Application, Domain, Data |
+| `api/TheYard.Infrastructure.Cosmos` | The auction's three ports, the operator's stores and the account store over Azure Cosmos DB, plus the partition key experiment behind `IStoreExperiment`, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). | Application, Infrastructure |
+| `api/TheYard.Experiment` | A console tool: seeds the 100,000-document catalogue and runs the partition key's query set in paired rounds (ADR: The partition key). | Infrastructure, Infrastructure.Cosmos |
+| `api/TheYard.Migrations.Sqlite` | The SQLite schema's history, applied by the process that uses it. | Infrastructure |
+| `api/TheYard.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | Application, Infrastructure, Infrastructure.Cosmos, Migrations.Sqlite (Domain and Data through them) |
+| `src/` | The browser: rendering, formatting, countdowns, URL state, one fetch seam. | the wire only |
+
+The test for whether a layer is earning its place is whether something can
+be swapped at its seam. Three things have been: the 100,000-record scale-up
+is a decorator on `IVehicleSource` and nothing above it changed, the test
+suite hands the same services in-memory fakes, and the catalogue moved from
+JSON files to SQLite without one line changing in Application or Domain
+(ADR: The relational store).
+
+```live path=api/TheYard.Application/Ports.cs region=ports
+```
+
+## The rules that keep it that way
+
+**Derive, do not store.** Auction windows, statuses, galleries and the
+100,000 vehicles are all computed from stable ids. Nothing is persisted,
+so nothing can drift out of date, and the same id always produces the same
+answer. The seed file is never modified.
+
+**One authority per rule.** A rule lives in `TheYard.Domain` and nowhere
+else. The browser once mirrored the auction math in TypeScript and the two
+disagreed twice, across time zones and then on a daylight-saving day. The
+derived facts now travel on the wire (`auction_starts_at`,
+`auction_ends_at`, `auction_status`, `min_next_bid`, `sold`) and the browser
+only formats them.
+
+**The wire is the contract.** snake_case in the dataset, snake_case on the
+wire, snake_case in the browser: nothing is renamed in transit. The
+envelope is `{ total, vehicles }`; a failure is a ProblemDetails body
+(ADR: Error handling). The settings that hold that contract are in
+`api/TheYard.Api/Composition/ApiRegistration.cs` (ADR: Program.cs, explained).
+
+**Endpoints bind and delegate.** A `MapGet` in `api/TheYard.Api/Endpoints/`
+validates its parameters and asks Application, the auction's handlers through
+`Auction`. If a rule appears in the host, it is in the wrong place, and
+`OnionTests` fails a handler that composes the bid services itself or reaches
+a store.
+
+**The address bar is the application state.** Filters, sort, the open
+vehicle and the Admin tab are all query parameters, mirrored by
+`src/app/hooks/useAddressBar.ts` and read back by `src/lib/inventory.ts`. There is no router
+and no state library; Back and Forward work because the URL is the truth.
+
+**One seam to the API for the inventory.** Every `fetch` for vehicles,
+facets and bids is in `src/lib/data.ts`, with its cache, its debounce and its
+abort signal. The seam is per concern rather than one file: accounts fetch
+through `src/lib/auth.ts`, the store list through `src/lib/stores.ts`, and
+the Admin tab, the error boundary, the document viewer and the build stamp
+each read their own endpoint directly, because a cache and a debounce built
+for the listing would be the wrong tool for a health check. No component
+computes an auction fact; that rule is the one that matters, and it holds.
+
+**Nothing ships untested.** Three suites, one per level: pure rules in
+xunit, the browser's logic in Vitest, the real stack in Playwright. The
+ship's gate runs all three once per version and nothing reaches the
+deploy without them (ADR: The tests, explained).
+
+## Where a change goes
+
+| The change | Where it goes |
+| --- | --- |
+| A new auction or bidding rule | `api/TheYard.Domain`, with a unit test first |
+| A new endpoint | one `MapGet`/`MapPost` in the matching file under `api/TheYard.Api/Endpoints/`, plus an integration test |
+| A new data source | a port in Application, an adapter in Infrastructure, its registration in `api/TheYard.Api/Composition/` |
+| A new derived fact for the browser | `StandingVehicle` in `api/TheYard.Application/BidView.cs`, then one copied field in `api/TheYard.Api/VehicleWire.cs` |
+| A new API call from the browser | one function in `src/lib/data.ts` |
+| A new view state | the URL, through `filtersToSearchParams` |
+| A visitor preference (not a view) | `localStorage`, like the collapsed rail |
+| A new document or record | `docs/`, then `DocumentationCatalog.cs`, and `src/library/records.ts` or `pages.ts` |
+| A new sidebar section's contents | `src/library/sections.ts`; its order and icon in `src/lib/siteMap.ts` |
+| Something the whole app knows (a view, the list, the account) | a hook in `src/app/hooks/`, named for what it gives back, with its header |
+| A new colour or spacing value | `src/styles/colors.css` or `sizes.css`, never a literal |
+
+## What is deliberately not here
+
+No durable volume. The stores are outside the container, Azure SQL Database
+and Azure Cosmos DB. Until its store attaches, a container serves the JSON
+seed held in memory with no bid store, so nothing a visitor does depends on
+a disk the roll throws away. SQLite is the store a clone runs on when no
+connection string is configured (ADR: The relational store; ADR: A second
+store on Cosmos DB, and what it costs).
+
+No password store of its own: accounts are ASP.NET Core Identity with a
+signed cookie (ADR: Accounts and per-user bids). No state library, router,
+component library or CSS framework. No server-rendered React. Each of those
+is a decision with a record behind it, not an oversight; ADR: Deployment
+strategy and the Hosting page cover the hosting side of the same question.
+
+## Files
+
+- [`docs/app-architecture/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/STYLE.md): the naming, layering and commenting rules this page's principles turn into, and the `.editorconfig` that enforces the mechanical half.
+- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's three ports the layers meet at.
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents for the composition root, walked line by line in ADR: Program.cs, explained.
+- [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition) and [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): the registrations and middleware, and the handlers.
+- [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.
+- [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the ten rules that hold the rings.
+- [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the wire shape, copying the derived facts `StandingVehicle` carries so the browser's job is formatting.
+- [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts) and [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): the one seam and the URL state.
+- [`docs/app-architecture/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/DATAFLOW.md): the same shape as a walk, step by step.
+- [`docs/app-architecture/PROJECTS.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/PROJECTS.md): every project and folder, one line each.

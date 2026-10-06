@@ -1,4 +1,4 @@
-// The order a cold first visit loads in, for the Web overview (docs/WEB-OVERVIEW.md). Read only.
+// The order a cold first visit loads in, for the Web overview (docs/performance/WEB-OVERVIEW.md). Read only.
 //
 // The repository's own Playwright Chromium, headless, a fresh context per round so nothing is
 // cached: every request in the order it was sent, with when it was sent, when its first byte

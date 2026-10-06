@@ -32,7 +32,7 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
     [Theory]
     [InlineData("/api/docs/nope")]
     [InlineData("/api/docs/adr-999")]
-    [InlineData("/api/docs/ADR-001-front-door-origin.md")]
+    [InlineData("/api/docs/decisions/ADR-001-front-door-origin.md")]
     public async Task An_unknown_slug_is_a_404_not_a_file_read(string path)
     {
         var response = await _client.GetAsync(path);

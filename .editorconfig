@@ -1,4 +1,4 @@
-# The mechanical half of docs/STYLE.md, applied by the editor and the
+# The mechanical half of docs/app-architecture/STYLE.md, applied by the editor and the
 # compiler instead of by review. Rules a tool cannot check (naming that
 # reads well, comments that say why) stay in that document.
 root = true
@@ -34,7 +34,7 @@ dotnet_diagnostic.IDE0005.severity = warning
 
 # #region ca1852
 # Sealed by default, the practice written up on the Best Practices page
-# docs/SEALED.md. CA1852 names an internal class that nothing derives from and
+# docs/best-practices/SEALED.md. CA1852 names an internal class that nothing derives from and
 # that could be sealed. It is a warning here, and the gate reads any warning as
 # red, so the analyzer half of the practice is held by the build rather than by
 # review; SealedByDefaultTests holds the public half.

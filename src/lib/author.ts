@@ -1,7 +1,7 @@
 /**
  * The Author page's layout (ADR: The sidebar, the addendum on the author's
  * section). The words are a served document
- * like every other, docs/AUTHOR.md, and they go through the same renderer.
+ * like every other, docs/author/AUTHOR.md, and they go through the same renderer.
  * What a letter-shaped document cannot give is the page's shape: a panel for
  * who he is with three ways to reach him, a panel of small headed blocks for
  * the rest of his life, photographs in one quiet frame, a closing line. This
