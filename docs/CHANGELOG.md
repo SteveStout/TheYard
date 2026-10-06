@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.86** (2026-10-06): ADR-091, One folder per sidebar section, writes down the docs/ folder structure as a standing rule: where each document goes, how to add one, and the test that holds it.
 - **1.0.3.85** (2026-10-06): A new Style page, How the documents are styled, teaches how the plain Markdown in Git becomes panels, a status reading, sections with addresses and code samples read from the running build, and shows each one by using it.
 - **1.0.3.84** (2026-10-06): The documents in docs/ move into one folder per sidebar section, with the decision records in docs/decisions, so the repository on GitHub reads the way the sidebar does; every ?doc= address is unchanged.
 - **1.0.3.83** (2026-10-06): About Steven drops the paragraph on TheYard from its intro, at Steve's request; How I lead and everything else on the page stay.

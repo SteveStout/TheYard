@@ -6,7 +6,8 @@ backend in onion architecture.
 ## Before you change anything
 
 Read the record that governs it. The decisions are `docs/decisions/ADR-*.md`, served from the running app under
-Decision Records, and the ones a test enforces are listed beside their test in
+Decision Records; every other document lives in the folder named for its sidebar section, and a new one goes
+there too (ADR: One folder per sidebar section). The ones a test enforces are listed beside their test in
 `docs/decisions/ADR-075-the-rules-a-change-has-to-pass.md`. A change that contradicts a record changes the record
 first, as an addendum that says when it stopped being true rather than an edit that makes it look like
 it was always this way. The test goes in the same commit as the change, and the one gate runs

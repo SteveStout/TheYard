@@ -4,8 +4,8 @@ using TheYard.Api;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The library on disk reads the way the sidebar reads (ADR: The sidebar, the
-/// addendum on the folders). Every document sits in the folder of the sidebar
+/// The library on disk reads the way the sidebar reads (ADR: One folder per
+/// sidebar section). Every document sits in the folder of the sidebar
 /// section that offers it, the decision records sit in docs/decisions, and the
 /// root of docs/ holds only the folders, the changelog and the pictures.
 ///

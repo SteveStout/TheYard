@@ -286,6 +286,7 @@ export const MENUS: Record<
       { key: 'adrOnionAndSolid' },
       { key: 'adrTechnologyVersions' },
       { key: 'adrDotnet10' },
+      { key: 'adrDocsFolders' },
     ],
   },
   // #endregion records-menu

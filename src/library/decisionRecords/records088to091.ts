@@ -1,5 +1,5 @@
 /**
- * Does:      Lists the decision records numbered 088 to 090, in number order, as data.
+ * Does:      Lists the decision records numbered 088 to 091, in number order, as data.
  * Does not:  Hold any other record or document, say which sidebar section shows a record, or draw anything.
  * Used by:   records.ts.
  */
@@ -8,8 +8,8 @@
 // in number order.
 import type { RecordEntry } from '../records';
 
-/** The decision records numbered 088 to 090, keyed by each one's name in code. */
-export const RECORDS_088_TO_090 = {
+/** The decision records numbered 088 to 091, keyed by each one's name in code. */
+export const RECORDS_088_TO_091 = {
   adrOnionAndSolid: {
     title: 'ADR: Onion and SOLID, how this codebase holds them',
     menuLabel: 'ADR: Onion and SOLID, how this codebase holds them',
@@ -30,5 +30,12 @@ export const RECORDS_088_TO_090 = {
     url: '/api/docs/adr-dotnet-10',
     kind: 'adr',
     number: '090',
+  },
+  adrDocsFolders: {
+    title: 'ADR: One folder per sidebar section',
+    menuLabel: 'ADR: One folder per sidebar section',
+    url: '/api/docs/adr-docs-folders',
+    kind: 'adr',
+    number: '091',
   },
 } as const satisfies Record<string, RecordEntry>;

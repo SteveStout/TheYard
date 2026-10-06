@@ -56,7 +56,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The sitemap lists every document the catalogue serves and nothing else, and llms.txt links only to what the site serves | ADR: The public face | PublicFaceTests |
 | /about is a served page with its own head, its Person names only his name, title, profiles and city, the sitemap lists it with the build's day, and the verification tag is written only when it is given | ADR: Every diagram opens on its own page, ADR: The public face | DiagramPageTests, PublicFaceTests, DockerBuildInputsTests |
 | The slug, the catalog and the sidebar offer the same documents | ADR: The staff review | DocumentationCatalogTests |
-| Every document sits in the folder of the sidebar section that offers it, the records in `docs/decisions/`, and the root of `docs/` holds only those folders, the changelog and the pictures | ADR: The sidebar | DocsFolderTests |
+| Every document sits in the folder of the sidebar section that offers it, the records in `docs/decisions/`, and the root of `docs/` holds only those folders, the changelog and the pictures | ADR: One folder per sidebar section | DocsFolderTests |
 | Every file in `src/app` and `src/library`, and every stylesheet under `src`, opens with what it does, what it does not, and which files use it; the last is read against the files that import it, and no file there runs past 300 lines but the ones named with why | ADR: The React configuration, explained for a new developer | FileHeaderTests |
 | No production C# file under `api/` and no TypeScript file under `src/` runs past 300 lines; a longer file is split by job and the file that keeps the name lists its parts (tests, migrations and generated files are left out) | ADR: The rules a change has to pass | FileShapeTests |
 | The five Style pages are served and are the Style section's rows, say "design token" and never a bare "token" (as do the design token files' comments), carry no em dash, and every live number and live fence on them is one the build can count or read, and every tile and glossary link lands on a real section | ADR: The palette | StyleSectionTests |
@@ -170,3 +170,7 @@ The documents moved into one folder per sidebar section (ADR: The sidebar, the a
 ## Addendum, 2026-10-06 (1.0.3.85): a fifth Style page
 
 The Style section gained How the documents are styled (ADR: Live code samples, the addendum on the page that shows them), so the row `StyleSectionTests` holds says five pages, and the same test holds the page's two new live numbers.
+
+## Addendum, 2026-10-06 (1.0.3.86): the folders have their own record
+
+The row `DocsFolderTests` holds now cites ADR: One folder per sidebar section, the record Steve asked for so the folder rule is followed from here on, in place of the addendum to ADR: The sidebar that first described it.
