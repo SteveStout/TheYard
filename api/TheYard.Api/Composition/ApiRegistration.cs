@@ -63,23 +63,34 @@ public static class ApiRegistration
         #endregion problem-details
 
         #region compression
-        // The catalogue's reads leave the container compressed (ADR: Cache headers, the
-        // addendum on compression). A page of a hundred vehicles is about 106 KB of JSON
-        // and about 16 KB as Brotli. The edge in front of the site forwards every API read
-        // to Azure, so without this the hop from Azure to the edge carried all 106 KB on
-        // every listing and the edge compressed it on the way out. The optimal level, which
-        // is Brotli's quality 4: about a millisecond for a hundred vehicles. The fastest
-        // level sent 44 KB, because the serializer writes the answer in pieces and every
-        // piece is flushed through the compressor, and the fastest level loses most of its
-        // gain at each flush. Only JSON, and only on the addresses CatalogueReads names,
-        // where RequestPipeline turns it on.
+        // What: the listing and the filter values leave the container compressed, as
+        // Brotli or gzip, whichever the caller asks for. Nothing else is compressed.
+        //
+        // Why: every API read goes browser to edge to Azure and back. The edge always
+        // compressed the answer for the browser, but it asked Azure for it plainly, so a
+        // page of a hundred vehicles crossed from Azure to the edge as about 106 KB of
+        // JSON. Compressed here it crosses as about 15 KB.
+        //
+        // How: this registers the compressor; RequestPipeline switches it on for the
+        // two addresses CatalogueReads names and no others. Timed on the build machine,
+        // a page took 79 to 100 ms plain and 87 to 96 ms as Brotli, so the cost is lost
+        // in the noise of building the page.
         builder.Services.AddResponseCompression(options =>
         {
+            // HTTPS compression is off by default because of the BREACH attack. It is
+            // safe here because only the two catalogue reads reach it and their bodies
+            // hold no secret; RequestPipeline explains the rule.
             options.EnableForHttps = true;
             options.MimeTypes = ["application/json"];
+            // Listed in order of preference: a caller that accepts both gets Brotli,
+            // the smaller of the two.
             options.Providers.Add<BrotliCompressionProvider>();
             options.Providers.Add<GzipCompressionProvider>();
         });
+        // Optimal, which for Brotli is quality 4, and not Fastest. The serializer
+        // writes the answer in many small pieces and each one is flushed through the
+        // compressor; at the fastest level each flush throws away most of the gain, and
+        // a page came out at 44 KB instead of about 15 KB.
         builder.Services.Configure<BrotliCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
         builder.Services.Configure<GzipCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
         #endregion compression

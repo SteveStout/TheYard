@@ -313,6 +313,28 @@ Lighthouse 12.8.2 as before: three runs a form factor on the Azure SQL site and 
 
 **The wake-up is the open problem.** For twenty minutes or more after each roll, single listing reads take seconds, and none of the five versions changed that. What the container spends those minutes on has not been measured, and it is the next thing to look at.
 
+## How the listing is compressed, and why only the listing
+
+**The trip.** A visitor's browser asks the edge, Netlify, for the listing. The edge forwards the request to the container on Azure and passes the answer back. The edge has always compressed what it hands the browser, so the browser never saw the full size. The waste was on the hop between them: the edge asked Azure for the answer plainly, and a page of a hundred vehicles crossed as about 106 KB of JSON.
+
+**What changed.** The container now compresses two answers itself, the listing (`/api/vehicles`) and the filter values (`/api/facets`), as Brotli or gzip, whichever the caller asks for. The same page crosses as about 15 KB, 85 per cent less. ASP.NET Core's response compression does the work. It is registered once, in [`ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs), read here from the running build with its comments:
+
+```live path=api/TheYard.Api/Composition/ApiRegistration.cs region=compression
+```
+
+It is switched on only for a GET of those two addresses, in [`RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs):
+
+```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=compression
+```
+
+**Why only those two.** Compressing an HTTPS response can leak a secret through its size. The attack is called BREACH. It needs a secret, such as a session token, and text the attacker chooses in the same compressed body. By sending many requests and watching the length shrink, the attacker guesses the secret a character at a time. That is why ASP.NET Core leaves HTTPS compression off unless it is asked for. The listing and the filter values are the same public data for every visitor and carry no secret in their bodies; a session travels in the Cookie header, which this compression never touches. Bids, accounts and the admin endpoints are sent as they are.
+
+**Why the optimal level.** The fastest level was tried first and sent 44 KB. The serializer writes the answer in many small pieces and each piece is flushed through the compressor, and at the fastest level each flush throws away most of the gain. The optimal level, which for Brotli is quality 4, brings the page to about 15 KB. Timed on the build machine, a page took 79 to 100 ms plain and 87 to 96 ms as Brotli, so the cost is lost in the noise of building the page.
+
+**What it did not do.** It cut the bytes and left the time alone. Most of a listing read was the server building the page, and on a warm container the rest is the trip from Missouri to the edge and on to Azure. The 3.9 s median read just after the roll was the container waking up, and the bench above rules out the compression. The changes a visitor can feel came next: the edge keeping its own copy for a few seconds, and the schedule order behind the default listing.
+
+[`CatalogueReads.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/CatalogueReads.cs) names the two addresses. The decision is recorded in [Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/ADR-015-cache-headers.md), the addendum on compression.
+
 ## What it cost to keep it honest
 
 Measuring is not free either, and the bill is small enough to print: the whole twenty-round measurement

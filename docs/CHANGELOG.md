@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.82** (2026-10-06): The Performance page explains how the listing is compressed and why only the listing and the filter values are, and the comments beside that code say what it does, how and why. Documents and comments only.
 - **1.0.3.81** (2026-10-05): The Performance page carries the live numbers for 1.0.3.79 and 1.0.3.80, read at the same container age as the reading before them: the edge now answers some listing reads in about a tenth of a second, a read forwarded to Azure takes what it took before, and every roll is still slow for its first twenty minutes. Documents only.
 - **1.0.3.80** (2026-10-05): The default listing reads its page off an ending-soonest order built once a day, instead of sorting all hundred thousand vehicles on every request, and gives the same page the full sort gives; on the build machine the page went from 90 to 100 ms to 25 to 34 ms.
 - **1.0.3.79** (2026-10-05): The edge may answer the listing and the filter values from its own copy for up to thirty seconds, only for a caller with no cookie; the browser is still told to ask every time, and a vehicle's own page and its bids are always read fresh.

@@ -138,12 +138,22 @@ public static class RequestPipeline
         #endregion error-log
 
         #region compression
-        // The catalogue's reads are compressed here and nothing else is (ApiRegistration,
-        // the compression region). Their bodies carry no secret: a session travels in a
-        // cookie header, which this does not touch. That is what makes compressing them
-        // safe from the BREACH attack, which needs a secret and text an attacker chooses
-        // in the same compressed body, and it is why the list is two reads and not the
-        // whole API.
+        // What: compression runs on a branch of the pipeline that only the catalogue's
+        // two reads enter (CatalogueReads.Covers: a GET of /api/vehicles or
+        // /api/facets). Every other response, bids, accounts and the admin endpoints
+        // included, is sent as it is.
+        //
+        // Why only these two: compressing an HTTPS response can leak a secret through
+        // its size. That attack, BREACH, needs a secret (a session token, say) and text
+        // the attacker chooses in the same compressed body; by sending many requests
+        // and watching the length shrink, the attacker guesses the secret a character
+        // at a time. The catalogue reads are the same public data for every visitor and
+        // carry no secret in their bodies. A session travels in the Cookie header,
+        // which this compression never touches.
+        //
+        // How: it sits here, before the cache headers and the endpoints, so it wraps
+        // the response body they write. The compressor itself is set up in
+        // ApiRegistration.
         app.UseWhen(context => CatalogueReads.Covers(context.Request), branch => branch.UseResponseCompression());
         #endregion compression
 
