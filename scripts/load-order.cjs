@@ -67,7 +67,10 @@ function L(m) {
         r.bytes = e.encodedDataLength;
       }
     });
-    await page.goto(site + '/?nocache=' + Date.now(), { waitUntil: 'load', timeout: 60000 });
+    // The bare address, because since 1.0.3.88 it is the only one that arrives with the landing
+    // page drawn into the HTML; any query hides the drawing. Nothing is reused without a
+    // cache-busting query: every round is a fresh context, and the page is no-cache.
+    await page.goto(site + '/', { waitUntil: 'load', timeout: 60000 });
     await page.waitForTimeout(4000);
     const marks = await page.evaluate(() => {
       const nav = performance.getEntriesByType('navigation')[0];

@@ -313,6 +313,27 @@ Lighthouse 12.8.2 as before: three runs a form factor on the Azure SQL site and 
 
 **The wake-up is the open problem.** For twenty minutes or more after each roll, single listing reads take seconds, and none of the five versions changed that. What the container spends those minutes on has not been measured, and it is the next thing to look at.
 
+## The landing page drawn at build time, measured on 7 October
+
+The open question above, which reading sets the phone's speed index, was answered first (ADR: The landing page rendered at build time, server rendering as the goal): none of them. The landing page appears in one frame, after every API read has ended. So 1.0.3.87 started the page's API reads from its head, and 1.0.3.88 drew the landing page into the HTML at build time, so a browser can paint it before any script runs and React takes over what is already there.
+
+Lighthouse 12.8.2 on its phone preset, three runs a site from Steve's machine in Missouri, each container's uptime read before and after every run. Before is 1.0.3.86 with both containers 870 minutes old; after is 1.0.3.88 with both 75 to 77 minutes old, later than any wake-up this page has seen (`renderlane-si-before-10386.log`, `renderlane-si-after-10388.log`).
+
+| Landing page, phone, median of three | Score | First paint | Largest paint | Speed index | Blocking |
+| --- | --- | --- | --- | --- | --- |
+| Azure SQL site, 1.0.3.86 | 90 | 2.28 s | 2.66 s | 4.89 s | 110 ms |
+| Azure SQL site, 1.0.3.88 | 92 | 1.75 s | 1.92 s | 4.21 s | 255 ms |
+| Azure Cosmos DB site, 1.0.3.86 | 88 | 1.76 s | 2.20 s | 3.71 s | 349 ms |
+| Azure Cosmos DB site, 1.0.3.88 | 93 | 1.75 s | 1.97 s | 3.31 s | 242 ms |
+
+**What moved.** The largest paint came in 0.2 to 0.7 s sooner on both sites, and the speed index by 0.4 to 0.7 s. On the Azure SQL site the first paint did too, by half a second.
+
+**What got worse.** Blocking time on the Azure SQL site rose from 110 to 255 ms. React now takes over a page that is already drawn, which is work on the main thread the empty page never asked for. On the Azure Cosmos DB site it fell, from 349 to 242 ms, so the two sites disagree and the three runs a site are too few to say which is the rule.
+
+**What did not move.** The speed index still swings by more than two seconds between runs on the same site, and under Lighthouse's trace the first paint still arrives about three seconds after the page has loaded, with the browser's other threads idle in between (`renderlane-si2-after2-10388.log`). That gap is Lighthouse's own and not the page's: a plain Chrome visit paints in under a second (the Web overview's load order).
+
+**What it cost.** The HTML a visitor downloads went from about 10 KB to 113 KB, 13.8 KB compressed, because the landing page is in it.
+
 ## How the listing is compressed, and why only the listing
 
 **The trip.** A visitor's browser asks the edge, Netlify, for the listing. The edge forwards the request to the container on Azure and passes the answer back. The edge has always compressed what it hands the browser, so the browser never saw the full size. The waste was on the hop between them: the edge asked Azure for the answer plainly, and a page of a hundred vehicles crossed as about 106 KB of JSON.

@@ -3,7 +3,7 @@
 The [Infrastructure overview](https://github.com/SteveStout/TheYard/blob/main/docs/performance/INFRASTRUCTURE-OVERVIEW.md) is the machines a
 request crosses. This page is what those machines send a browser, and the order a first visit
 loads it in. The [Performance overview](https://github.com/SteveStout/TheYard/blob/main/docs/performance/PERFORMANCE.md) holds what each change
-to the page moved; this one is the page as it stands at 1.0.0.144.
+to the page moved; this one is the page as it stood at 1.0.0.144, and as it stands at 1.0.3.89 in the section read on 7 October.
 
 ## In plain words
 
@@ -15,7 +15,7 @@ What that is worth: a developer can see why the page draws fast and rerun the sa
 
 | Piece | What it is | On the wire | How long a browser may keep it |
 | --- | --- | --- | --- |
-| The document | One HTML page, the shell of a React 19 application built by Vite 8 in TypeScript | about 2.1 KB | never; `no-cache`, so a new version is seen on the next visit |
+| The document | One HTML page built by Vite 8 in TypeScript, carrying the landing page drawn at build time since 1.0.3.88 (an empty shell of a React 19 application before) | about 12.7 KB, 113 KB built (about 2.1 KB before 1.0.3.88) | never; `no-cache`, so a new version is seen on the next visit |
 | The script | One bundle, named by a hash of its contents | about 90 KB (314,334 bytes built) | a year, `immutable`; a new build is a new name |
 | The document renderer | `marked` and highlight.js, a chunk of its own since 1.0.0.141 | 117,430 bytes built, fetched with the first document a reader opens and never on the inventory page | a year |
 | The stylesheet | One file, hashed | about 8.5 KB | a year |
@@ -55,6 +55,21 @@ The four waves were the same on every round of both sites:
 
 Every request on a cold visit went to the site's own domain over HTTP/2 and answered 200. No
 third-party host appears in any of the six rounds.
+
+## Read again on 7 October, at 1.0.3.89, on the bare address
+
+The same script, three cold rounds a site, with one change: it now asks for the bare address, because since 1.0.3.88 that is the only address that arrives with the landing page drawn into the HTML, and any query hides the drawing (`renderlane-loadorder-bare-sql.log`, `renderlane-loadorder-bare-cosmos.log`; both containers 70 minutes old). The waves are now three, not four:
+
+1. **The page, carrying the landing page.** About 12.7 KB on the wire. Its first byte took 200 to 250 ms on every warm round; the Azure SQL site's first round waited 3.4 s for it, one cold edge.
+2. **Everything the page names, at once, within 10 ms of it landing.** The stylesheet, the type, the script and the two badge photographs, and, from the script in the head, all six API reads the landing page makes (ADR: The landing page rendered at build time, server rendering as the goal). Until 1.0.3.87 the API reads waited for the script to arrive and run; now they leave with the page's own files, and every one is asked for once.
+3. **What the page opens later:** the document renderer and the Admin tab's chunks, half a second on, which the landing page's own panels load.
+
+| Bare address, warm rounds | First paint | Largest paint | Page loaded |
+| --- | --- | --- | --- |
+| Azure SQL site | 568 to 700 ms | 568 to 700 ms | 453 to 568 ms |
+| Azure Cosmos DB site | 672 to 736 ms | 672 to 736 ms | 532 to 719 ms |
+
+The first paint and the largest paint are now the same frame on every round: the page appears whole. On this fast desktop connection it does not appear sooner than the empty shell did: the same script on `/?nocache=` at 1.0.3.88, where the drawing is hidden and React draws from nothing, painted its first content at 648 to 696 ms (`renderlane-loadorder-10388-sql.log`). The gain the drawn page bought was measured on a throttled phone, where it took the largest paint 0.2 to 0.7 s sooner (the Performance overview).
 
 ## The marks, all six rounds
 

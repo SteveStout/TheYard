@@ -431,3 +431,9 @@ How a served document gets its look was spread across three files: `src/lib/mark
 
 ```live path=src/app/mount.tsx region=mount
 ```
+
+## Addendum, 2026-10-07 (1.0.3.90): what a component owes a page that arrives drawn
+
+Since 1.0.3.88 the landing page is drawn twice from the same tree: once by the build, with no window, and once by the browser, which must produce the same markup before React will take the page over. That puts one rule on every component the landing page renders. Anything it reads from the browser on its first draw (the window's width, local storage, the address, the time) is read through `useSyncExternalStore` with a third argument that gives the build's answer, as `useRail.ts` does, or inside an effect after the takeover; read directly, the two draws disagree and React throws the drawn page away and draws it again, which costs more than never drawing it at all. `tests/e2e/drawn.spec.ts` holds the result at phone and desk sizes: no hydration error, and the node the build drew is the node the visitor keeps.
+
+The takeover has a price of its own, measured after the roll: blocking time on the Azure SQL site's phone reading rose from 110 to 255 ms at the median, the main-thread work of attaching React to a page that is already there (ADR: The landing page rendered at build time, server rendering as the goal, the addendum on the numbers after). A smaller landing tree, or leaving parts of it to draw after the takeover, is where that comes back from.

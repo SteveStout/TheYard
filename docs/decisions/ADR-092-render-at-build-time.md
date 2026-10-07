@@ -47,6 +47,21 @@ The glass costs 70 to 180 ms of that first frame on this machine. It is the site
 - **Rendering inside the .NET host**, by a Node process in the API's container or by templates in the host. It would put page knowledge in the server, which is the separation Steve asked to keep.
 - **A static hint for every read on every page.** A page that opens on the inventory or the Admin tab never reads `/api/health` or `/api/tests/summary` itself, so the hints would be requests nobody uses and a warning in every reader's console. Those two are hinted only where the landing page is what opens.
 
+## Addendum, 2026-10-07 (1.0.3.90): the numbers after
+
+Both parts shipped: the hints in 1.0.3.87 and the drawn landing page in 1.0.3.88. Read after the roll of 1.0.3.88 on both live domains: the bare address's HTML carries the drawn page, React takes it over with no hydration error at phone and desk sizes and keeps the node the build drew, no API address is asked for twice, and an address that opens another view never shows the drawing (`renderlane-proof-1.0.3.88.log`).
+
+The same Lighthouse reading as above, three phone runs a site, with both containers 75 to 77 minutes old (`renderlane-si-after-10388.log`):
+
+| Landing page, phone, median of three | Speed index before | after | Largest paint before | after | Blocking before | after |
+| --- | --- | --- | --- | --- | --- | --- |
+| Azure SQL site | 4.89 s | 4.21 s | 2.66 s | 1.92 s | 110 ms | 255 ms |
+| Azure Cosmos DB site | 3.71 s | 3.31 s | 2.20 s | 1.97 s | 349 ms | 242 ms |
+
+The speed index and the largest paint improved on both sites. Blocking time rose on the Azure SQL site: taking over a drawn page is main-thread work an empty one never needed. The HTML grew from about 10 KB to 113 KB, 13.8 KB compressed. The first frame under Lighthouse's trace still lands about three seconds after the page has loaded, with the browser's other threads idle, which is the trace's and not the page's; the Performance overview carries the reading.
+
+The goal is unchanged: full server rendering, beside the API and apart from it. The memory reading above was taken from the containers, and it left about 846 MB of the plan unaccounted for. The plan's own reading, at one-minute grain over the ten days to 7 October, accounts for it: 92 per cent used at the median and 96 at the 99th percentile, and still 77 per cent with both containers at 233 MB, so the platform holds roughly 700 to 800 MB of its own. A rendering service of about the size of one of the sites does not fit on this B1 beside both of them; it needs a larger plan or a plan of its own, and that is the reading to price when the goal is taken up.
+
 ## Where it sits
 
 Outside the rings: this is the frontend's own page and its build. The API's rings do not change, the host serves the built files without reading them, and the one rule added is held by a browser spec (Single responsibility: the server answers in data, the frontend draws).
