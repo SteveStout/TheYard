@@ -37,6 +37,14 @@
   width: var(--rail-width-collapsed);
 }
 
+/* A page drawn at build time carries the rail before the docking line is known;
+   below the line the drawer is what the window wants, so the rail stays hidden. */
+@media (max-width: 1023.98px) {
+  .rail[data-auto] {
+    display: none;
+  }
+}
+
 /* ---- the drawer (phones and narrow windows) ---- */
 
 .drawer {

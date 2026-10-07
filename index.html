@@ -32,6 +32,14 @@
       (function () {
         var reads = ['/api/stores', '/api/auth/me', '/api/bids', '/api/version'];
         if (location.search === '') reads.push('/api/health', '/api/tests/summary');
+        // The build draws the landing page into #root (the note beside it,
+        // below). Any other address opens on another view, so that drawing is
+        // kept off the screen there until the app replaces it (src/app/mount.tsx).
+        else {
+          var hide = document.createElement('style');
+          hide.textContent = '#root[data-drawn] { display: none; }';
+          document.head.appendChild(hide);
+        }
         for (var i = 0; i < reads.length; i++) {
           var hint = document.createElement('link');
           hint.rel = 'preload';
@@ -170,6 +178,13 @@
     <!-- #endregion search-console-slot -->
   </head>
   <body>
+    <!--
+      The frontend build writes the landing page into this element and marks it
+      data-drawn (ADR: The landing page rendered at build time, and the Vite
+      config's prerender step), so the bare address paints before any script has
+      run. Left empty here, so the development server draws everything in the
+      browser as before.
+    -->
     <div id="root"></div>
     <!--
       For a reader that does not run JavaScript, which is most AI tools and some

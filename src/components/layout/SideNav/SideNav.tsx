@@ -27,8 +27,8 @@ export { readRailCollapsed, storeRailCollapsed } from './railStorage';
 
 /** Everything the shell hands the sidebar: its shape, which view is showing, and what each row does. */
 export type SideNavProps = {
-  /** At 1024px and up the panel docks beside the page; below, it is a drawer. */
-  docked: boolean;
+  /** At 1024px and up the panel docks beside the page; below, it is a drawer; null while a drawn page is taken over. */
+  docked: boolean | null;
   /** Docked only: icons-only rail. */
   collapsed: boolean;
   /** Collapses the docked rail to icons, or expands it again. */
@@ -120,6 +120,7 @@ export function SideNav(props: SideNavProps) {
   const content = (
     <NavContent
       {...props}
+      docked={docked !== false}
       openKey={openDocKey}
       onOpenDoc={openDoc}
       onCloseDrawer={() => drawerRef.current?.close()}
@@ -129,8 +130,14 @@ export function SideNav(props: SideNavProps) {
   return (
     <>
       {/* #region shapes */}
-      {docked ? (
-        <aside className={styles.rail} data-collapsed={collapsed} data-testid="side-rail">
+      {docked !== false ? (
+        // Not known yet (null) draws the rail too, and the stylesheet hides it below the docking line.
+        <aside
+          className={styles.rail}
+          data-collapsed={collapsed}
+          data-auto={docked === null ? '' : undefined}
+          data-testid="side-rail"
+        >
           {content}
         </aside>
       ) : (
@@ -154,7 +161,9 @@ export function SideNav(props: SideNavProps) {
 }
 
 /** The sidebar's props plus what SideNav itself works out: the open key and the two drawer-aware callbacks. */
-type ContentProps = SideNavProps & {
+type ContentProps = Omit<SideNavProps, 'docked'> & {
+  /** The rail's shape is drawn: docked, or not known yet. */
+  docked: boolean;
   openKey: DocKey | null;
   onOpenDoc: (key: DocKey) => void;
   onCloseDrawer: () => void;

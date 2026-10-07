@@ -90,7 +90,7 @@ when a dependency points outward (ADR: Onion and SOLID, how this codebase holds 
 
 React + TypeScript, deliberately thin. No business math runs in the browser:
 
-- `main.tsx`: entry point, read like `Program.cs`: one line per part with its file beside it. `lib/adminKey.ts` keeps the operator's key before the address bar is tidied, `styles/globalStyles.ts` loads the stylesheets in order, `app/reportUncaughtErrors.ts` reports crashes no boundary sees, and `app/mount.tsx` draws `App` inside the error boundary.
+- `main.tsx`: entry point, read like `Program.cs`: one line per part with its file beside it. `lib/adminKey.ts` keeps the operator's key before the address bar is tidied, `styles/globalStyles.ts` loads the stylesheets in order, `app/reportUncaughtErrors.ts` reports crashes no boundary sees, and `app/mount.tsx` puts the site on the page: it takes over the landing page the build drew with `hydrateRoot`, or draws any other address with `createRoot`. The site itself, `App` inside the error boundary, is `app/TheYard.tsx`, the one tree the browser and the build both draw.
 - `app/`: the app shell. `App.tsx` is the composition root and reads like a table of
   contents: one line per hook, then the view the address names inside `Shell.tsx`
   (the frame), with `Header.tsx`, `Footer.tsx` and `InventoryView.tsx` beside it.

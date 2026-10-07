@@ -33,6 +33,14 @@
   width: calc(100% + var(--rail-width-collapsed));
 }
 
+/* Not known yet (a page drawn at build time): above the docking line the rail is open. */
+@media (min-width: 1024px) {
+  :global([data-rail='auto']) .watermark {
+    left: calc(-1 * var(--rail-width));
+    width: calc(100% + var(--rail-width));
+  }
+}
+
 /* The rows are the drawing's one ink, with no rings and no lightning mark. Every
    text colour is still measured against the darker accent the rings were drawn
    in, so the margin they needed is kept. */

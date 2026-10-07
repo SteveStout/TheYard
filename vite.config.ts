@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig, type Plugin } from 'vite';
+import { build, defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // #region font-preload
@@ -48,6 +48,98 @@ function preloadTheFonts(): Plugin {
 }
 // #endregion font-preload
 
+// #region draw-the-landing-page
+// The landing page drawn to HTML when the site is built (ADR: The landing page
+// rendered at build time, server rendering as the goal). Until this, the HTML a
+// browser received was an empty frame, and a phone showed nothing until the
+// script had arrived and run. Now the bare address arrives with the landing page
+// already in #root, so the browser paints it as soon as the stylesheet is in,
+// and src/app/mount.tsx takes it over with hydrateRoot rather than drawing it
+// again from nothing.
+//
+// How: before the bundler starts on the site, a server-side build of
+// src/app/drawLanding.tsx is made in memory from the same sources and the same
+// stylesheet rules, so every class name it writes is the class name the
+// browser's bundle uses. Everything it needs is bundled into one module (React's
+// edge renderer included, so it reads no file and no Node API), that module
+// is run once, and the markup it returns is written into the page when the page
+// is written. It runs first, and not from inside the bundler's own hooks,
+// because a second build started from inside the first one never finished. A
+// draw that takes longer than a minute fails the build rather than holding it.
+// Nothing is written to disk but index.html, and the API serves that file as it
+// serves every other: it knows nothing about how it was made.
+//
+// The development server has no bundle, so there the page stays empty and the
+// browser draws everything, as before.
+const DRAW_TIMEOUT_MS = 60_000;
+// The timer functions, as Node gives them; this config is typed without Node's types (see font-preload above).
+const timers = globalThis as unknown as {
+  setTimeout: (run: () => void, ms: number) => unknown;
+  clearTimeout: (id: unknown) => void;
+};
+
+async function drawLandingMarkup(root: string): Promise<string> {
+  const built = await build({
+    configFile: false,
+    root,
+    logLevel: 'warn',
+    plugins: [react()],
+    ssr: { noExternal: true },
+    build: {
+      ssr: 'src/app/drawLanding.tsx',
+      write: false,
+      minify: false,
+      rolldownOptions: { output: { codeSplitting: false } },
+    },
+  });
+  const outputs = Array.isArray(built) ? built : 'output' in built ? [built] : [];
+  const entry = outputs
+    .flatMap((output) => output.output)
+    .find((chunk) => chunk.type === 'chunk' && chunk.isEntry);
+  if (!entry || entry.type !== 'chunk') {
+    throw new Error('The landing page was not built for drawing');
+  }
+  const drawing: { drawLanding: () => string } = await import(
+    /* @vite-ignore */ `data:text/javascript;charset=utf-8,${encodeURIComponent(entry.code)}`
+  );
+  return drawing.drawLanding();
+}
+
+function drawTheLandingPage(): Plugin {
+  let markup = '';
+  return {
+    name: 'theyard-draw-the-landing-page',
+    apply: 'build',
+    async configResolved(config) {
+      // A build of the server-side module itself carries the ssr flag: nothing to draw there.
+      if (config.build.ssr) return;
+      let timer: unknown;
+      const late = new Promise<never>((_, reject) => {
+        timer = timers.setTimeout(
+          () => reject(new Error('Drawing the landing page took over a minute')),
+          DRAW_TIMEOUT_MS
+        );
+      });
+      try {
+        markup = await Promise.race([drawLandingMarkup(config.root), late]);
+      } finally {
+        timers.clearTimeout(timer);
+      }
+    },
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, context) {
+        // Only the built page; the development server draws in the browser.
+        if (!context.bundle) return html;
+        const empty = '<div id="root"></div>';
+        if (!html.includes(empty)) throw new Error('index.html has no empty #root to draw into');
+        return html.replace(empty, `<div id="root" data-drawn="landing">${markup}</div>`);
+      },
+    },
+  };
+}
+// #endregion draw-the-landing-page
+
 // #region dev-server
 // The .NET API (api/) owns /api: data and vehicle photos. Proxying keeps the
 // browser same-origin, so the API needs no CORS configuration. The preview
@@ -59,7 +151,7 @@ const apiProxy = {
 };
 
 export default defineConfig({
-  plugins: [react(), preloadTheFonts()],
+  plugins: [react(), preloadTheFonts(), drawTheLandingPage()],
   server: {
     proxy: apiProxy,
     // Keep Vite's file watcher out of the .NET build output, because dotnet holds

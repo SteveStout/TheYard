@@ -24,8 +24,14 @@ import type { DocKey } from '../../library/documents';
 // hands back (push, replace, replaceQuery, stepBack), so a reader looking for
 // "what put that in the URL" has one file to read.
 
-/** The address, read once at startup. Filters live in it (?make=Ford&status=live). */
-const INITIAL_PARAMS = new URLSearchParams(window.location.search);
+/**
+ * The address, read once at startup. Filters live in it (?make=Ford&status=live).
+ * The build draws the landing page where there is no window, and the landing page
+ * is the address with no query, so that is the address it reads there.
+ */
+const INITIAL_PARAMS = new URLSearchParams(
+  typeof window === 'undefined' ? '' : window.location.search
+);
 const INITIAL_URL_STATE = filtersFromSearchParams(INITIAL_PARAMS);
 /** A tile click is GET navigation: ?vehicle={id} deep-links the detail view. */
 const INITIAL_VEHICLE_ID = INITIAL_PARAMS.get('vehicle');

@@ -33,7 +33,11 @@ export function StoreBar() {
     return () => controller.abort();
   }, []);
 
-  const here = { pathname: window.location.pathname, search: window.location.search };
+  // The build draws the landing page where there is no window: the bare address, which is what it is.
+  const here =
+    typeof window === 'undefined'
+      ? { pathname: '/', search: '' }
+      : { pathname: window.location.pathname, search: window.location.search };
   const ready = stores === null ? null : readyCount(stores);
   const readySentence = ready === null ? undefined : `${ready.up} of ${ready.of} stores ready`;
 

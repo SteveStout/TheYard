@@ -1,0 +1,45 @@
+/**
+ * Does:      Shows the right frame while a page drawn at build time is taken over: the rail above the docking line, the phone's
+ *            header below it, and the ribbon ground placed to match, until the browser has said which side the window is on.
+ * Does not:  Style the frame once that is known (App.module.css does), the rail itself (SideNav.module.css), or the ribbons'
+ *            paint (Ribbons.module.css); it names no class of its own and reads only the attributes the shell writes.
+ * Used by:   globalStyles.ts.
+ */
+/* A global sheet, not a module: it names no class, and a module imported only for
+   its rules is dropped from the build, so none of them would reach the stylesheet.
+
+   Not known yet: the landing page arrives drawn by the build (ADR: The landing
+   page rendered at build time), carrying both the rail and the phone's header,
+   with data-rail="auto" on the frame. These show the one the window wants, the
+   same as 'open' above the line and 'drawer' below it, so nothing moves when
+   the browser's answer arrives and React draws the frame it settles on. */
+@media (min-width: 1024px) {
+  /* div: one step above .app in App.module.css, whichever sheet the bundle puts first. */
+  div[data-rail='auto'] {
+    display: grid;
+    grid-template-columns: var(--rail-width) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  [data-rail='auto'] [data-frame='header'] {
+    display: none;
+  }
+
+  /* The ribbon ground starts at the window's edge and its drawing at the rail's, as
+     Ribbons.module.css does for 'open'; that sheet is held to a byte budget (ribbons.test.ts). */
+  [data-rail='auto'] [data-testid='ribbons'] {
+    left: calc(-1 * var(--rail-width));
+  }
+
+  [data-rail='auto'] [data-testid='ribbons'] > svg {
+    left: var(--rail-width);
+    width: calc(100% - var(--rail-width));
+  }
+}
+
+@media (max-width: 1023.98px) {
+  /* Below the line the drawer is what the window wants: the ribbons stand back, as for 'drawer'. */
+  [data-rail='auto'] [data-testid='ribbons'] > svg {
+    opacity: var(--ribbons-phone-opacity);
+  }
+}

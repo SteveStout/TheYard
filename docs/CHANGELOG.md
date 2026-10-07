@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.88** (2026-10-07): The landing page is drawn to HTML when the site is built, so the bare address paints before any script runs, and React takes that page over with hydrateRoot instead of drawing it again; every other address hides the drawing and opens its own view as before. The API serves the page as a file and knows nothing about it.
 - **1.0.3.87** (2026-10-07): The landing page's six API reads start from the page's head instead of waiting for the script, each hint matched to its request so nothing is asked for twice, and ADR-092 records the plan: the landing page drawn at build time next, and full server rendering, apart from the API, as the goal.
 - **1.0.3.86** (2026-10-06): ADR-091, One folder per sidebar section, writes down the docs/ folder structure as a standing rule: where each document goes, how to add one, and the test that holds it.
 - **1.0.3.85** (2026-10-06): A new Style page, How the documents are styled, teaches how the plain Markdown in Git becomes panels, a status reading, sections with addresses and code samples read from the running build, and shows each one by using it.

@@ -1,17 +1,24 @@
 /**
- * Does:      Draws the whole site into the page's one empty element, inside the safety net that catches a render crash.
+ * Does:      Puts the site on the page: takes over the landing page the build already drew, or draws any other page from
+ *            nothing.
  * Does not:  Decide what the site shows; App.tsx does that.
  * Used by:   main.tsx.
  */
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { ErrorBoundary } from '../components/shared/ErrorBoundary';
-import App from './App';
+import { createRoot, hydrateRoot } from 'react-dom/client';
+import { TheYard } from './TheYard';
 
 // #region mount
 /**
- * Finds the element index.html leaves empty for the site and draws the site into it. Everything
- * the site shows lives under this one call.
+ * Finds the element index.html holds for the site and puts the site in it.
+ *
+ * The build draws the landing page into that element (ADR: The landing page
+ * rendered at build time), so on the bare address the page is already there
+ * before this runs, and React takes it over with hydrateRoot: it draws the same
+ * tree again, finds the same markup, and attaches the clicks to it without
+ * replacing anything. Every other address (a document, the inventory, the
+ * Admin tab) opens on another view, so the drawn landing page is not what it
+ * wants; index.html keeps it hidden there, and this clears it and draws the
+ * view from nothing with createRoot, as the site always did.
  * @param elementId the id of that element, "root" in index.html
  */
 export function mountTheYard(elementId: string): void {
@@ -19,20 +26,13 @@ export function mountTheYard(elementId: string): void {
   const root = document.getElementById(elementId);
   if (!root) throw new Error(`Missing #${elementId} element`);
 
-  createRoot(root).render(
-    // StrictMode is a development check. It renders nothing and costs nothing in production. In
-    // development it mounts every component twice, so an effect that forgets to clean up (a
-    // timer, a listener) shows its bug right away.
-    <StrictMode>
-      {/* The safety net. If a component throws while drawing, React would remove the whole page
-          and leave it white. The boundary catches the throw, reports it to the API, and shows a
-          card with Reload and Back to inventory instead. It also spots a chunk a deploy has
-          replaced and reloads once onto the new version. */}
-      <ErrorBoundary>
-        {/* The whole site: routing, header, pages. */}
-        <App />
-      </ErrorBoundary>
-    </StrictMode>
-  );
+  const drawn = root.hasAttribute('data-drawn');
+  root.removeAttribute('data-drawn');
+  if (drawn && window.location.search === '') {
+    hydrateRoot(root, <TheYard />);
+    return;
+  }
+  root.replaceChildren();
+  createRoot(root).render(<TheYard />);
 }
 // #endregion mount

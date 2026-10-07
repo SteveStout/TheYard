@@ -15,6 +15,17 @@ import type { Rail } from './hooks/useRail';
 import type { RunningBuild } from './hooks/useRunningBuild';
 import styles from './App.module.css';
 
+/**
+ * What the frame's stylesheet reads off data-rail: docked open or collapsed, a drawer, or "auto" while a page drawn at
+ * build time is taken over and the docking line is not known yet (src/styles/drawn-page.css then shows the frame the
+ * window wants).
+ */
+function railShape(rail: Rail): 'auto' | 'drawer' | 'collapsed' | 'open' {
+  if (rail.docked === null) return 'auto';
+  if (!rail.docked) return 'drawer';
+  return rail.collapsed ? 'collapsed' : 'open';
+}
+
 export function Shell({
   rail,
   go,
@@ -42,10 +53,7 @@ export function Shell({
   children: ReactNode;
 }) {
   return (
-    <div
-      className={styles.app}
-      data-rail={rail.docked ? (rail.collapsed ? 'collapsed' : 'open') : 'drawer'}
-    >
+    <div className={styles.app} data-rail={railShape(rail)}>
       {/* #region skip-link */}
       {/* First in the tab order on purpose. The docked rail is around thirty
           buttons, and without this a keyboard user tabs every one of them to
@@ -83,8 +91,11 @@ export function Shell({
         {/* #region header-below-dock */}
         {/* Below the docking line the header carries the brand, Reset bids,
             and the hamburger; the docked rail makes it redundant above it.
-            What it draws is in Header.tsx. */}
-        {!rail.docked && (
+            What it draws is in Header.tsx. While a page drawn at build time is
+            taken over, the line is not known yet, so both the header and the
+            rail are drawn and the stylesheet shows the one the window wants
+            (data-rail="auto", src/styles/drawn-page.css). */}
+        {rail.docked !== true && (
           <Header
             onHome={go.goHome}
             bidCount={bidCount}

@@ -1,7 +1,7 @@
 /**
  * Does:      Joins the pieces of the site together, picks which view shows inside the frame, and says which code loads late.
  * Does not:  Hold state or rules of its own: what the app knows is in hooks/, one file per thing, named for what it gives back.
- * Used by:   mount.tsx.
+ * Used by:   TheYard.tsx.
  */
 import { lazy, Suspense, useEffect } from 'react';
 import { useNow } from '../hooks/useNow';

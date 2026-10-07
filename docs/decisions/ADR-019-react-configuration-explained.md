@@ -424,3 +424,10 @@ The front end is built on Node 24 in the Docker image and in CI where this recor
 ## Addendum, 2026-10-06 (1.0.3.85): the documents' look, written down
 
 How a served document gets its look was spread across three files: `src/lib/markdown.ts` (the renderer, the section ids and the fences), `src/lib/docLayout.ts` (the panels and the status reading) and `src/library/styleBlocks.ts` (the Style section's fences), with the glass itself in the stylesheets. None of them changed. A new page under Style, How the documents are styled, explains them in one place and shows the code from each file live (ADR: Live code samples, the addendum on the page that shows them), so a developer reading this record has a page to start from before opening the files.
+
+## Addendum, 2026-10-07 (1.0.3.88): the landing page arrives drawn, and the mount takes it over
+
+`app/mount.tsx` no longer always draws the site from nothing. The frontend build now draws the landing page to HTML and writes it into `#root` (ADR: The landing page rendered at build time, server rendering as the goal), so on the bare address the mount calls `hydrateRoot`, which draws the same tree again, finds the same markup and attaches to it; every other address clears that drawing and calls `createRoot` as before. The tree both draws start from moved into `app/TheYard.tsx`, so the build and the browser cannot draw different sites. Two things the first draw used to ask the browser for at once, which side of the docking line the window is on and whether the rail was left collapsed, are read through `useSyncExternalStore` in `useRail.ts`, whose third argument is the answer the build gave: React uses it while taking the page over and asks the browser straight after, which is what keeps the takeover free of hydration errors.
+
+```live path=src/app/mount.tsx region=mount
+```
