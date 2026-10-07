@@ -35,8 +35,9 @@ public sealed class InventoryService(
     // task is what is shared rather than the result, so two callers arriving
     // together wait on the same load instead of running two.
     //
-    // The host awaits WarmAsync before it serves anything (Composition/Startup.cs), so on a
-    // running site the accessors below read a task that finished at startup and
+    // The host starts WarmAsync beside the server (Composition/Startup.cs) and the
+    // pipeline awaits it before any store-bound endpoint runs (Warmth, Stores.cs), so on a
+    // running site the accessors below read a task that has already finished and
     // never block. A caller that skips the warm-up, which is what a unit test
     // over an in-memory source does, blocks on a task that a memory source has
     // already completed, which is a wait of no time. The only way to block a

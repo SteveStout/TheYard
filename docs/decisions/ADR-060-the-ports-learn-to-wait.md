@@ -179,3 +179,13 @@ is reached only warm (ADR: Three readers with no memory of the project).
 
 ```live path=api/TheYard.Tests/WarmthTests.cs region=warm-before-reading
 ```
+
+## Addendum, 2026-10-07 (1.0.3.89): the server listens first
+
+The host no longer loads the default store's catalogue before it listens. Measured on the three rolls App Insights held in full (1.0.3.84, 1.0.3.85 and 1.0.3.87), App Service stopped the old container 1 to 3.5 minutes before the new one was listening, because the new one loaded a hundred thousand vehicles first, on the one core both sites share, and for that stretch nothing answered at all. Steve's call on 7 October: answer first, load after.
+
+So the warm runs beside the server. The page's own files and the platform's probes, `/healthz` and `/readyz`, answer within seconds of the container starting; every API read waits for the load, and waits without holding a thread, because the pipeline already awaits the request's store before any `/api` endpoint runs (the addendum above). The bids replay before the catalogue loads, not after: they are a few rows and done in well under the catalogue's time, so a read let through by the warm finds them in place, and nobody sees a sold vehicle offered or their own bids missing after a roll. Readiness now includes the catalogue, so `/readyz` says 503 until it has loaded, and the deploy's Verify step polls it the way it polls the version. One promise of this record is kept in a different shape: a dataset that cannot be loaded still ends the process, but by logging the failure and stopping the host after it has started, rather than by never starting it.
+
+```live path=api/TheYard.Api/Composition/Startup.cs region=listen-first
+```
+

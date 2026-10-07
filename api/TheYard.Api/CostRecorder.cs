@@ -74,7 +74,7 @@ public sealed class CostRecorder(
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
         // Half a minute after the start, so the first read never competes
-        // with the catalogue this process loads before it answers anybody.
+        // with the catalogue this process loads as it starts.
         await Task.Delay(TimeSpan.FromSeconds(30), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         while (!stopping.IsCancellationRequested)
         {

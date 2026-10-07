@@ -270,3 +270,8 @@ This record is about the host Api alone: Program.cs is a table of contents, and 
 ## Addendum, 2026-10-03: endpoints ask the Application ring
 
 The section on endpoints says a handler calls the service that owns the rule. A bidding or catalogue handler now asks one Application type, `Auction` (`api/TheYard.Application/Auction.cs`), which composes the catalogue, the bids and the room in the order the rules need; the three services stay on each `Backend` and no endpoint holds them. `HandleBid` takes a function of the auction, the vehicle and the clock. The relational context factory the 2026-09-08 addendum mentions moved from the host into the relational adapter (`api/TheYard.Infrastructure/ContextFactory.cs`), because it builds `YardDbContext`; the host still creates it before the container exists and only asks it for contexts. `OnionTests` holds both changes.
+
+## Addendum, 2026-10-07 (1.0.3.89): the catalogue loads beside the server
+
+"Started before it serves" above stopped being true of the catalogue. `StartTheYardAsync` still attaches the loggers and says a missing store out loud before anything is served, but the default store's bids and catalogue now load beside the server rather than before it, so a roll answers in seconds instead of minutes (ADR: The ports learn to wait, the addendum on listening first). A dataset that cannot be loaded still ends the process: the failure is logged and the host is stopped, and readiness, which now waits on the catalogue, keeps the deploy's Verify step from passing.
+

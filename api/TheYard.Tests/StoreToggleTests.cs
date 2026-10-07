@@ -183,14 +183,31 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
         var answered = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, answered.StatusCode);
 
-        var metrics = await client.GetFromJsonAsync<JsonElement>("/api/admin/metrics");
+        // The default store's bids replay beside the server after its catalogue
+        // (Startup.cs, listen-first), so its ready time can land a moment after the
+        // first read that needed the catalogue; read the metrics until it has.
+        JsonElement metrics;
+        var waited = System.Diagnostics.Stopwatch.StartNew();
+        do
+        {
+            metrics = await client.GetFromJsonAsync<JsonElement>("/api/admin/metrics");
+            bool readied = metrics.GetProperty("backends").EnumerateArray()
+                .Any(backend => backend.GetProperty("default").GetBoolean()
+                    && backend.GetProperty("startup").GetProperty("ready_ms").GetInt64() > 0);
+            if (readied)
+            {
+                break;
+            }
+            await Task.Delay(250);
+        }
+        while (waited.Elapsed < TimeSpan.FromSeconds(60));
 
         var listed = metrics.GetProperty("backends").EnumerateArray().ToList();
         Assert.Equal(stores.GetProperty("stores").GetArrayLength(), listed.Count);
         var sql = Assert.Single(listed, backend => backend.GetProperty("key").GetString() == "sql");
         Assert.True(sql.GetProperty("requests").GetProperty("window").GetInt32() >= 1);
         Assert.Equal("SQLite", sql.GetProperty("store").GetString());
-        // The default store was warmed before the first request; the other
+        // The default store warms at startup, beside the server; the other
         // warms on its first request or in the background, so only the
         // default's cold start is promised here.
         var byDefault = Assert.Single(listed, backend => backend.GetProperty("default").GetBoolean());

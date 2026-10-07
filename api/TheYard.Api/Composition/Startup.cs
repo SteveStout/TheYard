@@ -6,13 +6,14 @@ namespace TheYard.Api;
 
 /// <summary>
 /// What happens once the host is built and before it serves: the loggers attached,
-/// the stores said out loud, the default catalogue warmed, the error rings wired to
-/// the kept log, the page sweep and the keep-warm loop started at the roll.
+/// the stores said out loud, the default catalogue's warm started beside the server,
+/// the error rings wired to the kept log, the page sweep and the keep-warm loop
+/// started at the roll.
 /// </summary>
 public static class Startup
 {
-    /// <summary>Warms the default store and starts what runs beside the requests.</summary>
-    public static async Task StartTheYardAsync(this WebApplication app, YardComposition host)
+    /// <summary>Starts the default store's warm beside the server and wires what runs beside the requests.</summary>
+    public static Task StartTheYardAsync(this WebApplication app, YardComposition host)
     {
         var sqlBackend = host.SqlBackend;
         var cosmos = host.Cosmos;
@@ -121,25 +122,43 @@ public static class Startup
             });
         }
 
-        // Materialize the inventory and replay the bids now, so a bad dataset fails
-        // the process at startup, visibly, and not as a 500 on the first request, and
-        // so no visitor's request is the one that waits for the store. This is the
-        // warm-up the ports record leans on: after these two lines every synchronous
-        // read in the application is reading a task that has already finished
-        // (ADR: The ports learn to wait). The default store first, before anything
-        // is served. The other store can be warmed after the container is ready, in
-        // the background, one after the other rather than both at once: the
-        // container has one vCPU, and two expansions of a hundred thousand records
-        // racing each other would both take longer and neither number would be that
-        // store's own. Off by default and off on the plan too, where the keep-warm
-        // loop loads the other store within four minutes (ADR: Kept awake); a test
-        // run boots ten applications at once and ten second expansions nobody asks
-        // for is memory the machine running the suite does not have to give; a store
-        // nobody warmed warms itself on its first request (the warm region of
-        // InventoryService; ADR: One container, both stores).
-        await backends.Default.Startup.Time("catalogue", backends.Default.Inventory.WarmAsync);
-        await backends.Default.Startup.Time("bids", backends.Default.Bids.LoadAsync);
-        backends.Default.Startup.Ready();
+        // #region listen-first
+        // The default store's bids and catalogue load beside the server, not before
+        // it. The server listens at once, so a roll's new container answers the
+        // platform's probes and serves the page's files in seconds. Every API read
+        // waits for the catalogue, and waits without holding a thread, because the
+        // pipeline awaits the warm before any /api endpoint runs (Warmth, Stores.cs).
+        // /readyz says not ready until the catalogue is in, so the deploy and a
+        // blue-green swap wait for the same thing a visitor would.
+        //
+        // The bids replay first. It is a few rows against a hundred thousand
+        // vehicles, so it is done long before the catalogue, and an API read let
+        // through by the catalogue's warm finds every bid already in place: no
+        // visitor sees a sold vehicle offered, or their own bids missing, in the
+        // first minutes after a roll.
+        //
+        // Until this, the process loaded a hundred thousand vehicles before it
+        // listened, and a roll answered nothing for the minutes that took (ADR: The
+        // ports learn to wait, the addendum on listening first). A dataset that
+        // cannot be loaded still ends the process, loudly, rather than serving a
+        // site with no catalogue: the failure is logged and the host is stopped,
+        // so the platform restarts it and says so. A host already stopping, as a
+        // test's host does when it is disposed mid-load, is left to stop.
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await backends.Default.Startup.Time("bids", backends.Default.Bids.LoadAsync);
+                await backends.Default.Startup.Time("catalogue", backends.Default.Inventory.WarmAsync);
+                backends.Default.Startup.Ready();
+            }
+            catch (Exception ex) when (!app.Lifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                app.Logger.LogCritical(ex, "The {Store} store could not be loaded; stopping, so the platform restarts the container", backends.Default.Name);
+                app.Lifetime.StopApplication();
+            }
+        });
+        // #endregion listen-first
         if (app.Configuration.GetValue("Store:WarmOthers", false))
         {
             _ = Task.Run(async () =>
@@ -232,5 +251,7 @@ public static class Startup
             app.Lifetime.ApplicationStopping.Register(() => loop.StopAsync(CancellationToken.None).GetAwaiter().GetResult());
         }
         // #endregion keep-warm-wiring
+        // Nothing here is awaited any more: the warm runs beside the server (listen-first).
+        return Task.CompletedTask;
     }
 }

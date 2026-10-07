@@ -130,3 +130,8 @@ The health card, from the fetch to the rows
 
 ```live path=src/components/admin/HealthCard/HealthCard.tsx region=health-card
 ```
+
+## Addendum, 2026-10-07 (1.0.3.89): ready means the catalogue is in
+
+The process listens before its catalogue loads (ADR: The ports learn to wait, the addendum on listening first), so `/readyz` gained one check that gates it, `catalogue`, which passes once the default store's hundred thousand vehicles are in memory. `/healthz` still answers the moment the process is up. `/api/health` shows the new check beside the others, and since it is an API read it waits for the load like every other, so the Admin tab sees the check pass; it is `/readyz` that says 503 while a fresh container loads. The deploy waits on `/readyz` before it reads the filters, and a blue-green swap will wait on the same thing.
+

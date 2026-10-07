@@ -137,12 +137,12 @@ public sealed class CurrentBackend(Backends backends, IHttpContextAccessor acces
 /// <summary>
 /// The request's store, warm before any endpoint reads it.
 ///
-/// <para>The host awaits the default store's catalogue before it serves and
-/// warms the others in the background on a deployed group, so a request that
-/// reaches a store between those two moments, a visitor following the toggle
-/// in the seconds after a roll, or any request to the other store in a test
-/// application where the background warm is off, found a catalogue still
-/// loading. <c>InventoryService</c>'s synchronous accessors then blocked the
+/// <para>The host starts the default store's catalogue loading beside the
+/// server and warms the others in the background on a deployed group, so a
+/// request that arrives before a store's load has finished, any request in the
+/// first minutes after a roll, a visitor following the toggle, or any request
+/// to the other store in a test application where the background warm is off,
+/// finds a catalogue still loading. <c>InventoryService</c>'s synchronous accessors then blocked the
 /// request thread on the load, on a container with one vCPU and therefore one
 /// thread pool worker to start with: the exact shape ADR: The ports learn to
 /// wait argued against (ADR: Three readers with no memory of the project).</para>

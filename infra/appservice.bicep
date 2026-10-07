@@ -138,8 +138,8 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
         appSettings: [
           // The platform's three: where the container listens, that nothing is
           // mounted over /home, and how long a start may take before App
-          // Service gives up on it. The process reads a hundred thousand
-          // vehicles into memory before it answers, on a processor it shares.
+          // Service gives up on it. The process answers at once and loads a
+          // hundred thousand vehicles beside the server, on a processor it shares.
           { name: 'WEBSITES_PORT', value: '8080' }
           { name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', value: 'false' }
           { name: 'WEBSITES_CONTAINER_START_TIME_LIMIT', value: '600' }

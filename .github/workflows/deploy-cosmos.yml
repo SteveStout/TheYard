@@ -216,8 +216,23 @@ jobs:
               exit 1
             fi
           done
+          # Readiness is the container's own word that its files are in place and its
+          # catalogue has loaded (ADR-010). The process listens before the catalogue is
+          # in (ADR: The ports learn to wait, the addendum on listening first). An API
+          # read waits for the load, so the version above usually arrives with it;
+          # this wait says so in the container's own words before the filters are read.
+          for i in $(seq 1 120); do
+            if curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 10 "$ORIGIN/readyz" > /dev/null 2>&1; then
+              echo "origin ready $(((i - 1) * 5))s after it served the version"
+              break
+            fi
+            if [[ "$i" -eq 120 ]]; then
+              echo "origin never said ready"
+              exit 1
+            fi
+            sleep 5
+          done
           curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/api/facets" > /dev/null
-          curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/readyz"
           echo
           # Which store it came up on, said out loud. A warning and not a
           # failure, for the reason Deploy gives: the fallback serving is the

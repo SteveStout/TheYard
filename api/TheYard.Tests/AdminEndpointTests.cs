@@ -23,9 +23,22 @@ public class AdminEndpointTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
-    public async Task Readyz_is_ready_when_the_dataset_and_docs_are_present()
+    public async Task Readyz_is_ready_when_the_dataset_and_docs_are_present_and_the_catalogue_has_loaded()
     {
-        var response = await _client.GetAsync("/readyz");
+        // The host listens before its catalogue loads (Startup.cs, listen-first), so
+        // ready can lag the first answer by the load; it must arrive, and say so.
+        HttpResponseMessage response;
+        var waited = System.Diagnostics.Stopwatch.StartNew();
+        do
+        {
+            response = await _client.GetAsync("/readyz");
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                break;
+            }
+            await Task.Delay(250);
+        }
+        while (waited.Elapsed < TimeSpan.FromSeconds(60));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("ready", await response.Content.ReadAsStringAsync());
     }
@@ -60,6 +73,19 @@ public class AdminEndpointTests(WebApplicationFactory<Program> factory)
     // #endregion error-eviction
 
     // #region readiness-and-health
+    [Fact]
+    public async Task The_catalogue_is_a_check_that_holds_the_container_from_service_until_it_has_loaded()
+    {
+        // The process listens before its catalogue loads (Startup.cs, listen-first),
+        // so the catalogue is what readiness waits on: a deploy, and a blue-green
+        // swap, send no visitor until the hundred thousand vehicles are in.
+        string body = await _client.GetStringAsync("/api/health");
+        using var json = JsonDocument.Parse(body);
+        var catalogue = json.RootElement.GetProperty("checks").EnumerateArray()
+            .Single(check => check.GetProperty("name").GetString() == "catalogue");
+        Assert.True(catalogue.GetProperty("gates_readiness").GetBoolean());
+    }
+
     [Fact]
     public async Task The_database_is_the_one_check_that_does_not_withhold_the_container_from_service()
     {

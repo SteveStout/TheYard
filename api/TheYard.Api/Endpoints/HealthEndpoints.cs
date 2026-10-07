@@ -65,7 +65,7 @@ public static class HealthEndpoints
     private static async Task<Results<ContentHttpResult, ProblemHttpResult>> Readiness(HostPaths paths, Backends backends) =>
         (await RunChecksAsync(paths, backends, readinessOnly: true)).Where(check => check.GatesReadiness).All(check => check.Status == "pass")
             ? TypedResults.Text("ready")
-            : TypedResults.Problem(detail: "A file this site cannot run without is missing; the health report says which.", statusCode: 503, title: "Not ready");
+            : TypedResults.Problem(detail: "A file this site cannot run without is missing, or its catalogue is still loading; the health report says which.", statusCode: 503, title: "Not ready");
 
     private static async Task<Ok<HealthReport>> Health(HostPaths paths, Backends backends, BuildInfo build, HostStart start, KeepWarmState keepWarm)
     {
@@ -109,6 +109,10 @@ public static class HealthEndpoints
             await Check("dataset file", () => Task.FromResult(File.Exists(paths.DataPath)), "data/vehicles.json present"),
             await Check("docs", () => Task.FromResult(File.Exists(Path.Combine(paths.RepoRoot, "docs", "hosting", "HOSTING.md"))), "served documents findable"),
             await Check("photo manifest", () => Task.FromResult(File.Exists(paths.ManifestPath)), "image manifest present"),
+            // The process listens before its catalogue is in (Startup.cs, listen-first),
+            // so ready means the default store's catalogue has loaded: the thing a
+            // deploy, and a blue-green swap, must wait for before sending a visitor.
+            await Check("catalogue", () => Task.FromResult(backends.Default.CatalogueLoaded), "the default store's catalogue is loaded"),
         };
         // One check per store, named by the store, so a container running both
         // says which one is unavailable. The default store's check is called

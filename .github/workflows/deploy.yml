@@ -227,8 +227,8 @@ jobs:
       - name: Verify
         run: |
           # Wait for the NEW build to answer at the origin. Ten minutes rather
-          # than five: the plan is one shared processor, and the process reads a
-          # hundred thousand vehicles into memory before it answers. Every read
+          # than five: the plan is one shared processor, and the image has to be
+          # pulled and started on it before the new build answers. Every read
           # here carries the self mark on its agent, so the Site activity card
           # counts it as the site's own (ADR: Site activity, 24 September).
           for i in $(seq 1 120); do
@@ -243,9 +243,23 @@ jobs:
               exit 1
             fi
           done
+          # Readiness is the container's own word that its files are in place and its
+          # catalogue has loaded (ADR-010). The process listens before the catalogue is
+          # in (ADR: The ports learn to wait, the addendum on listening first). An API
+          # read waits for the load, so the version above usually arrives with it;
+          # this wait says so in the container's own words before the filters are read.
+          for i in $(seq 1 120); do
+            if curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 10 "$ORIGIN/readyz" > /dev/null 2>&1; then
+              echo "origin ready $(((i - 1) * 5))s after it served the version"
+              break
+            fi
+            if [[ "$i" -eq 120 ]]; then
+              echo "origin never said ready"
+              exit 1
+            fi
+            sleep 5
+          done
           curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/api/facets" > /dev/null
-          # Readiness is the container's own word that its files are in place (ADR-010).
-          curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/readyz"
           echo
           # The domain is the edge in front of the same origin: what a visitor sees.
           site=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$SITE/api/version")
