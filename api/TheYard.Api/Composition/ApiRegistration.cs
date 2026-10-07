@@ -1,19 +1,19 @@
 using System.IO.Compression;
 using System.Text.Json;
-using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 
 namespace TheYard.Api;
 
 /// <summary>
 /// The shape of the wire: snake_case bodies, one ProblemDetails for every failure
-/// (ADR-023), one structured log line per request, the catalogue's reads compressed,
+/// (ADR-023), the edge's forwarded headers, the catalogue's reads compressed,
 /// and the OpenAPI document built from the endpoints as mapped (ADR: The API
 /// describes itself).
 /// </summary>
 public static class ApiRegistration
 {
-    /// <summary>Registers the JSON options, the problem shape, request logging, compression and the OpenAPI document.</summary>
+    /// <summary>Registers the JSON options, the forwarded headers, the problem shape, compression and the OpenAPI document.</summary>
     public static void AddTheYardApi(this WebApplicationBuilder builder, YardComposition host)
     {
         string buildVersion = host.Build.Version;
@@ -28,6 +28,36 @@ public static class ApiRegistration
         // Request bodies are snake_case like everything else on this wire.
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower);
+
+        #region forwarded-headers
+        // Every visitor reaches this process through two proxies: the edge (Netlify,
+        // which proxies each site's domain to its origin) and App Service's own front
+        // end, which terminates TLS and speaks plain HTTP to the container. Each adds
+        // the address it received the request from to the right of X-Forwarded-For,
+        // and says the scheme in X-Forwarded-Proto. So the visitor is the second entry
+        // from the right, and anything to the left of it is whatever the visitor sent,
+        // which is never read.
+        //
+        // Neither proxy has an address this app can list (the edge's are not fixed,
+        // and App Service's front end is a pool), so the trust is by count, not by
+        // address: KnownProxies and KnownIPNetworks are emptied, which means "any
+        // sender", and ForwardLimit is the number of proxies, two. The count is a
+        // setting, Edge:ForwardLimit, because the day the edge changes the number of
+        // hops changes, and /api/admin/arrival shows the raw headers beside what this
+        // resolved, so a wrong count is read live rather than guessed. A caller that
+        // skips the edge and calls the origin directly can still write the second
+        // entry; what that buys them is a different visitor count, because the
+        // address feeds counts and never a permission (ADR: The order of the request
+        // pipeline). X-Forwarded-Host is not read at all: the site's own address is
+        // configuration (Site:Url), never a header.
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.ForwardLimit = builder.Configuration.GetValue("Edge:ForwardLimit", 2);
+            options.KnownProxies.Clear();
+            options.KnownIPNetworks.Clear();
+        });
+        #endregion forwarded-headers
 
         #region problem-details
         // Every failure answers RFC 9457 ProblemDetails (ADR-023): one shape for a
@@ -48,17 +78,14 @@ public static class ApiRegistration
         // (ADR-030).
         builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
 
-        // Every API call is logged as one structured line: method, path, status,
-        // duration. The JSON console formatter keeps it machine-readable wherever the
-        // container's output lands.
-        builder.Services.AddHttpLogging(options =>
-        {
-            options.LoggingFields = HttpLoggingFields.RequestMethod
-                | HttpLoggingFields.RequestPath
-                | HttpLoggingFields.ResponseStatusCode
-                | HttpLoggingFields.Duration;
-            options.CombineLogs = true;
-        });
+        // No HTTP logging middleware. AddHttpLogging and UseHttpLogging stood here from
+        // the first commit to the pipeline lane, and never wrote a line: the logging
+        // configuration has always held Microsoft.AspNetCore at Warning, and the
+        // middleware logs at Information, so it checked, found itself filtered, and
+        // passed every request on. Every request is already recorded twice, by the
+        // timing ring in RequestPipeline.cs and by OpenTelemetry's request telemetry to
+        // Application Insights, whose daily cap a line per request would spend by noon
+        // (ADR: The order of the request pipeline).
         builder.Logging.AddJsonConsole(options => options.IncludeScopes = false);
         #endregion problem-details
 

@@ -176,3 +176,7 @@ Steve, on his iPhone, on the Admin tab after 1.0.3.26 rolled: every card he open
 ## Addendum, 2026-10-07 (1.0.3.88): the boundary's place
 
 The boundary still wraps `<App />` at the root, now in `src/app/TheYard.tsx`, the one tree that both the browser and the build draw (ADR: The landing page rendered at build time, server rendering as the goal); `app/mount.tsx` puts that tree on the page.
+
+## Addendum, 2026-10-07 (1.0.3.92): the request log that never wrote
+
+"Every request is logged, as structured JSON" above was not true on any day of this project. `AddHttpLogging` and `UseHttpLogging` were wired from the first commit, but the logging configuration has always held `Microsoft.AspNetCore` at Warning and the HTTP logger writes at Information, so it found itself filtered on every request and wrote nothing. Both are removed rather than switched on: every request is recorded already, by the timing ring on the Admin tab and by the request telemetry sent to Application Insights, and a line per request through the logger would spend that service's daily cap, which is already reached most afternoons. The error record moved up beside the exception handler in the same version, so a failure while reading the session now reaches the Admin tab (ADR: The order of the request pipeline).

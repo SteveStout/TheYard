@@ -188,10 +188,15 @@ public class ActivityTests
         Assert.Equal(expected, VisitorTokens.WithoutPort(address));
 
     [Fact]
-    public void The_forwarded_address_loses_its_port_so_one_machine_is_one_visitor()
+    public void The_address_is_the_one_the_forwarded_headers_middleware_resolved_and_never_a_raw_header()
     {
+        // The middleware has already written the visitor onto the connection
+        // (RequestPipeline.cs, the forwarded-headers region); a header left on the
+        // request is what a sender wrote, and is not read.
         var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
-        context.Request.Headers["X-Forwarded-For"] = "127.0.0.1:15766";
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("127.0.0.1");
+        context.Request.Headers["X-Forwarded-For"] = "6.6.6.6";
+        context.Request.Headers["X-Nf-Client-Connection-Ip"] = "6.6.6.6";
         Assert.Equal("127.0.0.1", VisitorTokens.AddressOf(context));
         Assert.Equal("127.0.0.x", VisitorTokens.NetworkOf(VisitorTokens.AddressOf(context)));
     }

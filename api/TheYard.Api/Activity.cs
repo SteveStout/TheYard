@@ -69,29 +69,16 @@ public sealed class VisitorTokens(string key)
     }
 
     /// <summary>
-    /// The visitor's address as the edge reports it. Netlify writes the
-    /// connecting client's address into its own header and the standard one;
-    /// a request that reaches the origin without either is a direct one and
-    /// the connection says who. A header is what the sender says it is, which
-    /// is fine for a count of visitors and would not be fine for anything that
-    /// grants something.
+    /// The visitor's address. The forwarded-headers middleware has already written
+    /// it onto the connection by the time anything reads it, counted back from the
+    /// right of X-Forwarded-For past the proxies this app runs behind, so a value a
+    /// visitor typed into the header is never the one used (ADR: The order of the
+    /// request pipeline). Until then this read the edge's own header, and without it
+    /// the leftmost X-Forwarded-For entry, which is the one a visitor writes. An
+    /// address is what feeds a count, never a permission.
     /// </summary>
-    public static string AddressOf(HttpContext context)
-    {
-        string? netlify = context.Request.Headers["X-Nf-Client-Connection-Ip"].FirstOrDefault();
-        if (!string.IsNullOrWhiteSpace(netlify))
-        {
-            return WithoutPort(netlify.Trim());
-        }
-
-        string? forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrWhiteSpace(forwarded))
-        {
-            return WithoutPort(forwarded.Split(',')[0].Trim());
-        }
-
-        return context.Connection.RemoteIpAddress?.ToString() ?? "";
-    }
+    public static string AddressOf(HttpContext context) =>
+        WithoutPort(context.Connection.RemoteIpAddress?.ToString() ?? "");
 
     /// <summary>
     /// The address without the port a forwarding hop may have written after

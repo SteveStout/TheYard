@@ -9,7 +9,7 @@
 import type { RecordEntry } from '../records';
 
 /** The decision records numbered 088 to 092, keyed by each one's name in code. */
-export const RECORDS_088_TO_092 = {
+export const RECORDS_088_TO_093 = {
   adrOnionAndSolid: {
     title: 'ADR: Onion and SOLID, how this codebase holds them',
     menuLabel: 'ADR: Onion and SOLID, how this codebase holds them',
@@ -44,5 +44,12 @@ export const RECORDS_088_TO_092 = {
     url: '/api/docs/adr-render-at-build-time',
     kind: 'adr',
     number: '092',
+  },
+  adrRequestPipeline: {
+    title: 'ADR: The order of the request pipeline',
+    menuLabel: 'ADR: The order of the request pipeline',
+    url: '/api/docs/adr-request-pipeline',
+    kind: 'adr',
+    number: '093',
   },
 } as const satisfies Record<string, RecordEntry>;

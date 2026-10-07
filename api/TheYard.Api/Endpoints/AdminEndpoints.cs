@@ -117,6 +117,16 @@ public static partial class AdminEndpoints
         app.MapGet("/api/admin/peer", Peer);
         // #endregion peer-endpoint
 
+        // #region arrival-endpoint
+        // How this request arrived, behind the operator's key: the address and scheme
+        // the forwarded-headers middleware resolved, beside the raw headers the edge and
+        // App Service's front end sent. The proof that the hop count in
+        // ApiRegistration is right, read on the live site rather than assumed
+        // (ADR: The order of the request pipeline). It answers with the caller's own
+        // address only, and a stranger gets the same 404 every keyed read gives.
+        app.MapGet("/api/admin/arrival", Arrival);
+        // #endregion arrival-endpoint
+
         // #region proof-endpoints
         // The performance proof (ADR: Same performance, proven): read the last result
         // or the run in progress, or start one. Reading is public like the rest of

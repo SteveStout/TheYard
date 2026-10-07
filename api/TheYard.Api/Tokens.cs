@@ -207,18 +207,18 @@ public sealed class TokenIssuer
 
     /// <summary>
     /// The session cookie's options: HttpOnly, and Secure when the browser reached
-    /// us over TLS. Behind the edge this process is spoken to over plain HTTP, so
-    /// `IsHttps` is false on a request that was HTTPS the whole way to the visitor;
-    /// the forwarded header is what carries that fact across the hop (ADR: Edge
-    /// deploy economics).
+    /// us over TLS. Behind the edge this process is spoken to over plain HTTP; the
+    /// forwarded-headers middleware reads X-Forwarded-Proto from the proxies it
+    /// trusts and sets the request's scheme, so `IsHttps` is true on a request that
+    /// was HTTPS the whole way to the visitor (ADR: The order of the request pipeline).
+    /// Until then this read the header itself (ADR: Edge deploy economics).
     /// </summary>
     /// <param name="context">The request the cookie answers.</param>
     /// <param name="lifetime">How long the cookie lives.</param>
     public static CookieOptions CookieFor(HttpContext context, TimeSpan lifetime) => new()
     {
         HttpOnly = true,
-        Secure = context.Request.IsHttps
-            || string.Equals(context.Request.Headers["X-Forwarded-Proto"], "https", StringComparison.OrdinalIgnoreCase),
+        Secure = context.Request.IsHttps,
         SameSite = SameSiteMode.Lax,
         Path = "/",
         MaxAge = lifetime,

@@ -288,6 +288,7 @@ export const MENUS: Record<
       { key: 'adrDotnet10' },
       { key: 'adrDocsFolders' },
       { key: 'adrRenderAtBuildTime' },
+      { key: 'adrRequestPipeline' },
     ],
   },
   // #endregion records-menu

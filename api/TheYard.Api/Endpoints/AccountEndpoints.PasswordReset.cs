@@ -111,9 +111,11 @@ public static partial class AccountEndpoints
     }
 
     /// <summary>
-    /// This site as a visitor reaches it, for a link: the site's configured address first (Site:Url,
-    /// the domain behind the edge, because the request's own host there is the origin server), then
-    /// the forwarded host, then the request's host.
+    /// This site as a visitor reaches it, for a link: the site's configured address (Site:Url, the
+    /// domain behind the edge, because the request's own host there is the origin server), or on a
+    /// machine with none, the request's own scheme and host. Never X-Forwarded-Host: a header is what
+    /// the sender says it is, and a link in a reset email must not be one a sender chose (ADR: The
+    /// order of the request pipeline). Every web app the template writes carries Site:Url.
     /// </summary>
     private static string SiteOrigin(HttpContext http, IConfiguration configuration)
     {
@@ -122,8 +124,6 @@ public static partial class AccountEndpoints
         {
             return siteUrl.TrimEnd('/');
         }
-        string scheme = http.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? http.Request.Scheme;
-        string host = http.Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? http.Request.Host.Value ?? "";
-        return $"{scheme}://{host}";
+        return $"{http.Request.Scheme}://{http.Request.Host.Value}";
     }
 }

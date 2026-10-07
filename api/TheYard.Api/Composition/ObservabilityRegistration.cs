@@ -106,6 +106,7 @@ public static class ObservabilityRegistration
             "/api/admin/logs/kept",
             "/api/admin/kept",
             "/api/admin/reset-links",
+            "/api/admin/arrival",
             "/api/errors",
             "/api/health",
             "/readyz",

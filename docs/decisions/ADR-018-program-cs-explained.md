@@ -275,3 +275,10 @@ The section on endpoints says a handler calls the service that owns the rule. A 
 
 "Started before it serves" above stopped being true of the catalogue. `StartTheYardAsync` still attaches the loggers and says a missing store out loud before anything is served, but the default store's bids and catalogue now load beside the server rather than before it, so a roll answers in seconds instead of minutes (ADR: The ports learn to wait, the addendum on listening first). A dataset that cannot be loaded still ends the process: the failure is logged and the host is stopped, and readiness, which now waits on the catalogue, keeps the deploy's Verify step from passing.
 
+
+## Addendum, 2026-10-07 (1.0.3.92): the pipeline line, reordered
+
+`Program.cs` did not change: `app.UseTheYardRequestPipeline(host)` is still one line, and the order still lives in `Composition/RequestPipeline.cs`. What that file holds did. The files now come straight after the problem shape and the error record, before routing, the user, the session and the store, where Microsoft's middleware order puts them; routing is called out loud instead of left to run at the top; the forwarded headers run before anything that reads the visitor's address or scheme; the health probes end at routing; and the HTTP logger, which never wrote a line, is gone. Every placement carries its reason beside its line (ADR: The order of the request pipeline).
+
+```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=routing
+```

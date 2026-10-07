@@ -32,7 +32,10 @@ public static class HealthEndpoints
             .WithTags("Health")
             .WithSummary("Is the process up")
             .WithDescription("The container's own health check. Answers ok the moment the process is listening and says nothing else.")
-            .Produces<string>(StatusCodes.Status200OK, "text/plain");
+            .Produces<string>(StatusCodes.Status200OK, "text/plain")
+            // Answered by routing itself, so a poll writes no log line, reads no
+            // token and waits for no store (RequestPipeline.cs, the routing region).
+            .ShortCircuit();
 
         // Only the checks that gate it, and only those get run: the database probe is
         // two SQL statements whose answer readiness discards, and this endpoint is
@@ -44,7 +47,8 @@ public static class HealthEndpoints
             .WithDescription("The deploy's verify step. Only the checks that gate readiness run, and the database is not one "
                 + "of them: a container whose store is gone still serves the catalogue from files.")
             .Produces<string>(StatusCodes.Status200OK, "text/plain")
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ShortCircuit();
 
         app.MapGet("/api/health", Health)
             .WithName("GetHealth")
@@ -62,10 +66,28 @@ public static class HealthEndpoints
     private static ContentHttpResult Liveness() =>
         TypedResults.Text("ok");
 
-    private static async Task<Results<ContentHttpResult, ProblemHttpResult>> Readiness(HostPaths paths, Backends backends) =>
-        (await RunChecksAsync(paths, backends, readinessOnly: true)).Where(check => check.GatesReadiness).All(check => check.Status == "pass")
-            ? TypedResults.Text("ready")
-            : TypedResults.Problem(detail: "A file this site cannot run without is missing, or its catalogue is still loading; the health report says which.", statusCode: 503, title: "Not ready");
+    // #region readiness
+    /// <summary>
+    /// Ready when the files are in place and the default store's catalogue is in; with
+    /// ?stores=all, only when every store this container runs has its catalogue in too.
+    /// The deploy asks the first. A blue-green swap asks the second, so the first
+    /// visitor to toggle stores after a swap never waits for a hundred thousand
+    /// vehicles to load (ADR: The order of the request pipeline). The keep-warm loop
+    /// loads the other store within minutes of a start.
+    /// </summary>
+    private static async Task<Results<ContentHttpResult, ProblemHttpResult>> Readiness(HostPaths paths, Backends backends, string? stores)
+    {
+        if (!(await RunChecksAsync(paths, backends, readinessOnly: true)).Where(check => check.GatesReadiness).All(check => check.Status == "pass"))
+        {
+            return TypedResults.Problem(detail: "A file this site cannot run without is missing, or its catalogue is still loading; the health report says which.", statusCode: 503, title: "Not ready");
+        }
+        if (string.Equals(stores, "all", StringComparison.Ordinal) && !backends.All.All(backend => backend.CatalogueLoaded))
+        {
+            return TypedResults.Problem(detail: "The default store is ready; another store's catalogue is still loading.", statusCode: 503, title: "Not ready on every store");
+        }
+        return TypedResults.Text("ready");
+    }
+    // #endregion readiness
 
     private static async Task<Ok<HealthReport>> Health(HostPaths paths, Backends backends, BuildInfo build, HostStart start, KeepWarmState keepWarm)
     {
