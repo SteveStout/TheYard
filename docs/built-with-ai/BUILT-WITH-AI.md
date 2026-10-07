@@ -37,11 +37,11 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 818 xUnit tests, 393 Vitest tests at 1.0.3.86 and 144 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 818 xUnit tests, 393 Vitest tests at 1.0.3.87 and 146 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the gate on 1.0.0.182 took 493 seconds, and the gate on 1.0.3.59, with both store passes carried forward from 1.0.3.58, took 641. A push that fails the gate does not roll.
 
-**The records.** Ninety-one decision records, each carrying the decision, the trade-off and the number behind
+**The records.** Ninety-two decision records, each carrying the decision, the trade-off and the number behind
 it, with a Files section pointing at the code it governs. Code shown in a record is read from the running build, so a
 record cannot drift from the code it describes.
 

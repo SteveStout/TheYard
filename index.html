@@ -3,6 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      The API reads the first page makes, started from here (ADR: The landing
+      page rendered at build time, server rendering as the goal).
+
+      Without this, each read waits until the script below has arrived and
+      run, so the landing page's figures arrive a whole bundle late. A preload
+      hint starts each one while the script is still on its way, and the
+      fetch that asks for it later is handed the answer already here.
+
+      A hint is used only when it matches its fetch exactly; anything else and
+      the browser asks twice. as="fetch" with crossOrigin "anonymous" is a cors
+      request with same-origin credentials and no extra headers, which is what
+      every one of these fetch calls sends. tests/e2e/preload.spec.ts holds
+      that: each address asked for once, and no hint the browser could not use.
+
+      Four reads every view makes on its first load. Two more only the landing
+      page makes, so they are hinted only when the address carries no query,
+      which is the landing page and nothing else; a hint nobody uses is a
+      wasted request and a warning in the reader's console.
+
+      It is a script rather than link tags because two of the six depend on
+      the address. It sits above the stylesheet on purpose: a script below a
+      stylesheet waits for it, and this one must not wait for anything.
+    -->
+    <!-- #region api-preload -->
+    <script>
+      (function () {
+        var reads = ['/api/stores', '/api/auth/me', '/api/bids', '/api/version'];
+        if (location.search === '') reads.push('/api/health', '/api/tests/summary');
+        for (var i = 0; i < reads.length; i++) {
+          var hint = document.createElement('link');
+          hint.rel = 'preload';
+          hint.as = 'fetch';
+          hint.crossOrigin = 'anonymous';
+          hint.href = reads[i];
+          document.head.appendChild(hint);
+        }
+      })();
+    </script>
+    <!-- #endregion api-preload -->
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f4452'/%3E%3Cpath d='M13 5 8 18h5l-2 9 10-14h-6l4-8z' fill='%23e6cb7e'/%3E%3C/svg%3E"
