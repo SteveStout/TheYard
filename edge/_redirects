@@ -14,7 +14,15 @@ http://www.stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 # in place of the two below:
 #   http://theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
 #   http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
+# Every page is the bare path with a query naming the view, the vehicle or the
+# document, and the rendering service draws it (ADR: A rendering service beside the API); each
+# domain's page goes to the service under that site's name, and everything else,
+# the bundle, the photographs and /api, to that site's API as before. The query
+# goes with a 200 rewrite. /index.html is still the API's own page, drawn in the
+# browser, which is the way round while the service is down.
+https://theyard-cosmos.stevenstout.biz/ https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net/site/cosmos 200!
 https://theyard-cosmos.stevenstout.biz/* https://app-theyard-cosmos-ss-zmnetj67bn5h2.azurewebsites.net/:splat 200!
 http://theyard-cosmos.stevenstout.biz/* https://theyard-cosmos.stevenstout.biz/:splat 301!
+/ https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net/site/sql 200!
 /* https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net/:splat 200!
 # #endregion rules

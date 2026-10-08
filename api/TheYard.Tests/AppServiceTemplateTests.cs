@@ -92,6 +92,26 @@ public class AppServiceTemplateTests
         Assert.Equal($"https://{app.Groups[1].Value.ToLowerInvariant()}.azurewebsites.net", origin.Groups[1].Value);
     }
 
+    [Theory]
+    [InlineData("/ ", "sql")]
+    [InlineData("https://theyard-cosmos.stevenstout.biz/ ", "cosmos")]
+    public void The_edge_sends_each_domains_page_to_the_renderer_under_its_site_name(string rule, string site)
+    {
+        // The page is the bare path; the renderer draws it for the site the path names, and the
+        // address it is sent to is the one Deploy Render verifies (ADR: A rendering service beside the API).
+        var origin = Regex.Match(Read(".github", "workflows", "deploy-render.yml"), @"^\s{6}ORIGIN: (\S+)\s*$", RegexOptions.Multiline);
+        Assert.True(origin.Success, "deploy-render.yml should name the origin it verifies");
+        var lines = Read("edge", "_redirects").Split('\n').Select(line => line.TrimEnd()).ToList();
+        int page = lines.FindIndex(line => line.StartsWith(rule, StringComparison.Ordinal));
+        Assert.True(page >= 0, $"the edge should have a rule for {rule.Trim()}");
+        Assert.Equal($"{rule}{origin.Groups[1].Value}/site/{site} 200!", lines[page]);
+        // Above the catch-all for the same name, because the first rule that matches wins.
+        int rest = lines.FindIndex(line => line.StartsWith(rule.TrimEnd() + "* ", StringComparison.Ordinal));
+        Assert.True(rest > page, $"the page rule for {rule.Trim()} has to come before its catch-all");
+        Assert.Contains($"sites.get(named[1])", Read("render", "server.mjs"), StringComparison.Ordinal);
+        Assert.Contains($"{site}=https://", Read("infra", "render.bicep"), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void The_template_and_the_deploys_name_the_same_database()
     {

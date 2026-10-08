@@ -1,6 +1,6 @@
 # ADR: A rendering service beside the API
 
-Status: proposed, 2026-10-08. The rendering service is in the repository with its tests in 1.0.3.100 and is not running anywhere yet. It is measured alone in Docker on Steve's machine before anything is created in Azure, the plan's memory decides where it runs, and it goes live behind the edge after that; each of those steps adds its numbers here, and this record is accepted in the version that puts it in front of visitors.
+Status: accepted, 2026-10-08, in 1.0.3.104, the version that puts the service in front of visitors. It came into the repository in 1.0.3.100, could not roll until 1.0.3.101, was measured alone in Docker and given its numbers in 1.0.3.102, and got its own site and roll in 1.0.3.103. The plan moved to B2 first, because the memory read said the service did not fit on B1. Each step's numbers are in an addendum below.
 
 ## In plain words
 
@@ -93,6 +93,15 @@ The first byte is the top of the page, sent before any API read has answered, wh
 
 ```live path=.github/workflows/deploy-render.yml region=render-verify
 ```
+
+## Addendum, 2026-10-08: in front of visitors
+
+From 1.0.3.104 the edge sends each domain's page to the service under that site's name, and everything else, the bundle, the photographs and `/api`, to that site's API as before. A page is the bare path with a query, so the rule is for `/` alone, above each domain's catch-all; a 200 rewrite takes the query with it. The edge deploys once for both rules.
+
+```live path=edge/_redirects region=rules
+```
+
+`/index.html` is not the bare path, so it still goes to the API, which answers it with its own page, drawn in the browser. That is the way round while the service is down, and the one this edge offers: it passes on whatever the service's address answers, including App Service's own error while the container restarts. A Cloudflare Worker can catch that answer and send the API's page in its place; that is the edge this site moves to at the end of October. `AppServiceTemplateTests` holds each rule to the address `Deploy Render` verifies and to the site name the service reads.
 
 ## Where it sits
 
