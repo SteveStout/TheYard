@@ -239,3 +239,14 @@ The two site deploys ignore `samples/**` and the sample's workflow file, so a pu
 ```live path=.github/workflows/deploy-shed.yml region=*
 ```
 
+
+## Addendum, 2026-10-08: sizing Verify from the rolls it reads
+
+Deploy #282 for 1.0.3.98 reported failure at its Verify step while both domains rolled fine and every read after the roll passed. Verify gave the new build ten minutes from the roll to answer `/api/version`, with ten seconds a read. The container started 8 min 15 s after the image push, and the Azure SQL site was ready 137 s later, 24 s past the budget. The edge warm after it was skipped, so the first visitor paid for the edge misses too.
+
+The rolls since 1.0.3.95 give the size. The new container starts 8 to 12 minutes after the image push and is ready 2 to 3.5 minutes after that (ADR-095, the roll-by-roll table). From 1.0.3.99 each deploy waits twenty-five minutes for the version, counted on the shell's clock and not in loop turns, so a slow read cannot stretch it. Each read may take thirty seconds, because an API read waits for the catalogue to load (ADR: The ports learn to wait). The wait for readiness after it keeps its ten minutes. Each job's timeout moves from thirty minutes to fifty, so the job outlasts every wait in it: the build or the wait for the image, then twenty-five minutes for the version and ten for readiness.
+
+```live path=.github/workflows/deploy.yml region=verify
+```
+
+`DeployWorkflowTests` holds the numbers on both workflows: a budget of 1,500 seconds named in Verify, thirty seconds on the version read, and a job timeout that covers the ten minutes before Verify plus its thirty-five. A roll that never answers still fails the run; it now fails at twenty-five minutes instead of ten.

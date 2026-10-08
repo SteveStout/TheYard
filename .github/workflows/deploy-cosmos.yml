@@ -45,7 +45,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Fifty minutes: ten waiting for the image, Verify's twenty-five for the version and ten for readiness, and room.
+    timeout-minutes: 50
     env:
       REGISTRY_NAME: crtheyardsszmnetj67bn5h2
       ACR: crtheyardsszmnetj67bn5h2.azurecr.io
@@ -204,18 +205,23 @@ jobs:
         run: |
           # Every read here carries the self mark on its agent, so the Site
           # activity card counts it as the site's own (ADR: Site activity, 24 September).
-          for i in $(seq 1 120); do
-            sleep 5
-            body=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 10 "$ORIGIN/api/version" || true)
-            if [[ "$body" == *"\"$APP_VERSION\""* ]]; then
-              echo "origin serves $APP_VERSION after $((i * 5))s: $body"
-              break
-            fi
-            if [[ "$i" -eq 120 ]]; then
-              echo "origin never served $APP_VERSION (last answer: $body)"
+          # Twenty-five minutes, read off the rolls: the new container starts 8 to 12
+          # minutes after the image push and is ready 2 to 3.5 minutes after that, and
+          # a ten-minute loop ended a roll that worked (ADR: The deploy pipeline, the
+          # addendum on sizing Verify). Thirty seconds a read, because an API read
+          # waits for the catalogue to load.
+          budget=1500
+          started=$SECONDS
+          body=""
+          until [[ "$body" == *"\"$APP_VERSION\""* ]]; do
+            if (( SECONDS - started >= budget )); then
+              echo "origin never served $APP_VERSION in ${budget}s (last answer: $body)"
               exit 1
             fi
+            sleep 5
+            body=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$ORIGIN/api/version" || true)
           done
+          echo "origin serves $APP_VERSION after $((SECONDS - started))s: $body"
           # Readiness is the container's own word that its files are in place and its
           # catalogue has loaded (ADR-010). The process listens before the catalogue is
           # in (ADR: The ports learn to wait, the addendum on listening first). An API

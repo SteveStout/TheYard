@@ -127,6 +127,37 @@ public class DeployWorkflowTests
     }
     // #endregion listen-first-verify
 
+    // #region verify-budget
+    /// <summary>
+    /// Verify's wait for the version is sized from the rolls it reads: the new container
+    /// starts 8 to 12 minutes after the image push and is ready 2 to 3.5 minutes after that,
+    /// and a ten-minute wait reported a roll that worked as a failure (Deploy #282). Each
+    /// deploy waits twenty-five minutes for the version, gives each read thirty seconds,
+    /// because an API read waits for the catalogue, and holds the job open longer than
+    /// Verify can take (ADR: The deploy pipeline, the addendum on sizing Verify).
+    /// </summary>
+    [Theory]
+    [InlineData("deploy.yml")]
+    [InlineData("deploy-cosmos.yml")]
+    public void Each_deploy_waits_long_enough_for_the_roll_it_measured(string file)
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
+        int verify = workflow.IndexOf("- name: Verify", StringComparison.Ordinal);
+        int ready = workflow.IndexOf("\"$ORIGIN/readyz\"", verify, StringComparison.Ordinal);
+        Assert.True(verify > 0 && ready > verify, $"{file} should wait for the version before readiness");
+        string wait = workflow[verify..ready];
+        var budget = Regex.Match(wait, @"^\s+budget=(\d+)\s*$", RegexOptions.Multiline);
+        Assert.True(budget.Success, $"{file} should name its wait for the version as budget=");
+        Assert.Equal(1500, int.Parse(budget.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Contains("--max-time 30 \"$ORIGIN/api/version\"", wait, StringComparison.Ordinal);
+        Assert.DoesNotContain("--max-time 10 \"$ORIGIN/api/version\"", wait, StringComparison.Ordinal);
+        var job = Regex.Match(workflow, @"^    timeout-minutes: (\d+)\s*$", RegexOptions.Multiline);
+        Assert.True(job.Success, $"{file} should give its job a timeout");
+        // The version's twenty-five minutes, readiness's ten, and ten for what comes before Verify.
+        Assert.True(int.Parse(job.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) * 60 >= 1500 + 600 + 600, $"{file}'s job ends before its Verify can");
+    }
+    // #endregion verify-budget
+
     // #region workflows-agree
     [Fact]
     public void The_two_deploy_workflows_name_the_same_registry_group_server_database_and_identity()
