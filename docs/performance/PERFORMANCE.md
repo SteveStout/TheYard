@@ -348,6 +348,19 @@ Lighthouse 12.8.2 on its phone preset, three runs a site from Steve's machine in
 
 **What this reading can and cannot say.** Every address at the origin, a file and a probe alike, takes about a third of a second, because the trip from Missouri to West US 3 and its TLS are nearly all of it. The pipeline's own share is a few milliseconds that ten asks from a thousand miles away cannot separate, so the table shows no change either way, and this page claims none. What the reorder did buy is work not done: a file no longer passes the sign-in check, and after a roll the photos no longer wait for a hundred thousand vehicles to load. The one change a visitor's browser can see is on The Shed, which has no edge and now sends `Strict-Transport-Security` itself.
 
+## What a deploy costs a visitor, roll by roll
+
+Each roll since 1.0.3.89 was read the same way: a probe on Steve's machine asks each site's origin for the page, `/healthz`, `/api/version` and `/api/facets`, and each domain for `/api/version`, every two seconds for 25 minutes from just before the push, and gives up on a read at 30 seconds (`scripts/probe-roll.py`; ADR: Blue-green on a $13 plan, measured and held). Before that, the three rolls Application Insights held in full showed the old container slowing two minutes in, nothing answering for 1 to 3.5 minutes, and worst reads of 18 to 112 seconds in the new container's first 150 seconds.
+
+| Roll | What changed | Nothing answered, longest | Slowest good answer | Ready, from the process starting |
+| --- | --- | --- | --- | --- |
+| 1.0.3.89 | the container listens before it loads | about 3 minutes | 2 to 7 s, one first read of 29 s | not read |
+| 1.0.3.92 | the request pipeline reordered | 153 to 168 s | 27 to 30 s | 87.7 s and 87.7 s |
+| 1.0.3.93 | the runtime reports what it compiled | 131 to 157 s | 27 to 30 s | 79.0 s and 76.4 s |
+| 1.0.3.94 | compiled ahead of time | 148 to 185 s | 28 to 30 s | 112.4 s and 108.0 s |
+
+**What the rows say.** The ready time moves from one roll to the next by more than most changes are worth: 88 seconds at 1.0.3.92 and 79 at 1.0.3.93 with nothing in the start changed between them, then 108 to 112 at 1.0.3.94, a roll in which even the waits on the network ran slower. Both sites start at once on one processor, and the plan is busier some minutes than others, so one roll says little about a change on its own (ADR: Compiled before it ships, the addendum on its first roll). Listening first took the slow minutes after a roll down to seconds, and nothing since has moved the stretch in which nothing answers, because that stretch is App Service stopping one container and starting the next on its single instance. Removing it takes a second copy running beside the first, which this plan has no memory for. A slowest answer near 30 seconds is the instruments' ceiling rather than the site's: the edge answers 504 at 28 seconds and the probe stops waiting at 30.
+
 ## How the listing is compressed, and why only the listing
 
 **The trip.** A visitor's browser asks the edge, Netlify, for the listing. The edge forwards the request to the container on Azure and passes the answer back. The edge has always compressed what it hands the browser, so the browser never saw the full size. The waste was on the hop between them: the edge asked Azure for the answer plainly, and a page of a hundred vehicles crossed as about 106 KB of JSON.

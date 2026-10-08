@@ -48,6 +48,30 @@ The runtime's time compiling is the total over every thread, and each compile is
 - **Invariant globalization.** Smaller and slightly faster to start, and it changes how dates and numbers are formatted and compared; nothing measured here asks for it.
 - **A composite, self-contained image.** Compiling the framework and the app together starts a little faster again, and means carrying the framework in the image instead of the base image; worth measuring once this one has its after reading.
 
+## Addendum, 2026-10-07 (1.0.3.96): the first roll compiled ahead of time, measured
+
+1.0.3.94 rolled at 22:18 CDT. The same reads as before, from the same places: each container's own startup timings and runtime reading (`orderlane-proof-1.0.3.94.log`, `rr-startup-after-10394-20m.log`), and the probe on Steve's machine for the roll and the first answers (`greenlane-probe-10394.log`). The time to a first answer is the probe's first good answer after the start time the container reports, so the two machines' clocks sit inside it.
+
+| | 1.0.3.93, compiled by the runtime | 1.0.3.94, compiled ahead of time |
+| --- | --- | --- |
+| Methods the runtime compiled itself, about two minutes in (SQL site, Cosmos DB site) | 32,690 and 32,414, at 106 s | 13,429 and 12,567, at 124 s |
+| Its time compiling, the same moment | 113 s and 119 s | 108 s and 113 s |
+| Methods compiled, twelve to thirteen minutes in | 62,432 and 63,155, at 800 s | 36,209 and 36,396, at 722 s |
+| Its time compiling, the same moment | 288 s and 269 s | 248 s and 263 s |
+| Methods compiled, seventy-five minutes in | 66,685 and 67,165, at 4,105 s | 39,864 and 39,769, at 4,031 s |
+| Its time compiling, the same moment | 618 s and 476 s | 287 s and 308 s |
+| From the process starting to the first `/healthz` | 21.0 s and 20.2 s | 28.0 s and 27.9 s |
+| From the process starting to the first `/api/version` | 31.1 s and 28.4 s | 50.5 s and 46.2 s |
+| Ready, from the process starting | 79.0 s and 76.4 s | 112.4 s and 108.0 s |
+| The image in the registry | 221.1 MB | 206.2 MB |
+| The roll: longest stretch with no answer | 131 to 157 s | 148 to 175 s, one address 185 s |
+
+**What it did.** The runtime compiled 59 to 61 per cent fewer methods in a container's first two minutes, about 42 per cent fewer by the twelfth minute, and 40 per cent fewer over the first seventy-five, where it also spent 35 to 54 per cent less time compiling (`rr-startup-after-10393-75m.log`, `rr-startup-after-10394-75m.log`). The image came out 15 MB smaller, because publishing for one platform leaves out the native files every other platform needed.
+
+**What it did not do, on this roll.** In the first minutes the time spent compiling barely moved, and the start was slower, not faster. Every step was slower, including the ones that only wait on the network: the schema check against Azure SQL took 29.7 s against 24.7 s, and preparing the Cosmos DB store 13 to 15 s against 8. Compiling ahead of time cannot slow a network wait, so the plan was busier during this roll than the one before. One roll is not enough to separate that from the change. The time compiling holding steady has a likelier cause of its own: with profile-guided optimization on, a method that turns out hot is compiled again with instruments, then once more at full optimization, and code compiled ahead of time goes through the same steps. So the runtime compiles fewer methods and spends about as long compiling the hot ones.
+
+**What comes next.** The next rolls are read the same way. If they agree with this one, the setting to measure is profile-guided optimization off for the first minutes, which trades some of the warmed process's speed for less compiling at start; Steve decides that trade on the numbers.
+
 ## Where it sits
 
 Outside the rings: the build and the runtime's configuration. No code changes; the one addition the tests hold is that the Dockerfile and the project say what this record says. Single responsibility: the Dockerfile says how the image is built, the project says how the process runs. It costs a larger image and a longer build; what would change it is a library that supports Native AOT, or a reading that says the larger image's pull costs more at a roll than the compiling it saves.
