@@ -5,9 +5,12 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { accountQuestion, SIGNED_OUT, type Account } from '../../lib/auth';
+import { useFirstLoad } from '../../hooks/useFirstLoad';
 
 export function useAccount() {
-  const [account, setAccount] = useState<Account>(SIGNED_OUT);
+  // A page the rendering service drew starts signed in as the service read it, with the visitor's cookie.
+  const firstAccount = useFirstLoad()?.account;
+  const [account, setAccount] = useState<Account>(firstAccount ?? SIGNED_OUT);
   // #region who
   // Who is signed in, if anyone. The session is an httpOnly cookie (one that
   // page scripts cannot read), so the page has to ask the API (ADR-037). A

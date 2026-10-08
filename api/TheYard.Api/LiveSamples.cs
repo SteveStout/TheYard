@@ -24,7 +24,7 @@ public static partial class LiveSamples
     /// sample's test folder and nothing else under samples/: the onion practices page shows the
     /// sample's architecture tests whole, and the rest of the sample is served by its own site.
     /// </summary>
-    public static readonly string[] AllowedRoots = ["src/", "api/", "infra/", ".github/", "tests/", "edge/", "scripts/", "samples/maplarge/tests/"];
+    public static readonly string[] AllowedRoots = ["src/", "api/", "infra/", ".github/", "tests/", "edge/", "scripts/", "render/", "samples/maplarge/tests/"];
 
     /// <summary>The single files at the repo root a live block may read: the ones the records decide (ADR-017).</summary>
     public static readonly string[] AllowedFiles = ["Dockerfile", "netlify.toml", "playwright.config.ts", "vite.config.ts", "package.json", "index.html", "tsconfig.json", "tsconfig.app.json", "tsconfig.node.json", ".editorconfig"];

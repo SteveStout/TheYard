@@ -118,3 +118,95 @@ test('an address that opens another view never shows the drawn landing page', as
   await expect(page.getByTestId('landing')).toHaveCount(0);
   expect(errors.filter((error) => HYDRATION.test(error))).toEqual([]);
 });
+
+// #region drawn-by-the-service
+/**
+ * Every view the rendering service draws (ADR: A rendering service beside the
+ * API), opened through it: the page arrives with the view in its HTML and the
+ * first load beside it, React takes it over with no hydration error at a phone's
+ * width and a desk's, and the node the service drew is the node on the page
+ * after. The service runs in the browser suite only when its build was made and
+ * asked for (YARD_RENDER, the gate); elsewhere these end at their first line.
+ */
+const RENDERED = 'http://localhost:5220';
+
+/** The addresses the service draws, with what each must arrive carrying in its HTML. */
+async function drawnAddresses(page: Page): Promise<Array<{ path: string; carries: string }>> {
+  const list = await (await page.request.get('/api/vehicles?view=inventory')).json();
+  const vehicle = list.vehicles[0] as { id: string; vin: string };
+  return [
+    { path: '/', carries: 'Welcome to The Yard' },
+    { path: '/?view=inventory', carries: 'data-testid="result-count"' },
+    { path: `/?vehicle=${vehicle.id}`, carries: vehicle.vin },
+    { path: '/?doc=readme', carries: 'In plain words' },
+    { path: '/?doc=author', carries: 'Steven' },
+  ];
+}
+
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1280, height: 900 },
+]) {
+  test(`at ${viewport.width}, every page the rendering service draws is taken over with no hydration error`, async ({
+    page,
+  }) => {
+    // The service runs in the gate, beside the built site; elsewhere nothing answers on 5220.
+    if (!process.env.YARD_RENDER) return;
+    test.setTimeout(120_000);
+    await page.setViewportSize(viewport);
+    for (const { path, carries } of await drawnAddresses(page)) {
+      const html = await (await page.request.get(RENDERED + path)).text();
+      const root = html.slice(
+        html.indexOf('<div id="root"'),
+        html.indexOf('<!-- #endregion root -->')
+      );
+      expect(root, `${path} arrives drawn`).toContain('data-drawn="server"');
+      expect(root, `${path} arrives with its view`).toContain(carries);
+      expect(html, `${path} carries its first load`).toContain('id="yard-first-load"');
+
+      const errors = watchErrors(page);
+      await keepTheDrawnNode(page);
+      await openTheYard(page, RENDERED + path);
+      // The drawn page already carries its announcement, so the page is open before React has
+      // taken it over. The frame says when it has: the rail is "auto" only while it is taken over.
+      await expect(page.locator('[data-rail="auto"]')).toHaveCount(0);
+      expect(
+        errors.filter((error) => HYDRATION.test(error)),
+        path
+      ).toEqual([]);
+      const kept = await page.evaluate(() => {
+        const keep = window as unknown as { __drawn?: Element | null };
+        return (
+          keep.__drawn != null &&
+          document.getElementById('root')?.firstElementChild === keep.__drawn
+        );
+      });
+      expect(kept, `${path}: the node the service drew is the node on the page`).toBe(true);
+      if (path.includes('doc=')) {
+        // Drawn open, then opened again as a modal: the backdrop and Escape work as they always did.
+        await expect(page.locator('dialog[open]')).toHaveCount(1);
+        await expect
+          .poll(() =>
+            page.evaluate(() => document.querySelector('dialog[open]')?.matches(':modal'))
+          )
+          .toBe(true);
+        await page.keyboard.press('Escape');
+        await expect(page.locator('dialog[open]')).toHaveCount(0);
+      }
+      page.removeAllListeners('console');
+      page.removeAllListeners('pageerror');
+    }
+  });
+}
+
+test('a page the service could not read the list for still opens, and the browser reads it', async ({
+  page,
+}) => {
+  if (!process.env.YARD_RENDER) return;
+  const errors = watchErrors(page);
+  // A filter no vehicle matches still answers; the list is drawn empty, not broken.
+  await openTheYard(page, `${RENDERED}/?view=inventory&make=NoSuchMake`);
+  await expect(page.getByTestId('view-announcement')).not.toHaveText('Loading inventory');
+  expect(errors.filter((error) => HYDRATION.test(error))).toEqual([]);
+});
+// #endregion drawn-by-the-service

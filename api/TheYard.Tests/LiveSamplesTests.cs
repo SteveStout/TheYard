@@ -65,6 +65,7 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
     [InlineData("tests/e2e/mobile.spec.ts")]
     [InlineData("edge/_redirects")]
     [InlineData("scripts/measure_stores.py")]
+    [InlineData("render/render.ts")]
     [InlineData("Dockerfile")]
     [InlineData("netlify.toml")]
     [InlineData("tsconfig.app.json")]

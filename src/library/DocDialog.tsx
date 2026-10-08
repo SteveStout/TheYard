@@ -4,6 +4,7 @@
  * Used by:   SideNav.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useFirstLoad } from '../hooks/useFirstLoad';
 import styles from './DocDialog.module.css';
 import prose from './DocProse.module.css';
 import swatches from './DocSwatches.module.css';
@@ -49,7 +50,18 @@ export function DocDialog({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const proseRef = useRef<HTMLDivElement>(null);
-  const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>({});
+  // #region drawn-document
+  // A ?doc= address the rendering service drew arrives with the document already
+  // rendered into the window, and the window drawn open, so it paints before any
+  // script (ADR: A rendering service beside the API). The window starts from that
+  // HTML here, so the first draw matches, and the effect below opens it again as
+  // a modal once the page is live. Only the first draw carries the open flag.
+  const firstDoc = useFirstLoad()?.doc ?? null;
+  const [drawnOpen] = useState(firstDoc !== null && firstDoc.key === request?.key);
+  const [docHtml, setDocHtml] = useState<Partial<Record<DocKey, string>>>(() =>
+    firstDoc ? { [firstDoc.key as DocKey]: firstDoc.html } : {}
+  );
+  // #endregion drawn-document
   // #region derived-error
   // The request that failed, not a boolean saying something did. A boolean has
   // to be cleared when the next document opens, and clearing it means a
@@ -61,7 +73,7 @@ export function DocDialog({
   const docError = request !== null && failedRequest === request;
   // #endregion derived-error
   /** Same content as docHtml, readable inside the effect without a stale closure. */
-  const cache = useRef<Partial<Record<DocKey, string>>>({});
+  const cache = useRef<Partial<Record<DocKey, string>>>({ ...docHtml });
   // #region copy-link
   // Every record has an address, and a page that did not say so hid it. A
   // feature nobody can find is a feature nobody has. The label carries the
@@ -88,6 +100,9 @@ export function DocDialog({
       if (dialog?.open) dialog.close();
       return;
     }
+    // Drawn open by the service, so open but not modal: no backdrop, no Escape. Its open
+    // attribute comes off and it opens again as a modal, which nobody sees happen.
+    if (dialog?.open && !dialog.matches(':modal')) dialog.removeAttribute('open');
     if (dialog && !dialog.open) dialog.showModal();
     const { key } = request;
     if (cache.current[key] !== undefined) return;
@@ -132,7 +147,11 @@ export function DocDialog({
           : `${WINDOW} op-glass op-sheet op-inset`
       }
       aria-label={DOCS[activeDoc].title}
-      onClose={onClose}
+      open={drawnOpen || undefined}
+      // A close that arrives while the window is open again is the one taking it over, not the reader's.
+      onClose={() => {
+        if (!dialogRef.current?.open) onClose?.();
+      }}
       onClick={(event) => {
         // Native dialog: a click on the backdrop targets the dialog itself.
         if (event.target === dialogRef.current) dialogRef.current?.close();

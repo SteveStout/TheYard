@@ -171,8 +171,8 @@ export default defineConfig({
   // is not told to process, which would leave the palette test with nothing to
   // measure.
   test: {
-    // Unit tests only; tests/e2e belongs to Playwright.
-    include: ['src/**/*.test.ts'],
+    // Unit tests only; tests/e2e belongs to Playwright. render/ holds the rendering service's own.
+    include: ['src/**/*.test.ts', 'render/**/*.test.ts'],
     // allowOnly is deliberately not set. Vitest already defaults it to
     // !process.env.CI, which is the rule this project wants: a committed
     // `it.only` turns a suite into one test and still reports green, so CI

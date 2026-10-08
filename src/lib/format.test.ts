@@ -108,6 +108,13 @@ describe('formatAuctionDateTime', () => {
     expect(stamp.startsWith(formatDateTime(when))).toBe(true);
     expect(stamp.endsWith(` ${zone}`)).toBe(true);
   });
+
+  it("writes UTC, whatever the viewer's zone, while a page drawn on a server is taken over", () => {
+    const when = Date.UTC(2026, 9, 2, 13, 43);
+    const stamp = formatAuctionDateTime(when, false);
+    expect(stamp).toMatch(/1:43/);
+    expect(stamp.endsWith(' UTC')).toBe(true);
+  });
 });
 
 describe('formatDate', () => {

@@ -4,6 +4,7 @@
  * Used by:   TheYard.tsx.
  */
 import { lazy, Suspense, useEffect } from 'react';
+import { useFirstLoad, useInTheBrowser } from '../hooks/useFirstLoad';
 import { useNow } from '../hooks/useNow';
 import { prefetchWhenIdle } from '../lib/prefetch';
 import { AccountPanel } from '../components/account/AccountPanel';
@@ -41,7 +42,8 @@ export default function App() {
   const rail = useRail(); // the sidebar: docked, collapsed, or a drawer
   const go = useNavigation(address, inventory.loadState); // open and close views, move focus, announce
   const build = useRunningBuild(); // the version line, asked of the API
-  const now = useNow(); // the clock every countdown reads
+  const now = useNow(1000, useFirstLoad()?.nowMs); // the clock every countdown reads
+  const inBrowser = useInTheBrowser(); // Admin and the account page draw only here, never on a server
   // #endregion table-of-contents
 
   // #region fetch-ahead
@@ -64,7 +66,9 @@ export default function App() {
       onResetBids={inventory.confirmResetBids}
       build={build}
     >
-      {address.adminOpen ? (
+      {address.adminOpen && !inBrowser ? (
+        <p className={styles.adminLoading}>Reading the machines...</p>
+      ) : address.adminOpen ? (
         <Suspense fallback={<p className={styles.adminLoading}>Reading the machines...</p>}>
           <AdminPanel
             onBack={go.closeAdmin}
@@ -78,6 +82,8 @@ export default function App() {
             onOpenAccount={go.openAccount}
           />
         </Suspense>
+      ) : address.accountOpen && !inBrowser ? (
+        <p className={styles.adminLoading}>Reading your account...</p>
       ) : address.accountOpen ? (
         <AccountPanel
           account={account}

@@ -1,5 +1,6 @@
 node_modules
 dist
+dist-render
 playwright-report
 test-results
 api/**/bin

@@ -15,6 +15,7 @@ import {
 import type { Vehicle } from '../../lib/types';
 import { byAuctionUrgency } from '../../lib/auction';
 import { applyBidRecord, useBids } from '../../hooks/useBids';
+import { useFirstLoad } from '../../hooks/useFirstLoad';
 import type { Address } from './useAddressBar';
 import { useListingRefresh } from './useListingRefresh';
 
@@ -26,10 +27,10 @@ export type LoadState = 'loading' | 'ready' | 'error';
  * not re-rank the page (ADR-056). A WeakMap lets old pages be garbage collected.
  */
 const answeredAt = new WeakMap<readonly Vehicle[], number>();
-function timeOfAnswer(vehicles: readonly Vehicle[]): number {
+function timeOfAnswer(vehicles: readonly Vehicle[], answered = Date.now()): number {
   let at = answeredAt.get(vehicles);
   if (at === undefined) {
-    at = Date.now();
+    at = answered;
     answeredAt.set(vehicles, at);
   }
   return at;
@@ -55,10 +56,22 @@ export type Inventory = ReturnType<typeof useInventory>;
 
 export function useInventory(address: Address, accountEmail: string | null) {
   const { filters, sort, inventoryOpen, selectedVehicle } = address;
+  // #region first-listing
+  // A page the rendering service drew arrives with its first listing read (ADR: A rendering service
+  // beside the API): the list starts from it, ranked at the service's clock, so this first draw is
+  // the service's draw, and the fetch below skips its first run, whose answer is already on the page.
+  const firstLoad = useFirstLoad();
+  const listing = firstLoad?.listing ?? null;
+  const [answered] = useState(() => {
+    if (listing) timeOfAnswer(listing.page.vehicles, firstLoad?.nowMs);
+    return listing !== null;
+  });
+  const skipFirstFetch = useRef(answered);
+  // #endregion first-listing
   /** The server-filtered, server-sorted page currently on display. */
-  const [page, setPage] = useState<VehiclePage>(EMPTY_PAGE);
-  const [facets, setFacets] = useState<InventoryFacets>(EMPTY_FACETS);
-  const [loadState, setLoadState] = useState<LoadState>('loading');
+  const [page, setPage] = useState<VehiclePage>(listing?.page ?? EMPTY_PAGE);
+  const [facets, setFacets] = useState<InventoryFacets>(listing?.facets ?? EMPTY_FACETS);
+  const [loadState, setLoadState] = useState<LoadState>(answered ? 'ready' : 'loading');
   /** A filter request failed, so the list shows the previous results. */
   const [staleResults, setStaleResults] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -130,6 +143,10 @@ export function useInventory(address: Address, accountEmail: string | null) {
   const initialAttempts = useRef(0);
   useEffect(() => {
     if (!needsListing) return;
+    if (skipFirstFetch.current) {
+      skipFirstFetch.current = false;
+      return;
+    }
     const controller = new AbortController();
     let retryTimer: number | undefined;
     const isRefresh = reloadNonce !== lastNonce.current;

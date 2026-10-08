@@ -1,7 +1,7 @@
 /**
  * Does:      Turns a document into its address (?doc=slug) and an address back into a document.
  * Does not:  Read or write the address bar (useAddressBar.ts does), or fetch a document.
- * Used by:   useAddressBar.ts, useNavigation.ts.
+ * Used by:   useAddressBar.ts, useNavigation.ts, firstAddress.ts.
  */
 import { DOCS, type DocKey } from './documents';
 

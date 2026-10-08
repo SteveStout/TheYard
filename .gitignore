@@ -5,6 +5,8 @@ node_modules/
 *.log
 *.bak
 dist/
+# The rendering service's build (npm run build:render), made from the same sources as dist/.
+dist-render/
 api/**/bin/
 api/**/obj/
 playwright-report/

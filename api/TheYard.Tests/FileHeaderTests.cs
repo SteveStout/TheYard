@@ -211,7 +211,10 @@ public class FileHeaderTests
         string src = Path.Combine(Repo.Root(), "src");
         var importers = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var specifier = new Regex(@"(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+)'(\.{1,2}/[^']+)'");
-        foreach (string file in Directory.EnumerateFiles(src, "*.*", SearchOption.AllDirectories)
+        // The rendering service's own code imports from src too (ADR: A rendering service beside the API).
+        foreach (string file in new[] { src, Path.Combine(Repo.Root(), "render") }
+            .Where(Directory.Exists)
+            .SelectMany(folder => Directory.EnumerateFiles(folder, "*.*", SearchOption.AllDirectories))
             .Where(path => path.EndsWith(".ts", StringComparison.Ordinal) || path.EndsWith(".tsx", StringComparison.Ordinal)))
         {
             string folder = Path.GetDirectoryName(file) ?? src;

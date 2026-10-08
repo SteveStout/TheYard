@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useInTheBrowser } from '../../../hooks/useFirstLoad';
 import type { Vehicle } from '../../../lib/types';
 import { auctionTiming, currentPrice, reserveState } from '../../../lib/auction';
 import type { BidOutcome } from '../../../lib/data';
@@ -47,6 +48,8 @@ export function BidPanel({
   const [pending, setPending] = useState(false);
 
   const timing = auctionTiming(vehicle, now);
+  const inViewersZone = useInTheBrowser(); // UTC while a server-drawn page is taken over
+  const stamp = (epochMs: number) => formatAuctionDateTime(epochMs, inViewersZone);
   // A buy-now purchase ends the auction immediately, whatever the clock says,
   // and it ends it for everybody: the server says `sold` on the vehicle and
   // refuses every bid on it, so the panel offers none (ADR: Accounts and
@@ -156,11 +159,8 @@ export function BidPanel({
       <Readout
         rows={[
           ['Bids', String(vehicle.bid_count)],
-          [status === 'upcoming' ? 'Opens' : 'Opened', formatAuctionDateTime(timing.startsAt)],
-          [
-            status === 'live' || status === 'upcoming' ? 'Ends' : 'Ended',
-            formatAuctionDateTime(timing.endsAt),
-          ],
+          [status === 'upcoming' ? 'Opens' : 'Opened', stamp(timing.startsAt)],
+          [status === 'live' || status === 'upcoming' ? 'Ends' : 'Ended', stamp(timing.endsAt)],
           ...(status === 'live' && !sold && !minIsStale
             ? [['Minimum next', formatCurrency(min)] as const]
             : []),

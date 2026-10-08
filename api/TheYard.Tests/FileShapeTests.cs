@@ -5,7 +5,7 @@ namespace TheYard.Tests;
 /// what it is for. A longer file is usually doing more than one job, so it is split by job:
 /// the file that keeps the name becomes the short list of its parts, the way Program.cs
 /// lists what the app is made of. The rule covers the C# under api/ and the TypeScript under
-/// src/. Tests are left out, because a test says what it checks in its name and a suite is as
+/// src/ and render/, the rendering service beside the API. Tests are left out, because a test says what it checks in its name and a suite is as
 /// long as the behaviour it covers; so are the database migrations and their generated
 /// snapshots, which a tool writes and nobody edits. The front end's own header rule
 /// (FileHeaderTests) holds the stylesheets.
@@ -32,7 +32,7 @@ public sealed class FileShapeTests
     public void No_production_source_file_runs_past_three_hundred_lines()
     {
         string root = Repo.Root();
-        List<string> tooLong = new[] { "api", "src" }
+        List<string> tooLong = new[] { "api", "src", "render" }
             .SelectMany(folder => Walk(Path.Combine(root, folder)))
             .Where(path => !IsTest(path) && !IsGenerated(path))
             .Select(path => (path, lines: File.ReadAllLines(path).Length))

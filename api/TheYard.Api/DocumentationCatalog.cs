@@ -125,6 +125,7 @@ public static class DocumentationCatalog
         ["adr-request-pipeline"] = "docs/decisions/ADR-093-the-order-of-the-request-pipeline.md",
         ["adr-compiled-before-it-ships"] = "docs/decisions/ADR-094-compiled-before-it-ships.md",
         ["adr-blue-green-measured-and-held"] = "docs/decisions/ADR-095-blue-green-measured-and-held.md",
+        ["adr-a-rendering-service-beside-the-api"] = "docs/decisions/ADR-096-a-rendering-service-beside-the-api.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

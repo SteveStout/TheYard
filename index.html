@@ -37,7 +37,7 @@
         // kept off the screen there until the app replaces it (src/app/mount.tsx).
         else {
           var hide = document.createElement('style');
-          hide.textContent = '#root[data-drawn] { display: none; }';
+          hide.textContent = '#root[data-drawn="landing"] { display: none; }';
           document.head.appendChild(hide);
         }
         for (var i = 0; i < reads.length; i++) {
@@ -185,7 +185,9 @@
       run. Left empty here, so the development server draws everything in the
       browser as before.
     -->
+    <!-- #region root -->
     <div id="root"></div>
+    <!-- #endregion root -->
     <!--
       For a reader that does not run JavaScript, which is most AI tools and some
       crawlers: who built this, what it is, and where the words are, as plain HTML.

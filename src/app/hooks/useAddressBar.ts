@@ -18,34 +18,13 @@ import {
 import { cardFromAddress, pinFromAddress, type CardSlug } from '../../lib/workbench';
 import { docKeyForSlug, docSlug } from '../../library/addresses';
 import type { DocKey } from '../../library/documents';
+import { useFirstLoad } from '../../hooks/useFirstLoad';
+import { browserSearch, readFirstAddress } from '../firstAddress';
 
 // This file is the only code that writes the address bar. Everything else
 // that needs to push or replace an entry asks through the four functions it
 // hands back (push, replace, replaceQuery, stepBack), so a reader looking for
 // "what put that in the URL" has one file to read.
-
-/**
- * The address, read once at startup. Filters live in it (?make=Ford&status=live).
- * The build draws the landing page where there is no window, and the landing page
- * is the address with no query, so that is the address it reads there.
- */
-const INITIAL_PARAMS = new URLSearchParams(
-  typeof window === 'undefined' ? '' : window.location.search
-);
-const INITIAL_URL_STATE = filtersFromSearchParams(INITIAL_PARAMS);
-/** A tile click is GET navigation: ?vehicle={id} deep-links the detail view. */
-const INITIAL_VEHICLE_ID = INITIAL_PARAMS.get('vehicle');
-// A password reset link's token, read once: the address bar loses it on the first render.
-const INITIAL_RESET = INITIAL_PARAMS.get('reset');
-/** ?doc=adr-lockout opens that record. A name that matches no record opens nothing. */
-const INITIAL_DOC = docKeyForSlug(INITIAL_PARAMS.get('doc'));
-/**
- * The landing page is home. The inventory is ?view=inventory, and an address
- * with a filter, a sort or ?vehicle= opens the inventory too.
- */
-const INITIAL_INVENTORY = opensInventory(INITIAL_PARAMS);
-/** The Admin card an address names (?view=admin&card=timing&pin=errors), resolved once. */
-const INITIAL_CARD = cardFromAddress(INITIAL_PARAMS.get('card'));
 
 /** Where a view's back button goes. Its label says which: "Back to home" or inventory. */
 export type BackTo = 'home' | 'inventory';
@@ -69,30 +48,33 @@ export type HistoryEntry = {
 export type Address = ReturnType<typeof useAddressBar>;
 
 export function useAddressBar() {
-  const [filters, setFilters] = useState<InventoryFilters>(INITIAL_URL_STATE.filters);
-  const [sort, setSort] = useState<SortKey>(INITIAL_URL_STATE.sort);
+  // The address the page opened on, read once: the one the rendering service drew, or the address bar.
+  const firstLoad = useFirstLoad();
+  const [first] = useState(() => readFirstAddress(firstLoad?.search ?? browserSearch()));
+  const [filters, setFilters] = useState<InventoryFilters>(first.filters);
+  const [sort, setSort] = useState<SortKey>(first.sort);
   /** Snapshot of the opened vehicle, so the detail view survives page refetches. */
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(
+    firstLoad?.vehicle ?? null
+  );
   /** The Admin tab (ADR-010): health, errors, and Azure's view, ?view=admin. */
-  const [adminOpen, setAdminOpen] = useState(INITIAL_PARAMS.get('view') === 'admin');
+  const [adminOpen, setAdminOpen] = useState(first.admin);
   // #region admin-card
   // The Admin workbench's open card and its pinned card (ADR-080). They live
   // here, beside the view, because the url-mirror effect below is the only code
   // that writes the address bar. If the address names a card that does not
   // exist, cardAsked keeps the name so the rail can say so, and Health opens.
-  const [adminCard, setAdminCard] = useState<CardSlug>(INITIAL_CARD.slug);
-  const [adminPin, setAdminPin] = useState<CardSlug | null>(
-    pinFromAddress(INITIAL_PARAMS.get('pin'))
-  );
+  const [adminCard, setAdminCard] = useState<CardSlug>(first.card.slug);
+  const [adminPin, setAdminPin] = useState<CardSlug | null>(first.pin);
   const [cardAsked, setCardAsked] = useState<string | null>(
-    INITIAL_CARD.known ? null : INITIAL_CARD.asked
+    first.card.known ? null : first.card.asked
   );
   // #endregion admin-card
   /** The account view (ADR-037), ?view=account. */
-  const [accountOpen, setAccountOpen] = useState(INITIAL_PARAMS.get('view') === 'account');
+  const [accountOpen, setAccountOpen] = useState(first.account);
   /** True when the base view is the inventory list rather than the landing page. */
-  const [inventoryOpen, setInventoryOpen] = useState(INITIAL_INVENTORY);
-  const [openDocKey, setOpenDocKey] = useState<DocKey | null>(INITIAL_DOC);
+  const [inventoryOpen, setInventoryOpen] = useState(first.inventory);
+  const [openDocKey, setOpenDocKey] = useState<DocKey | null>(first.docKey);
 
   // #region url-mirror
   // Mirror the current view into the address bar: the filter GET parameters
@@ -100,7 +82,8 @@ export function useAddressBar() {
   // typing shouldn't pile up history entries; opening a tile pushes its own
   // entry (openVehicle, in useNavigation.ts) so the browser's Back button
   // closes the detail view.
-  const deepLinkPending = useRef(INITIAL_VEHICLE_ID !== null);
+  // A vehicle the rendering service already read is no longer pending: it is on the page.
+  const deepLinkPending = useRef(first.vehicleId !== null && !firstLoad?.vehicle);
   useEffect(() => {
     if (deepLinkPending.current) return;
     // The landing page carries no filters: they belong to the inventory, and an
@@ -139,9 +122,9 @@ export function useAddressBar() {
 
   // Restore a deep-linked detail view on first load (?vehicle={id}).
   useEffect(() => {
-    if (!INITIAL_VEHICLE_ID) return;
+    if (!first.vehicleId || !deepLinkPending.current) return;
     let live = true;
-    fetchVehicleById(INITIAL_VEHICLE_ID)
+    fetchVehicleById(first.vehicleId)
       .then((vehicle) => {
         if (!live) return;
         deepLinkPending.current = false;
@@ -161,7 +144,7 @@ export function useAddressBar() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [first]);
 
   // #region back-forward
   // Browser Back/Forward: re-read the whole view from the URL. The listener is
@@ -223,8 +206,9 @@ export function useAddressBar() {
   /** Back one entry, or several at once: Admin leaves past every card it opened. */
   const stepBack = (entries = 1) =>
     entries === 1 ? window.history.back() : window.history.go(-entries);
-  /** What the entry on screen remembers, or nothing when the site did not push it. */
-  const entry = () => window.history.state as HistoryEntry | null;
+  /** What the entry on screen remembers, or nothing when the site did not push it or there is no window. */
+  const entry = () =>
+    typeof window === 'undefined' ? null : (window.history.state as HistoryEntry | null);
 
   return {
     filters,
@@ -257,9 +241,9 @@ export function useAddressBar() {
     /** The open vehicle's id, readable from a listener registered once. */
     selectedIdRef,
     /** The first load named a vehicle (?vehicle=), so the list is needed even before it shows. */
-    startedOnVehicleLink: INITIAL_VEHICLE_ID !== null,
+    startedOnVehicleLink: first.vehicleId !== null,
     /** A password reset link's token, from the first load. */
-    resetToken: INITIAL_RESET,
+    resetToken: first.resetToken,
     push,
     replace,
     replaceQuery,

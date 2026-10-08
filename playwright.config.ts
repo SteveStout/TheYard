@@ -106,6 +106,28 @@ export default defineConfig({
       reuseExistingServer: true,
       timeout: 120_000,
     },
+    // The rendering service (ADR: A rendering service beside the API), when its build is made
+    // (npm run build:render) and asked for: in front of the built site above, which stands in for
+    // the API it reads and for the edge, so a page it draws is taken over by the bundle that site
+    // serves. drawn.spec.ts opens it on 5220 and skips those pages when it is not running.
+    ...(process.env.YARD_RENDER
+      ? [
+          {
+            command: 'node render/server.mjs',
+            env: {
+              PORT: '5220',
+              YARD_SITES: 'sql=http://localhost:5173',
+              YARD_PASS_ORIGIN: 'http://localhost:5173',
+              // The suite's machine runs four browsers, the API and the site at once, and a list read
+              // there can pass the live deadline; the pages here are drawn with every read in.
+              YARD_DEADLINE_MS: '20000',
+            },
+            url: 'http://localhost:5220/readyz',
+            reuseExistingServer: true,
+            timeout: 120_000,
+          },
+        ]
+      : []),
   ],
   // #endregion web-servers
 });

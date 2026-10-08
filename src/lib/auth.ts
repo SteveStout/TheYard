@@ -26,13 +26,14 @@ export interface HistoryEntry {
 }
 
 // #region auth-seam
-interface AccountWire {
+/** Who is signed in, as the API writes it; the rendering service reads it too (render/loaders.ts). */
+export interface AccountWire {
   signed_in: boolean;
   email: string | null;
   member_since_ms: number | null;
 }
 
-function toAccount(wire: AccountWire): Account {
+export function toAccount(wire: AccountWire): Account {
   return {
     signedIn: wire.signed_in,
     email: wire.email,

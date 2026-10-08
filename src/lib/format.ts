@@ -85,9 +85,23 @@ const auctionDateTimeFormat = new Intl.DateTimeFormat(LOCALE, {
   timeZoneName: 'short',
 });
 
-/** "Apr. 5, 2:00 p.m. CDT", for auction start and end stamps, in the viewer's zone. */
-export function formatAuctionDateTime(epochMs: number): string {
-  return auctionDateTimeFormat.format(epochMs);
+/** The same stamp in UTC: a server does not know the viewer's zone, so a page drawn there says UTC first. */
+const auctionDateTimeFormatUtc = new Intl.DateTimeFormat(LOCALE, {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short',
+  timeZone: 'UTC',
+});
+
+/**
+ * "Apr. 5, 2:00 p.m. CDT", for auction start and end stamps, in the viewer's
+ * zone; "Apr. 5, 7:00 p.m. UTC" while a page drawn on a server is taken over,
+ * so the browser's first draw writes what the server wrote, then its own zone.
+ */
+export function formatAuctionDateTime(epochMs: number, inViewersZone = true): string {
+  return (inViewersZone ? auctionDateTimeFormat : auctionDateTimeFormatUtc).format(epochMs);
 }
 
 /**
