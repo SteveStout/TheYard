@@ -57,6 +57,22 @@ public static class MetricsReport
             // only honest cold start there is.
             startup = StartupView(mine, startedAt),
             // #endregion store-metrics
+            // #region runtime-metrics
+            // How much of this process's code the runtime compiled itself since it started, and
+            // how long that took, beside the garbage collector's mode: the reading that says
+            // whether code arrives compiled ahead of time (ReadyToRun) or is compiled on the
+            // container's one shared core as it is first called (ADR: The order of the request
+            // pipeline, the addendum on the review and the after reading). Process-wide, so once,
+            // not per store.
+            runtime = new
+            {
+                jit_methods = System.Runtime.JitInfo.GetCompiledMethodCount(currentThread: false),
+                jit_ms = (long)System.Runtime.JitInfo.GetCompilationTime(currentThread: false).TotalMilliseconds,
+                gc = System.Runtime.GCSettings.IsServerGC ? "server" : "workstation",
+                gc_concurrent = System.Runtime.GCSettings.LatencyMode != System.Runtime.GCLatencyMode.Batch,
+                processors = Environment.ProcessorCount,
+            },
+            // #endregion runtime-metrics
             // #region backends-metrics
             // Every store this container runs, on the same rows the peer answers with, so the
             // card compares two stores in one process the way it compares two containers: the cold

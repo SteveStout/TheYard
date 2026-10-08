@@ -33,8 +33,8 @@ public static class HealthEndpoints
             .WithSummary("Is the process up")
             .WithDescription("The container's own health check. Answers ok the moment the process is listening and says nothing else.")
             .Produces<string>(StatusCodes.Status200OK, "text/plain")
-            // Answered by routing itself, so a poll writes no log line, reads no
-            // token and waits for no store (RequestPipeline.cs, the routing region).
+            // Answered by routing itself, so a poll never reads the session cookie
+            // (RequestPipeline.cs, the routing region).
             .ShortCircuit();
 
         // Only the checks that gate it, and only those get run: the database probe is
@@ -81,7 +81,7 @@ public static class HealthEndpoints
         {
             return TypedResults.Problem(detail: "A file this site cannot run without is missing, or its catalogue is still loading; the health report says which.", statusCode: 503, title: "Not ready");
         }
-        if (string.Equals(stores, "all", StringComparison.Ordinal) && !backends.All.All(backend => backend.CatalogueLoaded))
+        if (string.Equals(stores, "all", StringComparison.OrdinalIgnoreCase) && !backends.All.All(backend => backend.CatalogueLoaded))
         {
             return TypedResults.Problem(detail: "The default store is ready; another store's catalogue is still loading.", statusCode: 503, title: "Not ready on every store");
         }

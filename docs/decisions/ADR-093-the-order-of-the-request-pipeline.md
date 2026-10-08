@@ -1,12 +1,12 @@
 # ADR: The order of the request pipeline
 
-Status: accepted, 2026-10-07 (1.0.3.92). The middleware on both sites follows the order Microsoft documents for an app behind a proxy, each placement said in a comment beside its line, held by tests, and measured on the live domains before and after.
+Status: accepted, 2026-10-07 (1.0.3.92). The middleware on both sites follows the order Microsoft documents for an app behind a proxy, each placement said in a comment beside its line, held by tests, and read on the live domains before and after 1.0.3.92; 1.0.3.93 added the after reading and the fixes an independent review asked for.
 
 ## In plain words
 
-Every request to this site passes through a short list of steps before anything answers it: one times it, one works out who sent it, one turns a crash into a readable error, one serves files, one finds the code that answers an address, one reads the sign-in. The order of that list decides what each step can see and how much work a request does before it is answered. Until this version the files came last, so every page, script and photo waited behind the sign-in, the session and the catalogue. This record puts the list in the order Microsoft documents, explains every position in plain words beside its line, and says where a popular graphic of the same list disagrees with the documentation and which one the build follows.
+Every request to this site passes through a short list of steps before anything answers it: one times it, one works out who sent it, one turns a crash into a readable error, one serves files, one finds the code that answers an address, one reads the sign-in. The order of that list decides what each step can see and how much work a request does before it is answered. Until this version the files came last, so every page, script and photo waited behind the sign-in check, and the photos, which live under the API's address, also waited behind the session and, after every roll, the catalogue. This record puts the list in the order Microsoft documents, explains every position in plain words beside its line, and says where a popular graphic of the same list disagrees with the documentation and which one the build follows.
 
-What that is worth: a visitor gets the page's files without the server reading a sign-in it does not need, a developer can read why each step sits where it sits and change one without guessing, and the organization gets a server that reads the visitor's address from the proxies it trusts rather than from a header anyone can write.
+What that is worth: a visitor gets the page's files without the server reading a sign-in it does not need, a developer can read why each step sits where it sits and change one without guessing, and the organization gets a server that reads the visitor's address from the proxies it trusts rather than from whatever a visitor writes into a header on the way through the edge.
 
 ## Context
 
@@ -41,7 +41,7 @@ The order, top to bottom, in `Composition/RequestPipeline.cs`:
 ```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=static-files
 ```
 
-**The forwarded headers trust two hops, by count (Steve's A, 7 October).** A visitor reaches the container through the edge and App Service's front end, and neither has an address the app can list. So the app clears the known proxies and trusts the two rightmost entries of X-Forwarded-For and X-Forwarded-Proto. A value a visitor wrote is to the left of those and never read. X-Forwarded-Host is never read: a link's host is configuration (`Site:Url`), which every web app the template writes carries. A caller that skips the edge can still write the second entry; the address feeds counts, never a permission. The count is a setting, `Edge:ForwardLimit`, and `/api/admin/arrival`, behind the operator's key, shows the raw headers beside what the app resolved.
+**The forwarded headers trust two hops, by count (Steve's A, 7 October).** A visitor reaches the container through the edge and App Service's front end, and neither has an address the app can list. So the app clears the known proxies and trusts the two rightmost entries of X-Forwarded-For and X-Forwarded-Proto. A value a visitor wrote is to the left of those and never read. X-Forwarded-Host is never read: a link's host is configuration (`Site:Url`), which every web app the template writes carries. A caller that skips the edge can still write the second entry; the address feeds counts, never a permission. The count is a setting, `Edge:ForwardLimit`, and `/api/admin/arrival`, behind the operator's key, shows X-Forwarded-For as it arrived beside what the app resolved (since 1.0.3.93; at 1.0.3.92 it showed only what was left after the middleware took its entries). Until a live reading of it is recorded in this record, the count of two is what both proxies are documented to do, not a measurement.
 
 ```live path=api/TheYard.Api/Composition/ApiRegistration.cs region=forwarded-headers
 ```
@@ -50,7 +50,7 @@ The order, top to bottom, in `Composition/RequestPipeline.cs`:
 
 **Readiness on every store, for the swap.** `/readyz?stores=all` answers 503 until every store the container runs has its catalogue in. The deploy asks `/readyz`; a blue-green swap asks the other, so the first visitor to toggle stores after a swap does not wait for a load. Blue-green is written and waits on a larger plan (ADR: The ports learn to wait, the addendum of 1.0.3.91).
 
-**The Shed matches where it has the same need, and says why not where it does not.** The before reading found that The Shed has no edge at all: its domain is bound to App Service, and Kestrel answers it directly, with no compression and no HSTS. So The Shed reads the one forwarded value it needs, the scheme from App Service's front end, one hop, and sends HSTS itself in production, which TheYard's edge already does for TheYard. Routing is called out loud after the files, as here. It leaves out the visitor address, compression, cache rules and short-circuited probes, each with its reason in a comment: it reads no address, its page is 4.5 KB and its script 1 KB, its files keep plain names, and there is nothing between routing and its health controller to skip.
+**The Shed matches where it has the same need, and says why not where it does not.** The before reading found that The Shed has no edge at all: its domain is bound to App Service, whose front end passes Kestrel's own Server header through, with no compression and no HSTS. So The Shed reads the one forwarded value it needs, the scheme from App Service's front end, one hop, and sends HSTS itself in production, which TheYard's edge already does for TheYard. Routing is called out loud after the files, as here. It leaves out the visitor address, compression, cache rules and short-circuited probes, each with its reason in a comment: it reads no address, its page is 4.5 KB and its script 1 KB, its files keep plain names, and there is nothing between routing and its health controller to skip.
 
 ## Where the documentation and the graphic disagree
 
@@ -67,22 +67,35 @@ The order, top to bottom, in `Composition/RequestPipeline.cs`:
 
 ## Measured
 
-Before: 1.0.3.89, both containers 70 minutes old, from Steve's machine in Missouri, ten asks of each address at each domain and each origin (`orderlane-capture-before.log`). Time to the first byte, median:
-
-| Address | Azure SQL domain | origin | Azure Cosmos DB domain | origin |
+| Address, first byte, median | Azure SQL domain | origin | Azure Cosmos DB domain | origin |
 | --- | --- | --- | --- | --- |
-| The page, `/` | 256 ms | 360 ms | 248 ms | 374 ms |
-| The script | 291 ms | 361 ms | 191 ms | 430 ms |
-| A photo | 168 ms | 333 ms | 198 ms | 341 ms |
-| `/api/version` | 234 ms | 323 ms | 259 ms | 338 ms |
-| `/api/facets` | 355 ms | 347 ms | 229 ms | 333 ms |
-| `/healthz` | 252 ms | 353 ms | 227 ms | 401 ms |
+| The page, `/` | 256 / 262 ms | 360 / 338 ms | 248 / 262 ms | 374 / 340 ms |
+| The script | 291 / 258 ms | 361 / 336 ms | 191 / 256 ms | 430 / 352 ms |
+| A photo | 168 / 237 ms | 333 / 349 ms | 198 / 214 ms | 341 / 342 ms |
+| `/api/version` | 234 / 249 ms | 323 / 344 ms | 259 / 239 ms | 338 / 346 ms |
+| `/api/facets` | 355 / 250 ms | 347 / 333 ms | 229 / 240 ms | 333 / 345 ms |
+| `/healthz` | 252 / 218 ms | 353 / 347 ms | 227 / 226 ms | 401 / 341 ms |
 
-At the origin every address takes about the same third of a second, a file and a probe alike: the trip from Missouri to West US 3 and back, and its TLS, is nearly all of it, and the pipeline's own share is a few milliseconds that this reading cannot separate. The after reading is taken the same way, and the record says plainly if it cannot tell the two apart.
+Each cell is before / after: 1.0.3.89 and 1.0.3.92, both read with the containers 70 minutes old, ten asks of each address (`orderlane-capture-before.log`, `orderlane-capture-after.log`). The two cannot be told apart. At the origin every address takes about a third of a second, a file and a probe alike, because the trip from Missouri to West US 3 and its TLS are nearly all of it; the pipeline's own share is a few milliseconds that this reading cannot separate, and the differences in the table, up and down, are inside its spread. What did change on the wire is what the record set out to change: The Shed now answers with `Strict-Transport-Security: max-age=2592000`, and every other header TheYard sends is the same as before.
+
+## Addendum, 2026-10-07 (1.0.3.93): the review, and the after reading
+
+An independent review of 1.0.3.92 (a QA engineer's, a staff engineer's and a hiring manager's reading, by a reviewer that had not seen the work) found two things that had to change and several that should. Fixed in this version:
+
+- **The every-store readiness test could not fail.** It warmed every store and then expected 200, so deleting the check would have passed it. It now runs on a host of its own and, where that host runs two stores, first expects 503 before the second store is read.
+- **The arrival read could not show what it claimed.** The middleware deletes the entries it uses, so at 1.0.3.92 the read showed only what was left. The pipeline now keeps X-Forwarded-For and X-Forwarded-Proto as they arrived, for that one address, before the middleware runs, and the read returns them beside what was resolved.
+- **"Never read" said more than the code does.** For a visitor through the edge, a value they write is never read; a caller who skips the edge can still write the entry that is. Each comment now says so.
+- **Untested behaviour got tests:** the scheme coming through when App Service sends one scheme for two addresses, a caller straight to the origin, and a reset link on a host with no Site:Url, which takes its own host and never X-Forwarded-Host.
+- **The short-circuit's saving is stated exactly:** the probes skip reading the session cookie, and nothing else, because they were never under /api.
+
+The same version adds a reading for the next one: `/api/admin/metrics` now says how many methods the runtime compiled itself since the process started and how long that took, beside the garbage collector's mode, so compiling ahead of time can be measured rather than assumed.
+
+```live path=api/TheYard.Api/MetricsReport.cs region=runtime-metrics
+```
 
 ## Where it sits
 
-The API ring's host only: the composition root's pipeline, its registration and three readers that now trust the middleware instead of a header. No port, no use case and no rule changes. Single responsibility: one place resolves where a request came from, and every reader asks the request. It costs nothing; what would change it is an edge with fixed addresses, where trust by address would replace trust by count.
+The API ring's host only: the composition root's pipeline, its registration and four readers that now trust the middleware instead of a header (the cookie's Secure flag, the activity card's address, the reset link, and the documentation pages' own address when no Site:Url is set). No port, no use case and no rule changes. Single responsibility: one place resolves where a request came from, and every reader asks the request. It costs nothing; what would change it is an edge with fixed addresses, where trust by address would replace trust by count.
 
 ## Files
 

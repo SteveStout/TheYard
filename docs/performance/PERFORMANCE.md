@@ -334,6 +334,20 @@ Lighthouse 12.8.2 on its phone preset, three runs a site from Steve's machine in
 
 **What it cost.** The HTML a visitor downloads went from about 10 KB to 113 KB, 13.8 KB compressed, because the landing page is in it.
 
+## The request pipeline in Microsoft's order, measured on 7 October
+
+1.0.3.92 put the middleware in the order Microsoft documents for an app behind a proxy (ADR: The order of the request pipeline): the page's files are answered before routing, the sign-in check, the session and the store's warmth, the forwarded headers are read once before anything that needs them, and the health probes end at routing. Read before (1.0.3.89) and after (1.0.3.92), both with the containers 70 minutes old, ten asks of each address from Steve's machine (`orderlane-capture-before.log`, `orderlane-capture-after.log`):
+
+| First byte, median, before / after | Azure SQL origin | Azure Cosmos DB origin |
+| --- | --- | --- |
+| The page | 360 / 338 ms | 374 / 340 ms |
+| The script | 361 / 336 ms | 430 / 352 ms |
+| A photo | 333 / 349 ms | 341 / 342 ms |
+| `/api/version` | 323 / 344 ms | 338 / 346 ms |
+| `/healthz` | 353 / 347 ms | 401 / 341 ms |
+
+**What this reading can and cannot say.** Every address at the origin, a file and a probe alike, takes about a third of a second, because the trip from Missouri to West US 3 and its TLS are nearly all of it. The pipeline's own share is a few milliseconds that ten asks from a thousand miles away cannot separate, so the table shows no change either way, and this page claims none. What the reorder did buy is work not done: a file no longer passes the sign-in check, and after a roll the photos no longer wait for a hundred thousand vehicles to load. The one change a visitor's browser can see is on The Shed, which has no edge and now sends `Strict-Transport-Security` itself.
+
 ## How the listing is compressed, and why only the listing
 
 **The trip.** A visitor's browser asks the edge, Netlify, for the listing. The edge forwards the request to the container on Azure and passes the answer back. The edge has always compressed what it hands the browser, so the browser never saw the full size. The waste was on the hop between them: the edge asked Azure for the answer plainly, and a page of a hundred vehicles crossed as about 106 KB of JSON.

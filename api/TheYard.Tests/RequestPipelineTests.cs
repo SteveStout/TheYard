@@ -58,7 +58,8 @@ public class RequestPipelineTests(RequestPipelineTests.KeyedHost host) : IClassF
         var endpoint = host.Services.GetRequiredService<EndpointDataSource>().Endpoints
             .OfType<RouteEndpoint>()
             .Single(candidate => candidate.RoutePattern.RawText == path);
-        // ShortCircuit() marks the endpoint with the framework's own metadata type.
+        // ShortCircuit() marks the endpoint with the framework's own metadata type, which is
+        // internal, so it is matched by name.
         Assert.Contains(endpoint.Metadata, metadata => metadata.GetType().Name == "ShortCircuitMetadata");
 
         // And it still answers: liveness at once, readiness once the catalogue is in.
@@ -80,26 +81,45 @@ public class RequestPipelineTests(RequestPipelineTests.KeyedHost host) : IClassF
     [Fact]
     public async Task Readiness_on_every_store_waits_for_every_store_this_host_runs()
     {
-        // A store other than the default warms on its first read here, because the
-        // background warm and the keep-warm loop are off in a test host. So each store is
-        // read once by name, and only then is every store ready.
-        var client = Client();
+        // A host of its own, so no other test has read its stores. A store other than the
+        // default warms only on its first read here, because the background warm and the
+        // keep-warm loop are off in a test host. Where the host runs two stores (the gate's
+        // Cosmos DB pass), every store is not ready until the second has been read; where
+        // it runs one, every store is the default.
+        await using var fresh = new KeyedHost();
+        var client = fresh.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        await Ready(client, "/readyz");
         using var stores = JsonDocument.Parse(await client.GetStringAsync("/api/stores"));
-        foreach (var store in stores.RootElement.GetProperty("stores").EnumerateArray())
+        var others = stores.RootElement.GetProperty("stores").EnumerateArray()
+            .Where(store => !store.GetProperty("default").GetBoolean())
+            .Select(store => store.GetProperty("key").GetString()!)
+            .ToList();
+        if (others.Count > 0)
+        {
+            var notYet = await client.GetAsync("/readyz?stores=all");
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, notYet.StatusCode);
+            Assert.Contains("another store", await notYet.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        }
+        foreach (string key in others)
         {
             using var read = new HttpRequestMessage(HttpMethod.Get, "/api/facets");
-            read.Headers.Add(Backends.HeaderName, store.GetProperty("key").GetString());
+            read.Headers.Add(Backends.HeaderName, key);
             Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(read)).StatusCode);
         }
+        await Ready(client, "/readyz?stores=all");
+    }
 
+    /// <summary>Asks until the address answers 200, a minute at most, and fails if it never does.</summary>
+    private static async Task Ready(HttpClient client, string path)
+    {
         HttpResponseMessage response;
         var waited = System.Diagnostics.Stopwatch.StartNew();
         do
         {
-            response = await client.GetAsync("/readyz?stores=all");
+            response = await client.GetAsync(path);
             if (response.StatusCode == HttpStatusCode.OK)
             {
-                break;
+                return;
             }
             await Task.Delay(250);
         }
@@ -109,24 +129,49 @@ public class RequestPipelineTests(RequestPipelineTests.KeyedHost host) : IClassF
     // #endregion probes-short-circuit
 
     // #region forwarded
-    [Fact]
-    public async Task The_visitor_is_the_second_address_from_the_right_and_a_value_the_visitor_wrote_is_never_read()
+    [Theory]
+    // Through the edge: what the visitor sent, the visitor, the edge.
+    [InlineData("6.6.6.6, 203.0.113.7, 10.1.2.3", "http, https, https", "203.0.113.7", "https")]
+    // App Service's front end often sends one scheme for two addresses; the scheme still comes through.
+    [InlineData("203.0.113.7, 10.1.2.3", "https", "203.0.113.7", "https")]
+    // Straight to the origin, skipping the edge: one address, which is the caller's.
+    [InlineData("198.51.100.9", "https", "198.51.100.9", "https")]
+    public async Task The_visitor_is_the_second_address_from_the_right_and_a_value_the_visitor_wrote_is_never_read(
+        string forwardedFor, string forwardedProto, string address, string scheme)
     {
-        // What reaches the container: whatever the visitor sent, then the visitor as the
-        // edge saw them, then the edge as App Service's front end saw it.
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/arrival");
         request.Headers.Add("X-Admin-Key", KeyedHost.Key);
-        request.Headers.Add("X-Forwarded-For", "6.6.6.6, 203.0.113.7, 10.1.2.3");
-        request.Headers.Add("X-Forwarded-Proto", "http, https, https");
+        request.Headers.Add("X-Forwarded-For", forwardedFor);
+        request.Headers.Add("X-Forwarded-Proto", forwardedProto);
         request.Headers.Add("X-Forwarded-Host", "evil.example.test");
         var response = await Client().SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var arrival = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal("203.0.113.7", arrival.RootElement.GetProperty("address").GetString());
-        Assert.Equal("https", arrival.RootElement.GetProperty("scheme").GetString());
-        // What the visitor wrote is left where it was, unread.
-        Assert.Equal("6.6.6.6", arrival.RootElement.GetProperty("forwarded_for").GetString());
+        Assert.Equal(address, arrival.RootElement.GetProperty("address").GetString());
+        Assert.Equal(scheme, arrival.RootElement.GetProperty("scheme").GetString());
+        // The read shows the header as it arrived, so a wrong hop count is visible live.
+        Assert.Equal(forwardedFor, arrival.RootElement.GetProperty("arrived_for").GetString());
+    }
+
+    [Fact]
+    public async Task A_reset_link_on_a_host_with_no_site_address_takes_its_own_host_and_never_a_forwarded_one()
+    {
+        // This host has no Site:Url, which is the only case the link was ever built from
+        // headers; X-Forwarded-Host must not reach a link that goes out in an email.
+        var client = Client();
+        string email = $"reset-{Guid.NewGuid():N}@example.com";
+        Assert.True((await client.PostAsJsonAsync("/api/auth/register", new { email, password = "correct horse" })).IsSuccessStatusCode);
+        using var mint = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email }) };
+        mint.Headers.Add("X-Admin-Key", KeyedHost.Key);
+        mint.Headers.Add("X-Forwarded-Host", "evil.example.test");
+        mint.Headers.Add("X-Forwarded-Proto", "https");
+        var minted = await client.SendAsync(mint);
+        Assert.Equal(HttpStatusCode.OK, minted.StatusCode);
+        using var json = JsonDocument.Parse(await minted.Content.ReadAsStringAsync());
+        string url = json.RootElement.GetProperty("url").GetString()!;
+        Assert.DoesNotContain("evil", url, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith("https://localhost", url, StringComparison.Ordinal);
     }
 
     [Fact]

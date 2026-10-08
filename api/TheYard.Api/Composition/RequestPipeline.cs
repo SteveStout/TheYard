@@ -52,10 +52,28 @@ public static class RequestPipeline
         // Service's front end add, and written onto the request. How: UseForwardedHeaders
         // with the options in ApiRegistration: X-Forwarded-For and X-Forwarded-Proto
         // only, counted back from the right as many hops as there are proxies we run
-        // through, so whatever a visitor typed into those headers is never read.
-        // Why here: before anything that reads the address or the scheme. The session
-        // cookie's Secure flag, the activity card's visitor and the reset link all
-        // read them, and before this each read the raw header in its own way.
+        // through, so for a visitor who comes through the edge, whatever they typed into
+        // those headers is never read. A caller who skips the edge and calls the origin
+        // directly can still write the entry that is read; the address feeds counts,
+        // never a permission.
+        // Why here: before everything that reads the address or the scheme on the way in
+        // (the session cookie's Secure flag, the reset link), and the one reader outside
+        // it, the timing above, reads the address on the way out, after this has written
+        // it; the middleware does not put the old values back. Before this, each reader
+        // read the raw header in its own way.
+        //
+        // The arrival read (/api/admin/arrival) shows the headers as they arrived, so
+        // they are kept for that one address before the middleware consumes them.
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.Equals(Arrival.Path, StringComparison.Ordinal))
+            {
+                context.Items[Arrival.RawKey] = new Arrival.Raw(
+                    context.Request.Headers["X-Forwarded-For"].ToString(),
+                    context.Request.Headers["X-Forwarded-Proto"].ToString());
+            }
+            await next();
+        });
         app.UseForwardedHeaders();
         // #endregion forwarded-headers
 
@@ -192,8 +210,9 @@ public static class RequestPipeline
         // out, ASP.NET Core adds one at the very top. Why here: after the files, which
         // never need a route, and before the user and the endpoint. The health probes
         // are marked ShortCircuit (HealthEndpoints.cs), so routing answers them right
-        // here: an orchestrator polling every few seconds never reads a token, never
-        // renews a session and never waits for a store. Anything
+        // here and they skip reading the session cookie. That is all it saves them: they
+        // are not under /api, so the session's renewal and the store's warmth never
+        // applied to them, and the timing ring already left them out by path. Anything
         // that needs the matched endpoint later (a CORS policy, a rate limit, an output
         // cache policy) goes below this line.
         app.UseRouting();

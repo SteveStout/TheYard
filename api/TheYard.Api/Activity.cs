@@ -71,19 +71,22 @@ public sealed class VisitorTokens(string key)
     /// <summary>
     /// The visitor's address. The forwarded-headers middleware has already written
     /// it onto the connection by the time anything reads it, counted back from the
-    /// right of X-Forwarded-For past the proxies this app runs behind, so a value a
-    /// visitor typed into the header is never the one used (ADR: The order of the
-    /// request pipeline). Until then this read the edge's own header, and without it
-    /// the leftmost X-Forwarded-For entry, which is the one a visitor writes. An
-    /// address is what feeds a count, never a permission.
+    /// right of X-Forwarded-For past the proxies this app runs behind, so for a visitor
+    /// who comes through the edge, a value they typed into the header is never the one
+    /// used (ADR: The order of the request pipeline). Until then this read the edge's
+    /// own header, and without it the leftmost X-Forwarded-For entry, which is the one
+    /// a visitor writes. An address is what feeds a count, never a permission.
     /// </summary>
     public static string AddressOf(HttpContext context) =>
         WithoutPort(context.Connection.RemoteIpAddress?.ToString() ?? "");
 
     /// <summary>
     /// The address without the port a forwarding hop may have written after
-    /// it. App Service's own requests reach the container as 127.0.0.1 with a
-    /// port, and with the port left on, it went into the token and the
+    /// it. Since the forwarded-headers middleware resolves the address, the
+    /// connection's address never carries a port and this is a guard rather than
+    /// a fix; it stays because the rule it holds still matters. App Service's own
+    /// requests reached the container as 127.0.0.1 with a port, and with the port
+    /// left on, it went into the token and the
     /// network: every one of those requests was a new visitor, hundreds a day,
     /// and the network showed the whole address. 203.0.113.7:443 is
     /// 203.0.113.7; [2001:db8::1]:443 is 2001:db8::1; an address with no port

@@ -25,19 +25,22 @@ public static partial class AdminEndpoints
         });
 
     /// <summary>
-    /// Answers how the caller's own request arrived: what the forwarded-headers
-    /// middleware resolved, and the headers it resolved it from. The middleware moves
-    /// the values it used into X-Original-For and X-Original-Proto, so both halves are
-    /// on the request by the time this runs. Behind the operator's key.
+    /// Answers how the caller's own request arrived: the forwarded headers exactly as they
+    /// reached the process (kept by the pipeline before the middleware consumed them), the
+    /// address and scheme the middleware resolved, and what it left behind. Behind the
+    /// operator's key.
     /// </summary>
-    private static IResult Arrival(HttpContext http, AdminKey adminKey)
+    private static IResult ArrivalRead(HttpContext http, AdminKey adminKey)
     {
         if (!adminKey.IsPresentedBy(http.Request))
         {
             return TypedResults.NotFound();
         }
         var headers = http.Request.Headers;
+        var raw = http.Items[Arrival.RawKey] as Arrival.Raw;
         return TypedResults.Ok(new ArrivalView(
+            raw?.ForwardedFor ?? "",
+            raw?.ForwardedProto ?? "",
             http.Connection.RemoteIpAddress?.ToString() ?? "",
             http.Request.Scheme,
             headers["X-Original-For"].ToString(),
@@ -154,13 +157,15 @@ public static partial class AdminEndpoints
     }
 }
 
-/// <summary>How one request arrived: what the forwarded-headers middleware resolved, and what it was handed.</summary>
+/// <summary>How one request arrived: the forwarded headers as they reached the process, and what the middleware made of them.</summary>
+/// <param name="ArrivedFor">X-Forwarded-For exactly as it arrived, before the middleware read it.</param>
+/// <param name="ArrivedProto">X-Forwarded-Proto exactly as it arrived.</param>
 /// <param name="Address">The caller's address as the app now sees it.</param>
 /// <param name="Scheme">The scheme as the app now sees it.</param>
-/// <param name="OriginalFor">The connection's own address before the middleware, which it keeps in X-Original-For.</param>
+/// <param name="OriginalFor">The connection's own address and port before the middleware, which it keeps in X-Original-For.</param>
 /// <param name="OriginalProto">The connection's own scheme before the middleware, which it keeps in X-Original-Proto.</param>
-/// <param name="ForwardedFor">What is left of X-Forwarded-For after the middleware took the entries it trusts.</param>
+/// <param name="ForwardedFor">What is left of X-Forwarded-For after the middleware took the entries it trusts: whatever lay to their left.</param>
 /// <param name="ForwardedProto">What is left of X-Forwarded-Proto after the same.</param>
 /// <param name="ForwardedHost">X-Forwarded-Host as sent, which this app never reads.</param>
 /// <param name="EdgeClientAddress">The edge's own header for the client, which this app no longer reads.</param>
-public sealed record ArrivalView(string Address, string Scheme, string OriginalFor, string OriginalProto, string ForwardedFor, string ForwardedProto, string ForwardedHost, string EdgeClientAddress);
+public sealed record ArrivalView(string ArrivedFor, string ArrivedProto, string Address, string Scheme, string OriginalFor, string OriginalProto, string ForwardedFor, string ForwardedProto, string ForwardedHost, string EdgeClientAddress);
