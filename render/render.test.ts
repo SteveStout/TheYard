@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import dataset from '../data/vehicles.json';
 import loadersSource from './loaders.ts?raw';
 import pageSource from './page.ts?raw';
 import renderSource from './render.ts?raw';
@@ -17,7 +16,32 @@ const PAGE = `<!doctype html><html><head><title>TheYard</title></head><body>
     ${ROOT_END}
     <noscript>For a reader without JavaScript.</noscript></body></html>`;
 const vehicle = {
-  ...(dataset as unknown as Array<{ id: string; vin: string; starting_bid: number }>)[0],
+  id: '4e3cd74f-bb88-4efe-b234-bcb2f7474b40',
+  vin: 'CG2UAF4T8LRBBVWJY',
+  year: 2025,
+  make: 'Mazda',
+  model: 'CX-5',
+  trim: 'Turbo',
+  body_style: 'SUV',
+  exterior_color: 'Blue',
+  interior_color: 'Light Grey',
+  engine: '2.5L I4',
+  transmission: 'automatic',
+  drivetrain: 'FWD',
+  odometer_km: 24_534,
+  fuel_type: 'gasoline',
+  condition_grade: 4,
+  condition_report: 'Very clean vehicle inside and out.',
+  damage_notes: [],
+  title_status: 'clean',
+  province: 'Ontario',
+  city: 'Mississauga',
+  auction_start: '2026-04-05T19:00:00',
+  starting_bid: 20_500,
+  buy_now_price: null,
+  images: ['https://placehold.co/800x600?text=CX-5'],
+  selling_dealership: 'A dealer',
+  lot: 'L-1',
   current_bid: null,
   bid_count: 0,
   auction_starts_at: NOW - 3_600_000,

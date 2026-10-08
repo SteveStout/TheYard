@@ -58,6 +58,36 @@ public class DockerBuildInputsTests
     }
     // #endregion inputs
 
+    /// <summary>
+    /// The frontend stage copies the inputs above and nothing else, and `npm run build` type-checks every
+    /// file under src, tests included. A file under src that imports from anywhere else builds on a
+    /// developer's machine and in CI, which hold the whole repository, and fails in the image: on
+    /// 8 October a test reading data/vehicles.json stopped Deploy at Build and push. So every relative
+    /// import under src has to land inside the inputs the stage copies.
+    /// </summary>
+    [Fact]
+    public void Nothing_under_src_imports_a_file_the_image_build_does_not_copy()
+    {
+        string root = Repo.Root();
+        var specifier = new Regex(@"(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+)'(\.{1,2}/[^'?]+)");
+        var outside = new List<string>();
+        foreach (string file in Directory.EnumerateFiles(Path.Combine(root, "src"), "*.*", SearchOption.AllDirectories)
+            .Where(path => path.EndsWith(".ts", StringComparison.Ordinal) || path.EndsWith(".tsx", StringComparison.Ordinal)))
+        {
+            foreach (Match match in specifier.Matches(File.ReadAllText(file)))
+            {
+                string target = Path.GetRelativePath(root, Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, match.Groups[1].Value)));
+                string first = target.Split(Path.DirectorySeparatorChar)[0];
+                if (!FrontendInputs.Contains(first, StringComparer.Ordinal))
+                {
+                    outside.Add($"{Path.GetRelativePath(root, file)} imports {match.Groups[1].Value}");
+                }
+            }
+        }
+
+        Assert.True(outside.Count == 0, "the image's frontend stage does not copy these: " + string.Join(", ", outside));
+    }
+
     [Fact]
     public void The_files_a_crawler_fetches_from_the_root_come_from_the_public_folder()
     {

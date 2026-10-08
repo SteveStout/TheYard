@@ -1,21 +1,53 @@
 import { describe, expect, it } from 'vitest';
 import type { FirstLoad } from '../hooks/useFirstLoad';
 import type { Vehicle } from '../lib/types';
-import dataset from '../../data/vehicles.json';
 import { drawForTheService } from './entry-server';
 
 // #region fixtures
 const NOW = Date.UTC(2026, 9, 8, 15, 0, 0);
 
-/** Three vehicles from the dataset, with the facts the API derives written in as it would write them. */
-const vehicles = (dataset as unknown as Vehicle[]).slice(0, 3).map((vehicle, index): Vehicle => ({
-  ...vehicle,
+/**
+ * Three vehicles as the API writes them, written out here rather than read from data/: the image's
+ * frontend stage builds from src/ and public/ only, and a test that reaches outside them breaks the
+ * build that ships (DockerBuildInputsTests).
+ */
+const vehicles: Vehicle[] = [
+  ['4e3cd74f-bb88-4efe-b234-bcb2f7474b40', 'CG2UAF4T8LRBBVWJY', 'Mazda', 'CX-5', 20_500],
+  ['7d0f5c1e-1a2b-4c3d-9e8f-0a1b2c3d4e5f', '1FTFW1E50NFA00001', 'Ford', 'F-150', 31_000],
+  ['b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e', '2T1BURHE0KC000002', 'Toyota', 'Corolla', 12_800],
+].map(([id, vin, make, model, startingBid], index): Vehicle => ({
+  id: String(id),
+  vin: String(vin),
+  year: 2024,
+  make: String(make),
+  model: String(model),
+  trim: 'Base',
+  body_style: 'SUV',
+  exterior_color: 'Blue',
+  interior_color: 'Black',
+  engine: '2.5L I4',
+  transmission: 'automatic',
+  drivetrain: 'FWD',
+  odometer_km: 24_534,
+  fuel_type: 'gasoline',
+  condition_grade: 4,
+  condition_report: `A clean ${String(make)}: minor cosmetic wear only.`,
+  damage_notes: [],
+  title_status: 'clean',
+  province: 'Ontario',
+  city: 'Mississauga',
+  auction_start: '2026-10-08T15:00:00',
+  starting_bid: Number(startingBid),
+  buy_now_price: null,
+  images: [`https://placehold.co/800x600?text=${String(model)}`],
+  selling_dealership: 'A dealer',
+  lot: `L-${index + 1}`,
   current_bid: null,
   bid_count: 0,
   auction_starts_at: NOW - 3_600_000,
   auction_ends_at: NOW + (index + 1) * 600_000,
   auction_status: 'live',
-  min_next_bid: vehicle.starting_bid,
+  min_next_bid: Number(startingBid),
   reserve_state: 'not-met',
   sold: false,
 }));

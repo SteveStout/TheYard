@@ -56,6 +56,10 @@ When the service itself is down, its container restarting or rolling, App Servic
 - **The page built into the service's image**: the service would draw into a page naming a bundle the API might no longer serve after the next roll. It reads the API's page instead.
 - **Streaming the data through Suspense**: React streams markup for a slow part of the page, but the data the browser needs to take that part over has to arrive in the page too, and React 19 has no stable way to send it without a framework. The deadline in decision 3 gives the same outcome for this site, the frame first and the slow view after, with the browser asking for what the service did not wait for.
 
+## Addendum, 2026-10-08: the first push did not roll
+
+1.0.3.100 passed its gate on both stores and was pushed at 12:03 CDT, and neither site rolled. Deploy #284 stopped at Build and push after 27 seconds, and Deploy Cosmos waited for an image that never came. The cause was this record's own test: `src/app/drawServer.test.ts` read its vehicles from `data/vehicles.json`, the build type-checks every file under `src/`, tests included, and the image's frontend stage copies `src/` and `public/` and nothing else. On a developer's machine and in CI, which hold the whole repository, it built. The same build on Steve's machine stopped at the same line, `TS2307: Cannot find module '../../data/vehicles.json'` (`ssrlane-render-docker.log`). In 1.0.3.101 the test writes its vehicles out, and `DockerBuildInputsTests` fails any file under `src/` that imports from outside what the stage copies. The sites served 1.0.3.99 throughout.
+
 ## Where it sits
 
 Outside the rings. The service is a client of the API, like a browser, and the API does not know it exists: no project in `api/` references it, and the host still serves the built page as a file (`ServerRenderingReadinessTests`). The service's own code is the frontend's code drawn somewhere else, with the few files of its own in `render/`.
