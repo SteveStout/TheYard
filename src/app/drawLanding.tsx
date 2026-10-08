@@ -2,7 +2,7 @@
  * Does:      Draws the landing page to HTML, once, when the site is built, for index.html to carry.
  * Does not:  Run in a browser or on the server: the frontend build calls it through the Vite config's prerender step,
  *            and the API serves the page it wrote as a file and knows nothing about it.
- * Used by:   the frontend build only (no file in src imports it).
+ * Used by:   the frontend build, through the Vite config's prerender step, and drawLanding.test.ts.
  */
 // The edge build of React's renderer: it schedules its work with timers, where the browser build
 // opens a message channel that keeps Node running after the draw is done, so the build never exits.

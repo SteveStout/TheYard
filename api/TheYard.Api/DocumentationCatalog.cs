@@ -123,6 +123,7 @@ public static class DocumentationCatalog
         ["adr-docs-folders"] = "docs/decisions/ADR-091-one-folder-per-sidebar-section.md",
         ["adr-render-at-build-time"] = "docs/decisions/ADR-092-render-at-build-time.md",
         ["adr-request-pipeline"] = "docs/decisions/ADR-093-the-order-of-the-request-pipeline.md",
+        ["adr-compiled-before-it-ships"] = "docs/decisions/ADR-094-compiled-before-it-ships.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

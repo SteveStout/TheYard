@@ -47,4 +47,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- How the runtime compiles and collects this process (ADR: Compiled before it ships). Written out even where they
+       are the defaults, so the choice is read here and held by CompilationTests rather than inherited silently.
+       ReadyToRun itself is a publish switch, in the Dockerfile, so a developer's build and the tests are unchanged. -->
+  <PropertyGroup>
+    <!-- Tiered compilation with profile-guided optimization: code compiled ahead of time runs first, and the methods
+         that turn out hot are compiled again at full optimization with what the first runs measured. -->
+    <TieredCompilation>true</TieredCompilation>
+    <TieredPGO>true</TieredPGO>
+    <!-- Workstation collection, background collection on. The web SDK's default is server collection, which keeps a
+         heap per core and holds more memory for throughput; on a plan whose memory is the scarcest thing it has, and
+         whose one core leaves server collection little to work with, the smaller footprint is the better trade.
+         /api/admin/metrics says which mode the live process runs. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+  </PropertyGroup>
+
 </Project>

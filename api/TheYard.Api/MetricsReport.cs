@@ -61,9 +61,8 @@ public static class MetricsReport
             // How much of this process's code the runtime compiled itself since it started, and
             // how long that took, beside the garbage collector's mode: the reading that says
             // whether code arrives compiled ahead of time (ReadyToRun) or is compiled on the
-            // container's one shared core as it is first called (ADR: The order of the request
-            // pipeline, the addendum on the review and the after reading). Process-wide, so once,
-            // not per store.
+            // container's one shared core as it is first called (ADR: Compiled before it ships).
+            // Process-wide, so once, not per store.
             runtime = new
             {
                 jit_methods = System.Runtime.JitInfo.GetCompiledMethodCount(currentThread: false),

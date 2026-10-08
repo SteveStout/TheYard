@@ -600,6 +600,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-compiled-before-it-ships</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/style-guide</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

@@ -289,6 +289,7 @@ export const MENUS: Record<
       { key: 'adrDocsFolders' },
       { key: 'adrRenderAtBuildTime' },
       { key: 'adrRequestPipeline' },
+      { key: 'adrCompiledBeforeItShips' },
     ],
   },
   // #endregion records-menu

@@ -62,6 +62,20 @@ The speed index and the largest paint improved on both sites. Blocking time rose
 
 The goal is unchanged: full server rendering, beside the API and apart from it. The memory reading above was taken from the containers, and it left about 846 MB of the plan unaccounted for. The plan's own reading, at one-minute grain over the ten days to 7 October, accounts for it: 92 per cent used at the median and 96 at the 99th percentile, and still 77 per cent with both containers at 233 MB, so the platform holds roughly 700 to 800 MB of its own. A rendering service of about the size of one of the sites does not fit on this B1 beside both of them; it needs a larger plan or a plan of its own, and that is the reading to price when the goal is taken up.
 
+## Addendum, 2026-10-07 (1.0.3.94): what is already in place for server rendering, held by tests
+
+Steve, 7 October: "make sure anything that is ready for React server is in place", and "all of this should be enforced with automated tests". What a rendering service will stand on, and the test that now keeps each from drifting:
+
+- **Every component the landing page renders draws with no browser.** `src/app/drawLanding.test.ts` draws the whole tree in Node, where there is no window, no document and no storage, so a component that reads the browser on its first draw fails the unit tests rather than the build or the live site.
+- **The API host draws no page and runs no JavaScript.** `ServerRenderingReadinessTests` fails on a Razor or single-page-app hosting package, a page template, a Node process or a page-drawing registration in the API project, and holds that every app route is answered with the built `index.html` as a file.
+- **Readiness per store, for a service that must not take traffic early.** `/readyz?stores=all` (ADR: The order of the request pipeline), held by `RequestPipelineTests`.
+- **The API's reads start from the page's head**, so a server-drawn page and a browser-drawn one ask for the same data the same way (`tests/e2e/preload.spec.ts`), and the takeover is free of hydration errors (`tests/e2e/drawn.spec.ts`).
+
+What is not in place, said plainly: a rendering service, and room for one. The plan's memory says a third process of the sites' size does not fit on this B1 (the addendum above).
+
+```live path=src/app/drawLanding.test.ts region=draws-without-a-browser
+```
+
 ## Where it sits
 
 Outside the rings: this is the frontend's own page and its build. The API's rings do not change, the host serves the built files without reading them, and the one rule added is held by a browser spec (Single responsibility: the server answers in data, the frontend draws).

@@ -52,7 +52,14 @@ RUN set -e; \
 # #endregion frontend-build
 
 # #region api-publish
-# Stage 2: publish the .NET API in Release mode.
+# Stage 2: publish the .NET API in Release mode, compiled ahead of time. ReadyToRun turns this app's own assemblies and
+# its packages (EF Core, the Cosmos DB SDK, Identity) into native code for linux-x64 at build time, beside the IL, so a
+# new container starts by running code instead of compiling it on the plan's one shared core; the runtime still
+# recompiles the methods that turn out hot at full optimization, with profile-guided optimization on, so nothing is
+# given up once the process has warmed. The framework itself already ships compiled this way in the aspnet image.
+# The cost is a larger image and a longer build, which Steve ruled do not count against it (7 October: "we worry more
+# about end performance"). Native AOT was not taken: EF Core, the Cosmos DB SDK and the reflection the JSON and
+# OpenAPI paths use do not support it (ADR: Compiled before it ships).
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-publish
 # We use the SDK image here because publishing requires a toolchain that can compile and package the ASP.NET app.
 WORKDIR /src
@@ -75,6 +82,9 @@ COPY api/TheYard.Api/TheYard.Api.csproj ./api/TheYard.Api/
 COPY api/TheYard.Tests/TheYard.Tests.csproj ./api/TheYard.Tests/
 # This restore is intentionally separate from source-copy so incremental Docker builds stay fast.
 RUN dotnet restore api/TheYard.slnx
+# And the API once more for the one platform it runs on, with ReadyToRun asked for, which is what makes
+# restore fetch the ahead-of-time compiler for linux-x64 (ADR: Compiled before it ships).
+RUN dotnet restore api/TheYard.Api/TheYard.Api.csproj -r linux-x64 -p:PublishReadyToRun=true
 
 # Copy the rest of the backend source after restore so code changes do not force a dependency re-restore.
 COPY api ./api
@@ -84,7 +94,8 @@ RUN set -eu; \
     TARGET_FRAMEWORK="$(grep -R -h -m1 --include='*.csproj' -Eo '<TargetFramework>[^<]+</TargetFramework>' /src/api | sed -E 's#<TargetFramework>([^<]+)</TargetFramework>#\1#' | head -n 1)"; \
     [ -n "${TARGET_FRAMEWORK}" ] || { echo "No TargetFramework found under /src/api" >&2; exit 1; }; \
     echo "Using target framework: ${TARGET_FRAMEWORK}"; \
-    dotnet publish api/TheYard.Api/TheYard.Api.csproj -c Release --no-restore -f "${TARGET_FRAMEWORK}" -o /app/publish
+    dotnet publish api/TheYard.Api/TheYard.Api.csproj -c Release --no-restore -f "${TARGET_FRAMEWORK}" \
+        -r linux-x64 --self-contained false -p:PublishReadyToRun=true -o /app/publish
 # #endregion api-publish
 
 # #region runtime

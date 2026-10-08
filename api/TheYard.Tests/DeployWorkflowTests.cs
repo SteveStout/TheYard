@@ -103,6 +103,30 @@ public class DeployWorkflowTests
     }
     // #endregion warm-edge
 
+    // #region listen-first-verify
+    /// <summary>
+    /// The container listens before its catalogue has loaded (ADR: The ports learn to wait,
+    /// the addendum on listening first), so a deploy is done only when readiness says the
+    /// catalogue is in: each deploy's Verify step polls /readyz, and reads the filters, which
+    /// need the catalogue, only after it.
+    /// </summary>
+    [Theory]
+    [InlineData("deploy.yml")]
+    [InlineData("deploy-cosmos.yml")]
+    public void Each_deploy_waits_for_readiness_before_it_reads_the_filters(string file)
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
+        int verify = workflow.IndexOf("- name: Verify", StringComparison.Ordinal);
+        Assert.True(verify > 0, $"{file} should have a Verify step");
+        int poll = workflow.IndexOf("\"$ORIGIN/readyz\"", verify, StringComparison.Ordinal);
+        int facets = workflow.IndexOf("\"$ORIGIN/api/facets\"", verify, StringComparison.Ordinal);
+        Assert.True(poll > verify, $"{file} should poll the origin's /readyz in Verify");
+        Assert.True(facets > poll, $"{file} should read the filters only after readiness");
+        string loop = workflow[workflow.LastIndexOf("for i in $(seq 1 120)", poll, StringComparison.Ordinal)..poll];
+        Assert.Contains("for i in $(seq 1 120)", loop, StringComparison.Ordinal);
+    }
+    // #endregion listen-first-verify
+
     // #region workflows-agree
     [Fact]
     public void The_two_deploy_workflows_name_the_same_registry_group_server_database_and_identity()
