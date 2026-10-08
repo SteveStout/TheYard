@@ -18,13 +18,13 @@ param baseName string = 'theyard'
 @description('Owner tag, as in main.bicep (ADR-003)')
 param ownerTag string = 'SS'
 
-@description('Plan size. B1 is 1 vCPU and 1.75 GB shared by both sites; B2 doubles both.')
+@description('Plan size. B2 since 8 October: 2 vCPU and 3.5 GB shared by both sites and the rendering service, after the plan read 91 per cent of B1\'s memory at the median before a third container (ADR: A rendering service beside the API). B1 is half of both.')
 @allowed([
   'B1'
   'B2'
   'B3'
 ])
-param skuName string = 'B1'
+param skuName string = 'B2'
 
 @description('The image both sites run, registry/name:tag. Every roll sets this on the sites; a deployment of this file has to be told what is running so it does not roll anything back.')
 param appImage string

@@ -82,6 +82,18 @@ The first byte is the top of the page, sent before any API read has answered, wh
 
 **The memory gate.** The plan's memory over the 24 hours to 10:54 CDT read 91 per cent at the median, which is 1,631 MB of B1's 1,792 (`mentor\logs\ssrlane-planread24`), and the gate was the plan's median plus the service's measured peak at or under 90 per cent. On B1 that is 1,767 MB, or 98.6 per cent, so it did not fit, and the plan was over the line before any third container existed. Steve had approved B2 beforehand, at $24.82 a month against $12.41 (ADR: One plan, two sites), and gave his word again in the session at 11:36. The plan moved to B2 at 11:42:28, which made each site unreachable for 20 to 29 seconds (`greenlane-probe-b2move.log`). On B2's 3,584 MB the same sum is 49 per cent. The service's web app, APP-THEYARD-RENDER-SS, was created on the plan at 13:18 with the measured image, and answered its readiness from both APIs.
 
+## Addendum, 2026-10-08: the service's site, and how it rolls
+
+`infra/render.bicep` describes the web app: the plan both sites share, read as existing; the identity both sites run as, for the registry pull and nothing else; the platform's health check on `/healthz`; and three settings of its own, `YARD_SITES` naming each site's API at its own address, the 2.5-second deadline, and a Node heap held at 192 MB, under the measured peak's ceiling, so a leak ends in a restart and not in the plan's memory. `main.bicep` names it as a module.
+
+```live path=infra/render.bicep region=render-site
+```
+
+`Deploy Render` rolls it on the same push as `Deploy` and `Deploy Cosmos`, with the version both sites carry, and is done when the service answers its own readiness as that version. Its readiness also says, for each site, whether that site's API runs the same build. During a roll the answer is often no, and the service sends the API's own page until it is yes, so the three rolls do not have to land together. The deploy identity holds Website Contributor on this site, the role it holds on the other two, which Steve approved at 11:36.
+
+```live path=.github/workflows/deploy-render.yml region=render-verify
+```
+
 ## Where it sits
 
 Outside the rings. The service is a client of the API, like a browser, and the API does not know it exists: no project in `api/` references it, and the host still serves the built page as a file (`ServerRenderingReadinessTests`). The service's own code is the frontend's code drawn somewhere else, with the few files of its own in `render/`.

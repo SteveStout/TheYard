@@ -1,0 +1,123 @@
+# Deploy Render: the rendering service's leg (ADR: A rendering service beside the API).
+# Fires on the same push as Deploy and Deploy Cosmos. It builds render/Dockerfile
+# with the version and commit the API's image carries, pushes it to the registry
+# as theyard-render, and rolls the renderer's web app. The service draws only for
+# an API that runs its own build, so the three rolls need not land together:
+# until the renderer and an API agree, that site's pages are drawn in the
+# browser, as they were before the service existed. Auth is OIDC, as in Deploy.
+name: Deploy Render
+
+on:
+  push:
+    branches: [main]
+    # The sample rolls on its own (ADR-009, the addendum of 29 September on the sample).
+    paths-ignore:
+      - "samples/**"
+      - ".github/workflows/deploy-shed.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+# The latest push wins, as for the two sites (ADR-009, addendum of 29 September).
+concurrency:
+  group: deploy-render
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # The build, Verify's twenty-five minutes, and room.
+    timeout-minutes: 40
+    env:
+      REGISTRY_NAME: crtheyardsszmnetj67bn5h2
+      ACR: crtheyardsszmnetj67bn5h2.azurecr.io
+      RG: RG-THEYARD-SS
+      # The renderer's web app on the plan the two sites share (infra/render.bicep).
+      APP: APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2
+      ORIGIN: https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+
+      # #region render-version
+      # The changelog's top line, read the way Deploy reads it, so the renderer
+      # and the API it draws for carry the same version (ADR-031).
+      - name: Compute version
+        env:
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          N=$(sed -n 's/^- \*\*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md | sed -n 1p)
+          if [ -z "$N" ]; then
+            echo "::error file=docs/CHANGELOG.md::No version line at the top of the changelog"
+            exit 1
+          fi
+          {
+            echo "N=$N"
+            echo "APP_VERSION=$N"
+            echo "APP_COMMIT=${HEAD_SHA:0:7}"
+            echo "IMAGE=$ACR/theyard-render:v$N"
+          } >> "$GITHUB_ENV"
+          echo "Deploying the renderer $N from ${HEAD_SHA:0:7} as $ACR/theyard-render:v$N"
+      # #endregion render-version
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign in to the registry
+        run: az acr login --name "$REGISTRY_NAME"
+
+      - uses: docker/setup-buildx-action@v4
+
+      # #region render-build
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: render/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE }}
+          build-args: |
+            APP_VERSION=${{ env.APP_VERSION }}
+            APP_COMMIT=${{ env.APP_COMMIT }}
+          cache-from: type=gha,scope=theyard-render
+          cache-to: type=gha,scope=theyard-render,mode=max
+          provenance: false
+      # #endregion render-build
+
+      # #region render-roll
+      # The image is the only thing a roll changes; the settings are infra/render.bicep's.
+      - name: Roll the renderer
+        run: |
+          az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
+          az webapp show -g "$RG" -n "$APP" --query "{state:state, image:siteConfig.linuxFxVersion}" -o json
+      # #endregion render-roll
+
+      # #region render-verify
+      # Done when the new renderer answers its own readiness with the version it
+      # was built as. Its readiness also says, per site, whether that site's API
+      # runs the same build; a site that does not yet is a notice and not a
+      # failure, because its own deploy may still be rolling.
+      - name: Verify
+        run: |
+          budget=1500
+          started=$SECONDS
+          body=""
+          until [[ "$body" == *"\"version\":\"$APP_VERSION\""* ]]; do
+            if (( SECONDS - started >= budget )); then
+              echo "the renderer never reported $APP_VERSION in ${budget}s (last answer: $body)"
+              exit 1
+            fi
+            sleep 5
+            body=$(curl -sS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$ORIGIN/readyz" || true)
+          done
+          echo "the renderer answers as $APP_VERSION after $((SECONDS - started))s: $body"
+          if [[ "$body" == *'"same_build":false'* ]]; then
+            echo "::notice::a site's API does not run $APP_VERSION yet; its pages draw in the browser until it does"
+          fi
+      # #endregion render-verify

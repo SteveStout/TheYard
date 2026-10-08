@@ -318,6 +318,12 @@ A what-if of the template against the live group, read the same day before anyth
 ```live path=infra/appservice.bicep region=telemetry-link
 ```
 
+## Addendum, 2026-10-08, shipped as 1.0.3.103: B2, and a third site that draws pages
+
+The plan moved from B1 to B2 at 11:42 CDT on 8 October, on Steve's word. Its memory had read 91 per cent at the median over the previous 24 hours, 1,631 MB of 1,792, before a rendering service was added beside the two sites (ADR: A rendering service beside the API). B2 is 2 vCPU and 3.5 GB at $24.82 a month against $12.41, the one parameter this record named for it. Both templates now default to B2, so a deployment of either cannot move the plan back. The move made each site unreachable for 20 to 29 seconds (`greenlane-probe-b2move.log`).
+
+The third site, APP-THEYARD-RENDER-SS, is in `infra/render.bicep`, which `main.bicep` names as a module beside this record's. It holds no secret and no connection string, so it is a template of its own: creating it could not rewrite either site's settings, which a deployment of `appservice.bicep` writes whole.
+
 ## Where it sits
 
 Most of this is a hosting decision about the App Service plan that sits outside the onion; two pieces of code moved with it: IdentityTokens in the host Api asks for a managed identity token at whichever door the host has, and InventoryService in Application gained ReleaseIfIdle so CatalogueKeeper, a host service in Stores.cs, can let an unused catalogue go. That split follows single responsibility, one reason to change per class, because InventoryService owns the catalogue's life and the keeper owns only the timing of the question. It cost a shared machine, so a plan restart takes both sites down, and a slow first read for whoever touches a released catalogue. Memory readings showing B1 paging under normal traffic would be the signal to move to B2.

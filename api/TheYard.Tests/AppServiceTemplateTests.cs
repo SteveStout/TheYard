@@ -125,6 +125,45 @@ public class AppServiceTemplateTests
         Assert.DoesNotContain("Microsoft.App/", template, StringComparison.Ordinal);
     }
 
+    // #region the-renderer
+    /// <summary>
+    /// The rendering service's web app (ADR: A rendering service beside the API) is a third site on the
+    /// plan. It holds no secret and no store: it listens where its image listens, answers the platform's
+    /// health check at the path its door answers, reads the two sites at the addresses the template
+    /// gives them, and pulls its image as the identity the sites run as. It is a template of its own,
+    /// which main.bicep names as a module, so a deployment that creates it cannot touch either site.
+    /// </summary>
+    [Fact]
+    public void The_renderer_is_a_site_on_the_same_plan_with_no_secret_and_no_store()
+    {
+        string template = Read("infra", "render.bicep");
+        Assert.Contains("resource plan 'Microsoft.Web/serverfarms@2023-12-01' existing = {", template, StringComparison.Ordinal);
+        Assert.Contains("{ name: 'WEBSITES_PORT', value: '8080' }", template, StringComparison.Ordinal);
+        Assert.Contains("ENV PORT=8080", Read("render", "Dockerfile"), StringComparison.Ordinal);
+        Assert.Contains("healthCheckPath: '/healthz'", template, StringComparison.Ordinal);
+        Assert.Contains("url.pathname === '/healthz'", Read("render", "server.mjs"), StringComparison.Ordinal);
+        Assert.Contains("acrUseManagedIdentityCreds: true", template, StringComparison.Ordinal);
+        Assert.Contains("{ name: 'YARD_SITES', value: 'sql=https://${toLower(sqlSite)}.azurewebsites.net,cosmos=https://${toLower(cosmosSite)}.azurewebsites.net' }", template, StringComparison.Ordinal);
+        foreach (string secret in new[] { "Auth__SigningKey", "Admin__Key", "ConnectionStrings", "APPLICATIONINSIGHTS_CONNECTION_STRING", "Cosmos__", "@secure()" })
+        {
+            Assert.DoesNotContain(secret, template, StringComparison.Ordinal);
+        }
+
+        string main = Read("infra", "main.bicep");
+        Assert.Contains("module render 'render.bicep'", main, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_plan_the_templates_describe_is_the_size_it_runs_at()
+    {
+        // The plan moved to B2 on 8 October, when the memory gate read it at 91 per cent before a third
+        // container (ADR: A rendering service beside the API). A template still saying B1 would move it
+        // back on its next deployment.
+        Assert.Contains("param skuName string = 'B2'", Read("infra", "appservice.bicep"), StringComparison.Ordinal);
+        Assert.Contains("param skuName string = 'B2'", Read("infra", "main.bicep"), StringComparison.Ordinal);
+    }
+    // #endregion the-renderer
+
     // #region never-complete
     [Fact]
     public void Nothing_in_the_repository_deploys_a_template_in_complete_mode()

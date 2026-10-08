@@ -158,6 +158,36 @@ public class DeployWorkflowTests
     }
     // #endregion verify-budget
 
+    // #region deploy-render
+    /// <summary>
+    /// The renderer rolls on the same push as the two sites, as the same version, and is done when it
+    /// answers its own readiness with that version (ADR: A rendering service beside the API). The
+    /// version comes from the changelog the way Deploy reads it, the image is one manifest like every
+    /// other, and its wait is sized like the sites'.
+    /// </summary>
+    [Fact]
+    public void The_renderer_rolls_as_the_version_the_sites_roll_and_waits_for_its_own_readiness()
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy-render.yml"));
+        string deploy = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
+        Assert.Contains("file: render/Dockerfile", workflow, StringComparison.Ordinal);
+        Assert.Contains("IMAGE=$ACR/theyard-render:v$N", workflow, StringComparison.Ordinal);
+        Assert.Contains("provenance: false", workflow, StringComparison.Ordinal);
+        Assert.Contains("APP_VERSION=${{ env.APP_VERSION }}", workflow, StringComparison.Ordinal);
+        string versionLine = Regex.Match(deploy, @"VERSIONS=\$\(sed -n '([^']+)' docs/CHANGELOG\.md\)").Groups[1].Value;
+        Assert.False(string.IsNullOrEmpty(versionLine), "deploy.yml should read the version from the changelog");
+        Assert.Contains($"sed -n '{versionLine}' docs/CHANGELOG.md", workflow, StringComparison.Ordinal);
+        int verify = workflow.IndexOf("- name: Verify", StringComparison.Ordinal);
+        Assert.True(verify > 0, "deploy-render.yml should verify the roll");
+        string wait = workflow[verify..];
+        Assert.Contains("budget=1500", wait, StringComparison.Ordinal);
+        Assert.Contains("--max-time 30 \"$ORIGIN/readyz\"", wait, StringComparison.Ordinal);
+        Assert.Contains("\\\"version\\\":\\\"$APP_VERSION\\\"", wait, StringComparison.Ordinal);
+        Assert.Equal(EnvOf("deploy.yml")["ACR"], EnvOf("deploy-render.yml")["ACR"]);
+        Assert.Equal(EnvOf("deploy.yml")["RG"], EnvOf("deploy-render.yml")["RG"]);
+    }
+    // #endregion deploy-render
+
     // #region workflows-agree
     [Fact]
     public void The_two_deploy_workflows_name_the_same_registry_group_server_database_and_identity()

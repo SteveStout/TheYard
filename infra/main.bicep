@@ -34,13 +34,13 @@ param ownerTag string = 'SS'
 @description('Region for the plan and both sites. westus3: westus2, where the registry and the document store are, answers a quota of zero for App Service on this subscription.')
 param location string = 'westus3'
 
-@description('Plan size: B1 is 1 vCPU and 1.75 GB shared by both sites, measured as enough with each site warming one store; B2 doubles both')
+@description('Plan size: B2 since 8 October, 2 vCPU and 3.5 GB shared by both sites and the rendering service, after the plan read 91 per cent of B1\'s memory at the median (ADR: A rendering service beside the API); B1 is half of both')
 @allowed([
   'B1'
   'B2'
   'B3'
 ])
-param skuName string = 'B1'
+param skuName string = 'B2'
 
 @description('The image both sites run, registry/name:tag. A deployment has to be told what is running, so that describing the infrastructure never rolls a site back.')
 param appImage string
@@ -56,6 +56,9 @@ param authSigningKey string
 @description('The operator key for the Admin tab keyed rows')
 @secure()
 param adminKey string
+
+@description('The image the rendering service runs, registry/theyard-render:tag. Every roll sets it; a deployment is told what is running.')
+param renderImage string
 
 @description('Deploy Front Door and lock both origins to it (ADR-001). Off: the free trial refuses Front Door, and the free edge in front of the sites today is Netlify.')
 param enableFrontDoor bool = false
@@ -91,6 +94,20 @@ module compute 'appservice.bicep' = {
     authSigningKey: authSigningKey
     adminKey: adminKey
   }
+}
+
+// The rendering service, a third site on the same plan, in a template of its own
+// that holds no secret, so creating it cannot touch either site's settings
+// (ADR: A rendering service beside the API).
+module render 'render.bicep' = {
+  name: 'render'
+  params: {
+    location: location
+    baseName: baseName
+    ownerTag: ownerTag
+    renderImage: renderImage
+  }
+  dependsOn: [compute]
 }
 // #endregion what-runs
 
