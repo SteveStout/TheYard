@@ -28,7 +28,7 @@ The Cosmos DB site's third run waited 5.8 s for the page's own HTML, so everythi
 | First contentful paint, Azure SQL site, median of five | As served | Markup already in the HTML |
 | --- | --- | --- |
 | With the frosted glass | 804 ms | 456 ms |
-| With every backdrop filter off | 620 ms | not read |
+| With every backdrop filter off | 620 ms | 300 ms |
 
 The glass costs 70 to 180 ms of that first frame on this machine. It is the site's look and it stays; this record does not touch it.
 

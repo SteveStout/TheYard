@@ -61,7 +61,7 @@ The order, top to bottom, in `Composition/RequestPipeline.cs`:
 ## What was considered and left out
 
 - **HSTS and HTTPS redirection in TheYard.** The edge terminates TLS, redirects HTTP and sends `Strict-Transport-Security: max-age=31536000` on every answer, page, script, photo, API read and probe alike, in the before reading. The app sending its own would be a second copy of the same header.
-- **Compressing the page in the container.** Since 1.0.3.88 the page is 113 KB, and the edge forwards it from Azure uncompressed on every visit, because the page is never kept at the edge. Through the edge it still arrives in 280 ms at the median from Missouri, so Brotli on the shared core for every visit would buy little.
+- **Compressing the page in the container.** Since 1.0.3.88 the page is 113 KB, and the edge forwards it from Azure uncompressed on every visit, because the page is never kept at the edge. Through the edge it still arrives whole in 288 and 287 ms at the median from Missouri (`orderlane-capture-after.log`), so Brotli on the shared core for every visit would buy little.
 - **CORS, antiforgery, output caching, rate limiting.** No cross-origin caller, a same-site Lax cookie on a JSON API, an edge that already keeps the catalogue's reads for thirty seconds, and a site-wide registration ceiling. Each has a place below `UseRouting` the day it is needed.
 - **Netlify signed proxy requests (Steve's B, not taken for now).** It would close the direct-to-origin hole for about 15 credits and a shared secret, until the edge moves to Cloudflare on about 30 October.
 

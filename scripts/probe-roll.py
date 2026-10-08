@@ -1,6 +1,7 @@
 """What a visitor sees during a roll, read every two seconds from wherever this runs (ADR: Blue-green on a $13 plan,
 measured and held). Read only. For each site, the origin's page (/), /healthz, /api/version and /api/facets, and the
-domain's /api/version, each with its status, its time and the version that answered; a read is given up at 30 seconds.
+domain's /api/version, each with its status, its time and the version that answered. Each wait on the socket is given up at
+30 seconds; a read whose answer arrives in pieces can run past that, and the logs hold good reads of over 40 seconds.
 One line a read, then a summary: per address, the longest stretch with no good answer, the slowest good answer, and when
 each version first answered. Independent of Application Insights, which stops recording at its daily cap.
 
