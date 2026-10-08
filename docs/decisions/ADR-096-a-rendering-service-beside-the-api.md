@@ -60,6 +60,28 @@ When the service itself is down, its container restarting or rolling, App Servic
 
 1.0.3.100 passed its gate on both stores and was pushed at 12:03 CDT, and neither site rolled. Deploy #284 stopped at Build and push after 27 seconds, and Deploy Cosmos waited for an image that never came. The cause was this record's own test: `src/app/drawServer.test.ts` read its vehicles from `data/vehicles.json`, the build type-checks every file under `src/`, tests included, and the image's frontend stage copies `src/` and `public/` and nothing else. On a developer's machine and in CI, which hold the whole repository, it built. The same build on Steve's machine stopped at the same line, `TS2307: Cannot find module '../../data/vehicles.json'` (`ssrlane-render-docker.log`). In 1.0.3.101 the test writes its vehicles out, and `DockerBuildInputsTests` fails any file under `src/` that imports from outside what the stage copies. The sites served 1.0.3.99 throughout.
 
+## Addendum, 2026-10-08: measured alone in Docker, before Azure
+
+`render/Dockerfile` builds the service in two stages: the site's own sources built with the site's own config, then Node and that build alone, with no `node_modules`, no sources and no package manager. The image is 62.4 MB beside the API's 208.1 MB.
+
+It was measured on Steve's machine at 13:10 to 13:15 CDT, against the 1.0.3.101 checkout (`ssrlane-render-docker.log`). The API ran in a container of its own with the scratch SQLite store, the service in another at `--cpus=1` and a 512 MB limit, both images built with the same stamp so the service drew for that API. Each view was asked thirty times, one after another:
+
+| View | HTML, gzip on the wire | First byte, p50 / p95 | Drawn `#root`, p50 / p95 |
+| --- | --- | --- | --- |
+| Landing | 14.6 KB (115 KB) | 8 / 36 ms | 32 / 71 ms |
+| Inventory | 40.3 KB (446 KB) | 7 / 28 ms | 105 / 155 ms |
+| A vehicle | 29.6 KB (216 KB) | 7 / 30 ms | 43 / 81 ms |
+| A document | 52.7 KB (233 KB) | 9 / 61 ms | 52 / 108 ms |
+| The Author page | 26.3 KB (196 KB) | 8 / 40 ms | 47 / 88 ms |
+
+The first byte is the top of the page, sent before any API read has answered, which is decision 6 at work. The drawn `#root` time includes the API's own reads inside Docker.
+
+**Memory.** 32.9 MiB at start, 51.6 MiB idle after every view had been drawn, 126.5 MiB at the median and 135.5 MiB at the peak under ten inventory pages a second, and 120.2 MiB thirty seconds after.
+
+**The limit, said plainly.** Ten inventory pages a second is more than one core draws. All 600 requests answered, but the processor read 96 to 104 per cent throughout, and requests queued behind each other: the whole page took 20.7 s at the median and 30.5 s at the 95th percentile. One inventory page is about 100 ms of drawing, so one core draws about ten a second and no more. The site's traffic is a small fraction of that. The step that would raise it is the edge keeping an anonymous visitor's page for a few seconds, the next item in the order this record set.
+
+**The memory gate.** The plan's memory over the 24 hours to 10:54 CDT read 91 per cent at the median, which is 1,631 MB of B1's 1,792 (`mentor\logs\ssrlane-planread24`), and the gate was the plan's median plus the service's measured peak at or under 90 per cent. On B1 that is 1,767 MB, or 98.6 per cent, so it did not fit, and the plan was over the line before any third container existed. Steve had approved B2 beforehand, at $24.82 a month against $12.41 (ADR: One plan, two sites), and gave his word again in the session at 11:36. The plan moved to B2 at 11:42:28, which made each site unreachable for 20 to 29 seconds (`greenlane-probe-b2move.log`). On B2's 3,584 MB the same sum is 49 per cent. The service's web app, APP-THEYARD-RENDER-SS, was created on the plan at 13:18 with the measured image, and answered its readiness from both APIs.
+
 ## Where it sits
 
 Outside the rings. The service is a client of the API, like a browser, and the API does not know it exists: no project in `api/` references it, and the host still serves the built page as a file (`ServerRenderingReadinessTests`). The service's own code is the frontend's code drawn somewhere else, with the few files of its own in `render/`.
