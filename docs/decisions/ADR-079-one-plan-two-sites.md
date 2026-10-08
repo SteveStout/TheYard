@@ -311,6 +311,13 @@ Steve, 7 October: "Can you remove the unused containers?? Check the git history 
 
 What stays is everything that holds data or is still read: the databases, the registry, the identity and the telemetry. The paused database the sites left on 14 September, `sqldb-theyard-ss`, is still unused and still waits for the owner's word, because it holds data. The two container group templates stay in `infra/`: nine records quote them as what ran until 1.0.0.156, and `AppServiceTemplateTests` still holds the sites' settings to every setting they carried. So the section above, The way back, describes a door that no longer exists; going back now would mean creating the groups again from those templates. The comment in `edge/_redirects` that names the way back is left as written until the edge next changes for a reason of its own, because any change under `edge/` redeploys the edge at 15 credits, and a comment is not worth that.
 
+## Addendum, 2026-10-07, shipped as 1.0.3.97: the template keeps the sites' link to their telemetry
+
+A what-if of the template against the live group, read the same day before anything was removed, showed one real difference besides properties a read never returns: a deployment would have taken the hidden `hidden-link: /app-insights-resource-id` tag off the Azure SQL site. A deployment writes a site's tags whole, and the template set none. Nothing reads the tag at run time; the portal uses it to link a site to its Application Insights component. The template now reads the component it already reports to and sets the tag on both sites, and `AppServiceTemplateTests` holds it there.
+
+```live path=infra/appservice.bicep region=telemetry-link
+```
+
 ## Where it sits
 
 Most of this is a hosting decision about the App Service plan that sits outside the onion; two pieces of code moved with it: IdentityTokens in the host Api asks for a managed identity token at whichever door the host has, and InventoryService in Application gained ReleaseIfIdle so CatalogueKeeper, a host service in Stores.cs, can let an unused catalogue go. That split follows single responsibility, one reason to change per class, because InventoryService owns the catalogue's life and the keeper owns only the timing of the question. It cost a shared machine, so a plan restart takes both sites down, and a slow first read for whoever touches a released catalogue. Memory readings showing B1 paging under normal traffic would be the signal to move to B2.

@@ -38,6 +38,9 @@ param sqlServer string = 'sql-theyard-ss-westus3'
 @description('The database on that server the sites run on (ADR: The SQL Server backend, addendum of 14 September)')
 param sqlDatabase string = 'sqldb-theyard-ss-basic'
 
+@description('The Application Insights component both sites report to, by name: read, never created here')
+param appInsightsName string = 'appi-theyard-ss'
+
 @description('Application Insights connection string. An ingestion key, so it is passed in and never written here.')
 @secure()
 param appInsightsConnectionString string
@@ -65,6 +68,15 @@ var siteNames = [
 resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: identityName
 }
+
+// #region telemetry-link
+// The component the connection string below reports to. The portal shows a site as linked to it by a
+// hidden tag on the site; a site deployed from a template with no tags loses it, and with it the
+// portal's shortcut from the site to its telemetry. Nothing reads the tag at run time.
+resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
+  name: appInsightsName
+}
+// #endregion telemetry-link
 
 // #region two-sites
 // What differs between the sites, and nothing else. Each site's peer is the
@@ -111,6 +123,9 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
     name: s.name
     location: location
     kind: 'app,linux,container'
+    tags: {
+      'hidden-link: /app-insights-resource-id': appInsights.id
+    }
     identity: {
       type: 'UserAssigned'
       userAssignedIdentities: {

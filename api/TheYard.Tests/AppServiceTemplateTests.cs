@@ -58,6 +58,17 @@ public class AppServiceTemplateTests
         Assert.Contains("healthCheckPath: '/healthz'", template, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Both_sites_keep_the_portals_link_to_their_telemetry()
+    {
+        // A site's tags are written whole by a deployment, so a template that sets none removes the
+        // hidden tag the portal links a site to its Application Insights component by; the what-if
+        // of 7 October showed exactly that on the Azure SQL site.
+        string template = Read("infra", "appservice.bicep");
+        Assert.Contains("resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {", template, StringComparison.Ordinal);
+        Assert.Contains("'hidden-link: /app-insights-resource-id': appInsights.id", template, StringComparison.Ordinal);
+    }
+
     // #region edge-and-rolls-agree
     [Theory]
     [InlineData("deploy.yml", "/* ")]
