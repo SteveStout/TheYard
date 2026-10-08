@@ -100,3 +100,7 @@ the reader: before a new file gets a number, ask what it decided.
 ## Addendum, 2026-10-06 (1.0.3.84): the records have a folder
 
 The records moved from the root of `docs/` into `docs/decisions/`, keeping their numbers and their file names, as part of giving every sidebar section a folder (ADR: The sidebar, the addendum on the folders). The index is unchanged: it reads the catalogue, the catalogue names each record by its new path, and the slugs are the same. The tests that count records and check their numbers run without a gap now read `docs/decisions/`, and `DocsFolderTests` fails if a record is written anywhere else.
+
+## Addendum, 2026-10-07 (1.0.3.95): the section reads its rows from the records
+
+The section listed every record by hand, one row a record, and the list had grown to 95 rows in a file the 300-line rule holds; the ninety-fifth record took `src/library/sections.ts` to 301 lines and the gate stopped it. The rows are now read from the records themselves and sorted by number, so a new record is in the sidebar, and in the landing page's count, the moment it is in its run of records, and `sections.ts` no longer grows by a line a record. `sections.test.ts` holds that every record is listed once and in number order, and `DocsFolderTests` reads the runs of records for the section each record is offered under. Where a change goes, from now on, for a new record: the markdown, its slug in `DocumentationCatalog.cs`, and its entry in the run of records it falls in.

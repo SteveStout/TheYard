@@ -61,6 +61,16 @@ public class DocsFolderTests
             }
         }
 
+        // The records section is read from the records themselves (sections.ts sorts them by
+        // number), so every key in the runs of records is offered under it.
+        string runs = string.Concat(Directory.EnumerateFiles(Path.Combine(Repo.Root(), "src", "library", "decisionRecords"), "*.ts")
+            .Where(path => !path.EndsWith(".test.ts", StringComparison.Ordinal))
+            .Select(File.ReadAllText));
+        foreach (Match record in Regex.Matches(runs, @"(\w+): \{\s*title: "))
+        {
+            sectionOf[record.Groups[1].Value] = "records";
+        }
+
         return sectionOf;
     }
 
