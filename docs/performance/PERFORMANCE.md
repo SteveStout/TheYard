@@ -366,6 +366,31 @@ Two of the columns are the probe's. The stretch with no good answer is the longe
 
 **What the rows say.** The ready time moves from one roll to the next by more than most changes are worth: 88 seconds at 1.0.3.92 and 79 at 1.0.3.93 with nothing in the start changed between them, then 71 to 161 seconds across the four rolls compiled ahead of time, in which the catalogue load itself grew from 26 and 28 seconds to 77 and 95. Both sites start at once on one processor, and the plan's own meter read that processor at 85 to 99 per cent for most of ten minutes around every start, saturated before the containers started, with the containers themselves reporting a small share of it. One roll says little about a change on its own, and what held the core is not named by the meters (ADR: Compiled before it ships, the addendum on the four rolls). Listening first took the slow minutes after a roll down to seconds, and nothing since has moved the stretch in which nothing answers, because that stretch is App Service stopping one container and starting the next on its single instance. Removing it takes a second copy running beside the first, which this plan has no memory for. The 23.4 s on the Azure SQL site at 1.0.3.95 is one stall eight and a half minutes after the start, every address of that site at once and the other site unaffected; what paused it was not measured.
 
+## Every page drawn on a server, measured on 8 October
+
+From 1.0.3.104 a rendering service beside the API draws every page a visitor can link to, with its data in the HTML, and React takes the markup over in the browser (ADR: A rendering service beside the API). Read with the same script on 8 October: before is 1.0.3.99, drawn in the browser, and after is 1.0.3.104. Lighthouse 12.8.2, phone preset and desk preset, three runs a view from Steve's machine in Missouri, the median kept (`ssrlane-lh-before.log`, `ssrlane-lh-after.log`).
+
+| Phone, median of three | Largest paint, before | Largest paint, after | Speed index, before | Speed index, after |
+| --- | --- | --- | --- | --- |
+| Inventory, Azure SQL site | 2.17 s | 1.87 s | 5.77 s | 3.51 s |
+| Inventory, Azure Cosmos DB site | 2.06 s | 2.05 s | 5.60 s | 3.67 s |
+| A vehicle, Azure SQL site | 2.47 s | 2.16 s | 5.59 s | 2.95 s |
+| A vehicle, Azure Cosmos DB site | 2.18 s | 2.20 s | 2.79 s | 4.42 s |
+| Landing, Azure SQL site | 1.91 s | 2.17 s | 3.39 s | 5.69 s |
+| Landing, Azure Cosmos DB site | 1.74 s | 2.18 s | 4.16 s | 5.85 s |
+| A document, Azure SQL site | 2.47 s | 2.99 s | 4.83 s | 3.97 s |
+| A document, Azure Cosmos DB site | 2.41 s | 2.94 s | 3.63 s | 4.48 s |
+
+**What it bought.** The inventory used to arrive as an empty page and now arrives drawn. Its speed index fell by about two seconds on a phone on both sites, and a vehicle's on the Azure SQL site by more than two and a half. On a desk every view's largest paint stayed between 0.46 and 0.60 s on both sites, except the document.
+
+**What it did not buy.** The landing page was already in the HTML from the build, so the service only made that HTML later to arrive. Its largest paint moved from about 1.8 to about 2.2 s, and its speed index swings by more than two seconds between runs, as it did on 7 October. Three runs are too few to call the vehicle on the Azure Cosmos DB site a loss or a gain.
+
+**What got worse.** The document window read a layout shift of 1.000 on a desk, score 74 and 73 against 99 before, with its largest paint at 0.76 to 0.79 s. The server drew the window open in the page's flow, and React moved it into the modal layer when it took the page over, so the whole window jumped. 1.0.3.105 draws the open window where the modal stands, and the browser suite measures the window's box before and after the takeover and fails on a move of more than two pixels. This page gains the reading after it once it rolls.
+
+**Where the time goes.** Ten reads of each view's HTML from Missouri: 196 to 241 ms to the first byte before, read from a file, and 281 to 501 ms after, drawn for each request. The service sends the top of the page before its API reads answer, and straight from the service's own address that top arrived 26 to 97 ms ahead of the drawing. Through the domain the two arrived together, 0 ms apart, because the edge in use today holds a proxied answer until it has all of it (`ssrlane-origin-ttfb.log`). A Cloudflare Worker passes a stream on as it comes, which the move at the end of October will be measured against.
+
+**What it costs.** The plan went from B1 to B2, $12.41 to $24.82 a month, because the plan's median memory was already 91 per cent of B1 before the service existed (ADR: One plan, two sites). The service holds 52 MiB idle and 136 MiB at its measured peak.
+
 ## How the listing is compressed, and why only the listing
 
 **The trip.** A visitor's browser asks the edge, Netlify, for the listing. The edge forwards the request to the container on Azure and passes the answer back. The edge has always compressed what it hands the browser, so the browser never saw the full size. The waste was on the hop between them: the edge asked Azure for the answer plainly, and a page of a hundred vehicles crossed as about 106 KB of JSON.

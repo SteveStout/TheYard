@@ -186,7 +186,13 @@ export const MENUS: Record<
   },
   practices: {
     label: 'Best Practices',
-    items: [{ key: 'practices' }, { key: 'sealed' }, { key: 'onion' }, { key: 'security' }],
+    items: [
+      { key: 'practices' },
+      { key: 'sealed' },
+      { key: 'onion' },
+      { key: 'security' },
+      { key: 'reactServerRendering' },
+    ],
   },
   // #region records-menu
   /**

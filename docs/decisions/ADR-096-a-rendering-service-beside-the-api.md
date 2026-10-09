@@ -1,6 +1,6 @@
 # ADR: A rendering service beside the API
 
-Status: accepted, 2026-10-08, in 1.0.3.104, the version that puts the service in front of visitors. It came into the repository in 1.0.3.100, could not roll until 1.0.3.101, was measured alone in Docker and given its numbers in 1.0.3.102, and got its own site and roll in 1.0.3.103. The plan moved to B2 first, because the memory read said the service did not fit on B1. Each step's numbers are in an addendum below.
+Status: accepted, 2026-10-08, in 1.0.3.104, the version that puts the service in front of visitors. It came into the repository in 1.0.3.100, could not roll until 1.0.3.101, was measured alone in Docker and given its numbers in 1.0.3.102, and got its own site and roll in 1.0.3.103. The plan moved to B2 first, because the memory read said the service did not fit on B1. Each step's numbers are in an addendum below, and the before and after on both domains in the last, with the fix 1.0.3.105 made.
 
 ## In plain words
 
@@ -102,6 +102,15 @@ From 1.0.3.104 the edge sends each domain's page to the service under that site'
 ```
 
 `/index.html` is not the bare path, so it still goes to the API, which answers it with its own page, drawn in the browser. That is the way round while the service is down, and the one this edge offers: it passes on whatever the service's address answers, including App Service's own error while the container restarts. A Cloudflare Worker can catch that answer and send the API's page in its place; that is the edge this site moves to at the end of October. `AppServiceTemplateTests` holds each rule to the address `Deploy Render` verifies and to the site name the service reads.
+
+## Addendum, 2026-10-08: before and after, and the window that moved
+
+Every view was read on both domains before the edge sent pages here (1.0.3.99) and after (1.0.3.104): Lighthouse 12.8.2 on its phone and desk presets, three runs a view, and ten reads of each view's HTML (`ssrlane-lh-before.log`, `ssrlane-lh-after.log`). The full tables are on the Performance page and on React server rendering, explained.
+
+- **Bought.** The inventory's speed index on a phone fell from 5.77 to 3.51 s on the Azure SQL site and from 5.60 to 3.67 s on the Azure Cosmos DB site; a vehicle's on the Azure SQL site from 5.59 to 2.95 s. Every address now arrives with its view in the HTML.
+- **Not bought.** The landing page was drawn at build time already, so its HTML now arrives later and its largest paint moved from about 1.8 to about 2.2 s on a phone.
+- **Worse, and fixed in 1.0.3.105.** A document read a layout shift of 1.000 on a desk. The window was drawn open in the page's flow and moved into the modal layer at the takeover. The drawn window now stands where the modal stands, over the frame on a phone and beside the rail on a desk, and `drawn.spec.ts` fails if its box moves more than two pixels when React takes the page over.
+- **The stream.** From the service's own address the top of the page arrives 26 to 97 ms before the drawing; through the domain the two arrive together, because the edge in use today buffers a proxied answer (`ssrlane-origin-ttfb.log`). The first byte through the domain went from 196 to 241 ms to 281 to 501 ms.
 
 ## Where it sits
 

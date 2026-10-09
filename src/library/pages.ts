@@ -74,6 +74,12 @@ export const PAGES = {
     url: '/api/docs/security',
     kind: 'overview',
   },
+  reactServerRendering: {
+    title: 'React server rendering, explained',
+    menuLabel: 'React server rendering, explained',
+    url: '/api/docs/react-server-rendering',
+    kind: 'overview',
+  },
   changelog: {
     title: 'Changelog',
     menuLabel: 'Version history',

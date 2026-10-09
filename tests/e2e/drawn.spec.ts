@@ -166,6 +166,27 @@ for (const viewport of [
 
       const errors = watchErrors(page);
       await keepTheDrawnNode(page);
+      // Where a drawn document window stands once the stylesheet is in and before the site's
+      // script runs (a module script waits for the stylesheet, so it runs after this), to hold
+      // it to where the modal stands after.
+      await page.addInitScript(() => {
+        document.addEventListener('readystatechange', () => {
+          if (document.readyState !== 'interactive') return;
+          const sheets = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+          void Promise.all(
+            sheets.map((link) =>
+              (link as HTMLLinkElement).sheet
+                ? null
+                : new Promise((loaded) => link.addEventListener('load', loaded, { once: true }))
+            )
+          ).then(() => {
+            const box = document.querySelector('dialog[open]')?.getBoundingClientRect();
+            (window as unknown as { __dialogBox?: number[] }).__dialogBox = box
+              ? [box.left, box.top, box.width]
+              : [];
+          });
+        });
+      });
       await openTheYard(page, RENDERED + path);
       // The drawn page already carries its announcement, so the page is open before React has
       // taken it over. The frame says when it has: the rail is "auto" only while it is taken over.
@@ -190,6 +211,16 @@ for (const viewport of [
             page.evaluate(() => document.querySelector('dialog[open]')?.matches(':modal'))
           )
           .toBe(true);
+        // Opened again as a modal where it was drawn: the window does not move when the page is taken over.
+        const moved = await page.evaluate(() => {
+          const before = (window as unknown as { __dialogBox?: number[] }).__dialogBox ?? [];
+          const box = document.querySelector('dialog[open]')?.getBoundingClientRect();
+          if (!box || before.length !== 3) return ['no box'];
+          return [box.left, box.top, box.width]
+            .map((now, i) => Math.abs(now - before[i]))
+            .filter((delta) => delta > 2);
+        });
+        expect(moved, `${path}: the drawn window stands where the modal stands`).toEqual([]);
         await page.keyboard.press('Escape');
         await expect(page.locator('dialog[open]')).toHaveCount(0);
       }

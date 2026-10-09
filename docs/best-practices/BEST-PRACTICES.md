@@ -155,3 +155,9 @@ footer displays exactly that.
   documents the footer are then the same string, and a ship that forgets its
   line fails rather than displaying a number with no sentence attached.
   Recorded in ADR: The version comes from the changelog.
+- **Pages are drawn on a server, and the API still draws nothing.** A small
+  rendering service beside the API reads what each page needs and sends it
+  already drawn, and React in the browser takes the markup over instead of
+  drawing it again. Every decision in it is beside the number that made it in
+  [React server rendering, explained](https://theyard.stevenstout.biz/?doc=react-server-rendering),
+  and recorded in ADR: A rendering service beside the API.

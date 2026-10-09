@@ -133,6 +133,7 @@ public static class DocumentationCatalog
         ["document-style"] = "docs/style/DOCUMENT-STYLE.md",
         ["author"] = "docs/author/AUTHOR.md",
         ["security"] = "docs/best-practices/SECURITY.md",
+        ["react-server-rendering"] = "docs/best-practices/REACT-SERVER-RENDERING.md",
         ["ai-development"] = "docs/about/AI-DEVELOPMENT.md",
         ["built-with-ai"] = "docs/built-with-ai/BUILT-WITH-AI.md",
         ["infrastructure-overview"] = "docs/performance/INFRASTRUCTURE-OVERVIEW.md",

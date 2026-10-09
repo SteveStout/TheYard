@@ -98,6 +98,39 @@
 }
 /* #endregion desk-dialog */
 
+/* #region drawn-open */
+/* A document the rendering service drew arrives open but not modal, because a modal
+   cannot be opened before a script runs (ADR: A rendering service beside the API). A
+   dialog that is open and not modal sits in the page's flow, so it is placed where the
+   modal will stand, and opening it again as a modal moves nothing; in the flow it read
+   a layout shift of 1.0 on a desk. On a desk the rail is "auto" until the page is
+   taken over, so the docked column is set for that too. */
+.dialog[open]:not(:modal) {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  /* Over the header and the rail, as the top layer would be; under the skip link. */
+  z-index: calc(var(--layer-skip) - 1);
+}
+
+@media (min-width: 1024px) {
+  :global([data-rail='auto']) .dialog[open] {
+    --dialog-left: var(--rail-width);
+
+    position: fixed;
+    inset: calc(var(--space-8) + var(--space-3)) 0 var(--space-6) var(--dialog-left);
+    width: min(760px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
+    height: auto;
+    max-height: none;
+    margin: 0 auto;
+  }
+
+  :global([data-rail='auto']) .dialogWide[open] {
+    width: min(1040px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
+  }
+}
+/* #endregion drawn-open */
+
 .dialogHeader {
   display: flex;
   align-items: center;
