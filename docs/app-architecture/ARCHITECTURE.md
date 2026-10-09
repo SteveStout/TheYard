@@ -35,11 +35,12 @@ flowchart LR
   B["Browser<br/>theyard.stevenstout.biz"]
 
   subgraph edge["Phase 1 edge: Netlify, free tier"]
-    TLS["TLS termination, Let's Encrypt<br/>rewrite proxy: /* to the origin"]
+    TLS["TLS termination, Let's Encrypt<br/>rewrite proxy: / with its query to the rendering service, /* to the site"]
   end
 
   subgraph azure["Azure, resource group RG-THEYARD-SS"]
-    ACI["Web app for containers, the first site<br/>on PLAN-THEYARD-SS, Linux B1, West US 3<br/>1 vCPU and 1.75 GB shared with the second site"]
+    ACI["Web app for containers, the first site<br/>on PLAN-THEYARD-SS, Linux B2, West US 3<br/>2 vCPU and 3.5 GB shared with the second site and the rendering service"]
+    RENDER["Web app for containers, the rendering service<br/>on the same plan, its own image: draws every page<br/>for either site by reading that site's API"]
     ACR[("Container Registry")]
     MI["Managed identity<br/>id-theyard-ss"]
     AI["Application Insights<br/>appi-theyard-ss"]
@@ -67,7 +68,9 @@ flowchart LR
   end
 
   B -->|HTTPS, session cookie| TLS
-  TLS -->|HTTPS| ACI
+  TLS -->|a page: HTTPS, under the site's name| RENDER
+  RENDER -->|the API's page, /api/version and the view's reads, the cookie forwarded| ACI
+  TLS -->|everything else: HTTPS| ACI
   ACI --> API
   API --> SPA
   API -->|read once at startup, expanded to 100,000| SQL
@@ -76,6 +79,7 @@ flowchart LR
   MI -.->|db_datareader, db_datawriter| SQL
   SEED -.->|first boot only| SQL
   ACR -.->|image pulled on every roll| ACI
+  ACR -.->|its own image, theyard-render, on the same push| RENDER
   ACI -.->|token from the plan's identity endpoint| MI
   MI -.->|Reader, Monitoring Reader| AI
   API -.->|requests, dependencies, exceptions| AI
@@ -334,6 +338,7 @@ and the rings are drawn on [their own page](https://theyard.stevenstout.biz/api/
 | `api/TheYard.Migrations.Sqlite` | The SQLite schema's history, applied by the process that uses it. | Infrastructure |
 | `api/TheYard.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | Application, Infrastructure, Infrastructure.Cosmos, Migrations.Sqlite (Domain and Data through them) |
 | `src/` | The browser: rendering, formatting, countdowns, URL state, one fetch seam. | the wire only |
+| `render/` | The rendering service: the same `src/` drawn on a server for each request, with one loader per view and a door for the host it runs on. Not a project in the solution; a client of the API. | the wire only |
 
 The test for whether a layer is earning its place is whether something can
 be swapped at its seam. Three things have been: the 100,000-record scale-up
@@ -417,9 +422,12 @@ store on Cosmos DB, and what it costs).
 
 No password store of its own: accounts are ASP.NET Core Identity with a
 signed cookie (ADR: Accounts and per-user bids). No state library, router,
-component library or CSS framework. No server-rendered React. Each of those
-is a decision with a record behind it, not an oversight; ADR: Deployment
-strategy and the Hosting page cover the hosting side of the same question.
+component library or CSS framework. No server-rendered React inside the API:
+the pages are drawn by a service beside it that reads the API like any other
+client, and the API does not know it exists (ADR: A rendering service beside
+the API). Each of those is a decision with a record behind it, not an
+oversight; ADR: Deployment strategy and the Hosting page cover the hosting
+side of the same question.
 
 ## Files
 

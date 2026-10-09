@@ -5,7 +5,7 @@ reviewer or anyone learning how small projects ship safely.
 
 ## In plain words
 
-This page shows how a code change gets from a laptop to the live site. Every test runs before a version can ship (the ship's gate), and a push to the main branch then builds the container image and rolls it onto both sites with no human step.
+This page shows how a code change gets from a laptop to the live site. Every test runs before a version can ship (the ship's gate), and a push to the main branch then builds the API's container image beside the rendering service's and rolls each onto its web apps with no human step.
 
 What that is worth: a developer can merge knowing a failing test stops the change before it reaches anyone, and the organization ships often with no Azure password or key stored anywhere to leak.
 
@@ -26,7 +26,15 @@ pull request from anybody else, which has had no gate.
 Deploy builds the container image, pushes it to Azure Container Registry,
 and rolls it onto the first site's web app, and on the same push a second
 named Deploy Cosmos waits for that image and rolls it onto the second site's,
-the two rolls side by side, with no human in the loop. Both sites share one App Service plan (ADR: One plan, two sites). The workflow signs in to Azure with a token GitHub mints for this one
+the two rolls side by side, with no human in the loop. A third, Deploy Render,
+fires on the same push: it builds the rendering service's own image from
+`render/Dockerfile` as the same version, pushes it as `theyard-render`, rolls
+the service's web app, and is done when the service answers its readiness as
+that version. The service draws a page only for an API running its own
+build, so the three rolls need not land together: until a site's API and the
+service agree, that site's pages are drawn in the browser, as they were
+before the service existed (ADR: A rendering service beside the API). All
+three web apps share one App Service plan (ADR: One plan, two sites). Each workflow signs in to Azure with a token GitHub mints for this one
 repository's main branch, so no Azure password or key is stored anywhere. The
 version in the page footer is stamped by that build. The full record is
 ADR: The deploy pipeline, below this entry in the menu.
@@ -93,9 +101,9 @@ Azure Container Instances Contributor Role  .../resourceGroups/RG-THEYARD-SS
 Managed Identity Operator                   .../userAssignedIdentities/id-theyard-ss
 ```
 
-Since 20 September 2026 the same identity also holds Website Contributor on the two web apps, and on
-nothing wider: setting a site's image and its settings is the whole of a roll
-(ADR: One plan, two sites).
+Since 20 September 2026 the same identity also holds Website Contributor on the two web apps, and since
+8 October on the rendering service's as well, and on nothing wider: setting a site's image and its settings is the whole of a roll
+(ADR: One plan, two sites; ADR: A rendering service beside the API).
 
 ## What comes next
 
@@ -114,6 +122,9 @@ URL, and every deploy so far has been gated on it.
 
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the three suites and the SQL project build as four jobs behind it, on every push to main and on a pull request.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Deploy workflow, step by step.
+- [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml): the second site's roll, from the same image.
+- [`.github/workflows/deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml): the rendering service's build and roll, on the same push.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites Deploy rolls (the roll sets the image and four settings).
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image Deploy builds.
+- [`render/Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/render/Dockerfile): the image Deploy Render builds: the service's build on Node, nothing else.
 - [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): the line every version writes for itself.

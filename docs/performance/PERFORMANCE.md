@@ -6,13 +6,13 @@ benchmark run on a laptop and quoted afterwards.
 
 The claim this page makes is narrow and checkable: **a hundred thousand vehicles, two different database
 engines, and page work measured in milliseconds, on free-tier data stores and the smallest machine that
-will hold it: since 20 September 2026, one Linux B1 App Service plan carrying both sites for $12.41 a month.**
+will hold it: since 20 September 2026 one App Service plan carrying both sites, Linux B1 at $12.41 a month until 8 October and B2 at $24.82 since, when a rendering service that draws every page joined the two sites on it.**
 
 ## In plain words
 
 This page measures how fast the site runs on the smallest Azure machine that will hold it, with a hundred thousand vehicles in two different databases (Azure SQL Database and Azure Cosmos DB). The two answer in the same time once the trip to each one is taken off, so any gap comes from where each one sits.
 
-What that is worth: a developer gets methods and numbers they can rerun from the Admin tab, and the organization sees the whole bill, $22.38 a month at list price, next to the speed it buys.
+What that is worth: a developer gets methods and numbers they can rerun from the Admin tab, and the organization sees the whole bill, $34.79 a month at list price, next to the speed it buys.
 
 ## What it runs on
 
@@ -20,13 +20,13 @@ What that is worth: a developer gets methods and numbers they can rerun from the
 | --- | --- | --- |
 | Azure Cosmos DB | Free tier, 1000 RU/s shared, local auth disabled so no key exists | **$0.00 a month** |
 | Azure SQL Database | Basic, 5 DTU, 2 GB, Entra-only (the serverless free database beside it paused on 14 September, below) | $4.90 a month |
-| Compute | One Linux B1 App Service plan, 1 vCPU and 1.75 GB, shared by both sites as two web apps for containers | **$12.41 a month** for both at list price in westus3, $0.017 an hour over 730 hours |
+| Compute | One Linux B2 App Service plan, 2 vCPU and 3.5 GB, shared by both sites as two web apps for containers and by the rendering service as a third | **$24.82 a month** for all three at list price in westus3, $0.034 an hour over 730 hours; B1 at $12.41 until 8 October |
 | Registry | Azure Container Registry, Basic, one image tag per version, 8.7 GiB on 20 September of the 10 GiB the tier includes | $5.07 a month ($0.1666 a day) |
 | Edge and TLS | Netlify free plan, 300 build credits a month | **$0.00 a month** |
 | Storage, 100,000 vehicles | 82 MB against a 25 GB allowance | **$0.00** |
 
-**The whole bill at list price is $22.38 a month: $12.41 of compute, $4.90 of database and $5.07 of
-registry**, read off the Azure Retail Prices API on 20 September. Until that day the compute was two
+**The whole bill at list price is $34.79 a month: $24.82 of compute, $4.90 of database and $5.07 of
+registry**, the plan's price read off the Azure Retail Prices API on 8 October and the rest on 20 September. It was $22.38 from 20 September to 8 October, on B1; the plan moved to B2 when the rendering service was added, because its memory read 91 per cent of B1 at the median before the third container existed (ADR: A rendering service beside the API). Until 20 September the compute was two
 Azure Container Instances, one per site at $34.44 a month each, and the same bill was $78.85 a month; the move took
 $56.47 a month off it, 72 per cent, and the record prices every option that was on the table
 ([One plan, two sites](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-079-one-plan-two-sites.md)). This page quoted
@@ -461,4 +461,4 @@ writer spends it whether or not a visitor is there.
 - [`api/TheYard.Infrastructure/YardDatabase.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDatabase.cs): `PingAsync`, the round trip to the relational store the proof measures.
 - [`src/components/admin/BackendsCard/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard/BackendsCard.tsx) and [`src/components/admin/ProofCard/ProofCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ProofCard/ProofCard.tsx): the comparison card and the proof card the numbers above are read from.
 - [`infra/cosmos`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions, indexing policy and partition key included.
-- [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites, 1 vCPU and 1.75 GB between them.
+- [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites, 2 vCPU and 3.5 GB shared with the rendering service.

@@ -31,6 +31,8 @@ The back end is an onion and its dependencies point inward only. `TheYard.Data` 
 
 The front end keeps the same discipline: `components` use `hooks` use `lib`, and **`src/lib` imports nothing from React**, which is what lets the arithmetic be tested without a browser.
 
+Beside the two, `render/` is the rendering service: a small Node program that draws any page a visitor can link to, with its data in the HTML, by reading the API like any other client. It is the front end's own code drawn somewhere else, with about 300 lines of its own, and the API does not know it exists ([ADR-096, A rendering service beside the API](https://theyard.stevenstout.biz/?doc=adr-a-rendering-service-beside-the-api)). `npm start` runs without it; the browser draws every page then, as it did before the service.
+
 ## The five rules that will bite you first
 
 1. **Derive, do not store.** Auction windows come from the item id by hash, status from the window and the clock. Nothing schedule-related is persisted.
@@ -44,6 +46,7 @@ The front end keeps the same discipline: `components` use `hooks` use `lib`, and
 - A rule about bidding goes in `TheYard.Domain/BidRules.cs` and nowhere else.
 - An endpoint is a route in `api/TheYard.Api/Endpoints/`, a call into `TheYard.Application` (`Auction` for anything about the auction), and a result. No business logic in `TheYard.Api`.
 - Presentation arithmetic goes in `src/lib` with a test beside it; a component reads it.
+- Anything a page needs read before it is drawn on the server goes in `render/loaders.ts`, and nothing the server draws may differ from the browser's first draw; `src/app/drawServer.test.ts` draws every view with no browser, and `tests/e2e/drawn.spec.ts` takes each one over in Chrome and fails on a hydration error.
 - A colour goes in `src/styles/colors.css`, a space or a size in `sizes.css`, a font size or weight in `typography.css`, a shadow, blur or opacity in `effects.css`. A raw hex in a component fails the style test.
 - A decision that someone could reasonably disagree with goes in `docs/decisions/ADR-*.md`, as a record with what was considered and what it cost. The Decision Records section of this site is that folder.
 

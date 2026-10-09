@@ -37,7 +37,7 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 846 xUnit tests, 414 Vitest tests at 1.0.3.105 and 151 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 847 xUnit tests, 414 Vitest tests at 1.0.3.106 and 151 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the gate on 1.0.0.182 took 493 seconds, and the gate on 1.0.3.59, with both store passes carried forward from 1.0.3.58, took 641. A push that fails the gate does not roll.
 
@@ -62,9 +62,10 @@ default cost 16.07 request units a document on the bulk seed against 8.84 tuned,
 
 - The Cosmos DB account on the free tier: $0.00 a month, 1000 RU/s shared, with local auth disabled so no
   key exists (ADR-058, ADR-059).
-- The compute: two container groups at $34.44 a month each at list price until 20 September, and one
-  App Service plan at $12.41 a month for both sites since, drawn from trial credit either way
-  (ADR-059, ADR-079).
+- The compute: two container groups at $34.44 a month each at list price until 20 September, one
+  App Service plan at $12.41 a month for both sites from then, and the same plan at $24.82 since
+  8 October, when the rendering service joined the two sites on it, drawn from trial credit either way
+  (ADR-059, ADR-079, ADR-096).
 - The edge: Netlify's free plan allots 300 credits a month, and 11 production deploys had consumed 165 of
   them at 15 each while serving the site cost almost nothing. Application pushes no longer redeploy the
   edge, so they cost zero credits (ADR-007).

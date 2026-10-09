@@ -43,6 +43,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | A kept minute leaves out a figure nobody read, a window is folded into the buckets it is drawn in, and the store's grouped query answers what the folding does | ADR: What the machines are doing | MachineHistoryTests |
 | An identity token is asked for at whichever door the host has, and a web app's card claims no restart count it was never given | ADR: One plan, two sites | AzureSelfTests |
 | Every setting a container group carried is a setting the two sites carry, and nothing deploys a template in complete mode | ADR: One plan, two sites | AppServiceTemplateTests |
+| The living documents that describe what runs name the plan size the template declares | ADR: A rendering service beside the API | AppServiceTemplateTests |
 | A request on a store whose catalogue is cold waits for the load without blocking a thread, and a warm store is waited on for no time at all | ADR: One container, both stores | WarmthTests |
 | No production comment leans on a version number, a date or a review to stand in for its reason | ADR: Code that reads like code | HouseVoiceTests |
 | Every record opens with its title, says what became of it, says where it sits in the rings above its Files section, and has a Files section with at least one link | This record, ADR: Onion and SOLID, how this codebase holds them | RecordShapeTests |
@@ -174,3 +175,7 @@ The Style section gained How the documents are styled (ADR: Live code samples, t
 ## Addendum, 2026-10-06 (1.0.3.86): the folders have their own record
 
 The row `DocsFolderTests` holds now cites ADR: One folder per sidebar section, the record Steve asked for so the folder rule is followed from here on, in place of the addendum to ADR: The sidebar that first described it.
+
+## Addendum, 2026-10-09 (1.0.3.106): the documents and the plan
+
+The plan moved to B2 on 8 October and five pages went on describing B1 (ADR: A rendering service beside the API, the addendum on the documents). `AppServiceTemplateTests` now reads the size from the template and holds every page that describes the machine to it, so the table has its row.

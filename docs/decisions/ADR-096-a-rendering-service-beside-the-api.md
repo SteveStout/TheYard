@@ -112,6 +112,10 @@ Every view was read on both domains before the edge sent pages here (1.0.3.99) a
 - **Worse, and fixed in 1.0.3.105.** A document read a layout shift of 1.000 on a desk. The window was drawn open in the page's flow and moved into the modal layer at the takeover. The drawn window now stands where the modal stands, over the frame on a phone and beside the rail on a desk, and `drawn.spec.ts` fails if its box moves more than two pixels when React takes the page over.
 - **The stream.** From the service's own address the top of the page arrives 26 to 97 ms before the drawing; through the domain the two arrive together, because the edge in use today buffers a proxied answer (`ssrlane-origin-ttfb.log`). The first byte through the domain went from 196 to 241 ms to 281 to 501 ms.
 
+## Addendum, 2026-10-09 (1.0.3.106): the documents say what runs
+
+The service went in front of visitors on 8 October and the pages that describe the running system kept describing the day before it. Hosting and both Performance overviews said one Linux B1 plan at $12.41 a month with two web apps on it, as did the README; CI/CD named two deploys where there are three; App Architecture's topology had no renderer in it; Start here did not mention `render/`. Each now says what this record says: B2 at $24.82 ($34.79 a month in all) with three web apps on the plan, a page's path to the service with everything else's to the API, and Deploy Render on the same push. `AppServiceTemplateTests` reads the plan's size from `infra/appservice.bicep` and fails until every page that describes the machine names it, so the next move of the plan cannot leave a page behind.
+
 ## Where it sits
 
 Outside the rings. The service is a client of the API, like a browser, and the API does not know it exists: no project in `api/` references it, and the host still serves the built page as a file (`ServerRenderingReadinessTests`). The service's own code is the frontend's code drawn somewhere else, with the few files of its own in `render/`.

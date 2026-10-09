@@ -9,38 +9,41 @@ included, is served from these menus; nothing requires opening the repository.
 
 ## In plain words
 
-This page explains how the site reaches the internet: a domain name and a free edge service (Netlify) that handles the secure connection, in front of two web apps on one Azure machine (an App Service plan). The piece still waiting is a production edge (Azure Front Door) that the free trial refuses to create.
+This page explains how the site reaches the internet: a domain name and a free edge service (Netlify) that handles the secure connection, in front of three web apps on one Azure machine (an App Service plan): one per site, and a rendering service that draws every page before it leaves. The piece still waiting is a production edge (Azure Front Door) that the free trial refuses to create.
 
 In practice, a developer sees how a small production setup fits together, with its infrastructure code served on the site, and the organization runs it on free services and one small plan while the full design waits behind one parameter.
 
 ## The picture
 
-[![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to a web app on the App Service plan on Azure; a green gate's push through Deploy to the registry and the roll; and Azure Front Door, designed, parameterized and still refused](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
+[![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to the rendering service and the site's web app on the App Service plan on Azure; a green gate's push through the three deploys to the registry and the roll; and Azure Front Door, designed, parameterized and still refused](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 
 *A preview. [Open the infrastructure diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 to zoom in and follow it; every diagram on this site opens that way (ADR: Diagram pages).*
 
-Three lanes: a request from left to right, a merge becoming a roll, and the
-one piece of the production design that still waits for a subscription
-upgrade. Every name in it is
+Three lanes: a request from left to right, through the rendering service
+and the API it reads, a merge becoming a roll, and the one piece of the
+production design that still waits for a subscription upgrade. Every name in it is
 the one the records and the pipeline logs carry. The source is
 [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg); the records below explain each box.
 
 Since 1.0.0.100 there are two sites behind that edge, and the second
-drawing is how the two names reach the two web apps on one plan and how both
-sites reach both stores (ADR: A permanent address for the second site;
-ADR: One plan, two sites):
+drawing is how the two names reach the two web apps on one plan, how a
+page reaches the rendering service beside them, and how both sites reach
+both stores (ADR: A permanent address for the second site; ADR: One plan,
+two sites):
 
-[![TheYard's two sites: two names at Wix, one Netlify edge, two web apps on one App Service plan on Azure, both stores behind both](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/two-sites.png)](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
+[![TheYard's two sites: two names at Wix, one Netlify edge, two web apps and the rendering service on one App Service plan on Azure, both stores behind both](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/two-sites.png)](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
 
 *A preview. [Open the two-sites diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/two-sites)
 to zoom in and follow it.*
 
 ## Websites and resources used
 
-- **Azure (portal.azure.com).** Runs the app: one Linux B1 App Service plan
-  for the compute, carrying two web apps for containers, one per site, since
-  1.0.0.156 (ADR: One plan, two sites); Container Registry for the image;
+- **Azure (portal.azure.com).** Runs the app: one Linux B2 App Service plan
+  for the compute, carrying three web apps for containers: one per site since
+  1.0.0.156 (ADR: One plan, two sites), and since 1.0.3.103 the rendering
+  service that draws every page for both (ADR: A rendering service beside the
+  API); Container Registry for the two images;
   Azure SQL Database for the store the first site is on and Azure Cosmos DB
   for the second's, with both stores opened by both sites since 1.0.0.94
   (ADR: One container, both stores). The only place code executes. For its
@@ -70,20 +73,25 @@ to zoom in and follow it.*
 2. **Edge.** Netlify's free tier terminates HTTPS and forwards every request
    unchanged. The entire edge is three files in this repository, deployed from
    GitHub on every push that touches them. The name a request arrived on
-   picks the origin: two rules above the catch-all send theyard-cosmos to the
-   second web app, and everything else goes to the first (ADR: A permanent
-   address for the second site).
-3. **Origin.** One App Service plan, `PLAN-THEYARD-SS`, Linux B1 in West US 3,
-   runs the Docker image twice in RG-THEYARD-SS: two web apps for containers,
-   each answering HTTPS on its own `azurewebsites.net` name and listening on
-   port 8080 inside. Azure does all the compute. The edge only forwards. Both
+   picks the site, and the path picks the origin: a page, the bare path with
+   its query, goes to the rendering service under that site's name, and
+   everything else, the bundle, the photographs and `/api`, goes to that
+   site's API (ADR: A permanent address for the second site; ADR: A rendering
+   service beside the API).
+3. **Origin.** One App Service plan, `PLAN-THEYARD-SS`, Linux B2 in West US 3,
+   runs the API's Docker image twice in RG-THEYARD-SS, two web apps for
+   containers, each answering HTTPS on its own `azurewebsites.net` name and
+   listening on port 8080 inside, and the rendering service's image once, a
+   third web app that draws a page for either site by reading that site's
+   API. Azure does all the compute. The edge only forwards. Both
    stores are opened by both sites since 1.0.0.94, and the second site runs
    the same image with Azure Cosmos DB as its default; since 1.0.0.100 it
    answers at https://theyard-cosmos.stevenstout.biz through the same edge
    and the same certificate. Each site is one store's site, and the Store bar
    at the top of every page links to the other at the same page (ADR: One
-   container, both stores). Why one plan, why B1 and why West US 3 are
-   ADR: One plan, two sites.
+   container, both stores). Why one plan and why West US 3 are ADR: One plan,
+   two sites, which also records the move from B1 to B2 when the rendering
+   service arrived.
 
 ## The certificate
 
@@ -112,6 +120,10 @@ mode only, because the same resource group holds the databases, the registry
 and the identity, and none of them is in a template on purpose (ADR: One
 plan, two sites).
 
+The rendering service's web app is the same kind of description, in
+`infra/render.bicep`, on the same plan (ADR: A rendering service beside the
+API).
+
 What is left is Front Door and the origin lock, behind one parameter that
 defaults off. The origins are reachable directly today, as the container
 groups were, and what that does and does not expose is on the Security page.
@@ -123,9 +135,11 @@ change in this one.
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep) and [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): what runs, the plan and
   the two sites (served above as Infrastructure (Bicep)).
+- [`infra/render.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/render.bicep): the rendering service's web app, on the same plan.
+- [`render/Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/render/Dockerfile): the rendering service's image: the build on Node, nothing else.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two
   container groups that ran until 1.0.0.156, stopped and kept as the way back.
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions the second store is built from.
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the HTTPS edge.
-- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image both of them run.
-- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): how a merge becomes a roll.
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image both sites run.
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml): how a merge becomes a roll of the sites, and of the service.

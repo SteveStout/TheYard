@@ -182,6 +182,36 @@ public class AppServiceTemplateTests
         Assert.Contains("param skuName string = 'B2'", Read("infra", "appservice.bicep"), StringComparison.Ordinal);
         Assert.Contains("param skuName string = 'B2'", Read("infra", "main.bicep"), StringComparison.Ordinal);
     }
+
+    // #region documents-agree
+    /// <summary>
+    /// The living documents that describe what runs name the plan size the template declares, and
+    /// none of them still describes the old size as the one that runs. The plan moved and four pages
+    /// kept saying B1 for a day; a reader of the Hosting page was told a machine that no longer existed.
+    /// The size is read from the template, so the next move fails here until every page says so.
+    /// </summary>
+    [Fact]
+    public void The_living_documents_name_the_plan_size_the_template_declares()
+    {
+        string sku = Regex.Match(Read("infra", "appservice.bicep"), @"param skuName string = '(B\d)'").Groups[1].Value;
+        Assert.False(string.IsNullOrEmpty(sku), "appservice.bicep should declare the plan's size");
+        string[] pages =
+        [
+            Path.Combine("docs", "hosting", "HOSTING.md"),
+            Path.Combine("docs", "performance", "INFRASTRUCTURE-OVERVIEW.md"),
+            Path.Combine("docs", "performance", "PERFORMANCE.md"),
+            Path.Combine("docs", "app-architecture", "ARCHITECTURE.md"),
+            "README.md",
+        ];
+        foreach (string page in pages)
+        {
+            string text = Read(page);
+            Assert.True(text.Contains($"Linux {sku}", StringComparison.Ordinal), $"{page} should name the plan as Linux {sku}");
+            // The phrase every stale line used: the old size described as the plan that runs today.
+            Assert.False(Regex.IsMatch(text, @"Linux B1 App Service plan\b(?! until)"), $"{page} still describes the plan as Linux B1");
+        }
+    }
+    // #endregion documents-agree
     // #endregion the-renderer
 
     // #region never-complete

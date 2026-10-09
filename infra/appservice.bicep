@@ -1,6 +1,7 @@
-// One plan, two sites (ADR: One plan, two sites). What runs: a Linux B1 App
+// One plan, two sites (ADR: One plan, two sites). What runs: a Linux B2 App
 // Service plan and two web apps for containers on it, one per site, both
-// running the same image as the same user-assigned identity. The two sites
+// running the same image as the same user-assigned identity; the rendering
+// service's web app on the same plan is render.bicep. The two sites
 // differ in which store a request gets when it names none, and in which
 // address each calls its own and its peer's. Everything else is one list.
 //
