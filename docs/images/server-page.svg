@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1272" viewBox="0 0 1400 1272" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>A page drawn on the server: from the address through the edge, the rendering service and the API to the HTML the browser paints, and then the takeover</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <marker id="arrow-taupe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#ab978c"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .lane { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 600; }
+      .lane-title { fill: #3f3a37; font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+      .lane-sub { fill: #62666f; font-size: 13px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .flow-label { fill: #4a6c96; font-size: 12px; font-weight: 500; }
+      .loop { stroke: #ab978c; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow-taupe); }
+      .loop-label { fill: #8a766b; font-size: 12px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="1272" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">A page drawn on the server: the first load, then the takeover</text>
+  <text x="40" y="68" class="caption">Every box is a file; the path under each title is where that step lives. The service in render/ is a client of the API, like a browser; the API draws nothing and does not know it exists.</text>
+
+  <!-- ===================== Lane 1: the first load ===================== -->
+  <rect x="40" y="92" width="700" height="1088" class="lane"/>
+  <text x="60" y="120" class="lane-title">The first load: drawn once, on the server, for this request</text>
+  <text x="60" y="140" class="lane-sub">From the address to the painted page. The API is only read; a read that misses the deadline is left to the browser.</text>
+
+  <!-- ===================== Lane 2: the takeover ===================== -->
+  <rect x="770" y="92" width="590" height="934" class="lane"/>
+  <text x="790" y="120" class="lane-title">The takeover: React attaches, it does not redraw</text>
+  <text x="790" y="140" class="lane-sub">Hydration, in React's word. One mismatch and the markup is thrown away.</text>
+
+  <rect x="60" y="170" width="660" height="118" class="box"/>
+  <text x="75" y="196" class="title">The address</text>
+  <text x="75" y="218" class="mono">the visitor's browser</text>
+  <text x="75" y="240" class="body">theyard.stevenstout.biz/?view=inventory, ?vehicle= or ?doc=. A page is the</text>
+  <text x="75" y="257" class="body">bare path with its query; the bundle, the photographs and /api are other</text>
+  <text x="75" y="274" class="body">paths, which never come this way.</text>
+  <path d="M120 288 L120 322" class="flow"/>
+  <text x="132" y="310" class="flow-label">GET /?view=inventory</text>
+  <rect x="60" y="324" width="660" height="118" class="box"/>
+  <text x="75" y="350" class="title">The edge</text>
+  <text x="75" y="372" class="mono">edge/_redirects</text>
+  <text x="75" y="394" class="body">Netlify matches the bare path on either name and rewrites it, query and all,</text>
+  <text x="75" y="411" class="body">to the rendering service as that site: /site/sql or /site/cosmos. Everything</text>
+  <text x="75" y="428" class="body">else goes to that site's API as before.</text>
+  <path d="M120 442 L120 476" class="flow"/>
+  <text x="132" y="464" class="flow-label">200 rewrite to /site/sql?view=inventory</text>
+  <rect x="60" y="478" width="660" height="135" class="box"/>
+  <text x="75" y="504" class="title">The page and the build</text>
+  <text x="75" y="526" class="mono">render/page.ts</text>
+  <text x="75" y="548" class="body">The service reads index.html and /api/version from the API it draws for,</text>
+  <text x="75" y="565" class="body">kept fifteen seconds. The page names the bundle that API serves; the service</text>
+  <text x="75" y="582" class="body">draws only when the API runs the build the service was made from, and during</text>
+  <text x="75" y="599" class="body">a roll it sends the API's page untouched for the browser to draw.</text>
+  <path d="M120 613 L120 647" class="flow"/>
+  <text x="132" y="635" class="flow-label">the API runs the same build: draw</text>
+  <rect x="60" y="649" width="660" height="152" class="box"/>
+  <text x="75" y="675" class="title">One loader per view, under one deadline</text>
+  <text x="75" y="697" class="mono">render/loaders.ts</text>
+  <text x="75" y="719" class="body">Who is signed in (the cookie forwarded, nothing else) and the build for the</text>
+  <text x="75" y="736" class="body">footer on every page; on an inventory or vehicle address the first page of</text>
+  <text x="75" y="753" class="body">the list with its facets; on ?vehicle= the vehicle; on ?doc= the document,</text>
+  <text x="75" y="770" class="body">rendered with the same Markdown code the browser uses. All at once under 2.5</text>
+  <text x="75" y="787" class="body">seconds; a read that fails or runs late is left to the browser.</text>
+  <path d="M120 801 L120 835" class="flow"/>
+  <text x="132" y="823" class="flow-label">the reads, all at once</text>
+  <rect x="60" y="837" width="660" height="152" class="box"/>
+  <text x="75" y="863" class="title">The draw, and the stream</text>
+  <text x="75" y="885" class="mono">render/render.ts, src/app/entry-server.tsx</text>
+  <text x="75" y="907" class="body">Everything above #root leaves at once, before any read has answered, so the</text>
+  <text x="75" y="924" class="body">browser starts on the stylesheet, the font and the bundle. Then #root with</text>
+  <text x="75" y="941" class="body">the site drawn by React's server renderer from what the loaders read; then</text>
+  <text x="75" y="958" class="body">the first load, that same data as JSON beside #root with every &lt; escaped;</text>
+  <text x="75" y="975" class="body">then the rest of the page.</text>
+  <path d="M120 989 L120 1023" class="flow"/>
+  <text x="132" y="1011" class="flow-label">the top first, then the drawing, then the first load</text>
+  <rect x="60" y="1025" width="660" height="135" class="box"/>
+  <text x="75" y="1051" class="title">The browser paints</text>
+  <text x="75" y="1073" class="mono">the visitor's browser</text>
+  <text x="75" y="1095" class="body">The HTML arrives with the view in it, and the browser shows the inventory,</text>
+  <text x="75" y="1112" class="body">the vehicle or the document before any script has run. Measured on 8</text>
+  <text x="75" y="1129" class="body">October: the inventory's speed index on a phone 3.5 s where it read 5.8</text>
+  <text x="75" y="1146" class="body">drawn in the browser.</text>
+  <rect x="790" y="170" width="550" height="101" class="box"/>
+  <text x="805" y="196" class="title">The bundle arrives</text>
+  <text x="805" y="218" class="mono">index.html, the API's own page</text>
+  <text x="805" y="240" class="body">The script the page named, already downloading while the</text>
+  <text x="805" y="257" class="body">service was drawing. Nothing in it is special to a drawn page.</text>
+  <path d="M850 271 L850 305" class="flow"/>
+  <text x="862" y="293" class="flow-label">script runs</text>
+  <rect x="790" y="307" width="550" height="135" class="box"/>
+  <text x="805" y="333" class="title">The first load is read</text>
+  <text x="805" y="355" class="mono">src/app/mount.tsx, src/app/firstLoad.ts</text>
+  <text x="805" y="377" class="body">#root says data-drawn="server" and the JSON beside it says</text>
+  <text x="805" y="394" class="body">which address it was drawn for. If it matches the address bar,</text>
+  <text x="805" y="411" class="body">hydrateRoot; otherwise the page is drawn from nothing, as it</text>
+  <text x="805" y="428" class="body">always was.</text>
+  <path d="M850 442 L850 476" class="flow"/>
+  <text x="862" y="464" class="flow-label">the address matches: hydrateRoot</text>
+  <rect x="790" y="478" width="550" height="135" class="box"/>
+  <text x="805" y="504" class="title">Every hook starts from it</text>
+  <text x="805" y="526" class="mono">src/hooks/useFirstLoad.ts</text>
+  <text x="805" y="548" class="body">Each hook that used to start empty (the address, the list, the</text>
+  <text x="805" y="565" class="body">vehicle, the account, the build, the clock) starts from the</text>
+  <text x="805" y="582" class="body">first load instead, so the browser's first draw is the</text>
+  <text x="805" y="599" class="body">server's draw, byte for byte.</text>
+  <path d="M850 613 L850 647" class="flow"/>
+  <text x="862" y="635" class="flow-label">same markup on both sides</text>
+  <rect x="790" y="649" width="550" height="169" class="box"/>
+  <text x="805" y="675" class="title">The four differences, answered</text>
+  <text x="805" y="697" class="mono">src/hooks/useMediaQuery.ts, src/library/DocDialog.tsx</text>
+  <text x="805" y="719" class="body">The clock: the browser counts down from the time the server</text>
+  <text x="805" y="736" class="body">drew at, then ticks. The time zone: UTC until the page is</text>
+  <text x="805" y="753" class="body">live, then the viewer's. The window's width: "does not match"</text>
+  <text x="805" y="770" class="body">until the page is live, then the real answer. The document</text>
+  <text x="805" y="787" class="body">window: drawn open where the modal stands, then opened again</text>
+  <text x="805" y="804" class="body">as a modal.</text>
+  <path d="M850 818 L850 852" class="flow"/>
+  <text x="862" y="840" class="flow-label">after the takeover, each changes once</text>
+  <rect x="790" y="854" width="550" height="152" class="box"/>
+  <text x="805" y="880" class="title">Live</text>
+  <text x="805" y="902" class="mono">src/app/TheYard.tsx</text>
+  <text x="805" y="924" class="body">React has attached its handlers to the markup it found. A</text>
+  <text x="805" y="941" class="body">click, a filter, a bid: the site from here is the site it</text>
+  <text x="805" y="958" class="body">always was, reading /api as before. tests/e2e/drawn.spec.ts</text>
+  <text x="805" y="975" class="body">opens every drawn view in Chrome and fails on a hydration</text>
+  <text x="805" y="992" class="body">error or a window that moved.</text>
+  <path d="M720 1092 L755 1092 L755 210 L790 210" class="loop"/>
+  <text x="75" y="1176" class="loop-label">the page is on screen while the script is still arriving; the dashed line is the takeover beginning</text>
+
+  <text x="40" y="1206" class="caption">Measured on the service alone in Docker: the top of the page in 7 to 9 ms, the drawn inventory in 105 ms at the median.</text>
+  <text x="40" y="1226" class="caption">Through the domain the top and the drawing arrive together, because the edge in use today holds a proxied answer until it has all of it.</text>
+  <text x="40" y="1246" class="caption">Source: docs/images/server-page.svg in the repository, drawn by docs/images/server-page.mjs and redrawn when a step moves.</text>
+</svg>

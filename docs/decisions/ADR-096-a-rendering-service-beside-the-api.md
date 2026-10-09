@@ -120,6 +120,10 @@ The service went in front of visitors on 8 October and the pages that describe t
 
 The three drawings that show the machine were a day behind the pages: `infrastructure.svg` had one process on a B1 plan with two deploys, and CI on a pull request only; `two-sites.mjs` had two web apps at $12.41; `dataflow.mjs` had no renderer in the read path. Each is redrawn: the service beside the API's process on the plan, with the edge's page rule, the third deploy and the second image in the registry; the service as a third web app that the page rule reaches, reading each site's API and opening no store; and the page's first read running on the service, with the browser's fetch seam starting from the first load the page carries. The side-by-side drawing prices the plan at $24.82. The test that holds the pages to the template's plan size holds the two drawings' sources as well.
 
+## Addendum, 2026-10-09 (1.0.3.108): the trip, drawn
+
+A reader of this record or of React server rendering, explained had to picture the request's path from the words. `docs/images/server-page.mjs` draws it in the house style. The first load runs down the left: the address, the edge's page rule, the page with its build, the loaders under their deadline, the draw with its stream, the browser painting. The takeover runs down the right: the bundle's arrival, the first load being read, every hook starting from it, the four differences answered, the page live. It opens on its own page, A page drawn on the server, in the sidebar's Diagrams section after The two sites, and the Best Practices page carries its preview.
+
 ## Where it sits
 
 Outside the rings. The service is a client of the API, like a browser, and the API does not know it exists: no project in `api/` references it, and the host still serves the built page as a file (`ServerRenderingReadinessTests`). The service's own code is the frontend's code drawn somewhere else, with the few files of its own in `render/`.
@@ -134,3 +138,4 @@ Outside the rings. The service is a client of the API, like a browser, and the A
 - [`src/app/mount.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/mount.tsx): where the browser takes a drawn page over.
 - [`src/app/drawServer.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/drawServer.test.ts) and [`render/render.test.ts`](https://github.com/SteveStout/TheYard/blob/main/render/render.test.ts): every view drawn with no browser, and the service's own rules.
 - [`tests/e2e/drawn.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/drawn.spec.ts): every drawn page taken over in Chrome with no hydration error.
+- [`docs/images/server-page.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/server-page.mjs): the drawing of the whole trip on its own page: the first load, then the takeover.

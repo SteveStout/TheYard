@@ -157,6 +157,7 @@ public static class DocumentationCatalog
         ["dataflow"] = ("docs/images/dataflow.svg", "TheYard data flow"),
         ["erd"] = ("docs/images/erd.svg", "TheYard's database"),
         ["two-sites"] = ("docs/images/two-sites.svg", "TheYard's two sites"),
+        ["server-page"] = ("docs/images/server-page.svg", "A page drawn on the server"),
         ["sql-vs-cosmos"] = ("docs/images/sql-vs-cosmos.svg", "SQL Server and Cosmos DB, side by side"),
         ["ui-architecture"] = ("docs/images/ui-architecture.svg", "TheYard's UI, layer by layer"),
         ["rings"] = ("docs/images/rings.svg", "TheYard's rings"),

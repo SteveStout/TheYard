@@ -146,6 +146,10 @@ place.
 
 ![The Diagrams section on the live site: five rows, Infrastructure, Data flow, The database, The two sites, SQL Server vs Cosmos DB, each with the new-tab icon, under the SQL vs Cosmos DB section](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/sidebar-sections.png)
 
+## Addendum, 2026-10-09 (1.0.3.108): a tenth drawing, the page drawn on the server
+
+The rendering service (ADR: A rendering service beside the API) gives the site a path a reader has to picture: a page's request leaving the edge for the service, which reads the API and sends the HTML drawn for React to take over. `docs/images/server-page.mjs` draws it with the first load down one lane and the takeover down the other, and it opens as A page drawn on the server, the row after The two sites in the Diagrams section. The sitemap lists it with the others.
+
 ## Addendum, 2026-09-29 (1.0.3.47): a page about him, on the same pattern
 
 A search for his name with ".NET" or "Azure" found his LinkedIn and not this site. The site had a head that described the auction and a structured-data block naming him only as the author of the code, and no page whose subject was him. `/about` is that page, served by the API the way a diagram is: one small HTML document, `api/TheYard.Api/AboutPage.cs`, with the palette inline, a viewport line, selectable text, and nothing fetched from another host, the font included (the diagram pages still ask Google for theirs; this one uses the reader's own copy of the face or the system's). Outside `/api` because it is a page a search engine lists; a literal route wins over the app's fallback, and the dev server proxies it to the API like `/api`.

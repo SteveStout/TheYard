@@ -70,6 +70,12 @@ The browser's first draw has to produce exactly the markup the server drew. Anyt
 
 Two views are left to the browser on purpose: the Admin tab and the account page. They are made of live readings and personal data that change by the second, so the server draws the frame around them and a short placeholder, and the browser draws them.
 
+## The whole trip, drawn
+
+[![A page drawn on the server: the first load from the address through the edge, the rendering service and the API to the HTML the browser paints, and then the takeover, where React attaches to that HTML](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/server-page.png)](https://theyard.stevenstout.biz/api/docs/diagrams/server-page)
+
+*A preview. [Open the drawing in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/server-page) to zoom in and follow it. Every box is a file; the left lane is the first load and the right lane the takeover.*
+
 ## Streaming: the top of the page leaves first
 
 Everything above `#root` in the page is the same for every visitor: the stylesheet, the font, the script. The service sends that part the moment a request arrives, before any API read has answered, so the browser starts downloading the stylesheet and the script while the service is still reading. The drawing follows, then the first load, then the rest of the page.
