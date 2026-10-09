@@ -44,6 +44,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | An identity token is asked for at whichever door the host has, and a web app's card claims no restart count it was never given | ADR: One plan, two sites | AzureSelfTests |
 | Every setting a container group carried is a setting the two sites carry, and nothing deploys a template in complete mode | ADR: One plan, two sites | AppServiceTemplateTests |
 | The living documents that describe what runs name the plan size the template declares | ADR: A rendering service beside the API | AppServiceTemplateTests |
+| The rendering service names the session cookie the API issues, so the edge's copy of a page drawn for nobody is never handed to a signed-in visitor | ADR: A rendering service beside the API | CacheHeaderTests |
 | A request on a store whose catalogue is cold waits for the load without blocking a thread, and a warm store is waited on for no time at all | ADR: One container, both stores | WarmthTests |
 | No production comment leans on a version number, a date or a review to stand in for its reason | ADR: Code that reads like code | HouseVoiceTests |
 | Every record opens with its title, says what became of it, says where it sits in the rings above its Files section, and has a Files section with at least one link | This record, ADR: Onion and SOLID, how this codebase holds them | RecordShapeTests |

@@ -4,7 +4,7 @@ import pageSource from './page.ts?raw';
 import renderSource from './render.ts?raw';
 import serverSource from './server.mjs?raw';
 import { cutAtRoot, ROOT_END, ROOT_START } from './page';
-import { createRenderer, RENDERED_HEADER } from './render';
+import { createRenderer, EDGE_RULE, EDGE_VARY, RENDERED_HEADER } from './render';
 
 // #region a-fake-api
 const API = 'https://api.example';
@@ -139,6 +139,24 @@ describe('the rendering service', () => {
     for (const read of asked) {
       expect(Object.keys(read.headers).sort().join(',')).toMatch(/^(Cookie,)?User-Agent$/);
       expect(read.headers['User-Agent']).toBe('TheYard-SelfRead/1 (render)');
+    }
+  });
+
+  it('lets the edge keep a page drawn for nobody, keyed by the view and the session cookie, and the browser still asks', async () => {
+    const { response } = await page('?view=inventory');
+    expect(response.headers.get('Netlify-CDN-Cache-Control')).toBe(EDGE_RULE);
+    expect(response.headers.get('Netlify-Vary')).toBe(EDGE_VARY);
+    expect(EDGE_VARY).toBe('query,cookie=theyard_session');
+    expect(response.headers.get('Cache-Control')).toBe('no-cache');
+    expect(response.headers.get('Vary')).toBe('Cookie');
+  });
+
+  it('never lets the edge keep a page drawn for a request that carried a cookie, whatever the cookie was', async () => {
+    for (const cookie of ['theyard_session=abc', 'other=1']) {
+      const { response } = await page('?view=inventory', fakeApi(), cookie);
+      expect(response.headers.get('Netlify-CDN-Cache-Control')).toBe('private, no-store');
+      expect(response.headers.get('Cache-Control')).toBe('private, no-cache');
+      expect(response.headers.get('Netlify-Vary')).toBe(EDGE_VARY);
     }
   });
 

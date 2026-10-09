@@ -59,19 +59,51 @@ export function createRenderer(
       return asServed(page, `other-build ${page.version}`);
     }
     const search = new URL(url).search.replace(/^\?/, '');
-    const load = loadFirst(search, headers.get('cookie'), apiOrigin, deadlineMs, read);
-    return new Response(streamPage(page, load), {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        // A page carries who is signed in, so no shared cache may keep one; the edge's own rules decide the rest.
-        'Cache-Control': 'private, no-cache',
-        Vary: 'Cookie',
-        [RENDERED_HEADER]: 'drawn',
-      },
-    });
+    const cookie = headers.get('cookie');
+    const load = loadFirst(search, cookie, apiOrigin, deadlineMs, read);
+    return new Response(streamPage(page, load), { status: 200, headers: pageHeaders(cookie) });
   };
 }
+
+// #region edge-copy
+/** The cookie a session travels in, as the API names it (api/TheYard.Api/Tokens.cs); CacheHeaderTests holds the two names together. */
+export const SESSION_COOKIE = 'theyard_session';
+
+/**
+ * How long the edge may answer an anonymous page from its own copy: ten
+ * seconds fresh, then twenty more while it fetches a new one behind the
+ * visitor. The browser is told nothing new and still asks every time; the
+ * edge alone reads this header, as it does for the catalogue's two reads.
+ */
+export const EDGE_RULE = 'public, max-age=10, stale-while-revalidate=20';
+
+/**
+ * What the edge keys its copy on: the whole query, because each view is one,
+ * and the session cookie, so a request that carries a session never meets a
+ * copy drawn for nobody. The same header goes on every page, kept or not,
+ * because the edge reads the first one it sees for an address and ignores the rest.
+ */
+export const EDGE_VARY = `query,cookie=${SESSION_COOKIE}`;
+
+/**
+ * The headers on a drawn page. A request with no Cookie header at all is
+ * everybody's: its page is the same for every such visitor and the edge may
+ * keep it. A request with any cookie is somebody's, and its page is answered
+ * fresh and never stored anywhere shared, whatever the cookie turns out to be.
+ * @param cookie the request's Cookie header, or null when it sent none
+ */
+export function pageHeaders(cookie: string | null): Record<string, string> {
+  const anonymous = cookie === null;
+  return {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': anonymous ? 'no-cache' : 'private, no-cache',
+    Vary: 'Cookie',
+    'Netlify-CDN-Cache-Control': anonymous ? EDGE_RULE : 'private, no-store',
+    'Netlify-Vary': EDGE_VARY,
+    [RENDERED_HEADER]: 'drawn',
+  };
+}
+// #endregion edge-copy
 
 /** The API's page, untouched: what a visitor got before this service existed. */
 function asServed(page: ServedPage, why: string): Response {

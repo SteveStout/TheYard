@@ -95,6 +95,22 @@ public class CacheHeaderTests(WebApplicationFactory<Program> factory)
         Assert.Equal("", Header(response, "Netlify-CDN-Cache-Control"));
     }
 
+    /// <summary>
+    /// The rendering service lets the edge keep an anonymous page for a few
+    /// seconds, keyed by the session cookie so a signed-in visitor never meets
+    /// that copy (ADR: A rendering service beside the API, the addendum on the
+    /// edge's copy of a page). The service writes the cookie's name itself, in
+    /// TypeScript; this holds it to the name the API issues.
+    /// </summary>
+    [Fact]
+    public void The_rendering_service_names_the_session_cookie_the_api_issues()
+    {
+        string source = File.ReadAllText(Path.Combine(Repo.Root(), "render", "render.ts"));
+
+        Assert.Contains($"export const SESSION_COOKIE = '{TokenIssuer.CookieName}';", source);
+        Assert.Contains("cookie=${SESSION_COOKIE}", source);
+    }
+
     [Fact]
     public async Task The_photo_set_keeps_its_one_day_rule()
     {
