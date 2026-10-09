@@ -41,7 +41,7 @@ public class DockerBuildInputsTests
 
         // Only the stage that runs `npm run build`. A COPY in the API stage
         // does not put a file where Vite can see it.
-        int start = dockerfile.IndexOf("FROM node:", StringComparison.Ordinal);
+        int start = dockerfile.IndexOf("FROM public.ecr.aws/docker/library/node:", StringComparison.Ordinal);
         int end = dockerfile.IndexOf("RUN npm run build", StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start, "the Dockerfile should have a node stage that runs the frontend build");
         string stage = dockerfile[start..end];

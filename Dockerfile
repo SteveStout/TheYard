@@ -2,7 +2,7 @@
 
 # #region frontend-build
 # Stage 1: build the frontend in a Node environment.
-FROM node:24-alpine AS frontend-build
+FROM public.ecr.aws/docker/library/node:24-alpine AS frontend-build
 # This gives us a standard Node toolchain for Vite and keeps the build dependencies isolated from the final runtime image.
 WORKDIR /src
 

@@ -89,7 +89,10 @@ public class TechnologyVersionsTests
         Assert.Contains($"Microsoft.Build.Sql/{rows["Microsoft.Build.Sql"].InUse}\"", sqlProject, StringComparison.Ordinal);
 
         string node = rows["node (Docker build stage and CI)"].InUse;
-        Assert.Contains($"FROM node:{node}-alpine", File.ReadAllText(Path.Combine(root, "Dockerfile")), StringComparison.Ordinal);
+        // The image is Docker's official one read from AWS's public mirror of it, which needs no account and is not
+        // rate limited for GitHub's runners the way Docker Hub is (ADR-002, the addendum on the mirror).
+        Assert.Contains($"FROM public.ecr.aws/docker/library/node:{node}-alpine", File.ReadAllText(Path.Combine(root, "Dockerfile")), StringComparison.Ordinal);
+        Assert.Contains($"FROM public.ecr.aws/docker/library/node:{node}-alpine", File.ReadAllText(Path.Combine(root, "render", "Dockerfile")), StringComparison.Ordinal);
         string ci = File.ReadAllText(Path.Combine(root, ".github", "workflows", "ci.yml"));
         Assert.DoesNotMatch(new Regex(@"node-version: (?!" + node + @"\b)\d+"), ci);
     }

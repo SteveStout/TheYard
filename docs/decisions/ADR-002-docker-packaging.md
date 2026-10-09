@@ -92,3 +92,7 @@ samples read (ADR: Live code samples):
 ## Addendum, 2026-10-03: the build stage is Node 24
 
 The build stage moved from `node:22-alpine` to `node:24-alpine`, and CI from Node 22 to Node 24, because 22 is in maintenance and 24 is the active long-term release (ADR: Technology versions). Nothing else in the stage changed.
+
+## Addendum, 2026-10-09 (1.0.3.109): the node image comes from a mirror that needs no account
+
+Deploy #292 for 1.0.3.108 failed in two seconds at Build and push, and twice more when re-run: Docker Hub answered the metadata request for `node:24-alpine` from GitHub's runner with 429 Too Many Requests, and once with a 504 from its token service. Nothing in the commit; the anonymous pull allowance is shared by every runner on the address, and the two .NET images come from Microsoft's registry, which has no such limit. The three Node stages, the site's build stage and the rendering service's build and run stages, now pull the same official image from AWS's public mirror of it, `public.ecr.aws/docker/library/node:24-alpine`, which Docker publishes there itself, needs no account and no secret, and is not metered that way. Read from the build machine before the change: the mirror answers the tag with the image index, status 200. A signed-in pull from Docker Hub would have raised the allowance instead, at the price of a Docker account and a secret in the pipeline, which the rules refuse. `TechnologyVersionsTests` holds both Dockerfiles to the mirror's address and the Node version, and `DockerBuildInputsTests` finds the frontend stage by it.

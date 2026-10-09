@@ -11,7 +11,7 @@
 #   docker build -f render/Dockerfile -t theyard-render .
 
 # #region build
-FROM node:24-alpine AS build
+FROM public.ecr.aws/docker/library/node:24-alpine AS build
 WORKDIR /src
 COPY package*.json ./
 RUN npm ci
@@ -22,7 +22,7 @@ RUN npx vite build --config render/vite.config.ts
 # #endregion build
 
 # #region run
-FROM node:24-alpine AS run
+FROM public.ecr.aws/docker/library/node:24-alpine AS run
 WORKDIR /app
 # React reads this when it loads: production is its faster renderer, without the development checks.
 ENV NODE_ENV=production
