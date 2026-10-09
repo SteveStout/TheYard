@@ -266,7 +266,7 @@ const rows = [
       title: 'The free tier',
       mono: '1000 RU/s and 25 GB for the life of the account, ADR-059',
       body: [
-        'Shared across the database\'s containers, never paused, and the site\'s whole month is pennies of it at serverless rates. The store costs $0.00; the site that serves it shares one $12.41 App Service plan with the other.',
+        'Shared across the database\'s containers, never paused, and the site\'s whole month is pennies of it at serverless rates. The store costs $0.00; the site that serves it shares one $24.82 App Service plan with the other and the rendering service.',
       ],
     },
   },

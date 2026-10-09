@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="848" viewBox="0 0 1520 848" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
-  <title>TheYard's two sites: two names at Wix, one Netlify edge, two web apps on one App Service plan on Azure, and both stores behind both</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="1111" viewBox="0 0 1520 1111" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>TheYard's two sites: two names at Wix, one Netlify edge, two web apps and the rendering service on one App Service plan on Azure, and both stores behind both</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
@@ -25,9 +25,9 @@
     </style>
   </defs>
 
-  <rect width="1520" height="848" fill="#e9e6e7"/>
-  <text x="40" y="44" class="heading">TheYard's two sites: two names, one edge, two web apps on one plan, both stores behind both</text>
-  <text x="40" y="68" class="caption">A request reads left to right. The name a visitor typed is the only thing that differs until the edge, the edge picks the origin from it, and each origin opens both stores.</text>
+  <rect width="1520" height="1111" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">TheYard's two sites: two names, one edge, three web apps on one plan, both stores behind both</text>
+  <text x="40" y="68" class="caption">A request reads left to right. The name a visitor typed and the path are what differ until the edge; the edge sends a page to the rendering service and everything else to that site's API, and each site opens both stores.</text>
 
   <!-- ===================== Lane 1: the names ===================== -->
   <rect x="40" y="92" width="400" height="507" class="lane"/>
@@ -35,14 +35,14 @@
   <text x="60" y="140" class="lane-sub">Three CNAMEs and one A record, all at the same edge.</text>
 
   <!-- ===================== Lane 2: the edge ===================== -->
-  <rect x="470" y="92" width="460" height="626" class="lane"/>
+  <rect x="470" y="92" width="460" height="694" class="lane"/>
   <text x="490" y="120" class="lane-title">One edge: the Netlify site theyard-edge</text>
   <text x="490" y="140" class="lane-sub">Terminates HTTPS, then proxies by Host. Three files in this repository.</text>
 
   <!-- ===================== Lane 3: Azure ===================== -->
-  <rect x="960" y="92" width="520" height="656" class="lane"/>
+  <rect x="960" y="92" width="520" height="919" class="lane"/>
   <text x="980" y="120" class="lane-title">Azure: RG-THEYARD-SS, one App Service plan in westus3</text>
-  <text x="980" y="140" class="lane-sub">Two web apps running the same image on one machine, and the two stores both open.</text>
+  <text x="980" y="140" class="lane-sub">Three web apps on one machine: two sites on one image, and the service; both stores open.</text>
 
   <rect x="60" y="170" width="360" height="118" class="box"/>
   <text x="75" y="196" class="title">theyard.stevenstout.biz</text>
@@ -67,24 +67,28 @@
   <text x="505" y="240" class="body">Four names on it: the bare domain, www, theyard</text>
   <text x="505" y="257" class="body">and theyard-cosmos. Adding the alias reissued it</text>
   <text x="505" y="274" class="body">within the minute; nothing was bought.</text>
-  <rect x="490" y="324" width="420" height="220" class="box"/>
-  <text x="505" y="350" class="title">edge/_redirects: the name picks the origin</text>
+  <rect x="490" y="324" width="420" height="288" class="box"/>
+  <text x="505" y="350" class="title">edge/_redirects: the name and the path pick the origin</text>
   <text x="505" y="372" class="mono">the first matching rule wins, top to bottom</text>
-  <text x="505" y="394" class="body">https://theyard-cosmos.stevenstout.biz/* to the</text>
-  <text x="505" y="411" class="body">second web app, 200!</text>
-  <text x="505" y="428" class="body">/* to the first web app, 200! (the catch-all,</text>
-  <text x="505" y="445" class="body">last)</text>
-  <text x="505" y="462" class="body">stevenstout.biz and www: 301 to</text>
-  <text x="505" y="479" class="body">theyard.stevenstout.biz</text>
-  <text x="505" y="496" class="body">A domain-level rule only matches a name assigned</text>
-  <text x="505" y="513" class="body">to the site, so the alias is what makes the first</text>
-  <text x="505" y="530" class="body">line eligible.</text>
-  <rect x="490" y="580" width="420" height="118" class="box"/>
-  <text x="505" y="606" class="title">netlify.toml: build only when the edge moves</text>
-  <text x="505" y="628" class="mono">ignore = "git diff --quiet ... -- edge/ netlify.toml"</text>
-  <text x="505" y="650" class="body">An application push costs no credits; an edge</text>
-  <text x="505" y="667" class="body">change is one deploy, 15 of the month's 300. This</text>
-  <text x="505" y="684" class="body">one cost exactly that, read off the meter.</text>
+  <text x="505" y="394" class="body">https://theyard-cosmos.stevenstout.biz/ to the</text>
+  <text x="505" y="411" class="body">rendering service as /site/cosmos, 200!</text>
+  <text x="505" y="428" class="body">https://theyard-cosmos.stevenstout.biz/* to the</text>
+  <text x="505" y="445" class="body">second web app, 200!</text>
+  <text x="505" y="462" class="body">/ to the rendering service as /site/sql, 200!</text>
+  <text x="505" y="479" class="body">/* to the first web app, 200! (the catch-all,</text>
+  <text x="505" y="496" class="body">last)</text>
+  <text x="505" y="513" class="body">stevenstout.biz and www: 301 to</text>
+  <text x="505" y="530" class="body">theyard.stevenstout.biz</text>
+  <text x="505" y="547" class="body">A page is the bare path with its query, so the two</text>
+  <text x="505" y="564" class="body">bare-path rules send every page to the service and</text>
+  <text x="505" y="581" class="body">the query goes with the rewrite; /index.html is</text>
+  <text x="505" y="598" class="body">still the API's own page, drawn in the browser.</text>
+  <rect x="490" y="648" width="420" height="118" class="box"/>
+  <text x="505" y="674" class="title">netlify.toml: build only when the edge moves</text>
+  <text x="505" y="696" class="mono">ignore = "git diff --quiet ... -- edge/ netlify.toml"</text>
+  <text x="505" y="718" class="body">An application push costs no credits; an edge</text>
+  <text x="505" y="735" class="body">change is one deploy, 15 of the month's 300. This</text>
+  <text x="505" y="752" class="body">one cost exactly that, read off the meter.</text>
   <rect x="980" y="170" width="420" height="135" class="box"/>
   <text x="995" y="196" class="title">APP-THEYARD-SS-ZMNETJ67BN5H2</text>
   <text x="995" y="218" class="mono">https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net</text>
@@ -98,39 +102,54 @@
   <text x="995" y="435" class="body">Store__Default = cosmos. Peer__Site =</text>
   <text x="995" y="452" class="body">https://theyard.stevenstout.biz. Rolled by</text>
   <text x="995" y="469" class="body">Deploy Cosmos. Same image, same plan: one Linux</text>
-  <text x="995" y="486" class="body">B1, 1 vCPU and 1.75 GB shared by both sites,</text>
-  <text x="995" y="503" class="body">$12.41 a month.</text>
-  <rect x="980" y="593" width="200" height="118" class="store"/>
-  <text x="995" y="619" class="title">Azure SQL Database</text>
-  <text x="995" y="641" class="mono">Entra-only, no SQL login</text>
-  <text x="995" y="663" class="body">Reached as the managed</text>
-  <text x="995" y="680" class="body">identity. West US 3,</text>
-  <text x="995" y="697" class="body">the plan's own region.</text>
-  <rect x="1200" y="593" width="200" height="135" class="store"/>
-  <text x="1215" y="619" class="title">Azure Cosmos DB</text>
-  <text x="1215" y="641" class="mono">no keys on the account</text>
-  <text x="1215" y="663" class="body">Reached as the managed</text>
-  <text x="1215" y="680" class="body">identity. West US 2,</text>
-  <text x="1215" y="697" class="body">one region from the</text>
-  <text x="1215" y="714" class="body">plan.</text>
-  <path d="M420 229 L490 408" class="flow"/>
-  <path d="M420 374 L490 434" class="flow"/>
-  <path d="M420 520 L490 460" class="flow"/>
+  <text x="995" y="486" class="body">B2, 2 vCPU and 3.5 GB shared by both sites and</text>
+  <text x="995" y="503" class="body">the rendering service, $24.82 a month.</text>
+  <rect x="980" y="577" width="420" height="203" class="box"/>
+  <text x="995" y="603" class="title">APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2</text>
+  <text x="995" y="625" class="mono">https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net</text>
+  <text x="995" y="647" class="body">The rendering service, one process for both</text>
+  <text x="995" y="664" class="body">sites: /site/sql draws for the first,</text>
+  <text x="995" y="681" class="body">/site/cosmos for the second. Its own image</text>
+  <text x="995" y="698" class="body">(render/Dockerfile: the build on Node, nothing</text>
+  <text x="995" y="715" class="body">else), rolled by Deploy Render on the same push.</text>
+  <text x="995" y="732" class="body">YARD_SITES names each site's API; a page is read</text>
+  <text x="995" y="749" class="body">from that API and drawn, then sent with its data</text>
+  <text x="995" y="766" class="body">in it. It opens no store.</text>
+  <rect x="980" y="856" width="200" height="118" class="store"/>
+  <text x="995" y="882" class="title">Azure SQL Database</text>
+  <text x="995" y="904" class="mono">Entra-only, no SQL login</text>
+  <text x="995" y="926" class="body">Reached as the managed</text>
+  <text x="995" y="943" class="body">identity. West US 3,</text>
+  <text x="995" y="960" class="body">the plan's own region.</text>
+  <rect x="1200" y="856" width="200" height="135" class="store"/>
+  <text x="1215" y="882" class="title">Azure Cosmos DB</text>
+  <text x="1215" y="904" class="mono">no keys on the account</text>
+  <text x="1215" y="926" class="body">Reached as the managed</text>
+  <text x="1215" y="943" class="body">identity. West US 2,</text>
+  <text x="1215" y="960" class="body">one region from the</text>
+  <text x="1215" y="977" class="body">plan.</text>
+  <path d="M420 229 L490 442" class="flow"/>
+  <path d="M420 374 L490 468" class="flow"/>
+  <path d="M420 520 L490 494" class="flow"/>
   <text x="490" y="314" class="flow-label">HTTPS, then the Host header picks the rule</text>
-  <path d="M910 414 L980 237" class="flow"/>
-  <path d="M910 454 L980 441" class="flow"/>
-  <text x="980" y="160" class="flow-label">everything else: HTTPS to the first web app</text>
-  <text x="980" y="355" class="flow-label">theyard-cosmos: HTTPS to the second web app</text>
+  <path d="M910 448 L980 237" class="flow"/>
+  <path d="M910 488 L980 441" class="flow"/>
+  <path d="M910 508 L980 678" class="flow"/>
+  <text x="980" y="160" class="flow-label">everything else on theyard: HTTPS to the first web app</text>
+  <text x="980" y="355" class="flow-label">everything else on theyard-cosmos: HTTPS to the second web app</text>
+  <text x="980" y="567" class="flow-label">a page on either name: HTTPS to the rendering service, as that site</text>
+  <path d="M1400 698 L1420 698 L1420 503 L1402 503" class="flow"/>
+  <text x="995" y="796" class="flow-label">reads the page, the build and the view from that site's API, cookie forwarded</text>
   <path d="M1020 305 L1020 365" class="flow" style="marker-end:none"/>
-  <path d="M1020 517 L1020 559 L1300 559" class="flow" style="marker-end:none"/>
-  <path d="M1080 559 L1080 593" class="flow"/>
-  <path d="M1300 559 L1300 593" class="flow"/>
-  <text x="1032" y="551" class="flow-label">both sites open both stores, as their managed identity</text>
+  <path d="M1020 517 L1020 553 L968 553 L968 822 L1300 822" class="flow" style="marker-end:none"/>
+  <path d="M1080 822 L1080 856" class="flow"/>
+  <path d="M1300 822 L1300 856" class="flow"/>
+  <text x="1020" y="814" class="flow-label">both sites open both stores, as their managed identity; the service opens neither</text>
   <path d="M1400 253 L1430 253 L1430 425 L1402 425" class="loop"/>
   <path d="M1400 457 L1454 457 L1454 277 L1402 277" class="loop"/>
   <text x="1028" y="335" class="loop-label">the Store bar: each site links to the other, at the same page</text>
 
-  <text x="40" y="782" class="caption">Each site is one store's site: the web app's default store serves it; a measurement can name the other store for one request with the X-Yard-Store header.</text>
-  <text x="40" y="802" class="caption">The edge retires at the registrar transfer around the end of October 2026; both names then become two records at Cloudflare pointing at the same two origins.</text>
-  <text x="40" y="822" class="caption">Source: docs/images/two-sites.svg in the repository, drawn by docs/images/two-sites.mjs and redrawn when a name, a rule or a site changes.</text>
+  <text x="40" y="1045" class="caption">Each site is one store's site: the web app's default store serves it; a measurement can name the other store for one request with the X-Yard-Store header.</text>
+  <text x="40" y="1065" class="caption">The edge retires at the registrar transfer around the end of October 2026; both names then become two records at Cloudflare, and a Worker takes the rendering function with it.</text>
+  <text x="40" y="1085" class="caption">Source: docs/images/two-sites.svg in the repository, drawn by docs/images/two-sites.mjs and redrawn when a name, a rule or a site changes.</text>
 </svg>

@@ -202,6 +202,9 @@ public class AppServiceTemplateTests
             Path.Combine("docs", "performance", "PERFORMANCE.md"),
             Path.Combine("docs", "app-architecture", "ARCHITECTURE.md"),
             "README.md",
+            // The drawings claim the same machine: the hand-drawn infrastructure picture and the two-sites generator.
+            Path.Combine("docs", "images", "infrastructure.svg"),
+            Path.Combine("docs", "images", "two-sites.mjs"),
         ];
         foreach (string page in pages)
         {

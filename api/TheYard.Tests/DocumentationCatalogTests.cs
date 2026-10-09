@@ -127,7 +127,7 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
         string images = Path.Combine(Repo.Root(), "docs", "images");
 
         Assert.Equal((1280, 800), DocImages.SizeOf(Path.Combine(images, "app-home.jpg")));
-        Assert.Equal((1400, 1370), DocImages.SizeOf(Path.Combine(images, "infrastructure.svg")));
+        Assert.Equal((1400, 1480), DocImages.SizeOf(Path.Combine(images, "infrastructure.svg")));
         Assert.Null(DocImages.SizeOf(Path.Combine(images, "nothing-by-this-name.png")));
     }
 

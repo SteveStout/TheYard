@@ -116,6 +116,10 @@ Every view was read on both domains before the edge sent pages here (1.0.3.99) a
 
 The service went in front of visitors on 8 October and the pages that describe the running system kept describing the day before it. Hosting and both Performance overviews said one Linux B1 plan at $12.41 a month with two web apps on it, as did the README; CI/CD named two deploys where there are three; App Architecture's topology had no renderer in it; Start here did not mention `render/`. Each now says what this record says: B2 at $24.82 ($34.79 a month in all) with three web apps on the plan, a page's path to the service with everything else's to the API, and Deploy Render on the same push. `AppServiceTemplateTests` reads the plan's size from `infra/appservice.bicep` and fails until every page that describes the machine names it, so the next move of the plan cannot leave a page behind.
 
+## Addendum, 2026-10-09 (1.0.3.107): the drawings say what runs
+
+The three drawings that show the machine were a day behind the pages: `infrastructure.svg` had one process on a B1 plan with two deploys, and CI on a pull request only; `two-sites.mjs` had two web apps at $12.41; `dataflow.mjs` had no renderer in the read path. Each is redrawn: the service beside the API's process on the plan, with the edge's page rule, the third deploy and the second image in the registry; the service as a third web app that the page rule reaches, reading each site's API and opening no store; and the page's first read running on the service, with the browser's fetch seam starting from the first load the page carries. The side-by-side drawing prices the plan at $24.82. The test that holds the pages to the template's plan size holds the two drawings' sources as well.
+
 ## Where it sits
 
 Outside the rings. The service is a client of the API, like a browser, and the API does not know it exists: no project in `api/` references it, and the host still serves the built page as a file (`ServerRenderingReadinessTests`). The service's own code is the frontend's code drawn somewhere else, with the few files of its own in `render/`.

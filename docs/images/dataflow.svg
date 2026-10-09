@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1749" viewBox="0 0 1400 1749" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2005" viewBox="0 0 1400 2005" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>TheYard data flow: a vehicle from a JSON file on disk to a card in the browser, and a bid back</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
@@ -24,14 +24,14 @@
     </style>
   </defs>
 
-  <rect width="1400" height="1749" fill="#e9e6e7"/>
+  <rect width="1400" height="2005" fill="#e9e6e7"/>
   <text x="40" y="44" class="heading">TheYard data flow: a vehicle from a JSON file to a card in the browser, and a bid back</text>
-  <text x="40" y="68" class="caption">Every box is a file; the path under each title is where that step lives. Domain, Application, Infrastructure and Api are the projects under api/.</text>
+  <text x="40" y="68" class="caption">Every box is a file; the path under each title is where that step lives. Domain, Application, Infrastructure and Api are the projects under api/; render/ is the rendering service beside them.</text>
 
   <!-- ===================== Lane 1: the read path ===================== -->
-  <rect x="40" y="92" width="800" height="1585" class="lane"/>
+  <rect x="40" y="92" width="800" height="1841" class="lane"/>
   <text x="60" y="120" class="lane-title">The read path, top to bottom</text>
-  <text x="60" y="140" class="lane-sub">The first four boxes run once at startup; the rest run for every request.</text>
+  <text x="60" y="140" class="lane-sub">The first four boxes run once at startup; the rest run for every request, and a page's first read runs on the rendering service.</text>
 
   <!-- ===================== Lane 2: the write path ===================== -->
   <rect x="870" y="92" width="490" height="1063" class="lane"/>
@@ -91,24 +91,38 @@
   <text x="75" y="1215" class="body">auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.</text>
   <path d="M120 1229 L120 1263" class="flow"/>
   <text x="132" y="1251" class="flow-label">{ total, vehicles } as JSON</text>
-  <rect x="60" y="1265" width="760" height="118" class="box"/>
-  <text x="75" y="1291" class="title">The fetch seam</text>
-  <text x="75" y="1313" class="mono">src/lib/data.ts</text>
-  <text x="75" y="1335" class="body">Debounces filter changes (500 ms), caches responses per query string for five minutes (a</text>
-  <text x="75" y="1352" class="body">hit skips the debounce) and aborts superseded requests. The query string comes from</text>
-  <text x="75" y="1369" class="body">src/lib/inventory.ts, the same serializer that feeds the address bar.</text>
-  <path d="M120 1383 L120 1417" class="flow"/>
-  <rect x="60" y="1419" width="760" height="101" class="box"/>
-  <text x="75" y="1445" class="title">App state and the address bar</text>
-  <text x="75" y="1467" class="mono">src/app/hooks/useAddressBar.ts</text>
-  <text x="75" y="1489" class="body">Holds the page. Filters, sort, ?vehicle and ?view are mirrored into the URL, and Back</text>
-  <text x="75" y="1506" class="body">and Forward re-read it.</text>
-  <path d="M120 1520 L120 1554" class="flow"/>
-  <rect x="60" y="1556" width="760" height="101" class="box"/>
-  <text x="75" y="1582" class="title">Cards, detail, bid panel</text>
-  <text x="75" y="1604" class="mono">src/components/*</text>
-  <text x="75" y="1626" class="body">Format currency (src/lib/format.ts) and tick the countdowns from the server's window</text>
-  <text x="75" y="1643" class="body">(src/lib/auction.ts). No business math runs in the browser.</text>
+  <rect x="60" y="1265" width="760" height="169" class="box"/>
+  <text x="75" y="1291" class="title">The rendering service, for a page</text>
+  <text x="75" y="1313" class="mono">render/loaders.ts, render/render.ts</text>
+  <text x="75" y="1335" class="body">A page request (the bare path with its query) comes here from the edge, not to the API.</text>
+  <text x="75" y="1352" class="body">One loader per view reads what the address needs from the API above (for the inventory,</text>
+  <text x="75" y="1369" class="body">the listing with its facets), all at once under a 2.5 s deadline, then</text>
+  <text x="75" y="1386" class="body">src/app/entry-server.tsx draws the site with React's server renderer and the HTML leaves</text>
+  <text x="75" y="1403" class="body">with the first load, the JSON the reads answered, written beside #root. A read that</text>
+  <text x="75" y="1420" class="body">misses the deadline is left to the browser.</text>
+  <path d="M120 1434 L120 1468" class="flow"/>
+  <text x="132" y="1456" class="flow-label">the page, drawn, with its first load</text>
+  <rect x="60" y="1470" width="760" height="169" class="box"/>
+  <text x="75" y="1496" class="title">The fetch seam</text>
+  <text x="75" y="1518" class="mono">src/lib/data.ts</text>
+  <text x="75" y="1540" class="body">In the browser, src/app/mount.tsx starts every hook from the first load the page</text>
+  <text x="75" y="1557" class="body">carries, so the first draw matches the server's and React takes the page over instead of</text>
+  <text x="75" y="1574" class="body">drawing it again. After that: debounces filter changes (500 ms), caches responses per</text>
+  <text x="75" y="1591" class="body">query string for five minutes (a hit skips the debounce) and aborts superseded requests.</text>
+  <text x="75" y="1608" class="body">The query string comes from src/lib/inventory.ts, the same serializer that feeds the</text>
+  <text x="75" y="1625" class="body">address bar.</text>
+  <path d="M120 1639 L120 1673" class="flow"/>
+  <rect x="60" y="1675" width="760" height="101" class="box"/>
+  <text x="75" y="1701" class="title">App state and the address bar</text>
+  <text x="75" y="1723" class="mono">src/app/hooks/useAddressBar.ts</text>
+  <text x="75" y="1745" class="body">Holds the page. Filters, sort, ?vehicle and ?view are mirrored into the URL, and Back</text>
+  <text x="75" y="1762" class="body">and Forward re-read it.</text>
+  <path d="M120 1776 L120 1810" class="flow"/>
+  <rect x="60" y="1812" width="760" height="101" class="box"/>
+  <text x="75" y="1838" class="title">Cards, detail, bid panel</text>
+  <text x="75" y="1860" class="mono">src/components/*</text>
+  <text x="75" y="1882" class="body">Format currency (src/lib/format.ts) and tick the countdowns from the server's window</text>
+  <text x="75" y="1899" class="body">(src/lib/auction.ts). No business math runs in the browser.</text>
   <rect x="890" y="170" width="450" height="118" class="box"/>
   <text x="905" y="196" class="title">BidPanel</text>
   <text x="905" y="218" class="mono">src/components/vehicle/BidPanel/BidPanel.tsx</text>
@@ -158,9 +172,9 @@
   <text x="905" y="1061" class="body">Clears the query cache and refetches, so every list,</text>
   <text x="905" y="1078" class="body">filter and total reflects the bid through the same read</text>
   <text x="905" y="1095" class="body">path.</text>
-  <path d="M920 1109 L920 1129 L855 1129 L855 1324 L822 1324" class="loop"/>
+  <path d="M920 1109 L920 1129 L855 1129 L855 1554 L822 1554" class="loop"/>
   <text x="930" y="1125" class="loop-label">refetch, through the same read path</text>
 
-  <text x="40" y="1703" class="caption">One rule shapes everything: derive, do not store. Windows, statuses, galleries and the 100,000 inventory are computed from stable ids, never persisted.</text>
-  <text x="40" y="1723" class="caption">Source: docs/images/dataflow.svg in the repository, drawn by docs/images/dataflow.mjs and redrawn when a box moves.</text>
+  <text x="40" y="1959" class="caption">One rule shapes everything: derive, do not store. Windows, statuses, galleries and the 100,000 inventory are computed from stable ids, never persisted.</text>
+  <text x="40" y="1979" class="caption">Source: docs/images/dataflow.svg in the repository, drawn by docs/images/dataflow.mjs and redrawn when a box moves.</text>
 </svg>

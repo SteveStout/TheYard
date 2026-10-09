@@ -46,14 +46,16 @@ const READ = [
     '4. Skip and Take for the page. Auction windows come from api/TheYard.Domain/AuctionSchedule.cs, all in memory.']],
   ['VehicleWire', 'api/TheYard.Api/VehicleWire.cs', [
     'Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at, auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.']],
+  ['The rendering service, for a page', 'render/loaders.ts, render/render.ts', [
+    "A page request (the bare path with its query) comes here from the edge, not to the API. One loader per view reads what the address needs from the API above (for the inventory, the listing with its facets), all at once under a 2.5 s deadline, then src/app/entry-server.tsx draws the site with React's server renderer and the HTML leaves with the first load, the JSON the reads answered, written beside #root. A read that misses the deadline is left to the browser."]],
   ['The fetch seam', 'src/lib/data.ts', [
-    'Debounces filter changes (500 ms), caches responses per query string for five minutes (a hit skips the debounce) and aborts superseded requests. The query string comes from src/lib/inventory.ts, the same serializer that feeds the address bar.']],
+    'In the browser, src/app/mount.tsx starts every hook from the first load the page carries, so the first draw matches the server\'s and React takes the page over instead of drawing it again. After that: debounces filter changes (500 ms), caches responses per query string for five minutes (a hit skips the debounce) and aborts superseded requests. The query string comes from src/lib/inventory.ts, the same serializer that feeds the address bar.']],
   ['App state and the address bar', 'src/app/hooks/useAddressBar.ts', [
     'Holds the page. Filters, sort, ?vehicle and ?view are mirrored into the URL, and Back and Forward re-read it.']],
   ['Cards, detail, bid panel', 'src/components/*', [
     "Format currency (src/lib/format.ts) and tick the countdowns from the server's window (src/lib/auction.ts). No business math runs in the browser."]],
 ];
-const READ_LABELS = { 0: 'once, at startup', 3: 'then, for every request', 6: '{ total, vehicles } as JSON' };
+const READ_LABELS = { 0: 'once, at startup', 3: 'then, for every request', 6: '{ total, vehicles } as JSON', 7: 'the page, drawn, with its first load' };
 
 const WRITE = [
   ['BidPanel', 'src/components/vehicle/BidPanel/BidPanel.tsx', [
@@ -124,7 +126,7 @@ const H = readBottom + 92;
 
 // The refetch loop: from under useBids, through the corridor, into the fetch seam.
 const [ubY, ubH] = writeGeoms[writeGeoms.length - 1];
-const [fsY, fsH] = readGeoms[7];
+const [fsY, fsH] = readGeoms[8];
 const startX = 890 + 30;
 const startY = ubY + ubH;
 const midY = fsY + Math.floor(fsH / 2);
@@ -145,12 +147,12 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
 
   <rect width="${W}" height="${H}" fill="#e9e6e7"/>
   <text x="40" y="44" class="heading">TheYard data flow: a vehicle from a JSON file to a card in the browser, and a bid back</text>
-  <text x="40" y="68" class="caption">Every box is a file; the path under each title is where that step lives. Domain, Application, Infrastructure and Api are the projects under api/.</text>
+  <text x="40" y="68" class="caption">Every box is a file; the path under each title is where that step lives. Domain, Application, Infrastructure and Api are the projects under api/; render/ is the rendering service beside them.</text>
 
   <!-- ===================== Lane 1: the read path ===================== -->
   <rect x="40" y="92" width="800" height="${readBottom + 20 - 92}" class="lane"/>
   <text x="60" y="120" class="lane-title">The read path, top to bottom</text>
-  <text x="60" y="140" class="lane-sub">The first four boxes run once at startup; the rest run for every request.</text>
+  <text x="60" y="140" class="lane-sub">The first four boxes run once at startup; the rest run for every request, and a page's first read runs on the rendering service.</text>
 
   <!-- ===================== Lane 2: the write path ===================== -->
   <rect x="870" y="92" width="490" height="${writeBottom + 46 - 92}" class="lane"/>

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1370" viewBox="0 0 1400 1370" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1480" viewBox="0 0 1400 1480" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>TheYard infrastructure: what runs today, how a merge becomes a roll, and the one piece of the production design still refused</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
@@ -26,12 +26,12 @@
     </style>
   </defs>
 
-  <rect width="1400" height="1370" fill="#e9e6e7"/>
-  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-09-22</text>
-  <text x="40" y="68" class="caption">Everything in the solid boxes is live and measured; the dashed group is the one piece of the production design the subscription still refuses.</text>
+  <rect width="1400" height="1480" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-10-09</text>
+  <text x="40" y="68" class="caption">Everything in the solid boxes is live and measured, the rendering service included; the dashed group is the one piece of the production design the subscription still refuses.</text>
 
   <!-- ===================== Lane 1: the request path ===================== -->
-  <rect x="40" y="92" width="1320" height="710" class="lane"/>
+  <rect x="40" y="92" width="1320" height="820" class="lane"/>
   <text x="60" y="120" class="lane-title">A request, left to right</text>
   <text x="60" y="140" class="lane-sub">HOSTING.md and ADR-004, ADR-007 record the chain; ADR-010 the Admin tab; ADR-015 the cache rules.</text>
 
@@ -59,21 +59,22 @@
   <text x="295" y="330" class="body">the transfer around Oct 30.</text>
 
   <!-- Netlify edge -->
-  <rect x="520" y="170" width="240" height="180" class="box"/>
+  <rect x="520" y="170" width="240" height="196" class="box"/>
   <text x="535" y="196" class="title">HTTPS edge: Netlify (free)</text>
   <text x="535" y="218" class="body">One Let's Encrypt cert, four names.</text>
-  <text x="535" y="240" class="mono">edge/_redirects  by Host</text>
+  <text x="535" y="240" class="mono">edge/_redirects  by Host and path</text>
   <text x="535" y="256" class="body">bare and www: 301 to theyard</text>
-  <text x="535" y="272" class="body">theyard-cosmos: to the second web app</text>
-  <text x="535" y="288" class="body">everything else: to the first web app</text>
-  <text x="535" y="310" class="mono">netlify.toml</text>
-  <text x="535" y="326" class="body">rebuilds only when edge/ changes</text>
-  <text x="535" y="344" class="muted">ADR-007, ADR-069; API not cached</text>
+  <text x="535" y="272" class="body">a page, / with its query: to the</text>
+  <text x="535" y="288" class="body">rendering service as that site</text>
+  <text x="535" y="304" class="body">everything else: to the site's API</text>
+  <text x="535" y="326" class="mono">netlify.toml</text>
+  <text x="535" y="342" class="body">rebuilds only when edge/ changes</text>
+  <text x="535" y="360" class="muted">ADR-007, ADR-069, ADR-096</text>
 
   <!-- Origin: the first web app on the plan both sites share (ADR-079) -->
-  <rect x="800" y="150" width="540" height="228" class="box"/>
-  <text x="815" y="176" class="title">Origin: App Service plan PLAN-THEYARD-SS, Linux B1, westus3</text>
-  <text x="815" y="198" class="mono">APP-THEYARD-SS-ZMNETJ67BN5H2  1 vCPU and 1.75 GB shared by both sites</text>
+  <rect x="800" y="150" width="540" height="338" class="box"/>
+  <text x="815" y="176" class="title">Origin: App Service plan PLAN-THEYARD-SS, Linux B2, westus3</text>
+  <text x="815" y="198" class="mono">APP-THEYARD-SS-ZMNETJ67BN5H2  2 vCPU and 3.5 GB, shared by three web apps</text>
   <text x="815" y="214" class="mono">https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net</text>
   <text x="815" y="238" class="body">Runs image theyard:vN from the registry, pulled with the</text>
   <text x="815" y="254" class="body">user-assigned identity id-theyard-ss (AcrPull; Reader on the resource group).</text>
@@ -85,6 +86,13 @@
   <text x="828" y="342" class="body">and the Admin tab, which trades the identity for a token and reads its own</text>
   <text x="828" y="358" class="body">site and the plan it shares from management.azure.com (ADR-010, ADR-079).</text>
 
+  <rect x="815" y="376" width="510" height="100" fill="#f4f2f3" stroke="#d8d3d4" rx="8"/>
+  <text x="828" y="398" class="title">Beside it: the rendering service, a third web app (render/, ADR-096)</text>
+  <text x="828" y="418" class="body">APP-THEYARD-RENDER-SS on the same plan, its own 62 MB image: Node and the site's</text>
+  <text x="828" y="434" class="body">build, no framework. For a page it reads what the view needs from that site's API</text>
+  <text x="828" y="450" class="body">under a 2.5 s deadline, draws the site with React's server renderer and streams</text>
+  <text x="828" y="466" class="body">the HTML with the data in it; React takes it over. It draws only for its own build.</text>
+
   <!-- request flow arrows -->
   <path d="M240 260 L280 260" class="flow"/>
   <path d="M480 260 L520 260" class="flow"/>
@@ -95,62 +103,62 @@
 
 
   <!-- Azure SQL Database, added 2026-09-03 (ADR-039, ADR-040) -->
-  <rect x="800" y="398" width="540" height="176" class="box"/>
-  <text x="815" y="424" class="title">Store: Azure SQL Database, RG-THEYARD-SS, westus3</text>
-  <text x="815" y="446" class="mono">sqldb-theyard-ss-basic  Basic  5 DTU  2 GB  $4.90 a month</text>
-  <text x="815" y="468" class="body">The server is Entra-only: it has no SQL login and therefore no password. The</text>
-  <text x="815" y="484" class="body">site authenticates as id-theyard-ss, which holds db_datareader and</text>
-  <text x="815" y="500" class="body">db_datawriter and cannot create or alter a table.</text>
-  <text x="815" y="522" class="body">The schema is api/TheYard.Database, hand-written DDL published by SqlPackage.</text>
-  <text x="815" y="538" class="body">Entity Framework maps to it; a conformance test fails the build if they differ.</text>
-  <text x="815" y="560" class="muted">West US 3 because West US 2 refused; the plan is here for the same reason.</text>
+  <rect x="800" y="508" width="540" height="176" class="box"/>
+  <text x="815" y="534" class="title">Store: Azure SQL Database, RG-THEYARD-SS, westus3</text>
+  <text x="815" y="556" class="mono">sqldb-theyard-ss-basic  Basic  5 DTU  2 GB  $4.90 a month</text>
+  <text x="815" y="578" class="body">The server is Entra-only: it has no SQL login and therefore no password. The</text>
+  <text x="815" y="594" class="body">site authenticates as id-theyard-ss, which holds db_datareader and</text>
+  <text x="815" y="610" class="body">db_datawriter and cannot create or alter a table.</text>
+  <text x="815" y="632" class="body">The schema is api/TheYard.Database, hand-written DDL published by SqlPackage.</text>
+  <text x="815" y="648" class="body">Entity Framework maps to it; a conformance test fails the build if they differ.</text>
+  <text x="815" y="670" class="muted">West US 3 because West US 2 refused; the plan is here for the same reason.</text>
 
-  <rect x="180" y="398" width="560" height="176" class="target"/>
-  <text x="195" y="424" class="title">When the database is not there</text>
-  <text x="195" y="448" class="body">A container that cannot reach the store serves the catalogue from the</text>
-  <text x="195" y="464" class="body">JSON files instead and says so on /api/health. Bids stop outliving the</text>
-  <text x="195" y="480" class="body">process; nothing else changes for a visitor.</text>
-  <text x="195" y="504" class="body">Built in ADR-033 for a serverless database that auto-pauses. The first</text>
-  <text x="195" y="520" class="body">thing it actually caught was a deploy whose connection string never got</text>
-  <text x="195" y="536" class="body">substituted, and nobody using the site could tell.</text>
-  <text x="195" y="560" class="muted">The deploy warns when a roll lands here (ADR-039 addendum).</text>
+  <rect x="180" y="508" width="560" height="176" class="target"/>
+  <text x="195" y="534" class="title">When the database is not there</text>
+  <text x="195" y="558" class="body">A container that cannot reach the store serves the catalogue from the</text>
+  <text x="195" y="574" class="body">JSON files instead and says so on /api/health. Bids stop outliving the</text>
+  <text x="195" y="590" class="body">process; nothing else changes for a visitor.</text>
+  <text x="195" y="614" class="body">Built in ADR-033 for a serverless database that auto-pauses. The first</text>
+  <text x="195" y="630" class="body">thing it actually caught was a deploy whose connection string never got</text>
+  <text x="195" y="646" class="body">substituted, and nobody using the site could tell.</text>
+  <text x="195" y="670" class="muted">The deploy warns when a roll lands here (ADR-039 addendum).</text>
 
-  <path d="M1070 378 L1070 398" class="flow"/>
+  <path d="M1070 488 L1070 508" class="flow"/>
   <!-- Azure Cosmos DB, added 2026-09-08 (ADR-059), and both stores in one process, 2026-09-09 (ADR-066) -->
-  <rect x="800" y="590" width="540" height="176" class="box"/>
-  <text x="815" y="616" class="title">Store: Azure Cosmos DB, RG-THEYARD-SS, westus2</text>
-  <text x="815" y="638" class="mono">cosmos-theyard-ss  free tier  1000 RU/s shared  session consistency  no keys</text>
-  <text x="815" y="660" class="body">Local authentication is disabled on the account, so there is no key to leak; the</text>
-  <text x="815" y="676" class="body">container authenticates as id-theyard-ss with a data-plane role that can read and</text>
-  <text x="815" y="692" class="body">write documents and cannot create a container (ADR-059, ADR-061).</text>
-  <text x="815" y="714" class="body">Four containers hold the catalogue, photos, accounts and bids as documents,</text>
-  <text x="815" y="730" class="body">partitioned on the make, the style, the account and the bidder (ADR-058).</text>
-  <text x="815" y="752" class="muted">Nothing indexed; the definitions are infra/cosmos/*.json (ADR-040 addendum).</text>
+  <rect x="800" y="700" width="540" height="176" class="box"/>
+  <text x="815" y="726" class="title">Store: Azure Cosmos DB, RG-THEYARD-SS, westus2</text>
+  <text x="815" y="748" class="mono">cosmos-theyard-ss  free tier  1000 RU/s shared  session consistency  no keys</text>
+  <text x="815" y="770" class="body">Local authentication is disabled on the account, so there is no key to leak; the</text>
+  <text x="815" y="786" class="body">container authenticates as id-theyard-ss with a data-plane role that can read and</text>
+  <text x="815" y="802" class="body">write documents and cannot create a container (ADR-059, ADR-061).</text>
+  <text x="815" y="824" class="body">Four containers hold the catalogue, photos, accounts and bids as documents,</text>
+  <text x="815" y="840" class="body">partitioned on the make, the style, the account and the bidder (ADR-058).</text>
+  <text x="815" y="862" class="muted">Nothing indexed; the definitions are infra/cosmos/*.json (ADR-040 addendum).</text>
 
-  <rect x="180" y="590" width="560" height="176" class="box"/>
-  <text x="195" y="616" class="title">Both stores in one process, two sites since 1.0.0.101</text>
-  <text x="195" y="640" class="body">Every site opens both stores; the default is sql here and cosmos on the</text>
-  <text x="195" y="656" class="body">second web app, which runs the same image on the same plan behind the same</text>
-  <text x="195" y="672" class="body">edge at theyard-cosmos.stevenstout.biz. The Store bar links each site to the</text>
-  <text x="195" y="688" class="body">other at the same page (no cookie); a measurement names a store for one request</text>
-  <text x="195" y="704" class="body">with a header. Each Admin tab reads the other through /api/admin/peer, and the</text>
-  <text x="195" y="720" class="body">proof card sends a visitor's requests to the container itself on both stores and</text>
-  <text x="195" y="736" class="body">says, per path, whether the two answer in the same time and why they differ.</text>
-  <text x="195" y="760" class="muted">ADR-066 the bar, ADR-069 the address, ADR-067 the proof, ADR-063 the peer read.</text>
+  <rect x="180" y="700" width="560" height="176" class="box"/>
+  <text x="195" y="726" class="title">Both stores in one process, two sites since 1.0.0.101</text>
+  <text x="195" y="750" class="body">Every site opens both stores; the default is sql here and cosmos on the</text>
+  <text x="195" y="766" class="body">second web app, which runs the same image on the same plan behind the same</text>
+  <text x="195" y="782" class="body">edge at theyard-cosmos.stevenstout.biz. The Store bar links each site to the</text>
+  <text x="195" y="798" class="body">other at the same page (no cookie); a measurement names a store for one request</text>
+  <text x="195" y="814" class="body">with a header. Each Admin tab reads the other through /api/admin/peer, and the</text>
+  <text x="195" y="830" class="body">proof card sends a visitor's requests to the container itself on both stores and</text>
+  <text x="195" y="846" class="body">says, per path, whether the two answer in the same time and why they differ.</text>
+  <text x="195" y="870" class="muted">ADR-066 the bar, ADR-069 the address, ADR-067 the proof, ADR-063 the peer read.</text>
 
-  <path d="M1330 378 L1350 378 L1350 678 L1340 678" class="flow"/>
-  <text x="1160" y="586" class="flow-label">the other store, per request</text>
-  <path d="M740 678 L800 678" class="flow"/>
+  <path d="M1330 488 L1350 488 L1350 788 L1340 788" class="flow"/>
+  <text x="1160" y="696" class="flow-label">the other store, per request</text>
+  <path d="M740 788 L800 788" class="flow"/>
 
-  <text x="1082" y="392" class="flow-label">read once at startup, written on every bid</text>
-  <path d="M800 486 L740 486" class="target-flow"/>
+  <text x="1082" y="502" class="flow-label">read once at startup, written on every bid</text>
+  <path d="M800 596 L740 596" class="target-flow"/>
 
   <!-- from the ship lane up to the origin: the image pull and the roll, routed between the two store boxes -->
-  <path d="M1030 896 L1030 790 L770 790 L770 378" class="flow"/>
-  <text x="778" y="800" class="flow-label">pulled by id-theyard-ss</text>
-  <path d="M715 896 L715 850 L760 850 L760 378" class="flow" style="stroke-dasharray:6 4"/>
-  <text x="560" y="586" class="flow-label">az webapp config set (roll)</text>
-  <g transform="translate(0,200)">
+  <path d="M1030 1006 L1030 900 L770 900 L770 488" class="flow"/>
+  <text x="778" y="910" class="flow-label">pulled by id-theyard-ss</text>
+  <path d="M715 1006 L715 960 L760 960 L760 488" class="flow" style="stroke-dasharray:6 4"/>
+  <text x="560" y="696" class="flow-label">az webapp config set (roll)</text>
+  <g transform="translate(0,310)">
   <!-- ===================== Lane 2: the ship path ===================== -->
   <rect x="40" y="622" width="1320" height="250" class="lane"/>
   <text x="60" y="650" class="lane-title">A merge becomes a roll, no hands on it</text>
@@ -173,31 +181,32 @@
   <text x="335" y="804" class="mono">SteveStout/TheYard</text>
 
   <rect x="540" y="696" width="350" height="160" class="box"/>
-  <text x="555" y="722" class="title">Deploy and Deploy Cosmos</text>
-  <text x="555" y="746" class="body">Both fire on the push, deploy.yml and</text>
-  <text x="555" y="762" class="body">deploy-cosmos.yml. OIDC federated credential;</text>
-  <text x="555" y="778" class="body">the version is the changelog's top line</text>
-  <text x="555" y="794" class="body">(ADR-031). docker build with APP_VERSION and</text>
-  <text x="555" y="810" class="body">APP_COMMIT, push, each site's settings,</text>
-  <text x="555" y="826" class="body">set the image, verify origin and domain.</text>
-  <text x="555" y="846" class="muted">roles: AcrPush, Website Contributor, two sites</text>
+  <text x="555" y="722" class="title">Deploy, Deploy Cosmos and Deploy Render</text>
+  <text x="555" y="746" class="body">All three fire on the push: deploy.yml and</text>
+  <text x="555" y="762" class="body">deploy-cosmos.yml roll the API's image onto the</text>
+  <text x="555" y="778" class="body">two sites; deploy-render.yml builds render/Dockerfile</text>
+  <text x="555" y="794" class="body">as the same version and rolls the service. OIDC;</text>
+  <text x="555" y="810" class="body">the version is the changelog's top line (ADR-031);</text>
+  <text x="555" y="826" class="body">each verifies its origin, the sites their domain.</text>
+  <text x="555" y="846" class="muted">roles: AcrPush, Website Contributor, three web apps</text>
 
   <rect x="930" y="696" width="200" height="160" class="box"/>
   <text x="945" y="722" class="title">Registry (ACR)</text>
   <text x="945" y="746" class="mono">crtheyardsszmnetj67bn5h2</text>
   <text x="945" y="762" class="mono">  .azurecr.io</text>
-  <text x="945" y="786" class="body">One tag per version,</text>
-  <text x="945" y="802" class="body">from theyard:v12. Basic tier.</text>
+  <text x="945" y="786" class="body">One tag per version, two</text>
+  <text x="945" y="802" class="body">images: theyard and</text>
+  <text x="945" y="818" class="body">theyard-render. Basic tier.</text>
 
   <rect x="1160" y="696" width="180" height="160" class="box"/>
   <text x="1175" y="722" class="title">CI (ci.yml)</text>
-  <text x="1175" y="746" class="body">On a pull request</text>
-  <text x="1175" y="762" class="body">only, not the push:</text>
+  <text x="1175" y="746" class="body">On every push to main</text>
+  <text x="1175" y="762" class="body">and on a pull request:</text>
   <text x="1175" y="778" class="body">style, then the three</text>
   <text x="1175" y="794" class="body">suites and the SQL</text>
   <text x="1175" y="810" class="body">project. Read-only</text>
   <text x="1175" y="826" class="body">token.</text>
-  <text x="1175" y="846" class="muted">ADR-009 addendum</text>
+  <text x="1175" y="846" class="muted">ADR-068, the 5 October addendum</text>
 
   <path d="M280 770 L320 770" class="flow"/>
   <path d="M500 770 L540 770" class="flow"/>
@@ -249,5 +258,5 @@
   <text x="688" y="1026" class="target-label">runs</text>
 
   </g>
-  <text x="40" y="1356" class="caption">Source: docs/images/infrastructure.svg in the repository. Names, sizes and roles are the ones the records and the pipeline logs carry; the picture is redrawn when they change.</text>
+  <text x="40" y="1466" class="caption">Source: docs/images/infrastructure.svg in the repository. Names, sizes and roles are the ones the records and the pipeline logs carry; the picture is redrawn when they change.</text>
 </svg>

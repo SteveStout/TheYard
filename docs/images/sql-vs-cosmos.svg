@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="2429" viewBox="0 0 1520 2429" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="2446" viewBox="0 0 1520 2446" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
   <title>SQL Server and Cosmos DB, side by side: the same application on Azure SQL Database (left) and Azure Cosmos DB (right), row by row</title>
   <defs>
     <style>
@@ -21,16 +21,16 @@
     </style>
   </defs>
 
-  <rect width="1520" height="2429" fill="#e9e6e7"/>
+  <rect width="1520" height="2446" fill="#e9e6e7"/>
   <text x="40" y="44" class="heading">SQL Server and Cosmos DB, side by side: one application, two stores, the same rows</text>
   <text x="40" y="68" class="caption">Read across. Each row is a question a developer who knows one of these and not the other asks first; each box names the file in this repository that answers it, and each number is one a record measured.</text>
 
   <!-- ===================== The two lanes ===================== -->
-  <rect x="40" y="92" width="700" height="2097" class="lane-sql"/>
+  <rect x="40" y="92" width="700" height="2114" class="lane-sql"/>
   <text x="60" y="122" class="lane-title">Azure SQL Database</text>
   <text x="60" y="142" class="lane-sub">The live site's default store: https://theyard.stevenstout.biz</text>
 
-  <rect x="780" y="92" width="700" height="2097" class="lane-cosmos"/>
+  <rect x="780" y="92" width="700" height="2114" class="lane-cosmos"/>
   <text x="800" y="122" class="lane-title">Azure Cosmos DB for NoSQL</text>
   <text x="800" y="142" class="lane-sub">The second site's default store: https://theyard-cosmos.stevenstout.biz</text>
 
@@ -188,20 +188,21 @@
   <text x="75" y="2119" class="body">Serverless compute that auto-pauses when nobody visits, so the first request</text>
   <text x="75" y="2136" class="body">after a quiet stretch waits for it to wake (a 25 s health check was measured</text>
   <text x="75" y="2153" class="body">once). The cost so far is $0.00.</text>
-  <rect x="800" y="2049" width="660" height="118" class="box"/>
+  <rect x="800" y="2049" width="660" height="135" class="box"/>
   <text x="815" y="2075" class="title">The free tier</text>
   <text x="815" y="2097" class="mono">1000 RU/s and 25 GB for the life of the account, ADR-059</text>
   <text x="815" y="2119" class="body">Shared across the database's containers, never paused, and the site's whole</text>
   <text x="815" y="2136" class="body">month is pennies of it at serverless rates. The store costs $0.00; the site</text>
-  <text x="815" y="2153" class="body">that serves it shares one $12.41 App Service plan with the other.</text>
-  <line x1="60" y1="2181" x2="1460" y2="2181" class="rule"/>
+  <text x="815" y="2153" class="body">that serves it shares one $24.82 App Service plan with the other and the</text>
+  <text x="815" y="2170" class="body">rendering service.</text>
+  <line x1="60" y1="2198" x2="1460" y2="2198" class="rule"/>
 
-  <text x="40" y="2235" class="caption">The records behind the left column: ADR-039 The SQL Server backend, ADR-040 Data first, and the database in source control, ADR-041 Two providers and a SQL project, explained, ADR-043 What</text>
-  <text x="40" y="2255" class="caption">the database is actually doing. Behind the right: ADR-058 The partition key, ADR-059 A second store on Cosmos DB, and what it costs, ADR-060 The ports learn to wait, ADR-061 Accounts on a</text>
-  <text x="40" y="2275" class="caption">document store, ADR-062 What the store is actually doing.</text>
-  <text x="40" y="2295" class="caption">Across both: ADR-063 Backends, side by side; ADR-064 Measuring both stores; ADR-065 Cosmos DB, explained for someone who knows SQL Server; ADR-066 One container, both stores; ADR-067 Same</text>
-  <text x="40" y="2315" class="caption">performance, proven; ADR-069 A permanent address for the second site.</text>
-  <text x="40" y="2335" class="caption">Both sites open both stores; each site serves its default and the Store bar links to the other at the same page. A measurement can name the other store for one request with the X-Yard-Store</text>
-  <text x="40" y="2355" class="caption">header.</text>
-  <text x="40" y="2375" class="caption">Source: docs/images/sql-vs-cosmos.svg in the repository, drawn by docs/images/sql-vs-cosmos.mjs and redrawn when a store, a file or a number changes.</text>
+  <text x="40" y="2252" class="caption">The records behind the left column: ADR-039 The SQL Server backend, ADR-040 Data first, and the database in source control, ADR-041 Two providers and a SQL project, explained, ADR-043 What</text>
+  <text x="40" y="2272" class="caption">the database is actually doing. Behind the right: ADR-058 The partition key, ADR-059 A second store on Cosmos DB, and what it costs, ADR-060 The ports learn to wait, ADR-061 Accounts on a</text>
+  <text x="40" y="2292" class="caption">document store, ADR-062 What the store is actually doing.</text>
+  <text x="40" y="2312" class="caption">Across both: ADR-063 Backends, side by side; ADR-064 Measuring both stores; ADR-065 Cosmos DB, explained for someone who knows SQL Server; ADR-066 One container, both stores; ADR-067 Same</text>
+  <text x="40" y="2332" class="caption">performance, proven; ADR-069 A permanent address for the second site.</text>
+  <text x="40" y="2352" class="caption">Both sites open both stores; each site serves its default and the Store bar links to the other at the same page. A measurement can name the other store for one request with the X-Yard-Store</text>
+  <text x="40" y="2372" class="caption">header.</text>
+  <text x="40" y="2392" class="caption">Source: docs/images/sql-vs-cosmos.svg in the repository, drawn by docs/images/sql-vs-cosmos.mjs and redrawn when a store, a file or a number changes.</text>
 </svg>
