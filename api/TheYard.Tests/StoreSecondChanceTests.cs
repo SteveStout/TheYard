@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api;
 using TheYard.Application;
@@ -167,6 +168,34 @@ public class StoreSecondChanceTests
         Assert.Equal(1, asked);
         Assert.Equal("SQLite, migrated", state.Note);
         Assert.Equal(5, StorePrepare.Tries);
+    }
+
+    [Theory]
+    [InlineData(null, 2000)]
+    [InlineData("0", 0)]
+    [InlineData("250", 250)]
+    [InlineData("-1", 2000)]
+    [InlineData("soon", 2000)]
+    public async Task The_first_wait_is_read_from_the_configuration_and_is_two_seconds_without_one(string? configured, int expectedMs)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { [StorePrepare.FirstWaitSetting] = configured })
+            .Build();
+
+        var firstWait = StorePrepare.FirstWaitFrom(configuration);
+        Assert.Equal(TimeSpan.FromMilliseconds(expectedMs), firstWait);
+
+        // The waits still double from whatever the first one is, and five asks are still five.
+        int asked = 0;
+        var waits = new List<TimeSpan>();
+        var state = await StorePrepare.WithTriesAsync(
+            () => { asked++; return Task.FromResult(new DatabaseState(false, "SQLite: cannot open")); },
+            wait => { waits.Add(wait); return Task.CompletedTask; },
+            firstWait);
+
+        Assert.Equal(5, asked);
+        Assert.False(state.Ready);
+        Assert.Equal(new[] { expectedMs, expectedMs * 2, expectedMs * 4, expectedMs * 8 }, waits.Select(wait => (int)wait.TotalMilliseconds).ToArray());
     }
     // #endregion five-tries
 

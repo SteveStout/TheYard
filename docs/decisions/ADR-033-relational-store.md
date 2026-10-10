@@ -392,3 +392,10 @@ The store is Infrastructure code (EfSources.cs, YardDbContext.cs and the row typ
 - [`api/TheYard.Tests/PersistenceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PersistenceTests.cs): the restart, the seeding, the migration history, and the file on disk.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the writable directory and the connection string.
 - [`docs/decisions/ADR-034-entity-framework-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-034-entity-framework-explained.md): the same setup, walked at a new developer's level.
+
+## Addendum, 2026-10-10: the first wait is a setting
+
+The five asks keep their waits, two seconds doubling to sixteen, about thirty in all. What changed is where the first wait comes from: `StorePrepare.FirstWaitFrom` reads `Store:FirstWaitMs` at startup and answers two seconds when the setting is absent or not a whole number of milliseconds. Nothing deployed sets it. The one caller that does is the test that proves the fallback (`PersistenceTests`, the database that will not open), which sets it to zero, because the five asks are the proof and the thirty seconds between them were not; with the waits in, that one test held every run of the suite on both stores to no less than half a minute (ADR: The five-minute gate, the addendum of 10 October on the first wait). `StoreSecondChanceTests` holds the setting in five shapes (absent, zero, a number, a negative, a word) with the four waits that follow from each.
+
+```live path=api/TheYard.Api/StorePrepare.cs region=five-tries
+```

@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using TheYard.Api;
 using TheYard.Infrastructure;
 
 namespace TheYard.Tests;
@@ -257,6 +258,11 @@ public class PersistenceTests : IDisposable
             {
                 builder.UseSetting("ConnectionStrings:Yard", $"Data Source={Path.Combine(blocker, "yard.db")}");
                 builder.UseSetting("Cosmos:AccountEndpoint", "");
+                // The store is asked five times before the site falls back to the files, and the
+                // asks are the proof here, not the thirty seconds of waiting between them: with
+                // the waits left in, this one test held every run of the suite on both stores to
+                // no less than half a minute. StoreSecondChanceTests holds the waits themselves.
+                builder.UseSetting(StorePrepare.FirstWaitSetting, "0");
             });
             var client = api.CreateClient();
 

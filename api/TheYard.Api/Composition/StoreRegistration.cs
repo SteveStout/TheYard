@@ -98,8 +98,11 @@ public static class StoreRegistration
         // when the catalogue is read. The interceptor puts every statement on the Admin
         // tab; it is attached here so YardConnection stays a description of where the
         // database is.
+        // How long the first of the five asks waits after a refusal (two seconds unless the
+        // configuration shortens it, which only a test that proves the fallback does).
+        var firstWait = StorePrepare.FirstWaitFrom(builder.Configuration);
         var sqlStartup = new StartupTimings();
-        var sqlState = await sqlStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos)));
+        var sqlState = await sqlStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos), firstWait));
         // The backend stands on the files until its store is attached: the same two
         // ports answered out of the JSON, the null bid store, no accounts, with the
         // synthetic scale-up still decorating the vehicle source (ADR: The relational
@@ -185,7 +188,7 @@ public static class StoreRegistration
             // attributed to nobody (ADR: What the store is actually doing).
             cosmos.CurrentRequest = currentRequest;
             var cosmosStartup = new StartupTimings();
-            var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.PrepareAsync(seedVehicles, seedPhotos)));
+            var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.PrepareAsync(seedVehicles, seedPhotos), firstWait));
             var store = cosmos;
             // The same shape as the relational backend: the files until the store is
             // attached, at once when it came up, by the second chance when it did not

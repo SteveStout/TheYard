@@ -23,22 +23,44 @@ public static class StorePrepare
     /// <summary>The wait after the first refusal; each wait after it is twice the one before.</summary>
     public static readonly TimeSpan FirstWait = TimeSpan.FromSeconds(2);
 
-    /// <summary>Asks the store up to five times with real waits between the asks.</summary>
-    public static Task<DatabaseState> WithTriesAsync(Func<Task<DatabaseState>> prepare) =>
-        WithTriesAsync(prepare, Task.Delay);
+    /// <summary>
+    /// The setting that shortens the first wait: a whole number of milliseconds, read by the
+    /// host at startup. Absent, the first wait is two seconds. A test that proves what the site
+    /// does when its store never answers sets it to zero, because the five asks are the proof
+    /// and the thirty seconds of waiting between them were not: with the waits in, that one test
+    /// held every test run on both stores to no less than half a minute.
+    /// </summary>
+    public const string FirstWaitSetting = "Store:FirstWaitMs";
+
+    /// <summary>The first wait the configuration asks for, or the default when it names none.</summary>
+    public static TimeSpan FirstWaitFrom(IConfiguration configuration)
+    {
+        string? configured = configuration[FirstWaitSetting];
+        return int.TryParse(configured, out int ms) && ms >= 0 ? TimeSpan.FromMilliseconds(ms) : FirstWait;
+    }
+
+    /// <summary>
+    /// Asks the store up to five times with real waits between the asks, the
+    /// first one as long as <paramref name="firstWait"/>.
+    /// </summary>
+    public static Task<DatabaseState> WithTriesAsync(Func<Task<DatabaseState>> prepare, TimeSpan firstWait) =>
+        WithTriesAsync(prepare, Task.Delay, firstWait);
 
     /// <summary>
     /// Asks the store up to five times, waiting through <paramref name="wait"/>
     /// between asks so a test can run it without a real clock. Returns the first
     /// ready state, with the ask count in its note when it took more than one,
-    /// or the last refusal with the count of refusals in its note.
+    /// or the last refusal with the count of refusals in its note. The waits
+    /// double from <paramref name="firstWait"/>, two seconds unless the caller
+    /// read a shorter one from the configuration.
     /// </summary>
     public static async Task<DatabaseState> WithTriesAsync(
         Func<Task<DatabaseState>> prepare,
-        Func<TimeSpan, Task> wait)
+        Func<TimeSpan, Task> wait,
+        TimeSpan? firstWait = null)
     {
         DatabaseState state = new(false, "never asked");
-        var between = FirstWait;
+        var between = firstWait ?? FirstWait;
         for (int attempt = 1; attempt <= Tries; attempt++)
         {
             try
