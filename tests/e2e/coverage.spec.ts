@@ -40,6 +40,37 @@ async function painted(tab: Page): Promise<void> {
 }
 // #endregion painted
 
+// #region arrive-in-app
+/** The tab holds the application, not a page the API serves on its own. */
+function appIsOpen(tab: Page): boolean {
+  const address = tab.url();
+  return address.includes('localhost:5173') && !/\/api\/|\/about$/.test(address);
+}
+
+/**
+ * Reaches an address the way Back and Forward do: the address bar is set and a popstate event
+ * fired, and the app re-reads the whole view from the address. Home first, so the page's own
+ * loading signals start from nothing; a document window still open from the last page, or a
+ * vehicle still drawn, would otherwise be read as the new page. A cold load of the 2.8 MB
+ * application per page was most of the read's time on the gate's four cores; the first page of
+ * each tab still loads cold, and so does every page the API serves on its own.
+ */
+async function arriveInApp(tab: Page, address: string): Promise<void> {
+  await tab.evaluate(() => {
+    window.history.pushState({}, '', '/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await expect(tab.getByTestId('view-announcement')).toHaveText('The Yard, home', {
+    timeout: 30_000,
+  });
+  await expect(tab.locator('dialog[open]')).toHaveCount(0, { timeout: 30_000 });
+  await tab.evaluate((next) => {
+    window.history.pushState({}, '', next);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, address);
+}
+// #endregion arrive-in-app
+
 /**
  * Every page the same, none missed (ADR: The glass look, the addendum on every
  * page the same). One test per width: every page the site lists for itself is
@@ -80,17 +111,20 @@ async function everyPage(
     Array.from({ length: 3 }, async () => {
       const tab = await context.newPage();
       for (let next = queue.shift(); next; next = queue.shift()) {
-        // The load event is the browser's own word that the document, its sheets and its images are
-        // in; what the page draws after that is read off the page's own signals below, not off a
-        // quiet network. Waiting for the network to go quiet cost half a second a page at best and
-        // more on a page that polls, and this read is about three hundred and eighty pages a run.
-        // A page that has not loaded in a minute fails the read by name instead of holding it.
-        await tab.goto(next.address, { waitUntil: 'load', timeout: 60_000 });
-        // An app view has settled when its announcement names it; a page of its own has drawn
-        // itself when its script has run (the API reference renders after its script loads).
         // /about is a page the API renders (AboutPage.cs), not a view of the app, so it is read
         // the way the API reference is: it has drawn when its panel is on the page.
         const served = next.address.startsWith('/api/') || next.address === '/about';
+        if (!served && appIsOpen(tab)) {
+          await arriveInApp(tab, next.address);
+        } else {
+          // The load event is the browser's own word that the document, its sheets and its images
+          // are in; what the page draws after that is read off the page's own signals below, not
+          // off a quiet network. A page that has not loaded in a minute fails the read by name
+          // instead of holding it.
+          await tab.goto(next.address, { waitUntil: 'load', timeout: 60_000 });
+        }
+        // An app view has settled when its announcement names it; a page of its own has drawn
+        // itself when its script has run (the API reference renders after its script loads).
         if (!served) {
           await expect(tab.getByTestId('view-announcement')).not.toHaveText(/Loading/, {
             timeout: 60_000,
