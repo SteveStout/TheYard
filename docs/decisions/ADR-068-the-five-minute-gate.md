@@ -429,3 +429,9 @@ The proof before it shipped (queue 2031, `mentor\logs\gatespeed-2031-inapp.log`)
 
 ```live path=tests/e2e/coverage.spec.ts region=arrive-in-app
 ```
+
+## Addendum, 2026-10-10: the gate's numbers for the read that arrives in the app, and the day in one table
+
+The gate's numbers for 1.0.3.118 come from `mentor\logs\gatespeed-2032-gate.log` with the results file it wrote. The three "every page" reads 63, 70 and 58 seconds against 121, 105 and 113 at 1.0.3.116 (and 113, 117 and 103 at 1.0.3.115); the coverage spec 196 seconds of test time against 337 to 344; the browser pass on SQLite 401 seconds against 465 to 511 on the day's gates before it and 545 to 742 across 9 October; the whole gate 655 seconds against 875 to 905 for the 9 October ships of the same shape (the two Cosmos DB passes skipped by the gate's own rule). Every one of the 156 browser tests ran, green on take one. So the lever the two addenda above pointed at was the right one: fewer cold loads of the application moved the pass where shorter waits did not.
+
+The day, measured on the gate's own lines, is tabled on the Performance page under "The gate on an 8 GB laptop, measured on 10 October": what was kept (the signals; the first wait as a setting; the read arriving in the app; in the gate copies, prettier's cache with the scoped format check) and what was measured then dropped (the order the specs run in; more browser workers), each with its log. The target this record is named for stands: five minutes, and 655 seconds is not it. What is left is the browser pass at 401 seconds on four cores, of which the coverage spec is now about a quarter, and the rest is 150 tests that each open the site cold.
