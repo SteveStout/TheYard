@@ -19,6 +19,7 @@ param baseName string = 'theyard'
 @description('Owner tag, as in main.bicep (ADR-003)')
 param ownerTag string = 'SS'
 
+// #region plan-size
 @description('Plan size. B2 since 8 October: 2 vCPU and 3.5 GB shared by both sites and the rendering service, after the plan read 91 per cent of B1\'s memory at the median before a third container (ADR: A rendering service beside the API). B1 is half of both.')
 @allowed([
   'B1'
@@ -26,6 +27,7 @@ param ownerTag string = 'SS'
   'B3'
 ])
 param skuName string = 'B2'
+// #endregion plan-size
 
 @description('The image both sites run, registry/name:tag. Every roll sets this on the sites; a deployment of this file has to be told what is running so it does not roll anything back.')
 param appImage string

@@ -49,9 +49,26 @@ is from the weeks the step was called "Roll the container group"; since
 
 ![One Deploy run's steps: compute the version, sign in to Azure, build and push, roll the container group, verify](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-deploy-steps.jpg)
 
+Deploy Render's roll and its check, read here from the workflow in this
+build. The roll is one call, because every setting the service runs with is
+in `infra/render.bicep` and only the image changes; the check waits until the
+service answers its readiness as the version it was built as, and says so
+when a site's API has not caught up yet:
+
+```live path=.github/workflows/deploy-render.yml region=render-roll
+```
+
+```live path=.github/workflows/deploy-render.yml region=render-verify
+```
+
 **The edge deploys itself.** The HTTPS front door of this site (see the
 Hosting menu) is three files in this repository. Netlify watches the repo and
 redeploys the edge only when those files change, with no human in the loop.
+The rule that keeps an app push from redeploying three unchanged files is in
+the edge's own configuration:
+
+```live path=netlify.toml region=ignore-rule
+```
 
 ## The design, before the build
 

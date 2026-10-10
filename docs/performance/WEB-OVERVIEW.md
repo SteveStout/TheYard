@@ -15,17 +15,24 @@ What that is worth: a developer can see why the page draws fast and rerun the sa
 
 | Piece | What it is | On the wire | How long a browser may keep it |
 | --- | --- | --- | --- |
-| The document | One HTML page built by Vite 8 in TypeScript, carrying the landing page drawn at build time since 1.0.3.88 (an empty shell of a React 19 application before) | about 12.7 KB, 113 KB built (about 2.1 KB before 1.0.3.88) | never; `no-cache`, so a new version is seen on the next visit |
-| The script | One bundle, named by a hash of its contents | about 90 KB (314,334 bytes built) | a year, `immutable`; a new build is a new name |
-| The document renderer | `marked` and highlight.js, a chunk of its own since 1.0.0.141 | 117,430 bytes built, fetched with the first document a reader opens and never on the inventory page | a year |
+| The document | One HTML page built by Vite 8 in TypeScript, carrying the landing page drawn at build time since 1.0.3.88 (an empty shell of a React 19 application before), and since 1.0.3.104 drawn for each request by the rendering service with the view's data in it | about 14 KB, 115 KB built (about 2.1 KB before 1.0.3.88) | never; `no-cache`, so a new version is seen on the next visit; since 1.0.3.110 the edge may keep a page drawn for nobody for ten seconds |
+| The script | One bundle, named by a hash of its contents, with the Admin tab split into files of its own that only `?view=admin` fetches | about 96 KB (305 KB built) | a year, `immutable`; a new build is a new name |
+| The document renderer | `marked` and highlight.js, a chunk of its own since 1.0.0.141 | about 47 KB (144 KB built), fetched with the first document a reader opens and never on the inventory page | a year |
 | The stylesheet | One file, hashed | about 8.5 KB | a year |
 | The type | One IBM Plex Sans file for its four weights, served from `/assets` (four Poppins files from 1.0.0.140 to 1.0.3.18), in place of Google Fonts | 29 KB (Poppins about 8 KB each) | a year |
 | The photographs | A WebP copy at 480 and 1280 wide offered first through a `picture` element, the JPEG pair as the fallback | 15 to 37 KB each at 480 | a day |
-| The data | JSON from `/api`, the listing of 100 vehicles the largest at about 13.7 KB | | never; every API read is forwarded to the container |
+| The data | JSON from `/api`, the listing of 100 vehicles the largest at about 16 KB compressed | | never in the browser; the edge keeps the listing and the filter values for fifteen seconds when nobody is signed in (ADR: Cache headers), and forwards every other read to the container |
 
 The edge serves everything text-shaped as Brotli, so the wire sizes above are compressed sizes. The
 cache rules are one decision, in
 [Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-015-cache-headers.md).
+
+The type is named in a stylesheet the browser only reads after it has fetched it, so on a cold visit
+the one font file would start one round trip late. The build writes a preload link for it into the
+page's head, reading the hashed name off its own output rather than carrying it here:
+
+```live path=vite.config.ts region=font-preload
+```
 
 ## The order a first visit loads in
 

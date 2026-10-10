@@ -93,6 +93,12 @@ to zoom in and follow it.*
    two sites, which also records the move from B1 to B2 when the rendering
    service arrived.
 
+The edge's rules, read from this build. The first matching line wins, top to
+bottom, so each domain's page rule sits above its catch-all:
+
+```live path=edge/_redirects region=rules
+```
+
 ## The certificate
 
 Let's Encrypt at the edge, issued and renewed automatically, one certificate
@@ -122,7 +128,12 @@ plan, two sites).
 
 The rendering service's web app is the same kind of description, in
 `infra/render.bicep`, on the same plan (ADR: A rendering service beside the
-API).
+API). This is the whole of it: the image, the two sites it reads by name, the
+deadline its reads run under, and the heap ceiling that turns a leak into a
+restart instead of the plan's memory:
+
+```live path=infra/render.bicep region=render-site
+```
 
 What is left is Front Door and the origin lock, behind one parameter that
 defaults off. The origins are reachable directly today, as the container

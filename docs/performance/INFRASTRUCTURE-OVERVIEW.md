@@ -38,6 +38,11 @@ per roll, which is under a cent. The timings are the plan's own, from the proof 
 
 Both sites and the rendering service run on the one machine. The two container groups the sites ran on until 1.0.0.156 were stopped, which billed nothing, then kept as the way back until they were deleted on 7 October.
 
+The plan's size is one parameter in the template, read here from this build; `AppServiceTemplateTests` holds every page that names the size to this line, so the next move of the plan cannot leave this one behind:
+
+```live path=infra/appservice.bicep region=plan-size
+```
+
 ## What the shape decides
 
 - **Distance is the largest number on the page.** The two engines answer in the same time once the
