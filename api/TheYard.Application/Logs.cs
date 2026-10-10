@@ -113,6 +113,7 @@ public static class KeptRings
 public sealed record KeptRingPage(IReadOnlyList<string> Entries, int Total);
 // #endregion kept-rings
 
+// #region log-text
 /// <summary>
 /// The rule every field obeys on its way in. An at sign becomes <c>%40</c>,
 /// which keeps the shape of a path readable and makes an email address
@@ -139,6 +140,7 @@ public static class LogText
         return replaced.Length > maxLength ? replaced[..maxLength] : replaced;
     }
 }
+// #endregion log-text
 
 /// <summary>What the operator asks the store for: a window, and optional narrowing by kind, status and a fragment of the path.</summary>
 /// <param name="Since">The start of the window; only events at or after this instant are returned.</param>

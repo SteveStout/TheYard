@@ -20,7 +20,10 @@ One document per event in a container named `logs`, partitioned by the day: ever
 
 Beside those, every entry the Admin tab's public lists take, recent errors, the log as the console got it, the SQL the application ran and what the document store ran, is kept whole as the entry the list serves. Those lists are rings in memory and empty on every deploy; kept, a card can show the last day, week or month.
 
-Every string on its way in passes through one function: bounded in length, and with every at sign turned into `%40`, so an address in a path, a query, an exception message or a stack cannot be kept as one.
+Every string on its way in passes through one function: bounded in length, and with every at sign turned into `%40`, so an address in a path, a query, an exception message or a stack cannot be kept as one. The function, read from this build:
+
+```live path=api/TheYard.Application/Logs.cs region=log-text
+```
 
 ## How long
 
