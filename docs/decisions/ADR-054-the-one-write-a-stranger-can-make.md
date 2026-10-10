@@ -131,6 +131,11 @@ paid subscription, and those two are one piece of work.
 - The security page's rate limiter paragraph is now half true, and its addendum
   says which half.
 
+The window, read from this build:
+
+```live path=api/TheYard.Api/RegistrationLimit.cs region=registration-limit
+```
+
 ## Where it sits
 
 The limit lives in the Api host: `RegistrationLimit` holds the sliding hour, and the register endpoint in `Endpoints/AccountEndpoints.SignIn.cs` calls `TryTake` after reading the request and `GiveBack` when Identity refuses the account. Single responsibility, one reason to change per class, fits here because the window logic sits in its own class and the endpoint only asks it for a slot. The cost is that a real visitor cannot register while somebody else spends the hour's 120 slots. The window also lives in one process's memory, so running a second instance, or adding the origin lock that a durable counter would need, is when this should move into a shared store.

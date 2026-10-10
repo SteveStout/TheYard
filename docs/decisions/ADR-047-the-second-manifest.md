@@ -131,6 +131,11 @@ something checking it.
 - One more test that reads a file it does not own, which is a small ongoing cost
   and the reason this record explains itself.
 
+The first manifest, read from this build: what Vite reads from the repository root, which `DockerBuildInputsTests` compares against the frontend stage's COPY lines:
+
+```live path=api/TheYard.Tests/DockerBuildInputsTests.cs region=inputs
+```
+
 ## Where it sits
 
 No ring: this is a build decision about which folders the Dockerfile copies into the image, held in place by `DockerBuildInputsTests`, so the onion and SOLID do not apply to it.

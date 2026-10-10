@@ -72,6 +72,11 @@ The language moved with .NET 10. Each feature was used only where it removes cod
 - **Null-conditional assignment.** `cosmos?.Logger = ...` in `api/TheYard.Api/Composition/Startup.cs` replaced a four-line null check.
 - **The `field` keyword.** Not used. No property here wraps a backing field that `field` would remove, and adding one to use the keyword would be the opposite of the point.
 
+The test that holds the table above to the project files, read from this build:
+
+```live path=api/TheYard.Tests/TechnologyVersionsTests.cs region=versions
+```
+
 ## Where it sits
 
 Outside the code: the project files, package.json and the Dockerfile, which TechnologyVersionsTests reads against this table. It cost a live read of five sources and one test. A package with a reason to stay behind gets a row that says why, and a new release changes the right-hand column the next time the list is read.

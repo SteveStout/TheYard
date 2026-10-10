@@ -97,6 +97,11 @@ At about 12:00 CDT Steve reported three pages down and asked for them to be fixe
 
 Two things, both mechanical. **A second look:** an address that did not answer on the first pass is asked again, alone, once the pass is over, and an address that answers then is up, with "answered on a second look" as its reason, so the card still says it was slow the first time. **A second sweep:** three minutes after the roll's sweep the settled process sweeps itself again (`PageStatusRunner.SecondSweep`, trigger "settled"), and that is the reading the tile shows until somebody asks for another. `PageStatusTests` holds both: a handler that times out once is up on the second look with its reason, one that times out twice is down with its reason, and the second sweep's delay. The ship script reads the Admin section on both sites after every roll now (`staging\polishlane\admin-after-roll.py`): health, pages, machines, kept, metrics, and it asks for a sweep itself when the roll's reading has anything down, so the after-ship log carries the settled reading and not the start's.
 
+The second look, read from this build:
+
+```live path=api/TheYard.Api/PageStatus.cs region=second-look
+```
+
 ## Where it sits
 
 The sweep lives in the host Api, with the Pages card on the front end, because checking what the site serves is a host concern and touches no auction rule. Single responsibility, one reason to change, divides it cleanly: ServedAddresses builds the list from DocumentationCatalog, SelfAddress asks the server where it is listening, and PageStatusRunner makes the requests and judges each answer. It cost a header the request hook must honour (X-Yard-Page-Check) and a reading taken at the origin that cannot see what the edge has cached. A site with paying users would justify an outside uptime service with alerts, since a container cannot report its own outage.

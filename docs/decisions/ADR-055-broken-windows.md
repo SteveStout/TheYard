@@ -132,6 +132,11 @@ The first is free and the fiftieth is a rewrite.
 - One habit is written down rather than carried: when a system gains users or
   persistence, its "only a demo" comments are the work list.
 
+The half a machine can see, read from this build, each one a search over the tree:
+
+```live path=api/TheYard.Tests/BrokenWindowsTests.cs region=markers
+```
+
 ## Where it sits
 
 No ring: this is a working-practice decision about when to fix a small flaw in place and when to ship it as its own version, enforced by `BrokenWindowsTests`, so the onion and SOLID do not apply to it.

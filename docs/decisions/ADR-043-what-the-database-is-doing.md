@@ -161,6 +161,11 @@ widening of `ISqlLog`, for reasons given where the sibling is decided
 and the canary test in this record now reads whichever card the container it is
 running on has.
 
+The port the statements are written into, read from this build. The entry type has no field for a parameter's value, which is why no redaction rule is needed for a column that does not exist yet:
+
+```live path=api/TheYard.Application/SqlLog.cs region=sql-log-port
+```
+
 ## Where it sits
 
 Each ring holds one piece: Application/SqlLog.cs declares ISqlLog, ICurrentRequest and SqlParameterShape, Infrastructure's SqlLogInterceptor records each command, and the host Api answers ICurrentRequest from HttpContext in HttpCurrentRequest.cs and keeps the rings in AdminObservability.cs. Dependency inversion is plain to see here, because Infrastructure needs the request in flight and gets it by asking a port Application defines, so it never sees an HttpContext. ICurrentRequest has a single method, which is interface segregation at its smallest. The cost is about a megabyte of memory and a history that empties on every roll; several instances or a need to look back past a deploy would justify a real log store.

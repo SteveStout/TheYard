@@ -90,6 +90,11 @@ where you were.
   on an insecure origin or a denied permission, the label says the link is in
   the address bar, which it is.
 
+The slug in both directions, read from this build:
+
+```live path=src/library/addresses.ts region=doc-addresses
+```
+
 ## Where it sits
 
 Only the front end moves here: `docSlug` in `src/library/addresses.ts` reads the slug off the API's own address, `useAddressBar` and `useNavigation` in `src/app/hooks` hold which record is open, and `DocDialog` follows that state. Single responsibility, one reason to change per file, is why the state left the dialog, since the dialog now only shows a record and the hooks decide which one the address names. The cost was one effect in `DocDialog` that closes it when the address names nothing, plus a history check so Back and Escape agree. A site that needed path-style addresses such as `/docs/adr-lockout` would have to add rewrite rules at the edge and in the container, and that would change the choice.

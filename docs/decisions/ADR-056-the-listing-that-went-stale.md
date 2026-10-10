@@ -186,6 +186,11 @@ page is open moves out of the way within a second, without one.
   only for the case it is still the answer to, a filtered list with no boundary
   of its own left to cross.
 
+The hook that owns the timer, read from this build:
+
+```live path=src/app/hooks/useListingRefresh.ts region=listing-goes-stale
+```
+
 ## Where it sits
 
 This is front end work held to a Domain rule: `nextAuctionBoundary` and `byAuctionUrgency` sit in `src/lib/auction.ts`, which imports nothing from React, the timer sits in the `useListingRefresh` hook, and the ranking they mirror is `VehicleOrdering.EndingSoonestRank` in Domain. Single responsibility, meaning one reason to change per unit, shows in the split between the plain function that finds the next boundary and the hook that owns the timer and the hidden tab. The cost is a second copy of the server's ranking bands in TypeScript, which bends the rule that the browser never re-implements auction math and has to be kept in step by hand, and since the 2026-09-21 addendum a card can read "Ended" at the top for up to a minute. A real marketplace with many containers would push changes over a socket or server-sent events and drop the browser's copy of the ranking.

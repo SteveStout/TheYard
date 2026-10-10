@@ -143,6 +143,11 @@ documents a count can live in was one short.
   That is its own record (ADR: The second manifest); it is named here because
   this work is what exposed it.
 
+The sitemap held to the catalogue in both directions, read from this build:
+
+```live path=api/TheYard.Tests/PublicFaceTests.cs region=sitemap-both-ways
+```
+
 ## Where it sits
 
 In the files the server hands out before any code runs: the head of `index.html` and the crawler files in `public/`. PublicFaceTests holds what they say.

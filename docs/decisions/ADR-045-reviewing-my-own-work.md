@@ -266,6 +266,11 @@ The pass took an hour, found three defects in code that had passed every
 test written for it, and fixed the tests that had passed: a check that
 cannot fail is not a check, and the seed's own comment was the reminder.
 
+The exception slot, read from this build. The message travels in the slot and never in the template, which is the fix this review found:
+
+```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=error-log
+```
+
 ## Where it sits
 
 The review reached two rings: the database failure now travels as an `Exception` on `DatabaseState` in Infrastructure, while the log ring's category allow-list and the outermost timing middleware (now in `Composition/RequestPipeline.cs`) belong to the Api host. Single responsibility, meaning a class has one reason to change, is what the main fix follows, since the message template now serves the public page and the exception slot serves the console, so neither has to decide which text is safe to print. The cost was an hour of skeptical reading per pass and an Admin tab that shows fewer framework lines than it used to. A team with a human reviewer on every pull request would rely on that reviewer and keep a pass like this for the diffs that touch public pages.

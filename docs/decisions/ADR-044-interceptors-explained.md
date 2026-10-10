@@ -147,6 +147,11 @@ problem before you take on the machinery.
   `HttpContext` is: ADR: Program.cs, explained.
 - Why the Admin page is public at all: ADR: Observability.
 
+The interceptor this record explains, read from this build. It subclasses EF Core's `DbCommandInterceptor`, overrides one method per command kind, and writes the statement's shape into the port in `SqlLog.cs`, never a parameter's value:
+
+```live path=api/TheYard.Infrastructure/SqlLogInterceptor.cs region=sql-interceptor
+```
+
 ## Where it sits
 
 The walkthrough centres on Infrastructure: SqlLogInterceptor subclasses EF Core's DbCommandInterceptor and writes into the ports and shapes in Application/SqlLog.cs, while the percentile helper sits in the host's RequestTimings.cs. Open/closed is the EF feature on show: the interceptor adds behaviour to the ORM through a hook EF publishes, with no change to EF or to any query. Its cost is an override per command kind to keep in step, and a type with no Value field that cannot show a value even when debugging wants one. A system with far more traffic than a five-hundred-entry ring would need a sketch or a metrics library for its percentiles.

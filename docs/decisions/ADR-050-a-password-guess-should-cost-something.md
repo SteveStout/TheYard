@@ -118,6 +118,11 @@ needed. Lockout does not depend on knowing who is asking.
   refused after five wrong ones, because a test that only checks the wrong
   password still passes when nothing is counting.
 
+The policy, read from this build, with the reason it is five and five written above it:
+
+```live path=api/TheYard.Api/Composition/AuthRegistration.cs region=lockout
+```
+
 ## Where it sits
 
 This lives in the Api host: the lockout options are set in `Composition/AuthRegistration.cs`, and the sign-in path in `Endpoints/AccountEndpoints.SignIn.cs` checks `IsLockedOutAsync` before the password and calls `AccessFailedAsync` after a miss, using columns the DACPAC in TheYard.Database has always defined. No SOLID principle is at stake here, because the decision switches on a control ASP.NET Core Identity already ships and adds no class of its own. The cost lands on a real user who mistypes five times, waits five minutes and sees the same message a wrong password gets. Once the origin lock is in place and the server can see a real client address, a per-address rate limit would be worth adding beside it.
