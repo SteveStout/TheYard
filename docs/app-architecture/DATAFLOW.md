@@ -82,6 +82,17 @@ What that is worth: a developer can trace any request to the file that handles i
    live/ended locally as time passes (`src/lib/auction.ts`). No business math runs in
    the browser.
 
+Step 4's overlay, read from this build. It is chosen once per listing, so a cold catalogue
+with no bid and no room pays for neither:
+
+```live path=api/TheYard.Application/Auction.cs region=overlays
+```
+
+Step 6's seam, the one function every list view goes through:
+
+```live path=src/lib/data.ts region=fetch-vehicles
+```
+
 ## The write path (bids)
 
 1. `src/components/vehicle/BidPanel/BidPanel.tsx` posts `{ amount }` to
@@ -101,3 +112,10 @@ What that is worth: a developer can trace any request to the file that handles i
    clears the query cache and the client (`src/hooks/useBids.ts`) refetches, so lists, filters, and
    totals all reflect the new bid, because the overlay in read-step 4 feeds the same
    pipeline every read uses.
+
+Step 2's first check, read from this build. Sold is a fact the rules cannot know from the
+vehicle alone, so the caller that holds everybody's standing supplies it, and it is asked
+before the clock and before the buy-now shortcut:
+
+```live path=api/TheYard.Domain/BidRules.cs region=sold
+```

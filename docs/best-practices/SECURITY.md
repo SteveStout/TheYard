@@ -55,15 +55,28 @@ password" through Azure Communication Services as the containers' own
 identity, with no key in the pipeline and one email per address per five
 minutes.
 
+The key's rule, read from this build: nothing, a placeholder a failed deploy
+substitution left behind, or anything too short to sign with all count as no
+key, and no key means the host invents one and says so:
+
+```live path=api/TheYard.Api/Tokens.cs region=configured-key
+```
+
 **A session bids only where its account is.** The token names the store that
 opened it, and a bid or a purchase sent to the other store, which the store
 header allows in one request, is refused with a sentence rather than written
 under an account that store does not have (ADR: Three readers with no memory
 of the project).
 
+```live path=api/TheYard.Api/Tokens.cs region=session-per-store
+```
+
 **Five wrong passwords buy five minutes off**, per account, and the refusal says
 exactly what a wrong password says, so the endpoint is not a list of which
 addresses are registered here (ADR: A password guess should cost something).
+
+```live path=api/TheYard.Api/Composition/AuthRegistration.cs region=lockout
+```
 
 **Public surfaces publish shapes, not values.** The Admin tab shows every SQL
 statement the application sends, with each parameter's name, type and size. Not

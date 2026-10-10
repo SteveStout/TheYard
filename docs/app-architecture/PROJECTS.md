@@ -86,6 +86,11 @@ verify routes, parameters, error paths, and the full bid lifecycle, with no
 running server required. `OnionTests` reads the compiled assemblies and fails the gate
 when a dependency points outward (ADR: Onion and SOLID, how this codebase holds them). How many tests there are is counted in the README.
 
+The rings, as that test reads them from the compiled assemblies, one fact per ring:
+
+```live path=api/TheYard.Tests/OnionTests.cs region=rings
+```
+
 ## Frontend (src/)
 
 React + TypeScript, deliberately thin. No business math runs in the browser:

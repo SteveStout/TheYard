@@ -50,6 +50,11 @@ Beside the two, `render/` is the rendering service: a small Node program that dr
 - A colour goes in `src/styles/colors.css`, a space or a size in `sizes.css`, a font size or weight in `typography.css`, a shadow, blur or opacity in `effects.css`. A raw hex in a component fails the style test.
 - A decision that someone could reasonably disagree with goes in `docs/decisions/ADR-*.md`, as a record with what was considered and what it cost. The Decision Records section of this site is that folder.
 
+The loaders, read from this build, because they are the one file on that list a new developer has not met before: one read per view, all at once, under one deadline, and a read that misses it is left to the browser.
+
+```live path=render/loaders.ts region=loaders
+```
+
 ## What the gate asks
 
 Every version runs one gate before anything rolls: Prettier, oxlint, TypeScript, the SQL project, Vitest, xUnit on SQLite, the live Cosmos DB tests, xUnit on Cosmos DB, the browser suite on both stores, and The Shed's own xUnit and Node tests. A build warning is red. A number quoted in a document is read back against the build, so a stale count in prose fails the suite rather than surviving in the page. The evidence strip on the landing page is those counts, read from the file the gate wrote.

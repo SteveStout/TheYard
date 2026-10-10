@@ -61,19 +61,14 @@ this way or what breaks otherwise; it never leans on a date, a version or a
 review to stand in for the reason, and a test holds that (ADR: The rules a
 change has to pass).
 
-```csharp
-// The store first, then memory. The other order looks harmless
-// and is not: a store that throws would leave the dictionaries
-// holding a bid the caller was just told had failed, shown as
-// winning until the next restart deleted it.
-await _store.SaveAsync(userId, vehicle.Id, state);
-Record(userId, vehicle.Id, state);
+```live path=api/TheYard.Application/BidService.Bidding.cs region=place
 ```
 
-That comment, from `BidService.PlaceBidAsync`, is worth keeping: the two
+The comment above the store write in that method is worth keeping: the two
 lines could be swapped without a compiler noticing, and the reason they
 cannot is a failure that would reach a visitor. A comment reading
-`// save the bid` would not be.
+`// save the bid` would not be. The method is read from this build, so the
+page shows the comment as it stands today and not as it was pasted once.
 
 Four more habits:
 
