@@ -53,6 +53,48 @@ export function roomCanAnswer(vehicle: Candidate, nowMs: number): boolean {
 }
 // #endregion room-to-answer
 
+// #region a-quiet-vehicle
+/** The fields of a listing row that say whether anybody, the room included, has touched it. */
+interface Quiet {
+  id: string;
+  current_bid: number | null;
+  sold: boolean;
+  auction_ends_at: number;
+}
+
+/**
+ * A live vehicle nobody has bid on, with time left: the one to open when the
+ * test is about the bid belonging to an account and not about the room.
+ *
+ * The room answers every bid within eight seconds (ADR: Competing bidders), and
+ * it is busiest on the vehicle with the most bids, which is the card the account
+ * spec used to open. Two specs in parallel workers then bid on the same vehicle:
+ * market.spec through bidTheMinimum, which reads the minimum again when the
+ * server refuses, and account.spec once, with no second read, so a round that
+ * landed between its read and its click left it posting a stale minimum. The
+ * page offered one figure and the server asked for the next, and the gate went
+ * red twice on a test whose subject was never the room. A vehicle with no bid
+ * has no room on it until this test bids, so the minimum it reads is the
+ * minimum the server holds. Five minutes on the clock is the same margin
+ * roomCanAnswer keeps.
+ */
+export async function aQuietVehicle(page: Page): Promise<string> {
+  const listing = await page.request.get('/api/vehicles?status=live&limit=100');
+  expect(listing.ok(), await listing.text()).toBe(true);
+  const { vehicles } = (await listing.json()) as { vehicles: Quiet[] };
+  const now = Date.now();
+  const quiet = vehicles.find(
+    (vehicle) =>
+      vehicle.current_bid === null && !vehicle.sold && vehicle.auction_ends_at - now > 5 * 60_000
+  );
+  expect(
+    quiet,
+    'none of 100 live vehicles is unbid, unsold and five minutes from its end'
+  ).toBeDefined();
+  return quiet!.id;
+}
+// #endregion a-quiet-vehicle
+
 /** Open a live vehicle the room can still answer on, and bid the minimum. */
 export async function bidTheMinimum(page: Page): Promise<void> {
   // Bidding belongs to an account now (ADR: Accounts and per-user bids), and a

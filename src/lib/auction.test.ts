@@ -4,6 +4,7 @@ import {
   auctionTiming,
   byAuctionUrgency,
   currentPrice,
+  minimumIsStale,
   nextAuctionBoundary,
   reserveState,
 } from './auction';
@@ -93,6 +94,21 @@ describe('currentPrice', () => {
   it('is the high bid, or the opening ask before any bids', () => {
     expect(currentPrice(makeVehicle({ current_bid: 22800 }))).toBe(22800);
     expect(currentPrice(makeVehicle({ current_bid: null }))).toBe(14500);
+  });
+});
+
+describe('minimumIsStale', () => {
+  it('is stale once a bid stands and the minimum has not moved past it', () => {
+    expect(minimumIsStale(makeVehicle({ current_bid: 49000, min_next_bid: 49000 }))).toBe(true);
+    expect(minimumIsStale(makeVehicle({ current_bid: 49000, min_next_bid: 48500 }))).toBe(true);
+  });
+
+  it('is current once the minimum is above the standing bid', () => {
+    expect(minimumIsStale(makeVehicle({ current_bid: 49000, min_next_bid: 49500 }))).toBe(false);
+  });
+
+  it('is never stale before any bid stands: the opening ask is the minimum, and equal to the price', () => {
+    expect(minimumIsStale(makeVehicle({ current_bid: null, min_next_bid: 14500 }))).toBe(false);
   });
 });
 

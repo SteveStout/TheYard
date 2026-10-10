@@ -237,3 +237,12 @@ The room is Application code: MarketService holds the competing bids and runs a 
 ## Addendum, 2026-10-03: the composition moved into Application
 
 The two overlays were composed by the endpoints and the badge's answer was worked out in `BidViews.cs` in the host. Both now live in the Application ring, in `Auction` (`api/TheYard.Application/Auction.cs`): `Overlay()` and `AsItStands` hold the order (the buyer's bids first, the room's second), `RoomRound` picks the room's candidates, and `BidsOf` answers the badge. The rule both overlays use to raise a price, only when higher and keeping the larger bid count, is `StandingRules.RaisedTo` in Domain, so it has one copy where it had three. The sentence above that says the overlays are composed at the composition root describes the earlier shape. Endpoints now ask `Auction` and never hold the three services, and `OnionTests.Endpoints_reach_the_auction_only_through_the_Application_ring` fails the build if one does (ADR: Onion and SOLID, how this codebase holds them).
+
+## Addendum, 2026-10-09 (1.0.3.111): the first bid on an untouched vehicle could not be placed
+
+The stale-minimum rule above said a minimum at or below the standing price is impossible, and disabled the button while it held one. That is true once a bid stands: the next minimum is that bid plus an increment. Before any bid stands it is the other way round: `BidRules.MinNextBid` is the opening ask, equal to the starting bid, so the rule read every untouched vehicle as stale and its form said "(updating the minimum)" with Place bid disabled, for as long as the page stayed open. Nobody could place the first bid on a vehicle nobody had bid on. The browser suite never met it because every bidding spec opened the most-bid vehicle, and the moved account spec (ADR: Accounts and per-user bids, the addendum of 9 October), which opens a vehicle with no bid, is the browser test that was red before this fix and green after it.
+
+The rule now lives in `src/lib/auction.ts` as `minimumIsStale`, where the arithmetic belongs and where a unit test can hold it: stale only when a bid stands and the minimum has not moved past it; never stale before any bid stands. The panel reads it.
+
+```live path=src/lib/auction.ts region=stale-minimum
+```

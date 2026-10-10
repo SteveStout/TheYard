@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
+import { aQuietVehicle } from './bidding';
 
 /**
  * The account view end to end (ADR: Accounts and per-user bids): the form a
@@ -95,10 +96,9 @@ test('a bid belongs to the account, and signing out takes it off the page', asyn
   await register(page, email);
   await expect(page.getByText('Nothing yet')).toBeVisible();
 
-  // Most bids first: the top card is live with a window ending hours out.
-  await openTheYard(page, '/?status=live&sort=most-bids');
-  await page.waitForSelector('article');
-  await page.locator('article h3 button').first().click();
+  // A vehicle nobody has bid on, so the room is not raising it between the
+  // read of the minimum and the click (tests/e2e/bidding.ts, aQuietVehicle).
+  await openTheYard(page, `/?vehicle=${await aQuietVehicle(page)}`);
   await expect(page.getByText('Specifications')).toBeVisible();
   const min = await page.locator('#bid-amount').getAttribute('placeholder');
   await page.locator('#bid-amount').fill(min!);

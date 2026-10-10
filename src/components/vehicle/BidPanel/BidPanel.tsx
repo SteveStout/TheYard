@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useInTheBrowser } from '../../../hooks/useFirstLoad';
 import type { Vehicle } from '../../../lib/types';
-import { auctionTiming, currentPrice, reserveState } from '../../../lib/auction';
+import { auctionTiming, currentPrice, minimumIsStale, reserveState } from '../../../lib/auction';
 import type { BidOutcome } from '../../../lib/data';
 import {
   CURRENCY_SYMBOL,
@@ -59,13 +59,11 @@ export function BidPanel({
   const hasBids = vehicle.current_bid !== null;
   const min = vehicle.min_next_bid;
   // #region stale-minimum
-  // The minimum next bid is domain math (tiered increments) and only the
-  // server has it, so the browser cannot recompute it when a competing bid
-  // arrives. It can tell that the one it holds is out of date: a minimum at or
-  // below the standing price is arithmetically impossible. For the moment
-  // between the room raising a bid and the refetch landing, the panel says so
-  // rather than showing a number that would be rejected on submission.
-  const minIsStale = status === 'live' && min <= currentPrice(vehicle);
+  // For the moment between the room raising a bid and the refetch landing, the
+  // panel says the minimum is updating and the button waits, rather than
+  // showing a number the server would refuse. The rule that tells a stale
+  // minimum from the opening ask is in src/lib/auction.ts, with its test.
+  const minIsStale = status === 'live' && minimumIsStale(vehicle);
   // #endregion stale-minimum
   const reserve = reserveState(vehicle);
   const wonAtClose =

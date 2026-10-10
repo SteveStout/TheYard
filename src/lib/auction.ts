@@ -142,3 +142,20 @@ export function reserveState(vehicle: Vehicle): ReserveState {
 export function currentPrice(vehicle: Vehicle): number {
   return vehicle.current_bid ?? vehicle.starting_bid;
 }
+
+// #region stale-minimum
+/**
+ * Whether the minimum next bid the page holds is out of date. The minimum is
+ * domain math and only the server has it, so the browser cannot recompute it
+ * when a competing bid arrives, but it can tell that the one it holds is
+ * impossible: once a bid stands, the next minimum is that bid plus an
+ * increment, so a minimum at or below the standing bid is a number the server
+ * has already moved past. Before any bid stands the rule is the other way
+ * round, the opening ask is the minimum by definition and equal to the price,
+ * and that is not stale; reading it as stale left the first bid on every
+ * untouched vehicle impossible to place.
+ */
+export function minimumIsStale(vehicle: Vehicle): boolean {
+  return vehicle.current_bid !== null && vehicle.min_next_bid <= vehicle.current_bid;
+}
+// #endregion stale-minimum
