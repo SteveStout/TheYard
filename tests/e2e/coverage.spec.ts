@@ -1,5 +1,44 @@
-import { expect, test, type Browser, type APIRequestContext } from '@playwright/test';
+import { expect, test, type Browser, type APIRequestContext, type Page } from '@playwright/test';
 import { readPage, siteList, type SitePage } from './coverage';
+
+// #region painted
+/**
+ * The page has what the reader measures: every face is loaded, so a width is the page's own and
+ * not a fallback face's; every picture in view has arrived or failed, so a box has its final
+ * size (a lazy picture below the fold is not asked for, because the browser will not fetch it
+ * until it scrolls into view and the wait would never end); and the browser has painted two
+ * frames since, so a layout that follows the last change is in. A named condition in place of a
+ * timer: a timer is a guess at how long the page needs, and the guess was three hundred
+ * milliseconds on about three hundred and eighty pages a run.
+ */
+async function painted(tab: Page): Promise<void> {
+  await tab.evaluate(async () => {
+    await document.fonts.ready;
+    const inView = (image: HTMLImageElement) => {
+      const box = image.getBoundingClientRect();
+      return box.bottom > 0 && box.top < innerHeight && box.right > 0 && box.left < innerWidth;
+    };
+    const pictures = Promise.all(
+      Array.from(document.images)
+        .filter((image) => !image.complete && (image.loading !== 'lazy' || inView(image)))
+        .map(
+          (image) =>
+            new Promise<void>((settled) => {
+              image.addEventListener('load', () => settled(), { once: true });
+              image.addEventListener('error', () => settled(), { once: true });
+            })
+        )
+    );
+    // A picture that fires neither load nor error (one whose source is swapped while it is
+    // waited on, or one the browser decides not to fetch) must not hold the read for ever; after
+    // five seconds the page is read as it stands, which is what a quiet network read too.
+    await Promise.race([pictures, new Promise<void>((enough) => setTimeout(enough, 5000))]);
+    await new Promise<void>((done) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => done()))
+    );
+  });
+}
+// #endregion painted
 
 /**
  * Every page the same, none missed (ADR: The glass look, the addendum on every
@@ -41,7 +80,12 @@ async function everyPage(
     Array.from({ length: 3 }, async () => {
       const tab = await context.newPage();
       for (let next = queue.shift(); next; next = queue.shift()) {
-        await tab.goto(next.address, { waitUntil: 'networkidle' });
+        // The load event is the browser's own word that the document, its sheets and its images are
+        // in; what the page draws after that is read off the page's own signals below, not off a
+        // quiet network. Waiting for the network to go quiet cost half a second a page at best and
+        // more on a page that polls, and this read is about three hundred and eighty pages a run.
+        // A page that has not loaded in a minute fails the read by name instead of holding it.
+        await tab.goto(next.address, { waitUntil: 'load', timeout: 60_000 });
         // An app view has settled when its announcement names it; a page of its own has drawn
         // itself when its script has run (the API reference renders after its script loads).
         // /about is a page the API renders (AboutPage.cs), not a view of the app, so it is read
@@ -52,16 +96,31 @@ async function everyPage(
             timeout: 60_000,
           });
           // An Admin card is a chunk of its own: the tab has drawn when the workbench is on the
-          // page and no card is still on its way (a phone read the log card's address before
-          // either, 1394).
+          // page and no card is still on its way (a phone once read the log card's address before
+          // either).
           if (next.address.includes('view=admin')) {
             await expect(tab.getByTestId('workbench')).toBeVisible({ timeout: 30_000 });
             await expect(tab.getByTestId('bench-loading')).toHaveCount(0, { timeout: 30_000 });
           }
-          await tab.waitForTimeout(300);
+          // A view that is still reading says so with a loading line of its own: the inventory,
+          // which the vehicle page stands on, the Admin tab and the account. The read waits for
+          // every such line to be gone, and on a vehicle page for the vehicle's own layout.
+          await expect(
+            tab.locator('main [class*="loadingInventory"], main [class*="adminLoading"]')
+          ).toHaveCount(0, { timeout: 60_000 });
+          if (next.address.includes('?vehicle=')) {
+            await expect(tab.getByTestId('vehicle-layout')).toBeVisible({ timeout: 60_000 });
+          }
+          // A document is fetched after the view is announced, and its window shows its loading
+          // line until the document is in; the read waits for that line to be gone.
+          if (next.address.includes('?doc=')) {
+            await expect(tab.locator('dialog [class*="docLoading"]')).toHaveCount(0, {
+              timeout: 60_000,
+            });
+          }
         } else {
           // The API reference draws itself from a script of its own, which on a cold phone took
-          // longer than the second and a half that was waited here at first (1393).
+          // longer than a second and a half.
           await tab
             .waitForFunction(
               () => document.querySelector('.op-glass, .scalar-card') !== null,
@@ -71,8 +130,8 @@ async function everyPage(
               }
             )
             .catch(() => undefined);
-          await tab.waitForTimeout(500);
         }
+        await painted(tab);
         const facts = await tab.evaluate(readPage);
         const wrong = [
           facts.font.includes('IBM Plex Sans') ? '' : `the body is ${facts.font}`,
