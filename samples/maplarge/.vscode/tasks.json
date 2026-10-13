@@ -4,7 +4,7 @@
   "tasks": [
     {
       "label": "Shed: run",
-      "detail": "dotnet run: the API and the page on :5120, browsing sample-home/ until FILES__HOME points elsewhere.",
+      "detail": "dotnet run: its launch profile, https://localhost:7146 and http://localhost:5120, browsing sample-home/ until FILES__HOME points elsewhere.",
       "type": "shell",
       "command": "dotnet run",
       "isBackground": true,

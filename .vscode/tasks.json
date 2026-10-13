@@ -152,7 +152,7 @@
     // ---- The Shed (samples/maplarge), runnable from this window ----
     {
       "label": "Shed: run",
-      "detail": "dotnet run in samples/maplarge: The Shed on :5120, browsing sample-home/.",
+      "detail": "dotnet run in samples/maplarge: its launch profile, https://localhost:7146 and http://localhost:5120, browsing sample-home/.",
       "type": "shell",
       "command": "dotnet run",
       "options": { "cwd": "${workspaceFolder}/samples/maplarge" },

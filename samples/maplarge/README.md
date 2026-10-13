@@ -28,8 +28,11 @@ and, for the TypeScript build and its tests, Node 24, the version TheYard builds
 dotnet run
 ```
 
-Then open the address it prints (`http://localhost:5120`). It browses `sample-home/` until you
-point it at a folder of your own:
+Then open the address it prints. The launch profile listens on `https://localhost:7146` and
+`http://localhost:5120`, and in Development the http address forwards to https, so run
+`dotnet dev-certs https --trust` once if the browser warns about the certificate. For plain http
+with no certificate, `dotnet run --no-launch-profile --urls http://localhost:5120`, or F5 in VS Code.
+It browses `sample-home/` until you point it at a folder of your own:
 
 ```
 FILES__HOME=C:\some\folder dotnet run

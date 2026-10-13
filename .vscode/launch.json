@@ -46,6 +46,10 @@
         "ASPNETCORE_URLS": "http://localhost:5120"
       },
       "console": "internalConsole",
+      // It serves plain http on :5120, so it needs no certificate. Without this line the C#
+      // extension sees the browser opening and, on a machine with no trusted HTTPS development
+      // certificate, asks on every F5 whether to create and trust one.
+      "checkForDevCert": false,
       "serverReadyAction": {
         "action": "openExternally",
         "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
