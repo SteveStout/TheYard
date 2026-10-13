@@ -80,6 +80,12 @@ export const PAGES = {
     url: '/api/docs/react-server-rendering',
     kind: 'overview',
   },
+  aheadOfTimeCompilation: {
+    title: 'Ahead-of-time compilation, explained',
+    menuLabel: 'Ahead-of-time compilation, explained',
+    url: '/api/docs/ahead-of-time-compilation',
+    kind: 'overview',
+  },
   changelog: {
     title: 'Changelog',
     menuLabel: 'Version history',

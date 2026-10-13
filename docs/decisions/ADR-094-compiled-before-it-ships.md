@@ -99,6 +99,10 @@ The three rolls after 1.0.3.94 were read the same way (`orderlane-proof-1.0.3.9N
 
 **What would settle it.** The same catalogue load, compiled ahead of time and not, in Docker on Steve's machine with the plan's limits (`--cpus=1 --memory=1792m`) and nothing else on the core, which holds the share constant and reads the setting alone. Until that reading exists this record claims only what the table holds, which is less compiling, with no faster start measured. The profile-guided optimization trade in the addendum above waits on the same reading.
 
+## Addendum, 2026-10-13 (1.0.3.120): the teaching page
+
+The record above is the decision and its readings. The page that teaches the mechanism from this build, with the Dockerfile's publish, the project's settings, the metrics reading and the tests shown live, the five rolls side by side and a drawing of the two containers, is [Ahead-of-time compilation, explained](https://theyard.stevenstout.biz/?doc=ahead-of-time-compilation). Nothing in this record changes; the reading that would settle the start time is still the one named in the addendum of 1.0.3.98.
+
 ## Where it sits
 
 Outside the rings: the build and the runtime's configuration. No code changes; the one addition the tests hold is that the Dockerfile and the project say what this record says. Single responsibility: the Dockerfile says how the image is built, the project says how the process runs. It costs a larger image and a longer build; what would change it is a library that supports Native AOT, or a reading that says the larger image's pull costs more at a roll than the compiling it saves.

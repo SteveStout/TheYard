@@ -161,3 +161,12 @@ footer displays exactly that.
   drawing it again. Every decision in it is beside the number that made it in
   [React server rendering, explained](https://theyard.stevenstout.biz/?doc=react-server-rendering),
   and recorded in ADR: A rendering service beside the API.
+- **The API ships compiled ahead of time, and the runtime's settings are written
+  out.** The image carries machine code for the app and its packages, so a new
+  container starts by running code instead of compiling it on the plan's one
+  shared core; tiered compilation and profile-guided optimization stay on, and
+  the collector's mode is pinned and tested from the configuration the build
+  writes. What one publish switch does, what sat beside it, what five rolls
+  measured and what they could not, in
+  [Ahead-of-time compilation, explained](https://theyard.stevenstout.biz/?doc=ahead-of-time-compilation),
+  and recorded in ADR: Compiled before it ships.

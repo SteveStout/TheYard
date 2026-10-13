@@ -47,6 +47,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- #region runtime-settings -->
   <!-- How the runtime compiles and collects this process (ADR: Compiled before it ships). Written out even where they
        are the defaults, so the choice is read here and held by CompilationTests rather than inherited silently.
        ReadyToRun itself is a publish switch, in the Dockerfile, so a developer's build and the tests are unchanged. -->
@@ -62,5 +63,6 @@
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
+  <!-- #endregion runtime-settings -->
 
 </Project>

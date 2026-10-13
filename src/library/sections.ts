@@ -38,8 +38,8 @@ export const API_REFERENCE: readonly MenuLink[] = [
 /**
  * Every drawing in the catalogue, on its own page (ADR: Every diagram opens on its own page, the
  * addendum on the section), in the order a reader meets the system: the whole, the data, the schema,
- * the two sites, a page drawn on the server, the two stores, the look, then the rings, a bid's walk
- * through them and the port.
+ * the two sites, a page drawn on the server, a container compiled ahead of time, the two stores, the
+ * look, then the rings, a bid's walk through them and the port.
  * DocumentationCatalog.Diagrams on the server is the authority for which drawings exist, and a test
  * holds this list to it, so a drawing cannot have a page without a row or a row without a page.
  */
@@ -49,6 +49,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'The database', href: '/api/docs/diagrams/erd' },
   { label: 'The two sites', href: '/api/docs/diagrams/two-sites' },
   { label: 'A page drawn on the server', href: '/api/docs/diagrams/server-page' },
+  { label: 'Compiled before it ships', href: '/api/docs/diagrams/compiled-ahead' },
   { label: 'SQL Server vs Cosmos DB', href: '/api/docs/diagrams/sql-vs-cosmos' },
   { label: 'The UI, layer by layer', href: '/api/docs/diagrams/ui-architecture' },
   { label: 'The rings', href: '/api/docs/diagrams/rings' },
@@ -194,6 +195,7 @@ export const MENUS: Record<
       { key: 'onion' },
       { key: 'security' },
       { key: 'reactServerRendering' },
+      { key: 'aheadOfTimeCompilation' },
     ],
   },
   // #region records-menu

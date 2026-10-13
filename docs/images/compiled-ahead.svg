@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1084" viewBox="0 0 1400 1084" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>Compiled before it ships: the same container compiled by the runtime on its one shared core, and compiled ahead of time at the build</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <marker id="arrow-taupe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#ab978c"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .lane { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 600; }
+      .lane-title { fill: #3f3a37; font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+      .lane-sub { fill: #62666f; font-size: 13px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .flow-label { fill: #4a6c96; font-size: 12px; font-weight: 500; }
+      .loop { stroke: #ab978c; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow-taupe); }
+      .loop-label { fill: #8a766b; font-size: 12px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="1084" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">Compiled before it ships: the same container, compiled by the runtime and compiled ahead of time</text>
+  <text x="40" y="68" class="caption">Every box is a step; the path under each title is where that step lives. The plan has one core, shared by both sites, and every new container starts on it.</text>
+
+  <!-- ===================== Lane 1: compiled by the runtime ===================== -->
+  <rect x="40" y="92" width="650" height="883" class="lane"/>
+  <text x="60" y="120" class="lane-title">Compiled by the runtime: before 1.0.3.94</text>
+  <text x="60" y="140" class="lane-sub">The image carries IL. Every method is compiled on the one core the first time it is called.</text>
+
+  <!-- ===================== Lane 2: compiled ahead of time ===================== -->
+  <rect x="710" y="92" width="650" height="900" class="lane"/>
+  <text x="730" y="120" class="lane-title">Compiled ahead of time: 1.0.3.94 on</text>
+  <text x="730" y="140" class="lane-sub">The image carries machine code too. The runtime compiles again only what turns out hot.</text>
+
+  <rect x="60" y="170" width="610" height="135" class="box"/>
+  <text x="75" y="196" class="title">The build</text>
+  <text x="75" y="218" class="mono">dotnet publish -c Release</text>
+  <text x="75" y="240" class="body">The C# compiler writes intermediate language, IL: portable, and not</text>
+  <text x="75" y="257" class="body">yet machine code. The image carries the IL for this app and its</text>
+  <text x="75" y="274" class="body">packages, 221.1 MB in the registry with native files for every</text>
+  <text x="75" y="291" class="body">platform the packages know.</text>
+  <path d="M120 305 L120 339" class="flow"/>
+  <text x="132" y="327" class="flow-label">IL only</text>
+  <rect x="60" y="341" width="610" height="118" class="box"/>
+  <text x="75" y="367" class="title">The container starts</text>
+  <text x="75" y="389" class="mono">App Service, one instance, one core shared by both sites</text>
+  <text x="75" y="411" class="body">The runtime loads the assemblies and finds IL. Nothing in them can run</text>
+  <text x="75" y="428" class="body">until it is compiled, and the only compiler on the machine is the one</text>
+  <text x="75" y="445" class="body">inside the running process.</text>
+  <path d="M120 459 L120 493" class="flow"/>
+  <text x="132" y="481" class="flow-label">load, then compile</text>
+  <rect x="60" y="495" width="610" height="152" class="box"/>
+  <text x="75" y="521" class="title">Every method, compiled at its first call</text>
+  <text x="75" y="543" class="mono">the JIT, on the plan's one core</text>
+  <text x="75" y="565" class="body">Each method is turned into machine code the first time it is called,</text>
+  <text x="75" y="582" class="body">on the same core that is checking the schema, loading a hundred</text>
+  <text x="75" y="599" class="body">thousand vehicles and answering the first visitors. 32,690 methods in</text>
+  <text x="75" y="616" class="body">the first two minutes on 1.0.3.93, and 113 seconds of compiling</text>
+  <text x="75" y="633" class="body">counted across every thread.</text>
+  <path d="M120 647 L120 681" class="flow"/>
+  <text x="132" y="669" class="flow-label">run, count, recompile</text>
+  <rect x="60" y="683" width="610" height="118" class="box"/>
+  <text x="75" y="709" class="title">The hot methods, compiled again</text>
+  <text x="75" y="731" class="mono">tiered compilation with PGO</text>
+  <text x="75" y="753" class="body">The runtime counts how often each method runs and compiles the hot</text>
+  <text x="75" y="770" class="body">ones a second and a third time at full optimization. 62,432 methods by</text>
+  <text x="75" y="787" class="body">the thirteenth minute, 66,685 by the seventy-fifth.</text>
+  <path d="M120 801 L120 835" class="flow"/>
+  <text x="132" y="823" class="flow-label">answer</text>
+  <rect x="60" y="837" width="610" height="118" class="box"/>
+  <text x="75" y="863" class="title">The first visitors</text>
+  <text x="75" y="885" class="mono">/readyz, then the listing</text>
+  <text x="75" y="907" class="body">Ready 79 seconds after the process started on 1.0.3.93, most of it</text>
+  <text x="75" y="924" class="body">waits on the network that compiling cannot shorten; the compiling</text>
+  <text x="75" y="941" class="body">shared the core with those waits and with the first answers.</text>
+  <rect x="730" y="170" width="610" height="152" class="box"/>
+  <text x="745" y="196" class="title">The build</text>
+  <text x="745" y="218" class="mono">Dockerfile, region api-publish</text>
+  <text x="745" y="240" class="body">Restore for linux-x64 with ReadyToRun asked for, which fetches the</text>
+  <text x="745" y="257" class="body">ahead-of-time compiler. Publish compiles this app and its packages to</text>
+  <text x="745" y="274" class="body">machine code for that platform and keeps the IL beside it. One switch;</text>
+  <text x="745" y="291" class="body">nothing in the code changes. 206.2 MB in the registry, 15 MB smaller,</text>
+  <text x="745" y="308" class="body">because one platform needs one set of native files.</text>
+  <path d="M790 322 L790 356" class="flow"/>
+  <text x="802" y="344" class="flow-label">IL and machine code</text>
+  <rect x="730" y="358" width="610" height="118" class="box"/>
+  <text x="745" y="384" class="title">The container starts</text>
+  <text x="745" y="406" class="mono">App Service, the same plan</text>
+  <text x="745" y="428" class="body">The runtime loads the assemblies and finds machine code already there</text>
+  <text x="745" y="445" class="body">for this app, EF Core, the Cosmos DB SDK and Identity. The framework</text>
+  <text x="745" y="462" class="body">in the aspnet base image shipped this way already.</text>
+  <path d="M790 476 L790 510" class="flow"/>
+  <text x="802" y="498" class="flow-label">load, then run</text>
+  <rect x="730" y="512" width="610" height="118" class="box"/>
+  <text x="745" y="538" class="title">Runs as compiled</text>
+  <text x="745" y="560" class="mono">ReadyToRun code, the first tier</text>
+  <text x="745" y="582" class="body">A method that arrived compiled runs without a visit to the JIT. The</text>
+  <text x="745" y="599" class="body">runtime compiled 12,273 to 16,525 methods itself at the first read</text>
+  <text x="745" y="616" class="body">across four rolls, 49 to 62 per cent fewer than before.</text>
+  <path d="M790 630 L790 664" class="flow"/>
+  <text x="802" y="652" class="flow-label">count, recompile the hot ones</text>
+  <rect x="730" y="666" width="610" height="135" class="box"/>
+  <text x="745" y="692" class="title">The hot methods, compiled again</text>
+  <text x="745" y="714" class="mono">TieredCompilation and TieredPGO, api/TheYard.Api/TheYard.Api.csproj</text>
+  <text x="745" y="736" class="body">Still on. Compiled-ahead code is the first tier; the methods that turn</text>
+  <text x="745" y="753" class="body">out hot are compiled again with instruments and then at full</text>
+  <text x="745" y="770" class="body">optimization, so a warmed process gives up nothing. That second</text>
+  <text x="745" y="787" class="body">compile is why the time spent compiling did not fall with the count.</text>
+  <path d="M790 801 L790 835" class="flow"/>
+  <text x="802" y="823" class="flow-label">answer, and report</text>
+  <rect x="730" y="837" width="610" height="135" class="box"/>
+  <text x="745" y="863" class="title">The first visitors</text>
+  <text x="745" y="885" class="mono">/api/admin/metrics, region runtime-metrics</text>
+  <text x="745" y="907" class="body">The reading that says what happened: methods the runtime compiled</text>
+  <text x="745" y="924" class="body">itself and its time compiling, beside the collector's mode. Ready read</text>
+  <text x="745" y="941" class="body">71 to 161 seconds across the four rolls, on a core the plan's meter</text>
+  <text x="745" y="958" class="body">showed at 85 to 99 per cent from before the containers began.</text>
+  <path d="M670 571 L695 571 L695 246 L730 246" class="loop"/>
+  <text x="60" y="158" class="loop-label">The dashed line is the work that moved: from the container's first minutes to the build.</text>
+
+  <text x="40" y="1018" class="caption">What held across four rolls: 49 to 62 per cent fewer methods compiled by the runtime at the first read, every time. What did not: no faster start measured, on a core the meter showed saturated through every roll.</text>
+  <text x="40" y="1038" class="caption">What would settle it: the same load in Docker on one machine with the plan's limits and nothing else on the core, compiled ahead of time and not.</text>
+  <text x="40" y="1058" class="caption">Source: docs/images/compiled-ahead.svg in the repository, drawn by docs/images/compiled-ahead.mjs and redrawn when a step moves.</text>
+</svg>

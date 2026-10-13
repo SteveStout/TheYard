@@ -75,6 +75,11 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/diagrams/compiled-ahead</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/diagrams/sql-vs-cosmos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -656,6 +661,11 @@
   </url>
   <url>
     <loc>https://theyard.stevenstout.biz/api/docs/react-server-rendering</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/ahead-of-time-compilation</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
