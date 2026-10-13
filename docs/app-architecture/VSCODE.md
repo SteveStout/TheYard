@@ -149,7 +149,7 @@ The tasks, read from the build:
 | What you see | What it is | What to do |
 | --- | --- | --- |
 | Vite dies with `EBUSY` | dotnet holds locks on `obj/` while it builds, and a watcher that reads it crashes. `vite.config.ts` excludes `api/` from Vite's watcher and `settings.json` excludes it from the editor's. | Keep both exclusions. |
-| The browser suite fails to start | **Yard: start** is still holding 5210 or 5173, and the suite starts its own servers on the same ports. | Stop the run task, then run the suite. |
+| The browser suite goes red on the bid and Admin tests | It reuses a server already running on 5210 or 5173 (`reuseExistingServer` in `playwright.config.ts`), and that server lacks the settings the suite gives the servers it starts. | Stop **Yard: start**, then run the suite. |
 | `npm ci` prints audit warnings | The audit reads the lock file's development packages; nothing in it ships to the browser or the container. | Read `npm audit`; the gate's own lint and tests are what hold the build. |
 | F5 says it cannot find `TheYard.Api.dll` | The build task did not run, or the SDK is not 10. | `dotnet --version`, then Ctrl+Shift+B. |
 | The Testing panel shows no xUnit tests | C# Dev Kit is still restoring the solution, or it opened the wrong one. | Wait for the status bar, or Ctrl+Shift+P, ".NET: Open Solution", `api/TheYard.slnx`. |

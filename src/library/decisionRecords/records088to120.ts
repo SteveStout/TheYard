@@ -80,4 +80,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '097',
   },
+  adrTheGateRunsWhereTheMemoryIs: {
+    title: 'ADR: The gate runs where the memory is',
+    menuLabel: 'ADR: The gate runs where the memory is',
+    url: '/api/docs/adr-the-gate-runs-where-the-memory-is',
+    kind: 'adr',
+    number: '098',
+  },
 } as const satisfies Record<string, RecordEntry>;

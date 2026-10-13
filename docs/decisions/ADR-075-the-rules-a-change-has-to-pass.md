@@ -94,6 +94,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every public class and record in the solution says what it is for in an XML summary, and every positional record names each parameter; only the generated migrations are excused, by name | ADR: The composition root, split by job | XmlSummaryTests |
 | The bill on the Admin tab is read from Azure once an hour and never on a request, a resource path is cut to its name and type before anything reaches the wire, the donut names four resources and folds the rest into Others, and a reading that is absent is a sentence and never a zero | ADR: What Azure charges | CostTests |
 | Every task in `.vscode/tasks.json` runs a script `package.json` declares or a project in the tree, every launch configuration runs a project that exists on the port its own `launchSettings.json` names, and the Working in VS Code page names every task and configuration | ADR: The editor is set up by the repository | WorkspaceTests |
+| The gate on GitHub Actions runs every check the laptop's gate ran, writes every report the results writer reads, turns red when any check fails, runs The Shed's suites on Windows, and runs only on `gate/` branches with no permission to write | ADR: The gate runs where the memory is | GateWorkflowTests |
 
 ## How the table is read
 
@@ -181,3 +182,7 @@ The row `DocsFolderTests` holds now cites ADR: One folder per sidebar section, t
 ## Addendum, 2026-10-09 (1.0.3.106): the documents and the plan
 
 The plan moved to B2 on 8 October and five pages went on describing B1 (ADR: A rendering service beside the API, the addendum on the documents). `AppServiceTemplateTests` now reads the size from the template and holds every page that describes the machine to it, so the table has its row.
+
+## Addendum, 2026-10-13 (1.0.3.123): the gate on GitHub Actions
+
+The gate moved to a GitHub runner (ADR: The gate runs where the memory is). `GateWorkflowTests` holds the workflow to every check the laptop's gate ran, so the table has its row.

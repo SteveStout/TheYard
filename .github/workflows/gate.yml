@@ -1,0 +1,221 @@
+name: Gate
+
+# The ship's gate, on a GitHub runner instead of the laptop (ADR: The gate runs where the memory is).
+#
+# The laptop that ships has 8 GB and the suites need more than it has free with an editor open: a
+# gate there waited hours for memory, and three takes timed out in specs the change did not touch.
+# So the laptop now only builds the commit and pushes it to a branch named gate/<version>; this
+# workflow runs every check the laptop's gate ran, in the same order, on a runner with 16 GB; and
+# the laptop reads the result. Green, it adds the results file and fast-forwards main, which
+# deploys exactly as before. Red, main is never touched.
+#
+# Nothing here pushes. The run leaves its reports as one artifact, gate-raw, in the layout
+# scripts/test_results.mjs reads, and the laptop writes data/test-results.json from it.
+on:
+  push:
+    branches: ["gate/**"]
+
+# Read the code; sign in to Azure for the Cosmos DB passes. Nothing else.
+permissions:
+  contents: read
+  id-token: write
+
+# One gate at a time: two would share the tests- containers on the Cosmos DB account.
+concurrency:
+  group: gate
+  cancel-in-progress: false
+
+jobs:
+  # #region gate-job
+  gate:
+    runs-on: ubuntu-latest
+    # The federated credential for the Cosmos DB passes is issued to this environment, so a
+    # branch name never has to be registered in Azure.
+    environment: gate
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - run: npm ci
+      - run: npx playwright install --with-deps chrome
+
+      # #region two-cuts
+      # What the commit changed decides two things, as on the laptop (ADR: The five-minute gate, the
+      # addendum on the two cuts): whether dotnet format runs, and whether the two passes on Cosmos DB
+      # run or are carried forward from the last version that ran them.
+      - name: What the commit changed
+        run: |
+          mkdir -p "$RUNNER_TEMP/raw/trx" "$RUNNER_TEMP/raw/trx-shed"
+          echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
+          git diff --name-only HEAD~1 HEAD > "$RUNNER_TEMP/raw/touched.txt"
+          cat "$RUNNER_TEMP/raw/touched.txt"
+          if grep -qE '\.(cs|csproj|slnx|editorconfig)$' "$RUNNER_TEMP/raw/touched.txt"; then echo "FORMAT_NEEDED=1" >> "$GITHUB_ENV"; else echo "FORMAT_NEEDED=0" >> "$GITHUB_ENV"; fi
+          if grep -qE '^(api/|infra/cosmos/|tests/e2e/(store-toggle|account|admin)\.spec\.ts$)' "$RUNNER_TEMP/raw/touched.txt"; then echo "COSMOS_NEEDED=1" >> "$GITHUB_ENV"; else echo "COSMOS_NEEDED=0" >> "$GITHUB_ENV"; fi
+      # #endregion two-cuts
+
+      # A login that fails does not stop the run here: the live Cosmos DB tests that need it then
+      # fail on their own, by name, and the verdict below turns the run red.
+      - uses: azure/login@v3
+        continue-on-error: true
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # #region build
+      # Any build warning is red, as on the laptop.
+      - name: dotnet build
+        run: |
+          set -o pipefail
+          dotnet build api/TheYard.slnx -c Debug 2>&1 | tee "$RAW/build.txt"
+          warnings=$(grep -c ': warning ' "$RAW/build.txt" || true)
+          echo "build warnings: $warnings"
+          echo "warnings=$warnings" > "$RAW/build.result"
+      - run: npx vite build
+      - run: npx vite build --config render/vite.config.ts
+      # #endregion build
+
+      # #region dotnet-side
+      # The .NET side: format, the SQL project, xUnit on SQLite, the live Cosmos DB tests, and the
+      # whole suite booted on Cosmos DB when the commit touched what it reads.
+      - name: The .NET side
+        if: always()
+        env:
+          COSMOS_ENDPOINT: https://cosmos-theyard-ss.documents.azure.com:443/
+        run: |
+          r="$RAW/dotnet.result"; : > "$r"
+          t() { local s=$SECONDS code=0; "$@" || code=$?; echo "$code $((SECONDS - s))"; }
+          if [ "$FORMAT_NEEDED" = 1 ]; then
+            read code s < <(t bash -c 'dotnet format api/TheYard.slnx --verify-no-changes --no-restore > "$RAW/format.txt" 2>&1')
+            echo "format=$code" >> "$r"; echo "format_s=$s" >> "$r"
+          else echo "format=skipped" >> "$r"; echo "format_s=0" >> "$r"; fi
+          read code s < <(t bash -c 'dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug > "$RAW/sqlproj.txt" 2>&1')
+          echo "sqlproj=$code" >> "$r"; echo "sqlproj_s=$s" >> "$r"
+          read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-sqlite.trx" --results-directory "$RAW/trx" > "$RAW/xunit-sqlite.txt" 2>&1')
+          echo "xunit=$code" >> "$r"; echo "xunit_s=$s" >> "$r"
+          export Cosmos__AccountEndpoint="$COSMOS_ENDPOINT"
+          read code s < <(t bash -c 'dotnet test api --no-build --filter "Store=cosmos" --logger "trx;LogFileName=xunit-live.trx" --results-directory "$RAW/trx" > "$RAW/xunit-live.txt" 2>&1')
+          echo "live=$code" >> "$r"; echo "live_s=$s" >> "$r"
+          export Cosmos__ContainerPrefix="tests-"
+          if [ "$COSMOS_NEEDED" = 1 ]; then
+            read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-cosmos.trx" --results-directory "$RAW/trx" > "$RAW/xunit-cosmos.txt" 2>&1')
+            echo "oncosmos=$code" >> "$r"; echo "oncosmos_s=$s" >> "$r"
+          else echo "oncosmos=skipped" >> "$r"; echo "oncosmos_s=0" >> "$r"; fi
+          cat "$r"
+      # #endregion dotnet-side
+
+      # #region node-side
+      # The node side: Prettier, oxlint, the type check, Vitest, the browser suite on SQLite against
+      # the bundle just built, and the three store specs on Cosmos DB when the commit touched them.
+      - name: The node side
+        if: always()
+        env:
+          COSMOS_ENDPOINT: https://cosmos-theyard-ss.documents.azure.com:443/
+        run: |
+          r="$RAW/node.result"; : > "$r"
+          t() { local s=$SECONDS code=0; "$@" || code=$?; echo "$code $((SECONDS - s))"; }
+          read code s < <(t bash -c 'npm run format:check > "$RAW/prettier.txt" 2>&1')
+          echo "prettier=$code" >> "$r"; echo "prettier_s=$s" >> "$r"
+          read code s < <(t bash -c 'npm run lint > "$RAW/lint.txt" 2>&1')
+          echo "lint=$code" >> "$r"; echo "lint_s=$s" >> "$r"
+          read code s < <(t bash -c 'npx tsc -b > "$RAW/tsc.txt" 2>&1')
+          echo "tsc=$code" >> "$r"; echo "tsc_s=$s" >> "$r"
+          read code s < <(t bash -c 'npx vitest run --reporter=default --reporter=json --outputFile.json="$RAW/vitest.json" > "$RAW/vitest.txt" 2>&1')
+          echo "vitest=$code" >> "$r"; echo "vitest_s=$s" >> "$r"
+          export YARD_API_PREBUILT=1 YARD_WEB_PREVIEW=1 YARD_RENDER=1
+          export PLAYWRIGHT_JSON_OUTPUT_FILE="$RAW/browser-sqlite.json" PLAYWRIGHT_JSON_OUTPUT_NAME="$RAW/browser-sqlite.json"
+          read code s < <(t bash -c 'npx playwright test --workers=2 --retries=1 --reporter=list,json > "$RAW/browser-sqlite.txt" 2>&1')
+          echo "browser=$code" >> "$r"; echo "browser_s=$s" >> "$r"
+          for port in 5173 5210 5220; do fuser -k "$port/tcp" 2>/dev/null || true; done
+          sleep 3
+          unset YARD_RENDER
+          export Cosmos__AccountEndpoint="$COSMOS_ENDPOINT" Cosmos__ContainerPrefix="tests-"
+          export PLAYWRIGHT_JSON_OUTPUT_FILE="$RAW/browser-cosmos.json" PLAYWRIGHT_JSON_OUTPUT_NAME="$RAW/browser-cosmos.json"
+          if [ "$COSMOS_NEEDED" = 1 ]; then
+            read code s < <(t bash -c 'npx playwright test tests/e2e/store-toggle.spec.ts tests/e2e/account.spec.ts tests/e2e/admin.spec.ts --workers=2 --retries=1 --reporter=list,json > "$RAW/browser-cosmos.txt" 2>&1')
+            echo "browser_cosmos=$code" >> "$r"; echo "browser_cosmos_s=$s" >> "$r"
+          else echo "browser_cosmos=skipped" >> "$r"; echo "browser_cosmos_s=0" >> "$r"; fi
+          for port in 5173 5210 5220; do fuser -k "$port/tcp" 2>/dev/null || true; done
+          cat "$r"
+      # #endregion node-side
+
+      # #region em-dashes
+      # The house rule on em dashes, over every text file.
+      - name: The em dash scan
+        if: always()
+        run: |
+          r="$RAW/rest.result"; : > "$r"
+          hits=$( (grep -rlP '\x{2014}' --include='*.md' --include='*.cs' --include='*.ts' --include='*.tsx' --include='*.css' --include='*.yml' --include='*.yaml' --include='*.json' --include='*.sql' --include='*.sqlproj' --include='*.csproj' --include='*.slnx' --include='*.mjs' --include='*.svg' --exclude-dir=node_modules --exclude-dir=bin --exclude-dir=obj --exclude-dir=.git --exclude-dir=dist --exclude-dir=dist-render --exclude-dir=playwright-report --exclude-dir=test-results . || true) | tee "$RAW/emdash.txt" | wc -l)
+          echo "emdash=$hits" >> "$r"
+          cat "$r"
+      # #endregion em-dashes
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: gate-raw
+          path: ${{ runner.temp }}/raw/
+
+      # #region verdict
+      # Red is any pass that is not 0, except the two that the cuts above may skip.
+      - name: The verdict
+        if: always()
+        run: |
+          red=""
+          val() { { grep -E "^$2=" "$RAW/$1" 2>/dev/null || true; } | head -n 1 | cut -d= -f2; }
+          for k in prettier lint tsc vitest browser; do [ "$(val node.result $k)" = 0 ] || red="$red $k"; done
+          v=$(val node.result browser_cosmos); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red browser_cosmos"
+          for k in sqlproj xunit live; do [ "$(val dotnet.result $k)" = 0 ] || red="$red $k"; done
+          for k in format oncosmos; do v=$(val dotnet.result $k); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red $k"; done
+          [ "$(val rest.result emdash)" = 0 ] || red="$red emdash"
+          [ "$(val build.result warnings)" = 0 ] || red="$red warnings"
+          if [ -n "$red" ]; then
+            echo "::error::red:$red"
+            for f in prettier.txt lint.txt tsc.txt format.txt sqlproj.txt emdash.txt; do
+              if [ -s "$RAW/$f" ]; then tail -n 12 "$RAW/$f" | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done; fi
+            done
+            for f in xunit-sqlite.txt xunit-live.txt xunit-cosmos.txt; do
+              [ -f "$RAW/$f" ] || continue; { grep -E '^\s*Failed |Error Message' "$RAW/$f" || true; } | head -n 8 | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done
+            done
+            for f in browser-sqlite.txt browser-cosmos.txt; do
+              [ -f "$RAW/$f" ] || continue; { grep -E '^\s+[0-9]+\) ' "$RAW/$f" || true; } | head -n 8 | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done
+            done
+            exit 1
+          fi
+          echo "red: nothing"
+      # #endregion verdict
+  # #endregion gate-job
+
+  # #region shed-job
+  # The Shed's two suites, so the tree that ships is green as a whole. On Windows, as on the laptop:
+  # its path rules are written for the system they run on, and one of its cases (a drive letter is a
+  # rooted path) only means something there.
+  shed:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: The Shed's xUnit and node tests
+        run: |
+          x=0; (cd samples/maplarge && dotnet test TestProject.sln -nologo -v q) || x=$?
+          n=0; (cd samples/maplarge && node --test tests/js/*.test.js) || n=$?
+          echo "shed_xunit=$x shed_node=$n"
+          if [ "$x" != 0 ] || [ "$n" != 0 ]; then echo "::error::red: The Shed (xUnit $x, node $n)"; exit 1; fi
+  # #endregion shed-job
