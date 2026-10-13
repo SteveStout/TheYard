@@ -1,0 +1,26 @@
+{
+  // Settings for The Shed opened as its own folder. Opened from TheYard's root, the
+  // root's settings apply instead and these are not read.
+  "dotnet.defaultSolution": "TestProject.sln",
+  "editor.formatOnSave": true,
+  "[csharp]": { "editor.defaultFormatter": "ms-dotnettools.csharp" },
+  "[markdown]": { "editor.formatOnSave": false },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  // The page's TypeScript compiles with the project's own tsc, into wwwroot/js, which is
+  // committed; search reads the source under src/ and not the output.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bin": true,
+    "**/obj": true,
+    "wwwroot/js": true,
+    "package-lock.json": true
+  },
+  "files.associations": { "*.bicep": "bicep" }
+}

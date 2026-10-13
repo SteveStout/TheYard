@@ -1,0 +1,9 @@
+{
+  // The extensions The Shed is built with; VS Code offers them when this folder opens on its own.
+  "recommendations": [
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    "editorconfig.editorconfig",
+    "ms-azuretools.vscode-bicep"
+  ]
+}

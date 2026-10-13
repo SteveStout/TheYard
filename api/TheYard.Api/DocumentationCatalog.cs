@@ -5,10 +5,9 @@ namespace TheYard.Api;
 
 /// <summary>
 /// Every document the site serves, by the slug the sidebar asks for (ADR-017).
-/// src/library/records.ts and src/library/pages.ts carry the same slugs with titles, so
-/// a new record is one line here and one line there, and DocumentationCatalogTests holds
-/// the two lists to each other. A slug missing from this table is a 404 at
-/// /api/docs/{slug}, never a file read.
+/// src/library/records.ts and src/library/pages.ts carry the same slugs with titles, so a new record is
+/// one line here and one line there, and DocumentationCatalogTests holds the two lists to each other.
+/// A slug missing from this table is a 404 at /api/docs/{slug}, never a file read.
 /// </summary>
 public static class DocumentationCatalog
 {
@@ -18,6 +17,7 @@ public static class DocumentationCatalog
     {
         ["readme"] = "README.md",
         ["start-here"] = "docs/app-architecture/START-HERE.md",
+        ["vscode"] = "docs/app-architecture/VSCODE.md",
         ["dataflow"] = "docs/app-architecture/DATAFLOW.md",
         ["sql-vs-cosmos"] = "docs/sql-vs-cosmos/SQL-VS-COSMOS.md",
         ["projects"] = "docs/app-architecture/PROJECTS.md",
@@ -126,6 +126,7 @@ public static class DocumentationCatalog
         ["adr-compiled-before-it-ships"] = "docs/decisions/ADR-094-compiled-before-it-ships.md",
         ["adr-blue-green-measured-and-held"] = "docs/decisions/ADR-095-blue-green-measured-and-held.md",
         ["adr-a-rendering-service-beside-the-api"] = "docs/decisions/ADR-096-a-rendering-service-beside-the-api.md",
+        ["adr-the-editor-is-set-up-by-the-repository"] = "docs/decisions/ADR-097-the-editor-is-set-up-by-the-repository.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",
@@ -171,14 +172,12 @@ public static class DocumentationCatalog
 
 // #region docs-images
 /// <summary>
-/// The pictures a document carries. The markdown names them on
-/// GitHub's raw host so the files read on GitHub as they are; read here, that
-/// meant every document's pictures came from a third host, and the README on a
-/// phone was 1.4 MB, 985 KB of it a PNG rendered from an SVG this repository
-/// already serves at 17 KB. So the served markdown names them here instead:
-/// the raw address becomes /api/docs/images/{name}, and a PNG whose SVG source
-/// stands beside it is served as that SVG. The markdown files themselves are
-/// untouched, which is what keeps them right on GitHub.
+/// The pictures a document carries. The markdown names them on GitHub's raw host so the files read
+/// on GitHub as they are; read here, that meant every document's pictures came from a third host, and
+/// the README on a phone was 1.4 MB, 985 KB of it a PNG rendered from an SVG this repository already
+/// serves at 17 KB. So the served markdown names them here instead: the raw address becomes
+/// /api/docs/images/{name}, and a PNG whose SVG source stands beside it is served as that SVG. The
+/// markdown files themselves are untouched, which is what keeps them right on GitHub.
 /// </summary>
 public static partial class DocImages
 {

@@ -88,6 +88,7 @@ export const MENUS: Record<
     label: 'App Architecture',
     items: [
       { key: 'startHere' },
+      { key: 'vscode' },
       { key: 'architecture' },
       { key: 'style', sub: true },
       { key: 'dataflow', sub: true },

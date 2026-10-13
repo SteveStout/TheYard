@@ -100,6 +100,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/vscode</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/dataflow</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -621,6 +626,11 @@
   </url>
   <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-a-rendering-service-beside-the-api</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-editor-is-set-up-by-the-repository</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

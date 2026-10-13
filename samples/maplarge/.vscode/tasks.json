@@ -1,0 +1,56 @@
+{
+  // The Shed's commands as tasks: Terminal > Run Task. The same commands the README gives.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Shed: run",
+      "detail": "dotnet run: the API and the page on :5120, browsing sample-home/ until FILES__HOME points elsewhere.",
+      "type": "shell",
+      "command": "dotnet run",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "shed",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building",
+          "endsPattern": "Now listening on"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Shed: build",
+      "detail": "dotnet build. F5 runs this first.",
+      "type": "shell",
+      "command": "dotnet build",
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "silent", "panel": "shared" }
+    },
+    {
+      "label": "Shed: build TypeScript",
+      "detail": "npm run build: tsc writes wwwroot/js from src/. Run it after any change under src/, and commit the output.",
+      "type": "shell",
+      "command": "npm run build",
+      "problemMatcher": "$tsc",
+      "group": "build"
+    },
+    {
+      "label": "Shed: test (xUnit)",
+      "detail": "dotnet test: the rules, the use cases, every route through the real host, and the repository rules.",
+      "type": "shell",
+      "command": "dotnet test",
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "Shed: test (node)",
+      "detail": "npm test: node --test on the page's pure functions.",
+      "type": "shell",
+      "command": "npm test",
+      "problemMatcher": [],
+      "group": "test"
+    }
+  ]
+}

@@ -38,6 +38,12 @@ FILES__HOME=C:\some\folder dotnet run
 or set `Files:Home` in `appsettings.json`. Visual Studio 2026 or newer (the first with the .NET 10
 SDK), Rider and VS Code open `TestProject.sln`.
 
+**In VS Code:** open this folder, accept the extensions it recommends, press F5. The folder carries its
+own `.vscode/`: the build, the TypeScript build, both test suites as tasks, and a launch configuration
+that opens the browser when the API says it is listening. The step-by-step with screenshots is
+[Working in VS Code](https://theyard.stevenstout.biz/?doc=vscode) on TheYard, which also runs The Shed
+from its own window.
+
 ## Tests
 
 ```
@@ -54,7 +60,7 @@ npm run build
 
 | Suite | Count | What it covers |
 | --- | --- | --- |
-| xUnit | 144 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
+| xUnit | 145 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
 | node --test | 21 | The address parser and serializer, the byte and date formatting, the markdown reader (a `<script>` arrives as text, an image keeps its alt text). |
 
 The build treats warnings as errors and a public member without a summary is a warning.

@@ -1,0 +1,20 @@
+{
+  // The extensions this repository is built with. VS Code offers to install them the
+  // first time the folder is opened (ADR: The editor is set up by the repository).
+  "recommendations": [
+    // C#: the language service, the debugger and the Testing panel for xUnit.
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    // The front end: the formatter the gate checks against, the linter it runs,
+    // and the two test suites in the Testing panel.
+    "esbenp.prettier-vscode",
+    "oxc.oxc-vscode",
+    "vitest.explorer",
+    "ms-playwright.playwright",
+    // The repository's whitespace rules, applied by the editor as it saves.
+    "editorconfig.editorconfig",
+    // What the site runs on: the Dockerfile and the Bicep files under infra/.
+    "ms-azuretools.vscode-containers",
+    "ms-azuretools.vscode-bicep"
+  ]
+}

@@ -1,0 +1,156 @@
+# Working in VS Code
+
+This page takes a developer from a clean machine to a breakpoint in the API, a Chrome window on the page and three green test suites, in VS Code, with screenshots of the editor as it goes. It covers TheYard and The Shed, because both live in this repository and both are set up the same way. Everything here was run from a fresh clone on the day it was written, and the times beside each step are from that run.
+
+## In plain words
+
+Open the folder, say yes to the extensions it recommends, press F5. That is the whole setup, because the repository carries its own editor configuration: what to build, what to run, which ports, which tests, and which extensions, all in a `.vscode` folder beside the code. A new developer gets the same editor as everyone else without copying settings from anyone.
+
+What that is worth: a developer makes a first change and watches it under the debugger inside the first half hour, with no walkthrough; and the organization can hand this repository to a new hire, a reviewer or a demo laptop and have it run the same way every time.
+
+## Before you start
+
+Four installs, once per machine. On Windows, one line in a terminal does the first two:
+
+```
+winget install OpenJS.NodeJS.LTS Microsoft.DotNet.SDK.10
+```
+
+| What | Why | How to check |
+| --- | --- | --- |
+| [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) | The API, The Shed and the xUnit tests. | `dotnet --version` prints 10.x |
+| [Node 24](https://nodejs.org) | The React page, Vite, Vitest, Playwright and The Shed's TypeScript build. | `node -v` prints v24.x |
+| [Google Chrome](https://www.google.com/chrome/) | The browser suite runs in the real Chrome (`channel: 'chrome'` in `playwright.config.ts`), and F5 opens the page in it. | Chrome opens |
+| [VS Code](https://code.visualstudio.com) | The editor this page is about. | `code --version` |
+
+No database to install. With no connection string the API writes to a SQLite file in your temp folder and the catalogue is read from `data/`, so the first run serves 100,000 vehicles on its own. The Shed needs nothing but the SDK: its page is TypeScript compiled to `wwwroot/js`, and the output is committed.
+
+## Step 1: clone and open
+
+```
+git clone https://github.com/SteveStout/TheYard.git
+cd TheYard
+npm ci
+code .
+```
+
+`npm ci` installs the front end's packages exactly as `package-lock.json` has them (32 seconds on a four-core laptop). `code .` opens the folder in VS Code. The first time it opens, VS Code reads `.vscode/extensions.json` and offers the extensions this repository is built with:
+
+![VS Code on the TheYard folder: the Explorer on the left, a file from render/ in the editor, the terminal below, and the notice at the bottom right offering the recommended extensions](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vscode-open-folder.jpg)
+
+## Step 2: install the recommended extensions
+
+Press **Install All** on that notice, or open the Extensions view (Ctrl+Shift+X) and type `@recommended`. The list is the one in the file below, each with its reason beside it:
+
+```live path=.vscode/extensions.json region=*
+```
+
+![The Extensions view filtered to @recommended: the nine workspace recommendations, EditorConfig, Playwright Test, Bicep, Vitest and Oxc in view with an Install button on each, and the Oxc page open beside them](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vscode-extensions.jpg)
+
+C# Dev Kit opens `api/TheYard.slnx` on its own, because `.vscode/settings.json` names it as the default solution. Give it a minute the first time: it restores the ten projects and the Testing panel fills with the xUnit tests.
+
+## Step 3: run it
+
+**Terminal > Run Task** (or Ctrl+Shift+P, then "Run Task") lists every command in `.vscode/tasks.json`. Pick **Yard: start (API + web)**.
+
+![The Run Task picker: Select the task to run, with every task listed and the command it runs under its name, The Shed's five first and then the Yard's](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vscode-run-task.jpg)
+
+The task is `npm start`: one terminal, the API in blue on `http://localhost:5210` and Vite in green on `http://localhost:5173`, and Chrome opens on the page when Vite is ready. Vite proxies `/api` to the API, so the page and the API are one address in the browser. From the fresh clone the page answered in 8 seconds and the API, which builds first, in 18.
+
+![The task's terminal: Executing task: npm start, then the api lines as the .NET host starts and asks the store whether the vehicles and photos tables exist, with the Yard: start terminal selected in the list on the right](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vscode-start-terminal.jpg)
+
+To stop it, press the trash icon on that terminal, or Ctrl+C in it. The other run tasks start one half on its own (**Yard: API only**, **Yard: web only (Vite)**), which is what the debugger uses.
+
+## Step 4: F5, a breakpoint on each side
+
+Open **Run and Debug** (Ctrl+Shift+D). The configurations come from `.vscode/launch.json`; the one selected on arrival is **Yard: API + web (F5)**, a compound that starts the API under the .NET debugger and then Chrome, attached, on the page. Press F5.
+
+```live path=.vscode/launch.json region=*
+```
+
+Put a breakpoint on the first line of `List` in `api/TheYard.Api/Endpoints/VehicleEndpoints.cs` (click in the gutter left of the line number), then press Load more on the page. The debugger stops in the API with the request's query in the Variables pane; F5 lets it go. A breakpoint in a `.tsx` file under `src/` stops Chrome the same way, through Vite's source maps.
+
+The compound builds the API first (the task **Yard: build API**, also Ctrl+Shift+B), waits for Vite to print its address, and stops both when either stops. The ports are the ones in `api/TheYard.Api/Properties/launchSettings.json` and `vite.config.ts`, written out in `launch.json` so the page and the proxy always meet; `WorkspaceTests` holds the three files to each other.
+
+## Step 5: the tests, in the Testing panel
+
+Open **Testing** (the flask icon). Three trees: xUnit from C# Dev Kit, Vitest from its extension, and Playwright from its. Each test runs or debugs from the play button beside it, and a red one opens on the failing line.
+
+The same suites as tasks, each the README's own command, measured from the fresh clone:
+
+| Task | Command | What it runs | Fresh clone |
+| --- | --- | --- | --- |
+| Yard: test (Vitest) | `npm test` | The presentation logic, no browser. | 19 s |
+| Yard: test (xUnit on SQLite) | `npm run test:api` | Every xUnit test but the seven that need the live Cosmos DB account: 918 passed. | 63 s after the build |
+| Yard: test (browser, Playwright) | `npm run test:e2e` | The real stack in Chrome. It starts both servers itself, so stop **Yard: start** first. | minutes |
+| Yard: lint | `npm run lint` | oxlint, warnings denied. | 2 s |
+| Yard: format check | `npm run format:check` | Prettier, the way the gate checks it. | 11 s |
+| Yard: format check (C#) | `npm run format:api:check` | dotnet format with no changes allowed. | |
+| Yard: everything the gate checks (no browser) | the six above, in order | What to run before a commit. | about 2 minutes |
+
+The editor formats on save with the same Prettier and the same `.editorconfig` the gate checks against, so a change arrives at the gate already formatted. What the gate itself runs, and why a build warning is red, is in [ADR-068, the five-minute gate](https://theyard.stevenstout.biz/?doc=adr-five-minute-gate).
+
+## Step 6: The Shed
+
+The Shed is the file browser under `samples/maplarge`, one .NET project with its page in plain TypeScript. It runs from this window and from its own.
+
+**From this window:** select **Shed: run** in Run and Debug and press F5. It builds, starts on `http://localhost:5120`, and the browser opens on the page when the API says it is listening. Its tasks (**Shed: build TypeScript**, **Shed: test (xUnit)**, **Shed: test (node)**) are in the same Run Task list.
+
+**On its own, which is the demo shape:** File > Open Folder on `samples/maplarge`. That folder carries its own `.vscode` with the same launch configuration and tasks, and C# Dev Kit opens `TestProject.sln`. F5 does the same thing.
+
+To browse a folder of your own instead of `sample-home/`, add `"FILES__HOME": "C:\\some\\folder"` to the `env` block of the launch configuration. After any change under `src/`, run **Shed: build TypeScript** and commit `wwwroot/js` with the change: `dotnet run` needs no Node, which is the point of committing the output ([ADR-006 of The Shed, TypeScript organised](https://theshed.stevenstout.biz/?view=docs&doc=adr-006-typescript-organised)).
+
+## A ten-minute demo
+
+For showing the two projects to someone, in order, with nothing to type:
+
+1. Open the TheYard folder. Run and Debug, **Yard: API + web (F5)**. The page opens; filter by make, open a vehicle, place a bid, watch the room answer.
+2. Set a breakpoint in `VehicleEndpoints.cs`, press Load more, step once, let it go. The API owns the rules; the page asks.
+3. Testing panel: run one xUnit test and one Vitest test from the play button. Point at `OnionTests`: the rings are tests.
+4. Open any record from the sidebar on the page (Decision Records): the code in it is read from the build you are running.
+5. Stop. Open `samples/maplarge` in a new window, F5. Browse, search `*.csv`, upload a file, drop a breakpoint in `FilesController.cs`, download it back.
+
+Every step here is a task or a launch configuration, so the demo is the same on any machine the repository is cloned to.
+
+## VS Code: the files this page added, and why
+
+This page shipped with the editor configuration it describes. Every file, and what it is for:
+
+| File | What it does |
+| --- | --- |
+| `.vscode/extensions.json` | The recommended extensions, each with its reason as a comment. VS Code offers them when the folder opens. |
+| `.vscode/settings.json` | The default solution, format on save with Prettier and dotnet format, LF line endings, the project's own TypeScript, and the watcher and search exclusions for `bin/`, `obj/`, `node_modules/` and the build outputs. Nothing in it is a matter of taste. |
+| `.vscode/tasks.json` | Every command the README gives, as a task: run, build, the three suites, the checks, and The Shed's own, each with the command it runs shown beside it in the picker. |
+| `.vscode/launch.json` | F5: the API under the debugger, the page in Chrome through Vite, the compound of both, and The Shed with its browser opening when it listens. |
+| `samples/maplarge/.vscode/` | The same four files for The Shed opened as its own folder: its solution, its tasks, and F5. |
+| `docs/app-architecture/VSCODE.md` | This page, served under App Architecture after Start here. |
+| `docs/images/vscode-*.jpg` | The four screenshots on this page, taken in VS Code on the day it was written. |
+| `api/TheYard.Tests/WorkspaceTests.cs` | Holds the configuration to the code: every task runs a script `package.json` has or a project that exists, every launch configuration's program is a project in the tree on the port its `launchSettings.json` names, every task is on this page, and the extensions file names the C# and test extensions. |
+| `api/TheYard.Api/LiveSamples.cs` | `.vscode/` added to the roots a live block may read from, so this page shows the real files. |
+| `Dockerfile`, `.dockerignore` | The runtime image copies `.vscode/` beside the other sources the records read, and the ignore file stopped excluding it. |
+| `README.md`, `samples/maplarge/README.md`, `CLAUDE.md` | Each gained the line that points here. |
+| `docs/decisions/ADR-097-the-editor-is-set-up-by-the-repository.md` | The record: why the configuration is in the repository, what it holds, and what was left out. |
+
+The tasks, read from the build:
+
+```live path=.vscode/tasks.json region=*
+```
+
+## When something is off
+
+| What you see | What it is | What to do |
+| --- | --- | --- |
+| Vite dies with `EBUSY` | dotnet holds locks on `obj/` while it builds, and a watcher that reads it crashes. `vite.config.ts` excludes `api/` from Vite's watcher and `settings.json` excludes it from the editor's. | Keep both exclusions. |
+| The browser suite fails to start | **Yard: start** is still holding 5210 or 5173, and the suite starts its own servers on the same ports. | Stop the run task, then run the suite. |
+| `npm ci` prints audit warnings | The audit reads the lock file's development packages; nothing in it ships to the browser or the container. | Read `npm audit`; the gate's own lint and tests are what hold the build. |
+| F5 says it cannot find `TheYard.Api.dll` | The build task did not run, or the SDK is not 10. | `dotnet --version`, then Ctrl+Shift+B. |
+| The Testing panel shows no xUnit tests | C# Dev Kit is still restoring the solution, or it opened the wrong one. | Wait for the status bar, or Ctrl+Shift+P, ".NET: Open Solution", `api/TheYard.slnx`. |
+| C# formatting differs from the gate | The gate runs `dotnet format` on the solution; the editor formats one file. | Run **Yard: format check (C#)** before committing. |
+
+## Files
+
+- [`.vscode/extensions.json`](https://github.com/SteveStout/TheYard/blob/main/.vscode/extensions.json), [`.vscode/settings.json`](https://github.com/SteveStout/TheYard/blob/main/.vscode/settings.json), [`.vscode/tasks.json`](https://github.com/SteveStout/TheYard/blob/main/.vscode/tasks.json), [`.vscode/launch.json`](https://github.com/SteveStout/TheYard/blob/main/.vscode/launch.json): TheYard's editor configuration.
+- [`samples/maplarge/.vscode/`](https://github.com/SteveStout/TheYard/tree/main/samples/maplarge/.vscode): The Shed's.
+- [`api/TheYard.Tests/WorkspaceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/WorkspaceTests.cs): the configuration held to the code and to this page.
+- [`api/TheYard.Api/Properties/launchSettings.json`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Properties/launchSettings.json) and [`samples/maplarge/Properties/launchSettings.json`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Properties/launchSettings.json): the ports.
+- [ADR-097, The editor is set up by the repository](https://theyard.stevenstout.biz/?doc=adr-the-editor-is-set-up-by-the-repository): the decision.

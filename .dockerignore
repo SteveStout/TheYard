@@ -2,11 +2,11 @@
 node_modules/
 **/node_modules/
 
-# Git and editor metadata
+# Git and editor metadata. .vscode/ rides along: the runtime image copies it so the
+# editor page can show the launch and task files live (ADR: The editor is set up by the repository).
 .git/
 .gitignore
 .vs/
-.vscode/
 
 # Local environment and IDE settings
 *.user

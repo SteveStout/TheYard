@@ -98,6 +98,12 @@ export const PAGES = {
     url: '/api/docs/start-here',
     kind: 'overview',
   },
+  vscode: {
+    title: 'Working in VS Code',
+    menuLabel: 'Working in VS Code',
+    url: '/api/docs/vscode',
+    kind: 'overview',
+  },
   architecture: {
     title: 'App Architecture',
     menuLabel: 'Architecture overview',

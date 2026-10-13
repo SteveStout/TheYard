@@ -1,0 +1,208 @@
+{
+  // Every command a developer runs, as a task: Terminal > Run Task, or Ctrl+Shift+B for the
+  // default build. Each one is the same command the README gives, so the task and the
+  // README cannot drift (ADR: The editor is set up by the repository).
+  "version": "2.0.0",
+  "tasks": [
+    // ---- TheYard: run it ----
+    {
+      "label": "Yard: start (API + web)",
+      "detail": "npm start: the .NET API on :5210 and Vite on :5173 in one terminal, and the browser opens.",
+      "type": "shell",
+      "command": "npm start",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "yard",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE v",
+          "endsPattern": "Local:"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "run" }
+    },
+    {
+      "label": "Yard: API only",
+      "detail": "npm run api: dotnet run on the API alone, :5210.",
+      "type": "shell",
+      "command": "npm run api",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "yard-api",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building",
+          "endsPattern": "Now listening on"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "run" }
+    },
+    {
+      "label": "Yard: web only (Vite)",
+      "detail": "npm run dev: Vite on :5173, proxying /api to :5210. The launch configuration waits for it.",
+      "type": "shell",
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "yard-web",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE v",
+          "endsPattern": "Local:"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "run" }
+    },
+
+    // ---- TheYard: build ----
+    {
+      "label": "Yard: build API",
+      "detail": "dotnet build on the API project. F5 runs this first.",
+      "type": "shell",
+      "command": "dotnet build api/TheYard.Api/TheYard.Api.csproj",
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "silent", "panel": "shared" }
+    },
+    {
+      "label": "Yard: build solution (warnings are errors)",
+      "detail": "dotnet build on every project, the way the gate builds it: any warning is red.",
+      "type": "shell",
+      "command": "dotnet build api/TheYard.slnx -warnaserror",
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": "Yard: build web (tsc + vite)",
+      "detail": "npm run build: the type check and the production bundle into dist/.",
+      "type": "shell",
+      "command": "npm run build",
+      "problemMatcher": "$tsc",
+      "group": "build"
+    },
+
+    // ---- TheYard: the three suites, and the checks the gate runs before them ----
+    {
+      "label": "Yard: test (Vitest)",
+      "detail": "npm test: the presentation logic, no browser.",
+      "type": "shell",
+      "command": "npm test",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Yard: test (xUnit on SQLite)",
+      "detail": "npm run test:api: every xUnit test except the seven that need the live Cosmos DB account.",
+      "type": "shell",
+      "command": "npm run test:api",
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "Yard: test (browser, Playwright)",
+      "detail": "npm run test:e2e: the real stack in Chrome. Starts both servers itself; stop 'Yard: start' first.",
+      "type": "shell",
+      "command": "npm run test:e2e",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Yard: lint",
+      "detail": "npm run lint: oxlint, warnings denied.",
+      "type": "shell",
+      "command": "npm run lint",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Yard: format check",
+      "detail": "npm run format:check: Prettier on the front end, the way the gate checks it.",
+      "type": "shell",
+      "command": "npm run format:check",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Yard: format check (C#)",
+      "detail": "npm run format:api:check: dotnet format with no changes allowed.",
+      "type": "shell",
+      "command": "npm run format:api:check",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Yard: everything the gate checks (no browser)",
+      "detail": "Format, lint, type check, Vitest and xUnit in order. The browser suite is its own task.",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Yard: format check",
+        "Yard: format check (C#)",
+        "Yard: lint",
+        "Yard: build web (tsc + vite)",
+        "Yard: test (Vitest)",
+        "Yard: test (xUnit on SQLite)"
+      ],
+      "problemMatcher": [],
+      "group": "test"
+    },
+
+    // ---- The Shed (samples/maplarge), runnable from this window ----
+    {
+      "label": "Shed: run",
+      "detail": "dotnet run in samples/maplarge: The Shed on :5120, browsing sample-home/.",
+      "type": "shell",
+      "command": "dotnet run",
+      "options": { "cwd": "${workspaceFolder}/samples/maplarge" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "shed",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building",
+          "endsPattern": "Now listening on"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "run" }
+    },
+    {
+      "label": "Shed: build",
+      "detail": "dotnet build on The Shed. The 'Shed: run' launch configuration runs this first.",
+      "type": "shell",
+      "command": "dotnet build samples/maplarge/TestProject.csproj",
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "presentation": { "reveal": "silent", "panel": "shared" }
+    },
+    {
+      "label": "Shed: build TypeScript",
+      "detail": "npm run build in samples/maplarge: tsc writes wwwroot/js, which is committed.",
+      "type": "shell",
+      "command": "npm run build",
+      "options": { "cwd": "${workspaceFolder}/samples/maplarge" },
+      "problemMatcher": "$tsc",
+      "group": "build"
+    },
+    {
+      "label": "Shed: test (xUnit)",
+      "detail": "dotnet test in samples/maplarge.",
+      "type": "shell",
+      "command": "dotnet test",
+      "options": { "cwd": "${workspaceFolder}/samples/maplarge" },
+      "problemMatcher": "$msCompile",
+      "group": "test"
+    },
+    {
+      "label": "Shed: test (node)",
+      "detail": "npm test in samples/maplarge: node --test on the page's pure functions.",
+      "type": "shell",
+      "command": "npm test",
+      "options": { "cwd": "${workspaceFolder}/samples/maplarge" },
+      "problemMatcher": [],
+      "group": "test"
+    }
+  ]
+}

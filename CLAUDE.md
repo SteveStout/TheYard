@@ -92,6 +92,7 @@ split).
 - `npm install` then `npm start` runs the API and the frontend together.
 - API alone: `npm run api`. Frontend alone: `npm run dev`.
 - Docker: `npm run docker` builds the image and serves everything at http://localhost:8080; `npm run docker:stop` stops it. Raw commands are documented in the README.
+- VS Code: `.vscode/` carries every command as a task and F5 for the API, the page and The Shed; `docs/app-architecture/VSCODE.md` is the walkthrough and `WorkspaceTests` holds the files to the tree (ADR: The editor is set up by the repository).
 
 ## Environment
 

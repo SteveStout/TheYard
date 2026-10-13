@@ -1,0 +1,63 @@
+{
+  // F5. The first configuration is the one a new developer wants: the API under the
+  // debugger and the page in Chrome, with breakpoints on both sides
+  // (ADR: The editor is set up by the repository).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // The .NET API under the debugger. Built first by the task below; the same
+      // address and environment as api/TheYard.Api/Properties/launchSettings.json.
+      "name": "Yard: API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Yard: build API",
+      "program": "${workspaceFolder}/api/TheYard.Api/bin/Debug/net10.0/TheYard.Api.dll",
+      "cwd": "${workspaceFolder}/api/TheYard.Api",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5210"
+      },
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      // The React page in Chrome with source maps, once Vite reports it is up.
+      // Vite proxies /api to :5210, so this needs "Yard: API" running beside it,
+      // which the compound below does.
+      "name": "Yard: web in Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "preLaunchTask": "Yard: web only (Vite)",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      // The Shed from the same window: the API and its page are one process on :5120,
+      // and the browser opens when it says it is listening. To point it at a folder of
+      // your own, add FILES__HOME to env.
+      "name": "Shed: run",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Shed: build",
+      "program": "${workspaceFolder}/samples/maplarge/bin/Debug/net10.0/TestProject.dll",
+      "cwd": "${workspaceFolder}/samples/maplarge",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5120"
+      },
+      "console": "internalConsole",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      // F5 with this selected: both halves of TheYard, breakpoints on both sides.
+      "name": "Yard: API + web (F5)",
+      "configurations": ["Yard: API", "Yard: web in Chrome"],
+      "stopAll": true
+    }
+  ]
+}

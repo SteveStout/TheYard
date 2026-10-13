@@ -1,0 +1,65 @@
+{
+  // Workspace settings, so a fresh clone behaves the same way on every machine
+  // (ADR: The editor is set up by the repository). Personal settings stay in the
+  // user profile; nothing here is a matter of taste.
+
+  // The solution C# Dev Kit loads on arrival. The Shed has its own, under samples/maplarge.
+  "dotnet.defaultSolution": "api/TheYard.slnx",
+
+  // The gate runs Prettier and dotnet format as checks, so the editor runs them as
+  // it saves and a change arrives at the gate already formatted.
+  "editor.formatOnSave": true,
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[csharp]": { "editor.defaultFormatter": "ms-dotnettools.csharp" },
+  // Markdown keeps its two-space hard breaks (.editorconfig says the same).
+  "[markdown]": { "editor.formatOnSave": false },
+
+  // LF everywhere, the way the repository stores every file (.gitattributes, ADR-028).
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+
+  // The TypeScript the project pins, not the one bundled with the editor, so the
+  // Problems panel and `tsc -b` agree.
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+  // dotnet holds locks on obj/ while it builds. vite.config.ts excludes api/ from
+  // Vite's watcher for the same reason; this keeps the editor's watcher off it too.
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/dist/**": true,
+    "**/dist-render/**": true,
+    "**/playwright-report/**": true,
+    "**/test-results/**": true
+  },
+  // Search reads source, not build output or the Shed's compiled page.
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bin": true,
+    "**/obj": true,
+    "**/dist": true,
+    "**/dist-render": true,
+    "**/playwright-report": true,
+    "**/test-results": true,
+    "**/TestResults": true,
+    "samples/maplarge/wwwroot/js": true,
+    "package-lock.json": true
+  },
+
+  // The Testing panel: Vitest and Playwright each find their config at the root;
+  // xUnit comes with C# Dev Kit and the solution above. The browser suite keeps
+  // one Chrome open between runs instead of starting one per click.
+  "playwright.reuseBrowser": true,
+
+  // Bicep and the solution file get their languages by name.
+  "files.associations": {
+    "*.slnx": "xml",
+    "*.bicep": "bicep"
+  }
+}
