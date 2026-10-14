@@ -143,6 +143,12 @@
   color: var(--color-danger);
 }
 
+/* Amber: worth a look, between fine and needs attention (the tone words clear 4.5:1). */
+.warn {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
 .muted {
   color: var(--color-text-muted);
   font-size: var(--card-quiet-size);

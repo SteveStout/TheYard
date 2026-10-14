@@ -1704,3 +1704,18 @@ test('the tests card carries CODE HEALTH: warnings, the gate against five minute
   // A results file an older gate wrote has no code numbers, and the row says so instead of a zero.
   await expect(health.getByTestId('code-gate')).toContainText(/\d+ s/);
 });
+
+test('the Azure card says the certificate and the storage, or why neither is read here (1.0.3.132)', async ({
+  page,
+  request,
+}) => {
+  const azure = (await (await request.get('http://localhost:5210/api/admin/azure')).json()) as {
+    hourly?: unknown;
+  };
+  // The hourly readings ride on the Azure answer, null before the first pass.
+  expect('hourly' in azure).toBe(true);
+  await openTheYard(page, '/?view=admin&card=azure');
+  await expect(page.getByTestId('azure-card').getByTestId('azure-hourly')).toBeVisible({
+    timeout: 30_000,
+  });
+});

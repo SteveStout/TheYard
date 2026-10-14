@@ -6,7 +6,7 @@
  */
 import { codeRows, type CodeNumbers, type GateSummary } from '../../../lib/codeHealth';
 import cardStyles from '../shared/card.module.css';
-import { pill } from '../shared/common';
+import { TONE_WORDS, tonePill } from '../shared/common';
 import { More } from '../shared/More';
 import { DataTable } from '../DataTable';
 
@@ -27,9 +27,7 @@ export function CodeHealthSection({
         {rows.map((row) => (
           <li key={row.key} className={cardStyles.checkRow} data-testid={`code-${row.key}`}>
             {row.tone === 'plain' ? null : (
-              <span className={pill(row.tone === 'good')}>
-                {row.tone === 'good' ? 'fine' : 'look'}
-              </span>
+              <span className={tonePill(row.tone)}>{TONE_WORDS[row.tone]}</span>
             )}
             <span>{row.label}</span>
             <span className={cardStyles.muted}>{row.value}</span>

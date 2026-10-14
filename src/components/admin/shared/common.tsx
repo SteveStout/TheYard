@@ -98,6 +98,13 @@ export function useKeptWindow<T>(card: KeptCard, tick: number) {
 export const pill = (ok: boolean) =>
   ok ? `${styles.pill} ${styles.ok}` : `${styles.pill} ${styles.bad}`;
 
+/** A judged reading as a pill in its own tone: green, amber or red, the word inside saying which. */
+export const tonePill = (tone: 'good' | 'warn' | 'bad') =>
+  `${styles.pill} ${tone === 'good' ? styles.ok : tone === 'warn' ? styles.warn : styles.bad}`;
+
+/** The word inside a tone pill, the same words the tiles use. */
+export const TONE_WORDS = { good: 'fine', warn: 'worth a look', bad: 'needs attention' } as const;
+
 /** What a card says when its last read failed. */
 export const failed = (what: string) => <CardState state="failed" what={what} />;
 

@@ -1,3 +1,5 @@
+using TheYard.Infrastructure;
+
 namespace TheYard.Api;
 
 /// <summary>
@@ -40,6 +42,14 @@ public static class AdminRegistration
             builder.Configuration["Peer:Url"],
             new HttpClient { Timeout = PeerReader.Patience + TimeSpan.FromSeconds(1) });
         builder.Services.AddSingleton(peer);
+        // Once an hour, the certificate the site answers with and how full the relational store
+        // is, for the Azure card (HourlyReadings.cs). Only a container with a public https address
+        // reads a certificate; only one with Azure SQL Database reads a size.
+        Uri? site = Uri.TryCreate(builder.Configuration["Site:Url"], UriKind.Absolute, out var siteUrl)
+            && siteUrl.Scheme == Uri.UriSchemeHttps ? siteUrl : null;
+        var quietSql = host.SqlBackend?.QuietContexts;
+        builder.Services.AddSingleton(new HourlyReadings(site, cancellation => StorageStats.ReadAsync(quietSql, cancellation), TimeProvider.System));
+        builder.Services.AddHostedService(services => services.GetRequiredService<HourlyReadings>());
         // The performance proof (ADR: Same performance, proven), built on first use so a test's own
         // ProofClients registration is the one it gets.
         builder.Services.AddSingleton(services => new ProofRunner(backends, services.GetRequiredService<ProofClients>(), sqlLog, storeLog));

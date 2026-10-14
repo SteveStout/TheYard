@@ -81,9 +81,13 @@ public static partial class AdminEndpoints
         return TypedResults.Ok(backends.Describe(http));
     }
 
-    /// <summary>Answers what this container reads about its own Azure resource (AzureSelf).</summary>
-    private static async Task<IResult> Azure(AzureSelf azureSelf) =>
-        Results.Json(await azureSelf.GetStateAsync());
+    /// <summary>Answers what this container reads about its own Azure resource (AzureSelf), with the hourly readings beside it.</summary>
+    private static async Task<IResult> Azure(AzureSelf azureSelf, HourlyReadings hourly)
+    {
+        var answer = System.Text.Json.JsonSerializer.SerializeToNode(await azureSelf.GetStateAsync())!.AsObject();
+        answer["hourly"] = hourly.View is { } view ? System.Text.Json.JsonSerializer.SerializeToNode(view) : null;
+        return Results.Json(answer);
+    }
 
     /// <summary>
     /// Answers the other container's metrics, read server side, so the comparison card can show both backends.
