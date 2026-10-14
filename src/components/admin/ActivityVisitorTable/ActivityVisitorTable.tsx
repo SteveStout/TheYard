@@ -4,6 +4,7 @@
  * visitor is still only a keyed hash. It is its own component because it holds its own
  * sort state and has nothing to do with the public chart above it.
  */
+import { CardState } from '../shared/CardState';
 import { useState } from 'react';
 import {
   groupByDay,
@@ -82,7 +83,7 @@ export function ActivityVisitorTable({ visitors }: { visitors: Fetched<ActivityV
     <>
       <h3 className={cardStyles.cardTitle}>Visitors</h3>
       {visitors === null ? (
-        <p className={cardStyles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : visitors === 'failed' ? (
         <p className={cardStyles.muted} data-testid="visitors-refused">
           The visitor rows did not answer to this key.

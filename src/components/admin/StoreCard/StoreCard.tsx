@@ -2,6 +2,7 @@
  * What the document store ran (ADR: What the store is actually doing), now or over
  * a kept window, on a container that runs a document store.
  */
+import { CardState } from '../shared/CardState';
 import type { ReactNode } from 'react';
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
 import { documentStore } from '../../../lib/metrics';
@@ -72,7 +73,7 @@ function StoreTable({
       </About>
       {picker}
       {rows === null ? (
-        <p className={styles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : rows === 'failed' ? (
         <p className={styles.muted} data-testid="card-failed">
           Could not read the store log on the last try; the next try is in 30 seconds.

@@ -2,6 +2,7 @@
  * Application health (ADR-010): the checks the container runs on itself, with
  * how long each took. The strip reads the same answer, so it is handed in.
  */
+import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
 import styles from '../shared/card.module.css';
 import type { Health, Fetched } from '../shared/types';
@@ -16,7 +17,7 @@ export default function HealthCard({ health }: { health: Fetched<Health> }) {
         <h2 className={styles.cardTitle}>Application health</h2>
         <Range of="keptWarm" />
         {health === null ? (
-          <p className={styles.muted}>Loading…</p>
+          <CardState state="loading" />
         ) : health === 'failed' ? (
           failed('the health report')
         ) : (

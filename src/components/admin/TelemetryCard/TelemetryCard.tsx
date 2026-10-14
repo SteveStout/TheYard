@@ -1,6 +1,7 @@
 /**
  * Application Insights, read back through the container's own identity (ADR-024).
  */
+import { CardState } from '../shared/CardState';
 import { durationWords } from '../../../lib/duration';
 import { emptyHourWords } from '../../../lib/telemetryCard';
 import styles from '../shared/card.module.css';
@@ -52,7 +53,7 @@ export default function TelemetryCard({ tick }: { tick: number }) {
       <article className={`${styles.card} op-glass`} data-testid="telemetry-card">
         <h2 className={styles.cardTitle}>Traffic, last hour</h2>
         {telemetry === null ? (
-          <p className={styles.muted}>Loading…</p>
+          <CardState state="loading" />
         ) : telemetry === 'failed' ? (
           failed('the telemetry')
         ) : !telemetry.configured || telemetry.available === false ? (

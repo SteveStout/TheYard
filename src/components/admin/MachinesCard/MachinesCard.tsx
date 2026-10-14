@@ -7,6 +7,7 @@
  *   MachinesRelationalSection  the relational store's own resource view
  *   MachinesDocumentSection    the document store's request units
  */
+import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
 import type { ReactNode } from 'react';
 import { type MachineWindow, windowName } from '../../../lib/machineChart';
@@ -38,7 +39,7 @@ export default function MachinesCard({
         <h2 className={styles.cardTitle}>What the machines are doing</h2>
         {toolbar}
         {machines === null ? (
-          <p className={styles.muted}>Loading…</p>
+          <CardState state="loading" />
         ) : (
           <p className={styles.muted} data-testid="machines-failed">
             Could not read the machines on the last try.

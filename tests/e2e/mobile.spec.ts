@@ -528,6 +528,14 @@ test.describe('the Admin tab on the narrowest phone', () => {
     for (const card of ['log', 'machines', 'tests', 'timing', 'backends']) {
       await openTheYard(page, `/?view=admin&card=${card}`);
       const open = page.getByTestId('bench-open');
+      // The log's and the machines' tables are folded behind More since 1.0.3.129; open the folds to measure them.
+      if (card === 'log' || card === 'machines') {
+        const folds = open.locator('details[data-testid$="-more"]');
+        await expect(folds.first()).toBeAttached({ timeout: 60_000 });
+        await folds.evaluateAll((all) =>
+          all.forEach((fold) => ((fold as HTMLDetailsElement).open = true))
+        );
+      }
       await expect(open.locator('table').first()).toBeVisible({ timeout: 60_000 });
       const tables = await open.locator('table').evaluateAll((all) =>
         all.map((table) => {

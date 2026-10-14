@@ -1,6 +1,7 @@
 /**
  * Azure's view of the container (ADR-010), asked by the container with its own identity.
  */
+import { CardState } from '../shared/CardState';
 import { shortenDigests, formatDateTime } from '../../../lib/format';
 import styles from '../shared/card.module.css';
 import type { AzureState } from '../shared/types';
@@ -12,7 +13,7 @@ export default function AzureCard({ tick }: { tick: number }) {
     <article className={`${styles.card} op-glass`} data-testid="azure-card">
       <h2 className={styles.cardTitle}>Azure's view of the container</h2>
       {azure === null ? (
-        <p className={styles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : azure === 'failed' ? (
         failed("Azure's view")
       ) : azure.available && azure.host === 'app-service' ? (

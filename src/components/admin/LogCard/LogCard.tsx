@@ -1,6 +1,9 @@
 /**
  * The log, as the console got it (ADR-010), now or over a kept window.
  */
+import { levelLine } from '../../../lib/logLevels';
+import { More } from '../shared/More';
+import { CardState } from '../shared/CardState';
 import { Fragment } from 'react';
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
 import { dottedParts } from '../../../lib/tableFit';
@@ -60,7 +63,7 @@ export default function LogCard({ tick }: { tick: number }) {
         </About>
         {picker('logs')}
         {logRows === null ? (
-          <p className={styles.muted}>Loading…</p>
+          <CardState state="loading" />
         ) : logRows === 'failed' ? (
           failed('the log')
         ) : logRows.length === 0 ? (
@@ -68,12 +71,19 @@ export default function LogCard({ tick }: { tick: number }) {
             <p className={styles.muted}>Nothing recorded since the container started.</p>
           )
         ) : (
-          <DataTable
-            label="Recent log lines"
-            rows={logRows.slice(0, cardWindows.logs === 'now' ? 80 : 200)}
-            rowKey={(_entry, index) => index}
-            columns={logColumns(cardWindows.logs)}
-          />
+          <>
+            <p className={styles.muted} data-testid="log-levels">
+              {levelLine(logRows.slice(0, cardWindows.logs === 'now' ? 80 : 200))}
+            </p>
+            <More label="every line" testId="log-more">
+              <DataTable
+                label="Recent log lines"
+                rows={logRows.slice(0, cardWindows.logs === 'now' ? 80 : 200)}
+                rowKey={(_entry, index) => index}
+                columns={logColumns(cardWindows.logs)}
+              />
+            </More>
+          </>
         )}
       </article>
       {/* #endregion log-section */}

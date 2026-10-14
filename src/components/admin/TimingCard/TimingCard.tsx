@@ -2,6 +2,7 @@
  * Timing: the requests' percentiles and every path's, with both stores on the same
  * two lines (ADR: Backends, side by side, the addendum on parity).
  */
+import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
 import { documentStoreLine, percentileWords, sqlLine, timingWindow } from '../../../lib/metrics';
 import { millisecondsWords } from '../../../lib/statTiles';
@@ -33,7 +34,7 @@ export default function TimingCard({ tick }: { tick: number }) {
         <h2 className={cardStyles.cardTitle}>Timing</h2>
         <Range of="p95" />
         {metrics === null ? (
-          <p className={cardStyles.muted}>Loading…</p>
+          <CardState state="loading" />
         ) : metrics === 'failed' ? (
           failed('the timing')
         ) : (

@@ -183,7 +183,8 @@ test('the machines card shows the container, the relational store and the docume
     expect(wire.relational.note).toBeTruthy();
     await expect(card.getByTestId('machines-relational-note')).toBeVisible();
   } else {
-    await expect(card.getByTestId('machines-relational-table')).toBeVisible();
+    // Folded behind More since 1.0.3.129, so it is on the page and not yet open.
+    await expect(card.getByTestId('machines-relational-table')).toBeAttached();
   }
 });
 
@@ -1465,6 +1466,9 @@ test('the store and the log never scroll sideways on a desk: a table too wide fo
     await page.setViewportSize({ width, height: 900 });
     for (const card of ['store', 'log']) {
       await openTheYard(page, `/?view=admin&card=${card}`);
+      // The log's table is folded under its level count since 1.0.3.129; open the fold to measure it.
+      if (card === 'log')
+        await page.getByTestId('log-more').locator('summary').click({ timeout: 60_000 });
       const table = page.getByTestId('bench-open').locator('table').first();
       await expect(table).toBeVisible({ timeout: 60_000 });
       const read = await table.evaluate((element) => {
@@ -1663,4 +1667,27 @@ test('the Backends card names this build beside the other site, and the process 
   });
   await expect(card.getByTestId('backends-runtime')).toContainText('This process started');
   await expect(card.getByTestId('backends-runtime')).toContainText('garbage collection');
+});
+
+test('the long tables fold behind More, and the log counts its levels before its table (1.0.3.129)', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=log');
+  const log = page.getByTestId('log-card');
+  await expect(log.getByTestId('log-levels')).toContainText(/\d+ \w+/, { timeout: 30_000 });
+  const fold = log.getByTestId('log-more');
+  await expect(fold).not.toHaveAttribute('open');
+  await fold.locator('summary').click();
+  await expect(fold.locator('table').first()).toBeVisible();
+  await openTheYard(page, '/?view=admin&card=machines');
+  const machines = page.getByTestId('machines-card');
+  await expect(machines.getByTestId('containersection-more')).toHaveCount(1, { timeout: 60_000 });
+  await expect(machines.getByTestId('containersection-more')).toContainText('More: the newest 20');
+  // A card still loading, failed or empty says so with one status line, whichever card it is.
+  await openTheYard(page, '/?view=admin&card=errors');
+  await expect(
+    page
+      .getByTestId('errors-card')
+      .locator('[data-testid="card-empty"], [data-testid="errors-table"]')
+  ).toHaveCount(1, { timeout: 30_000 });
 });

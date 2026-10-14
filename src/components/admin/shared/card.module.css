@@ -5,10 +5,10 @@
  *            glass).
  * Used by:   ActivityCard.tsx, ActivityDaysTable.tsx, ActivityGraph.tsx, ActivityPathTiles.tsx,
  *            ActivityTotals.tsx, ActivityVisitorTable.tsx, AdminBenchCard.tsx, AdminPanel.tsx,
- *            AdminStatStrip.tsx, AdminWorkbench.tsx, AzureCard.tsx, BackendsCard.tsx,
+ *            AdminStatStrip.tsx, AdminWorkbench.tsx, AzureCard.tsx, BackendsCard.tsx, CardState.tsx,
  *            DataTable.tsx, ErrorsCard.tsx, ExperimentCard.tsx, HealthCard.tsx, KeptLogsCard.tsx,
  *            LogCard.tsx, MachineChart.tsx, MachinesCard.tsx, MachinesContainerSection.tsx,
- *            MachinesDocumentSection.tsx, MachinesKeptWindow.tsx, MachinesRelationalSection.tsx,
+ *            MachinesDocumentSection.tsx, MachinesKeptWindow.tsx, MachinesRelationalSection.tsx, More.tsx,
  *            OperatorCard.tsx, OverviewCard.tsx, PagesCard.tsx, ProofCard.tsx, Range.tsx, ResetLinkCard.tsx, SpendCard.tsx,
  *            SqlCard.tsx, StoreCard.tsx, TelemetryCard.tsx, TestsCard.tsx, TimingCard.tsx,
  *            TrafficCard.tsx, common.tsx, useMachines.tsx.
@@ -55,15 +55,15 @@
    top rule and the corner brackets are the shared .op-glass class (the
    operator's look); this sheet lays the card out. */
 .card {
-  padding: var(--space-5);
+  padding: var(--card-pad);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--card-gap);
 }
 
 .cardTitle {
   margin: 0;
-  font-size: var(--text-md);
+  font-size: var(--card-title-size);
   font-weight: var(--weight-semibold);
   color: var(--color-heading);
 }
@@ -145,7 +145,7 @@
 
 .muted {
   color: var(--color-text-muted);
-  font-size: var(--text-xs);
+  font-size: var(--card-quiet-size);
 }
 
 .mono {
@@ -178,11 +178,11 @@
    blur: a blur is paid for by the pixel on a phone, and the tiles, the small
    cards and the buttons are where it is spent (ADR: The glass look). */
 .wide {
-  padding: var(--space-5);
+  padding: var(--card-pad);
   margin-top: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--card-gap);
 }
 
 /* The statement itself. Wrapped rather than truncated: a query nobody can read

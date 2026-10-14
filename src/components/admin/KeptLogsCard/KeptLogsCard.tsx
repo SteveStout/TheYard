@@ -1,6 +1,7 @@
 /**
  * The kept log (ADR: Logs that outlive the container), behind the operator's key.
  */
+import { CardState } from '../shared/CardState';
 import { useEffect, useState } from 'react';
 import { ACTIVITY_WINDOWS, labelFor, type ActivityWindow } from '../../../lib/activity';
 import {
@@ -158,7 +159,7 @@ export default function KeptLogsCard({ adminKey }: { adminKey: string | null }) 
             </button>
           </form>
           {logs === null ? (
-            <p className={cardStyles.muted}>Loading…</p>
+            <CardState state="loading" />
           ) : logs === 'failed' ? (
             <p className={cardStyles.muted} data-testid="kept-logs-refused">
               The kept log did not answer to this key.

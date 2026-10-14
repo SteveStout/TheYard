@@ -73,6 +73,6 @@
 }
 
 .range {
-  font-size: var(--text-xs);
+  font-size: var(--card-quiet-size);
   color: var(--color-text-muted);
 }

@@ -10,6 +10,7 @@
  *     ActivityDaysTable/         the day by day table
  *   ActivityVisitorTable/        the per-visitor rows, behind the operator's key
  */
+import { CardState } from '../shared/CardState';
 import { useState } from 'react';
 import {
   ACTIVITY_WHO,
@@ -103,7 +104,7 @@ export default function ActivityCard({
         ))}
       </p>
       {report === null ? (
-        <p className={cardStyles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : report === 'failed' ? (
         <p className={cardStyles.muted} data-testid="card-failed">
           Could not read the activity on the last try; the next try is on the next window change.

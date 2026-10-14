@@ -2,6 +2,7 @@
  * Backends, side by side (ADR: Backends, side by side): the two stores on the same
  * rows, or this container against its peer.
  */
+import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
 import styles from '../shared/card.module.css';
 import type {
@@ -244,7 +245,7 @@ export default function BackendsCard({ tick }: { tick: number }) {
           each has served.
         </About>
         {metrics === null || peer === null ? (
-          <p className={styles.muted}>Loading…</p>
+          <CardState state="loading" />
         ) : metrics === 'failed' ? (
           failed('the comparison')
         ) : (
