@@ -56,7 +56,20 @@ npm run test:all
 ```
 
 It runs the 145 xUnit tests (`dotnet test` builds first), then the TypeScript build, then the 21
-node tests, and stops at the first failure. In VS Code it is the task **Shed: test all**. Run
+node tests, and stops at the first failure. Each step's output is captured, and a green run prints
+one line per step:
+
+```
+The Shed - all tests
+C# tests (xUnit)     145 passed   0 failed   19.2 s
+TypeScript build     clean                    1.5 s
+TypeScript tests      21 passed   0 failed    1.4 s
+ALL GREEN - 166 tests passed
+```
+
+A failing step prints everything it printed, then the summary, and the command exits non-zero, so
+nothing is hidden. `npm run test:all:full` runs the same three commands with their whole output.
+In VS Code they are the tasks **Shed: test all** and **Shed: test all (full output)**. Run
 `npm install` once first. Each suite on its own:
 
 ```

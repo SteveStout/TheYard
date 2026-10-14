@@ -54,9 +54,17 @@
     },
     {
       "label": "Shed: test all",
-      "detail": "npm run test:all: dotnet test, then the TypeScript build, then npm test, stopping at the first failure. One command for every test before a commit.",
+      "detail": "npm run test:all: dotnet test, then the TypeScript build, then npm test, stopping at the first failure, with one summary line per step. A failing step prints its whole output first. One command for every test before a commit.",
       "type": "shell",
       "command": "npm run test:all",
+      "problemMatcher": ["$msCompile", "$tsc"],
+      "group": "test"
+    },
+    {
+      "label": "Shed: test all (full output)",
+      "detail": "npm run test:all:full: the same three commands joined with &&, every line they print.",
+      "type": "shell",
+      "command": "npm run test:all:full",
       "problemMatcher": ["$msCompile", "$tsc"],
       "group": "test"
     }

@@ -92,6 +92,17 @@ The same suites as tasks, each the README's own command, measured from the fresh
 | Yard: format check (C#) | `npm run format:api:check` | dotnet format with no changes allowed. | 40 s |
 | Yard: everything the gate checks (no browser) | the six above, in order | What to run before a commit. | 108 s |
 
+**Both unit suites, one command:** `npm run test:all` runs **Yard: test (xUnit on SQLite)** and then **Yard: test (Vitest)**, each with its output captured, and prints one line per suite:
+
+```
+TheYard - all tests
+C# tests (xUnit)      943 passed    0 failed   37.3 s
+TypeScript tests      419 passed    0 failed   10.6 s
+ALL GREEN - 1362 tests passed
+```
+
+A failing suite prints everything it printed, then the summary, and exits non-zero. `npm run test:all:full` runs the same two commands with their whole output. The browser suite stays its own command, `npm run test:e2e`, because it needs the app running and starts both servers itself.
+
 The editor formats on save with the same Prettier and the same `.editorconfig` the gate checks against, so a change arrives at the gate already formatted. What the gate itself runs, and why a build warning is red, is in [ADR-068, the five-minute gate](https://theyard.stevenstout.biz/?doc=adr-five-minute-gate).
 
 ## Step 6: The Shed
@@ -108,7 +119,17 @@ The Shed is the file browser under `samples/maplarge`, one .NET project with its
 npm run test:all
 ```
 
-It runs the 145 xUnit tests (`dotnet test` builds first), then the TypeScript build, then the 21 node tests, and stops at the first failure. With The Shed open as its own folder it is the task **Shed: test all** in Run Task. It is the one command to run before a commit.
+It runs the 145 xUnit tests (`dotnet test` builds first), then the TypeScript build, then the 21 node tests, and stops at the first failure. Each step's output is captured, and a green run prints one line per step:
+
+```
+The Shed - all tests
+C# tests (xUnit)     145 passed   0 failed   19.2 s
+TypeScript build     clean                    1.5 s
+TypeScript tests      21 passed   0 failed    1.4 s
+ALL GREEN - 166 tests passed
+```
+
+A failing step prints everything it printed, then the summary, and exits non-zero. `npm run test:all:full` runs the same three commands with their whole output. With The Shed open as its own folder they are the tasks **Shed: test all** and **Shed: test all (full output)** in Run Task. It is the one command to run before a commit.
 
 ![The Shed opened as its own folder with Shed: run (F5) running under the debugger: the debug toolbar at the top, HomePath.cs in the editor, and the Debug Console as the host starts on http only](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vscode-shed-f5.jpg)
 
