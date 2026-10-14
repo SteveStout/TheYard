@@ -53,6 +53,8 @@ function results(file) {
 
 const node = results('node.result');
 const dotnet = results('dotnet.result');
+const build = results('build.result');
+const measured = results('code.result');
 const seconds = (side, key) => Number(side[`${key}_s`] ?? 0);
 
 const readJson = (file) => {
@@ -224,6 +226,39 @@ if (suites.length === 0 || empty.length > 0) {
   process.exit(1);
 }
 
+// #region code-health
+// The code's own numbers for CODE HEALTH, and the last thirty gates carried forward from the
+// file this one replaces, so the tests card can show a trend from one file that ships.
+const count = (side, key) =>
+  side[key] === undefined || side[key] === '' ? null : Number(side[key]);
+const code = {
+  warnings: count(build, 'warnings'),
+  distJsBytes: count(measured, 'dist_js_bytes'),
+  distCssBytes: count(measured, 'dist_css_bytes'),
+  outdatedNpm: count(measured, 'outdated_npm'),
+  outdatedNuget: count(measured, 'outdated_nuget'),
+};
+const before = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : null;
+const summed = (all) => ({
+  passed: all.reduce((sum, suite) => sum + suite.passed, 0),
+  failed: all.reduce((sum, suite) => sum + suite.failed, 0),
+});
+const history = [
+  ...(before?.history ?? []),
+  ...(before && before.version !== version
+    ? [
+        {
+          version: before.version,
+          ranAt: before.ranAt,
+          gateSeconds: before.gateSeconds,
+          ...summed(before.suites ?? []),
+          distJsBytes: before.code?.distJsBytes ?? null,
+        },
+      ]
+    : []),
+].slice(-30);
+// #endregion code-health
+
 // One test per line, so a diff between two versions reads test by test.
 const lines = [
   '{',
@@ -231,6 +266,8 @@ const lines = [
   `  "ranAt": ${JSON.stringify(new Date().toISOString())},`,
   `  "gateSeconds": ${Number(gateSeconds ?? 0)},`,
   `  "checks": ${JSON.stringify(checks)},`,
+  `  "code": ${JSON.stringify(code)},`,
+  `  "history": ${JSON.stringify(history)},`,
   '  "suites": [',
   suites
     .map((suite) => {

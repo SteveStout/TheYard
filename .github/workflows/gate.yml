@@ -83,6 +83,21 @@ jobs:
       - run: npx vite build --config render/vite.config.ts
       # #endregion build
 
+      # #region code-numbers
+      # The code's own numbers for CODE HEALTH on the tests card: the page's built size and the
+      # packages with a newer release. Measurements, not checks: nothing here turns the run red
+      # (the build's warnings already do, above), so they go to their own file, code.result.
+      - name: The code's own numbers
+        if: always()
+        run: |
+          echo "dist_js_bytes=$(cat dist/assets/*.js | wc -c)" >> "$RAW/code.result"
+          echo "dist_css_bytes=$(cat dist/assets/*.css | wc -c)" >> "$RAW/code.result"
+          npm outdated --json > "$RAW/npm-outdated.json" 2>/dev/null || true
+          echo "outdated_npm=$(node -e 'try{console.log(Object.keys(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")||"{}")).length)}catch{console.log(-1)}' "$RAW/npm-outdated.json")" >> "$RAW/code.result"
+          echo "outdated_nuget=$( (dotnet list api/TheYard.slnx package --outdated 2>/dev/null || true) | grep -cE '^\s+> ' || true)" >> "$RAW/code.result"
+          cat "$RAW/code.result"
+      # #endregion code-numbers
+
       # #region dotnet-side
       # The .NET side: format, the SQL project, xUnit on SQLite, the live Cosmos DB tests, and the
       # whole suite booted on Cosmos DB when the commit touched what it reads.

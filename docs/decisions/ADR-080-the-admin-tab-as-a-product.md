@@ -409,6 +409,15 @@ The cards also take their type sizes and their spacing from tokens in the token 
 
 Shot at 390 by 844 on 14 October, the tab put the Admin paragraph, What this shows, the window row and a caption before any number, so the first tiles started about 540 pixels down and the second row of tiles was below the fold. On a phone the paragraph and its fold now follow the strip, and the first tiles are on the first screen with the words one scroll away. A desk keeps the order it had. The Overview is scanned by axe as the tab's first card, and the tone words are held to 4.5:1 on their soft grounds by `colors.test.ts`; the amber one is the closest of the three, at 4.51.
 
+## Addendum, 2026-10-15 (1.0.3.131): CODE HEALTH on the tests card
+
+The gate already measured things about the code that nobody could see: its build warnings were counted and thrown away once the verdict read them, and the size of the built page was in nobody's file. The tests card now has a CODE HEALTH section under its headline. Build warnings are red over zero, since the gate fails on one anyway. The gate's seconds are read against the five minutes of ADR-068. The page's built size and the number of npm and NuGet packages with a newer release are shown plainly, with no tone, because neither has a line Steve has drawn.
+
+The numbers are measured on the gate's runner, in a step of their own that writes `code.result` and turns nothing red; `GateWorkflowTests` still requires every check the workflow records to feed the verdict and now names that file as the one that holds measurements. `scripts/test_results.mjs` carries them into `data/test-results.json` with the last thirty gates before this one, carried forward from the file it replaces, so the trend ships in the same three files the ship already writes. The first gate run after this change is the proof that the step works; a number the gate did not measure reads as not measured, never as zero.
+
+```live path=src/lib/codeHealth.ts region=code-rows
+```
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.

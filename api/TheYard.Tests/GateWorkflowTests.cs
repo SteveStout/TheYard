@@ -104,7 +104,11 @@ public class GateWorkflowTests
         Assert.True(verdict > 0, "the gate job should end with the verdict");
         string judged = workflow[verdict..];
 
-        var keys = Regex.Matches(workflow[..verdict], @"echo ""([a-z_]+)=")
+        // The code's own numbers (code.result) are measurements for the tests card, not checks:
+        // the build's warnings are the one of them that turns a run red, and the verdict reads that.
+        string recorded = string.Join('\n', workflow[..verdict].Split('\n')
+            .Where(line => !line.Contains("code.result", StringComparison.Ordinal)));
+        var keys = Regex.Matches(recorded, @"echo ""([a-z_]+)=")
             .Select(match => match.Groups[1].Value)
             .Where(key => !key.EndsWith("_s", StringComparison.Ordinal))
             .Distinct(StringComparer.Ordinal)

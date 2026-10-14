@@ -1,6 +1,7 @@
 /**
  * Every test, for this build (ADR: The five-minute gate).
  */
+import { CodeHealthSection } from './CodeHealthSection';
 import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
 import { Fragment, useEffect, useState } from 'react';
@@ -120,6 +121,11 @@ export default function TestsCard() {
       ) : (
         <>
           <TestsSummary results={results} />
+          <CodeHealthSection
+            code={results.code}
+            gateSeconds={results.gateSeconds}
+            history={results.history}
+          />
           <p className={cardStyles.muted} data-testid="tests-checks">
             {results.checks.map((check, index) => (
               <Fragment key={check.name}>
