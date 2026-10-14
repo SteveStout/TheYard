@@ -102,6 +102,14 @@ The Shed is the file browser under `samples/maplarge`, one .NET project with its
 
 **On its own, which is the demo shape:** File > Open Folder on `samples/maplarge`. That folder carries its own `.vscode` with the same launch configuration and tasks, and C# Dev Kit opens `TestProject.sln`. F5 does the same thing.
 
+**Every test, one command:** in `samples/maplarge`, run
+
+```
+npm run test:all
+```
+
+It runs the 145 xUnit tests (`dotnet test` builds first), then the TypeScript build, then the 21 node tests, and stops at the first failure. With The Shed open as its own folder it is the task **Shed: test all** in Run Task. It is the one command to run before a commit.
+
 ![The Shed opened as its own folder with Shed: run (F5) running under the debugger: the debug toolbar at the top, HomePath.cs in the editor, and the Debug Console as the host starts on http only](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vscode-shed-f5.jpg)
 
 F5 browses `sample-home/` inside the repository, so a file uploaded during a demo lands in the working tree. To keep the tree clean, copy `sample-home/` somewhere else and point `FILES__HOME` at the copy, as below.

@@ -34,6 +34,7 @@ Every "latest stable" below was read live on 2026-10-03 from nuget.org, the npm 
 | xunit | 2.9.3 | 2.9.3 | The last v2 release. xUnit v3 is 4.0.1 and changes the test platform (ADR: Staying on .NET 10, and on xUnit v2 for now). |
 | xunit.runner.visualstudio | 3.1.5 | 4.0.0 | 4.0.0 is the runner for xUnit v3; 3.1.5 is the newest for v2. |
 | NetArchTest.eNhancedEdition | 1.4.5 | 1.4.5 | |
+| System.Security.Cryptography.Pkcs | 10.0.13 | 10.0.13 | |
 
 ## Build tools and images
 
@@ -76,6 +77,10 @@ The test that holds the table above to the project files, read from this build:
 
 ```live path=api/TheYard.Tests/TechnologyVersionsTests.cs region=versions
 ```
+
+## Addendum, 14 October 2026: a package named only to raise its version
+
+Two advisories published on 13 October cover System.Security.Cryptography.Pkcs 9.0.11 (GHSA-846f-f764-76mx, high, and GHSA-2fmv-rv2c-59x7, moderate). No project here names it: it arrives under SQL Server's client, Microsoft.Data.SqlClient 6.1.6, which the Entity Framework provider brings. NuGet's audit reports it as a warning, every warning is red, and the gate for 1.0.3.124 stopped at the build on it. `TheYard.Infrastructure.csproj` now names the package at 10.0.13, the patched release, so every project that reaches SQL Server's client resolves that version instead; nothing in the code calls it. The row above is held by `TechnologyVersionsTests` like every other. The reference can go once the provider brings a patched version on its own.
 
 ## Where it sits
 

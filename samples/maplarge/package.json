@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test tests/js/*.test.js"
+    "test": "node --test tests/js/*.test.js",
+    "test:all": "dotnet test && npm run build && npm test"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

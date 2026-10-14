@@ -49,6 +49,16 @@ from its own window.
 
 ## Tests
 
+One command runs every test:
+
+```
+npm run test:all
+```
+
+It runs the 145 xUnit tests (`dotnet test` builds first), then the TypeScript build, then the 21
+node tests, and stops at the first failure. In VS Code it is the task **Shed: test all**. Run
+`npm install` once first. Each suite on its own:
+
 ```
 dotnet test
 npm install && npm test
