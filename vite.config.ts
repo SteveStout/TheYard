@@ -148,6 +148,8 @@ const apiProxy = {
   '/api': 'http://localhost:5210',
   // The page about him is the API's too (api/TheYard.Api/AboutPage.cs), outside /api.
   '/about': 'http://localhost:5210',
+  // And the resume at its own address (ResumeDoor.cs), exactly /resume with or without its query.
+  '^/resume(\\?.*)?$': 'http://localhost:5210',
 };
 
 export default defineConfig({

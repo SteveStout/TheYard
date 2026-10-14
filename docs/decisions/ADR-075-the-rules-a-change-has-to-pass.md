@@ -95,6 +95,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The bill on the Admin tab is read from Azure once an hour and never on a request, a resource path is cut to its name and type before anything reaches the wire, the donut names four resources and folds the rest into Others, and a reading that is absent is a sentence and never a zero | ADR: What Azure charges | CostTests |
 | Every task in `.vscode/tasks.json` runs a script `package.json` declares or a project in the tree, every launch configuration runs a project that exists on the port its own `launchSettings.json` names, and the Working in VS Code page names every task and configuration | ADR: The editor is set up by the repository | WorkspaceTests |
 | The gate on GitHub Actions runs every check the laptop's gate ran, writes every report the results writer reads, turns red when any check fails, runs The Shed's suites on Windows, and runs only on `gate/` branches with no permission to write | ADR: The gate runs where the memory is | GateWorkflowTests |
+| The resume at /resume is the locked resume, byte for byte, inline under his name and the lock's date, and the door in its link is recorded as one allowed word, never the query | ADR: The resume has an address | ResumeAddressTests |
 
 ## How the table is read
 

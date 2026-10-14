@@ -44,6 +44,7 @@ public static class ServedAddresses
         {
             new("/api/reference", "API reference", "page"),
             new("/about", "About Steven Stout", "page"),
+            new("/resume", "The resume, at its own address", "file"),
             new("/api/version", "The build this container was made from", "api"),
             new("/api/health", "Health, both stores", "api"),
             new("/api/vehicles?limit=1", "The listing", "api"),
