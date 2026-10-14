@@ -1587,3 +1587,43 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
   await expect(card.getByTestId('spend-forecast')).toBeAttached();
 });
 // #endregion spend-card
+
+test('a week or a month names its Mondays and Fridays and washes its weekends, on the activity chart and the kept machine charts (1.0.3.127)', async ({
+  page,
+  request,
+}) => {
+  await openTheYard(page, '/?view=admin&card=activity');
+  const card = page.getByTestId('activity-card');
+  await expect(card.getByTestId('activity-graph')).toBeVisible();
+  await card.getByTestId('activity-window-30d').click();
+  await expect(card.getByTestId('activity-graph')).toHaveAttribute('aria-label', /30d window/);
+  // Thirty days always hold at least four weekends and four Mondays, whatever today is.
+  await expect(
+    card.getByTestId('activity-day-label').filter({ hasText: 'Mon' }).first()
+  ).toBeVisible();
+  expect(await card.getByTestId('activity-weekend').count()).toBeGreaterThan(0);
+
+  // The kept machine charts draw the same marks, where the store keeps a window
+  // (the Cosmos DB pass) and its readings span at least two days. A store that
+  // started with the test run has only minutes, so the chart is all there is to
+  // see; SQLite keeps none, and the card says so in words instead.
+  const wire = (await (
+    await request.get('http://localhost:5210/api/admin/machines?window=30d')
+  ).json()) as { history: { available: boolean; buckets?: { at: string }[] } };
+  const kept = (wire.history.buckets ?? []).map((bucket) => Date.parse(bucket.at));
+  const span = kept.length > 1 ? Math.max(...kept) - Math.min(...kept) : 0;
+  await openTheYard(page, '/?view=admin&card=machines');
+  await page.getByTestId('machines-card-window-30d').click();
+  const machines = page.getByTestId('machines-card');
+  if (wire.history.available && span >= 2 * 86_400_000) {
+    await expect(machines.getByTestId('machine-history-container-day-label').first()).toBeVisible({
+      timeout: 30_000,
+    });
+  } else if (wire.history.available) {
+    await expect(machines.getByTestId('machines-history')).toBeVisible({ timeout: 30_000 });
+  } else {
+    await expect(machines.getByTestId('machines-history-note')).toContainText('is not kept here', {
+      timeout: 30_000,
+    });
+  }
+});
