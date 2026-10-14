@@ -378,6 +378,22 @@ Which slot falls on which day is decided in `src/lib/dayMarks.ts`, React-free an
 ```live path=src/lib/dayMarks.ts region=day-marks
 ```
 
+## Addendum, 2026-10-15 (1.0.3.128): the Overview, and one table of normal ranges
+
+Steve asked for the tab to "bring as much server and code health information to the surface as possible" and for every section to show him exactly what he needs. Read on 14 October, the strip had eight tiles and none of them said where normal ends: 27% memory said nothing about 80% amber and 95% red, and "under 1 ms" said nothing about the second that turns the speed tile amber. The cost of running the site was two clicks away on the spend card with no line it could cross. Three of the eight tiles have no tone by design, so they never rolled anything up.
+
+**The tab opens on the Overview now**, the first card on the rail, and `?view=admin` with no card names it. It is four rows, the four questions in the order somebody on call asks them, each with its number and its normal range under it, and the tone on the row's edge and in a word beside the number. Up counts the checks and the pages and says when the process started and when the site last rolled, at which version, both read off what the API already answered (the metrics read's start time and the page sweep's trigger). Fast is the speed tile's reading. Cost is the month so far against Steve's number for the subscription, **$50 a month: red over it**, amber from $40 or when Azure forecasts more than the month's own pace would reach, measured to the newest day on the bill because Azure reports a day late. Broke is the errors tile plus any kept-warm read that failed. The rows are built in `src/lib/overview.ts` from what the strip already holds plus reads the API already served, so the Overview and the tiles cannot disagree. No endpoint was added for it.
+
+**Every line now comes from one table.** `src/lib/ranges.ts` holds each judged number's amber and red lines in its own unit, with where they come from, from memory and the ninety-fifth through the month's cost and the gate's seconds, plus two for the collection still to come (the certificate's days and the SQL storage). The tile rules import their thresholds from it instead of keeping their own. Seven cards print their range under the title, so a card and its tile say the same thing about where amber starts.
+
+Two signals that were on the wire and on no card are drawn now. The Backends card names this site's build beside the other site's: the peer read asks the other site's public `/api/version` inside the same two and a half seconds of patience, because two sites on different builds explain most of the differences between them. Under the table it says when this process started and what the runtime compiled for itself. The Azure card says when Azure answered, since the answer is kept for a minute.
+
+```live path=src/lib/ranges.ts region=ranges
+```
+
+```live path=src/lib/overview.ts region=overview-rows
+```
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.
@@ -390,6 +406,7 @@ This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are Rea
 - [`src/lib/statTiles.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.test.ts): every threshold, a reading that has not arrived, and a gap in the line.
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the page sorted only as far as the page, which is what the first amber tile found.
 - [`src/lib/dayMarks.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/dayMarks.ts) and [`src/components/admin/DayMarks/DayMarks.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/DayMarks/DayMarks.tsx): which slot of a daily chart is a weekend and which carries a Monday or Friday label, and the band and the labels drawn from it.
+- [`src/lib/ranges.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ranges.ts) and [`src/lib/overview.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/overview.ts): every normal range on the tab in one table, and the Overview's four rows built from it; [`src/components/admin/OverviewCard/OverviewCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/OverviewCard/OverviewCard.tsx) draws them.
 - [`src/lib/workbench.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/workbench.ts): the workbench's addresses, React-free: the cards by slug and what an address opens, the only part of the workbench the page's first chunk carries.
 - [`src/lib/bench.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/bench.ts): the rest of it, loaded with the Admin tab's chunk: the cards under their questions, where j and k lead, what the rail's search finds, which card a tile opens and the hour at a glance.
 - [`src/lib/workbench.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/workbench.test.ts): every card once, a wrong name, the walk round the rail, and every tile's card.

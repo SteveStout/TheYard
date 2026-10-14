@@ -5,6 +5,7 @@
  * from the shapes, the shared words and the drawing helpers it builds on.
  */
 import { formatNumber } from '../format';
+import { RANGES } from '../ranges';
 import { ringOf } from './tileRing';
 import type { StatTile, TileQuestion, TileReadings } from './tileTypes';
 import { millisecondsWords, RING_HOLDS, ringStretch, uptimeWords } from './tileWords';
@@ -60,11 +61,12 @@ const waiting = (key: string, question: TileQuestion, label: string): Omit<StatT
  * "someone should be looking". A failing check or a page that is down is red.
  * A slow 95th percentile (p95: 95 of every 100 requests were faster), memory
  * past 80% of its limit, or a refused request is amber. The thresholds are
- * this site's own, set from what it measures on a quiet day, and open to change.
+ * this site's own, set from what it measures on a quiet day, and open to change;
+ * the lines themselves live in src/lib/ranges.ts, one table for the tab.
  */
-export const SLOW_P95_MS = 1_000;
+export const SLOW_P95_MS = RANGES.p95.amber;
 /** A 95th percentile at or above this many milliseconds turns the speed tile red. */
-export const VERY_SLOW_P95_MS = 3_000;
+export const VERY_SLOW_P95_MS = RANGES.p95.red;
 /**
  * The speed tile only takes a colour when the hour has at least this many warm
  * requests. With fewer, the 95th percentile is really just the one slowest
@@ -78,9 +80,9 @@ export const QUIET_BELOW_REQUESTS = 20;
  */
 const RINGED = new Set(['health', 'pages', 'memory']);
 /** The share of its limit at which memory turns the tile amber. */
-export const MEMORY_WARN_SHARE = 0.8;
+export const MEMORY_WARN_SHARE = RANGES.memory.amber;
 /** The share of its limit at which memory turns the tile red. */
-export const MEMORY_BAD_SHARE = 0.95;
+export const MEMORY_BAD_SHARE = RANGES.memory.red;
 
 /** Builds every tile, in display order, from the readings the tab holds. */
 export function tilesFrom(readings: TileReadings): StatTile[] {

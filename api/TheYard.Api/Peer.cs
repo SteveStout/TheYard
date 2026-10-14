@@ -33,7 +33,7 @@ public sealed class PeerReader(string? configuredUrl, HttpClient client)
     {
         if (Url is null)
         {
-            return new PeerView(false, false, "no peer is configured on this container", null, DateTimeOffset.UtcNow, null);
+            return new PeerView(false, false, "no peer is configured on this container", null, DateTimeOffset.UtcNow, null, null);
         }
 
         string host = Url.Host;
@@ -43,20 +43,47 @@ public sealed class PeerReader(string? configuredUrl, HttpClient client)
             using var response = await client.GetAsync(new Uri(Url, "/api/admin/metrics"), timeout.Token);
             if (!response.IsSuccessStatusCode)
             {
-                return new PeerView(true, false, $"the peer answered {(int)response.StatusCode}", host, DateTimeOffset.UtcNow, null);
+                return new PeerView(true, false, $"the peer answered {(int)response.StatusCode}", host, DateTimeOffset.UtcNow, null, null);
             }
             var metrics = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: timeout.Token);
-            return new PeerView(true, true, null, host, DateTimeOffset.UtcNow, metrics);
+            string? version = await VersionAsync(timeout.Token);
+            return new PeerView(true, true, null, host, DateTimeOffset.UtcNow, metrics, version);
         }
         catch (OperationCanceledException)
         {
-            return new PeerView(true, false, $"the peer did not answer within {Patience.TotalSeconds:0.#} seconds", host, DateTimeOffset.UtcNow, null);
+            return new PeerView(true, false, $"the peer did not answer within {Patience.TotalSeconds:0.#} seconds", host, DateTimeOffset.UtcNow, null, null);
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
         {
             // The type, never the message: a message here carries a host name
             // and a port, and this is a public page.
-            return new PeerView(true, false, $"the peer could not be read ({ex.GetType().Name})", host, DateTimeOffset.UtcNow, null);
+            return new PeerView(true, false, $"the peer could not be read ({ex.GetType().Name})", host, DateTimeOffset.UtcNow, null, null);
+        }
+    }
+
+    /// <summary>
+    /// The peer's build, from its public /api/version, inside the same patience as its metrics.
+    /// The metrics answer carries no version, and two sites on different builds explain most
+    /// differences between them, so the card asks. A version it cannot read is null, never a
+    /// failure: the comparison stands without it.
+    /// </summary>
+    private async Task<string?> VersionAsync(CancellationToken token)
+    {
+        try
+        {
+            using var response = await client.GetAsync(new Uri(Url!, "/api/version"), token);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: token);
+            return body.TryGetProperty("version", out var version) && version.ValueKind == JsonValueKind.String
+                ? version.GetString()
+                : null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or OperationCanceledException)
+        {
+            return null;
         }
     }
 }
@@ -68,7 +95,8 @@ public sealed class PeerReader(string? configuredUrl, HttpClient client)
 /// <param name="Host">The peer's host name, or null when none is configured.</param>
 /// <param name="FetchedAt">When the read was attempted, UTC.</param>
 /// <param name="Metrics">The peer's metrics as it reported them, or null when it could not be read.</param>
-public sealed record PeerView(bool Configured, bool Reachable, string? Reason, string? Host, DateTimeOffset FetchedAt, JsonElement? Metrics);
+/// <param name="Version">The peer's build from its /api/version, or null when it could not be read.</param>
+public sealed record PeerView(bool Configured, bool Reachable, string? Reason, string? Host, DateTimeOffset FetchedAt, JsonElement? Metrics, string? Version);
 // #endregion peer
 
 // #region routes

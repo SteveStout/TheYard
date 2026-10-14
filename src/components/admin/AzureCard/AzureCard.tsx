@@ -98,6 +98,11 @@ export default function AzureCard({ tick }: { tick: number }) {
           served by the container on Azure, which asks about itself with its own identity.
         </p>
       )}
+      {azure !== null && azure !== 'failed' && azure.fetched_at !== undefined && (
+        <p className={styles.muted} data-testid="azure-fetched">
+          Azure answered at {formatDateTime(azure.fetched_at)}; the answer is kept for a minute.
+        </p>
+      )}
     </article>
   );
 }

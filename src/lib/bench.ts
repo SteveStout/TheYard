@@ -44,6 +44,7 @@ const card = (
 
 /** Every card, in the rail's order; the order is the questions' order, and within one the page's. */
 export const BENCH_CARDS: BenchCard[] = [
+  card('overview', 'Overview', 'up'),
   card('health', 'Application health', 'up'),
   card('azure', "Azure's view of the container", 'up'),
   card('pages', 'Every page, checked', 'up'),

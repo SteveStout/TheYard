@@ -112,7 +112,9 @@ public class PeerTests
         Assert.True(peer.GetProperty("reachable").GetBoolean());
         Assert.Equal("127.0.0.1", peer.GetProperty("host").GetString());
         Assert.Equal("Azure Cosmos DB", peer.GetProperty("metrics").GetProperty("store").GetProperty("store").GetString());
-        Assert.Equal(1, canned.Hits);
+        // Two reads: the metrics, then the build, so the card can name both sites' versions.
+        Assert.Equal("1.0.3.999", peer.GetProperty("version").GetString());
+        Assert.Equal(2, canned.Hits);
     }
     // #endregion peer-up
 
@@ -149,7 +151,7 @@ public class PeerTests
     }
     // #endregion charges
 
-    /// <summary>A peer on the loopback that answers /api/admin/metrics with one canned document, after a delay if asked.</summary>
+    /// <summary>A peer on the loopback that answers /api/admin/metrics with one canned document and /api/version with a build, after a delay if asked.</summary>
     private sealed class CannedPeer : IDisposable
     {
         private readonly HttpListener _listener = new();
@@ -175,7 +177,10 @@ public class PeerTests
                         try
                         {
                             await Task.Delay(delay, _stop.Token);
-                            byte[] body = Encoding.UTF8.GetBytes("""{"store":{"store":"Azure Cosmos DB","window":3}}""");
+                            // The metrics document, and the build on /api/version, which the peer read asks for second.
+                            byte[] body = Encoding.UTF8.GetBytes(context.Request.Url?.AbsolutePath == "/api/version"
+                                ? """{"version":"1.0.3.999","commit":"abc1234"}"""
+                                : """{"store":{"store":"Azure Cosmos DB","window":3}}""");
                             context.Response.ContentType = "application/json";
                             await context.Response.OutputStream.WriteAsync(body);
                         }

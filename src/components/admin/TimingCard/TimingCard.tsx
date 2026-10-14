@@ -2,6 +2,7 @@
  * Timing: the requests' percentiles and every path's, with both stores on the same
  * two lines (ADR: Backends, side by side, the addendum on parity).
  */
+import { Range } from '../shared/Range';
 import { documentStoreLine, percentileWords, sqlLine, timingWindow } from '../../../lib/metrics';
 import { millisecondsWords } from '../../../lib/statTiles';
 import chartStyles from '../charts/charts.module.css';
@@ -30,6 +31,7 @@ export default function TimingCard({ tick }: { tick: number }) {
       {/* #region timing-section */}
       <article className={`${cardStyles.wide} op-glass`} data-testid="timing-card">
         <h2 className={cardStyles.cardTitle}>Timing</h2>
+        <Range of="p95" />
         {metrics === null ? (
           <p className={cardStyles.muted}>Loading…</p>
         ) : metrics === 'failed' ? (

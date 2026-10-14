@@ -2,6 +2,7 @@
  * Backends, side by side (ADR: Backends, side by side): the two stores on the same
  * rows, or this container against its peer.
  */
+import { Range } from '../shared/Range';
 import styles from '../shared/card.module.css';
 import type {
   RouteTiming,
@@ -16,6 +17,7 @@ import type {
 import { useRead, failed, About, ms, msAndRu } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
 import { percentileWords } from '../../../lib/metrics';
+import { clockLabel } from '../../../lib/machineChart';
 
 // #region comparison
 /** The rows the comparison card puts side by side: the paths a visitor actually takes (ADR: Backends, side by side). */
@@ -201,16 +203,36 @@ function Comparison({ mine, peer }: { mine: Metrics; peer: Peer | null }) {
     />
   );
 }
+/** This site's build beside the other site's, the first thing to rule out when two columns differ. */
+function versionsLine(own: string | null, peer: Peer | null): string {
+  const mine = own === null ? 'this site: version not read' : `This site runs v${own}`;
+  if (peer === null || !peer.configured) return `${mine}; no other site to compare.`;
+  if (!peer.reachable || peer.version === undefined || peer.version === null) {
+    return `${mine}; the other site's version could not be read.`;
+  }
+  return `${mine}; the other site runs v${peer.version}${own === peer.version ? ', the same build' : ''}.`;
+}
+
+/** The process under both columns: when it started, and how much it compiled for itself. */
+function runtimeLine(m: Metrics): string {
+  const started = `This process started ${clockLabel(m.startup.started_at)}`;
+  const prepared = m.startup.prepare_ms === null ? '' : `, prepared in ${ms(m.startup.prepare_ms)}`;
+  if (m.runtime === undefined) return `${started}${prepared}.`;
+  const r = m.runtime;
+  return `${started}${prepared}; the runtime compiled ${r.jit_methods.toLocaleString('en-US')} methods itself in ${ms(r.jit_ms)}, ${r.gc} garbage collection${r.gc_concurrent ? ', concurrent' : ''}, ${r.processors} processor${r.processors === 1 ? '' : 's'}.`;
+}
 // #endregion comparison
 
 export default function BackendsCard({ tick }: { tick: number }) {
   const metrics = useRead<Metrics>('/api/admin/metrics', tick);
   const peer = useRead<Peer>('/api/admin/peer', tick);
+  const version = useRead<{ version: string }>('/api/version', tick);
   return (
     <>
       {/* #region backends-card */}
       <article className={`${styles.wide} op-glass`} data-testid="backends-card">
         <h2 className={styles.cardTitle}>Backends, side by side</h2>
+        <Range of="coldStart" />
         <About>
           The two stores on the same rows: how long each took to come up, what the seed cost, and
           how long the things a visitor does take on each, with the request charge beside every
@@ -226,7 +248,18 @@ export default function BackendsCard({ tick }: { tick: number }) {
         ) : metrics === 'failed' ? (
           failed('the comparison')
         ) : (
-          <Comparison mine={metrics} peer={peer === 'failed' ? null : peer} />
+          <>
+            <Comparison mine={metrics} peer={peer === 'failed' ? null : peer} />
+            <p className={styles.muted} data-testid="backends-versions">
+              {versionsLine(
+                version === null || version === 'failed' ? null : version.version,
+                peer === 'failed' ? null : peer
+              )}
+            </p>
+            <p className={styles.muted} data-testid="backends-runtime">
+              {runtimeLine(metrics)}
+            </p>
+          </>
         )}
       </article>
       {/* #endregion backends-card */}

@@ -21,6 +21,9 @@ test('the Admin tab shows the running system reporting on itself', async ({ page
     .getByRole('button', { name: 'Admin', exact: true })
     .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
+  // The tab opens on the Overview (1.0.3.128); the health card is the next on the rail.
+  await expect(page.getByTestId('overview-card')).toBeVisible();
+  await openCard(page, 'health');
   // The health card waits on every store the container runs. On the gate's
   // Cosmos DB pass that is two real stores reached from this machine, each
   // behind a token acquisition on a cold process, and the relational one is a
@@ -371,11 +374,24 @@ test('a browser error reaches the Admin tab (ADR-023)', async ({ page, request }
   await expect(page.getByTestId('errors-card')).toContainText(marker);
 });
 
-test('?view=admin deep-links straight to the Admin tab, on its first card', async ({ page }) => {
+test('?view=admin deep-links straight to the Admin tab, on its first card, the Overview: four questions, each with its normal range (1.0.3.128)', async ({
+  page,
+}) => {
   await openTheYard(page, '/?view=admin');
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
-  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'health');
-  await expect(page.getByTestId('health-card')).toBeVisible();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'overview');
+  const card = page.getByTestId('overview-card');
+  await expect(card).toBeVisible();
+  for (const row of ['up', 'fast', 'cost', 'broke']) {
+    await expect(card.getByTestId(`overview-${row}`)).toHaveCount(1);
+    await expect(card.getByTestId(`overview-${row}-range`)).toContainText(/^Normal: .+/);
+  }
+  await expect(card.getByTestId('overview-cost-range')).toContainText('$50');
+  // Up says every check and every page once the health read lands, and when the process started.
+  await expect(card.getByTestId('overview-up')).toContainText(/\d+ of \d+ checks/, {
+    timeout: 45_000,
+  });
+  await expect(card.getByTestId('overview-up')).toContainText('restarted');
 });
 
 // #region workbench
@@ -392,12 +408,12 @@ test('an address naming a card opens that card, and the rail marks it (the workb
   await expect(page).toHaveURL(/[?&]card=timing(&|$)/);
 });
 
-test('a name that is no card opens health, and the rail says so (the workbench)', async ({
+test('a name that is no card opens the Overview, and the rail says so (the workbench)', async ({
   page,
 }) => {
   await openTheYard(page, '/?view=admin&card=nothing-by-this-name');
-  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'health');
-  await expect(page.getByTestId('health-card')).toBeVisible();
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'overview');
+  await expect(page.getByTestId('overview-card')).toBeVisible();
   await expect(page.getByTestId('bench-unknown')).toContainText('nothing-by-this-name');
   // The address stops naming what is not there.
   await expect(page).not.toHaveURL(/card=/);
@@ -412,7 +428,7 @@ test('Back after two cards returns to the first, and the back button leaves the 
   await page.goBack();
   await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
   await page.goBack();
-  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'health');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'overview');
   await page.goForward();
   await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'timing');
   // Two cards deep, the view's own back button still goes where it says.
@@ -439,8 +455,9 @@ test("the strip's Health tile opens the health card (the workbench)", async ({ p
 test('Next walks every card on the rail, and every one opens to a card with its name, the key-only one too (1.0.3.30)', async ({
   page,
 }) => {
-  // The reset card drew nothing without the key, so Previous from Health landed on an empty bench.
-  await openTheYard(page, '/?view=admin&card=health');
+  // The reset card drew nothing without the key, so Previous from the first card landed on an empty bench.
+  // The walk starts on the first card on the rail, the Overview since 1.0.3.128.
+  await openTheYard(page, '/?view=admin');
   const open = page.getByTestId('bench-open');
   // The rail comes with the tab's own chunk; its links are waited for, not assumed
   // (1.0.3.31: the gate read them once before they had drawn and found none).
@@ -512,7 +529,7 @@ test('Pin sits in the card header beside Previous and Next, and This hour stands
   // The lone Pin row over the card is gone.
   await expect(page.getByTestId('bench-open').getByTestId('bench-pin')).toHaveCount(0);
   await expect(page.getByTestId('bench-hour')).toHaveCount(0);
-  for (const card of ['health', 'timing', 'traffic']) {
+  for (const card of ['overview', 'timing', 'traffic']) {
     await openCard(page, card);
     await expect(page.getByTestId('bench-hour')).toHaveCount(1);
   }
@@ -1626,4 +1643,24 @@ test('a week or a month names its Mondays and Fridays and washes its weekends, o
       timeout: 30_000,
     });
   }
+});
+
+test('the Backends card names this build beside the other site, and the process under both columns (1.0.3.128)', async ({
+  page,
+  request,
+}) => {
+  const peer = (await (await request.get('http://localhost:5210/api/admin/peer')).json()) as {
+    configured: boolean;
+    version?: string | null;
+  };
+  // The peer answer carries a version field now, null when there is no peer to read.
+  expect('version' in peer).toBe(true);
+  await openTheYard(page, '/?view=admin&card=backends');
+  const card = page.getByTestId('backends-card');
+  await expect(card.getByTestId('range-coldStart')).toContainText('amber at 30 s, red at 60 s');
+  await expect(card.getByTestId('backends-versions')).toContainText('This site runs v', {
+    timeout: 30_000,
+  });
+  await expect(card.getByTestId('backends-runtime')).toContainText('This process started');
+  await expect(card.getByTestId('backends-runtime')).toContainText('garbage collection');
 });

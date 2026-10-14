@@ -4,6 +4,7 @@
  * with Azure's forecast, what each resource cost, and how many resources of each
  * type are on the bill, over the window every chart on the tab shares.
  */
+import { Range } from '../shared/Range';
 import type { ReactNode } from 'react';
 import {
   costWindowFor,
@@ -41,6 +42,7 @@ export default function SpendCard({
   return (
     <article className={`${cardStyles.wide} op-glass`} data-testid="spend-card">
       <h2 className={cardStyles.cardTitle}>What Azure charges</h2>
+      <Range of="cost" />
       <About>
         The bill for the subscription this site runs on, as Azure Cost Management reports it: the
         spend so far and what Azure forecasts for the rest of the month, what each resource cost,

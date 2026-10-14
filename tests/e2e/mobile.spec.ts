@@ -131,6 +131,9 @@ test('Admin is reachable from the drawer and the footer still renders', async ({
     .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
   await expect(page).toHaveURL(/view=admin/);
+  // The tab opens on the Overview (1.0.3.128); the health card is one address away.
+  await expect(page.getByTestId('overview-card')).toBeVisible();
+  await openTheYard(page, '/?view=admin&card=health');
   // The timed checks fit a phone row too (ADR-010, second pass).
   await expect(page.getByTestId('health-card')).toContainText('healthy');
   await expect(page.getByTestId('check-duration').first()).toHaveText(/^\d+ ms$/);

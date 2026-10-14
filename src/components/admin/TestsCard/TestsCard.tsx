@@ -1,6 +1,7 @@
 /**
  * Every test, for this build (ADR: The five-minute gate).
  */
+import { Range } from '../shared/Range';
 import { Fragment, useEffect, useState } from 'react';
 import {
   duration,
@@ -96,6 +97,7 @@ export default function TestsCard() {
   return (
     <article className={`${cardStyles.wide} op-glass`} data-testid="tests-card">
       <h2 className={cardStyles.cardTitle}>Every test, for this build</h2>
+      <Range of="gateSeconds" />
       <About>
         The ship&rsquo;s gate runs every suite once, on the machine that ships: xUnit on SQLite and
         again booted on Cosmos DB, the live Cosmos DB tests, Vitest, and the browser suite on both

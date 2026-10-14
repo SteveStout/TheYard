@@ -86,10 +86,10 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   // The workbench shows one card at a time (ADR: The Admin tab, as a product,
   // the addendum on the workbench), so the scan reads three of them: the first
   // card, a chart card with a table, and the card with the most controls.
-  test('the admin tab, on the health card', async ({ page }) => {
+  test('the admin tab, on the Overview, its first card', async ({ page }) => {
     await openTheYard(page, '/?view=admin');
     await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
-    await expect(page.getByTestId('health-card')).toBeVisible();
+    await expect(page.getByTestId('overview-card')).toBeVisible();
     expect(await violations(page)).toEqual([]);
   });
 
