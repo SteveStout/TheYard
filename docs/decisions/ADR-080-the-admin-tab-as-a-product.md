@@ -405,6 +405,10 @@ The cards also take their type sizes and their spacing from tokens in the token 
 ```live path=src/lib/logLevels.ts region=level-line
 ```
 
+## Addendum, 2026-10-15 (1.0.3.130): the tiles first on a phone
+
+Shot at 390 by 844 on 14 October, the tab put the Admin paragraph, What this shows, the window row and a caption before any number, so the first tiles started about 540 pixels down and the second row of tiles was below the fold. On a phone the paragraph and its fold now follow the strip, and the first tiles are on the first screen with the words one scroll away. A desk keeps the order it had. The Overview is scanned by axe as the tab's first card, and the tone words are held to 4.5:1 on their soft grounds by `colors.test.ts`; the amber one is the closest of the three, at 4.51.
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.

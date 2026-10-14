@@ -578,3 +578,21 @@ test.describe('the Admin tab on the narrowest phone', () => {
   });
 });
 // #endregion phone-tables
+
+test('on a phone the Admin tab opens on its tiles, with the paragraph under them (1.0.3.130)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=admin');
+  const strip = page.getByTestId('stat-strip').first();
+  await expect(strip).toBeVisible();
+  const where = await page.evaluate(() => {
+    const top = (id: string) =>
+      document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1;
+    return { tile: top('tile-version'), intro: top('admin-intro'), height: window.innerHeight };
+  });
+  // The first tile starts on the first screen, and the words come after the tiles.
+  expect(where.tile).toBeGreaterThan(0);
+  expect(where.tile).toBeLessThan(where.height / 2);
+  expect(where.intro).toBeGreaterThan(where.tile);
+});
