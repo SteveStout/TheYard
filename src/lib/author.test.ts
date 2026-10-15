@@ -31,6 +31,21 @@ describe('the Author page in its shape', () => {
     expect(html).not.toMatch(/author-block-(gold|teal)/);
   });
 
+  it('sets a panel whose every block quotes somebody in a row that scrolls sideways, named and reachable by keyboard', () => {
+    // The first panel is always the introduction, so the quotations come second.
+    const quoted = layoutAuthor(
+      '<h2>Hi</h2><p>Me.</p>' +
+        '<h2>What colleagues say</h2><h3>A</h3><p><strong>Title.</strong></p><blockquote><p>Words.</p></blockquote>' +
+        '<h3>B</h3><p><strong>Title.</strong></p><blockquote><p>More words.</p></blockquote>'
+    );
+    expect(quoted).toContain(
+      '<div class="author-blocks author-row" role="region" aria-label="2 quotations, scrolling sideways" tabindex="0">'
+    );
+    expect(quoted.match(/<section class="author-block op-glass">/g)).toHaveLength(2);
+    // A panel with one block that quotes nobody stays a grid.
+    expect(html).not.toContain('author-row');
+  });
+
   it('gives a block with photographs the whole row, and the odd plain one out too', () => {
     expect(html.match(/author-block-wide/g)).toHaveLength(1);
     expect(html).toMatch(

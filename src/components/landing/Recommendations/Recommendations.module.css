@@ -1,21 +1,28 @@
 /**
- * Does:      Styles the landing page's What colleagues say strip: three quote tiles in a row on a desk and stacked on a phone, who said each, and the link to the ten.
- * Does not:  Draw the strip's heading (Landing.module.css does, as it does every group heading) or a tile's glass (panels.css does).
+ * Does:      Styles the landing page's What colleagues say row: ten quote tiles side by side, scrolled sideways, who said each, and the link to the ten in full.
+ * Does not:  Draw the row's heading (Landing.module.css does, as it does every group heading) or a tile's glass (panels.css does).
  * Used by:   Recommendations.tsx.
  */
+.row {
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--space-3);
+  /* The sideways scroll keeps the page's own: a flick along the row never drags the page. */
+  overscroll-behavior-x: contain;
+}
+
+.row:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .quotes {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
   gap: var(--space-3);
-}
-
-@media (min-width: 768px) {
-  .quotes {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 .quote {
@@ -23,7 +30,9 @@
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  min-width: 0;
+  /* One tile is most of a phone's width and a fixed share of a desk's, so the row always shows the edge of the next. */
+  flex: 0 0 min(20rem, 82vw);
+  scroll-snap-align: start;
 }
 
 /* The sentence, quoted by the type's own marks, which take the heading's colour so they read as trim. */

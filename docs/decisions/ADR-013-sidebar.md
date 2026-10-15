@@ -344,3 +344,8 @@ Steve asked for his LinkedIn recommendations on the landing page and on About St
 
 The rule that nobody from a former employer is named on the page stands for everybody who did not write one. A recommendation is the writer's own public words about him, with their name on it by their choice, which is the opposite of a page naming a colleague who never asked to be on it. The words live once, in `src/library/recommendations.ts`, and `recommendations.test.ts` holds About Steven to the same lines, so an edit to either shows up in the gate. `landing.spec` holds the strip and its link; `author.spec` holds the panel and its ten blocks. Nothing is reworded: the one place the site shortens anything is a title that LinkedIn shows as a headline, cut to its first part.
 
+## Addendum, 2026-10-15 (1.0.3.136): the row
+
+Steve looked at the panel and asked for the recommendations in a row, on the landing page and on About Steven. Ten blocks two across ran the length of the page, and the landing strip showed three and hid seven. Both pages now show the ten in one row that scrolls sideways, each block snapping to the left edge with the next one's edge showing. On the landing page every recommendation lends one sentence, as written; About Steven keeps them in full. The row is a named region with a tab stop, so the arrow keys scroll what a mouse scrolls, the rule the admin tables already follow.
+
+The document did not change: `layoutAuthor` reads a panel whose every block quotes somebody as a row, and nothing else about the panel is special, so a second panel of quotations would get the same shape without a line of code. `author.test` holds the rule and `author.spec` reads the row on the page; `landing.spec` reads the ten sentences and the region.
