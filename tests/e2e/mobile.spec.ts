@@ -536,6 +536,12 @@ test.describe('the Admin tab on the narrowest phone', () => {
           all.forEach((fold) => ((fold as HTMLDetailsElement).open = true))
         );
       }
+      // Any other fold on the card is opened too: the tests card keeps the last gates behind
+      // More from 1.0.3.131, and a folded table is still a table that has to fit the phone.
+      await expect(open.locator('table').first()).toBeAttached({ timeout: 60_000 });
+      await open
+        .locator('details')
+        .evaluateAll((all) => all.forEach((fold) => ((fold as HTMLDetailsElement).open = true)));
       await expect(open.locator('table').first()).toBeVisible({ timeout: 60_000 });
       const tables = await open.locator('table').evaluateAll((all) =>
         all.map((table) => {

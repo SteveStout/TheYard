@@ -32,4 +32,10 @@ export type AzureState = {
   plan_sites?: number | null;
   region?: string | null;
   fetched_at?: string;
+  /** The hourly readings (api/TheYard.Api/HourlyReadings.cs); null before the first pass, absent from an older build. */
+  hourly?: {
+    read_at: string;
+    certificate: { host: string; not_after: string; days_left: number } | null;
+    sql_storage: { used_mb: number; max_mb: number; share: number } | null;
+  } | null;
 };

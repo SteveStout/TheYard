@@ -418,6 +418,13 @@ The numbers are measured on the gate's runner, in a step of their own that write
 ```live path=src/lib/codeHealth.ts region=code-rows
 ```
 
+## Addendum, 2026-10-15 (1.0.3.132): the certificate and the storage
+
+Two numbers that change by the day were not collected anywhere: when the certificate the site answers with runs out, and how full the relational store is. Both are read once an hour now, outside any request, and shown on the Azure card with their ranges. The certificate comes from one TLS handshake with the site's own public address, which only a container with an https address of its own makes; it is amber under 30 days, when the platform should already have renewed it, and red under a week. The storage is the data files' size from `sys.database_files` beside the tier's ceiling, which any user of the database may read; it is amber at 80% and red at 95%, because the tier refuses writes when it is full. A container without either says so in a sentence.
+
+```live path=api/TheYard.Api/HourlyReadings.cs region=hourly-readings
+```
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.

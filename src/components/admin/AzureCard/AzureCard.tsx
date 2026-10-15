@@ -5,7 +5,66 @@ import { CardState } from '../shared/CardState';
 import { shortenDigests, formatDateTime } from '../../../lib/format';
 import styles from '../shared/card.module.css';
 import type { AzureState } from '../shared/types';
-import { useRead, pill, failed } from '../shared/common';
+import { useRead, pill, failed, tonePill } from '../shared/common';
+import { Range } from '../shared/Range';
+import { toneOf } from '../../../lib/ranges';
+
+/** The certificate's days left and the relational store's size, each judged against its range. */
+function HourlyLines({ hourly }: { hourly: NonNullable<AzureState['hourly']> | null }) {
+  if (hourly === null) {
+    return (
+      <p className={styles.muted} data-testid="azure-hourly">
+        The certificate and the storage are read once an hour; the first reading has not been taken.
+      </p>
+    );
+  }
+  const certificate = hourly.certificate;
+  const storage = hourly.sql_storage;
+  return (
+    <ul className={styles.checkList} data-testid="azure-hourly">
+      <li className={styles.checkRow} data-testid="azure-certificate">
+        {certificate === null ? (
+          <span className={styles.muted}>
+            No certificate read here: this container has no public address of its own.
+          </span>
+        ) : (
+          <>
+            <span className={tonePill(toneOf('certificateDays', certificate.days_left))}>
+              {certificate.days_left} days
+            </span>
+            <span className={styles.muted}>
+              left on the certificate for {certificate.host}, to{' '}
+              {formatDateTime(certificate.not_after)}
+            </span>
+          </>
+        )}
+      </li>
+      <li className={styles.checkRow} data-testid="azure-storage">
+        {storage === null ? (
+          <span className={styles.muted}>
+            No storage read here: there is no Azure SQL Database behind this container.
+          </span>
+        ) : (
+          <>
+            <span className={tonePill(toneOf('sqlStorage', storage.share))}>
+              {Math.round(storage.share * 100)}%
+            </span>
+            <span className={styles.muted}>
+              of the relational store's {storage.max_mb.toLocaleString('en-US')} MB,{' '}
+              {storage.used_mb.toLocaleString('en-US')} MB in its data files
+            </span>
+          </>
+        )}
+      </li>
+      <li className={styles.checkRow}>
+        <Range of="certificateDays" />
+      </li>
+      <li className={styles.checkRow}>
+        <Range of="sqlStorage" />
+      </li>
+    </ul>
+  );
+}
 
 export default function AzureCard({ tick }: { tick: number }) {
   const azure = useRead<AzureState>('/api/admin/azure', tick);
@@ -99,6 +158,7 @@ export default function AzureCard({ tick }: { tick: number }) {
           served by the container on Azure, which asks about itself with its own identity.
         </p>
       )}
+      {azure !== null && azure !== 'failed' && <HourlyLines hourly={azure.hourly ?? null} />}
       {azure !== null && azure !== 'failed' && azure.fetched_at !== undefined && (
         <p className={styles.muted} data-testid="azure-fetched">
           Azure answered at {formatDateTime(azure.fetched_at)}; the answer is kept for a minute.
