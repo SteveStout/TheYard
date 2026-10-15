@@ -1691,3 +1691,16 @@ test('the long tables fold behind More, and the log counts its levels before its
       .locator('[data-testid="card-empty"], [data-testid="errors-table"]')
   ).toHaveCount(1, { timeout: 30_000 });
 });
+
+test('the tests card carries CODE HEALTH: warnings, the gate against five minutes, the build and the packages (1.0.3.131)', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=tests');
+  const health = page.getByTestId('tests-card').getByTestId('code-health');
+  await expect(health).toBeVisible({ timeout: 30_000 });
+  for (const row of ['warnings', 'gate', 'bundle', 'outdated']) {
+    await expect(health.getByTestId(`code-${row}`)).toHaveCount(1);
+  }
+  // A results file an older gate wrote has no code numbers, and the row says so instead of a zero.
+  await expect(health.getByTestId('code-gate')).toContainText(/\d+ s/);
+});

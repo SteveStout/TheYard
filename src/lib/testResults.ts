@@ -9,6 +9,7 @@
  */
 
 /** One test: its group (a class or a file), its name, p f or s, and its milliseconds. */
+import type { CodeNumbers, GateSummary } from './codeHealth';
 export type TestRow = [group: string, name: string, outcome: 'p' | 'f' | 's', ms: number];
 
 export type TestSuite = {
@@ -32,6 +33,10 @@ export type TestResults = {
   gateSeconds: number;
   checks: TestCheck[];
   suites: TestSuite[];
+  /** The code's own numbers (src/lib/codeHealth.ts); absent from a file an older gate wrote. */
+  code?: CodeNumbers;
+  /** The last thirty gates before this one, oldest first; absent from a file an older gate wrote. */
+  history?: GateSummary[];
 };
 
 export type TestTotals = { tests: number; passed: number; failed: number; skipped: number };
