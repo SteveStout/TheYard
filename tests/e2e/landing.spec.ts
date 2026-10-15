@@ -37,9 +37,10 @@ for (const viewport of [
       expect(names).toEqual(EXPECTED);
 
       // The sections under their three group headings, in the sidebar's groups (1.0.1.4).
-      await expect(page.getByTestId('landing').getByRole('heading', { level: 2 })).toHaveText(
-        SITE_GROUPS.map((group) => group.label)
-      );
+      await expect(page.getByTestId('landing').getByRole('heading', { level: 2 })).toHaveText([
+        'What colleagues say',
+        ...SITE_GROUPS.map((group) => group.label),
+      ]);
 
       // The two large tiles wear a photograph in the badge, and it has loaded.
       for (const name of ['inventory', 'author']) {
@@ -69,6 +70,21 @@ for (const viewport of [
         'aria-label',
         /^\d of \d stores up$/
       );
+
+      // What colleagues say: three sentences from his LinkedIn recommendations, each credited, and
+      // one link to all ten on About Steven.
+      const said = page.getByTestId('landing-recommendations');
+      await expect(said).toBeVisible();
+      await expect(said.locator('blockquote')).toHaveCount(3);
+      await expect(said.locator('li').first()).toContainText('Sarah Sebestyen');
+      await page.getByTestId('landing-recommendations-all').click();
+      await expect(page).toHaveURL(/doc=author/);
+      await expect(
+        page
+          .getByRole('dialog', { name: 'About Steven' })
+          .getByRole('heading', { name: 'What colleagues say', exact: true })
+      ).toBeVisible();
+      await page.keyboard.press('Escape');
 
       // The resume is a large tile, and it opens the PDF this site serves.
       const resume = page.getByTestId('landing-tile-resume');

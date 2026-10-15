@@ -337,3 +337,10 @@ Nothing a reader of the site sees moved. A document is served by its slug, and t
 ## Addendum, 2026-10-06 (1.0.3.86): the folders have their own record
 
 The folder rule described in the addendum above is a standing rule for every new document, so it has a record of its own, ADR: One folder per sidebar section, which holds the tree, how to add a document and what the test checks.
+
+## Addendum, 2026-10-15 (1.0.3.135): what colleagues say
+
+Steve asked for his LinkedIn recommendations on the landing page and on About Steven. Ten people have written one, and every one is public on his profile, so the site quotes them: About Steven gains a panel, What colleagues say, between How I lead and Away from the keyboard, one block per person with the name and title LinkedIn shows, how they worked together and the month, and the recommendation word for word as a quotation. The landing page carries a strip of three sentences lifted from three of them, each credited, with one link to the ten in full.
+
+The rule that nobody from a former employer is named on the page stands for everybody who did not write one. A recommendation is the writer's own public words about him, with their name on it by their choice, which is the opposite of a page naming a colleague who never asked to be on it. The words live once, in `src/library/recommendations.ts`, and `recommendations.test.ts` holds About Steven to the same lines, so an edit to either shows up in the gate. `landing.spec` holds the strip and its link; `author.spec` holds the panel and its ten blocks. Nothing is reworded: the one place the site shortens anything is a title that LinkedIn shows as a headline, cut to its first part.
+

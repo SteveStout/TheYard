@@ -21,11 +21,18 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
 }) => {
   await openTheYard(page);
   const wide = await theAuthorPage(page, page.getByTestId('side-rail'));
-  // Panels and blocks, not a letter: who he is, how he leads, the rest of his life in headed blocks,
-  // a closing line.
-  await expect(wide.locator('.author-panel')).toHaveCount(4);
+  // Panels and blocks, not a letter: who he is, how he leads, what colleagues say, the rest of his
+  // life in headed blocks, a closing line.
+  await expect(wide.locator('.author-panel')).toHaveCount(5);
   await expect(wide.getByRole('heading', { name: 'How I lead', exact: true })).toBeVisible();
-  expect(await wide.locator('.author-block').count()).toBeGreaterThanOrEqual(4);
+  // The ten recommendations, each its own block under the name of the person who wrote it, quoted.
+  const said = wide.locator('.author-panel').nth(2);
+  await expect(
+    said.getByRole('heading', { name: 'What colleagues say', exact: true })
+  ).toBeVisible();
+  await expect(said.locator('.author-block')).toHaveCount(10);
+  await expect(said.locator('.author-block blockquote')).toHaveCount(10);
+  expect(await wide.locator('.author-block').count()).toBeGreaterThanOrEqual(14);
   await page.keyboard.press('Escape');
 
   await page.setViewportSize({ width: 375, height: 812 });

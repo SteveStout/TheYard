@@ -56,7 +56,7 @@ public class AuthorPageTests
     private static readonly (string Digest, string Reason)[] ForbiddenWords =
     [
         ("1db3eaa0e3c1f7181c319937ef17bb2ceb2e61f5690ea5af5b7902a146acc0dc", "a family member's first name: he is 'my father-in-law' and nothing more"),
-        ("bb219b4bc775567863b6aa3cbe18dba58af56e18c64686d7afde2d29acd87f7e", "a former manager's first name: nobody from a former employer is on this page"),
+        ("bb219b4bc775567863b6aa3cbe18dba58af56e18c64686d7afde2d29acd87f7e", "a former manager's first name: nobody from a former employer is on this page unless they wrote one of the recommendations it quotes (ADR: The sidebar, the addendum on what colleagues say)"),
         ("4d3ad6d6b72063611c7ce3c8427c4c48c100fc82881d1679aa0267042f1d7b66", "the wedding date, as the email wrote it"),
         ("6fbbbc97e1d004120cd2ea8ead8ca6ea118a7074b823aa856c9206f49eec0275", "the wedding date, without the ordinal"),
         ("edf6b12b4cccfdcebbb0c4b776d7c33b7c3e03c8205c9adac9e370df068c28d8", "the wedding date, abbreviated"),
@@ -468,4 +468,60 @@ public class AuthorPageTests
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
     // #endregion pictures
+
+    // #region what-colleagues-say
+    /// <summary>
+    /// What colleagues say is the panel of About Steven that quotes the
+    /// recommendations on his LinkedIn profile (ADR: The sidebar, the addendum
+    /// on what colleagues say). The words live once, in
+    /// src/library/recommendations.ts, and the panel quotes every one of them
+    /// in full under the name of the person who wrote it, so an edit to either
+    /// file shows up here.
+    /// </summary>
+    [Fact]
+    public void What_colleagues_say_quotes_every_recommendation_in_full_under_its_writers_name()
+    {
+        string words = Words();
+        int said = words.IndexOf("\n## What colleagues say\n", StringComparison.Ordinal);
+        int away = words.IndexOf("\n## Away from the keyboard\n", StringComparison.Ordinal);
+        Assert.True(said > 0 && away > said, "docs/author/AUTHOR.md should hold What colleagues say as a panel ahead of Away from the keyboard");
+        string panel = words[said..away];
+        string source = File.ReadAllText(Path.Combine(Root, "src", "library", "recommendations.ts"));
+        List<(string Name, string Text)> entries = Recommendations(source);
+        Assert.Equal(10, entries.Count);
+        var wrong = new List<string>();
+        foreach ((string name, string text) in entries)
+        {
+            if (!panel.Contains($"\n### {name}\n", StringComparison.Ordinal))
+            {
+                wrong.Add($"{name} has no block on the panel");
+            }
+            foreach (string line in text.Split('\n').Where(line => line.Length > 0))
+            {
+                if (!panel.Contains($"> {line}", StringComparison.Ordinal))
+                {
+                    wrong.Add($"{name}'s words are not quoted as written: \"{line[..Math.Min(60, line.Length)]}\"");
+                }
+            }
+        }
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+        Assert.Equal(entries.Count, Regex.Matches(panel, @"(?m)^### ").Count);
+    }
+
+    /// <summary>The name and text of each entry, read off the TypeScript source: a quoted string, with its \n, \' and \" escapes resolved.</summary>
+    private static List<(string Name, string Text)> Recommendations(string source)
+    {
+        var entries = new List<(string, string)>();
+        foreach (Match entry in Regex.Matches(source, @"(?m)^\s*name: (?<name>'(?:[^'\\]|\\.)*'|""(?:[^""\\]|\\.)*""),"))
+        {
+            Match text = Regex.Match(source[(entry.Index + entry.Length)..], @"(?m)^\s*text: (?<text>'(?:[^'\\]|\\.)*'|""(?:[^""\\]|\\.)*""),");
+            Assert.True(text.Success, $"no text follows {entry.Groups["name"].Value}");
+            entries.Add((Unquote(entry.Groups["name"].Value), Unquote(text.Groups["text"].Value)));
+        }
+        return entries;
+    }
+
+    private static string Unquote(string literal) =>
+        literal[1..^1].Replace("\\n", "\n", StringComparison.Ordinal).Replace("\\'", "'", StringComparison.Ordinal).Replace("\\\"", "\"", StringComparison.Ordinal);
+    // #endregion what-colleagues-say
 }
