@@ -122,18 +122,20 @@ export function AdminPanel({
           {backTo === 'home' ? 'Back to home' : 'Back to inventory'}
         </button>
       </div>
-      <p className={styles.blurb}>
-        The running system reporting on itself, in the order somebody asks: is it up, is it fast, is
-        it costing anything, what broke.
-      </p>
-      <About>
-        One card at a time, the one the address names: the rail lists every card under the question
-        it answers, a tile opens the card behind its number, j and k walk the rail, and a pinned
-        card stays beside whichever one is open. Every statistic the page shows for one store it
-        shows for the other, and where a number has no meaning on one side the page says so in
-        words. Refreshes every 30 seconds. Public on purpose; the reasoning is in the Best Practices
-        menu.
-      </About>
+      <div className={styles.intro} data-testid="admin-intro">
+        <p className={styles.blurb}>
+          The running system reporting on itself, in the order somebody asks: is it up, is it fast,
+          is it costing anything, what broke.
+        </p>
+        <About>
+          One card at a time, the one the address names: the rail lists every card under the
+          question it answers, a tile opens the card behind its number, j and k walk the rail, and a
+          pinned card stays beside whichever one is open. Every statistic the page shows for one
+          store it shows for the other, and where a number has no meaning on one side the page says
+          so in words. Refreshes every 30 seconds. Public on purpose; the reasoning is in the Best
+          Practices menu.
+        </About>
+      </div>
       <AdminStatStrip
         tiles={tiles}
         onOpenCard={onOpenCard}
@@ -141,15 +143,17 @@ export function AdminPanel({
         caption={caption}
       />
 
-      <AdminWorkbench
-        open={card}
-        pin={pin}
-        asked={cardAsked}
-        onOpen={onOpenCard}
-        onPin={onPin}
-        glance={glance}
-        render={renderCard}
-      />
+      <div className={styles.benchOrder}>
+        <AdminWorkbench
+          open={card}
+          pin={pin}
+          asked={cardAsked}
+          onOpen={onOpenCard}
+          onPin={onPin}
+          glance={glance}
+          render={renderCard}
+        />
+      </div>
     </section>
   );
 }

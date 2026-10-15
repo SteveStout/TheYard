@@ -21,6 +21,21 @@ function token(name: string): string {
   return hex;
 }
 
+// #region tone-words
+// The tone word on a tile and on an Overview row ("worth a look" in amber) is
+// text on its soft ground, so it is held to 4.5:1 like any other words.
+describe('the tone words on the Admin tab', () => {
+  it('green, amber and red each clear 4.5:1 on their soft ground and on white', () => {
+    for (const tone of ['success', 'warning', 'danger']) {
+      expect(contrast(token(`color-${tone}`), token(`color-${tone}-soft`))).toBeGreaterThanOrEqual(
+        4.5
+      );
+      expect(contrast(token(`color-${tone}`), token('color-surface'))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+// #endregion tone-words
+
 // #region site-palette
 // Contrast is measured, not eyeballed. The test reads the real token sheets with
 // ?raw and computes the WCAG ratio for every text and ground pair the site
