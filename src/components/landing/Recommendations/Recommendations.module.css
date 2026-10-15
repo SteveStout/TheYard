@@ -1,0 +1,79 @@
+/**
+ * Does:      Styles the landing page's What colleagues say strip: three quote tiles in a row on a desk and stacked on a phone, who said each, and the link to the ten.
+ * Does not:  Draw the strip's heading (Landing.module.css does, as it does every group heading) or a tile's glass (panels.css does).
+ * Used by:   Recommendations.tsx.
+ */
+.quotes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .quotes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.quote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  min-width: 0;
+}
+
+/* The sentence, quoted by the type's own marks, which take the heading's colour so they read as trim. */
+.words {
+  margin: 0;
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: var(--color-text);
+  quotes: '\201C' '\201D';
+}
+
+.words::before {
+  content: open-quote;
+  color: var(--color-heading);
+}
+
+.words::after {
+  content: close-quote;
+  color: var(--color-heading);
+}
+
+.who {
+  margin: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.name {
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.all {
+  margin: 0;
+}
+
+.allLink {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.allLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}

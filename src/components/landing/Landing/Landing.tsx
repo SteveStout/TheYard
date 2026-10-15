@@ -18,6 +18,7 @@ import { LINKS, MENUS } from '../../../library/sections';
 import { CountUp } from '../../shared/CountUp';
 import { Ring } from '../../shared/Ring';
 import { NavGlyph } from '../../shared/SheetIcons';
+import { Recommendations } from '../Recommendations';
 import styles from './Landing.module.css';
 
 /**
@@ -247,6 +248,16 @@ export function Landing({
           );
         })}
       </ul>
+      <section
+        className={styles.group}
+        aria-labelledby="landing-said"
+        data-testid="landing-recommendations"
+      >
+        <h2 id="landing-said" className={styles.groupHeading}>
+          What colleagues say
+        </h2>
+        <Recommendations onOpenAuthor={() => onOpenDoc('author')} />
+      </section>
       {groups.map((group) => (
         <section
           key={group.key}
