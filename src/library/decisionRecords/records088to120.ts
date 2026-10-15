@@ -87,4 +87,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '098',
   },
+  adrTheResumeHasAnAddress: {
+    title: 'ADR: The resume has an address',
+    menuLabel: 'ADR: The resume has an address',
+    url: '/api/docs/adr-the-resume-has-an-address',
+    kind: 'adr',
+    number: '099',
+  },
 } as const satisfies Record<string, RecordEntry>;

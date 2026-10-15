@@ -294,6 +294,22 @@ public class ActivityTests
     }
 
     [Fact]
+    public void A_resume_open_through_a_door_counts_in_the_resume_step()
+    {
+        var rows = new List<ActivityVisitor>
+        {
+            Row("p1", "107.138.48.x", 1, 0, path: "/resume/linkedin"),
+            Row("p2", "198.51.100.x", 1, 0, path: "/index.html"),
+        };
+
+        var steps = JsonSerializer.SerializeToElement(ActivityWho.Path(rows)).EnumerateArray()
+            .ToDictionary(entry => entry.GetProperty("step").GetString()!, entry => entry.GetProperty("visitor_days").GetInt32());
+
+        Assert.Equal(1, steps["resume"]);
+        Assert.Equal(1, steps["site"]);
+    }
+
+    [Fact]
     public void The_path_to_the_resume_counts_the_visitor_days_that_reached_each_step()
     {
         var rows = new List<ActivityVisitor>

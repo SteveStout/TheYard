@@ -132,7 +132,11 @@ public static class ObservabilityRegistration
         // literal implementation.
         void RecordRequest(HttpContext context, TimeSpan elapsed)
         {
-            string path = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
+            // A visit to /resume is recorded as the door it came through, /resume/linkedin, which
+            // the handler left on the request; every other request is its own path (ResumeDoor.cs).
+            string path = context.Items.TryGetValue(ResumeDoor.ItemKey, out var door) && door is string doorPath
+                ? doorPath
+                : context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
             if (observabilityReads.Contains(path))
             {
                 return;

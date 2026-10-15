@@ -128,6 +128,7 @@ public static class DocumentationCatalog
         ["adr-a-rendering-service-beside-the-api"] = "docs/decisions/ADR-096-a-rendering-service-beside-the-api.md",
         ["adr-the-editor-is-set-up-by-the-repository"] = "docs/decisions/ADR-097-the-editor-is-set-up-by-the-repository.md",
         ["adr-the-gate-runs-where-the-memory-is"] = "docs/decisions/ADR-098-the-gate-runs-where-the-memory-is.md",
+        ["adr-the-resume-has-an-address"] = "docs/decisions/ADR-099-the-resume-has-an-address.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

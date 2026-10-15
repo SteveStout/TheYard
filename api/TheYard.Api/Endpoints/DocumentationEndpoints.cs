@@ -78,6 +78,13 @@ public static class DocumentationEndpoints
             .WithSummary("The author's resume")
             .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf");
 
+        #region resume-address
+        // The resume at an address a person can type and a link can carry (ADR: The resume has an
+        // address): the same file as /api/docs/resume, inline, under his name and the lock's date.
+        // The door in ?src= becomes one allowed word for the activity hook; the query is dropped.
+        app.MapGet("/resume", ResumeAtItsAddress).ExcludeFromDescription();
+        #endregion resume-address
+
         return app;
     }
 
@@ -120,4 +127,11 @@ public static class DocumentationEndpoints
 
     private static PhysicalFileHttpResult Resume(HostPaths paths) =>
         TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");
+
+    private static PhysicalFileHttpResult ResumeAtItsAddress(HttpContext http, HostPaths paths, string? src)
+    {
+        http.Items[ResumeDoor.ItemKey] = ResumeDoor.PathFor(src);
+        http.Response.Headers.ContentDisposition = $"inline; filename=\"{ResumeDoor.FileName}\"";
+        return TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");
+    }
 }

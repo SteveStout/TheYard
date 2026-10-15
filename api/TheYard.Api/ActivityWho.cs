@@ -135,15 +135,22 @@ public static class ActivityWho
     /// the paths each is asked for by: the page itself (every address the site
     /// serves is the one document, kept as /index.html), the inventory's
     /// listing, About Steven, and the resume, which the page links as
-    /// /api/docs/resume and the repository serves as /docs/resume.pdf.
+    /// /api/docs/resume, the repository serves as /docs/resume.pdf, and a
+    /// link Steve hands out opens at /resume, recorded by its door.
     /// </summary>
     public static readonly (string Step, string[] Paths)[] Steps =
     [
         ("site", ["/", "/index.html"]),
         ("inventory", ["/api/vehicles"]),
         ("author", ["/api/docs/author"]),
-        ("resume", ["/api/docs/resume", "/docs/resume.pdf", "/resume.pdf"]),
+        ("resume", ["/api/docs/resume", "/docs/resume.pdf", "/resume.pdf", ResumeDoor.PathPrefix]),
     ];
+
+    /// <summary>Whether a visitor-day asked for one of a step's paths; a path longer than / that ends in a slash counts everything under it.</summary>
+    private static bool Asked(ActivityVisitor row, string[] paths) =>
+        paths.Any(path => path.Length > 1 && path.EndsWith('/')
+            ? row.Paths.Keys.Any(asked => asked.StartsWith(path, StringComparison.Ordinal))
+            : row.Paths.ContainsKey(path));
 
     /// <summary>How many of these visitor-days asked for each step, in the order the steps are walked.</summary>
     public static List<object> Path(IReadOnlyList<ActivityVisitor> rows) =>
@@ -151,7 +158,7 @@ public static class ActivityWho
         {
             step = step.Step,
             visitor_days = rows
-                .Where(row => step.Paths.Any(row.Paths.ContainsKey))
+                .Where(row => Asked(row, step.Paths))
                 .Select(NameOf)
                 .Distinct(StringComparer.Ordinal)
                 .Count(),

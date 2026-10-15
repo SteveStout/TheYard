@@ -36,6 +36,7 @@ const PAGE_NAMES: readonly (readonly [RegExp, string])[] = [
   [/^\/api\/tests\/summary$/, 'The test counts'],
   [/^\/api\/docs\/author$/, 'About Steven'],
   [/^(\/api\/docs\/resume|\/docs\/resume\.pdf|\/resume\.pdf)$/, 'The resume'],
+  [/^\/resume\/([a-z]+)$/, 'The resume, through $1'],
   [/^\/api\/docs\/(.+)$/, 'Document: $1'],
   [/^\/api\/admin\/(.+)$/, 'Admin: $1'],
 ];
