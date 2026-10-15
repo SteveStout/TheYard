@@ -19,8 +19,8 @@ rather than filtered afterwards.
 
 **Search walks lazily and stops at a cap.** `Descendants` is an `IEnumerable` over a recursive
 enumeration with `IgnoreInaccessible`; `FileBrowser.Search` reads it until it has `limit` matches
-(200 unless asked, 1,000 at most) and then stops, so a search that fills its limit in the first
-subfolder never reads the rest of the tree. The reply says `truncated: true` so the page can say
+(200 unless asked, 1,000 at most) plus one more, which proves the list is cut off, and then stops,
+so a search that fills its limit in the first subfolder never reads the rest of the tree. The reply says `truncated: true` so the page can say
 "narrow the search" instead of pretending the list is complete. The cap is the honest choice: an
 uncapped search of a large tree is the one request in this API that could hold a thread for
 seconds.
@@ -71,7 +71,7 @@ The same test in the 1.0.0.30 gate, on the same laptop: generating the files too
 
 ## Where it sits
 
-The speed lives in two rings: Infrastructure walks a folder in one pass, and Application stops a search as soon as it has enough matches. It follows the L in SOLID: IFileStore promises to hand entries back one at a time, so any store that stands in for the disk keeps a search fast as long as it keeps that promise. The cost is that a search can stop early, and the page has to say the list was cut off. If people needed every match in a huge tree, the search would hand back its results a page at a time.
+The speed lives in two rings: Infrastructure walks a folder in one pass, and Domain (`SearchMatches`) stops a search as soon as it has enough matches. It follows the L in SOLID: IFileStore promises to hand entries back one at a time, so any store that stands in for the disk keeps a search fast as long as it keeps that promise. The cost is that a search can stop early, and the page has to say the list was cut off. If people needed every match in a huge tree, the search would hand back its results a page at a time.
 
 ## Files
 

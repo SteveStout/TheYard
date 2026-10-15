@@ -25,12 +25,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     {
         long started = Stopwatch.GetTimestamp();
         string absolute = Folder(path);
-        var folders = new List<FolderEntry>();
-        var files = new List<FileEntry>();
-        foreach (StoreEntry entry in store.Children(absolute))
-        {
-            Sort(entry, folders, files);
-        }
+        (List<FolderEntry> folders, List<FileEntry> files) = SplitByKind(store.Children(absolute));
         folders.Sort((a, b) => ViewTotals.NameOrder.Compare(a.Name, b.Name));
         files.Sort((a, b) => ViewTotals.NameOrder.Compare(a.Name, b.Name));
         string relative = home.Relative(absolute);
@@ -41,10 +36,10 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     // #region search
     /// <summary>
     /// Finds every file and folder under a folder, at any depth, whose name matches the
-    /// query, and stops once it has the maximum number of matches. The store hands back
-    /// entries one at a time as it walks, so a search that fills up early never reads
-    /// the rest of the tree. That early stop and the cap on results keep a search on a
-    /// large tree fast (more in docs/ADR-008-performance-measured.md).
+    /// query, up to a maximum number of matches. The store hands back entries one at a
+    /// time as it walks, and <see cref="SearchMatches"/> stops the walk at the first match
+    /// past the maximum, so a search that fills up early never reads the rest of the tree
+    /// (more in docs/ADR-008-performance-measured.md).
     /// </summary>
     /// <param name="path">The folder to search under, relative to home; "" means home.</param>
     /// <param name="query">A plain substring, or a glob using * or ?; empty is refused.</param>
@@ -62,22 +57,8 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         }
         int cap = Math.Clamp(limit ?? options.SearchLimit, 1, options.SearchCeiling);
         string absolute = Folder(path);
-        var folders = new List<FolderEntry>();
-        var files = new List<FileEntry>();
-        bool truncated = false;
-        foreach (StoreEntry entry in store.Descendants(absolute))
-        {
-            if (!pattern.Matches(Path.GetFileName(entry.Absolute)))
-            {
-                continue;
-            }
-            if (folders.Count + files.Count >= cap)
-            {
-                truncated = true;
-                break;
-            }
-            Sort(entry, folders, files);
-        }
+        (List<StoreEntry> kept, bool truncated) = SearchMatches.Take(store.Descendants(absolute), pattern, cap);
+        (List<FolderEntry> folders, List<FileEntry> files) = SplitByKind(kept);
         folders.Sort((a, b) => ViewTotals.NameOrder.Compare(a.Path, b.Path));
         files.Sort((a, b) => ViewTotals.NameOrder.Compare(a.Path, b.Path));
         return new SearchResult(pattern.Query, home.Relative(absolute), folders, files, ViewTotals.Of(folders, files), truncated, Elapsed(started));
@@ -271,21 +252,35 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         return absolute;
     }
 
-    /// <summary>Adds one entry the store handed back to the folder list or the file list, by its kind.</summary>
-    private void Sort(StoreEntry entry, List<FolderEntry> folders, List<FileEntry> files)
+    /// <summary>
+    /// Sorts the entries the store handed back into a folder list and a file list by their
+    /// kind, converting each on the way into the record the API returns.
+    /// </summary>
+    /// <param name="entries">The entries, in the order the store handed them back.</param>
+    private (List<FolderEntry> Folders, List<FileEntry> Files) SplitByKind(IEnumerable<StoreEntry> entries)
     {
-        if (entry.Kind == EntryKind.Folder)
+        var folders = new List<FolderEntry>();
+        var files = new List<FileEntry>();
+        foreach (StoreEntry entry in entries)
         {
-            folders.Add(Folder(entry));
+            if (entry.Kind == EntryKind.Folder)
+            {
+                folders.Add(Folder(entry));
+            }
+            else
+            {
+                files.Add(File(entry));
+            }
         }
-        else
-        {
-            files.Add(File(entry));
-        }
+        return (folders, files);
     }
 
     /// <summary>A folder's listing entry: its name, its path from home and when it last changed.</summary>
-    private FolderEntry Folder(StoreEntry entry) => new(HomePath.NameOf(home.Relative(entry.Absolute)), home.Relative(entry.Absolute), entry.ModifiedMs);
+    private FolderEntry Folder(StoreEntry entry)
+    {
+        string relative = home.Relative(entry.Absolute);
+        return new FolderEntry(HomePath.NameOf(relative), relative, entry.ModifiedMs);
+    }
 
     /// <summary>A file's listing entry: its name, path from home, size, time and lower-case extension.</summary>
     private FileEntry File(StoreEntry entry)

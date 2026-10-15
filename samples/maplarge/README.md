@@ -55,13 +55,13 @@ One command runs every test:
 npm run test:all
 ```
 
-It runs the 145 xUnit tests (`dotnet test` builds first), then the TypeScript build, then the 21
+It runs the 148 xUnit tests (`dotnet test` builds first), then the TypeScript build, then the 21
 node tests, and stops at the first failure. Each step's output is captured, and a green run prints
 one line per step:
 
 ```
 The Shed - all tests
-C# tests (xUnit)     145 passed   0 failed   19.2 s
+C# tests (xUnit)     148 passed   0 failed   19.2 s
 TypeScript build     clean                    1.5 s
 TypeScript tests      21 passed   0 failed    1.4 s
 ALL GREEN - 166 tests passed
@@ -86,7 +86,7 @@ npm run build
 
 | Suite | Count | What it covers |
 | --- | --- | --- |
-| xUnit | 145 | The path guard and the search pattern (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
+| xUnit | 148 | The path guard, the search pattern and the match cap (pure); the use cases over an in-memory store; every route and every refusal through the real host over a temp home; the served PDFs; the records, the live fences, the links and the publish list; the repository rules (the onion rings read from the compiled app, sealed, no em dash, no raw colour, every stylesheet closed and linked, the rules table, the versions table, the front end); a measured search over 10,000 files. |
 | node --test | 21 | The address parser and serializer, the byte and date formatting, the markdown reader (a `<script>` arrives as text, an image keeps its alt text). |
 
 The build treats warnings as errors and a public member without a summary is a warning.
@@ -131,7 +131,7 @@ the build at request time. Three to read first:
 ```
 Program.cs            the host, a table of contents: one line per part, each naming its file
 Data/                 ApiResponses, ApiRequests, FileStoreEntry: sealed records, no behaviour
-Domain/               the rules: HomePath, NamePattern, ViewTotals (pure)
+Domain/               the rules: HomePath, NamePattern, SearchMatches, ViewTotals (pure)
 Application/          FileBrowser, the use cases, behind IFileStore
 Infrastructure/       PhysicalFileStore, the disk
 Documentation/        DocumentationCatalog, LiveSamples, VersionReader: the documents the app serves

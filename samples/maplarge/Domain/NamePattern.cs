@@ -47,9 +47,13 @@ public sealed class NamePattern
         }
     }
 
-    /// <summary>Returns true when a name matches; always false for an empty query.</summary>
+    /// <summary>
+    /// Returns true when a name matches; always false for an empty query. The name is a
+    /// span so a caller can pass a slice of a longer path without copying it; a string
+    /// converts to the span on its own.
+    /// </summary>
     /// <param name="name">A file or folder name on its own, without the folders above it.</param>
-    public bool Matches(string name)
+    public bool Matches(ReadOnlySpan<char> name)
     {
         if (IsEmpty)
         {
