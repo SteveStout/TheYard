@@ -4,6 +4,7 @@
  * a chart and the newest twenty minutes. Its own file because this store is
  * sold by request unit and has no memory or processor reading to show.
  */
+import { More } from '../shared/More';
 import styles from '../shared/card.module.css';
 import type { DocumentMinute, Machines } from '../shared/types';
 import { busiestRate } from '../../../lib/machineChart';
@@ -102,13 +103,15 @@ export function MachinesDocumentSection({
               },
             ]}
           />
-          <DataTable
-            label="What the document store charged"
-            testId="machines-document-table"
-            rows={[...documentStore.minutes].reverse().slice(0, 20)}
-            rowKey={(minute) => minute.at}
-            columns={DOCUMENT_COLUMNS}
-          />
+          <More label="the newest 20 minutes of charges" testId="documentsection-more">
+            <DataTable
+              label="What the document store charged"
+              testId="machines-document-table"
+              rows={[...documentStore.minutes].reverse().slice(0, 20)}
+              rowKey={(minute) => minute.at}
+              columns={DOCUMENT_COLUMNS}
+            />
+          </More>
         </>
       )}
     </>

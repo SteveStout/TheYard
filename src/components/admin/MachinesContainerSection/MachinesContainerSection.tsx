@@ -4,6 +4,7 @@
  * sampled window and the newest twenty samples. Its own file because the
  * container reports differently from either store and reads on its own.
  */
+import { More } from '../shared/More';
 import styles from '../shared/card.module.css';
 import type { MachineSample, Machines } from '../shared/types';
 import type { MachineWindow } from '../../../lib/machineChart';
@@ -127,13 +128,15 @@ export function MachinesContainerSection({
               },
             ]}
           />
-          <DataTable
-            label="The container, sampled"
-            testId="machines-container-table"
-            rows={[...samples].reverse().slice(0, 20)}
-            rowKey={(sample) => sample.at}
-            columns={CONTAINER_COLUMNS}
-          />
+          <More label="the newest 20 samples" testId="containersection-more">
+            <DataTable
+              label="The container, sampled"
+              testId="machines-container-table"
+              rows={[...samples].reverse().slice(0, 20)}
+              rowKey={(sample) => sample.at}
+              columns={CONTAINER_COLUMNS}
+            />
+          </More>
         </>
       )}
     </>

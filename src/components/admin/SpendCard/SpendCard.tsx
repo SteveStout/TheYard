@@ -4,6 +4,7 @@
  * with Azure's forecast, what each resource cost, and how many resources of each
  * type are on the bill, over the window every chart on the tab shares.
  */
+import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
 import type { ReactNode } from 'react';
 import {
@@ -58,7 +59,7 @@ export default function SpendCard({
         </p>
       )}
       {report === null ? (
-        <p className={cardStyles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : report === 'failed' ? (
         failed('what Azure charges')
       ) : !report.available ? (

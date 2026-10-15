@@ -1,6 +1,7 @@
 /**
  * The partition key, live (ADR: The partition key).
  */
+import { CardState } from '../shared/CardState';
 import styles from '../shared/card.module.css';
 import type { Experiment, ExperimentRow } from '../shared/types';
 import { useRead, failed, About } from '../shared/common';
@@ -32,7 +33,7 @@ export default function ExperimentCard({ tick }: { tick: number }) {
           this size are in the partition key record.
         </About>
         {experiment === null ? (
-          <p className={styles.muted}>Loading…</p>
+          <CardState state="loading" />
         ) : experiment === 'failed' ? (
           failed('the experiment')
         ) : !experiment.available ? (

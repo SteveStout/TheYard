@@ -1,6 +1,7 @@
 /**
  * Every test, for this build (ADR: The five-minute gate).
  */
+import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
 import { Fragment, useEffect, useState } from 'react';
 import {
@@ -107,7 +108,7 @@ export default function TestsCard() {
         failures first and then the slowest.
       </About>
       {results === null ? (
-        <p className={cardStyles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : results === 'failed' ? (
         <p className={cardStyles.muted} data-testid="tests-failed">
           Could not read the test results on the last try.

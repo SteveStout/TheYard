@@ -2,6 +2,7 @@
  * The SQL this application ran (ADR: What the database is actually doing), now or over a
  * kept window, on a container that runs a relational store.
  */
+import { CardState } from '../shared/CardState';
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
 import styles from '../shared/card.module.css';
 import type { SqlStatement, Metrics, StoreLog } from '../shared/types';
@@ -78,7 +79,7 @@ export default function SqlCard({ tick }: { tick: number }) {
       </About>
       {picker('sql')}
       {sqlRows === null ? (
-        <p className={styles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : sqlRows === 'failed' ? (
         failed('the SQL log')
       ) : sqlRows.length === 0 ? (

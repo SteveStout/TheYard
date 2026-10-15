@@ -3,6 +3,7 @@
  * addendum on the workbench): the read an open card makes, the window a public
  * list is over, and the small pieces every card draws with.
  */
+import { CardState } from './CardState';
 import { type ReactNode, useEffect, useState } from 'react';
 import { hourOfTraffic, type TrafficSlot } from '../../../lib/machineChart';
 import { durationWords } from '../../../lib/duration';
@@ -98,11 +99,7 @@ export const pill = (ok: boolean) =>
   ok ? `${styles.pill} ${styles.ok}` : `${styles.pill} ${styles.bad}`;
 
 /** What a card says when its last read failed. */
-export const failed = (what: string) => (
-  <p className={styles.muted} data-testid="card-failed">
-    Could not read {what} on the last try; the next try is in 30 seconds.
-  </p>
-);
+export const failed = (what: string) => <CardState state="failed" what={what} />;
 
 /** A card this container has nothing for: its name, and why, in words. */
 export function Absent({ name, note }: { name: string; note: string | null }) {

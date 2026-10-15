@@ -1,6 +1,7 @@
 /**
  * Every page, checked (ADR: Every page, checked at every roll).
  */
+import { CardState } from '../shared/CardState';
 import { useEffect, useState } from 'react';
 import styles from '../shared/card.module.css';
 import type { PageEntry, PageStatus, Fetched } from '../shared/types';
@@ -100,7 +101,7 @@ export default function PagesCard({
         read from outside after every ship.
       </About>
       {pages === null ? (
-        <p className={styles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : pages === 'failed' ? (
         <p className={styles.muted} data-testid="pages-failed">
           Could not read the page check on the last try.

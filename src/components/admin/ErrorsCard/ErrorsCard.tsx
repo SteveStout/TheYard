@@ -2,6 +2,8 @@
  * Recent errors, from the server and the browser (ADR-023), now or over a kept
  * window. The strip reads the ring for its tile, so the ring is handed in.
  */
+import { More } from '../shared/More';
+import { CardState } from '../shared/CardState';
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
 import styles from './ErrorsCard.module.css';
 import cardStyles from '../shared/card.module.css';
@@ -64,20 +66,26 @@ export default function ErrorsCard({
       <h2 className={cardStyles.cardTitle}>Recent errors</h2>
       {picker('errors')}
       {errorRows === null ? (
-        <p className={cardStyles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : errorRows === 'failed' ? (
         failed('the error list')
       ) : errorRows.length === 0 ? (
         cardWindows.errors !== 'now' ? null : (
-          <p className={cardStyles.muted}>
-            None recorded since the container started, from the server or the browser. The list
-            keeps the server&rsquo;s last 50 and the browser&rsquo;s last 50, in two rings so a
-            flood of browser reports cannot push out the server&rsquo;s, and resets on every deploy;
-            Application Insights keeps the durable copy (ADR: Telemetry). A server error carries its
-            stack, file and line beside it; the exception&rsquo;s message is deliberately not here,
-            because a message is where a framework writes a connection detail and this page is
-            public.
-          </p>
+          <>
+            <CardState state="empty">
+              None recorded since the container started, from the server or the browser.
+            </CardState>
+            <More label="how the list is kept">
+              <p className={cardStyles.muted}>
+                The list keeps the server&rsquo;s last 50 and the browser&rsquo;s last 50, in two
+                rings so a flood of browser reports cannot push out the server&rsquo;s, and resets
+                on every deploy; Application Insights keeps the durable copy (ADR: Telemetry). A
+                server error carries its stack, file and line beside it; the exception&rsquo;s
+                message is deliberately not here, because a message is where a framework writes a
+                connection detail and this page is public.
+              </p>
+            </More>
+          </>
         )
       ) : (
         <DataTable

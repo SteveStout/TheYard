@@ -5,6 +5,7 @@
  * this store reports in shares of a tier, unlike the container or the
  * document store.
  */
+import { More } from '../shared/More';
 import styles from '../shared/card.module.css';
 import type { Machines, ResourceStatRow } from '../shared/types';
 import { MachineChart } from '../charts';
@@ -77,13 +78,15 @@ export function MachinesRelationalSection({ relational }: { relational: Machines
               },
             ]}
           />
-          <DataTable
-            label="The relational store's own reading"
-            testId="machines-relational-table"
-            rows={relational.rows.slice(0, 20)}
-            rowKey={(row) => row.at}
-            columns={RELATIONAL_COLUMNS}
-          />
+          <More label="the relational store's newest 20 readings" testId="relationalsection-more">
+            <DataTable
+              label="The relational store's own reading"
+              testId="machines-relational-table"
+              rows={relational.rows.slice(0, 20)}
+              rowKey={(row) => row.at}
+              columns={RELATIONAL_COLUMNS}
+            />
+          </More>
         </>
       )}
     </>

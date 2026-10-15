@@ -2,6 +2,7 @@
  * Same performance, proven (ADR: Same performance, proven): the run, and the card
  * that shows it.
  */
+import { CardState } from '../shared/CardState';
 import { useState } from 'react';
 import { pairedBars } from '../../../lib/machineChart';
 import styles from './ProofCard.module.css';
@@ -107,7 +108,7 @@ function ProofBody({
         </button>
       </p>
       {proof === null ? (
-        <p className={cardStyles.muted}>Loading…</p>
+        <CardState state="loading" />
       ) : proof === 'failed' ? (
         <p className={cardStyles.muted} data-testid="card-failed">
           Could not read the proof on the last try; the next try is in 30 seconds.

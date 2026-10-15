@@ -19,6 +19,9 @@
   --space-6: 24px;
   --space-7: 32px;
   --space-8: 48px;
+  /* An Admin card's padding and the gap between its parts, the same on every card. */
+  --card-pad: var(--space-5);
+  --card-gap: var(--space-3);
 
   /* #region reserved-heights */
   /* Room a page holds before its data arrives, so nothing you are already

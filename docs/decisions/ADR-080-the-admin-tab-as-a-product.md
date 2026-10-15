@@ -394,6 +394,17 @@ Two signals that were on the wire and on no card are drawn now. The Backends car
 ```live path=src/lib/overview.ts region=overview-rows
 ```
 
+## Addendum, 2026-10-15 (1.0.3.129): one way to say loading, and the long tables folded
+
+The audit of 14 October counted 19 hand-written "Loading..." paragraphs and ten cards using the shared failed sentence, while seven wrote their own and four of those dropped when the next try would come. **One component, `CardState`, now says all three states**: loading, failed with the next try, and read but empty, each as one status line a screen reader hears and a test finds by its id on any card. The shared `failed()` is that component's failed state.
+
+The longest cards were long because of their tables. The machines card drew three charts and then three twenty-row tables, 4,433 pixels tall at a desk, and the log card printed 80 rows, 22,306 characters, with no count first. **Nothing is deleted, only folded behind More**: the machines card keeps its charts and folds its three tables, the log card says how many lines of each level the window holds and folds the table under that line, and an empty error list is one line with how the list is kept behind More.
+
+The cards also take their type sizes and their spacing from tokens in the token sheets now, instead of the same numbers written on every card.
+
+```live path=src/lib/logLevels.ts region=level-line
+```
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.
