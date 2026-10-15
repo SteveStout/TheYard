@@ -7,6 +7,7 @@
  *   MachinesRelationalSection  the relational store's own resource view
  *   MachinesDocumentSection    the document store's request units
  */
+import { Range } from '../shared/Range';
 import type { ReactNode } from 'react';
 import { type MachineWindow, windowName } from '../../../lib/machineChart';
 import styles from '../shared/card.module.css';
@@ -66,6 +67,7 @@ function MachinesBody({
   return (
     <article className={`${styles.wide} op-glass`} data-testid="machines-card">
       <h2 className={styles.cardTitle}>What the machines are doing</h2>
+      <Range of="memory" />
       <About>
         The three machines under this site, each reporting the way it actually reports. The
         container knows its own memory and its own processor time, and the limit its share is read

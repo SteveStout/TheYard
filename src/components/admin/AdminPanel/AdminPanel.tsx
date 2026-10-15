@@ -47,7 +47,7 @@ export function AdminPanel({
   backTo = 'inventory',
   signedIn,
   onOpenAccount,
-  card = 'health',
+  card = 'overview',
   pin = null,
   cardAsked = null,
   onOpenCard = () => {},
@@ -98,6 +98,7 @@ export function AdminPanel({
       slug={slug}
       tick={reads.tick}
       health={reads.health}
+      tiles={tiles}
       errors={reads.errors}
       machines={machines.machines}
       window={machines.window}

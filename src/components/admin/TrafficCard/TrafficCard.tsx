@@ -2,6 +2,7 @@
  * Traffic (ADR: The Admin tab, as a product): how busy, how fast and how many
  * errors, over the window every chart on the tab shares, which the tab hands in.
  */
+import { Range } from '../shared/Range';
 import type { ReactNode } from 'react';
 import {
   fromFirstReading,
@@ -72,6 +73,7 @@ function TrafficCard({
   return (
     <article className={`${cardStyles.wide} op-glass`} data-testid="traffic-card">
       <h2 className={cardStyles.cardTitle}>Traffic</h2>
+      <Range of="clientErrorsHour" />
       <About>
         How busy the site is, how fast it is answering and whether anything is failing, over the
         window chosen here, which the machines card below follows. The last hour is the request ring

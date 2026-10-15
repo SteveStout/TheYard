@@ -15,7 +15,7 @@ import {
   type InventoryFilters,
   type SortKey,
 } from '../../lib/inventory';
-import { cardFromAddress, pinFromAddress, type CardSlug } from '../../lib/workbench';
+import { cardFromAddress, DEFAULT_CARD, pinFromAddress, type CardSlug } from '../../lib/workbench';
 import { docKeyForSlug, docSlug } from '../../library/addresses';
 import type { DocKey } from '../../library/documents';
 import { useFirstLoad } from '../../hooks/useFirstLoad';
@@ -95,8 +95,8 @@ export function useAddressBar() {
     if (listOnly && !opensInventory(params)) params.set('view', 'inventory');
     if (adminOpen) {
       params.set('view', 'admin');
-      // Health is the card ?view=admin opens, so it is the one card the address leaves unnamed.
-      if (adminCard !== 'health') params.set('card', adminCard);
+      // The Overview is the card ?view=admin opens, so it is the one card the address leaves unnamed.
+      if (adminCard !== DEFAULT_CARD) params.set('card', adminCard);
       if (adminPin !== null) params.set('pin', adminPin);
     }
     if (accountOpen) params.set('view', 'account');

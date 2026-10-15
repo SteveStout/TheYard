@@ -14,6 +14,7 @@
 
 /** The cards by their slug, which is the card's test id without "-card", in the rail's order. */
 export const CARD_SLUGS = [
+  'overview',
   'health',
   'azure',
   'pages',
@@ -38,7 +39,10 @@ export const CARD_SLUGS = [
 
 export type CardSlug = (typeof CARD_SLUGS)[number];
 
-/** The card an address names, and whether the name was one: a wrong or missing name opens health. */
+/** The card ?view=admin opens, and the one a wrong name falls back to: the Overview. */
+export const DEFAULT_CARD: CardSlug = 'overview';
+
+/** The card an address names, and whether the name was one: a wrong or missing name opens the Overview. */
 export function cardFromAddress(raw: string | null): {
   slug: CardSlug;
   asked: string | null;
@@ -46,7 +50,11 @@ export function cardFromAddress(raw: string | null): {
 } {
   const asked = raw === null || raw.trim() === '' ? null : raw.trim();
   const known = asked !== null && (CARD_SLUGS as readonly string[]).includes(asked);
-  return { slug: known ? (asked as CardSlug) : 'health', asked, known: asked === null || known };
+  return {
+    slug: known ? (asked as CardSlug) : DEFAULT_CARD,
+    asked,
+    known: asked === null || known,
+  };
 }
 
 /**

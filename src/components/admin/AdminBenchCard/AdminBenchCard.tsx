@@ -6,6 +6,7 @@ import { lazy, type ReactNode, Suspense } from 'react';
 import type { ActivityReport } from '../../../lib/activity';
 import { benchCard } from '../../../lib/bench';
 import type { MachineWindow } from '../../../lib/machineChart';
+import type { StatTile } from '../../../lib/statTiles';
 import type { CardSlug } from '../../../lib/workbench';
 import styles from '../AdminPanel/AdminPanel.module.css';
 import cardStyles from '../shared/card.module.css';
@@ -21,6 +22,7 @@ import { Absent } from '../shared/common';
  * so choosing a card waits on its data and not on its code.
  */
 export const CARD_CHUNKS = {
+  OverviewCard: () => import('../OverviewCard/OverviewCard'),
   HealthCard: () => import('../HealthCard/HealthCard'),
   AzureCard: () => import('../AzureCard/AzureCard'),
   PagesCard: () => import('../PagesCard/PagesCard'),
@@ -42,6 +44,8 @@ export const CARD_CHUNKS = {
   OperatorCard: () => import('../OperatorCard/OperatorCard'),
   ResetLinkCard: () => import('../ResetLinkCard/ResetLinkCard'),
 };
+/** The Overview, its code fetched the first time it is drawn. */
+const OverviewCard = lazy(CARD_CHUNKS.OverviewCard);
 /** The Health card, its code fetched the first time it is drawn. */
 const HealthCard = lazy(CARD_CHUNKS.HealthCard);
 /** The Azure card, its code fetched the first time it is drawn. */
@@ -91,6 +95,8 @@ export type AdminBenchCardProps = {
   /** The page's refresh tick; a card re-reads its data when it moves. */
   tick: number;
   health: Fetched<Health>;
+  /** The strip's tiles, which the Overview sums up. */
+  tiles: StatTile[];
   errors: Fetched<ErrorEntry[]>;
   machines: Fetched<Machines>;
   /** The chart window every chart on the tab follows. */
@@ -122,6 +128,8 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
   const { slug, tick, machines, window: machineWindow, toolbar, adminKey, rowsServed } = props;
   const drawn = (() => {
     switch (slug) {
+      case 'overview':
+        return <OverviewCard health={props.health} tiles={props.tiles} tick={tick} />;
       case 'health':
         return <HealthCard health={props.health} />;
       case 'azure':

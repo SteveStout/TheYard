@@ -122,6 +122,14 @@ export type Metrics = {
   startup: Startup;
   /** Absent from a peer on an older build, so read as optional. */
   backends?: BackendMetrics[];
+  /** What the runtime compiled itself since the process started, and the collector's mode (ADR: Compiled before it ships). */
+  runtime?: {
+    jit_methods: number;
+    jit_ms: number;
+    gc: string;
+    gc_concurrent: boolean;
+    processors: number;
+  };
 };
 
 /**
@@ -135,4 +143,6 @@ export type Peer = {
   host: string | null;
   fetched_at: string;
   metrics: Metrics | null;
+  /** The peer's build from its /api/version; null when it could not be read, absent from an older build. */
+  version?: string | null;
 };

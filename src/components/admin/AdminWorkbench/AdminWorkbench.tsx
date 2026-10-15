@@ -259,5 +259,5 @@ export function AdminWorkbench({
 }
 
 /** Cards that show "This hour": the Admin home and the two cards it sums up. */
-const HOUR_CARDS: readonly CardSlug[] = ['health', 'timing', 'traffic'];
+const HOUR_CARDS: readonly CardSlug[] = ['overview', 'timing', 'traffic'];
 // #endregion workbench

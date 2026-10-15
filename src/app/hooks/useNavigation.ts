@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react';
 import { fetchVehicleById } from '../../lib/data';
 import type { Vehicle } from '../../lib/types';
 import { filtersToSearchParams, opensInventory } from '../../lib/inventory';
-import type { CardSlug } from '../../lib/workbench';
+import { type CardSlug, DEFAULT_CARD } from '../../lib/workbench';
 import { docSlug } from '../../library/addresses';
 import type { DocKey } from '../../library/documents';
 import type { Address, BackTo } from './useAddressBar';
@@ -138,7 +138,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     address.push({ viaAdmin: true, from: openedFrom() }, params);
     setSelectedVehicle(null);
     setAccountOpen(false);
-    setAdminCard('health');
+    setAdminCard(DEFAULT_CARD);
     setAdminPin(null);
     setCardAsked(null);
     setAdminOpen(true);
@@ -153,7 +153,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     if (slug === adminCard && cardAsked === null) return;
     const params = filtersToSearchParams(filters, sort);
     params.set('view', 'admin');
-    if (slug !== 'health') params.set('card', slug);
+    if (slug !== DEFAULT_CARD) params.set('card', slug);
     if (adminPin !== null) params.set('pin', adminPin);
     const held = address.entry() ?? {};
     address.push(
