@@ -294,6 +294,28 @@ public class ActivityTests
     }
 
     [Fact]
+    public void The_resume_opens_are_counted_by_door_people_only()
+    {
+        var rows = new List<ActivityVisitor>
+        {
+            Row("p1", "107.138.48.x", 2, 0, path: "/resume/linkedin"),
+            Row("p2", "198.51.100.x", 1, 0, path: "/resume/other"),
+            Row("p3", "203.0.113.x", 1, 0, path: "/api/docs/resume"),
+            // A scanner that walked to the resume through a door is not a person and is left out.
+            Row("s1", "192.0.2.x", 3, 3, path: "/resume/linkedin"),
+        };
+
+        var doors = JsonSerializer.SerializeToElement(ActivityWho.Doors(rows)).EnumerateArray()
+            .ToDictionary(entry => entry.GetProperty("door").GetString()!, entry => (entry.GetProperty("visitor_days").GetInt32(), entry.GetProperty("requests").GetInt32()));
+
+        Assert.Equal(new[] { "application", "email", "linkedin", "post", "signature", "other", "site" }, doors.Keys.ToArray());
+        Assert.Equal((1, 2), doors["linkedin"]);
+        Assert.Equal((1, 1), doors["other"]);
+        Assert.Equal((1, 1), doors["site"]);
+        Assert.Equal((0, 0), doors["email"]);
+    }
+
+    [Fact]
     public void A_resume_open_through_a_door_counts_in_the_resume_step()
     {
         var rows = new List<ActivityVisitor>

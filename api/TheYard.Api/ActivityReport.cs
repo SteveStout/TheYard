@@ -95,6 +95,8 @@ public static class ActivityReport
             // people, scanners and crawlers, and the site reading itself, so
             // the card can show visitors only or everything.
             who = ActivityWho.Summary(keptRows, backends.All.Select(backend => backend.Key).ToList()),
+            // The resume's opens by the door its link named, people only (ADR: The resume has an address).
+            doors = ActivityWho.Doors(keptRows),
             top_paths = paths.OrderByDescending(entry => entry.Value).ThenBy(entry => entry.Key, StringComparer.Ordinal).Take(12)
                 .Select(entry => new { path = entry.Key, requests = entry.Value }).ToList(),
             stores,
