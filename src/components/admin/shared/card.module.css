@@ -3,7 +3,7 @@
  *            filter row, check lists and status rows.
  * Does not:  Style one card's own layout (that card's sheet does), or draw a panel's ground (panels.css owns the
  *            glass).
- * Used by:   ActivityCard.tsx, ActivityDaysTable.tsx, ActivityGraph.tsx, ActivityPathTiles.tsx,
+ * Used by:   ActivityCard.tsx, ActivityDaysTable.tsx, ActivityDoors.tsx, ActivityGraph.tsx, ActivityPathTiles.tsx,
  *            ActivityTotals.tsx, ActivityVisitorTable.tsx, AdminBenchCard.tsx, AdminPanel.tsx,
  *            AdminStatStrip.tsx, AdminWorkbench.tsx, AzureCard.tsx, BackendsCard.tsx, CardState.tsx, CodeHealthSection.tsx,
  *            DataTable.tsx, ErrorsCard.tsx, ExperimentCard.tsx, HealthCard.tsx, KeptLogsCard.tsx,

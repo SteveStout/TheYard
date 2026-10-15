@@ -189,6 +189,33 @@ public static class ActivityWho
             .Select(entry => (object)new { host = entry.Key, visitor_days = entry.Value.Count }).ToList();
     }
 
+    // #region doors
+    /// <summary>
+    /// The resume's opens by the door the link named (ADR: The resume has an address): for
+    /// each door, and for "site", the resume opened from the site itself with no door, how
+    /// many visitor-days opened it and how many requests that was, people only. A door is
+    /// one of a handful of words, so nothing here says anything about who opened it.
+    /// </summary>
+    public static List<object> Doors(IReadOnlyList<ActivityVisitor> rows)
+    {
+        var kinds = Tokens(rows);
+        var people = rows.Where(row => kinds[NameOf(row)] == Kind.People).ToList();
+        var doors = ResumeDoor.Doors.Order(StringComparer.Ordinal).Append("other")
+            .Select(door => (door, paths: new[] { ResumeDoor.PathPrefix + door }))
+            .Append((door: "site", paths: new[] { "/api/docs/resume", "/docs/resume.pdf", "/resume.pdf" }));
+        return doors.Select(entry =>
+        {
+            var opened = people.Where(row => entry.paths.Any(row.Paths.ContainsKey)).ToList();
+            return (object)new
+            {
+                door = entry.door,
+                visitor_days = opened.Select(NameOf).Distinct(StringComparer.Ordinal).Count(),
+                requests = opened.Sum(row => entry.paths.Sum(path => row.Paths.GetValueOrDefault(path))),
+            };
+        }).ToList();
+    }
+    // #endregion doors
+
     /// <summary>The twelve paths these rows asked for most, with their request counts, ties broken by path.</summary>
     private static List<object> TopPaths(IEnumerable<ActivityVisitor> rows)
     {

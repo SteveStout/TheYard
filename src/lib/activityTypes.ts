@@ -85,6 +85,8 @@ export type ActivityReport = {
   by_store: { store: string; requests: number; bots: number; humans: number }[];
   series: ActivitySeries[];
   days: ActivityDay[];
+  /** The resume's opens by the door its link named, people only; absent from an older build. */
+  doors?: { door: string; visitor_days: number; requests: number }[];
   who: {
     people: ActivityWhoEntry;
     scanners: ActivityWhoEntry;

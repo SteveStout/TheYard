@@ -15,6 +15,7 @@ import styles from '../ActivityCard/ActivityCard.module.css';
 import chartStyles from '../charts/charts.module.css';
 import cardStyles from '../shared/card.module.css';
 import { type Column, DataTable } from '../DataTable';
+import { ActivityDoors } from '../ActivityDoors';
 import { PathBars } from '../PathBars';
 
 /** A site that linked here, and how many visitor-days it sent. */
@@ -96,6 +97,7 @@ export function ActivityPathTiles({ report, who }: { report: ActivityReport; who
           opened from a PDF, the resume among them, sends no referrer and reads as typed or unknown.
         </p>
       </section>
+      {report.doors !== undefined && <ActivityDoors report={report} tone={tone} />}
     </>
   );
 }

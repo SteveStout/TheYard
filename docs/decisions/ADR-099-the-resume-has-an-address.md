@@ -33,6 +33,13 @@ Until this record the resume was reachable at `/api/docs/resume`, which reads li
 
 A Door column on the activity row is just as correct and costs a day across both stores, the EF model, the Cosmos document and the DACPAC; the path carries the same word for nothing. A wrapper page with a download button adds a click and a second request to what a phone already does with a PDF. Both stay available if the bare PDF shows a blank frame on a phone.
 
+## Addendum, 2026-10-15 (1.0.3.134): the opens by door, on the activity card
+
+The door is only worth recording if somebody reads it. The activity report now carries `doors`, one entry per door and one for the site itself (the resume opened from the page's own links, with no door), each with the visitor-days and the requests that opened it, people only so a scanner walking the links does not count as interest. The Site activity card draws them as bars beside the path to the resume, which answers the question the address was made for: which of Steve's channels recruiters actually open the resume from.
+
+```live path=api/TheYard.Api/ActivityWho.cs region=doors
+```
+
 ## Where it sits
 
 The API layer only: one route in `Endpoints/`, one small static class beside it, and two one-line hooks in the activity path. Single responsibility: `ResumeDoor` decides what a door is, the endpoint serves the file, and the activity code counts paths as it always has. What would change it is a second document that wants the same treatment, at which point the door list belongs to the link rather than to the resume.
