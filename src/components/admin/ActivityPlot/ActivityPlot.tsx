@@ -28,6 +28,7 @@ import {
   type ActivityWho,
 } from '../../../lib/activity';
 import { plotFrame } from '../../../lib/plotFrame';
+import { DayMarks } from '../DayMarks';
 import styles from '../ActivityCard/ActivityCard.module.css';
 import chartStyles from '../charts/charts.module.css';
 import { PlotFrame, useFittedBox } from '../charts';
@@ -57,7 +58,9 @@ export function ActivityPlot({
   const [fit, chart] = useFittedBox(CHART);
   const ceiling = view === 'kind' ? stackCeiling(bands) : ceilingOf(lines);
   const count = report.days.length;
-  const labels = labelledIndexes(count);
+  // A month is labelled by its Mondays and Fridays instead (DayMarks below), and a
+  // week, which names every day, gets its weekends washed.
+  const labels = report.window === '30d' ? [] : labelledIndexes(count);
   const innerWidth = chart.width - chart.left - chart.right;
   const step = count <= 1 ? 0 : innerWidth / (count - 1);
   // The report's own moment, not the browser's clock: rendering stays a pure function of
@@ -142,6 +145,13 @@ export function ActivityPlot({
               major: false,
             }))
           )}
+        />
+        <DayMarks
+          slots={report.days.map((day) => ({ at: day.day }))}
+          windowMinutes={report.window === '24h' ? 0 : count * 24 * 60}
+          labelled={report.window === '30d'}
+          box={chart}
+          testId="activity"
         />
         <text
           className={chartStyles.axisLabel}

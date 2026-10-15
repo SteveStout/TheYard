@@ -3,7 +3,7 @@
  *            gauges and the summary list.
  * Does not:  Choose a series colour (the chart design tokens do) or style the card a chart sits in.
  * Used by:   ActivityGraph.tsx, ActivityPathTiles.tsx, ActivityPlot.tsx, ActivityReadout.tsx, ActivityTotals.tsx,
- *            BarGauge.tsx, ChartReadout.tsx, MachineChart.tsx, PeakCallout.tsx, PlotFrame.tsx, ProofCard.tsx,
+ *            BarGauge.tsx, ChartReadout.tsx, DayMarks.tsx, MachineChart.tsx, PeakCallout.tsx, PlotFrame.tsx, ProofCard.tsx,
  *            SpendCard.tsx, TimingCard.tsx, activitySeriesLook.ts.
  */
 

@@ -1,0 +1,13 @@
+/**
+ * Does:      Washes the weekends across a daily chart.
+ * Does not:  Place the band or the Monday and Friday labels (src/lib/dayMarks.ts does), or style the axis
+ *            labels (charts.module.css does).
+ * Used by:   DayMarks.tsx.
+ */
+
+/* The weekend, washed across a daily chart so the weekly rhythm reads before
+   the axis is (ADR: The Admin tab, as a product, the addendum on day marks). */
+.weekendBand {
+  fill: var(--color-heading);
+  fill-opacity: var(--mark-weekend-opacity);
+}

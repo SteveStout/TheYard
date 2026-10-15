@@ -193,7 +193,8 @@ public class StoreToggleTests(WebApplicationFactory<Program> factory)
             metrics = await client.GetFromJsonAsync<JsonElement>("/api/admin/metrics");
             bool readied = metrics.GetProperty("backends").EnumerateArray()
                 .Any(backend => backend.GetProperty("default").GetBoolean()
-                    && backend.GetProperty("startup").GetProperty("ready_ms").GetInt64() > 0);
+                    && backend.GetProperty("startup").GetProperty("ready_ms") is { ValueKind: JsonValueKind.Number } readyMs
+                    && readyMs.GetInt64() > 0);
             if (readied)
             {
                 break;

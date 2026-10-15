@@ -20,6 +20,7 @@ import {
   xOf,
 } from '../../../lib/machineChart';
 import { ChartReadout } from '../ChartReadout';
+import { DayMarks } from '../DayMarks';
 import { PeakCallout } from '../PeakCallout';
 import { PlotFrame } from '../PlotFrame';
 import { useFittedBox } from '../charts/useFittedBox';
@@ -73,6 +74,9 @@ export function MachineChart({
   const step = points.length <= 1 ? 0 : innerWidth / (points.length - 1);
   const peak =
     callout === undefined ? null : calloutFor(series, callout, ceiling, drawnWindow, box);
+  // Over a week or a month the Mondays and Fridays label the axis and the weekends
+  // are washed (DayMarks); the hour and the day keep their three clock labels.
+  const daily = drawnWindow === '7d' || drawnWindow === '30d';
   // A single series has no legend, so when the caller named no axis unit, the
   // series' own unit goes at the top of the axis instead.
   const shownUnit = axisUnit ?? (series.length === 1 && percentage !== true ? unit : undefined);
@@ -116,6 +120,12 @@ export function MachineChart({
         {/* The instrument style: no grid, graduation ticks on the axes, and gold
             corner brackets at the plot's top left and bottom right. */}
         <PlotFrame frame={machineFrame(points.length, box)} testId={testId} />
+        <DayMarks
+          slots={points}
+          windowMinutes={daily ? (drawnWindow === '7d' ? 7 : 30) * 24 * 60 : 0}
+          box={box}
+          testId={testId}
+        />
         <line
           className={styles.axis}
           x1={box.left}
@@ -142,7 +152,7 @@ export function MachineChart({
         >
           0
         </text>
-        {ticks(points.length).map((index) => (
+        {(daily ? [] : ticks(points.length)).map((index) => (
           <text
             key={index}
             className={styles.axisLabel}
