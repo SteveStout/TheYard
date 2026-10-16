@@ -1,7 +1,7 @@
 {
   "name": "the-shed",
   "private": true,
-  "description": "The Shed: a file and folder browser in TypeScript over an ASP.NET Core API. MapLarge developer test project, built by Steven Stout.",
+  "description": "The Shed: a file and folder browser in TypeScript over an ASP.NET Core API. A developer test project, built by Steven Stout.",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",

@@ -40,10 +40,10 @@ This record sits in the front end's outer ring (src/ui and navigation.ts) around
 
 ## Files
 
-- [`wwwroot/index.html`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/index.html): the dialog and the trigger.
-- [`src/navigation.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/navigation.ts): open and close as navigation.
-- [`src/ui/controls.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/controls.ts): the open and close buttons, and Escape.
-- [`wwwroot/css/dialog.css`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/css/dialog.css): the dialog's panel; [`wwwroot/css/phone.css`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/css/phone.css) makes it full screen on a phone.
+- [`wwwroot/index.html`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/wwwroot/index.html): the dialog and the trigger.
+- [`src/navigation.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/navigation.ts): open and close as navigation.
+- [`src/ui/controls.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/ui/controls.ts): the open and close buttons, and Escape.
+- [`wwwroot/css/dialog.css`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/wwwroot/css/dialog.css): the dialog's panel; [`wwwroot/css/phone.css`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/wwwroot/css/phone.css) makes it full screen on a phone.
 
 The render that opens and closes it:
 

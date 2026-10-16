@@ -77,13 +77,13 @@ The page has two rings of its own: src/lib holds the pure pieces and src/ui draw
 
 ## Files
 
-- [`src/main.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/main.ts): the page's parts, in order, one line each.
-- [`src/ui/elements.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/elements.ts): `buildElement`, `buildFromMarkdown` and `replaceContents`.
-- [`src/ui/browser.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/ui/browser.ts): the file browser.
-- [`src/lib/api.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/api.ts): every call, and the cache.
-- [`src/lib/types.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/types.ts): the wire, as TypeScript sees it.
-- [`tsconfig.json`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tsconfig.json): the compiler, and the whole build.
-- [`tests/js/`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/js): the `node --test` suite, over the compiled modules.
+- [`src/main.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/main.ts): the page's parts, in order, one line each.
+- [`src/ui/elements.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/ui/elements.ts): `buildElement`, `buildFromMarkdown` and `replaceContents`.
+- [`src/ui/browser.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/ui/browser.ts): the file browser.
+- [`src/lib/api.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/lib/api.ts): every call, and the cache.
+- [`src/lib/types.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/lib/types.ts): the wire, as TypeScript sees it.
+- [`tsconfig.json`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tsconfig.json): the compiler, and the whole build.
+- [`tests/js/`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/js): the `node --test` suite, over the compiled modules.
 
 The cache:
 

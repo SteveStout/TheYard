@@ -73,10 +73,10 @@ Every ring: the map of all of them and of the nine tests that hold them. A secon
 
 ## Files
 
-- [`tests/TestProject.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/OnionTests.cs): the rings, read from the compiled app.
-- [`Application/IFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/IFileStore.cs): the port.
-- [`Application/FileBrowser.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/FileBrowser.cs): the use cases.
-- [`Composition/FilesRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Composition/FilesRegistration.cs): where the port is filled in.
+- [`tests/TestProject.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/OnionTests.cs): the rings, read from the compiled app.
+- [`Application/IFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Application/IFileStore.cs): the port.
+- [`Application/FileBrowser.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Application/FileBrowser.cs): the use cases.
+- [`Composition/FilesRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Composition/FilesRegistration.cs): where the port is filled in.
 
 The ring rules, as they are in this build:
 

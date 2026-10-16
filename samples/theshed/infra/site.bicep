@@ -4,7 +4,7 @@
 // updates one site and touches nothing else. Incremental mode, always.
 //
 //   az deployment group create -g RG-THEYARD-SS --mode Incremental \
-//     --template-file samples/maplarge/infra/site.bicep --parameters appImage=<registry>/theshed:v1
+//     --template-file samples/theshed/infra/site.bicep --parameters appImage=<registry>/theshed:v1
 
 targetScope = 'resourceGroup'
 

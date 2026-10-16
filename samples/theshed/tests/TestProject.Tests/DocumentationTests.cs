@@ -204,7 +204,7 @@ public sealed partial class DocumentationTests : IDisposable
     private static partial Regex SampleUnavailable();
 
     /// <summary>A link to a file of this sample on GitHub, with the path inside the sample captured.</summary>
-    [GeneratedRegex(@"https://github\.com/SteveStout/TheYard/(?:blob|tree)/main/samples/maplarge/(?<path>[^)\s#]+)")]
+    [GeneratedRegex(@"https://github\.com/SteveStout/TheYard/(?:blob|tree)/main/samples/theshed/(?<path>[^)\s#]+)")]
     private static partial Regex RepoLink();
 
     /// <summary>A four-number version such as 1.0.0.28.</summary>

@@ -103,4 +103,4 @@ The API ring's host only: the composition root's pipeline, its registration and 
 - [`api/TheYard.Api/Composition/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs): the forwarded headers' options, and why there is no HTTP logger.
 - [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the short-circuited probes, and readiness on every store.
 - [`api/TheYard.Tests/RequestPipelineTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RequestPipelineTests.cs): files before the session, probes at routing, the visitor from the right, the cookie's Secure flag.
-- [`samples/maplarge/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Composition/RequestPipeline.cs): The Shed's pipeline and what it leaves out.
+- [`samples/theshed/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Composition/RequestPipeline.cs): The Shed's pipeline and what it leaves out.

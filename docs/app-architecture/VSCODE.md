@@ -107,13 +107,13 @@ The editor formats on save with the same Prettier and the same `.editorconfig` t
 
 ## Step 6: The Shed
 
-The Shed is the file browser under `samples/maplarge`, one .NET project with its page in plain TypeScript. It runs from this window and from its own.
+The Shed is the file browser under `samples/theshed`, one .NET project with its page in plain TypeScript. It runs from this window and from its own.
 
 **From this window:** select **Shed: run** in Run and Debug and press F5. It builds, starts on `http://localhost:5120`, and the browser opens on the page when the API says it is listening. The configuration serves plain http, so it tells the C# extension not to ask for an HTTPS development certificate (`checkForDevCert` is false). Its tasks (**Shed: build TypeScript**, **Shed: test (xUnit)**, **Shed: test (node)**) are in the same Run Task list.
 
-**On its own, which is the demo shape:** File > Open Folder on `samples/maplarge`. That folder carries its own `.vscode` with the same launch configuration and tasks, and C# Dev Kit opens `TestProject.sln`. F5 does the same thing.
+**On its own, which is the demo shape:** File > Open Folder on `samples/theshed`. That folder carries its own `.vscode` with the same launch configuration and tasks, and C# Dev Kit opens `TestProject.sln`. F5 does the same thing.
 
-**Every test, one command:** in `samples/maplarge`, run
+**Every test, one command:** in `samples/theshed`, run
 
 ```
 npm run test:all
@@ -145,7 +145,7 @@ For showing the two projects to someone, in order, with nothing to type:
 2. Set a breakpoint in `VehicleEndpoints.cs`, press Load more, step once, let it go. The API owns the rules; the page asks.
 3. Testing panel: run one xUnit test from the play button (and one Vitest test, once the Vitest extension is installed). Point at `OnionTests`: the rings are tests.
 4. Open any record from the sidebar on the page (Decision Records): the code in it is read from the build you are running.
-5. Stop. Open `samples/maplarge` in a new window, F5. Browse, search `*.csv`, upload a file, drop a breakpoint in `FilesController.cs`, download it back.
+5. Stop. Open `samples/theshed` in a new window, F5. Browse, search `*.csv`, upload a file, drop a breakpoint in `FilesController.cs`, download it back.
 
 Every step here is a task or a launch configuration, so the demo is the same on any machine the repository is cloned to.
 
@@ -159,13 +159,13 @@ This page shipped with the editor configuration it describes. Every file, and wh
 | `.vscode/settings.json` | The default solution, format on save with Prettier and dotnet format, LF line endings, the project's own TypeScript, and the watcher and search exclusions for `bin/`, `obj/`, `node_modules/` and the build outputs. Nothing in it is a matter of taste. |
 | `.vscode/tasks.json` | Every command the README gives, as a task: run, build, the three suites, the checks, and The Shed's own, each with the command it runs shown beside it in the picker. |
 | `.vscode/launch.json` | F5: the API under the debugger, the page in Chrome through Vite, the compound of both, and The Shed with its browser opening when it listens. |
-| `samples/maplarge/.vscode/` | The same four files for The Shed opened as its own folder: its solution, its tasks, and F5. |
+| `samples/theshed/.vscode/` | The same four files for The Shed opened as its own folder: its solution, its tasks, and F5. |
 | `docs/app-architecture/VSCODE.md` | This page, served under App Architecture after Start here. |
 | `docs/images/vscode-*.jpg` | The seven screenshots on this page, taken in VS Code on the laptop it was rehearsed on. |
 | `api/TheYard.Tests/WorkspaceTests.cs` | Holds the configuration to the code: every task runs a script `package.json` has or a project that exists, every launch configuration's program is a project in the tree on the port its `launchSettings.json` names, every task is on this page, and the extensions file names the C# and test extensions. |
 | `api/TheYard.Api/LiveSamples.cs` | `.vscode/` added to the roots a live block may read from, so this page shows the real files. |
 | `Dockerfile`, `.dockerignore` | The runtime image copies `.vscode/` beside the other sources the records read, and the ignore file stopped excluding it. |
-| `README.md`, `samples/maplarge/README.md`, `CLAUDE.md` | Each gained the line that points here. |
+| `README.md`, `samples/theshed/README.md`, `CLAUDE.md` | Each gained the line that points here. |
 | `docs/decisions/ADR-097-the-editor-is-set-up-by-the-repository.md` | The record: why the configuration is in the repository, what it holds, and what was left out. |
 
 The tasks, read from the build:
@@ -189,7 +189,7 @@ The tasks, read from the build:
 ## Files
 
 - [`.vscode/extensions.json`](https://github.com/SteveStout/TheYard/blob/main/.vscode/extensions.json), [`.vscode/settings.json`](https://github.com/SteveStout/TheYard/blob/main/.vscode/settings.json), [`.vscode/tasks.json`](https://github.com/SteveStout/TheYard/blob/main/.vscode/tasks.json), [`.vscode/launch.json`](https://github.com/SteveStout/TheYard/blob/main/.vscode/launch.json): TheYard's editor configuration.
-- [`samples/maplarge/.vscode/`](https://github.com/SteveStout/TheYard/tree/main/samples/maplarge/.vscode): The Shed's.
+- [`samples/theshed/.vscode/`](https://github.com/SteveStout/TheYard/tree/main/samples/theshed/.vscode): The Shed's.
 - [`api/TheYard.Tests/WorkspaceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/WorkspaceTests.cs): the configuration held to the code and to this page.
-- [`api/TheYard.Api/Properties/launchSettings.json`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Properties/launchSettings.json) and [`samples/maplarge/Properties/launchSettings.json`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Properties/launchSettings.json): the ports.
+- [`api/TheYard.Api/Properties/launchSettings.json`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Properties/launchSettings.json) and [`samples/theshed/Properties/launchSettings.json`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Properties/launchSettings.json): the ports.
 - [ADR-097, The editor is set up by the repository](https://theyard.stevenstout.biz/?doc=adr-the-editor-is-set-up-by-the-repository): the decision.

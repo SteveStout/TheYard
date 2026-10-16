@@ -75,9 +75,9 @@ The speed lives in two rings: Infrastructure walks a folder in one pass, and Dom
 
 ## Files
 
-- [`Infrastructure/PhysicalFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Infrastructure/PhysicalFileStore.cs): the walk.
-- [`Application/FileBrowser.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/FileBrowser.cs): the capped search.
-- [`tests/TestProject.Tests/PerformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/PerformanceTests.cs): the measurement.
+- [`Infrastructure/PhysicalFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Infrastructure/PhysicalFileStore.cs): the walk.
+- [`Application/FileBrowser.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Application/FileBrowser.cs): the capped search.
+- [`tests/TestProject.Tests/PerformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/PerformanceTests.cs): the measurement.
 
 The walk:
 

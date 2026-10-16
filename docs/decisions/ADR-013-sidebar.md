@@ -349,3 +349,10 @@ The rule that nobody from a former employer is named on the page stands for ever
 Steve looked at the panel and asked for the recommendations in a row, on the landing page and on About Steven. Ten blocks two across ran the length of the page, and the landing strip showed three and hid seven. Both pages now show the ten in one row that scrolls sideways, each block snapping to the left edge with the next one's edge showing. On the landing page every recommendation lends one sentence, as written; About Steven keeps them in full. The row is a named region with a tab stop, so the arrow keys scroll what a mouse scrolls, the rule the admin tables already follow.
 
 The document did not change: `layoutAuthor` reads a panel whose every block quotes somebody as a row, and nothing else about the panel is special, so a second panel of quotations would get the same shape without a line of code. `author.test` holds the rule and `author.spec` reads the row on the page; `landing.spec` reads the ten sentences and the region.
+
+## Addendum, 2026-10-16 (1.0.3.140): The Shed
+
+The Shed is a second app in this repository: a file and folder browser built in the same working method, with its own site, its own deploy and its own decision records. Until now nothing on TheYard pointed to it, so a visitor found it only through the repository. It now has a section of its own under How it is built, with two links out: the running app and its code. The landing page draws it as a tile like every section, and because the section holds only links, the tile opens the app in a new tab. The sample's folder moved from its first working name to `samples/theshed`, the name it goes by everywhere else, and its documents now describe it as a developer test project without naming a company.
+
+```live path=src/library/sections.ts region=shed-section
+```

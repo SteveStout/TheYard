@@ -74,6 +74,6 @@ Four habits:
 
 ## Files
 
-- [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/.editorconfig): the mechanical rules.
-- [`docs/ADR-002-one-project-four-folders-dependencies-inward.md`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-002-one-project-four-folders-dependencies-inward.md): the layers these rules protect.
+- [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/.editorconfig): the mechanical rules.
+- [`docs/ADR-002-one-project-four-folders-dependencies-inward.md`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/ADR-002-one-project-four-folders-dependencies-inward.md): the layers these rules protect.
 - [TheYard's Coding and Commenting Style](https://github.com/SteveStout/TheYard/blob/main/docs/STYLE.md): the page this one is trimmed from.

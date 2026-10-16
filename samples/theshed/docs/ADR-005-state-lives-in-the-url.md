@@ -54,9 +54,9 @@ This record sits in the front end's inner ring, where src/lib/urlState.ts reads 
 
 ## Files
 
-- [`src/lib/urlState.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/urlState.ts): the parser and the serializer.
-- [`src/navigation.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/navigation.ts): `navigate`, the one way state changes.
-- [`tests/js/urlState.test.js`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/js/urlState.test.js): the round trip and the fallbacks.
+- [`src/lib/urlState.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/lib/urlState.ts): the parser and the serializer.
+- [`src/navigation.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/navigation.ts): `navigate`, the one way state changes.
+- [`tests/js/urlState.test.js`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/js/urlState.test.js): the round trip and the fallbacks.
 
 The parser:
 

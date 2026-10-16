@@ -66,8 +66,8 @@ Beside the folders, in the test project. RuleTableTests reads this table, and on
 
 ## Files
 
-- [`tests/TestProject.Tests/ProjectRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/ProjectRulesTests.cs): `RuleTableTests` and the other project rules.
-- [`tests/TestProject.Tests/DocumentationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/DocumentationTests.cs): the record set, the served documents and the version line.
-- [`tests/TestProject.Tests/PublishListTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/PublishListTests.cs): what a publish carries.
-- [`tests/TestProject.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/LiveSamplesTests.cs): the paths a live block may read and how a region is cut.
-- [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/.editorconfig): the mechanical rules the compiler applies.
+- [`tests/TestProject.Tests/ProjectRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/ProjectRulesTests.cs): `RuleTableTests` and the other project rules.
+- [`tests/TestProject.Tests/DocumentationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/DocumentationTests.cs): the record set, the served documents and the version line.
+- [`tests/TestProject.Tests/PublishListTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/PublishListTests.cs): what a publish carries.
+- [`tests/TestProject.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/LiveSamplesTests.cs): the paths a live block may read and how a region is cut.
+- [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/.editorconfig): the mechanical rules the compiler applies.

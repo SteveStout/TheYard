@@ -62,7 +62,7 @@ public class WorkspaceTests
     // #region tasks
     [Theory]
     [InlineData(".vscode")]
-    [InlineData("samples/maplarge/.vscode")]
+    [InlineData("samples/theshed/.vscode")]
     public void Every_task_runs_a_script_the_package_declares_or_a_project_in_the_tree(string folder)
     {
         string root = Repo.Root();
@@ -136,7 +136,7 @@ public class WorkspaceTests
     // #region launch
     [Theory]
     [InlineData(".vscode")]
-    [InlineData("samples/maplarge/.vscode")]
+    [InlineData("samples/theshed/.vscode")]
     public void Every_launch_configuration_runs_a_project_in_the_tree_on_the_port_its_own_settings_name(string folder)
     {
         string root = Repo.Root();
@@ -241,9 +241,9 @@ public class WorkspaceTests
         string solution = settings.RootElement.GetProperty("dotnet.defaultSolution").GetString()!;
         Assert.True(File.Exists(Path.Combine(root, solution)), $".vscode/settings.json opens {solution}, which does not exist");
 
-        using var shedSettings = Read(root, "samples", "maplarge", ".vscode", "settings.json");
+        using var shedSettings = Read(root, "samples", "theshed", ".vscode", "settings.json");
         string shedSolution = shedSettings.RootElement.GetProperty("dotnet.defaultSolution").GetString()!;
-        Assert.True(File.Exists(Path.Combine(root, "samples", "maplarge", shedSolution)), $"The Shed's settings.json opens {shedSolution}, which does not exist");
+        Assert.True(File.Exists(Path.Combine(root, "samples", "theshed", shedSolution)), $"The Shed's settings.json opens {shedSolution}, which does not exist");
 
         using var extensions = Read(root, ".vscode", "extensions.json");
         var recommended = extensions.RootElement.GetProperty("recommendations").EnumerateArray()

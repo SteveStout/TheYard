@@ -206,10 +206,10 @@ gives: their source spells out the note and the fence they look for.
 ## Addendum, 2026-10-04: one folder from the sample beside the app
 
 The onion practices page shows The Shed's architecture tests whole, because they are the example of
-the rings drawn as folders in one project. The Shed lives under `samples/maplarge`, which none of the
-seven roots reached, so `samples/maplarge/tests/` is the eighth. It is the sample's test folder and
+the rings drawn as folders in one project. The Shed lives under `samples/theshed`, which none of the
+seven roots reached, so `samples/theshed/tests/` is the eighth. It is the sample's test folder and
 nothing more: the rest of the sample is served by its own site, and the rejection tests gained
-`samples/maplarge/Program.cs` to keep it that way. The runtime stage of the Dockerfile copies the one
+`samples/theshed/Program.cs` to keep it that way. The runtime stage of the Dockerfile copies the one
 file the page names, and the coverage test above already fails any live block whose file the image
 does not carry.
 

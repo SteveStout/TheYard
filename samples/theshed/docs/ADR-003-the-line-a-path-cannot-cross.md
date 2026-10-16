@@ -65,10 +65,10 @@ HomePath lives in Domain, the innermost ring, and every path from a request walk
 
 ## Files
 
-- [`Domain/HomePath.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Domain/HomePath.cs): the guard.
-- [`Application/FilesOptions.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/FilesOptions.cs): the settings.
-- [`Composition/FilesRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Composition/FilesRegistration.cs): `HomeFor`, where configuration becomes a `HomePath`.
-- [`tests/TestProject.Tests/HomePathTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/HomePathTests.cs): the refusals, on both operating systems.
+- [`Domain/HomePath.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Domain/HomePath.cs): the guard.
+- [`Application/FilesOptions.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Application/FilesOptions.cs): the settings.
+- [`Composition/FilesRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Composition/FilesRegistration.cs): `HomeFor`, where configuration becomes a `HomePath`.
+- [`tests/TestProject.Tests/HomePathTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/HomePathTests.cs): the refusals, on both operating systems.
 
 The guard, as it is in this build:
 

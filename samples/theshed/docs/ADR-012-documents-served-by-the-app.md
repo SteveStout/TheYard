@@ -69,13 +69,13 @@ This record sits in the Documentation folder, an outer ring beside Controllers t
 
 ## Files
 
-- [`Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Documentation/DocumentationCatalog.cs): the list and the slugs.
-- [`Documentation/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Documentation/LiveSamples.cs): the expander.
-- [`Documentation/VersionReader.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Documentation/VersionReader.cs): the version and the commit.
-- [`Controllers/DocumentationAndVersionController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/DocumentationAndVersionController.cs): the three routes.
-- [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/src/lib/markdown.ts): the reader.
-- [`tests/TestProject.Tests/DocumentationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/DocumentationTests.cs): every fence resolves, every link lands.
-- [`tests/TestProject.Tests/PublishListTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/PublishListTests.cs): every document and every quoted file travels with a publish.
+- [`Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Documentation/DocumentationCatalog.cs): the list and the slugs.
+- [`Documentation/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Documentation/LiveSamples.cs): the expander.
+- [`Documentation/VersionReader.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Documentation/VersionReader.cs): the version and the commit.
+- [`Controllers/DocumentationAndVersionController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Controllers/DocumentationAndVersionController.cs): the three routes.
+- [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/src/lib/markdown.ts): the reader.
+- [`tests/TestProject.Tests/DocumentationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/DocumentationTests.cs): every fence resolves, every link lands.
+- [`tests/TestProject.Tests/PublishListTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/PublishListTests.cs): every document and every quoted file travels with a publish.
 
 The allowed roots, and the check:
 

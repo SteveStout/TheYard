@@ -1,7 +1,7 @@
 name: Deploy The Shed
 
-# The sample under samples/maplarge, rolled to its own web app on the plan the
-# two TheYard sites share (samples/maplarge/docs/ADR-001). Runs only when the
+# The sample under samples/theshed, rolled to its own web app on the plan the
+# two TheYard sites share (samples/theshed/docs/ADR-001). Runs only when the
 # sample changes; TheYard's own deploys ignore samples/ for the same reason.
 # The steps are the ones deploy.yml uses, shorter: the version from the
 # sample's changelog, one image into the same registry, the site described by
@@ -11,7 +11,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "samples/maplarge/**"
+      - "samples/theshed/**"
       - ".github/workflows/deploy-shed.yml"
   workflow_dispatch:
 
@@ -34,7 +34,7 @@ jobs:
       APP: APP-THESHED-SS-ZMNETJ67BN5H2
       ORIGIN: https://app-theshed-ss-zmnetj67bn5h2.azurewebsites.net
       SITE: https://theshed.stevenstout.biz
-      SAMPLE: samples/maplarge
+      SAMPLE: samples/theshed
     steps:
       - uses: actions/checkout@v7
 
@@ -67,7 +67,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
-          context: samples/maplarge
+          context: samples/theshed
           push: true
           tags: ${{ env.IMAGE }}
           build-args: |
@@ -77,7 +77,7 @@ jobs:
           provenance: false
 
       # The site was created once from the sample's Bicep by a person with rights on
-      # the group (samples/maplarge/infra/site.bicep, the header says how); the deploy
+      # the group (samples/theshed/infra/site.bicep, the header says how); the deploy
       # identity holds Website Contributor on the site and nothing wider, the same as
       # on the two TheYard sites, so a roll here is the two calls deploy.yml makes:
       # the settings, then the image. App Service starts the new container beside

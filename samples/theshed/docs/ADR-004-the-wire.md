@@ -67,12 +67,12 @@ The reply records live in Data at the center of the onion; a refusal is thrown f
 
 ## Files
 
-- [`Data/ApiResponses.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Data/ApiResponses.cs): every reply the API sends.
-- [`Data/ApiRequests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Data/ApiRequests.cs): the move and copy body the page sends.
-- [`Application/ApiRefusalException.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Application/ApiRefusalException.cs): a refusal with its status.
-- [`Controllers/ProblemResponseHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/ProblemResponseHandler.cs): the problem document.
-- [`Controllers/FilesController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Controllers/FilesController.cs): the routes.
-- [`tests/TestProject.Tests/FilesApiTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/FilesApiTests.cs): every route and every refusal through the real host.
+- [`Data/ApiResponses.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Data/ApiResponses.cs): every reply the API sends.
+- [`Data/ApiRequests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Data/ApiRequests.cs): the move and copy body the page sends.
+- [`Application/ApiRefusalException.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Application/ApiRefusalException.cs): a refusal with its status.
+- [`Controllers/ProblemResponseHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Controllers/ProblemResponseHandler.cs): the problem document.
+- [`Controllers/FilesController.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Controllers/FilesController.cs): the routes.
+- [`tests/TestProject.Tests/FilesApiTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/FilesApiTests.cs): every route and every refusal through the real host.
 
 The handler:
 

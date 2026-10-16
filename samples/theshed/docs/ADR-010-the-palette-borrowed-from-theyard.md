@@ -57,9 +57,9 @@ This record is about the palette and touches no ring: it sets the colours, sizes
 
 ## Files
 
-- [`wwwroot/css/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/css/tokens.css): the tokens, and the `@font-face`.
-- [`wwwroot/css/`](https://github.com/SteveStout/TheYard/tree/main/samples/maplarge/wwwroot/css): everything else, one sheet per part of the page, in tokens.
-- [`wwwroot/fonts/OFL.txt`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/fonts/OFL.txt): the font's licence.
+- [`wwwroot/css/tokens.css`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/wwwroot/css/tokens.css): the tokens, and the `@font-face`.
+- [`wwwroot/css/`](https://github.com/SteveStout/TheYard/tree/main/samples/theshed/wwwroot/css): everything else, one sheet per part of the page, in tokens.
+- [`wwwroot/fonts/OFL.txt`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/wwwroot/fonts/OFL.txt): the font's licence.
 - [TheYard's `src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css): the source of the values.
 
 The panel, with its rule and brackets:

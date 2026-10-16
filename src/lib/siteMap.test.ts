@@ -14,6 +14,7 @@ const EVERY_SECTION: Record<MenuVariant, true> = {
   look: true,
   hosting: true,
   builtWithAi: true,
+  shed: true,
   cicd: true,
   practices: true,
   records: true,
@@ -58,6 +59,7 @@ describe('the site map', () => {
       'diagrams',
       'look',
       'builtWithAi',
+      'shed',
       'performance',
       'traffic',
       'hosting',
@@ -85,7 +87,7 @@ describe('the site map', () => {
     expect(groups.map((group) => [group.label, group.tiles.map(name)])).toEqual([
       [
         'How it is built',
-        ['architecture', 'apiReference', 'stores', 'diagrams', 'look', 'builtWithAi'],
+        ['architecture', 'apiReference', 'stores', 'diagrams', 'look', 'builtWithAi', 'shed'],
       ],
       ['How it is run', ['performance', 'traffic', 'hosting', 'cicd', 'practices']],
       ['Who and why', ['records', 'changelog', 'about']],
@@ -101,7 +103,7 @@ describe('the site map', () => {
       'admin',
       'repo',
     ]);
-    expect(grid).toHaveLength(17);
+    expect(grid).toHaveLength(18);
     // The two large tiles carry a photograph in the badge, and nothing else does.
     expect(
       featured.map(

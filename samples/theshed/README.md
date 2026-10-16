@@ -5,7 +5,7 @@ single page in TypeScript, with no framework, that browses, searches, uploads, d
 folders, moves, copies and deletes, inside a dialog, with the whole state of the page in the
 address bar.
 
-Built for MapLarge's developer test project (September 2026) on the starter they sent, in the
+Built as a developer test project (September 2026) on the starter that came with the brief, in the
 working method of [TheYard](https://theyard.stevenstout.biz), whose repository this folder lives
 in. **Live:** [theshed.stevenstout.biz](https://theshed.stevenstout.biz). The running version and
 commit: [/api/version](https://theshed.stevenstout.biz/api/version).
@@ -118,13 +118,13 @@ A bare address is the page with the dialog closed; any state opens it.
 ## The records
 
 Fourteen decision records, served from the running app under the Docs tab and readable here in
-[`docs/`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs). Each is one
+[`docs/`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs). Each is one
 decision: what was asked, what was chosen, what it cost, and the code it decided about, read from
 the build at request time. Three to read first:
 
-- [ADR-003, the line a path cannot cross](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-003-the-line-a-path-cannot-cross.md): the security model, one class.
-- [ADR-005, state lives in the URL](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-005-state-lives-in-the-url.md): deep links, done fully.
-- [ADR-009, the rules a change has to pass](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-009-the-rules-a-change-has-to-pass.md): every standing rule beside the test that holds it.
+- [ADR-003, the line a path cannot cross](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/ADR-003-the-line-a-path-cannot-cross.md): the security model, one class.
+- [ADR-005, state lives in the URL](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/ADR-005-state-lives-in-the-url.md): deep links, done fully.
+- [ADR-009, the rules a change has to pass](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/ADR-009-the-rules-a-change-has-to-pass.md): every standing rule beside the test that holds it.
 
 ## Layout
 
@@ -174,5 +174,5 @@ error for three years ([Logs that outlive the container](https://theyard.stevens
 
 The shape and the tests were decided first; an AI assistant (Claude) drafted against them; a
 person reads everything before it ships. The exact division is in
-[ADR-011](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-011-built-with-ai.md)
-and [`docs/BUILT-WITH-AI.md`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/BUILT-WITH-AI.md).
+[ADR-011](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/ADR-011-built-with-ai.md)
+and [`docs/BUILT-WITH-AI.md`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/BUILT-WITH-AI.md).

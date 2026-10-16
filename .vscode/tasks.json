@@ -149,13 +149,13 @@
       "group": "test"
     },
 
-    // ---- The Shed (samples/maplarge), runnable from this window ----
+    // ---- The Shed (samples/theshed), runnable from this window ----
     {
       "label": "Shed: run",
-      "detail": "dotnet run in samples/maplarge: its launch profile, https://localhost:7146 and http://localhost:5120, browsing sample-home/.",
+      "detail": "dotnet run in samples/theshed: its launch profile, https://localhost:7146 and http://localhost:5120, browsing sample-home/.",
       "type": "shell",
       "command": "dotnet run",
-      "options": { "cwd": "${workspaceFolder}/samples/maplarge" },
+      "options": { "cwd": "${workspaceFolder}/samples/theshed" },
       "isBackground": true,
       "problemMatcher": {
         "owner": "shed",
@@ -172,35 +172,35 @@
       "label": "Shed: build",
       "detail": "dotnet build on The Shed. The 'Shed: run' launch configuration runs this first.",
       "type": "shell",
-      "command": "dotnet build samples/maplarge/TestProject.csproj",
+      "command": "dotnet build samples/theshed/TestProject.csproj",
       "problemMatcher": "$msCompile",
       "group": "build",
       "presentation": { "reveal": "silent", "panel": "shared" }
     },
     {
       "label": "Shed: build TypeScript",
-      "detail": "npm run build in samples/maplarge: tsc writes wwwroot/js, which is committed.",
+      "detail": "npm run build in samples/theshed: tsc writes wwwroot/js, which is committed.",
       "type": "shell",
       "command": "npm run build",
-      "options": { "cwd": "${workspaceFolder}/samples/maplarge" },
+      "options": { "cwd": "${workspaceFolder}/samples/theshed" },
       "problemMatcher": "$tsc",
       "group": "build"
     },
     {
       "label": "Shed: test (xUnit)",
-      "detail": "dotnet test in samples/maplarge.",
+      "detail": "dotnet test in samples/theshed.",
       "type": "shell",
       "command": "dotnet test",
-      "options": { "cwd": "${workspaceFolder}/samples/maplarge" },
+      "options": { "cwd": "${workspaceFolder}/samples/theshed" },
       "problemMatcher": "$msCompile",
       "group": "test"
     },
     {
       "label": "Shed: test (node)",
-      "detail": "npm test in samples/maplarge: node --test on the page's pure functions.",
+      "detail": "npm test in samples/theshed: node --test on the page's pure functions.",
       "type": "shell",
       "command": "npm test",
-      "options": { "cwd": "${workspaceFolder}/samples/maplarge" },
+      "options": { "cwd": "${workspaceFolder}/samples/theshed" },
       "problemMatcher": [],
       "group": "test"
     }

@@ -16,7 +16,7 @@ the shape is decided and the tests are listed before any code. The assistant dra
 list, and a person reads the result before it goes anywhere.
 
 **Decided by a person, before code.** What the brief was asking for and how it would be read; that
-the answer is TheYard's practices applied to their starter and not TheYard's stack (ADR-001); plain
+the answer is TheYard's practices applied to the brief's starter and not TheYard's stack (ADR-001); plain
 TypeScript with no framework; the palette carried over and the branding dropped (ADR-010); that
 the sample lives beside TheYard and deploys on its plan. The assistant put the rest to him as a
 written plan first: the layering (ADR-002), the guard (ADR-003), the wire (ADR-004), the address as
@@ -50,5 +50,5 @@ This record is about how the project was built and touches no ring of the code.
 
 ## Files
 
-- [`docs/BUILT-WITH-AI.md`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/BUILT-WITH-AI.md): the working method, as a guide.
-- [`docs/ADR-009-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-009-the-rules-a-change-has-to-pass.md): the test list that came first.
+- [`docs/BUILT-WITH-AI.md`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/BUILT-WITH-AI.md): the working method, as a guide.
+- [`docs/ADR-009-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/ADR-009-the-rules-a-change-has-to-pass.md): the test list that came first.

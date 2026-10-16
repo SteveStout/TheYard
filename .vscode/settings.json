@@ -3,7 +3,7 @@
   // (ADR: The editor is set up by the repository). Personal settings stay in the
   // user profile; nothing here is a matter of taste.
 
-  // The solution C# Dev Kit loads on arrival. The Shed has its own, under samples/maplarge.
+  // The solution C# Dev Kit loads on arrival. The Shed has its own, under samples/theshed.
   "dotnet.defaultSolution": "api/TheYard.slnx",
 
   // The gate runs Prettier and dotnet format as checks, so the editor runs them as
@@ -48,7 +48,7 @@
     "**/playwright-report": true,
     "**/test-results": true,
     "**/TestResults": true,
-    "samples/maplarge/wwwroot/js": true,
+    "samples/theshed/wwwroot/js": true,
     "package-lock.json": true
   },
 

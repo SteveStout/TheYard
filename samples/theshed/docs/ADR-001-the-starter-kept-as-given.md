@@ -4,7 +4,7 @@ Status: accepted, 2026-09-29.
 
 ## Context
 
-MapLarge's test project arrives as a zip: `TestProject.sln`, `TestProject.csproj` on net8.0 with
+The test project arrives as a zip: `TestProject.sln`, `TestProject.csproj` on net8.0 with
 controllers, a `Program.cs` that adds controllers and static files, one `TestController` that
 returns a string, and a `wwwroot/index.html` that says hello. The brief asks for a file and folder
 browser as a single page app over a JSON API, and says three things about how it wants to read the
@@ -64,9 +64,9 @@ This record touches no ring: it sets the project file and the starter's shape, w
 
 ## Files
 
-- [`TestProject.csproj`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/TestProject.csproj): the starter's project file plus five settings.
-- [`Program.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Program.cs): the host, still one class and one `Main`.
-- [`wwwroot/index.html`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/wwwroot/index.html): the one page.
+- [`TestProject.csproj`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/TestProject.csproj): the starter's project file plus five settings.
+- [`Program.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Program.cs): the host, still one class and one `Main`.
+- [`wwwroot/index.html`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/wwwroot/index.html): the one page.
 
 ```live path=TestProject.csproj region=*
 ```

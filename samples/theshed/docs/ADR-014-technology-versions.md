@@ -44,7 +44,7 @@ Outside the code: the project files, package.json and the Dockerfile, which Tech
 
 ## Files
 
-- [`tests/TestProject.Tests/TechnologyVersionsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/TechnologyVersionsTests.cs): the check.
-- [`tests/TestProject.Tests/TestProject.Tests.csproj`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/TestProject.Tests.csproj): the test packages.
-- [`package.json`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/package.json): the TypeScript compiler.
-- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/Dockerfile): the images.
+- [`tests/TestProject.Tests/TechnologyVersionsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/TechnologyVersionsTests.cs): the check.
+- [`tests/TestProject.Tests/TestProject.Tests.csproj`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/TestProject.Tests.csproj): the test packages.
+- [`package.json`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/package.json): the TypeScript compiler.
+- [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Dockerfile): the images.

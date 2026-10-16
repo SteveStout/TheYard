@@ -282,12 +282,12 @@ otherwise fail on code nobody wrote.
 
 Folders can draw the rings as well as projects can. The Shed, a file and folder browser that lives
 beside TheYard in this repository
-([`samples/maplarge`](https://github.com/SteveStout/TheYard/tree/main/samples/maplarge)) and runs at
+([`samples/theshed`](https://github.com/SteveStout/TheYard/tree/main/samples/theshed)) and runs at
 [theshed.stevenstout.biz](https://theshed.stevenstout.biz), is one project. Its rings are folders, each folder is a namespace, and the
 tests select a ring by namespace instead of by project: `Data`, `Domain`, `Application`,
 `Infrastructure`, `Controllers`, `Documentation` and `Composition`. The reasoning for keeping it to one
 project is its own record,
-[One project, seven folders, dependencies inward](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/docs/ADR-002-one-project-four-folders-dependencies-inward.md).
+[One project, seven folders, dependencies inward](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/docs/ADR-002-one-project-four-folders-dependencies-inward.md).
 
 One project costs one thing. Across projects, the compiler refuses a reference that would make a
 cycle, so an adapter can never use the host and nobody has to test it. Inside one project the compiler
@@ -299,9 +299,9 @@ line would otherwise be checked by none of the rules.
 project of its own the day a second store or a second host appears. This is the section to copy first.
 
 The Shed's tests, whole,
-[`samples/maplarge/tests/TestProject.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/maplarge/tests/TestProject.Tests/OnionTests.cs):
+[`samples/theshed/tests/TestProject.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/OnionTests.cs):
 
-```live path=samples/maplarge/tests/TestProject.Tests/OnionTests.cs region=*
+```live path=samples/theshed/tests/TestProject.Tests/OnionTests.cs region=*
 ```
 
 ## When not to build it this way

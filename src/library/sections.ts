@@ -183,6 +183,24 @@ export const MENUS: Record<
     label: 'Built with AI',
     items: [{ key: 'builtWithAi' }],
   },
+  // #region shed-section
+  /**
+   * The Shed, a file and folder browser in this repository under samples/theshed with its own
+   * site and deploy. Only links, so the landing tile opens the live app and the sidebar row
+   * holds the code beside it.
+   */
+  shed: {
+    label: 'The Shed',
+    items: [],
+    links: [
+      { label: 'Open The Shed', href: 'https://theshed.stevenstout.biz' },
+      {
+        label: "The Shed's code",
+        href: 'https://github.com/SteveStout/TheYard/tree/main/samples/theshed',
+      },
+    ],
+  },
+  // #endregion shed-section
   cicd: {
     label: 'CI/CD',
     items: [{ key: 'cicd' }],

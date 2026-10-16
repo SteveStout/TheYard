@@ -24,7 +24,7 @@ internal static class Repo
         "node_modules", "bin", "obj", ".git", "dist", "playwright-report",
         "test-results", "TestResults", "coverage", ".vs", ".idea",
         // A sample under samples/ is its own solution with its own gate and its own
-        // copies of these rules (samples/maplarge/tests); this suite reads TheYard.
+        // copies of these rules (samples/theshed/tests); this suite reads TheYard.
         "samples",
     ];
 

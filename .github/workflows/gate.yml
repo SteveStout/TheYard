@@ -229,8 +229,8 @@ jobs:
           dotnet-version: 10.0.x
       - name: The Shed's xUnit and node tests
         run: |
-          x=0; (cd samples/maplarge && dotnet test TestProject.sln -nologo -v q) || x=$?
-          n=0; (cd samples/maplarge && node --test tests/js/*.test.js) || n=$?
+          x=0; (cd samples/theshed && dotnet test TestProject.sln -nologo -v q) || x=$?
+          n=0; (cd samples/theshed && node --test tests/js/*.test.js) || n=$?
           echo "shed_xunit=$x shed_node=$n"
           if [ "$x" != 0 ] || [ "$n" != 0 ]; then echo "::error::red: The Shed (xUnit $x, node $n)"; exit 1; fi
   # #endregion shed-job
