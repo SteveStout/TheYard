@@ -10,7 +10,8 @@
  * and no React.
  *
  * What it relies on in the document, and nothing else: second-level headings
- * open the panels, third-level headings open the blocks, a list whose every
+ * open the panels, third-level headings open the blocks, a panel whose every
+ * block quotes somebody is a row that scrolls sideways, a list whose every
  * item is one link is a row of buttons, an image that names one of the
  * page's photographs is that photograph, a rule opens the closing panel, and
  * a second rule opens the small print under the panels.
@@ -106,6 +107,7 @@ function blocks(section: string): string {
   const parts = section.split(/(?=<h3[ >])/);
   if (parts.length === 1) return pairs(section);
   const [lead, ...headed] = parts;
+  if (headed.every((block) => /<blockquote[ >]/.test(block))) return pairs(lead) + row(headed);
   const pictured = headed.map((block) => standAlone(block)[0].includes('class="author-photo"'));
   const plain = pictured.filter((has) => !has).length;
   const lastPlain = pictured.lastIndexOf(false);
@@ -140,6 +142,25 @@ function blocks(section: string): string {
     `</div>`
   );
 }
+
+// #region quoted-row
+/**
+ * A panel of quotations, one block for each person quoted, as a row that
+ * scrolls sideways: ten recommendations stacked two across ran the length of
+ * the page, and a row shows the edge of the next one and asks for a flick. The
+ * row is a named region with a tab stop, because a box that scrolls under a
+ * mouse has to scroll under the arrow keys too (WCAG 2.1.1, as the admin
+ * tables do it). The blocks keep their order, and so their alternation.
+ */
+function row(headed: string[]): string {
+  const label = `${headed.length} quotations, scrolling sideways`;
+  return (
+    `<div class="author-blocks author-row" role="region" aria-label="${label}" tabindex="0">` +
+    headed.map((block) => `<section class="author-block op-glass">${block}</section>`).join('') +
+    `</div>`
+  );
+}
+// #endregion quoted-row
 
 /** The first panel: the words on one side and its photograph, when it has one, on the other. */
 function intro(section: string): string {

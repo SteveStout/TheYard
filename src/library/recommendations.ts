@@ -1,5 +1,5 @@
 /**
- * Does:      Holds the recommendations colleagues wrote for Steve on LinkedIn, word for word, with the name and title LinkedIn shows, and names the three the landing page quotes.
+ * Does:      Holds the recommendations colleagues wrote for Steve on LinkedIn, word for word, with the name and title LinkedIn shows, and the one sentence of each the landing page quotes.
  * Does not:  Draw them (Recommendations.tsx does) or hold the About Steven page's copy of them (docs/author/AUTHOR.md does; AuthorPageTests holds the two to the same words).
  * Used by:   Recommendations.tsx, recommendations.test.ts.
  */
@@ -13,8 +13,8 @@ export type Recommendation = {
   when: string;
   /** The recommendation, word for word, paragraphs joined by a blank line. */
   text: string;
-  /** One sentence of it, as written, for the landing page's strip; only three carry one. */
-  pull?: string;
+  /** One sentence of it, as written, for the landing page's row: every one carries one. */
+  pull: string;
 };
 
 // Read from linkedin.com/in/stevenwstout/details/recommendations on 2026-10-15,
@@ -36,6 +36,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     relationship: 'Sean worked with Steven but they were at different companies',
     when: 'April 2024',
     text: "I worked with Steven on a data analysis project for Conway. Steven showed a great attention to detail and is results focused.\n\nWhether it's debugging complex code or meticulously planning out project timelines, Steven cares about positive results.",
+    pull: "Whether it's debugging complex code or meticulously planning out project timelines, Steven cares about positive results.",
   },
   {
     // LinkedIn shows a floppy-disk emoji after his name; a name is letters here.
@@ -44,6 +45,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     relationship: 'Steven was senior to Anthony but did not manage Anthony directly',
     when: 'April 2024',
     text: 'Mr. Stout is responsive and knowledgeable, with a strong sense of responsibility and ownership. He brings diverse skills to the table whether working on a large project, a quick win, or solving a technical problem. I recommend Steven to any team and look forward to working together in the future.',
+    pull: 'Mr. Stout is responsive and knowledgeable, with a strong sense of responsibility and ownership.',
   },
   {
     name: 'Meagan Colley',
@@ -59,6 +61,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     relationship: 'Sanders worked with Steven on the same team',
     when: 'August 2023',
     text: 'I have known Steven since 2018. Steven is a veteran full stack developer. Steven works extremally well in any team he is apart of. Steven is driven by making sure any solution he is working on meets the vision of his customers. I would recommend Steven to any team and given the chance to work with him again, I would look forward to our collaboration.',
+    pull: 'Steven is driven by making sure any solution he is working on meets the vision of his customers.',
   },
   {
     name: 'Dustin Comuzie',
@@ -66,6 +69,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     relationship: 'Dustin worked with Steven but they were at different companies',
     when: 'June 2023',
     text: 'Steven is methodical in the way he approaches complex issues and exhibits exemplary patience and perseverance until resolution of the issue. In a recent project where nonstandard methods had to be implemented, Steven rose to the task and remained vigilant until the goal was achieved. He then documented the steps to ease future implementations. I always look forward to collaborating with Steven.',
+    pull: 'Steven is methodical in the way he approaches complex issues and exhibits exemplary patience and perseverance until resolution of the issue.',
   },
   {
     name: 'Micah Johnson',
@@ -73,6 +77,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     relationship: 'Micah worked with Steven but on different teams',
     when: 'May 2023',
     text: 'Steven and I both worked at Hunter Engineering, though in different departments. However, his reputation for solving extremely technical and difficult problems was a sentiment that was well known. He is amazingly efficient, while also fostering great relationships.',
+    pull: 'He is amazingly efficient, while also fostering great relationships.',
   },
   {
     name: 'Lee Markum',
@@ -81,6 +86,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     relationship: 'Lee worked with Steven but on different teams',
     when: 'February 2023',
     text: "Steve is a knowledgeable Application Developer who cares about the overall performance of the applications he works on. Whether it's in the application layer or the database layer, Steve wants best practices to be used so that the design is right, and the performance is good.\n\nHe is a continuous learner; always striving to improve his skills and make a positive impact on the projects he works on. Steve has a strong desire to learn from others and to pass on to colleagues what his experience has taught him.",
+    pull: 'He is a continuous learner; always striving to improve his skills and make a positive impact on the projects he works on.',
   },
   {
     name: 'Drew Dell',
@@ -96,10 +102,6 @@ export const RECOMMENDATIONS: Recommendation[] = [
     relationship: 'Bill worked with Steven but on different teams',
     when: 'February 2023',
     text: 'I worked with Steve Stout from May 2015-Nov 2018 at Hunter Engineering. We worked on different teams, and we worked well together. He is a team player that works hard at getting projects done.\n\n1. He is very task oriented.\n2. He did not require any rework with his apps.\n3. Was able to give alternative suggestions when issues arrived.',
+    pull: 'He is a team player that works hard at getting projects done.',
   },
 ];
-
-/** The three the landing page quotes, in the order the strip shows them: each with its pull sentence. */
-export function landingPicks(all: Recommendation[] = RECOMMENDATIONS): Recommendation[] {
-  return all.filter((entry) => entry.pull !== undefined);
-}

@@ -32,6 +32,10 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   ).toBeVisible();
   await expect(said.locator('.author-block')).toHaveCount(10);
   await expect(said.locator('.author-block blockquote')).toHaveCount(10);
+  // The ten sit in one row that scrolls sideways: a named region with a tab stop, wider than its box.
+  const row = said.getByRole('region', { name: '10 quotations, scrolling sideways' });
+  await expect(row).toHaveAttribute('tabindex', '0');
+  expect(await row.evaluate((box) => box.scrollWidth > box.clientWidth)).toBe(true);
   expect(await wide.locator('.author-block').count()).toBeGreaterThanOrEqual(14);
   await page.keyboard.press('Escape');
 
@@ -158,11 +162,15 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     }
   }).toPass({ timeout: 20_000 });
 
-  // Nothing on the page is wider than the phone.
+  // Nothing on the page is wider than the phone. The row of quotations scrolls inside its
+  // own box, so the blocks waiting past its edge are inside the row, not past the phone;
+  // the row itself is held to the phone like everything else.
   await expect(async () => {
     const overflow = await doc.evaluate((dialog) => {
       const wide = Array.from(dialog.querySelectorAll('*')).filter(
-        (element) => element.getBoundingClientRect().right > window.innerWidth + 0.5
+        (element) =>
+          !element.parentElement?.closest('.author-row') &&
+          element.getBoundingClientRect().right > window.innerWidth + 0.5
       ).length;
       return {
         wide,

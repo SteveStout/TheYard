@@ -71,12 +71,16 @@ for (const viewport of [
         /^\d of \d stores up$/
       );
 
-      // What colleagues say: three sentences from his LinkedIn recommendations, each credited, and
-      // one link to all ten on About Steven.
+      // What colleagues say: one sentence from each of his ten LinkedIn recommendations, credited,
+      // in a row that scrolls sideways (a named region with a tab stop), and one link to all ten
+      // in full on About Steven.
       const said = page.getByTestId('landing-recommendations');
       await expect(said).toBeVisible();
-      await expect(said.locator('blockquote')).toHaveCount(3);
+      await expect(said.locator('blockquote')).toHaveCount(10);
       await expect(said.locator('li').first()).toContainText('Sarah Sebestyen');
+      const row = said.getByRole('region', { name: /scrolling sideways/ });
+      await expect(row).toHaveAttribute('tabindex', '0');
+      expect(await row.evaluate((box) => box.scrollWidth > box.clientWidth)).toBe(true);
       await page.getByTestId('landing-recommendations-all').click();
       await expect(page).toHaveURL(/doc=author/);
       await expect(

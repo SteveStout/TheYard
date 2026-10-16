@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RECOMMENDATIONS, landingPicks } from './recommendations';
+import { RECOMMENDATIONS } from './recommendations';
 
 describe('the recommendations', () => {
   it('are the ten on his LinkedIn profile, each from a different person', () => {
@@ -18,11 +18,10 @@ describe('the recommendations', () => {
     }
   });
 
-  it('lend the landing page three sentences, each written by the person it is credited to', () => {
-    const picks = landingPicks();
-    expect(picks).toHaveLength(3);
-    for (const pick of picks) {
-      expect(pick.text).toContain(pick.pull);
+  it('lend the landing page one sentence each, written by the person it is credited to', () => {
+    for (const entry of RECOMMENDATIONS) {
+      expect(entry.pull.length).toBeGreaterThan(0);
+      expect(entry.text).toContain(entry.pull);
     }
   });
 });
