@@ -425,6 +425,13 @@ Two numbers that change by the day were not collected anywhere: when the certifi
 ```live path=api/TheYard.Api/HourlyReadings.cs region=hourly-readings
 ```
 
+## Addendum, 2026-10-15 (1.0.3.137): the late store
+
+The hourly storage reading took the relational store's quiet context once, when the services were registered. A store that refuses at startup has no context then; the second chance attaches it a few minutes later, but the reading kept the empty one and said "not read" until the next restart. The reading now asks for the context each hour, the same way the machine recorder already did, so a late store shows its size at the next hourly read.
+
+```live path=api/TheYard.Api/Composition/AdminRegistration.cs region=hourly-readings-wiring
+```
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.

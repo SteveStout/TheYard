@@ -47,8 +47,12 @@ public static class AdminRegistration
         // reads a certificate; only one with Azure SQL Database reads a size.
         Uri? site = Uri.TryCreate(builder.Configuration["Site:Url"], UriKind.Absolute, out var siteUrl)
             && siteUrl.Scheme == Uri.UriSchemeHttps ? siteUrl : null;
-        var quietSql = host.SqlBackend?.QuietContexts;
-        builder.Services.AddSingleton(new HourlyReadings(site, cancellation => StorageStats.ReadAsync(quietSql, cancellation), TimeProvider.System));
+        // #region hourly-readings-wiring
+        // The quiet context is looked up at each reading, not here: a relational store that
+        // refused at startup gets one only when the second chance attaches it later.
+        var sqlBackend = host.SqlBackend;
+        builder.Services.AddSingleton(new HourlyReadings(site, cancellation => StorageStats.ReadAsync(sqlBackend?.QuietContexts, cancellation), TimeProvider.System));
+        // #endregion hourly-readings-wiring
         builder.Services.AddHostedService(services => services.GetRequiredService<HourlyReadings>());
         // The performance proof (ADR: Same performance, proven), built on first use so a test's own
         // ProofClients registration is the one it gets.
