@@ -55,6 +55,11 @@ describe('overviewRows', () => {
     expect(up.tone).toBe('good');
   });
 
+  it('puts the day and month in front of a roll that was not today', () => {
+    const up = overviewRows({ ...base, pages: { ...base.pages!, at: '2026-01-02T15:00:00Z' } })[0];
+    expect(up.detail).toMatch(/rolled \d+ Jan \d\d:\d\d at v1\.0\.3\.124/);
+  });
+
   it('is red on one page down or one failing check', () => {
     const down = overviewRows({ ...base, pages: { ...base.pages!, up: 160 } })[0];
     expect(down.tone).toBe('bad');

@@ -68,14 +68,14 @@ function upRow({ health, pages, startedAt }: OverviewReadings): OverviewRow {
   const checksFine = passing === health.checks.length;
   const pagesFine = pages === null || pages.up === pages.checked;
   const restart =
-    (startedAt === null ? 'restarted' : `restarted ${clockLabel(startedAt)}`) +
+    (startedAt === null ? 'restarted' : `restarted ${dayClock(startedAt)}`) +
     `, ${uptimeWords(health.uptime_seconds)} ago`;
   const rolled =
     pages === null
       ? ''
       : pages.trigger === 'roll'
-        ? `; rolled ${clockLabel(pages.at)} at v${pages.version}`
-        : `; pages checked ${clockLabel(pages.at)}`;
+        ? `; rolled ${dayClock(pages.at)} at v${pages.version}`
+        : `; pages checked ${dayClock(pages.at)}`;
   return {
     key: 'up',
     question,
@@ -150,5 +150,15 @@ function brokeRow({ tiles, health }: OverviewReadings): OverviewRow {
     range: 'red on any 5xx answer, listed error or failed kept-warm read',
     tone,
   };
+}
+/**
+ * A time today as its clock, and a time on any other day with the day and month in front, so a
+ * roll from last week does not read as this morning's.
+ */
+function dayClock(at: string): string {
+  const when = new Date(at);
+  if (Number.isNaN(when.getTime())) return '';
+  if (when.toDateString() === new Date().toDateString()) return clockLabel(at);
+  return `${when.getDate()} ${when.toLocaleString('en-US', { month: 'short' })} ${clockLabel(at)}`;
 }
 // #endregion overview-rows
