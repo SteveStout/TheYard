@@ -27,7 +27,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     relationship: 'Steven was senior to Sarah but did not manage Sarah directly',
     when: 'November 2024',
     text: 'I’ve had the pleasure of working with Steve and he’s one of the most technically skilled and reliable professionals I know. Steve has a natural talent for problem-solving, always finding quick and effective solutions to complex challenges.\n\nWhether working independently or with a team, Steve consistently delivers high-quality work on time, no matter the pressure. His technical expertise and practical approach make him an invaluable asset to any team.',
-    pull: 'Steve consistently delivers high-quality work on time, no matter the pressure.',
+    pull: 'Whether working independently or with a team, Steve consistently delivers high-quality work on time, no matter the pressure.',
   },
   {
     name: 'Sean Whitesell',

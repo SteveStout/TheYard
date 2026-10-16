@@ -280,6 +280,7 @@ describe('unique visitors per day', () => {
     expect(pageName('/api/docs/resume')).toBe('The resume');
     expect(pageName('/docs/resume.pdf')).toBe('The resume');
     expect(pageName('/resume.pdf')).toBe('The resume');
+    expect(pageName('/resume/linkedin')).toBe('The resume, through linkedin');
     expect(pageName('/api/docs/changelog')).toBe('Document: changelog');
     expect(pageName('/wp-admin/install.php')).toBe('/wp-admin/install.php');
   });

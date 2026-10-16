@@ -432,6 +432,13 @@ The hourly storage reading took the relational store's quiet context once, when 
 ```live path=api/TheYard.Api/Composition/AdminRegistration.cs region=hourly-readings-wiring
 ```
 
+## Addendum, 2026-10-15 (1.0.3.138): the date in front
+
+The Overview's first row said "rolled 14:02" for a roll of any day, so a site that had not shipped in a week read as if it rolled this morning. A restart or a roll today still shows its clock; any other day shows the day and month in front of it, "rolled 9 Oct 14:02". The live pass after the eleven ships also found Sarah Sebestyen's line on the landing page cut at "Steve consistently", which dropped the clause she opened it with; it is now quoted from her first word. The resume's doors had no page-name test of their own, so `activity.test.ts` holds `/resume/linkedin` to its name.
+
+```live path=src/lib/overview.ts region=overview-rows
+```
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.
