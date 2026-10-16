@@ -44,6 +44,8 @@ export type OverviewReadings = {
     month_to_date: number;
     forecast_month: number | null;
     currency: string;
+    /** Why there is no bill, in the cost reader's words, such as a throttled read or a missing role. */
+    note?: string | null;
   } | null;
   /** The strip's tiles, for the speed and the errors rows. */
   tiles: StatTile[];
@@ -112,8 +114,9 @@ function costRow({ cost }: OverviewReadings): OverviewRow {
     return {
       key: 'cost',
       question,
-      value: 'not read here',
-      detail: 'this site does not read the bill',
+      value: 'no bill to show',
+      // The reader's own reason, so a throttled read does not say this site never reads the bill.
+      detail: cost.note ?? 'this site does not read the bill',
       range,
       tone: 'plain',
     };

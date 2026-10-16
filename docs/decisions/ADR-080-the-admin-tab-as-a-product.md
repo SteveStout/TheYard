@@ -439,6 +439,13 @@ The Overview's first row said "rolled 14:02" for a roll of any day, so a site th
 ```live path=src/lib/overview.ts region=overview-rows
 ```
 
+## Addendum, 2026-10-15 (1.0.3.139): the reason for no bill
+
+The live pass on 1.0.3.138 found the Overview's cost row saying "not read here, this site does not read the bill" on both sites, while the What Azure charges card beside it said the true thing: Cost Management had answered the bill reader with 429 and asked it to wait an hour. The site restarted once per version that afternoon, and every start reads the bill. The row now shows the reader's own note, the same words the card shows, and keeps "this site does not read the bill" for a site that has no note to give.
+
+```live path=src/lib/overview.ts region=overview-rows
+```
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.

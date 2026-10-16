@@ -80,6 +80,16 @@ describe('overviewRows', () => {
     expect(over.tone).toBe('bad');
     const none = overviewRows({ ...base, cost: { ...base.cost!, available: false } })[2];
     expect(none.tone).toBe('plain');
+    expect(none.detail).toBe('this site does not read the bill');
+    const slowed = overviewRows({
+      ...base,
+      cost: {
+        ...base.cost!,
+        available: false,
+        note: 'Cost Management asked this site to slow down',
+      },
+    })[2];
+    expect(slowed.detail).toBe('Cost Management asked this site to slow down');
   });
 
   it('turns broke red on a failed kept-warm read, and waits for what has not been read', () => {
