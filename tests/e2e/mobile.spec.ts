@@ -601,4 +601,20 @@ test('on a phone the Admin tab opens on its tiles, with the paragraph under them
   expect(where.tile).toBeGreaterThan(0);
   expect(where.tile).toBeLessThan(where.height / 2);
   expect(where.intro).toBeGreaterThan(where.tile);
+  // In the document too, not only on the screen: a keyboard reaches the tiles before the words
+  // (1.0.3.143). On a desk the words come first, as the page reads there.
+  const after = await page.evaluate(() => {
+    const tile = document.querySelector('[data-testid="tile-version"]')!;
+    const intro = document.querySelector('[data-testid="admin-intro"]')!;
+    return Boolean(tile.compareDocumentPosition(intro) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(after).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page.getByTestId('admin-intro')).toBeVisible();
+  const before = await page.evaluate(() => {
+    const tile = document.querySelector('[data-testid="tile-version"]')!;
+    const intro = document.querySelector('[data-testid="admin-intro"]')!;
+    return Boolean(intro.compareDocumentPosition(tile) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(before).toBe(true);
 });

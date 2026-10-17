@@ -32,22 +32,13 @@
 
 /* On the bare ground, so the body colour and not the muted one: a quiet colour
    is only ever read inside a panel (ADR: The glass look). */
-/* The paragraph under the title and its What this shows. On a phone they follow the strip,
-   so the first tiles are on the first screen and the words are one scroll away. */
+/* The paragraph under the title and its What this shows. On a phone the panel draws them after
+   the strip (AdminPanel.tsx), so the first tiles are on the first screen and the tab order is the
+   reading order; no CSS order, because order moves the eye and not the keyboard. */
 .intro {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-@media (max-width: 639.98px) {
-  .intro {
-    order: 1;
-  }
-
-  .benchOrder {
-    order: 2;
-  }
 }
 
 .blurb {

@@ -11,6 +11,8 @@
 // the strip's reads, ./stripTiles.ts turns readings into tiles, and ./followCardLink.ts is the
 // click rule every card link follows.
 import { type ReactNode, useEffect, useState } from 'react';
+import { useMediaQuery } from '../../../hooks/useMediaQuery';
+import { PHONE } from '../../../lib/breakpoints';
 import { adminKey, browserStorage, forgetAdminKey, rememberAdminKey } from '../../../lib/adminKey';
 import type { CardSlug } from '../../../lib/workbench';
 import { prefetchWhenIdle } from '../../../lib/prefetch';
@@ -114,6 +116,28 @@ export function AdminPanel({
     />
   );
 
+  // #region admin-panel-order
+  // On a phone the words follow the tiles in the DOM itself, not by CSS order, so a keyboard
+  // reaches the tiles first the way the eye does (WCAG 1.3.2 and 2.4.3; ADR-080, the addendum
+  // on the reading order). A server draws the desk order and the browser moves the block once.
+  const phone = useMediaQuery(PHONE);
+  const intro = (
+    <div className={styles.intro} data-testid="admin-intro">
+      <p className={styles.blurb}>
+        The running system reporting on itself, in the order somebody asks: is it up, is it fast, is
+        it costing anything, what broke.
+      </p>
+      <About>
+        One card at a time, the one the address names: the rail lists every card under the question
+        it answers, a tile opens the card behind its number, j and k walk the rail, and a pinned
+        card stays beside whichever one is open. Every statistic the page shows for one store it
+        shows for the other, and where a number has no meaning on one side the page says so in
+        words. Refreshes every 30 seconds. Public on purpose; the reasoning is in the Best Practices
+        menu.
+      </About>
+    </div>
+  );
+  // #endregion admin-panel-order
   return (
     <section className={styles.wrap} aria-label="Admin">
       <div className={styles.head}>
@@ -122,26 +146,14 @@ export function AdminPanel({
           {backTo === 'home' ? 'Back to home' : 'Back to inventory'}
         </button>
       </div>
-      <div className={styles.intro} data-testid="admin-intro">
-        <p className={styles.blurb}>
-          The running system reporting on itself, in the order somebody asks: is it up, is it fast,
-          is it costing anything, what broke.
-        </p>
-        <About>
-          One card at a time, the one the address names: the rail lists every card under the
-          question it answers, a tile opens the card behind its number, j and k walk the rail, and a
-          pinned card stays beside whichever one is open. Every statistic the page shows for one
-          store it shows for the other, and where a number has no meaning on one side the page says
-          so in words. Refreshes every 30 seconds. Public on purpose; the reasoning is in the Best
-          Practices menu.
-        </About>
-      </div>
+      {phone ? null : intro}
       <AdminStatStrip
         tiles={tiles}
         onOpenCard={onOpenCard}
         toolbar={machines.toolbar('over the tiles', 'strip-window')}
         caption={caption}
       />
+      {phone ? intro : null}
 
       <div className={styles.benchOrder}>
         <AdminWorkbench

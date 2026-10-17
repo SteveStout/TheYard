@@ -446,6 +446,13 @@ The live pass on 1.0.3.138 found the Overview's cost row saying "not read here, 
 ```live path=src/lib/overview.ts region=overview-rows
 ```
 
+## Addendum, 2026-10-16 (1.0.3.143): the reading order
+
+1.0.3.130 put the tiles above the words on a phone with CSS `order`, which moves what the eye sees and leaves the document as it was: a keyboard still met the paragraph and its What this shows before the first tile (WCAG 1.3.2 and 2.4.3). The panel now draws the block after the strip on a phone and before it on a desk, so the two orders agree. A server draws the desk order, and the browser moves the block once on arrival, the same way the workbench already reads the phone width. The phone test holds both orders: the tile above the words on the screen, and before them in the document.
+
+```live path=src/components/admin/AdminPanel/AdminPanel.tsx region=admin-panel-order
+```
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.
