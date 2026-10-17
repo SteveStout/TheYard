@@ -170,6 +170,7 @@ public class HouseVoiceTests
             ("activityChart.ts", "`2026-09-13`"),
             ("costWords.ts", "'September',"),
             ("costWords.ts", "\"30 September\""),
+            ("Recommendations.cs", "September|October|November|December"),
             ("docLayout.ts", "shipped as 1.0.0.21."),
         ];
         var history = new Regex(@"1\.0\.\d+\.\d+|September|2026-09|the staff review|the tweaks pass|the self-review");

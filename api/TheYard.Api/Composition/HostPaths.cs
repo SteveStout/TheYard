@@ -9,6 +9,8 @@ namespace TheYard.Api;
 /// <param name="ReadmePath">The README, whose folder is the repository root.</param>
 /// <param name="TestResultsPath">Every test result from the gate that shipped this build, beside the dataset
 /// (ADR: The five-minute gate, the addendum on every check running once).</param>
+/// <param name="RecommendationsPath">What colleagues say, data/recommendations.json, beside the dataset
+/// (ADR: The sidebar, the addendum on the column on the right).</param>
 /// <param name="ResumePath">The resume the About section serves.</param>
 /// <param name="ManifestPath">The photo manifest.</param>
 /// <param name="ImagesRoot">The photographs, served under /api/images.</param>
@@ -19,6 +21,7 @@ public sealed record HostPaths(
     string DataPath,
     string ReadmePath,
     string TestResultsPath,
+    string RecommendationsPath,
     string ResumePath,
     string ManifestPath,
     string ImagesRoot,
@@ -34,6 +37,7 @@ public sealed record HostPaths(
             dataPath,
             readmePath,
             Path.Combine(Path.GetDirectoryName(dataPath)!, "test-results.json"),
+            Path.Combine(Path.GetDirectoryName(dataPath)!, "recommendations.json"),
             Path.Combine(contentRoot, "wwwroot", "docs", "resume.pdf"),
             Path.Combine(contentRoot, "photo-manifest.json"),
             Path.Combine(contentRoot, "wwwroot", "images"),

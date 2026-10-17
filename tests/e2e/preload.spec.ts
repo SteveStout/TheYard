@@ -14,7 +14,7 @@ import { openTheYard } from './app';
 /** The reads every view makes on its first load. */
 const EVERY_VIEW = ['/api/stores', '/api/auth/me', '/api/bids', '/api/version'];
 /** The two only the landing page makes, hinted only when the address carries no query. */
-const LANDING_ONLY = ['/api/health', '/api/tests/summary'];
+const LANDING_ONLY = ['/api/health', '/api/tests/summary', '/api/recommendations'];
 
 /** Every API address the page asked for over the network, with its query, in order. */
 function watchApiReads(page: Page): string[] {
@@ -57,7 +57,7 @@ const builtPage = (page: Page) =>
 /** Addresses asked for more than once. */
 const twice = (asked: string[]) => [...new Set(asked.filter((a, i) => asked.indexOf(a) !== i))];
 
-test('the landing page hints its six API reads in the head, and asks for each one once', async ({
+test('the landing page hints its seven API reads in the head, and asks for each one once', async ({
   page,
 }) => {
   const asked = watchApiReads(page);

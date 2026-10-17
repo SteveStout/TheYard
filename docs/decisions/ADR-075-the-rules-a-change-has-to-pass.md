@@ -72,6 +72,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The server owns the clock and every derived fact, and no request names a day | ADR: Three readers with no memory of the project | AuctionScheduleTests |
 | Sold is decided before every other bid rule, for everybody | ADR: Accounts and per-user bids | BidRulesTests |
 | Every public endpoint is in the API document with an operation id, a summary, its responses and its lock, and no operator endpoint is | ADR: The API describes itself | ApiDocumentTests |
+| What colleagues say comes from one file in one shape: every entry the same six fields and nothing else, the month in words, the pull sentence as written, no two from one person, and the endpoint answers the file in its order | ADR: The sidebar | RecommendationsTests |
 | No stylesheet or component carries a raw colour; every colour is a token in the one sheet | ADR: The palette | StyleRulesTests |
 | Every hex on the Style pages (Colour and style, Background and ribbon) is a token's value, every colour token is on one of them, and every contrast figure they state is the figure the tokens give and clears its bar | ADR: The palette | StyleRulesTests |
 | A chart series is never a status colour, and a line takes a status tone only for server errors | ADR: The Admin tab, as a product | StyleRulesTests |

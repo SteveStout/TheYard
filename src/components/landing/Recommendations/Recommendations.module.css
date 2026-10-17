@@ -1,23 +1,21 @@
 /**
- * Does:      Styles the landing page's What colleagues say row: ten quote tiles side by side, scrolled sideways, who said each, and the link to the ten in full.
- * Does not:  Draw the row's heading (Landing.module.css does, as it does every group heading) or a tile's glass (panels.css does).
+ * Does:      Styles the What colleagues say column: quote tiles stacked, scrolled down, who said each, the blank places before the answer, and the link to the ten in full.
+ * Does not:  Place the column on a page (the page's own stylesheet does) or draw a tile's glass (panels.css does).
  * Used by:   Recommendations.tsx.
  */
-.row {
-  overflow-x: auto;
-  padding-bottom: var(--space-2);
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--space-3);
-  /* The sideways scroll keeps the page's own: a flick along the row never drags the page. */
-  overscroll-behavior-x: contain;
-  /* A thin bar under the row from the first paint, so the card the right edge cuts reads as a
-     row that scrolls and not as a card the page clipped. A fade would have done it too, and
-     would have masked the focus ring with it. */
+.column {
+  /* The column's height is the page's to set: on the landing page it is the first screen, and it scrolls on its own
+     past that, with a thin bar from the first paint so a tile the bottom edge cuts reads as a column that scrolls. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--space-2);
+  scroll-snap-type: y proximity;
+  scroll-padding-block: var(--space-3);
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
 }
 
-.row:focus-visible {
+.column:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
@@ -27,6 +25,7 @@
   margin: 0;
   padding: 0;
   display: flex;
+  flex-direction: column;
   gap: var(--space-3);
 }
 
@@ -35,12 +34,15 @@
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  /* One tile is most of a phone's width and a fixed share of a desk's, so the row always shows the edge of the next. */
-  flex: 0 0 min(20rem, 82vw);
   scroll-snap-align: start;
 }
 
-/* The sentence, quoted by the type's own marks, which take the heading's colour so they read as trim. */
+/* A blank place before the answer: the height of a short quotation and its line of credit. */
+.place {
+  min-height: 132px;
+}
+
+/* The words, quoted by the type's own marks, which take the heading's colour so they read as trim. */
 .words {
   margin: 0;
   font-size: var(--text-md);
@@ -49,12 +51,20 @@
   quotes: '\201C' '\201D';
 }
 
-.words::before {
+.words p {
+  margin: 0;
+}
+
+.words p + p {
+  margin-top: var(--space-2);
+}
+
+.words p:first-child::before {
   content: open-quote;
   color: var(--color-heading);
 }
 
-.words::after {
+.words p:last-child::after {
   content: close-quote;
   color: var(--color-heading);
 }
@@ -70,6 +80,14 @@
 .name {
   font-weight: var(--weight-semibold);
   color: var(--color-heading);
+}
+
+/* An answer that did not come, said in words where the column would be. */
+.failed {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
 
 .all {
