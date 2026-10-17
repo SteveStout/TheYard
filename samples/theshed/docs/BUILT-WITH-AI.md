@@ -1,4 +1,4 @@
-# Built with AI
+# Built with AI, the practice
 
 How this project was made, as a working method rather than a disclosure. The decision record is
 ADR-011; this page is the practice.

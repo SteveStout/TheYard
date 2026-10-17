@@ -17,7 +17,9 @@
 }
 
 .docs nav {
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
   border-right: 1px solid var(--color-border);
   padding-right: var(--space-3);
 }
@@ -32,6 +34,9 @@
 
 .docs nav button {
   all: unset;
+  /* all: unset leaves the button content-box, and a full-width button plus its padding ran past the
+     column (a sideways scrollbar under the list at 1440). */
+  box-sizing: border-box;
   display: block;
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
@@ -53,7 +58,13 @@
 
 .docs article {
   overflow: auto;
+  scrollbar-width: thin;
   padding-right: var(--space-3);
+}
+
+/* The measure belongs to the text, not to the box that scrolls: with the width on the box, its
+   scrollbar stood a hand's width in from the panel's edge with nothing between. */
+.docs article > * {
   max-width: 80ch;
 }
 

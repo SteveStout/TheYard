@@ -13,7 +13,7 @@ honest.
 ## Decision
 
 **The catalogue.** `DocumentationCatalog` lists what the Docs tab shows, in order: Start here, the
-README, About Steven, the records by number, then the guides (Style, Built with AI, Changelog). A
+README, About Steven, the records by number, then the guides (Style, Built with AI, the practice, Changelog). A
 slug is a lower-case file name; `GET /api/docs` is the list and `GET /api/docs/{slug}` is one
 document as `text/markdown`. The files are read from `docs/` at request time, so editing a record
 and reloading is enough.

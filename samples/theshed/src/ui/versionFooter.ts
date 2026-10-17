@@ -18,6 +18,6 @@ export function showVersion(footer: HTMLElement, navigate: Navigate): void {
     // A real link, so it works from the keyboard and in a new tab; a normal click opens the readme
     // in the dialog without a reload.
     const about = buildElement('a', { href: '?view=docs&doc=readme', onclick: (event: Event) => { event.preventDefault(); navigate({ view: 'docs', doc: 'readme' }); } }, 'about this build');
-    replaceContents(footer, `The Shed ${version.version} @ ${version.commit}`, ' · ', about);
+    replaceContents(footer, `The Shed v${version.version} · ${version.commit}`, ' · ', about);
   }).catch(() => replaceContents(footer, 'The Shed'));
 }
