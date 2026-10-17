@@ -207,7 +207,6 @@ browser suite reads every heading.
 
 ![The comparison open from its section: the record dialog over the inventory, the rail row marked current, the page's first paragraphs](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/sidebar-sql-vs-cosmos-open.png)
 
-
 ## Addendum, 2026-09-15: every section is closed on arrival, shipped as 1.0.0.135
 
 The records index has been a closed `details` since it was written, and the other ten sections were
@@ -233,7 +232,6 @@ files.
 
 ```live path=src/components/layout/RailSectionShell/RailSectionShell.tsx region=section-shell
 ```
-
 
 ## Addendum, 2026-09-21: a fourteenth section, for the author, shipped as 1.0.0.171
 
@@ -350,6 +348,13 @@ Steve looked at the panel and asked for the recommendations in a row, on the lan
 
 The document did not change: `layoutAuthor` reads a panel whose every block quotes somebody as a row, and nothing else about the panel is special, so a second panel of quotations would get the same shape without a line of code. `author.test` holds the rule and `author.spec` reads the row on the page; `landing.spec` reads the ten sentences and the region.
 
+## Addendum, 2026-10-16 (1.0.3.140): The Shed
+
+The Shed is a second app in this repository: a file and folder browser built in the same working method, with its own site, its own deploy and its own decision records. Until now nothing on TheYard pointed to it, so a visitor found it only through the repository. It now has a section of its own under How it is built, with two links out: the running app and its code. The landing page draws it as a tile like every section, and because the section holds only links, the tile opens the app in a new tab. The sample's folder moved from its first working name to `samples/theshed`, the name it goes by everywhere else, and its documents now describe it as a developer test project without naming a company.
+
+```live path=src/library/sections.ts region=shed-section
+```
+
 ## Addendum, 2026-10-17 (1.0.3.152): the column on the right, and the words served from one file
 
 Steve looked at the row and asked for two things. The recommendations should stand in a column on the right of the landing page, with everything else on the left, so a reader who came for the inventory or the resume has them in view the whole way down; a row under the figures was the easiest thing on the page to scroll past. And the words should come from the API in one consistent shape that is easy to add to and adjust, even while the values are fixed.
@@ -362,14 +367,16 @@ The words now live in one file, `data/recommendations.json`, beside the dataset 
 ```live path=api/TheYard.Api/Endpoints/RecommendationEndpoints.cs region=recommendations-route
 ```
 
-On the landing page the column stands to the right from 900 px of the page's own box (about 1,220 px of screen with the rail open), as tall as the screen, and keeps its place while the left side scrolls; past what fits it scrolls on its own, a named region with a tab stop as before. The left column lays itself out by its own width, which is 320 px and a gap narrower than the page: the featured tiles go two across from 640 px of column, the figures four across from 720 and the groups from 760, so a desk at 1440 with the rail open reads four across beside the quotes and a desk at 1280 reads the figures two by two and the groups three across, the trade the column is worth. Narrower than two columns it follows the featured tiles as one block that scrolls inside itself. The column reads the endpoint when the page opens, hinted from the head with the landing page's other reads (ADR: The landing page rendered at build time, server rendering as the goal), and draws ten blank places until the answer arrives, so nothing on the page moves when it does; an answer that does not come is said in words. The TypeScript copy of the words is gone with this version; `AuthorPageTests` holds About Steven to the file until that page reads the endpoint too.
+On the landing page the column stands to the right from 900 px of the page's own box (about 1,220 px of screen with the rail open), as tall as the screen, and keeps its place while the left side scrolls; past what fits it scrolls on its own, a named region with a tab stop as before. The left column lays itself out by its own width, which is 320 px and a gap narrower than the page: the featured tiles go two across from 640 px of column, the figures four across from 720 and the groups from 760, so a desk at 1440 with the rail open reads four across beside the quotes and a desk at 1280 reads the figures two by two and the groups three across, the trade the column is worth. Narrower than two columns it follows the featured tiles as one block that scrolls inside itself. The column reads the endpoint when the page opens, hinted from the head with the landing page's other reads (ADR: The landing page rendered at build time, server rendering as the goal), and draws ten blank places until the answer arrives, so nothing on the page moves when it does; an answer that does not come is said in words. The TypeScript copy of the words is gone with this version; `AuthorPageTests` held About Steven to the file until that page read the endpoint too, which the next version is.
 
 ```live path=src/lib/recommendations.ts region=recommendations-from
 ```
 
-## Addendum, 2026-10-16 (1.0.3.140): The Shed
+## Addendum, 2026-10-17 (1.0.3.153): About Steven's column
 
-The Shed is a second app in this repository: a file and folder browser built in the same working method, with its own site, its own deploy and its own decision records. Until now nothing on TheYard pointed to it, so a visitor found it only through the repository. It now has a section of its own under How it is built, with two links out: the running app and its code. The landing page draws it as a tile like every section, and because the section holds only links, the tile opens the app in a new tab. The sample's folder moved from its first working name to `samples/theshed`, the name it goes by everywhere else, and its documents now describe it as a developer test project without naming a company.
+The same two asks, on About Steven: the recommendations stand in a column on the right of every other panel, in full, and they come from the endpoint rather than from the document. The document keeps the panel's heading and its one sentence, moved up to follow who he is, and quotes nobody: `layoutAuthor` stands the panel headed What colleagues say aside with a place in it, and the document window fills that place from `/api/recommendations` once the page is in it, through the same component the landing page draws. One file, one endpoint, one component; the two pages cannot quote different words, and a recommendation added to the file appears in both.
 
-```live path=src/library/sections.ts region=shed-section
+```live path=src/lib/author.ts region=said-aside
 ```
+
+The order is the document's: who he is, what colleagues say, then the rest. One column reads it that way, and so does the keyboard and a screen reader at every width. From 1280 px of screen, the wide-desk step of the site's width scale, the Author page's window is wider than before (1280 px where there is room) and the three are placed in the page's grid, which moves the column to the right of the others without moving a word in the document; it stands as tall as the window leaves room for and keeps its place while the page scrolls. In one column the quotations stand in a box of a fixed height, the same height before and after they land, so nothing under them moves when the answer arrives, and a flick that reaches their end carries on down the page. The row that 1.0.3.136 introduced is gone with its rule; `author.test` holds the aside, `author.spec` reads the column on both widths, and `AuthorPageTests` holds the document to a heading and a sentence with no quotation in it.

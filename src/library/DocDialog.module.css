@@ -93,7 +93,7 @@
 
   :global([data-rail='open']) .dialogWide,
   :global([data-rail='collapsed']) .dialogWide {
-    width: min(1040px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
+    width: min(1280px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
   }
 }
 /* #endregion desk-dialog */
@@ -126,7 +126,7 @@
   }
 
   :global([data-rail='auto']) .dialogWide[open] {
-    width: min(1040px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
+    width: min(1280px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
   }
 }
 /* #endregion drawn-open */

@@ -10,10 +10,9 @@ public static class RecommendationEndpoints
     public static IEndpointRouteBuilder MapRecommendationEndpoints(this IEndpointRouteBuilder app)
     {
         // #region recommendations-route
-        // The landing page's column reads this, and About Steven's panel is held to the same file
-        // by AuthorPageTests until it reads the endpoint too, so the two cannot quote different
-        // things. Public like the pages that show it: every word is already public on LinkedIn,
-        // by its writer's choice. An entry out of
+        // The landing page's column and About Steven's both read this, so the two pages cannot
+        // quote different things. Public like the pages that show it: every word is already
+        // public on LinkedIn, by its writer's choice. An entry out of
         // shape is answered as a failure that names the slip rather than as a column with a hole
         // in it; the gate reads the same check, so a shipped build never gets that far.
         app.MapGet("/api/recommendations", Read)

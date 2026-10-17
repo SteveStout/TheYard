@@ -2,9 +2,9 @@
  * What colleagues say, as a column: the recommendations on Steve's LinkedIn
  * profile, word for word, each with who wrote it, read from /api/recommendations
  * when the component opens. The words live in one file on the server,
- * data/recommendations.json, and this file only draws them; the landing page
- * reads them here, and About Steven is held to the same file until it reads
- * the endpoint too. Ten blank places stand in the column
+ * data/recommendations.json, and this file only draws them: the landing page
+ * draws the one sentence each, About Steven draws them in full, both read
+ * from the one endpoint. Ten blank places stand in the column
  * from the first paint, so nothing moves when the answer arrives, and an answer
  * that does not come, or is not the shape, is said out loud rather than drawn
  * as an empty column.

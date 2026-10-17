@@ -10,11 +10,12 @@
  * and no React.
  *
  * What it relies on in the document, and nothing else: second-level headings
- * open the panels, third-level headings open the blocks, a panel whose every
- * block quotes somebody is a row that scrolls sideways, a list whose every
- * item is one link is a row of buttons, an image that names one of the
- * page's photographs is that photograph, a rule opens the closing panel, and
- * a second rule opens the small print under the panels.
+ * open the panels, third-level headings open the blocks, the panel headed
+ * What colleagues say is the column with a place in it that the window fills
+ * from /api/recommendations, a list whose every item is one link
+ * is a row of buttons, an image that names one of the page's photographs is
+ * that photograph, a rule opens the closing panel, and a second rule opens the
+ * small print under the panels.
  */
 import { AUTHOR_PHOTOS, photoFigure, photoNamed } from './authorPhotos';
 
@@ -107,7 +108,6 @@ function blocks(section: string): string {
   const parts = section.split(/(?=<h3[ >])/);
   if (parts.length === 1) return pairs(section);
   const [lead, ...headed] = parts;
-  if (headed.every((block) => /<blockquote[ >]/.test(block))) return pairs(lead) + row(headed);
   const pictured = headed.map((block) => standAlone(block)[0].includes('class="author-photo"'));
   const plain = pictured.filter((has) => !has).length;
   const lastPlain = pictured.lastIndexOf(false);
@@ -143,24 +143,27 @@ function blocks(section: string): string {
   );
 }
 
-// #region quoted-row
+// #region said-aside
 /**
- * A panel of quotations, one block for each person quoted, as a row that
- * scrolls sideways: ten recommendations stacked two across ran the length of
- * the page, and a row shows the edge of the next one and asks for a flick. The
- * row is a named region with a tab stop, because a box that scrolls under a
- * mouse has to scroll under the arrow keys too (WCAG 2.1.1, as the admin
- * tables do it). The blocks keep their order, and so their alternation.
+ * The panel headed What colleagues say is not drawn from the document's words
+ * alone: it keeps its heading and its sentence, and under them a place the
+ * window fills with the recommendations read from /api/recommendations, the
+ * one file they live in. It is written straight after the introduction, which
+ * is where a reader meets it in one column and where the keyboard and a screen
+ * reader meet it at every width; a wide window moves it to the right by placing
+ * it in the page's grid, and moves nothing in the document.
  */
-function row(headed: string[]): string {
-  const label = `${headed.length} quotations, scrolling sideways`;
+const SAID = /<h2[^>]*>What colleagues say<\/h2>/;
+
+function aside(section: string): string {
+  // A landmark with a name: an aside is a region of its own to a screen reader, and an unnamed one
+  // reads as "complementary" in a list of landmarks.
   return (
-    `<div class="author-blocks author-row" role="region" aria-label="${label}" tabindex="0">` +
-    headed.map((block) => `<section class="author-block op-glass">${block}</section>`).join('') +
-    `</div>`
+    `<aside class="author-panel author-side op-glass" aria-label="What colleagues say">${section}` +
+    `<div class="author-said" data-recommendations></div></aside>`
   );
 }
-// #endregion quoted-row
+// #endregion said-aside
 
 /** The first panel: the words on one side and its photograph, when it has one, on the other. */
 function intro(section: string): string {
@@ -173,8 +176,9 @@ function intro(section: string): string {
 }
 
 /**
- * The page in its shape: the first panel is who he is, every later one is
- * split into its blocks, and what follows a rule is the closing panel. The
+ * The page in its shape: the first panel is who he is, the one headed What
+ * colleagues say follows it as its own column, every later one is split into
+ * its blocks, and what follows a rule is the closing panel. The
  * blocks carry no colour of their own: the stylesheet alternates them by
  * their order, so an edit to the document cannot leave two the same.
  */
@@ -185,11 +189,14 @@ export function layoutAuthor(html: string): string {
   // Whatever comes before the first panel's heading, the page's own title as a rule, stays above the panels.
   const top = /^<h2[ >]/.test(parts[0]) ? '' : parts[0];
   const sections = top === '' ? parts : parts.slice(1);
-  const panels = sections.map((section, index) =>
-    index === 0
-      ? `<section class="author-panel author-intro op-glass">${intro(section)}</section>`
-      : `<section class="author-panel op-glass">${blocks(section)}</section>`
-  );
+  const said = sections.filter((section) => SAID.test(section));
+  const panels = sections
+    .filter((section) => !SAID.test(section))
+    .map((section, index) =>
+      index === 0
+        ? `<section class="author-panel author-intro op-glass">${intro(section)}</section>`
+        : `<section class="author-panel op-glass">${blocks(section)}</section>`
+    );
   const close =
     closing.length === 0
       ? ''
@@ -197,6 +204,13 @@ export function layoutAuthor(html: string): string {
   // A second rule opens the small print under the panels: the photographer's credit.
   const credit =
     closing.length < 2 ? '' : `<footer class="author-credit">${closing.slice(1).join('')}</footer>`;
-  return `<div class="author-page" data-testid="author-page">${top}${panels.join('')}${close}${credit}</div>`;
+  // Who he is, what colleagues say, then the rest: the order a reader meets them in, and the order
+  // the document carries. The stylesheet moves the middle one to the right of the rest on a wide
+  // window by placing all three in the page's grid, which leaves this order where it is.
+  const [first, ...rest] = panels;
+  return (
+    `<div class="author-page" data-testid="author-page">${top}${first ?? ''}${said.map(aside).join('')}` +
+    `<div class="author-rest">${rest.join('')}${close}${credit}</div></div>`
+  );
 }
 // #endregion panels
