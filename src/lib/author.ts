@@ -12,7 +12,8 @@
  * What it relies on in the document, and nothing else: second-level headings
  * open the panels, third-level headings open the blocks, the panel headed
  * What colleagues say is the column with a place in it that the window fills
- * from /api/recommendations, a list whose every item is one link
+ * from /api/recommendations, and its heading opens the page they were written
+ * on, a list whose every item is one link
  * is a row of buttons, an image that names one of the page's photographs is
  * that photograph, a rule opens the closing panel, and a second rule opens the
  * small print under the panels.
@@ -153,7 +154,7 @@ function blocks(section: string): string {
  * reader meet it at every width; a wide window moves it to the right by placing
  * it in the page's grid, and moves nothing in the document.
  */
-const SAID = /<h2[^>]*>What colleagues say<\/h2>/;
+const SAID = /<h2[^>]*>(?:<a [^>]*>)?What colleagues say(?:<\/a>)?<\/h2>/;
 
 function aside(section: string): string {
   // A landmark with a name: an aside is a region of its own to a screen reader, and an unnamed one

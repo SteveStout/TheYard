@@ -480,28 +480,25 @@ public class AuthorPageTests
     /// from the file.
     /// </summary>
     [Fact]
-    public void What_colleagues_say_is_a_heading_and_a_sentence_after_the_introduction_and_quotes_nobody()
+    public void What_colleagues_say_is_one_heading_after_the_introduction_and_quotes_nobody()
     {
         string words = Words();
-        int said = words.IndexOf("\n## What colleagues say\n", StringComparison.Ordinal);
+        int said = words.IndexOf("\n## [What colleagues say]", StringComparison.Ordinal);
         int lead = words.IndexOf("\n## How I lead\n", StringComparison.Ordinal);
         Assert.True(said > 0 && lead > said, "docs/author/AUTHOR.md should hold What colleagues say as a panel ahead of How I lead");
         string panel = words[said..lead];
-        Assert.DoesNotContain("\n### ", panel);
-        Assert.DoesNotContain("\n> ", panel);
-        Assert.Contains("linkedin.com/in/stevenwstout/details/recommendations", panel);
+        // One line, and it is the heading: the link to the page every one of them was written on.
+        // Nothing under it, because what stands under it is the quotations themselves.
+        Assert.Equal(
+            "## [What colleagues say](https://www.linkedin.com/in/stevenwstout/details/recommendations/)",
+            panel.Trim());
         var entries = JsonSerializer.Deserialize<RecommendationsReply>(
             File.ReadAllText(Repo.DataFile("recommendations.json")), RecommendationsFile.Format)!.Recommendations;
         foreach (var entry in entries)
         {
             Assert.DoesNotContain(entry.Name, panel);
         }
-
-        // The panel says how many people wrote one. The words are the document's, the number is the
-        // file's, so an entry added to the file without a word changed here fails.
-        string[] spelled = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
-        Assert.True(entries.Count < spelled.Length, $"{entries.Count} recommendations: spell the count in this test to keep holding the sentence");
-        Assert.Contains(spelled[entries.Count], panel, StringComparison.OrdinalIgnoreCase);
     }
+
     // #endregion what-colleagues-say
 }
