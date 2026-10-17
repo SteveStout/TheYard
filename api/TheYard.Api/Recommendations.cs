@@ -7,7 +7,9 @@ namespace TheYard.Api;
 /// <summary>
 /// One recommendation as LinkedIn shows it, in the one shape every entry of
 /// data/recommendations.json has. Adding a recommendation is adding one more
-/// object to that file with these six fields; nothing in the code changes.
+/// object to that file with these six fields, and moving the count the tests
+/// hold (ten, the number on his profile); the shape, the reader and the pages
+/// do not change.
 /// </summary>
 /// <param name="Name">The writer's name, as LinkedIn shows it.</param>
 /// <param name="Title">The writer's title when they wrote it, as LinkedIn shows it.</param>
@@ -71,7 +73,7 @@ public static partial class RecommendationsFile
 
     /// <summary>
     /// Everything an entry has to get right, one line per slip: every field present and not blank,
-    /// the month written as words with its year, the pull sentence a line the writer wrote, and no
+    /// the month one of the twelve with its year, the pull a whole sentence the writer wrote, and no
     /// two entries from the same person. Empty when the file is in shape. The pages show the file
     /// as it is, so this is what the gate reads before a version ships, and what the endpoint
     /// reads before it answers.
@@ -99,6 +101,12 @@ public static partial class RecommendationsFile
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (entry, index) in reply.Recommendations.Select((entry, index) => (entry, index)))
         {
+            if (entry is null)
+            {
+                problems.Add($"entry {index + 1}: is null");
+                continue;
+            }
+
             string who = string.IsNullOrWhiteSpace(entry.Name) ? $"entry {index + 1}" : entry.Name;
             if (string.IsNullOrWhiteSpace(entry.Name))
             {
@@ -137,12 +145,16 @@ public static partial class RecommendationsFile
             {
                 problems.Add($"{who}: pull is not a sentence from the paragraphs, as written");
             }
+            else if (!entry.Pull.EndsWith('.') && !entry.Pull.EndsWith('!') && !entry.Pull.EndsWith('?'))
+            {
+                problems.Add($"{who}: pull should be a whole sentence, ending as one");
+            }
         }
 
         return problems;
     }
 
-    [GeneratedRegex(@"^[A-Z][a-z]+ 20\d\d$")]
+    [GeneratedRegex(@"^(January|February|March|April|May|June|July|August|September|October|November|December) 20\d\d$")]
     private static partial Regex MonthAndYear();
 }
 // #endregion recommendations-file

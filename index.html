@@ -31,7 +31,7 @@
     <script>
       (function () {
         var reads = ['/api/stores', '/api/auth/me', '/api/bids', '/api/version'];
-        if (location.search === '') reads.push('/api/health', '/api/tests/summary');
+        if (location.search === '') reads.push('/api/health', '/api/tests/summary', '/api/recommendations');
         // The build draws the landing page into #root (the note beside it,
         // below). Any other address opens on another view, so that drawing is
         // kept off the screen there until the app replaces it (src/app/mount.tsx).

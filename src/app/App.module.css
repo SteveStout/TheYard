@@ -239,8 +239,10 @@
      window. The window is the wrong thing to ask: it includes a 270px rail the
      grid does not get, and that rail collapses to icons, which a media query
      cannot see. At 1024 the grid was giving three cards about 215 pixels each
-     and wrapping every title, every badge row and every city name. */
-  container-type: inline-size;
+     and wrapping every title, every badge row and every city name. Named, so a
+     box inside a narrower container of its own (the landing page's left column)
+     can still ask the page how wide the page is. */
+  container: page / inline-size;
 }
 
 @media (max-width: 639.98px) {

@@ -2,8 +2,9 @@
  * What colleagues say, as a column: the recommendations on Steve's LinkedIn
  * profile, word for word, each with who wrote it, read from /api/recommendations
  * when the component opens. The words live in one file on the server,
- * data/recommendations.json, and every page that shows them reads the same
- * endpoint, so this file only draws them. Ten blank places stand in the column
+ * data/recommendations.json, and this file only draws them; the landing page
+ * reads them here, and About Steven is held to the same file until it reads
+ * the endpoint too. Ten blank places stand in the column
  * from the first paint, so nothing moves when the answer arrives, and an answer
  * that does not come, or is not the shape, is said out loud rather than drawn
  * as an empty column.
@@ -55,10 +56,13 @@ export function Recommendations({
     };
   }, []);
 
+  // The count is the answer's, not a number written here, so an eleventh entry in the file names itself.
+  const count =
+    reading.state === 'ready' ? `${reading.entries.length} recommendations` : 'recommendations';
   const label =
     words === 'pull'
-      ? 'What colleagues say: ten recommendations, one sentence each, in a column that scrolls down'
-      : 'What colleagues say: ten recommendations in full, in a column that scrolls down';
+      ? `What colleagues say: ${count}, one sentence each, in a column that scrolls down`
+      : `What colleagues say: ${count} in full, in a column that scrolls down`;
   return (
     <>
       <div
@@ -116,7 +120,7 @@ export function Recommendations({
             onClick={onOpenAuthor}
             data-testid="landing-recommendations-all"
           >
-            All ten, in full, on About Steven
+            All of them, in full, on About Steven
           </button>
         </p>
       )}

@@ -1,8 +1,8 @@
 namespace TheYard.Api;
 
 /// <summary>
-/// What colleagues say, served from data/recommendations.json so the two pages that show it quote
-/// one file (ADR: The sidebar, the addendum on the column on the right).
+/// What colleagues say, served from data/recommendations.json, the one file the words live in
+/// (ADR: The sidebar, the addendum on the column on the right).
 /// </summary>
 public static class RecommendationEndpoints
 {
@@ -10,16 +10,17 @@ public static class RecommendationEndpoints
     public static IEndpointRouteBuilder MapRecommendationEndpoints(this IEndpointRouteBuilder app)
     {
         // #region recommendations-route
-        // The landing page's column and About Steven's both read this, so the words live in one
-        // file and the two pages cannot quote different things. Public like the pages that show
-        // it: every word is already public on LinkedIn, by its writer's choice. An entry out of
+        // The landing page's column reads this, and About Steven's panel is held to the same file
+        // by AuthorPageTests until it reads the endpoint too, so the two cannot quote different
+        // things. Public like the pages that show it: every word is already public on LinkedIn,
+        // by its writer's choice. An entry out of
         // shape is answered as a failure that names the slip rather than as a column with a hole
         // in it; the gate reads the same check, so a shipped build never gets that far.
         app.MapGet("/api/recommendations", Read)
             .WithName("GetRecommendations")
             .WithTags("Documents")
             .WithSummary("The recommendations colleagues wrote on LinkedIn, in the order the site shows them")
-            .WithDescription("Every entry has the same six fields: the writer's name and title, how they worked with Steve, the month, the recommendation as paragraphs, and the one sentence a short place quotes. They come from one file, data/recommendations.json, which is the one place to add or adjust one.")
+            .WithDescription("Every entry has the same six fields: the writer's name and title, how they worked with Steve, the month, the recommendation as paragraphs, and the one sentence a short place quotes. They come from one file, data/recommendations.json, the one place to add or adjust one; the gate holds the file to the shape and to the count the site states.")
             .Produces<RecommendationsReply>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);

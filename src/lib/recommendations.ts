@@ -1,5 +1,5 @@
 /**
- * Does:      Names the shape /api/recommendations answers and reads an answer into it, so the pages that show what colleagues say draw from one wire.
+ * Does:      Names the shape /api/recommendations answers and reads an answer into it, so a page that shows what colleagues say draws from one wire.
  * Does not:  Fetch (the component does, with the page's own fetch) or draw anything.
  * Used by:   Recommendations.tsx, recommendations.test.ts.
  */
@@ -17,7 +17,7 @@ export type Recommendation = {
   pull: string;
 };
 
-/** Where the words come from on the site: the one endpoint both pages read. */
+/** Where the words come from on the site: the one endpoint, read by the landing page's column. */
 export const RECOMMENDATIONS_URL = '/api/recommendations';
 
 /** How many blank places the column draws before the answer arrives, so nothing moves when it does. */

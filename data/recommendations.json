@@ -1,5 +1,5 @@
 {
-  "readme": "One entry per person, shown in this order. Every entry has the same six fields: name and title as LinkedIn shows them, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the six fields; the gate checks the shape.",
+  "readme": "One entry per person, shown in this order. Every entry has the same six fields: name and title as LinkedIn shows them, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the six fields, then move the count the site states (ten, in RecommendationsTests and the About Steven document); the gate checks the shape.",
   "source": "https://www.linkedin.com/in/stevenwstout/details/recommendations/",
   "recommendations": [
     {

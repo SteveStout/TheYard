@@ -43,15 +43,18 @@
   min-width: 0;
 }
 
-/* One column: the quotes take at most most of a screen and scroll on their own, so the rest is still a flick away. */
+/* One column: the quotes take most of a screen at most and scroll on their own, so the rest is still a flick
+   away; and a flick that reaches their end hands off to the page, as on any page. */
 .side > [role='region'] {
   max-height: min(70dvh, 560px);
 }
 
-@container (min-width: 900px) {
+@container page (min-width: 900px) {
   .body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--recommendations-width, 320px);
+    /* The column's width is written here and nowhere else: 320 px holds a quotation at the body size in two
+       to four lines, and leaves the left column 580 px at the narrowest page that splits. */
+    grid-template-columns: minmax(0, 1fr) 320px;
     grid-template-rows: auto 1fr;
     column-gap: var(--space-5);
     row-gap: var(--space-5);
@@ -81,6 +84,9 @@
     max-height: none;
     min-height: 0;
     flex: 1 1 auto;
+    /* Beside the page the column keeps its own scroll: a wheel over the quotes reads the quotes,
+       and the page under them stands still. */
+    overscroll-behavior-y: contain;
   }
 }
 
@@ -342,11 +348,39 @@
   min-height: calc(2 * 1.5em);
 }
 
-/* Four across once the page is wide enough, after the two-column rule above so
+/* Four across once the box is wide enough, after the two-column rule above so
    it wins on source order (written before it, it lost and read two by two at 1280). */
 @container (min-width: 860px) {
   .proof {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Beside the column, every grid on the left asks its own column how wide it is
+   (.lead and .rest are containers), and the column is 320 px and a gap narrower
+   than the page, so the widths above would never be reached on a desk with the
+   rail open. These are the column's own widths: the figures four across from
+   720 px of column and the groups from 760, so a desk at 1440 with the rail open
+   reads four across beside the quotes, and a desk at 1280 reads the figures two
+   by two and the groups three across, which is the trade the column is worth
+   (ADR: The sidebar, the addendum on the column on the right). */
+@container page (min-width: 900px) {
+  @container (min-width: 720px) {
+    .proof {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @container (min-width: 760px) {
+    .grid,
+    .grid:has(> li:nth-child(4):last-child) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .grid:has(> li:nth-child(3):last-child),
+    .grid:has(> li:nth-child(6):last-child) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 }
 

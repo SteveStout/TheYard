@@ -90,9 +90,11 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
         {
             Recommendations =
             [
-                first with { When = "4/2024" },
+                first with { When = "Smarch 2024" },
                 first with { Name = "Somebody Else", Pull = "A sentence nobody wrote." },
                 first with { Name = "Nobody", Paragraphs = [] },
+                first with { Name = "Half Way", Pull = first.Pull.TrimEnd('.') },
+                null!,
                 first,
             ],
         };
@@ -100,6 +102,8 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
         Assert.Contains(problems, problem => problem.StartsWith(first.Name, StringComparison.Ordinal) && problem.Contains("when", StringComparison.Ordinal));
         Assert.Contains(problems, problem => problem.StartsWith("Somebody Else", StringComparison.Ordinal) && problem.Contains("pull", StringComparison.Ordinal));
         Assert.Contains(problems, problem => problem.StartsWith("Nobody", StringComparison.Ordinal) && problem.Contains("paragraphs", StringComparison.Ordinal));
+        Assert.Contains(problems, problem => problem.StartsWith("Half Way", StringComparison.Ordinal) && problem.Contains("whole sentence", StringComparison.Ordinal));
+        Assert.Contains(problems, problem => problem.StartsWith("entry 5", StringComparison.Ordinal) && problem.Contains("null", StringComparison.Ordinal));
         Assert.Contains(problems, problem => problem.Contains("second entry from the same person", StringComparison.Ordinal));
         Assert.Empty(RecommendationsFile.Problems(good));
         Assert.Single(RecommendationsFile.Problems(null));

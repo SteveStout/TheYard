@@ -11,8 +11,6 @@
   padding-right: var(--space-2);
   scroll-snap-type: y proximity;
   scroll-padding-block: var(--space-3);
-  /* The column's scroll keeps the page's own: a flick down the column never drags the page. */
-  overscroll-behavior-y: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
 }

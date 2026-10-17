@@ -25,15 +25,15 @@ import styles from './Landing.module.css';
  * The landing page: what the address opens with no query. A tile per
  * place the sidebar goes, drawn from the same site map the sidebar is drawn
  * from (src/lib/siteMap.ts), so the two cannot list different things. The
- * large tiles are the map's featured entries, Inventory and Author, each with
- * a photograph in its badge; below them every other section under its group's
+ * large tiles are the map's featured entries, Inventory, Author and the
+ * resume, the first two with a photograph in the badge; below them every other section under its group's
  * heading, as the sidebar groups them, then Sign in, Admin and GitHub.
  * The Admin tile carries the one live reading, a health dot from /api/health,
  * read once when the page opens, and under the title the evidence strip reads
  * the gate's own counts from /api/tests/summary. What colleagues say stands in
  * a column of its own on the right of all of it, read from /api/recommendations,
  * and keeps its place on the screen while the rest scrolls; where the page is
- * too narrow for two columns it follows the two featured tiles.
+ * too narrow for two columns it follows the featured tiles.
  *
  * A section's tile opens what its sidebar section opens first: its first
  * document in the dialog, or its first link in a new tab when it has no

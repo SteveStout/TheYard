@@ -74,7 +74,7 @@ for (const viewport of [
       // What colleagues say: one sentence from each of his ten LinkedIn recommendations, credited,
       // read from /api/recommendations into a column that scrolls down (a named region with a tab
       // stop), and one link to all ten in full on About Steven. Wide, the column stands to the
-      // right of everything else; narrow, it follows the two featured tiles.
+      // right of everything else; narrow, it follows the featured tiles.
       const said = page.getByTestId('landing-recommendations');
       await expect(said).toBeVisible();
       await expect(said.locator('blockquote')).toHaveCount(10);
