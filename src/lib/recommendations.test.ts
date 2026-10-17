@@ -4,6 +4,7 @@ import { recommendationsFrom } from './recommendations';
 const sarah = {
   name: 'Sarah Sebestyen',
   title: 'AI Developer at Hunter Engineering Company',
+  profile: 'https://www.linkedin.com/in/sarah-sebestyen/',
   relationship: 'Steven was senior to Sarah but did not manage Sarah directly',
   when: 'November 2024',
   paragraphs: ['First paragraph.', 'Steve consistently delivers high-quality work on time.'],
@@ -24,10 +25,13 @@ describe('an answer from /api/recommendations', () => {
     expect(recommendationsFrom(null)).toBeNull();
     expect(recommendationsFrom({ recommendations: 'ten' })).toBeNull();
     expect(recommendationsFrom({ recommendations: [{ ...sarah, pull: '' }] })).toBeNull();
+    expect(recommendationsFrom({ recommendations: [{ ...sarah, profile: '' }] })).toBeNull();
     expect(recommendationsFrom({ recommendations: [{ ...sarah, paragraphs: [] }] })).toBeNull();
-    const { name, title, relationship, paragraphs, pull } = sarah;
+    const { name, title, profile, relationship, paragraphs, pull } = sarah;
     expect(
-      recommendationsFrom({ recommendations: [{ name, title, relationship, paragraphs, pull }] })
+      recommendationsFrom({
+        recommendations: [{ name, title, profile, relationship, paragraphs, pull }],
+      })
     ).toBeNull();
   });
 

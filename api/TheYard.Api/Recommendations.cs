@@ -7,12 +7,13 @@ namespace TheYard.Api;
 /// <summary>
 /// One recommendation as LinkedIn shows it, in the one shape every entry of
 /// data/recommendations.json has. Adding a recommendation is adding one more
-/// object to that file with these six fields, and moving the count the tests
+/// object to that file with these seven fields, and moving the count the tests
 /// hold (ten, the number on his profile); the shape, the reader and the pages
 /// do not change.
 /// </summary>
 /// <param name="Name">The writer's name, as LinkedIn shows it.</param>
 /// <param name="Title">The writer's title when they wrote it, as LinkedIn shows it.</param>
+/// <param name="Profile">The address of the writer's own LinkedIn page, so their name opens it.</param>
 /// <param name="Relationship">How the writer worked with Steve, in LinkedIn's words.</param>
 /// <param name="When">The month and year LinkedIn dates it, as words.</param>
 /// <param name="Paragraphs">The recommendation word for word, one string per paragraph.</param>
@@ -20,6 +21,7 @@ namespace TheYard.Api;
 public sealed record Recommendation(
     string Name,
     string Title,
+    string Profile,
     string Relationship,
     string When,
     IReadOnlyList<string> Paragraphs,
@@ -73,8 +75,8 @@ public static partial class RecommendationsFile
 
     /// <summary>
     /// Everything an entry has to get right, one line per slip: every field present and not blank,
-    /// the month one of the twelve with its year, the pull a whole sentence the writer wrote, and no
-    /// two entries from the same person. Empty when the file is in shape. The pages show the file
+    /// the month one of the twelve with its year, the profile a page on LinkedIn, the pull a whole
+    /// sentence the writer wrote, and no two entries from the same person. Empty when the file is in shape. The pages show the file
     /// as it is, so this is what the gate reads before a version ships, and what the endpoint
     /// reads before it answers.
     /// </summary>
@@ -120,6 +122,14 @@ public static partial class RecommendationsFile
             if (string.IsNullOrWhiteSpace(entry.Title))
             {
                 problems.Add($"{who}: title is blank");
+            }
+
+            // A name opens a page, so the address has to be a profile on LinkedIn and nowhere else:
+            // a page under this name is the writer saying it, and an address pointing anywhere else
+            // is not theirs to stand behind.
+            if (entry.Profile is null || !entry.Profile.StartsWith("https://www.linkedin.com/in/", StringComparison.Ordinal))
+            {
+                problems.Add($"{who}: profile should be the address of their page on LinkedIn");
             }
 
             if (string.IsNullOrWhiteSpace(entry.Relationship))

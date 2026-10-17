@@ -8,6 +8,8 @@
 export type Recommendation = {
   name: string;
   title: string;
+  /** The address of their own page on LinkedIn, which their name opens. */
+  profile: string;
   relationship: string;
   /** The month and year LinkedIn dates it, as words. */
   when: string;
@@ -45,6 +47,7 @@ export function recommendationsFrom(answer: unknown): Recommendation[] | null {
     if (
       !text(entry.name) ||
       !text(entry.title) ||
+      !text(entry.profile) ||
       !text(entry.relationship) ||
       !text(entry.when) ||
       !text(entry.pull) ||
@@ -55,6 +58,7 @@ export function recommendationsFrom(answer: unknown): Recommendation[] | null {
     entries.push({
       name: entry.name,
       title: entry.title,
+      profile: entry.profile,
       relationship: entry.relationship,
       when: entry.when,
       paragraphs: entry.paragraphs,

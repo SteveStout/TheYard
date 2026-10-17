@@ -109,6 +109,12 @@ for (const viewport of [
       );
       await expect(said.locator('li').first()).toContainText(/November 2024\./);
       await expect(said.getByRole('button')).toHaveCount(0);
+      // Every name opens the page of the person who wrote it, in a tab of its own.
+      const writers = said.getByRole('link');
+      await expect(writers).toHaveCount(10);
+      await expect(writers.first()).toHaveText('Sarah Sebestyen');
+      await expect(writers.first()).toHaveAttribute('href', /linkedin\.com\/in\//);
+      await expect(writers.first()).toHaveAttribute('target', '_blank');
 
       // The resume is a large tile, and it opens the PDF this site serves.
       const resume = page.getByTestId('landing-tile-resume');

@@ -392,3 +392,9 @@ The box is gone. On both pages the quotations are part of the page: one under th
 Steve read the live column again and asked for the link under it to go and for every review to show. One ask: the link existed to send a reader somewhere else for the words the page was holding back, and a reader who has to click is a reader who does not read them.
 
 So there is one way to draw a recommendation now, on the landing page and on About Steven alike: whole, every paragraph the writer wrote, under their name, their title, how they worked with him and when. The component takes no argument for it and the page offers no button under it. The `pull` sentence stays in the file and in the endpoint's answer, because it is the writer's own sentence and a short place may want one; no page quotes it today, and the file's shape check still holds it to being a sentence of the paragraphs it sits with, so it cannot drift from them while it waits.
+
+## Addendum, 2026-10-17 (1.0.3.156): the name opens the page
+
+Steve asked for each person who wrote a recommendation to be a link to their LinkedIn, which is the thing that makes a quotation checkable: a reader who wonders whether these are real people can go and see one.
+
+The file gains a seventh field, `profile`, beside the title, and the endpoint answers it with the rest. The ten addresses were read from his own recommendations page in his browser, signed in, rather than written from memory, and the gate holds each one to being a page under `linkedin.com/in/` and to being one page per writer, so a wrong or shared address fails the build rather than the reader. The name is drawn as the link, in the heading's colour with its underline under the pointer and under the keyboard, so a column of ten names does not read as a column of ten links; each opens in a tab of its own.

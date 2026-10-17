@@ -27,14 +27,14 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
     }
 
     /// <summary>
-    /// The shape is six fields, every entry the same, nothing extra: a seventh field on one entry
+    /// The shape is seven fields, every entry the same, nothing extra: a field more on one entry
     /// is a field the pages never show, and a missing one is a hole in the column.
     /// </summary>
     [Fact]
-    public void Every_entry_has_the_same_six_fields_and_nothing_else()
+    public void Every_entry_has_the_same_seven_fields_and_nothing_else()
     {
         using var document = JsonDocument.Parse(File.ReadAllText(FilePath));
-        string[] expected = ["name", "title", "relationship", "when", "paragraphs", "pull"];
+        string[] expected = ["name", "title", "profile", "relationship", "when", "paragraphs", "pull"];
         var wrong = new List<string>();
         foreach (var entry in document.RootElement.GetProperty("recommendations").EnumerateArray())
         {
@@ -45,7 +45,7 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
             }
         }
 
-        Assert.True(wrong.Count == 0, "entries whose fields are not the six, in order: " + string.Join("; ", wrong));
+        Assert.True(wrong.Count == 0, "entries whose fields are not the seven, in order: " + string.Join("; ", wrong));
         var top = document.RootElement.EnumerateObject().Select(property => property.Name).ToArray();
         Assert.Equal(new[] { "readme", "source", "recommendations" }, top);
     }
@@ -60,6 +60,19 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
             Assert.DoesNotContain("@", all);
             Assert.DoesNotContain("http", all);
             Assert.DoesNotContain("\u2014", all);
+        }
+    }
+
+    /// <summary>Every name opens a page of its own, and no two names open the same one.</summary>
+    [Fact]
+    public void Every_writer_has_their_own_page_on_linkedin()
+    {
+        var entries = Reply().Recommendations;
+        Assert.Equal(entries.Count, entries.Select(entry => entry.Profile).Distinct(StringComparer.Ordinal).Count());
+        foreach (var entry in entries)
+        {
+            Assert.StartsWith("https://www.linkedin.com/in/", entry.Profile, StringComparison.Ordinal);
+            Assert.EndsWith("/", entry.Profile, StringComparison.Ordinal);
         }
     }
 
@@ -91,6 +104,7 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
             Recommendations =
             [
                 first with { When = "Smarch 2024" },
+                first with { Name = "No Page", Profile = "https://example.com/in/nobody/" },
                 first with { Name = "Somebody Else", Pull = "A sentence nobody wrote." },
                 first with { Name = "Nobody", Paragraphs = [] },
                 first with { Name = "Half Way", Pull = first.Pull.TrimEnd('.') },
@@ -103,7 +117,8 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
         Assert.Contains(problems, problem => problem.StartsWith("Somebody Else", StringComparison.Ordinal) && problem.Contains("pull", StringComparison.Ordinal));
         Assert.Contains(problems, problem => problem.StartsWith("Nobody", StringComparison.Ordinal) && problem.Contains("paragraphs", StringComparison.Ordinal));
         Assert.Contains(problems, problem => problem.StartsWith("Half Way", StringComparison.Ordinal) && problem.Contains("whole sentence", StringComparison.Ordinal));
-        Assert.Contains(problems, problem => problem.StartsWith("entry 5", StringComparison.Ordinal) && problem.Contains("null", StringComparison.Ordinal));
+        Assert.Contains(problems, problem => problem.StartsWith("No Page", StringComparison.Ordinal) && problem.Contains("LinkedIn", StringComparison.Ordinal));
+        Assert.Contains(problems, problem => problem.StartsWith("entry 6", StringComparison.Ordinal) && problem.Contains("null", StringComparison.Ordinal));
         Assert.Contains(problems, problem => problem.Contains("second entry from the same person", StringComparison.Ordinal));
         Assert.Empty(RecommendationsFile.Problems(good));
         Assert.Single(RecommendationsFile.Problems(null));
