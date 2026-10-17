@@ -104,10 +104,14 @@ public class GateWorkflowTests
         Assert.True(verdict > 0, "the gate job should end with the verdict");
         string judged = workflow[verdict..];
 
-        // The code's own numbers (code.result) are measurements for the tests card, not checks:
-        // the build's warnings are the one of them that turns a run red, and the verdict reads that.
-        string recorded = string.Join('\n', workflow[..verdict].Split('\n')
-            .Where(line => !line.Contains("code.result", StringComparison.Ordinal)));
+        // The code's own numbers (the code-numbers region) are measurements for the tests card,
+        // not checks: the build's warnings are the one of them that turns a run red, and the verdict
+        // reads that. Only that region is set aside; a check written anywhere else still counts.
+        string before = workflow[..verdict];
+        int numbersStart = before.IndexOf("# #region code-numbers", StringComparison.Ordinal);
+        int numbersEnd = before.IndexOf("# #endregion code-numbers", StringComparison.Ordinal);
+        Assert.True(numbersStart > 0 && numbersEnd > numbersStart, "gate.yml should fence the code's own numbers in the code-numbers region");
+        string recorded = before[..numbersStart] + before[numbersEnd..];
         var keys = Regex.Matches(recorded, @"echo ""([a-z_]+)=")
             .Select(match => match.Groups[1].Value)
             .Where(key => !key.EndsWith("_s", StringComparison.Ordinal))

@@ -453,6 +453,10 @@ The live pass on 1.0.3.138 found the Overview's cost row saying "not read here, 
 ```live path=src/components/admin/AdminPanel/AdminPanel.tsx region=admin-panel-order
 ```
 
+## Addendum, 2026-10-16 (1.0.3.144): measured only on a green build
+
+The measuring step ran under `if: always()`, so a run whose build failed still wrote `dist_js_bytes=0`, and the card would have shown 0 kB where the addendum of 1.0.3.131 promised "not measured". The step now runs only when both builds passed; when it does not run, the file is absent and the card says so. The verdict test used to set aside every workflow line that named `code.result`; it now sets aside the code-numbers region alone, so a real check written elsewhere cannot hide behind that name.
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.

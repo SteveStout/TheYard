@@ -73,6 +73,7 @@ jobs:
       # #region build
       # Any build warning is red, as on the laptop.
       - name: dotnet build
+        id: build
         run: |
           set -o pipefail
           dotnet build api/TheYard.slnx -c Debug 2>&1 | tee "$RAW/build.txt"
@@ -80,15 +81,18 @@ jobs:
           echo "build warnings: $warnings"
           echo "warnings=$warnings" > "$RAW/build.result"
       - run: npx vite build
+        id: web
       - run: npx vite build --config render/vite.config.ts
       # #endregion build
 
       # #region code-numbers
       # The code's own numbers for CODE HEALTH on the tests card: the page's built size and the
       # packages with a newer release. Measurements, not checks: nothing here turns the run red
-      # (the build's warnings already do, above), so they go to their own file, code.result.
+      # (the build's warnings already do, above), so they go to their own file, code.result. They
+      # run only after both builds passed: a size read off a failed build would say 0 kB, and the
+      # card must say not measured instead (ADR-080).
       - name: The code's own numbers
-        if: always()
+        if: always() && steps.build.outcome == 'success' && steps.web.outcome == 'success'
         run: |
           echo "dist_js_bytes=$(cat dist/assets/*.js | wc -c)" >> "$RAW/code.result"
           echo "dist_css_bytes=$(cat dist/assets/*.css | wc -c)" >> "$RAW/code.result"

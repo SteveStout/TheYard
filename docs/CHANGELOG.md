@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.144** (2026-10-16): The gate measures the page's size and the outdated packages only after both builds passed, so a failed build reads as not measured rather than 0 kB, and the test that holds every recorded check to the verdict now sets aside only the measuring step (ADR: The Admin tab as a product, the addendum on a green build).
 - **1.0.3.143** (2026-10-16): On a phone the Admin tab's paragraph follows the tiles in the document, not only on the screen, so a keyboard reaches the tiles first the way the eye does (ADR: The Admin tab as a product, the addendum on the reading order).
 - **1.0.3.142** (2026-10-16): `/resume` is in the API document with its name, a sentence and its PDF response, as ADR-075 asks of every public endpoint (ADR-099, the addendum on the API document).
 - **1.0.3.141** (2026-10-16): The Shed's explainer PDF says 148 xUnit and 21 node tests, the counts of the suites that ran when it was built, instead of a default left from an older build (The Shed 1.0.0.42).
