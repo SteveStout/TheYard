@@ -210,3 +210,9 @@ The readings span four rings: MachineSampler and MachineRecorder sit in the host
 ## Addendum, 2026-10-03: the resource view moved to the adapter
 
 The read of `sys.dm_db_resource_stats` moved from the host into the relational adapter (`api/TheYard.Infrastructure/ResourceStats.cs`), because it is a raw statement against the database and the host should only ask for a reading. The card, the statement and the sentence a refused read shows are unchanged. `OnionTests.The_host_never_queries_a_database_itself` keeps any query out of the host from now on.
+
+## Addendum, 2026-10-17: the latency on the first screen
+
+How fast the site answers is on the landing page now, as the band's first instrument, from the same kept five-minute buckets this record describes. The figure is the request-weighted median of the day's buckets, each taken at its own worst minute's ninety-fifth percentile, and the record for the route says why that one and not the newest bucket or the day's worst (ADR: One reading for the first screen).
+
+Nothing about the keeping changes: the recorder writes the same minute it always wrote, and the Admin tab's card still draws every bucket of the window with its own figures.

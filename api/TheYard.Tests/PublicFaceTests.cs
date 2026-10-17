@@ -331,6 +331,14 @@ public class PublicFaceTests
         public static int? Value(string word)
         {
             string lower = word.ToLowerInvariant();
+            // The records passed a hundred on 17 October. A claim reads "one hundred decision
+            // records" and this match sees the last word of the number, so the word itself is
+            // the value; "two hundred" will need its own line, and will say so by failing.
+            if (lower == "hundred")
+            {
+                return 100;
+            }
+
             int index = Array.IndexOf(Units, lower);
             if (index >= 0)
             {

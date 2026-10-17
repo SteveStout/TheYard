@@ -1,0 +1,81 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildWords,
+  LATENCY_CEILING_MS,
+  moneyWords,
+  pulseFrom,
+  share,
+  ticks,
+  UNREAD,
+  uptimeWords,
+} from './pulse';
+
+const answer = {
+  usual_p95_ms_24h: 31,
+  requests_24h: 1840,
+  month_to_date: 16.95,
+  forecast_month: 33.39,
+  currency: 'USD',
+  cost_read_at_ms: 1_760_700_000_000,
+  uptime_seconds: 27_180,
+  version: '1.0.3.156',
+  commit: '3b24c42',
+  read_at_ms: 1_760_700_100_000,
+};
+
+describe('an answer from /api/pulse', () => {
+  it('is read into the shape, with every figure as it came', () => {
+    expect(pulseFrom(answer)).toEqual(answer);
+  });
+
+  it('reads a null figure as unread rather than refusing the answer', () => {
+    const unread = { ...answer, usual_p95_ms_24h: null, month_to_date: null, forecast_month: null };
+    expect(pulseFrom(unread)?.usual_p95_ms_24h).toBeNull();
+    expect(pulseFrom(unread)?.month_to_date).toBeNull();
+  });
+
+  it('is null when it is not that shape, so the band says so instead of drawing a figure it does not have', () => {
+    expect(pulseFrom(null)).toBeNull();
+    expect(pulseFrom({ ...answer, uptime_seconds: 'a while' })).toBeNull();
+    expect(pulseFrom({ ...answer, currency: 7 })).toBeNull();
+    const { version: _version, ...noVersion } = answer;
+    expect(pulseFrom(noVersion)).toBeNull();
+  });
+});
+
+describe('the words under each instrument', () => {
+  it('says how long since the roll in the two units that carry it', () => {
+    expect(uptimeWords(27_180)).toBe('7 h 33 m');
+    expect(uptimeWords(2_460)).toBe('41 m');
+    expect(uptimeWords(273_600)).toBe('3 d 4 h');
+    expect(uptimeWords(-1)).toBe(UNREAD);
+  });
+
+  it('writes a shipped build with its commit, and a local one in words', () => {
+    expect(buildWords('1.0.3.159', '0149834')).toBe('1.0.3.159 at 0149834');
+    expect(buildWords('dev', 'local')).toBe('dev build');
+  });
+
+  it('prints money with its symbol, and the forecast as whole currency', () => {
+    expect(moneyWords(16.95, 'USD')).toBe('$16.95');
+    expect(moneyWords(33.39, 'USD', true)).toBe('$33');
+    expect(moneyWords(1234.5, 'EUR')).toBe('€1,234.50');
+    expect(moneyWords(12, 'SEK')).toBe('12.00 SEK');
+    expect(moneyWords(null, 'USD')).toBe(UNREAD);
+  });
+});
+
+describe('the scale', () => {
+  it('puts the marker where the reading is, and pins it at the end past the ceiling', () => {
+    expect(share(31, LATENCY_CEILING_MS)).toBeCloseTo(0.31);
+    expect(share(250, LATENCY_CEILING_MS)).toBe(1);
+    expect(share(null, LATENCY_CEILING_MS)).toBe(0);
+    expect(share(-4, LATENCY_CEILING_MS)).toBe(0);
+  });
+
+  it('graduates every five with a number every twenty-five', () => {
+    const marks = ticks(LATENCY_CEILING_MS);
+    expect(marks).toHaveLength(21);
+    expect(marks.filter((mark) => mark.major).map((mark) => mark.at)).toEqual([0, 25, 50, 75, 100]);
+  });
+});

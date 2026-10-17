@@ -4,10 +4,9 @@ using System.Text.RegularExpressions;
 namespace TheYard.Api;
 
 /// <summary>
-/// Every document the site serves, by the slug the sidebar asks for (ADR-017).
-/// src/library/records.ts and src/library/pages.ts carry the same slugs with titles, so a new record is
-/// one line here and one line there, and DocumentationCatalogTests holds the two lists to each other.
-/// A slug missing from this table is a 404 at /api/docs/{slug}, never a file read.
+/// Every document the site serves, by the slug the sidebar asks for (ADR-017). src/library/records.ts and
+/// src/library/pages.ts carry the same slugs with titles, so a new record is one line here and one there, and
+/// DocumentationCatalogTests holds the two lists to each other. A slug missing from this table is a 404 at /api/docs/{slug}, never a file read.
 /// </summary>
 public static class DocumentationCatalog
 {
@@ -129,6 +128,7 @@ public static class DocumentationCatalog
         ["adr-the-editor-is-set-up-by-the-repository"] = "docs/decisions/ADR-097-the-editor-is-set-up-by-the-repository.md",
         ["adr-the-gate-runs-where-the-memory-is"] = "docs/decisions/ADR-098-the-gate-runs-where-the-memory-is.md",
         ["adr-the-resume-has-an-address"] = "docs/decisions/ADR-099-the-resume-has-an-address.md",
+        ["adr-one-reading-for-the-first-screen"] = "docs/decisions/ADR-100-one-reading-for-the-first-screen.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

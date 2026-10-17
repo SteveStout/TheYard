@@ -18,6 +18,7 @@ import { LINKS, MENUS } from '../../../library/sections';
 import { CountUp } from '../../shared/CountUp';
 import { Ring } from '../../shared/Ring';
 import { NavGlyph } from '../../shared/SheetIcons';
+import { PulseBand } from '../PulseBand';
 import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
 import { Pets } from '../Pets';
 import { Recommendations } from '../../shared/Recommendations';
@@ -30,23 +31,21 @@ import styles from './Landing.module.css';
  * large tiles are the map's featured entries, Inventory, Author and the
  * resume, the first two with a photograph in the badge; below them every other section under its group's
  * heading, as the sidebar groups them, then Sign in, Admin and GitHub.
- * The Admin tile carries the one live reading, a health dot from /api/health,
- * read once when the page opens, and under the title the evidence strip reads
- * the gate's own counts from /api/tests/summary. What colleagues say stands in
- * a column of its own on the right of all of it, every recommendation in full,
- * read from /api/recommendations, with Freya and Vincent under them so the two
- * columns come out about one height; where the page is too narrow for two
- * columns the whole of it follows the featured tiles.
+ * The Admin tile carries a health dot from /api/health, read once when the page
+ * opens; under the title the evidence strip reads the gate's own counts from
+ * /api/tests/summary, and the band over it reads the running site from
+ * /api/pulse. What colleagues say stands in a column of its own on the right of
+ * all of it, every recommendation in full from /api/recommendations, with Freya
+ * and Vincent under them; too narrow for two columns, it follows the tiles.
  *
- * A section's tile opens what its sidebar section opens first: its first
- * document in the dialog, or its first link in a new tab when it has no
- * documents (API Reference, Diagrams).
+ * A section's tile opens what its sidebar section opens first: its first document
+ * in the dialog, or its first link in a new tab when it has none (API Reference, Diagrams).
  */
 /** The two figures that are a share of a whole, and so carry a ring (the operator's look). */
 const RINGED = ['tests', 'stores'];
 
-/** The strip's four places before the gate's counts arrive: the same boxes, blank, so nothing moves when they fill. */
-const PROOF_PLACEHOLDER: ProofFigure[] = ['tests', 'gate', 'records', 'stores'].map((key) => ({
+/** The strip's three places before the gate's counts arrive: the same boxes, blank, so nothing moves when they fill. */
+const PROOF_PLACEHOLDER: ProofFigure[] = ['tests', 'records', 'stores'].map((key) => ({
   key,
   figure: '',
   label: '',
@@ -201,6 +200,7 @@ export function Landing({
         </h1>
         <p className={styles.lede}>{INTRO.sentence}</p>
       </header>
+      <PulseBand onOpenDoc={onOpenDoc} />
       <div className={styles.body}>
         <div className={styles.lead}>
           <ul className={styles.featured} aria-label="Start here">
@@ -227,7 +227,7 @@ export function Landing({
           <Pets />
         </aside>
         <div className={styles.rest}>
-          {/* The strip stands at its full height from the first paint, four blank
+          {/* The strip stands at its full height from the first paint, three blank
           figures until the gate's counts arrive: drawn only once they
           had, it pushed every group below it down 124 px on a desk, the last
           layout shift the landing page had. */}

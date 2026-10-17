@@ -1,7 +1,15 @@
 /**
- * The landing page's evidence strip: the four figures a reader who
+ * The landing page's evidence strip: the three figures a reader who
  * has never seen this project is asked to believe, each one read from
  * something the build itself produced rather than typed into a page.
+ *
+ * The gate's own seconds are not among them any more. To a stranger a number
+ * beside a target reads as a miss before it reads as a gate, and the target is
+ * held by a test and shown on the Admin tab, where the card has room to say
+ * what it is (ADR: One reading for the first screen).
+ *
+ * The tests tile says so when a suite was carried from an earlier version rather than measured
+ * for this one, which is where the gate tile used to say it.
  *
  * The counts come from /api/tests/summary, which is the gate's own results
  * file added up; the record count is the site map's own list of decision
@@ -47,9 +55,6 @@ export type ProofRing = { value: number; max: number; words: string };
 /** The store passes rerun the same tests on the other store, so the headline count is the gate's own once. */
 const COUNTED_ONCE = ['vitest', 'xunit-sqlite', 'xunit-live', 'browser-sqlite'];
 
-/** The gate time the project aims for (ADR-068), shown beside the measured one so a slow gate reads as slow. */
-const GATE_TARGET_SECONDS = 300;
-
 const plural = (count: number, one: string) => `${count} ${one}${count === 1 ? '' : 's'}`;
 
 /** A whole number with thousands separated, in the one locale the site writes in. */
@@ -58,7 +63,7 @@ export function figures(count: number): string {
 }
 
 /**
- * The four figures, or null while the summary has not arrived, so the strip
+ * The three figures, or null while the summary has not arrived, so the strip
  * reserves its box rather than jumping when it does.
  */
 export function proofFigures(summary: TestSummary | null, records: number): ProofFigure[] | null {
@@ -76,23 +81,17 @@ export function proofFigures(summary: TestSummary | null, records: number): Proo
       key: 'tests',
       figure: figures(tests),
       label: failed === 0 ? 'tests green' : `tests, ${plural(failed, 'failure')}`,
-      detail: 'test runs in the gate, each suite once',
+      // What the count is, and when some of it was not measured for this version, that instead:
+      // a suite carried from an earlier build is the one thing a reader needs about the figure.
+      detail:
+        carried.length === 0
+          ? 'test runs in the gate, each suite once'
+          : `${plural(carried.length, 'suite')} carried from ${carried[0].carried}`,
       ring: {
         value: tests,
         max: tests + countedFailed,
         words: `${figures(tests)} of ${figures(tests + countedFailed)} tests passed`,
       },
-    },
-    {
-      key: 'gate',
-      figure: `${summary.gate_seconds} s`,
-      // The target sits in the label, which keeps two lines on every tile; a longer detail
-      // wrapped to a third line at 390 and moved the figures in the row off one baseline.
-      label: `one gate, target ${GATE_TARGET_SECONDS} s`,
-      detail:
-        carried.length === 0
-          ? `every suite ran for ${summary.version}`
-          : `${plural(carried.length, 'suite')} carried from ${carried[0].carried}`,
     },
     {
       key: 'records',

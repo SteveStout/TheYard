@@ -55,6 +55,15 @@ public static class ActivityRegistration
         // minute is not the newest line on the SQL card for ever.
         IMachineHistory machineHistory = cosmos is not null ? new CosmosMachineHistory(cosmos) : NullMachineHistory.Instance;
         builder.Services.AddSingleton(new MachineHistoryReader(machineHistory, backends.Default.Key));
+        // The first screen's one reading, over the same kept minutes and the same hourly bill the
+        // Admin tab reads, kept for fifteen seconds (ADR: One reading for the first screen).
+        builder.Services.AddSingleton(services => new PulseReader(
+            machineHistory,
+            backends.Default.Key,
+            services.GetRequiredService<CostHistoryReader>(),
+            services.GetRequiredService<HostStart>(),
+            services.GetRequiredService<BuildInfo>(),
+            TimeProvider.System));
         builder.Services.AddSingleton(services => new MachineRecorder(
             services.GetRequiredService<MachineSampler>(),
             machineHistory,

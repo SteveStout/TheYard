@@ -278,3 +278,7 @@ Steve said he had never liked the way the background moved. Nothing in the drawi
 `ribbons.test.ts` holds that the layer is pinned to the page and never the window. The browser suite scrolls the front page 600 pixels at a desk and a phone width and reads the ribbons, the watermark and the words: all three move by the scroll, to the pixel. Two assertions in `glass.spec.ts` that read the ribbons' and the watermark's position as `fixed` read `absolute` now; that is this change, and no other assertion moved.
 
 One consequence to watch: a document opened after the reader has scrolled down stands on the gradient ground alone, since the ribbons are above the screen. The Background and ribbon page draws a second copy of the drawing in a strip, with ids of its own, which is also the standing proof of the Chrome fix of 1.0.3.20.
+
+## Addendum, 2026-10-17: the sentence keeps only what stays true
+
+The first screen's sentence named a count of vehicles. The band under it now reads the site live (ADR: One reading for the first screen), so the sentence keeps only the words that are as true a year from now as today: built and run by one engineer, in the open, on .NET and React, live on Azure, every decision written down, the bill on the page. A test holds it to carrying no figure at all, so the next person to write a number into it has to answer the test first.
