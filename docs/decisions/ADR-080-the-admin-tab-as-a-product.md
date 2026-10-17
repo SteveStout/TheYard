@@ -473,6 +473,10 @@ A look at the live site at 1440 and 390, screen by screen, found six things no t
 
 A fresh reader of 1.0.3.143 before it shipped found the cost of dropping the CSS `order` rule: a server draws the desk order, and a phone shows that until the browser has read its width, so the words stood above the tiles for one frame and then jumped under them, a shift the old rule never had. The rule is back for that first paint alone; once the block has moved in the document it changes nothing, and the keyboard follows the document, which is what 1.0.3.143 fixed. The same reader found that the test's desk read waited on nothing (the words are visible in both layouts) and raced the move; it polls the document order now. The gate's measuring step (1.0.3.144) names the two builds it reads, the API's and the page's, rather than "both" of the three the job runs.
 
+## Addendum, 2026-10-16 (1.0.3.151): the bars at their real width
+
+1.0.3.147 let the activity card's bars run to the card's edge by dropping the 560 px cap on the drawing, and the close read of the live page at 1440 showed the words beside the bars a size and a half: `fitBox` only ever narrows a drawing to the width it is given, so the 560-wide drawing was scaled up to the card, its text with it. The drawing now starts wider than any card (1,600 units), so it is always narrowed to the real width and its words keep the chart text size, which is what the cap had been doing by accident.
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.

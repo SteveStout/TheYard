@@ -8,10 +8,12 @@ import styles from '../ActivityCard/ActivityCard.module.css';
 
 /**
  * The drawing's sizes: its width before the card's is read, each row's height, and the room
- * kept for the label on the left and the count on the right. Drawn at its real width, as wide
- * as the table under it, its words stay the chart text size on a phone and on a wide desk alike.
+ * kept for the label on the left and the count on the right. fitBox only ever narrows a drawing
+ * to the width it is given, so the width here is wider than any card and the bars are always
+ * drawn at their real width, as wide as the table under them; the words keep the chart text size
+ * on a phone and on a wide desk alike (at 560 the drawing was scaled up to a desk's card).
  */
-const PATH_CHART = { width: 560, row: 26, bar: 120, count: 44 } as const;
+const PATH_CHART = { width: 1600, row: 26, bar: 120, count: 44 } as const;
 
 /** One row: its key, the words beside it, its count, its share of the longest bar, its test id. */
 export type PathBar = { key: string; name: string; count: number; share: number; testId: string };
