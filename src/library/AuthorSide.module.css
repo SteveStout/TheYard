@@ -27,6 +27,15 @@
   width: 100%;
 }
 
+/* The column's list is not one of the document's lists. A document indents a list of its own, and
+   that indent moved every quotation in from the panel's edge on this page while the same column on
+   the landing page stood at it. The quotations carry their own box and their own order, so the
+   indent and the marker both go. */
+.prose :global(.author-said) ul {
+  padding-left: 0;
+  list-style: none;
+}
+
 /* The heading the document keeps, which is the link to where the recommendations were written. A
    child selector, because everything deeper is the quotations and they carry their own spacing. */
 .prose :global(.author-side) > h2 {

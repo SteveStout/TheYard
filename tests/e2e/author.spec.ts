@@ -43,6 +43,23 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     'href',
     /linkedin\.com\/in\//
   );
+  // A quotation reaches the panel it stands in, here as on the landing page: the document's own
+  // list indent is not a margin on the column.
+  const inset = await said.evaluate((panel) => {
+    const box = panel.getBoundingClientRect();
+    const edge = getComputedStyle(panel);
+    const card = panel.querySelector('li')!.getBoundingClientRect();
+    return {
+      left: Math.round(
+        card.left - box.left - parseFloat(edge.borderLeftWidth) - parseFloat(edge.paddingLeft)
+      ),
+      right: Math.round(
+        box.right - card.right - parseFloat(edge.borderRightWidth) - parseFloat(edge.paddingRight)
+      ),
+    };
+  });
+  expect(inset.left).toBeLessThanOrEqual(1);
+  expect(Math.abs(inset.left - inset.right)).toBeLessThanOrEqual(1);
   const column = said.getByRole('region', { name: /recommendations, in full/ });
   await expect(column).toHaveAttribute('data-state', 'ready');
   // One scroll bar on the screen, the window's own: every recommendation stands in the page.
