@@ -118,15 +118,15 @@ public static class DocumentationEndpoints
     private static Results<ContentHttpResult, ProblemHttpResult> Diagram(string name, HostPaths paths) =>
         DocumentationCatalog.Diagrams.TryGetValue(name, out var diagram)
             ? TypedResults.Content(
-                DiagramPage.Render(diagram.Title, File.ReadAllText(Path.Combine(paths.RepoRoot, diagram.File)), diagram.File),
+                DiagramPage.Render(diagram.Title, File.ReadAllText(Path.Combine(paths.RepoRoot, diagram.File)), diagram.File, SiteFace.StyleFor(paths.AssetsRoot)),
                 "text/html; charset=utf-8")
             : TypedResults.Problem(detail: "No diagram has that name.", statusCode: 404, title: "No such diagram");
 
-    private static ContentHttpResult About(HttpContext http, IConfiguration configuration)
+    private static ContentHttpResult About(HttpContext http, IConfiguration configuration, HostPaths paths)
     {
         string? configured = configuration["Site:Url"];
         string site = string.IsNullOrWhiteSpace(configured) ? $"{http.Request.Scheme}://{http.Request.Host}" : configured;
-        return TypedResults.Content(AboutPage.Render(site), "text/html; charset=utf-8");
+        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot)), "text/html; charset=utf-8");
     }
 
     private static ContentHttpResult Bicep(HostPaths paths) =>

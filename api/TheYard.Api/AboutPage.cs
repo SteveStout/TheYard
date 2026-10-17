@@ -8,7 +8,7 @@ namespace TheYard.Api;
 /// his name rather than the one who came to see the auction. Served by the API
 /// on the diagram pages' pattern (ADR-020): one small HTML document with the
 /// palette inline, a viewport line and selectable text, and nothing fetched
-/// from another host, not even a font. Every sentence is drawn from the served
+/// from another host, not even the font, which is the site's own file (SiteFace). Every sentence is drawn from the served
 /// resume, the README and his own words for How I lead; the page invents
 /// nothing about him.
 /// </summary>
@@ -53,9 +53,10 @@ public static class AboutPage
 
     /// <summary>
     /// The same page with <paramref name="leadImage"/> as the picture beside How I
-    /// lead, or none when it is null.
+    /// lead, or none when it is null, and <paramref name="face"/> as the style line that
+    /// declares the site's face from its own file (SiteFace), or none for the fallback face.
     /// </summary>
-    public static string Render(string siteUrl, string? leadImage)
+    public static string Render(string siteUrl, string? leadImage, string face = "")
     {
         string site = siteUrl.TrimEnd('/');
         string canonical = site + "/about";
@@ -109,6 +110,7 @@ public static class AboutPage
             <meta name="twitter:description" content="{{e(Description)}}">
             <meta name="twitter:image" content="{{e(site + "/og.png")}}">
             <script type="application/ld+json">{{person}}</script>
+            {{face}}
             <style>
               html { background: #f3f7f6; }
               html, body { margin: 0; color: #524b48; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; font-variant-numeric: tabular-nums; line-height: 1.6; }

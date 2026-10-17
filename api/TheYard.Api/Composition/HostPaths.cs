@@ -14,6 +14,7 @@ namespace TheYard.Api;
 /// <param name="ImagesRoot">The photographs, served under /api/images.</param>
 /// <param name="RepoRoot">The folder README.md sits in, in the image and in a checkout: live code samples
 /// (ADR-014) read whitelisted source files under it.</param>
+/// <param name="AssetsRoot">The built site's hashed files, wwwroot/assets, where SiteFace finds the font.</param>
 public sealed record HostPaths(
     string DataPath,
     string ReadmePath,
@@ -21,7 +22,8 @@ public sealed record HostPaths(
     string ResumePath,
     string ManifestPath,
     string ImagesRoot,
-    string RepoRoot)
+    string RepoRoot,
+    string AssetsRoot)
 {
     /// <summary>Finds every path from the content root the host was started in.</summary>
     public static HostPaths Find(string contentRoot)
@@ -35,7 +37,8 @@ public sealed record HostPaths(
             Path.Combine(contentRoot, "wwwroot", "docs", "resume.pdf"),
             Path.Combine(contentRoot, "photo-manifest.json"),
             Path.Combine(contentRoot, "wwwroot", "images"),
-            Path.GetDirectoryName(readmePath)!);
+            Path.GetDirectoryName(readmePath)!,
+            Path.Combine(contentRoot, "wwwroot", "assets"));
     }
 
     #region find-upward

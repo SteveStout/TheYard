@@ -126,6 +126,36 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         Assert.DoesNotMatch(@"\(?\b\d{3}\)?[ .-]\d{3}[ .-]\d{4}\b", body);
     }
 
+    /// <summary>
+    /// The About page and the diagram pages wear the site's face from the site's own file
+    /// (1.0.3.148): SiteFace finds the hashed woff2 under wwwroot/assets and the pages carry
+    /// its declaration; with no built site beside the process they carry none and the
+    /// fallback face in their own rule stands.
+    /// </summary>
+    [Fact]
+    public void The_pages_the_api_draws_wear_the_site_face_from_its_own_file()
+    {
+        string assets = Path.Combine(Path.GetTempPath(), "theyard-siteface-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(assets);
+        try
+        {
+            Assert.Equal(string.Empty, SiteFace.Find(assets));
+            File.WriteAllBytes(Path.Combine(assets, "ibm-plex-sans-latin-BgnScaL7.woff2"), [0]);
+            string face = SiteFace.Find(assets);
+            Assert.Contains("url('/assets/ibm-plex-sans-latin-BgnScaL7.woff2') format('woff2')", face);
+            Assert.Contains("font-family: 'IBM Plex Sans'", face);
+            Assert.Contains(face, AboutPage.Render("https://theyard.stevenstout.biz/", AboutPage.LeadImage, face));
+            Assert.Contains(face, DiagramPage.Render("A drawing", "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>", "docs/images/a.svg", face));
+        }
+        finally
+        {
+            Directory.Delete(assets, true);
+        }
+        Assert.Equal(string.Empty, SiteFace.Find(Path.Combine(assets, "gone")));
+        Assert.DoesNotContain("fonts.googleapis.com", DiagramPage.Render("A drawing", "<svg></svg>", "docs/images/a.svg"));
+        Assert.DoesNotContain("@font-face", AboutPage.Render("https://theyard.stevenstout.biz/"));
+    }
+
     [Fact]
     public void Each_site_names_itself_on_the_about_page()
     {

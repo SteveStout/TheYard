@@ -18,7 +18,7 @@ public static class DiagramPage
     /// the site's own ground, the green grey to white gradient, with the site's teal for a link. The tab carries the site's own icon, the one index.html and the reference page
     /// carry, so a browser does not go looking for /favicon.ico and log a 404 (read in Chrome at 390, 1400 and 1406).
     /// </summary>
-    public static string Render(string title, string svg, string sourcePath)
+    public static string Render(string title, string svg, string sourcePath, string face = "")
     {
         // A standalone SVG file may open with an XML prolog, which HTML must not carry.
         int start = svg.IndexOf("<svg", StringComparison.OrdinalIgnoreCase);
@@ -32,9 +32,7 @@ public static class DiagramPage
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>{{safeTitle}}</title>
             <link rel="icon" href="{{ApiDocument.Favicon}}">
-            <link rel="preconnect" href="https://fonts.googleapis.com">
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+            {{face}}
             <style>
               html { background: #f3f7f6; }
               html, body { margin: 0; color: #5e5653; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif; font-variant-numeric: tabular-nums; }
