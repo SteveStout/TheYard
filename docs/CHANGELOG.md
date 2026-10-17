@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.141** (2026-10-16): The Shed's explainer PDF says 148 xUnit and 21 node tests, the counts of the suites that ran when it was built, instead of a default left from an older build (The Shed 1.0.0.42).
 - **1.0.3.140** (2026-10-16): The Shed has a section in the sidebar and a tile on the landing page under How it is built, opening the running app and its code in a new tab; its folder moved to samples/theshed and its documents describe it as a developer test project without naming a company (ADR: The sidebar, the addendum on The Shed).
 - **1.0.3.139** (2026-10-15): The Overview's cost row gives the bill reader's own reason when there is no bill, so a read Cost Management slowed down no longer says this site does not read the bill (ADR: The Admin tab as a product, the addendum on the reason for no bill).
 - **1.0.3.138** (2026-10-15): Polish after the ship: the Overview puts the day and month in front of a restart or a roll that was not today, Sarah Sebestyen's sentence on the landing page is quoted whole from its first word, and a resume opened through a door gets its own page-name test (ADR: The Admin tab as a product, the addendum on the date in front).
