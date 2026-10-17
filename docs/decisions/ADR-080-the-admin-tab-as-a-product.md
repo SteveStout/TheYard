@@ -457,6 +457,10 @@ The live pass on 1.0.3.138 found the Overview's cost row saying "not read here, 
 
 The measuring step ran under `if: always()`, so a run whose build failed still wrote `dist_js_bytes=0`, and the card would have shown 0 kB where the addendum of 1.0.3.131 promised "not measured". The step now runs only when both builds passed; when it does not run, the file is absent and the card says so. The verdict test used to set aside every workflow line that named `code.result`; it now sets aside the code-numbers region alone, so a real check written elsewhere cannot hide behind that name.
 
+## Addendum, 2026-10-16 (1.0.3.145): the delegate is the port
+
+The pre-ship review of 15 October noted that the hourly storage read reaches `StorageStats` in Infrastructure through a delegate rather than an interface in Application. That is the pattern the admin readings already use: the machine recorder takes its relational reading as a `Func<CancellationToken, Task<StoreLoad>>` the composition root hands it, and `HourlyReadings` takes its storage reading the same way. A one-method interface would add a file and a name and no seam the delegate does not already give: the test passes a lambda, the composition root passes the Infrastructure call, and the onion tests see no reference from the reading to Infrastructure. The rule, recorded here so the next reader does not reopen it: an admin reading with one input and one output is a delegate; a port with more than one method is an interface.
+
 ## Where it sits
 
 This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are React-free code in src/lib, and the cards in src/components/admin draw what those files compute. Single responsibility (one reason to change) is the point of that split: the tile thresholds are named constants in statTiles.ts, and a chart's arithmetic is tested without a browser. The one Application change was InventoryService.Search sorting only as far as the page. It cost every chart drawn and tested by hand, with no library to borrow from. A team that already pays for Grafana or Azure Monitor workbooks, and can hand out sign-ins, would have less reason to build its own.

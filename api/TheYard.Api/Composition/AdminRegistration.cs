@@ -48,7 +48,8 @@ public static class AdminRegistration
         Uri? site = Uri.TryCreate(builder.Configuration["Site:Url"], UriKind.Absolute, out var siteUrl)
             && siteUrl.Scheme == Uri.UriSchemeHttps ? siteUrl : null;
         // #region hourly-readings-wiring
-        // The quiet context is looked up at each reading, not here: a relational store that
+        // The reading is a delegate, which is the port for a one-call reading (ADR-080, the addendum
+        // on the delegate). The quiet context is looked up at each reading, not here: a relational store that
         // refused at startup gets one only when the second chance attaches it later.
         var sqlBackend = host.SqlBackend;
         builder.Services.AddSingleton(new HourlyReadings(site, cancellation => StorageStats.ReadAsync(sqlBackend?.QuietContexts, cancellation), TimeProvider.System));
