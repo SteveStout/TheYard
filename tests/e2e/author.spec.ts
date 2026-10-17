@@ -28,9 +28,14 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   // The ten recommendations in full, read from /api/recommendations into a column on the right of
   // every other panel, running as far down the page as there are quotations.
   const said = wide.locator('.author-side');
-  await expect(
-    said.getByRole('heading', { name: 'What colleagues say', exact: true })
-  ).toBeVisible();
+  // The heading is the link to where they were written, and no prose stands under it.
+  const saidHeading = said.getByRole('heading', { name: 'What colleagues say', exact: true });
+  await expect(saidHeading).toBeVisible();
+  await expect(saidHeading.getByRole('link')).toHaveAttribute(
+    'href',
+    'https://www.linkedin.com/in/stevenwstout/details/recommendations/'
+  );
+  await expect(said.locator('> p')).toHaveCount(0);
   await expect(said.locator('blockquote')).toHaveCount(10);
   await expect(said.locator('blockquote').first()).toContainText('pleasure of working with Steve');
   await expect(said).toContainText('Sarah Sebestyen');

@@ -11,21 +11,28 @@
   display: contents;
 }
 
+/* The column's own area: the heading centred over it and the quotations the full width of it. The
+   panel's side padding comes in, so a quotation reaches both edges of the column it stands in. */
 .prose :global(.author-side) {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-3);
   min-width: 0;
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
 }
 
-/* The heading and the sentence the document keeps. Child selectors, because everything deeper is
-   the quotations, which carry their own spacing and whose paragraphs must keep it. */
+.prose :global(.author-said) {
+  width: 100%;
+}
+
+/* The heading the document keeps, which is the link to where the recommendations were written. A
+   child selector, because everything deeper is the quotations and they carry their own spacing. */
 .prose :global(.author-side) > h2 {
   margin-bottom: 0;
-}
-
-.prose :global(.author-side) > p {
-  margin: 0;
+  align-self: center;
+  text-align: center;
 }
 
 /* Two columns: the introduction and the rest on the left, the quotations on the right, running as

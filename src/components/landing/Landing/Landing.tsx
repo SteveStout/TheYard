@@ -18,6 +18,8 @@ import { LINKS, MENUS } from '../../../library/sections';
 import { CountUp } from '../../shared/CountUp';
 import { Ring } from '../../shared/Ring';
 import { NavGlyph } from '../../shared/SheetIcons';
+import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
+import { Pets } from '../Pets';
 import { Recommendations } from '../../shared/Recommendations';
 import styles from './Landing.module.css';
 
@@ -32,9 +34,9 @@ import styles from './Landing.module.css';
  * read once when the page opens, and under the title the evidence strip reads
  * the gate's own counts from /api/tests/summary. What colleagues say stands in
  * a column of its own on the right of all of it, every recommendation in full,
- * read from /api/recommendations,
- * and keeps its place on the screen while the rest scrolls; where the page is
- * too narrow for two columns it follows the featured tiles.
+ * read from /api/recommendations, with Freya and Vincent under them so the two
+ * columns come out about one height; where the page is too narrow for two
+ * columns the whole of it follows the featured tiles.
  *
  * A section's tile opens what its sidebar section opens first: its first
  * document in the dialog, or its first link in a new tab when it has no
@@ -206,14 +208,23 @@ export function Landing({
           </ul>
         </div>
         <aside
-          className={styles.side}
+          className={`${styles.side} op-glass`}
           aria-labelledby="landing-said"
           data-testid="landing-recommendations"
         >
           <h2 id="landing-said" className={styles.groupHeading}>
-            What colleagues say
+            {/* The heading is the way to where these were written, so nothing under it has to say so. */}
+            <a
+              className={styles.headingLink}
+              href={RECOMMENDATIONS_SOURCE}
+              target="_blank"
+              rel="noreferrer"
+            >
+              What colleagues say
+            </a>
           </h2>
           <Recommendations />
+          <Pets />
         </aside>
         <div className={styles.rest}>
           {/* The strip stands at its full height from the first paint, four blank

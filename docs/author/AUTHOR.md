@@ -12,9 +12,7 @@ I have spent twelve years building full stack software in C#, SQL Server, React 
 - [LinkedIn](https://www.linkedin.com/in/stevenwstout)
 - [GitHub](https://github.com/SteveStout/TheYard)
 
-## What colleagues say
-
-Ten people I have worked with wrote these on LinkedIn, in their own words. Nothing in the quotes is edited; each name is as LinkedIn shows it, with the title they gave, and [the originals are on my profile](https://www.linkedin.com/in/stevenwstout/details/recommendations/).
+## [What colleagues say](https://www.linkedin.com/in/stevenwstout/details/recommendations/)
 
 ## How I lead
 

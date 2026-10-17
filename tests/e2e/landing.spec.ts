@@ -39,6 +39,7 @@ for (const viewport of [
       // The sections under their three group headings, in the sidebar's groups (1.0.1.4).
       await expect(page.getByTestId('landing').getByRole('heading', { level: 2 })).toHaveText([
         'What colleagues say',
+        'Freya and Vincent',
         ...SITE_GROUPS.map((group) => group.label),
       ]);
 
@@ -77,6 +78,62 @@ for (const viewport of [
       // are quotations; narrow, it follows the featured tiles.
       const said = page.getByTestId('landing-recommendations');
       await expect(said).toBeVisible();
+      // Its heading is the link to where they were written, centred over the column, and a
+      // quotation fills the panel: it starts where the panel's own edge ends, and the same gap
+      // stands on both sides of it.
+      await expect(
+        said.getByRole('heading', { name: 'What colleagues say' }).getByRole('link')
+      ).toHaveAttribute('href', /linkedin\.com\/in\/stevenwstout/);
+      const area = await said.evaluate((column) => {
+        const box = column.getBoundingClientRect();
+        const edge = getComputedStyle(column);
+        const inset = {
+          left: parseFloat(edge.borderLeftWidth) + parseFloat(edge.paddingLeft),
+          right: parseFloat(edge.borderRightWidth) + parseFloat(edge.paddingRight),
+        };
+        const heading = column.querySelector('h2')!.getBoundingClientRect();
+        const card = column.querySelector('li')!.getBoundingClientRect();
+        return {
+          left: Math.round(heading.left - box.left),
+          right: Math.round(box.right - heading.right),
+          card: Math.round(card.left - box.left - inset.left),
+          cardRight: Math.round(box.right - card.right - inset.right),
+        };
+      });
+      expect(Math.abs(area.left - area.right)).toBeLessThanOrEqual(2);
+      expect(area.card).toBeLessThanOrEqual(1);
+      expect(Math.abs(area.card - area.cardRight)).toBeLessThanOrEqual(1);
+
+      // Freya and Vincent under the quotations, their photographs one under the next and each one
+      // drawn from the files this site serves.
+      const pets = page.getByTestId('landing-pets');
+      await expect(pets).toBeVisible();
+      const rabbits = pets.locator('img');
+      await expect(rabbits).toHaveCount(3);
+      // They are lazy, under ten quotations: a browser fetches them when a reader reaches them,
+      // and this reads them the same way rather than asking the page to load them all at once.
+      await pets.scrollIntoViewIfNeeded();
+      await expect(async () => {
+        const read = await rabbits.evaluateAll((images) =>
+          (images as HTMLImageElement[]).map((image) => ({
+            path: image.currentSrc === '' ? '' : new URL(image.currentSrc).pathname,
+            natural: image.naturalWidth,
+            left: Math.round(image.getBoundingClientRect().left),
+            top: Math.round(image.getBoundingClientRect().top),
+          }))
+        );
+        for (const image of read) {
+          expect(image.path).toMatch(
+            /^\/api\/images\/author\/rabbits-[a-z-]+-\d+\.(avif|webp|jpg)$/
+          );
+          expect(image.natural).toBeGreaterThan(0);
+        }
+        // Stacked: each one starts where the one above it did, and below it.
+        expect(new Set(read.map((image) => image.left)).size).toBe(1);
+        expect(read[1].top).toBeGreaterThan(read[0].top);
+        expect(read[2].top).toBeGreaterThan(read[1].top);
+      }).toPass({ timeout: 20_000 });
+      await page.evaluate(() => window.scrollTo(0, 0));
       await expect(said.locator('blockquote')).toHaveCount(10);
       await expect(said.locator('li').first()).toContainText('Sarah Sebestyen');
       const column = said.getByRole('region', {
@@ -109,8 +166,9 @@ for (const viewport of [
       );
       await expect(said.locator('li').first()).toContainText(/November 2024\./);
       await expect(said.getByRole('button')).toHaveCount(0);
-      // Every name opens the page of the person who wrote it, in a tab of its own.
-      const writers = said.getByRole('link');
+      // Every name opens the page of the person who wrote it, in a tab of its own. Counted inside
+      // the quotations: the heading over them is a link too, to where all ten were written.
+      const writers = said.locator('li').getByRole('link');
       await expect(writers).toHaveCount(10);
       await expect(writers.first()).toHaveText('Sarah Sebestyen');
       await expect(writers.first()).toHaveAttribute('href', /linkedin\.com\/in\//);

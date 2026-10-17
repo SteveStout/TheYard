@@ -36,19 +36,36 @@
   container-type: inline-size;
 }
 
+/* The column is a section of its own, on the glass, the way About Steven's panel is: its heading
+   centred over it, everything in it the full width of it, and nothing indenting any of it from the
+   left. */
 .side {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-3);
   min-width: 0;
+  padding: var(--space-4) var(--space-3);
+}
+
+.side > * {
+  width: 100%;
+}
+
+.side > .groupHeading {
+  width: auto;
+  align-self: center;
+  text-align: center;
 }
 
 @container page (min-width: 900px) {
   .body {
     display: grid;
-    /* The column's width is written here and nowhere else: 320 px holds a quotation at the body size in two
-       to four lines, and leaves the left column 580 px at the narrowest page that splits. */
-    grid-template-columns: minmax(0, 1fr) 320px;
+    /* A share rather than a fixed width, so neither column reads as the page with the other as a
+       margin: the left is a little over half and the right a little under, which at 1440 with the
+       rail open measures about 630 and 470. A fixed 320 left the quotations a ribbon beside a
+       column two of them wide. */
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     grid-template-rows: auto 1fr;
     column-gap: var(--space-5);
     row-gap: var(--space-5);
@@ -347,13 +364,13 @@
    by two and the groups three across, which is the trade the column is worth
    (ADR: The sidebar, the addendum on the column on the right). */
 @container page (min-width: 900px) {
-  @container (min-width: 720px) {
+  @container (min-width: 600px) {
     .proof {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
-  @container (min-width: 760px) {
+  @container (min-width: 700px) {
     .grid,
     .grid:has(> li:nth-child(4):last-child) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -374,6 +391,23 @@
 }
 
 /* On the same glass as the title, so the ribbons do not cross the words. */
+/* A heading that is a link keeps the heading's own colour and weight, and says it is a link under
+   the pointer and under the keyboard. */
+.headingLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.headingLink:hover,
+.headingLink:focus-visible {
+  text-decoration: underline;
+}
+
+.headingLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .groupHeading {
   align-self: flex-start;
   margin: 0;

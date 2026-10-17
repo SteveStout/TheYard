@@ -34,14 +34,14 @@ describe('the Author page in its shape', () => {
   it('writes the panel headed What colleagues say after the introduction, as its own named column with the place the window fills', () => {
     const said = layoutAuthor(
       '<h2>Hi</h2><p>Me.</p>' +
-        '<h2>What colleagues say</h2><p>Ten people wrote these.</p>' +
+        '<h2><a href="https://www.linkedin.com/in/stevenwstout/">What colleagues say</a></h2>' +
         '<h2>Away</h2><h3>One</h3><p>Words.</p>'
     );
     // The order in the document is the order a reader meets them: who he is, the quotations, the rest.
     expect(said).toContain(
       '<section class="author-panel author-intro op-glass"><h2>Hi</h2><p>Me.</p></section>' +
         '<aside class="author-panel author-side op-glass" aria-label="What colleagues say">' +
-        '<h2>What colleagues say</h2><p>Ten people wrote these.</p>' +
+        '<h2><a href="https://www.linkedin.com/in/stevenwstout/">What colleagues say</a></h2>' +
         '<div class="author-said" data-recommendations></div></aside>' +
         '<div class="author-rest"><section class="author-panel op-glass">'
     );

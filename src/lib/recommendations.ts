@@ -19,6 +19,10 @@ export type Recommendation = {
   pull: string;
 };
 
+/** The page the recommendations were written on, which both headings open. */
+export const RECOMMENDATIONS_SOURCE =
+  'https://www.linkedin.com/in/stevenwstout/details/recommendations/';
+
 /** Where the words come from on the site: the one endpoint, read by the landing page's column and by About Steven's. */
 export const RECOMMENDATIONS_URL = '/api/recommendations';
 
