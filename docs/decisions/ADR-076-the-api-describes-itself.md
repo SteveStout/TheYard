@@ -21,7 +21,7 @@ description of an API becomes after a fortnight.
 
 Two facts about the code shaped the answer. First, the endpoints were untyped on the way out: every
 one answered `Results.Json(new { ... })` with an anonymous object, which a generator can only
-describe as "an object". Second, fifteen of the forty-one endpoints sit under `/api/admin/` and are
+describe as "an object". Second, fifteen of them sit under `/api/admin/` and are
 operator surfaces, some of them behind a key: the SQL ring, the Azure state, the reset-link mint.
 A generated document that listed those would be an index of the parts of the site a stranger has
 the least business reading, and on a public site that is disclosure rather than untidiness.

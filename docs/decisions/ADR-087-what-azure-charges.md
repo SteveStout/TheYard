@@ -104,3 +104,9 @@ The bill card spans three rings: CostHistory.cs in Application holds the ICostHi
 - [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): `GET /api/admin/costs`.
 - [`src/components/admin/SpendCard/SpendCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/SpendCard/SpendCard.tsx) and [`src/lib/spend.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/spend.ts): the card and the layout it draws from.
 - [`api/TheYard.Tests/CostTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CostTests.cs) and [`src/lib/spend.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/spend.test.ts): the tests above.
+
+## Addendum, 2026-10-17: the bill on the first screen
+
+What Azure charges is on the landing page now, as the band's middle instrument: the month to date as a figure, a bar of it against the month's forecast, and the forecast printed after the fill. It is the same hourly read this record describes, handed out through `/api/pulse` rather than read again (ADR: One reading for the first screen), so the cost reader's rate to Azure is unchanged.
+
+The honest-failure state travels with it. On a container with no identity to ask Azure with, the figure is the word `unread` and the track is empty, never a zero: a zero in that place claims the site is free.

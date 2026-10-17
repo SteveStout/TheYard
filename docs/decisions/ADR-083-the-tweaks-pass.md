@@ -207,3 +207,9 @@ The findings still open from the two picture reviews of 1.0.3.29, each read on t
 - **The countdown ring on a photo** sits on a see-through disc with the glass's hairline, not a white one, and without a blur, because a hundred cards each blurring cost a phone frames.
 - **An ended lot** with bids says "Final bid", on its card and its page.
 - **Left as they are, with the reason.** An ended lot leading "Ending soonest" until the next answer is ADR-056's choice (cards do not jump under a reader). "Forgot your password?" is disabled until an email is typed, which `account.spec` holds. Inputs are 40 px and square-cornered and pills 34 px and round on a desk, one height per kind of control (the controls region of the token sheet).
+
+## Addendum, 2026-10-17: the instrument grammar on the first screen
+
+The Mark VII grammar leaves the Admin tab for the first time. The band under the landing page's title draws two of its instruments in it: a tick scale from zero to a hundred milliseconds, graduated every five with a number every twenty-five, a teal fill to the reading and a gold marker on it; and a filled bar gauge on the same track and fill colours, with the month's forecast printed after the fill.
+
+The same tokens, the same stroke weights and the same type as the cards it came from, so the two pages read as one instrument panel. A reading past the end of the scale pins the marker at the end and the figure still says its number, because a pinned marker is a shape a reader can learn and a clipped number is a lie.

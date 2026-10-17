@@ -117,6 +117,7 @@ public static class KeepWarmReads
         "/api/health",
         "/api/stores",
         "/api/version",
+        "/api/pulse",
         "/api/tests/summary",
         "/api/recommendations",
         "/api/admin/activity?window=24h",

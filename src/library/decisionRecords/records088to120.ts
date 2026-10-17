@@ -94,4 +94,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '099',
   },
+  adrOneReadingForTheFirstScreen: {
+    title: 'ADR: One reading for the first screen',
+    menuLabel: 'ADR: One reading for the first screen',
+    url: '/api/docs/adr-one-reading-for-the-first-screen',
+    kind: 'adr',
+    number: '100',
+  },
 } as const satisfies Record<string, RecordEntry>;

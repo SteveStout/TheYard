@@ -72,6 +72,10 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   // hairline of the card's ground between the donut's slices. Drawings, not icons.
   'SpendCard.module.css': ['.newest', '.arc'],
   'Ring.module.css': ['.tick', '.tickMajor'],
+  // The first screen's latency scale (ADR: One reading for the first screen): the axis, its
+  // graduations every five milliseconds, the teal fill to the reading and the marker on it.
+  // An instrument's scale, drawn at the weights a scale is read at, not an icon.
+  'PulseBand.module.css': ['.axis', '.minor', '.major', '.fill', '.marker'],
   'Watermark.module.css': ['.rows'],
 };
 

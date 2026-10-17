@@ -27,7 +27,8 @@ for (const viewport of [
         page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })
       ).toBeVisible();
       await expect(page.getByTestId('view-announcement')).toHaveText('The Yard, home');
-      await expect(page.getByTestId('landing')).toContainText('showcase');
+      await expect(page.getByTestId('landing')).toContainText('Steven Stout');
+      await expect(page.getByTestId('landing')).toContainText('built and run by one engineer');
 
       const names = await page
         .locator('[data-testid^="landing-tile-"]')
@@ -55,12 +56,43 @@ for (const viewport of [
       // The one live reading: the Admin tile's health dot, read from /api/health.
       await expect(page.getByTestId('landing-admin-health')).toHaveText(/^(Healthy|Degraded)$/);
 
-      // The evidence strip: four figures this build's own gate produced (1.0.2.0).
+      // The band over it reads the running site: three instruments, each with a figure or the
+      // word for a figure the server could not read, and never a zero standing in for one
+      // (ADR: One reading for the first screen).
+      const band = page.getByTestId('pulse-band');
+      await expect(band).toBeVisible();
+      // The band's labels name their own instrument and are not sections of the page: a reader
+      // moving by heading should find the page's sections and nothing else.
+      await expect(band.getByRole('heading')).toHaveCount(0);
+      for (const instrument of ['pulse-latency', 'pulse-cost', 'pulse-roll']) {
+        await expect(page.getByTestId(instrument)).toBeVisible();
+      }
+      // The roll instrument always has a figure: the container knows its own uptime and build.
+      await expect(page.getByTestId('pulse-roll-figure')).toHaveText(
+        /^(\d+ d \d+ h|\d+ h \d+ m|\d+ m)$/
+      );
+      // The build the reading came from: the shipped version and its commit, or the words this
+      // site writes outside a build, as the footer and the rail write them.
+      await expect(band).toContainText(/(dev build|\d+\.\d+\.\d+\.\d+ at [0-9a-f]{7})/);
+      // A figure that was read is a number; one that was not says so in words.
+      for (const [testId, pattern] of [
+        ['pulse-latency', /^(\d[\d,]*ms|unread)$/],
+        ['pulse-cost', /^(\$[\d,]+\.\d\d|[\d,]+\.\d\d [A-Z]{3}|unread)$/],
+      ] as const) {
+        // The label, the reading, then the line under it: the reading is the second.
+        const reading = (await page.getByTestId(testId).locator('p').nth(1).innerText()).replace(
+          /\s+/g,
+          ''
+        );
+        expect(reading, `${testId} reads a figure or says it is unread`).toMatch(pattern);
+      }
+
+      // The evidence strip: three figures this build's own gate produced (1.0.2.0), the gate's own
+      // seconds having moved to the Admin tab.
       const strip = page.getByTestId('landing-proof');
       await expect(strip).toBeVisible();
-      await expect(strip.locator('li')).toHaveCount(4);
+      await expect(strip.locator('li')).toHaveCount(3);
       await expect(page.getByTestId('landing-proof-tests')).toContainText(/\d[\d,]* *tests/);
-      await expect(page.getByTestId('landing-proof-gate')).toContainText('one gate');
       await expect(page.getByTestId('landing-proof-records')).toContainText('decision records');
       // The two figures that are a share of a whole carry a ring, its number in words (the operator's look).
       await expect(page.getByTestId('landing-proof-ring-tests')).toHaveAttribute(

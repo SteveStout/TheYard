@@ -60,7 +60,6 @@ describe('the landing page evidence strip', () => {
     const shown = proofFigures(summary, 82)!;
     expect(shown.map((figure) => [figure.figure, figure.label])).toEqual([
       ['905', 'tests green'],
-      ['312 s', 'one gate, target 300 s'],
       ['82', 'decision records'],
       ['2', 'stores, one codebase'],
     ]);
@@ -69,12 +68,13 @@ describe('the landing page evidence strip', () => {
   });
 
   it('names a carried suite rather than passing its count off as this build', () => {
-    expect(proofFigures(summary, 82)![1].detail).toBe('2 suites carried from 1.0.1.4');
+    // On the tile that carries the count, which is where a reader reads the count.
+    expect(proofFigures(summary, 82)![0].detail).toBe('2 suites carried from 1.0.1.4');
     const fresh = {
       ...summary,
       suites: summary.suites.map((suite) => ({ ...suite, carried: undefined })),
     };
-    expect(proofFigures(fresh, 82)![1].detail).toBe('every suite ran for 1.0.1.6');
+    expect(proofFigures(fresh, 82)![0].detail).toBe('test runs in the gate, each suite once');
   });
 
   it('says how many failed rather than calling a red gate green', () => {

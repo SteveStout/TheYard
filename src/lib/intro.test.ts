@@ -11,10 +11,16 @@ const memory = () => {
 
 describe('the intro strip', () => {
   it('says what this is and who built it in one sentence, and offers four ways on', () => {
-    expect(INTRO.sentence).toContain('Steven Stout');
-    expect(INTRO.sentence).toMatch(/auction site/);
+    expect(INTRO.sentence).toMatch(/one engineer/);
+    expect(INTRO.sentence).toMatch(/auction/);
     expect(INTRO.sentence.split('. ').length).toBe(1);
     expect(INTRO.links.map((link) => link.key)).toEqual(['resume', 'author', 'built', 'admin']);
+  });
+
+  it('carries no figure of its own, because every figure the first screen shows is read live', () => {
+    // A number typed into a sentence is a number nobody edits when it moves; the band over the
+    // page reads its figures from the running site instead (ADR: One reading for the first screen).
+    expect(INTRO.sentence).not.toMatch(/\d/);
   });
 
   it('stays dismissed in a browser that remembers', () => {

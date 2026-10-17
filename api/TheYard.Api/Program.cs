@@ -38,6 +38,7 @@ app.MapBidEndpoints();                        // Endpoints/BidEndpoints.cs
 app.MapDocumentationEndpoints();              // Endpoints/DocumentationEndpoints.cs
 app.MapRecommendationEndpoints();             // Endpoints/RecommendationEndpoints.cs
 app.MapHealthEndpoints();                     // Endpoints/HealthEndpoints.cs
+app.MapPulseEndpoints();                      // Endpoints/PulseEndpoints.cs
 app.MapErrorEndpoints();                      // Endpoints/ErrorEndpoints.cs
 app.MapAdminEndpoints();                      // Endpoints/AdminEndpoints.cs
 app.MapAccountEndpoints();                    // Endpoints/AccountEndpoints.cs

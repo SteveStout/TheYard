@@ -1,0 +1,228 @@
+/**
+ * Does:      Styles the first screen's band: three instruments across one glass panel, each with its label, its reading,
+ *            its scale or gauge, and the line under it, and the hairlines between them.
+ * Does not:  Decide what a figure means or what it says (PulseBand.tsx and src/lib/pulse.ts do), or draw the glass (panels.css does).
+ * Used by:   PulseBand.tsx.
+ */
+.band {
+  display: grid;
+  grid-template-columns: 1fr;
+  padding: var(--space-4) var(--space-5);
+  gap: 0;
+}
+
+/* One under the next on a phone, separated by a hairline; three across once there is room. */
+.instrument {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3) 0;
+}
+
+.instrument + .instrument {
+  border-top: 1px solid var(--color-mark-rule);
+}
+
+@container (min-width: 860px) {
+  .band {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .instrument {
+    padding: 0 var(--space-5);
+  }
+
+  .instrument + .instrument {
+    border-top: 0;
+    border-left: 1px solid var(--color-mark-rule);
+  }
+
+  .instrument:first-child {
+    padding-left: 0;
+  }
+
+  .instrument:last-child {
+    padding-right: 0;
+  }
+}
+
+/* The instrument's name, in the small spaced capitals every readout on this site wears. */
+.label {
+  margin: 0;
+  font-size: var(--readout-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-heading);
+}
+
+/* The reading's row: one height on every instrument, so three figures sit on one baseline. */
+.reading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  min-height: var(--pulse-reading-height);
+}
+
+.figure {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  color: var(--color-heading);
+}
+
+/* The unit beside the number, smaller and quieter: the number is the reading. */
+.unit {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.unread {
+  align-self: center;
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+}
+
+/* The tick scale, in the instrument grammar: a thin axis, graduations every five, a teal fill to
+   the reading and a gold marker on it. */
+.scale {
+  width: 100%;
+  height: 34px;
+}
+
+.axis {
+  stroke: var(--color-mark-axis);
+  stroke-width: 1;
+}
+
+.minor {
+  stroke: var(--color-mark-axis);
+  stroke-width: 1;
+  opacity: var(--mark-minor-opacity);
+}
+
+.major {
+  stroke: var(--color-mark-axis);
+  stroke-width: 1.25;
+}
+
+.number {
+  fill: var(--color-text-muted);
+  font-size: var(--chart-text-xs);
+  letter-spacing: var(--readout-tracking);
+}
+
+.fill {
+  stroke: var(--color-mark-teal);
+  stroke-width: 3;
+}
+
+.marker {
+  fill: var(--color-mark-marker);
+  stroke: var(--color-mark-axis);
+  stroke-width: 0.75;
+}
+
+/* The bill as a filled bar: the month so far of what the month is forecast to cost. */
+.gauge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  min-height: var(--pulse-figure-height);
+}
+
+.track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-mark-bar-track);
+}
+
+.spent {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--radius-full);
+  background: var(--color-mark-teal);
+}
+
+.pip {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: var(--radius-full);
+  background: var(--color-mark-marker);
+  transform: translateY(-50%);
+}
+
+.forecast {
+  flex: 0 0 auto;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+/* The live dot, with the site's own pulse, beside how long it has been up. */
+.live {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-live);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: var(--live-dim-opacity);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live {
+    animation: none;
+  }
+}
+
+/* The version under the dot, where the other two carry their scale. */
+.version {
+  margin: 0;
+  min-height: var(--pulse-figure-height);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.detail {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  /* Three lines reserved: the line under the latency reading gains how many requests the figure
+     rests on when the answer lands, and a box that grows then would move everything under the
+     band. The band stands at its full height from the first paint or it is not a band. */
+  min-height: calc(3 * 1.5em);
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}

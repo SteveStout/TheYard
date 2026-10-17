@@ -30,6 +30,8 @@
   --touch-target: 44px; /* the smallest thing a thumb should have to hit */
   --inventory-loading-height: 100vh;
   --store-note-height: 38px; /* two lines of the store bar's note on a phone */
+  --pulse-reading-height: 44px; /* the first screen's reading row, so three figures sit on one baseline */
+  --pulse-figure-height: 34px; /* the line a figure stands on, and the line under it where a scale goes */
   --admin-card-loading-height: 360px; /* about one screen of an Admin card */
   /* #endregion reserved-heights */
   /* #region controls */

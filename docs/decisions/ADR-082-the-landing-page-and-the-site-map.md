@@ -79,3 +79,11 @@ The site map lives in the front end: src/lib/siteMap.ts and its entries import n
 - [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): the sidebar's pinned rows drawn from it.
 - [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): `opensInventory()`, which keeps every older address on the inventory.
 - [`tests/e2e/landing.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/landing.spec.ts): the landing page against the map.
+
+## Addendum, 2026-10-17: the first screen proves it
+
+The landing page carried a sentence with figures in it and a strip of four counts from the gate. The figures in the sentence were true the day they were typed, and a sentence is not a thing anybody edits when a number moves.
+
+The figures leave the sentence. A band of three instruments sits under the title and reads the running site from `/api/pulse` (ADR: One reading for the first screen): how fast it answers, what it has cost Azure this month, and how long it has been up since the last roll. Under the band the strip keeps the three counts that are facts about the build rather than readings of it: the tests the gate ran, the decision records, and the two stores.
+
+The gate's own seconds leave the landing page for the Admin tab. Beside a target, to a stranger, that figure reads as a miss before it reads as a gate; the target is held by a test and the card on the Admin tab has the room to say what it means.

@@ -61,6 +61,10 @@ showed it. Both stores stay warm, which is this record's goal: a visitor who swi
 meets a cold read. The cost is the second catalogue's memory on each site, working sets of 350 to
 475 MB a site with both held, and the keeper is retired.
 
+## Addendum, 2026-10-17: the first screen's reading is kept warm too
+
+`/api/pulse` joined the loop with the band on the landing page (ADR: One reading for the first screen). It belongs here for the reason the rest of the list does: it is a read a visitor opens on the first screen, it asks the two sources the Admin tab asks, and a cold one costs the visitor the wait. The loop's own count follows the list rather than a number written down, so nothing else moved.
+
 ## Where it sits
 
 KeepWarm and KeepWarmState live in the host Api, with one line on the health card in the front end, since sending reads to the app's own pipeline is a hosting concern that no inner ring should know about. Single responsibility, one reason to change, separates the schedule in KeepWarm from the reads in KeepWarmReads, and the loop takes its clock as a TimeProvider through the constructor, the dependency inversion habit that lets KeepWarmTests move time by hand. It cost a pass of reads every four minutes per container, inside capacity the plans already pay for. A plan billed per request or able to scale to zero would make the loop cost money and reopen the choice.
