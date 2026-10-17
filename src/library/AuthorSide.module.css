@@ -1,6 +1,6 @@
 /**
- * Does:      Places what colleagues say on the Author page: after the introduction in one column, beside the panels and in place
- *            while the page scrolls on a wide window, and reserves its box so nothing under it moves when the quotations arrive.
+ * Does:      Places what colleagues say on the Author page: after the introduction in one column, and beside the panels on a wide
+ *            window, running as far down the page as there are quotations.
  * Does not:  Draw the quotations (the shared Recommendations component does) or style the other panels (AuthorPage.module.css does).
  * Used by:   DocDialog.tsx.
  */
@@ -28,21 +28,8 @@
   margin: 0;
 }
 
-/* In one column the quotations stand in a box of their own height, the same height empty and full,
-   so the panels under them never move when the answer lands. Short enough that a flick aimed past
-   it is not spent inside it, and the page carries on scrolling at its end. */
-.prose :global(.author-said) {
-  min-height: min(55dvh, 440px);
-}
-
-.prose :global(.author-said) > [role='region'] {
-  max-height: min(55dvh, 440px);
-}
-
-/* Two columns: the introduction and the rest on the left, the quotations on the right, as tall as
-   the window leaves room for and in place while the page scrolls. From the wide-desk step of the
-   site's scale, 1280 px. The height subtracts what stands between the window and the page: the
-   dialog's own margins, its title bar, and the reading panel's padding. */
+/* Two columns: the introduction and the rest on the left, the quotations on the right, running as
+   far down the page as there are quotations. From the wide-desk step of the site's scale, 1280 px. */
 @media (min-width: 1280px) {
   .prose :global(.author-page) {
     grid-template-columns: minmax(0, 1fr) 380px;
@@ -65,27 +52,5 @@
   .prose :global(.author-side) {
     grid-column: 2;
     grid-row: 1 / 3;
-    position: sticky;
-    top: var(--space-5);
-    max-height: calc(
-      100dvh - var(--space-8) - var(--space-3) - var(--space-6) - 2 * var(--space-4) -
-        var(--pill-height) - 2 * var(--space-5)
-    );
-  }
-
-  .prose :global(.author-said) {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    flex: 1 1 auto;
-  }
-
-  .prose :global(.author-said) > [role='region'] {
-    max-height: none;
-    min-height: 0;
-    flex: 1 1 auto;
-    /* Beside the page the column keeps its own scroll: a wheel over the quotations reads the
-       quotations, and the page under them stands still. */
-    overscroll-behavior-y: contain;
   }
 }

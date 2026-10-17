@@ -1,23 +1,13 @@
 /**
- * Does:      Styles the What colleagues say column: quote tiles stacked, scrolled down, who said each, the blank places before the answer, and the link to the ten in full.
+ * Does:      Styles the What colleagues say column: quote tiles stacked down the page, who said each, the blank places before the answer, and the link to the ten in full.
  * Does not:  Place the column on a page (the page's own stylesheet does) or draw a tile's glass (panels.css does).
  * Used by:   Recommendations.tsx.
  */
+/* Every quotation stands in the page, one under the next, as far down as there are quotations.
+   A box of its own with a scroll inside it put a second bar beside the page's own and hid most of
+   what it held, which is the opposite of what the column is for: all of them, read on the way past. */
 .column {
-  /* The column's height is the page's to set: on the landing page it is the first screen, and it scrolls on its own
-     past that, with a thin bar from the first paint so a tile the bottom edge cuts reads as a column that scrolls. */
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: var(--space-2);
-  scroll-snap-type: y proximity;
-  scroll-padding-block: var(--space-3);
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
-}
-
-.column:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
+  min-width: 0;
 }
 
 .quotes {

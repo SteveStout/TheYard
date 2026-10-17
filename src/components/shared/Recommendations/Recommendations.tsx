@@ -4,7 +4,10 @@
  * when the component opens. The words live in one file on the server,
  * data/recommendations.json, and this file only draws them: the landing page
  * draws the one sentence each, About Steven draws them in full, both read
- * from the one endpoint. Ten blank places stand in the column
+ * from the one endpoint. Every one of them stands in the page, one under the
+ * next, with no scroll of its own: a reader on the way past the page reads
+ * them all, and the page keeps the only scroll bar on the screen.
+ * Ten blank places stand in the column
  * from the first paint, so nothing moves when the answer arrives, and an answer
  * that does not come, or is not the shape, is said out loud rather than drawn
  * as an empty column.
@@ -29,9 +32,9 @@ type Reading =
 
 /**
  * The column and, when it has somewhere to send the reader, the link under it; `onOpenAuthor`
- * opens About Steven, where every recommendation stands in full. The column is a region with a
- * name and a tab stop: a box that scrolls under a mouse has to scroll under the arrow keys too
- * (WCAG 2.1.1, the rule the admin tables follow).
+ * opens About Steven, where every recommendation stands in full. The column is a named region, so
+ * a reader moving by landmark can find it and skip it; it holds no scroll of its own, so it needs
+ * no tab stop of its own either (the rule in WCAG 2.1.1 is for a box that scrolls).
  */
 export function Recommendations({
   words,
@@ -61,8 +64,8 @@ export function Recommendations({
     reading.state === 'ready' ? `${reading.entries.length} recommendations` : 'recommendations';
   const label =
     words === 'pull'
-      ? `What colleagues say: ${count}, one sentence each, in a column that scrolls down`
-      : `What colleagues say: ${count} in full, in a column that scrolls down`;
+      ? `What colleagues say: ${count}, one sentence each`
+      : `What colleagues say: ${count} in full`;
   return (
     <>
       <div
@@ -71,7 +74,6 @@ export function Recommendations({
         aria-label={label}
         aria-busy={reading.state === 'reading'}
         data-state={reading.state}
-        tabIndex={0}
       >
         {reading.state === 'failed' ? (
           <p className={styles.failed}>The recommendations could not be read just now.</p>
