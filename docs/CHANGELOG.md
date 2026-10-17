@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.160** (2026-10-17): A quotation on About Steven reaches the edge of the panel it stands in, as it does on the landing page: the indent a document gives its own lists was moving every one of them in, and the browser tests now hold both pages to the same edge (ADR: The sidebar, the addendum on its own section).
 - **1.0.3.159** (2026-10-17): The first screen reads the running site: a band of three instruments under the title says how fast it answers, what it has cost Azure this month and how long it has been up, from one new public reading at /api/pulse, and the figures leave the sentence (ADR: One reading for the first screen).
 - **1.0.3.158** (2026-10-17): What colleagues say is a section of its own beside the first screen, its heading the link to the page the recommendations were written on, with Freya and Vincent under them and a width that leaves neither column dominating the page (ADR: The sidebar, the addendum on its own section).
 - **1.0.3.157** (2026-10-17): Every workflow names the Ubuntu image it runs on rather than the label that moves on 19 October, and the two browser tests that waited for a quiet network wait for the page to have drawn what it fetched (ADR: The deploy pipeline, the addendum on the runner and the wait).
