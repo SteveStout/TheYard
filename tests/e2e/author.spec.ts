@@ -34,7 +34,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   await expect(said.locator('blockquote')).toHaveCount(10);
   await expect(said.locator('blockquote').first()).toContainText('pleasure of working with Steve');
   await expect(said).toContainText('Sarah Sebestyen');
-  const column = said.getByRole('region', { name: /recommendations in full/ });
+  const column = said.getByRole('region', { name: /recommendations, in full/ });
   await expect(column).toHaveAttribute('data-state', 'ready');
   // One scroll bar on the screen, the window's own: every recommendation stands in the page.
   expect(

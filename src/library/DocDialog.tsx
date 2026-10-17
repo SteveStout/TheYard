@@ -229,7 +229,7 @@ export function DocDialog({
             dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }}
           />
         )}
-        {said !== null && createPortal(<Recommendations words="full" />, said)}
+        {said !== null && createPortal(<Recommendations />, said)}
       </div>
     </dialog>
   );

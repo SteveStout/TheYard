@@ -1,5 +1,5 @@
 /**
- * Does:      Styles the What colleagues say column: quote tiles stacked down the page, who said each, the blank places before the answer, and the link to the ten in full.
+ * Does:      Styles the What colleagues say column: quote tiles stacked down the page, who said each, and the blank places before the answer.
  * Does not:  Place the column on a page (the page's own stylesheet does) or draw a tile's glass (panels.css does).
  * Used by:   Recommendations.tsx.
  */
@@ -78,24 +78,4 @@
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-}
-
-.all {
-  margin: 0;
-}
-
-.allLink {
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  font-size: var(--text-sm);
-  color: var(--color-accent);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.allLink:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
 }

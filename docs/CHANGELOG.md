@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.155** (2026-10-17): Every recommendation is shown whole on both the landing page and About Steven, under the name, title, relationship and month of the person who wrote it, and the link that used to send a reader elsewhere for the rest of the words is gone (ADR: The sidebar, the addendum on whole, on both pages).
 - **1.0.3.154** (2026-10-17): What colleagues say stands in the page itself on both pages, every recommendation one under the next as far down as there are quotations, so the page's own bar is the only scroll bar on the screen (ADR: The sidebar, the addendum on one scroll bar).
 - **1.0.3.153** (2026-10-17): About Steven reads what colleagues say from /api/recommendations in full, in a column that follows who he is in the document and stands to the right of every other panel on a wide window, and the document keeps only the heading and its sentence (ADR: The sidebar, the addendum on About Steven's column).
 - **1.0.3.152** (2026-10-17): What colleagues say stands in a column on the right of the landing page, read from the new /api/recommendations, which serves the ten from one file in one shape so a recommendation is added by adding an entry and moving the count the tests hold (ADR: The sidebar, the addendum on the column on the right).

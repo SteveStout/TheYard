@@ -71,15 +71,17 @@ for (const viewport of [
         /^\d of \d stores up$/
       );
 
-      // What colleagues say: one sentence from each of his ten LinkedIn recommendations, credited,
-      // read from /api/recommendations into a column of the page itself, and one link to all ten
-      // in full on About Steven. Wide, the column stands to the right of everything else and runs
-      // as far down as there are quotations; narrow, it follows the featured tiles.
+      // What colleagues say: his ten LinkedIn recommendations, each one whole and credited, read
+      // from /api/recommendations into a column of the page itself, with nothing to click through
+      // to. Wide, the column stands to the right of everything else and runs as far down as there
+      // are quotations; narrow, it follows the featured tiles.
       const said = page.getByTestId('landing-recommendations');
       await expect(said).toBeVisible();
       await expect(said.locator('blockquote')).toHaveCount(10);
       await expect(said.locator('li').first()).toContainText('Sarah Sebestyen');
-      const column = said.getByRole('region', { name: /What colleagues say/ });
+      const column = said.getByRole('region', {
+        name: /What colleagues say: \d+ recommendations, in full/,
+      });
       await expect(column).toHaveAttribute('data-state', 'ready');
       // One scroll bar on the screen, the page's own: every quotation stands in the page, so the
       // column scrolls neither down nor sideways and holds no tab stop of its own.
@@ -100,14 +102,13 @@ for (const viewport of [
         expect(saidBox.y).toBeGreaterThan(authorBox.y + authorBox.height - 1);
         expect(stripBox.y).toBeGreaterThan(saidBox.y + saidBox.height - 1);
       }
-      await page.getByTestId('landing-recommendations-all').click();
-      await expect(page).toHaveURL(/doc=author/);
-      await expect(
-        page
-          .getByRole('dialog', { name: 'About Steven' })
-          .getByRole('heading', { name: 'What colleagues say', exact: true })
-      ).toBeVisible();
-      await page.keyboard.press('Escape');
+      // Whole, not a sentence of each: the first one carries words from past its opening line, and
+      // the credit under it says how the two worked together and when.
+      await expect(said.locator('blockquote').first()).toContainText(
+        'His technical expertise and practical approach'
+      );
+      await expect(said.locator('li').first()).toContainText(/November 2024\./);
+      await expect(said.getByRole('button')).toHaveCount(0);
 
       // The resume is a large tile, and it opens the PDF this site serves.
       const resume = page.getByTestId('landing-tile-resume');

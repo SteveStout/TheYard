@@ -31,7 +31,8 @@ import styles from './Landing.module.css';
  * The Admin tile carries the one live reading, a health dot from /api/health,
  * read once when the page opens, and under the title the evidence strip reads
  * the gate's own counts from /api/tests/summary. What colleagues say stands in
- * a column of its own on the right of all of it, read from /api/recommendations,
+ * a column of its own on the right of all of it, every recommendation in full,
+ * read from /api/recommendations,
  * and keeps its place on the screen while the rest scrolls; where the page is
  * too narrow for two columns it follows the featured tiles.
  *
@@ -212,7 +213,7 @@ export function Landing({
           <h2 id="landing-said" className={styles.groupHeading}>
             What colleagues say
           </h2>
-          <Recommendations words="pull" onOpenAuthor={() => onOpenDoc('author')} />
+          <Recommendations />
         </aside>
         <div className={styles.rest}>
           {/* The strip stands at its full height from the first paint, four blank
