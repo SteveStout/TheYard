@@ -30,7 +30,10 @@ import styles from './Landing.module.css';
  * heading, as the sidebar groups them, then Sign in, Admin and GitHub.
  * The Admin tile carries the one live reading, a health dot from /api/health,
  * read once when the page opens, and under the title the evidence strip reads
- * the gate's own counts from /api/tests/summary.
+ * the gate's own counts from /api/tests/summary. What colleagues say stands in
+ * a column of its own on the right of all of it, read from /api/recommendations,
+ * and keeps its place on the screen while the rest scrolls; where the page is
+ * too narrow for two columns it follows the two featured tiles.
  *
  * A section's tile opens what its sidebar section opens first: its first
  * document in the dialog, or its first link in a new tab when it has no
@@ -195,85 +198,91 @@ export function Landing({
         </h1>
         <p className={styles.lede}>{INTRO.sentence}</p>
       </header>
-      <ul className={styles.featured} aria-label="Start here">
-        {featured.map((entry) => tile(entry, true))}
-      </ul>
-      {/* The strip stands at its full height from the first paint, four blank
+      <div className={styles.body}>
+        <div className={styles.lead}>
+          <ul className={styles.featured} aria-label="Start here">
+            {featured.map((entry) => tile(entry, true))}
+          </ul>
+        </div>
+        <aside
+          className={styles.side}
+          aria-labelledby="landing-said"
+          data-testid="landing-recommendations"
+        >
+          <h2 id="landing-said" className={styles.groupHeading}>
+            What colleagues say
+          </h2>
+          <Recommendations words="pull" onOpenAuthor={() => onOpenDoc('author')} />
+        </aside>
+        <div className={styles.rest}>
+          {/* The strip stands at its full height from the first paint, four blank
           figures until the gate's counts arrive: drawn only once they
           had, it pushed every group below it down 124 px on a desk, the last
           layout shift the landing page had. */}
-      <ul
-        className={styles.proof}
-        aria-label="What this build's gate measured"
-        aria-busy={proof === null}
-        data-testid="landing-proof"
-        data-state={proof === null ? 'loading' : 'ready'}
-      >
-        {(proof ?? PROOF_PLACEHOLDER).map((figure) => {
-          // The stores are read live from the health answer: how many answered, of how many run.
-          const ring =
-            figure.key === 'stores' && stores !== null
-              ? {
-                  value: stores.up,
-                  max: stores.of,
-                  words: `${stores.up} of ${stores.of} stores up`,
-                }
-              : figure.ring;
-          return (
-            <li
-              key={figure.key}
-              className={`${styles.proofItem} op-glass op-tile`}
-              data-testid={`landing-proof-${figure.key}`}
+          <ul
+            className={styles.proof}
+            aria-label="What this build's gate measured"
+            aria-busy={proof === null}
+            data-testid="landing-proof"
+            data-state={proof === null ? 'loading' : 'ready'}
+          >
+            {(proof ?? PROOF_PLACEHOLDER).map((figure) => {
+              // The stores are read live from the health answer: how many answered, of how many run.
+              const ring =
+                figure.key === 'stores' && stores !== null
+                  ? {
+                      value: stores.up,
+                      max: stores.of,
+                      words: `${stores.up} of ${stores.of} stores up`,
+                    }
+                  : figure.ring;
+              return (
+                <li
+                  key={figure.key}
+                  className={`${styles.proofItem} op-glass op-tile`}
+                  data-testid={`landing-proof-${figure.key}`}
+                >
+                  <span className={styles.proofFigure}>
+                    <CountUp text={figure.figure || '\u00a0'} />
+                  </span>
+                  <span className={styles.proofLabel}>{figure.label || '\u00a0'}</span>
+                  <span className={styles.proofDetail}>{figure.detail || '\u00a0'}</span>
+                  {RINGED.includes(figure.key) && (
+                    // Drawn from the first paint, an empty track until its reading
+                    // arrives, so the figure's row is its full height from the start.
+                    <span className={styles.proofRing}>
+                      <Ring
+                        value={ring?.value ?? 0}
+                        max={ring?.max ?? 1}
+                        size="tile"
+                        inside={ringReading(figure.key, ring)}
+                        label={ring?.words ?? null}
+                        testId={`landing-proof-ring-${figure.key}`}
+                      />
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {groups.map((group) => (
+            <section
+              key={group.key}
+              className={styles.group}
+              aria-labelledby={`landing-group-${group.key}`}
+              data-testid={`landing-group-${group.key}`}
             >
-              <span className={styles.proofFigure}>
-                <CountUp text={figure.figure || '\u00a0'} />
-              </span>
-              <span className={styles.proofLabel}>{figure.label || '\u00a0'}</span>
-              <span className={styles.proofDetail}>{figure.detail || '\u00a0'}</span>
-              {RINGED.includes(figure.key) && (
-                // Drawn from the first paint, an empty track until its reading
-                // arrives, so the figure's row is its full height from the start.
-                <span className={styles.proofRing}>
-                  <Ring
-                    value={ring?.value ?? 0}
-                    max={ring?.max ?? 1}
-                    size="tile"
-                    inside={ringReading(figure.key, ring)}
-                    label={ring?.words ?? null}
-                    testId={`landing-proof-ring-${figure.key}`}
-                  />
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <section
-        className={styles.group}
-        aria-labelledby="landing-said"
-        data-testid="landing-recommendations"
-      >
-        <h2 id="landing-said" className={styles.groupHeading}>
-          What colleagues say
-        </h2>
-        <Recommendations onOpenAuthor={() => onOpenDoc('author')} />
-      </section>
-      {groups.map((group) => (
-        <section
-          key={group.key}
-          className={styles.group}
-          aria-labelledby={`landing-group-${group.key}`}
-          data-testid={`landing-group-${group.key}`}
-        >
-          <h2 id={`landing-group-${group.key}`} className={styles.groupHeading}>
-            {group.label}
-          </h2>
-          <ul className={styles.grid}>{group.tiles.map((entry) => tile(entry, false))}</ul>
-        </section>
-      ))}
-      <ul className={styles.grid} aria-label="Sign in, Admin and the source">
-        {rest.map((entry) => tile(entry, false))}
-      </ul>
+              <h2 id={`landing-group-${group.key}`} className={styles.groupHeading}>
+                {group.label}
+              </h2>
+              <ul className={styles.grid}>{group.tiles.map((entry) => tile(entry, false))}</ul>
+            </section>
+          ))}
+          <ul className={styles.grid} aria-label="Sign in, Admin and the source">
+            {rest.map((entry) => tile(entry, false))}
+          </ul>
+        </div>
+      </div>
     </section>
   );
 }

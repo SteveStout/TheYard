@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using TheYard.Api;
 
 namespace TheYard.Tests;
 
@@ -474,7 +475,7 @@ public class AuthorPageTests
     /// What colleagues say is the panel of About Steven that quotes the
     /// recommendations on his LinkedIn profile (ADR: The sidebar, the addendum
     /// on what colleagues say). The words live once, in
-    /// src/library/recommendations.ts, and the panel quotes every one of them
+    /// data/recommendations.json, and the panel quotes every one of them
     /// in full under the name of the person who wrote it, so an edit to either
     /// file shows up here.
     /// </summary>
@@ -486,17 +487,18 @@ public class AuthorPageTests
         int away = words.IndexOf("\n## Away from the keyboard\n", StringComparison.Ordinal);
         Assert.True(said > 0 && away > said, "docs/author/AUTHOR.md should hold What colleagues say as a panel ahead of Away from the keyboard");
         string panel = words[said..away];
-        string source = File.ReadAllText(Path.Combine(Root, "src", "library", "recommendations.ts"));
-        List<(string Name, string Text)> entries = Recommendations(source);
+        var entries = JsonSerializer.Deserialize<RecommendationsReply>(
+            File.ReadAllText(Repo.DataFile("recommendations.json")), RecommendationsFile.Format)!.Recommendations;
         Assert.Equal(10, entries.Count);
         var wrong = new List<string>();
-        foreach ((string name, string text) in entries)
+        foreach (var entry in entries)
         {
+            string name = entry.Name;
             if (!panel.Contains($"\n### {name}\n", StringComparison.Ordinal))
             {
                 wrong.Add($"{name} has no block on the panel");
             }
-            foreach (string line in text.Split('\n').Where(line => line.Length > 0))
+            foreach (string line in entry.Paragraphs)
             {
                 if (!panel.Contains($"> {line}", StringComparison.Ordinal))
                 {
@@ -508,20 +510,5 @@ public class AuthorPageTests
         Assert.Equal(entries.Count, Regex.Matches(panel, @"(?m)^### ").Count);
     }
 
-    /// <summary>The name and text of each entry, read off the TypeScript source: a quoted string, with its \n, \' and \" escapes resolved.</summary>
-    private static List<(string Name, string Text)> Recommendations(string source)
-    {
-        var entries = new List<(string, string)>();
-        foreach (Match entry in Regex.Matches(source, @"(?m)^\s*name: (?<name>'(?:[^'\\]|\\.)*'|""(?:[^""\\]|\\.)*""),"))
-        {
-            Match text = Regex.Match(source[(entry.Index + entry.Length)..], @"(?m)^\s*text: (?<text>'(?:[^'\\]|\\.)*'|""(?:[^""\\]|\\.)*""),");
-            Assert.True(text.Success, $"no text follows {entry.Groups["name"].Value}");
-            entries.Add((Unquote(entry.Groups["name"].Value), Unquote(text.Groups["text"].Value)));
-        }
-        return entries;
-    }
-
-    private static string Unquote(string literal) =>
-        literal[1..^1].Replace("\\n", "\n", StringComparison.Ordinal).Replace("\\'", "'", StringComparison.Ordinal).Replace("\\\"", "\"", StringComparison.Ordinal);
     // #endregion what-colleagues-say
 }

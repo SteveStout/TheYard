@@ -350,6 +350,23 @@ Steve looked at the panel and asked for the recommendations in a row, on the lan
 
 The document did not change: `layoutAuthor` reads a panel whose every block quotes somebody as a row, and nothing else about the panel is special, so a second panel of quotations would get the same shape without a line of code. `author.test` holds the rule and `author.spec` reads the row on the page; `landing.spec` reads the ten sentences and the region.
 
+## Addendum, 2026-10-17 (1.0.3.152): the column on the right, and the words served from one file
+
+Steve looked at the row and asked for two things. The recommendations should stand in a column on the right of the landing page, with everything else on the left, so a reader who came for the inventory or the resume has them in view the whole way down; a row under the figures was the easiest thing on the page to scroll past. And the words should come from the API in one consistent shape that is easy to add to and adjust, even while the values are fixed.
+
+The words now live in one file, `data/recommendations.json`, beside the dataset and the gate's results: one entry per person in the order they are shown, every entry the same six fields (name, title, relationship, when, paragraphs, pull), and nothing reworded. Adding a recommendation is adding one entry; the code does not change. `GET /api/recommendations` answers the file as it is, snake_case on the wire like every other answer, and is in the API document with the rest. The shape is written once, in `Recommendations.cs`, beside the check that says what an entry has to get right; the endpoint answers a failure that names the slip when an entry is out of shape, and `RecommendationsTests` reads the same check in the gate, so a shipped build never gets that far.
+
+```live path=api/TheYard.Api/Recommendations.cs region=recommendation-shape
+```
+
+```live path=api/TheYard.Api/Endpoints/RecommendationEndpoints.cs region=recommendations-route
+```
+
+On the landing page the column stands to the right from 900 px of page width, as tall as the screen, and keeps its place while the left side scrolls; past the fifth quotation it scrolls on its own, a named region with a tab stop as before. Narrower than that it follows the two featured tiles as one block that scrolls inside itself. The column reads the endpoint when the page opens and draws ten blank places until the answer arrives, so nothing on the page moves when it does; an answer that does not come is said in words. The TypeScript copy of the words is gone with this version; `AuthorPageTests` holds About Steven to the file until that page reads the endpoint too.
+
+```live path=src/lib/recommendations.ts region=recommendations-from
+```
+
 ## Addendum, 2026-10-16 (1.0.3.140): The Shed
 
 The Shed is a second app in this repository: a file and folder browser built in the same working method, with its own site, its own deploy and its own decision records. Until now nothing on TheYard pointed to it, so a visitor found it only through the repository. It now has a section of its own under How it is built, with two links out: the running app and its code. The landing page draws it as a tile like every section, and because the section holds only links, the tile opens the app in a new tab. The sample's folder moved from its first working name to `samples/theshed`, the name it goes by everywhere else, and its documents now describe it as a developer test project without naming a company.

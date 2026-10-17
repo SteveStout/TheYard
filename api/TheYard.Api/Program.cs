@@ -36,6 +36,7 @@ app.MapReferenceEndpoints();                  // Endpoints/ReferenceEndpoints.cs
 app.MapVehicleEndpoints();                    // Endpoints/VehicleEndpoints.cs
 app.MapBidEndpoints();                        // Endpoints/BidEndpoints.cs
 app.MapDocumentationEndpoints();              // Endpoints/DocumentationEndpoints.cs
+app.MapRecommendationEndpoints();             // Endpoints/RecommendationEndpoints.cs
 app.MapHealthEndpoints();                     // Endpoints/HealthEndpoints.cs
 app.MapErrorEndpoints();                      // Endpoints/ErrorEndpoints.cs
 app.MapAdminEndpoints();                      // Endpoints/AdminEndpoints.cs

@@ -118,6 +118,7 @@ public static class KeepWarmReads
         "/api/stores",
         "/api/version",
         "/api/tests/summary",
+        "/api/recommendations",
         "/api/admin/activity?window=24h",
         "/api/admin/activity?window=7d",
         "/api/admin/activity?window=30d",

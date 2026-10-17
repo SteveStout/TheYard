@@ -1,0 +1,112 @@
+{
+  "readme": "One entry per person, shown in this order. Every entry has the same six fields: name and title as LinkedIn shows them, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the six fields; the gate checks the shape.",
+  "source": "https://www.linkedin.com/in/stevenwstout/details/recommendations/",
+  "recommendations": [
+    {
+      "name": "Sarah Sebestyen",
+      "title": "AI Developer at Hunter Engineering Company",
+      "relationship": "Steven was senior to Sarah but did not manage Sarah directly",
+      "when": "November 2024",
+      "paragraphs": [
+        "I’ve had the pleasure of working with Steve and he’s one of the most technically skilled and reliable professionals I know. Steve has a natural talent for problem-solving, always finding quick and effective solutions to complex challenges.",
+        "Whether working independently or with a team, Steve consistently delivers high-quality work on time, no matter the pressure. His technical expertise and practical approach make him an invaluable asset to any team."
+      ],
+      "pull": "Whether working independently or with a team, Steve consistently delivers high-quality work on time, no matter the pressure."
+    },
+    {
+      "name": "Sean Whitesell",
+      "title": "President of SkyForge Consulting, Microsoft MVP, Senior Cloud Architect, Author, Tech Leader",
+      "relationship": "Sean worked with Steven but they were at different companies",
+      "when": "April 2024",
+      "paragraphs": [
+        "I worked with Steven on a data analysis project for Conway. Steven showed a great attention to detail and is results focused.",
+        "Whether it's debugging complex code or meticulously planning out project timelines, Steven cares about positive results."
+      ],
+      "pull": "Whether it's debugging complex code or meticulously planning out project timelines, Steven cares about positive results."
+    },
+    {
+      "name": "Anthony Fortner",
+      "title": "Data Engineering Manager at Hunter Engineering Company",
+      "relationship": "Steven was senior to Anthony but did not manage Anthony directly",
+      "when": "April 2024",
+      "paragraphs": [
+        "Mr. Stout is responsive and knowledgeable, with a strong sense of responsibility and ownership. He brings diverse skills to the table whether working on a large project, a quick win, or solving a technical problem. I recommend Steven to any team and look forward to working together in the future."
+      ],
+      "pull": "Mr. Stout is responsive and knowledgeable, with a strong sense of responsibility and ownership."
+    },
+    {
+      "name": "Meagan Colley",
+      "title": "Business Intelligence Analyst",
+      "relationship": "Meagan worked with Steven on the same team",
+      "when": "April 2024",
+      "paragraphs": [
+        "In my time at Conway I was very privileged to have been mentored by Steven. His knowledge is very expansive as a full stack developer. As a result, I was able to learn a great amount from him. Steven taught me quite a few tricks and tips in regards to MySQL DB as well as Microsoft Azure and other front end tools. I know he has a wealth of knowledge in many other technical areas in addition to those mentioned. Our products ran on multiple languages and programs and he was the only tech person at the time, so he was the SME for virtually every product. Apart from his diverse technical knowledge, Steven was also professional and a joy to work with. He was very responsive to any issue or question a team member or client may have. He also was fantastic at problem solving; not only for quick fixes but also long term sustainability. I continue to be impressed by the improvements Steven has made to Conway's company products."
+      ],
+      "pull": "Our products ran on multiple languages and programs and he was the only tech person at the time, so he was the SME for virtually every product."
+    },
+    {
+      "name": "Sanders Crosby",
+      "title": "Director, Advanced Automation Technologies",
+      "relationship": "Sanders worked with Steven on the same team",
+      "when": "August 2023",
+      "paragraphs": [
+        "I have known Steven since 2018. Steven is a veteran full stack developer. Steven works extremally well in any team he is apart of. Steven is driven by making sure any solution he is working on meets the vision of his customers. I would recommend Steven to any team and given the chance to work with him again, I would look forward to our collaboration."
+      ],
+      "pull": "Steven is driven by making sure any solution he is working on meets the vision of his customers."
+    },
+    {
+      "name": "Dustin Comuzie",
+      "title": "IT Professional",
+      "relationship": "Dustin worked with Steven but they were at different companies",
+      "when": "June 2023",
+      "paragraphs": [
+        "Steven is methodical in the way he approaches complex issues and exhibits exemplary patience and perseverance until resolution of the issue. In a recent project where nonstandard methods had to be implemented, Steven rose to the task and remained vigilant until the goal was achieved. He then documented the steps to ease future implementations. I always look forward to collaborating with Steven."
+      ],
+      "pull": "Steven is methodical in the way he approaches complex issues and exhibits exemplary patience and perseverance until resolution of the issue."
+    },
+    {
+      "name": "Micah Johnson",
+      "title": "Senior Systems Architect",
+      "relationship": "Micah worked with Steven but on different teams",
+      "when": "May 2023",
+      "paragraphs": [
+        "Steven and I both worked at Hunter Engineering, though in different departments. However, his reputation for solving extremely technical and difficult problems was a sentiment that was well known. He is amazingly efficient, while also fostering great relationships."
+      ],
+      "pull": "He is amazingly efficient, while also fostering great relationships."
+    },
+    {
+      "name": "Lee Markum",
+      "title": "Senior DBA",
+      "relationship": "Lee worked with Steven but on different teams",
+      "when": "February 2023",
+      "paragraphs": [
+        "Steve is a knowledgeable Application Developer who cares about the overall performance of the applications he works on. Whether it's in the application layer or the database layer, Steve wants best practices to be used so that the design is right, and the performance is good.",
+        "He is a continuous learner; always striving to improve his skills and make a positive impact on the projects he works on. Steve has a strong desire to learn from others and to pass on to colleagues what his experience has taught him."
+      ],
+      "pull": "He is a continuous learner; always striving to improve his skills and make a positive impact on the projects he works on."
+    },
+    {
+      "name": "Drew Dell",
+      "title": "Developer IV at Hunter Engineering Company",
+      "relationship": "Steven was senior to Drew but did not manage Drew directly",
+      "when": "February 2023",
+      "paragraphs": [
+        "Steve and I started working at Hunter around the same time. This was my first job in software development out of college. Working with Steve benefited my growth as a developer tremendously. During our time together at Hunter he was one of the most productive developers on the team. He was always given the most complex problems to solve because he had a reputation for being able to solve hard problems and get projects across the finish line. He did all of that while championing best practices and mentoring some of the junior devs. He would be a great leader on any team."
+      ],
+      "pull": "He was always given the most complex problems to solve because he had a reputation for being able to solve hard problems and get projects across the finish line."
+    },
+    {
+      "name": "Bill Sladek",
+      "title": "Software Engineer",
+      "relationship": "Bill worked with Steven but on different teams",
+      "when": "February 2023",
+      "paragraphs": [
+        "I worked with Steve Stout from May 2015-Nov 2018 at Hunter Engineering. We worked on different teams, and we worked well together. He is a team player that works hard at getting projects done.",
+        "1. He is very task oriented.",
+        "2. He did not require any rework with his apps.",
+        "3. Was able to give alternative suggestions when issues arrived."
+      ],
+      "pull": "He is a team player that works hard at getting projects done."
+    }
+  ]
+}

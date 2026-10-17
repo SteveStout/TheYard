@@ -72,15 +72,28 @@ for (const viewport of [
       );
 
       // What colleagues say: one sentence from each of his ten LinkedIn recommendations, credited,
-      // in a row that scrolls sideways (a named region with a tab stop), and one link to all ten
-      // in full on About Steven.
+      // read from /api/recommendations into a column that scrolls down (a named region with a tab
+      // stop), and one link to all ten in full on About Steven. Wide, the column stands to the
+      // right of everything else; narrow, it follows the two featured tiles.
       const said = page.getByTestId('landing-recommendations');
       await expect(said).toBeVisible();
       await expect(said.locator('blockquote')).toHaveCount(10);
       await expect(said.locator('li').first()).toContainText('Sarah Sebestyen');
-      const row = said.getByRole('region', { name: /scrolling sideways/ });
-      await expect(row).toHaveAttribute('tabindex', '0');
-      expect(await row.evaluate((box) => box.scrollWidth > box.clientWidth)).toBe(true);
+      const column = said.getByRole('region', { name: /scrolls down/ });
+      await expect(column).toHaveAttribute('tabindex', '0');
+      await expect(column).toHaveAttribute('data-state', 'ready');
+      expect(await column.evaluate((box) => box.scrollHeight > box.clientHeight)).toBe(true);
+      expect(await column.evaluate((box) => box.scrollWidth <= box.clientWidth)).toBe(true);
+      const saidBox = (await said.boundingBox())!;
+      const stripBox = (await page.getByTestId('landing-proof').boundingBox())!;
+      const authorBox = (await page.getByTestId('landing-tile-author').boundingBox())!;
+      if (viewport.width >= 1280) {
+        expect(saidBox.x).toBeGreaterThanOrEqual(stripBox.x + stripBox.width);
+        expect(saidBox.y).toBeLessThan(stripBox.y);
+      } else {
+        expect(saidBox.y).toBeGreaterThan(authorBox.y + authorBox.height - 1);
+        expect(stripBox.y).toBeGreaterThan(saidBox.y + saidBox.height - 1);
+      }
       await page.getByTestId('landing-recommendations-all').click();
       await expect(page).toHaveURL(/doc=author/);
       await expect(
