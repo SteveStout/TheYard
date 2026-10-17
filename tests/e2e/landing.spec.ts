@@ -72,18 +72,24 @@ for (const viewport of [
       );
 
       // What colleagues say: one sentence from each of his ten LinkedIn recommendations, credited,
-      // read from /api/recommendations into a column that scrolls down (a named region with a tab
-      // stop), and one link to all ten in full on About Steven. Wide, the column stands to the
-      // right of everything else; narrow, it follows the featured tiles.
+      // read from /api/recommendations into a column of the page itself, and one link to all ten
+      // in full on About Steven. Wide, the column stands to the right of everything else and runs
+      // as far down as there are quotations; narrow, it follows the featured tiles.
       const said = page.getByTestId('landing-recommendations');
       await expect(said).toBeVisible();
       await expect(said.locator('blockquote')).toHaveCount(10);
       await expect(said.locator('li').first()).toContainText('Sarah Sebestyen');
-      const column = said.getByRole('region', { name: /scrolls down/ });
-      await expect(column).toHaveAttribute('tabindex', '0');
+      const column = said.getByRole('region', { name: /What colleagues say/ });
       await expect(column).toHaveAttribute('data-state', 'ready');
-      expect(await column.evaluate((box) => box.scrollHeight > box.clientHeight)).toBe(true);
-      expect(await column.evaluate((box) => box.scrollWidth <= box.clientWidth)).toBe(true);
+      // One scroll bar on the screen, the page's own: every quotation stands in the page, so the
+      // column scrolls neither down nor sideways and holds no tab stop of its own.
+      expect(
+        await column.evaluate((box) => [
+          box.scrollHeight - box.clientHeight,
+          box.scrollWidth - box.clientWidth,
+          box.getAttribute('tabindex'),
+        ])
+      ).toEqual([0, 0, null]);
       const saidBox = (await said.boundingBox())!;
       const stripBox = (await page.getByTestId('landing-proof').boundingBox())!;
       const authorBox = (await page.getByTestId('landing-tile-author').boundingBox())!;

@@ -26,7 +26,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   await expect(wide.locator('.author-panel')).toHaveCount(5);
   await expect(wide.getByRole('heading', { name: 'How I lead', exact: true })).toBeVisible();
   // The ten recommendations in full, read from /api/recommendations into a column on the right of
-  // every other panel: a named region with a tab stop, taller than its box.
+  // every other panel, running as far down the page as there are quotations.
   const said = wide.locator('.author-side');
   await expect(
     said.getByRole('heading', { name: 'What colleagues say', exact: true })
@@ -35,9 +35,14 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   await expect(said.locator('blockquote').first()).toContainText('pleasure of working with Steve');
   await expect(said).toContainText('Sarah Sebestyen');
   const column = said.getByRole('region', { name: /recommendations in full/ });
-  await expect(column).toHaveAttribute('tabindex', '0');
   await expect(column).toHaveAttribute('data-state', 'ready');
-  expect(await column.evaluate((box) => box.scrollHeight > box.clientHeight)).toBe(true);
+  // One scroll bar on the screen, the window's own: every recommendation stands in the page.
+  expect(
+    await column.evaluate((box) => [
+      box.scrollHeight - box.clientHeight,
+      box.getAttribute('tabindex'),
+    ])
+  ).toEqual([0, null]);
   const sideBox = (await said.boundingBox())!;
   const restBox = (await wide.locator('.author-rest').boundingBox())!;
   expect(sideBox.x).toBeGreaterThanOrEqual(restBox.x + restBox.width);
@@ -61,8 +66,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   await page.getByRole('button', { name: 'Menu' }).click();
   const doc = await theAuthorPage(page, page.getByRole('dialog', { name: 'Menu' }));
 
-  // On a phone the column follows who he is and comes before how he leads, and it scrolls inside
-  // its own box, a box whose height is the same before and after the quotations land.
+  // On a phone the column follows who he is and comes before how he leads, every quotation in it.
   const introBox = (await doc.locator('.author-intro').boundingBox())!;
   const saidBox = (await doc.locator('.author-side').boundingBox())!;
   const leadBox = (await doc

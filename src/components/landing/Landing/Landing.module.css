@@ -1,6 +1,6 @@
 /**
  * Does:      Styles the landing page: the hero and its title, the two columns under it, the featured tiles, the
- *            section tiles under their group headings, each tile's badge, and the place of the column on the right.
+ *            section tiles under their group headings, each tile's badge, and the place of the quotations column.
  * Does not:  Decide which sections exist (siteMap.ts does), or draw a tile's glass (panels.css does).
  * Used by:   Landing.tsx.
  */
@@ -43,12 +43,6 @@
   min-width: 0;
 }
 
-/* One column: the quotes take most of a screen at most and scroll on their own, so the rest is still a flick
-   away; and a flick that reaches their end hands off to the page, as on any page. */
-.side > [role='region'] {
-  max-height: min(70dvh, 560px);
-}
-
 @container page (min-width: 900px) {
   .body {
     display: grid;
@@ -70,23 +64,11 @@
     grid-row: 2;
   }
 
-  /* The column stands the height of the screen and keeps its place while the left side scrolls. */
+  /* The column stands beside both rows and runs as far down the page as there are quotations, so
+     a reader scrolling the left side passes every one of them. */
   .side {
     grid-column: 2;
     grid-row: 1 / 3;
-    align-self: start;
-    position: sticky;
-    top: var(--space-6);
-    max-height: calc(100dvh - 2 * var(--space-6));
-  }
-
-  .side > [role='region'] {
-    max-height: none;
-    min-height: 0;
-    flex: 1 1 auto;
-    /* Beside the page the column keeps its own scroll: a wheel over the quotes reads the quotes,
-       and the page under them stands still. */
-    overscroll-behavior-y: contain;
   }
 }
 
