@@ -10,6 +10,11 @@
   scroll-padding-inline: var(--space-3);
   /* The sideways scroll keeps the page's own: a flick along the row never drags the page. */
   overscroll-behavior-x: contain;
+  /* A thin bar under the row from the first paint, so the card the right edge cuts reads as a
+     row that scrolls and not as a card the page clipped. A fade would have done it too, and
+     would have masked the focus ring with it. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }
 
 .row:focus-visible {

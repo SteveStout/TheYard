@@ -15,6 +15,18 @@
   transform: none;
 }
 
+/* The blocks are narrower than the page's tiles, so the figure is one step smaller and "under 1 ms"
+   stays on one line; the word at the foot sits at the foot of every block, not under the last line
+   of a detail that is two lines in one block and five in the next. */
+.statBlock .blockValue {
+  font-size: var(--text-xl);
+}
+
+.statBlock .blockWord {
+  margin-top: auto;
+  padding-top: var(--space-1);
+}
+
 /* A chart as a section: the question it answers, one sentence on how to read it, the chart. */
 .chartSection {
   display: flex;

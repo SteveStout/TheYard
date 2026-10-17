@@ -5,6 +5,7 @@ import {
   CHART,
   areaPath,
   ceilingOf,
+  headroom,
   bandPath,
   countFor,
   dayLines,
@@ -63,7 +64,15 @@ describe('the graph', () => {
   it('has a ceiling of at least one, so a quiet day still draws an axis', () => {
     expect(ceilingOf([])).toBe(1);
     expect(ceilingOf([{ store: 'sql', name: '', points: [] }])).toBe(1);
-    expect(ceilingOf(series)).toBe(10);
+    // The peak is 10; the axis tops out at the next round number with headroom over it.
+    expect(ceilingOf(series)).toBe(12);
+  });
+
+  it('keeps headroom over the peak with a round number at the top (1.0.3.147)', () => {
+    expect([1, 2, 3, 5, 9, 10, 50, 205, 1000].map(headroom)).toEqual([
+      2, 3, 4, 6, 10, 12, 60, 250, 1200,
+    ]);
+    expect(headroom(0)).toBe(1);
   });
 
   it('draws the line from the left edge to the right edge and inside the area', () => {
@@ -194,7 +203,7 @@ describe('unique visitors per day', () => {
     expect(bands[1].lower).toEqual([1, 0]);
     expect(bands[1].upper).toEqual([2, 0]);
     expect(bands[2].upper).toEqual([3, 0]);
-    expect(stackCeiling(bands)).toBe(3);
+    expect(stackCeiling(bands)).toBe(4);
   });
 
   it('stacks the people alone under Visitors only, and a quiet window still has an axis', () => {

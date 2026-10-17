@@ -97,7 +97,8 @@
   overflow-wrap: normal;
 }
 
-.table tr:last-child td {
+.table tbody tr:last-child td,
+.table tbody tr:last-child th {
   border-bottom: none;
 }
 

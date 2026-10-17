@@ -341,6 +341,10 @@
   border-top: 1px solid var(--color-sheet-divider-strong);
   padding-top: var(--space-2);
   padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
+  /* A shade over the list's last pixels: a row cut by the block's edge reads as the list going on
+     under it, not as a row the rail lost. */
+  position: relative;
+  box-shadow: 0 -10px 14px -10px color-mix(in srgb, var(--palette-brown-gray) 28%, transparent);
 }
 
 /* Visually hidden, still read by assistive tech and still the accessible name. */

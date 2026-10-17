@@ -104,10 +104,14 @@ function TrafficCard({
                   data-tone={block.tone}
                 >
                   <span className={stripStyles.tileLabel}>{block.label}</span>
-                  <span className={stripStyles.tileValue}>{block.value}</span>
+                  <span className={`${stripStyles.tileValue} ${styles.blockValue}`}>
+                    {block.value}
+                  </span>
                   <span className={stripStyles.tileDetail}>{block.detail}</span>
                   {block.word !== null && (
-                    <span className={stripStyles.tileTone}>{block.word}</span>
+                    <span className={`${stripStyles.tileTone} ${styles.blockWord}`}>
+                      {block.word}
+                    </span>
                   )}
                 </div>
               </li>

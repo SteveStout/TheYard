@@ -7,9 +7,9 @@ import { useFittedBox } from '../charts';
 import styles from '../ActivityCard/ActivityCard.module.css';
 
 /**
- * The drawing's sizes: the widest it grows, each row's height, and the room kept for the
- * label on the left and the count on the right. Drawn at its real width, its words stay
- * the chart text size on a phone and on a wide desk alike.
+ * The drawing's sizes: its width before the card's is read, each row's height, and the room
+ * kept for the label on the left and the count on the right. Drawn at its real width, as wide
+ * as the table under it, its words stay the chart text size on a phone and on a wide desk alike.
  */
 const PATH_CHART = { width: 560, row: 26, bar: 120, count: 44 } as const;
 

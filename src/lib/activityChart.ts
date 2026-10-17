@@ -20,7 +20,23 @@ import type {
  */
 export const CHART = { width: 720, height: 200, left: 36, right: 12, top: 12, bottom: 28 } as const;
 
-/** The highest count on any series, or 1, so a flat day still has a y axis. */
+/**
+ * The axis's top for a peak: the next round number (1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8 of a power of
+ * ten, whole) with a tenth of headroom over it, so the highest day never touches the frame and
+ * the label stays a number a reader expects. 1 for an empty window, so a flat day still has an axis.
+ */
+export function headroom(peak: number): number {
+  if (peak <= 0) return 1;
+  const want = peak * 1.1;
+  const scale = 10 ** Math.floor(Math.log10(want));
+  for (const step of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) {
+    const top = step * scale;
+    if (top >= want && Number.isInteger(top)) return top;
+  }
+  return 10 * scale;
+}
+
+/** The axis's top over the highest count on any series: headroom() of the peak. */
 export function ceilingOf(series: ActivitySeries[]): number {
   let top = 0;
   for (const line of series) {
@@ -28,7 +44,7 @@ export function ceilingOf(series: ActivitySeries[]): number {
       if (point.requests > top) top = point.requests;
     }
   }
-  return top === 0 ? 1 : top;
+  return headroom(top);
 }
 
 /**
@@ -98,11 +114,10 @@ export function stackBands(days: ActivityDay[], who: ActivityWho): ActivityBand[
   });
 }
 
-/** The top of the stack on its highest day, or 1, so a quiet window still has an axis. */
+/** The axis's top over the stack on its highest day: headroom() of it, 1 for a quiet window. */
 export function stackCeiling(bands: ActivityBand[]): number {
   const top = bands.length === 0 ? [] : bands[bands.length - 1].upper;
-  const most = Math.max(0, ...top);
-  return most === 0 ? 1 : most;
+  return headroom(Math.max(0, ...top));
 }
 
 /** The x of the day at `index` of `count`, spread evenly across the drawing area. */
