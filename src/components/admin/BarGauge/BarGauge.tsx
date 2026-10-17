@@ -35,7 +35,7 @@ export function BarGauge({
   ceiling: string;
   value: number;
   max: number;
-  /** The reading in words: "31 % · 364 MB". */
+  /** The reading in words: "31% · 364 MB". */
   reading: string;
   /** The fill colour: deep teal, or gold for request units. */
   tone?: 'deep' | 'gold';

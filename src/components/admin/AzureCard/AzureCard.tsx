@@ -100,7 +100,7 @@ export default function AzureCard({ tick }: { tick: number }) {
             </li>
             <li className={styles.checkRow}>
               <span className={styles.mono}>{azure.image?.split('/').pop()}</span>
-              <span className={styles.muted}>image Azure reports</span>
+              <span className={styles.muted}>the container image Azure reports</span>
             </li>
             <li className={styles.checkRow}>
               <span className={pill(azure.always_on === true)}>
@@ -134,7 +134,7 @@ export default function AzureCard({ tick }: { tick: number }) {
           </li>
           <li className={styles.checkRow}>
             <span className={styles.mono}>{azure.image?.split('/').pop()}</span>
-            <span className={styles.muted}>image Azure reports</span>
+            <span className={styles.muted}>the container image Azure reports</span>
           </li>
           {azure.events && azure.events.length > 0 && (
             <li className={styles.checkRow}>

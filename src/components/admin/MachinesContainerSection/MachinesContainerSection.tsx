@@ -71,23 +71,24 @@ export function MachinesContainerSection({
         <>
           <p data-testid="machines-container-line">
             <strong>
-              {latest.working_set_mb} MB of {container.memory_limit_mb} MB
+              {formatNumber(latest.working_set_mb)} MB of {formatNumber(container.memory_limit_mb)}{' '}
+              MB
             </strong>{' '}
-            in use, {latest.managed_mb} MB of it managed objects,{' '}
+            in use, {formatNumber(latest.managed_mb)} MB of it managed objects,{' '}
             {latest.cpu_percent === null
               ? 'processor share not read yet'
               : `${latest.cpu_percent}% of ${container.processors} processor${container.processors === 1 ? '' : 's'}`}
             , {latest.threads} threads, {latest.gen0_collections} quick collections and{' '}
             {latest.gen2_collections} full ones since this container started. Peak working set in
-            the window: {peak} MB.
+            the window: {formatNumber(peak)} MB.
           </p>
           <BarGauge
             testId="machines-memory-gauge"
             name="Memory"
-            ceiling={`${container.memory_limit_mb.toLocaleString()} MB`}
+            ceiling={`${formatNumber(container.memory_limit_mb)} MB`}
             value={latest.working_set_mb}
             max={container.memory_limit_mb}
-            reading={`${Math.round((latest.working_set_mb / Math.max(1, container.memory_limit_mb)) * 100)} % · ${latest.working_set_mb.toLocaleString()} MB`}
+            reading={`${Math.round((latest.working_set_mb / Math.max(1, container.memory_limit_mb)) * 100)}% · ${formatNumber(latest.working_set_mb)} MB`}
           />
           {container.catalogues && container.catalogues.length > 0 && (
             // Most of that memory is catalogues, a hundred thousand vehicles a

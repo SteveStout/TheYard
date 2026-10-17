@@ -8,7 +8,7 @@
 const ORDER = ['Critical', 'Error', 'Warning', 'Information', 'Debug', 'Trace'];
 
 // #region level-line
-/** "1 error, 3 warnings, 76 information": every level present, worst first, each with its count. */
+/** "76 information lines", or "80 lines: 1 error, 3 warnings, 76 information": every level present, worst first, each with its count. */
 export function levelLine(entries: { level: string }[]): string {
   if (entries.length === 0) return 'No lines in the window.';
   const counts = new Map<string, number>();
@@ -18,7 +18,12 @@ export function levelLine(entries: { level: string }[]): string {
     return at === -1 ? ORDER.length : at;
   };
   const levels = [...counts.keys()].sort((a, b) => rank(a) - rank(b));
-  return levels
+  const total = entries.length;
+  const ending = total === 1 ? '' : 's';
+  if (levels.length === 1) {
+    return `${total.toLocaleString('en-US')} ${levels[0].toLowerCase()} line${ending}`;
+  }
+  const each = levels
     .map((level) => {
       const n = counts.get(level) ?? 0;
       const word = level.toLowerCase();
@@ -26,5 +31,6 @@ export function levelLine(entries: { level: string }[]): string {
       return `${n.toLocaleString('en-US')} ${plural ? word : `${word}s`}`;
     })
     .join(', ');
+  return `${total.toLocaleString('en-US')} line${ending}: ${each}`;
 }
 // #endregion level-line

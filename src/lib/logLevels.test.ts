@@ -10,7 +10,7 @@ describe('levelLine', () => {
       { level: 'Error' },
       { level: 'Warning' },
     ];
-    expect(levelLine(entries)).toBe('1 error, 2 warnings, 2 information');
+    expect(levelLine(entries)).toBe('5 lines: 1 error, 2 warnings, 2 information');
   });
 
   it('says an empty window in words', () => {
@@ -18,6 +18,13 @@ describe('levelLine', () => {
   });
 
   it('puts a level it does not know after the ones it does', () => {
-    expect(levelLine([{ level: 'Odd' }, { level: 'Critical' }])).toBe('1 critical, 1 odd');
+    expect(levelLine([{ level: 'Odd' }, { level: 'Critical' }])).toBe('2 lines: 1 critical, 1 odd');
+  });
+
+  it('says what it counts when every line is one level', () => {
+    expect(levelLine([{ level: 'Information' }, { level: 'Information' }])).toBe(
+      '2 information lines'
+    );
+    expect(levelLine([{ level: 'Error' }])).toBe('1 error line');
   });
 });

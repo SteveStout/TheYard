@@ -73,11 +73,11 @@ export function MachinesDocumentSection({
             {documentStore.p50_ms === null || documentStore.p95_ms === null
               ? 'none of them timed'
               : `${millisecondsWords(documentStore.p50_ms)} at the median and ${millisecondsWords(documentStore.p95_ms)} at the ninety-fifth`}
-            . The free tier allows {documentStore.free_request_units_per_second} request units a
-            second, and the gauge below is the busiest minute in the ring as a rate against that
-            allowance; the table&rsquo;s last column is each minute&rsquo;s average rate against it.
-            There is no memory or processor reading here: the store is sold by request unit and
-            reports neither.
+            . The free tier allows {formatNumber(documentStore.free_request_units_per_second)}{' '}
+            request units a second, and the gauge below is the busiest minute in the ring as a rate
+            against that allowance; the table&rsquo;s last column is each minute&rsquo;s average
+            rate against it. There is no memory or processor reading here: the store is sold by
+            request unit and reports neither.
           </p>
           <BarGauge
             testId="machines-ru-gauge"
