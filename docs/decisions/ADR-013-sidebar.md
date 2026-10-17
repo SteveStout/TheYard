@@ -207,7 +207,6 @@ browser suite reads every heading.
 
 ![The comparison open from its section: the record dialog over the inventory, the rail row marked current, the page's first paragraphs](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/sidebar-sql-vs-cosmos-open.png)
 
-
 ## Addendum, 2026-09-15: every section is closed on arrival, shipped as 1.0.0.135
 
 The records index has been a closed `details` since it was written, and the other ten sections were
@@ -233,7 +232,6 @@ files.
 
 ```live path=src/components/layout/RailSectionShell/RailSectionShell.tsx region=section-shell
 ```
-
 
 ## Addendum, 2026-09-21: a fourteenth section, for the author, shipped as 1.0.0.171
 
@@ -350,6 +348,13 @@ Steve looked at the panel and asked for the recommendations in a row, on the lan
 
 The document did not change: `layoutAuthor` reads a panel whose every block quotes somebody as a row, and nothing else about the panel is special, so a second panel of quotations would get the same shape without a line of code. `author.test` holds the rule and `author.spec` reads the row on the page; `landing.spec` reads the ten sentences and the region.
 
+## Addendum, 2026-10-16 (1.0.3.140): The Shed
+
+The Shed is a second app in this repository: a file and folder browser built in the same working method, with its own site, its own deploy and its own decision records. Until now nothing on TheYard pointed to it, so a visitor found it only through the repository. It now has a section of its own under How it is built, with two links out: the running app and its code. The landing page draws it as a tile like every section, and because the section holds only links, the tile opens the app in a new tab. The sample's folder moved from its first working name to `samples/theshed`, the name it goes by everywhere else, and its documents now describe it as a developer test project without naming a company.
+
+```live path=src/library/sections.ts region=shed-section
+```
+
 ## Addendum, 2026-10-17 (1.0.3.152): the column on the right, and the words served from one file
 
 Steve looked at the row and asked for two things. The recommendations should stand in a column on the right of the landing page, with everything else on the left, so a reader who came for the inventory or the resume has them in view the whole way down; a row under the figures was the easiest thing on the page to scroll past. And the words should come from the API in one consistent shape that is easy to add to and adjust, even while the values are fixed.
@@ -374,11 +379,4 @@ The same two asks, on About Steven: the recommendations stand in a column on the
 ```live path=src/lib/author.ts region=said-aside
 ```
 
-From 1280 px of screen, the wide-desk step of the site's width scale, the Author page's window is wider than before (1280 px where there is room) and the column stands on the right, as tall as the window and in place while the page scrolls. Narrower, the panels and the column are one column in reading order, the stylesheet putting the column straight after the introduction, so a phone reads who he is, then what colleagues say, then how he leads. The row that 1.0.3.136 introduced is gone with its rule; `author.test` holds the aside, `author.spec` reads the column on both widths, and `AuthorPageTests` holds the document to a heading and a sentence with no quotation in it.
-
-## Addendum, 2026-10-16 (1.0.3.140): The Shed
-
-The Shed is a second app in this repository: a file and folder browser built in the same working method, with its own site, its own deploy and its own decision records. Until now nothing on TheYard pointed to it, so a visitor found it only through the repository. It now has a section of its own under How it is built, with two links out: the running app and its code. The landing page draws it as a tile like every section, and because the section holds only links, the tile opens the app in a new tab. The sample's folder moved from its first working name to `samples/theshed`, the name it goes by everywhere else, and its documents now describe it as a developer test project without naming a company.
-
-```live path=src/library/sections.ts region=shed-section
-```
+The order is the document's: who he is, what colleagues say, then the rest. One column reads it that way, and so does the keyboard and a screen reader at every width. From 1280 px of screen, the wide-desk step of the site's width scale, the Author page's window is wider than before (1280 px where there is room) and the three are placed in the page's grid, which moves the column to the right of the others without moving a word in the document; it stands as tall as the window leaves room for and keeps its place while the page scrolls. In one column the quotations stand in a box of a fixed height, the same height before and after they land, so nothing under them moves when the answer arrives, and a flick that reaches their end carries on down the page. The row that 1.0.3.136 introduced is gone with its rule; `author.test` holds the aside, `author.spec` reads the column on both widths, and `AuthorPageTests` holds the document to a heading and a sentence with no quotation in it.

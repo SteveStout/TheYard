@@ -31,24 +31,26 @@ describe('the Author page in its shape', () => {
     expect(html).not.toMatch(/author-block-(gold|teal)/);
   });
 
-  it('stands the panel headed What colleagues say aside, with the place the window fills from the endpoint', () => {
+  it('writes the panel headed What colleagues say after the introduction, as its own named column with the place the window fills', () => {
     const said = layoutAuthor(
       '<h2>Hi</h2><p>Me.</p>' +
         '<h2>What colleagues say</h2><p>Ten people wrote these.</p>' +
         '<h2>Away</h2><h3>One</h3><p>Words.</p>'
     );
+    // The order in the document is the order a reader meets them: who he is, the quotations, the rest.
     expect(said).toContain(
-      '</div><aside class="author-panel author-side op-glass"><h2>What colleagues say</h2><p>Ten people wrote these.</p>' +
-        '<div class="author-said" data-recommendations></div></aside></div>'
+      '<section class="author-panel author-intro op-glass"><h2>Hi</h2><p>Me.</p></section>' +
+        '<aside class="author-panel author-side op-glass" aria-label="What colleagues say">' +
+        '<h2>What colleagues say</h2><p>Ten people wrote these.</p>' +
+        '<div class="author-said" data-recommendations></div></aside>' +
+        '<div class="author-rest"><section class="author-panel op-glass">'
     );
-    // The other panels keep their column and their order, the introduction first.
-    expect(said).toMatch(
-      /<div class="author-main"><section class="author-panel author-intro op-glass">[\s\S]*<h2>Away<\/h2>[\s\S]*<\/div><aside/
-    );
+    expect(said).toMatch(/<div class="author-rest">[\s\S]*<h2>Away<\/h2>/);
     expect(said.match(/class="author-panel/g)).toHaveLength(3);
-    // A page without that panel has the column of panels and nothing beside it.
+    // A page without that panel has its panels in one run and nothing beside them.
     expect(html).not.toContain('author-side');
-    expect(html).toContain('<div class="author-main"><section class="author-panel author-intro');
+    expect(html).toContain('<section class="author-panel author-intro op-glass"><h2>Hi</h2>');
+    expect(html).toContain('<div class="author-rest">');
   });
 
   it('gives a block with photographs the whole row, and the odd plain one out too', () => {

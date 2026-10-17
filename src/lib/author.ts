@@ -11,8 +11,8 @@
  *
  * What it relies on in the document, and nothing else: second-level headings
  * open the panels, third-level headings open the blocks, the panel headed
- * What colleagues say is the column on the right with a place in it that the
- * window fills from /api/recommendations, a list whose every item is one link
+ * What colleagues say is the column with a place in it that the window fills
+ * from /api/recommendations, a list whose every item is one link
  * is a row of buttons, an image that names one of the page's photographs is
  * that photograph, a rule opens the closing panel, and a second rule opens the
  * small print under the panels.
@@ -148,15 +148,18 @@ function blocks(section: string): string {
  * The panel headed What colleagues say is not drawn from the document's words
  * alone: it keeps its heading and its sentence, and under them a place the
  * window fills with the recommendations read from /api/recommendations, the
- * one file they live in. It stands aside from the other panels, in a column
- * on the right where the page is wide enough and after the introduction where
- * it is not (the stylesheet orders it; the markup is the same at every width).
+ * one file they live in. It is written straight after the introduction, which
+ * is where a reader meets it in one column and where the keyboard and a screen
+ * reader meet it at every width; a wide window moves it to the right by placing
+ * it in the page's grid, and moves nothing in the document.
  */
 const SAID = /<h2[^>]*>What colleagues say<\/h2>/;
 
 function aside(section: string): string {
+  // A landmark with a name: an aside is a region of its own to a screen reader, and an unnamed one
+  // reads as "complementary" in a list of landmarks.
   return (
-    `<aside class="author-panel author-side op-glass">${section}` +
+    `<aside class="author-panel author-side op-glass" aria-label="What colleagues say">${section}` +
     `<div class="author-said" data-recommendations></div></aside>`
   );
 }
@@ -173,9 +176,9 @@ function intro(section: string): string {
 }
 
 /**
- * The page in its shape: the first panel is who he is, every later one is
- * split into its blocks, the one headed What colleagues say stands aside as
- * the column on the right, and what follows a rule is the closing panel. The
+ * The page in its shape: the first panel is who he is, the one headed What
+ * colleagues say follows it as its own column, every later one is split into
+ * its blocks, and what follows a rule is the closing panel. The
  * blocks carry no colour of their own: the stylesheet alternates them by
  * their order, so an edit to the document cannot leave two the same.
  */
@@ -201,11 +204,13 @@ export function layoutAuthor(html: string): string {
   // A second rule opens the small print under the panels: the photographer's credit.
   const credit =
     closing.length < 2 ? '' : `<footer class="author-credit">${closing.slice(1).join('')}</footer>`;
-  // The panels in one column and the recommendations beside them: the stylesheet decides where beside is.
+  // Who he is, what colleagues say, then the rest: the order a reader meets them in, and the order
+  // the document carries. The stylesheet moves the middle one to the right of the rest on a wide
+  // window by placing all three in the page's grid, which leaves this order where it is.
+  const [first, ...rest] = panels;
   return (
-    `<div class="author-page" data-testid="author-page">${top}` +
-    `<div class="author-main">${panels.join('')}${close}${credit}</div>` +
-    `${said.map(aside).join('')}</div>`
+    `<div class="author-page" data-testid="author-page">${top}${first ?? ''}${said.map(aside).join('')}` +
+    `<div class="author-rest">${rest.join('')}${close}${credit}</div></div>`
   );
 }
 // #endregion panels

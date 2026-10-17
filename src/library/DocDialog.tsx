@@ -146,6 +146,9 @@ export function DocDialog({
   const [said, setSaid] = useState<HTMLElement | null>(null);
   useEffect(() => {
     setSaid(proseRef.current?.querySelector<HTMLElement>('[data-recommendations]') ?? null);
+    // Let go of the place before the document that holds it is replaced, so the column is never
+    // drawn into a node that has left the page.
+    return () => setSaid(null);
   }, [activeDoc, docHtml]);
 
   return (
@@ -226,7 +229,7 @@ export function DocDialog({
             dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }}
           />
         )}
-        {said !== null && said.isConnected && createPortal(<Recommendations words="full" />, said)}
+        {said !== null && createPortal(<Recommendations words="full" />, said)}
       </div>
     </dialog>
   );

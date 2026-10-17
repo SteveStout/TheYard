@@ -38,7 +38,6 @@ When the roadmap is bigger than the team, I put scope and date on the table, wit
 
 Good systems give engineers a safe place to learn fast. My favorite part of leading is helping each person on the team become the best version of themselves.
 
-
 ## Away from the keyboard
 
 ### The lake, and no boat

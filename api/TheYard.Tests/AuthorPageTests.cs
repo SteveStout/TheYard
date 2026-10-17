@@ -496,6 +496,12 @@ public class AuthorPageTests
         {
             Assert.DoesNotContain(entry.Name, panel);
         }
+
+        // The panel says how many people wrote one. The words are the document's, the number is the
+        // file's, so an entry added to the file without a word changed here fails.
+        string[] spelled = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+        Assert.True(entries.Count < spelled.Length, $"{entries.Count} recommendations: spell the count in this test to keep holding the sentence");
+        Assert.Contains(spelled[entries.Count], panel, StringComparison.OrdinalIgnoreCase);
     }
     // #endregion what-colleagues-say
 }

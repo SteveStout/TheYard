@@ -39,8 +39,20 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   await expect(column).toHaveAttribute('data-state', 'ready');
   expect(await column.evaluate((box) => box.scrollHeight > box.clientHeight)).toBe(true);
   const sideBox = (await said.boundingBox())!;
-  const mainBox = (await wide.locator('.author-main').boundingBox())!;
-  expect(sideBox.x).toBeGreaterThanOrEqual(mainBox.x + mainBox.width);
+  const restBox = (await wide.locator('.author-rest').boundingBox())!;
+  expect(sideBox.x).toBeGreaterThanOrEqual(restBox.x + restBox.width);
+  // The eye reads it beside the panels; the document, and so the keyboard, reads it after the
+  // introduction and before the rest.
+  const order = await wide.evaluate((dialog) =>
+    Array.from(dialog.querySelectorAll('.author-intro, .author-side, .author-rest')).map((node) =>
+      node.classList.contains('author-intro')
+        ? 'intro'
+        : node.classList.contains('author-side')
+          ? 'side'
+          : 'rest'
+    )
+  );
+  expect(order).toEqual(['intro', 'side', 'rest']);
   expect(await wide.locator('.author-block').count()).toBeGreaterThanOrEqual(13);
   await page.keyboard.press('Escape');
 
@@ -49,7 +61,8 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   await page.getByRole('button', { name: 'Menu' }).click();
   const doc = await theAuthorPage(page, page.getByRole('dialog', { name: 'Menu' }));
 
-  // On a phone the column follows who he is and comes before how he leads, and it scrolls inside its own box.
+  // On a phone the column follows who he is and comes before how he leads, and it scrolls inside
+  // its own box, a box whose height is the same before and after the quotations land.
   const introBox = (await doc.locator('.author-intro').boundingBox())!;
   const saidBox = (await doc.locator('.author-side').boundingBox())!;
   const leadBox = (await doc
