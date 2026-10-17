@@ -1,10 +1,11 @@
 {
-  "readme": "One entry per person, shown in this order. Every entry has the same six fields: name and title as LinkedIn shows them, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the six fields, then move the count the site states (ten, in RecommendationsTests and the About Steven document); the gate checks the shape.",
+  "readme": "One entry per person, shown in this order. Every entry has the same seven fields: name and title as LinkedIn shows them, profile as the address of their LinkedIn page, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the six fields, then move the count the site states (ten, in RecommendationsTests and the About Steven document); the gate checks the shape.",
   "source": "https://www.linkedin.com/in/stevenwstout/details/recommendations/",
   "recommendations": [
     {
       "name": "Sarah Sebestyen",
       "title": "AI Developer at Hunter Engineering Company",
+      "profile": "https://www.linkedin.com/in/sarah-sebestyen/",
       "relationship": "Steven was senior to Sarah but did not manage Sarah directly",
       "when": "November 2024",
       "paragraphs": [
@@ -16,6 +17,7 @@
     {
       "name": "Sean Whitesell",
       "title": "President of SkyForge Consulting, Microsoft MVP, Senior Cloud Architect, Author, Tech Leader",
+      "profile": "https://www.linkedin.com/in/sean-whitesell/",
       "relationship": "Sean worked with Steven but they were at different companies",
       "when": "April 2024",
       "paragraphs": [
@@ -27,6 +29,7 @@
     {
       "name": "Anthony Fortner",
       "title": "Data Engineering Manager at Hunter Engineering Company",
+      "profile": "https://www.linkedin.com/in/anthony-fortner-%F0%9F%92%BE-4102ba11a/",
       "relationship": "Steven was senior to Anthony but did not manage Anthony directly",
       "when": "April 2024",
       "paragraphs": [
@@ -37,6 +40,7 @@
     {
       "name": "Meagan Colley",
       "title": "Business Intelligence Analyst",
+      "profile": "https://www.linkedin.com/in/meagan-colley-67221b177/",
       "relationship": "Meagan worked with Steven on the same team",
       "when": "April 2024",
       "paragraphs": [
@@ -47,6 +51,7 @@
     {
       "name": "Sanders Crosby",
       "title": "Director, Advanced Automation Technologies",
+      "profile": "https://www.linkedin.com/in/sanderscrosby/",
       "relationship": "Sanders worked with Steven on the same team",
       "when": "August 2023",
       "paragraphs": [
@@ -57,6 +62,7 @@
     {
       "name": "Dustin Comuzie",
       "title": "IT Professional",
+      "profile": "https://www.linkedin.com/in/dcomuzie/",
       "relationship": "Dustin worked with Steven but they were at different companies",
       "when": "June 2023",
       "paragraphs": [
@@ -67,6 +73,7 @@
     {
       "name": "Micah Johnson",
       "title": "Senior Systems Architect",
+      "profile": "https://www.linkedin.com/in/micahryanjohnson/",
       "relationship": "Micah worked with Steven but on different teams",
       "when": "May 2023",
       "paragraphs": [
@@ -77,6 +84,7 @@
     {
       "name": "Lee Markum",
       "title": "Senior DBA",
+      "profile": "https://www.linkedin.com/in/leemarkum/",
       "relationship": "Lee worked with Steven but on different teams",
       "when": "February 2023",
       "paragraphs": [
@@ -88,6 +96,7 @@
     {
       "name": "Drew Dell",
       "title": "Developer IV at Hunter Engineering Company",
+      "profile": "https://www.linkedin.com/in/drew-dell-a167a7131/",
       "relationship": "Steven was senior to Drew but did not manage Drew directly",
       "when": "February 2023",
       "paragraphs": [
@@ -98,6 +107,7 @@
     {
       "name": "Bill Sladek",
       "title": "Software Engineer",
+      "profile": "https://www.linkedin.com/in/bill-sladek-05a37b6/",
       "relationship": "Bill worked with Steven but on different teams",
       "when": "February 2023",
       "paragraphs": [

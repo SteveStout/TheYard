@@ -67,9 +67,24 @@
   color: var(--color-text-muted);
 }
 
+/* The name is the link to the writer's own page: the heading's colour rather than the accent, so a
+   column of ten names does not read as a column of ten links, with the underline on it under the
+   pointer and under the keyboard. */
 .name {
+  width: fit-content;
   font-weight: var(--weight-semibold);
   color: var(--color-heading);
+  text-decoration: none;
+}
+
+.name:hover,
+.name:focus-visible {
+  text-decoration: underline;
+}
+
+.name:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* An answer that did not come, said in words where the column would be. */

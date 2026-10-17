@@ -1,7 +1,8 @@
 /**
  * What colleagues say, as a column: the recommendations on Steve's LinkedIn
  * profile, word for word and whole, each under the name of the person who
- * wrote it, read from /api/recommendations when the component opens. The words
+ * wrote it, which opens their own page, read from /api/recommendations when
+ * the component opens. The words
  * live in one file on the server, data/recommendations.json, and this file only
  * draws them, the same way on every page that shows them. Every one of them
  * stands in the page, one under the next, with no scroll of its own and nothing
@@ -77,7 +78,15 @@ export function Recommendations() {
                     ))}
                   </blockquote>
                   <p className={styles.who}>
-                    <span className={styles.name}>{entry.name}</span>
+                    {/* The name opens the page of the person who wrote it, in a tab of its own. */}
+                    <a
+                      className={styles.name}
+                      href={entry.profile}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {entry.name}
+                    </a>
                     <span>{entry.title}</span>
                     <span>
                       {entry.relationship}, {entry.when}.
