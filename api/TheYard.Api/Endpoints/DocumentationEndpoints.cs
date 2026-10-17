@@ -82,7 +82,14 @@ public static class DocumentationEndpoints
         // The resume at an address a person can type and a link can carry (ADR: The resume has an
         // address): the same file as /api/docs/resume, inline, under his name and the lock's date.
         // The door in ?src= becomes one allowed word for the activity hook; the query is dropped.
-        app.MapGet("/resume", ResumeAtItsAddress).ExcludeFromDescription();
+        app.MapGet("/resume", ResumeAtItsAddress)
+            .WithName("GetResumeAtItsAddress")
+            .WithTags("Documents")
+            .WithSummary("The resume, inline, at an address a link can carry")
+            .WithDescription("The same PDF as /api/docs/resume, opened in the browser under the author's name. "
+                + "An optional ?src= names the door the link was handed out through (linkedin, application, email, signature, post); "
+                + "it is counted and never stored, and any other value counts as other.")
+            .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf");
         #endregion resume-address
 
         return app;

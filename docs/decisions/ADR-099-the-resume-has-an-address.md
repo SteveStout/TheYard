@@ -51,3 +51,7 @@ The API layer only: one route in `Endpoints/`, one small static class beside it,
 - [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the activity hook reads the door's path when the handler left one.
 - [`api/TheYard.Api/ActivityWho.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ActivityWho.cs): the resume step counts everything under `/resume/`.
 - [`api/TheYard.Tests/ResumeAddressTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ResumeAddressTests.cs) and [`tests/e2e/resume.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/resume.spec.ts): the address, the bytes, the doors and the query that never lands.
+
+## Addendum, 2026-10-16 (1.0.3.142): in the API document
+
+The address shipped excluded from the API document, the way `/about` is, because it serves a file rather than JSON. ADR-075's rule is wider than that: every public endpoint is in the document with its name, a sentence and its responses, and `ApiDocumentTests` holds the document to the routing table. `/resume` is now described there: GetResumeAtItsAddress (GetResume is `/api/docs/resume`, the same file under `/api`), under Documents, answering `application/pdf`, with `src` explained as a door that is counted and never stored. `/about` stays out: it is a page for search engines, not an endpoint a tool calls.
