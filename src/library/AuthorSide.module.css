@@ -1,0 +1,77 @@
+/**
+ * Does:      Places what colleagues say on the Author page: beside the panels in a column on the right where the window is wide
+ *            enough, as tall as the window and in place while the page scrolls, and after the introduction where it is not.
+ * Does not:  Draw the quotations (the shared Recommendations component does) or style the other panels (AuthorPage.module.css does).
+ * Used by:   DocDialog.tsx.
+ */
+/* The markup is written by src/lib/author.ts, so these names are global, as the Author page's are.
+   One column first: the panels and the aside are siblings in the page's grid, and the aside is
+   ordered straight after the introduction, so a phone reads who he is, then what colleagues say,
+   then the rest. */
+.prose :global(.author-main) {
+  display: contents;
+}
+
+.prose :global(.author-intro) {
+  order: -2;
+}
+
+.prose :global(.author-side) {
+  order: -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.prose :global(.author-side) h2 {
+  margin-bottom: 0;
+}
+
+.prose :global(.author-side) p {
+  margin: 0;
+}
+
+/* In one column the quotations take most of a screen at most and scroll on their own, so the rest of the page is still a flick away. */
+.prose :global(.author-said) > [role='region'] {
+  max-height: min(70dvh, 560px);
+}
+
+/* Two columns: every panel on the left, the column on the right, as tall as the window and in
+   place while the page scrolls. From the wide-desk step of the site's scale, 1280 px, where the
+   Author page's window has about 930 px inside it with the rail open. */
+@media (min-width: 1280px) {
+  .prose :global(.author-page) {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+  }
+
+  .prose :global(.author-main) {
+    display: grid;
+    gap: var(--space-4);
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .prose :global(.author-side) {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 0;
+    max-height: calc(100vh - 2 * var(--space-6) - var(--space-7) - 2 * var(--space-5));
+  }
+
+  .prose :global(.author-said) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .prose :global(.author-said) > [role='region'] {
+    max-height: none;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+}

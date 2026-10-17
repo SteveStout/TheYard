@@ -472,43 +472,30 @@ public class AuthorPageTests
 
     // #region what-colleagues-say
     /// <summary>
-    /// What colleagues say is the panel of About Steven that quotes the
-    /// recommendations on his LinkedIn profile (ADR: The sidebar, the addendum
-    /// on what colleagues say). The words live once, in
-    /// data/recommendations.json, and the panel quotes every one of them
-    /// in full under the name of the person who wrote it, so an edit to either
-    /// file shows up here.
+    /// What colleagues say is the panel of About Steven that stands aside as the
+    /// column on the right (ADR: The sidebar, the addendum on About Steven's
+    /// column). The document keeps the heading and its sentence, right after
+    /// who he is; the words themselves are read from /api/recommendations, the
+    /// one file they live in, so the document quotes nobody and cannot drift
+    /// from the file.
     /// </summary>
     [Fact]
-    public void What_colleagues_say_quotes_every_recommendation_in_full_under_its_writers_name()
+    public void What_colleagues_say_is_a_heading_and_a_sentence_after_the_introduction_and_quotes_nobody()
     {
         string words = Words();
         int said = words.IndexOf("\n## What colleagues say\n", StringComparison.Ordinal);
-        int away = words.IndexOf("\n## Away from the keyboard\n", StringComparison.Ordinal);
-        Assert.True(said > 0 && away > said, "docs/author/AUTHOR.md should hold What colleagues say as a panel ahead of Away from the keyboard");
-        string panel = words[said..away];
+        int lead = words.IndexOf("\n## How I lead\n", StringComparison.Ordinal);
+        Assert.True(said > 0 && lead > said, "docs/author/AUTHOR.md should hold What colleagues say as a panel ahead of How I lead");
+        string panel = words[said..lead];
+        Assert.DoesNotContain("\n### ", panel);
+        Assert.DoesNotContain("\n> ", panel);
+        Assert.Contains("linkedin.com/in/stevenwstout/details/recommendations", panel);
         var entries = JsonSerializer.Deserialize<RecommendationsReply>(
             File.ReadAllText(Repo.DataFile("recommendations.json")), RecommendationsFile.Format)!.Recommendations;
-        Assert.Equal(10, entries.Count);
-        var wrong = new List<string>();
         foreach (var entry in entries)
         {
-            string name = entry.Name;
-            if (!panel.Contains($"\n### {name}\n", StringComparison.Ordinal))
-            {
-                wrong.Add($"{name} has no block on the panel");
-            }
-            foreach (string line in entry.Paragraphs)
-            {
-                if (!panel.Contains($"> {line}", StringComparison.Ordinal))
-                {
-                    wrong.Add($"{name}'s words are not quoted as written: \"{line[..Math.Min(60, line.Length)]}\"");
-                }
-            }
+            Assert.DoesNotContain(entry.Name, panel);
         }
-        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
-        Assert.Equal(entries.Count, Regex.Matches(panel, @"(?m)^### ").Count);
     }
-
     // #endregion what-colleagues-say
 }

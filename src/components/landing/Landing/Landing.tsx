@@ -18,7 +18,7 @@ import { LINKS, MENUS } from '../../../library/sections';
 import { CountUp } from '../../shared/CountUp';
 import { Ring } from '../../shared/Ring';
 import { NavGlyph } from '../../shared/SheetIcons';
-import { Recommendations } from '../Recommendations';
+import { Recommendations } from '../../shared/Recommendations';
 import styles from './Landing.module.css';
 
 /**

@@ -21,28 +21,45 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
 }) => {
   await openTheYard(page);
   const wide = await theAuthorPage(page, page.getByTestId('side-rail'));
-  // Panels and blocks, not a letter: who he is, how he leads, what colleagues say, the rest of his
-  // life in headed blocks, a closing line.
+  // Panels and blocks, not a letter: who he is, how he leads, the rest of his life in headed
+  // blocks, a closing line, and what colleagues say standing aside.
   await expect(wide.locator('.author-panel')).toHaveCount(5);
   await expect(wide.getByRole('heading', { name: 'How I lead', exact: true })).toBeVisible();
-  // The ten recommendations, each its own block under the name of the person who wrote it, quoted.
-  const said = wide.locator('.author-panel').nth(2);
+  // The ten recommendations in full, read from /api/recommendations into a column on the right of
+  // every other panel: a named region with a tab stop, taller than its box.
+  const said = wide.locator('.author-side');
   await expect(
     said.getByRole('heading', { name: 'What colleagues say', exact: true })
   ).toBeVisible();
-  await expect(said.locator('.author-block')).toHaveCount(10);
-  await expect(said.locator('.author-block blockquote')).toHaveCount(10);
-  // The ten sit in one row that scrolls sideways: a named region with a tab stop, wider than its box.
-  const row = said.getByRole('region', { name: '10 quotations, scrolling sideways' });
-  await expect(row).toHaveAttribute('tabindex', '0');
-  expect(await row.evaluate((box) => box.scrollWidth > box.clientWidth)).toBe(true);
-  expect(await wide.locator('.author-block').count()).toBeGreaterThanOrEqual(14);
+  await expect(said.locator('blockquote')).toHaveCount(10);
+  await expect(said.locator('blockquote').first()).toContainText('pleasure of working with Steve');
+  await expect(said).toContainText('Sarah Sebestyen');
+  const column = said.getByRole('region', { name: /recommendations in full/ });
+  await expect(column).toHaveAttribute('tabindex', '0');
+  await expect(column).toHaveAttribute('data-state', 'ready');
+  expect(await column.evaluate((box) => box.scrollHeight > box.clientHeight)).toBe(true);
+  const sideBox = (await said.boundingBox())!;
+  const mainBox = (await wide.locator('.author-main').boundingBox())!;
+  expect(sideBox.x).toBeGreaterThanOrEqual(mainBox.x + mainBox.width);
+  expect(await wide.locator('.author-block').count()).toBeGreaterThanOrEqual(13);
   await page.keyboard.press('Escape');
 
   await page.setViewportSize({ width: 375, height: 812 });
   await openTheYard(page);
   await page.getByRole('button', { name: 'Menu' }).click();
   const doc = await theAuthorPage(page, page.getByRole('dialog', { name: 'Menu' }));
+
+  // On a phone the column follows who he is and comes before how he leads, and it scrolls inside its own box.
+  const introBox = (await doc.locator('.author-intro').boundingBox())!;
+  const saidBox = (await doc.locator('.author-side').boundingBox())!;
+  const leadBox = (await doc
+    .locator('.author-panel', {
+      has: page.getByRole('heading', { name: 'How I lead', exact: true }),
+    })
+    .boundingBox())!;
+  expect(saidBox.y).toBeGreaterThan(introBox.y + introBox.height - 1);
+  expect(leadBox.y).toBeGreaterThan(saidBox.y + saidBox.height - 1);
+  await expect(doc.locator('.author-side blockquote')).toHaveCount(10);
 
   // Three ways to reach him, each a full finger-sized target, none of them an email address or a form.
   const buttons = doc.locator('.author-intro .author-button');
@@ -162,15 +179,12 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     }
   }).toPass({ timeout: 20_000 });
 
-  // Nothing on the page is wider than the phone. The row of quotations scrolls inside its
-  // own box, so the blocks waiting past its edge are inside the row, not past the phone;
-  // the row itself is held to the phone like everything else.
+  // Nothing on the page is wider than the phone. The column of quotations scrolls inside its
+  // own box, down and never sideways, and is held to the phone like everything else.
   await expect(async () => {
     const overflow = await doc.evaluate((dialog) => {
       const wide = Array.from(dialog.querySelectorAll('*')).filter(
-        (element) =>
-          !element.parentElement?.closest('.author-row') &&
-          element.getBoundingClientRect().right > window.innerWidth + 0.5
+        (element) => element.getBoundingClientRect().right > window.innerWidth + 0.5
       ).length;
       return {
         wide,

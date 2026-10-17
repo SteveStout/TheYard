@@ -101,8 +101,7 @@
   color: var(--color-on-accent);
 }
 
-.prose :global(.author-button:focus-visible),
-.prose :global(.author-row:focus-visible) {
+.prose :global(.author-button:focus-visible) {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
@@ -112,22 +111,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
   margin-top: var(--space-4);
-}
-
-/* A panel of quotations is a row, not a grid: the blocks sit side by side at one width and
-   the row scrolls sideways, snapping a block to the left edge, with the next one's edge
-   showing. The row keeps its own scroll: a flick along it never drags the page. */
-.prose :global(.author-row) {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  overscroll-behavior-x: contain;
-  padding-bottom: var(--space-2);
-}
-
-.prose :global(.author-row) > :global(.author-block) {
-  flex: 0 0 min(28rem, 85vw);
-  scroll-snap-align: start;
 }
 
 /* #region author-alternation */

@@ -1,15 +1,18 @@
 /**
- * Does:      Draws the window a document opens in: asks the API for it, renders it, lays it in panels, and offers its link.
+ * Does:      Draws the window a document opens in: asks the API for it, renders it, lays it in panels, fills the Author page's place for what colleagues say, and offers its link.
  * Does not:  Decide which document is open (the sidebar and useNavigation.ts do), or hold any document's words.
  * Used by:   SideNav.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Recommendations } from '../components/shared/Recommendations';
 import { useFirstLoad } from '../hooks/useFirstLoad';
 import styles from './DocDialog.module.css';
 import prose from './DocProse.module.css';
 import swatches from './DocSwatches.module.css';
 import panels from './DocPanels.module.css';
 import author from './AuthorPage.module.css';
+import side from './AuthorSide.module.css';
 import blocks from './StyleBlocks.module.css';
 import { useLiveBlocks } from './useLiveBlocks';
 import { layoutDocument } from '../lib/docLayout';
@@ -18,10 +21,10 @@ import { DOCS, type DocKey } from './documents';
 
 /**
  * The document's sheets, one job each (ADR-019, the addendum on the stylesheets). Each scopes its
- * rules under its own .prose, so the element that holds the document carries all five; the
+ * rules under its own .prose, so the element that holds the document carries all six; the
  * reading panel's frost is scoped under the window as well, so the window carries that sheet's .dialog.
  */
-const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose} ${blocks.prose}`;
+const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose} ${side.prose} ${blocks.prose}`;
 const WINDOW = `${styles.dialog} ${panels.dialog} ${styles.dialogGround}`;
 
 /**
@@ -138,6 +141,13 @@ export function DocDialog({
 
   useLiveBlocks(proseRef, request ? docHtml[activeDoc] : undefined, onOpenDoc);
 
+  // The Author page leaves a place for what colleagues say (src/lib/author.ts); once the page is
+  // in the window the column is drawn into it, read from the one endpoint the landing page reads.
+  const [said, setSaid] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setSaid(proseRef.current?.querySelector<HTMLElement>('[data-recommendations]') ?? null);
+  }, [activeDoc, docHtml]);
+
   return (
     <dialog
       ref={dialogRef}
@@ -216,6 +226,7 @@ export function DocDialog({
             dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }}
           />
         )}
+        {said !== null && said.isConnected && createPortal(<Recommendations words="full" />, said)}
       </div>
     </dialog>
   );
