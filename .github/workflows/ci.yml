@@ -61,7 +61,7 @@ jobs:
   # job already enforces noUnusedLocals and noUnusedParameters, so the linter is
   # not asked to repeat it (ADR-028).
   style:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -83,7 +83,7 @@ jobs:
     # until this line existed: without `needs` these all start at once and the
     # claim was decoration (the staff review, 2026-09-03).
     needs: style
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -97,7 +97,7 @@ jobs:
 
   api:
     needs: style
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
@@ -209,7 +209,7 @@ jobs:
   # and a schema change was published that did not contain the change.
   database:
     needs: style
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
@@ -222,7 +222,7 @@ jobs:
 
   e2e:
     needs: style
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

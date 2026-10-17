@@ -28,7 +28,7 @@ concurrency:
 jobs:
   # #region gate-job
   gate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # The federated credential for the Cosmos DB passes is issued to this environment, so a
     # branch name never has to be registered in Azure.
     environment: gate

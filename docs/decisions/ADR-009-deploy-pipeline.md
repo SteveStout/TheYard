@@ -250,3 +250,11 @@ The rolls since 1.0.3.95 give the size. The new container starts 8 to 12 minutes
 ```
 
 `DeployWorkflowTests` holds the numbers on both workflows: a budget of 1,500 seconds named in Verify, thirty seconds on the version read, and a job timeout that covers the ten minutes before Verify plus its thirty-five. A roll that never answers still fails the run; it now fails at twenty-five minutes instead of ten.
+
+## Addendum, 2026-10-17: the runner is a version, and a wait is a fact
+
+Two changes to how the pipeline runs, neither of them to what it builds.
+
+GitHub says the `ubuntu-latest` label moves to Ubuntu 26 from 19 October 2026. A label that moves is a build that changes without a commit, which is the one thing a pipeline is for preventing, and it would have moved while nobody was watching it. Every workflow here now names `ubuntu-24.04`, the image they have been green on, so the migration is a change this repository makes on a day it chooses. The Shed's suite on `windows-latest` is left as it is: the notice is about the Ubuntu label, and that job exists to run the path rules on Windows, whichever Windows GitHub offers.
+
+The browser suite failed twice on `main` on the morning of 17 October and passed on every push after it, which is the shape of a wait that is a guess rather than a test. Both places that waited on `networkidle` now wait on what they are actually waiting for: the landing page's shift reading waits until every figure the first paint fetches has drawn, and the Admin tab's request test waits until the tab has made a request. Playwright's own documentation discourages `networkidle` for this reason. Neither timeout was raised, no test was retried, and nothing was skipped.

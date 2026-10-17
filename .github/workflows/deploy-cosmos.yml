@@ -44,7 +44,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Fifty minutes: ten waiting for the image, Verify's twenty-five for the version and ten for readiness, and room.
     timeout-minutes: 50
     env:
