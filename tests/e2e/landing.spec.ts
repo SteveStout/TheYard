@@ -264,7 +264,27 @@ async function shiftAfterFirstPaint(
     }).observe({ type: 'layout-shift', buffered: true });
   });
   await openTheYard(page, path);
-  await page.waitForLoadState('networkidle');
+  // Settled is a fact about the page, not half a second with no request open: every reading the
+  // first paint waits for has arrived and drawn. On a view that carries none of them this still
+  // holds, because each poll returns at once when its element is not on the page.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const health = document.querySelector('[data-testid="landing-admin-health"]');
+          const tests = document.querySelector('[data-testid="landing-proof-tests"]');
+          const said = document.querySelector(
+            '[data-testid="landing-recommendations"] [role="region"]'
+          );
+          return [
+            health === null || /^(Healthy|Degraded|Unreachable)$/.test(health.textContent ?? ''),
+            tests === null || /\d/.test(tests.textContent ?? ''),
+            said === null || said.getAttribute('data-state') !== 'reading',
+          ].every(Boolean);
+        }),
+      { timeout: 30_000 }
+    )
+    .toBe(true);
   await page.waitForTimeout(1500);
   return page.evaluate(() => (window as unknown as { __shifts: Shifts }).__shifts);
 }

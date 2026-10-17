@@ -620,7 +620,21 @@ test('the tab reads what the strip and the open card need, and a card is fetched
   page.on('request', (request) => asked.push(new URL(request.url()).pathname));
   await openTheYard(page, '/?view=admin&card=health');
   await expect(page.getByTestId('health-card')).toBeVisible();
-  await page.waitForLoadState('networkidle');
+  // The tab's first paint has made its reads: the health card's own read has gone out and the list
+  // this test reads has stopped growing. That is the fact the test needs; half a second with no
+  // connection open was a guess at it, and Playwright's own documentation discourages it.
+  await expect.poll(() => asked, { timeout: 30_000 }).toContain('/api/health');
+  await expect
+    .poll(
+      () => {
+        const seen = asked.length;
+        return new Promise<boolean>((settled) =>
+          setTimeout(() => settled(asked.length === seen), 600)
+        );
+      },
+      { timeout: 30_000 }
+    )
+    .toBe(true);
   // Before the workbench every card read on the tab's first paint, which is how
   // the tab's own reads became most of the slow requests on the site.
   for (const unread of [

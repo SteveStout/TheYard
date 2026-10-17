@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.157** (2026-10-17): Every workflow names the Ubuntu image it runs on rather than the label that moves on 19 October, and the two browser tests that waited for a quiet network wait for the page to have drawn what it fetched (ADR: The deploy pipeline, the addendum on the runner and the wait).
 - **1.0.3.156** (2026-10-17): The name of each person who wrote a recommendation opens their own page on LinkedIn, from a seventh field in the one file the words live in, held by the gate to being a profile and one per writer (ADR: The sidebar, the addendum on the name opening the page).
 - **1.0.3.155** (2026-10-17): Every recommendation is shown whole on both the landing page and About Steven, under the name, title, relationship and month of the person who wrote it, and the link that used to send a reader elsewhere for the rest of the words is gone (ADR: The sidebar, the addendum on whole, on both pages).
 - **1.0.3.154** (2026-10-17): What colleagues say stands in the page itself on both pages, every recommendation one under the next as far down as there are quotations, so the page's own bar is the only scroll bar on the screen (ADR: The sidebar, the addendum on one scroll bar).
