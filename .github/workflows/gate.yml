@@ -89,7 +89,8 @@ jobs:
       # The code's own numbers for CODE HEALTH on the tests card: the page's built size and the
       # packages with a newer release. Measurements, not checks: nothing here turns the run red
       # (the build's warnings already do, above), so they go to their own file, code.result. They
-      # run only after both builds passed: a size read off a failed build would say 0 kB, and the
+      # run only after the two builds they read passed, the API's and the page's (the rendering
+      # service's build is not measured): a size read off a failed build would say 0 kB, and the
       # card must say not measured instead (ADR-080).
       - name: The code's own numbers
         if: always() && steps.build.outcome == 'success' && steps.web.outcome == 'success'

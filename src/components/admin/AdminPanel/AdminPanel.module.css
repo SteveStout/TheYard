@@ -34,11 +34,24 @@
    is only ever read inside a panel (ADR: The glass look). */
 /* The paragraph under the title and its What this shows. On a phone the panel draws them after
    the strip (AdminPanel.tsx), so the first tiles are on the first screen and the tab order is the
-   reading order; no CSS order, because order moves the eye and not the keyboard. */
+   reading order. The order rule under it is for the first paint alone: a server draws the desk
+   order and a phone shows that until the browser has read its width, so without the rule the words
+   stood above the tiles for a frame and then jumped under them. Once the block has moved in the
+   document the rule changes nothing, and the keyboard follows the document, not the rule. */
 .intro {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+@media (max-width: 639.98px) {
+  .intro {
+    order: 1;
+  }
+
+  .benchOrder {
+    order: 2;
+  }
 }
 
 .blurb {

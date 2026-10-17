@@ -610,11 +610,14 @@ test('on a phone the Admin tab opens on its tiles, with the paragraph under them
   });
   expect(after).toBe(true);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await expect(page.getByTestId('admin-intro')).toBeVisible();
-  const before = await page.evaluate(() => {
-    const tile = document.querySelector('[data-testid="tile-version"]')!;
-    const intro = document.querySelector('[data-testid="admin-intro"]')!;
-    return Boolean(intro.compareDocumentPosition(tile) & Node.DOCUMENT_POSITION_FOLLOWING);
-  });
-  expect(before).toBe(true);
+  // The block moves once the browser has read the new width, so the read waits for it.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const tile = document.querySelector('[data-testid="tile-version"]')!;
+        const intro = document.querySelector('[data-testid="admin-intro"]')!;
+        return Boolean(intro.compareDocumentPosition(tile) & Node.DOCUMENT_POSITION_FOLLOWING);
+      })
+    )
+    .toBe(true);
 });
