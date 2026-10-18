@@ -279,11 +279,20 @@ public class BidServiceTests
 
     private sealed class RefusingResetStore : IBidStore
     {
+        private readonly MemoryBidStore _inner = new();
+
         public int Clears { get; private set; }
 
-        public Task<IReadOnlyList<StoredBid>> LoadAsync() => Task.FromResult<IReadOnlyList<StoredBid>>([]);
+        public Task<IReadOnlyList<StoredBid>> LoadAsync() => _inner.LoadAsync();
 
-        public Task SaveAsync(string userId, string vehicleId, BidState state) => Task.CompletedTask;
+        public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync() => _inner.LoadStandingsAsync();
+
+        public Task<StoredStanding?> ReadStandingAsync(string vehicleId) => _inner.ReadStandingAsync(vehicleId);
+
+        public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId) => _inner.BidsOnAsync(vehicleId);
+
+        public Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion) =>
+            _inner.TrySaveAsync(userId, vehicleId, state, standing, expectedVersion);
 
         public Task ClearAsync(string userId)
         {
@@ -348,7 +357,15 @@ public class BidServiceTests
                 : Task.FromResult<IReadOnlyList<StoredBid>>(bids);
         }
 
-        public Task SaveAsync(string userId, string vehicleId, BidState state) => Task.CompletedTask;
+        public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync() => Task.FromResult<IReadOnlyList<StoredStanding>>([]);
+
+        public Task<StoredStanding?> ReadStandingAsync(string vehicleId) => Task.FromResult<StoredStanding?>(null);
+
+        public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId) =>
+            Task.FromResult<IReadOnlyList<StoredBid>>(bids.Where(bid => bid.VehicleId == vehicleId).ToList());
+
+        public Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion) =>
+            Task.FromResult(true);
 
         public Task ClearAsync(string userId) => Task.CompletedTask;
     }

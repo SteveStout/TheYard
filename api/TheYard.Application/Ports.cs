@@ -25,43 +25,50 @@ public interface IPhotoManifestSource
 }
 
 /// <summary>
-/// Port: where everybody's bids are kept between one run of this process and
-/// the next. Read once at startup and written through on every accepted bid,
-/// which is the shape the bidding path can afford (ADR: The relational store).
-/// A bid belongs to a user (ADR: Accounts and per-user bids), so the key is the
-/// pair and not the vehicle.
+/// Port: where everybody's bids are kept, and the one place each vehicle's
+/// standing is decided. Two sites run one image over the same store, so the
+/// standing (price, count, high bidder, sold) is a row or document the store
+/// owns, written with a compare-and-set on its version. Memory is a cache of
+/// it, and a cache can be stale; the store cannot be argued with
+/// (ADR: Three readers with no memory of the project, item 5).
+/// A bid belongs to a user (ADR: Accounts and per-user bids), so a buyer's row
+/// is keyed by the pair and the standing by the vehicle.
 /// </summary>
 public interface IBidStore
 {
+    /// <summary>Every buyer's row, for the replay at startup.</summary>
     Task<IReadOnlyList<StoredBid>> LoadAsync();
 
-    Task SaveAsync(string userId, string vehicleId, BidState state);
+    /// <summary>Every vehicle's stored standing, for the replay at startup.</summary>
+    Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync();
+
+    /// <summary>One vehicle's stored standing and its version, or null when the store holds none for it.</summary>
+    Task<StoredStanding?> ReadStandingAsync(string vehicleId);
 
     /// <summary>
-    /// Forget one person's bids. Not everybody's: this is what the reset button
-    /// on a page a stranger can also be looking at is allowed to do
-    /// (ADR: Reset is one person's start-over).
+    /// Every buyer's row on one vehicle. Read when the store holds no standing
+    /// for it, which is a vehicle bid on before standings existed or one a
+    /// reset cleared, so the standing is worked out from the rows rather than
+    /// taken to be the opening ask.
+    /// </summary>
+    Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId);
+
+    /// <summary>
+    /// Writes the buyer's row and the vehicle's new standing, but only if the
+    /// standing still carries <paramref name="expectedVersion"/>; null expects
+    /// there to be no standing yet. False means another writer moved it first,
+    /// and nothing of this bid was kept: the caller reads again and runs the
+    /// rules again.
+    /// </summary>
+    Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion);
+
+    /// <summary>
+    /// Forget one person's bids, and the standing of every vehicle they bid on,
+    /// so the next read works each one out again from whoever is left. Not
+    /// everybody's: this is what the reset button on a page a stranger can also
+    /// be looking at is allowed to do (ADR: Reset is one person's start-over).
     /// </summary>
     Task ClearAsync(string userId);
 }
 
-/// <summary>
-/// The port wired to nothing: bids live in memory and end with the process.
-/// The unit tests use it, and so does a backend whose store has not come up
-/// yet; those bids are dropped when the store attaches.
-/// </summary>
-public sealed class NullBidStore : IBidStore
-{
-    public static readonly NullBidStore Instance = new();
-
-    private NullBidStore()
-    {
-    }
-
-    public Task<IReadOnlyList<StoredBid>> LoadAsync() => Task.FromResult<IReadOnlyList<StoredBid>>([]);
-
-    public Task SaveAsync(string userId, string vehicleId, BidState state) => Task.CompletedTask;
-
-    public Task ClearAsync(string userId) => Task.CompletedTask;
-}
 // #endregion ports

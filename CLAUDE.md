@@ -72,8 +72,9 @@ split).
   and nothing is derived from it.
 - Bid rules live only in `TheYard.Domain/BidRules.cs`. A bid at or above buy-now wins AT the buy-now
   price, and that check runs BEFORE the increment check. A vehicle anybody has bought is SOLD, to
-  everybody: that check runs before all the others, the caller that holds everybody's standing
-  (`BidService.IsSold`) supplies it, `Auction.Find` and `Auction.Search` hand every vehicle out with its
+  everybody, on both sites: that check runs before all the others, the standing the store owns supplies it
+  (read by `BidService` under its gate and written back with a compare-and-set; `BidService.IsSold` is the
+  listing's cached copy), `Auction.Find` and `Auction.Search` hand every vehicle out with its
   sold flag beside it, and the wire says `sold` on every vehicle. A listing or a rule that forgets it recreates the second buyer (ADR: Accounts and per-user
   bids, addendum). Raising a vehicle's shown price over a bid, and whether the reserve is met, live only
   in `TheYard.Domain/StandingRules.cs` (`RaisedTo`, `Reserve`).

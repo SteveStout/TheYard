@@ -139,9 +139,9 @@ written for the second store. From the gate's own workflow:
 ```live path=.github/workflows/gate.yml region=both-stores
 ```
 
-`NullBidStore` is the smaller case. It implements `IBidStore` and keeps nothing, and the tests of
-the use cases hand it in where a real store would go, so a use case can be tested with no database
-and no mocking framework. It stands in for a real store in production too: a backend whose store has
+`MemoryBidStore` is the smaller case. It implements `IBidStore` in a dictionary, with the same
+compare-and-set rule the two real stores keep, and the tests of the use cases hand it in where a
+real store would go, so a use case can be tested with no database and no mocking framework. It stands in for a real store in production too: a backend whose store has
 not come up yet bids against it, and the bids are forgotten at restart. That is a deliberate limit,
 written down in [ADR: The relational store](https://theyard.stevenstout.biz/?doc=adr-store).
 
@@ -204,7 +204,7 @@ nothing ([ADR: Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-a
 | --- | --- | --- | --- |
 | S | One reason to change. | A rule lives in Domain once; `Program.cs` is a list; one job per front-end file. | `FileHeaderTests`, `OnionTests` |
 | O | Add a class, do not edit the core. | Cosmos DB arrived as adapters behind the same ports; a page is a catalogue row. | `DocumentationCatalogTests` |
-| L | A stand-in behaves the same. | The same suite runs on both stores; `NullBidStore`. | The gate's second xUnit pass |
+| L | A stand-in behaves the same. | The same suite runs on both stores; `MemoryBidStore`. | The gate's second xUnit pass |
 | I | Small interfaces, shaped to the caller. | Three auction ports; a one-method experiment port. | Review, and the record |
 | D | Depend on an abstraction the inner ring owns. | `IBidStore` declared inside, implemented outside, wired in `Composition/`. | `OnionTests` |
 

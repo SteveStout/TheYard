@@ -123,38 +123,56 @@ public class RelationalConstraintTests : IDisposable
     {
         var store = new EfBidStore(new PlainFactory(Connection));
 
-        await store.SaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1));
+        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null));
         byte[] first = TokenOf();
-        await store.SaveAsync("buyer-1", "veh-1", new BidState(11_000, 2, false, 2));
+        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(11_000, 2, false, 2), Standing(11_000, 2), "1"));
         byte[] second = TokenOf();
 
         Assert.NotEmpty(first);
         Assert.NotEqual(first, second);
     }
 
+    /// <summary>
+    /// Somebody else moves the buyer's row between this store reading it and
+    /// writing it. The store answers false and writes nothing, the standing
+    /// included, so the caller reads again and runs the rules again rather than
+    /// writing over a bid it never saw.
+    /// </summary>
     [Fact]
-    public async Task The_store_gets_past_a_conflict_it_did_not_cause()
+    public async Task A_conflict_on_the_buyers_row_writes_nothing()
     {
         var store = new EfBidStore(new PlainFactory(Connection));
-        await store.SaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1));
+        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null));
 
-        // Somebody else moves the row between this store reading it and writing
-        // it. The store's retry starts again from what is there now, which is
-        // the only correct answer: the alternative is overwriting a bid that
-        // was already accepted.
         using (var other = Context())
         {
-            var row = other.Bids.Single();
-            row.Amount = 10_800;
-            row.RowVersion = Guid.NewGuid().ToByteArray();
+            var standing = other.Standings.Single();
+            standing.Amount = 10_800;
+            standing.Version = 2;
             other.SaveChanges();
         }
 
-        await store.SaveAsync("buyer-1", "veh-1", new BidState(12_000, 3, false, 3));
+        Assert.False(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(12_000, 3, false, 3), Standing(12_000, 3), "1"));
 
         using var db = Context();
-        Assert.Equal(12_000, db.Bids.Single().Amount);
+        Assert.Equal(10_000, db.Bids.Single().Amount);
+        Assert.Equal(10_800, db.Standings.Single().Amount);
     }
+
+    /// <summary>Two inserts of the first standing on one vehicle: the second loses and keeps nothing.</summary>
+    [Fact]
+    public async Task The_second_first_bid_on_a_vehicle_loses_the_insert()
+    {
+        var store = new EfBidStore(new PlainFactory(Connection));
+        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null));
+        Assert.False(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_500, 1, false, 2), Standing(10_500, 1), null));
+
+        using var db = Context();
+        Assert.Equal(10_000, db.Standings.Single().Amount);
+        Assert.Equal(1, db.Standings.Single().Version);
+    }
+
+    private static VehicleStanding Standing(int amount, int count) => new(amount, count, "buyer-1", false, count);
     // #endregion concurrency
 
     private byte[] TokenOf()

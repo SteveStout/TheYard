@@ -1,6 +1,7 @@
-// BidService is one class in three files. This one holds the two indexes, the load from the
+// BidService is one class in four files. This one holds the two indexes, the load from the
 // store, the reads every listing makes, and Record, which every write ends in.
 //   BidService.Bidding.cs   placing a bid and buying now, under the gate
+//   BidService.Standing.cs  reading the store's standing and working out the next one
 //   BidService.Reset.cs     one person's start-over
 // The records it hands out have a file each beside it: BidState.cs, VehicleStanding.cs and
 // StoredBid.cs.
@@ -11,15 +12,18 @@ using TheYard.Domain;
 namespace TheYard.Application;
 
 /// <summary>
-/// Everybody's bids, read from the store once at startup and written through on
-/// every accepted bid. Two indexes over the same facts, because two questions
-/// are asked at very different rates: what does this vehicle stand at, which is
+/// Everybody's bids. The store decides each vehicle's standing; this class keeps
+/// a cache of it for the listing, read from the store at startup and refreshed
+/// on every write. Two indexes over the same facts, because two questions are
+/// asked at very different rates: what does this vehicle stand at, which is
 /// asked a hundred thousand times per listing request, and what have I bid,
-/// which is asked once.
+/// which is asked once. A bid is never decided against the cache: the bid path
+/// reads the store's standing under the gate and writes with a compare-and-set,
+/// so two sites over one store cannot both sell a vehicle.
 /// </summary>
 public sealed partial class BidService
 {
-    /// <summary>By vehicle. The hot path: Apply does one lookup per vehicle.</summary>
+    /// <summary>By vehicle, a cache of the store's standing. The hot path: Apply does one lookup per vehicle.</summary>
     private readonly ConcurrentDictionary<string, VehicleStanding> _standing;
 
     /// <summary>By user, then by vehicle. Asked once per page, not once per row.</summary>
@@ -28,9 +32,9 @@ public sealed partial class BidService
     /// <summary>Where bids are kept between restarts: read once at load, written on every accepted bid.</summary>
     private readonly IBidStore _store;
 
-    /// <summary>Bids that live exactly as long as this process does.</summary>
+    /// <summary>Bids that live exactly as long as this process does, in a store of their own.</summary>
     public BidService()
-        : this(NullBidStore.Instance)
+        : this(new MemoryBidStore())
     {
     }
 
@@ -64,8 +68,7 @@ public sealed partial class BidService
     /// that failed is not kept: the next caller starts another, so a store
     /// that was down at startup is read the first time it is up rather than
     /// never (ADR: The ports learn to wait, addendum). Replaying twice is safe,
-    /// because Record keeps the higher standing and the same bid twice is the
-    /// same standing.
+    /// because it writes the store's facts over themselves.
     /// </summary>
     public Task LoadAsync()
     {
@@ -79,12 +82,72 @@ public sealed partial class BidService
         }
     }
 
-    /// <summary>Every stored bid, recorded into both indexes in the order the store returns them.</summary>
-    private async Task LoadFromStoreAsync()
+    /// <summary>
+    /// The store's standings first, then every buyer's row. A vehicle with rows
+    /// and no standing is one bid on before standings were kept, or one a reset
+    /// cleared, so its standing is worked out from the rows. A standing whose
+    /// high bidder has no row is the document store's two writes interrupted
+    /// between them; the standing is the authority, so the holder's row is put
+    /// back in memory from it rather than the price being lowered to match.
+    /// </summary>
+    private async Task LoadFromStoreAsync() =>
+        Replay(await _store.LoadStandingsAsync(), await _store.LoadAsync());
+
+    /// <summary>
+    /// Throws the cache away and reads it again from the store. The other site's
+    /// bids reach this process's listing here, at startup, and on the next write
+    /// to the same vehicle; the rules never wait for it, because they read the
+    /// store themselves.
+    /// </summary>
+    public async Task RefreshAsync()
     {
-        foreach (var bid in await _store.LoadAsync())
+        await _gate.WaitAsync();
+        try
         {
-            Record(bid.UserId, bid.VehicleId, bid.State);
+            var standings = await _store.LoadStandingsAsync();
+            var bids = await _store.LoadAsync();
+            _standing.Clear();
+            _byUser.Clear();
+            Replay(standings, bids);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// What the store holds, into both indexes. Two repairs on the way: a
+    /// vehicle with rows and no standing gets one worked out from its rows, and
+    /// a standing whose holder has no row gets the holder's row back from the
+    /// standing, because the standing is the authority.
+    /// </summary>
+    private void Replay(IReadOnlyList<StoredStanding> standings, IReadOnlyList<StoredBid> bids)
+    {
+        foreach (var stored in standings)
+        {
+            _standing[stored.VehicleId] = stored.Standing;
+        }
+
+        foreach (var group in bids.GroupBy(bid => bid.VehicleId, StringComparer.Ordinal))
+        {
+            foreach (var bid in group)
+            {
+                Remember(bid.UserId, bid.VehicleId, bid.State);
+            }
+            if (!_standing.ContainsKey(group.Key) && Derive(group) is { } derived)
+            {
+                _standing[group.Key] = derived;
+            }
+        }
+
+        foreach (var stored in standings)
+        {
+            var held = stored.Standing;
+            if (!_byUser.TryGetValue(held.HighBidderId, out var mine) || !mine.ContainsKey(stored.VehicleId))
+            {
+                Remember(held.HighBidderId, stored.VehicleId, new BidState(held.Amount, held.BidCount, held.SoldBuyNow, held.AtMs));
+            }
         }
     }
     // #endregion store
@@ -169,31 +232,19 @@ public sealed partial class BidService
 
     // #region record
     /// <summary>
-    /// Both indexes, from one fact. The standing only moves up: a later bid
-    /// from somebody else at a lower number does not exist, because BidRules
-    /// rejected it before this was called, and a replayed bid from the store
-    /// arriving out of order should not be able to lower the price either.
+    /// Both indexes, from one write the store accepted: the buyer's row and the
+    /// standing it decided. The standing is the store's answer, so it is set
+    /// rather than merged; there is nothing in memory that could know better.
     /// </summary>
-    private void Record(string userId, string vehicleId, BidState state)
+    private void Record(string userId, string vehicleId, BidState state, VehicleStanding standing)
     {
+        Remember(userId, vehicleId, state);
+        _standing[vehicleId] = standing;
+    }
+
+    /// <summary>One buyer's row into the by-user index, replacing whatever that buyer held on that vehicle.</summary>
+    private void Remember(string userId, string vehicleId, BidState state) =>
         _byUser.GetOrAdd(userId, _ => new ConcurrentDictionary<string, BidState>(StringComparer.Ordinal))[vehicleId] =
             state;
-
-        _standing.AddOrUpdate(
-            vehicleId,
-            _ => new VehicleStanding(state.Amount, state.BidCount, userId, state.WonBuyNow, state.AtMs),
-            (_, held) => state.Amount > held.Amount
-                ? new VehicleStanding(
-                    state.Amount,
-                    Math.Max(held.BidCount, state.BidCount),
-                    userId,
-                    held.SoldBuyNow || state.WonBuyNow,
-                    state.AtMs)
-                : held with
-                {
-                    BidCount = Math.Max(held.BidCount, state.BidCount),
-                    SoldBuyNow = held.SoldBuyNow || state.WonBuyNow,
-                });
-    }
     // #endregion record
 }

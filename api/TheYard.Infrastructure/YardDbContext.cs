@@ -39,6 +39,9 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
     /// <summary>One buyer's standing on one vehicle. The only table that changes after startup.</summary>
     public DbSet<BidRow> Bids => Set<BidRow>();
 
+    /// <summary>One standing per vehicle, the price everybody's bids are measured against.</summary>
+    public DbSet<StandingRow> Standings => Set<StandingRow>();
+
     /// <summary>Requests per store per UTC hour (ADR: Site activity, and the line an address does not cross).</summary>
     public DbSet<ActivityHourRow> ActivityHours => Set<ActivityHourRow>();
 
@@ -277,6 +280,8 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
             visitor.Property(row => row.Sources).HasMaxLength(PathsLength);
         });
         // #endregion activity-model
+
+        ConfigureStandings(model);
     }
     // #endregion model
 }

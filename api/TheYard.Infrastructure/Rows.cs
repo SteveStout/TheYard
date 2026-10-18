@@ -111,9 +111,42 @@ public sealed class BidRow
     /// The optimistic concurrency token (ADR: The SQL Server backend). On SQL
     /// Server this is a <c>rowversion</c> the database maintains; on SQLite the
     /// store assigns a new value on every save, because SQLite has no such type.
-    /// Either way a write that read a stale row fails instead of overwriting
-    /// somebody else's bid. Nullable because a row that has not been read yet
-    /// does not have one.
+    /// It guards this one buyer's row, so the race it catches is the same
+    /// account writing from two sites at once. Two different buyers are two
+    /// rows and never meet here; what they race for is the vehicle's standing,
+    /// which <see cref="StandingRow"/> guards with a version of its own.
+    /// Nullable because a row that has not been read yet does not have one.
     /// </summary>
     public byte[]? RowVersion { get; set; }
+}
+
+/// <summary>
+/// One vehicle's standing across everybody: the price, the count, the high
+/// bidder and whether it has sold. The store owns it so two sites over one
+/// database agree on it; a write names the version it read and is refused if
+/// another writer moved it first (ADR: Three readers with no memory of the
+/// project, item 5).
+/// </summary>
+public sealed class StandingRow
+{
+    /// <summary>The vehicle, and the key: one standing per vehicle.</summary>
+    public required string VehicleId { get; set; }
+
+    public required int Amount { get; set; }
+
+    public required int BidCount { get; set; }
+
+    /// <summary>The account holding the highest bid.</summary>
+    public required string HighBidderId { get; set; }
+
+    public required bool SoldBuyNow { get; set; }
+
+    public required long AtMs { get; set; }
+
+    /// <summary>
+    /// Moves by one on every write. A plain number rather than rowversion, so
+    /// the compare-and-set reads the same on SQL Server and SQLite: an update
+    /// that names the version it read and changes no row lost the race.
+    /// </summary>
+    public required long Version { get; set; }
 }

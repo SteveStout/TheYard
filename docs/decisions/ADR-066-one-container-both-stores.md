@@ -373,3 +373,8 @@ Most of this lives in the Api host, where `Backend.cs` holds one store's catalog
 ## Addendum, 2026-10-03: endpoints ask the auction
 
 An endpoint still takes `CurrentBackend`, as this record decided, and now reads the store through `CurrentBackend.Auction`, the Application type that composes the catalogue, the bids and the room for that store. The timing card's shape moved from the endpoint into `MetricsReport` (`api/TheYard.Api/MetricsReport.cs`), and the live block above follows it. The context factory moved to the relational adapter.
+
+## Addendum, 2026-10-18: sold holds across the two
+
+The "Not a cluster" paragraph above stopped being true for the auction's rules on 2026-10-18, with 1.0.3.167. Nothing in the store marked a vehicle sold until then; from that version each vehicle's standing, sold included, is kept in the store and written with a compare-and-set, and every bid and buy-now reads it before the rules run (ADR: Three readers with no memory of the project, the addendum on the standing the store owns). So "sold, to everybody" holds across both sites, and a bid under the other site's standing is refused. What stays per process is the listing's cache: a bid placed on one site shows on the other site's listing from the next bid on that vehicle or that site's next start.
+

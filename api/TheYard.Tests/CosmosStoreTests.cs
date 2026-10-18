@@ -117,17 +117,23 @@ public class CosmosStoreTests
         var bids = new CosmosBidStore(store);
         string buyer = $"buyer-{Guid.NewGuid():N}";
 
-        await bids.SaveAsync(buyer, "veh-1", new BidState(10_000, 1, false, 1));
-        await bids.SaveAsync(buyer, "veh-1", new BidState(11_000, 2, false, 2));
-        await bids.SaveAsync(buyer, "veh-2", new BidState(5_000, 1, false, 3));
+        string first = $"veh-1-{Guid.NewGuid():N}", second = $"veh-2-{Guid.NewGuid():N}";
+        Assert.True(await bids.TrySaveAsync(buyer, first, new BidState(10_000, 1, false, 1), new VehicleStanding(10_000, 1, buyer, false, 1), null));
+        var read = await bids.ReadStandingAsync(first);
+        Assert.True(await bids.TrySaveAsync(buyer, first, new BidState(11_000, 2, false, 2), new VehicleStanding(11_000, 2, buyer, false, 2), read!.Version));
+        // The etag it decided against has moved, so the same write again is refused.
+        Assert.False(await bids.TrySaveAsync(buyer, first, new BidState(12_000, 3, false, 3), new VehicleStanding(12_000, 3, buyer, false, 3), read.Version));
+        Assert.True(await bids.TrySaveAsync(buyer, second, new BidState(5_000, 1, false, 3), new VehicleStanding(5_000, 1, buyer, false, 3), null));
 
-        var mine = (await bids.LoadAsync()).Where(b => b.UserId == buyer).OrderBy(b => b.VehicleId).ToList();
+        var mine = (await bids.LoadAsync()).Where(b => b.UserId == buyer).OrderBy(b => b.VehicleId, StringComparer.Ordinal).ToList();
         Assert.Equal(2, mine.Count);
+        Assert.Equal(11_000, (await bids.ReadStandingAsync(first))!.Standing.Amount);
         Assert.Equal(11_000, mine[0].State.Amount);
         Assert.Equal(2, mine[0].State.BidCount);
 
         await bids.ClearAsync(buyer);
         Assert.DoesNotContain((await bids.LoadAsync()), b => b.UserId == buyer);
+        Assert.Null(await bids.ReadStandingAsync(first));
 
         var operations = log.Snapshot();
         // Every write was pinned to the buyer; the second save was a replace carrying the etag.

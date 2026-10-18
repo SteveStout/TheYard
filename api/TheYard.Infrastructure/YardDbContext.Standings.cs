@@ -1,0 +1,28 @@
+// The model for the Standings table: one row per vehicle that the bid path reads and writes with a
+// compare-and-set. A file of its own because YardDbContext.cs holds the rest of the model and is
+// at the length a reader can take in at once.
+using Microsoft.EntityFrameworkCore;
+
+namespace TheYard.Infrastructure;
+
+/// <summary>The standing's part of the model; the context itself is described in YardDbContext.cs.</summary>
+public sealed partial class YardDbContext
+{
+    // #region standings-model
+    /// <summary>
+    /// One standing per vehicle, keyed by the vehicle, with a plain version
+    /// column the store moves itself. No foreign key on the high bidder: a
+    /// deleted account takes its bid rows with it by cascade, and the bid path
+    /// reads the rows again whenever a standing is missing, so a standing is
+    /// never the only record of a bid.
+    /// </summary>
+    private static void ConfigureStandings(ModelBuilder model) =>
+        model.Entity<StandingRow>(standing =>
+        {
+            standing.ToTable("Standings");
+            standing.HasKey(row => row.VehicleId);
+            standing.Property(row => row.VehicleId).HasMaxLength(IdLength);
+            standing.Property(row => row.HighBidderId).HasMaxLength(IdentityKeyLength);
+        });
+    // #endregion standings-model
+}

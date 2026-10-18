@@ -93,7 +93,7 @@ public static class YardDatabase
         // The names are listed once, here, and not again inside the SQL: two
         // lists can drift, and this is a check whose whole job is to notice
         // drift.
-        string[] required = ["Vehicles", "Photos", "Bids", "AspNetUsers"];
+        string[] required = ["Vehicles", "Photos", "Bids", "Standings", "AspNetUsers"];
         var present = await db.Database.SqlQuery<string>($"SELECT name AS Value FROM sys.tables").ToListAsync();
         var missing = required.Where(table => !present.Contains(table, StringComparer.OrdinalIgnoreCase)).ToList();
         return missing.Count == 0

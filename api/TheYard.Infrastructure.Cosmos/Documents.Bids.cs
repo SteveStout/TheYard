@@ -40,4 +40,44 @@ public sealed class BidDocument
     [JsonPropertyName("_etag")]
     public string? ETag { get; set; }
 }
+
+/// <summary>
+/// One vehicle's standing across everybody, kept in the bids container under a
+/// partition no account can have, so the standings need no container of their
+/// own and every one of them is a point read in one partition. The id is the
+/// vehicle id; the etag is the version a compare-and-set names.
+/// </summary>
+public sealed class StandingDocument
+{
+    /// <summary>
+    /// The partition every standing lives in. Account ids are GUIDs, so this
+    /// value can never be somebody's partition.
+    /// </summary>
+    public const string Partition = "~standing";
+
+    /// <summary>The vehicle the standing is on, which is the document id (<c>id</c>).</summary>
+    public string Id { get; set; } = "";
+
+    /// <summary>Always <see cref="Partition"/> (<c>user_id</c>).</summary>
+    public string UserId { get; set; } = Partition;
+
+    /// <summary>The highest bid on the vehicle, in whole dollars (<c>amount</c>).</summary>
+    public int Amount { get; set; }
+
+    /// <summary>How many bids the vehicle has had, counting everybody's (<c>bid_count</c>).</summary>
+    public int BidCount { get; set; }
+
+    /// <summary>The account holding the highest bid (<c>high_bidder_id</c>).</summary>
+    public string HighBidderId { get; set; } = "";
+
+    /// <summary>True once any buyer has bought the vehicle outright (<c>sold_buy_now</c>).</summary>
+    public bool SoldBuyNow { get; set; }
+
+    /// <summary>When the standing bid was placed, in milliseconds since the epoch, UTC (<c>at_ms</c>).</summary>
+    public long AtMs { get; set; }
+
+    /// <summary>The document's etag: a replace that names a stale one is refused with 412.</summary>
+    [JsonPropertyName("_etag")]
+    public string? ETag { get; set; }
+}
 // #endregion documents

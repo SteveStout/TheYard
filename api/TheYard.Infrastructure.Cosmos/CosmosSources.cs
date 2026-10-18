@@ -40,21 +40,63 @@ public sealed class CosmosPhotoManifestSource(CosmosStore store) : IPhotoManifes
 }
 
 /// <summary>
-/// Adapter: bids, in a container partitioned on the buyer. Every operation
+/// Adapter: bids, in a container partitioned on the buyer, and each vehicle's
+/// standing in the same container under a partition of its own. Every operation
 /// here names the partition, so every one of them is a point operation or a
-/// query inside one partition; the only fan-out is the read at startup
-/// (ADR: The partition key).
+/// query inside one partition; the fan-outs are the read at startup and the
+/// rows on one vehicle that has no standing yet (ADR: The partition key). The
+/// standing half is in CosmosBidStore.Standing.cs.
 /// </summary>
-public sealed class CosmosBidStore(CosmosStore store) : IBidStore
+public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
 {
     private const string Partition = "pinned to the buyer";
 
     // #region cosmos-bid-store
+    /// <summary>Every buyer's document, and none of the standings that share the container.</summary>
     public async Task<IReadOnlyList<StoredBid>> LoadAsync()
     {
         var documents = await store.QueryAsync<BidDocument>(
-            store.Bids, new QueryDefinition("SELECT * FROM c"), partitionKey: null, "cross-partition");
+            store.Bids,
+            new QueryDefinition("SELECT * FROM c WHERE c.user_id != @standing").WithParameter("@standing", StandingDocument.Partition),
+            partitionKey: null,
+            "cross-partition");
         return documents.Select(d => d.ToStoredBid()).ToList();
+    }
+
+    /// <summary>
+    /// Every buyer's document on one vehicle: the id is the vehicle, so this is
+    /// one id across every buyer's partition. It runs only when the vehicle has
+    /// no standing yet.
+    /// </summary>
+    public async Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId)
+    {
+        var documents = await store.QueryAsync<BidDocument>(
+            store.Bids,
+            new QueryDefinition("SELECT * FROM c WHERE c.id = @vehicle AND c.user_id != @standing")
+                .WithParameter("@vehicle", vehicleId)
+                .WithParameter("@standing", StandingDocument.Partition),
+            partitionKey: null,
+            "cross-partition");
+        return documents.Select(d => d.ToStoredBid()).ToList();
+    }
+
+    /// <summary>
+    /// The standing first, with a compare-and-set on its etag, then the buyer's
+    /// document. They live in different partitions, so this is two writes and
+    /// not a transaction: the standing goes first because it is what the rules
+    /// read, and a buyer's document missing after a standing that names them is
+    /// repaired from the standing when the cache is next read from the store.
+    /// A 412 or 409 on the standing answers false, nothing written.
+    /// </summary>
+    public async Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion)
+    {
+        if (!await TryWriteStandingAsync(vehicleId, standing, expectedVersion))
+        {
+            return false;
+        }
+
+        await SaveBuyerAsync(userId, vehicleId, state);
+        return true;
     }
 
     /// <summary>
@@ -63,15 +105,11 @@ public sealed class CosmosBidStore(CosmosStore store) : IBidStore
     /// etag the read returned. Three tries, then the exception travels: a 412
     /// means another writer moved this buyer's document between the read and
     /// the write, a 409 means another writer created it first, and both take
-    /// the one account bidding from two containers at once. The retry reads
-    /// again and writes this bid over what it finds, the same as the relational
-    /// store (ADR: The SQL Server backend): the rules ran on this side already,
-    /// and what the document held in between is not re-examined. Two buyers
-    /// racing each other are two documents and never meet here: the store keeps
-    /// no per-vehicle standing, so the join that would catch them is a decision
-    /// still open (ADR: Three readers with no memory of the project).
+    /// the one account bidding from two sites at once. The standing has
+    /// already been decided by then, so the retry writes this bid over what it
+    /// finds.
     /// </summary>
-    public async Task SaveAsync(string userId, string vehicleId, BidState state)
+    private async Task SaveBuyerAsync(string userId, string vehicleId, BidState state)
     {
         for (int attempt = 1; ; attempt++)
         {
@@ -112,9 +150,10 @@ public sealed class CosmosBidStore(CosmosStore store) : IBidStore
 
     /// <summary>
     /// One person's documents: a query inside that person's partition for the
-    /// ids, then the deletes as an atomic batch. There is no ExecuteDelete on
-    /// this side; the batch is what a partition offers instead
-    /// (ADR: Reset is one person's start-over).
+    /// ids, then the deletes as an atomic batch, then the standing of each of
+    /// those vehicles, so the next bid works it out again from whoever is left.
+    /// There is no ExecuteDelete on this side; the batch is what a partition
+    /// offers instead (ADR: Reset is one person's start-over).
     /// </summary>
     public async Task ClearAsync(string userId)
     {
@@ -126,6 +165,7 @@ public sealed class CosmosBidStore(CosmosStore store) : IBidStore
         if (ids.Count > 0)
         {
             await store.DeleteBatchAsync(store.Bids, userId, ids, Partition);
+            await ForgetStandingsAsync(ids);
         }
     }
     // #endregion cosmos-bid-store

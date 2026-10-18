@@ -34,47 +34,33 @@ public sealed partial class BidService
         await _gate.WaitAsync();
         try
         {
-            if (!_byUser.TryGetValue(userId, out var mine))
-            {
-                return [];
-            }
-
-            string[] touched = mine.Keys.ToArray();
+            // The store is asked even when this process holds nothing for the
+            // caller, because the caller may have bid on the other site.
+            string[] touched = _byUser.TryGetValue(userId, out var mine) ? mine.Keys.ToArray() : [];
             var orphaned = new List<string>();
             // The store first, then memory, the same rule the bid path follows.
             // Clearing the dictionaries before the store is asked would leave a
             // caller told their bids were gone, when a store that refused kept
             // the rows to be replayed at the next start (ADR: Three readers with
-            // no memory of the project). The gate is held, so nothing of this
-            // caller's can arrive between the two.
+            // no memory of the project). The store drops the standing of every
+            // vehicle this person touched along with their rows.
             await _store.ClearAsync(userId);
             _byUser.TryRemove(userId, out _);
 
             foreach (string vehicleId in touched)
             {
-                // Recomputed, not removed. Removing it would hand the vehicle
-                // back to its opening ask and delete a third person's bid
-                // without a word, which is the same defect one size smaller.
-                var best = _byUser
-                    .Select(user => user.Value.TryGetValue(vehicleId, out var state) ? (user.Key, state) : (null, null))
-                    .Where(pair => pair.Item2 is not null)
-                    .OrderByDescending(pair => pair.Item2!.Amount)
-                    .ThenBy(pair => pair.Item2!.AtMs)
-                    .FirstOrDefault();
-
-                if (best.Item1 is null)
+                // Recomputed, not removed, and from the store's rows rather than
+                // this process's memory, so a bid placed on the other site
+                // still counts. Removing it would hand the vehicle back to its
+                // opening ask and delete a third person's bid without a word.
+                var (held, _) = await CurrentAsync(vehicleId);
+                if (held is null)
                 {
                     // Nobody left on this one, so the room's answer to it has
                     // nothing to be an answer to. These are the only vehicles
                     // the caller gets to clear the room on.
-                    _standing.TryRemove(vehicleId, out _);
                     orphaned.Add(vehicleId);
-                    continue;
                 }
-
-                var state = best.Item2!;
-                _standing[vehicleId] = new VehicleStanding(
-                    state.Amount, state.BidCount, best.Item1, state.WonBuyNow, state.AtMs);
             }
 
             return orphaned;

@@ -66,17 +66,30 @@ public class PortsTests
 
     private sealed class SlowStore : IBidStore
     {
+        private readonly MemoryBidStore _inner = new();
+
         public int Writes;
 
-        public Task<IReadOnlyList<StoredBid>> LoadAsync() => Task.FromResult<IReadOnlyList<StoredBid>>([]);
+        public Task<IReadOnlyList<StoredBid>> LoadAsync() => _inner.LoadAsync();
 
-        public async Task SaveAsync(string userId, string vehicleId, BidState state)
+        public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync() => _inner.LoadStandingsAsync();
+
+        public Task<StoredStanding?> ReadStandingAsync(string vehicleId) => _inner.ReadStandingAsync(vehicleId);
+
+        public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId) => _inner.BidsOnAsync(vehicleId);
+
+        public async Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion)
         {
             await Task.Delay(5);
-            Interlocked.Increment(ref Writes);
+            bool saved = await _inner.TrySaveAsync(userId, vehicleId, state, standing, expectedVersion);
+            if (saved)
+            {
+                Interlocked.Increment(ref Writes);
+            }
+            return saved;
         }
 
-        public Task ClearAsync(string userId) => Task.CompletedTask;
+        public Task ClearAsync(string userId) => _inner.ClearAsync(userId);
     }
     // #endregion gate
 

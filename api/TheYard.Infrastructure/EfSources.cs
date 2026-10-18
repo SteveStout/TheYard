@@ -3,9 +3,11 @@
 // The rest of the relational plumbing has a file of its own beside this one:
 //   VehicleRows.cs     row to domain and back
 //   DatabaseState.cs   whether the store is usable, and one sentence about why
+//   EfBidStore.Standing.cs   each vehicle's standing, moved with a compare-and-set
 //   YardDatabase.cs    bringing the database up once at startup
 //   SeedResult.cs      what the first boot found
 //   YardSeed.cs        filling an empty catalogue from the JSON files
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application;
 using TheYard.Data;
@@ -45,18 +47,18 @@ public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> facto
 }
 
 /// <summary>
-/// Adapter: bids, which are the only thing here that survives a restart
-/// because they are the only thing a visitor creates.
+/// Adapter: bids and the standing they add up to, which are the only things
+/// here that change after startup, because they are the only things a visitor
+/// creates. The standing half is in EfBidStore.Standing.cs.
 /// </summary>
-public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidStore
+public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidStore
 {
     // #region bid-store
     /// <summary>Every stored bid, for BidService to replay into its indexes at startup.</summary>
     public async Task<IReadOnlyList<StoredBid>> LoadAsync()
     {
         using var db = await factory.CreateDbContextAsync();
-        return await db.Bids.AsNoTracking()
-            .Select(row => new StoredBid(
+        return await db.Bids.AsNoTracking().Select(row => new StoredBid(
                 row.UserId,
                 row.VehicleId,
                 new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs)))
@@ -64,46 +66,77 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
     }
 
     /// <summary>
-    /// One row per buyer per vehicle, replaced rather than appended. Called
-    /// inside BidService's lock, which is what makes "read the row, decide,
-    /// write the row" safe here without the database needing an opinion about
-    /// it.
+    /// Every buyer's row on one vehicle. There is no index on VehicleId alone,
+    /// so this reads the table; it runs only when a vehicle has no standing yet,
+    /// once per vehicle, on a table of visitor bids.
     /// </summary>
-    public async Task SaveAsync(string userId, string vehicleId, BidState state)
+    public async Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId)
     {
-        // Three tries, then the exception travels. A conflict here means
-        // another writer moved this same buyer's row between the read and the
-        // write, which takes the one account bidding from two containers at
-        // once. The retry reads the row again and writes this bid over it: the
-        // rules already ran on this side against the standing this container
-        // held, and what the row held in between is not re-examined. Two buyers
-        // racing each other are two rows and never meet here: the store keeps no
-        // per-vehicle standing, so the compare-and-set standing that would join
-        // them is a decision still open (ADR: Three readers with no memory of the project). A fresh
-        // context per attempt, because a context that has just thrown a
-        // concurrency exception is holding the values that lost.
-        for (int attempt = 1; ; attempt++)
-        {
-            try
-            {
-                await WriteAsync(userId, vehicleId, state);
-                return;
-            }
-            catch (DbUpdateConcurrencyException) when (attempt < 3)
-            {
-                // Deliberately empty. The retry is the handling.
-            }
-        }
+        using var db = await factory.CreateDbContextAsync();
+        return await db.Bids.AsNoTracking().Where(row => row.VehicleId == vehicleId).Select(row => new StoredBid(
+                row.UserId,
+                row.VehicleId,
+                new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs)))
+            .ToListAsync();
     }
 
     /// <summary>
-    /// One attempt at the write: insert the buyer's row for this vehicle, or
-    /// update it in place, on a fresh context, and move the concurrency token
-    /// where the provider does not move it itself.
+    /// The buyer's row and the vehicle's standing in one transaction, the
+    /// standing first with a compare-and-set on its version. An update that
+    /// names a version no longer there changes no row, and an insert where
+    /// another writer has just inserted breaks the key; either way the
+    /// transaction is rolled back and the answer is false, so BidService reads
+    /// again and runs the rules again. The buyer's row keeps its own token,
+    /// which catches one account writing from two sites at once, and that too
+    /// answers false rather than writing over what it never saw.
     /// </summary>
-    private async Task WriteAsync(string userId, string vehicleId, BidState state)
+    public async Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion)
     {
         using var db = await factory.CreateDbContextAsync();
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        if (expectedVersion is not null && !await TryMoveStandingAsync(db, vehicleId, standing, long.Parse(expectedVersion, CultureInfo.InvariantCulture)))
+        {
+            return false;
+        }
+
+        if (expectedVersion is null)
+        {
+            db.Standings.Add(RowOf(vehicleId, standing, version: 1));
+        }
+
+        await StageBuyerRowAsync(db, userId, vehicleId, state);
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+        catch (DbUpdateException) when (expectedVersion is null)
+        {
+            // An insert that broke a key lost to another writer's insert of the
+            // same standing. Anything else that broke is a real failure and
+            // travels.
+            await transaction.RollbackAsync();
+            if (await StandingExistsAsync(vehicleId))
+            {
+                return false;
+            }
+            throw;
+        }
+
+        await transaction.CommitAsync();
+        return true;
+    }
+
+    /// <summary>
+    /// The buyer's row for this vehicle, added or changed in place on the
+    /// context, with the concurrency token moved where the provider does not
+    /// move it itself. Nothing is written until the caller saves.
+    /// </summary>
+    private static async Task StageBuyerRowAsync(YardDbContext db, string userId, string vehicleId, BidState state)
+    {
         var existing = await db.Bids.FindAsync(userId, vehicleId);
         if (existing is null)
         {
@@ -134,18 +167,24 @@ public sealed class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidS
         {
             existing.RowVersion = Guid.NewGuid().ToByteArray();
         }
-
-        await db.SaveChangesAsync();
     }
 
-    /// <summary>Deletes one buyer's bids, every vehicle, in one statement.</summary>
+    /// <summary>
+    /// Deletes one buyer's rows, every vehicle, and the standing of each of
+    /// those vehicles, in one transaction. The standings go so the next bid on
+    /// each vehicle works its standing out again from whoever is left.
+    /// </summary>
     public async Task ClearAsync(string userId)
     {
         using var db = await factory.CreateDbContextAsync();
+        await using var transaction = await db.Database.BeginTransactionAsync();
         // One person's rows and nobody else's. A delete over the whole table,
         // on a site two strangers can be looking at, would let either of them
         // delete the other's bids (ADR: Reset is one person's start-over).
+        var touched = await db.Bids.Where(bid => bid.UserId == userId).Select(bid => bid.VehicleId).ToListAsync();
+        await db.Standings.Where(row => touched.Contains(row.VehicleId)).ExecuteDeleteAsync();
         await db.Bids.Where(bid => bid.UserId == userId).ExecuteDeleteAsync();
+        await transaction.CommitAsync();
     }
     // #endregion bid-store
 }

@@ -136,8 +136,8 @@ ports, and the rules have no idea which one is answering.
 **The practice:** name the port for what the inner ring needs (`IBidStore`) and keep the technology
 out of the name (`ISqlBidRepository` would leak it), and keep every type the port mentions inside the
 inner ring. Give
-it a do-nothing implementation beside it, as `NullBidStore` is here, and the use cases can be tested
-with no database and no mocking framework.
+it an in-memory implementation beside it that keeps the same rules, as `MemoryBidStore` is here, and
+the use cases can be tested with no database and no mocking framework.
 
 The ports, whole,
 [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs):
