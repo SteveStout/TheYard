@@ -99,6 +99,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every task in `.vscode/tasks.json` runs a script `package.json` declares or a project in the tree, every launch configuration runs a project that exists on the port its own `launchSettings.json` names, and the Working in VS Code page names every task and configuration | ADR: The editor is set up by the repository | WorkspaceTests |
 | The gate on GitHub Actions runs every check the laptop's gate ran, writes every report the results writer reads, turns red when any check fails, runs The Shed's suites on Windows, and runs only on `gate/` branches with no permission to write | ADR: The gate runs where the memory is | GateWorkflowTests |
 | The resume at /resume is the locked resume, byte for byte, inline under his name and the lock's date, and the door in its link is recorded as one allowed word, never the query | ADR: The resume has an address | ResumeAddressTests |
+| The App Service plan is read a minute by the SQL site alone and kept thirty-one days, every window is drawn from the kept copy, and CPU, memory, the HTTP queue and sockets turn amber and red only when fifteen minutes in a row hold the line | ADR: The App Service plan, read every minute | PlanThresholdTests, PlanViewTests |
 
 ## How the table is read
 

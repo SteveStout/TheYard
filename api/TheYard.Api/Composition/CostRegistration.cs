@@ -24,6 +24,9 @@ public static class CostRegistration
             YardComposition.AzureClientId(builder.Configuration),
             configured: IdentityTokens.OnAppService);
         ICostHistory history = new CostsInMemory();
+        // The kept days are also what the plan card reads its own line of the bill from, so the
+        // two cards cannot disagree about what the plan costs.
+        builder.Services.AddSingleton(history);
         var status = new CostStatus();
         builder.Services.AddSingleton(reader);
         builder.Services.AddSingleton(status);

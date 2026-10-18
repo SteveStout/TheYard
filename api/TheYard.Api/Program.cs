@@ -26,6 +26,7 @@ builder.AddTheYardApi(host);                  // Composition/ApiRegistration.cs
 builder.AddTheYardTelemetry();                // Composition/TelemetryRegistration.cs
 builder.AddTheYardAdmin(host);                // Composition/AdminRegistration.cs
 builder.AddTheYardCosts();                    // Composition/CostRegistration.cs
+builder.AddTheYardPlan(host);                 // Composition/PlanRegistration.cs
 
 var app = builder.Build();
 await app.StartTheYardAsync(host);            // Composition/Startup.cs
@@ -41,6 +42,7 @@ app.MapHealthEndpoints();                     // Endpoints/HealthEndpoints.cs
 app.MapPulseEndpoints();                      // Endpoints/PulseEndpoints.cs
 app.MapErrorEndpoints();                      // Endpoints/ErrorEndpoints.cs
 app.MapAdminEndpoints();                      // Endpoints/AdminEndpoints.cs
+app.MapPlanEndpoints();                       // Endpoints/PlanEndpoints.cs
 app.MapAccountEndpoints();                    // Endpoints/AccountEndpoints.cs
 app.MapTheYardSpa();                          // Composition/SpaRegistration.cs
 

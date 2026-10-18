@@ -1246,7 +1246,7 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
   }
   await expect(page.getByTestId('question-up').getByTestId('bench-link-health')).toBeVisible();
   await expect(page.getByTestId('question-fast').getByTestId('bench-link-traffic')).toBeVisible();
-  await expect(page.getByTestId('question-cost').getByTestId('bench-link-machines')).toBeVisible();
+  await expect(page.getByTestId('question-cloud').getByTestId('bench-link-machines')).toBeVisible();
   await expect(page.getByTestId('question-broke').getByTestId('bench-link-errors')).toBeVisible();
   // A tile goes to its card.
   await strip.getByTestId('tile-errors').click();

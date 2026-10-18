@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="378" viewBox="0 0 1400 378" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>The role assignments id-theyard-ss holds, read back on 18 October 2026: Reader on RG-THEYARD-SS, which the plan and its apps inherit</title>
+  <defs>
+    <style>
+      .heading { fill: #3f3a37; font-size: 20px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+      .mono { fill: #3f3a37; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 13px; }
+      .panel { fill: #1f2a2e; }
+    </style>
+  </defs>
+  <rect width="1400" height="378" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">id-theyard-ss: its role assignments, read back</text>
+  <text x="40" y="70" class="caption">az role assignment list --assignee &lt;the identity&#x27;s principal&gt; --all, through the runner on 2026-10-18. Reader on the group covers the plan and every app on it.</text>
+  <rect x="40" y="96" width="1320" height="228" rx="8" fill="#ffffff" stroke="#536786" stroke-width="1.5"/>
+  <text x="56" y="132" class="mono">[</text>
+  <text x="56" y="154" class="mono">  { &quot;role&quot;: &quot;Reader&quot;,               &quot;scope&quot;: &quot;/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS&quot; },</text>
+  <text x="56" y="176" class="mono">  { &quot;role&quot;: &quot;AcrPull&quot;,              &quot;scope&quot;: &quot;.../registries/crtheyardsszmnetj67bn5h2&quot; },</text>
+  <text x="56" y="198" class="mono">  { &quot;role&quot;: &quot;Monitoring Reader&quot;,    &quot;scope&quot;: &quot;.../components/appi-theyard-ss&quot; },</text>
+  <text x="56" y="220" class="mono">  { &quot;role&quot;: &quot;Contributor&quot;,          &quot;scope&quot;: &quot;.../communicationServices/acs-theyard-ss&quot; },</text>
+  <text x="56" y="242" class="mono">  { &quot;role&quot;: &quot;Cost Management Reader&quot;, &quot;scope&quot;: &quot;/subscriptions/df3b718c-6d99-4904-8102-6f865941f640&quot; }</text>
+  <text x="56" y="264" class="mono">]</text>
+  <text x="56" y="286" class="mono"></text>
+  <text x="56" y="308" class="mono">PLAN-THEYARD-SS  Microsoft.Web/serverFarms  B2  westus3   (inherits Reader from RG-THEYARD-SS)</text>
+</svg>

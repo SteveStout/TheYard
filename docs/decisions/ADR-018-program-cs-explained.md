@@ -37,10 +37,10 @@ serves a file asks for it as a parameter.
 What the file is today:
 
 ```
-54 total
+56 total
   7 comment
   6 blank
-  41 code, across 0 endpoints
+  43 code, across 0 endpoints
 ```
 
 No route is mapped in Program.cs itself. Until 1.0.3.39 it was one file of 2,667 lines holding 48

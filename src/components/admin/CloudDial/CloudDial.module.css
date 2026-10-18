@@ -1,0 +1,92 @@
+/**
+ * Does:      Draws one dial: a pale face, the tick ring in hairlines, the arc in the reading's tone, the amber and
+ *            red marks, the 30-day 95th in the gold bar's dark tone and the peak in red.
+ * Does not:  Decide the tone or the angles (the server and src/lib/cloud.ts do).
+ * Used by:   CloudDial.tsx.
+ */
+.dial {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  min-width: 0;
+}
+
+.dial svg {
+  width: min(200px, 100%);
+  height: auto;
+}
+
+.face {
+  fill: var(--color-surface-muted);
+  stroke: var(--color-border);
+}
+
+.tick {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+}
+
+.track {
+  fill: none;
+  stroke: var(--color-neutral-soft);
+  stroke-width: 14;
+}
+
+.arc {
+  fill: none;
+  stroke-width: 14;
+}
+
+.good {
+  stroke: var(--color-success);
+}
+
+.info {
+  stroke: var(--color-heading);
+}
+
+.warning {
+  stroke: var(--color-warning);
+}
+
+.alarm {
+  stroke: var(--color-danger);
+}
+
+.amberMark {
+  stroke: var(--color-warning);
+  stroke-width: 2.5;
+}
+
+.redMark {
+  stroke: var(--color-danger);
+  stroke-width: 2.5;
+}
+
+.p95 {
+  fill: var(--color-gold-bar-dark);
+}
+
+.peak {
+  fill: var(--color-danger);
+}
+
+.big {
+  fill: var(--color-heading);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.absolute {
+  fill: var(--color-text);
+  font-size: var(--chart-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}

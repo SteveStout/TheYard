@@ -128,6 +128,7 @@ public static class DocumentationCatalog
         ["adr-the-gate-runs-where-the-memory-is"] = "docs/decisions/ADR-098-the-gate-runs-where-the-memory-is.md",
         ["adr-the-resume-has-an-address"] = "docs/decisions/ADR-099-the-resume-has-an-address.md",
         ["adr-one-reading-for-the-first-screen"] = "docs/decisions/ADR-100-one-reading-for-the-first-screen.md",
+        ["adr-the-app-service-plan-read-every-minute"] = "docs/decisions/ADR-101-the-app-service-plan-read-every-minute.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",
@@ -169,6 +170,7 @@ public static class DocumentationCatalog
         ["bid-walk"] = ("docs/images/bid-walk.svg", "One bid through the rings"),
         ["port-adapter"] = ("docs/images/port-adapter.svg", "The inner ring owns the interface"),
         ["solid"] = ("docs/images/solid.svg", "SOLID, in plain words"),
+        ["plan-minute"] = ("docs/images/plan-minute.svg", "The plan's minute, from Azure to the card"),
     };
     // #endregion diagrams
 }

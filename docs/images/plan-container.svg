@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="224" viewBox="0 0 1400 224" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>The plan container on cosmos-theyard-ss, read back on 18 October 2026: partitioned on /day, 2,678,400 seconds to live, nine indexed paths</title>
+  <defs>
+    <style>
+      .heading { fill: #3f3a37; font-size: 20px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+      .mono { fill: #3f3a37; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 13px; }
+      .panel { fill: #1f2a2e; }
+    </style>
+  </defs>
+  <rect width="1400" height="224" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">cosmos-theyard-ss / theyard / plan, read back</text>
+  <text x="40" y="70" class="caption">az cosmosdb sql container create from infra/cosmos/plan.json, then container show, through the runner on 2026-10-18.</text>
+  <rect x="40" y="96" width="1320" height="74" rx="8" fill="#ffffff" stroke="#536786" stroke-width="1.5"/>
+  <text x="56" y="132" class="mono">created: {   &quot;included&quot;: 9,   &quot;name&quot;: &quot;plan&quot;,   &quot;pk&quot;: [ &quot;/day&quot; ],   &quot;ttl&quot;: 2678400 }</text>
+  <text x="56" y="154" class="mono">read back: {   &quot;name&quot;: &quot;plan&quot;,   &quot;pk&quot;: [ &quot;/day&quot; ],   &quot;ttl&quot;: 2678400 }</text>
+</svg>

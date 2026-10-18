@@ -2,7 +2,7 @@
  * Does:      Lays out the Overview's four rows: the question, the number and its tone word, the line under it and
  *            its range, with the tone on the row's left edge.
  * Does not:  Decide a row's tone (src/lib/overview.ts does) or style the card itself (card.module.css does).
- * Used by:   OverviewCard.tsx.
+ * Used by:   CloudRows.tsx, OverviewCard.tsx.
  */
 
 .rows {

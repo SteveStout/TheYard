@@ -241,3 +241,37 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     expect(overflow.width).toBe(375);
   }).toPass({ timeout: 20_000 });
 });
+
+test('the two half cards in each row end on one line, each photograph filling its card to the foot', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openTheYard(page, '/?doc=author');
+  const doc = page.getByRole('dialog', { name: 'About Steven' });
+  await expect(doc.getByTestId('author-page')).toBeVisible();
+  await expect(doc.locator('.author-block-half img').first()).toBeVisible();
+  // Every half card, with the row it sits in and how far its photograph's foot is from its padding.
+  const cards = await doc.locator('.author-block-half').evaluateAll((blocks) =>
+    blocks.map((block) => {
+      const box = block.getBoundingClientRect();
+      const photo = block.querySelector(':scope > .author-photo')?.getBoundingClientRect();
+      const padding = parseFloat(getComputedStyle(block).paddingBottom);
+      return {
+        top: Math.round(box.top),
+        height: box.height,
+        gap: photo ? box.bottom - padding - photo.bottom : null,
+      };
+    })
+  );
+  const rows = new Map<number, typeof cards>();
+  for (const card of cards) rows.set(card.top, [...(rows.get(card.top) ?? []), card]);
+  const pairs = [...rows.values()].filter((row) => row.length === 2);
+  expect(pairs.length).toBeGreaterThanOrEqual(2);
+  for (const [left, right] of pairs) {
+    expect(Math.abs(left.height - right.height)).toBeLessThanOrEqual(1);
+    for (const card of [left, right]) {
+      expect(card.gap).not.toBeNull();
+      expect(card.gap!).toBeLessThanOrEqual(24);
+    }
+  }
+});

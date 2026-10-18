@@ -81,10 +81,10 @@
 
   <rect x="815" y="268" width="510" height="96" fill="#f4f2f3" stroke="#d8d3d4" rx="8"/>
   <text x="828" y="290" class="title">Inside: one ASP.NET Core 10 process (Dockerfile, ADR-002)</text>
-  <text x="828" y="310" class="body">Serves the built React SPA from wwwroot, /api/* over the catalogue it read at startup,</text>
-  <text x="828" y="326" class="body">the docs with live code read from its own source (ADR-014), /healthz and /readyz,</text>
-  <text x="828" y="342" class="body">and the Admin tab, which trades the identity for a token and reads its own</text>
-  <text x="828" y="358" class="body">site and the plan it shares from management.azure.com (ADR-010, ADR-079).</text>
+  <text x="828" y="310" class="body">Serves the built React SPA from wwwroot, /api/* over the catalogue, the docs with</text>
+  <text x="828" y="326" class="body">live code from its own source (ADR-014), /healthz and /readyz, and the Admin tab,</text>
+  <text x="828" y="342" class="body">which trades the identity for a token and reads its site and the plan it shares,</text>
+  <text x="828" y="358" class="body">the plan kept a minute at a time in Cosmos DB (ADR-010, ADR-079, ADR-101).</text>
 
   <rect x="815" y="376" width="510" height="100" fill="#f4f2f3" stroke="#d8d3d4" rx="8"/>
   <text x="828" y="398" class="title">Beside it: the rendering service, a third web app (render/, ADR-096)</text>

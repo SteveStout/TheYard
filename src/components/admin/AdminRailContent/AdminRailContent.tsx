@@ -10,7 +10,7 @@ import { followCardLink } from '../AdminPanel/followCardLink';
 
 /**
  * What goes in the rail (the side list of cards): a search box, a note when the
- * address named an unknown card, and the cards grouped under five questions.
+ * address named an unknown card, and the cards grouped under six questions.
  * On a wide screen the rail sits beside the card; on narrower ones it is in the
  * Cards drawer.
  */

@@ -1,6 +1,6 @@
 /**
  * The workbench's rail and what stands beside the open card (ADR: The Admin tab,
- * as a product, the addendum on the workbench): the five questions and every
+ * as a product, the addendum on the workbench): the six questions and every
  * card under the one it answers, where the previous and next keys lead, what
  * the rail's search finds, which card a tile opens and the hour at a glance.
  * Only the Admin tab's chunk loads it; the addresses are in workbench.ts,
@@ -10,8 +10,8 @@
  */
 import { CARD_SLUGS, type CardSlug } from './workbench';
 
-/** The five questions, which are the rail's five groups. */
-export type BenchQuestion = 'up' | 'fast' | 'cost' | 'broke' | 'desk';
+/** The six questions, which are the rail's six groups. */
+export type BenchQuestion = 'up' | 'fast' | 'cost' | 'cloud' | 'broke' | 'desk';
 
 export type BenchCard = {
   slug: CardSlug;
@@ -26,6 +26,7 @@ export const BENCH_QUESTIONS: { key: BenchQuestion; title: string }[] = [
   { key: 'up', title: 'Is it up?' },
   { key: 'fast', title: 'Is it fast?' },
   { key: 'cost', title: 'Is it costing anything?' },
+  { key: 'cloud', title: 'Cloud infrastructure' },
   { key: 'broke', title: 'What broke?' },
   { key: 'desk', title: 'Who came, and the operator' },
 ];
@@ -46,7 +47,6 @@ const card = (
 export const BENCH_CARDS: BenchCard[] = [
   card('overview', 'Overview', 'up'),
   card('health', 'Application health', 'up'),
-  card('azure', "Azure's view of the container", 'up'),
   card('pages', 'Every page, checked', 'up'),
   card('tests', 'Every test, for this build', 'up'),
   card('traffic', 'Traffic', 'fast'),
@@ -55,10 +55,12 @@ export const BENCH_CARDS: BenchCard[] = [
   card('backends', 'Backends, side by side', 'fast'),
   card('proof', 'Same performance, proven', 'fast'),
   card('spend', 'What Azure charges', 'cost'),
-  card('machines', 'What the machines are doing', 'cost'),
   card('experiment', 'The partition key, live', 'cost'),
   card('sql', 'The SQL this application ran', 'cost'),
   card('store', 'What the document store ran', 'cost'),
+  card('plan', 'The App Service plan', 'cloud'),
+  card('azure', "Azure's view of the container", 'cloud'),
+  card('machines', 'What the machines are doing', 'cloud'),
   card('errors', 'Recent errors', 'broke'),
   card('log', 'The log, as the console got it', 'broke'),
   card('kept', 'Kept log', 'broke', 'kept-logs-card'),

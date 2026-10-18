@@ -44,6 +44,9 @@ public static class Containers
     /// <summary>What the machines were doing: one document a minute from each site, partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: What the machines are doing).</summary>
     public const string Machines = "machines";
 
+    /// <summary>The App Service plan, kept: one document a minute and one an hour, partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: The App Service plan, read every minute).</summary>
+    public const string Plan = "plan";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -57,6 +60,7 @@ public static class Containers
         [Logs] = "/day",
         [Resets] = "/id",
         [Machines] = "/day",
+        [Plan] = "/day",
     };
 
     /// <summary>

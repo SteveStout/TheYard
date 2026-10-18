@@ -148,17 +148,35 @@
   margin: 0;
 }
 
-/* Two blocks side by side: the words at the top, the photograph at the foot, and both
-   photographs cut to one shape, so the two sit on one line at one size whatever the
-   words above them. The cut is the page's; the source files are untouched. */
+/* Two blocks side by side: the grid stretches both to the row's height, and the shorter
+   one's photograph grows into what its words leave, so both end on one line with no
+   band; the credit stays under it. Stacked on a phone, nothing grows. */
 .prose :global(.author-block-half) {
   display: flex;
   flex-direction: column;
 }
 
 .prose :global(.author-block-half) > :global(.author-photo) {
-  margin-top: auto;
+  margin-top: 0;
   padding-top: var(--space-3);
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.prose :global(.author-block-half) > :global(.author-photo) picture {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.prose :global(.author-block-half) > :global(.author-photo) img {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .prose :global(.author-block-half) :global(.author-frame) {

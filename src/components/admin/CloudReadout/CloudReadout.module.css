@@ -1,0 +1,101 @@
+/**
+ * Does:      Draws the readout beside a card: the uptime ring, then one hairline row a reading, the tone on its
+ *            left border.
+ * Does not:  Decide a reading's tone or words (the server does) or lay out the frame.
+ * Used by:   CloudReadout.tsx.
+ */
+.readout {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-heading);
+}
+
+.ring {
+  width: min(220px, 100%);
+  justify-self: center;
+}
+
+.tick {
+  stroke: var(--color-border-strong);
+}
+
+.track {
+  fill: none;
+  stroke: var(--color-neutral-soft);
+  stroke-width: 16;
+}
+
+.fill {
+  fill: none;
+  stroke: var(--color-teal-deep);
+  stroke-width: 16;
+}
+
+.big {
+  fill: var(--color-heading);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+}
+
+.label {
+  fill: var(--color-text);
+  font-size: var(--chart-text);
+}
+
+.lines {
+  display: grid;
+  margin: 0;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 2px solid transparent;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.line dt {
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--readout-tracking);
+}
+
+.line dd {
+  margin: 0;
+  color: var(--color-text);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.good {
+  border-left-color: var(--color-success);
+}
+
+.warning {
+  border-left-color: var(--color-warning);
+}
+
+.alarm {
+  border-left-color: var(--color-danger);
+}
+
+.footnote {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text);
+}

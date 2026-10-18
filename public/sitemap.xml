@@ -105,6 +105,11 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/diagrams/plan-minute</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/clean-architecture</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -661,6 +666,11 @@
   </url>
   <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-one-reading-for-the-first-screen</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-app-service-plan-read-every-minute</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

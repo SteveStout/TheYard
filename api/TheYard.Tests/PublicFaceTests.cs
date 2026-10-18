@@ -61,7 +61,7 @@ public class PublicFaceTests
                 @"\s+",
                 " ");
 
-            foreach (Match match in Regex.Matches(document, @"([A-Za-z][a-z]+(?:-[a-z]+)?) decision record"))
+            foreach (Match match in Regex.Matches(document, @"((?:[A-Za-z][a-z]+ hundred and )?[A-Za-z][a-z]+(?:-[a-z]+)?) decision record"))
             {
                 int? claimed = Words.Value(match.Groups[1].Value);
                 if (claimed is null)
@@ -331,12 +331,18 @@ public class PublicFaceTests
         public static int? Value(string word)
         {
             string lower = word.ToLowerInvariant();
-            // The records passed a hundred on 17 October. A claim reads "one hundred decision
-            // records" and this match sees the last word of the number, so the word itself is
-            // the value; "two hundred" will need its own line, and will say so by failing.
+            // The records passed a hundred on 17 October. "One hundred decision records" is read
+            // by its last word, which is the value; "one hundred and one" is read as its hundreds
+            // and the rest, each a number this reader already knows.
             if (lower == "hundred")
             {
                 return 100;
+            }
+
+            int and = lower.IndexOf(" hundred and ", StringComparison.Ordinal);
+            if (and > 0)
+            {
+                return Value(lower[..and]) is { } hundreds && Value(lower[(and + 13)..]) is { } rest ? hundreds * 100 + rest : null;
             }
 
             int index = Array.IndexOf(Units, lower);

@@ -1,0 +1,24 @@
+{
+  "container": "plan",
+  "partitionKeyPath": "/day",
+  "defaultTtlSeconds": 2678400,
+  "why": "The App Service plan, kept: one document a minute with the plan's own readings from Azure Monitor and one per app on it, and one document an hour with the apps' states and the Activity Log, all partitioned on the UTC day and written by the SQL site alone so a minute is never written twice. The kind, the day, the minute, the three bucket keys and the figures the windows average are indexed, and nothing else, so a month is a grouped query over the index. Documents expire thirty-one days after they are written, one more than the longest window, so the container is its own retention policy (ADR: The App Service plan, read every minute).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      { "path": "/kind/?" },
+      { "path": "/day/?" },
+      { "path": "/at/?" },
+      { "path": "/b5/?" },
+      { "path": "/h1/?" },
+      { "path": "/h4/?" },
+      { "path": "/cpu/?" },
+      { "path": "/memory/?" },
+      { "path": "/http_queue/?" }
+    ],
+    "excludedPaths": [
+      { "path": "/*" }
+    ]
+  }
+}

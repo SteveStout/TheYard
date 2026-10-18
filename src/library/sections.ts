@@ -57,6 +57,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'One bid through the rings', href: '/api/docs/diagrams/bid-walk' },
   { label: 'The port and its adapters', href: '/api/docs/diagrams/port-adapter' },
   { label: 'SOLID, in plain words', href: '/api/docs/diagrams/solid' },
+  { label: 'The plan’s minute', href: '/api/docs/diagrams/plan-minute' },
 ];
 // #endregion diagrams
 

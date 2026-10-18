@@ -1,0 +1,115 @@
+/**
+ * Does:      Lays out the frame every Cloud infrastructure card shares: the card and its readout side by side, the
+ *            header with the resource's link, the two dials with the sparklines between them, and the key.
+ * Does not:  Draw a dial, the chart, the rows or the readout (each has its own sheet), or the panels' glass.
+ * Used by:   CloudCard.tsx.
+ */
+.frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.spec {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--readout-tracking);
+  color: var(--color-heading);
+}
+
+.resource {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.quiet {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text);
+}
+
+.dials {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 120px) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.between {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.spark {
+  display: grid;
+  gap: 2px;
+}
+
+.sparkName,
+.key {
+  font-size: var(--chart-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-heading);
+}
+
+.spark svg {
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.spark path {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+
+.key {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.gold {
+  color: var(--color-gold-bar-dark);
+  font-weight: var(--weight-semibold);
+}
+
+.red {
+  color: var(--color-danger);
+  font-weight: var(--weight-semibold);
+}
+
+.normal {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+@media (max-width: 1023.98px) {
+  .frame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dials {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+}

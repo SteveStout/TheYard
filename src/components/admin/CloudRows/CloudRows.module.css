@@ -1,0 +1,38 @@
+/**
+ * Does:      Styles the rows' tone word and detail line, and the portal links in teal, underlined, with the mark
+ *            that says they open a new tab.
+ * Does not:  Lay out the rows themselves (OverviewCard.module.css does, shared with the Overview).
+ * Used by:   CloudRows.tsx.
+ */
+.word {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-success);
+}
+
+.detail {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.portal {
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.portal:hover {
+  color: var(--color-accent-hover);
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

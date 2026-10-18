@@ -101,4 +101,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '100',
   },
+  adrTheAppServicePlanReadEveryMinute: {
+    title: 'ADR: The App Service plan, read every minute',
+    menuLabel: 'ADR: The App Service plan, read every minute',
+    url: '/api/docs/adr-the-app-service-plan-read-every-minute',
+    kind: 'adr',
+    number: '101',
+  },
 } as const satisfies Record<string, RecordEntry>;
