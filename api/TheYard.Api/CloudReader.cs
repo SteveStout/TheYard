@@ -46,8 +46,9 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
                 await recorder.RecordOnceAsync(key, cancellation);
                 lastHour = await history.NewestAsync(60, cancellation);
             }
-            catch (HttpRequestException)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                // Any failed live read, Azure's or Netlify's, is the recorder's gap, never this route's 500.
                 // The card answers from what is kept; the readout's live-read line says how old it is.
             }
         }

@@ -104,10 +104,12 @@ public static class ResourceView
         new("Cost", inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} / mo" : "not on the bill yet", "info");
 
     /// <summary>The live-read line: how old the newest kept minute is.</summary>
-    public static CloudLine LiveRead(ResourceCardInputs inputs)
+    public static CloudLine LiveRead(ResourceCardInputs inputs, bool hourly = false)
     {
         long? age = inputs.LastHour.Count == 0 ? null : (long)(inputs.Now - inputs.LastHour[^1].At).TotalSeconds;
-        return new("Live read", age is { } seconds ? $"{seconds} s ago" : "not read yet", age is > 300 ? "warning" : "info");
+        // An hourly source's document is stamped at its hour, so it is late only past two of them.
+        long late = hourly ? 7_200 : 300;
+        return new("Live read", age is { } seconds ? $"{seconds} s ago" : "not read yet", age > late ? "warning" : "info");
     }
 
     /// <summary>How old the newest kept minute is, in seconds.</summary>

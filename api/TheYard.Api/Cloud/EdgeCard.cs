@@ -67,12 +67,14 @@ public static class EdgeCard
                 new("Plan", ResourceView.Fact(inputs, "plan"), "info"),
                 new("Retires", Retires.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), "info"),
                 new("Cost", "not on the Azure bill; Netlify bills in credits", "info"),
-                ResourceView.LiveRead(inputs),
+                ResourceView.LiveRead(inputs, hourly: true),
             ],
             configured ? $"{inputs.Availability.Reason}, one document an hour from Netlify" : "NETLIFY_TOKEN is not set, so nothing is read from Netlify");
         return new CloudReport(
             inputs.Window, PlanView.Windows, configured && inputs.Availability.Available && inputs.LastHour.Count > 0,
-            configured ? ResourceView.Note(inputs, "no hour kept yet; the first is read a minute after the SQL site starts") : "NETLIFY_TOKEN is not set, so the edge is not read.",
+            !configured ? "NETLIFY_TOKEN is not set, so the edge is not read."
+                : ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("site") is { } missing ? $"NETLIFY_TOKEN is set, but {missing}, so the edge is not read."
+                : ResourceView.Note(inputs, "no hour kept yet; the first is read a minute after the SQL site starts"),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
             "Netlify edge",
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("plan") is { } plan ? $"{plan.ToUpperInvariant()} PLAN · 300 CREDITS" : "FREE PLAN · 300 CREDITS",

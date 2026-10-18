@@ -65,6 +65,9 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
         Assert.Null(rows[1]["AppRoleName"]);
         using var none = JsonDocument.Parse("{}");
         Assert.Empty(AzureMetrics.QueryRows(none.RootElement));
+        // The same query through Resource Manager answers in Pascal case, as read live on 18 October.
+        using var pascal = JsonDocument.Parse("""{"Tables":[{"Columns":[{"ColumnName":"n","ColumnType":"long"},{"ColumnName":"gb","ColumnType":"real"}],"Rows":[[58,0.098]],"TableName":"Table_0"}]}""");
+        Assert.Equal("0.098", AzureMetrics.QueryRows(pascal.RootElement)[0]["gb"]);
     }
 
 

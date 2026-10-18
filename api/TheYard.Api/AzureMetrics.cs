@@ -38,6 +38,7 @@ public sealed class AzureMetrics(string clientId, bool configured)
         string token = await Token();
         var series = new Dictionary<string, Dictionary<DateTimeOffset, double>>(StringComparer.Ordinal);
         var held = new Dictionary<string, double>(StringComparer.Ordinal);
+        var none = new HashSet<string>(StringComparer.Ordinal);
         // One request per filter and grain, because Azure Monitor applies one filter and one grain to every metric in a request.
         foreach (var group in metrics.GroupBy(metric => (Filter: metric.Filter ?? "", metric.Interval)))
         {
@@ -45,8 +46,17 @@ public sealed class AzureMetrics(string clientId, bool configured)
             var read = await ReadGroupAsync(token, resourceId, [.. group], start, to, cancellation);
             foreach (var metric in group)
             {
-                if (!read.TryGetValue(metric.Azure, out var points) || points.Count == 0)
+                if (!read.TryGetValue(metric.Azure, out var points))
                 {
+                    continue;
+                }
+                if (points.Count == 0)
+                {
+                    // Answered with nothing: a count or a total of nothing is zero; an average of nothing stays unread.
+                    if (metric.Aggregation is "count" or "total")
+                    {
+                        none.Add(metric.Reading);
+                    }
                     continue;
                 }
                 // A point stamped at the read's own end is a coarser grain's newest value standing in.
@@ -61,7 +71,7 @@ public sealed class AzureMetrics(string clientId, bool configured)
             }
         }
         var minutes = series.Values.SelectMany(points => points.Keys).Distinct().Order().ToList();
-        if (minutes.Count == 0 && held.Count > 0)
+        if (minutes.Count == 0 && (held.Count > 0 || none.Count > 0))
         {
             var utc = to.ToUniversalTime();
             minutes.Add(new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, 0, TimeSpan.Zero));
@@ -72,6 +82,7 @@ public sealed class AzureMetrics(string clientId, bool configured)
                     metric => metric.Reading,
                     metric => series.TryGetValue(metric.Reading, out var points) && points.TryGetValue(at, out double value) ? Math.Round(value, 3)
                         : held.TryGetValue(metric.Reading, out double slow) ? Math.Round(slow, 3)
+                        : none.Contains(metric.Reading) ? 0
                         : (double?)null),
                 version))
             .ToList();
@@ -87,7 +98,14 @@ public sealed class AzureMetrics(string clientId, bool configured)
         try
         {
             using var answer = await GetAsync(token, Path(group, group[0].Interval, span), cancellation);
-            return PlanShapes.Series(answer.RootElement, [.. group.Select(m => (m.Azure, m.Aggregation))]);
+            var answered = PlanShapes.Series(answer.RootElement, [.. group.Select(m => (m.Azure, m.Aggregation))]);
+            // A metric Azure answered for with no points is kept as answered and empty, so a count
+            // of nothing reads as zero and not as unread.
+            foreach (var metric in group)
+            {
+                answered.TryAdd(metric.Azure, []);
+            }
+            return answered;
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
@@ -106,6 +124,10 @@ public sealed class AzureMetrics(string clientId, bool configured)
                         {
                             // A coarser grain's newest value stands for the minute, as a slow metric's does.
                             read[metric.Azure] = interval == metric.Interval ? points : new Dictionary<DateTimeOffset, double> { [to] = points.MaxBy(pair => pair.Key).Value };
+                        }
+                        else
+                        {
+                            read[metric.Azure] = [];
                         }
                         break;
                     }
@@ -156,16 +178,24 @@ public sealed class AzureMetrics(string clientId, bool configured)
         return QueryRows(answer.RootElement);
     }
 
-    /// <summary>The first table of a Log Analytics answer as rows of text by column name; empty when it has none.</summary>
+    /// <summary>
+    /// The first table of a Log Analytics answer as rows of text by column name; empty when it has
+    /// none. The query API answers in camel case (tables, columns, name, rows) and the same query
+    /// through Resource Manager in Pascal case (Tables, Columns, ColumnName, Rows), so both are read.
+    /// </summary>
     public static IReadOnlyList<IReadOnlyDictionary<string, string?>> QueryRows(JsonElement answer)
     {
-        if (!answer.TryGetProperty("tables", out var tables) || tables.GetArrayLength() == 0)
+        if (Property(answer, "tables", "Tables") is not { ValueKind: JsonValueKind.Array } tables || tables.GetArrayLength() == 0)
         {
             return [];
         }
         var table = tables[0];
-        var columns = table.GetProperty("columns").EnumerateArray().Select(c => c.GetProperty("name").GetString()!).ToList();
-        return table.GetProperty("rows").EnumerateArray()
+        if (Property(table, "columns", "Columns") is not { ValueKind: JsonValueKind.Array } columnList || Property(table, "rows", "Rows") is not { ValueKind: JsonValueKind.Array } rowList)
+        {
+            return [];
+        }
+        var columns = columnList.EnumerateArray().Select(c => (Property(c, "name", "ColumnName") is { ValueKind: JsonValueKind.String } n ? n.GetString() : null) ?? "").ToList();
+        return rowList.EnumerateArray()
             .Select(row => (IReadOnlyDictionary<string, string?>)columns.Select((name, i) => (name, cell: row[i]))
                 .ToDictionary(pair => pair.name, pair => pair.cell.ValueKind switch
                 {
@@ -175,6 +205,9 @@ public sealed class AzureMetrics(string clientId, bool configured)
                 }, StringComparer.Ordinal))
             .ToList();
     }
+
+    private static JsonElement? Property(JsonElement element, string camel, string pascal) =>
+        element.ValueKind == JsonValueKind.Object && (element.TryGetProperty(camel, out var found) || element.TryGetProperty(pascal, out found)) ? found : null;
 
     /// <summary>A Resource Manager token for the site's identity, which the registry exchanges for one of its own.</summary>
     public Task<string> ArmTokenAsync() => Token();

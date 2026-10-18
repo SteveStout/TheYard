@@ -64,7 +64,7 @@ public static class InsightsCard
                 new("Retention", $"{ResourceView.Fact(inputs, "retention_days")} days", "info"),
                 new("Workspace", ResourceView.Fact(inputs, "workspace_name"), "info"),
                 ResourceView.Cost(inputs),
-                ResourceView.LiveRead(inputs),
+                ResourceView.LiveRead(inputs, hourly: true),
             ],
             $"{inputs.Availability.Reason}, one document an hour from the workspace's Usage table");
         return new CloudReport(

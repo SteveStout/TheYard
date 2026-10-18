@@ -115,6 +115,9 @@ public class CloudThresholdTests
         Assert.Equal(EdgeCard.ProjectUrl, view.Resource!.Href);
         Assert.Equal("alarm", EdgeCard.View(Held("credits", 270), configured: true).Dials[0].Tone);
         Assert.StartsWith("until Oct 30", view.Rows.Single(r => r.Key == "needed").Answer, StringComparison.Ordinal);
+        // A token that answers but cannot see the site is a sentence too, as the first live roll found.
+        var unseen = EdgeCard.View(Held("credits", 0, new Dictionary<string, string?> { ["token"] = "set", ["site"] = "the token sees 0 sites and none is theyard-edge" }), configured: true);
+        Assert.Equal("NETLIFY_TOKEN is set, but the token sees 0 sites and none is theyard-edge, so the edge is not read.", unseen.Note);
     }
     // #endregion cloud-threshold-tests
 }

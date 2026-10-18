@@ -41,7 +41,16 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
         {
             return [];
         }
-        var (id, account) = await SiteAsync(cancellation);
+        (string Id, string Account) found;
+        try
+        {
+            found = await SiteAsync(cancellation);
+        }
+        catch (NetlifySiteMissingException)
+        {
+            return [];
+        }
+        var (id, account) = found;
         double? usedGb = null;
         DateTimeOffset cycleStart = new(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
         try
@@ -78,7 +87,15 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
         {
             return new ResourceHour(hour, "", null, new Dictionary<string, string?> { ["token"] = "missing" }, []);
         }
-        var (id, _) = await SiteAsync(cancellation);
+        string id;
+        try
+        {
+            (id, _) = await SiteAsync(cancellation);
+        }
+        catch (NetlifySiteMissingException missing)
+        {
+            return new ResourceHour(hour, "", null, new Dictionary<string, string?> { ["token"] = "set", ["site"] = missing.Message }, []);
+        }
         using var site = await GetAsync($"/api/v1/sites/{id}", cancellation);
         using var ssl = await GetAsync($"/api/v1/sites/{id}/ssl", cancellation);
         _cacheHit = await SampleAsync(cancellation);
@@ -123,8 +140,16 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
             return known;
         }
         using var sites = await GetAsync($"/api/v1/sites?name={Uri.EscapeDataString(siteName)}&filter=all", cancellation);
-        var site = sites.RootElement.EnumerateArray().First(s => AzureMetrics.Text(s, "name") == siteName);
-        _site = (AzureMetrics.Text(site, "id")!, AzureMetrics.Text(site, "account_slug")!);
+        var listed = sites.RootElement.ValueKind == JsonValueKind.Array ? sites.RootElement.EnumerateArray().ToList() : [];
+        // Netlify's name filter is a substring search, so the site is matched by its name or its
+        // default subdomain; a token that cannot see it gets the sentence, not an exception.
+        var site = listed.FirstOrDefault(s => string.Equals(AzureMetrics.Text(s, "name"), siteName, StringComparison.OrdinalIgnoreCase)
+            || (AzureMetrics.Text(s, "url") ?? "").Contains("//" + siteName + ".", StringComparison.OrdinalIgnoreCase));
+        if (site.ValueKind != JsonValueKind.Object)
+        {
+            throw new NetlifySiteMissingException($"the token sees {listed.Count} sites and none is {siteName}");
+        }
+        _site = (AzureMetrics.Text(site, "id") ?? "", AzureMetrics.Text(site, "account_slug") ?? AzureMetrics.Text(site, "account_id") ?? "");
         return _site.Value;
     }
 
@@ -137,4 +162,6 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
         return JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
     }
 }
+/// <summary>The token answered, but none of the sites it can see is the edge.</summary>
+public sealed class NetlifySiteMissingException(string message) : Exception(message);
 // #endregion netlify-edge
