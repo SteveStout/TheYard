@@ -94,7 +94,7 @@ host composes nothing about a vehicle; `AuctionTests` holds that the two facts a
 
 "What is kept on purpose" says `IActivityStore` and `ILogStore` each have one writer and one reader. They do not, and have not for some time: `IActivityStore` carries `RecordAsync` beside `AvailabilityAsync`, `HoursAsync` and `VisitorsAsync`, and `ILogStore` carries `AppendAsync` beside `AvailabilityAsync`, `QueryAsync`, `CountAsync` and `RingAsync`. The ruling it supports is unchanged, and is the reason this is an addendum rather than an edit: each port is one writer and the reads its own callers ask for, splitting them would double the interfaces and allow no new swap, and they stay whole until a caller needs only half. Found by a reader of the SOLID page on the way to shipping it, which is what a page written against the code is for.
 
-## Addendum, 2026-10-18: each letter in plain words first
+## Addendum, 2026-10-18 (1.0.3.163): each letter in plain words first
 
 The SOLID Principles page opened with one paragraph that ran the five habits together, so a reader
 who did not already know the acronym could not match a habit to its letter. The page now opens with a

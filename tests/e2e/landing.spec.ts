@@ -212,6 +212,15 @@ for (const viewport of [
         for (const third of [stripRights[2], groupRights[2]]) {
           expect(Math.abs(third - featuredRights[2])).toBeLessThanOrEqual(1);
         }
+        // No tile alone on a last row: the seventh tile of How it is built takes the row.
+        const lefts = await page
+          .locator('[data-testid="landing-group-built"] li')
+          .evaluateAll((items) =>
+            items.map((item) => Math.round(item.getBoundingClientRect().left))
+          );
+        expect(groupRights).toHaveLength(7);
+        expect(Math.abs(lefts[6] - lefts[0])).toBeLessThanOrEqual(1);
+        expect(Math.abs(groupRights[6] - featuredRights[2])).toBeLessThanOrEqual(1);
       } else {
         expect(new Set(featuredRights).size).toBe(1);
         expect(new Set(stripRights.slice(0, 2)).size).toBe(2);

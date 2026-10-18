@@ -36,8 +36,8 @@
   flex-direction: column;
   gap: var(--space-5);
   min-width: 0;
-  /* The grids inside ask their own column how wide it is, not the page: four
-     figures across a column 600 px wide is four figures 140 px wide. */
+  /* The grids inside ask their own column how wide it is, not the page: three
+     figures across a column 480 px wide is three figures about 150 px wide. */
   container-type: inline-size;
 }
 
@@ -157,7 +157,8 @@
 }
 
 /* No tile sits alone on the last row. Two across, an odd last tile takes the
-   whole row. Wider, a group's column count is chosen from its size below. */
+   whole row; three across, a last tile alone on its row does the same, in the
+   three-column rules below. */
 .grid > li:last-child:nth-child(odd) {
   grid-column: 1 / -1;
 }
@@ -235,7 +236,7 @@
 
 /* The evidence strip under the featured tiles: three figures the build itself
    produced, on the same glass as the title so the ribbons stay behind them. Two
-   across on a phone; from the widths above, three across on the featured row's
+   across on a phone; from the widths below, three across on the featured row's
    own columns. */
 .proof {
   list-style: none;
@@ -260,6 +261,12 @@
     grid-column: auto;
   }
 
+  /* Three across, a last tile alone on its row takes the whole row (seven tiles read as
+     three, three and one wide one); four tiles are two rows of two, below, and keep it. */
+  .grid > li:last-child:nth-child(3n + 1):not(:nth-child(4)) {
+    grid-column: 1 / -1;
+  }
+
   /* Four tiles read as two rows of two, not three and one. */
   .grid:has(> li:nth-child(4):last-child) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -282,6 +289,10 @@
 
     .grid > li:last-child:nth-child(odd) {
       grid-column: auto;
+    }
+
+    .grid > li:last-child:nth-child(3n + 1):not(:nth-child(4)) {
+      grid-column: 1 / -1;
     }
 
     .grid:has(> li:nth-child(4):last-child) {
@@ -485,10 +496,6 @@
   font-size: var(--text-sm);
 }
 
-.big .blurb {
-  font-size: var(--text-sm);
-}
-
 @media (max-width: 639.98px) {
   .heading {
     font-size: var(--text-2xl);
@@ -511,22 +518,30 @@
     height: 52px;
   }
 
-  .big {
-    min-height: 0;
-    padding: var(--space-5) var(--space-3);
-  }
-
-  .badgeBig {
-    width: 64px;
-    height: 64px;
-  }
-
   .proofFigure {
     font-size: var(--text-xl);
   }
+}
 
-  .big .title {
-    font-size: var(--text-lg);
+/* The featured cards one per row: a phone, or a page between 640 and about 690 px
+   wide where the column is still under 640. Read from the column and the page rather
+   than the window, so a desk with the column beside the quotations, three across in a
+   column under 640, keeps the desk size. */
+@container page (max-width: 899.98px) {
+  @container (max-width: 639.98px) {
+    .big {
+      min-height: 0;
+      padding: var(--space-5) var(--space-3);
+    }
+
+    .badgeBig {
+      width: 64px;
+      height: 64px;
+    }
+
+    .big .title {
+      font-size: var(--text-lg);
+    }
   }
 }
 

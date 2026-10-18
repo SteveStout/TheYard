@@ -73,7 +73,7 @@ The site map lives in the front end: src/lib/siteMap.ts and its entries import n
 
 - [`src/lib/siteMap.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/siteMap.ts): the one structure, its groups and the two badge photographs.
 - [`src/lib/landingHealth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/landingHealth.ts): the Admin tile's health dot, as a word and a tone.
-- [`src/lib/landingProof.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/landingProof.ts): the evidence strip's four figures, from the gate's own counts.
+- [`src/lib/landingProof.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/landingProof.ts): the evidence strip's three figures, from the gate's own counts.
 - [`api/TheYard.Api/TestSummary.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TestSummary.cs): those counts, read out of the results file the gate wrote.
 - [`src/components/landing/Landing/Landing.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/landing/Landing/Landing.tsx): the landing page drawn from it.
 - [`src/components/layout/SideNav/SideNav.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/SideNav/SideNav.tsx): the sidebar's pinned rows drawn from it.
