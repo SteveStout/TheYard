@@ -229,6 +229,51 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
         Assert.Equal(TimeSpan.FromMinutes(minutes), CostRecorder.WaitAfter(outcome));
     }
 
+    // #region cost-retry-after-tests
+    /// <summary>
+    /// A request to slow down that names its wait is waited that long and half a minute more,
+    /// never under a minute and never over the hour; one that names nothing is still an hour, so
+    /// the first screen's cost tile is empty no longer than Azure asks.
+    /// </summary>
+    [Theory]
+    [InlineData(20, 60)]
+    [InlineData(300, 330)]
+    [InlineData(7200, 3600)]
+    public void A_slow_down_is_waited_as_long_as_Azure_named(int namedSeconds, int waitedSeconds)
+    {
+        Assert.Equal(TimeSpan.FromSeconds(waitedSeconds), CostRecorder.WaitAfter(CostOutcome.Refused, TimeSpan.FromSeconds(namedSeconds)));
+        Assert.Equal(TimeSpan.FromHours(1), CostRecorder.WaitAfter(CostOutcome.Refused));
+        Assert.Equal(TimeSpan.FromMinutes(5), CostRecorder.WaitAfter(CostOutcome.Failed, TimeSpan.FromSeconds(namedSeconds)));
+    }
+
+    [Fact]
+    public void The_longest_wait_any_header_names_is_the_one_read()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        response.Headers.TryAddWithoutValidation("Retry-After", "40");
+        response.Headers.TryAddWithoutValidation("x-ms-ratelimit-microsoft.costmanagement-qpu-retry-after", "240");
+        Assert.Equal(TimeSpan.FromSeconds(240), CostReader.RetryAfterOf(response));
+
+        using var silent = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        Assert.Null(CostReader.RetryAfterOf(silent));
+    }
+
+    [Fact]
+    public void The_card_says_the_wait_it_will_actually_take()
+    {
+        Assert.EndsWith("the next read is in 5 minutes", CostReader.NoteFor(HttpStatusCode.TooManyRequests, TimeSpan.FromSeconds(240)));
+        Assert.EndsWith("the next read is in an hour", CostReader.NoteFor(HttpStatusCode.TooManyRequests));
+    }
+
+    [Fact]
+    public void The_two_sites_first_reads_land_a_minute_apart()
+    {
+        Assert.Equal(TimeSpan.FromSeconds(30), CostRecorder.FirstReadAfter("sql"));
+        Assert.Equal(TimeSpan.FromSeconds(30), CostRecorder.FirstReadAfter(null));
+        Assert.Equal(TimeSpan.FromSeconds(90), CostRecorder.FirstReadAfter("cosmos"));
+    }
+    // #endregion cost-retry-after-tests
+
     [Fact]
     public async Task The_reader_answers_a_minute_from_its_cache_and_reads_again_after()
     {
@@ -254,7 +299,7 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
         var status = new CostStatus();
         var reader = new CostReader("sub", "client", configured: false);
 
-        using var recorder = new CostRecorder(reader, history, status, clock, NullLogger<CostRecorder>.Instance);
+        using var recorder = new CostRecorder(reader, history, status, clock, NullLogger<CostRecorder>.Instance, TimeSpan.FromSeconds(30));
         await recorder.RecordOnceAsync(CancellationToken.None);
         var report = await new CostHistoryReader(history, reader, status, clock).ReadAsync("30d", CancellationToken.None);
 

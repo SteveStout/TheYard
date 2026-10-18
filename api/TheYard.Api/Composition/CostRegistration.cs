@@ -33,7 +33,8 @@ public static class CostRegistration
             history,
             status,
             TimeProvider.System,
-            services.GetRequiredService<ILogger<CostRecorder>>()));
+            services.GetRequiredService<ILogger<CostRecorder>>(),
+            CostRecorder.FirstReadAfter(builder.Configuration["Store:Default"])));
         builder.Services.AddHostedService(services => services.GetRequiredService<CostRecorder>());
         // #endregion cost-wiring
     }

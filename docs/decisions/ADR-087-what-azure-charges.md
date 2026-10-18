@@ -110,3 +110,13 @@ The bill card spans three rings: CostHistory.cs in Application holds the ICostHi
 What Azure charges is on the landing page now, as the band's middle instrument: the month to date as a figure, a bar of it against the month's forecast, and the forecast printed after the fill. It is the same hourly read this record describes, handed out through `/api/pulse` rather than read again (ADR: One reading for the first screen), so the cost reader's rate to Azure is unchanged.
 
 The honest-failure state travels with it. On a container with no identity to ask Azure with, the figure is the word `unread` and the track is empty, never a zero: a zero in that place claims the site is free.
+
+## Addendum, 2026-10-18: a slow-down waits as long as Azure says
+
+Until this addendum, every refusal to read was waited for an hour. That held for a missing role, and it was wrong for a request to slow down. Both sites were rolled several times on 18 October, each roll started both first reads within the same second, and Cost Management answered 429 to both. The bill is held in memory, so the first screen's cost tile read `unread` on both sites until the next hourly read.
+
+From 1.0.3.166 a 429 is waited exactly as long as Cost Management names in its headers, the standard `Retry-After` or the three `x-ms-ratelimit-microsoft.costmanagement-*-retry-after` it adds, taking the longest, plus half a minute, never under a minute and never over the hour. A refusal that names no wait is still an hour. The card's sentence says the wait it will actually take. And the site whose default store is the document store makes its first read a minute after the other site's, at 90 seconds rather than 30, so a roll of both no longer spends both first reads at once.
+
+```live path=api/TheYard.Api/CostRecorder.cs region=cost-retry
+```
+

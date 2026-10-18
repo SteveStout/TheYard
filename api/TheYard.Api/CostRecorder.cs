@@ -19,25 +19,50 @@ public sealed class CostRecorder(
     ICostHistory history,
     CostStatus status,
     TimeProvider clock,
-    ILogger<CostRecorder> logger) : BackgroundService
+    ILogger<CostRecorder> logger,
+    TimeSpan firstReadAfter) : BackgroundService
 {
+    /// <summary>The wait the last read asked for, so the loop sleeps as long as the refusal named.</summary>
+    private TimeSpan? _retryAfter;
+
     /// <summary>How often the bill is read.</summary>
     public static readonly TimeSpan Every = TimeSpan.FromHours(1);
 
     /// <summary>How soon a read that did not finish is tried again.</summary>
     public static readonly TimeSpan Retry = TimeSpan.FromMinutes(5);
 
+    /// <summary>The least a request to slow down is waited, whatever it named.</summary>
+    public static readonly TimeSpan ShortestSlowDown = TimeSpan.FromMinutes(1);
+
     // #region cost-retry
     /// <summary>
     /// How long to wait after a read. An hour after one that went through,
-    /// and after one Azure refused: a missing role does not appear in five
-    /// minutes, and a request to slow down is a request to slow down. Five
-    /// minutes after one that did not finish, because a timeout says nothing
-    /// about the next answer, and an hour of an empty card for one slow answer
-    /// is the wrong trade (ADR: What Azure charges, addendum).
+    /// and after one Azure refused for want of a role, which does not appear
+    /// in five minutes. Five minutes after one that did not finish, because a
+    /// timeout says nothing about the next answer, and an hour of an empty card
+    /// for one slow answer is the wrong trade. A request to slow down is
+    /// waited exactly as long as Azure named, plus half a minute, between one
+    /// minute and an hour; when it named nothing, an hour
+    /// (ADR: What Azure charges, addenda).
     /// </summary>
-    public static TimeSpan WaitAfter(CostOutcome outcome) => outcome == CostOutcome.Failed ? Retry : Every;
+    public static TimeSpan WaitAfter(CostOutcome outcome, TimeSpan? retryAfter = null) => outcome switch
+    {
+        CostOutcome.Failed => Retry,
+        CostOutcome.Refused when retryAfter is { } named =>
+            TimeSpan.FromTicks(Math.Clamp((named + TimeSpan.FromSeconds(30)).Ticks, ShortestSlowDown.Ticks, Every.Ticks)),
+        _ => Every,
+    };
     // #endregion cost-retry
+
+    /// <summary>
+    /// How long after the start the first read waits. Both sites are rolled together, so the
+    /// site whose default store is the document store waits a minute longer than the other,
+    /// and the two first reads never reach Cost Management in the same second.
+    /// </summary>
+    public static TimeSpan FirstReadAfter(string? defaultStore) =>
+        string.Equals(defaultStore, "cosmos", StringComparison.OrdinalIgnoreCase)
+            ? TimeSpan.FromSeconds(90)
+            : TimeSpan.FromSeconds(30);
 
     /// <summary>One read, public so the suite can run one without waiting an hour; says how it went.</summary>
     public async Task<CostOutcome> RecordOnceAsync(CancellationToken cancellation)
@@ -64,18 +89,20 @@ public sealed class CostRecorder(
         }
 
         status.Set(now, read.Outcome == CostOutcome.Read, read.Note);
+        _retryAfter = read.RetryAfter;
         return read.Outcome;
     }
 
     /// <summary>
-    /// The loop: half a minute after start, then a read, then a wait set by how the read went.
+    /// The loop: a short wait after start (see FirstReadAfter), then a read, then a wait set by how the read went.
     /// A run that is not on Azure stops after its first read, since there is nothing to ask with.
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
-        // Half a minute after the start, so the first read never competes
-        // with the catalogue this process loads as it starts.
-        await Task.Delay(TimeSpan.FromSeconds(30), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
+        // A short wait after the start, so the first read never competes with
+        // the catalogue this process loads as it starts, and the two sites'
+        // first reads land a minute apart.
+        await Task.Delay(firstReadAfter, stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         while (!stopping.IsCancellationRequested)
         {
             var outcome = CostOutcome.Failed;
@@ -99,7 +126,7 @@ public sealed class CostRecorder(
                 status.Set(clock.GetUtcNow(), false, $"the last read did not finish ({ex.GetType().Name}); the next is in five minutes");
             }
 
-            await Task.Delay(WaitAfter(outcome), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
+            await Task.Delay(WaitAfter(outcome, _retryAfter), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         }
     }
 }

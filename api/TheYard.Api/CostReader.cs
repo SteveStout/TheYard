@@ -32,7 +32,8 @@ public enum CostOutcome
 /// <param name="Note">Why there is nothing, in words the card can show; null on a clean read.</param>
 /// <param name="Days">The charges by resource by day; empty unless the read went through.</param>
 /// <param name="Forecast">The forecast days; empty when the forecast could not be had, which does not spoil the actuals.</param>
-public sealed record CostRead(CostOutcome Outcome, string? Note, IReadOnlyList<CostDay> Days, IReadOnlyList<CostForecastDay> Forecast);
+/// <param name="RetryAfter">How long Cost Management said to wait before asking again, when it refused and said; null otherwise.</param>
+public sealed record CostRead(CostOutcome Outcome, string? Note, IReadOnlyList<CostDay> Days, IReadOnlyList<CostForecastDay> Forecast, TimeSpan? RetryAfter = null);
 
 /// <summary>
 /// Reads Cost Management with the site's own identity, the way the telemetry
@@ -70,7 +71,7 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
         var actuals = await PostAsync(token, "query", CostQuery.Actuals(from, to), cancellation);
         if (actuals.Outcome != CostOutcome.Read)
         {
-            return new CostRead(actuals.Outcome, actuals.Note, [], []);
+            return new CostRead(actuals.Outcome, actuals.Note, [], [], actuals.RetryAfter);
         }
 
         var days = new List<CostDay>();
@@ -102,7 +103,7 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
     /// Posts one question to Cost Management and follows its next-page links, at most five
     /// pages. Says how it went, why not in words a card can show, and the pages it got.
     /// </summary>
-    private async Task<(CostOutcome Outcome, string? Note, List<JsonElement> Pages)> PostAsync(string token, string action, object body, CancellationToken cancellation)
+    private async Task<(CostOutcome Outcome, string? Note, List<JsonElement> Pages, TimeSpan? RetryAfter)> PostAsync(string token, string action, object body, CancellationToken cancellation)
     {
         var pages = new List<JsonElement>();
         string? address = $"{CostQuery.Scope(subscriptionId)}/{action}?api-version={CostQuery.ApiVersion}";
@@ -116,7 +117,8 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
             using var response = await Http.SendAsync(request, cancellation);
             if (!response.IsSuccessStatusCode)
             {
-                return (OutcomeOf(response.StatusCode), NoteFor(response.StatusCode), pages);
+                var wait = response.StatusCode == HttpStatusCode.TooManyRequests ? RetryAfterOf(response) : null;
+                return (OutcomeOf(response.StatusCode), NoteFor(response.StatusCode, wait), pages, wait);
             }
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
@@ -125,8 +127,52 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
             address = properties.TryGetProperty("nextLink", out var next) && next.ValueKind == JsonValueKind.String ? next.GetString() : null;
         }
 
-        return (CostOutcome.Read, null, pages);
+        return (CostOutcome.Read, null, pages, null);
     }
+
+    // #region cost-retry-after
+    /// <summary>
+    /// The headers Cost Management names its wait in, in seconds: the standard one, and the
+    /// three it adds for the query, entity and tenant allowances. When more than one is sent
+    /// the longest is the one that holds.
+    /// </summary>
+    public static readonly string[] RetryAfterHeaders =
+    [
+        "Retry-After",
+        "x-ms-ratelimit-microsoft.costmanagement-qpu-retry-after",
+        "x-ms-ratelimit-microsoft.costmanagement-entity-retry-after",
+        "x-ms-ratelimit-microsoft.costmanagement-tenant-retry-after",
+    ];
+
+    /// <summary>
+    /// How long a refusal said to wait: the longest number of seconds any of the headers carries,
+    /// or null when none carries one. A date in Retry-After is read as the time until then.
+    /// </summary>
+    public static TimeSpan? RetryAfterOf(HttpResponseMessage response)
+    {
+        TimeSpan? longest = null;
+        foreach (string name in RetryAfterHeaders)
+        {
+            if (!response.Headers.TryGetValues(name, out var values))
+            {
+                continue;
+            }
+            foreach (string value in values)
+            {
+                TimeSpan? wait = int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int seconds)
+                    ? TimeSpan.FromSeconds(seconds)
+                    : DateTimeOffset.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var at)
+                        ? at - DateTimeOffset.UtcNow
+                        : null;
+                if (wait is { } found && found > TimeSpan.Zero && (longest is null || found > longest))
+                {
+                    longest = found;
+                }
+            }
+        }
+        return longest;
+    }
+    // #endregion cost-retry-after
 
     /// <summary>Which of the four a status is.</summary>
     public static CostOutcome OutcomeOf(HttpStatusCode status) => status switch
@@ -141,13 +187,20 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
     /// service's own words are not printed: an error from Cost Management names
     /// the scope it refused, and the scope is the subscription's path.
     /// </summary>
-    public static string NoteFor(HttpStatusCode status) => status switch
+    public static string NoteFor(HttpStatusCode status, TimeSpan? retryAfter = null) => status switch
     {
         HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => NoRoleNote,
-        HttpStatusCode.TooManyRequests => "Cost Management asked this site to slow down; the next read is in an hour",
+        HttpStatusCode.TooManyRequests => $"Cost Management asked this site to slow down; the next read is in {Minutes(CostRecorder.WaitAfter(CostOutcome.Refused, retryAfter))}",
         HttpStatusCode.BadRequest or HttpStatusCode.Conflict => "Cost Management refused the read, which it does while a billing account is being set up; the next read is in an hour",
         _ => $"Cost Management answered {(int)status}; the next read is in five minutes",
     };
+
+    /// <summary>A wait in the words a card shows: "an hour", "1 minute", "12 minutes".</summary>
+    public static string Minutes(TimeSpan wait)
+    {
+        int minutes = (int)Math.Ceiling(wait.TotalMinutes);
+        return minutes >= 60 ? "an hour" : minutes == 1 ? "1 minute" : $"{minutes} minutes";
+    }
 }
 
 /// <summary>What the recorder last found, which is how the card tells "no role" from "nothing kept yet".</summary>
