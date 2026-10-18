@@ -24,7 +24,8 @@ public abstract class SampleTree
     /// <summary>Builds the tree described above and a browser over it.</summary>
     protected SampleTree()
     {
-        Browser = new FileBrowser(new HomePath(Root), Store, new FilesOptions { SearchLimit = 3, SearchCeiling = 5 });
+        var options = new FilesOptions { SearchLimit = 3, SearchCeiling = 5 };
+        Browser = new FileBrowser(new HomePath(Root), Store, options, new HomeQuota(new HomePath(Root), Store, options));
         Store.Folder("docs");
         Store.Folder("docs/notes");
         Store.Folder("Archive");

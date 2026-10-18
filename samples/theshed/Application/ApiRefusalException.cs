@@ -38,4 +38,12 @@ public sealed class ApiRefusalException : Exception
     /// <summary>413: an upload is larger than the configured limit.</summary>
     /// <param name="detail">The file's name and size, and the limit.</param>
     public static ApiRefusalException TooLarge(string detail) => new(413, "Too large", detail);
+
+    /// <summary>403: the request is a write and writes are turned off on this site.</summary>
+    /// <param name="detail">Why writes are off, and what still works.</param>
+    public static ApiRefusalException Forbidden(string detail) => new(403, "Writes are turned off", detail);
+
+    /// <summary>507: the write would take the home past its byte quota.</summary>
+    /// <param name="detail">How much the home holds, what the write adds, and the quota.</param>
+    public static ApiRefusalException Full(string detail) => new(507, "The home is full", detail);
 }

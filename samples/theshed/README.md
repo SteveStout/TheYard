@@ -101,10 +101,11 @@ document (ADR-004).
 | `GET /api/files?path=` | One folder: folders, files, totals, `took_ms`. |
 | `GET /api/files/search?path=&q=&limit=` | Everything under a folder whose name matches a substring or a glob (`*.md`, `report?`), capped, with `truncated`. |
 | `GET /api/files/download?path=` | The bytes, as an attachment, ranges accepted. |
-| `POST /api/files/upload?path=&overwrite=` | Multipart files into a folder; 409 on a name that exists unless `overwrite=true`; 413 past the limit. |
+| `POST /api/files/upload?path=&overwrite=` | Multipart files into a folder; 409 on a name that exists unless `overwrite=true`; 413 past the limit; 507 past the home's quota. |
 | `POST /api/files/folder?path=&name=` | A new folder. |
 | `DELETE /api/files?path=` | A file, or a folder and its contents. Home itself is refused. |
 | `POST /api/files/move`, `POST /api/files/copy` | `{ "from": "a/b.txt", "to": "c/b.txt" }`. A folder is never put inside itself. |
+| Every write above (upload, folder, delete, move, copy) | 403 with a problem document while `Files:AllowWrites` is false, which is the default and what the public site runs; 429 past `Files:WritesPerMinute` from one visitor (default 30). A local run in Development has writes on. |
 | `GET /api/docs`, `GET /api/docs/{slug}` | The documents below, as markdown with live code expanded. |
 | `GET /api/version` | The version from the changelog and the commit. |
 | `GET /healthz` | 200 when the home folder is there, 503 when it is not. |

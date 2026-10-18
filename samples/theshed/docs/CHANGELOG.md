@@ -3,6 +3,7 @@
 One line per shipped version, newest first. The footer reads its version from the top line here,
 so this file and the page cannot disagree (ADR-012).
 
+- 1.0.0.44 The public site is read only: upload, new folder, delete, move and copy answer 403 with a sentence saying why unless `Files:AllowWrites` turns them on, which Development does; one visitor gets 30 writes a minute before a 429; and an upload or copy that would take the home past 200 MB is refused with 507 (ADR-013, the addendum on the gate).
 - 1.0.0.43 The Docs view at 1440, read and tidied: the list of documents no longer grows a sideways scrollbar (its buttons are border-box), the document's scrollbar sits at the panel's edge with the measure on the text rather than the scrolling box, both bars are thin, the guide once also titled Built with AI is Built with AI, the practice, and the footer reads `The Shed v1.0.0.43 · commit` the way TheYard's does; the explainer PDF is rebuilt at this version, so its code pages name the version the footer shows.
 - 1.0.0.42 The explainer PDF's test counts are read from the suites when it is built (148 xUnit, 21 node); the builder refuses to run without them, so a stale default can no longer reach page 1.
 - 1.0.0.41 The Shed moves to `samples/theshed` in TheYard's repository and is described as what it is, a developer test project, with no company named; TheYard's sidebar and landing page now link to it. Nothing in the app changed.

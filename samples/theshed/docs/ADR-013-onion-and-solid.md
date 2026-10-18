@@ -67,6 +67,19 @@ compiler stops a wrong reference instead of a test.
 One test package (NetArchTest), nine tests, and moving the download stream and the health check
 behind the use cases so the controllers never touch the disk.
 
+## Addendum, 2026-10-18: the writes have a gate
+
+Until 1.0.0.44 every write route on the public site was anonymous and unlimited, so anybody could empty the sample tree or fill the disk with a loop of copies before the next visitor arrived. From 1.0.0.44 three things stand in front of them, each in the ring it belongs to.
+
+- **Writes are off unless a setting turns them on.** `Files:AllowWrites` defaults to false in `appsettings.json` and in the site's template; Development turns it on. A write action carries `WritesAllowed`, a filter in Controllers that refuses with a 403 problem document before the action runs, so an upload's body is never read. Browse, search and download are unaffected.
+- **A limit per visitor.** `Files:WritesPerMinute` (default 30) is a fixed window per visitor, registered in Composition and named by the same write actions. Behind App Service the visitor is the last address its front end appended to `X-Forwarded-For`, the one a visitor cannot write for themselves.
+- **A byte quota on the home.** `HomeQuota` in Application measures the home through the file store port and refuses an upload or a copy that would take it past `Files:HomeQuotaBytes` (default 200 MB) with 507. It is a rule, so it sits beside the other rules and is tested over the in-memory store.
+
+The rings are unchanged: Controllers and Composition name Application, nothing inside names them, and the ring test still passes on the compiled app.
+
+```live path=Controllers/WritesAllowedAttribute.cs region=*
+```
+
 ## Where it sits
 
 Every ring: the map of all of them and of the nine tests that hold them. A second app reusing the rules would split the folders into projects instead.
@@ -77,6 +90,10 @@ Every ring: the map of all of them and of the nine tests that hold them. A secon
 - [`Application/IFileStore.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Application/IFileStore.cs): the port.
 - [`Application/FileBrowser.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Application/FileBrowser.cs): the use cases.
 - [`Composition/FilesRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Composition/FilesRegistration.cs): where the port is filled in.
+- [`Controllers/WritesAllowedAttribute.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Controllers/WritesAllowedAttribute.cs): writes off unless a setting turns them on.
+- [`Composition/WriteLimitRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Composition/WriteLimitRegistration.cs): the writes a visitor may make in a minute.
+- [`Application/HomeQuota.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Application/HomeQuota.cs): the home's byte quota.
+- [`tests/TestProject.Tests/WriteLimitsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/tests/TestProject.Tests/WriteLimitsTests.cs): the three, held.
 
 The ring rules, as they are in this build:
 

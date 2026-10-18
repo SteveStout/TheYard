@@ -67,10 +67,11 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'WEBSITES_PORT', value: '8080' }
         { name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', value: 'false' }
         { name: 'WEBSITES_CONTAINER_START_TIME_LIMIT', value: '300' }
-        // The home is the sample tree inside the image. Uploads and deletes land on the
-        // container's own disk and are gone at the next roll, which is what a public
-        // demo of a file browser should be.
+        // The home is the sample tree inside the image. Writes are off on the public site,
+        // so a stranger cannot empty or fill it before the next visitor arrives: upload, new
+        // folder, delete, move and copy answer 403 with a sentence saying why.
         { name: 'Files__Home', value: '' }
+        { name: 'Files__AllowWrites', value: 'false' }
         { name: 'Files__MaxUploadBytes', value: string(maxUploadBytes) }
         { name: 'SHED_COMMIT', value: shedCommit }
       ]

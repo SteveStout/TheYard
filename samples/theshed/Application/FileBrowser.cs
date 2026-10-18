@@ -13,7 +13,7 @@ namespace TestProject.Application;
 /// except through the <see cref="IFileStore"/> interface, so the rules can be tested
 /// with an in-memory store (more in docs/ADR-002-one-project-four-folders-dependencies-inward.md).
 /// </summary>
-public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions options)
+public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions options, HomeQuota quota)
 {
     // #region browse
     /// <summary>
@@ -104,6 +104,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         {
             throw ApiRefusalException.TooLarge($"'{name}' is {length:N0} bytes; the limit is {options.MaxUploadBytes:N0}.");
         }
+        quota.Allow(length);
         string absoluteFolder = Folder(folder);
         string target = Path.Combine(absoluteFolder, HomePath.ValidName(Path.GetFileName(name)));
         if (!overwrite && store.KindOf(target) != EntryKind.None)
@@ -178,6 +179,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     public object Copy(string? from, string? to)
     {
         (string source, string target) = Transfer(from, to);
+        quota.Allow(quota.SizeOf(source));
         store.Copy(source, target);
         return Describe(store.Describe(target));
     }

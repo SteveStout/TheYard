@@ -38,6 +38,7 @@ public static class FilesRegistration
         // the class that reads and writes real files. FileBrowser holds the rules and depends only
         // on the interface, so tests can swap in a different store.
         builder.Services.AddSingleton<IFileStore, PhysicalFileStore>();
+        builder.Services.AddSingleton<HomeQuota>();
         builder.Services.AddSingleton<FileBrowser>();
 
         // FileBrowser.UploadAsync checks the exact per-file limit and names the file in its error.

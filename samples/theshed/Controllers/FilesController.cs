@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TestProject.Application;
 using TestProject.Data;
 
@@ -63,6 +64,8 @@ public sealed class FilesController(FileBrowser browser) : ControllerBase
     /// <param name="path">The folder that receives the files.</param>
     /// <param name="overwrite">True to replace existing files with the same name.</param>
     [HttpPost("upload")]
+    [WritesAllowed]
+    [EnableRateLimiting(WritesAllowedAttribute.LimitPolicy)]
     public async Task<TransferResult> Upload([FromQuery] string? path, [FromQuery] bool overwrite = false)
     {
         if (!Request.HasFormContentType)
@@ -91,6 +94,8 @@ public sealed class FilesController(FileBrowser browser) : ControllerBase
     /// <param name="path">The folder to create it in.</param>
     /// <param name="name">The new folder's name.</param>
     [HttpPost("folder")]
+    [WritesAllowed]
+    [EnableRateLimiting(WritesAllowedAttribute.LimitPolicy)]
     public ActionResult<FolderEntry> CreateFolder([FromQuery] string? path, [FromQuery] string? name) =>
         StatusCode(StatusCodes.Status201Created, browser.CreateFolder(path, name));
 
@@ -100,6 +105,8 @@ public sealed class FilesController(FileBrowser browser) : ControllerBase
     /// </summary>
     /// <param name="path">The file or folder to delete.</param>
     [HttpDelete]
+    [WritesAllowed]
+    [EnableRateLimiting(WritesAllowedAttribute.LimitPolicy)]
     public IActionResult Delete([FromQuery] string? path)
     {
         browser.Delete(path);
@@ -112,6 +119,8 @@ public sealed class FilesController(FileBrowser browser) : ControllerBase
     /// </summary>
     /// <param name="request">The source and destination, both relative to home.</param>
     [HttpPost("move")]
+    [WritesAllowed]
+    [EnableRateLimiting(WritesAllowedAttribute.LimitPolicy)]
     public object Move([FromBody] MoveRequest request) => browser.Move(request.From, request.To);
 
     /// <summary>
@@ -120,5 +129,7 @@ public sealed class FilesController(FileBrowser browser) : ControllerBase
     /// </summary>
     /// <param name="request">The source and destination, both relative to home.</param>
     [HttpPost("copy")]
+    [WritesAllowed]
+    [EnableRateLimiting(WritesAllowedAttribute.LimitPolicy)]
     public object Copy([FromBody] MoveRequest request) => browser.Copy(request.From, request.To);
 }

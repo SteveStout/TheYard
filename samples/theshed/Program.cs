@@ -19,6 +19,7 @@ public sealed class Program
         builder.AddTheShedFiles();                    // Composition/FilesRegistration.cs
         builder.AddTheShedDocumentationAndVersion();  // Composition/DocumentationAndVersionRegistration.cs
         builder.AddTheShedApi();                      // Composition/ApiRegistration.cs
+        builder.AddTheShedWriteLimits();              // Composition/WriteLimitRegistration.cs
 
         var app = builder.Build();
         app.UseTheShedRequestPipeline();              // Composition/RequestPipeline.cs

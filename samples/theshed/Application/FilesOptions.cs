@@ -33,4 +33,23 @@ public sealed class FilesOptions
     /// The highest limit a search may ask for; a larger request is lowered to this.
     /// </summary>
     public int SearchCeiling { get; set; } = 1000;
+
+    /// <summary>
+    /// Whether upload, new folder, delete, move and copy are answered at all. Off unless a setting
+    /// turns it on: the public site is a demonstration anybody can open, and a file browser that
+    /// takes anonymous deletes is one a stranger can empty. Off, those routes answer 403 with a
+    /// sentence saying why; browse, search and download are unaffected. Development turns it on in
+    /// appsettings.Development.json, so a local run can try every route.
+    /// </summary>
+    public bool AllowWrites { get; set; }
+
+    /// <summary>
+    /// The most bytes the home may hold once a write lands. An upload or a copy that would take it
+    /// past this is refused, so a loop of copies cannot fill the disk. Default 200 MB; 0 turns
+    /// the check off.
+    /// </summary>
+    public long HomeQuotaBytes { get; set; } = 200L * 1024 * 1024;
+
+    /// <summary>How many write requests one visitor may make in a minute before the next is refused with 429.</summary>
+    public int WritesPerMinute { get; set; } = 30;
 }

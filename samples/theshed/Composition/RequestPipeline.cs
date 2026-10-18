@@ -47,6 +47,8 @@ public static class RequestPipeline
         // rather than left for ASP.NET Core to put at the top, so anything that needs the
         // matched endpoint has a line to go below.
         app.UseRouting();
+        // After routing, so the limiter can see which endpoint asked for the write policy.
+        app.UseRateLimiter();
         // What this site leaves out of TheYard's pipeline, and why. No visitor address from the
         // forwarded headers: nothing here counts visitors, sets a cookie or builds a link from a
         // host. No compression: the page is about 4.5 KB and its script about 1 KB, measured at

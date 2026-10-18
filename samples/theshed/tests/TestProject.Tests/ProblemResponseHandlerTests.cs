@@ -25,6 +25,9 @@ public sealed class ProblemResponseHandlerTests : IDisposable
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Production");
+            // The routes under test include the writes, which are off unless a setting turns them on.
+            builder.UseSetting("Files:AllowWrites", "true");
+            builder.UseSetting("Files:WritesPerMinute", "10000");
             builder.UseSetting("Files:Home", _home.Root);
         });
     }

@@ -35,6 +35,9 @@ public sealed class FilesApiTests : IDisposable
             // Run as Production. In Development the app redirects HTTP to HTTPS, and the test
             // client would get that redirect instead of the API's answer.
             builder.UseEnvironment("Production");
+            // The routes under test include the writes, which are off unless a setting turns them on.
+            builder.UseSetting("Files:AllowWrites", "true");
+            builder.UseSetting("Files:WritesPerMinute", "10000");
             builder.UseSetting("Files:Home", _home.Root);
             builder.UseSetting("Files:MaxUploadBytes", "64");
             builder.UseSetting("Files:SearchLimit", "2");

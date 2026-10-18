@@ -40,7 +40,10 @@ public sealed class PerformanceTests(ITestOutputHelper output) : IDisposable
         }
         generated.Stop();
 
-        var browser = new FileBrowser(new HomePath(_home.Root), new PhysicalFileStore(), new FilesOptions());
+        var home = new HomePath(_home.Root);
+        var disk = new PhysicalFileStore();
+        var settings = new FilesOptions();
+        var browser = new FileBrowser(home, disk, settings, new HomeQuota(home, disk, settings));
 
         // Browse once before timing to warm the OS directory cache, so the timings match a
         // repeat visit rather than the first read of a cold disk.
