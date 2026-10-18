@@ -36,3 +36,10 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* A row's list sits under its answer, across the row. */
+.table {
+  grid-column: 1 / -1;
+  margin-top: var(--space-2);
+  min-width: 0;
+}

@@ -47,7 +47,7 @@ public static class CosmosCard
         var rows = new List<CloudRow>
         {
             new("runs", "What runs on it?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "container_count")} containers",
-                [new(ResourceView.Fact(inputs, "containers"), null)], "good"),
+                [], "good") { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("container_rows"), "Container", "Type", "Kept for") },
             new("throttling", "Is it throttling?", throttled is null ? "not read yet" : $"{throttled.Value.ToString("N0", CultureInfo.InvariantCulture)} throttled",
                 [new($"429s in the window · normalized peak {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak)} · latency {ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", null)],
                 throttled is > 0 ? "warning" : CloudTones.Of(ruTone == PlanTone.Info ? PlanTone.Good : ruTone)),
@@ -91,6 +91,14 @@ public static class CosmosCard
             readout);
     }
 
+    /// <summary>A container's time to live in words: off, on with no default, or the default in days or hours.</summary>
+    public static string TimeToLive(string? seconds) =>
+        seconds is null ? "kept until deleted"
+        : seconds == "-1" ? "on, no default"
+        : double.TryParse(seconds, NumberStyles.Float, CultureInfo.InvariantCulture, out double s)
+            ? s >= 86_400 ? $"{(s / 86_400).ToString("0.#", CultureInfo.InvariantCulture)} days" : $"{(s / 3_600).ToString("0.#", CultureInfo.InvariantCulture)} hours"
+            : seconds;
+
     /// <summary>The hour's facts from the account's record and its containers' definitions.</summary>
     public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement account, System.Text.Json.JsonElement containers)
     {
@@ -102,6 +110,7 @@ public static class CosmosCard
         {
             ["container_count"] = list.Count.ToString(CultureInfo.InvariantCulture),
             ["containers"] = string.Join(" · ", list.Select(c => c.Ttl is null or "-1" ? c.Name : $"{c.Name} {(double.Parse(c.Ttl, CultureInfo.InvariantCulture) / 86_400).ToString("0.#", CultureInfo.InvariantCulture)} d")),
+            ["container_rows"] = CloudTable.ToFact(list.Select(c => new[] { c.Name, "Cosmos DB container", TimeToLive(c.Ttl) })),
             ["free_tier"] = free == "true" ? "on" : free == "false" ? "off" : null,
             ["spec"] = string.Join(' ', new[] { free == "true" ? "FREE TIER" : null, "1,000 RU/S SHARED", "25 GB", AzureMetrics.Text(account, "location")?.ToUpperInvariant() }.Where(p => p is not null)),
         };

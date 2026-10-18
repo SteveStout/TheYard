@@ -92,7 +92,37 @@ public sealed record CloudMark(long AtMs, string Kind, string Title);
 /// <param name="Answer">The big answer: "3 apps, running".</param>
 /// <param name="Detail">The line under it, in pieces, any of which may link to a portal blade.</param>
 /// <param name="Tone">good, info, warning or alarm.</param>
-public sealed record CloudRow(string Key, string Question, string Answer, IReadOnlyList<CloudLink> Detail, [property: Description("good, info, warning or alarm")] string Tone);
+public sealed record CloudRow(string Key, string Question, string Answer, IReadOnlyList<CloudLink> Detail, [property: Description("good, info, warning or alarm")] string Tone)
+{
+    /// <summary>
+    /// A list the row answers with, drawn as a table under it: the apps on the plan, a database's
+    /// containers, a registry's images. Empty, never null, when the row has no list.
+    /// </summary>
+    public CloudTable Table { get; init; } = CloudTable.None;
+}
+
+/// <summary>A row's list as a table: its column names, and its rows as cells any of which may link to a portal blade.</summary>
+/// <param name="Columns">The column names, in order.</param>
+/// <param name="Rows">One list of cells a row, as many cells as columns.</param>
+public sealed record CloudTable(IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<CloudLink>> Rows)
+{
+    /// <summary>No table: no columns and no rows.</summary>
+    public static readonly CloudTable None = new([], []);
+
+    /// <summary>
+    /// A table from a fact a card kept as text: one row a line, cells split by tabs. Facts are kept
+    /// as text so every hour document has one shape; this turns the list back into rows.
+    /// </summary>
+    public static CloudTable FromFact(string? fact, params string[] columns) =>
+        string.IsNullOrWhiteSpace(fact)
+            ? None
+            : new CloudTable(columns, [.. fact.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => (IReadOnlyList<CloudLink>)[.. line.Split('\t').Take(columns.Length).Select(cell => new CloudLink(cell, null))])]);
+
+    /// <summary>Rows as a fact: one line a row, cells joined by tabs, with tabs and newlines in a cell made spaces.</summary>
+    public static string ToFact(IEnumerable<IEnumerable<string?>> rows) =>
+        string.Join('\n', rows.Select(row => string.Join('\t', row.Select(cell => (cell ?? "").Replace('\t', ' ').Replace('\n', ' ')))));
+}
 
 /// <summary>The readout beside the card: an uptime ring, then one line a reading.</summary>
 /// <param name="Title">"The plan".</param>

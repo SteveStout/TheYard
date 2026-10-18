@@ -43,7 +43,15 @@ export type CloudReport = {
     legend: string;
     start_ms: number;
   };
-  rows: { key: string; question: string; answer: string; detail: CloudLink[]; tone: CloudTone }[];
+  rows: {
+    key: string;
+    question: string;
+    answer: string;
+    detail: CloudLink[];
+    tone: CloudTone;
+    /** The row's list as a table; no columns and no rows when the row has none. */
+    table: { columns: string[]; rows: CloudLink[][] };
+  }[];
   readout: {
     title: string;
     uptime_percent: number | null;

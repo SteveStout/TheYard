@@ -122,5 +122,23 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
         Assert.StartsWith("Oct 18 19:34 UTC skipped, no edge change", log, StringComparison.Ordinal);
         Assert.DoesNotContain("failed", log.Split(" · ")[0], StringComparison.Ordinal);
     }
+    [Fact]
+    public void A_list_a_row_answers_with_is_a_table_and_says_what_type_each_resource_is()
+    {
+        string fact = CloudTable.ToFact([["plan", "Cosmos DB container", "31 days"], ["users", "Cosmos DB container", "kept\tuntil\ndeleted"]]);
+        var table = CloudTable.FromFact(fact, "Container", "Type", "Kept for");
+        Assert.Equal(["Container", "Type", "Kept for"], table.Columns);
+        Assert.Equal(2, table.Rows.Count);
+        Assert.Equal("kept until deleted", table.Rows[1][2].Text);
+        Assert.Empty(CloudTable.FromFact(null, "A").Rows);
+        Assert.Empty(new CloudRow("k", "q", "a", [], "good").Table.Columns);
+
+        // The plan's apps: each a web app, each naming the store it talks to as a resource of its own.
+        Assert.Equal("SQL database, its own resource", PlanRows.Store("APP-THEYARD-SS-ZMNETJ67BN5H2"));
+        Assert.Equal("Cosmos DB account, its own resource", PlanRows.Store("APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2"));
+        Assert.Equal("its own files, on the plan's storage", PlanRows.Store("APP-THESHED-SS-ZMNETJ67BN5H2"));
+        Assert.Equal("Node.js", PlanRows.Runtime("APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2"));
+        Assert.Equal(".NET 10", PlanRows.Runtime("APP-THESHED-SS-ZMNETJ67BN5H2"));
+    }
     // #endregion cloud-view-tests
 }

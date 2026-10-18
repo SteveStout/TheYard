@@ -20,12 +20,20 @@ public static class PlanRows
             "power",
             "What does it power?",
             apps.Count == 0 ? "not read yet" : running == apps.Count ? $"{apps.Count} apps, running" : $"{apps.Count - running} of {apps.Count} apps stopped",
-            apps.SelectMany((app, i) => new[]
-                {
+            [],
+            CloudTones.Of(PlanThresholds.AppsTone(apps)))
+        {
+            // The apps are a list, so they are a table: each name a link to its blade.
+            Table = apps.Count == 0 ? CloudTable.None : new CloudTable(
+                ["App", "Type", "Runs", "Talks to", "State", "Always on"],
+                [.. apps.Select(app => (IReadOnlyList<CloudLink>)[
                     new CloudLink(app.Name, PlanView.Portal(hour!.TenantId, app.ResourceId)),
-                    new CloudLink($" {Label(app.Name)}{(i < apps.Count - 1 ? " · " : "")}", null),
-                }).ToList(),
-            CloudTones.Of(PlanThresholds.AppsTone(apps)));
+                    new CloudLink("Web app (container)", null),
+                    new CloudLink(Runtime(app.Name), null),
+                    new CloudLink(Store(app.Name), null),
+                    new CloudLink(app.State, null),
+                    new CloudLink(app.AlwaysOn is { } on ? (on ? "yes" : "no") : "not read", null)])]),
+        };
 
         double? used = Sum(newest?.Apps.Select(app => app.FileSystemMb) ?? []);
         double? storage = PlanSizes.StorageGbOf(hour?.Sku);
@@ -106,10 +114,19 @@ public static class PlanRows
     }
 
     /// <summary>What an app is, from its name: the renderer, the Cosmos DB site, or the SQL site.</summary>
-    public static string Label(string name) =>
-        name.Contains("render", StringComparison.OrdinalIgnoreCase) ? "Node.js SSR"
-        : name.Contains("cosmos", StringComparison.OrdinalIgnoreCase) ? ".NET 10 Cosmos DB"
-        : ".NET 10 Azure SQL";
+    /// <summary>What an app on the plan runs on.</summary>
+    public static string Runtime(string name) =>
+        name.Contains("render", StringComparison.OrdinalIgnoreCase) ? "Node.js" : ".NET 10";
+
+    /// <summary>
+    /// What an app on the plan keeps its data in. The stores are resources of their own, each with
+    /// its own card under Cloud infrastructure; nothing on the plan holds them.
+    /// </summary>
+    public static string Store(string name) =>
+        name.Contains("shed", StringComparison.OrdinalIgnoreCase) ? "its own files, on the plan's storage"
+        : name.Contains("render", StringComparison.OrdinalIgnoreCase) ? "the two sites' APIs (web apps)"
+        : name.Contains("cosmos", StringComparison.OrdinalIgnoreCase) ? "Cosmos DB account, its own resource"
+        : "SQL database, its own resource";
 
     private static double? Sum(IEnumerable<double?> values)
     {

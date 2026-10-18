@@ -37,7 +37,8 @@ public static class InsightsCard
         var rows = new List<CloudRow>
         {
             new("reporters", "Who reports to it?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "reporter_count")} apps in the last day",
-                [new(ResourceView.Fact(inputs, "reporters"), null), new(ResourceView.Fact(inputs, "workspace_name"), ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("workspace_href"))], "good"),
+                [new("sends to ", null), new(ResourceView.Fact(inputs, "workspace_name"), ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("workspace_href"))], "good")
+            { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("reporter_rows"), "App", "Type", "Items, last day") },
             new("dropped", "Is anything dropped?", refused ? "the workspace refused the query" : inputs.Buckets.Count == 0 ? "not read yet" : cappedHours > 0 ? $"yes, the cap stopped collection in {cappedHours:0} hours" : "no hour hit the cap",
                 [new(refused ? "the site's identity holds Reader, which cannot run a log query; Log Analytics Reader on the workspace is what it needs" : $"sampling keeps {ResourceView.Number(sampling, "0")} % of requests · the component's own setting is {ResourceView.Fact(inputs, "sampling_setting")} %", null)],
                 refused ? "warning" : cappedHours > 0 ? "alarm" : "good"),

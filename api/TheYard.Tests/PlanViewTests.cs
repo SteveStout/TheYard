@@ -56,7 +56,10 @@ public class PlanViewTests
         Assert.Equal("0.70 of 1.75 GB", report.Dials[1].Absolute);
         Assert.All(report.Rows, row => Assert.Contains(row.Tone, new[] { "good", "info" }));
         Assert.Equal("2 apps, running", report.Rows.Single(r => r.Key == "power").Answer);
-        Assert.Contains(report.Rows.Single(r => r.Key == "power").Detail, piece => piece.Href == "https://portal.azure.com/#@tenant-1/resource" + Sql);
+        // The apps are a table, each name a link to its blade and each named as a web app.
+        var apps = report.Rows.Single(r => r.Key == "power").Table;
+        Assert.Contains(apps.Rows, row => row[0].Href == "https://portal.azure.com/#@tenant-1/resource" + Sql);
+        Assert.All(apps.Rows, row => Assert.Equal("Web app (container)", row[1].Text));
         Assert.Equal(12, report.Readout.Lines.Count);
         Assert.Equal("$13.14 / mo", report.Readout.Lines.Single(l => l.Label == "Plan cost").Value);
     }

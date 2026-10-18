@@ -46,7 +46,15 @@ public static class SqlCard
         var rows = new List<CloudRow>
         {
             new("runs", "What runs on it?", inputs.Hours.Count == 0 ? "not read yet" : "theyard, the SQL site",
-                [new($"EF Core · {ResourceView.Fact(inputs, "tables")} tables · migrations at {ResourceView.Fact(inputs, "migration")} · the paused free database {ResourceView.Fact(inputs, "paused", "sqldb-theyard-ss")} is named, not read", null)], "good"),
+                [new($"EF Core · {ResourceView.Fact(inputs, "tables")} tables · migrations at {ResourceView.Fact(inputs, "migration")}", null)], "good")
+            {
+                Table = inputs.Hours.Count == 0 ? CloudTable.None : new CloudTable(
+                    ["Database", "Type", "Size", "Read by this card"],
+                    [
+                        [ResourceView.Resource(inputs) ?? new CloudLink("sqldb-theyard-ss-basic", null), new("SQL database", null), new(ResourceView.Fact(inputs, "spec"), null), new("yes, a minute", null)],
+                        [new(ResourceView.Fact(inputs, "paused", "sqldb-theyard-ss"), null), new("SQL database", null), new("free tier, paused", null), new("named, never read", null)],
+                    ]),
+            },
             new("waiting", "Is it waiting on anything?", blocked is null && deadlocks is null ? "not read yet" : $"{ResourceView.Number(blocked)} blocked",
                 [new($"sessions {ResourceView.Number(sessions)} · workers {PlanView.Percent(ResourceView.Now(inputs, "workers"))} · log IO {PlanView.Percent(ResourceView.Now(inputs, "log_write"))} · deadlocks {ResourceView.Number(deadlocks)} in the window", null)],
                 deadlocks is > 0 ? "alarm" : CloudTones.Of(dtuTone == PlanTone.Info ? PlanTone.Good : dtuTone)),

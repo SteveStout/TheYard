@@ -70,6 +70,7 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
             ["sampling_setting"] = AzureMetrics.Text(component.RootElement, "properties.SamplingPercentage") ?? "100",
             ["retention_days"] = AzureMetrics.Text(workspace.RootElement, "properties.retentionInDays"),
             ["reporters"] = reporters.Count == 0 ? "nothing reported in a day" : string.Join(" · ", reporters.Select(r => $"{r.GetValueOrDefault("AppRoleName") ?? "unnamed"} {r.GetValueOrDefault("items")}")),
+            ["reporter_rows"] = CloudTable.ToFact(reporters.Select(r => new[] { r.GetValueOrDefault("AppRoleName") ?? "unnamed", "Web app", r.GetValueOrDefault("items") })),
             ["reporter_count"] = reporters.Count.ToString(CultureInfo.InvariantCulture),
             ["workspace_name"] = PlanReader.NameOf(workspaceId),
             ["workspace_href"] = PlanView.Portal(tenant, workspaceId),

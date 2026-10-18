@@ -41,7 +41,8 @@ public static class AcrCard
         var rows = new List<CloudRow>
         {
             new("holds", "What does it hold?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "repositories")} images, {ResourceView.Fact(inputs, "tags")} tags",
-                [new(ResourceView.Fact(inputs, "repository_list"), null)], "good"),
+                ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("repository_rows") is null ? [new(ResourceView.Fact(inputs, "repository_list"), null)] : [], "good")
+            { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("repository_rows"), "Image", "Type", "Tags") },
             new("pulled", "Who pulled?", pulls is null ? "not read yet" : $"{pulls.Value.ToString("N0", CultureInfo.InvariantCulture)} pulls",
                 [new($"{ResourceView.Number(ok)} succeeded · {ResourceView.Number(pushes)} pushes in the window · the three apps pull with the site's identity", null)],
                 pulls is > 0 && ok is { } good && good < pulls ? "warning" : "good"),
@@ -95,6 +96,7 @@ public static class AcrCard
             ["login_server"] = AzureMetrics.Text(record, "properties.loginServer"),
             ["repositories"] = holdings?.Repositories.Count.ToString(CultureInfo.InvariantCulture),
             ["tags"] = holdings?.Repositories.Sum(r => r.Tags).ToString(CultureInfo.InvariantCulture),
+            ["repository_rows"] = holdings is null ? null : CloudTable.ToFact(holdings.Repositories.Select(r => new[] { r.Name, "Image repository", r.Tags.ToString(CultureInfo.InvariantCulture) })),
             ["repository_list"] = holdings is null ? "the catalogue could not be read; AcrPull on the registry is what it needs" : string.Join(" · ", holdings.Repositories.Select(r => $"{r.Name} {r.Tags} tags")),
             ["untagged"] = holdings?.UntaggedManifests.ToString(CultureInfo.InvariantCulture),
             ["untagged_gb"] = holdings is null ? null : (holdings.UntaggedBytes / 1024.0 / 1024 / 1024).ToString("0.00", CultureInfo.InvariantCulture),

@@ -43,8 +43,9 @@ public static class EdgeCard
                 certSoon ? "warning" : "good"),
             new("credits", "Is it costing credits?", credits is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0} this cycle" : configured ? "not read yet" : "no token set",
                 [new($"{ResourceView.Number(ResourceView.Now(inputs, "deploys"))} deploys at {NetlifyEdge.CreditsPerDeploy:0} · {ResourceView.Number(ResourceView.Now(inputs, "bandwidth_gb"), "0.000")} GB at {NetlifyEdge.CreditsPerGb:0} a GB", null),
-                    new($"deploys: {ResourceView.Fact(inputs, "deploy_log")}", ProjectUrl + "/deploys")],
-                ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : CloudTones.Of(creditTone)),
+                    new("the deploy log on Netlify", ProjectUrl + "/deploys")],
+                ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : CloudTones.Of(creditTone))
+            { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("deploy_rows"), "When", "Type", "Came to") },
             new("cached", "What is cached?", hit is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of the sampled pages" : "not sampled yet",
                 [new($"sampled hourly: {string.Join(", ", NetlifyEdge.Sampled)} · read from the Cache-Status header", null)],
                 CloudTones.Of(missTone)),

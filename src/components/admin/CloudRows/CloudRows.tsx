@@ -3,6 +3,7 @@
  * it, any piece of which links to a resource's portal blade. The colour sits on the border.
  */
 import { toneWord, type CloudLink, type CloudReport, type CloudTone } from '../../../lib/cloud';
+import { DataTable } from '../DataTable';
 import rowStyles from '../OverviewCard/OverviewCard.module.css';
 import styles from './CloudRows.module.css';
 
@@ -22,7 +23,9 @@ export function PortalLink({ link }: { link: CloudLink }) {
       <span aria-hidden="true">↗</span>
       <span className={styles.hidden}>
         {' '}
-        (opens the Azure portal in a new tab, with your own Azure sign-in)
+        {link.href.includes('portal.azure.com')
+          ? '(opens the Azure portal in a new tab, with your own Azure sign-in)'
+          : '(opens Netlify in a new tab, with your own Netlify sign-in)'}
       </span>
     </a>
   );
@@ -42,11 +45,29 @@ export function CloudRows({ rows }: { rows: CloudReport['rows'] }) {
           <span className={rowStyles.value}>
             {row.answer} <span className={styles.word}>{toneWord(row.tone)}</span>
           </span>
-          <span className={styles.detail}>
-            {row.detail.map((piece, index) => (
-              <PortalLink key={index} link={piece} />
-            ))}
-          </span>
+          {row.detail.length > 0 && (
+            <span className={styles.detail}>
+              {row.detail.map((piece, index) => (
+                <PortalLink key={index} link={piece} />
+              ))}
+            </span>
+          )}
+          {row.table.rows.length > 0 && (
+            <div className={styles.table} data-testid={`cloud-table-${row.key}`}>
+              <DataTable
+                label={row.question}
+                columns={row.table.columns.map((name, at) => ({
+                  name,
+                  cell: (cells: CloudLink[]) => (
+                    <PortalLink link={cells[at] ?? { text: '', href: null }} />
+                  ),
+                  rowHeader: at === 0,
+                }))}
+                rows={row.table.rows}
+                rowKey={(cells, index) => `${cells[0]?.text ?? ''}-${index}`}
+              />
+            </div>
+          )}
         </div>
       ))}
     </div>

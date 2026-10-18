@@ -110,6 +110,7 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
             ["cert_expires"] = AzureMetrics.Text(ssl.RootElement, "expires_at"),
             ["plan"] = AzureMetrics.Text(site.RootElement, "plan"),
             ["deploy_log"] = log,
+            ["deploy_rows"] = DeployRows(deploys.RootElement),
             ["deploys_live"] = live.ToString(CultureInfo.InvariantCulture),
             ["deploys_skipped"] = skipped.ToString(CultureInfo.InvariantCulture),
             ["deploys_failed"] = failed.ToString(CultureInfo.InvariantCulture),
@@ -146,6 +147,15 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
             + (o.Outcome == "skipped" ? "skipped, no edge change" : o.Outcome)));
         return (outcomes.Count == 0 ? "no deploys listed" : log, outcomes.Count(o => o.Outcome == "live"), outcomes.Count(o => o.Outcome == "skipped"), outcomes.Count(o => o.Outcome == "failed"));
     }
+
+    /// <summary>The newest deploys as table rows: when, what kind of thing, and what it came to.</summary>
+    public static string DeployRows(JsonElement deploys, int newest = 8) =>
+        CloudTable.ToFact((deploys.ValueKind == JsonValueKind.Array ? deploys.EnumerateArray().ToList() : []).Take(newest).Select(d => new[]
+        {
+            DateTimeOffset.TryParse(AzureMetrics.Text(d, "created_at"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? at.UtcDateTime.ToString("MMM d HH:mm", CultureInfo.InvariantCulture) + " UTC" : "",
+            AzureMetrics.Text(d, "context") == "production" ? "Production deploy" : "Deploy",
+            Outcome(d) == "skipped" ? "skipped, no edge change" : Outcome(d),
+        }));
 
     /// <summary>Asks the edge for each sampled page and counts the answers its cache served.</summary>
     private async Task<double?> SampleAsync(CancellationToken cancellation)

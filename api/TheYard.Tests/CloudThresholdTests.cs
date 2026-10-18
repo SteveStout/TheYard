@@ -56,7 +56,9 @@ public class CloudThresholdTests
         var view = SqlCard.View(Held("storage_gb", 1.8, new Dictionary<string, string?> { ["dtu"] = "5", ["max_gb"] = "2", ["paused"] = "sqldb-theyard-ss" }));
         Assert.Equal(90, view.Dials[1].Percent);
         Assert.Equal("alarm", view.Dials[1].Tone);
-        Assert.Contains("sqldb-theyard-ss is named, not read", view.Rows[0].Detail[0].Text);
+        var databases = view.Rows[0].Table;
+        Assert.Equal(["Database", "Type", "Size", "Read by this card"], databases.Columns);
+        Assert.Equal(["sqldb-theyard-ss", "SQL database", "free tier, paused", "named, never read"], databases.Rows[1].Select(cell => cell.Text));
     }
 
 
