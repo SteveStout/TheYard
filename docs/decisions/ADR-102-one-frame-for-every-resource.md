@@ -91,3 +91,15 @@ Configuration, read back through the runner on 18 October: every role assignment
 The section: seven resources to seven containers to one frame.
 
 [![Cloud infrastructure: seven resources read by two recorders on the SQL site, kept in seven containers, served by two routes and drawn in one frame](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/cloud-infrastructure.svg)](https://theyard.stevenstout.biz/api/docs/diagrams/cloud-infrastructure)
+
+## Addendum, 2026-10-18: an hourly card speaks on its newest reading
+
+The fifteen-minute hold above stopped being true for two cards in 1.0.3.175. Application Insights and the Netlify edge keep one document an hour, because their sources move no faster, so fifteen minutes of readings over a line could never be kept and both cards could never turn amber or red. The first live hour showed the cost: the telemetry workspace had ingested 0.098 GB of its 0.1 GB daily cap, and the dial said information. An hourly card now takes its tone from its newest reading alone, which already stands for an hour; every minute-by-minute card keeps the hold. `CloudThresholdTests` holds the case as it was read.
+
+```live path=api/TheYard.Api/ResourceView.cs region=hourly-tone
+```
+
+## Addendum, 2026-10-18: the edge builds from its own branch
+
+The edge card reads Netlify's deploy log, and on the first day it read as a column of failures. None was a failure: every push to main started a Netlify build, `netlify.toml`'s ignore rule found no change under `edge/` and cancelled it, and Netlify files a cancelled build as an error, "Canceled build due to no content change". From 1.0.3.175 two things hold. The card names each deploy by Netlify's own reason, live, skipped or failed, so a skipped build is never shown as failed (`NetlifyEdge.Outcome`, held by `CloudViewTests`). And Netlify builds from an `edge` branch that `.github/workflows/edge-branch.yml` moves to main only when `edge/` or `netlify.toml` changes, on the owner's word on 18 October. Once the project's production branch is `edge` in Netlify's settings, a change made in the Netlify account that owns the project, a push that does not touch the edge starts no build at all; until then, and after, the ignore rule stays as the second guard.
+

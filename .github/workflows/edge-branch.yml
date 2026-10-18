@@ -1,0 +1,35 @@
+name: Edge branch
+
+# The Netlify edge builds from the edge branch, not from main (ADR: One frame
+# for every resource, the addendum on the edge's builds). Every push to main
+# used to start a Netlify build that netlify.toml's ignore rule then cancelled,
+# and Netlify files a cancelled build as failed, so the edge's deploy log read
+# as a column of failures. This moves the edge branch to main only when what
+# the edge serves changes: edge/ or netlify.toml. Netlify then builds once per
+# real change, and the log holds only deploys that happened.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "edge/**"
+      - "netlify.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edge-branch
+  cancel-in-progress: false
+
+jobs:
+  move:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      # A fast-forward of a branch nobody commits to, so a force is never needed.
+      - name: Move the edge branch to this commit
+        run: git push origin "HEAD:refs/heads/edge"

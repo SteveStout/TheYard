@@ -26,15 +26,33 @@ public static class ResourceView
     /// A dial: the reading's share of its limit now, its thirty-day 95th and peak, and the tone the
     /// shared rule gives it; <paramref name="percentReading"/> is true when the reading is already a percentage.
     /// </summary>
-    public static CloudDial Dial(ResourceCardInputs inputs, string reading, string name, double? limit, (double Amber, double Red) levels, Func<double?, string> absolute, bool percentReading = false)
+    public static CloudDial Dial(ResourceCardInputs inputs, string reading, string name, double? limit, (double Amber, double Red) levels, Func<double?, string> absolute, bool percentReading = false, bool hourly = false)
     {
         double? now = Now(inputs, reading);
         double? share = percentReading ? now : Share(now, limit);
         var (p95, peak) = ResourceFolding.Spread(inputs.Month, reading);
         double? toShare(double? v) => percentReading ? v : Share(v, limit);
-        var sustained = PlanThresholds.ToneOf(Hour(inputs, reading).Select(toShare).ToList(), levels);
+        var sustained = Tone(Hour(inputs, reading).Select(toShare).ToList(), levels, hourly);
         return new CloudDial(name, share, PlanView.Percent(share), absolute(now), levels.Amber, levels.Red, toShare(p95), toShare(peak), CloudTones.Dial(share, levels, sustained));
     }
+
+    // #region hourly-tone
+    /// <summary>
+    /// The tone of a reading's newest values: held fifteen minutes for a minute's source, and the
+    /// newest value alone for an hourly one, whose one document already stands for its hour.
+    /// </summary>
+    public static PlanTone Tone(IReadOnlyList<double?> values, (double Amber, double Red) levels, bool hourly)
+    {
+        if (!hourly)
+        {
+            return PlanThresholds.ToneOf(values, levels);
+        }
+        return values.LastOrDefault(v => v is not null) is not { } newest ? PlanTone.Info
+            : newest >= levels.Red ? PlanTone.Alarm
+            : newest >= levels.Amber ? PlanTone.Warning
+            : PlanTone.Good;
+    }
+    // #endregion hourly-tone
 
     /// <summary>A reading's sixty minutes as a sparkline, scaled to its limit.</summary>
     public static CloudSpark Spark(ResourceCardInputs inputs, string reading, string name, double? limit, bool percentReading = false) =>

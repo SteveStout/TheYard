@@ -22,14 +22,14 @@ public static class InsightsCard
     {
         double? cap = InsightsSource.Parse(ResourceView.Fact(inputs, "cap_gb", ""));
         double? today = ResourceView.Now(inputs, "ingest_today_gb"), month = ResourceView.Now(inputs, "ingest_month_gb"), sampling = ResourceView.Now(inputs, "sampling");
-        var ingestTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "ingest_today_gb").Select(v => ResourceView.Share(v, cap)).ToList(), Ingestion);
-        var droppedTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "sampling").Select(v => v is { } s ? 100 - s : (double?)null).ToList(), Dropped);
+        var ingestTone = ResourceView.Tone(ResourceView.Hour(inputs, "ingest_today_gb").Select(v => ResourceView.Share(v, cap)).ToList(), Ingestion, hourly: true);
+        var droppedTone = ResourceView.Tone(ResourceView.Hour(inputs, "sampling").Select(v => v is { } s ? 100 - s : (double?)null).ToList(), Dropped, hourly: true);
         double cappedHours = inputs.Buckets.Sum(b => b.Sums.GetValueOrDefault("capped") is > 0 ? 1 : 0);
         double? billable = month is { } m ? Math.Max(0, m - InsightsSource.FreeGbPerMonth) : null;
         var dials = new[]
         {
-            ResourceView.Dial(inputs, "ingest_today_gb", "Ingested today", cap, Ingestion, v => v is { } g ? $"{g.ToString("0.000", CultureInfo.InvariantCulture)} of {(cap is { } c ? c.ToString("0.###", CultureInfo.InvariantCulture) + " GB cap" : "no cap")}" : "not read"),
-            ResourceView.Dial(inputs, "sampling", "Sampling kept", 100, (100 - Dropped.Amber, 100 - Dropped.Red), v => v is { } s ? $"{s.ToString("0", CultureInfo.InvariantCulture)} % of requests kept" : "no requests in the hour", percentReading: true) with { Tone = CloudTones.Of(droppedTone) },
+            ResourceView.Dial(inputs, "ingest_today_gb", "Ingested today", cap, Ingestion, v => v is { } g ? $"{g.ToString("0.000", CultureInfo.InvariantCulture)} of {(cap is { } c ? c.ToString("0.###", CultureInfo.InvariantCulture) + " GB cap" : "no cap")}" : "not read", hourly: true),
+            ResourceView.Dial(inputs, "sampling", "Sampling kept", 100, (100 - Dropped.Amber, 100 - Dropped.Red), v => v is { } s ? $"{s.ToString("0", CultureInfo.InvariantCulture)} % of requests kept" : "no requests in the hour", percentReading: true, hourly: true) with { Tone = CloudTones.Of(droppedTone) },
         };
         var marks = inputs.Buckets.Where(b => b.Sums.GetValueOrDefault("capped") is > 0)
             .Select(b => new CloudMark(b.At.ToUnixTimeMilliseconds(), "event", "The daily cap stopped collection"));

@@ -26,12 +26,12 @@ public static class EdgeCard
     public static CloudReport View(ResourceCardInputs inputs, bool configured)
     {
         double? credits = ResourceView.Now(inputs, "credits"), hit = ResourceView.Now(inputs, "cache_hit");
-        var creditTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "credits").Select(v => ResourceView.Share(v, NetlifyEdge.FreeCredits)).ToList(), Credits);
-        var missTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "cache_hit").Select(v => v is { } h ? 100 - h : (double?)null).ToList(), Misses);
+        var creditTone = ResourceView.Tone(ResourceView.Hour(inputs, "credits").Select(v => ResourceView.Share(v, NetlifyEdge.FreeCredits)).ToList(), Credits, hourly: true);
+        var missTone = ResourceView.Tone(ResourceView.Hour(inputs, "cache_hit").Select(v => v is { } h ? 100 - h : (double?)null).ToList(), Misses, hourly: true);
         var dials = new[]
         {
-            ResourceView.Dial(inputs, "credits", "Credits, this cycle", NetlifyEdge.FreeCredits, Credits, v => v is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0}" : "not read"),
-            ResourceView.Dial(inputs, "cache_hit", "Cache hits", 100, (100 - Misses.Amber, 100 - Misses.Red), v => v is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of {NetlifyEdge.Sampled.Length} sampled" : "not sampled yet", percentReading: true) with { Tone = CloudTones.Of(missTone) },
+            ResourceView.Dial(inputs, "credits", "Credits, this cycle", NetlifyEdge.FreeCredits, Credits, v => v is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0}" : "not read", hourly: true),
+            ResourceView.Dial(inputs, "cache_hit", "Cache hits", 100, (100 - Misses.Amber, 100 - Misses.Red), v => v is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of {NetlifyEdge.Sampled.Length} sampled" : "not sampled yet", percentReading: true, hourly: true) with { Tone = CloudTones.Of(missTone) },
         };
         int daysLeft = Retires.DayNumber - DateOnly.FromDateTime(inputs.Now.UtcDateTime).DayNumber;
         string? cert = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cert_expires");
@@ -42,8 +42,9 @@ public static class EdgeCard
                 [new($"certificate for {ResourceView.Fact(inputs, "cert_names")} · expires {ResourceView.Fact(inputs, "cert_expires")} · the page and /api proxied to the two web apps", null)],
                 certSoon ? "warning" : "good"),
             new("credits", "Is it costing credits?", credits is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0} this cycle" : configured ? "not read yet" : "no token set",
-                [new($"{ResourceView.Number(ResourceView.Now(inputs, "deploys"))} deploys at {NetlifyEdge.CreditsPerDeploy:0} · {ResourceView.Number(ResourceView.Now(inputs, "bandwidth_gb"), "0.000")} GB at {NetlifyEdge.CreditsPerGb:0} a GB", null)],
-                CloudTones.Of(creditTone)),
+                [new($"{ResourceView.Number(ResourceView.Now(inputs, "deploys"))} deploys at {NetlifyEdge.CreditsPerDeploy:0} · {ResourceView.Number(ResourceView.Now(inputs, "bandwidth_gb"), "0.000")} GB at {NetlifyEdge.CreditsPerGb:0} a GB", null),
+                    new($"deploys: {ResourceView.Fact(inputs, "deploy_log")}", ProjectUrl + "/deploys")],
+                ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : CloudTones.Of(creditTone)),
             new("cached", "What is cached?", hit is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of the sampled pages" : "not sampled yet",
                 [new($"sampled hourly: {string.Join(", ", NetlifyEdge.Sampled)} · read from the Cache-Status header", null)],
                 CloudTones.Of(missTone)),
@@ -64,7 +65,7 @@ public static class EdgeCard
                 new("Domain", ResourceView.Fact(inputs, "domain"), "info"),
                 new("Certificate", ResourceView.Fact(inputs, "cert_names"), "info"),
                 new("Expires", ResourceView.Fact(inputs, "cert_expires"), certSoon ? "warning" : "info"),
-                new("Plan", ResourceView.Fact(inputs, "plan"), "info"),
+                new("Builds", $"{ResourceView.Fact(inputs, "deploys_live", "0")} live · {ResourceView.Fact(inputs, "deploys_skipped", "0")} skipped · {ResourceView.Fact(inputs, "deploys_failed", "0")} failed", ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : "info"),
                 new("Retires", Retires.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), "info"),
                 new("Cost", "not on the Azure bill; Netlify bills in credits", "info"),
                 ResourceView.LiveRead(inputs, hourly: true),

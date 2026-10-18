@@ -152,5 +152,6 @@ change in this one.
   container groups that ran until 1.0.0.156, stopped and kept as the way back.
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions the second store is built from.
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the HTTPS edge.
+- [`.github/workflows/edge-branch.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/edge-branch.yml): moves the `edge` branch, which Netlify builds from, to main only when `edge/` or `netlify.toml` changes, so the edge builds once per real change.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image both sites run.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml): how a merge becomes a roll of the sites, and of the service.

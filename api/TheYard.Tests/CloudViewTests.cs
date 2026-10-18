@@ -106,5 +106,21 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
         Assert.Equal("PT1H", AcrCard.Metrics.Single(m => m.Azure == "StorageUsed").Interval);
         Assert.All(CosmosCard.Metrics.Where(m => m.Azure is "DataUsage" or "DocumentCount"), m => Assert.Equal("PT5M", m.Interval));
     }
+    [Fact]
+    public void A_build_the_ignore_rule_skipped_is_skipped_never_failed()
+    {
+        // As Netlify listed them on 18 October: the ignore rule's cancel is filed as an error.
+        using var deploys = JsonDocument.Parse("""
+            [
+              {"state":"error","error_message":"Canceled build due to no content change","created_at":"2026-10-18T19:34:47Z"},
+              {"state":"ready","created_at":"2026-10-08T19:33:09Z"},
+              {"state":"error","error_message":"Build script returned non-zero exit code: 2","created_at":"2026-10-07T10:00:00Z"}
+            ]
+            """);
+        var (log, live, skipped, failed) = NetlifyEdge.DeployLog(deploys.RootElement);
+        Assert.Equal((1, 1, 1), (live, skipped, failed));
+        Assert.StartsWith("Oct 18 19:34 UTC skipped, no edge change", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("failed", log.Split(" · ")[0], StringComparison.Ordinal);
+    }
     // #endregion cloud-view-tests
 }

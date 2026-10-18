@@ -91,6 +91,11 @@ public class CloudThresholdTests
         Assert.Equal("alarm", capped.Rows.Single(r => r.Key == "dropped").Tone);
         Assert.Equal("alarm", capped.Dials[0].Tone);
         Assert.Contains(capped.Chart.Marks, mark => mark.Title == "The daily cap stopped collection");
+        // An hourly source keeps one document an hour, so its newest reading speaks at once: the
+        // live workspace read 0.098 of its 0.1 GB cap on 18 October, and that is red, not information.
+        var nearCap = InsightsCard.View(Held("ingest_today_gb", 0.098, new Dictionary<string, string?> { ["cap_gb"] = "0.1" }, minutes: 1));
+        Assert.Equal("alarm", nearCap.Dials[0].Tone);
+        Assert.Equal("alarm", nearCap.Rows.Single(r => r.Key == "cap").Tone);
         Assert.Equal("warning", InsightsCard.View(Held("ingest_today_gb", 0.2, new Dictionary<string, string?>())).Rows.Single(r => r.Key == "cap").Tone);
     }
 
