@@ -20,7 +20,6 @@ import { Ring } from '../../shared/Ring';
 import { NavGlyph } from '../../shared/SheetIcons';
 import { PulseBand } from '../PulseBand';
 import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
-import { Pets } from '../Pets';
 import { Recommendations } from '../../shared/Recommendations';
 import styles from './Landing.module.css';
 
@@ -224,7 +223,6 @@ export function Landing({
             </a>
           </h2>
           <Recommendations />
-          <Pets />
         </aside>
         <div className={styles.rest}>
           {/* The strip stands at its full height from the first paint, three blank

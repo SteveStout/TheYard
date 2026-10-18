@@ -40,7 +40,6 @@ for (const viewport of [
       // The sections under their three group headings, in the sidebar's groups (1.0.1.4).
       await expect(page.getByTestId('landing').getByRole('heading', { level: 2 })).toHaveText([
         'What colleagues say',
-        'Freya and Vincent',
         ...SITE_GROUPS.map((group) => group.label),
       ]);
 
@@ -136,36 +135,6 @@ for (const viewport of [
       expect(area.card).toBeLessThanOrEqual(1);
       expect(Math.abs(area.card - area.cardRight)).toBeLessThanOrEqual(1);
 
-      // Freya and Vincent under the quotations, their photographs one under the next and each one
-      // drawn from the files this site serves.
-      const pets = page.getByTestId('landing-pets');
-      await expect(pets).toBeVisible();
-      const rabbits = pets.locator('img');
-      await expect(rabbits).toHaveCount(3);
-      // They are lazy, under ten quotations: a browser fetches them when a reader reaches them,
-      // and this reads them the same way rather than asking the page to load them all at once.
-      await pets.scrollIntoViewIfNeeded();
-      await expect(async () => {
-        const read = await rabbits.evaluateAll((images) =>
-          (images as HTMLImageElement[]).map((image) => ({
-            path: image.currentSrc === '' ? '' : new URL(image.currentSrc).pathname,
-            natural: image.naturalWidth,
-            left: Math.round(image.getBoundingClientRect().left),
-            top: Math.round(image.getBoundingClientRect().top),
-          }))
-        );
-        for (const image of read) {
-          expect(image.path).toMatch(
-            /^\/api\/images\/author\/rabbits-[a-z-]+-\d+\.(avif|webp|jpg)$/
-          );
-          expect(image.natural).toBeGreaterThan(0);
-        }
-        // Stacked: each one starts where the one above it did, and below it.
-        expect(new Set(read.map((image) => image.left)).size).toBe(1);
-        expect(read[1].top).toBeGreaterThan(read[0].top);
-        expect(read[2].top).toBeGreaterThan(read[1].top);
-      }).toPass({ timeout: 20_000 });
-      await page.evaluate(() => window.scrollTo(0, 0));
       await expect(said.locator('blockquote')).toHaveCount(10);
       await expect(said.locator('li').first()).toContainText('Sarah Sebestyen');
       const column = said.getByRole('region', {

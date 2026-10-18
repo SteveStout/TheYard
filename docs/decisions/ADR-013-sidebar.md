@@ -408,3 +408,9 @@ The heading on both pages is now the link to the page the recommendations were w
 Under the quotations stand Freya and Vincent, his two rabbits, from the same photographs About Steven serves and in the same gold frame, one under the next. They are named in the component by the names the photo manifest knows them under, so a picture reaches the first screen the way it reaches the Author page and an address typed into a page cannot put one there. The column was about half the height of the left side before them; it is about the same height now.
 
 And the column is a section of its own, on the glass, the way About Steven's panel is, rather than a heading with cards loose beside the page. Its width is a share rather than a fixed 320 px: the left column takes a little over half and the quotations a little under, which at 1440 with the rail open measures about 630 and 470. A fixed 320 beside a 780 px column read as a page with a margin down the side of it, which is what he meant by one column dominating. The evidence strip still goes four across beside it, from 600 px of its own column rather than 720.
+
+## Addendum, 2026-10-18 (1.0.3.162): the rabbits leave the home screen
+
+Steve read the landing page on his phone and said the rabbits should not be on the home screen. The first screen is where a recruiter or a hiring manager decides whether to keep reading, so it carries the work and what colleagues say about it. Freya and Vincent stay on About Steven, in the same photographs, where a reader who wants to know the person behind the site goes looking for them.
+
+The paragraph above on the rabbits standing under the quotations stopped being true at this version. At a desk width the quotations column is shorter than the left side again; the first screen comes before an even page. The Pets component is deleted rather than left unused, and the landing test no longer looks for it.

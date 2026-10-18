@@ -1,1 +1,0 @@
-export { Pets } from './Pets';
