@@ -96,8 +96,9 @@ public sealed class PasswordReset(TokenIssuer issuer, IResetLinks links)
         }
 
         // Removed then added rather than reset through a token provider, because a provider needs
-        // a key ring this container does not keep across a roll. Both calls update the security
-        // stamp.
+        // a key ring this container does not keep across a roll. Both calls move the security
+        // stamp, and every session token carries a fingerprint of the stamp it was issued against
+        // (SessionStamp.cs), so each session opened before the reset is refused on its next request.
         var removed = await users.RemovePasswordAsync(user);
         if (!removed.Succeeded)
         {

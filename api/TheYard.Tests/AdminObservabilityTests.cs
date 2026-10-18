@@ -272,7 +272,7 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
     {
         // The self-test endpoint throws on purpose and answers 500. It is the
         // one request in the application guaranteed to take the exception path.
-        var failed = await _client.GetAsync("/api/admin/selftest/exception");
+        var failed = await (await Buyers.SignedIn(factory)).GetAsync("/api/admin/selftest/exception");
         Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
 
         string body = await _client.GetStringAsync("/api/admin/metrics");

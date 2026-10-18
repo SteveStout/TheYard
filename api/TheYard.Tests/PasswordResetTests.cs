@@ -132,7 +132,7 @@ public class PasswordResetTests : IClassFixture<PasswordResetTests.KeyedHost>
     {
         var client = Client();
         var issuer = _host.Services.GetRequiredService<TokenIssuer>();
-        string session = issuer.Issue("user-1", "someone", "sql");
+        string session = issuer.Issue("user-1", "someone", "sql", null);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/auth/reset", new { token = session, password = "long enough" })).StatusCode);
 
         string reset = issuer.IssueReset("user-1", "sql", null);

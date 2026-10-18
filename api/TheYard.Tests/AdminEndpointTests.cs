@@ -49,7 +49,7 @@ public class AdminEndpointTests(WebApplicationFactory<Program> factory)
     {
         // The endpoint that throws on purpose, so there is a real server error
         // in the buffer to try to lose.
-        var failed = await _client.GetAsync("/api/admin/selftest/exception");
+        var failed = await (await Buyers.SignedIn(factory)).GetAsync("/api/admin/selftest/exception");
         Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
 
         // More browser reports than the whole buffer used to hold. Anybody can

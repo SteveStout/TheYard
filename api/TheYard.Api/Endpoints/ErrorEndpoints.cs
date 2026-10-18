@@ -42,7 +42,10 @@ public static class ErrorEndpoints
         // record, not the Application Insights exceptions the Admin tab reads. This
         // asks all three at once, and the answer it produces is the answer any real
         // bug would produce (ADR-030).
-        app.MapGet("/api/admin/selftest/exception", SelfTest);
+        // Signed in only, and once a minute per account: every call lands in the server's
+        // error ring and the kept log, and anonymous calls in a loop would push the
+        // operator's real errors off the page.
+        app.MapGet("/api/admin/selftest/exception", SelfTest).RequireAuthorization();
         #endregion selftest
 
         return app;
@@ -81,10 +84,19 @@ public static class ErrorEndpoints
         return TypedResults.NoContent();
     }
 
-    private static IResult SelfTest() =>
+    private static IResult SelfTest(HttpContext http, SelfTestCooldown cooldown)
+    {
+        if (!cooldown.TryTake(http.UserIdOrNull() ?? ""))
+        {
+            return TypedResults.Problem(
+                detail: $"The self-test runs once every {SelfTestCooldown.Every.TotalSeconds:0} seconds per account.",
+                statusCode: StatusCodes.Status429TooManyRequests,
+                title: "Too soon");
+        }
         throw new InvalidOperationException(
             "Deliberate self-test failure. No caller ever sees this sentence, which "
             + "is the point of it: it exists to be found in a log and nowhere else.");
+    }
 }
 
 /// <summary>What the browser reports when a render crashes or a promise rejects (ADR-023).</summary>

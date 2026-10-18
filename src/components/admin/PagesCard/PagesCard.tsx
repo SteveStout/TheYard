@@ -116,6 +116,11 @@ export default function PagesCard({
                 setNote(null);
                 void fetch('/api/admin/pages', { method: 'POST' })
                   .then((r) => {
+                    // A sweep dials every served address, so a stranger cannot start one.
+                    if (r.status === 401) {
+                      setNote('sign in to start a check');
+                      return undefined;
+                    }
                     if (r.status === 409) {
                       return r
                         .json()

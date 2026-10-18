@@ -158,10 +158,12 @@ public static partial class AdminEndpoints
             .WithTags("Admin")
             .WithSummary("Every address this container serves, as the last sweep found it");
 
-        // And one on demand. 409 rather than an error when a sweep is already running
-        // or the last one is inside the cooldown, which is what the proof's start
-        // does and what the card's button expects.
+        // And one on demand, for a signed-in visitor, like the proof's start: a sweep
+        // dials every served address on the loopback, which is work a stranger should
+        // not be able to start in a loop. 409 rather than an error when a sweep is
+        // already running or the last one is inside the cooldown.
         app.MapPost("/api/admin/pages", RunPageStatus)
+            .RequireAuthorization()
             .WithName("RunPageStatus")
             .WithTags("Admin")
             .WithSummary("Check every address this container serves, now");

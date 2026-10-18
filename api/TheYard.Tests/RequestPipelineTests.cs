@@ -40,7 +40,7 @@ public class RequestPipelineTests(RequestPipelineTests.KeyedHost host) : IClassF
         // own one-day rule and no new cookie.
         var issuer = host.Services.GetRequiredService<TokenIssuer>();
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/images/coupe-01.jpg");
-        request.Headers.Add("Cookie", $"{TokenIssuer.CookieName}={issuer.Issue("user-1", "someone", "sql", TimeSpan.FromDays(2))}");
+        request.Headers.Add("Cookie", $"{TokenIssuer.CookieName}={issuer.Issue("user-1", "someone", "sql", null, TimeSpan.FromDays(2))}");
         var response = await Client().SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

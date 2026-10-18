@@ -167,3 +167,15 @@ going to make an account. `RegistrationLimit.GiveBack` returns the slot on
 that path, and two tests hold it, one on the window and one through the
 endpoint. The rule this record stated stands, and is true again: one write a
 stranger can make, and only the ones that happen are counted.
+
+## Addendum, 2026-10-18: the list was not the whole list
+
+The list above stopped being the whole list as the Admin tab grew, and a review on 2026-10-18 found three more things a stranger could cause. Two were routes: `GET /api/admin/selftest/exception`, which throws on purpose and lands in the server's error ring and the kept log on every call, so a loop of them pushed the operator's real errors off the page; and `POST /api/admin/pages`, which starts a sweep that dials every served address on the loopback. The third was a bid with no ceiling: `int.MaxValue` was accepted and the next minimum wrapped to a negative number on the wire.
+
+From 1.0.3.169 both routes need a signed-in session, like the proof's start, and the self-test runs once a minute per account. A bid above `BidRules.MaxBid`, ten million dollars, is refused before any sum is made, and arithmetic in Domain is checked, so a price that would wrap throws instead. The operator's key is read from the `X-Admin-Key` header and never from the address, because an address is written into the request logs of App Service, Front Door and Application Insights. And a session can now be ended: each token carries a fingerprint of the account's security stamp, every request checks it against the account, and both a password change and a sign-out move the stamp, so a copied cookie stops working the moment its owner signs out or resets.
+
+What a stranger can cause is the list above again: reads, the browser's error ring, and an account.
+
+```live path=api/TheYard.Api/SessionStamp.cs region=session-stamp
+```
+

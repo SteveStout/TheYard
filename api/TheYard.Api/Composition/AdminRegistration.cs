@@ -81,6 +81,7 @@ public static class AdminRegistration
         // log and the start is marked once the host is up (Composition/Startup.cs).
         var errorRings = new ErrorRings();
         builder.Services.AddSingleton(errorRings);
+        builder.Services.AddSingleton(new SelfTestCooldown(TimeProvider.System));
         var hostStart = new HostStart();
         builder.Services.AddSingleton(hostStart);
         host.ErrorRings = errorRings;

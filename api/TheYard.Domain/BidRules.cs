@@ -34,6 +34,13 @@ public readonly record struct BidOutcome(BidOutcomeKind Kind, int Amount, string
 /// </summary>
 public static class BidRules
 {
+    /// <summary>
+    /// The most a bid may be, in whole dollars. The dataset's dearest vehicle is under a
+    /// hundredth of this, so no real bid meets it, and every sum the rules make from a price
+    /// under it fits in an int with room to spare.
+    /// </summary>
+    public const int MaxBid = 10_000_000;
+
     public static int Increment(int currentBid) =>
         currentBid < 5_000 ? 100 : currentBid < 20_000 ? 250 : 500;
 
@@ -62,6 +69,12 @@ public static class BidRules
         if (sold)
         {
             return BidOutcome.Rejected(SoldReason);
+        }
+        // Before the buy-now shortcut, so an absurd number is refused rather than read as a
+        // purchase, and before any sum, so no price this method adds to can overflow.
+        if (amount > MaxBid)
+        {
+            return BidOutcome.Rejected($"A bid can be at most ${MaxBid.ToString("N0", CultureInfo.InvariantCulture)}.");
         }
         var status = AuctionSchedule.StatusFor(vehicle.Id, clock);
         if (status == AuctionStatus.Live && vehicle.BuyNowPrice is { } buyNow && amount >= buyNow)

@@ -60,7 +60,7 @@ public static partial class AccountEndpoints
 
         http.Response.Cookies.Append(
             TokenIssuer.CookieName,
-            issuer.Issue(user.Id, user.Email!, current.Backend.Key),
+            issuer.Issue(user.Id, user.Email!, current.Backend.Key, user.SecurityStamp),
             TokenIssuer.CookieFor(http, issuer.Lifetime));
         return TypedResults.Ok(Accounts.Describe(user));
     }
@@ -111,14 +111,22 @@ public static partial class AccountEndpoints
 
         http.Response.Cookies.Append(
             TokenIssuer.CookieName,
-            issuer.Issue(user.Id, user.Email!, current.Backend.Key),
+            issuer.Issue(user.Id, user.Email!, current.Backend.Key, user.SecurityStamp),
             TokenIssuer.CookieFor(http, issuer.Lifetime));
         return TypedResults.Ok(Accounts.Describe(user));
     }
 
-    /// <summary>Signs out by deleting the session cookie, and answers the anonymous account.</summary>
-    private static Ok<AccountView> Logout(TokenIssuer issuer, HttpContext http)
+    /// <summary>
+    /// Signs out: moves the account's security stamp, so every session it had open is refused on
+    /// its next request, then deletes the cookie and answers the anonymous account.
+    /// </summary>
+    private static async Task<Ok<AccountView>> Logout(TokenIssuer issuer, RequestAccounts accounts, HttpContext http)
     {
+        // A copied cookie outlives a deleted one; moving the stamp is what ends it.
+        if (http.UserIdOrNull() is { } id && accounts.Users is { } users && await users.FindByIdAsync(id) is { } user)
+        {
+            await users.UpdateSecurityStampAsync(user);
+        }
         // Deleted with the same attributes it was set with, or the browser keeps a
         // second cookie of the same name on a different path and stays signed in.
         http.Response.Cookies.Delete(TokenIssuer.CookieName, TokenIssuer.CookieFor(http, issuer.Lifetime));

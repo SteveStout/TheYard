@@ -115,18 +115,33 @@ public sealed class TokenIssuer
     /// </summary>
     public const string StoreClaim = "store";
 
+    /// <summary>
+    /// The claim carrying a fingerprint of the account's security stamp when the session was
+    /// opened. Identity moves the stamp when the password changes, and the site moves it on
+    /// sign-out, so a token whose fingerprint no longer matches the account is refused on its
+    /// next request (SessionStamp.cs). The stamp itself never leaves the store.
+    /// </summary>
+    public const string StampClaim = "stamp";
+
     // #region issue
     /// <summary>
-    /// The claims are the user's id, the name to greet them by, and the store
-    /// the account lives in, and nothing else. A token is sent on every
+    /// The claims are the user's id, the name to greet them by, the store the
+    /// account lives in, and a fingerprint of its security stamp, and nothing else. A token is sent on every
     /// request and is readable by anyone holding it, so anything in here is
     /// both bandwidth and disclosure; everything the application needs beyond
     /// identity it can look up.
     /// </summary>
-    public string Issue(string userId, string email, string store) => Issue(userId, email, store, _lifetime);
+    public string Issue(string userId, string email, string store, string? securityStamp) => Issue(userId, email, store, securityStamp, _lifetime);
 
     /// <summary>The same token with a lifetime of the caller's choosing; the tests use it to make a token that is already a few days old.</summary>
-    public string Issue(string userId, string email, string store, TimeSpan lifetime)
+    public string Issue(string userId, string email, string store, string? securityStamp, TimeSpan lifetime) =>
+        IssueWithFingerprint(userId, email, store, Fingerprint(securityStamp), lifetime);
+
+    /// <summary>
+    /// The same token from a stamp fingerprint already in hand: what a renewal re-issues, since
+    /// the request carries the fingerprint and not the stamp.
+    /// </summary>
+    public string IssueWithFingerprint(string userId, string email, string store, string stampFingerprint, TimeSpan lifetime)
     {
         var handler = new JsonWebTokenHandler();
         return handler.CreateToken(new SecurityTokenDescriptor
@@ -138,6 +153,7 @@ public sealed class TokenIssuer
                 new Claim(ClaimTypes.NameIdentifier, userId),
                 new Claim(ClaimTypes.Name, email),
                 new Claim(StoreClaim, store),
+                new Claim(StampClaim, stampFingerprint),
             ]),
             Expires = DateTime.UtcNow.Add(lifetime),
             SigningCredentials = _credentials,

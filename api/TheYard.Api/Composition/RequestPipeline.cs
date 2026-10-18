@@ -245,9 +245,10 @@ public static class RequestPipeline
                 string? id = context.UserIdOrNull();
                 string? email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
                 string? store = context.User.FindFirst(TokenIssuer.StoreClaim)?.Value;
-                if (id is not null && email is not null && store is not null)
+                string? stamp = context.User.FindFirst(TokenIssuer.StampClaim)?.Value;
+                if (id is not null && email is not null && store is not null && stamp is not null)
                 {
-                    context.Response.Cookies.Append(TokenIssuer.CookieName, tokens.Issue(id, email, store), TokenIssuer.CookieFor(context, tokens.Lifetime));
+                    context.Response.Cookies.Append(TokenIssuer.CookieName, tokens.IssueWithFingerprint(id, email, store, stamp, tokens.Lifetime), TokenIssuer.CookieFor(context, tokens.Lifetime));
                 }
             }
 

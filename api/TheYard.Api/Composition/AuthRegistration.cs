@@ -128,6 +128,15 @@ public static class AuthRegistration
                         }
                         return Task.CompletedTask;
                     },
+                    // A valid signature is not enough: the account's security stamp has to be
+                    // the one the token was issued against (SessionStamp.cs).
+                    OnTokenValidated = async context =>
+                    {
+                        if (await SessionStamp.WhyRefusedAsync(context.HttpContext, context.Principal) is { } reason)
+                        {
+                            context.Fail(reason);
+                        }
+                    },
                 };
             });
         builder.Services.AddAuthorization();

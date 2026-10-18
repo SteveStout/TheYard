@@ -41,7 +41,7 @@ public class ExceptionHandlerTests(ProductionApi factory) : IClassFixture<Produc
     [Fact]
     public async Task An_unhandled_exception_answers_problem_details_carrying_a_trace_id()
     {
-        var response = await _client.GetAsync(SelfTest);
+        var response = await (await Buyers.SignedIn(factory)).GetAsync(SelfTest);
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
@@ -57,7 +57,7 @@ public class ExceptionHandlerTests(ProductionApi factory) : IClassFixture<Produc
     [Fact]
     public async Task The_exception_never_reaches_the_caller()
     {
-        string body = await (await _client.GetAsync(SelfTest)).Content.ReadAsStringAsync();
+        string body = await (await (await Buyers.SignedIn(factory)).GetAsync(SelfTest)).Content.ReadAsStringAsync();
 
         // The three things a 500 leaks when nobody stops it: the message, the
         // type, and the stack. The endpoint throws with a distinctive sentence
@@ -70,7 +70,7 @@ public class ExceptionHandlerTests(ProductionApi factory) : IClassFixture<Produc
     [Fact]
     public async Task A_thrown_request_reaches_the_list_the_admin_tab_reads()
     {
-        await _client.GetAsync(SelfTest);
+        await (await Buyers.SignedIn(factory)).GetAsync(SelfTest);
 
         string errors = await _client.GetStringAsync("/api/errors");
         Assert.Contains(SelfTest, errors);
@@ -85,7 +85,7 @@ public class ExceptionHandlerTests(ProductionApi factory) : IClassFixture<Produc
     [Fact]
     public async Task The_list_carries_the_frames_and_still_refuses_the_message()
     {
-        await _client.GetAsync(SelfTest);
+        await (await Buyers.SignedIn(factory)).GetAsync(SelfTest);
 
         var entries = await _client.GetFromJsonAsync<JsonElement>("/api/errors");
         var thrown = entries.EnumerateArray()
@@ -121,7 +121,7 @@ public class ExceptionHandlerTests(ProductionApi factory) : IClassFixture<Produc
     public async Task The_shape_of_a_crash_and_the_shape_of_a_rejected_query_are_the_same()
     {
         using var crash = JsonDocument.Parse(
-            await (await _client.GetAsync(SelfTest)).Content.ReadAsStringAsync());
+            await (await (await Buyers.SignedIn(factory)).GetAsync(SelfTest)).Content.ReadAsStringAsync());
         using var rejected = JsonDocument.Parse(
             await (await _client.GetAsync("/api/vehicles?sort=alphabetical")).Content.ReadAsStringAsync());
 

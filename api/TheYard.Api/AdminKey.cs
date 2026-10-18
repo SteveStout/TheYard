@@ -24,15 +24,17 @@ public sealed class AdminKey(string? configured)
     /// <summary>Whether a key is configured at all; without one the keyed endpoints do not exist.</summary>
     public bool Configured => _key is not null;
 
-    /// <summary>The header a script presents the key in, when it does not put it in the address.</summary>
+    /// <summary>The header the key is presented in, and the only place it is read from.</summary>
     public const string HeaderName = "X-Admin-Key";
 
     /// <summary>
-    /// Whether a request presents the key: the key query parameter first, the header otherwise.
-    /// The one copy of where the key is read from, for every keyed endpoint.
+    /// Whether a request presents the key in the header. Never in the address: an address is
+    /// written into the App Service, Front Door and Application Insights request logs, and a key
+    /// in a log is a key anybody who can read the log holds. The page takes the key from its own
+    /// link once and sends it in this header. The one copy of where the key is read from, for
+    /// every keyed endpoint.
     /// </summary>
-    public bool IsPresentedBy(HttpRequest request) =>
-        Admits(request.Query["key"].FirstOrDefault() ?? request.Headers[HeaderName].FirstOrDefault());
+    public bool IsPresentedBy(HttpRequest request) => Admits(request.Headers[HeaderName].FirstOrDefault());
 
     /// <summary>Whether the presented value is the whole key, compared in constant time so the time taken says nothing about how close a guess was.</summary>
     public bool Admits(string? presented)

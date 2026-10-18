@@ -475,7 +475,7 @@ public class AuthBidTests : AuthTestBase
         // store's name in the claim: a valid token that is on the wrong store.
         var issuer = new TokenIssuer("a-signing-key-for-tests-only-not-a-secret", TimeSpan.FromDays(7));
         var elsewhere = api.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
-        string token = issuer.Issue(userId, _first, otherStore);
+        string token = issuer.Issue(userId, _first, otherStore, null);
         elsewhere.DefaultRequestHeaders.Add("Cookie", $"{TokenIssuer.CookieName}={token}");
 
         var refused = await elsewhere.PostAsJsonAsync(
