@@ -191,6 +191,32 @@ for (const viewport of [
         );
         expect(overflow).toBe(0);
       }).toPass();
+
+      // The left column runs on one set of columns: on a desk the featured row, the strip and
+      // the first group's first row share three, read off the boxes rather than the stylesheet,
+      // so the third of each ends on the same x. On a phone the featured tiles stack one per row
+      // and the strip stays two across.
+      const rights = async (selector: string) =>
+        page
+          .locator(selector)
+          .evaluateAll((items) =>
+            items.map((item) => Math.round(item.getBoundingClientRect().right))
+          );
+      const featuredRights = await rights(
+        '[data-testid="landing"] ul[aria-label="Start here"] > li'
+      );
+      const stripRights = await rights('[data-testid="landing-proof"] > li');
+      const groupRights = await rights('[data-testid="landing-group-built"] li');
+      if (viewport.width >= 1024) {
+        expect(new Set(featuredRights.slice(0, 3)).size).toBe(3);
+        for (const third of [stripRights[2], groupRights[2]]) {
+          expect(Math.abs(third - featuredRights[2])).toBeLessThanOrEqual(1);
+        }
+      } else {
+        expect(new Set(featuredRights).size).toBe(1);
+        expect(new Set(stripRights.slice(0, 2)).size).toBe(2);
+        expect(stripRights[2]).toBe(stripRights[0]);
+      }
     });
   });
 }

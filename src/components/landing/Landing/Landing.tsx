@@ -28,14 +28,14 @@ import styles from './Landing.module.css';
  * place the sidebar goes, drawn from the same site map the sidebar is drawn
  * from (src/lib/siteMap.ts), so the two cannot list different things. The
  * large tiles are the map's featured entries, Inventory, Author and the
- * resume, the first two with a photograph in the badge; below them every other section under its group's
- * heading, as the sidebar groups them, then Sign in, Admin and GitHub.
- * The Admin tile carries a health dot from /api/health, read once when the page
- * opens; under the title the evidence strip reads the gate's own counts from
- * /api/tests/summary, and the band over it reads the running site from
- * /api/pulse. What colleagues say stands in a column of its own on the right of
- * all of it, every recommendation in full from /api/recommendations, with Freya
- * and Vincent under them; too narrow for two columns, it follows the tiles.
+ * resume, three across with the badge on top, the first two with a photograph in
+ * the badge; under them the evidence strip reads the gate's own counts from
+ * /api/tests/summary on the same three columns; below that every other section
+ * under its group's heading, as the sidebar groups them, then Sign in, Admin and
+ * GitHub. The Admin tile carries a health dot from /api/health, read once when the
+ * page opens, and the band under the title reads the running site from /api/pulse.
+ * What colleagues say stands in a column of its own on the right, every
+ * recommendation in full from /api/recommendations; too narrow for two, it follows.
  *
  * A section's tile opens what its sidebar section opens first: its first document
  * in the dialog, or its first link in a new tab when it has none (API Reference, Diagrams).

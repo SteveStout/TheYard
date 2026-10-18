@@ -9,8 +9,8 @@ which also lists where a principle was deliberately not pushed further.
 
 ## In plain words
 
-SOLID is five rules of thumb for arranging code so that it can change without breaking. Each letter
-is one of them.
+Each letter of SOLID is one habit. The drawing takes them one at a time, with where TheYard shows
+each one.
 
 [![The five SOLID letters one under the next, each with what it means in plain words and where TheYard shows it](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/solid.png)](https://theyard.stevenstout.biz/api/docs/diagrams/solid)
 

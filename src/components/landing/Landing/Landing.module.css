@@ -5,10 +5,15 @@
  * Used by:   Landing.tsx.
  */
 /* The landing page: glass tiles with a round teal icon on a gold ring, the
-   two featured tiles large at the top, the sections under their group
+   three featured tiles large at the top, the sections under their group
    headings below them. Every value is a token. Tiles are glass without the blur
-   (VehicleCard's reason: a blur is paid for by the pixel, and there are
-   eighteen); the two large tiles take the blur, as the intro strip does. */
+   (a blur is paid for by the pixel, and there are eighteen); the three large
+   tiles take the blur, as the intro strip does.
+
+   The left column runs on one set of three columns, row after row: the featured
+   tiles, the evidence strip and the groups all share the same column count, gap
+   and edges, so the eye reads one grid down the page instead of three layouts
+   stacked. Phones keep one featured tile per row and the strip two across. */
 .landing {
   display: flex;
   flex-direction: column;
@@ -157,41 +162,6 @@
   grid-column: 1 / -1;
 }
 
-/* Container queries, as the inventory grid: the box is the page minus
-   whichever rail is showing, which a media query cannot see. */
-@container (min-width: 640px) {
-  .featured {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-5);
-  }
-
-  .grid > li:last-child:nth-child(odd) {
-    grid-column: auto;
-  }
-
-  /* Four tiles read as two rows of two, not three and one. */
-  .grid:has(> li:nth-child(4):last-child) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@container (min-width: 860px) {
-  .grid,
-  .grid:has(> li:nth-child(4):last-child) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  /* Three tiles fill three columns, and six fill two rows of three. */
-  .grid:has(> li:nth-child(3):last-child),
-  .grid:has(> li:nth-child(6):last-child) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 .tile,
 .big {
   appearance: none;
@@ -263,17 +233,10 @@
   background: var(--color-danger);
 }
 
-/* Inventory and Author across the top, the resume a banner under them at every
-   width (three across put the Author's line in a 300 px column and
-   broke the resume's own title over three lines). */
-@container (min-width: 640px) {
-  .featured > li:nth-child(3) {
-    grid-column: 1 / -1;
-  }
-}
-
-/* The evidence strip under the title: four figures the build itself
-   produced, on the same glass as the title so the ribbons stay behind them. */
+/* The evidence strip under the featured tiles: three figures the build itself
+   produced, on the same glass as the title so the ribbons stay behind them. Two
+   across on a phone; from the widths above, three across on the featured row's
+   own columns. */
 .proof {
   list-style: none;
   margin: calc(-1 * var(--space-2)) 0 0;
@@ -281,6 +244,50 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
+}
+
+/* Container queries, as the inventory grid: the box is the page minus
+   whichever rail is showing, which a media query cannot see. */
+@container (min-width: 640px) {
+  .featured,
+  .proof,
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+
+  .grid > li:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  /* Four tiles read as two rows of two, not three and one. */
+  .grid:has(> li:nth-child(4):last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Beside the quotations the left column is narrower than the page: about 550 px
+   on a 1280 desk and 630 px on a 1440 desk with the rail open, so the 640 px rule
+   above would never fire there. While the two columns stand side by side, the
+   same three columns start from 480 px of column. There is no four-column rule:
+   a fourth column would put the groups out of line with the featured row. */
+@container page (min-width: 900px) {
+  @container (min-width: 480px) {
+    .featured,
+    .proof,
+    .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+
+    .grid > li:last-child:nth-child(odd) {
+      grid-column: auto;
+    }
+
+    .grid:has(> li:nth-child(4):last-child) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
 }
 
 .proofItem {
@@ -347,42 +354,6 @@
   min-height: calc(2 * 1.5em);
 }
 
-/* Four across once the box is wide enough, after the two-column rule above so
-   it wins on source order (written before it, it lost and read two by two at 1280). */
-@container (min-width: 860px) {
-  .proof {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-/* Beside the column, every grid on the left asks its own column how wide it is
-   (.lead and .rest are containers), and the column is 320 px and a gap narrower
-   than the page, so the widths above would never be reached on a desk with the
-   rail open. These are the column's own widths: the figures four across from
-   720 px of column and the groups from 760, so a desk at 1440 with the rail open
-   reads four across beside the quotes, and a desk at 1280 reads the figures two
-   by two and the groups three across, which is the trade the column is worth
-   (ADR: The sidebar, the addendum on the column on the right). */
-@container page (min-width: 900px) {
-  @container (min-width: 600px) {
-    .proof {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  @container (min-width: 700px) {
-    .grid,
-    .grid:has(> li:nth-child(4):last-child) {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .grid:has(> li:nth-child(3):last-child),
-    .grid:has(> li:nth-child(6):last-child) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-}
-
 /* A group of sections under its heading, as the sidebar groups them. */
 .group {
   display: flex;
@@ -424,12 +395,16 @@
 }
 
 .big {
+  /* Stacked, as the section tiles are: the 88 px badge on top, the title and its line centred
+     under it. The three sit in one grid row, which stretches each to the tallest, and the
+     shared minimum keeps them one height even when every line wraps to the same count. */
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-5);
-  min-height: 168px;
-  padding: var(--space-6) var(--space-7);
-  text-align: left;
+  gap: var(--space-2);
+  min-height: 248px;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
 }
@@ -488,7 +463,8 @@
   min-width: 0;
 }
 
-.tile .text {
+.tile .text,
+.big .text {
   align-items: center;
   margin-top: var(--space-2);
 }
@@ -501,7 +477,7 @@
 }
 
 .big .title {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
 }
 
 .blurb {
@@ -510,7 +486,7 @@
 }
 
 .big .blurb {
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
 }
 
 @media (max-width: 639.98px) {
@@ -536,9 +512,8 @@
   }
 
   .big {
-    min-height: 120px;
-    padding: var(--space-5);
-    gap: var(--space-4);
+    min-height: 0;
+    padding: var(--space-5) var(--space-3);
   }
 
   .badgeBig {
@@ -551,11 +526,7 @@
   }
 
   .big .title {
-    font-size: var(--text-xl);
-  }
-
-  .big .blurb {
-    font-size: var(--text-sm);
+    font-size: var(--text-lg);
   }
 }
 
