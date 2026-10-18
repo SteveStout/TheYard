@@ -190,6 +190,64 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
     }
 
     /// <summary>
+    /// A link into a section of another page lands on a heading the site gives an id to, and that
+    /// is the second-level headings only (<c>withHeadingIds</c> in src/lib/markdown.ts). A link to
+    /// a third-level heading, or to one that has been renamed, leaves the reader at the top of the
+    /// page with no error anywhere, so every anchored link in every document is read back here
+    /// against the headings of the page it names.
+    /// </summary>
+    [Fact]
+    public void Every_link_into_a_section_of_another_page_lands_on_a_heading_with_an_id()
+    {
+        string root = RepoRoot();
+        var wrong = new List<string>();
+
+        foreach ((string slug, string file) in DocumentationCatalog.Files)
+        {
+            foreach (Match link in Regex.Matches(File.ReadAllText(Path.Combine(root, file)), @"\?doc=([a-z0-9-]+)#([a-z0-9-]+)"))
+            {
+                string target = link.Groups[1].Value;
+                string anchor = link.Groups[2].Value;
+                if (!DocumentationCatalog.Files.TryGetValue(target, out string? targetFile))
+                {
+                    wrong.Add($"{slug} links to ?doc={target}, which no document answers");
+                    continue;
+                }
+
+                if (!SectionIds(Path.Combine(root, targetFile)).Contains(anchor))
+                {
+                    wrong.Add($"{slug} links to ?doc={target}#{anchor}, and that page has no second-level heading with that id");
+                }
+            }
+        }
+
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+
+    /// <summary>The ids a document's second-level headings get, made the way the site makes them.</summary>
+    private static HashSet<string> SectionIds(string path)
+    {
+        var used = new Dictionary<string, int>(StringComparer.Ordinal);
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (Match heading in Regex.Matches(File.ReadAllText(path), @"^## (.+)$", RegexOptions.Multiline))
+        {
+            string words = Regex.Replace(heading.Groups[1].Value.TrimEnd('\r'), @"<[^>]+>", string.Empty);
+            string wordsOnly = Regex.Replace(words.ToLowerInvariant(), @"[^a-z0-9 -]", string.Empty).Trim();
+            string id = Regex.Replace(wordsOnly, @" +", "-");
+            if (id.Length == 0)
+            {
+                id = "section";
+            }
+
+            int seen = used.TryGetValue(id, out int before) ? before : 0;
+            used[id] = seen + 1;
+            ids.Add(seen == 0 ? id : $"{id}-{seen}");
+        }
+
+        return ids;
+    }
+
+    /// <summary>
     /// The onion practices page is written to be linked a section at a time: the site gives every
     /// second-level heading an id made from its words, and a post or a comment links straight to
     /// one. Renaming a heading would leave those links landing at the top of the page with no

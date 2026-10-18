@@ -325,6 +325,11 @@ and names the type that broke it. The rings, the ten rules and where each
 SOLID principle shows are in
 [ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid),
 and the rings are drawn on [their own page](https://theyard.stevenstout.biz/api/docs/diagrams/rings).
+What the rings mean, and the principles under them, are two pages of their own:
+[Onion and Clean Architecture](https://theyard.stevenstout.biz/?doc=clean-architecture) reads the
+pattern beside this codebase ring by ring, and
+[SOLID Principles](https://theyard.stevenstout.biz/?doc=solid) takes the five one at a time, with
+the code each one shows in and the place it stops.
 
 | Project | Owns | Depends on |
 | --- | --- | --- |

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1000" viewBox="0 0 1400 1000" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>Palermo's onion beside TheYard's rings: each textbook ring tied to the project that is that ring, every dependency pointing inward</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <style>
+      .ring0 { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; }
+      .ring1 { fill: #ece9ea; stroke: #7b7f8a; stroke-width: 1.5; }
+      .ring2 { fill: #f7f5f6; stroke: #7b7f8a; stroke-width: 1.5; }
+      .ring3 { fill: #ffffff; stroke: #536786; stroke-width: 2; }
+      .ring4 { fill: #f7f5f6; stroke: #536786; stroke-width: 2; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 700; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .tie { stroke: #4a6c96; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; opacity: 0.75; }
+      .inward { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .flow-label { fill: #4a6c96; font-size: 12px; font-weight: 500; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .side-heading { fill: #3f3a37; font-size: 17px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="1000" fill="#e9e6e7"/>
+  <text x="40" y="48" class="heading">The textbook onion, and the one this codebase is built as</text>
+  <text x="40" y="72" class="caption">Four rings on the left, as the pattern is written down. On the right, the projects that are those rings, one deliberate difference: the centre is split in two.</text>
+  <text x="40" y="118" class="side-heading">The pattern (Cockburn 2005, Palermo 2008, Martin 2012)</text>
+  <text x="800" y="118" class="side-heading">TheYard</text>
+
+  <rect x="40" y="150" width="560" height="760" rx="18" class="ring0"/>
+  <text x="58" y="176" class="title">Frameworks, drivers, tests</text>
+  <text x="58" y="194" class="body">The web framework, the database</text>
+  <text x="58" y="210" class="body">engine, the browser.</text>
+  <rect x="78" y="245" width="484" height="570" rx="18" class="ring1"/>
+  <text x="96" y="271" class="title">Interface adapters</text>
+  <text x="96" y="289" class="body">Controllers, gateways,</text>
+  <text x="96" y="305" class="body">repositories: one real thing each.</text>
+  <rect x="116" y="340" width="408" height="380" rx="18" class="ring2"/>
+  <text x="134" y="366" class="title">Use cases, the application</text>
+  <text x="134" y="384" class="body">What the software does with the</text>
+  <text x="134" y="400" class="body">rules, and the ports it needs.</text>
+  <rect x="154" y="435" width="332" height="190" rx="18" class="ring3"/>
+  <text x="172" y="461" class="title">Entities, the domain model</text>
+  <text x="172" y="479" class="body">The rules that would exist</text>
+  <text x="172" y="495" class="body">with no software at all.</text>
+  <rect x="800" y="150" width="560" height="760" rx="18" class="ring0"/>
+  <text x="818" y="176" class="title">Host, front end, tests</text>
+  <text x="818" y="194" class="mono">api/TheYard.Api, src/, render/, api/TheYard.Tests</text>
+  <text x="818" y="212" class="body">Endpoints read a request and ask Auction;</text>
+  <text x="818" y="228" class="body">Composition/ wires every service.</text>
+  <rect x="838" y="245" width="484" height="570" rx="18" class="ring1"/>
+  <text x="856" y="271" class="title">The adapters, the same ports twice</text>
+  <text x="856" y="289" class="mono">api/TheYard.Infrastructure[.Cosmos]</text>
+  <text x="856" y="307" class="body">EF Core over Azure SQL or SQLite,</text>
+  <text x="856" y="323" class="body">and the Cosmos DB SDK.</text>
+  <rect x="876" y="340" width="408" height="380" rx="18" class="ring2"/>
+  <text x="894" y="366" class="title">The use cases</text>
+  <text x="894" y="384" class="mono">api/TheYard.Application</text>
+  <text x="894" y="402" class="body">Auction, and the ports the auction</text>
+  <text x="894" y="418" class="body">and the operator need.</text>
+  <rect x="914" y="435" width="332" height="190" rx="18" class="ring3"/>
+  <text x="932" y="461" class="title">The rules</text>
+  <text x="932" y="479" class="mono">api/TheYard.Domain</text>
+  <text x="932" y="497" class="body">BidRules, AuctionSchedule,</text>
+  <text x="932" y="513" class="body">StandingRules, VehicleFilter.</text>
+  <rect x="990" y="530" width="256" height="104" rx="18" class="ring4"/>
+  <text x="1008" y="556" class="title">The shapes</text>
+  <text x="1008" y="574" class="mono">api/TheYard.Data</text>
+  <text x="1008" y="592" class="body">Records with no behaviour.</text>
+  <path d="M600 170 C 670 170, 730 170, 800 170" class="tie"/>
+  <path d="M562 265 C 632 265, 768 265, 838 265" class="tie"/>
+  <path d="M524 360 C 594 360, 806 360, 876 360" class="tie"/>
+  <path d="M486 455 C 556 455, 844 455, 914 455" class="tie"/>
+  <path d="M486 455 C 556 455, 920 550, 990 550" class="tie"/>
+  <path d="M48 680 L146 680" class="inward"/>
+  <path d="M808 680 L906 680" class="inward"/>
+  <text x="42" y="712" class="flow-label">Dependencies point inward</text>
+  <text x="802" y="712" class="flow-label">Dependencies point inward</text>
+
+  <text x="40" y="950" class="caption">A dashed line ties a textbook ring to the project that is that ring. Ten tests in api/TheYard.Tests/OnionTests.cs fail the build when a dependency points the other way.</text>
+  <text x="40" y="972" class="caption">Source: docs/images/onion-side-by-side.svg in the repository, drawn by docs/images/onion-side-by-side.mjs and redrawn when a ring changes.</text>
+</svg>

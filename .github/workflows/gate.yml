@@ -119,6 +119,7 @@ jobs:
           else echo "format=skipped" >> "$r"; echo "format_s=0" >> "$r"; fi
           read code s < <(t bash -c 'dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug > "$RAW/sqlproj.txt" 2>&1')
           echo "sqlproj=$code" >> "$r"; echo "sqlproj_s=$s" >> "$r"
+          # #region both-stores
           read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-sqlite.trx" --results-directory "$RAW/trx" > "$RAW/xunit-sqlite.txt" 2>&1')
           echo "xunit=$code" >> "$r"; echo "xunit_s=$s" >> "$r"
           export Cosmos__AccountEndpoint="$COSMOS_ENDPOINT"
@@ -129,6 +130,7 @@ jobs:
             read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-cosmos.trx" --results-directory "$RAW/trx" > "$RAW/xunit-cosmos.txt" 2>&1')
             echo "oncosmos=$code" >> "$r"; echo "oncosmos_s=$s" >> "$r"
           else echo "oncosmos=skipped" >> "$r"; echo "oncosmos_s=0" >> "$r"; fi
+          # #endregion both-stores
           cat "$r"
       # #endregion dotnet-side
 

@@ -53,6 +53,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'SQL Server vs Cosmos DB', href: '/api/docs/diagrams/sql-vs-cosmos' },
   { label: 'The UI, layer by layer', href: '/api/docs/diagrams/ui-architecture' },
   { label: 'The rings', href: '/api/docs/diagrams/rings' },
+  { label: 'The textbook onion, and TheYard’s', href: '/api/docs/diagrams/onion-side-by-side' },
   { label: 'One bid through the rings', href: '/api/docs/diagrams/bid-walk' },
   { label: 'The port and its adapters', href: '/api/docs/diagrams/port-adapter' },
 ];
@@ -90,6 +91,8 @@ export const MENUS: Record<
       { key: 'startHere' },
       { key: 'vscode' },
       { key: 'architecture' },
+      { key: 'cleanArchitecture', sub: true },
+      { key: 'solid', sub: true },
       { key: 'style', sub: true },
       { key: 'dataflow', sub: true },
       { key: 'projects', sub: true },
