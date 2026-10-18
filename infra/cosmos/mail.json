@@ -1,0 +1,35 @@
+{
+  "container": "mail",
+  "partitionKeyPath": "/day",
+  "defaultTtlSeconds": 2678400,
+  "why": "The Communication Services card's keep: one document a minute with the sends and the delivery outcomes from Azure Monitor and one document an hour with the resource's record, its linked email domain and the Activity Log. Partitioned on the UTC day and written by the SQL site alone, so a reading is never written twice. The kind, the day, the moment and the three bucket keys are indexed and nothing else, so a window is a grouped query over the index. Documents expire thirty-one days after they are written, one more than the longest window (ADR: One frame for every resource).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      {
+        "path": "/kind/?"
+      },
+      {
+        "path": "/day/?"
+      },
+      {
+        "path": "/at/?"
+      },
+      {
+        "path": "/b5/?"
+      },
+      {
+        "path": "/h1/?"
+      },
+      {
+        "path": "/h4/?"
+      }
+    ],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

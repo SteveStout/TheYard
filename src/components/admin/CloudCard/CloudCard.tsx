@@ -42,6 +42,7 @@ function Spark({ name, values }: { name: string; values: (number | null)[] }) {
   );
 }
 
+// #region cloud-frame
 /**
  * The frame: a loading or failed line until the card's route answers, then the whole card. The
  * window buttons are the tab's shared ones, drawn beside the chart's title.
@@ -119,3 +120,4 @@ export function CloudCard({
     </div>
   );
 }
+// #endregion cloud-frame

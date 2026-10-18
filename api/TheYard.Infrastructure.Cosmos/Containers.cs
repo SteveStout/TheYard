@@ -47,6 +47,24 @@ public static class Containers
     /// <summary>The App Service plan, kept: one document a minute and one an hour, partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: The App Service plan, read every minute).</summary>
     public const string Plan = "plan";
 
+    /// <summary>The Azure SQL Database sqldb-theyard-ss-basic, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
+    public const string ResourceSql = "sqldb";
+
+    /// <summary>The Cosmos DB account cosmos-theyard-ss, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
+    public const string ResourceCosmos = "cosmosdb";
+
+    /// <summary>The Container Registry crtheyardsszmnetj67bn5h2, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
+    public const string ResourceRegistry = "registry";
+
+    /// <summary>The Application Insights component and its Log Analytics workspace, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
+    public const string ResourceInsights = "insights";
+
+    /// <summary>The Communication Services acs-theyard-ss, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
+    public const string ResourceMail = "mail";
+
+    /// <summary>The Netlify edge theyard-edge, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
+    public const string ResourceEdge = "edge";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -61,6 +79,12 @@ public static class Containers
         [Resets] = "/id",
         [Machines] = "/day",
         [Plan] = "/day",
+        [ResourceSql] = "/day",
+        [ResourceCosmos] = "/day",
+        [ResourceRegistry] = "/day",
+        [ResourceInsights] = "/day",
+        [ResourceMail] = "/day",
+        [ResourceEdge] = "/day",
     };
 
     /// <summary>

@@ -8,9 +8,16 @@ namespace TheYard.Api;
 public static class PlanCost
 {
     /// <summary>The month to date for the plan's resource, in the bill's currency; null when the bill has not been read or does not name it.</summary>
-    public static async Task<double?> MonthToDateAsync(ICostHistory history, PlanReader reader, TimeProvider clock, CancellationToken cancellation)
+    public static Task<double?> MonthToDateAsync(ICostHistory history, PlanReader reader, TimeProvider clock, CancellationToken cancellation) =>
+        reader.PlanName is { } plan ? ForResourceAsync(history, plan, clock, cancellation) : Task.FromResult<double?>(null);
+
+    /// <summary>
+    /// The month to date for any resource the bill names, matched on its name without case; every
+    /// card under Cloud infrastructure reads its cost line through this.
+    /// </summary>
+    public static async Task<double?> ForResourceAsync(ICostHistory history, string plan, TimeProvider clock, CancellationToken cancellation)
     {
-        if (!(await history.AvailabilityAsync(cancellation)).Available || reader.PlanName is not { } plan)
+        if (!(await history.AvailabilityAsync(cancellation)).Available)
         {
             return null;
         }

@@ -100,6 +100,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The gate on GitHub Actions runs every check the laptop's gate ran, writes every report the results writer reads, turns red when any check fails, runs The Shed's suites on Windows, and runs only on `gate/` branches with no permission to write | ADR: The gate runs where the memory is | GateWorkflowTests |
 | The resume at /resume is the locked resume, byte for byte, inline under his name and the lock's date, and the door in its link is recorded as one allowed word, never the query | ADR: The resume has an address | ResumeAddressTests |
 | The App Service plan is read a minute by the SQL site alone and kept thirty-one days, every window is drawn from the kept copy, and CPU, memory, the HTTP queue and sockets turn amber and red only when fifteen minutes in a row hold the line | ADR: The App Service plan, read every minute | PlanThresholdTests, PlanViewTests |
+| Every resource under Cloud infrastructure is a definition drawn in the one frame, found in the resource group rather than typed, linked to the blade Azure returned, and turns amber and red at the lines its card names; a key the catalogue does not name is a 404 | ADR: One frame for every resource | CloudThresholdTests, CloudViewTests |
 
 ## How the table is read
 

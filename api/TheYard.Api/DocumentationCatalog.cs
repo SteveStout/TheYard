@@ -129,6 +129,7 @@ public static class DocumentationCatalog
         ["adr-the-resume-has-an-address"] = "docs/decisions/ADR-099-the-resume-has-an-address.md",
         ["adr-one-reading-for-the-first-screen"] = "docs/decisions/ADR-100-one-reading-for-the-first-screen.md",
         ["adr-the-app-service-plan-read-every-minute"] = "docs/decisions/ADR-101-the-app-service-plan-read-every-minute.md",
+        ["adr-one-frame-for-every-resource"] = "docs/decisions/ADR-102-one-frame-for-every-resource.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",
@@ -171,6 +172,7 @@ public static class DocumentationCatalog
         ["port-adapter"] = ("docs/images/port-adapter.svg", "The inner ring owns the interface"),
         ["solid"] = ("docs/images/solid.svg", "SOLID, in plain words"),
         ["plan-minute"] = ("docs/images/plan-minute.svg", "The plan's minute, from Azure to the card"),
+        ["cloud-infrastructure"] = ("docs/images/cloud-infrastructure.svg", "Cloud infrastructure: seven resources, one frame"),
     };
     // #endregion diagrams
 }

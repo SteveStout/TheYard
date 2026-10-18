@@ -1,7 +1,7 @@
 /**
  * The App Service plan (ADR: The App Service plan, read every minute), the first card under Cloud
  * infrastructure: it reads GET /api/admin/plan for the tab's window and draws the answer in the
- * frame every Cloud infrastructure card shares. Everything it shows comes from
+ * frame every resource shares (ADR: One frame for every resource). Everything it shows comes from
  * the kept minutes; this file only chooses the route.
  */
 import type { ReactNode } from 'react';

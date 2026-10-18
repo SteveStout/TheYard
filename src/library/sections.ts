@@ -58,6 +58,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'The port and its adapters', href: '/api/docs/diagrams/port-adapter' },
   { label: 'SOLID, in plain words', href: '/api/docs/diagrams/solid' },
   { label: 'The plan’s minute', href: '/api/docs/diagrams/plan-minute' },
+  { label: 'Cloud infrastructure', href: '/api/docs/diagrams/cloud-infrastructure' },
 ];
 // #endregion diagrams
 

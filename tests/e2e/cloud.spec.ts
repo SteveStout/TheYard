@@ -30,3 +30,24 @@ test('the plan card opens Cloud infrastructure and draws its dials and questions
   expect(slugs.indexOf('bench-link-azure')).toBeLessThan(slugs.indexOf('bench-link-machines'));
 });
 // #endregion cloud-plan
+
+// #region cloud-resources
+/**
+ * The six resource cards after the plan (ADR: One frame for every resource): each opens from its
+ * address in the same frame as the plan, with its own key in the rail, two dials, four questions
+ * and a readout, and a local run with nothing kept says so in a sentence.
+ */
+test('every resource under Cloud infrastructure draws in the one frame', async ({ page }) => {
+  for (const slug of ['sqldb', 'cosmosdb', 'registry', 'insights', 'mail', 'edge']) {
+    await openTheYard(page, `/?view=admin&card=${slug}`);
+    await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', slug);
+    await expect(page.getByTestId('bench-crumb')).toContainText('Cloud infrastructure');
+    const card = page.getByTestId(`${slug}-card`);
+    await expect(card.getByTestId('cloud-dial-left')).toBeVisible({ timeout: 30_000 });
+    await expect(card.getByTestId('cloud-dial-right')).toBeVisible();
+    await expect(card.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(4);
+    await expect(card.getByTestId('cloud-readout')).toBeVisible();
+    await expect(card.getByTestId('cloud-note')).toBeVisible();
+  }
+});
+// #endregion cloud-resources

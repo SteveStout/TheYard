@@ -35,6 +35,7 @@ export const CARD_CHUNKS = {
   SpendCard: () => import('../SpendCard/SpendCard'),
   MachinesCard: () => import('../MachinesCard/MachinesCard'),
   PlanCard: () => import('../PlanCard/PlanCard'),
+  CloudResourceCard: () => import('../CloudResourceCard/CloudResourceCard'),
   ExperimentCard: () => import('../ExperimentCard/ExperimentCard'),
   SqlCard: () => import('../SqlCard/SqlCard'),
   StoreCard: () => import('../StoreCard/StoreCard'),
@@ -70,6 +71,7 @@ const SpendCard = lazy(CARD_CHUNKS.SpendCard);
 /** The Machines card, its code fetched the first time it is drawn. */
 const MachinesCard = lazy(CARD_CHUNKS.MachinesCard);
 const PlanCard = lazy(CARD_CHUNKS.PlanCard);
+const CloudResourceCard = lazy(CARD_CHUNKS.CloudResourceCard);
 /** The Experiment card, its code fetched the first time it is drawn. */
 const ExperimentCard = lazy(CARD_CHUNKS.ExperimentCard);
 /** The SQL card, its code fetched the first time it is drawn. */
@@ -180,6 +182,21 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
             tick={tick}
             window={machineWindow}
             toolbar={toolbar('on the plan card', 'plan-window')}
+          />
+        );
+      case 'sqldb':
+      case 'cosmosdb':
+      case 'registry':
+      case 'insights':
+      case 'mail':
+      case 'edge':
+        return (
+          <CloudResourceCard
+            resource={slug}
+            title={benchCard(slug).name}
+            tick={tick}
+            window={machineWindow}
+            toolbar={toolbar(`on the ${benchCard(slug).name} card`, `${slug}-window`)}
           />
         );
       case 'experiment':

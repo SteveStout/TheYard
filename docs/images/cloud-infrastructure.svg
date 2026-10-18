@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>Cloud infrastructure: seven resources read on the SQL site by PlanRecorder and CloudRecorder, kept in seven Cosmos DB containers partitioned on the day for thirty-one days, served by GET /api/admin/plan and GET /api/admin/cloud/{key}, and drawn in one frame, CloudCard</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #536786; stroke-width: 1.5; }
+      .keep { fill: #ffffff; stroke: #25663a; stroke-width: 2; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 700; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .flow { stroke: #4a6c96; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+  <rect width="1400" height="700" fill="#e9e6e7"/>
+  <text x="40" y="48" class="heading">Cloud infrastructure: seven resources, seven containers, one frame</text>
+  <text x="40" y="74" class="caption">Read once a minute (once an hour where the source moves no faster) by the SQL site alone, kept a month, served from the kept copy, drawn the same way every time.</text>
+  <rect x="40" y="130" width="330" height="54" rx="8" class="box"/>
+  <text x="56" y="152" class="title">App Service plan</text>
+  <text x="56" y="172" class="mono">PLAN-THEYARD-SS</text>
+  <path class="flow" d="M370 157 L516 360"/>
+  <rect x="900" y="130" width="200" height="54" rx="8" class="keep"/>
+  <text x="916" y="152" class="title">plan</text>
+  <text x="916" y="172" class="mono">/day, 31 days</text>
+  <path class="flow" d="M770 360 L896 157"/>
+  <path class="flow" d="M1100 157 L1176 360"/>
+  <rect x="40" y="200" width="330" height="54" rx="8" class="box"/>
+  <text x="56" y="222" class="title">Azure SQL Database</text>
+  <text x="56" y="242" class="mono">sqldb-theyard-ss-basic</text>
+  <path class="flow" d="M370 227 L516 360"/>
+  <rect x="900" y="200" width="200" height="54" rx="8" class="keep"/>
+  <text x="916" y="222" class="title">sqldb</text>
+  <text x="916" y="242" class="mono">/day, 31 days</text>
+  <path class="flow" d="M770 360 L896 227"/>
+  <path class="flow" d="M1100 227 L1176 360"/>
+  <rect x="40" y="270" width="330" height="54" rx="8" class="box"/>
+  <text x="56" y="292" class="title">Cosmos DB</text>
+  <text x="56" y="312" class="mono">cosmos-theyard-ss</text>
+  <path class="flow" d="M370 297 L516 360"/>
+  <rect x="900" y="270" width="200" height="54" rx="8" class="keep"/>
+  <text x="916" y="292" class="title">cosmosdb</text>
+  <text x="916" y="312" class="mono">/day, 31 days</text>
+  <path class="flow" d="M770 360 L896 297"/>
+  <path class="flow" d="M1100 297 L1176 360"/>
+  <rect x="40" y="340" width="330" height="54" rx="8" class="box"/>
+  <text x="56" y="362" class="title">Container Registry</text>
+  <text x="56" y="382" class="mono">crtheyardsszmnetj67bn5h2</text>
+  <path class="flow" d="M370 367 L516 360"/>
+  <rect x="900" y="340" width="200" height="54" rx="8" class="keep"/>
+  <text x="916" y="362" class="title">registry</text>
+  <text x="916" y="382" class="mono">/day, 31 days</text>
+  <path class="flow" d="M770 360 L896 367"/>
+  <path class="flow" d="M1100 367 L1176 360"/>
+  <rect x="40" y="410" width="330" height="54" rx="8" class="box"/>
+  <text x="56" y="432" class="title">Application Insights</text>
+  <text x="56" y="452" class="mono">appi-theyard-ss, log-theyard-ss</text>
+  <path class="flow" d="M370 437 L516 360"/>
+  <rect x="900" y="410" width="200" height="54" rx="8" class="keep"/>
+  <text x="916" y="432" class="title">insights</text>
+  <text x="916" y="452" class="mono">/day, 31 days</text>
+  <path class="flow" d="M770 360 L896 437"/>
+  <path class="flow" d="M1100 437 L1176 360"/>
+  <rect x="40" y="480" width="330" height="54" rx="8" class="box"/>
+  <text x="56" y="502" class="title">Communication Services</text>
+  <text x="56" y="522" class="mono">acs-theyard-ss</text>
+  <path class="flow" d="M370 507 L516 360"/>
+  <rect x="900" y="480" width="200" height="54" rx="8" class="keep"/>
+  <text x="916" y="502" class="title">mail</text>
+  <text x="916" y="522" class="mono">/day, 31 days</text>
+  <path class="flow" d="M770 360 L896 507"/>
+  <path class="flow" d="M1100 507 L1176 360"/>
+  <rect x="40" y="550" width="330" height="54" rx="8" class="box"/>
+  <text x="56" y="572" class="title">The Netlify edge</text>
+  <text x="56" y="592" class="mono">theyard-edge</text>
+  <path class="flow" d="M370 577 L516 360"/>
+  <rect x="900" y="550" width="200" height="54" rx="8" class="keep"/>
+  <text x="916" y="572" class="title">edge</text>
+  <text x="916" y="592" class="mono">/day, 31 days</text>
+  <path class="flow" d="M770 360 L896 577"/>
+  <path class="flow" d="M1100 577 L1176 360"/>
+  <rect x="520" y="300" width="250" height="120" rx="8" class="box"/>
+  <text x="536" y="326" class="title">The recorders</text>
+  <text x="536" y="348" class="mono">PlanRecorder, CloudRecorder</text>
+  <text x="536" y="370" class="body">the SQL site only; Azure Monitor,</text>
+  <text x="536" y="388" class="body">Resource Manager, Log Analytics</text>
+  <text x="536" y="406" class="body">and Netlify, with the identity</text>
+  <rect x="1180" y="280" width="190" height="160" rx="8" class="box"/>
+  <text x="1196" y="306" class="title">One frame</text>
+  <text x="1196" y="328" class="mono">CloudCard</text>
+  <text x="1196" y="352" class="body">two dials, the month,</text>
+  <text x="1196" y="370" class="body">four questions and a</text>
+  <text x="1196" y="388" class="body">readout, from one</text>
+  <text x="1196" y="406" class="body">CloudReport each</text>
+  <text x="40" y="672" class="caption">Source: docs/images/cloud-infrastructure.svg in the repository, drawn by hand (ADR: One frame for every resource).</text>
+</svg>

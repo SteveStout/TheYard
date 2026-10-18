@@ -1,0 +1,35 @@
+{
+  "container": "sqldb",
+  "partitionKeyPath": "/day",
+  "defaultTtlSeconds": 2678400,
+  "why": "The Azure SQL Database card's keep: one document a minute with the database's readings from Azure Monitor (DTU, data space, sessions, workers, log writes, firewall blocks, deadlocks and failed connections) and one document an hour with its record, its tables and the Activity Log. Partitioned on the UTC day and written by the SQL site alone, so a reading is never written twice. The kind, the day, the moment and the three bucket keys are indexed and nothing else, so a window is a grouped query over the index. Documents expire thirty-one days after they are written, one more than the longest window (ADR: One frame for every resource).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      {
+        "path": "/kind/?"
+      },
+      {
+        "path": "/day/?"
+      },
+      {
+        "path": "/at/?"
+      },
+      {
+        "path": "/b5/?"
+      },
+      {
+        "path": "/h1/?"
+      },
+      {
+        "path": "/h4/?"
+      }
+    ],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

@@ -108,4 +108,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '101',
   },
+  adrOneFrameForEveryResource: {
+    title: 'ADR: One frame for every resource',
+    menuLabel: 'ADR: One frame for every resource',
+    url: '/api/docs/adr-one-frame-for-every-resource',
+    kind: 'adr',
+    number: '102',
+  },
 } as const satisfies Record<string, RecordEntry>;

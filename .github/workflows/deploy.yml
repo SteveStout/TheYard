@@ -155,6 +155,7 @@ jobs:
         env:
           YARD_AUTH_SIGNING_KEY: ${{ secrets.YARD_AUTH_SIGNING_KEY }}
           ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
         run: |
           # The Application Insights connection string is an ingestion key, so it
           # lives only in Azure: read it here with the credential this job already
@@ -202,12 +203,19 @@ jobs:
               "Auth__SigningKey": os.environ.get("YARD_AUTH_SIGNING_KEY", ""),
               "Admin__Key": os.environ.get("ADMIN_KEY", ""),
           }
-          held = [{"name": name, "value": value, "slotSetting": False} for name, value in wanted.items() if value]
+          # The Netlify token is optional: the edge card says in a sentence when
+          # it is missing, so an unset secret is a plain line here, not a warning
+          # (ADR: One frame for every resource).
+          optional = {"Netlify__Token": os.environ.get("NETLIFY_TOKEN", "")}
+          held = [{"name": name, "value": value, "slotSetting": False} for name, value in {**wanted, **optional}.items() if value]
           for name, value in wanted.items():
               if not value:
                   print(f"::warning::{name} is not held by this job; the site keeps the value it has")
+          for name, value in optional.items():
+              if not value:
+                  print(f"{name} is not set; the card that reads it says so")
           json.dump(held, open(sys.argv[1], "w", encoding="utf-8"))
-          print(f"{len(held)} of {len(wanted)} values go to the site (values masked)")
+          print(f"{len(held)} of {len(wanted) + len(optional)} values go to the site (values masked)")
           PY
           # #endregion secrets
           if [ "$(cat "$RUNNER_TEMP/settings.json")" != "[]" ]; then
