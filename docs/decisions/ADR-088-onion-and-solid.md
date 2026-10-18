@@ -94,6 +94,15 @@ host composes nothing about a vehicle; `AuctionTests` holds that the two facts a
 
 "What is kept on purpose" says `IActivityStore` and `ILogStore` each have one writer and one reader. They do not, and have not for some time: `IActivityStore` carries `RecordAsync` beside `AvailabilityAsync`, `HoursAsync` and `VisitorsAsync`, and `ILogStore` carries `AppendAsync` beside `AvailabilityAsync`, `QueryAsync`, `CountAsync` and `RingAsync`. The ruling it supports is unchanged, and is the reason this is an addendum rather than an edit: each port is one writer and the reads its own callers ask for, splitting them would double the interfaces and allow no new swap, and they stay whole until a caller needs only half. Found by a reader of the SOLID page on the way to shipping it, which is what a page written against the code is for.
 
+## Addendum, 2026-10-18: each letter in plain words first
+
+The SOLID Principles page opened with one paragraph that ran the five habits together, so a reader
+who did not already know the acronym could not match a habit to its letter. The page now opens with a
+drawing, `docs/images/solid.svg`, that takes the letters one at a time: the name, one plain sentence,
+and one line on where TheYard shows it, the same examples the page's table holds. Under it, one line
+per letter in words, and why the five matter. The drawing has its own page like every other, and the
+browser test that opens the page holds the drawing's link and the five lines.
+
 ## Where it sits
 
 Every ring: this record is the map of all of them and of the tests that hold them, and it serves all five SOLID principles by naming where each one shows and where it stops. It cost a new test package (NetArchTest), ten tests and a pass over every record. A codebase with one store and no rules worth testing alone would be built flat instead, as the section above says.
@@ -106,4 +115,5 @@ Every ring: this record is the map of all of them and of the tests that hold the
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's ports.
 - [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition): the composition root.
 - [`docs/images/rings.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/rings.mjs): the drawing.
+- [`docs/images/solid.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/solid.mjs): the SOLID letters, one at a time.
 

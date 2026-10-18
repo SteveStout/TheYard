@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.3.163** (2026-10-18): The SOLID Principles page opens with each letter in plain words: a drawing of the five, one under the next with where TheYard shows each, that opens on its own page, and one line per letter under it (ADR: Onion and SOLID, the addendum on plain words first).
 - **1.0.3.162** (2026-10-18): Freya and Vincent leave the landing page, so the first screen is the work and the recommendations; their photographs stay on About Steven, where the rest of his life is (ADR: The sidebar, the addendum on the home screen).
 - **1.0.3.161** (2026-10-17): Two pages under Architecture overview, Onion / Clean Architecture and SOLID Principles, read the pattern and the five principles against this codebase with the project files, the ports, the ring tests and the gate’s two store passes shown live, and the textbook onion is drawn beside TheYard’s rings on its own page (ADR: Onion and SOLID).
 - **1.0.3.160** (2026-10-17): A quotation on About Steven reaches the edge of the panel it stands in, as it does on the landing page: the indent a document gives its own lists was moving every one of them in, and the browser tests now hold both pages to the same edge (ADR: The sidebar, the addendum on its own section).

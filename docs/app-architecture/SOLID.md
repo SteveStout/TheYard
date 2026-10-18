@@ -9,10 +9,25 @@ which also lists where a principle was deliberately not pushed further.
 
 ## In plain words
 
-Five habits. Give each piece of code one job. Add new behaviour by adding code, not by editing what
-already works. Make sure anything that stands in for something else behaves the same way. Keep
-interfaces small and shaped to the code that uses them. Have the important code depend on
-interfaces it owns, never on the database or the framework underneath.
+SOLID is five rules of thumb for arranging code so that it can change without breaking. Each letter
+is one of them.
+
+[![The five SOLID letters one under the next, each with what it means in plain words and where TheYard shows it](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/solid.png)](https://theyard.stevenstout.biz/api/docs/diagrams/solid)
+
+*A preview. [Open the drawing in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/solid) to read it full size.*
+
+- **S, Single Responsibility.** Each class has one job, so it has only one reason to change.
+- **O, Open / Closed.** Add new behaviour by writing new code, and leave the code that already works
+  alone.
+- **L, Liskov Substitution.** Anything that stands in for something else has to behave the same way,
+  so the code using it never notices the swap.
+- **I, Interface Segregation.** Keep interfaces small and shaped to the code that calls them, so no
+  class has to depend on methods it never uses.
+- **D, Dependency Inversion.** Important code depends on contracts it owns, never on the database or
+  the framework underneath it. The details plug into the contract, not the other way round.
+
+Why it matters: code that follows them is easier to read and to fix, its parts lean on each other
+less, and each part can be tested on its own.
 
 What that is worth: a developer can add a second database, a new endpoint or a new page without
 reopening code that already works, and the organization gets a codebase where a change lands in one
@@ -35,10 +50,10 @@ place, is covered by the tests that already exist, and does not surprise the cod
 ## Where the five came from
 
 Robert C. Martin collected the five in the second half of the 1990s, starting from a 1995 newsgroup
-post, and published them as the principles of object-oriented design; the letters were later lined
-up into one word. Two of the five are older than the collection: Bertrand Meyer stated the open-closed
-principle in 1988, and Barbara Liskov described the substitution idea in a 1987 keynote. The other
-three are Martin's own.
+post, and published them as the principles of object-oriented design; Michael Feathers later lined
+the letters up into the word SOLID. Two of the five are older than the collection: Bertrand Meyer
+stated the open-closed principle in 1988, and Barbara Liskov described the substitution idea in a
+1987 keynote. The other three are Martin's own.
 
 ## S, single responsibility
 
@@ -71,7 +86,7 @@ the reason where a reader of the rule will find it. The test reads the headers b
 ```live path=api/TheYard.Tests/FileHeaderTests.cs region=the-header-rule
 ```
 
-**Where it stops.** `Program.cs` lists ten calls, one per area of the application, rather than ten
+**Where it stops.** `Program.cs` lists twelve calls, one per area of the application, rather than twelve
 classes with one method each, because a list a reader can scan is the job. The record's section
 [What is kept on purpose](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid#what-is-kept-on-purpose)
 names the others.

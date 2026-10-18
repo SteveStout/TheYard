@@ -56,6 +56,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'The textbook onion, and TheYard’s', href: '/api/docs/diagrams/onion-side-by-side' },
   { label: 'One bid through the rings', href: '/api/docs/diagrams/bid-walk' },
   { label: 'The port and its adapters', href: '/api/docs/diagrams/port-adapter' },
+  { label: 'SOLID, in plain words', href: '/api/docs/diagrams/solid' },
 ];
 // #endregion diagrams
 

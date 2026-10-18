@@ -71,4 +71,19 @@ test('the principles pages open with every live sample read from this build', as
   await expect(clean.locator('a[href$="/api/docs/diagrams/onion-side-by-side"]')).not.toHaveCount(
     0
   );
+
+  // The SOLID page says what each letter means before it says anything else: the drawing, which
+  // opens on its own page, and one plain line per letter under it.
+  await openTheYard(page, '/?doc=solid');
+  const solid = page.getByRole('dialog', { name: 'SOLID Principles' });
+  await expect(solid.locator('a[href$="/api/docs/diagrams/solid"]')).not.toHaveCount(0);
+  for (const letter of [
+    'S, Single Responsibility.',
+    'O, Open / Closed.',
+    'L, Liskov Substitution.',
+    'I, Interface Segregation.',
+    'D, Dependency Inversion.',
+  ]) {
+    await expect(solid.locator('li strong').filter({ hasText: letter })).toHaveCount(1);
+  }
 });

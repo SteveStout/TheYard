@@ -168,6 +168,7 @@ public static class DocumentationCatalog
         ["onion-side-by-side"] = ("docs/images/onion-side-by-side.svg", "The textbook onion, and TheYard's"),
         ["bid-walk"] = ("docs/images/bid-walk.svg", "One bid through the rings"),
         ["port-adapter"] = ("docs/images/port-adapter.svg", "The inner ring owns the interface"),
+        ["solid"] = ("docs/images/solid.svg", "SOLID, in plain words"),
     };
     // #endregion diagrams
 }
