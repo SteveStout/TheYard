@@ -85,6 +85,11 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/diagrams/onion-side-by-side</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/diagrams/ui-architecture</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -93,6 +98,16 @@
     <loc>https://theyard.stevenstout.biz/api/docs/diagrams/rings</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/clean-architecture</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/solid</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://theyard.stevenstout.biz/api/docs/start-here</loc>

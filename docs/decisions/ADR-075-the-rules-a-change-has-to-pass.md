@@ -73,6 +73,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Sold is decided before every other bid rule, for everybody | ADR: Accounts and per-user bids | BidRulesTests |
 | Every public endpoint is in the API document with an operation id, a summary, its responses and its lock, and no operator endpoint is | ADR: The API describes itself | ApiDocumentTests |
 | The first screen's one reading answers every field the band draws, and its latency figure is the request-weighted middle five minutes of the day, null when the day is empty | ADR: One reading for the first screen | PulseTests |
+| A link into a section of another page names a slug the site serves and a second-level heading on it, which is the only kind the site gives an id | ADR: The staff review | DocumentationCatalogTests |
 | What colleagues say comes from one file in one shape: every entry the same seven fields and nothing else, the month in words, the pull sentence as written, no two from one person, and the endpoint answers the file in its order | ADR: The sidebar | RecommendationsTests |
 | No stylesheet or component carries a raw colour; every colour is a token in the one sheet | ADR: The palette | StyleRulesTests |
 | Every hex on the Style pages (Colour and style, Background and ribbon) is a token's value, every colour token is on one of them, and every contrast figure they state is the figure the tokens give and clears its bar | ADR: The palette | StyleRulesTests |

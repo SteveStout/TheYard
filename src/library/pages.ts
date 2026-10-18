@@ -110,6 +110,18 @@ export const PAGES = {
     url: '/api/docs/architecture',
     kind: 'overview',
   },
+  cleanArchitecture: {
+    title: 'Onion and Clean Architecture',
+    menuLabel: 'Onion / Clean Architecture',
+    url: '/api/docs/clean-architecture',
+    kind: 'overview',
+  },
+  solid: {
+    title: 'SOLID Principles',
+    menuLabel: 'SOLID Principles',
+    url: '/api/docs/solid',
+    kind: 'overview',
+  },
   styleGuide: {
     title: 'Style guide',
     menuLabel: 'Style guide',

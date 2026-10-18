@@ -90,6 +90,10 @@ the Domain's schedule and bid rules. They now sit on `StandingVehicle` in Applic
 standing price and the sold flag the auction already hands out, and `VehicleWire` copies them. The
 host composes nothing about a vehicle; `AuctionTests` holds that the two facts are the rules' own.
 
+## Addendum, 2026-10-17: the two ports carry more reads than this said
+
+"What is kept on purpose" says `IActivityStore` and `ILogStore` each have one writer and one reader. They do not, and have not for some time: `IActivityStore` carries `RecordAsync` beside `AvailabilityAsync`, `HoursAsync` and `VisitorsAsync`, and `ILogStore` carries `AppendAsync` beside `AvailabilityAsync`, `QueryAsync`, `CountAsync` and `RingAsync`. The ruling it supports is unchanged, and is the reason this is an addendum rather than an edit: each port is one writer and the reads its own callers ask for, splitting them would double the interfaces and allow no new swap, and they stay whole until a caller needs only half. Found by a reader of the SOLID page on the way to shipping it, which is what a page written against the code is for.
+
 ## Where it sits
 
 Every ring: this record is the map of all of them and of the tests that hold them, and it serves all five SOLID principles by naming where each one shows and where it stops. It cost a new test package (NetArchTest), ten tests and a pass over every record. A codebase with one store and no rules worth testing alone would be built flat instead, as the section above says.

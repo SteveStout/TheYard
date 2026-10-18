@@ -45,3 +45,30 @@ test('a link to a section of the onion practices page opens the page on that sec
     await expect(onion.locator(`a[href$="/api/docs/diagrams/${drawing}"]`)).not.toHaveCount(0);
   }
 });
+
+// The two pages under Architecture overview are the concept behind the practices page: what the
+// rings mean, and the five principles under them. Both are written against this codebase, so every
+// claim on them stands on a live fence, and a fence that cannot be read says so in the page instead
+// of failing. This opens each one the way a reader does, from the sidebar's address.
+test('the principles pages open with every live sample read from this build', async ({ page }) => {
+  for (const [slug, title] of [
+    ['clean-architecture', 'Onion and Clean Architecture'],
+    ['solid', 'SOLID Principles'],
+  ] as const) {
+    await openTheYard(page, `/?doc=${slug}`);
+    const doc = page.getByRole('dialog', { name: title });
+    await expect(doc.getByRole('heading', { level: 1, name: title })).toBeVisible();
+    // Nothing on the page is a sample the build could not read.
+    await expect(doc.locator('em').filter({ hasText: 'Sample unavailable' })).toHaveCount(0);
+    // The project files and the ports are shown whole, so the arrows a reader is asked to believe
+    // are the lines themselves.
+    await expect(doc.locator('pre code')).not.toHaveCount(0);
+  }
+
+  // The drawing the first page opens on has a page of its own, as every drawing does.
+  await openTheYard(page, '/?doc=clean-architecture');
+  const clean = page.getByRole('dialog', { name: 'Onion and Clean Architecture' });
+  await expect(clean.locator('a[href$="/api/docs/diagrams/onion-side-by-side"]')).not.toHaveCount(
+    0
+  );
+});

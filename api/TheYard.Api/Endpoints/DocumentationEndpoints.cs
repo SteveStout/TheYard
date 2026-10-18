@@ -31,7 +31,7 @@ public static class DocumentationEndpoints
         #endregion docs-endpoint
 
         #region docs-images-endpoint
-        // A document's picture, from the repository (DocumentationCatalog.cs, DocImages). The
+        // A document's picture, from the repository (DocImages.cs). The
         // name is held to one shape, so an address cannot climb out of docs/images, and
         // a name that is not there is a 404 with nothing read. Cached for a day, the
         // same as the photographs: a drawing changes with a commit, and a day is the
@@ -98,7 +98,7 @@ public static class DocumentationEndpoints
     private static Results<ContentHttpResult, ProblemHttpResult> Document(string slug, HostPaths paths, BuildInfo build) =>
         DocumentationCatalog.Files.TryGetValue(slug, out var file)
             ? TypedResults.Text(
-                // The pictures are named here rather than on GitHub's raw host (DocumentationCatalog.cs, DocImages).
+                // The pictures are named here rather than on GitHub's raw host (DocImages.cs).
                 DocImages.Rewrite(LiveCounts.Expand(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot), paths.RepoRoot),
                 "text/markdown")
             : TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document");
