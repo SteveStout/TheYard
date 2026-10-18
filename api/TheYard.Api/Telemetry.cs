@@ -17,7 +17,7 @@ namespace TheYard.Api;
 public sealed partial class TelemetryReader(string appId, string clientId, bool enabled, string? siteName = null)
 {
     /// <summary>The one client every read shares, with a short timeout so a slow service cannot hold the Admin card.</summary>
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
+    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(8));
 
     /// <summary>
     /// The site this reader counts for, as Application Insights names it. Both

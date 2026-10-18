@@ -57,7 +57,12 @@ export function CloudDial({ dial, testId }: { dial: Dial; testId: string }) {
             <title>{`Peak over 30 days: ${Math.round(dial.peak)} %`}</title>
           </circle>
         )}
-        <text className={styles.big} x={C} y={C + 6} textAnchor="middle">
+        <text
+          className={dial.percent === null ? styles.bigWord : styles.big}
+          x={C}
+          y={C + 6}
+          textAnchor="middle"
+        >
           {dial.big}
         </text>
         <text className={styles.absolute} x={C} y={C + 28} textAnchor="middle">

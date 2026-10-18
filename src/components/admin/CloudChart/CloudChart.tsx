@@ -53,6 +53,22 @@ export function CloudChart({
             </text>
           </g>
         ))}
+        {/* #region deploy-bands */}
+        {/* Each roll shaded behind the lines, so a spike inside one reads as the deploy it was. */}
+        {chart.bands.map((band) => (
+          <rect
+            key={`${band.start_ms}-${band.title}`}
+            className={styles.band}
+            x={x(band.start_ms)}
+            y={TOP}
+            width={Math.max(2, x(band.end_ms) - x(band.start_ms))}
+            height={PLOT}
+            data-testid="cloud-band"
+          >
+            <title>{band.title}</title>
+          </rect>
+        ))}
+        {/* #endregion deploy-bands */}
         <line
           className={styles.redLine}
           x1={LEFT}

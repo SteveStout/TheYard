@@ -84,7 +84,9 @@ export function CloudCard({
           <p className={styles.resource} data-testid="cloud-resource">
             <PortalLink link={report.resource} />{' '}
             <span className={styles.quiet}>
-              opens in the Azure portal; your sign-in, not the site&rsquo;s
+              {report.resource.href?.includes('portal.azure.com') === false
+                ? 'opens Netlify; your sign-in, not the site\u2019s'
+                : 'opens in the Azure portal; your sign-in, not the site\u2019s'}
             </span>
           </p>
         )}

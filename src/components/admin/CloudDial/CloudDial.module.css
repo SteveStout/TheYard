@@ -79,6 +79,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* "not read" in the dial's middle: a word, so it sits at the size of a heading, not a figure. */
+.bigWord {
+  fill: var(--color-text);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
 .absolute {
   fill: var(--color-text);
   font-size: var(--chart-text-sm);

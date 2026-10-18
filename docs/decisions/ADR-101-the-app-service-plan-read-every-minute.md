@@ -87,3 +87,11 @@ Configuration, read back through the runner on 18 October: the identity's Reader
 The minute's path, Azure Monitor to recorder to Cosmos DB to card:
 
 [![The minute's path: Azure Monitor read by PlanRecorder on the SQL site, kept in the plan container, read by GET /api/admin/plan and drawn by the plan card](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/plan-minute.svg)](https://theyard.stevenstout.biz/api/docs/diagrams/plan-minute)
+
+## Addendum, 2026-10-18: a deploy is a span, and a spike inside one is a blip
+
+The gold marker above says where the version changed; from 1.0.3.177 the chart also shades the whole roll. Every deploy writes each site's settings and then its image, and Azure's Activity Log, already read hourly, records both as configuration writes on the app; writes within ten minutes of each other are one roll, and the span runs from the first to three minutes after the last, while App Service starts the new container beside the old one and the plan runs both. The owner asked for it after the plan card's CPU sparkline showed two spikes: "I'd like to pull that data in so it's obvious it's just a blip." The "What did Azure do to it?" row now lists each roll in a table as a planned deploy with how long it took, and any spike over the amber line inside one is named in a sentence as the roll it was. Nothing about the fifteen-minute hold changes: a roll lasts about two minutes, so it could never turn a dial amber, and now the reason is on the chart.
+
+```live path=api/TheYard.Api/PlanDeploys.cs region=plan-deploys
+```
+

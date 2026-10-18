@@ -42,6 +42,8 @@ export type CloudReport = {
     red_line: number;
     legend: string;
     start_ms: number;
+    /** Each deploy as a shaded span, from its first write to the new container answering. */
+    bands: { start_ms: number; end_ms: number; title: string }[];
   };
   rows: {
     key: string;
@@ -156,3 +158,12 @@ export function dayMarks(startMs: number, endMs: number): { atMs: number; label:
   return marks;
 }
 // #endregion chart-scales
+
+/**
+ * A readout value as the lines it prints on: a list the server joins with a comma and a space
+ * (a certificate's four names, say) is one item a line, so a long list never runs past the panel.
+ * A number's thousands comma has no space after it and stays whole.
+ */
+export function valueLines(value: string): string[] {
+  return value.split(', ').filter((part) => part.length > 0);
+}

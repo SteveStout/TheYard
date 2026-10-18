@@ -69,6 +69,7 @@
 }
 
 .line dt {
+  flex-shrink: 0;
   color: var(--color-accent);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
@@ -76,10 +77,18 @@
 }
 
 .line dd {
+  display: grid;
+  justify-items: end;
+  min-width: 0;
   margin: 0;
   color: var(--color-text);
   text-align: right;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+/* One item of a listed value a line; a single value is one part. */
+.part {
+  display: block;
 }
 
 .good {

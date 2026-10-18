@@ -51,6 +51,11 @@
   font-weight: var(--weight-semibold);
 }
 
+/* A deploy's span: a pale wash of the accent behind the series, never a line of its own. */
+.band {
+  fill: var(--color-accent-soft);
+}
+
 .redLine {
   stroke: var(--color-danger);
   stroke-dasharray: 4 3;

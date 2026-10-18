@@ -62,8 +62,21 @@ public static class PlanRows
             hours.Count == 0 ? "not read yet" : restarts.Count > 0 ? $"{restarts.Count} restart{(restarts.Count == 1 ? "" : "s")}{days}" : $"{events.Count} events{days}",
             [new CloudLink(restarts.Count > 0
                 ? $"{restarts[^1].At.ToString("d MMM HH:mm", CultureInfo.InvariantCulture)} UTC, {(restarts[^1].Planned ? "planned" : "by Azure, unplanned")} · {deploys} deploys in the window"
-                : $"no restart, no scale, no maintenance · {deploys} deploys in the window", null)],
-            CloudTones.Of(PlanThresholds.EventsTone(events)));
+                : $"no restart, no scale, no maintenance · {deploys} deploys in the window", null),
+                .. PlanDeploys.Blips(PlanDeploys.Rolls(events, buckets), buckets).Select(blip => new CloudLink($" · {blip}", null))],
+            CloudTones.Of(PlanThresholds.EventsTone(events)))
+        {
+            // The window's rolls, newest first: each a planned swap, with how long the two containers overlapped.
+            Table = PlanDeploys.Rolls(events, buckets) is { Count: > 0 } rolls
+                ? new CloudTable(
+                    ["When", "Type", "What", "Took"],
+                    [.. rolls.OrderByDescending(r => r.StartMs).Take(8).Select(r => (IReadOnlyList<CloudLink>)[
+                        new CloudLink(DateTimeOffset.FromUnixTimeMilliseconds(r.StartMs).UtcDateTime.ToString("MMM d HH:mm", CultureInfo.InvariantCulture) + " UTC", null),
+                        new CloudLink(r.Title.StartsWith("Deploy", StringComparison.Ordinal) ? "Deploy, planned" : "Configuration, planned", null),
+                        new CloudLink(r.Title, null),
+                        new CloudLink($"{Math.Max(1, (int)Math.Round((r.EndMs - r.StartMs) / 60_000.0))} min", null)])])
+                : CloudTable.None,
+        };
 
         double cpuShare = (month.CpuP95 ?? 0) / PlanThresholds.Cpu.Red, memoryShare = (month.MemoryP95 ?? 0) / PlanThresholds.Memory.Red;
         bool memoryFirst = memoryShare >= cpuShare;

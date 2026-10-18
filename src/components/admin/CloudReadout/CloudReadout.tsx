@@ -3,7 +3,7 @@
  * resource's name in capitals, a ring for how much of the window it was up, then one line a
  * reading with its tone on the left edge, and where the readings come from.
  */
-import { arcPath, pointAt, angleOf, ticks, type CloudReport } from '../../../lib/cloud';
+import { arcPath, pointAt, angleOf, ticks, type CloudReport, valueLines } from '../../../lib/cloud';
 import styles from './CloudReadout.module.css';
 
 export function CloudReadout({ readout }: { readout: CloudReport['readout'] }) {
@@ -47,7 +47,13 @@ export function CloudReadout({ readout }: { readout: CloudReport['readout'] }) {
             data-testid="cloud-readout-line"
           >
             <dt>{line.label}</dt>
-            <dd>{line.value}</dd>
+            <dd>
+              {valueLines(line.value).map((part, index) => (
+                <span key={index} className={styles.part}>
+                  {part}
+                </span>
+              ))}
+            </dd>
           </div>
         ))}
       </dl>

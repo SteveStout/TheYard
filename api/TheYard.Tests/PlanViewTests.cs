@@ -90,4 +90,31 @@ public class PlanViewTests
         Assert.Equal("alarm", report.Readout.Lines.Single(l => l.Label == "Restarts, 30 d").Tone);
     }
     // #endregion plan-view-tests
+
+    [Fact]
+    public void A_deploy_is_a_shaded_span_and_a_spike_inside_it_is_named_a_blip()
+    {
+        var t = new DateTimeOffset(2026, 10, 18, 20, 40, 0, TimeSpan.Zero);
+        // The roll as Azure logged it: the settings write, then the image, on two apps a minute apart.
+        PlanEvent[] events =
+        [
+            new(t, "config", "Write web app config", "APP-THEYARD-SS", Planned: true),
+            new(t.AddMinutes(1), "config", "Write web app config", "APP-THEYARD-COSMOS-SS", Planned: true),
+            new(t.AddHours(2), "restart", "Restart", "APP-THEYARD-SS", Planned: true),
+        ];
+        PlanBucket[] buckets =
+        [
+            new(t.AddMinutes(-5), 5, 10, 12, 60, 61, 0, "1.0.3.175"),
+            new(t, 5, 40, 74, 66, 68, 0, "1.0.3.176"),
+            new(t.AddMinutes(30), 5, 9, 10, 60, 61, 0, "1.0.3.176"),
+        ];
+        var rolls = PlanDeploys.Rolls(events, buckets);
+        var roll = Assert.Single(rolls);
+        Assert.Equal("Deploy 1.0.3.176: a new container beside the old, then the swap", roll.Title);
+        Assert.Equal(t.ToUnixTimeMilliseconds(), roll.StartMs);
+        Assert.Equal(t.AddMinutes(4).ToUnixTimeMilliseconds(), roll.EndMs);
+        var blip = Assert.Single(PlanDeploys.Blips(rolls, buckets));
+        Assert.StartsWith("CPU reached 74 % in the roll at Oct 18 20:40 UTC, a blip", blip, StringComparison.Ordinal);
+        Assert.Equal("kept since Oct 18 20:35 UTC", PlanDeploys.KeptSince(buckets, t.AddDays(-1), TimeSpan.FromMinutes(30)));
+    }
 }

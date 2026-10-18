@@ -16,7 +16,7 @@ public sealed record AcrHoldings(IReadOnlyList<(string Name, int Tags)> Reposito
 /// <summary>Reads a registry's repositories, tags and untagged manifests.</summary>
 public static class AcrCatalog
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
+    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>
     /// The registry's holdings. The identity's Resource Manager token is exchanged at the registry

@@ -64,6 +64,9 @@ public static class PlanView
                 .Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), "event", $"{e.Title} on {e.Resource}{(e.Planned ? "" : ", by Azure")}")))
             .OrderBy(mark => mark.AtMs)
             .ToList();
+        var allEvents = hours.SelectMany(h => h.Events).GroupBy(e => (e.At, e.Title, e.Resource)).Select(g => g.First()).ToList();
+        var rolls = PlanDeploys.Rolls(allEvents, buckets);
+        string? keptSince = PlanDeploys.KeptSince(buckets, now - length, TimeSpan.FromTicks(length.Ticks / 60));
         var chart = new CloudChart(
             $"CPU and memory, {CloudTones.WindowWords(window)}",
             [
@@ -72,8 +75,11 @@ public static class PlanView
             ],
             marks,
             PlanThresholds.Cpu.Red,
-            "teal CPU · green memory · gold deploys · red Azure restart · dashed 80 %",
-            (now - length).ToUnixTimeMilliseconds());
+            "teal CPU · green memory · gold deploys, shaded while the roll runs · red Azure restart · dashed 80 %" + (keptSince is null ? "" : $" · {keptSince}"),
+            (now - length).ToUnixTimeMilliseconds())
+        {
+            Bands = rolls,
+        };
 
         return new CloudReport(
             window,

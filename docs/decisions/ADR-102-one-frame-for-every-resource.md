@@ -107,3 +107,12 @@ The edge card reads Netlify's deploy log, and on the first day it read as a colu
 ## Addendum, 2026-10-18: a list is a table, and each resource says what it is
 
 From 1.0.3.176 a row that answers with a list draws it as a table under the answer, through the Admin tab's one table component (ADR-083), and every table names each resource's type. The owner's reading of the plan card was the reason: "4 apps, running" followed by ".NET 10 Azure SQL" on one line read as though the database ran on the plan. It never has; the plan carries four web apps, and the SQL database and the Cosmos DB account are resources of their own with cards of their own. The plan's table says so in a column, Talks to, and the other cards' tables say Cosmos DB container, image repository, web app or SQL database beside each name. A row carries its table as `CloudRow.Table`, empty and never null when it has none.
+
+## Addendum, 2026-10-18: the readers are tested, and a good deploy is green
+
+From 1.0.3.173 to 1.0.3.176 every push to main deployed green and ran CI red, and GitHub mailed the owner a failed run on each one. No test failed. The coverage step failed: 86.8 per cent of lines against its floor of 90 and 66.7 per cent of branches against 75, because the new readers behind these cards talk to Azure Resource Manager, Azure Monitor, Log Analytics, the registry and Netlify, and the CI runner has no credential to reach any of them. The floor stays where it is. Lowering it would hide the same gap in every other project.
+
+What changed instead. Seven readers each held a static `HttpClient` of their own, which is seven connection pools for the same few hosts. From 1.0.3.177 they share one, `OutboundHttp`: one `SocketsHttpHandler` that retires each connection after two minutes, so a changed DNS answer is picked up, and a cheap client per call that carries the caller's timeout. The same file is the suite's seam. A test routes its own flow's calls to recorded answers, which `CloudReadersTests` holds in the shapes each service gives. Every reader then runs its real request building, parsing and failure paths with no network: a metric Azure refuses at one grain, a Log Analytics query answered 403, and a Netlify token that cannot see the site.
+
+```live path=api/TheYard.Api/OutboundHttp.cs region=outbound-http
+```

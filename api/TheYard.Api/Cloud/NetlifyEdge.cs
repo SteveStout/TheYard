@@ -13,7 +13,7 @@ namespace TheYard.Api;
 /// <summary>Reads the edge's own figures from Netlify's API, and samples its cache once an hour.</summary>
 public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
+    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>What each meter costs in credits on the free plan, as Netlify publishes them.</summary>
     public const double CreditsPerDeploy = 15, CreditsPerGb = 20, FreeCredits = 300;

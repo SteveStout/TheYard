@@ -36,10 +36,12 @@ public static class EdgeCard
         int daysLeft = Retires.DayNumber - DateOnly.FromDateTime(inputs.Now.UtcDateTime).DayNumber;
         string? cert = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cert_expires");
         bool certSoon = DateTimeOffset.TryParse(cert, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expires) && expires - inputs.Now < TimeSpan.FromDays(14);
+        // The date a reader reads, not the timestamp Netlify sends.
+        string expiresOn = cert is not null && DateTimeOffset.TryParse(cert, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var on) ? on.UtcDateTime.ToString("MMM d, yyyy", CultureInfo.InvariantCulture) : "not read";
         var rows = new List<CloudRow>
         {
             new("through", "What goes through it?", inputs.Hours.Count == 0 ? (configured ? "not read yet" : "no token set") : ResourceView.Fact(inputs, "domain"),
-                [new($"certificate for {ResourceView.Fact(inputs, "cert_names")} · expires {ResourceView.Fact(inputs, "cert_expires")} · the page and /api proxied to the two web apps", null)],
+                [new($"certificate for {ResourceView.Fact(inputs, "cert_names")} · expires {expiresOn} · the page and /api proxied to the two web apps", null)],
                 certSoon ? "warning" : "good"),
             new("credits", "Is it costing credits?", credits is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0} this cycle" : configured ? "not read yet" : "no token set",
                 [new($"{ResourceView.Number(ResourceView.Now(inputs, "deploys"))} deploys at {NetlifyEdge.CreditsPerDeploy:0} · {ResourceView.Number(ResourceView.Now(inputs, "bandwidth_gb"), "0.000")} GB at {NetlifyEdge.CreditsPerGb:0} a GB", null),
@@ -65,7 +67,7 @@ public static class EdgeCard
                 new("Cache hits", hit is { } ch ? $"{ch.ToString("0", CultureInfo.InvariantCulture)} %" : "not sampled", CloudTones.Of(missTone)),
                 new("Domain", ResourceView.Fact(inputs, "domain"), "info"),
                 new("Certificate", ResourceView.Fact(inputs, "cert_names"), "info"),
-                new("Expires", ResourceView.Fact(inputs, "cert_expires"), certSoon ? "warning" : "info"),
+                new("Expires", expiresOn, certSoon ? "warning" : "info"),
                 new("Builds", $"{ResourceView.Fact(inputs, "deploys_live", "0")} live · {ResourceView.Fact(inputs, "deploys_skipped", "0")} skipped · {ResourceView.Fact(inputs, "deploys_failed", "0")} failed", ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : "info"),
                 new("Retires", Retires.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), "info"),
                 new("Cost", "not on the Azure bill; Netlify bills in credits", "info"),

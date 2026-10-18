@@ -40,7 +40,7 @@ public static class AdminRegistration
         // The other container's metrics, read server side with a short patience (ADR: Backends, side by side).
         var peer = new PeerReader(
             builder.Configuration["Peer:Url"],
-            new HttpClient { Timeout = PeerReader.Patience + TimeSpan.FromSeconds(1) });
+            OutboundHttp.Client(PeerReader.Patience + TimeSpan.FromSeconds(1)));
         builder.Services.AddSingleton(peer);
         // Once an hour, the certificate the site answers with and how full the relational store
         // is, for the Azure card (HourlyReadings.cs). Only a container with a public https address

@@ -68,7 +68,20 @@ public sealed record CloudSpark(string Name, IReadOnlyList<double?> Values);
 /// <param name="RedLine">Where the dashed red line sits, in percent.</param>
 /// <param name="Legend">The legend in words, under the chart.</param>
 /// <param name="StartMs">Where the chart starts, in milliseconds since the epoch, UTC.</param>
-public sealed record CloudChart(string Title, IReadOnlyList<CloudSeries> Series, IReadOnlyList<CloudMark> Marks, double RedLine, string Legend, long StartMs);
+public sealed record CloudChart(string Title, IReadOnlyList<CloudSeries> Series, IReadOnlyList<CloudMark> Marks, double RedLine, string Legend, long StartMs)
+{
+    /// <summary>
+    /// Spans shaded behind the series: each deploy, from its first configuration write to the
+    /// new container answering, so a spike inside one reads as the roll it was. Empty, never null.
+    /// </summary>
+    public IReadOnlyList<CloudBand> Bands { get; init; } = [];
+}
+
+/// <summary>A span on the chart, shaded behind the series.</summary>
+/// <param name="StartMs">Where it starts, in milliseconds since the epoch, UTC.</param>
+/// <param name="EndMs">Where it ends.</param>
+/// <param name="Title">What it was: the word Deploy, the version, and "a new container beside the old, then the swap".</param>
+public sealed record CloudBand(long StartMs, long EndMs, string Title);
 
 /// <summary>One series of the chart.</summary>
 /// <param name="Name">What it is.</param>

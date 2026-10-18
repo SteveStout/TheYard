@@ -119,7 +119,7 @@ public sealed class ErrorRingBuffer(int capacity)
 /// </summary>
 public sealed class AzureSelf(string clientId, string resourceId)
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(4) };
+    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(4));
 
     private static string Trim(string text, int max) =>
         text.Length <= max ? text : text[..max].TrimEnd() + "...";

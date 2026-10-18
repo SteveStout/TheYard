@@ -48,7 +48,7 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
     /// seconds: a first read on a site still busy loading the catalogue can take longer than
     /// twenty seconds, and a shorter limit cancels it (ADR: What Azure charges, addendum).
     /// </summary>
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
+    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(60));
 
     /// <summary>What the card says on a run that is not on Azure.</summary>
     public const string NotConfigured = "the cost reader runs only on Azure, where the site has an identity to ask with; a local run reads nothing";

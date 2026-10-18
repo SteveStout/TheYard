@@ -101,6 +101,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The resume at /resume is the locked resume, byte for byte, inline under his name and the lock's date, and the door in its link is recorded as one allowed word, never the query | ADR: The resume has an address | ResumeAddressTests |
 | The App Service plan is read a minute by the SQL site alone and kept thirty-one days, every window is drawn from the kept copy, and CPU, memory, the HTTP queue and sockets turn amber and red only when fifteen minutes in a row hold the line | ADR: The App Service plan, read every minute | PlanThresholdTests, PlanViewTests |
 | Every resource under Cloud infrastructure is a definition drawn in the one frame, found in the resource group rather than typed, linked to the blade Azure returned, and turns amber and red at the lines its card names; a key the catalogue does not name is a 404 | ADR: One frame for every resource | CloudThresholdTests, CloudViewTests |
+| Every reader behind the plan card and the six resource cards runs against Azure's and Netlify's recorded answers through the one outbound pool: what it asks for, what it makes of the answer, and a refused metric, a refused query or an unseen site read as less and never as a failed card | ADR: One frame for every resource | CloudReadersTests |
 
 ## How the table is read
 

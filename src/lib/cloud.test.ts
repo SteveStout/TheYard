@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { angleOf, arcPath, dayMarks, linePath, ticks, toneWord, xOf, yOf } from './cloud';
+import {
+  angleOf,
+  arcPath,
+  dayMarks,
+  linePath,
+  ticks,
+  toneWord,
+  valueLines,
+  xOf,
+  yOf,
+} from './cloud';
 
 describe('the Cloud infrastructure frame', () => {
   it('fills the dial clockwise from twelve o’clock and never closes the ring', () => {
@@ -38,5 +48,12 @@ describe('the Cloud infrastructure frame', () => {
     expect(toneWord('good')).toBe('fine');
     expect(toneWord('info')).toBe('for information');
     expect(toneWord('alarm')).toBe('warning');
+  });
+
+  it('prints a listed readout value one item a line, and keeps a thousands comma whole', () => {
+    expect(
+      valueLines('stevenstout.biz, theyard-cosmos.stevenstout.biz, www.stevenstout.biz')
+    ).toEqual(['stevenstout.biz', 'theyard-cosmos.stevenstout.biz', 'www.stevenstout.biz']);
+    expect(valueLines('2,152')).toEqual(['2,152']);
   });
 });
