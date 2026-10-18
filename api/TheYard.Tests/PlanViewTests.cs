@@ -40,11 +40,14 @@ public class PlanViewTests
         Assert.Equal(("B3", 24.82), PlanView.NextSize("B2"));
         Assert.Equal(("B2", 12.41), PlanView.NextSize("b1"));
         Assert.Null(PlanView.NextSize("B3"));
-        // Azure refuses a whole metrics read that names one metric the resource does not report, so
-        // the names are held to what the Linux plan and its apps list (az monitor metrics
-        // list-definitions, 18 October): AppConnections, a Windows plan's metric, cost the first roll.
+        // Azure refuses a whole metrics read that names one metric the resource does not report, or
+        // one it does not keep at a minute's grain, so the minute's names are held to what the Linux
+        // plan and its apps report at PT1M (az monitor metrics list-definitions and a read at PT1M,
+        // 18 October). AppConnections, a Windows plan's metric, cost the first roll; FileSystemUsage,
+        // kept at six hours, cost the second, and is read apart at its own grain.
         string[] planReports = ["BytesReceived", "BytesSent", "CpuPercentage", "DiskQueueLength", "HttpQueueLength", "MemoryPercentage", "SocketInboundAll", "SocketOutboundAll"];
-        string[] appReports = ["CpuTime", "FileSystemUsage", "Http5xx", "MemoryWorkingSet", "Requests", "BytesReceived", "BytesSent", "HttpResponseTime"];
+        string[] appReports = ["CpuTime", "Http5xx", "MemoryWorkingSet", "Requests", "BytesReceived", "BytesSent", "HttpResponseTime"];
+        Assert.Equal("FileSystemUsage", PlanReader.FileSystem.Name);
         Assert.All(PlanReader.PlanMetrics, metric => Assert.Contains(metric.Name, planReports));
         Assert.All(PlanReader.AppMetrics, metric => Assert.Contains(metric.Name, appReports));
         Assert.Equal("https://portal.azure.com/#@tenant-1/resource" + Plan, report.Resource!.Href);

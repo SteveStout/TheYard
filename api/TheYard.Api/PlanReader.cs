@@ -30,8 +30,15 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     /// <summary>Each app's metrics, with the aggregation each is read with.</summary>
     public static readonly (string Name, string Aggregation)[] AppMetrics =
     [
-        ("CpuTime", "total"), ("MemoryWorkingSet", "average"), ("Requests", "total"), ("Http5xx", "total"), ("FileSystemUsage", "average"),
+        ("CpuTime", "total"), ("MemoryWorkingSet", "average"), ("Requests", "total"), ("Http5xx", "total"),
     ];
+
+    /// <summary>
+    /// The app's storage, which Azure keeps only at six hours: asked apart at that grain and its
+    /// newest value held on every minute, because a request at a minute's grain that names it is
+    /// refused whole.
+    /// </summary>
+    public static readonly (string Name, string Aggregation) FileSystem = ("FileSystemUsage", "average");
 
     /// <summary>True only on Azure, where there is an identity to ask with and a site to start from.</summary>
     public bool Configured => configured && !string.IsNullOrWhiteSpace(selfResourceId);
@@ -52,9 +59,11 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
         var (planId, apps) = await LayoutAsync(token, cancellation);
         var plan = await MetricsAsync(token, planId, PlanMetrics, from, to, cancellation);
         var perApp = new List<(string Name, Dictionary<string, Dictionary<DateTimeOffset, double>> Series)>();
+        var storage = new Dictionary<string, double?>(StringComparer.Ordinal);
         foreach (string app in apps)
         {
             perApp.Add((NameOf(app), await MetricsAsync(token, app, AppMetrics, from, to, cancellation)));
+            storage[NameOf(app)] = await StorageAsync(token, app, to, cancellation);
         }
 
         var minutes = plan.Values.SelectMany(series => series.Keys).Distinct().Order().ToList();
@@ -76,7 +85,7 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
                     Value(app.Series, "Http5xx", at),
                     // AppConnections is a Windows plan's metric; Azure refuses the whole read on a Linux plan.
                     null,
-                    Value(app.Series, "FileSystemUsage", at) is { } used ? Math.Round(used / 1024 / 1024, 1) : null)).ToList()))
+                    storage.GetValueOrDefault(app.Name) is { } used ? Math.Round(used / 1024 / 1024, 1) : null)).ToList()))
             .ToList();
     }
 
@@ -147,6 +156,24 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
         string span = $"{from.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}/{to.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}";
         using var answer = await GetAsync(token, $"{resourceId}/providers/microsoft.insights/metrics?api-version=2023-10-01&metricnames={names}&interval=PT1M&timespan={span}&aggregation={aggregations}", cancellation);
         return PlanShapes.Series(answer.RootElement, metrics);
+    }
+
+    /// <summary>An app's newest storage reading at its six-hour grain, or null when Azure has none or refuses.</summary>
+    private static async Task<double?> StorageAsync(string token, string app, DateTimeOffset to, CancellationToken cancellation)
+    {
+        string span = $"{to.AddHours(-12).UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}/{to.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}";
+        try
+        {
+            using var answer = await GetAsync(token, $"{app}/providers/microsoft.insights/metrics?api-version=2023-10-01&metricnames={FileSystem.Name}&interval=PT6H&timespan={span}&aggregation={FileSystem.Aggregation}", cancellation);
+            return PlanShapes.Series(answer.RootElement, [FileSystem]).TryGetValue(FileSystem.Name, out var points) && points.Count > 0
+                ? points.MaxBy(pair => pair.Key).Value
+                : null;
+        }
+        catch (HttpRequestException)
+        {
+            // Storage is one figure on the card; a refused read of it leaves the minute whole.
+            return null;
+        }
     }
 
     /// <summary>The Activity Log entries for one resource in a span, classified.</summary>

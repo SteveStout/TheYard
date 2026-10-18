@@ -73,7 +73,7 @@ public sealed class PlanRecorder(PlanReader reader, IPlanHistory history, BuildI
             catch (Exception ex)
             {
                 // The type, never the message: an answer from Azure names the resource it refused.
-                logger.LogWarning("A minute of the plan could not be kept ({Exception})", ex.GetType().Name);
+                logger.LogWarning("A minute of the plan could not be kept ({Exception} {Status})", ex.GetType().Name, (ex as HttpRequestException)?.StatusCode);
                 await Task.Delay(TimeSpan.FromMinutes(1), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
             }
         }
