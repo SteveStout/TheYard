@@ -14,7 +14,7 @@ namespace TheYard.Application;
 /// <param name="WorkingSetMb">The app's average memory working set, in megabytes.</param>
 /// <param name="Requests">Requests the app answered in the minute.</param>
 /// <param name="Http5xx">Requests it answered with a 5xx status.</param>
-/// <param name="Connections">Its average open connections.</param>
+/// <param name="Connections">Its average open connections; null on a Linux plan, which does not report them.</param>
 /// <param name="FileSystemMb">The plan storage the app is using, in megabytes.</param>
 public sealed record PlanAppMinute(string Name, double? CpuSeconds, double? WorkingSetMb, double? Requests, double? Http5xx, double? Connections, double? FileSystemMb = null);
 

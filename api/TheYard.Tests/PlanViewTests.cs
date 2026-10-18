@@ -40,6 +40,13 @@ public class PlanViewTests
         Assert.Equal(("B3", 24.82), PlanView.NextSize("B2"));
         Assert.Equal(("B2", 12.41), PlanView.NextSize("b1"));
         Assert.Null(PlanView.NextSize("B3"));
+        // Azure refuses a whole metrics read that names one metric the resource does not report, so
+        // the names are held to what the Linux plan and its apps list (az monitor metrics
+        // list-definitions, 18 October): AppConnections, a Windows plan's metric, cost the first roll.
+        string[] planReports = ["BytesReceived", "BytesSent", "CpuPercentage", "DiskQueueLength", "HttpQueueLength", "MemoryPercentage", "SocketInboundAll", "SocketOutboundAll"];
+        string[] appReports = ["CpuTime", "FileSystemUsage", "Http5xx", "MemoryWorkingSet", "Requests", "BytesReceived", "BytesSent", "HttpResponseTime"];
+        Assert.All(PlanReader.PlanMetrics, metric => Assert.Contains(metric.Name, planReports));
+        Assert.All(PlanReader.AppMetrics, metric => Assert.Contains(metric.Name, appReports));
         Assert.Equal("https://portal.azure.com/#@tenant-1/resource" + Plan, report.Resource!.Href);
         Assert.Equal("23 %", report.Dials[0].Big);
         Assert.Equal("0.23 of 1 vCPU", report.Dials[0].Absolute);

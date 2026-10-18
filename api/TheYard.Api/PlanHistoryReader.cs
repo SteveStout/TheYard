@@ -43,8 +43,16 @@ public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? record
         {
             // Azure Monitor reports a minute a minute or two after it ends, so "older than sixty
             // seconds" is measured from the end of the newest minute, not its start.
-            await recorder.RecordOnceAsync(cancellation);
-            lastHour = await history.NewestAsync(60, cancellation);
+            try
+            {
+                await recorder.RecordOnceAsync(cancellation);
+                lastHour = await history.NewestAsync(60, cancellation);
+            }
+            catch (HttpRequestException)
+            {
+                // Azure refused or failed the read: the card answers from what is kept, and its
+                // live-read line says how old that is. A refused read is never a 500.
+            }
         }
 
         var view = PlanView.Build(

@@ -30,7 +30,7 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     /// <summary>Each app's metrics, with the aggregation each is read with.</summary>
     public static readonly (string Name, string Aggregation)[] AppMetrics =
     [
-        ("CpuTime", "total"), ("MemoryWorkingSet", "average"), ("Requests", "total"), ("Http5xx", "total"), ("AppConnections", "average"), ("FileSystemUsage", "average"),
+        ("CpuTime", "total"), ("MemoryWorkingSet", "average"), ("Requests", "total"), ("Http5xx", "total"), ("FileSystemUsage", "average"),
     ];
 
     /// <summary>True only on Azure, where there is an identity to ask with and a site to start from.</summary>
@@ -74,7 +74,8 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
                     Value(app.Series, "MemoryWorkingSet", at) is { } bytes ? Math.Round(bytes / 1024 / 1024, 1) : null,
                     Value(app.Series, "Requests", at),
                     Value(app.Series, "Http5xx", at),
-                    Value(app.Series, "AppConnections", at),
+                    // AppConnections is a Windows plan's metric; Azure refuses the whole read on a Linux plan.
+                    null,
                     Value(app.Series, "FileSystemUsage", at) is { } used ? Math.Round(used / 1024 / 1024, 1) : null)).ToList()))
             .ToList();
     }
