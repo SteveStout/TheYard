@@ -14,7 +14,7 @@ What that is worth: the site stopped holding a second copy of data its databases
 
 Before, each site loaded all hundred thousand vehicles into its own memory, for both databases, and answered every search by walking that list. The databases held the 200 starting vehicles. After, the databases hold all hundred thousand and answer the search themselves, and the site asks for one page and keeps nothing but a five-second cache (ADR: The store does the work).
 
-Measured before the change, on 1.0.3.176: the plan at 82 per cent of its 3.5 GB, each .NET site about 750 MB of working set and 420 to 460 MB of heap, each holding two hundred thousand vehicles. After, on 1.0.3.179 ten minutes after both fills had finished: the plan at 68 per cent, each .NET site about 360 to 380 MB of working set and 80 to 110 MB of heap under a 986 MB limit, holding no vehicles. The whole table, with the listing times on each store, is in ADR: The store does the work, the addendum of 19 October.
+Measured before the change, on 1.0.3.176: the plan at 82 per cent of its 3.5 GB, each .NET site about 750 MB of working set and 420 to 460 MB of heap, each holding two hundred thousand vehicles. After, on 1.0.3.179 at 04:43 UTC on 19 October, ten minutes after both fills had finished: the plan at 68 per cent, each .NET site about 360 to 380 MB of working set and 80 to 110 MB of heap under a 986 MB limit, holding no vehicles. The plan did not stay there: it read 73 per cent at 11:30 UTC the same morning, with each .NET site at 366 to 396 MB, and the settled reading a day after 1.0.3.181 rolled is in the same record. The whole table, with the listing times on each store, is in ADR: The store does the work, the addenda of 19 October.
 
 ## The eight rules
 

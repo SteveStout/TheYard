@@ -11,6 +11,9 @@ public sealed partial class YardDbContext
     /// <summary>All hundred thousand vehicles with their slot, read a page at a time.</summary>
     public DbSet<CatalogueRow> Catalogue => Set<CatalogueRow>();
 
+    /// <summary>Every word of every vehicle's searchable text, one row each, what a typed word is sought in.</summary>
+    public DbSet<CatalogueWordRow> CatalogueWords => Set<CatalogueWordRow>();
+
     // #region catalogue-model
     /// <summary>
     /// The catalogue at the seed table's widths, keyed by id, unique on its place, one index
@@ -77,4 +80,17 @@ public sealed partial class YardDbContext
             }
         });
     // #endregion catalogue-model
+
+    /// <summary>
+    /// The words, keyed by the place and the word so the fill's check for a vehicle's words is a
+    /// seek, and indexed by the word so a typed word is a range that hands back places.
+    /// </summary>
+    private static void ConfigureCatalogueWords(ModelBuilder model) =>
+        model.Entity<CatalogueWordRow>(row =>
+        {
+            row.ToTable("CatalogueWords");
+            row.HasKey(r => new { r.Seq, r.Word });
+            row.HasIndex(r => new { r.Word, r.Seq }).HasDatabaseName("IX_CatalogueWords_Word");
+            row.Property(r => r.Word).HasMaxLength(TheYard.Infrastructure.CatalogueWords.WordLength);
+        });
 }

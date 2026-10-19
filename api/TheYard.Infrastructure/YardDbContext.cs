@@ -285,6 +285,7 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
 
         ConfigureStandings(model);
         ConfigureCatalogue(model, sqlServer);
+        ConfigureCatalogueWords(model);
     }
     // #endregion model
 }

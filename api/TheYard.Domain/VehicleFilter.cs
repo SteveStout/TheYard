@@ -90,7 +90,8 @@ public sealed record VehicleFilter
 
     // #region query
     /// <summary>
-    /// Every token must appear somewhere in the vehicle's searchable text. The
+    /// Every token must be held by the vehicle's searchable text, as the start of a word or, under
+    /// three characters, anywhere (VehicleSearchIndex.Holds). The
     /// text splits in two: the part that never changes, which the index holds,
     /// and the auction status, which the clock decides. A token that the
     /// static part already satisfies never triggers the status computation, so
@@ -112,12 +113,12 @@ public sealed record VehicleFilter
         string? status = null;
         foreach (string token in tokens)
         {
-            if (text.Contains(token, StringComparison.Ordinal))
+            if (VehicleSearchIndex.Holds(text, token))
             {
                 continue;
             }
             status ??= AuctionSchedule.StatusFor(vehicle.Id, clock).ToString().ToLowerInvariant();
-            if (!status.Contains(token, StringComparison.Ordinal))
+            if (!VehicleSearchIndex.Holds(status, token))
             {
                 return false;
             }

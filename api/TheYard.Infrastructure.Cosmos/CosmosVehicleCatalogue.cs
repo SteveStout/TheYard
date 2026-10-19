@@ -1,10 +1,11 @@
 // The catalogue port over the catalogue container: a filter and an order written as one Cosmos DB
-// SQL query each, over indexed paths only, paged by the store with OFFSET and LIMIT. Its own file
+// SQL query each, over indexed paths only, a page deep in an order read from a kept place. Its own file
 // because this is one of the two query implementations ADR: The store does the work fences, and
 // the other is its EF Core twin.
 using System.Text;
 using Microsoft.Azure.Cosmos;
 using TheYard.Application;
+using TheYard.Domain;
 
 namespace TheYard.Infrastructure.Cosmos;
 
@@ -19,7 +20,7 @@ namespace TheYard.Infrastructure.Cosmos;
 /// </summary>
 /// <param name="store">The document store.</param>
 /// <param name="target">How many vehicles the catalogue is.</param>
-public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVehicleCatalogue
+public sealed partial class CosmosVehicleCatalogue(CosmosStore store, int target) : IVehicleCatalogue
 {
     private const string Written = "c.seq < @target AND c.price >= 0";
 
@@ -60,8 +61,8 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
     // #region cosmos-catalogue-query
     /// <summary>
     /// The filter as a WHERE clause on indexed paths: the store's own spellings compared with
-    /// equality, the segment as a comparison of the slot with now, every typed word as CONTAINS on
-    /// the searchable text or a status word that names the segment, and the moved ids left out
+    /// equality, the segment as a comparison of the slot with now, every typed word as the start of
+    /// a word of the searchable text or a status word that names the segment, and the moved ids left out
     /// with one array parameter.
     /// </summary>
     private static (string Where, List<(string Name, object Value)> Parameters, string? Partition) Where(CatalogueFilter filter, int target)
@@ -99,10 +100,19 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
         for (int i = 0; i < filter.Tokens.Count; i++)
         {
             var token = filter.Tokens[i];
-            var either = new List<string> { $"CONTAINS(c.search, @t{i})" };
+            // The one word rule (VehicleSearchIndex.Holds): three characters or more start a word,
+            // which is the text's start or just after a space; a shorter token is anywhere.
+            bool word = token.Text.Length >= VehicleSearchIndex.WordLength;
+            var either = word
+                ? new List<string> { $"STARTSWITH(c.search, @t{i})", $"CONTAINS(c.search, @s{i})" }
+                : new List<string> { $"CONTAINS(c.search, @t{i})" };
             either.AddRange(token.AlsoMatches.Select(Segment).OfType<string>());
             where.Append($" AND ({string.Join(" OR ", either)})");
             parameters.Add(($"@t{i}", token.Text));
+            if (word)
+            {
+                parameters.Add(($"@s{i}", " " + token.Text));
+            }
         }
         if (filter.Exclude.Count > 0)
         {
@@ -165,12 +175,20 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
             await Count(CatalogueSegment.Ended));
     }
 
-    /// <summary>One page: the ORDER BY, then OFFSET and LIMIT in the store, so it reads only as far as the page. The two numbers are integers this code computed, written into the text.</summary>
+    /// <summary>
+    /// One page: from the kept places when the page is deep in an order they serve
+    /// (CosmosVehicleCatalogue.Keyset.cs), otherwise the ORDER BY, then OFFSET and LIMIT in the
+    /// store. The numbers written into the text are integers this code computed.
+    /// </summary>
     public async Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
     {
         if (take <= 0)
         {
             return [];
+        }
+        if (await KeysetPageAsync(filter, order, skip, take) is { } kept)
+        {
+            return kept;
         }
         var (where, parameters, partition) = Where(filter, target);
         var documents = await store.QueryAsync<CatalogueDocument>(

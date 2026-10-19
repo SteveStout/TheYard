@@ -116,4 +116,29 @@ public class VehicleSearchIndexTests
         Assert.DoesNotContain("live", text);
         Assert.DoesNotContain("upcoming", text);
     }
+
+    // #region words
+    /// <summary>
+    /// A token of three characters or more is the start of a word, which is what a word index can
+    /// seek; a shorter one is looked for anywhere, as every token was before 1.0.3.183 (ADR: The
+    /// store does the work, the addendum of 19 October).
+    /// </summary>
+    [Theory]
+    [InlineData("2023 ford bronco big bend suv clean ontario toronto", "hon", false)]
+    [InlineData("2019 honda civic ex sedan clean ontario toronto", "hon", true)]
+    [InlineData("2019 honda civic ex sedan clean ontario toronto", "onda", false)]
+    [InlineData("2019 honda civic ex sedan clean ontario toronto", "on", true)]
+    [InlineData("2019 honda civic ex sedan clean ontario toronto", "2019", true)]
+    [InlineData("2019 honda civic ex sedan clean ontario toronto", "019", false)]
+    [InlineData("2019 honda civic ex sedan clean ontario toronto", "toronto", true)]
+    [InlineData("upcoming", "up", true)]
+    [InlineData("upcoming", "com", false)]
+    [InlineData("live", "liv", true)]
+    public void A_word_is_the_start_of_a_word_and_a_shorter_token_is_anywhere(string text, string token, bool held) =>
+        Assert.Equal(held, VehicleSearchIndex.Holds(text, token));
+
+    [Fact]
+    public void A_texts_words_are_each_word_once_in_the_order_they_first_appear() =>
+        Assert.Equal(["2019", "honda", "civic", "sedan", "toronto"], VehicleSearchIndex.WordsOf("2019 honda civic sedan honda toronto"));
+    // #endregion words
 }

@@ -84,9 +84,13 @@ jobs:
       # the old one and moves traffic when it answers.
       - name: Roll
         run: |
+          # Resource Manager sometimes answers a write with a gateway error (BadGatewayConnection on
+          # 1.0.3.182's roll of the SQL site); each write is tried three times, a minute apart, before
+          # the roll is red, and the same write twice is the same setting (ADR: The deploy pipeline).
+          arm() { for try in 1 2 3; do "$@" && return 0; echo "::warning::Resource Manager refused $1 $2 $3 $4, try $try of 3"; [ "$try" = 3 ] || sleep 60; done; return 1; }
           set -eu
-          az webapp config appsettings set -g "$RG" -n "$APP" --settings "SHED_COMMIT=$APP_COMMIT" -o none
-          az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
+          arm az webapp config appsettings set -g "$RG" -n "$APP" --settings "SHED_COMMIT=$APP_COMMIT" -o none
+          arm az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
           az webapp show -g "$RG" -n "$APP" --query "{state:state, image:siteConfig.linuxFxVersion, host:defaultHostName}" -o json
 
       - name: Verify

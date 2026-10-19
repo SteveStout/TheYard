@@ -16,7 +16,8 @@ namespace TheYard.Infrastructure;
 /// <param name="contexts">A context per operation.</param>
 /// <param name="target">How many vehicles the catalogue is.</param>
 /// <param name="local">True for a SQLite file this process owns, which is filled at warm-up whatever its size.</param>
-public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts, int target, bool local) : IVehicleCatalogue
+/// <param name="fillsWords">True for the site that fills this store's catalogue, which also fills the words of rows stored before the words table existed.</param>
+public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts, int target, bool local, bool fillsWords = false) : IVehicleCatalogue
 {
     /// <inheritdoc />
     public int Target => target;
@@ -42,6 +43,7 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
         await using var db = await contexts.CreateDbContextAsync();
         int filled = await db.Catalogue.CountAsync(row => row.Seq < target);
         _beyond = await db.Catalogue.AnyAsync(row => row.Seq >= target);
+        await CheckWordsAsync(db, filled, now: true);
         return filled;
     }
 
@@ -52,6 +54,8 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
         {
             return;
         }
+        // A word check after a fill looks again at once, so the words written with these rows are read.
+        Interlocked.Exchange(ref _wordsCheckedTicks, 0);
         if (local)
         {
             await FillFileAsync(batch);
@@ -65,15 +69,18 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
             .Where(row => row.Seq >= low && row.Seq <= high)
             .Select(row => row.Seq)
             .ToListAsync()).ToHashSet();
-        db.Catalogue.AddRange(batch.Where(entry => !held.Contains(entry.Seq)).Select(entry => entry.ToCatalogueRow()));
+        var rows = batch.Where(entry => !held.Contains(entry.Seq)).Select(entry => entry.ToCatalogueRow()).ToList();
+        db.Catalogue.AddRange(rows);
+        // Each row's words in the same save, so a row is never stored without them.
+        db.CatalogueWords.AddRange(rows.SelectMany(row => CatalogueWords.For(row.Seq, row.SearchText)));
         await db.SaveChangesAsync();
     }
 
     // #region ef-catalogue-query
     /// <summary>
     /// The filter as a WHERE clause: the store's own spellings compared with equality, the
-    /// segment as a comparison of the slot with now, every typed word as a substring of the
-    /// searchable text or a status word that names the row's segment, and the ids somebody's
+    /// segment as a comparison of the slot with now, every typed word as a range on the words
+    /// table (EfVehicleCatalogue.Words.cs) or a status word that names the row's segment, and the ids somebody's
     /// bid moved left out as one JSON parameter, however many there are.
     /// </summary>
     private IQueryable<CatalogueRow> Query(YardDbContext db, CatalogueFilter filter)
@@ -132,10 +139,7 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
             bool live = token.AlsoMatches.Contains(CatalogueSegment.Live);
             bool upcoming = token.AlsoMatches.Contains(CatalogueSegment.Upcoming);
             bool ended = token.AlsoMatches.Contains(CatalogueSegment.Ended);
-            rows = rows.Where(row => row.SearchText.Contains(text)
-                || (live && row.StartOffsetMs <= d && row.EndOffsetMs > d)
-                || (upcoming && row.StartOffsetMs > d)
-                || (ended && row.EndOffsetMs <= d));
+            rows = Holding(db, rows, text, live, upcoming, ended, d);
         }
         if (filter.Exclude.Count > 0)
         {
@@ -168,6 +172,7 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
     public async Task<SegmentCounts> CountAsync(CatalogueFilter filter)
     {
         await using var db = await contexts.CreateDbContextAsync();
+        await WordsBeforeQueryAsync(db, filter);
         long d = filter.SinceAnchorMs;
         var counts = await Query(db, filter.In(CatalogueSegment.Any))
             .GroupBy(_ => 1)
@@ -199,6 +204,7 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
             return [];
         }
         await using var db = await contexts.CreateDbContextAsync();
+        await WordsBeforeQueryAsync(db, filter);
         bool word = local && filter.Tokens.Count > 0;
         if (!word && skip < DeepSkip)
         {

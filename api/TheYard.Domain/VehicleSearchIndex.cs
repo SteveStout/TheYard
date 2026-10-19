@@ -40,6 +40,31 @@ public sealed class VehicleSearchIndex
         .ToLowerInvariant();
     // #endregion text
 
+    // #region words
+    /// <summary>
+    /// The shortest typed word looked for as the start of a word. "hon" finds Honda; a shorter
+    /// token, "4x" or "ex", is looked for anywhere in the text.
+    /// The stores answer a word from a table of words, one row per word of the text, which an
+    /// index can seek; a token shorter than this is a scan on either store (ADR: The store does
+    /// the work, the addendum of 19 October).
+    /// </summary>
+    public const int WordLength = 3;
+
+    /// <summary>The distinct words of a searchable text, in the order they first appear.</summary>
+    public static IReadOnlyList<string> WordsOf(string text) =>
+        [.. text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal)];
+
+    /// <summary>
+    /// Whether the text holds the token: a token of <see cref="WordLength"/> or more as the start of
+    /// one of its words, a shorter one anywhere. The text is single-spaced, so a word starts at the
+    /// text's start or after a space. Every store and the in-memory filters ask this one question.
+    /// </summary>
+    public static bool Holds(string text, string token) =>
+        token.Length < WordLength
+            ? text.Contains(token, StringComparison.Ordinal)
+            : text.StartsWith(token, StringComparison.Ordinal) || text.Contains(" " + token, StringComparison.Ordinal);
+    // #endregion words
+
     // #region lookup
     /// <summary>
     /// The indexed text for a vehicle, or a freshly computed one when the

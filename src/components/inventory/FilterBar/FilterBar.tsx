@@ -86,6 +86,7 @@ export function FilterBar({
             className={styles.searchInput}
             placeholder="Search make, model, province…"
             aria-label="Search vehicles"
+            title="A word of three letters or more matches the start of a word, so hon finds Honda; one or two letters match anywhere"
             value={filters.query}
             onChange={(e) => onFiltersChange({ query: e.target.value })}
           />

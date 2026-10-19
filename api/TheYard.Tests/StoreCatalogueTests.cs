@@ -6,6 +6,7 @@ using TheYard.Application;
 using TheYard.Data;
 using TheYard.Domain;
 using TheYard.Infrastructure;
+using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
 
@@ -114,6 +115,7 @@ public sealed class StoreCatalogueTests
             string make = facets.Makes[1];
             string province = facets.Provinces[0];
             string moved = vehicles[7].Id;
+            string longMake = vehicles.First(v => v.Make.Length >= 5).Make.ToLowerInvariant();
             var filters = new List<CatalogueFilter>
             {
                 new(),
@@ -123,6 +125,11 @@ public sealed class StoreCatalogueTests
                 new() { Tokens = [new CatalogueToken(vehicles[3].Model.ToLowerInvariant(), [])] },
                 new() { Tokens = [new CatalogueToken("live", [CatalogueSegment.Live])] },
                 new() { Tokens = [new CatalogueToken("e", [CatalogueSegment.Upcoming, CatalogueSegment.Ended]), new CatalogueToken("20", [])] },
+                // A word of three characters or more is the start of a word, from the words table;
+                // the same three letters inside a word find nothing there and nothing in the list.
+                new() { Tokens = [new CatalogueToken(longMake[..3], [])] },
+                new() { Tokens = [new CatalogueToken(longMake[1..4], [])] },
+                new() { Tokens = [new CatalogueToken(vehicles[5].City.ToLowerInvariant().Split(' ')[0], []), new CatalogueToken(vehicles[5].Year.ToString(System.Globalization.CultureInfo.InvariantCulture), [])] },
                 new() { Segment = CatalogueSegment.Live, BodyStyle = vehicles[0].BodyStyle },
                 new() { Segment = CatalogueSegment.Ended, Exclude = [moved, vehicles[11].Id, "not-in-the-catalogue"] },
                 new() { Segment = CatalogueSegment.Upcoming, TitleStatus = vehicles[0].TitleStatus },
@@ -258,9 +265,10 @@ public sealed class StoreCatalogueTests
                 Assert.True(plan.Contains("COVERING INDEX", StringComparison.Ordinal), $"the deep {order} page reads the table for the rows it skips: {plan}");
             }
 
-            // A typed word is looked for in the words index alone: the page's places are read off it
-            // first, and only the page's own rows come from the table after.
-            var word = new CatalogueToken(vehicles[3].Model.ToLowerInvariant(), []);
+            // A typed word is a range on the words table's word index, which hands back the places;
+            // the page's places are read off them first, and only the page's own rows come from the
+            // table after (ADR: The store does the work, the addendum of 19 October).
+            var word = new CatalogueToken(vehicles.First(v => v.Make.Length >= 5).Make.ToLowerInvariant()[..3], []);
             foreach (var order in Enum.GetValues<CatalogueOrder>())
             {
                 foreach (var segment in new[] { CatalogueSegment.Live, CatalogueSegment.Upcoming, CatalogueSegment.Ended })
@@ -269,7 +277,8 @@ public sealed class StoreCatalogueTests
                     var filter = new CatalogueFilter { SinceAnchorMs = since, Segment = segment, Tokens = [word] };
                     await store.PageAsync(filter, order, 0, 25);
                     string plan = await PlanAsync(file, capture.Taken[0]);
-                    Assert.True(plan.Contains("COVERING INDEX IX_Catalogue_Words", StringComparison.Ordinal), $"the {order} page of {segment} for a word reads more than the words index: {plan}");
+                    Assert.True(plan.Contains("COVERING INDEX IX_CatalogueWords_Word (Word>? AND Word<?)", StringComparison.Ordinal), $"the {order} page of {segment} for a word does not seek the word index: {plan}");
+                    Assert.False(plan.Contains("IX_Catalogue_Words", StringComparison.Ordinal), $"the {order} page of {segment} for a word scans every row's text: {plan}");
                 }
             }
         }
@@ -277,6 +286,27 @@ public sealed class StoreCatalogueTests
         {
             File.Delete(file);
         }
+    }
+
+    /// <summary>
+    /// The document store reads a deep page from kept places only where the places count the
+    /// rows: the whole catalogue in any order, the live segment by end, the upcoming by start and
+    /// the ended by end, each in the order the default listing reads it. Any other filter is a set
+    /// the places do not count, and keeps OFFSET (ADR: The store does the work, the addendum of 19 October).
+    /// </summary>
+    [Fact]
+    public void The_document_store_keeps_places_only_for_the_orders_whose_rows_they_count()
+    {
+        var whole = new CatalogueFilter { SinceAnchorMs = 1 };
+        Assert.True(CosmosVehicleCatalogue.KeysetServes(whole, CatalogueOrder.PriceAscending));
+        Assert.True(CosmosVehicleCatalogue.KeysetServes(whole with { Segment = CatalogueSegment.Live }, CatalogueOrder.EndAscending));
+        Assert.True(CosmosVehicleCatalogue.KeysetServes(whole with { Segment = CatalogueSegment.Upcoming }, CatalogueOrder.StartAscending));
+        Assert.True(CosmosVehicleCatalogue.KeysetServes(whole with { Segment = CatalogueSegment.Ended }, CatalogueOrder.EndDescending));
+        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole, CatalogueOrder.Seq));
+        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole with { Segment = CatalogueSegment.Live }, CatalogueOrder.PriceAscending));
+        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole with { Make = "Ford" }, CatalogueOrder.PriceAscending));
+        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole with { Tokens = [new CatalogueToken("ford", [])] }, CatalogueOrder.PriceAscending));
+        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole with { Exclude = ["a"] }, CatalogueOrder.PriceAscending));
     }
 
     /// <summary>SQLite's plan for one statement, its steps joined, with the statement's own parameters.</summary>

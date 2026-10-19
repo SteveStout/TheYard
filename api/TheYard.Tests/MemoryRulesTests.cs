@@ -97,6 +97,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.MemoryResetLinks._kept"] = "reset links, each expiring in an hour and swept on every mint",
         ["TheYard.Infrastructure.Cosmos.CosmosVehicleCatalogue._makeBySeedId"] = "the seed's two hundred ids and their makes",
         ["TheYard.Infrastructure.Cosmos.CosmosStore._physicalPartitions"] = "one per container, read at startup",
+        ["TheYard.Infrastructure.Cosmos.CosmosVehicleCatalogue._keysets"] = "one per order, seven, each the key of every 250th row: 400 places",
+        ["TheYard.Infrastructure.Cosmos.CosmosVehicleCatalogue._walks"] = "one per order, seven",
     };
 
     private static readonly string[] Projects =

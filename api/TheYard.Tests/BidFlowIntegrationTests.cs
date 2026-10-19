@@ -44,11 +44,24 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
         // And not one anybody has bought: a sold vehicle takes no bid (ADR:
         // Accounts and per-user bids, the addendum on the second buyer), and on
         // the document store the test containers remember yesterday's runs.
-        var target = live.RootElement.GetProperty("vehicles").EnumerateArray()
-            .First(vehicle => !vehicle.GetProperty("sold").GetBoolean());
-        string id = target.GetProperty("id").GetString()!;
-        int min = target.GetProperty("min_next_bid").GetInt32();
-        int bidCount = target.GetProperty("bid_count").GetInt32();
+        // The figures from the vehicle's own read, never the listing's: the listing is a cached page,
+        // and on the document store every test class shares the test containers, so another class's
+        // bid or purchase on the same vehicle can land after the page was cached (the gate of
+        // 1.0.3.183 on Cosmos DB was refused a bid at the cached figures this way).
+        string id = "";
+        int min = 0, bidCount = 0;
+        foreach (var candidate in live.RootElement.GetProperty("vehicles").EnumerateArray().Where(vehicle => !vehicle.GetProperty("sold").GetBoolean()))
+        {
+            id = candidate.GetProperty("id").GetString()!;
+            using var fresh = await GetAsync($"/api/vehicles/{id}");
+            if (fresh.RootElement.GetProperty("sold").GetBoolean())
+            {
+                continue;
+            }
+            min = fresh.RootElement.GetProperty("min_next_bid").GetInt32();
+            bidCount = fresh.RootElement.GetProperty("bid_count").GetInt32();
+            break;
+        }
 
         // Place a bid at the minimum.
         var placed = await _client.PostAsJsonAsync($"/api/vehicles/{id}/bids",

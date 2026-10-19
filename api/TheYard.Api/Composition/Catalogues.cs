@@ -26,7 +26,7 @@ internal static class Catalogues
     /// <summary>The relational store's catalogue, over the Catalogue table, filled whole at warm-up on a local SQLite file.</summary>
     public static InventoryService Sql(ContextFactory contexts, YardConnection yard, int targetCount, CatalogueUpkeep upkeep) =>
         new(
-            new EfVehicleCatalogue(contexts, targetCount, local: yard.Provider == YardProvider.Sqlite),
+            new EfVehicleCatalogue(contexts, targetCount, local: yard.Provider == YardProvider.Sqlite, fillsWords: upkeep == CatalogueUpkeep.Fill),
             new SyntheticVehicleSource(new EfVehicleSource(contexts), targetCount),
             new EfPhotoManifestSource(contexts),
             upkeep);

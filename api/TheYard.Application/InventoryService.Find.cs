@@ -57,7 +57,7 @@ public sealed partial class InventoryService
     ];
 
     private static CatalogueSegment[] StatusWordsHolding(string word) =>
-        [.. StatusWords.Where(status => status.Word.Contains(word, StringComparison.Ordinal)).Select(status => status.Segment)];
+        [.. StatusWords.Where(status => VehicleSearchIndex.Holds(status.Word, word)).Select(status => status.Segment)];
 
     private static bool TryCanon(string? wanted, IReadOnlyList<string> known, out string? canon)
     {

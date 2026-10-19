@@ -3,6 +3,7 @@
 // (ADR: The store does the work).
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application;
+using TheYard.Domain;
 
 namespace TheYard.Infrastructure;
 
@@ -20,7 +21,7 @@ public sealed partial class EfVehicleCatalogue
     ];
 
     /// <summary>
-    /// A SQLite file's fill: one transaction and one prepared INSERT OR IGNORE run once a row,
+    /// A SQLite file's fill: one transaction and one prepared INSERT OR IGNORE run once a row, each row's words beside it,
     /// which writes a hundred thousand rows in seconds where change tracking takes minutes. Only
     /// for a file this process owns; Azure SQL Database is filled through the model, at its pace.
     /// </summary>
@@ -58,6 +59,8 @@ public sealed partial class EfVehicleCatalogue
             }
             await command.ExecuteNonQueryAsync();
         }
+        // Each row's words in the same transaction, so a row is never stored without them.
+        await WriteWordsAsync(connection, transaction, batch.SelectMany(entry => CatalogueWords.For(entry.Seq, VehicleSearchIndex.TextFor(entry.Vehicle))));
         await transaction.CommitAsync();
     }
 

@@ -179,7 +179,7 @@ public sealed record CatalogueFilter
         }
         foreach (var token in Tokens)
         {
-            if (!searchText.Contains(token.Text, StringComparison.Ordinal) && !token.AlsoMatches.Contains(segment))
+            if (!VehicleSearchIndex.Holds(searchText, token.Text) && !token.AlsoMatches.Contains(segment))
             {
                 return false;
             }

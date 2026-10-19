@@ -407,28 +407,45 @@ namespace TheYard.Migrations.Sqlite
                     b.HasIndex("Seq")
                         .IsUnique();
 
+                    b.HasIndex("EndOffsetMs", "Seq", "StartOffsetMs");
+
+                    b.HasIndex("StartOffsetMs", "Seq", "EndOffsetMs");
+
                     b.HasIndex("BidCount", "Seq", "StartOffsetMs", "EndOffsetMs")
                         .IsDescending(true, false, false, false);
 
                     b.HasIndex("ConditionGrade", "Seq", "StartOffsetMs", "EndOffsetMs")
                         .IsDescending(true, false, false, false);
 
-                    b.HasIndex("EndOffsetMs", "Seq", "StartOffsetMs");
-
                     b.HasIndex("Price", "Seq", "StartOffsetMs", "EndOffsetMs");
-
-                    b.HasIndex(new[] { "Price", "Seq", "StartOffsetMs", "EndOffsetMs" }, "IX_Catalogue_PriceDescending")
-                        .IsDescending(true, false, false, false);
-
-                    b.HasIndex("StartOffsetMs", "Seq", "EndOffsetMs");
-
-                    b.HasIndex("Province", "TitleStatus", "BodyStyle", "Make", "ConditionGrade", "Price", "StartOffsetMs", "EndOffsetMs")
-                        .HasDatabaseName("IX_Catalogue_Counts");
 
                     b.HasIndex("SearchText", "StartOffsetMs", "EndOffsetMs", "Price", "ConditionGrade", "BidCount", "Seq")
                         .HasDatabaseName("IX_Catalogue_Words");
 
+                    b.HasIndex("Province", "TitleStatus", "BodyStyle", "Make", "ConditionGrade", "Price", "StartOffsetMs", "EndOffsetMs")
+                        .HasDatabaseName("IX_Catalogue_Counts");
+
+                    b.HasIndex(new[] { "Price", "Seq", "StartOffsetMs", "EndOffsetMs" }, "IX_Catalogue_PriceDescending")
+                        .IsDescending(true, false, false, false);
+
                     b.ToTable("Catalogue", (string)null);
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.CatalogueWordRow", b =>
+                {
+                    b.Property<int>("Seq")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Word")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Seq", "Word");
+
+                    b.HasIndex("Word", "Seq")
+                        .HasDatabaseName("IX_CatalogueWords_Word");
+
+                    b.ToTable("CatalogueWords", (string)null);
                 });
 
             modelBuilder.Entity("TheYard.Infrastructure.PhotoRow", b =>

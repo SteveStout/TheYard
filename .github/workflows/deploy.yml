@@ -157,6 +157,10 @@ jobs:
           ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
           NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
         run: |
+          # Resource Manager sometimes answers a write with a gateway error (BadGatewayConnection on
+          # 1.0.3.182's roll of the SQL site); each write is tried three times, a minute apart, before
+          # the roll is red, and the same write twice is the same setting (ADR: The deploy pipeline).
+          arm() { for try in 1 2 3; do "$@" && return 0; echo "::warning::Resource Manager refused $1 $2 $3 $4, try $try of 3"; [ "$try" = 3 ] || sleep 60; done; return 1; }
           # The Application Insights connection string is an ingestion key, so it
           # lives only in Azure: read it here with the credential this job already
           # holds and mask it in the log. az resource show is core CLI; az monitor
@@ -219,13 +223,13 @@ jobs:
           PY
           # #endregion secrets
           if [ "$(cat "$RUNNER_TEMP/settings.json")" != "[]" ]; then
-            az webapp config appsettings set -g "$RG" -n "$APP" --settings "@$RUNNER_TEMP/settings.json" -o none
+            arm az webapp config appsettings set -g "$RG" -n "$APP" --settings "@$RUNNER_TEMP/settings.json" -o none
           fi
           rm -f "$RUNNER_TEMP/settings.json"
           # The image is the only thing that changes between rolls. App Service
           # starts the new container beside the old one and moves traffic when
           # the new one answers, so the site serves through its own roll.
-          az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
+          arm az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
           az webapp show -g "$RG" -n "$APP" --query "{state:state, image:siteConfig.linuxFxVersion, host:defaultHostName}" -o json
       # #endregion roll
       # #region verify
