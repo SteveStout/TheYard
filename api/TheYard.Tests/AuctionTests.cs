@@ -33,37 +33,37 @@ public sealed class AuctionTests
 
     // #region overlays
     [Fact]
-    public void A_vehicle_with_no_bids_anywhere_stands_at_the_dataset_price()
+    public async Task A_vehicle_with_no_bids_anywhere_stands_at_the_dataset_price()
     {
         var vehicle = Live("a");
         var (auction, _) = Build(vehicle);
 
-        var found = auction.Find(vehicle.Id)!;
+        var found = (await auction.FindAsync(vehicle.Id))!;
 
         Assert.Equal(22_800, found.Vehicle.CurrentBid);
         Assert.False(found.Sold);
     }
 
     [Fact]
-    public void The_shown_price_is_the_room_when_the_room_is_highest()
+    public async Task The_shown_price_is_the_room_when_the_room_is_highest()
     {
         var vehicle = Live("a");
         var (auction, market) = Build(vehicle);
         market.Tick([vehicle], new Dictionary<string, BidState>(), At(Noon));
 
-        Assert.Equal(23_300, auction.Find(vehicle.Id)!.Vehicle.CurrentBid);
-        Assert.Equal(23_300, auction.Search(new VehicleFilter(), At(Noon), VehicleSort.EndingSoonest, 10, 0).Vehicles.Single().Vehicle.CurrentBid);
+        Assert.Equal(23_300, (await auction.FindAsync(vehicle.Id))!.Vehicle.CurrentBid);
+        Assert.Equal(23_300, (await auction.SearchAsync(new VehicleFilter(), At(Noon), VehicleSort.EndingSoonest, 10, 0)).Vehicles.Single().Vehicle.CurrentBid);
     }
     // #endregion overlays
 
     [Fact]
-    public void A_standing_vehicle_carries_its_status_and_next_bid_so_the_wire_only_copies_them()
+    public async Task A_standing_vehicle_carries_its_status_and_next_bid_so_the_wire_only_copies_them()
     {
         var vehicle = Live("a");
         var (auction, market) = Build(vehicle);
         market.Tick([vehicle], new Dictionary<string, BidState>(), At(Noon));
 
-        var standing = auction.Find(vehicle.Id)!;
+        var standing = (await auction.FindAsync(vehicle.Id))!;
 
         Assert.Equal(AuctionStatus.Live, standing.StatusAt(At(Noon)));
         Assert.Equal(AuctionSchedule.Window(vehicle.Id, At(Noon).AnchorMs), standing.WindowAt(At(Noon)));
@@ -80,8 +80,8 @@ public sealed class AuctionTests
         market.Tick([vehicle], new Dictionary<string, BidState>(), At(Noon));
 
         // 23,300 is the room's standing bid, so the dataset's 22,800 plus one increment is too low.
-        var refused = await auction.PlaceBidAsync(auction.Find(vehicle.Id)!, 23_300, At(Noon.AddSeconds(1)), "buyer");
-        var accepted = await auction.PlaceBidAsync(auction.Find(vehicle.Id)!, 23_800, At(Noon.AddSeconds(2)), "buyer");
+        var refused = await auction.PlaceBidAsync((await auction.FindAsync(vehicle.Id))!, 23_300, At(Noon.AddSeconds(1)), "buyer");
+        var accepted = await auction.PlaceBidAsync((await auction.FindAsync(vehicle.Id))!, 23_800, At(Noon.AddSeconds(2)), "buyer");
 
         Assert.Equal(BidOutcomeKind.Rejected, refused.Kind);
         Assert.Equal(BidOutcomeKind.Accepted, accepted.Kind);
@@ -93,10 +93,10 @@ public sealed class AuctionTests
         var bought = Live("b") with { BuyNowPrice = 40_000 };
         var (auction, _) = Build(bought);
 
-        await auction.BuyNowAsync(auction.Find(bought.Id)!, At(Noon), "buyer");
+        await auction.BuyNowAsync((await auction.FindAsync(bought.Id))!, At(Noon), "buyer");
 
-        Assert.True(auction.Find(bought.Id)!.Sold);
-        Assert.True(auction.Search(new VehicleFilter(), At(Noon), VehicleSort.EndingSoonest, 10, 0).Vehicles.Single().Sold);
+        Assert.True((await auction.FindAsync(bought.Id))!.Sold);
+        Assert.True((await auction.SearchAsync(new VehicleFilter(), At(Noon), VehicleSort.EndingSoonest, 10, 0)).Vehicles.Single().Sold);
     }
 
     [Fact]
@@ -105,11 +105,11 @@ public sealed class AuctionTests
         var contested = Live("a");
         var bought = Live("b") with { BuyNowPrice = 40_000 };
         var (auction, market) = Build(contested, bought);
-        await auction.PlaceBidAsync(auction.Find(contested.Id)!, 23_300, At(Noon), "buyer");
-        await auction.BuyNowAsync(auction.Find(bought.Id)!, At(Noon), "buyer");
+        await auction.PlaceBidAsync((await auction.FindAsync(contested.Id))!, 23_300, At(Noon), "buyer");
+        await auction.BuyNowAsync((await auction.FindAsync(bought.Id))!, At(Noon), "buyer");
 
         // The room answers once the grace period has passed, and never on a vehicle somebody bought.
-        auction.RoomRound(At(Noon.AddSeconds(30)));
+        await auction.RoomRoundAsync(At(Noon.AddSeconds(30)));
         var badges = auction.BidsOf("buyer");
 
         Assert.True(badges[contested.Id].Outbid);
@@ -125,10 +125,10 @@ public sealed class AuctionTests
         var first = Live("a");
         var second = Live("b");
         var (auction, _) = Build(first, second);
-        await auction.PlaceBidAsync(auction.Find(first.Id)!, 23_300, At(Noon), "buyer");
-        await auction.PlaceBidAsync(auction.Find(second.Id)!, 23_300, At(Noon.AddSeconds(5)), "buyer");
+        await auction.PlaceBidAsync((await auction.FindAsync(first.Id))!, 23_300, At(Noon), "buyer");
+        await auction.PlaceBidAsync((await auction.FindAsync(second.Id))!, 23_300, At(Noon.AddSeconds(5)), "buyer");
 
-        var history = auction.HistoryOf("buyer");
+        var history = await auction.HistoryOfAsync("buyer");
 
         Assert.Equal(2, history.Count);
         Assert.Equal([second.Id, first.Id], history.Bids.Select(entry => entry.VehicleId));
@@ -141,10 +141,10 @@ public sealed class AuctionTests
         var mine = Live("a");
         var shared = Live("b");
         var (auction, market) = Build(mine, shared);
-        await auction.PlaceBidAsync(auction.Find(mine.Id)!, 23_300, At(Noon), "me");
-        await auction.PlaceBidAsync(auction.Find(shared.Id)!, 23_300, At(Noon), "me");
-        await auction.PlaceBidAsync(auction.Find(shared.Id)!, 23_800, At(Noon.AddSeconds(1)), "someone else");
-        auction.RoomRound(At(Noon.AddSeconds(30)));
+        await auction.PlaceBidAsync((await auction.FindAsync(mine.Id))!, 23_300, At(Noon), "me");
+        await auction.PlaceBidAsync((await auction.FindAsync(shared.Id))!, 23_300, At(Noon), "me");
+        await auction.PlaceBidAsync((await auction.FindAsync(shared.Id))!, 23_800, At(Noon.AddSeconds(1)), "someone else");
+        await auction.RoomRoundAsync(At(Noon.AddSeconds(30)));
 
         await auction.ResetAsync("me");
 
@@ -154,12 +154,12 @@ public sealed class AuctionTests
     }
 
     [Fact]
-    public void The_room_round_bids_on_live_auctions_even_when_nobody_has_bid()
+    public async Task The_room_round_bids_on_live_auctions_even_when_nobody_has_bid()
     {
         var vehicle = Live("a");
         var (auction, market) = Build(vehicle);
 
-        var raised = auction.RoomRound(At(Noon));
+        var raised = await auction.RoomRoundAsync(At(Noon));
 
         Assert.Equal([vehicle.Id], raised);
         Assert.NotNull(market.For(vehicle.Id));

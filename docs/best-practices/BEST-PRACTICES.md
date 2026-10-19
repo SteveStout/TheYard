@@ -170,3 +170,11 @@ footer displays exactly that.
   measured and what they could not, in
   [Ahead-of-time compilation, explained](https://theyard.stevenstout.biz/?doc=ahead-of-time-compilation),
   and recorded in ADR: Compiled before it ships.
+
+- **The store does the work, and the memory is measured.** The hundred
+  thousand vehicles live in the databases, which filter, order and page
+  every listing; the site holds none of them once its store answers, every
+  cache is bounded, and each .NET site runs under a heap limit. The eight
+  rules, why each one matters and the number each one moved, in
+  [Memory, held by the build](https://theyard.stevenstout.biz/?doc=memory),
+  and recorded in ADR: The store does the work.

@@ -115,4 +115,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '102',
   },
+  adrTheStoreDoesTheWork: {
+    title: 'ADR: The store does the work',
+    menuLabel: 'ADR: The store does the work',
+    url: '/api/docs/adr-the-store-does-the-work',
+    kind: 'adr',
+    number: '103',
+  },
 } as const satisfies Record<string, RecordEntry>;

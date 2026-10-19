@@ -131,6 +131,49 @@ public sealed partial class CosmosStore
         return charge;
     }
 
+    /// <summary>
+    /// Point reads of many documents in one call, each id with its partition, so the store answers
+    /// them as point reads and never as a query that fans out. A document that is not there is
+    /// simply absent from the answer.
+    /// </summary>
+    public async Task<IReadOnlyList<T>> ReadManyAsync<T>(Container container, IReadOnlyList<(string Id, string PartitionKey)> items, string partitionLabel)
+    {
+        if (items.Count == 0)
+        {
+            return [];
+        }
+        var response = await Timed(container, StoreOperationKind.PointRead, $"ReadMany: {items.Count} ReadItem", [], partitionLabel, 1,
+            () => container.ReadManyItemsAsync<T>([.. items.Select(item => (item.Id, new PartitionKey(item.PartitionKey)))]), r => r.Cost());
+        return [.. response];
+    }
+
+    /// <summary>One partition's upserts, at most a hundred at a time, each hundred one atomic batch; the summed charge comes back.</summary>
+    public async Task<double> UpsertBatchAsync<T>(Container container, string partitionKey, IReadOnlyList<T> documents, string partitionLabel)
+    {
+        double charge = 0;
+        for (int start = 0; start < documents.Count; start += 100)
+        {
+            var slice = documents.Skip(start).Take(100).ToList();
+            var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
+            foreach (var document in slice)
+            {
+                batch.UpsertItem(document);
+            }
+            var response = await Timed(container, StoreOperationKind.Batch, $"TransactionalBatch: {slice.Count} UpsertItem", [], partitionLabel, 1,
+                async () =>
+                {
+                    var r = await batch.ExecuteAsync();
+                    if (!r.IsSuccessStatusCode)
+                    {
+                        throw new InvalidOperationException($"the batch was refused with {r.StatusCode}");
+                    }
+                    return r;
+                }, r => r.Cost());
+            charge += response.RequestCharge;
+        }
+        return charge;
+    }
+
     /// <summary>How many documents a container holds, by a count query across every partition. The seed asks this; the probe does not, because a count is a scan.</summary>
     private async Task<int> CountAsync(Container container)
     {

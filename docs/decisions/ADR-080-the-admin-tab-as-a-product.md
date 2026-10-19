@@ -515,5 +515,9 @@ This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are Rea
 ```live path=src/lib/trafficCard.ts region=traffic-words
 ```
 
-```live path=api/TheYard.Application/InventoryService.cs region=page
+```live path=api/TheYard.Application/InventoryService.Search.cs region=page
 ```
+
+## Addendum, 2026-10-18 (1.0.3.178): the page is the store's
+
+The rule from the first amber tile, sort only as far as the page, is now kept by the store: each order is an index ending in the expansion's place, and OFFSET and FETCH stop at the page's last row (ADR: The store does the work).

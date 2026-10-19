@@ -6,7 +6,7 @@ using TheYard.Domain;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The shape of the three seams, held by a test because the shape is the
+/// The shape of the seams, held by a test because the shape is the
 /// decision (ADR: The ports learn to wait).
 /// </summary>
 public class PortsTests
@@ -23,9 +23,12 @@ public class PortsTests
     [InlineData(typeof(IVehicleSource))]
     [InlineData(typeof(IPhotoManifestSource))]
     [InlineData(typeof(IBidStore))]
+    [InlineData(typeof(IVehicleCatalogue))]
     public void Every_port_member_returns_a_task(Type port)
     {
-        var methods = port.GetMethods(BindingFlags.Public | BindingFlags.Instance);
+        // A property is a fact about the adapter fixed when it was built (the catalogue's size and
+        // how it wants to be filled), never a read of the store, so only the methods are held.
+        var methods = port.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(method => !method.IsSpecialName).ToArray();
         Assert.NotEmpty(methods);
         foreach (var method in methods)
         {

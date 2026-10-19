@@ -79,8 +79,25 @@ public sealed class Backend
     public Task<StoreLoad> ReadLoadAsync(int rows, CancellationToken cancellation, ILogger? logger = null) =>
         ResourceStats.ReadAsync(Contexts, Name, rows, cancellation, logger);
 
-    /// <summary>Whether this backend's catalogue is in memory right now, for the Admin tab's memory reading.</summary>
+    /// <summary>Whether this backend's catalogue is warm right now, for the Admin tab's memory reading.</summary>
     public bool CatalogueLoaded => Inventory.IsWarm;
+
+    /// <summary>
+    /// Where this backend's catalogue is answered from and how much of it this process holds, for the
+    /// Machines card, which reads it here so no endpoint names the inventory (ADR: The store does the work).
+    /// </summary>
+    public object CatalogueHeld()
+    {
+        var report = Inventory.Report();
+        return new
+        {
+            mode = report.Mode,
+            held_in_memory = report.HeldInMemory,
+            target = report.Target,
+            filled = report.Filled,
+            note = report.Note,
+        };
+    }
 
     /// <summary>True on the document store, which logs each operation with its request charge.</summary>
     public bool LogsOperations => Cosmos is not null;

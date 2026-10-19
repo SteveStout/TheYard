@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -69,50 +70,80 @@ public static partial class DocImages
             return null;
         }
         string extension = Path.GetExtension(path).ToLowerInvariant();
+        // #region header-only
+        // Only the header is read. Reading the whole file to look at its first bytes put every
+        // photograph of a document, up to 941 KB, on the large object heap on every page that
+        // asked its size (ADR: The store does the work, rule d): a PNG's size is in its first 24
+        // bytes, a JPEG's in a frame marker the walk below seeks to, and an SVG's in its opening
+        // tag, which is in the first 32,768 characters of every drawing here.
+        using var stream = File.OpenRead(path);
         if (extension == ".svg")
         {
-            string head = File.ReadAllText(path);
-            int open = head.IndexOf("<svg", StringComparison.OrdinalIgnoreCase);
-            int close = open < 0 ? -1 : head.IndexOf('>', open);
-            if (close < 0)
+            char[] buffer = ArrayPool<char>.Shared.Rent(SvgHeadChars);
+            try
             {
-                return null;
+                using var reader = new StreamReader(stream);
+                int read = reader.ReadBlock(buffer, 0, SvgHeadChars);
+                return SvgSize(new string(buffer, 0, read));
             }
-            string tag = head[open..close];
-            Match width = SvgWidth().Match(tag);
-            Match height = SvgHeight().Match(tag);
-            if (width.Success && height.Success)
+            finally
             {
-                return (Pixels(width.Groups[1].Value), Pixels(height.Groups[1].Value));
+                ArrayPool<char>.Shared.Return(buffer);
             }
-            Match box = SvgViewBox().Match(tag);
-            return box.Success ? (Pixels(box.Groups[1].Value), Pixels(box.Groups[2].Value)) : null;
         }
-        byte[] bytes = File.ReadAllBytes(path);
-        if (extension == ".png" && bytes.Length >= 24)
+        Span<byte> head = stackalloc byte[24];
+        if (extension == ".png")
         {
-            return ((bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19],
-                (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23]);
+            return stream.ReadAtLeast(head, 24, throwOnEndOfStream: false) < 24
+                ? null
+                : ((head[16] << 24) | (head[17] << 16) | (head[18] << 8) | head[19],
+                    (head[20] << 24) | (head[21] << 16) | (head[22] << 8) | head[23]);
         }
         if (extension is ".jpg" or ".jpeg")
         {
-            int at = 2;
-            while (at + 9 < bytes.Length)
+            Span<byte> marker = head[..9];
+            long at = 2;
+            while (at + 9 < stream.Length)
             {
-                if (bytes[at] != 0xFF)
+                stream.Position = at;
+                stream.ReadExactly(marker);
+                if (marker[0] != 0xFF)
                 {
                     at++;
                     continue;
                 }
-                byte marker = bytes[at + 1];
-                if (marker is >= 0xC0 and <= 0xCF and not 0xC4 and not 0xC8 and not 0xCC)
+                if (marker[1] is >= 0xC0 and <= 0xCF and not 0xC4 and not 0xC8 and not 0xCC)
                 {
-                    return ((bytes[at + 7] << 8) | bytes[at + 8], (bytes[at + 5] << 8) | bytes[at + 6]);
+                    return ((marker[7] << 8) | marker[8], (marker[5] << 8) | marker[6]);
                 }
-                at += 2 + ((bytes[at + 2] << 8) | bytes[at + 3]);
+                at += 2 + ((marker[2] << 8) | marker[3]);
             }
         }
         return null;
+        // #endregion header-only
+    }
+
+    /// <summary>How many characters of a drawing are read to find its opening tag: 64 KB of string, under the large object heap's 85,000 bytes.</summary>
+    private const int SvgHeadChars = 32_768;
+
+    /// <summary>An SVG's width and height, or its view box, from the opening tag in its first characters.</summary>
+    private static (int Width, int Height)? SvgSize(string head)
+    {
+        int open = head.IndexOf("<svg", StringComparison.OrdinalIgnoreCase);
+        int close = open < 0 ? -1 : head.IndexOf('>', open);
+        if (close < 0)
+        {
+            return null;
+        }
+        string tag = head[open..close];
+        Match width = SvgWidth().Match(tag);
+        Match height = SvgHeight().Match(tag);
+        if (width.Success && height.Success)
+        {
+            return (Pixels(width.Groups[1].Value), Pixels(height.Groups[1].Value));
+        }
+        Match box = SvgViewBox().Match(tag);
+        return box.Success ? (Pixels(box.Groups[1].Value), Pixels(box.Groups[2].Value)) : null;
     }
 
     private static int Pixels(string value) =>

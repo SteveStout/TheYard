@@ -32,7 +32,7 @@ public class WarmthTests
         await waiting;
 
         Assert.True(backend.Inventory.IsWarm);
-        Assert.Empty(backend.Inventory.GetAll());
+        Assert.Equal(0, backend.Inventory.Report().HeldInMemory);
     }
 
     [Fact]

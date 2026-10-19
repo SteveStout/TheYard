@@ -105,15 +105,15 @@ public static class BidEndpoints
     private static Ok<IReadOnlyDictionary<string, BidView>> MyBids(CurrentBackend current, HttpContext http) =>
         TypedResults.Ok(BidsOf(current.Auction, http));
 
-    private static Ok<BidHistory> History(CurrentBackend current, HttpContext http) =>
-        TypedResults.Ok(current.Auction.HistoryOf(http.UserId()));
+    private static async Task<Ok<BidHistory>> History(CurrentBackend current, HttpContext http) =>
+        TypedResults.Ok(await current.Auction.HistoryOfAsync(http.UserId()));
 
     // The room's round, and the caller's own badges riding back with it, so a page does not need
     // a second request to find out it has been outbid.
-    private static Ok<TickResult> Tick(CurrentBackend current, HttpContext http)
+    private static async Task<Ok<TickResult>> Tick(CurrentBackend current, HttpContext http)
     {
         var auction = current.Auction;
-        var raised = auction.RoomRound(Clocks.Now());
+        var raised = await auction.RoomRoundAsync(Clocks.Now());
         return TypedResults.Ok(new TickResult(raised.Count, BidsOf(auction, http)));
     }
 
@@ -152,7 +152,7 @@ public static class BidEndpoints
         // #endregion session-per-store
         var auction = current.Auction;
         var clock = Clocks.Now();
-        if (auction.Find(id) is not { } vehicle)
+        if (await auction.FindAsync(id) is not { } vehicle)
         {
             return TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
         }
@@ -170,7 +170,7 @@ public static class BidEndpoints
                 // same account in a second tab can land between the bid and this read.
                 auction.BidsOf(userId).TryGetValue(id, out var view) ? view : null,
                 // Read again after the bid, so the price and the sold flag are the ones it left.
-                VehicleWire.ToWire(auction.Find(id) ?? vehicle, clock)));
+                VehicleWire.ToWire(await auction.FindAsync(id) ?? vehicle, clock)));
     }
     #endregion bid-handling
 }

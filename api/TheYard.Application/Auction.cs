@@ -24,36 +24,49 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     /// <summary>
     /// The overlay a listing applies to every row: everybody's bids, then the room's. Each one only
     /// raises the price (StandingRules.RaisedTo), so the page shows the highest of the dataset, the
-    /// bids and the room, and a competitor who has gone higher is what the buyer sees. Null when
-    /// nobody has bid at all, so a cold listing pays for neither. IsEmpty rather than a snapshot
-    /// count, because a snapshot copies the whole dictionary just to ask whether it is empty.
+    /// bids and the room, and a competitor who has gone higher is what the buyer sees. It names the
+    /// vehicles it moves, because the store holds the dataset's figures and a listing that filters or
+    /// sorts by price has to work those vehicles out from the moved ones (ADR: The store does the
+    /// work). Null when nobody has bid at all, so a cold listing pays for neither. IsEmpty rather
+    /// than a snapshot count, because a snapshot copies the whole dictionary just to ask whether it
+    /// is empty.
     /// </summary>
-    private Func<Vehicle, Vehicle>? Overlay() => (bids.IsEmpty, market.IsEmpty) switch
+    private ListingOverlay? Overlay()
     {
-        (true, true) => null,
-        (false, true) => bids.Apply,
-        (true, false) => market.Apply,
-        _ => AsItStands,
-    };
+        if (bids.IsEmpty && market.IsEmpty)
+        {
+            return null;
+        }
+        var moved = new HashSet<string>(StringComparer.Ordinal);
+        if (!bids.IsEmpty)
+        {
+            moved.UnionWith(bids.Standing().Keys);
+        }
+        if (!market.IsEmpty)
+        {
+            moved.UnionWith(market.Snapshot().Keys);
+        }
+        return new ListingOverlay(moved, AsItStands);
+    }
 
     /// <summary>The vehicle at the price it stands at: the dataset, then everybody's bids, then the room's.</summary>
     private Vehicle AsItStands(Vehicle vehicle) => market.Apply(bids.Apply(vehicle));
     // #endregion overlays
 
     /// <summary>One vehicle by id, standing at its price and with its sold flag, or null when the catalogue has no such id.</summary>
-    public StandingVehicle? Find(string vehicleId) =>
-        inventory.GetById(vehicleId) is { } vehicle ? new StandingVehicle(AsItStands(vehicle), bids.IsSold(vehicleId)) : null;
+    public async Task<StandingVehicle?> FindAsync(string vehicleId) =>
+        await inventory.FindAsync(vehicleId) is { } vehicle ? new StandingVehicle(AsItStands(vehicle), bids.IsSold(vehicleId)) : null;
 
     /// <summary>Whether anybody has bought this vehicle outright, which closes it to everybody.</summary>
     public bool IsSold(string vehicleId) => bids.IsSold(vehicleId);
 
     /// <summary>The values behind the catalogue's filters: every make, body style, province and the rest.</summary>
-    public InventoryFacets Facets() => inventory.Facets();
+    public Task<InventoryFacets> FacetsAsync() => inventory.FacetsAsync();
 
     /// <summary>One page of the catalogue, filtered and sorted, each vehicle at the price it stands at and with its sold flag.</summary>
-    public StandingPage Search(VehicleFilter filter, AuctionClock clock, VehicleSort sort, int limit, int offset)
+    public async Task<StandingPage> SearchAsync(VehicleFilter filter, AuctionClock clock, VehicleSort sort, int limit, int offset)
     {
-        var page = inventory.Search(filter, clock, sort, limit, offset, Overlay());
+        var page = await inventory.SearchAsync(filter, clock, sort, limit, offset, Overlay());
         return new StandingPage(page.Total, [.. page.Vehicles.Select(vehicle => new StandingVehicle(vehicle, bids.IsSold(vehicle.Id)))]);
     }
 
@@ -84,18 +97,16 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     /// handed everybody's standing, not one account's. Its candidates are every vehicle somebody
     /// is bidding on plus the first live auctions in the catalogue, so the grid moves even for a
     /// visitor who has bid on nothing. The first ones rather than a search, because a search
-    /// derives a status for every row and sorts the matches to keep a handful of them.
+    /// counts every match to keep a handful of them; the store answers the first live ones off its
+    /// own order and stops at the fortieth.
     /// </summary>
     /// <returns>The ids the room raised.</returns>
-    public IReadOnlyList<string> RoomRound(AuctionClock clock)
+    public async Task<IReadOnlyList<string>> RoomRoundAsync(AuctionClock clock)
     {
         var standing = bids.StandingAsBids();
-        var contested = standing.Keys
-            .Select(inventory.GetById)
-            .OfType<Vehicle>();
-        var live = inventory.GetAll()
-            .Where(v => AuctionSchedule.StatusFor(v.Id, clock) == AuctionStatus.Live)
-            .Take(RoomRoundLiveCount);
+        var found = (await inventory.FindManyAsync(standing.Keys.ToList())).ToDictionary(v => v.Id, StringComparer.Ordinal);
+        var contested = standing.Keys.Where(found.ContainsKey).Select(id => found[id]);
+        var live = await inventory.FirstLiveAsync(clock, RoomRoundLiveCount);
         var candidates = contested.Concat(live).DistinctBy(v => v.Id).ToList();
         return market.Tick(candidates, standing, clock);
     }
@@ -144,13 +155,16 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     /// One buyer's history for the account page, newest first: each vehicle's title beside the
     /// buyer's standing on it, or "(withdrawn)" when the vehicle has left the catalogue.
     /// </summary>
-    public BidHistory HistoryOf(string userId)
+    public async Task<BidHistory> HistoryOfAsync(string userId)
     {
-        var entries = BidsOf(userId)
+        var mine = BidsOf(userId);
+        var titles = (await inventory.FindManyAsync(mine.Keys.ToList()))
+            .ToDictionary(v => v.Id, v => $"{v.Year} {v.Make} {v.Model}", StringComparer.Ordinal);
+        var entries = mine
             .OrderByDescending(entry => entry.Value.AtMs)
             .Select(entry => new BidHistoryEntry(
                 entry.Key,
-                inventory.GetById(entry.Key) is { } v ? $"{v.Year} {v.Make} {v.Model}" : "(withdrawn)",
+                titles.TryGetValue(entry.Key, out var title) ? title : "(withdrawn)",
                 entry.Value))
             .ToList();
         return new BidHistory(entries.Count, entries);

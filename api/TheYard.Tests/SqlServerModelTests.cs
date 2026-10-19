@@ -70,7 +70,7 @@ public class SqlServerModelTests
     public void Every_text_column_this_application_owns_has_a_length()
     {
         using var db = SqlServer();
-        Type[] mine = [typeof(VehicleRow), typeof(PhotoRow), typeof(BidRow)];
+        Type[] mine = [typeof(VehicleRow), typeof(CatalogueRow), typeof(PhotoRow), typeof(BidRow)];
 
         var unbounded = mine
             .Select(type => db.Model.FindEntityType(type)!)
@@ -199,14 +199,16 @@ public class SqlServerModelTests
     {
         using var db = SqlServer();
 
-        // The catalogue in the Vehicles table is 200 rows, expanded in memory to
-        // 100,000 by SyntheticVehicleSource, and a visitor bids on the expanded
-        // set. A constraint here would reject 99.8 per cent of legitimate bids.
-        // It becomes correct the day the expansion is persisted, and this test
-        // is what will fail and send somebody to the record when that day comes.
+        // The Vehicles table is the 200-row seed and a visitor bids on the
+        // expansion, so a constraint there would reject 99.8 per cent of
+        // legitimate bids. The expansion is persisted now, in Catalogue
+        // (ADR: The store does the work), and a constraint on it is still wrong:
+        // the site serves from memory while the catalogue fills, a bid placed
+        // then names a row that is not there yet, and a refused bid is a worse
+        // answer than a row the fill writes a minute later.
         Assert.DoesNotContain(
             db.Model.FindEntityType(typeof(BidRow))!.GetForeignKeys(),
-            key => key.PrincipalEntityType.ClrType == typeof(VehicleRow));
+            key => key.PrincipalEntityType.ClrType == typeof(VehicleRow) || key.PrincipalEntityType.ClrType == typeof(CatalogueRow));
     }
 
     [Fact]

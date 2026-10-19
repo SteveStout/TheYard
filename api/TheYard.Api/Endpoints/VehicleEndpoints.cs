@@ -45,7 +45,7 @@ public static class VehicleEndpoints
     // ending soonest first). Responses are an envelope: { total, vehicles },
     // with each vehicle carrying the server-derived auction facts.
     // e.g. /api/vehicles?make=Ford&status=live&sort=price-asc&limit=100&offset=100
-    private static Results<Ok<VehiclePage>, ProblemHttpResult> List(
+    private static async Task<Results<Ok<VehiclePage>, ProblemHttpResult>> List(
         CurrentBackend current,
         [AsParameters] VehicleQueryParams query)
     {
@@ -57,17 +57,17 @@ public static class VehicleEndpoints
         }
         // The auction hands back each vehicle at its standing price with its sold flag, so a
         // listing never composes the bids, the room or the sale itself.
-        var result = current.Auction.Search(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset);
+        var result = await current.Auction.SearchAsync(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset);
         return TypedResults.Ok(new VehiclePage(result.Total, [.. result.Vehicles.Select(v => VehicleWire.ToWire(v, clock))]));
     }
     #endregion inventory-endpoint
 
-    private static Ok<InventoryFacets> Facets(CurrentBackend current) =>
-        TypedResults.Ok(current.Auction.Facets());
+    private static async Task<Ok<InventoryFacets>> Facets(CurrentBackend current) =>
+        TypedResults.Ok(await current.Auction.FacetsAsync());
 
-    private static Results<Ok<VehicleView>, ProblemHttpResult> One(CurrentBackend current, string id)
+    private static async Task<Results<Ok<VehicleView>, ProblemHttpResult>> One(CurrentBackend current, string id)
     {
-        return current.Auction.Find(id) is { } vehicle
+        return await current.Auction.FindAsync(id) is { } vehicle
             ? TypedResults.Ok(VehicleWire.ToWire(vehicle, Clocks.Now()))
             : TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
     }

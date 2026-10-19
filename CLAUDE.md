@@ -24,7 +24,8 @@ codebase holds them):
   not belong here.
 - `api/TheYard.Domain` - the rules. Depends only on Data.
 - `api/TheYard.Application` - use cases and ports. `Auction` is what the endpoints ask about the auction; the
-  auction's three ports are `IVehicleSource`, `IPhotoManifestSource` and `IBidStore`, beside the
+  auction's ports are `IVehicleCatalogue` (the store's hundred thousand, queried a page at a time),
+  `IVehicleSource` (the seed, which fills it), `IPhotoManifestSource` and `IBidStore`, beside the
   operator's ports (`IActivityStore`, `ILogStore`, `IStoreExperiment` and the rest). Depends on Domain.
 - `api/TheYard.Infrastructure` - the relational adapters: EF Core over Azure SQL Database or SQLite, the
   JSON seed readers, the synthetic scale-up decorator, the Identity user entity. Implements the ports.
@@ -54,7 +55,12 @@ split).
 ## Rules that must survive any change
 
 - **Derive, do not store.** Auction windows derive from the item id via FNV-1a hash. Status derives from
-  the window and the clock. Nothing schedule-related is persisted.
+  the window and the clock. Nothing schedule-related is persisted, with one exception since
+  1.0.3.178: the slot, the window's start and end as offsets from the day's anchor, is written beside
+  each vehicle in the store so the store can order a page by auction time. It is a copy of the hash's
+  answer, `CatalogueSlot.For` is the only code that makes it, and `StoreCatalogueTests` holds all
+  hundred thousand to the window the hash gives on any day (ADR: The store does the work). Status is
+  still never stored.
 - **The server owns every derived fact, and the clock.** The server computes windows, status and
   `min_next_bid` on its own clock: now, and the UTC midnight that began the day, one anchor for every
   visitor (`AuctionClock.Utc`). No request names a day; an `anchor_ms` from an old page is ignored.
@@ -74,7 +80,7 @@ split).
   price, and that check runs BEFORE the increment check. A vehicle anybody has bought is SOLD, to
   everybody, on both sites: that check runs before all the others, the standing the store owns supplies it
   (read by `BidService` under its gate and written back with a compare-and-set; `BidService.IsSold` is the
-  listing's cached copy), `Auction.Find` and `Auction.Search` hand every vehicle out with its
+  listing's cached copy), `Auction.FindAsync` and `Auction.SearchAsync` hand every vehicle out with its
   sold flag beside it, and the wire says `sold` on every vehicle. A listing or a rule that forgets it recreates the second buyer (ADR: Accounts and per-user
   bids, addendum). Raising a vehicle's shown price over a bid, and whether the reserve is met, live only
   in `TheYard.Domain/StandingRules.cs` (`RaisedTo`, `Reserve`).

@@ -3,6 +3,7 @@
 // container holds is one short file to open:
 //   Containers.cs            the container names and their partition keys (region containers)
 //   Documents.Vehicles.cs    VehicleDocument, the vehicles container (region documents)
+//   Documents.Catalogue.cs   CatalogueDocument, the catalogue container (region documents)
 //   Documents.Photos.cs      PhotoDocument, the photos container (region documents)
 //   Documents.Bids.cs        BidDocument, the bids container (region documents)
 //   Documents.Users.cs       UserDocument and EmailClaimDocument, the users container
@@ -21,6 +22,7 @@
 // layer is a field that stops being copied without anything saying so.
 using TheYard.Application;
 using TheYard.Data;
+using TheYard.Domain;
 
 namespace TheYard.Infrastructure.Cosmos;
 
@@ -107,4 +109,83 @@ public static class Documents
     public static StoredBid ToStoredBid(this BidDocument d) =>
         new(d.UserId, d.Id, new BidState(d.Amount, d.BidCount, d.WonBuyNow, d.AtMs));
     // #endregion mapping
+
+    // #region catalogue-mapping
+    /// <summary>The document for one vehicle of the catalogue at its place, with the slot, the price and the text derived here.</summary>
+    public static CatalogueDocument ToCatalogueDocument(this CatalogueEntry entry)
+    {
+        var v = entry.Vehicle;
+        var slot = CatalogueSlot.For(v.Id);
+        return new CatalogueDocument
+        {
+            Id = v.Id,
+            Seq = entry.Seq,
+            Vin = v.Vin,
+            Year = v.Year,
+            Make = v.Make,
+            Model = v.Model,
+            Trim = v.Trim,
+            BodyStyle = v.BodyStyle,
+            ExteriorColor = v.ExteriorColor,
+            InteriorColor = v.InteriorColor,
+            Engine = v.Engine,
+            Transmission = v.Transmission,
+            Drivetrain = v.Drivetrain,
+            OdometerKm = v.OdometerKm,
+            FuelType = v.FuelType,
+            ConditionGrade = v.ConditionGrade,
+            ConditionReport = v.ConditionReport,
+            DamageNotes = [.. v.DamageNotes],
+            TitleStatus = v.TitleStatus,
+            Province = v.Province,
+            City = v.City,
+            AuctionStart = v.AuctionStart,
+            StartingBid = v.StartingBid,
+            ReservePrice = v.ReservePrice,
+            BuyNowPrice = v.BuyNowPrice,
+            SellingDealership = v.SellingDealership,
+            Lot = v.Lot,
+            CurrentBid = v.CurrentBid,
+            BidCount = v.BidCount,
+            StartOffset = slot.StartOffsetMs,
+            EndOffset = slot.EndOffsetMs,
+            Price = CatalogueSlot.PriceOf(v),
+            Search = VehicleSearchIndex.TextFor(v),
+        };
+    }
+
+    /// <summary>The vehicle and its place a catalogue document holds. The images are left empty: the gallery derives them.</summary>
+    public static CatalogueEntry ToEntry(this CatalogueDocument d) => new(d.Seq, new Vehicle
+    {
+        Id = d.Id,
+        Vin = d.Vin,
+        Year = d.Year,
+        Make = d.Make,
+        Model = d.Model,
+        Trim = d.Trim,
+        BodyStyle = d.BodyStyle,
+        ExteriorColor = d.ExteriorColor,
+        InteriorColor = d.InteriorColor,
+        Engine = d.Engine,
+        Transmission = d.Transmission,
+        Drivetrain = d.Drivetrain,
+        OdometerKm = d.OdometerKm,
+        FuelType = d.FuelType,
+        ConditionGrade = d.ConditionGrade,
+        ConditionReport = d.ConditionReport,
+        DamageNotes = d.DamageNotes,
+        TitleStatus = d.TitleStatus,
+        Province = d.Province,
+        City = d.City,
+        AuctionStart = d.AuctionStart,
+        StartingBid = d.StartingBid,
+        ReservePrice = d.ReservePrice,
+        BuyNowPrice = d.BuyNowPrice,
+        Images = [],
+        SellingDealership = d.SellingDealership,
+        Lot = d.Lot,
+        CurrentBid = d.CurrentBid,
+        BidCount = d.BidCount,
+    });
+    // #endregion catalogue-mapping
 }

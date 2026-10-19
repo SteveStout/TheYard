@@ -71,4 +71,41 @@ public interface IBidStore
     Task ClearAsync(string userId);
 }
 
+/// <summary>
+/// Port: the catalogue as the store holds it, all hundred thousand vehicles with
+/// the slot each id's hash gives it, and the store doing the filtering, the
+/// ordering and the paging (ADR: The store does the work). Application plans a
+/// listing out of these primitives, the three schedule segments, the room's and
+/// the bids' overlay, the page, and the adapters only translate a filter and an
+/// order into their own query: EF Core over the Catalogue table, the SDK over the
+/// catalogue container. Every read is bounded by the page it asks for; nothing
+/// here hands back the whole catalogue.
+/// </summary>
+public interface IVehicleCatalogue
+{
+    /// <summary>How many vehicles this catalogue is the first of: the expansion's target count.</summary>
+    int Target { get; }
+
+    /// <summary>How the store wants to be filled: a batch at a time, a pause between, and up to how many it fills at warm-up.</summary>
+    CatalogueFillPace Pace { get; }
+
+    /// <summary>How many of the first <see cref="Target"/> vehicles the store holds with their slot, read as one count.</summary>
+    Task<int> FilledAsync();
+
+    /// <summary>Writes one batch of the expansion, each vehicle at its place; a vehicle already there is left as it is or rewritten the same.</summary>
+    Task FillAsync(IReadOnlyList<CatalogueEntry> batch);
+
+    /// <summary>How many vehicles match, split by the three schedule segments, in one read where the store allows it.</summary>
+    Task<SegmentCounts> CountAsync(CatalogueFilter filter);
+
+    /// <summary>One page of the matches in one order, skipped and taken in the store's own query.</summary>
+    Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take);
+
+    /// <summary>The vehicles with these ids, by point read where the address names the partition; an id the catalogue lacks is simply absent.</summary>
+    Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids);
+
+    /// <summary>The distinct values behind the filters, read once at warm-up.</summary>
+    Task<InventoryFacets> FacetsAsync();
+}
+
 // #endregion ports

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>A listing request before and after: process memory in the middle, then the store in the middle</title>
+  <rect width="960" height="430" fill="#ffffff"/>
+  <text x="240" y="34" font-size="20" font-weight="700" text-anchor="middle" fill="#14213d">Before: the process holds the catalogue</text>
+  <text x="720" y="34" font-size="20" font-weight="700" text-anchor="middle" fill="#14213d">After: the store holds the catalogue</text>
+  <line x1="480" y1="20" x2="480" y2="410" stroke="#c9ced6" stroke-width="2" stroke-dasharray="6 6"/>
+
+  <!-- before -->
+  <rect x="40" y="60" width="400" height="44" rx="8" fill="#eef3fb" stroke="#4a6fa5"/>
+  <text x="240" y="88" font-size="16" text-anchor="middle" fill="#14213d">GET /api/vehicles</text>
+  <path d="M240 104 V128" stroke="#4a6fa5" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="40" y="132" width="400" height="150" rx="10" fill="#fdecea" stroke="#c0392b" stroke-width="2"/>
+  <text x="240" y="160" font-size="16" font-weight="700" text-anchor="middle" fill="#7b241c">The site's process, on the shared B2</text>
+  <text x="240" y="186" font-size="15" text-anchor="middle" fill="#14213d">100,000 vehicles per store, both stores loaded</text>
+  <text x="240" y="210" font-size="15" text-anchor="middle" fill="#14213d">filter, sort and page every request in memory</text>
+  <text x="240" y="234" font-size="15" text-anchor="middle" fill="#14213d">search index, schedule order, facets</text>
+  <text x="240" y="264" font-size="15" font-weight="700" text-anchor="middle" fill="#7b241c">about 750 MB a site, 2.87 GB on the plan</text>
+  <path d="M240 282 V306" stroke="#4a6fa5" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="40" y="310" width="400" height="64" rx="8" fill="#f4f6f8" stroke="#8a94a3"/>
+  <text x="240" y="336" font-size="15" text-anchor="middle" fill="#14213d">SQL Database and Cosmos DB</text>
+  <text x="240" y="358" font-size="14" text-anchor="middle" fill="#55606e">read once at startup: 200 seed rows</text>
+
+  <!-- after -->
+  <rect x="520" y="60" width="400" height="44" rx="8" fill="#eef3fb" stroke="#4a6fa5"/>
+  <text x="720" y="88" font-size="16" text-anchor="middle" fill="#14213d">GET /api/vehicles</text>
+  <path d="M720 104 V128" stroke="#4a6fa5" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="520" y="132" width="400" height="84" rx="10" fill="#eaf6ee" stroke="#2e7d4f" stroke-width="2"/>
+  <text x="720" y="160" font-size="16" font-weight="700" text-anchor="middle" fill="#1e5a37">The site's process</text>
+  <text x="720" y="184" font-size="15" text-anchor="middle" fill="#14213d">plans the query, lays bids on the page</text>
+  <text x="720" y="206" font-size="15" text-anchor="middle" fill="#14213d">a bounded five-second cache, catalogue held: 0</text>
+  <path d="M720 216 V240" stroke="#4a6fa5" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="520" y="244" width="400" height="130" rx="10" fill="#e8f0fb" stroke="#2f5d9e" stroke-width="2"/>
+  <text x="720" y="272" font-size="16" font-weight="700" text-anchor="middle" fill="#1f3f6e">The store, 100,000 vehicles with their slot</text>
+  <text x="720" y="298" font-size="15" text-anchor="middle" fill="#14213d">WHERE on the filter, ORDER BY an index</text>
+  <text x="720" y="322" font-size="15" text-anchor="middle" fill="#14213d">OFFSET and FETCH: only the page comes back</text>
+  <text x="720" y="350" font-size="14" text-anchor="middle" fill="#55606e">SQL: the Catalogue table. Cosmos DB: the catalogue container</text>
+
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6fa5"/>
+    </marker>
+  </defs>
+</svg>

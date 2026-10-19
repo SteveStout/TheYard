@@ -178,6 +178,16 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
           // both loaded on purpose, measured at 350 to 475 MB a site with both
           // held (ADR: Kept awake; ADR: One plan, two sites, the last addendum).
           { name: 'Store__WarmOthers', value: 'false' }
+          // The catalogue is the store's (ADR: The store does the work): a site fills the
+          // catalogue of the store it defaults to when that store holds less than it should,
+          // and watches the other, which the other site fills. Off everywhere a deploy has not
+          // said so, which is every test host.
+          { name: 'Catalogue__Keep', value: 'true' }
+          // The heap may grow to 30 per cent of what the container sees, so a regression is
+          // collected, and failing that refused, inside its own share instead of taking the
+          // plan's 3.5 GB from the other three apps. GC settings read from the environment are
+          // hexadecimal: 0x1E is thirty; a plain "30" would be forty-eight.
+          { name: 'DOTNET_GCHeapHardLimitPercent', value: '0x1E' }
           { name: 'Email__Endpoint', value: 'https://acs-theyard-ss.unitedstates.communication.azure.com' }
           { name: 'Email__From', value: 'DoNotReply@ae4d5c47-28c9-49e2-8d3a-a859abd0f7df.azurecomm.net' }
           { name: 'Peer__Url', value: s.peerUrl }

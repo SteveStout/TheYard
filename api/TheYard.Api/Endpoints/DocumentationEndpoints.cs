@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using TheYard.Application;
 
 namespace TheYard.Api;
 
@@ -95,13 +96,30 @@ public static class DocumentationEndpoints
         return app;
     }
 
-    private static Results<ContentHttpResult, ProblemHttpResult> Document(string slug, HostPaths paths, BuildInfo build) =>
-        DocumentationCatalog.Files.TryGetValue(slug, out var file)
-            ? TypedResults.Text(
-                // The pictures are named here rather than on GitHub's raw host (DocImages.cs).
-                DocImages.Rewrite(LiveCounts.Expand(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot), paths.RepoRoot),
-                "text/markdown")
-            : TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document");
+    // #region rendered-documents
+    // A document is rewritten whole by its live fences, so it cannot be streamed, and the longest
+    // ones are over 42,500 characters, a large object on every read. Each one is rendered once per
+    // build and kept, bounded by count and bytes, so the large object heap sees a document once
+    // rather than once per reader (ADR: The store does the work, rule d).
+    private static readonly BoundedCache<string, string> Rendered =
+        new(64, 16L << 20, TimeSpan.FromMinutes(30), text => text.Length * 2L, comparer: StringComparer.Ordinal);
+
+    private static Results<ContentHttpResult, ProblemHttpResult> Document(string slug, HostPaths paths, BuildInfo build)
+    {
+        if (!DocumentationCatalog.Files.TryGetValue(slug, out var file))
+        {
+            return TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document");
+        }
+        string key = $"{build.Commit}/{slug}";
+        if (!Rendered.TryGet(key, out var text))
+        {
+            // The pictures are named here rather than on GitHub's raw host (DocImages.cs).
+            text = DocImages.Rewrite(LiveCounts.Expand(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot), paths.RepoRoot);
+            Rendered.Set(key, text);
+        }
+        return TypedResults.Text(text, "text/markdown");
+    }
+    // #endregion rendered-documents
 
     private static Results<PhysicalFileHttpResult, ProblemHttpResult> Picture(string name, HttpContext http, HostPaths paths)
     {

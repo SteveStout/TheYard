@@ -1,6 +1,8 @@
 // YardDbContext is one class in two files. This one holds the tables and the model: how each
 // row maps to its table on either provider, and why the two providers differ where they do.
 //   YardDbContext.Columns.cs   the named column widths and the auction-start converter
+//   YardDbContext.Standings.cs the Standings table's model
+//   YardDbContext.Catalogue.cs the Catalogue table's model, the hundred thousand the store pages
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -282,6 +284,7 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
         // #endregion activity-model
 
         ConfigureStandings(model);
+        ConfigureCatalogue(model, sqlServer);
     }
     // #endregion model
 }

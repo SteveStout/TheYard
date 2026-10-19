@@ -35,11 +35,11 @@ mocking.
 
 The use cases, and the seams. `Auction` is what the endpoints ask about the auction: it composes one
 store's catalogue, everybody's bids and the simulated room (`MarketService`) in the one
-order the rules need, and `BidsOf` gives a buyer's bids as `BidView`s. `InventoryService` loads the dataset once and answers
-search/facet/by-id queries by composing Domain rules; `BidService` holds the buyer's
+order the rules need, and `BidsOf` gives a buyer's bids as `BidView`s. `InventoryService` plans every listing, facet and by-id read
+as queries against the store's catalogue, and fills an empty store from the seed once (ADR: The store does the work); `BidService` holds the buyer's
 bid state, read from the database at startup and written through on every accepted
-bid. `Auction` hands the bid and room overlay to `InventoryService.Search`, which
-applies it before filtering, so prices never disagree with the listing. Both consume data through the auction's three ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`): the
+bid. `Auction` hands the bid and room overlay to `InventoryService.SearchAsync`, which
+applies it before filtering, so prices never disagree with the listing. Both consume data through the auction's ports (`IVehicleCatalogue`, `IVehicleSource`, `IPhotoManifestSource`, `IBidStore`): the
 interfaces that make Infrastructure swappable and the tests trivial to fake. Beside them sit the
 operator's ports, which the Admin tab and the account flows read through: `IActivityStore`,
 `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment`
@@ -57,7 +57,7 @@ the database readings the Admin tab shows (`ResourceStats`, `YardDatabase.PingAs
 
 ## TheYard.Infrastructure.Cosmos
 
-The auction's three ports, the operator's stores and the account store over Azure Cosmos DB, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). The partition key experiment the Admin tab runs is `PartitionExperiment`, behind `IStoreExperiment`.
+The auction's ports, the operator's stores and the account store over Azure Cosmos DB, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). The partition key experiment the Admin tab runs is `PartitionExperiment`, behind `IStoreExperiment`.
 
 ## TheYard.Migrations.Sqlite
 

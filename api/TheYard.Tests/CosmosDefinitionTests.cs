@@ -169,4 +169,47 @@ public class CosmosDefinitionTests
         Assert.DoesNotContain("documents.azure.com", connection.Describe());
     }
     // #endregion choose
+
+    // #region catalogue-index
+    /// <summary>
+    /// The catalogue's queries filter and order on indexed paths only (ADR: The store does the
+    /// work): every path a WHERE names is included, and every two-key ORDER BY a page is read in has
+    /// the composite index Cosmos DB needs to serve it, in the direction it is read.
+    /// </summary>
+    [Fact]
+    public void The_catalogue_indexes_every_path_its_queries_name_and_every_order_a_page_is_read_in()
+    {
+        var policy = Definitions()[Containers.Catalogue].GetProperty("indexingPolicy");
+        var included = policy.GetProperty("includedPaths").EnumerateArray().Select(p => p.GetProperty("path").GetString()).ToHashSet();
+        var composites = policy.GetProperty("compositeIndexes").EnumerateArray()
+            .Select(index => string.Join(", ", index.EnumerateArray().Select(key => $"{key.GetProperty("path").GetString()} {key.GetProperty("order").GetString()}")))
+            .ToHashSet();
+
+        foreach (string path in new[] { "seq", "price", "start_offset", "end_offset", "search", "condition_grade", "bid_count", "make", "body_style", "title_status", "province" })
+        {
+            Assert.Contains($"/{path}/?", included);
+        }
+        foreach (string order in new[] { "/end_offset ascending", "/end_offset descending", "/start_offset ascending", "/price ascending", "/price descending", "/condition_grade descending", "/bid_count descending" })
+        {
+            Assert.Contains($"{order}, /seq ascending", composites);
+        }
+    }
+
+    [Fact]
+    public void A_catalogue_document_carries_the_fields_its_queries_name_and_comes_back_as_the_vehicle()
+    {
+        var vehicle = TestData.Vehicle(id: "seed-1-0004d");
+        var entry = new TheYard.Application.CatalogueEntry(77, vehicle);
+        string json = JsonSerializer.Serialize(entry.ToCatalogueDocument(), CosmosStore.Json);
+        var back = JsonSerializer.Deserialize<CatalogueDocument>(json, CosmosStore.Json)!.ToEntry();
+        var slot = TheYard.Application.CatalogueSlot.For(vehicle.Id);
+
+        foreach (string field in new[] { "\"seq\":77", $"\"start_offset\":{slot.StartOffsetMs}", $"\"end_offset\":{slot.EndOffsetMs}", "\"price\":22800", "\"search\":\"2023 ford bronco" })
+        {
+            Assert.Contains(field, json, StringComparison.Ordinal);
+        }
+        Assert.Equal(77, back.Seq);
+        Assert.Equivalent(vehicle with { Images = [] }, back.Vehicle, strict: true);
+    }
+    // #endregion catalogue-index
 }

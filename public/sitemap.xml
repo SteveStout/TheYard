@@ -205,6 +205,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/memory</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/onion</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -681,6 +686,11 @@
   </url>
   <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-one-frame-for-every-resource</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-store-does-the-work</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

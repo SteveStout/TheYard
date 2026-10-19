@@ -1,6 +1,7 @@
 // Brings the relational database up once at startup, or reports that it could not. It has a file
 // of its own because it runs before the container is built and its answer decides which stores
 // get registered, which is a different job from the adapters that read and write the rows.
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application;
 
@@ -119,5 +120,16 @@ public static class YardDatabase
     {
         await using var db = await contexts.CreateDbContextAsync();
         await db.Database.ExecuteSqlRawAsync("SELECT 1");
+    }
+
+    /// <summary>
+    /// Closes the pooled connections to one SQLite file, and only that file's, so it can be
+    /// deleted while every other database in the process keeps its pool.
+    /// </summary>
+    /// <param name="file">The database file.</param>
+    public static void ReleaseFile(string file)
+    {
+        using var connection = new SqliteConnection($"Data Source={file}");
+        SqliteConnection.ClearPool(connection);
     }
 }

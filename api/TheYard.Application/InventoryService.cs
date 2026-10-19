@@ -1,3 +1,8 @@
+// The catalogue as a visitor's request meets it. This file is the class's fields, its two
+// constructors and how a vehicle leaves; the work is in the files beside it:
+//   InventoryService.Warm.cs     the warm-up, the choice of store or list, and the fill (region warm)
+//   InventoryService.Search.cs   a listing planned out of the port's primitives (region search)
+//   InventoryService.Find.cs     a filter resolved to the store's spelling, and reads by id (regions resolve, find)
 using TheYard.Data;
 using TheYard.Domain;
 
@@ -19,247 +24,101 @@ public sealed record InventoryFacets(
     IReadOnlyList<string> TitleStatuses,
     IReadOnlyList<string> Provinces);
 
-/// <summary>
-/// The read-only inventory use case: loads the dataset once, rewrites each
-/// vehicle's images to gallery picks served under <paramref name="imagePathPrefix"/>,
-/// and answers list and by-id lookups. Vehicles whose body style has no photo
-/// pool keep the images the dataset carries.
-/// </summary>
-public sealed class InventoryService(
-    IVehicleSource vehicleSource,
-    IPhotoManifestSource manifestSource,
-    string imagePathPrefix = "/api/images")
+/// <summary>The prices somebody's bid or the room has moved: which vehicles, and how to lay the moves over one.</summary>
+/// <param name="Ids">Every vehicle with a bid or a room answer on it.</param>
+/// <param name="Apply">The vehicle at the price it stands at.</param>
+public sealed record ListingOverlay(IReadOnlyCollection<string> Ids, Func<Vehicle, Vehicle> Apply);
+
+/// <summary>What a site does about a store whose catalogue holds less than it should, past what the warm-up fills itself.</summary>
+public enum CatalogueUpkeep
 {
-    // #region warm
-    // One load, shared by every caller, started by whoever asks first. The
-    // task is what is shared rather than the result, so two callers arriving
-    // together wait on the same load instead of running two.
-    //
-    // The host starts WarmAsync beside the server (Composition/Startup.cs) and the
-    // pipeline awaits it before any store-bound endpoint runs (Warmth, Stores.cs), so on a
-    // running site the accessors below read a task that has already finished and
-    // never block. A caller that skips the warm-up, which is what a unit test
-    // over an in-memory source does, blocks on a task that a memory source has
-    // already completed, which is a wait of no time. The only way to block a
-    // thread here for real is to skip the warm-up against a store that has to
-    // go over the network, and the host does not (ADR: The ports learn to wait).
-    //
-    // A load that failed is not kept. A Lazy would keep a faulted task forever, so
-    // a store that was unreachable for one second at startup would answer every
-    // request until the next roll with that second's exception. Here the next
-    // caller after a failure starts a fresh load; a load in flight or finished is
-    // shared, and the lock is what makes the start single.
-    private readonly object _warmGate = new();
-    private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index, InventoryFacets Facets)>? _inventory;
+    /// <summary>Nothing: the list in memory answers for the life of the process. Every test host.</summary>
+    Off,
 
-    private Task<(IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index, InventoryFacets Facets)> InventoryTask()
+    /// <summary>Count the store once a minute and switch to it when another site has filled it.</summary>
+    Watch,
+
+    /// <summary>Fill the store beside the running site, then switch to it.</summary>
+    Fill,
+}
+
+/// <summary>Where a site's catalogue is answered from right now, for the Admin tab and the memory test.</summary>
+/// <param name="Mode">"store" when the store answers; "memory" when the list in this process does; "filling" while this site fills the store beside the list; "waiting for the store" while another site does.</param>
+/// <param name="HeldInMemory">How many vehicles this process holds in a list: zero once the store answers.</param>
+/// <param name="Target">How many vehicles the catalogue is.</param>
+/// <param name="Filled">How many of them the store holds with their slot, at the last count.</param>
+/// <param name="Note">Why the store is not answering, when it is not.</param>
+public sealed record CatalogueReport(string Mode, int HeldInMemory, int Target, int Filled, string? Note);
+
+/// <summary>
+/// The read-only inventory use case. The store holds the hundred thousand vehicles with their slot,
+/// and every listing, facet and vehicle read is a query against it, planned here out of the
+/// catalogue port's primitives (ADR: The store does the work). The deterministic expansion is the
+/// seeder: it fills an empty store once and is let go. A site whose store is down, or still being
+/// filled, answers from the expansion in memory until the store can, and says so on the Admin tab.
+/// Vehicles whose body style has no photo pool keep the images the dataset carries.
+/// </summary>
+public sealed partial class InventoryService
+{
+    private const int ExpectedVehicleBytes = 1_500;
+    private const long BucketMs = 5_000;
+
+    private readonly IVehicleCatalogue? _store;
+    private readonly IVehicleSource _seeder;
+    private readonly IPhotoManifestSource _manifestSource;
+    private readonly string _imagePathPrefix;
+    private readonly CatalogueUpkeep _upkeep;
+
+    // #region listing-cache
+    // Bounded by count and bytes, expiring after a bucket of the clock: a store's answer is reused
+    // for the five seconds a page of auctions cannot visibly change in, and never grows past the
+    // numbers here (ADR: The store does the work, rule b).
+    private readonly BoundedCache<string, SegmentCounts> _counts = new(512, 1L << 20, TimeSpan.FromSeconds(5), _ => 96);
+    private readonly BoundedCache<string, IReadOnlyList<CatalogueEntry>> _pages = new(64, 16L << 20, TimeSpan.FromSeconds(5), page => 64 + (page.Count * ExpectedVehicleBytes));
+    private readonly BoundedCache<string, CatalogueEntry> _vehicles = new(4_096, 8L << 20, TimeSpan.FromMinutes(10), _ => ExpectedVehicleBytes, comparer: StringComparer.Ordinal);
+    // #endregion listing-cache
+
+    /// <summary>The catalogue out of a list in memory, filled from <paramref name="vehicleSource"/>: the tests' shape and the file fallback's.</summary>
+    public InventoryService(IVehicleSource vehicleSource, IPhotoManifestSource manifestSource, string imagePathPrefix = "/api/images")
+        : this(null, vehicleSource, manifestSource, CatalogueUpkeep.Off, imagePathPrefix)
     {
-        lock (_warmGate)
-        {
-            if (_inventory is null || _inventory.IsFaulted || _inventory.IsCanceled)
-            {
-                _inventory = BuildAsync(vehicleSource, manifestSource, imagePathPrefix);
-            }
-            return _inventory;
-        }
     }
 
-    /// <summary>Load the catalogue now, so the first visitor does not pay for it.</summary>
-    public Task WarmAsync() => InventoryTask();
-
-    /// <summary>Whether the catalogue has been loaded, which the host asserts before serving.</summary>
-    public bool IsWarm => _inventory is { IsCompletedSuccessfully: true };
-
-    private (IReadOnlyList<Vehicle> All, IReadOnlyDictionary<string, Vehicle> ById, VehicleSearchIndex Index, InventoryFacets Facets) Inventory =>
-        InventoryTask().GetAwaiter().GetResult();
-    // #endregion warm
-
-    public IReadOnlyList<Vehicle> GetAll() => Inventory.All;
-
-    /// <summary>
-    /// The searchable text for the loaded dataset, built with it. Exposed
-    /// because the thing worth asserting about an index is that it covers the
-    /// dataset it was built from (ADR: The search index).
-    /// </summary>
-    public VehicleSearchIndex SearchIndex => Inventory.Index;
-
-    /// <summary>
-    /// Vehicles matching <paramref name="filter"/> (statuses derived from
-    /// <paramref name="clock"/>), ordered by <paramref name="sort"/>, paged by
-    /// <paramref name="limit"/>/<paramref name="offset"/>. Total counts every
-    /// match. <paramref name="overlay"/> (the buyer's bids) is applied BEFORE
-    /// filtering, so price bounds see the same figures the UI displays.
-    /// </summary>
-    public SearchResult Search(
-        VehicleFilter filter,
-        AuctionClock clock,
-        VehicleSort sort = VehicleSort.EndingSoonest,
-        int limit = int.MaxValue,
-        int offset = 0,
-        Func<Vehicle, Vehicle>? overlay = null)
+    /// <summary>The catalogue out of <paramref name="store"/>, filled from <paramref name="seeder"/> when the store holds less than it should.</summary>
+    /// <param name="store">The store's catalogue, or null to answer from memory.</param>
+    /// <param name="seeder">The deterministic expansion, read only to fill the store or to stand in for it.</param>
+    /// <param name="manifestSource">The photo manifest.</param>
+    /// <param name="upkeep">What this site does about a store that holds less than it should, past what the warm-up fills.</param>
+    /// <param name="imagePathPrefix">The path photos are served under.</param>
+    public InventoryService(IVehicleCatalogue? store, IVehicleSource seeder, IPhotoManifestSource manifestSource, CatalogueUpkeep upkeep, string imagePathPrefix = "/api/images")
     {
-        if (sort == VehicleSort.EndingSoonest)
-        {
-            return SearchEndingSoonest(filter, clock, limit, offset, overlay);
-        }
-
-        IEnumerable<Vehicle> source = GetAll();
-        if (overlay is not null)
-        {
-            source = source.Select(overlay);
-        }
-        // #region search
-        // Compile the filter once, then run the predicate down the rows. Both
-        // halves of the free-text comparison are precomputed by this point: the
-        // query's tokens by Compile, each vehicle's searchable text by the index
-        // built at load (ADR: The search index). What is left per row is a
-        // dictionary lookup and a substring test.
-        var matches = filter.Compile(clock, Inventory.Index);
-        var matched = source.Where(matches).ToList();
-        // #endregion search
-        // #region page
-        // The count needs every match and the page needs a hundred of them.
-        // Sorting every match and then taking the page would be a full sort
-        // of a hundred thousand rows on every unfiltered listing, and on the
-        // plan's one shared core that is the slowest read the site has (ADR: The
-        // Admin tab, as a product, the addendum on the first amber tile). Skip and Take straight off the ordering let the
-        // runtime sort only as far as the page: the same rows in the same
-        // order, ties included, because the ordering is still the stable one.
-        var page = VehicleOrdering.Sort(matched, sort, clock).Skip(offset).Take(limit).ToList();
-        return new SearchResult(matched.Count, page);
-        // #endregion page
+        _store = store;
+        _seeder = seeder;
+        _manifestSource = manifestSource;
+        _upkeep = upkeep;
+        _imagePathPrefix = imagePathPrefix;
     }
 
-    // #region ending-soonest
-    // The default listing, and the one every visitor opens. Sorting all hundred
-    // thousand vehicles by their auction window on every request was most of its
-    // time: measured on the build machine, 90 to 100 ms against 35 to 45 ms for the
-    // same page sorted by price, and several times that on the plan's shared core.
-    // The windows are fixed for the day, so the order is read off a ScheduleOrder
-    // built once per anchor and the page stops at its last row (ADR: The search
-    // index, the addendum on the schedule order). The total still counts every
-    // match, so the filter still runs down every row.
-    private ScheduleOrder? _schedule;
-    private IReadOnlyList<Vehicle>? _scheduledFor;
-
-    private ScheduleOrder ScheduleFor(IReadOnlyList<Vehicle> all, long anchorMs)
+    private async Task<(Warmed Warm, IVehicleCatalogue Catalogue)> ReadyAsync()
     {
-        // Built again when the day's anchor moves or the catalogue was loaded again. Two
-        // requests that arrive together at midnight may both build it, and either result
-        // is the same order, so no lock is needed.
-        ScheduleOrder? current = Volatile.Read(ref _schedule);
-        if (current is not null && current.AnchorMs == anchorMs && ReferenceEquals(Volatile.Read(ref _scheduledFor), all))
-        {
-            return current;
-        }
-
-        var built = new ScheduleOrder(all, anchorMs);
-        Volatile.Write(ref _scheduledFor, all);
-        Volatile.Write(ref _schedule, built);
-        return built;
+        var warm = await WarmTask();
+        return (warm, _active!);
     }
-
-    private SearchResult SearchEndingSoonest(VehicleFilter filter, AuctionClock clock, int limit, int offset, Func<Vehicle, Vehicle>? overlay)
-    {
-        var all = GetAll();
-        var matches = filter.Compile(clock, Inventory.Index);
-        var kept = new Vehicle?[all.Count];
-        int total = 0;
-        for (int index = 0; index < all.Count; index++)
-        {
-            Vehicle vehicle = overlay is null ? all[index] : overlay(all[index]);
-            if (matches(vehicle))
-            {
-                kept[index] = vehicle;
-                total++;
-            }
-        }
-
-        var page = new List<Vehicle>(Math.Max(0, Math.Min(limit, total - offset)));
-        if (limit <= 0)
-        {
-            return new SearchResult(total, page);
-        }
-
-        int skipped = 0;
-        ScheduleFor(all, clock.AnchorMs).Visit(clock.NowMs, index =>
-        {
-            if (kept[index] is not { } vehicle)
-            {
-                return true;
-            }
-
-            if (skipped < offset)
-            {
-                skipped++;
-                return true;
-            }
-
-            page.Add(vehicle);
-            return page.Count < limit;
-        });
-
-        return new SearchResult(total, page);
-    }
-    // #endregion ending-soonest
 
     // #region facets
     /// <summary>
-    /// Distinct values feeding the UI's filter dropdowns, sorted. Built once
-    /// with the catalogue and handed back by reference, because walking all
-    /// hundred thousand vehicles four times on every request cost 12 ms on the
-    /// live container for an answer that cannot change after load
-    /// (ADR: The search index, addendum).
+    /// The values behind the catalogue's filters, read from the store once at warm-up and handed
+    /// back by reference, because they cannot change after the fill and walking the catalogue for
+    /// them on every request is the cost ADR: The search index took out (its addendum).
     /// </summary>
-    public InventoryFacets Facets() => Inventory.Facets;
-
-    private static InventoryFacets BuildFacets(IReadOnlyList<Vehicle> vehicles) =>
-        new(
-            Distinct(vehicles, v => v.Make),
-            Distinct(vehicles, v => v.BodyStyle),
-            Distinct(vehicles, v => v.TitleStatus),
-            Distinct(vehicles, v => v.Province));
-
-    private static IReadOnlyList<string> Distinct(
-        IReadOnlyList<Vehicle> vehicles,
-        Func<Vehicle, string> field) =>
-        vehicles.Select(field).Distinct().OrderBy(v => v, StringComparer.Ordinal).ToList();
+    public async Task<InventoryFacets> FacetsAsync() => (await WarmTask()).Facets;
     // #endregion facets
 
-    public Vehicle? GetById(string id) =>
-        Inventory.ById.TryGetValue(id, out var vehicle) ? vehicle : null;
-
-    private static async Task<(IReadOnlyList<Vehicle>, IReadOnlyDictionary<string, Vehicle>, VehicleSearchIndex, InventoryFacets)> BuildAsync(
-        IVehicleSource vehicleSource,
-        IPhotoManifestSource manifestSource,
-        string imagePathPrefix)
+    /// <summary>A vehicle as it leaves: its gallery photos in place of the dataset's, then at the price it stands at.</summary>
+    private Vehicle Finish(Vehicle vehicle, Warmed warm, ListingOverlay? overlay)
     {
-        // Key pools by lowercase style, because PhotoGallery looks them up lowercased,
-        // so a capitalized style in the manifest must not silently miss.
-        var pools = (await manifestSource.LoadAsync())
-            .GroupBy(photo => photo.Style.ToLowerInvariant())
-            .ToDictionary(
-                group => group.Key,
-                group => (IReadOnlyList<PhotoEntry>)group.ToList());
-
-        var vehicles = (await vehicleSource.LoadAsync())
-            .Select(vehicle =>
-            {
-                var photos = PhotoGallery.SelectPhotos(vehicle.Id, vehicle.Make, vehicle.BodyStyle, pools);
-                return photos.Count == 0
-                    ? vehicle
-                    : vehicle with { Images = photos.Select(file => $"{imagePathPrefix}/{file}").ToList() };
-            })
-            .ToList();
-
-        // The index and the facets are built here, with the dictionary, for the
-        // same reason the dictionary is: the work is identical for every request
-        // that follows, and after this point the vehicles never change (ADR: The
-        // search index).
-        return (
-            vehicles,
-            vehicles.ToDictionary(vehicle => vehicle.Id),
-            new VehicleSearchIndex(vehicles),
-            BuildFacets(vehicles));
+        var photos = PhotoGallery.SelectPhotos(vehicle.Id, vehicle.Make, vehicle.BodyStyle, warm.Pools);
+        var shown = photos.Count == 0 ? vehicle : vehicle with { Images = [.. photos.Select(file => $"{_imagePathPrefix}/{file}")] };
+        return overlay is null ? shown : overlay.Apply(shown);
     }
 }

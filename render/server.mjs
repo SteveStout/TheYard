@@ -5,6 +5,7 @@
 //            edge sends to the API. A Cloudflare Worker is the same renderer behind a different door.
 // Used by:   render/Dockerfile (its start command), and playwright.config.ts for the browser suite.
 import { createServer } from 'node:http';
+import { getHeapStatistics } from 'node:v8';
 import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 import { Readable, pipeline } from 'node:stream';
 import { constants, createBrotliCompress, createGzip } from 'node:zlib';
@@ -54,7 +55,27 @@ async function readiness() {
       return { name, answered: page !== null, api_build: page?.version ?? null, same_build: same };
     })
   );
-  return { ready: reads.every((site) => site.answered), build: own, sites: reads };
+  return {
+    ready: reads.every((site) => site.answered),
+    build: own,
+    sites: reads,
+    memory: memory(),
+  };
+}
+
+/**
+ * The heap against the limit NODE_OPTIONS sets, and the resident set beside it, the reading
+ * rule h of the Memory page asks of this service (ADR: The store does the work).
+ */
+function memory() {
+  const mb = (bytes) => Math.round((bytes / 1024 / 1024) * 10) / 10;
+  const heap = getHeapStatistics();
+  return {
+    heap_used_mb: mb(heap.used_heap_size),
+    heap_total_mb: mb(heap.total_heap_size),
+    heap_limit_mb: mb(heap.heap_size_limit),
+    rss_mb: mb(process.memoryUsage.rss()),
+  };
 }
 // #endregion readiness
 

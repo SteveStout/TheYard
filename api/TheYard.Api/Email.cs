@@ -66,15 +66,43 @@ public sealed class AcsEmailSender(string endpoint, string from, TokenCredential
 public sealed class ForgotLimit(TimeSpan spacing, Func<DateTimeOffset> clock)
 {
     public static readonly TimeSpan DefaultSpacing = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// The most addresses remembered at once. An address mailed longer ago than the spacing is
+    /// forgotten when the count reaches this, which changes no answer, because its next ask would
+    /// be granted anyway; past it with every one of them recent, a new address is refused, so
+    /// the memory is a ceiling and not a dictionary that grows with every stranger's ask
+    /// (ADR: The store does the work, rule b).
+    /// </summary>
+    public const int MaxAddresses = 10_000;
+
     private readonly ConcurrentDictionary<string, DateTimeOffset> _last = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>How many addresses are remembered now.</summary>
+    public int Count => _last.Count;
 
     /// <summary>True, and the slot is taken, when this address has not been mailed in the last few minutes.</summary>
     public bool TryTake(string email)
     {
         var now = clock();
+        string address = email.Trim();
+        if (_last.Count >= MaxAddresses && !_last.ContainsKey(address))
+        {
+            foreach (var (known, last) in _last)
+            {
+                if (now - last >= spacing)
+                {
+                    _last.TryRemove(known, out _);
+                }
+            }
+            if (_last.Count >= MaxAddresses)
+            {
+                return false;
+            }
+        }
         bool taken = false;
         _last.AddOrUpdate(
-            email.Trim(),
+            address,
             _ => { taken = true; return now; },
             (_, last) =>
             {

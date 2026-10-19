@@ -48,13 +48,13 @@ public static class StoreRegistration
         // site says sql; the second container says cosmos; a developer or a test run
         // that configured the document store and said nothing gets the document store.
         string? configuredDefaultStore = builder.Configuration["Store:Default"];
+        string defaultStore = configuredDefaultStore ?? (cosmosConfigured ? "cosmos" : "sql");
+        bool keepCatalogues = builder.Configuration.GetValue("Catalogue:Keep", false);
         string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
-        // Pooling off for a scratch database, which is what makes it deletable
-        // without a process-wide ClearAllPools. That call empties the pool for every
-        // connection in the process, and a test run holds ten applications at once
-        // against ten different databases, so one of them tidying up on shutdown would
-        // pull connections out from under the others.
-        string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase};Pooling=False";
+        // Pooled, so SQLite's page cache outlives a statement (ADR: The store does the work).
+        // Startup empties this one file's pool before deleting it, never ClearAllPools, which
+        // would pull connections from under the other applications a test run holds at once.
+        string databaseConnection = configuredDatabase ?? $"Data Source={scratchDatabase}";
         // The relational store is always one of the two: SQL Server when the deploy
         // gave one, SQLite otherwise, and "yard" keeps its name because most of this
         // file only ever needs the relational side's answer.
@@ -145,7 +145,7 @@ public static class StoreRegistration
                 state,
                 contexts,
                 quietContexts,
-                new InventoryService(new SyntheticVehicleSource(new EfVehicleSource(contexts), targetCount), new EfPhotoManifestSource(contexts)),
+                Catalogues.Sql(contexts, yard, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "sql")),
                 new BidService(new EfBidStore(contexts)),
                 new EfActivityStore(quietContexts),
                 () => YardDatabase.HasSeedAsync(contexts),
@@ -211,7 +211,7 @@ public static class StoreRegistration
                 null,
                 null,
                 // The same three ports, answered out of the document store.
-                new InventoryService(new SyntheticVehicleSource(new CosmosVehicleSource(store), targetCount), new CosmosPhotoManifestSource(store)),
+                Catalogues.Cosmos(store, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "cosmos")),
                 new BidService(new CosmosBidStore(store)),
                 new CosmosActivityStore(store),
                 store.ProbeAsync,
@@ -243,7 +243,7 @@ public static class StoreRegistration
         // container, both stores, addendum). Unset everywhere but the deployed groups.
         var backends = new Backends(
             backendList,
-            configuredDefaultStore ?? (cosmosConfigured ? "cosmos" : "sql"),
+            defaultStore,
             builder.Configuration["Peer:Site"]);
         builder.Services.AddSingleton(backends);
         builder.Services.AddScoped<CurrentBackend>();

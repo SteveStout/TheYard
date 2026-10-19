@@ -2,7 +2,7 @@
   "container": "catalogue",
   "partitionKeyPath": "/make",
   "defaultTtlSeconds": null,
-  "why": "The experiment: the 100,000 expanded vehicles, so a filtered page can be served from the store and the partition key measured on the hot path. Only the paths the filters and sorts use are indexed; the seed cost against the default policy is measured in catalogue-default (ADR: The partition key).",
+  "why": "The catalogue: the 100,000 expanded vehicles the site's listing, facets and vehicle reads are queries on (ADR: The store does the work), and first the partition key experiment's container (ADR: The partition key). Only the paths the filters and orders use are indexed, plus one composite per order a page is read in, each ending in seq so a tie reads the same on both stores; the seed cost against the default policy is measured in catalogue-default.",
   "indexingPolicy": {
     "indexingMode": "consistent",
     "automatic": true,
@@ -33,12 +33,99 @@
       },
       {
         "path": "/seq/?"
+      },
+      {
+        "path": "/start_offset/?"
+      },
+      {
+        "path": "/end_offset/?"
+      },
+      {
+        "path": "/price/?"
+      },
+      {
+        "path": "/bid_count/?"
+      },
+      {
+        "path": "/search/?"
       }
     ],
     "excludedPaths": [
       {
         "path": "/*"
       }
+    ],
+    "compositeIndexes": [
+      [
+        {
+          "path": "/end_offset",
+          "order": "ascending"
+        },
+        {
+          "path": "/seq",
+          "order": "ascending"
+        }
+      ],
+      [
+        {
+          "path": "/end_offset",
+          "order": "descending"
+        },
+        {
+          "path": "/seq",
+          "order": "ascending"
+        }
+      ],
+      [
+        {
+          "path": "/start_offset",
+          "order": "ascending"
+        },
+        {
+          "path": "/seq",
+          "order": "ascending"
+        }
+      ],
+      [
+        {
+          "path": "/price",
+          "order": "ascending"
+        },
+        {
+          "path": "/seq",
+          "order": "ascending"
+        }
+      ],
+      [
+        {
+          "path": "/price",
+          "order": "descending"
+        },
+        {
+          "path": "/seq",
+          "order": "ascending"
+        }
+      ],
+      [
+        {
+          "path": "/condition_grade",
+          "order": "descending"
+        },
+        {
+          "path": "/seq",
+          "order": "ascending"
+        }
+      ],
+      [
+        {
+          "path": "/bid_count",
+          "order": "descending"
+        },
+        {
+          "path": "/seq",
+          "order": "ascending"
+        }
+      ]
     ]
   }
 }

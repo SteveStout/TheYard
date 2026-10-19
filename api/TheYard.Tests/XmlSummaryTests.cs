@@ -28,6 +28,8 @@ public class XmlSummaryTests
         "20260924180000_ActivitySources.Designer.cs",
         "20261018142907_StandingPerVehicle.cs",
         "20261018142907_StandingPerVehicle.Designer.cs",
+        "20261018220059_Catalogue.cs",
+        "20261018220059_Catalogue.Designer.cs",
         "YardDbContextModelSnapshot.cs",
     };
 

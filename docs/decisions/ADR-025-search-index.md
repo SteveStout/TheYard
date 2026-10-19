@@ -133,7 +133,7 @@ The scan, and why the status is checked separately:
 
 Where the two meet (`api/TheYard.Application/InventoryService.cs`):
 
-```live path=api/TheYard.Application/InventoryService.cs region=search
+```live path=api/TheYard.Application/InventoryService.Search.cs region=search
 ```
 
 ## Consequences
@@ -215,3 +215,7 @@ Steve asked why the listing was uneven on a warm site. Measured on the live cont
 A vehicle's window depends only on its id and the day's anchor, so for one day it never changes. What moves with the clock is which band each vehicle is in. `ScheduleOrder` holds the catalogue sorted twice, by end and by start, built once for each anchor, and reads the ending-soonest order off them at any instant: live by closest end, then upcoming by soonest start, then ended by most recent end, a tie in catalogue order. `InventoryService` keeps one per day and walks it until the page is full; the filter still runs down every row, because the total counts every match. Nothing is stored: the order is the schedule derived again and held in memory for the day it belongs to, so the rule that schedule facts are derived and never persisted still holds.
 
 On the same machine the default listing went from 90 to 100 ms to 25 to 34 ms. `ScheduleOrderTests` holds the order to the full sort at every three hours across a week, ties included, and `InventoryServiceTests` holds the page and the total to the full sort under six filters and offsets.
+
+## Addendum, 2026-10-18: the search moved to the store
+
+From 1.0.3.178 the site no longer builds this index. The searchable text is written once beside each vehicle in the store, and a typed word is a substring test there: `CONTAINS` on Cosmos DB's indexed `search` path, `instr` or `CHARINDEX` on the Catalogue table, each one still able to match a status word ("live", "ended") as the in-memory version did. The schedule order this record added is replaced by one index per order in each store. Both classes stay in Domain with their tests, unused by the site, because that change was held to leaving Domain as it was (ADR: The store does the work).

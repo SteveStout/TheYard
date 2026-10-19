@@ -219,3 +219,7 @@ The key paths are declared in `Containers.PartitionKeyPaths` in Infrastructure.C
 - [`api/TheYard.Infrastructure.Cosmos/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Infrastructure.Cosmos): the documents, the container catalog that declares the same keys, and the adapters.
 - [`api/TheYard.Infrastructure/SyntheticVehicleSource.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SyntheticVehicleSource.cs): why the seed's distributions are the catalogue's distributions.
 - [`docs/decisions/ADR-059-a-second-store-priced.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-059-a-second-store-priced.md): the parent record, with the account and the arithmetic.
+
+## Addendum, 2026-10-18: the catalogue container serves the site
+
+The trade-off this record named ("if pages were served from this container") arrived in 1.0.3.178: the `catalogue` container is now the store the Cosmos DB site's listing, filter values and vehicle reads are queries against (ADR: The store does the work). The key stays `/make`. A vehicle read by id names its partition, because the synthetic id is a seed id and six characters and the seed's two hundred makes give every id its make, so the 2.83 RU query this record measured never runs on a visitor's path; a listing with no make fans out to the one physical partition, which the table above shows costs what a pinned page costs at this size. The indexing policy gained the slot, the price, the bid count and the searchable text, and one composite index per two-key order.

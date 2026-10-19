@@ -22,8 +22,8 @@ Program.cs, explained walks the entry point top to bottom.
 
 | Route | Handled by |
 | --- | --- |
-| `GET /api/vehicles` (filter/sort/page params) | `Auction.Search` → `InventoryService.Search` |
-| `GET /api/vehicles/{id}` | `Auction.Find`, which hands the vehicle back at its standing price with its sold flag |
+| `GET /api/vehicles` (filter/sort/page params) | `Auction.SearchAsync` → `InventoryService.SearchAsync`, which plans the query and the store answers it (ADR: The store does the work) |
+| `GET /api/vehicles/{id}` | `Auction.FindAsync`, a point read in the store, which hands the vehicle back at its standing price with its sold flag |
 | `GET /api/facets` | `Auction.Facets` |
 | `POST /api/vehicles/{id}/bids` | `Auction.PlaceBidAsync` → `BidService` → `BidRules` |
 | `POST /api/vehicles/{id}/buy-now` | `Auction.BuyNowAsync` → `BidService` → `BidRules` |
@@ -64,9 +64,11 @@ What that is worth: a developer can trace any request to the file that handles i
    the same auction. Everybody's bids, then the simulated room's, overlay **before**
    filtering (`Auction.Overlay` in `api/TheYard.Application/Auction.cs`, each raise made by
    `StandingRules.RaisedTo` in `api/TheYard.Domain/StandingRules.cs`), so price bounds see
-   the same figures the UI shows. Then `Where` → `OrderBy` → `Skip/Take`, all in memory:
-   `api/TheYard.Domain/VehicleFilter.cs` and `VehicleOrdering.cs`, applied in
-   `InventoryService.Search`.
+   the same figures the UI shows. Then `Where` → `OrderBy` → `Skip/Take`, in the store:
+   `InventoryService.SearchAsync` resolves the filter to the store's own spelling and plans
+   the page, and the store's adapter (`EfVehicleCatalogue.cs` over the Catalogue table,
+   `CosmosVehicleCatalogue.cs` over the catalogue container) answers it off an index, so only
+   the page comes back (ADR: The store does the work).
 5. **Wire.** `api/TheYard.Api/VehicleWire.cs` stamps the server-derived auction facts
    onto each vehicle (`auction_starts_at`, `auction_ends_at`, `auction_status`,
    `min_next_bid`, and `sold`, from everybody's standing), and the endpoint

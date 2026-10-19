@@ -203,6 +203,9 @@ public sealed class MemoryPlanHistory(string reason) : IPlanHistory
         {
             _hours.RemoveAll(kept => kept.At == hour.At);
             _hours.Add(hour);
+            // The month the store keeps, and no more, so a process that runs on this fake for
+            // weeks holds a month like the container's time-to-live does (ADR: The store does the work, rule b).
+            _hours.RemoveAll(kept => kept.At < hour.At.AddDays(-31));
         }
         return Task.CompletedTask;
     }

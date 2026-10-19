@@ -98,6 +98,8 @@ public static class Startup
             // the delete fails on Windows.
             app.Lifetime.ApplicationStopped.Register(() =>
             {
+                // This database's pooled connections closed first, so its file is not held.
+                YardDatabase.ReleaseFile(scratchDatabase);
                 // SQLite writes three files, not one: the database, the write-ahead log
                 // and the shared-memory index. Deleting only the first leaves the other
                 // two behind, and this runs whether or not the store came up, because

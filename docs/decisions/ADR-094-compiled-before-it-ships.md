@@ -113,3 +113,7 @@ Outside the rings: the build and the runtime's configuration. No code changes; t
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the compilation and collection settings.
 - [`api/TheYard.Tests/CompilationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CompilationTests.cs): the live reading, the Dockerfile's publish, and the runtime configuration the build writes, held to this record.
 - [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the runtime reading, in the region `runtime-metrics`.
+
+## Addendum, 2026-10-18: a heap limit beside the mode
+
+From 1.0.3.178 each .NET site also runs under `DOTNET_GCHeapHardLimitPercent=0x1E`, thirty per cent of what the container sees, set in `infra/appservice.bicep`. Read from the environment, GC settings are hexadecimal; `30` would have been forty-eight per cent. Workstation and concurrent collection stay as this record pinned them (ADR: The store does the work).

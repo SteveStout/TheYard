@@ -217,6 +217,7 @@ export const MENUS: Record<
     items: [
       { key: 'practices' },
       { key: 'sealed' },
+      { key: 'memory' },
       { key: 'onion' },
       { key: 'security' },
       { key: 'reactServerRendering' },

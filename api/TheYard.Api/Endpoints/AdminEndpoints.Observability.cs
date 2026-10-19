@@ -126,13 +126,18 @@ public static partial class AdminEndpoints
                 uptime_seconds = (long)(now - startedAt).TotalSeconds,
                 every_seconds = (int)MachineSampler.Every.TotalSeconds,
                 samples = sampler.Snapshot(),
-                // Which catalogues this process is holding right now, because a
-                // hundred thousand vehicles is most of what the memory above is.
+                // The collector's own reading, once, now: what ADR: The store does the work
+                // measured before and after, and what MEMORY.md teaches to read.
+                gc = MachineSampler.GcReading(),
+                // Which catalogues this process is holding right now. Until the store did the
+                // work, a hundred thousand vehicles per store was most of the memory above; the
+                // count held in memory reads 0 once the store answers (ADR: The store does the work).
                 catalogues = backends.All.Select(backend => new
                 {
                     store = backend.Name,
                     serves = ReferenceEquals(backend, backends.Default),
                     loaded = backend.CatalogueLoaded,
+                    held = backend.CatalogueHeld(),
                 }),
             },
             relational = new

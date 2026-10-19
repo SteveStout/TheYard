@@ -335,10 +335,10 @@ the code each one shows in and the place it stops.
 | --- | --- | --- |
 | `api/TheYard.Data` | The plain records: `Vehicle`, `PhotoEntry`. No logic. | nothing |
 | `api/TheYard.Domain` | The rules: auction schedule and clock, filter, ordering, the search index, bid rules, standing rules (the one rule for raising a price, and reserve met or not), photo gallery, FNV-1a. Pure functions and records. | Data |
-| `api/TheYard.Application` | The use cases: `Auction`, what the endpoints ask about the auction, composing `InventoryService`, `BidService` and `MarketService`; the auction's three ports (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`); and the operator's ports (`IActivityStore`, `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment` and the rest). | Domain, Data |
+| `api/TheYard.Application` | The use cases: `Auction`, what the endpoints ask about the auction, composing `InventoryService`, `BidService` and `MarketService`; the auction's ports (`IVehicleCatalogue`, the store's hundred thousand a page at a time; `IVehicleSource`, the seed that fills it; `IPhotoManifestSource`; `IBidStore`); and the operator's ports (`IActivityStore`, `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment` and the rest). | Domain, Data |
 | `api/TheYard.Database` | The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is. | nothing |
 | `api/TheYard.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator, the Identity user, and the database readings the Admin tab shows (`ResourceStats`, `YardDatabase.PingAsync`). | Application, Domain, Data |
-| `api/TheYard.Infrastructure.Cosmos` | The auction's three ports, the operator's stores and the account store over Azure Cosmos DB, plus the partition key experiment behind `IStoreExperiment`, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). | Application, Infrastructure |
+| `api/TheYard.Infrastructure.Cosmos` | The auction's ports, the operator's stores and the account store over Azure Cosmos DB, plus the partition key experiment behind `IStoreExperiment`, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). | Application, Infrastructure |
 | `api/TheYard.Experiment` | A console tool: seeds the 100,000-document catalogue and runs the partition key's query set in paired rounds (ADR: The partition key). | Infrastructure, Infrastructure.Cosmos |
 | `api/TheYard.Migrations.Sqlite` | The SQLite schema's history, applied by the process that uses it. | Infrastructure |
 | `api/TheYard.Api` | The host: composition, endpoints, serialization, static files, the served documents, observability. | Application, Infrastructure, Infrastructure.Cosmos, Migrations.Sqlite (Domain and Data through them) |
@@ -437,7 +437,7 @@ side of the same question.
 ## Files
 
 - [`docs/app-architecture/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/STYLE.md): the naming, layering and commenting rules this page's principles turn into, and the `.editorconfig` that enforces the mechanical half.
-- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's three ports the layers meet at.
+- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's ports the layers meet at.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents for the composition root, walked line by line in ADR: Program.cs, explained.
 - [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition) and [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): the registrations and middleware, and the handlers.
 - [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.

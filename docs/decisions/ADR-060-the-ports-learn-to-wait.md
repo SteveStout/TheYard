@@ -79,7 +79,7 @@ completed, a wait of no time. The only way to block a thread here for real is to
 skip the warm-up against a store that goes over the network, and the host does
 not:
 
-```live path=api/TheYard.Application/InventoryService.cs region=warm
+```live path=api/TheYard.Application/InventoryService.Warm.cs region=warm
 ```
 
 The host's side of that bargain is two lines, before the pipeline is built:
@@ -195,3 +195,7 @@ So the warm runs beside the server. The page's own files and the platform's prob
 The addendum above blamed the dark stretch on the catalogue loading before the server listened. The roll of 1.0.3.89 says that was most of the wrong answer. A probe on Steve's machine read each site's origin and domain every two seconds through the roll (`greenlane-probe-10389.log`): the old containers' last answer arrived at 14:51:08 CDT, and nothing answered, `/healthz` included, until 14:54:15, 186 seconds. `/healthz` answers the instant the process listens and reads no store, so those three minutes are App Service replacing the container on its one instance: stopping the old one, then pulling and starting the new one. Both domains answered 504 after 28 seconds, repeatedly, through that stretch.
 
 What listening first did change is everything after it. The new version's API answered within seconds of `/healthz` returning, and the slowest read after that was 2 to 7 seconds with one first read of 29 seconds, against worst reads of 18 to 112 seconds in the first 150 seconds of the three rolls Application Insights held in full. The dark stretch is the platform's, and no change inside the container removes it; two containers overlapping does, which on this plan needs memory it does not have: the plan reads 92 per cent used at the median over ten days.
+
+## Addendum, 2026-10-18: the warm-up no longer loads the catalogue
+
+From 1.0.3.178 warming a store reads the photo manifest, the filter values and one count of what the store holds; the hundred thousand vehicles stay in the store and every listing awaits its query (ADR: The store does the work). The shared task, and the rule that a failed warm-up is not kept, are unchanged.

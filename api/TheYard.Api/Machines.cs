@@ -43,6 +43,36 @@ public sealed class MachineSampler(int capacity) : BackgroundService
     /// <summary>What the runtime says this container may use, which is what a memory number here is a share of.</summary>
     public static double MemoryLimitMb => Math.Round(GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / 1024d / 1024d, 1);
 
+    // #region gc-reading
+    /// <summary>
+    /// The garbage collector's own account of this process, read once: the mode in effect, the
+    /// heap against the limit it may grow to, the two generations that hold long-lived and large
+    /// objects, how much of the heap is pinned or fragmented, and the share of time spent in
+    /// collections. The numbers ADR: The store does the work records before and after.
+    /// </summary>
+    public static object GcReading()
+    {
+        var info = GC.GetGCMemoryInfo(GCKind.Any);
+        static double Mb(long bytes) => Math.Round(bytes / 1024d / 1024d, 1);
+        var generations = info.GenerationInfo;
+        return new
+        {
+            mode = System.Runtime.GCSettings.IsServerGC ? "server" : "workstation",
+            concurrent = AppContext.TryGetSwitch("System.GC.Concurrent", out bool concurrent) ? concurrent : true,
+            heap_size_mb = Mb(info.HeapSizeBytes),
+            committed_mb = Mb(info.TotalCommittedBytes),
+            limit_mb = Mb(info.TotalAvailableMemoryBytes),
+            gen2_mb = generations.Length > 2 ? Mb(generations[2].SizeAfterBytes) : 0,
+            large_object_heap_mb = generations.Length > 3 ? Mb(generations[3].SizeAfterBytes) : 0,
+            fragmented_mb = Mb(info.FragmentedBytes),
+            pinned_objects = info.PinnedObjectsCount,
+            pause_percent = Math.Round(info.PauseTimePercentage, 2),
+            allocated_mb = Mb(GC.GetTotalAllocatedBytes(precise: false)),
+            collections = new { gen0 = GC.CollectionCount(0), gen1 = GC.CollectionCount(1), gen2 = GC.CollectionCount(2) },
+        };
+    }
+    // #endregion gc-reading
+
     /// <summary>The processors this process can use, as the runtime sees them inside the container.</summary>
     public static int Processors => Environment.ProcessorCount;
 

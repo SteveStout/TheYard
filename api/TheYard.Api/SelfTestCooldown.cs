@@ -30,6 +30,12 @@ public sealed class SelfTestCooldown(TimeProvider clock)
                 return false;
             }
             _last[account] = now;
+            // An account that ran it longer ago than the cooldown answers the same as one that
+            // never did, so it is forgotten, and the dictionary holds the last minute's runners only.
+            foreach (var (known, _) in _last.Where(entry => now - entry.Value >= Every).ToList())
+            {
+                _last.Remove(known);
+            }
             return true;
         }
     }

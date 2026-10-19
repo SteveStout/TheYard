@@ -96,7 +96,7 @@ is a ring nothing can hide in.
 | --- | --- | --- | --- |
 | The domain model | `api/TheYard.Data` | `Vehicle` and `PhotoEntry`, exactly as the dataset has them. Records with no behaviour. | the BCL only |
 | Domain services, the rules | `api/TheYard.Domain` | `BidRules`, `AuctionSchedule`, `AuctionClock`, `StandingRules`, `VehicleFilter`, `VehicleOrdering`, `VehicleSearchIndex`, `PhotoGallery`, and the `Fnv1a` hash the schedule is derived from. Pure functions of their inputs and the clock they are handed. | Data |
-| Application services, the use cases | `api/TheYard.Application` | `Auction`, the one class an endpoint asks about the auction, composing `InventoryService`, `BidService` and `MarketService`; the auction's three ports and the operator's ports. | Domain, Data |
+| Application services, the use cases | `api/TheYard.Application` | `Auction`, the one class an endpoint asks about the auction, composing `InventoryService`, `BidService` and `MarketService`; the auction's ports and the operator's ports. | Domain, Data |
 | Infrastructure, the adapters | `api/TheYard.Infrastructure` and `api/TheYard.Infrastructure.Cosmos` | The same ports implemented twice: EF Core over Azure SQL Database or SQLite, and the Cosmos DB SDK. | Application; the document store adapter also borrows one shared user type from the relational one |
 | User interface and host | `api/TheYard.Api`, with `src/` and `render/` | Endpoints that read a request, ask `Auction` and write the answer; the composition root in `Composition/`; the React front end and the service that draws it on the server, both clients of the API. | Application and both adapters; the front end, the wire only |
 | Tests | `api/TheYard.Tests` | Rules with fixed clocks, use cases with hand-written fakes at the ports, the real host through `WebApplicationFactory`, and the ten tests that hold the rings. | everything |
@@ -126,7 +126,7 @@ rules and the use cases compile against the base class library and each other, a
 
 Application needs to save a bid, and the database is outside it. So Application declares the
 interface it needs, in its own words, and each adapter implements it. At compile time every arrow
-still points inward, at the interface. The auction's three ports, read from the running build:
+still points inward, at the interface. The auction's ports, read from the running build:
 
 ```live path=api/TheYard.Application/Ports.cs region=ports
 ```

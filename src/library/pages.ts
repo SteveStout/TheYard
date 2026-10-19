@@ -74,6 +74,12 @@ export const PAGES = {
     url: '/api/docs/security',
     kind: 'overview',
   },
+  memory: {
+    title: 'Memory, held by the build',
+    menuLabel: 'Memory, held by the build',
+    url: '/api/docs/memory',
+    kind: 'overview',
+  },
   reactServerRendering: {
     title: 'React server rendering, explained',
     menuLabel: 'React server rendering, explained',

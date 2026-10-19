@@ -225,7 +225,9 @@ public class SchemaConformanceTests
         // decision, and it belongs beside the storage. The only query either of
         // these tables serves is ORDER BY Seq, run once at startup, so that is
         // where the clustered index goes and the primary key is nonclustered.
-        foreach (string table in new[] { "Vehicles", "Photos" })
+        // The Catalogue is read a page at a time off its other indexes, and the
+        // room's first live auctions in this order, so it is clustered the same.
+        foreach (string table in new[] { "Vehicles", "Photos", "Catalogue" })
         {
             var clustered = Assert.Single(ddl.Tables[table].Indexes, index => index.Clustered);
             Assert.Equal("Seq", clustered.Columns);
@@ -392,8 +394,9 @@ internal sealed class Ddl
 
     private static string Collapse(string text) => Regex.Replace(text, @"\s+", " ").Trim();
 
+    /// <summary>The columns an index names, without their brackets or a direction: the model compares names, and a descending key is a storage decision.</summary>
     private static string Columns(string list) =>
-        string.Join(",", list.Split(',').Select(part => part.Trim().Trim('[', ']')));
+        string.Join(",", list.Split(',').Select(part => Regex.Replace(part.Trim(), @"\s+(ASC|DESC)$", string.Empty, RegexOptions.IgnoreCase).Trim('[', ']')));
 
     private static string StripComments(string sql) =>
         Regex.Replace(sql, @"--[^\n]*", string.Empty);
