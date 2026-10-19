@@ -53,12 +53,17 @@ public class CloudThresholdTests
     [Fact]
     public void The_sql_card_names_the_paused_free_database_and_reads_its_size_from_the_record()
     {
-        var view = SqlCard.View(Held("storage_gb", 1.8, new Dictionary<string, string?> { ["dtu"] = "5", ["max_gb"] = "2", ["paused"] = "sqldb-theyard-ss" }));
+        var view = SqlCard.View(Held("storage_gb", 1.8, new Dictionary<string, string?> { ["dtu"] = "5", ["max_gb"] = "2", ["paused"] = "sqldb-theyard-ss", ["paused_status"] = "Paused", ["paused_spec"] = "GeneralPurpose free offer", ["served_by"] = "theyard.stevenstout.biz, on APP-THEYARD-ONE-SS" }));
         Assert.Equal(90, view.Dials[1].Percent);
         Assert.Equal("alarm", view.Dials[1].Tone);
         var databases = view.Rows[0].Table;
         Assert.Equal(["Database", "Type", "Size", "Read by this card"], databases.Columns);
-        Assert.Equal(["sqldb-theyard-ss", "SQL database", "free tier, paused", "named, never read"], databases.Rows[1].Select(cell => cell.Text));
+        Assert.Equal(["sqldb-theyard-ss", "SQL database", "GeneralPurpose free offer, Paused", "its record, an hour"], databases.Rows[1].Select(cell => cell.Text));
+        // What runs on it is this process's own settings, never a name written down.
+        Assert.Equal("theyard.stevenstout.biz, on APP-THEYARD-ONE-SS", view.Rows.Single(r => r.Key == "runs").Answer);
+        // With no other database on the server the table lists the one it reads, and nothing more.
+        var alone = SqlCard.View(Held("storage_gb", 1.8, new Dictionary<string, string?> { ["dtu"] = "5", ["max_gb"] = "2" }));
+        Assert.Single(alone.Rows[0].Table.Rows);
     }
 
 

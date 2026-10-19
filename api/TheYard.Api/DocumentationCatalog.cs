@@ -135,6 +135,7 @@ public static class DocumentationCatalog
         ["adr-the-store-does-the-work"] = "docs/decisions/ADR-103-the-store-does-the-work.md",
         ["adr-memory-follows-traffic"] = "docs/decisions/ADR-104-memory-follows-traffic.md",
         ["adr-one-web-app-for-every-net-process"] = "docs/decisions/ADR-105-one-web-app-for-every-net-process.md",
+        ["adr-unused-resources-are-deleted"] = "docs/decisions/ADR-106-unused-resources-are-deleted.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",
@@ -179,6 +180,7 @@ public static class DocumentationCatalog
         ["plan-minute"] = ("docs/images/plan-minute.svg", "The plan's minute, from Azure to the card"),
         ["cloud-infrastructure"] = ("docs/images/cloud-infrastructure.svg", "Cloud infrastructure: seven resources, one frame"),
         ["deploy-shape"] = ("docs/images/deploy-shape.svg", "One shape for every app that runs"),
+        ["request-path"] = ("docs/images/request-path.svg", "How a request gets answered"),
     };
     // #endregion diagrams
 }

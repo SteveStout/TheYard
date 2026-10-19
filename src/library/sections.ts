@@ -48,6 +48,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'Data flow', href: '/api/docs/diagrams/dataflow' },
   { label: 'The database', href: '/api/docs/diagrams/erd' },
   { label: 'The two sites', href: '/api/docs/diagrams/two-sites' },
+  { label: 'How a request gets answered', href: '/api/docs/diagrams/request-path' },
   { label: 'One shape for every deploy', href: '/api/docs/diagrams/deploy-shape' },
   { label: 'A page drawn on the server', href: '/api/docs/diagrams/server-page' },
   { label: 'Compiled before it ships', href: '/api/docs/diagrams/compiled-ahead' },

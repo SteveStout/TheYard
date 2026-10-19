@@ -133,16 +133,18 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
         Assert.Empty(CloudTable.FromFact(null, "A").Rows);
         Assert.Empty(new CloudRow("k", "q", "a", [], "good").Table.Columns);
 
-        // The plan's apps: each a web app, each naming the store it talks to as a resource of its own.
-        Assert.Equal("SQL database, its own resource", PlanRows.Store("APP-THEYARD-SS-ZMNETJ67BN5H2"));
-        Assert.Equal("Cosmos DB account, its own resource", PlanRows.Store("APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2"));
-        Assert.Equal("its own files, on the plan's storage", PlanRows.Store("APP-THESHED-SS-ZMNETJ67BN5H2"));
-        // The one web app since 19 October, and the renderer that reads it for both sites.
-        Assert.Equal("SQL database and Cosmos DB account, each its own resource; The Shed's files in the image", PlanRows.Store("APP-THEYARD-ONE-SS-ZMNETJ67BN5H2"));
-        Assert.Equal("the two sites' API (web app)", PlanRows.Store("APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2"));
-        Assert.Equal(".NET 10", PlanRows.Runtime("APP-THEYARD-ONE-SS-ZMNETJ67BN5H2"));
-        Assert.Equal("Node.js", PlanRows.Runtime("APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2"));
-        Assert.Equal(".NET 10", PlanRows.Runtime("APP-THESHED-SS-ZMNETJ67BN5H2"));
+        // The plan's apps are described from Azure's own read of each site, never from its name.
+        Assert.Equal("Web app, Linux container", PlanRows.TypeOf("app,linux,container"));
+        Assert.Equal("Web app, Linux", PlanRows.TypeOf("app,linux"));
+        Assert.Equal("Web app", PlanRows.TypeOf("app"));
+        Assert.Equal("not read", PlanRows.TypeOf(null));
+        Assert.Equal("theyard:v1.0.3.186", PlanRows.ImageOf("DOCKER|crtheyardsszmnetj67bn5h2.azurecr.io/theyard:v1.0.3.186"));
+        Assert.Equal("theyard-render:v1.0.3.186", PlanRows.ImageOf("DOCKER|crtheyardsszmnetj67bn5h2.azurecr.io/theyard-render:v1.0.3.186"));
+        Assert.Equal("NODE 20-lts", PlanRows.ImageOf("NODE|20-lts"));
+        Assert.Equal("not read", PlanRows.ImageOf(""));
+        // The edge card names who answered a page and the API from the header each web app sends.
+        Assert.Equal("the page answered by APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2", NetlifyEdge.AnsweredBy("the page", "APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2"));
+        Assert.Equal("/api answered without naming its app", NetlifyEdge.AnsweredBy("/api", null));
     }
     // #endregion cloud-view-tests
 }

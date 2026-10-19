@@ -87,7 +87,7 @@ const nameCosmos = box(b1, nameLive.bottom + 36, w1, 'theyard-cosmos.stevenstout
 const nameBare = box(b1, nameCosmos.bottom + 36, w1, 'stevenstout.biz and www', 'A 75.2.60.5 and CNAME -> theyard-edge.netlify.app', [
   'Both forward to the live site with a 301, so a trimmed or retyped address still lands on the app.',
 ], 42);
-const nameShed = box(b1, nameBare.bottom + 36, w1, 'theshed.stevenstout.biz', 'CNAME -> the one web app, TTL 1 hour', [
+const nameShed = box(b1, nameBare.bottom + 36, w1, 'theshed.stevenstout.biz', 'CNAME -> the one web app, TTL 30 min', [
   'The Shed, bound straight to the web app with App Service\'s managed certificate. No edge in front of it.',
 ], 42);
 const lane1Bottom = nameShed.bottom + 20;

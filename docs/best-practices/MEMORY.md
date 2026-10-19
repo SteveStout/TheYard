@@ -1,6 +1,6 @@
 # Memory, held by the build
 
-TheYard is a used-vehicle auction platform built in the open: a .NET 10 API, a React front end, and two databases underneath it. Four apps share one small App Service plan, a B2 with 3.5 GB of memory between them, so a megabyte one app keeps is a megabyte the other three cannot have. This page is the eight rules the apps are held to, each with why it matters, the number this site moved when it applied it, and the code or test that holds it.
+TheYard is a used-vehicle auction platform built in the open: a .NET 10 API, a React front end, and two databases underneath it. Two apps share one small App Service plan, a B2 with 3.5 GB of memory between them: the one web app that runs every .NET process (both sites and The Shed) and the rendering service. A megabyte one keeps is a megabyte the other cannot have, and the platform's own share comes out of the same 3.5 GB. This page is the eight rules the apps are held to, each with why it matters, the number this site moved when it applied it, and the code or test that holds it.
 
 ## In plain words
 

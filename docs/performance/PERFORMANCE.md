@@ -19,7 +19,7 @@ What that is worth: a developer gets methods and numbers they can rerun from the
 | Resource | What it is | What it costs |
 | --- | --- | --- |
 | Azure Cosmos DB | Free tier, 1000 RU/s shared, local auth disabled so no key exists | **$0.00 a month** |
-| Azure SQL Database | Basic, 5 DTU, 2 GB, Entra-only (the serverless free database beside it paused on 14 September, below) | $4.90 a month |
+| Azure SQL Database | Basic, 5 DTU, 2 GB, Entra-only (the serverless free database beside it, paused on 14 September, was deleted on 19 October: ADR: Unused resources are deleted) | $4.90 a month |
 | Compute | One Linux B2 App Service plan, 2 vCPU and 3.5 GB, shared by one web app for containers that serves both sites and The Shed (since 19 October; two web apps for the sites and a third for The Shed before) and by the rendering service | **$24.82 a month** for the plan at list price in westus3, $0.034 an hour over 730 hours; B1 at $12.41 until 8 October |
 | Registry | Azure Container Registry, Basic, one image tag per version, 8.7 GiB on 20 September of the 10 GiB the tier includes | $5.07 a month ($0.1666 a day) |
 | Edge and TLS | Netlify free plan, 300 build credits a month | **$0.00 a month** |

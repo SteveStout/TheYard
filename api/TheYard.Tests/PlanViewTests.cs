@@ -20,7 +20,7 @@ public class PlanViewTests
 
     private static PlanHour Hour(params PlanEvent[] events) => new(
         Now.AddHours(-1), Plan, "tenant-1", "B1", 1, 1, 1.75,
-        [new PlanAppState("APP-THEYARD-SS", Sql, "Running", true, Now.AddDays(-1)), new PlanAppState("app-theyard-render-ss", Sql.Replace("APP-THEYARD-SS", "app-theyard-render-ss"), "Running", true, null)],
+        [new PlanAppState("APP-THEYARD-SS", Sql, "Running", true, Now.AddDays(-1), "app,linux,container", "DOCKER|cr.azurecr.io/theyard:v1.0.3.170", ["theyard.example", "app-theyard-ss.azurewebsites.net"]), new PlanAppState("app-theyard-render-ss", Sql.Replace("APP-THEYARD-SS", "app-theyard-render-ss"), "Running", true, null)],
         events, "West US 3", true);
 
     private static CloudReport Build(IReadOnlyList<PlanMinute> minutes, params PlanHour[] hours) => PlanView.Build(
@@ -56,12 +56,15 @@ public class PlanViewTests
         Assert.Equal("0.70 of 1.75 GB", report.Dials[1].Absolute);
         Assert.All(report.Rows, row => Assert.Contains(row.Tone, new[] { "good", "info" }));
         Assert.Equal("2 apps, running", report.Rows.Single(r => r.Key == "power").Answer);
-        // The apps are a table, each name a link to its blade and each named as a web app.
+        // The apps are a table, each name a link to its blade, and each described from Azure's own
+        // read of the site: what it is, the image it runs and the names it answers to.
         var apps = report.Rows.Single(r => r.Key == "power").Table;
         Assert.Contains(apps.Rows, row => row[0].Href == "https://portal.azure.com/#@tenant-1/resource" + Sql);
-        Assert.All(apps.Rows.SkipLast(1), row => Assert.Equal("Web app (container)", row[1].Text));
+        Assert.Equal(["Web app, Linux container", "theyard:v1.0.3.170", "theyard.example, app-theyard-ss.azurewebsites.net"], apps.Rows[0].Skip(1).Take(3).Select(cell => cell.Text));
+        // An hour kept before the reader read these says so, and never guesses from the name.
+        Assert.Equal(["not read", "not read", "not read"], apps.Rows[1].Skip(1).Take(3).Select(cell => cell.Text));
         // Each app with what it holds and burns now, and a last row for the plan outside every app.
-        Assert.Equal(new[] { "App", "Type", "Runs", "Talks to", "State", "Always on", "Memory now", "CPU now" }, apps.Columns);
+        Assert.Equal(new[] { "App", "Type", "Runs", "Answers to", "State", "Always on", "Memory now", "CPU now" }, apps.Columns);
         Assert.Equal("the plan, outside the apps", apps.Rows[^1][0].Text);
         // The row says it is a difference, not a reading (ADR: The App Service plan, read every minute, 19 October).
         Assert.Equal("Linux and the platform (derived: plan memory used minus the apps)", apps.Rows[^1][1].Text);

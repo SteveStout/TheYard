@@ -100,7 +100,7 @@ public static class CosmosCard
             : seconds;
 
     /// <summary>The hour's facts from the account's record and its containers' definitions.</summary>
-    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement account, System.Text.Json.JsonElement containers)
+    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement account, System.Text.Json.JsonElement containers, string? throughput = null)
     {
         var list = containers.TryGetProperty("value", out var value)
             ? value.EnumerateArray().Select(c => (Name: AzureMetrics.Text(c, "name") ?? "?", Ttl: AzureMetrics.Text(c, "properties.resource.defaultTtl"))).OrderBy(c => c.Name, StringComparer.Ordinal).ToList()
@@ -112,7 +112,8 @@ public static class CosmosCard
             ["containers"] = string.Join(" · ", list.Select(c => c.Ttl is null or "-1" ? c.Name : $"{c.Name} {(double.Parse(c.Ttl, CultureInfo.InvariantCulture) / 86_400).ToString("0.#", CultureInfo.InvariantCulture)} d")),
             ["container_rows"] = CloudTable.ToFact(list.Select(c => new[] { c.Name, "Cosmos DB container", TimeToLive(c.Ttl) })),
             ["free_tier"] = free == "true" ? "on" : free == "false" ? "off" : null,
-            ["spec"] = string.Join(' ', new[] { free == "true" ? "FREE TIER" : null, "1,000 RU/S SHARED", "25 GB", AzureMetrics.Text(account, "location")?.ToUpperInvariant() }.Where(p => p is not null)),
+            ["throughput"] = throughput,
+            ["spec"] = string.Join(' ', new[] { free == "true" ? "FREE TIER" : null, double.TryParse(throughput, CultureInfo.InvariantCulture, out double ru) ? $"{ru.ToString("N0", CultureInfo.InvariantCulture)} RU/S SHARED" : null, AzureMetrics.Text(account, "location")?.ToUpperInvariant() }.Where(p => p is not null)),
         };
     }
 }

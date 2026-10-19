@@ -33,6 +33,8 @@ const own = {
 };
 /** Only for the browser suite on one machine: every request that is not a page goes on to this origin. */
 const passOrigin = process.env.YARD_PASS_ORIGIN ?? null;
+/** App Service's name for this web app, said on every answer so the edge card can read who answered a page. */
+const siteName = process.env.WEBSITE_SITE_NAME ?? null;
 // #endregion settings
 
 const render = createRenderer(own, Number(process.env.YARD_DEADLINE_MS ?? 2500));
@@ -147,6 +149,7 @@ async function passOn(request, response) {
 }
 
 const server = createServer(async (request, response) => {
+  if (siteName) response.setHeader('x-yard-site', siteName);
   try {
     const url = new URL(request.url ?? '/', 'http://render.local');
     if (url.pathname === '/healthz') {

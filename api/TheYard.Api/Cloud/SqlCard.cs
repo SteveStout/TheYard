@@ -43,17 +43,23 @@ public static class SqlCard
         double? deadlocks = ResourceView.WindowSum(inputs, "deadlocks"), failed = ResourceView.WindowSum(inputs, "failed"), blocked = ResourceView.WindowSum(inputs, "blocked");
         var events = inputs.Hours.SelectMany(h => h.Events).ToList();
         var dtuTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "dtu"), Dtu);
+        // The database this card reads, then any other on the server as its own record says, only while there is one.
+        var databases = new List<IReadOnlyList<CloudLink>>
+        {
+            new CloudLink[] { ResourceView.Resource(inputs) ?? new CloudLink(ResourceCatalog.SqlDatabase, null), new("SQL database", null), new(ResourceView.Fact(inputs, "spec"), null), new("yes, a minute", null) },
+        };
+        if (ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("paused") is { } other)
+        {
+            databases.Add(new CloudLink[] { new(other, null), new("SQL database", null), new($"{ResourceView.Fact(inputs, "paused_spec")}, {ResourceView.Fact(inputs, "paused_status")}", null), new("its record, an hour", null) });
+        }
         var rows = new List<CloudRow>
         {
-            new("runs", "What runs on it?", inputs.Hours.Count == 0 ? "not read yet" : "theyard, the SQL site",
+            new("runs", "What runs on it?", inputs.Hours.Count == 0 ? "not read yet" : ResourceView.Fact(inputs, "served_by", "no site of this process names it"),
                 [new($"EF Core · {ResourceView.Fact(inputs, "tables")} tables · migrations at {ResourceView.Fact(inputs, "migration")}", null)], "good")
             {
                 Table = inputs.Hours.Count == 0 ? CloudTable.None : new CloudTable(
                     ["Database", "Type", "Size", "Read by this card"],
-                    [
-                        [ResourceView.Resource(inputs) ?? new CloudLink("sqldb-theyard-ss-basic", null), new("SQL database", null), new(ResourceView.Fact(inputs, "spec"), null), new("yes, a minute", null)],
-                        [new(ResourceView.Fact(inputs, "paused", "sqldb-theyard-ss"), null), new("SQL database", null), new("free tier, paused", null), new("named, never read", null)],
-                    ]),
+                    databases),
             },
             new("waiting", "Is it waiting on anything?", blocked is null && deadlocks is null ? "not read yet" : $"{ResourceView.Number(blocked)} blocked",
                 [new($"sessions {ResourceView.Number(sessions)} · workers {PlanView.Percent(ResourceView.Now(inputs, "workers"))} · log IO {PlanView.Percent(ResourceView.Now(inputs, "log_write"))} · deadlocks {ResourceView.Number(deadlocks)} in the window", null)],

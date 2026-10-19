@@ -60,7 +60,10 @@ public sealed record PlanBucket(DateTimeOffset At, int Minutes, double? CpuPerce
 /// <param name="State">"Running", "Stopped" or what Azure says.</param>
 /// <param name="AlwaysOn">Whether Always On is set; null when not read.</param>
 /// <param name="LastModifiedAt">When the app's configuration last changed, which a deploy changes; null when not read.</param>
-public sealed record PlanAppState(string Name, string ResourceId, string State, bool? AlwaysOn, DateTimeOffset? LastModifiedAt);
+/// <param name="Kind">Azure's kind for the site, such as "app,linux,container"; null when not read, as in an hour kept before the reader read it.</param>
+/// <param name="Image">What the site runs, Azure's linuxFxVersion, such as "DOCKER|registry/theyard:tag"; null when not read.</param>
+/// <param name="Hosts">The names the site answers to, Azure's hostNames; null when not read.</param>
+public sealed record PlanAppState(string Name, string ResourceId, string State, bool? AlwaysOn, DateTimeOffset? LastModifiedAt, string? Kind = null, string? Image = null, IReadOnlyList<string>? Hosts = null);
 
 /// <summary>One entry of the plan's Activity Log: something Azure or somebody did to it or its apps.</summary>
 /// <param name="At">When it happened, UTC.</param>

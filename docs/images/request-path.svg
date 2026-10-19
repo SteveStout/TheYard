@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="830" viewBox="0 0 1400 830" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>How a request gets answered: three names at Wix, the Netlify edge's two files, the rendering service, and inside the one web app SiteHosts picking the name, ShedMount handing The Shed's name to The Shed, and Stores picking Azure SQL or Cosmos DB</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .shed { fill: #f3f7f2; stroke: #5d7f58; }
+      .store { fill: #f6f3ec; stroke: #9a8459; }
+      .lane { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 600; }
+      .lane-title { fill: #3f3a37; font-size: 17px; font-weight: 700; }
+      .lane-sub { fill: #62666f; font-size: 13px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 10.5px; }
+      .label { fill: #4a6c96; font-size: 12px; font-weight: 600; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+  <rect width="1400" height="830" fill="#e9e6e7"/>
+  <text x="30" y="44" class="heading">How a request gets answered: three names, one web app, two stores</text>
+  <text x="30" y="68" class="caption">Read left to right. The name a visitor typed decides everything after it: The Shed or TheYard, and for TheYard, which store answers when the request names none.</text>
+  <rect x="30" y="100" width="270" height="560" class="lane"/>
+  <text x="46" y="128" class="lane-title">The names, at Wix DNS</text>
+  <text x="46" y="147" class="lane-sub">what the visitor typed</text>
+  <rect x="46" y="166" width="238" height="92" class="box"/>
+  <text x="60" y="191" class="title">theyard</text>
+  <text x="60" y="211" class="mono">CNAME theyard-edge.netlify.app</text>
+  <text x="60" y="232" class="body">The live site.</text>
+  <text x="60" y="249" class="body">No store named: Azure SQL.</text>
+  <rect x="46" y="296" width="238" height="92" class="box"/>
+  <text x="60" y="321" class="title">theyard-cosmos</text>
+  <text x="60" y="341" class="mono">CNAME theyard-edge.netlify.app</text>
+  <text x="60" y="362" class="body">The second site.</text>
+  <text x="60" y="379" class="body">No store named: Cosmos DB.</text>
+  <rect x="46" y="500" width="238" height="109" class="box"/>
+  <text x="60" y="525" class="title">theshed</text>
+  <text x="60" y="545" class="mono">CNAME app-theyard-one-ss-...</text>
+  <text x="60" y="566" class="body">Bound to the web app with</text>
+  <text x="60" y="583" class="body">App Service's certificate.</text>
+  <text x="60" y="600" class="body">No edge in front of it.</text>
+  <rect x="330" y="100" width="300" height="400" class="lane"/>
+  <text x="346" y="128" class="lane-title">The edge: Netlify, theyard-edge</text>
+  <text x="346" y="147" class="lane-sub">HTTPS ends here; the first matching rule wins</text>
+  <rect x="346" y="166" width="268" height="109" class="box"/>
+  <text x="360" y="191" class="title">1. edge/_redirects</text>
+  <text x="360" y="211" class="mono">a page, the bare path with its query</text>
+  <text x="360" y="232" class="body">To the rendering service as</text>
+  <text x="360" y="249" class="body">/site/sql or /site/cosmos.</text>
+  <text x="360" y="266" class="body">Bare domain and www: 301.</text>
+  <rect x="346" y="326" width="268" height="109" class="box"/>
+  <text x="360" y="351" class="title">2. netlify.toml</text>
+  <text x="360" y="371" class="mono">everything else, proxied</text>
+  <text x="360" y="392" class="body">To the one web app, with</text>
+  <text x="360" y="409" class="body">X-Yard-Host: the name typed.</text>
+  <text x="360" y="426" class="body">The Cosmos DB rule first.</text>
+  <rect x="330" y="530" width="300" height="230" class="lane"/>
+  <text x="346" y="558" class="lane-title">The rendering service</text>
+  <text x="346" y="577" class="lane-sub">APP-THEYARD-RENDER-SS, Node</text>
+  <rect x="346" y="596" width="268" height="109" class="box"/>
+  <text x="360" y="621" class="title">render/server.mjs</text>
+  <text x="360" y="641" class="mono">YARD_SITES: both names, one address</text>
+  <text x="360" y="662" class="body">Draws the page from the API,</text>
+  <text x="360" y="679" class="body">naming the store on every read</text>
+  <text x="360" y="696" class="body">(X-Yard-Store, render/loaders.ts).</text>
+  <rect x="660" y="100" width="710" height="660" class="lane"/>
+  <text x="676" y="128" class="lane-title">The one web app: APP-THEYARD-ONE-SS</text>
+  <text x="676" y="147" class="lane-sub">one .NET process on the B2 plan; every .NET request lands here</text>
+  <rect x="680" y="166" width="330" height="126" class="box"/>
+  <text x="694" y="191" class="title">Which name? SiteHosts.Of</text>
+  <text x="694" y="211" class="mono">api/TheYard.Api/SiteHosts.cs</text>
+  <text x="694" y="232" class="body">The Host header first, when App Service</text>
+  <text x="694" y="249" class="body">routed by one of the three names;</text>
+  <text x="694" y="266" class="body">else X-Yard-Host, only if it names one.</text>
+  <text x="694" y="283" class="body">Anything else: no name.</text>
+  <rect x="1040" y="166" width="310" height="126" class="box shed"/>
+  <text x="1054" y="191" class="title">The Shed's name: ShedMount</text>
+  <text x="1054" y="211" class="mono">Composition/ShedMount.cs, ShedApplication.cs</text>
+  <text x="1054" y="232" class="body">Handed over before TheYard's pipeline:</text>
+  <text x="1054" y="249" class="body">The Shed's own app from /app/shed,</text>
+  <text x="1054" y="266" class="body">its pipeline and controllers, no socket.</text>
+  <text x="1054" y="283" class="body">503 if it could not start.</text>
+  <rect x="680" y="366" width="330" height="109" class="box"/>
+  <text x="694" y="391" class="title">A Yard name: TheYard's pipeline</text>
+  <text x="694" y="411" class="mono">Program.cs, then the endpoints</text>
+  <text x="694" y="432" class="body">Auth, limits, then the API and the</text>
+  <text x="694" y="449" class="body">pages; every endpoint asks</text>
+  <text x="694" y="466" class="body">CurrentBackend once per request.</text>
+  <rect x="1040" y="366" width="310" height="109" class="box"/>
+  <text x="1054" y="391" class="title">Which store? Stores.cs</text>
+  <text x="1054" y="411" class="mono">Backends, region backends</text>
+  <text x="1054" y="432" class="body">X-Yard-Store, when a request names one;</text>
+  <text x="1054" y="449" class="body">else the name's store;</text>
+  <text x="1054" y="466" class="body">no name (probes, first reads): SQL.</text>
+  <rect x="1040" y="576" width="145" height="92" class="box store"/>
+  <text x="1054" y="601" class="title">Azure SQL</text>
+  <text x="1054" y="621" class="mono">sqldb-theyard-ss-basic</text>
+  <text x="1054" y="642" class="body">The relational</text>
+  <text x="1054" y="659" class="body">store.</text>
+  <rect x="1205" y="576" width="145" height="92" class="box store"/>
+  <text x="1219" y="601" class="title">Cosmos DB</text>
+  <text x="1219" y="621" class="mono">cosmos-theyard-ss</text>
+  <text x="1219" y="642" class="body">The document</text>
+  <text x="1219" y="659" class="body">store.</text>
+  <path d="M284 212 L346 220.5" class="flow"/>
+  <path d="M284 342 L346 240.5" class="flow"/>
+  <path d="M284 352 L346 380.5" class="flow"/>
+  <path d="M480 275 L480 326" class="flow"/>
+  <text x="488" y="304.5" class="label">no page rule</text>
+  <path d="M346 261 H336 V626 H346" class="flow"/>
+  <text x="348" y="470" class="label">a page</text>
+  <path d="M614 380.5 H638 V222 H680" class="flow"/>
+  <path d="M284 515 H645 V260 H680" class="flow"/>
+  <text x="400" y="522" class="label">Host: theshed, no edge</text>
+  <path d="M614 650.5 H652 V278 H680" class="flow"/>
+  <text x="668" y="654.5" class="label">the renderer's reads: X-Yard-Host and X-Yard-Store</text>
+  <path d="M1010 206 L1040 206" class="flow"/>
+  <path d="M845 292 L845 366" class="flow"/>
+  <text x="853" y="333" class="label">theyard, theyard-cosmos or none</text>
+  <path d="M1010 420.5 L1040 420.5" class="flow"/>
+  <path d="M1135 475 L1112.5 576" class="flow"/>
+  <text x="1082.5" y="505" class="label">sql</text>
+  <path d="M1255 475 L1277.5 576" class="flow"/>
+  <text x="1285.5" y="505" class="label">cosmos</text>
+  <text x="30" y="804" class="caption">Source: docs/images/request-path.svg, drawn by docs/images/request-path.mjs from edge/_redirects, netlify.toml, SiteHosts.cs, ShedMount.cs, Stores.cs and render/loaders.ts.</text>
+</svg>

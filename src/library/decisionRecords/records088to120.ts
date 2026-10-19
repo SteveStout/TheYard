@@ -136,4 +136,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '105',
   },
+  adrUnusedResourcesAreDeleted: {
+    title: 'ADR: Unused resources are deleted',
+    menuLabel: 'ADR: Unused resources are deleted',
+    url: '/api/docs/adr-unused-resources-are-deleted',
+    kind: 'adr',
+    number: '106',
+  },
 } as const satisfies Record<string, RecordEntry>;

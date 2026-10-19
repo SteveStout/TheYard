@@ -126,6 +126,24 @@ public static class RequestPipeline
         });
         #endregion error-log
 
+        #region site-header
+        // Every answer names the web app that gave it, App Service's own WEBSITE_SITE_NAME, so the
+        // edge card's hourly sample reads who answered a page and who answered the API instead of
+        // saying so from memory. Off where App Service is not, as in the tests.
+        if (Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME") is { Length: > 0 } siteName)
+        {
+            app.Use(async (context, next) =>
+            {
+                context.Response.OnStarting(() =>
+                {
+                    context.Response.Headers[NetlifyEdge.SiteHeader] = siteName;
+                    return Task.CompletedTask;
+                });
+                await next();
+            });
+        }
+        #endregion site-header
+
         #region cache-headers
         // Cache rules (ADR-015), from the shape of the address. Registered before the
         // files and the endpoints so its rule is in place on every response either writes. Vite names every

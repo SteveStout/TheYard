@@ -14,10 +14,11 @@ public static class ResourceCatalog
         AcrType = "Microsoft.ContainerRegistry/registries", InsightsType = "Microsoft.Insights/components",
         WorkspaceType = "Microsoft.OperationalInsights/workspaces", MailType = "Microsoft.Communication/CommunicationServices";
 
-    /// <summary>The database the SQL card reads; the server's other user database is the paused free one, named and never read.</summary>
+    /// <summary>The database the SQL card reads; any other user database on the server is listed from its own record.</summary>
     public const string SqlDatabase = "sqldb-theyard-ss-basic";
 
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model)
+    /// <param name="sqlSite">The public name whose requests get the SQL database and the web app that answers it, from this process's own settings; null where it serves none.</param>
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, string? sqlSite = null)
     {
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
 
@@ -50,7 +51,28 @@ public static class ResourceCatalog
                     string server = resource.Name.Split('/')[0];
                     var paused = all.FirstOrDefault(r => string.Equals(r.Type, SqlType, StringComparison.OrdinalIgnoreCase)
                         && r.Name.StartsWith(server + "/", StringComparison.OrdinalIgnoreCase) && r.Id != resource.Id && !r.Name.EndsWith("/master", StringComparison.OrdinalIgnoreCase));
-                    var facts = new Dictionary<string, string?>(SqlCard.Facts(record, model.Tables, model.Migration)) { ["paused"] = paused?.Name.Split('/')[^1] };
+                    var facts = new Dictionary<string, string?>(SqlCard.Facts(record, model.Tables, model.Migration))
+                    {
+                        ["paused"] = paused?.Name.Split('/')[^1],
+                        ["served_by"] = sqlSite,
+                    };
+                    if (paused is not null)
+                    {
+                        // The server's other database is read for what Azure says it is, never described from memory.
+                        try
+                        {
+                            var (other, _) = await azure.RecordAsync(paused.Id, "2023-08-01", cancellation);
+                            using (other)
+                            {
+                                facts["paused_status"] = AzureMetrics.Text(other.RootElement, "properties.status");
+                                facts["paused_spec"] = string.Join(' ', new[] { AzureMetrics.Text(other.RootElement, "sku.tier"), AzureMetrics.Text(other.RootElement, "properties.useFreeLimit") == "true" ? "free offer" : null }.Where(p => p is not null));
+                            }
+                        }
+                        catch (HttpRequestException)
+                        {
+                            // Left unread; the table says so.
+                        }
+                    }
                     return facts;
                 }),
                 SqlCard.View),
@@ -60,7 +82,18 @@ public static class ResourceCatalog
                     using var databases = await azure.GetJsonAsync($"{resource.Id}/sqlDatabases?api-version=2024-05-15", cancellation);
                     string? database = databases.RootElement.TryGetProperty("value", out var list) && list.GetArrayLength() > 0 ? AzureMetrics.Text(list[0], "name") : null;
                     using var containers = await azure.GetJsonAsync($"{resource.Id}/sqlDatabases/{database}/containers?api-version=2024-05-15", cancellation);
-                    return CosmosCard.Facts(record, containers.RootElement);
+                    // The database's shared throughput as Azure has it, rather than the free tier's figure written down.
+                    string? throughput = null;
+                    try
+                    {
+                        using var settings = await azure.GetJsonAsync($"{resource.Id}/sqlDatabases/{database}/throughputSettings/default?api-version=2024-05-15", cancellation);
+                        throughput = AzureMetrics.Text(settings.RootElement, "properties.resource.throughput") ?? AzureMetrics.Text(settings.RootElement, "properties.resource.autoscaleSettings.maxThroughput");
+                    }
+                    catch (HttpRequestException)
+                    {
+                        // Left out of the header line rather than guessed.
+                    }
+                    return CosmosCard.Facts(record, containers.RootElement, throughput);
                 }),
                 CosmosCard.View),
             new("registry", "registry", "crtheyardsszmnetj67bn5h2", ReadingsOf(AcrCard.Metrics), Monitor(AcrType, null, AcrCard.Metrics),

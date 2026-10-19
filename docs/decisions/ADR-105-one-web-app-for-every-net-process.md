@@ -1,6 +1,6 @@
 # ADR: One web app for every .NET process
 
-Status: accepted, 2026-10-19. The SQL site, the Cosmos DB site and The Shed run in one process in one web app, APP-THEYARD-ONE-SS, on the same B2 plan, and each request is answered by the name it arrived on. The three web apps they ran in are retired: APP-THEYARD-SS and APP-THEYARD-COSMOS-SS were deleted at 15:52 and 15:53 UTC on Steve's word of the same morning, and APP-THESHED-SS is stopped until The Shed's DNS record names the new web app, then deleted. The cutover, its times and the memory before and after are in the addendum below. The rendering service stays a web app of its own.
+Status: accepted, 2026-10-19. The SQL site, the Cosmos DB site and The Shed run in one process in one web app, APP-THEYARD-ONE-SS, on the same B2 plan, and each request is answered by the name it arrived on. The three web apps they ran in are deleted: APP-THEYARD-SS and APP-THEYARD-COSMOS-SS at 15:52 and 15:53 UTC on Steve's word of the same morning, and APP-THESHED-SS at 19:36 once The Shed's DNS record named the new web app. The cutover, its times and the memory before and after are in the addendum below. The rendering service stays a web app of its own.
 
 ## Reading list
 
@@ -79,6 +79,10 @@ Read live through the day from the operator's PC; every time is UTC.
 | 15:52 and 15:53 | APP-THEYARD-SS and APP-THEYARD-COSMOS-SS deleted. The plan, the databases, the registry, the identity and the rendering service untouched |
 | 15:54 | The plan at 60 per cent, 2.10 of 3.5 GB: the one web app 388 MB, the rendering service 137 MB |
 | 16:54 | An hour after the delete, the number for the record: the plan at 61 per cent, 2.14 of 3.5 GB; the one web app 434 MB, the rendering service 139 MB, The Shed's old web app stopped at 0; the plan outside the apps 1,613 MB. Azure Monitor's own five-minute averages read 59.0 to 61.6 per cent from 15:54 to 16:49 |
+| 18:14 | 1.0.3.185 rolled to the one web app from the operator's PC; both Yard domains on it at 18:16, and 33 checks green at 18:18 |
+| 18:48 | The owner gave the GitHub deploy identity Website Contributor on the one web app. Deploy for 1.0.3.185, rerun at 19:14, passed its roll on its own: every roll from here is the workflow's again |
+| 18:56 | The Shed's CNAME at Wix changed to the one web app, its TTL to 30 minutes. The record had been served for an hour at a time, so resolvers held the old answer for up to that long |
+| 19:36 to 19:37 | Both public resolvers named the one web app for The Shed at 19:36; The Shed answered healthy at its own name from it, and APP-THESHED-SS was deleted at 19:36:54. 33 checks green at 19:37; the plan at 59 per cent, 2.07 of 3.5 GB, two apps on it: the one web app 437 MB, the rendering service 95 MB, outside them 1,583 MB |
 
 What moved and what did not. The plan went from 72 to 61 per cent, 2.52 to 2.14 GB, and all of it came from the apps: 977 MB for four became 573 MB for two, because the one process holding both sites and The Shed (434 MB) is far less than the three it replaced (876 MB). The row outside the apps, the one this record was argued from, did not shrink in the hour: 1,603 MB before, 1,613 MB after. So the share the platform holds outside the apps is not one sidecar per app in any way an hour shows, and the saving is the apps' own: two .NET runtimes and their caches that no longer exist. The record keeps the argument it was made on and this reading beside it; the outside row is worth reading again a day on.
 
@@ -90,6 +94,7 @@ The host ring only, and the deploy around it. Domain, Application and Infrastruc
 
 ## Files
 
+- [`docs/images/request-path.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/request-path.mjs) - the drawing of every way a request reaches code, on the Hosting page
 - [`api/TheYard.Api/SiteHosts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/SiteHosts.cs) - the three names and which one a request arrived on
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs) - the store a request gets
 - [`api/TheYard.Api/Composition/ShedMount.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ShedMount.cs) - The Shed's name to The Shed

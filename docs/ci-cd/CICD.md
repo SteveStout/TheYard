@@ -129,9 +129,11 @@ Azure Container Instances Contributor Role  .../resourceGroups/RG-THEYARD-SS
 Managed Identity Operator                   .../userAssignedIdentities/id-theyard-ss
 ```
 
-Since 20 September 2026 the same identity also holds Website Contributor on the two web apps, and since
-8 October on the rendering service's as well, and on nothing wider: setting a site's image and its settings is the whole of a roll
-(ADR: One plan, two sites; ADR: A rendering service beside the API).
+The same identity also holds Website Contributor on each web app it rolls, and on nothing wider: setting a
+site's image and its settings is the whole of a roll. Today that is the one web app, granted on 19 October 2026 when
+the three .NET web apps became it, and the rendering service, since 8 October (ADR: One web app for every .NET
+process; ADR: A rendering service beside the API). The Azure Container Instances role above is left from the container
+groups retired that day; nothing uses it now, and taking it away is a change to the identity, so it waits for the owner.
 
 ## What comes next
 

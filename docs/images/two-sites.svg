@@ -64,7 +64,7 @@
   <text x="75" y="582" class="body">lands on the app.</text>
   <rect x="60" y="632" width="360" height="118" class="box"/>
   <text x="75" y="658" class="title">theshed.stevenstout.biz</text>
-  <text x="75" y="680" class="mono">CNAME -&gt; the one web app, TTL 1 hour</text>
+  <text x="75" y="680" class="mono">CNAME -&gt; the one web app, TTL 30 min</text>
   <text x="75" y="702" class="body">The Shed, bound straight to the web app</text>
   <text x="75" y="719" class="body">with App Service's managed certificate. No</text>
   <text x="75" y="736" class="body">edge in front of it.</text>

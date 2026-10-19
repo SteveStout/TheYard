@@ -26,12 +26,12 @@ public static class PlanRows
             // The apps are a list, so they are a table: each name a link to its blade, with what each
             // holds and burns now, and a last row for what the plan holds outside every app.
             Table = apps.Count == 0 ? CloudTable.None : new CloudTable(
-                ["App", "Type", "Runs", "Talks to", "State", "Always on", "Memory now", "CPU now"],
+                ["App", "Type", "Runs", "Answers to", "State", "Always on", "Memory now", "CPU now"],
                 [.. apps.Select(app => (IReadOnlyList<CloudLink>)[
                     new CloudLink(app.Name, PlanView.Portal(hour!.TenantId, app.ResourceId)),
-                    new CloudLink("Web app (container)", null),
-                    new CloudLink(Runtime(app.Name), null),
-                    new CloudLink(Store(app.Name), null),
+                    new CloudLink(TypeOf(app.Kind), null),
+                    new CloudLink(ImageOf(app.Image), null),
+                    new CloudLink(app.Hosts is { Count: > 0 } hosts ? string.Join(", ", hosts) : "not read", null),
                     new CloudLink(app.State, null),
                     new CloudLink(app.AlwaysOn is { } on ? (on ? "yes" : "no") : "not read", null),
                     new CloudLink(Megabytes(PlanChildren.MemoryMb(lastHour, app.Name)), null),
@@ -145,20 +145,39 @@ public static class PlanRows
     /// <summary>What the plan card's last row is, said on the row: a difference, not a reading.</summary>
     public const string DerivedPlatform = "Linux and the platform (derived: plan memory used minus the apps)";
 
-    /// <summary>What an app on the plan runs: Node.js for the rendering service, .NET 10 for the rest.</summary>
-    public static string Runtime(string name) =>
-        name.Contains("render", StringComparison.OrdinalIgnoreCase) ? "Node.js" : ".NET 10";
+    /// <summary>
+    /// What Azure says a site is, in words: its kind, read each hour with the site
+    /// ("app,linux,container" is a web app running a Linux container).
+    /// </summary>
+    public static string TypeOf(string? kind)
+    {
+        if (string.IsNullOrWhiteSpace(kind))
+        {
+            return "not read";
+        }
+        var parts = kind.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        string what = parts.Contains("functionapp", StringComparer.OrdinalIgnoreCase) ? "Function app" : "Web app";
+        string how = parts.Contains("container", StringComparer.OrdinalIgnoreCase)
+            ? parts.Contains("linux", StringComparer.OrdinalIgnoreCase) ? ", Linux container" : ", container"
+            : parts.Contains("linux", StringComparer.OrdinalIgnoreCase) ? ", Linux" : "";
+        return what + how;
+    }
 
     /// <summary>
-    /// What an app on the plan keeps its data in. The stores are resources of their own, each with
-    /// its own card under Cloud infrastructure; nothing on the plan holds them.
+    /// What a site runs, from its linuxFxVersion: the image and tag for a container
+    /// ("DOCKER|registry/theyard:tag" is theyard:tag), else the stack and version.
     /// </summary>
-    public static string Store(string name) =>
-        name.Contains("-ONE-", StringComparison.OrdinalIgnoreCase) ? "SQL database and Cosmos DB account, each its own resource; The Shed's files in the image"
-        : name.Contains("shed", StringComparison.OrdinalIgnoreCase) ? "its own files, on the plan's storage"
-        : name.Contains("render", StringComparison.OrdinalIgnoreCase) ? "the two sites' API (web app)"
-        : name.Contains("cosmos", StringComparison.OrdinalIgnoreCase) ? "Cosmos DB account, its own resource"
-        : "SQL database, its own resource";
+    public static string ImageOf(string? linuxFx)
+    {
+        if (string.IsNullOrWhiteSpace(linuxFx))
+        {
+            return "not read";
+        }
+        int bar = linuxFx.IndexOf('|', StringComparison.Ordinal);
+        string stack = bar < 0 ? "" : linuxFx[..bar];
+        string value = bar < 0 ? linuxFx : linuxFx[(bar + 1)..];
+        return string.Equals(stack, "DOCKER", StringComparison.OrdinalIgnoreCase) ? value.Split('/')[^1] : $"{stack} {value}".Trim();
+    }
 
     private static double? Sum(IEnumerable<double?> values)
     {

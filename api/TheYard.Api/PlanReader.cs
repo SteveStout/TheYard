@@ -105,7 +105,13 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
             var props = site.RootElement.GetProperty("properties");
             bool? alwaysOn = props.TryGetProperty("siteConfig", out var config) && config.TryGetProperty("alwaysOn", out var on) && on.ValueKind is JsonValueKind.True or JsonValueKind.False ? on.GetBoolean() : null;
             DateTimeOffset? modified = props.TryGetProperty("lastModifiedTimeUtc", out var lm) && DateTimeOffset.TryParse(lm.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? at : null;
-            states.Add(new PlanAppState(NameOf(app), app, props.TryGetProperty("state", out var st) ? st.GetString() ?? "unknown" : "unknown", alwaysOn, modified));
+            // What the card says each app is, runs and answers to comes from this same read, never from its name.
+            string? siteKind = site.RootElement.TryGetProperty("kind", out var k) ? k.GetString() : null;
+            string? image = config.ValueKind == JsonValueKind.Object && config.TryGetProperty("linuxFxVersion", out var fx) && !string.IsNullOrEmpty(fx.GetString()) ? fx.GetString() : null;
+            IReadOnlyList<string>? hosts = props.TryGetProperty("hostNames", out var names) && names.ValueKind == JsonValueKind.Array
+                ? [.. names.EnumerateArray().Select(name => name.GetString() ?? "").Where(name => name.Length > 0)]
+                : null;
+            states.Add(new PlanAppState(NameOf(app), app, props.TryGetProperty("state", out var st) ? st.GetString() ?? "unknown" : "unknown", alwaysOn, modified, siteKind, image, hosts));
         }
 
         var events = new List<PlanEvent>();

@@ -100,7 +100,7 @@ public static class AcrCard
             ["repository_list"] = holdings is null ? "the catalogue could not be read; AcrPull on the registry is what it needs" : string.Join(" · ", holdings.Repositories.Select(r => $"{r.Name} {r.Tags} tags")),
             ["untagged"] = holdings?.UntaggedManifests.ToString(CultureInfo.InvariantCulture),
             ["untagged_gb"] = holdings is null ? null : (holdings.UntaggedBytes / 1024.0 / 1024 / 1024).ToString("0.00", CultureInfo.InvariantCulture),
-            ["spec"] = string.Join(' ', new[] { tier, "10 GB", AzureMetrics.Text(record, "location") }.Where(p => p is not null)).ToUpperInvariant(),
+            ["spec"] = string.Join(' ', new[] { tier, AzureMetrics.Text(record, "location") }.Where(p => p is not null)).ToUpperInvariant(),
         };
     }
 }

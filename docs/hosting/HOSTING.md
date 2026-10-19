@@ -98,7 +98,11 @@ to zoom in and follow it.*
 
 Three domains, two web apps, one process for everything .NET. Follow a request
 from the address bar to the code that answers it, every step read from this
-build.
+build. The whole path first, then each hop with its code:
+
+[![How a request gets answered: three names at Wix, the Netlify edge's two files, the rendering service, and inside the one web app SiteHosts picking the name, ShedMount handing The Shed's name to The Shed, and Stores picking Azure SQL or Cosmos DB](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/request-path.svg)](https://theyard.stevenstout.biz/api/docs/diagrams/request-path)
+
+*A preview. [Open the request path in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/request-path) to zoom in. Drawn by [`docs/images/request-path.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/request-path.mjs).*
 
 **theyard.stevenstout.biz and theyard-cosmos.stevenstout.biz, at the edge.**
 Netlify reads `edge/_redirects` first. A page (the bare path, with its query)

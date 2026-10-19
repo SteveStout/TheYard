@@ -21,6 +21,12 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
     /// <summary>The pages the hourly sample asks the edge for: the files every visitor's first page pulls.</summary>
     public static readonly string[] Sampled = ["/", "/favicon.svg", "/og.png", "/api/version"];
 
+    /// <summary>The header each of TheYard's web apps names itself in, read off the sampled answers.</summary>
+    public const string SiteHeader = "X-Yard-Site";
+
+    /// <summary>The sampled addresses whose answerer the card names: a page and the API.</summary>
+    public static readonly (string Path, string Label)[] Answerers = [("/", "the page"), ("/api/version", "/api")];
+
     /// <summary>True when a token is configured.</summary>
     public bool Configured => !string.IsNullOrWhiteSpace(token) && !token.StartsWith("__", StringComparison.Ordinal);
 
@@ -101,7 +107,8 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
         using var ssl = await GetAsync($"/api/v1/sites/{id}/ssl", cancellation);
         using var deploys = await GetAsync($"/api/v1/sites/{id}/deploys?per_page=20", cancellation);
         var (log, live, skipped, failed) = DeployLog(deploys.RootElement);
-        _cacheHit = await SampleAsync(cancellation);
+        string? answeredBy;
+        (_cacheHit, answeredBy) = await SampleAsync(cancellation);
         return new ResourceHour(hour, id, null, new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             ["token"] = "set",
@@ -114,6 +121,7 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
             ["deploys_live"] = live.ToString(CultureInfo.InvariantCulture),
             ["deploys_skipped"] = skipped.ToString(CultureInfo.InvariantCulture),
             ["deploys_failed"] = failed.ToString(CultureInfo.InvariantCulture),
+            ["answered_by"] = answeredBy,
         }, []);
     }
 
@@ -157,10 +165,14 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
             Outcome(d) == "skipped" ? "skipped, no edge change" : Outcome(d),
         }));
 
-    /// <summary>Asks the edge for each sampled page and counts the answers its cache served.</summary>
-    private async Task<double?> SampleAsync(CancellationToken cancellation)
+    /// <summary>
+    /// Asks the edge for each sampled page, counts the answers its cache served, and reads which
+    /// web app answered the page and the API from the header each names itself in.
+    /// </summary>
+    private async Task<(double? Hit, string? AnsweredBy)> SampleAsync(CancellationToken cancellation)
     {
         int asked = 0, hits = 0;
+        var answered = new List<string>();
         foreach (string path in Sampled)
         {
             try
@@ -172,14 +184,22 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
                 {
                     hits++;
                 }
+                if (Answerers.FirstOrDefault(a => a.Path == path).Label is { } label)
+                {
+                    answered.Add(AnsweredBy(label, response.Headers.TryGetValues(SiteHeader, out var names) ? names.FirstOrDefault() : null));
+                }
             }
             catch (HttpRequestException)
             {
                 // A page that did not answer is left out of the share rather than counted as a miss.
             }
         }
-        return asked == 0 ? null : Math.Round(100.0 * hits / asked, 1);
+        return (asked == 0 ? null : Math.Round(100.0 * hits / asked, 1), answered.Count == 0 ? null : string.Join(" · ", answered));
     }
+
+    /// <summary>One sampled answer in words: who answered it, or that it named nobody.</summary>
+    public static string AnsweredBy(string label, string? site) =>
+        site is { Length: > 0 } ? $"{label} answered by {site}" : $"{label} answered without naming its app";
 
     private async Task<(string Id, string Account)> SiteAsync(CancellationToken cancellation)
     {

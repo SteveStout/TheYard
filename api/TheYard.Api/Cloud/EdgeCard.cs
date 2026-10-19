@@ -41,7 +41,7 @@ public static class EdgeCard
         var rows = new List<CloudRow>
         {
             new("through", "What goes through it?", inputs.Hours.Count == 0 ? (configured ? "not read yet" : "no token set") : ResourceView.Fact(inputs, "domain"),
-                [new($"certificate for {ResourceView.Fact(inputs, "cert_names")} · expires {expiresOn} · the page and /api proxied to the two web apps", null)],
+                [new($"certificate for {ResourceView.Fact(inputs, "cert_names")} · expires {expiresOn} · {ResourceView.Fact(inputs, "answered_by", "who answers not sampled yet")}", null)],
                 certSoon ? "warning" : "good"),
             new("credits", "Is it costing credits?", credits is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0} this cycle" : configured ? "not read yet" : "no token set",
                 [new($"{ResourceView.Number(ResourceView.Now(inputs, "deploys"))} deploys at {NetlifyEdge.CreditsPerDeploy:0} · {ResourceView.Number(ResourceView.Now(inputs, "bandwidth_gb"), "0.000")} GB at {NetlifyEdge.CreditsPerGb:0} a GB", null),
