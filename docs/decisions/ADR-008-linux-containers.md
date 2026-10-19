@@ -67,7 +67,7 @@ No ring: choosing Linux for the container is a hosting decision about the base i
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) and
   [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): every job runs on
   `ubuntu-latest`, so the image is built where it runs.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the Linux container group that hosts it.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml): the Linux container group that hosts it.
 
 ```live path=Dockerfile region=runtime
 ```

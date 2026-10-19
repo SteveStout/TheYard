@@ -14,7 +14,7 @@ public static partial class AccountEndpoints
     /// Mints a reset link for an address on this site's store, behind the operator's key, and answers it for the
     /// operator to hand over.
     /// </summary>
-    private static async Task<IResult> OperatorResetLink(ResetLinkRequest request, HttpContext http, RequestAccounts accounts, CurrentBackend current, PasswordReset reset, AdminKey adminKey, IConfiguration configuration, CancellationToken cancellation)
+    private static async Task<IResult> OperatorResetLink(ResetLinkRequest request, HttpContext http, RequestAccounts accounts, CurrentBackend current, PasswordReset reset, AdminKey adminKey, IConfiguration configuration, SiteHosts hosts, CancellationToken cancellation)
     {
         if (!adminKey.IsPresentedBy(http.Request))
         {
@@ -33,7 +33,7 @@ public static partial class AccountEndpoints
                 statusCode: 404, title: "No such account");
         }
 
-        string url = await reset.LinkForAsync(user, current.Backend.Key, SiteOrigin(http, configuration), cancellation);
+        string url = await reset.LinkForAsync(user, current.Backend.Key, SiteOrigin(http, configuration, hosts), cancellation);
         return Results.Json(new
         {
             email = user.Email,
@@ -47,7 +47,7 @@ public static partial class AccountEndpoints
     /// Emails a reset link to an address, answering the same sentence whether or not the address has an account
     /// here.
     /// </summary>
-    private static async Task<Results<Ok<ForgotReply>, ProblemHttpResult>> Forgot(ResetLinkRequest request, HttpContext http, RequestAccounts accounts, CurrentBackend current, PasswordReset reset, IEmailSender mail, ForgotLimit limit, IConfiguration configuration, CancellationToken cancellation)
+    private static async Task<Results<Ok<ForgotReply>, ProblemHttpResult>> Forgot(ResetLinkRequest request, HttpContext http, RequestAccounts accounts, CurrentBackend current, PasswordReset reset, IEmailSender mail, ForgotLimit limit, IConfiguration configuration, SiteHosts hosts, CancellationToken cancellation)
     {
         if (!mail.Configured)
         {
@@ -73,7 +73,7 @@ public static partial class AccountEndpoints
         var user = await users.FindByEmailAsync(request.Email);
         if (user is not null && user.Email is not null)
         {
-            string url = await reset.LinkForAsync(user, current.Backend.Key, SiteOrigin(http, configuration), cancellation);
+            string url = await reset.LinkForAsync(user, current.Backend.Key, SiteOrigin(http, configuration, hosts), cancellation);
             await mail.SendAsync(
                 user.Email,
                 "Your TheYard password reset link",
@@ -111,14 +111,20 @@ public static partial class AccountEndpoints
     }
 
     /// <summary>
-    /// This site as a visitor reaches it, for a link: the site's configured address (Site:Url, the
+    /// This site as a visitor reaches it, for a link: the Yard name the request arrived on when one
+    /// web app serves both sites (SiteHosts, which takes only a name configured here, so a sender can
+    /// choose between the two sites and nothing else), then the configured address (Site:Url, the
     /// domain behind the edge, because the request's own host there is the origin server), or on a
-    /// machine with none, the request's own scheme and host. Never X-Forwarded-Host: a header is what
-    /// the sender says it is, and a link in a reset email must not be one a sender chose (ADR: The
+    /// machine with neither, the request's own scheme and host. Never X-Forwarded-Host: a header is
+    /// what the sender says it is, and a link in a reset email must not be one a sender chose (ADR: The
     /// order of the request pipeline). Every web app the template writes carries Site:Url.
     /// </summary>
-    private static string SiteOrigin(HttpContext http, IConfiguration configuration)
+    private static string SiteOrigin(HttpContext http, IConfiguration configuration, SiteHosts hosts)
     {
+        if (hosts.SiteOrigin(http) is { } arrivedOn)
+        {
+            return arrivedOn;
+        }
         string? siteUrl = configuration["Site:Url"];
         if (!string.IsNullOrWhiteSpace(siteUrl))
         {

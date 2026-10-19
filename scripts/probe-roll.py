@@ -13,9 +13,12 @@ import sys, time, json, datetime, threading, urllib.request
 
 LOG = sys.argv[1]
 seconds = int(sys.argv[2]) if len(sys.argv) > 2 else 900
+# Both sites are one web app since 19 October (ADR: One web app for every .NET process), so both origins are its
+# address; the domains still differ, and the edge says which one was typed.
+ONE = "https://app-theyard-one-ss-zmnetj67bn5h2.azurewebsites.net"
 SITES = {
-    "sql": ("https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net", "https://theyard.stevenstout.biz"),
-    "cosmos": ("https://app-theyard-cosmos-ss-zmnetj67bn5h2.azurewebsites.net", "https://theyard-cosmos.stevenstout.biz"),
+    "sql": (ONE, "https://theyard.stevenstout.biz"),
+    "cosmos": (ONE, "https://theyard-cosmos.stevenstout.biz"),
 }
 TARGETS = []
 for site, (origin, domain) in SITES.items():

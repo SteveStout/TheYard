@@ -137,6 +137,10 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
         Assert.Equal("SQL database, its own resource", PlanRows.Store("APP-THEYARD-SS-ZMNETJ67BN5H2"));
         Assert.Equal("Cosmos DB account, its own resource", PlanRows.Store("APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2"));
         Assert.Equal("its own files, on the plan's storage", PlanRows.Store("APP-THESHED-SS-ZMNETJ67BN5H2"));
+        // The one web app since 19 October, and the renderer that reads it for both sites.
+        Assert.Equal("SQL database and Cosmos DB account, each its own resource; The Shed's files in the image", PlanRows.Store("APP-THEYARD-ONE-SS-ZMNETJ67BN5H2"));
+        Assert.Equal("the two sites' API (web app)", PlanRows.Store("APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2"));
+        Assert.Equal(".NET 10", PlanRows.Runtime("APP-THEYARD-ONE-SS-ZMNETJ67BN5H2"));
         Assert.Equal("Node.js", PlanRows.Runtime("APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2"));
         Assert.Equal(".NET 10", PlanRows.Runtime("APP-THESHED-SS-ZMNETJ67BN5H2"));
     }

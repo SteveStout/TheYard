@@ -686,7 +686,7 @@ YardConnection in Infrastructure is the one class that knows which engine sits u
 - [`api/TheYard.Tests/SchemaConformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SchemaConformanceTests.cs): what holds the mapping to the schema.
 - [`api/TheYard.Tests/SqlServerModelTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SqlServerModelTests.cs): the schema, asserted without a SQL Server.
 - [`api/TheYard.Tests/RelationalConstraintTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RelationalConstraintTests.cs): the foreign key and the token, exercised against an engine.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the setting, and the placeholder that is not a connection string.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml): the setting, and the placeholder that is not a connection string.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): where the setting is built, at roll time, from the resource itself.
 - [`docs/decisions/ADR-040-database-source-control.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-040-database-source-control.md): the SQL project, why it is the authority, and what enforces that.
 - [`docs/decisions/ADR-041-two-providers-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-041-two-providers-explained.md): the same setup, walked at a new developer's level.

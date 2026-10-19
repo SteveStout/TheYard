@@ -6,14 +6,12 @@ name: CI
 # read without a login, and a floor only CI measures (the coverage step) goes
 # red on the commit that crossed it rather than weeks later (ADR: The
 # five-minute gate, addendum of 5 October). The deploy does not wait for it.
-# A push that touches only the sample under samples/ has its own workflow
-# (deploy-shed.yml) and does not run this one.
+# A push that touches only The Shed under samples/ runs this too: The Shed is
+# built into the same app since 19 October, so its code can break this one's
+# build (ADR: One web app for every .NET process).
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "samples/**"
-      - ".github/workflows/deploy-shed.yml"
   pull_request:
   workflow_dispatch:
 

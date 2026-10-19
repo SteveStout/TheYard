@@ -7,13 +7,24 @@ name: Edge branch
 # as a column of failures. This moves the edge branch to main only when what
 # the edge serves changes: edge/ or netlify.toml. Netlify then builds once per
 # real change, and the log holds only deploys that happened.
+#
+# #region after-deploy
+# It moves after Deploy, never beside it (ADR: One web app for every .NET
+# process). An edge rule names an origin, and a rule that moved before its
+# origin was rolled and verified would send every visitor to a web app still
+# starting, or to one that does not exist yet: the push that brought the one
+# web app up changed both. So this starts when Deploy finishes on main, does
+# nothing unless Deploy succeeded, compares the edge files at that commit with
+# the edge branch rather than with the commit before (a newer push can cancel
+# the run that carried the change), and after the move reads both Yard names
+# until each serves the build Deploy just verified at the origin.
 on:
-  push:
+  workflow_run:
+    workflows: [Deploy]
+    types: [completed]
     branches: [main]
-    paths:
-      - "edge/**"
-      - "netlify.toml"
   workflow_dispatch:
+# #endregion after-deploy
 
 permissions:
   contents: write
@@ -24,12 +35,43 @@ concurrency:
 
 jobs:
   move:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 1
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+      # #region move
       # A fast-forward of a branch nobody commits to, so a force is never needed.
-      - name: Move the edge branch to this commit
-        run: git push origin "HEAD:refs/heads/edge"
+      - name: Move the edge branch to this commit if what the edge serves changed
+        id: move
+        run: |
+          git fetch -q origin edge
+          if git diff --quiet origin/edge HEAD -- edge/ netlify.toml; then
+            echo "the edge branch already serves these rules; nothing to move"
+            echo "moved=false" >> "$GITHUB_OUTPUT"
+          else
+            git push origin "HEAD:refs/heads/edge"
+            echo "moved=true" >> "$GITHUB_OUTPUT"
+          fi
+      # #endregion move
+      # #region verify-domains
+      # Netlify builds the edge branch in about a minute. The rules are live when
+      # both Yard names serve the build at this commit; until then a name answers
+      # from the rules before. Ten minutes, then red.
+      - name: Read both Yard names until they serve this build
+        if: steps.move.outputs.moved == 'true'
+        run: |
+          N=$(sed -n 's/^- \*\*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md | sed -n 1p)
+          C=$(git rev-parse --short=7 HEAD)
+          for domain in https://theyard.stevenstout.biz https://theyard-cosmos.stevenstout.biz; do
+            started=$SECONDS
+            until body=$(curl -fsS -A "TheYard-SelfRead/1 (edge)" --max-time 30 "$domain/api/version") && [[ "$body" == *"\"$N\""* && "$body" == *"\"$C\""* ]]; do
+              if (( SECONDS - started >= 600 )); then echo "$domain never served $N at $C (last: $body)"; exit 1; fi
+              sleep 10
+            done
+            echo "$domain serves $N at $C after $((SECONDS - started)) s"
+          done
+      # #endregion verify-domains

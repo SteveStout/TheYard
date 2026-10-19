@@ -1,25 +1,23 @@
 # Deploy Render: the rendering service's leg (ADR: A rendering service beside the API).
-# Fires on the same push as Deploy and Deploy Cosmos. It builds render/Dockerfile
-# with the version and commit the API's image carries, pushes it to the registry
-# as theyard-render, and rolls the renderer's web app. The service draws only for
-# an API that runs its own build, so the three rolls need not land together:
-# until the renderer and an API agree, that site's pages are drawn in the
-# browser, as they were before the service existed. Auth is OIDC, as in Deploy.
+# Fires on the same push as Deploy. It builds render/Dockerfile with the version
+# and commit the API's image carries, pushes it to the registry as theyard-render,
+# and rolls the renderer's web app. The service draws only for an API that runs
+# its own build, so the two rolls need not land together: until the renderer and
+# the API agree, the pages are drawn in the browser, as they were before the
+# service existed. Auth is OIDC, as in Deploy.
 name: Deploy Render
 
 on:
   push:
     branches: [main]
-    # The sample rolls on its own (ADR-009, the addendum of 29 September on the sample).
-    paths-ignore:
-      - "samples/**"
-      - ".github/workflows/deploy-shed.yml"
+    # Every push, as Deploy: a push that changes only The Shed still gives the API a new
+    # version, and the renderer draws only for the version it was built as.
 
 permissions:
   id-token: write
   contents: read
 
-# The latest push wins, as for the two sites (ADR-009, addendum of 29 September).
+# The latest push wins, as for the web app (ADR-009, addendum of 29 September).
 concurrency:
   group: deploy-render
   cancel-in-progress: true
@@ -33,7 +31,7 @@ jobs:
       REGISTRY_NAME: crtheyardsszmnetj67bn5h2
       ACR: crtheyardsszmnetj67bn5h2.azurecr.io
       RG: RG-THEYARD-SS
-      # The renderer's web app on the plan the two sites share (infra/render.bicep).
+      # The renderer's web app on the plan, beside the one web app (infra/render.bicep).
       APP: APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2
       ORIGIN: https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net
     steps:

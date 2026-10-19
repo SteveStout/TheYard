@@ -15,10 +15,13 @@ namespace TheYard.Api;
 /// The stores this container runs, and which one a request gets.
 ///
 /// <para>The choice is a header, which is how a measurement asks for a store
-/// without a browser; a request that names none gets the container's default,
-/// which is what makes each site one store's site (ADR: One container, both
-/// stores, the addendum on the toggle moving to the sites). A header naming a
-/// store this container does not have is the default, never an error.</para>
+/// without a browser; a request that names none gets the store of the site it
+/// arrived on (SiteHosts, ADR: One web app for every .NET process), and a request
+/// that arrived on no site's name gets the container's default. Until 19 October
+/// each site was a container of its own and the default alone made it one
+/// store's site (ADR: One container, both stores, the addendum on the toggle
+/// moving to the sites). A header naming a store this container does not have
+/// is ignored, never an error.</para>
 ///
 /// <para>A cookie named yard-store chooses nothing. A browser may still carry
 /// one, so the stores endpoint expires it on sight, and the browser lands
@@ -35,9 +38,17 @@ public sealed class Backends
     /// <summary>Every store this container runs, in the order they were brought up.</summary>
     private readonly Backend[] _all;
 
-    /// <summary>The stores, the key of the one a request gets when it names none, and the other site's address if there is one.</summary>
-    public Backends(IEnumerable<Backend> all, string? defaultKey, string? otherSite = null)
+    /// <summary>The site names this process answers to; none on a developer's machine and the test host.</summary>
+    private readonly SiteHosts _hosts;
+
+    /// <summary>
+    /// The stores, the key of the one a request gets when it names none and arrived on no
+    /// site's name, the other site's address for a container that serves one site, and the
+    /// site names when one container serves both.
+    /// </summary>
+    public Backends(IEnumerable<Backend> all, string? defaultKey, string? otherSite = null, SiteHosts? hosts = null)
     {
+        _hosts = hosts ?? SiteHosts.None;
         _all = all.ToArray();
         if (_all.Length == 0)
         {
@@ -72,7 +83,7 @@ public sealed class Backends
     public Backend? Named(string? key) =>
         key is null ? null : Array.Find(_all, backend => string.Equals(backend.Key, key, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The backend a request asked for: the header, or the default.</summary>
+    /// <summary>The backend a request asked for: the header, or its site's store, or the default.</summary>
     public Backend For(HttpContext? context)
     {
         if (context is null)
@@ -83,7 +94,26 @@ public sealed class Backends
         {
             return byHeader;
         }
-        return Default;
+        return SiteDefault(context);
+    }
+
+    /// <summary>
+    /// The store the site this request arrived on serves when a request names none: the
+    /// Cosmos DB site's name gets Azure Cosmos DB, the SQL site's gets the relational store,
+    /// and any other address the container's default.
+    /// </summary>
+    public Backend SiteDefault(HttpContext? context) =>
+        Named(_hosts.StoreFor(_hosts.Of(context))) ?? Default;
+
+    /// <summary>
+    /// The other site as a visitor reaches it, from where this request is: the other store's
+    /// public name when one process serves both, otherwise the configured other site.
+    /// </summary>
+    public string? OtherSiteFor(HttpContext? context)
+    {
+        var here = SiteDefault(context);
+        var other = _all.FirstOrDefault(backend => !ReferenceEquals(backend, here));
+        return other is not null && _hosts.OriginOf(other.Key) is { } origin ? origin : OtherSite;
     }
 
     /// <summary>
@@ -103,14 +133,15 @@ public sealed class Backends
     public StoresView Describe(HttpContext? context)
     {
         var current = For(context);
+        var siteDefault = SiteDefault(context);
         return new StoresView(
             current.Key,
             _all.Select(backend => new StoreView(
                 backend.Key,
                 backend.Name,
                 backend.Ready,
-                ReferenceEquals(backend, Default))).ToArray(),
-            OtherSite);
+                ReferenceEquals(backend, siteDefault))).ToArray(),
+            OtherSiteFor(context));
     }
 }
 
@@ -166,7 +197,7 @@ public static class Warmth
 /// <param name="Key">The store's key.</param>
 /// <param name="Name">The store's display name.</param>
 /// <param name="Ready">True when the store came up.</param>
-/// <param name="Default">True when it is the store a request gets when it names none.</param>
+/// <param name="Default">True when it is the store a request on this site gets when it names none.</param>
 public sealed record StoreView(string Key, string Name, bool Ready, bool Default);
 
 /// <summary>The bar's answer: which store this request is on, the stores there are (one of them this site's default), and the other site if there is one.</summary>

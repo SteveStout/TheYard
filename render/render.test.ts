@@ -142,6 +142,23 @@ describe('the rendering service', () => {
     }
   });
 
+  it('names the site it draws for on every read, because one API serves both sites', async () => {
+    const api = fakeApi();
+    const render = createRenderer(OWN, 2_500, api.read);
+    await (
+      await render(
+        'https://render.example/site/cosmos?view=inventory',
+        new Headers(),
+        API,
+        'cosmos'
+      )
+    ).text();
+    // The listing and its filters are the store's; the page itself is the same on both sites.
+    const reads = api.asked.filter((read) => /\/api\/(vehicles|facets)/.test(read.url));
+    expect(reads.length).toBe(2);
+    for (const read of reads) expect(read.headers['X-Yard-Store']).toBe('cosmos');
+  });
+
   it('lets the edge keep a page drawn for nobody, keyed by the view and the session cookie, and the browser still asks', async () => {
     const { response } = await page('?view=inventory');
     expect(response.headers.get('Netlify-CDN-Cache-Control')).toBe(EDGE_RULE);

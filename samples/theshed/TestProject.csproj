@@ -14,6 +14,10 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- The page in wwwroot is served from the folder, as plain files, here and when TheYard runs this app inside its
+         own process. Static web assets would also hand it to any project that references this one, which is how
+         TheYard's API, referencing it for its assembly, came to answer its own address with this app's page. -->
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
   </PropertyGroup>
 
   <ItemGroup>

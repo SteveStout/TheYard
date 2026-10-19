@@ -170,3 +170,24 @@ A page deep in an order is now asked for from a kept place: the order key and pl
 **The memory readings.** The 1.0.3.181 entry in the changelog read the plan at 62 to 64 per cent and each .NET site at about 300 MB at 06:04 UTC, fifteen minutes after `DOTNET_GCConserveMemory` was set, and the table above read 68 per cent at 04:43 UTC. Neither held. At 11:30 UTC the plan read 73 per cent, 2.56 of 3.5 GB, with a 30-day 95th of 84.4 and a peak of 94; the SQL site's working set 395.7 MB, up from 357.3 an hour before, with a 106.6 MB heap and a 41.9 MB large object heap; the Cosmos DB site 366.2 MB, up from 338.4, with a 103.2 MB heap and a 31.8 MB large object heap. No vehicle is held in memory on either, and the heap limit is 986.4 MB on both, as written. Each number on a page that quotes numbers now carries the minute it was read. The settled reading, a day after 1.0.3.181 rolled, is written below when it is taken.
 
 **The document store read every four minutes from the SQL site.** It is the keep-warm loop (ADR: Kept awake), which sends every public read through each store every four minutes, the Cosmos DB store included, so that store's connection and caches never go cold on either site. It is meant, and it stays.
+
+**Read after the roll.** 1.0.3.183 was live on both sites at 22b3015 at 13:14 UTC, with every workflow on that commit green (CI #39257101995, Deploy #39257102076, Deploy Cosmos #39257102111, Deploy Render #39257102061, read with gh). The words were filled beside the site from 13:14 to 13:19 UTC: a fresh word on the SQL site read 4,660, 28,656, 12,252 and 11,893 ms while the fill ran, and 275 ms at 13:19:28, when it had finished. The fill cost the database about eleven minutes at 78 to 100 per cent of its DTU, three of them at 100, with its log writes peaking at 99 per cent (the ninety minutes before 13:19 UTC, one reading a minute).
+
+Then, from the operator's PC, ten words never typed on either site before (13:19:34 to 13:22:16 UTC):
+
+| word | SQL site | Cosmos DB site | matches |
+| --- | --- | --- | --- |
+| pickup | 99 ms | 542 ms | 0 |
+| sedan | 1,216 ms | 1,752 ms | 26,000 |
+| hatchback | 348 ms | 536 ms | 3,000 |
+| coupe | 457 ms | 537 ms | 2,500 |
+| wagon | 94 ms | 331 ms | 0 |
+| minivan | 129 ms | 551 ms | 0 |
+| convertible | 102 ms | 340 ms | 0 |
+| crossover | 100 ms | 334 ms | 0 |
+| quebec | 820 ms | 633 ms | 24,000 |
+| alberta | 218 ms | 565 ms | 12,500 |
+
+Before, five words read 3,705 to 4,777 ms on the SQL site. Now a word is a seek: eight of the ten answer under 500 ms, and the two that do not are the two with the most matches, where the time goes on counting 24,000 and 26,000 rows, not on finding them.
+
+The deep pages on the document store, the second read two minutes after the first started the walk (13:22 UTC): offset 40,000 in 29.3 RU and 269 ms in the store, 475 ms from the PC; 20,000 in 37.0 RU and 244 ms; 5,000 in 28.6 RU and 89 ms for the page itself. Before, 40,000 was 1,659 RU and 8,087 ms. The first read at each depth still pays the old price once while it keeps its places (1,657 RU at 40,000), which is the walk the addendum describes. The SQL site's deep pages read 187 to 232 ms, as before. The plan read 70 to 71 per cent after the roll, against 73 before.

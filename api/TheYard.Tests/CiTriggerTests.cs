@@ -34,16 +34,23 @@ public class CiTriggerTests
         Assert.Contains("  workflow_dispatch:", triggers, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The Shed is built into the same app since 19 October (ADR: One web app for every .NET
+    /// process), so a push that touches only its folder can break this app's build and changes
+    /// what runs: both CI and the deploy run on it, and nothing names the retired Shed deploy.
+    /// </summary>
     [Fact]
-    public void A_push_that_touches_only_the_sample_skips_ci_as_it_skips_the_deploy()
+    public void A_push_that_touches_only_the_sample_runs_ci_and_the_deploy()
     {
         string ci = TriggersOf("ci.yml");
         string deploy = TriggersOf("deploy.yml");
 
-        foreach (string ignored in new[] { "\"samples/**\"", "\".github/workflows/deploy-shed.yml\"" })
+        foreach (string triggers in new[] { ci, deploy })
         {
-            Assert.Contains(ignored, ci, StringComparison.Ordinal);
-            Assert.Contains(ignored, deploy, StringComparison.Ordinal);
+            Assert.DoesNotContain("samples/**", triggers, StringComparison.Ordinal);
+            Assert.DoesNotContain("deploy-shed.yml", triggers, StringComparison.Ordinal);
+            Assert.DoesNotContain("paths-ignore", triggers, StringComparison.Ordinal);
         }
+        Assert.False(File.Exists(Path.Combine(Repo.Root(), ".github", "workflows", "deploy-shed.yml")));
     }
 }

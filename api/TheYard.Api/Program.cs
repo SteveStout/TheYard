@@ -30,6 +30,7 @@ builder.AddTheYardPlan(host);                 // Composition/PlanRegistration.cs
 builder.AddTheYardCloud(host);                // Composition/CloudRegistration.cs
 
 var app = builder.Build();
+await app.MountTheShedAsync();                // Composition/ShedMount.cs
 await app.StartTheYardAsync(host);            // Composition/Startup.cs
 app.UseTheYardRequestPipeline(host);          // Composition/RequestPipeline.cs
 #endregion composition

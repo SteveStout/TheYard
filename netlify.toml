@@ -6,3 +6,29 @@
   # exit 0 here means "nothing under edge/ or this file moved, skip it".
   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- edge/ netlify.toml"
   # #endregion ignore-rule
+
+# #region proxy-rules
+# The two Yard names, everything but the page, to the one web app that serves
+# both sites (ADR: One web app for every .NET process). Netlify reads
+# edge/_redirects first, so the page rules and the address moves there win over
+# these; between these two, the first that matches wins, so the Cosmos DB site's
+# name comes before the catch-all.
+#
+# The web app's own address is the same for both names, so each rule says which
+# name the visitor typed in X-Yard-Host, and the web app picks the site's store by
+# it (api/TheYard.Api/SiteHosts.cs). Only a rule written in this file can add a
+# header to a proxied request; edge/_redirects cannot.
+[[redirects]]
+  from = "https://theyard-cosmos.stevenstout.biz/*"
+  to = "https://app-theyard-one-ss-zmnetj67bn5h2.azurewebsites.net/:splat"
+  status = 200
+  force = true
+  headers = {X-Yard-Host = "theyard-cosmos.stevenstout.biz"}
+
+[[redirects]]
+  from = "/*"
+  to = "https://app-theyard-one-ss-zmnetj67bn5h2.azurewebsites.net/:splat"
+  status = 200
+  force = true
+  headers = {X-Yard-Host = "theyard.stevenstout.biz"}
+# #endregion proxy-rules

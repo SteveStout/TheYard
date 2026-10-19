@@ -16,8 +16,13 @@ export type OwnBuild = { version: string; commit: string };
 /** What the page says about how it was made, on a header a probe or a reader can see. */
 export const RENDERED_HEADER = 'X-Yard-Rendered';
 
-/** One page request: the address, the request's headers, and the API that address is read from. */
-export type Render = (url: string, headers: Headers, apiOrigin: string) => Promise<Response>;
+/** One page request: the address, the request's headers, the API that address is read from, and the site's store. */
+export type Render = (
+  url: string,
+  headers: Headers,
+  apiOrigin: string,
+  store?: string | null
+) => Promise<Response>;
 
 /**
  * The renderer, made once per process.
@@ -43,7 +48,7 @@ export function createRenderer(
   read: typeof fetch = fetch
 ): Render {
   const pageAt = servedPages(read);
-  return async (url, headers, apiOrigin) => {
+  return async (url, headers, apiOrigin, store = null) => {
     const page = await pageAt(apiOrigin);
     if (!page) {
       return new Response('The API is not answering, so there is no page to send.', {
@@ -60,7 +65,7 @@ export function createRenderer(
     }
     const search = new URL(url).search.replace(/^\?/, '');
     const cookie = headers.get('cookie');
-    const load = loadFirst(search, cookie, apiOrigin, deadlineMs, read);
+    const load = loadFirst(search, cookie, apiOrigin, deadlineMs, read, store);
     return new Response(streamPage(page, load), { status: 200, headers: pageHeaders(cookie) });
   };
 }

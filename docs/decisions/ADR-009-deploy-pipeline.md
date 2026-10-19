@@ -68,7 +68,7 @@ A second GitHub Actions workflow, Deploy, separate from CI on purpose.
 ## In the code
 
 The workflow is [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml)
-and the template it renders is [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml).
+and the template it renders is [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml).
 The samples below are read from this build's copy of the workflow each time
 the page is served (ADR: Live code samples). The trigger and the gate:
 
@@ -142,7 +142,7 @@ The deploy pipeline is a deployment decision made in GitHub Actions workflows, o
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the whole pipeline; its trigger,
   version, changelog check and roll are the live blocks above.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the gate it waits for.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the template it renders and rolls.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml): the template it renders and rolls.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image it builds, with the two provenance
   arguments (ADR: Version in the footer).
 - [`docs/ci-cd/CICD.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ci-cd/CICD.md): the design written before the build, and the
@@ -185,8 +185,7 @@ that image's tag to be in the registry, ten minutes at most, and rolls the
 second site beside it. The plan's one machine starts both new containers at
 once, which costs each a little and saves the whole of one roll.
 
-```live path=.github/workflows/deploy-cosmos.yml region=wait-for-image
-```
+*Deploy Cosmos retired on 19 October with the web app it rolled (ADR: One web app for every .NET process); its wait for the image is kept at [`.github/workflows/deploy-cosmos.yml` at 22b3015](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml).*
 
 The image's slow layers, `npm ci`, the restore and the publish, are kept in
 GitHub's own build cache between runs through Buildx, so a version whose
@@ -236,8 +235,7 @@ The two site deploys ignore `samples/**` and the sample's workflow file, so a pu
 
 **Measured on the first run, 29 September (1.0.3.46).** The workflow's first version asked Azure to deploy the sample's Bicep on every run, and the deploy identity may not: it holds Website Contributor on each site and nothing at the group, which is the least it needs to roll (ADR: The code is public and the secrets are not). So the site was created once, from the same Bicep, by the owner from the runner, the identity was given the same role on the new site, and the workflow rolls it the way `deploy.yml` rolls: the settings, then the image. One first run failed at that step and nothing was rolled; the record and the workflow say why.
 
-```live path=.github/workflows/deploy-shed.yml region=*
-```
+*Deploy The Shed retired on 19 October, when The Shed moved into the same image and process (ADR: One web app for every .NET process); the workflow is kept at [`.github/workflows/deploy-shed.yml` at 22b3015](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-shed.yml).*
 
 
 ## Addendum, 2026-10-08: sizing Verify from the rolls it reads

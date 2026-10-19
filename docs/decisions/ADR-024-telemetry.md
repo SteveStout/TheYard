@@ -102,8 +102,7 @@ The card, which renders every state the reader can answer with
 The container spec's placeholder, and the roll step that fills it in
 (`infra/aci-theyard.yaml`, `.github/workflows/deploy.yml`):
 
-```live path=infra/aci-theyard.yaml region=container
-```
+*The container group file this showed live retired on 19 October with the container groups' last settings (ADR: One web app for every .NET process); it is kept at [`infra/aci-theyard.yaml` at 22b3015](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml), the last commit that carried it.*
 
 ```live path=.github/workflows/deploy.yml region=roll
 ```
@@ -149,7 +148,7 @@ Telemetry is a host concern and stays in the host Api, where Composition/Telemet
 - [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the Admin endpoint (region telemetry-endpoint).
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the one package this added.
 - [`src/components/admin/TelemetryCard/TelemetryCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TelemetryCard/TelemetryCard.tsx): the card and its three states.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the placeholder and the roll-time substitution.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml) and [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the placeholder and the roll-time substitution.
 - [`api/TheYard.Tests/TelemetryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TelemetryTests.cs): the off path, the shape of every answer, and the endpoint.
 - [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the card rendering its not-configured state in a browser.
 - [`docs/decisions/ADR-010-observability.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-010-observability.md) and [`docs/decisions/ADR-023-error-handling.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-023-error-handling.md): the Admin tab and the error path this extends.

@@ -38,7 +38,11 @@ public static class PlanRows
                     new CloudLink(Percent(PlanChildren.CpuPercent(lastHour, app.Name, hour.Cores)), null)]),
                     (IReadOnlyList<CloudLink>)[
                         new CloudLink("the plan, outside the apps", null),
-                        new CloudLink("Linux and the platform", null),
+                        // Derived, not read: no Azure metric names this share. It is the plan's
+                        // memory in use minus every app's own reading (PlanChildren.OutsideMb): the
+                        // host, the platform agent, the image layers and one Kudu sidecar per app
+                        // (ADR: The App Service plan, read every minute, the addendum of 19 October).
+                        new CloudLink(DerivedPlatform, null),
                         new CloudLink("App Service", null),
                         new CloudLink("every app on it", null),
                         new CloudLink(hour!.Linux == true ? "Linux" : "", null),
@@ -138,8 +142,10 @@ public static class PlanRows
             $"{availability.Reason}, one minute each; live every 60 s from Azure Monitor");
     }
 
-    /// <summary>What an app is, from its name: the renderer, the Cosmos DB site, or the SQL site.</summary>
-    /// <summary>What an app on the plan runs on.</summary>
+    /// <summary>What the plan card's last row is, said on the row: a difference, not a reading.</summary>
+    public const string DerivedPlatform = "Linux and the platform (derived: plan memory used minus the apps)";
+
+    /// <summary>What an app on the plan runs: Node.js for the rendering service, .NET 10 for the rest.</summary>
     public static string Runtime(string name) =>
         name.Contains("render", StringComparison.OrdinalIgnoreCase) ? "Node.js" : ".NET 10";
 
@@ -148,8 +154,9 @@ public static class PlanRows
     /// its own card under Cloud infrastructure; nothing on the plan holds them.
     /// </summary>
     public static string Store(string name) =>
-        name.Contains("shed", StringComparison.OrdinalIgnoreCase) ? "its own files, on the plan's storage"
-        : name.Contains("render", StringComparison.OrdinalIgnoreCase) ? "the two sites' APIs (web apps)"
+        name.Contains("-ONE-", StringComparison.OrdinalIgnoreCase) ? "SQL database and Cosmos DB account, each its own resource; The Shed's files in the image"
+        : name.Contains("shed", StringComparison.OrdinalIgnoreCase) ? "its own files, on the plan's storage"
+        : name.Contains("render", StringComparison.OrdinalIgnoreCase) ? "the two sites' API (web app)"
         : name.Contains("cosmos", StringComparison.OrdinalIgnoreCase) ? "Cosmos DB account, its own resource"
         : "SQL database, its own resource";
 

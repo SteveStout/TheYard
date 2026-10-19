@@ -19,8 +19,16 @@ namespace TheYard.Api;
 /// every thirty and a peer that takes longer than that is a peer that is
 /// down for the purposes of a comparison.</para>
 /// </summary>
-public sealed class PeerReader(string? configuredUrl, HttpClient client)
+public sealed class PeerReader(string? configuredUrl, HttpClient client, bool bothStoresHere = false)
 {
+    /// <summary>
+    /// What the card says when this process serves both sites (ADR: One web app for every .NET
+    /// process): the other site is this process, and the comparison card already sets its two
+    /// stores side by side. The retirement is an addendum on ADR: Backends, side by side.
+    /// </summary>
+    public const string OneProcess =
+        "no peer to read: since 19 October both sites are this one process, so the comparison card above sets the two stores side by side";
+
     public static readonly TimeSpan Patience = TimeSpan.FromSeconds(2.5);
 
     /// <summary>The peer's origin, or null when none is configured or the deploy left its placeholder behind.</summary>
@@ -33,7 +41,7 @@ public sealed class PeerReader(string? configuredUrl, HttpClient client)
     {
         if (Url is null)
         {
-            return new PeerView(false, false, "no peer is configured on this container", null, DateTimeOffset.UtcNow, null, null);
+            return new PeerView(false, false, bothStoresHere ? OneProcess : "no peer is configured on this container", null, DateTimeOffset.UtcNow, null, null);
         }
 
         string host = Url.Host;

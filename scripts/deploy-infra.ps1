@@ -5,19 +5,21 @@
 #
 # A web app's settings are replaced whole by a template deployment, and four of them are not in the repository:
 # the image tag the last roll set, the telemetry connection string, the session signing key and the operator's
-# key. So this reads those four off the first site as it runs, hands them back to the template as parameters,
-# and the deployment describes the sites as they already are. The values pass through a parameters file that
+# key. So this reads those four off the web app as it runs, hands them back to the template as parameters,
+# and the deployment describes the web app as it already is. The values pass through a parameters file that
 # is emptied before this script returns, and none of them is ever printed.
 #
 # Incremental mode, always, and the mode is written out rather than left to the default. The resource group
 # holds the databases, the document store, the registry and the identity, and none of them is in the template:
 # a complete-mode deployment would delete every one (ADR: One plan, two sites). A test refuses the other
 # word anywhere in this folder.
-param([switch]$Apply)
+param([switch]$Apply, [string]$From = "")
 
 $ErrorActionPreference = "Stop"
 $rg = "RG-THEYARD-SS"
-$first = "APP-THEYARD-SS-ZMNETJ67BN5H2"
+# The one web app every .NET process runs in (ADR: One web app for every .NET process). -From names another
+# web app to read the four values from, which is how the one web app was first created from the SQL site's.
+$first = if ($From) { $From } else { "APP-THEYARD-ONE-SS-ZMNETJ67BN5H2" }
 $root = Split-Path -Parent $PSScriptRoot
 
 $fx = (az webapp config show -g $rg -n $first --query linuxFxVersion -o tsv)

@@ -44,11 +44,13 @@ public static class StoreRegistration
         string? configuredCosmos = builder.Configuration["Cosmos:AccountEndpoint"];
         bool cosmosConfigured = !string.IsNullOrWhiteSpace(configuredCosmos)
             && !configuredCosmos.StartsWith("__", StringComparison.Ordinal);
-        // Which store a request gets when it names none: "sql" or "cosmos". The live
-        // site says sql; the second container says cosmos; a developer or a test run
-        // that configured the document store and said nothing gets the document store.
+        // The names this process answers to (SiteHosts.cs) pick a request's store. With neither
+        // name: Store:Default where set, else the relational store for the web app serving both
+        // sites, else the document store for a run that configured it and said nothing else.
+        var siteHosts = SiteHosts.From(builder.Configuration);
+        bool servesBothSites = siteHosts.Sql is not null && siteHosts.Cosmos is not null;
         string? configuredDefaultStore = builder.Configuration["Store:Default"];
-        string defaultStore = configuredDefaultStore ?? (cosmosConfigured ? "cosmos" : "sql");
+        string defaultStore = configuredDefaultStore ?? (servesBothSites || !cosmosConfigured ? "sql" : "cosmos");
         bool keepCatalogues = builder.Configuration.GetValue("Catalogue:Keep", false);
         string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
         // Pooled, so SQLite's page cache outlives a statement (ADR: The store does the work).
@@ -145,7 +147,7 @@ public static class StoreRegistration
                 state,
                 contexts,
                 quietContexts,
-                Catalogues.Sql(contexts, yard, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "sql")),
+                Catalogues.Sql(contexts, yard, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "sql", servesBothSites)),
                 new BidService(new EfBidStore(contexts)),
                 new EfActivityStore(quietContexts),
                 () => YardDatabase.HasSeedAsync(contexts),
@@ -211,7 +213,7 @@ public static class StoreRegistration
                 null,
                 null,
                 // The same three ports, answered out of the document store.
-                Catalogues.Cosmos(store, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "cosmos")),
+                Catalogues.Cosmos(store, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "cosmos", servesBothSites)),
                 new BidService(new CosmosBidStore(store)),
                 new CosmosActivityStore(store),
                 store.ProbeAsync,
@@ -236,15 +238,14 @@ public static class StoreRegistration
         }
         // #endregion cosmos-backend
 
-        // Which one a request gets when it names none, and the answer every request
-        // reads from its own header (ADR: One container, both stores).
-        // Peer:Site is the other container as a visitor reaches it, which behind the
-        // edge is the domain and not the origin the peer endpoint reads (ADR: One
-        // container, both stores, addendum). Unset everywhere but the deployed groups.
+        // Which one a request gets: its header, the name it arrived on, or the default (ADR: One
+        // web app for every .NET process). Peer:Site is unset where one process serves both sites.
         var backends = new Backends(
             backendList,
             defaultStore,
-            builder.Configuration["Peer:Site"]);
+            builder.Configuration["Peer:Site"],
+            siteHosts);
+        builder.Services.AddSingleton(siteHosts);
         builder.Services.AddSingleton(backends);
         builder.Services.AddScoped<CurrentBackend>();
         // Identity's stores want a context per request, and the factory hands out

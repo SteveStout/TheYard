@@ -4,25 +4,22 @@ https://www.stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 http://stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 http://www.stevenstout.biz/* https://theyard.stevenstout.biz/:splat 301!
 # The second site, whose default store is Azure Cosmos DB, under its own name
-# (ADR: A permanent address for the second site). These two sit above the
-# catch-all because the first matching rule wins, top to bottom, and the
-# catch-all matches everything.
+# (ADR: A permanent address for the second site). These sit above everything in
+# netlify.toml, because Netlify reads this file's rules first and the first
+# matching rule wins.
 #
-# Both origins are web apps on one App Service plan since 1.0.0.156, reached
-# over HTTPS (ADR: One plan, two sites). Until the stopped container groups are
-# deleted, the way back is `az container start` on both and these two origins
-# in place of the two below:
-#   http://theyard-cosmos-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
-#   http://theyard-ss-zmnetj67bn5h2.westus2.azurecontainer.io:8080
 # Every page is the bare path with a query naming the view, the vehicle or the
 # document, and the rendering service draws it (ADR: A rendering service beside the API); each
-# domain's page goes to the service under that site's name, and everything else,
-# the bundle, the photographs and /api, to that site's API as before. The query
-# goes with a 200 rewrite. /index.html is still the API's own page, drawn in the
-# browser, which is the way round while the service is down.
+# domain's page goes to the service under that site's name. The query goes with
+# a 200 rewrite.
+#
+# Everything else, the bundle, the photographs and /api, goes to the one web app
+# that serves both sites (ADR: One web app for every .NET process). Those two
+# rules are in netlify.toml, because only a rule written there can add a header
+# to what it proxies, and the web app learns which site a request is for from the
+# X-Yard-Host header those rules add. Until 19 October they were here, one per
+# site, each to a web app of its own.
 https://theyard-cosmos.stevenstout.biz/ https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net/site/cosmos 200!
-https://theyard-cosmos.stevenstout.biz/* https://app-theyard-cosmos-ss-zmnetj67bn5h2.azurewebsites.net/:splat 200!
 http://theyard-cosmos.stevenstout.biz/* https://theyard-cosmos.stevenstout.biz/:splat 301!
 / https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net/site/sql 200!
-/* https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net/:splat 200!
 # #endregion rules

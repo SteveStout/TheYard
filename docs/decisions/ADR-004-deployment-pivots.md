@@ -147,7 +147,7 @@ No ring: this is a deployment record about which Azure service runs the containe
 
 ## Files
 
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): what runs, the container group template
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml): what runs, the container group template
   every deploy renders; the container itself is shown live below.
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): what would run after an upgrade, the App
   Service and Front Door target of ADR: Front Door origin, deliberately
@@ -156,5 +156,4 @@ No ring: this is a deployment record about which Azure service runs the containe
   from the rendered template (ADR: The deploy pipeline).
 - [`docs/hosting/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/hosting/HOSTING.md): the chain a request follows today.
 
-```live path=infra/aci-theyard.yaml region=container
-```
+*The container group file this showed live retired on 19 October with the container groups' last settings (ADR: One web app for every .NET process); it is kept at [`infra/aci-theyard.yaml` at 22b3015](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml), the last commit that carried it.*

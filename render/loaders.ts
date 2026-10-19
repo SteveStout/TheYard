@@ -19,16 +19,27 @@ import { SELF_READ } from './page';
 /** One read of the API: its JSON, or null on anything but a 200. */
 type Read = <T>(path: string, signal: AbortSignal) => Promise<T | null>;
 
+/** The header that names the store a read is for, as the API names it (api/TheYard.Api/Stores.cs). */
+export const STORE_HEADER = 'X-Yard-Store';
+
 /**
  * Reads from one API origin, forwarding only the visitor's cookie, so a page
  * for a signed-in visitor is read as that visitor and nothing else they sent
  * goes on. Every read carries the self mark on its agent, so the Site activity
  * card does not count the page twice: the browser's own reads after it are the visit.
+ * Since one web app serves both sites, every read also names the site's store,
+ * because the API's address no longer says which site it is.
  */
-function readerFor(apiOrigin: string, cookie: string | null, read: typeof fetch): Read {
+function readerFor(
+  apiOrigin: string,
+  cookie: string | null,
+  read: typeof fetch,
+  store: string | null
+): Read {
   return async <T>(path: string, signal: AbortSignal) => {
     const headers: Record<string, string> = { 'User-Agent': SELF_READ };
     if (cookie) headers.Cookie = cookie;
+    if (store) headers[STORE_HEADER] = store;
     const response = await read(`${apiOrigin}${path}`, { headers, signal });
     if (!response.ok) return null;
     return (path.startsWith('/api/docs/') ? await response.text() : await response.json()) as T;
@@ -53,16 +64,18 @@ function inTime<T>(work: Promise<T | null>): Promise<T | null> {
  * @param cookie the visitor's Cookie header, or null
  * @param apiOrigin the API this page is read from
  * @param deadlineMs how long the reads may take together before the page is drawn without the rest
+ * @param store the site's store, named on every read, or null to take the API's default
  */
 export async function loadFirst(
   search: string,
   cookie: string | null,
   apiOrigin: string,
   deadlineMs: number,
-  read: typeof fetch = fetch
+  read: typeof fetch = fetch,
+  store: string | null = null
 ): Promise<FirstLoad> {
   const signal = AbortSignal.timeout(deadlineMs);
-  const get = readerFor(apiOrigin, cookie, read);
+  const get = readerFor(apiOrigin, cookie, read, store);
   const first = readFirstAddress(search);
   const listingQuery = vehicleQueryParams(first.filters, first.sort).toString();
   const needsListing = first.inventory || first.vehicleId !== null;

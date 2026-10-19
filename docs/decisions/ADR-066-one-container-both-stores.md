@@ -368,7 +368,7 @@ Most of this lives in the Api host, where `Backend.cs` holds one store's catalog
 - [`api/TheYard.Tests/StoreToggleTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreToggleTests.cs): the rule, the endpoints, the ring.
 - [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts) and [`src/components/layout/StoreBar/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/StoreBar/StoreBar.tsx): the toggle.
 - [`tests/e2e/store-toggle.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/store-toggle.spec.ts): the toggle in a browser, on one store and on two.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two groups, three variables apart.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard-cosmos.yaml): the two groups, three variables apart.
 
 ## Addendum, 2026-10-03: endpoints ask the auction
 

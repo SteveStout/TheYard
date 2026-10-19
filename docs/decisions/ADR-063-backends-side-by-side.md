@@ -4,7 +4,7 @@ Status: accepted, 2026-09-08. One card at the top of the Admin tab, on both
 sites, with this container and its peer on the same rows: the store, the cold
 start, the seed and what it cost, and how long the things a visitor does take
 on each, with the request charge beside every number the document store can put
-one on. Parent: ADR: A second store on Cosmos DB, and what it costs.
+one on. Parent: ADR: A second store on Cosmos DB, and what it costs. The peer read is retired on 19 October: both sites are one process, and the card says so in a sentence (ADR: One web app for every .NET process).
 
 ## In plain words
 
@@ -208,6 +208,15 @@ line with the request units and the fan-out count beside the percentiles:
 
 ![The Timing card on the second site after: the same two store lines](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/timing-cosmos-after.png)
 
+
+## Addendum, 2026-10-19: the peer read retired
+
+Steve, 07:47 to 07:49 CDT: "since I've demoed the shed, let merge all .net into one new app service, and delete the old", and "on the existing ADRs indicate the separate app services would be for increased load and separation down the road but we merged due to low traffic on the update and ram".
+
+The separate web apps were the design for increased load and separation down the road: one process per site and per product, so one could roll, fail or be scaled without the others. They were merged on 19 October because traffic is low and the memory on the B2 plan is better spent (read live at 13:46 UTC that morning: the plan at 72 per cent, 2.52 of 3.5 GB; the four apps 977 MB together, the SQL site 404 MB, the Cosmos DB site 370, the rendering service 105 and The Shed 98; and the plan outside the apps 1,603 MB). The split is one bicep change and one edge rule away when load returns: a second entry in `infra/appservice.bicep`'s `sites` list with its own names, and that domain's rule in `netlify.toml` pointed at it.
+
+The peer card read the other web app's metrics through this one's API. On 19 October the other site became this same process, so there is no other container to read, and a read of itself would show the same numbers twice under two names, which is not a comparison. The template no longer sets `Peer__Url`, and with none set the card says in a sentence that both sites are this one process and that the comparison card sets the two stores side by side, which it has done since the addendum of 8 September. The reader, its patience and its four failure sentences stay in the code for the day a site gets a web app of its own again.
+
 ## Where it sits
 
 The comparison is a host and front end job: `Peer.cs` in the Api reads the other site's `/api/admin/metrics` server side and groups timings by route template, `AdminObservability.cs` records each container's own cold start, and `BackendsCard` with `src/lib/metrics.ts` draws the two columns in the browser. Single responsibility, one reason to change per class, shows in `Peer.cs` owning the peer and nothing else, including the four ways a peer can fail to answer, so the rest of the Admin tab never has to know a second site exists. It cost a `Peer:Url` setting on each site, a two and a half second wait before a slow peer counts as down, and a comparison that is never on equal traffic because the two sites have different visitors. Since both stores now run in one process (the 2026-09-08 addendum), a team starting fresh could rely on the in-process columns alone and keep the peer read only for sites that run one store.
@@ -221,4 +230,4 @@ The comparison is a host and front end job: `Peer.cs` in the Api reads the other
 - [`src/components/admin/BackendsCard/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard/BackendsCard.tsx) and [`src/components/admin/TimingCard/TimingCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TimingCard/TimingCard.tsx): the card, and the Timing card's two store lines.
 - [`src/lib/metrics.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.ts): the Timing card's words, with [`src/lib/metrics.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.test.ts) beside it.
 - [`api/TheYard.Tests/PeerTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PeerTests.cs): down first, up last.
-- [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the second container group, with its peer setting.
+- [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard-cosmos.yaml): the second container group, with its peer setting.
