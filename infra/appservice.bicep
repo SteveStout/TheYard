@@ -188,6 +188,10 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
           // plan's 3.5 GB from the other three apps. GC settings read from the environment are
           // hexadecimal: 0x1E is thirty; a plain "30" would be forty-eight.
           { name: 'DOTNET_GCHeapHardLimitPercent', value: '0x1E' }
+          // The collector told to trade a little processor for memory: at 7 of 9 it compacts the
+          // large object heap once it is fragmented, which it otherwise never does (Memory, held by
+          // the build, rule d). Read live before and after on the plan's dial.
+          { name: 'DOTNET_GCConserveMemory', value: '7' }
           { name: 'Email__Endpoint', value: 'https://acs-theyard-ss.unitedstates.communication.azure.com' }
           { name: 'Email__From', value: 'DoNotReply@ae4d5c47-28c9-49e2-8d3a-a859abd0f7df.azurecomm.net' }
           { name: 'Peer__Url', value: s.peerUrl }

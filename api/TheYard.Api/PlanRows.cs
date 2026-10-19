@@ -23,16 +23,28 @@ public static class PlanRows
             [],
             CloudTones.Of(PlanThresholds.AppsTone(apps)))
         {
-            // The apps are a list, so they are a table: each name a link to its blade.
+            // The apps are a list, so they are a table: each name a link to its blade, with what each
+            // holds and burns now, and a last row for what the plan holds outside every app.
             Table = apps.Count == 0 ? CloudTable.None : new CloudTable(
-                ["App", "Type", "Runs", "Talks to", "State", "Always on"],
+                ["App", "Type", "Runs", "Talks to", "State", "Always on", "Memory now", "CPU now"],
                 [.. apps.Select(app => (IReadOnlyList<CloudLink>)[
                     new CloudLink(app.Name, PlanView.Portal(hour!.TenantId, app.ResourceId)),
                     new CloudLink("Web app (container)", null),
                     new CloudLink(Runtime(app.Name), null),
                     new CloudLink(Store(app.Name), null),
                     new CloudLink(app.State, null),
-                    new CloudLink(app.AlwaysOn is { } on ? (on ? "yes" : "no") : "not read", null)])]),
+                    new CloudLink(app.AlwaysOn is { } on ? (on ? "yes" : "no") : "not read", null),
+                    new CloudLink(Megabytes(PlanChildren.MemoryMb(lastHour, app.Name)), null),
+                    new CloudLink(Percent(PlanChildren.CpuPercent(lastHour, app.Name, hour.Cores)), null)]),
+                    (IReadOnlyList<CloudLink>)[
+                        new CloudLink("the plan, outside the apps", null),
+                        new CloudLink("Linux and the platform", null),
+                        new CloudLink("App Service", null),
+                        new CloudLink("every app on it", null),
+                        new CloudLink(hour!.Linux == true ? "Linux" : "", null),
+                        new CloudLink("", null),
+                        new CloudLink(Megabytes(PlanChildren.OutsideMb(lastHour, hour.MemoryGb)), null),
+                        new CloudLink("", null)]]),
         };
 
         double? used = Sum(newest?.Apps.Select(app => app.FileSystemMb) ?? []);
@@ -89,7 +101,7 @@ public static class PlanRows
             month.CpuP95 is null && month.MemoryP95 is null ? "not enough kept yet"
                 : worst == PlanTone.Alarm ? $"no, {(memoryFirst ? "memory" : "CPU")} is past its line"
                 : $"yes, {(memoryFirst ? "memory" : "CPU")} first",
-            [new CloudLink($"{(PlanView.NextSize(hour?.Sku) is { } next ? $"{next.Size} +${next.ExtraPerMonth.ToString("0.00", CultureInfo.InvariantCulture)}/mo" : "no Basic size above it")} · the renderer's 192 MB heap is the $0 lever · red at {(memoryFirst ? "85" : "80")} % p95", null)],
+            [new CloudLink($"{(PlanView.NextSize(hour?.Sku) is { } next ? $"{next.Size} +${next.ExtraPerMonth.ToString("0.00", CultureInfo.InvariantCulture)}/mo" : "no Basic size above it")} · the renderer's 128 MB heap is the $0 lever · red at {(memoryFirst ? "85" : "80")} % p95", null)],
             CloudTones.Of(worst == PlanTone.Info && month.Minutes > 0 ? PlanTone.Good : worst));
         return [power, queue, azure, size];
     }
@@ -146,6 +158,10 @@ public static class PlanRows
         var read = values.Where(v => v is not null).Select(v => v!.Value).ToList();
         return read.Count == 0 ? null : read.Sum();
     }
+
+    private static string Megabytes(double? value) => value is { } v ? $"{Math.Round(v).ToString("N0", CultureInfo.InvariantCulture)} MB" : "not read";
+
+    private static string Percent(double? value) => value is { } v ? $"{v.ToString("0.0", CultureInfo.InvariantCulture)} %" : "not read";
 
     private static string Count(double? value) => value is { } v ? Math.Round(v).ToString("N0", CultureInfo.InvariantCulture) : "not read";
 

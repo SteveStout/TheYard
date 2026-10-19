@@ -263,6 +263,12 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         Assert.Contains("{ name: 'DOTNET_GCHeapHardLimitPercent', value: '0x1E' }", template, StringComparison.Ordinal);
         Assert.Equal(30, Convert.ToInt32("1E", 16));
         Assert.Contains("{ name: 'Catalogue__Keep', value: 'true' }", template, StringComparison.Ordinal);
+        Assert.Contains("{ name: 'DOTNET_GCConserveMemory', value: '7' }", template, StringComparison.Ordinal);
+        string render = File.ReadAllText(Path.Combine(Repo.Root(), "infra", "render.bicep"));
+        Assert.Contains("{ name: 'NODE_OPTIONS', value: '--max-old-space-size=128' }", render, StringComparison.Ordinal);
+        // A V8 flag Node does not allow in NODE_OPTIONS stops the process before it starts: this one took the
+        // rendering service down for twenty minutes on 19 October.
+        Assert.DoesNotMatch(@"value: .[^']*optimize_for_size", render);
     }
     // #endregion rule-e
 

@@ -73,8 +73,10 @@ resource render 'Microsoft.Web/sites@2023-12-01' = {
         // Each site by name, read at its origin: the edge's rule for each domain names the path.
         { name: 'YARD_SITES', value: 'sql=https://${toLower(sqlSite)}.azurewebsites.net,cosmos=https://${toLower(cosmosSite)}.azurewebsites.net' }
         { name: 'YARD_DEADLINE_MS', value: '2500' }
-        // Node's heap held under the measured peak's ceiling, so a leak ends in a restart and not in the plan's memory.
-        { name: 'NODE_OPTIONS', value: '--max-old-space-size=192' }
+        // Node's heap held under the measured peak's ceiling, so a leak ends in a restart and not in the plan's memory,
+        // measured 2026-10-19 at 18 MB of heap in use and 79 MB resident. Only the flags Node allows in NODE_OPTIONS
+        // go here: --optimize_for_size is not one, and set here on 19 October it stopped the container starting.
+        { name: 'NODE_OPTIONS', value: '--max-old-space-size=128' }
       ]
     }
   }

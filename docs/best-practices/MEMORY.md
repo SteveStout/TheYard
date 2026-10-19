@@ -94,7 +94,7 @@ Here: none was found; the request, log, error and SQL rings were already rings. 
 
 ### h. Every app measured the same way
 
-Why: a rule nobody measures is a guess. The Node rendering service runs under `--max-old-space-size=192`; whether that is tight or padded is a reading, not an opinion.
+Why: a rule nobody measures is a guess. The Node rendering service ran under `--max-old-space-size=192`; whether that was tight or padded is a reading, not an opinion. Read on 19 October it used 18 MB of heap with 79 MB resident, so it runs under `--max-old-space-size=128` now, with room still to spare. `--optimize_for_size` was tried beside it the same night and is a flag Node refuses in `NODE_OPTIONS`: the container did not start until it was taken out, and a test now holds it out, and each .NET site runs with `DOTNET_GCConserveMemory=7`, which has the collector compact the large object heap once it is fragmented.
 
 Here: the rendering service's `/readyz` answers its heap used against its limit, and each .NET site's `/api/admin/machines` answers the collector's own reading.
 

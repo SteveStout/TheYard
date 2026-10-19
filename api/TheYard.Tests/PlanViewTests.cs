@@ -59,7 +59,10 @@ public class PlanViewTests
         // The apps are a table, each name a link to its blade and each named as a web app.
         var apps = report.Rows.Single(r => r.Key == "power").Table;
         Assert.Contains(apps.Rows, row => row[0].Href == "https://portal.azure.com/#@tenant-1/resource" + Sql);
-        Assert.All(apps.Rows, row => Assert.Equal("Web app (container)", row[1].Text));
+        Assert.All(apps.Rows.SkipLast(1), row => Assert.Equal("Web app (container)", row[1].Text));
+        // Each app with what it holds and burns now, and a last row for the plan outside every app.
+        Assert.Equal(new[] { "App", "Type", "Runs", "Talks to", "State", "Always on", "Memory now", "CPU now" }, apps.Columns);
+        Assert.Equal("the plan, outside the apps", apps.Rows[^1][0].Text);
         Assert.Equal(12, report.Readout.Lines.Count);
         Assert.Equal("$13.14 / mo", report.Readout.Lines.Single(l => l.Label == "Plan cost").Value);
     }

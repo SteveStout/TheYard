@@ -95,3 +95,6 @@ The gold marker above says where the version changed; from 1.0.3.177 the chart a
 ```live path=api/TheYard.Api/PlanDeploys.cs region=plan-deploys
 ```
 
+## Addendum, 2026-10-19: what each app holds and burns
+
+Steve asked on 19 October for the four apps' RAM and CPU beside the plan's dial. The plan's kept minutes already carried each app's working set and its seconds of processor a minute, so nothing new is read: the table under "What does it power?" gains a Memory now and a CPU now column, the CPU as the app's seconds of processor over the sixty seconds each of the plan's cores had, and a last row for the plan's memory no app's working set accounts for, the operating system, the platform's containers beside each site and the file cache. Read the night it shipped, that last row was the largest thing on the plan: about 1.5 of the 2.45 GB in use, with the four apps' working sets at about 920 MB between them. `PlanChildrenTests` holds the arithmetic.
