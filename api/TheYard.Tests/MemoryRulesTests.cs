@@ -114,12 +114,27 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         || type.GetMethod("<Clone>$", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) is not null
         || type.Namespace == "TheYard.Data";
 
+    /// <summary>
+    /// A type this codebase wrote. The coverage run instruments the same assemblies and adds its own
+    /// tracker classes to them, each with a static hit array, so the scan reads only TheYard's namespaces.
+    /// </summary>
+    private static bool IsOurs(Type type) => type.Namespace?.StartsWith("TheYard", StringComparison.Ordinal) == true;
+
+    [Fact]
+    public void The_scan_reads_only_the_types_this_codebase_wrote()
+    {
+        Assert.True(IsOurs(typeof(PlanChildren)));
+        Assert.True(IsOurs(typeof(MemoryRulesTests)));
+        // CI's tracker is Coverlet.Core.Instrumentation.Tracker.<assembly>_<guid>; any other namespace stands in for it.
+        Assert.False(IsOurs(typeof(System.Text.StringBuilder)));
+    }
+
     [Fact]
     public void Every_collection_a_long_lived_object_keeps_is_named_with_its_bound()
     {
         var found = Projects
             .SelectMany(name => Assembly.Load(new AssemblyName(name)).GetTypes())
-            .Where(type => type.IsClass && !IsValue(type) && !(type.FullName ?? "").Contains('<', StringComparison.Ordinal))
+            .Where(type => type.IsClass && IsOurs(type) && !IsValue(type) && !(type.FullName ?? "").Contains('<', StringComparison.Ordinal))
             .SelectMany(type => type.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
                 .Where(field => !field.IsLiteral && !field.Name.Contains('<', StringComparison.Ordinal) && IsCollection(field.FieldType) && !IsFrozen(field))
                 .Select(field => $"{type.FullName}.{field.Name}"))
