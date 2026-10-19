@@ -74,4 +74,8 @@ jobs:
             done
             echo "$domain serves $N at $C after $((SECONDS - started)) s"
           done
+          # The Cosmos DB site's name must still reach its own store through the edge's header.
+          stores=$(curl -fsS -A "TheYard-SelfRead/1 (edge)" --max-time 30 https://theyard-cosmos.stevenstout.biz/api/stores)
+          echo "theyard-cosmos /api/stores: $stores"
+          [[ "$stores" == *'"current":"cosmos"'* ]] || { echo "the Cosmos DB site's name did not get Azure Cosmos DB through the edge"; exit 1; }
       # #endregion verify-domains

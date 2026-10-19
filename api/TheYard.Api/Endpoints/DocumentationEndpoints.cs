@@ -149,7 +149,7 @@ public static class DocumentationEndpoints
     }
 
     private static ContentHttpResult Bicep(HostPaths paths) =>
-        TypedResults.Text("# infra/main.bicep" + "\n\nWhat runs, as code: one App Service plan and two web apps, which are the module below it, with Azure Front Door and the origin lock behind a parameter that stays off while the subscription refuses Front Door. Deployed in incremental mode only; the Hosting overview explains both.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "main.bicep")) + "\n```\n\n## infra/appservice.bicep\n\nThe plan and the two sites, what differs between them, and every setting they carry.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "appservice.bicep")) + "\n```\n", "text/markdown");
+        TypedResults.Text("# infra/main.bicep" + "\n\nWhat runs, as code: one App Service plan, the one web app that serves both sites and The Shed (the module below it) and the rendering service's web app (infra/render.bicep), with Azure Front Door and the origin lock behind a parameter that stays off while the subscription refuses Front Door. Deployed in incremental mode only; the Hosting overview explains both.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "main.bicep")) + "\n```\n\n## infra/appservice.bicep\n\nThe plan and the one web app: the three names it answers to and every setting it carries.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "appservice.bicep")) + "\n```\n", "text/markdown");
 
     private static PhysicalFileHttpResult Resume(HostPaths paths) =>
         TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");

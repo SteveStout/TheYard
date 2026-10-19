@@ -27,7 +27,7 @@ npx playwright test  # the browser suite, which starts both servers itself
 
 ## The shape, in one minute
 
-The back end is an onion and its dependencies point inward only. `TheYard.Data` holds records with no behaviour; `TheYard.Domain` holds the rules; `TheYard.Application` holds the use cases and the ports they read through; `TheYard.Infrastructure` and `TheYard.Infrastructure.Cosmos` implement those ports over Azure SQL Database, SQLite and Azure Cosmos DB; `TheYard.Api` is the host, with its handlers in `Endpoints/` and the composition root in `Composition/`. `OnionTests` fails the gate when a dependency points outward ([ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid)). One process serves both stores and picks one per request, which is why the site has two public addresses and one codebase.
+The back end is an onion and its dependencies point inward only. `TheYard.Data` holds records with no behaviour; `TheYard.Domain` holds the rules; `TheYard.Application` holds the use cases and the ports they read through; `TheYard.Infrastructure` and `TheYard.Infrastructure.Cosmos` implement those ports over Azure SQL Database, SQLite and Azure Cosmos DB; `TheYard.Api` is the host, with its handlers in `Endpoints/` and the composition root in `Composition/`. `OnionTests` fails the gate when a dependency points outward ([ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid)). One process serves both stores and The Shed: the name a request arrives on picks the store, theyard for Azure SQL Database and theyard-cosmos for Azure Cosmos DB, an `X-Yard-Store` header overrides it, and theshed reaches The Shed's own application inside the same process. **Hosting**, the section "How a request gets answered", follows one request from the address bar to the code that answers it.
 
 The front end keeps the same discipline: `components` use `hooks` use `lib`, and **`src/lib` imports nothing from React**, which is what lets the arithmetic be tested without a browser.
 
@@ -64,7 +64,8 @@ Every version runs one gate before anything rolls: Prettier, oxlint, TypeScript,
 1. **Project README**, for what the thing is and how it is put together.
 2. **ADR: The rules a change has to pass**, which lists each rule beside the test that enforces it.
 3. **App Architecture** and **Projects**, for the onion and the ten projects.
-4. **Built with AI**, for how this repository was actually written, and what was checked by hand.
-5. Any **decision record** whose title sounds like the change you are about to make.
+4. **Hosting** and **What is watched**, for how a request reaches the code and what watches it.
+5. **Built with AI**, for how this repository was actually written, and what was checked by hand.
+6. Any **decision record** whose title sounds like the change you are about to make.
 
 If a document and the code disagree, the code is right and the document is a bug. Fix it in the same commit.

@@ -36,14 +36,14 @@ const READ = [
   ['SyntheticVehicleSource', 'api/TheYard.Infrastructure/SyntheticVehicleSource.cs', [
     "Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a, api/TheYard.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state while keeping the seed's make, model and trim mix."]],
   ['InventoryService', 'api/TheYard.Application/InventoryService.cs', [
-    "Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and materializes the list plus an id index once. The host awaits that load in api/TheYard.Api/Composition/Startup.cs before it serves."]],
+    "Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and fills the store's catalogue, which every page then queries; the process holds none of them (ADR: The store does the work). The warm runs beside the server and /readyz waits for it."]],
   ['GET /api/vehicles', 'api/TheYard.Api/Endpoints/VehicleEndpoints.cs', [
     "api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a filter and a sort. The clock is the server's (api/TheYard.Api/Clocks.cs): now, and the UTC midnight that began the day, the same for every visitor."]],
   ['Search, through Auction.Search', 'api/TheYard.Application/Auction.cs', [
     "1. Everybody's bids, then the room's, are laid over each vehicle (Auction.Overlay, raising a price through api/TheYard.Domain/StandingRules.cs), so price bounds see the figures the page shows.",
     '2. Where: api/TheYard.Domain/VehicleFilter.cs',
     '3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs',
-    '4. Skip and Take for the page. Auction windows come from api/TheYard.Domain/AuctionSchedule.cs, all in memory.']],
+    '4. The store filters, orders and pages; only the page comes back. Auction windows come from api/TheYard.Domain/AuctionSchedule.cs.']],
   ['VehicleWire', 'api/TheYard.Api/VehicleWire.cs', [
     'Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at, auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.']],
   ['The rendering service, for a page', 'render/loaders.ts, render/render.ts', [

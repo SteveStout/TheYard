@@ -143,8 +143,11 @@ wwwroot/              index.html, css (tokens.css, then one sheet per part), fon
 tests/                TestProject.Tests (xUnit), js (node --test)
 docs/                 the records and the guides
 sample-home/          what is browsed until Files:Home is set
-infra/                site.bicep: the Azure web app The Shed runs on
 ```
+
+Live, The Shed runs inside TheYard's one web app, started from its own published folder and handed every
+request on its own name; the Bicep for that web app is TheYard's `infra/appservice.bicep` (ADR-001, the
+addendum of 19 October).
 
 From Data down to Composition, each folder uses only the folders above it in this list. `OnionTests`
 checks that in the compiled app (ADR-002, ADR-013).

@@ -35,30 +35,26 @@ flowchart LR
   B["Browser<br/>theyard.stevenstout.biz"]
 
   subgraph edge["Phase 1 edge: Netlify, free tier"]
-    TLS["TLS termination, Let's Encrypt<br/>rewrite proxy: / with its query to the rendering service, /* to the site"]
+    TLS["TLS termination, Let's Encrypt<br/>rewrite proxy: / with its query to the rendering service, /* to the one web app with X-Yard-Host"]
   end
 
   subgraph azure["Azure, resource group RG-THEYARD-SS"]
-    ACI["Web app for containers, the first site<br/>on PLAN-THEYARD-SS, Linux B2, West US 3<br/>2 vCPU and 3.5 GB shared with the second site and the rendering service"]
-    RENDER["Web app for containers, the rendering service<br/>on the same plan, its own image: draws every page<br/>for either site by reading that site's API"]
+    ACI["Web app for containers, APP-THEYARD-ONE-SS: both sites and The Shed<br/>on PLAN-THEYARD-SS, Linux B2, West US 3<br/>2 vCPU and 3.5 GB shared with the rendering service<br/>the store follows the name, or X-Yard-Store"]
+    RENDER["Web app for containers, the rendering service<br/>on the same plan, its own image: draws every page<br/>for either site, naming its store on every read"]
     ACR[("Container Registry")]
     MI["Managed identity<br/>id-theyard-ss"]
     AI["Application Insights<br/>appi-theyard-ss"]
     LAW[("Log Analytics<br/>log-theyard-ss, 0.1 GB cap")]
-    ACI2["Web app for containers, the second site<br/>on the same plan, the same image, Cosmos DB by default"]
   end
 
   subgraph sql["Azure SQL Database, the first site's store, West US 3"]
     SQL[("Azure SQL Database<br/>sqldb-theyard-ss-basic, Basic, 5 DTU<br/>catalogue, photo manifest, accounts, bids")]
   end
 
-  subgraph cosmos["Azure Cosmos DB, the second site's store, West US 2"]
+  subgraph cosmos["Azure Cosmos DB, the Cosmos DB site's store, West US 2"]
     COSMOS[("Azure Cosmos DB<br/>cosmos-theyard-ss, free tier, no keys<br/>the same four things, as documents")]
   end
 
-  ACI2 -->|managed identity| COSMOS
-  ACI2 -->|managed identity| SQL
-  ACI2 <-->|/api/admin/peer, 2.5 s patience| ACI
 
   subgraph box["Inside the container"]
     API["ASP.NET Core minimal API, .NET 10"]
@@ -73,8 +69,8 @@ flowchart LR
   TLS -->|everything else: HTTPS| ACI
   ACI --> API
   API --> SPA
-  API -->|read once at startup, expanded to 100,000| SQL
-  API -->|the other store, chosen per request by the toggle| COSMOS
+  API -->|a page per query; the store holds all 100,000| SQL
+  API -->|the other store, chosen by the name or X-Yard-Store| COSMOS
   API -.->|when SQL is unreachable| FILE
   MI -.->|db_datareader, db_datawriter| SQL
   SEED -.->|first boot only| SQL

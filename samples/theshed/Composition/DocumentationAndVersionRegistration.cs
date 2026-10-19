@@ -9,8 +9,9 @@ namespace TestProject.Composition;
 /// <list type="bullet">
 /// <item>The version number is set by the newest entry at the top of docs/CHANGELOG.md.
 /// Adding a line there is how a new version is set.</item>
-/// <item>The commit is set by the deploy, which puts it in the SHED_COMMIT environment
-/// variable of the container. A local run reads it from the .git folder instead.</item>
+/// <item>The commit is set by the image, which puts it in the SHED_COMMIT environment
+/// variable (TheYard's Dockerfile sets it to the commit it was built from). A local run
+/// reads it from the .git folder instead.</item>
 /// <item>The documentation is the markdown files in the docs folder (the decision records
 /// and the guides) plus README.md. DocumentationAndVersionController serves them to the
 /// Docs tab.</item>

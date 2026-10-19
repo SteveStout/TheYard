@@ -30,8 +30,8 @@ public static class ApiRegistration
             options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower);
 
         #region forwarded-headers
-        // Every visitor reaches this process through two proxies: the edge (Netlify,
-        // which proxies each site's domain to its origin) and App Service's own front
+        // Every Yard visitor reaches this process through two proxies: the edge (Netlify,
+        // which proxies both Yard domains to this web app) and App Service's own front
         // end, which terminates TLS and speaks plain HTTP to the container. Each adds
         // the address it received the request from to the right of X-Forwarded-For,
         // and says the scheme in X-Forwarded-Proto. So the visitor is the second entry
@@ -48,8 +48,9 @@ public static class ApiRegistration
         // skips the edge and calls the origin directly can still write the second
         // entry; what that buys them is a different visitor count, because the
         // address feeds counts and never a permission (ADR: The order of the request
-        // pipeline). X-Forwarded-Host is not read at all: the site's own address is
-        // configuration (Site:Url), never a header.
+        // pipeline). X-Forwarded-Host is not read at all. The site a request is for comes
+        // from X-Yard-Host, the edge's own header, counted only when it names one of the
+        // configured names (SiteHosts.cs), else from Site:Url.
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;

@@ -321,6 +321,12 @@ jobs:
               fi
               curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$domain/api/facets" > /dev/null
             done
+            # Both domains answer the same version; only the store says the edge sent the right name.
+            stores=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$COSMOS_SITE/api/stores")
+            if [[ "$stores" != *'"current":"cosmos"'* ]]; then
+              echo "$COSMOS_SITE did not get Azure Cosmos DB through the edge: $stores"
+              exit 1
+            fi
           else
             echo "::notice::the edge does not yet serve this commit's rules for this origin; Edge branch moves them after this run and reads both names"
           fi

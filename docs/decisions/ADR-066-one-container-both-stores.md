@@ -5,7 +5,8 @@ document store side by side, a visitor picks one with a toggle at the top of
 every page, and the same request is served by whichever store the visitor
 chose. The second container stays, running the same image with the other
 store as its default. Parent: ADR: A second store on Cosmos DB, and what it
-costs.
+costs. Since 19 October one web app serves both sites, and a request's store
+follows the name it arrived on (ADR: One web app for every .NET process).
 
 ## In plain words
 

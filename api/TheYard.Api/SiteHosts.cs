@@ -13,9 +13,9 @@ namespace TheYard.Api;
 /// <para>Which name a request arrived on is the Host header when App Service routed it here
 /// by that name, which is how The Shed's domain arrives, bound straight to the web app. The
 /// two Yard domains arrive through the edge, which proxies to the web app's own address and
-/// says which domain the visitor typed in <see cref="HeaderName"/> (netlify.toml). A header
-/// is what the sender says it is, so it counts only when it names one of the three names
-/// configured here: the most a sender can choose is which of these three sites answers, the
+/// says which domain the visitor typed in <see cref="HeaderName"/> (netlify.toml); the header
+/// is read only when the Host is not one of the three. A header is what the sender says it is,
+/// so it counts only when it names one of the three names configured here: the most a sender can choose is which of these three sites answers, the
 /// same choice typing the other address makes.</para>
 /// </summary>
 public sealed class SiteHosts
@@ -57,11 +57,14 @@ public sealed class SiteHosts
         {
             return null;
         }
-        if (context.Request.Headers.TryGetValue(HeaderName, out var said) && Known(said.ToString()) is { } fromEdge)
+        // The Host header first: a name App Service routed here by is the name, whatever a
+        // header says. Only a request on another name (the web app's own address, which is
+        // where the edge sends both Yard names) is told its name by the edge's header.
+        if (Known(context.Request.Host.Host) is { } routed)
         {
-            return fromEdge;
+            return routed;
         }
-        return Known(context.Request.Host.Host);
+        return context.Request.Headers.TryGetValue(HeaderName, out var said) ? Known(said.ToString()) : null;
     }
 
     /// <summary>The store a name serves when the request names none: "sql", "cosmos", or null for any other name.</summary>
