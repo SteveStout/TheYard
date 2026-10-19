@@ -63,6 +63,8 @@ public class PlanViewTests
         // Each app with what it holds and burns now, and a last row for the plan outside every app.
         Assert.Equal(new[] { "App", "Type", "Runs", "Talks to", "State", "Always on", "Memory now", "CPU now" }, apps.Columns);
         Assert.Equal("the plan, outside the apps", apps.Rows[^1][0].Text);
+        // The row says it is a difference, not a reading (ADR: The App Service plan, read every minute, 19 October).
+        Assert.Equal("Linux and the platform (derived: plan memory used minus the apps)", apps.Rows[^1][1].Text);
         Assert.Equal(12, report.Readout.Lines.Count);
         Assert.Equal("$13.14 / mo", report.Readout.Lines.Single(l => l.Label == "Plan cost").Value);
     }

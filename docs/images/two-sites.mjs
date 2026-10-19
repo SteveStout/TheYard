@@ -1,8 +1,9 @@
 // Draws two-sites.svg (ADR: A permanent address for the second site) in the
-// style of infrastructure.svg and dataflow.svg: how two names reach two web
-// apps on one App Service plan through one edge, how a page reaches the
-// rendering service beside them (ADR: A rendering service beside the API), and
-// how both sites reach both stores (ADR: One plan, two sites).
+// style of infrastructure.svg and dataflow.svg: how the two Yard names reach
+// the one web app through one edge and The Shed's name reaches it directly
+// (ADR: One web app for every .NET process), how a page reaches the rendering
+// service beside it (ADR: A rendering service beside the API), and how the
+// one process reaches both stores.
 // Every box carries the file or the resource it stands for. Run from the repo
 // root:
 //   node docs/images/two-sites.mjs          writes docs/images/two-sites.svg
@@ -78,15 +79,18 @@ const L1 = { x: 40, w: 400 };
 const b1 = L1.x + 20;
 const w1 = L1.w - 40;
 const nameLive = box(b1, 170, w1, 'theyard.stevenstout.biz', 'CNAME -> theyard-edge.netlify.app, TTL 30 min', [
-  'The live site, the name a resume carries. The web app behind it serves Azure SQL Database by default.',
+  'The live site, the name a resume carries. Its requests get Azure SQL Database when they name no store.',
 ], 42);
 const nameCosmos = box(b1, nameLive.bottom + 36, w1, 'theyard-cosmos.stevenstout.biz', 'CNAME -> theyard-edge.netlify.app, TTL 30 min', [
-  'The second site, since 1.0.0.100. One label, so any DNS form accepts it.',
+  'The second site, since 1.0.0.100. Its requests get Azure Cosmos DB when they name no store.',
 ], 42);
 const nameBare = box(b1, nameCosmos.bottom + 36, w1, 'stevenstout.biz and www', 'A 75.2.60.5 and CNAME -> theyard-edge.netlify.app', [
   'Both forward to the live site with a 301, so a trimmed or retyped address still lands on the app.',
 ], 42);
-const lane1Bottom = nameBare.bottom + 20;
+const nameShed = box(b1, nameBare.bottom + 36, w1, 'theshed.stevenstout.biz', 'CNAME -> the one web app, TTL 1 hour', [
+  'The Shed, bound straight to the web app with App Service\'s managed certificate. No edge in front of it.',
+], 42);
+const lane1Bottom = nameShed.bottom + 20;
 
 // ===================== Lane 2: the edge =====================
 const L2 = { x: 470, w: 460 };
@@ -95,79 +99,71 @@ const w2 = L2.w - 40;
 const cert = box(b2, 170, w2, 'One certificate', "Let's Encrypt, issued and renewed by Netlify", [
   'Four names on it: the bare domain, www, theyard and theyard-cosmos. Adding the alias reissued it within the minute; nothing was bought.',
 ], 50);
-const rules = box(b2, cert.bottom + 36, w2, 'edge/_redirects: the name and the path pick the origin', 'the first matching rule wins, top to bottom', [
-  'https://theyard-cosmos.stevenstout.biz/ to the rendering service as /site/cosmos, 200!',
-  'https://theyard-cosmos.stevenstout.biz/* to the second web app, 200!',
-  '/ to the rendering service as /site/sql, 200!',
-  '/* to the first web app, 200! (the catch-all, last)',
-  'stevenstout.biz and www: 301 to theyard.stevenstout.biz',
-  'A page is the bare path with its query, so the two bare-path rules send every page to the service and the query goes with the rewrite; /index.html is still the API\'s own page, drawn in the browser.',
+const rules = box(b2, cert.bottom + 36, w2, 'The rules: edge/_redirects first, then netlify.toml', 'the first matching rule wins, top to bottom', [
+  'edge/_redirects: https://theyard-cosmos.stevenstout.biz/ to the rendering service as /site/cosmos; / to it as /site/sql; stevenstout.biz and www, 301 to theyard.',
+  'netlify.toml: https://theyard-cosmos.stevenstout.biz/* to the one web app with X-Yard-Host: theyard-cosmos.stevenstout.biz; then /* to the same web app with X-Yard-Host: theyard.stevenstout.biz.',
+  'Both proxy rules reach the same address, so each says which name the visitor typed. Only netlify.toml can add a header to a proxied request.',
 ], 50);
-const ignore = box(b2, rules.bottom + 36, w2, 'netlify.toml: build only when the edge moves', 'ignore = "git diff --quiet ... -- edge/ netlify.toml"', [
-  'An application push costs no credits; an edge change is one deploy, 15 of the month\'s 300. This one cost exactly that, read off the meter.',
+const ignore = box(b2, rules.bottom + 36, w2, 'Moved only after the roll it names', 'edge-branch.yml, after Deploy succeeds', [
+  'The edge builds from the edge branch, which moves after Deploy has verified the origin and only when edge/ or netlify.toml changed: one deploy, 15 credits.',
 ], 50);
 const lane2Bottom = ignore.bottom + 20;
 
 // ===================== Lane 3: Azure =====================
 const L3 = { x: 960, w: 520 };
 const b3 = L3.x + 20;
-const w3 = L3.w - 100; // a gutter on the right for the Store bar's loop
-const groupSql = box(b3, 170, w3, 'APP-THEYARD-SS-ZMNETJ67BN5H2', 'https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net', [
-  'Store__Default = sql. Peer__Site = https://theyard-cosmos.stevenstout.biz. Rolled by the Deploy workflow. A web app for containers on PLAN-THEYARD-SS.',
-], 48);
-const groupCosmos = box(b3, groupSql.bottom + 60, w3, 'APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2', 'https://app-theyard-cosmos-ss-zmnetj67bn5h2.azurewebsites.net', [
-  'Store__Default = cosmos. Peer__Site = https://theyard.stevenstout.biz. Rolled by Deploy Cosmos. Same image, same plan: one Linux B2, 2 vCPU and 3.5 GB shared by both sites and the rendering service, $24.82 a month.',
-], 48);
-const renderer = box(b3, groupCosmos.bottom + 60, w3, 'APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2', 'https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net', [
-  'The rendering service, one process for both sites: /site/sql draws for the first, /site/cosmos for the second. Its own image (render/Dockerfile: the build on Node, nothing else), rolled by Deploy Render on the same push. YARD_SITES names each site\'s API; a page is read from that API and drawn, then sent with its data in it. It opens no store.',
-], 48);
+const w3 = L3.w - 40;
+const one = box(b3, 170, w3, 'APP-THEYARD-ONE-SS-ZMNETJ67BN5H2', 'https://app-theyard-one-ss-zmnetj67bn5h2.azurewebsites.net', [
+  'One process, three names (api/TheYard.Api/SiteHosts.cs). The name is the Host header, or X-Yard-Host from the edge, and only a configured name counts.',
+  'theyard: Azure SQL Database. theyard-cosmos: Azure Cosmos DB. An X-Yard-Store header wins over both. theshed: The Shed\'s own application, started inside the process from /app/shed (Composition/ShedMount.cs).',
+  'Rolled by Deploy. A web app for containers on PLAN-THEYARD-SS, one Linux B2, 2 vCPU and 3.5 GB shared with the rendering service.',
+], 56);
+const renderer = box(b3, one.bottom + 70, w3, 'APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2', 'https://app-theyard-render-ss-zmnetj67bn5h2.azurewebsites.net', [
+  'The rendering service: /site/sql draws for the first site, /site/cosmos for the second. Its own image (render/Dockerfile), rolled by Deploy Render on the same push. Both sites are read from the one web app, each read naming its store in X-Yard-Store. It opens no store.',
+], 56);
 const storesY = renderer.bottom + 76;
 const halfW = Math.floor((w3 - 20) / 2);
 const storeSql = box(b3, storesY, halfW, 'Azure SQL Database', 'Entra-only, no SQL login', [
   'Reached as the managed identity. West US 3, the plan\'s own region.',
-], 22, 'store');
+], 26, 'store');
 const storeCosmos = box(b3 + halfW + 20, storesY, halfW, 'Azure Cosmos DB', 'no keys on the account', [
   'Reached as the managed identity. West US 2, one region from the plan.',
-], 22, 'store');
+], 26, 'store');
 const lane3Bottom = Math.max(storeSql.bottom, storeCosmos.bottom) + 20;
-const H = Math.max(lane1Bottom, lane2Bottom, lane3Bottom) + 100;
+const H = Math.max(lane1Bottom, lane2Bottom, lane3Bottom) + 130;
 
 // ===================== Arrows =====================
-// Names to the rules box: the Host header is the only thing that differs.
+// The three edge names to the rules box.
 arrow(`M${nameLive.right} ${nameLive.midY} L${rules.x} ${rules.midY - 26}`);
 arrow(`M${nameCosmos.right} ${nameCosmos.midY} L${rules.x} ${rules.midY}`);
 arrow(`M${nameBare.right} ${nameBare.midY} L${rules.x} ${rules.midY + 26}`);
 label('HTTPS, then the Host header picks the rule', L2.x + 20, rules.y - 10);
-// Rules to the two sites and the service, labelled above each.
-arrow(`M${rules.right} ${rules.midY - 20} L${groupSql.x} ${groupSql.midY}`);
-arrow(`M${rules.right} ${rules.midY + 20} L${groupCosmos.x} ${groupCosmos.midY}`);
+// The Shed's name straight to the web app: under the edge lane, then up the gap between the lanes.
+const underY = Math.max(lane1Bottom, lane2Bottom) + 16;
+const shedX = nameShed.x + Math.floor(nameShed.w / 2);
+arrow(`M${shedX} ${nameShed.bottom} L${shedX} ${underY} L${L3.x - 14} ${underY} L${L3.x - 14} ${one.bottom - 20} L${one.x} ${one.bottom - 20}`);
+label('theshed: HTTPS straight to the web app, with no edge in front', shedX + 12, underY - 6);
+// Rules to the web app and the service.
+arrow(`M${rules.right} ${rules.midY - 20} L${one.x} ${one.y + 40}`);
 arrow(`M${rules.right} ${rules.midY + 40} L${renderer.x} ${renderer.midY}`);
-label('everything else on theyard: HTTPS to the first web app', groupSql.x, groupSql.y - 10);
-label('everything else on theyard-cosmos: HTTPS to the second web app', groupCosmos.x, groupCosmos.y - 10);
-label('a page on either name: HTTPS to the rendering service, as that site', renderer.x, renderer.y - 10);
-// The service reads each site's API: two short lines back up the column, in the gutter the Store bar uses.
-const rx = renderer.right + 6;
-arrow(`M${renderer.right} ${renderer.midY + 20} L${rx + 14} ${renderer.midY + 20} L${rx + 14} ${groupCosmos.bottom - 14} L${groupCosmos.right + 2} ${groupCosmos.bottom - 14}`);
-label('reads the page, the build and the view from that site\'s API, cookie forwarded', renderer.x + 15, renderer.bottom + 16);
-// Both sites open both stores: two lines down from each site into a bus, and the bus into both stores.
+label('everything but a page: HTTPS with X-Yard-Host', one.x, one.y - 10);
+label('a page on either Yard name: HTTPS to the rendering service, as that site', renderer.x, renderer.y - 10);
+// The service reads the web app, in the gutter on the right.
+const gx = one.right + 14;
+arrow(`M${renderer.right} ${renderer.midY} L${gx} ${renderer.midY} L${gx} ${one.midY} L${one.right + 2} ${one.midY}`, 'loop');
+label('reads with X-Yard-Store: sql or cosmos', renderer.x + 15, renderer.bottom + 16, 'loop-label');
+// The web app opens both stores, past the service, down the lane's left margin.
 const busY = storesY - 34;
 const sqlCx = storeSql.x + Math.floor(storeSql.w / 2);
 const cosCx = storeCosmos.x + Math.floor(storeCosmos.w / 2);
-out.push(`  <path d="M${groupSql.x + 40} ${groupSql.bottom} L${groupSql.x + 40} ${groupCosmos.y}" class="flow" style="marker-end:none"/>`);
-// Past the service, which opens no store: the bus runs down the lane's left margin.
 const marginX = L3.x + 8;
-out.push(`  <path d="M${groupCosmos.x + 40} ${groupCosmos.bottom} L${groupCosmos.x + 40} ${renderer.y - 24} L${marginX} ${renderer.y - 24} L${marginX} ${busY} L${cosCx} ${busY}" class="flow" style="marker-end:none"/>`);
+out.push(`  <path d="M${one.x + 40} ${one.bottom} L${one.x + 40} ${renderer.y - 30} L${marginX} ${renderer.y - 30} L${marginX} ${busY} L${cosCx} ${busY}" class="flow" style="marker-end:none"/>`);
 arrow(`M${sqlCx} ${busY} L${sqlCx} ${storesY}`);
 arrow(`M${cosCx} ${busY} L${cosCx} ${storesY}`);
-label('both sites open both stores, as their managed identity; the service opens neither', groupCosmos.x + 40, busY - 8);
-// The Store bar: each site links to the other at the same page, drawn in the gutter.
-const gx = groupSql.right + 30;
-arrow(`M${groupSql.right} ${groupSql.midY + 16} L${gx} ${groupSql.midY + 16} L${gx} ${groupCosmos.midY - 16} L${groupCosmos.right + 2} ${groupCosmos.midY - 16}`, 'loop');
-arrow(`M${groupCosmos.right} ${groupCosmos.midY + 16} L${gx + 24} ${groupCosmos.midY + 16} L${gx + 24} ${groupSql.midY + 40} L${groupSql.right + 2} ${groupSql.midY + 40}`, 'loop');
-label('the Store bar: each site links to the other, at the same page', groupSql.right - 372, groupSql.bottom + 30, 'loop-label');
+label('the web app opens both stores, as its managed identity; the service opens neither', storeSql.x, busY - 8);
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
-  <title>TheYard's two sites: two names at Wix, one Netlify edge, two web apps and the rendering service on one App Service plan on Azure, and both stores behind both</title>
+  <title>TheYard's two sites and The Shed: four names at Wix, one Netlify edge, one web app for every .NET process and the rendering service on one App Service plan, both stores behind it</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
@@ -179,27 +175,27 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   </defs>
 
   <rect width="${W}" height="${H}" fill="#e9e6e7"/>
-  <text x="40" y="44" class="heading">TheYard's two sites: two names, one edge, three web apps on one plan, both stores behind both</text>
-  <text x="40" y="68" class="caption">A request reads left to right. The name a visitor typed and the path are what differ until the edge; the edge sends a page to the rendering service and everything else to that site's API, and each site opens both stores.</text>
+  <text x="40" y="44" class="heading">Two sites and The Shed: one edge, one web app for every .NET process, the rendering service beside it</text>
+  <text x="40" y="68" class="caption">Read left to right. The edge sends a Yard page to the rendering service and the rest to the web app, saying which name was typed; The Shed's name needs no edge.</text>
 
   <!-- ===================== Lane 1: the names ===================== -->
   <rect x="${L1.x}" y="92" width="${L1.w}" height="${lane1Bottom - 92}" class="lane"/>
   <text x="${L1.x + 20}" y="120" class="lane-title">The names, at Wix DNS</text>
-  <text x="${L1.x + 20}" y="140" class="lane-sub">Three CNAMEs and one A record, all at the same edge.</text>
+  <text x="${L1.x + 20}" y="140" class="lane-sub">Three names at the edge, and The Shed's at the web app.</text>
 
   <!-- ===================== Lane 2: the edge ===================== -->
   <rect x="${L2.x}" y="92" width="${L2.w}" height="${lane2Bottom - 92}" class="lane"/>
   <text x="${L2.x + 20}" y="120" class="lane-title">One edge: the Netlify site theyard-edge</text>
-  <text x="${L2.x + 20}" y="140" class="lane-sub">Terminates HTTPS, then proxies by Host. Three files in this repository.</text>
+  <text x="${L2.x + 20}" y="140" class="lane-sub">Terminates HTTPS, then proxies by Host. Two files in this repository.</text>
 
   <!-- ===================== Lane 3: Azure ===================== -->
   <rect x="${L3.x}" y="92" width="${L3.w}" height="${lane3Bottom - 92}" class="lane"/>
   <text x="${L3.x + 20}" y="120" class="lane-title">Azure: RG-THEYARD-SS, one App Service plan in westus3</text>
-  <text x="${L3.x + 20}" y="140" class="lane-sub">Three web apps on one machine: two sites on one image, and the service; both stores open.</text>
+  <text x="${L3.x + 20}" y="140" class="lane-sub">Two web apps: every .NET process in one, the service in the other.</text>
 
 ${out.join('\n')}
 
-  <text x="40" y="${H - 66}" class="caption">Each site is one store's site: the web app's default store serves it; a measurement can name the other store for one request with the X-Yard-Store header.</text>
+  <text x="40" y="${H - 66}" class="caption">Each Yard site is one store's site by its name; a measurement names the other store for one request with X-Yard-Store (ADR: One web app for every .NET process).</text>
   <text x="40" y="${H - 46}" class="caption">The edge retires at the registrar transfer around the end of October 2026; both names then become two records at Cloudflare, and a Worker takes the rendering function with it.</text>
   <text x="40" y="${H - 26}" class="caption">Source: docs/images/two-sites.svg in the repository, drawn by docs/images/two-sites.mjs and redrawn when a name, a rule or a site changes.</text>
 </svg>

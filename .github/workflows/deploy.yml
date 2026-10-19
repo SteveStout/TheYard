@@ -2,8 +2,10 @@
 # Fires on a push to main, which only the ship's gate makes once every suite
 # has passed on both stores (ADR: The five-minute gate, addendum of 21
 # September: every check runs once). It builds the image with the two footer
-# build arguments, pushes it to the registry and rolls the first site's web app
-# to the new tag (ADR: One plan, two sites). Auth is OIDC: GitHub holds three
+# build arguments, pushes it to the registry and rolls the one web app that
+# serves both sites and The Shed to the new tag (ADR: One web app for every .NET
+# process). Until 19 October Deploy Cosmos and Deploy Shed rolled the other two
+# web apps from the same push; both retired with them. Auth is OIDC: GitHub holds three
 # identifiers as repository variables and two secrets, the session signing key
 # and the operator's key, which the roll hands to the site (ADR: Three readers
 # with no memory of the project).
@@ -19,12 +21,9 @@ name: Deploy
 on:
   push:
     branches: [main]
-    # A push that touches only the sample under samples/ rolls the sample and not
-    # the site; deploy-shed.yml watches that folder (ADR-009, the addendum of 29
-    # September on the sample). A push that touches both rolls both.
-    paths-ignore:
-      - "samples/**"
-      - ".github/workflows/deploy-shed.yml"
+    # Every push to main rolls, The Shed's folder included: The Shed is built into
+    # the same image and served by the same process (ADR: One web app for every
+    # .NET process), so a change under samples/theshed is a change to what runs.
 
 permissions:
   id-token: write
@@ -52,11 +51,14 @@ jobs:
       REGISTRY_NAME: crtheyardsszmnetj67bn5h2
       ACR: crtheyardsszmnetj67bn5h2.azurecr.io
       RG: RG-THEYARD-SS
-      # The first site's web app on the plan both sites share, its own address,
-      # and the public name the edge sends to it (ADR: One plan, two sites).
-      APP: APP-THEYARD-SS-ZMNETJ67BN5H2
-      ORIGIN: https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net
+      # The one web app on the plan, its own address, and the three public names
+      # it answers to: the two the edge proxies to it, and The Shed's, bound to it
+      # directly (ADR: One web app for every .NET process).
+      APP: APP-THEYARD-ONE-SS-ZMNETJ67BN5H2
+      ORIGIN: https://app-theyard-one-ss-zmnetj67bn5h2.azurewebsites.net
       SITE: https://theyard.stevenstout.biz
+      COSMOS_SITE: https://theyard-cosmos.stevenstout.biz
+      SHED_SITE: https://theshed.stevenstout.biz
       # The Application Insights component this deploy reads the connection
       # string from. The name is not a secret; the string it returns is.
       AI_NAME: appi-theyard-ss
@@ -279,14 +281,51 @@ jobs:
           done
           curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 20 "$ORIGIN/api/facets" > /dev/null
           echo
-          # The domain is the edge in front of the same origin: what a visitor sees.
-          site=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$SITE/api/version")
-          echo "domain: $site"
-          if [[ "$site" != *"\"$APP_VERSION\""* || "$site" != *"\"$APP_COMMIT\""* ]]; then
-            echo "domain does not report $APP_VERSION at $APP_COMMIT"
+          # #region verify-names
+          # The other two names, at the origin, before any domain: the process picks the
+          # store, and The Shed, by the name a request arrived on, which the edge writes
+          # as X-Yard-Host (api/TheYard.Api/SiteHosts.cs). The Cosmos DB site's name must
+          # get Azure Cosmos DB with no store named, and The Shed's name must reach The
+          # Shed's own health check and its own page.
+          cosmos=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 -H "X-Yard-Host: ${COSMOS_SITE#https://}" "$ORIGIN/api/stores")
+          echo "the Cosmos DB site's name at the origin: $cosmos"
+          if [[ "$cosmos" != *'"current":"cosmos"'* ]]; then
+            echo "the Cosmos DB site's name did not get Azure Cosmos DB"
             exit 1
           fi
-          curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$SITE/api/facets" > /dev/null
+          shed=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 -H "X-Yard-Host: ${SHED_SITE#https://}" "$ORIGIN/healthz")
+          shed_page=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 -H "X-Yard-Host: ${SHED_SITE#https://}" "$ORIGIN/")
+          echo "The Shed's name at the origin: $shed"
+          if [[ "$shed" != *'"healthy"'* || "$shed_page" != *"<title>The Shed</title>"* ]]; then
+            echo "The Shed's name did not reach The Shed's health check and page"
+            exit 1
+          fi
+          # #endregion verify-names
+          # #region verify-domains
+          # The domains are what a visitor sees. The edge serves the rules on the
+          # edge branch, which Edge branch moves only after this run succeeds
+          # (edge-branch.yml), because a rule that moved before its origin was
+          # verified would send visitors to a web app still starting. So this reads
+          # the domains when the edge already serves this commit's rules and they
+          # send the names here; when this push changed the rules, Edge branch moves
+          # them next and reads both names itself. The Shed's name is bound to a web
+          # app in Azure, not in a file, so it is read and said, never a failure here.
+          git fetch -q --depth=1 origin edge
+          if git diff --quiet FETCH_HEAD HEAD -- edge/ netlify.toml && grep -q "${ORIGIN#https://}" netlify.toml edge/_redirects; then
+            for domain in "$SITE" "$COSMOS_SITE"; do
+              site=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$domain/api/version")
+              echo "domain $domain: $site"
+              if [[ "$site" != *"\"$APP_VERSION\""* || "$site" != *"\"$APP_COMMIT\""* ]]; then
+                echo "$domain does not report $APP_VERSION at $APP_COMMIT"
+                exit 1
+              fi
+              curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$domain/api/facets" > /dev/null
+            done
+          else
+            echo "::notice::the edge does not yet serve this commit's rules for this origin; Edge branch moves them after this run and reads both names"
+          fi
+          echo "The Shed's domain: $(curl -sS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$SHED_SITE/api/version" || true)"
+          # #endregion verify-domains
           # Which store the container actually came up on, said out loud.
           #
           # A warning and not a failure, on purpose. The whole point of the
@@ -295,14 +334,14 @@ jobs:
           # the design working and must not fail a deploy. What it must not be
           # is silent: 1.0.0.49 shipped that way and nothing said so until
           # somebody read the health endpoint by hand.
-          store=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$SITE/api/health" || true)
+          store=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 "$ORIGIN/api/health" || true)
           case "$store" in
             *"Azure SQL Database"*) echo "the site is on Azure SQL Database" ;;
             *SQLite*) echo "::warning::this roll is serving from SQLite, not Azure SQL Database" ;;
             *) echo "::warning::could not tell which store the container is on" ;;
           esac
           # Azure's own view of the container (the Admin tab's card), informational.
-          curl -sS --max-time 40 "$SITE/api/admin/azure" || true
+          curl -sS --max-time 40 "$ORIGIN/api/admin/azure" || true
           echo
           {
             echo "## Deployed $N"
@@ -322,7 +361,14 @@ jobs:
       - name: Warm the edge
         continue-on-error: true
         timeout-minutes: 5
-        run: node scripts/warm-edge.mjs "$SITE" deploy
+        run: |
+          # Both Yard names, when the edge already serves this commit's rules and they send them here.
+          if git diff --quiet FETCH_HEAD HEAD -- edge/ netlify.toml && grep -q "${ORIGIN#https://}" netlify.toml edge/_redirects; then
+            node scripts/warm-edge.mjs "$SITE" deploy
+            node scripts/warm-edge.mjs "$COSMOS_SITE" deploy
+          else
+            echo "the edge sends the Yard names elsewhere; nothing to warm"
+          fi
       # #endregion warm-edge
 
       # #region cache-export
@@ -354,7 +400,7 @@ jobs:
       # September: "we only want the last 10 deployments"). ACR Tasks are refused
       # on this subscription, so acr purge cannot run on a schedule; the deploy
       # prunes instead, after the site answers. It deletes nothing if it reads
-      # fewer than ten tagged images or if either site runs an image outside the
+      # fewer than ten tagged images or if the web app runs an image outside the
       # newest ten, and a refusal to delete never fails the deploy.
       # A newer push cancels this run; the prune still runs once the image was
       # built, so a morning of stacked pushes does not grow the registry.
@@ -362,15 +408,13 @@ jobs:
         if: always() && steps.build.outcome == 'success'
         continue-on-error: true
         timeout-minutes: 5
-        env:
-          COSMOS_APP: APP-THEYARD-COSMOS-SS-ZMNETJ67BN5H2
         run: |
           set -euo pipefail
           meta=$(az acr manifest list-metadata -r "$REGISTRY_NAME" -n theyard --orderby time_desc -o json)
           tagged=$(echo "$meta" | jq '[.[] | select((.tags // []) | length > 0)] | length')
           if [ "$tagged" -lt 10 ]; then echo "$tagged tagged images; nothing pruned"; exit 0; fi
           keep=$(echo "$meta" | jq -r '[.[] | select((.tags // []) | length > 0)] | .[0:10] | .[].digest')
-          for app in "$APP" "$COSMOS_APP"; do
+          for app in "$APP"; do
             tag=$(az webapp config show -g "$RG" -n "$app" --query linuxFxVersion -o tsv | sed 's/.*://')
             digest=$(echo "$meta" | jq -r --arg t "$tag" '.[] | select((.tags // []) | index($t)) | .digest')
             if ! echo "$keep" | grep -Fqx "$digest"; then echo "::warning::$app runs $tag, outside the newest ten; nothing pruned"; exit 0; fi

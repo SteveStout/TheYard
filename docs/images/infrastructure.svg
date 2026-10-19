@@ -27,7 +27,7 @@
   </defs>
 
   <rect width="1400" height="1480" fill="#e9e6e7"/>
-  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-10-09</text>
+  <text x="40" y="44" class="heading">TheYard on Azure, as it runs on 2026-10-19</text>
   <text x="40" y="68" class="caption">Everything in the solid boxes is live and measured, the rendering service included; the dashed group is the one piece of the production design the subscription still refuses.</text>
 
   <!-- ===================== Lane 1: the request path ===================== -->
@@ -41,8 +41,8 @@
   <text x="75" y="218" class="mono">theyard</text>
   <text x="75" y="234" class="mono">theyard-cosmos</text>
   <text x="75" y="250" class="mono">  .stevenstout.biz</text>
-  <text x="75" y="274" class="body">Two sites, one store</text>
-  <text x="75" y="291" class="body">each by default. Bundles</text>
+  <text x="75" y="274" class="body">Two sites, a store each</text>
+  <text x="75" y="291" class="body">by name. Bundles</text>
   <text x="75" y="308" class="body">cached a year; the page,</text>
   <text x="75" y="325" class="body">API and docs say no-cache.</text>
   <text x="75" y="343" class="muted">ADR-015, ADR-069</text>
@@ -53,7 +53,7 @@
   <text x="295" y="218" class="mono">theyard          CNAME</text>
   <text x="295" y="234" class="mono">theyard-cosmos   CNAME</text>
   <text x="295" y="250" class="mono">  theyard-edge.netlify.app</text>
-  <text x="295" y="270" class="mono">bare A, www CNAME</text>
+  <text x="295" y="270" class="mono">bare A, www, theshed CNAME</text>
   <text x="295" y="296" class="body">Registrar-locked to Wix; the</text>
   <text x="295" y="313" class="body">Cloudflare zone is staged for</text>
   <text x="295" y="330" class="body">the transfer around Oct 30.</text>
@@ -62,11 +62,11 @@
   <rect x="520" y="170" width="240" height="196" class="box"/>
   <text x="535" y="196" class="title">HTTPS edge: Netlify (free)</text>
   <text x="535" y="218" class="body">One Let's Encrypt cert, four names.</text>
-  <text x="535" y="240" class="mono">edge/_redirects  by Host and path</text>
+  <text x="535" y="240" class="mono">_redirects, then netlify.toml</text>
   <text x="535" y="256" class="body">bare and www: 301 to theyard</text>
   <text x="535" y="272" class="body">a page, / with its query: to the</text>
   <text x="535" y="288" class="body">rendering service as that site</text>
-  <text x="535" y="304" class="body">everything else: to the site's API</text>
+  <text x="535" y="304" class="body">the rest: the web app, X-Yard-Host</text>
   <text x="535" y="326" class="mono">netlify.toml</text>
   <text x="535" y="342" class="body">rebuilds only when edge/ changes</text>
   <text x="535" y="360" class="muted">ADR-007, ADR-069, ADR-096</text>
@@ -74,22 +74,22 @@
   <!-- Origin: the first web app on the plan both sites share (ADR-079) -->
   <rect x="800" y="150" width="540" height="338" class="box"/>
   <text x="815" y="176" class="title">Origin: App Service plan PLAN-THEYARD-SS, Linux B2, westus3</text>
-  <text x="815" y="198" class="mono">APP-THEYARD-SS-ZMNETJ67BN5H2  2 vCPU and 3.5 GB, shared by three web apps</text>
-  <text x="815" y="214" class="mono">https://app-theyard-ss-zmnetj67bn5h2.azurewebsites.net</text>
+  <text x="815" y="198" class="mono">APP-THEYARD-ONE-SS-ZMNETJ67BN5H2  2 vCPU and 3.5 GB, shared by two web apps</text>
+  <text x="815" y="214" class="mono">https://app-theyard-one-ss-zmnetj67bn5h2.azurewebsites.net</text>
   <text x="815" y="238" class="body">Runs image theyard:vN from the registry, pulled with the</text>
   <text x="815" y="254" class="body">user-assigned identity id-theyard-ss (AcrPull; Reader on the resource group).</text>
 
   <rect x="815" y="268" width="510" height="96" fill="#f4f2f3" stroke="#d8d3d4" rx="8"/>
   <text x="828" y="290" class="title">Inside: one ASP.NET Core 10 process (Dockerfile, ADR-002)</text>
-  <text x="828" y="310" class="body">Serves the built React SPA from wwwroot, /api/* over the catalogue, the docs with</text>
-  <text x="828" y="326" class="body">live code from its own source (ADR-014), /healthz and /readyz, and the Admin tab,</text>
+  <text x="828" y="310" class="body">Serves both sites by the name typed and The Shed as its own app inside it; the SPA,</text>
+  <text x="828" y="326" class="body">/api/*, the docs with live code (ADR-014), /healthz and /readyz, and the Admin tab,</text>
   <text x="828" y="342" class="body">which trades the identity for a token and reads its site, the plan and six more</text>
   <text x="828" y="358" class="body">resources from Azure, kept a minute at a time in Cosmos DB (ADR-101, ADR-102).</text>
 
   <rect x="815" y="376" width="510" height="100" fill="#f4f2f3" stroke="#d8d3d4" rx="8"/>
-  <text x="828" y="398" class="title">Beside it: the rendering service, a third web app (render/, ADR-096)</text>
+  <text x="828" y="398" class="title">Beside it: the rendering service, the second web app (render/, ADR-096)</text>
   <text x="828" y="418" class="body">APP-THEYARD-RENDER-SS on the same plan, its own 62 MB image: Node and the site's</text>
-  <text x="828" y="434" class="body">build, no framework. For a page it reads what the view needs from that site's API</text>
+  <text x="828" y="434" class="body">build, no framework. For a page it reads what the view needs from the web app</text>
   <text x="828" y="450" class="body">under a 2.5 s deadline, draws the site with React's server renderer and streams</text>
   <text x="828" y="466" class="body">the HTML with the data in it; React takes it over. It draws only for its own build.</text>
 
@@ -136,15 +136,15 @@
   <text x="815" y="862" class="muted">Nothing indexed; the definitions are infra/cosmos/*.json (ADR-040 addendum).</text>
 
   <rect x="180" y="700" width="560" height="176" class="box"/>
-  <text x="195" y="726" class="title">Both stores in one process, two sites since 1.0.0.101</text>
-  <text x="195" y="750" class="body">Every site opens both stores; the default is sql here and cosmos on the</text>
-  <text x="195" y="766" class="body">second web app, which runs the same image on the same plan behind the same</text>
-  <text x="195" y="782" class="body">edge at theyard-cosmos.stevenstout.biz. The Store bar links each site to the</text>
+  <text x="195" y="726" class="title">Both stores and both sites in one process since 19 October</text>
+  <text x="195" y="750" class="body">A request gets the store its name picks: sql on theyard, cosmos on</text>
+  <text x="195" y="766" class="body">theyard-cosmos, both answered by this web app behind the same edge, which</text>
+  <text x="195" y="782" class="body">says which name was typed (ADR-105). The Store bar links each site to the</text>
   <text x="195" y="798" class="body">other at the same page (no cookie); a measurement names a store for one request</text>
-  <text x="195" y="814" class="body">with a header. Each Admin tab reads the other through /api/admin/peer, and the</text>
+  <text x="195" y="814" class="body">with a header. The peer read retired with the second web app, and the</text>
   <text x="195" y="830" class="body">proof card sends a visitor's requests to the container itself on both stores and</text>
   <text x="195" y="846" class="body">says, per path, whether the two answer in the same time and why they differ.</text>
-  <text x="195" y="870" class="muted">ADR-066 the bar, ADR-069 the address, ADR-067 the proof, ADR-063 the peer read.</text>
+  <text x="195" y="870" class="muted">ADR-066 the bar, ADR-069 the address, ADR-067 the proof, ADR-105 one web app.</text>
 
   <path d="M1330 488 L1350 488 L1350 788 L1340 788" class="flow"/>
   <text x="1160" y="696" class="flow-label">the other store, per request</text>
@@ -181,14 +181,14 @@
   <text x="335" y="804" class="mono">SteveStout/TheYard</text>
 
   <rect x="540" y="696" width="350" height="160" class="box"/>
-  <text x="555" y="722" class="title">Deploy, Deploy Cosmos and Deploy Render</text>
-  <text x="555" y="746" class="body">All three fire on the push: deploy.yml and</text>
-  <text x="555" y="762" class="body">deploy-cosmos.yml roll the API's image onto the</text>
-  <text x="555" y="778" class="body">two sites; deploy-render.yml builds render/Dockerfile</text>
+  <text x="555" y="722" class="title">Deploy and Deploy Render</text>
+  <text x="555" y="746" class="body">Both fire on the push: deploy.yml rolls</text>
+  <text x="555" y="762" class="body">the API's image onto the one web app;</text>
+  <text x="555" y="778" class="body">deploy-render.yml builds render/Dockerfile</text>
   <text x="555" y="794" class="body">as the same version and rolls the service. OIDC;</text>
   <text x="555" y="810" class="body">the version is the changelog's top line (ADR-031);</text>
-  <text x="555" y="826" class="body">each verifies its origin, the sites their domain.</text>
-  <text x="555" y="846" class="muted">roles: AcrPush, Website Contributor, three web apps</text>
+  <text x="555" y="826" class="body">each verifies its origin; the edge moves after.</text>
+  <text x="555" y="846" class="muted">roles: AcrPush, Website Contributor, two web apps</text>
 
   <rect x="930" y="696" width="200" height="160" class="box"/>
   <text x="945" y="722" class="title">Registry (ACR)</text>
@@ -231,16 +231,16 @@
   <text x="75" y="1072" class="mono">fdOriginGroup, fdOrigin, fdRoute</text>
 
   <rect x="380" y="966" width="300" height="140" class="target"/>
-  <text x="395" y="992" class="title">The two web apps, as locked origins</text>
-  <text x="395" y="1016" class="body">Each answers only Azure Front Door's backend</text>
+  <text x="395" y="992" class="title">The web app, as a locked origin</text>
+  <text x="395" y="1016" class="body">It answers only Azure Front Door's backend</text>
   <text x="395" y="1032" class="body">range, and only with this profile's ID in</text>
   <text x="395" y="1048" class="body">the X-Azure-FDID header (siteLock).</text>
-  <text x="395" y="1072" class="mono">siteLock, one per site</text>
+  <text x="395" y="1072" class="mono">siteLock, one per web app</text>
 
   <rect x="740" y="966" width="300" height="140" class="target"/>
   <text x="755" y="992" class="title">The same image</text>
   <text x="755" y="1016" class="body">Nothing about the sites changes. Front</text>
-  <text x="755" y="1032" class="body">Door goes in front of both, each site</text>
+  <text x="755" y="1032" class="body">Door goes in front of the web app, which</text>
   <text x="755" y="1048" class="body">answers only to it, and the Netlify</text>
   <text x="755" y="1064" class="body">edge retires.</text>
 

@@ -80,6 +80,8 @@ COPY api/TheYard.Migrations.Sqlite/TheYard.Migrations.Sqlite.csproj ./api/TheYar
 COPY api/TheYard.Database/TheYard.Database.sqlproj ./api/TheYard.Database/
 COPY api/TheYard.Api/TheYard.Api.csproj ./api/TheYard.Api/
 COPY api/TheYard.Tests/TheYard.Tests.csproj ./api/TheYard.Tests/
+# The Shed, the sample this process also serves under its own name (ADR: One web app for every .NET process).
+COPY samples/theshed/TestProject.csproj ./samples/theshed/
 # This restore is intentionally separate from source-copy so incremental Docker builds stay fast.
 RUN dotnet restore api/TheYard.slnx
 # And the API once more for the one platform it runs on, with ReadyToRun asked for, which is what makes
@@ -88,6 +90,9 @@ RUN dotnet restore api/TheYard.Api/TheYard.Api.csproj -r linux-x64 -p:PublishRea
 
 # Copy the rest of the backend source after restore so code changes do not force a dependency re-restore.
 COPY api ./api
+# The Shed's whole folder: its code builds into this app, and its documents, sample home, page and live
+# sources are published to a folder of their own below.
+COPY samples/theshed ./samples/theshed
 
 # Read the target framework from the project files instead of hard-coding it; the repo is currently on net10.0.
 RUN set -eu; \
@@ -95,7 +100,8 @@ RUN set -eu; \
     [ -n "${TARGET_FRAMEWORK}" ] || { echo "No TargetFramework found under /src/api" >&2; exit 1; }; \
     echo "Using target framework: ${TARGET_FRAMEWORK}"; \
     dotnet publish api/TheYard.Api/TheYard.Api.csproj -c Release --no-restore -f "${TARGET_FRAMEWORK}" \
-        -r linux-x64 --self-contained false -p:PublishReadyToRun=true -o /app/publish
+        -r linux-x64 --self-contained false -p:PublishReadyToRun=true -o /app/publish; \
+    dotnet publish samples/theshed/TestProject.csproj -c Release -o /app/shed
 # #endregion api-publish
 
 # #region runtime
@@ -146,8 +152,12 @@ COPY --chown=app:app tests ./tests
 COPY --chown=app:app scripts ./scripts
 COPY --chown=app:app render ./render
 # One file from the sample beside this app: its architecture tests, which the onion practices page
-# shows whole. Only that file, because the rest of the sample is served by its own site.
+# shows whole. Only that file here, because the rest of the sample is The Shed's own folder below.
 COPY --chown=app:app samples/theshed/tests/TestProject.Tests/OnionTests.cs ./samples/theshed/tests/TestProject.Tests/
+# The Shed's published folder, which Composition/ShedMount.cs starts The Shed from: its documents, its
+# sample home, its page and the source files its live samples read, at the path Shed__ContentRoot names.
+# Its own appsettings.json and README.md live there and nowhere near this app's.
+COPY --chown=app:app --from=api-publish /app/shed/ /app/shed/
 # The built frontend bundle is copied into wwwroot so the ASP.NET API can serve it and provide SPA fallback routing.
 COPY --chown=app:app --from=frontend-build /src/dist/ /app/wwwroot/
 
@@ -162,6 +172,9 @@ ARG APP_VERSION=dev
 ARG APP_COMMIT=local
 ENV APP_VERSION=${APP_VERSION}
 ENV APP_COMMIT=${APP_COMMIT}
+# The Shed's footer names the commit too, and it is the same commit: one repository, one image.
+ENV SHED_COMMIT=${APP_COMMIT}
+ENV Shed__ContentRoot=/app/shed
 # #endregion build-args
 
 # Set the runtime URL to port 8080, which matches the container runtime conventions we want for a single-process app.

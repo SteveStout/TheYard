@@ -3,7 +3,7 @@
 Status: accepted, 2026-09-20, written before any of the resources it names existed. Asked for in four
 sentences, reading the machines card the evening it went live: "We're using about 1% of the SQL, is
 there any way to reduce our SQL cost?", then "Can't we use one container?", then "Is there any way
-for them to share an App Service plan instead, which would be cleaner?", then "or share compute."
+for them to share an App Service plan instead, which would be cleaner?", then "or share compute." Since 19 October the two sites and The Shed are one web app on this plan (ADR: One web app for every .NET process); the addendum of that day says why.
 
 ## In plain words
 
@@ -324,6 +324,15 @@ The plan moved from B1 to B2 at 11:42 CDT on 8 October, on Steve's word. Its mem
 
 The third site, APP-THEYARD-RENDER-SS, is in `infra/render.bicep`, which `main.bicep` names as a module beside this record's. It holds no secret and no connection string, so it is a template of its own: creating it could not rewrite either site's settings, which a deployment of `appservice.bicep` writes whole.
 
+
+## Addendum, 2026-10-19: one web app for both sites and The Shed
+
+Steve, 07:47 to 07:49 CDT: "since I've demoed the shed, let merge all .net into one new app service, and delete the old", and "on the existing ADRs indicate the separate app services would be for increased load and separation down the road but we merged due to low traffic on the update and ram".
+
+The separate web apps were the design for increased load and separation down the road: one process per site and per product, so one could roll, fail or be scaled without the others. They were merged on 19 October because traffic is low and the memory on the B2 plan is better spent (read live at 13:46 UTC that morning: the plan at 72 per cent, 2.52 of 3.5 GB; the four apps 977 MB together, the SQL site 404 MB, the Cosmos DB site 370, the rendering service 105 and The Shed 98; and the plan outside the apps 1,603 MB). The split is one bicep change and one edge rule away when load returns: a second entry in `infra/appservice.bicep`'s `sites` list with its own names, and that domain's rule in `netlify.toml` pointed at it.
+
+What changed in this record's terms: `infra/appservice.bicep` describes the plan and one web app, APP-THEYARD-ONE-SS, which answers both sites' names and The Shed's and picks a request's store by the name it arrived on, so the per-site `Store__Default`, `Peer__Url` and `Peer__Site` are gone. Deploy Cosmos retired with the second site's web app. The plan, its size, its region and the rendering service beside it are unchanged (ADR: One web app for every .NET process).
+
 ## Where it sits
 
 Most of this is a hosting decision about the App Service plan that sits outside the onion; two pieces of code moved with it: IdentityTokens in the host Api asks for a managed identity token at whichever door the host has, and InventoryService in Application gained ReleaseIfIdle so CatalogueKeeper, a host service in Stores.cs, can let an unused catalogue go. That split follows single responsibility, one reason to change per class, because InventoryService owns the catalogue's life and the keeper owns only the timing of the question. It cost a shared machine, so a plan restart takes both sites down, and a slow first read for whoever touches a released catalogue. Memory readings showing B1 paging under normal traffic would be the signal to move to B2.
@@ -333,15 +342,15 @@ Most of this is a hosting decision about the App Service plan that sits outside 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): what runs, with Front Door and the origin lock behind a parameter that stays off.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): its module, the plan and the two sites, what differs between them, and every setting the container groups carried.
 - [`scripts/deploy-infra.ps1`](https://github.com/SteveStout/TheYard/blob/main/scripts/deploy-infra.ps1): describing the infrastructure to Azure again without changing what runs, in incremental mode.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the two container groups, stopped and kept, which is the way back.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard-cosmos.yaml): the two container groups, stopped and kept, which is the way back.
 - [`api/TheYard.Api/IdentityTokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/IdentityTokens.cs): a managed identity token from whichever door the host has.
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs) and [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): the catalogues and the warm before a read; the keeper that let one go was retired on 4 October.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the site asking Azure about itself, as a container group or as a web app on a shared plan.
-- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml): a roll sets the image and the three values the repository does not hold.
+- [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml): a roll sets the image and the three values the repository does not hold.
 - [`api/TheYard.Tests/AzureSelfTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AzureSelfTests.cs) and [`api/TheYard.Tests/AppServiceTemplateTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AppServiceTemplateTests.cs): both doors, both shapes, and the template held to the files it took over from.
 - [`docs/decisions/ADR-004-deployment-pivots.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-004-deployment-pivots.md): the day-one wall this record measured again.
 
-```live path=infra/appservice.bicep region=two-sites
+```live path=infra/appservice.bicep region=sites-list
 ```
 
 ```live path=api/TheYard.Api/IdentityTokens.cs region=identity-token

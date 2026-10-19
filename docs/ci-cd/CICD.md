@@ -24,17 +24,20 @@ pull request from anybody else, which has had no gate.
 
 **Continuous deployment.** When the gate pushes to main, a workflow named
 Deploy builds the container image, pushes it to Azure Container Registry,
-and rolls it onto the first site's web app, and on the same push a second
-named Deploy Cosmos waits for that image and rolls it onto the second site's,
-the two rolls side by side, with no human in the loop. A third, Deploy Render,
+and rolls it onto the one web app that serves both sites and The Shed, with no
+human in the loop; it reads the Cosmos DB site's name and The Shed's name at the
+origin before any domain, and the edge moves after it, only when the edge's
+rules changed (ADR: One web app for every .NET process). Until 19 October a
+second workflow, Deploy Cosmos, rolled the same image onto the second site's
+web app, and a third, Deploy The Shed, rolled The Shed. Deploy Render
 fires on the same push: it builds the rendering service's own image from
 `render/Dockerfile` as the same version, pushes it as `theyard-render`, rolls
 the service's web app, and is done when the service answers its readiness as
 that version. The service draws a page only for an API running its own
-build, so the three rolls need not land together: until a site's API and the
-service agree, that site's pages are drawn in the browser, as they were
-before the service existed (ADR: A rendering service beside the API). All
-three web apps share one App Service plan (ADR: One plan, two sites). Each workflow signs in to Azure with a token GitHub mints for this one
+build, so the two rolls need not land together: until the API and the
+service agree, the pages are drawn in the browser, as they were
+before the service existed (ADR: A rendering service beside the API). Both
+web apps share one App Service plan (ADR: One plan, two sites). Each workflow signs in to Azure with a token GitHub mints for this one
 repository's main branch, so no Azure password or key is stored anywhere. The
 version in the page footer is stamped by that build. The full record is
 ADR: The deploy pipeline, below this entry in the menu.
@@ -139,7 +142,7 @@ URL, and every deploy so far has been gated on it.
 
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the three suites and the SQL project build as four jobs behind it, on every push to main and on a pull request.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Deploy workflow, step by step.
-- [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml): the second site's roll, from the same image.
+- [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml): the second site's roll, from the same image, retired on 19 October with the web app it rolled (ADR: One web app for every .NET process).
 - [`.github/workflows/deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml): the rendering service's build and roll, on the same push.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites Deploy rolls (the roll sets the image and four settings).
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image Deploy builds.

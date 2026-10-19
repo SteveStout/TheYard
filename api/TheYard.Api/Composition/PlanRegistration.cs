@@ -18,7 +18,7 @@ public static class PlanRegistration
         // read off it, never configured. The keep is the document store when there is one, and
         // this process's memory otherwise, which the card says.
         string self = builder.Configuration["Azure:SelfResourceId"]
-            ?? $"/subscriptions/{YardComposition.AzureSubscriptionId(builder.Configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-SS-ZMNETJ67BN5H2";
+            ?? $"/subscriptions/{YardComposition.AzureSubscriptionId(builder.Configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-ONE-SS-ZMNETJ67BN5H2";
         var reader = new PlanReader(YardComposition.AzureClientId(builder.Configuration), self, configured: IdentityTokens.OnAppService);
         IPlanHistory history = host.Cosmos is not null
             ? new CosmosPlanHistory(host.Cosmos)

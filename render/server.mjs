@@ -16,7 +16,8 @@ import { createRenderer, servedPages } from '../dist-render/entry.js';
 const port = Number(process.env.PORT ?? 8080);
 /**
  * The sites this service draws for, name=origin, comma-separated, the first one
- * the site the bare path draws: "sql=https://app-theyard-ss-...,cosmos=https://...".
+ * the site the bare path draws: "sql=https://app-theyard-one-ss-...,cosmos=https://app-theyard-one-ss-...".
+ * Since 19 October both names are the one web app's address, and the name is the store each read names.
  * Each name is a path, /site/<name>, which the edge's rule for that domain names.
  */
 const sites = new Map(
@@ -160,12 +161,14 @@ const server = createServer(async (request, response) => {
     const named = /^\/site\/([a-z]+)\/?$/.exec(url.pathname);
     const isPage = request.method === 'GET' || request.method === 'HEAD';
     if (isPage && (url.pathname === '/' || named)) {
-      const origin = named ? sites.get(named[1]) : sites.values().next().value;
+      const name = named ? named[1] : sites.keys().next().value;
+      const origin = name ? sites.get(name) : undefined;
       if (!origin) {
         response.writeHead(404, { 'content-type': 'text/plain' });
         return response.end('No such site here.');
       }
-      return send(request, response, await render(url.href, headersOf(request), origin));
+      // The site's name is its store's key, named on every read: both sites are one API since 19 October.
+      return send(request, response, await render(url.href, headersOf(request), origin, name));
     }
     if (passOrigin) return await passOn(request, response);
     response.writeHead(404, { 'content-type': 'text/plain' });

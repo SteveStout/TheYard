@@ -17,11 +17,14 @@ internal static class Catalogues
 {
     /// <summary>
     /// Nothing for a process the deploy has not told to keep its catalogues, which is every test
-    /// host and a developer's machine; the fill for the store this site defaults to; a watch on the
-    /// other, which the other site fills.
+    /// host and a developer's machine; the fill for every store when one process serves both
+    /// sites (ADR: One web app for every .NET process); otherwise the fill for the store this site
+    /// defaults to and a watch on the other, which the other site fills.
     /// </summary>
-    public static CatalogueUpkeep UpkeepFor(bool keep, string defaultStore, string store) =>
-        !keep ? CatalogueUpkeep.Off : store == defaultStore ? CatalogueUpkeep.Fill : CatalogueUpkeep.Watch;
+    public static CatalogueUpkeep UpkeepFor(bool keep, string defaultStore, string store, bool servesBothSites = false) =>
+        !keep ? CatalogueUpkeep.Off
+        : servesBothSites || store == defaultStore ? CatalogueUpkeep.Fill
+        : CatalogueUpkeep.Watch;
 
     /// <summary>The relational store's catalogue, over the Catalogue table, filled whole at warm-up on a local SQLite file.</summary>
     public static InventoryService Sql(ContextFactory contexts, YardConnection yard, int targetCount, CatalogueUpkeep upkeep) =>

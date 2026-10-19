@@ -116,8 +116,19 @@ public abstract class AuthTestBase : IDisposable
         // (ADR: Accounts and per-user bids, the addendum on the second buyer),
         // and on the document store the test containers remember yesterday's
         // runs.
-        var vehicle = live.EnumerateArray().First(row => !row.GetProperty("sold").GetBoolean());
-        return (vehicle.GetProperty("id").GetString()!, vehicle.GetProperty("min_next_bid").GetInt32());
+        // The figures are the vehicle's own, read after the listing: on the document store a
+        // listing can be a cached page whose minimum is a bid behind, and a bid at it is refused
+        // (1.0.3.184's gate on Cosmos DB, as BidFlowIntegrationTests found on 1.0.3.183).
+        foreach (var row in live.EnumerateArray().Where(row => !row.GetProperty("sold").GetBoolean()))
+        {
+            string id = row.GetProperty("id").GetString()!;
+            using var fresh = JsonDocument.Parse(await client.GetStringAsync($"/api/vehicles/{id}"));
+            if (!fresh.RootElement.GetProperty("sold").GetBoolean())
+            {
+                return (id, fresh.RootElement.GetProperty("min_next_bid").GetInt32());
+            }
+        }
+        throw new InvalidOperationException("the schedule always has a live auction nobody has bought");
     }
 
     /// <summary>

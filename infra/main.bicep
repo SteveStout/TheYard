@@ -1,7 +1,8 @@
-// TheYard, as it runs (ADR: One plan, two sites). One Linux App Service plan
-// and two web apps for containers, in infra/appservice.bicep, called from here
-// as a module; and Azure Front Door in front of both with each origin locked to
-// it (ADR-001), behind a parameter that defaults off, because the subscription
+// TheYard, as it runs (ADR: One web app for every .NET process). One Linux App
+// Service plan and one web app for containers, which serves both sites and The
+// Shed, in infra/appservice.bicep, called from here as a module; the rendering
+// service beside it in infra/render.bicep; and Azure Front Door in front with the
+// origin locked to it (ADR-001), behind a parameter that defaults off, because the subscription
 // still refuses Front Door: "Free Trial and Student account is forbidden for
 // Azure Frontdoor resources", measured on 2026-08-31 and not yet retried on a
 // paid subscription.
@@ -31,7 +32,7 @@ param baseName string = 'theyard'
 @description('Owner tag appended to resource names per ADR-003')
 param ownerTag string = 'SS'
 
-@description('Region for the plan and both sites. westus3: westus2, where the registry and the document store are, answers a quota of zero for App Service on this subscription.')
+@description('Region for the plan and its web apps. westus3: westus2, where the registry and the document store are, answers a quota of zero for App Service on this subscription.')
 param location string = 'westus3'
 
 @description('Plan size: B2 since 8 October, 2 vCPU and 3.5 GB shared by both sites and the rendering service, after the plan read 91 per cent of B1\'s memory at the median (ADR: A rendering service beside the API); B1 is half of both')
@@ -42,14 +43,14 @@ param location string = 'westus3'
 ])
 param skuName string = 'B2'
 
-@description('The image both sites run, registry/name:tag. A deployment has to be told what is running, so that describing the infrastructure never rolls a site back.')
+@description('The image the web app runs, registry/name:tag. A deployment has to be told what is running, so that describing the infrastructure never rolls a site back.')
 param appImage string
 
 @description('Application Insights connection string, an ingestion key, passed in and never written here')
 @secure()
 param appInsightsConnectionString string
 
-@description('The session signing key both sites share')
+@description('The session signing key the web app signs sessions with')
 @secure()
 param authSigningKey string
 
@@ -60,7 +61,7 @@ param adminKey string
 @description('The image the rendering service runs, registry/theyard-render:tag. Every roll sets it; a deployment is told what is running.')
 param renderImage string
 
-@description('Deploy Front Door and lock both origins to it (ADR-001). Off: the free trial refuses Front Door, and the free edge in front of the sites today is Netlify.')
+@description('Deploy Front Door and lock the origin to it (ADR-001). Off: the free trial refuses Front Door, and the free edge in front of the sites today is Netlify.')
 param enableFrontDoor bool = false
 
 // #region naming
@@ -80,8 +81,8 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
 }
 
 // #region what-runs
-// The plan and the two sites, every setting included, in one module so the
-// file that says what differs between the two sites says nothing else.
+// The plan and the one web app, every setting included, in one module so the
+// file that says which names the web app answers to says nothing else.
 module compute 'appservice.bicep' = {
   name: 'compute'
   params: {
@@ -96,8 +97,8 @@ module compute 'appservice.bicep' = {
   }
 }
 
-// The rendering service, a third site on the same plan, in a template of its own
-// that holds no secret, so creating it cannot touch either site's settings
+// The rendering service, the second web app on the same plan, in a template of its
+// own that holds no secret, so creating it cannot touch the web app's settings
 // (ADR: A rendering service beside the API).
 module render 'render.bicep' = {
   name: 'render'
@@ -111,11 +112,11 @@ module render 'render.bicep' = {
 }
 // #endregion what-runs
 
-// The two sites the module made, by the names it gave them, so Front Door can
-// point at them and lock them.
+// The web app the module made, by the name it gave it, so Front Door can point at it
+// and lock it. Front Door would send the visitor's name as X-Yard-Host the way the
+// edge does today; that rule is written when Front Door is turned on.
 var siteNames = [
-  'APP-${upperTag}-${toUpper(suffix)}'
-  'APP-${toUpper(baseName)}-COSMOS-${toUpper(ownerTag)}-${toUpper(suffix)}'
+  'APP-${toUpper(baseName)}-ONE-${toUpper(ownerTag)}-${toUpper(suffix)}'
 ]
 
 resource site 'Microsoft.Web/sites@2023-12-01' existing = [
@@ -133,7 +134,7 @@ resource fdProfile 'Microsoft.Cdn/profiles@2024-02-01' = if (enableFrontDoor) {
 }
 
 // #region origin-lock
-// With Front Door on, nothing reaches either site except through it: the
+// With Front Door on, nothing reaches the web app except through it: the
 // service tag admits Front Door's address space, and the header admits only
 // this profile, because every Front Door customer shares that address space.
 resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = [
@@ -164,8 +165,7 @@ resource siteLock 'Microsoft.Web/sites/config@2023-12-01' = [
 ]
 // #endregion origin-lock
 
-// One endpoint, one origin group, one origin and one route per site: each site
-// is its own public name, so each gets its own way in.
+// One endpoint, one origin group, one origin and one route per web app.
 resource fdEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = [
   for (name, i) in siteNames: if (enableFrontDoor) {
     parent: fdProfile

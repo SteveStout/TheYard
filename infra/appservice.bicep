@@ -1,16 +1,24 @@
-// One plan, two sites (ADR: One plan, two sites). What runs: a Linux B2 App
-// Service plan and two web apps for containers on it, one per site, both
-// running the same image as the same user-assigned identity; the rendering
-// service's web app on the same plan is render.bicep. The two sites
-// differ in which store a request gets when it names none, and in which
-// address each calls its own and its peer's. Everything else is one list.
+// One plan, one web app for every .NET process (ADR: One web app for every .NET
+// process). What runs: a Linux B2 App Service plan and one web app for containers
+// on it, which serves the SQL site, the Cosmos DB site and The Shed from one
+// process, by the name each request arrives on; the rendering service's web app
+// on the same plan is render.bicep.
+//
+// Until 19 October this file described two web apps, one per site, and The Shed
+// had a third of its own (samples/theshed/infra/site.bicep, retired). They were
+// the design for load and separation: one process per site and per product, so
+// one could roll or fail without the others. Traffic is low and the plan's memory
+// is the scarce thing, and every app on a plan costs its own share of it outside
+// the app itself, so the three became one. The split is this file and one edge
+// rule away when load returns: put a second entry back in `sites` with its own
+// Hosts values, and point that domain's edge rule at it.
 //
 // Deployed in incremental mode, always. This resource group also holds the
 // databases, the document store, the registry and the identity, and none of
 // them is in this file; a complete-mode deployment would delete every one.
 // The template is the description. Deletion is a separate, named act.
 
-@description('Region for the plan and both sites. westus3 because westus2 refuses App Service on this subscription (measured 2026-08-31 and again 2026-09-20), and because the relational server is already there.')
+@description('Region for the plan and the web app. westus3 because westus2 refuses App Service on this subscription (measured 2026-08-31 and again 2026-09-20), and because the relational server is already there.')
 param location string = 'westus3'
 
 @description('Workload token, as in main.bicep (ADR-003)')
@@ -29,26 +37,26 @@ param ownerTag string = 'SS'
 param skuName string = 'B2'
 // #endregion plan-size
 
-@description('The image both sites run, registry/name:tag. Every roll sets this on the sites; a deployment of this file has to be told what is running so it does not roll anything back.')
+@description('The image the web app runs, registry/name:tag. Every roll sets this on the web app; a deployment of this file has to be told what is running so it does not roll anything back.')
 param appImage string
 
-@description('The user-assigned identity both sites run as: registry pull, both stores, mail, and the reads of its own resource')
+@description('The user-assigned identity the web app runs as: registry pull, both stores, mail, and the reads of its own resource')
 param identityName string = 'id-theyard-ss'
 
-@description('Azure SQL logical server. A name, not a secret: the sites sign in as the identity and there is no password to hold.')
+@description('Azure SQL logical server. A name, not a secret: the web app signs in as the identity and there is no password to hold.')
 param sqlServer string = 'sql-theyard-ss-westus3'
 
-@description('The database on that server the sites run on (ADR: The SQL Server backend, addendum of 14 September)')
+@description('The database on that server the web app runs on (ADR: The SQL Server backend, addendum of 14 September)')
 param sqlDatabase string = 'sqldb-theyard-ss-basic'
 
-@description('The Application Insights component both sites report to, by name: read, never created here')
+@description('The Application Insights component the web app reports to, by name: read, never created here')
 param appInsightsName string = 'appi-theyard-ss'
 
 @description('Application Insights connection string. An ingestion key, so it is passed in and never written here.')
 @secure()
 param appInsightsConnectionString string
 
-@description('The session signing key both sites share, so a roll does not end every session')
+@description('The session signing key, so a roll does not end every session')
 @secure()
 param authSigningKey string
 
@@ -60,11 +68,9 @@ param adminKey string
 var suffix = uniqueString(resourceGroup().id)
 var upperTag = toUpper('${baseName}-${ownerTag}')
 var planName = 'PLAN-${upperTag}'
-// Two sites, named the way the two container groups were: the first is the
-// workload, the second says which store it defaults to.
+// One web app, named for what it is: the one app every .NET process runs in.
 var siteNames = [
-  'APP-${upperTag}-${toUpper(suffix)}'
-  'APP-${toUpper(baseName)}-COSMOS-${toUpper(ownerTag)}-${toUpper(suffix)}'
+  'APP-${toUpper(baseName)}-ONE-${toUpper(ownerTag)}-${toUpper(suffix)}'
 ]
 // #endregion plan-naming
 
@@ -81,27 +87,23 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
 }
 // #endregion telemetry-link
 
-// #region two-sites
-// What differs between the sites, and nothing else. Each site's peer is the
-// other one, read server side at its azurewebsites.net address for the
-// comparison card, and linked for visitors at its public name behind the edge.
+// #region sites-list
+// The names the one web app answers to. The store a request gets when it names
+// none follows the name it arrived on: the SQL site's name gets Azure SQL
+// Database, the Cosmos DB site's gets Azure Cosmos DB, and The Shed's name gets
+// The Shed (api/TheYard.Api/SiteHosts.cs). siteUrl is where links in an email
+// point when a request arrived on no Yard name. One entry; a second entry here
+// is how a site gets a web app of its own again.
 var sites = [
   {
     name: siteNames[0]
-    storeDefault: 'sql'
     siteUrl: 'https://theyard.stevenstout.biz'
-    peerSite: 'https://theyard-cosmos.stevenstout.biz'
-    peerUrl: 'https://${toLower(siteNames[1])}.azurewebsites.net'
-  }
-  {
-    name: siteNames[1]
-    storeDefault: 'cosmos'
-    siteUrl: 'https://theyard-cosmos.stevenstout.biz'
-    peerSite: 'https://theyard.stevenstout.biz'
-    peerUrl: 'https://${toLower(siteNames[0])}.azurewebsites.net'
+    hostSql: 'theyard.stevenstout.biz'
+    hostCosmos: 'theyard-cosmos.stevenstout.biz'
+    hostShed: 'theshed.stevenstout.biz'
   }
 ]
-// #endregion two-sites
+// #endregion sites-list
 
 var sqlConnection = 'Server=tcp:${sqlServer}${environment().suffixes.sqlServerHostname},1433;Initial Catalog=${sqlDatabase};Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Managed Identity;User Id=${identity.properties.clientId};'
 
@@ -161,9 +163,8 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
           { name: 'WEBSITES_PORT', value: '8080' }
           { name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', value: 'false' }
           { name: 'WEBSITES_CONTAINER_START_TIME_LIMIT', value: '600' }
-          // The application's, name for name what the container groups carried
-          // (infra/aci-theyard.yaml, infra/aci-theyard-cosmos.yaml); a test holds
-          // this list to those two files.
+          // The application's. AppServiceTemplateTests holds this list to the
+          // settings the code reads and the deploy writes.
           { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
           { name: 'ConnectionStrings__YardSql', value: sqlConnection }
           { name: 'Auth__SigningKey', value: authSigningKey }
@@ -171,21 +172,23 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
           { name: 'Cosmos__AccountEndpoint', value: 'https://cosmos-theyard-ss.documents.azure.com:443/' }
           { name: 'Cosmos__Database', value: 'theyard' }
           { name: 'Cosmos__Credential', value: 'managed-identity' }
-          { name: 'Store__Default', value: s.storeDefault }
-          // Off here, on in the container groups. Each site warms the store it
-          // serves at startup, so a roll is ready on its own store first; the
-          // keep-warm loop then loads the other within four minutes and keeps
-          // both loaded on purpose, measured at 350 to 475 MB a site with both
-          // held (ADR: Kept awake; ADR: One plan, two sites, the last addendum).
+          // The three names, each read by SiteHosts.cs. No store default is set: a request
+          // that names no store and arrives on neither Yard name gets the relational store.
+          { name: 'Hosts__Sql', value: s.hostSql }
+          { name: 'Hosts__Cosmos', value: s.hostCosmos }
+          { name: 'Hosts__Shed', value: s.hostShed }
+          // Off. The process warms the relational store at startup, so a roll is ready
+          // on the first site's store first; the keep-warm loop then loads the other within
+          // four minutes and keeps both loaded (ADR: Kept awake).
           { name: 'Store__WarmOthers', value: 'false' }
-          // The catalogue is the store's (ADR: The store does the work): a site fills the
-          // catalogue of the store it defaults to when that store holds less than it should,
-          // and watches the other, which the other site fills. Off everywhere a deploy has not
-          // said so, which is every test host.
+          // The catalogue is the store's (ADR: The store does the work): the process fills
+          // each store's catalogue when that store holds less than it should, both of them,
+          // as the only process that keeps them. Off everywhere a deploy has not said so,
+          // which is every test host.
           { name: 'Catalogue__Keep', value: 'true' }
           // The heap may grow to 30 per cent of what the container sees, so a regression is
           // collected, and failing that refused, inside its own share instead of taking the
-          // plan's 3.5 GB from the other three apps. GC settings read from the environment are
+          // plan's 3.5 GB from the rendering service. GC settings read from the environment are
           // hexadecimal: 0x1E is thirty; a plain "30" would be forty-eight.
           { name: 'DOTNET_GCHeapHardLimitPercent', value: '0x1E' }
           // The collector told to trade a little processor for memory: at 7 of 9 it compacts the
@@ -194,11 +197,17 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
           { name: 'DOTNET_GCConserveMemory', value: '7' }
           { name: 'Email__Endpoint', value: 'https://acs-theyard-ss.unitedstates.communication.azure.com' }
           { name: 'Email__From', value: 'DoNotReply@ae4d5c47-28c9-49e2-8d3a-a859abd0f7df.azurecomm.net' }
-          { name: 'Peer__Url', value: s.peerUrl }
-          { name: 'Peer__Site', value: s.peerSite }
           { name: 'Site__Url', value: s.siteUrl }
-          // The site's own ARM path, so the Admin tab's Azure card reads this
-          // site and the plan it shares. An identifier, not a secret (ADR-010).
+          // The Shed, served by this process on its name (Composition/ShedMount.cs): where the
+          // Dockerfile put its published files, and its own settings as its retired web app
+          // carried them. The home is the sample tree inside the image, and writes are off on
+          // the public site, so a stranger cannot empty or fill it before the next visitor.
+          { name: 'Shed__ContentRoot', value: '/app/shed' }
+          { name: 'Files__Home', value: '' }
+          { name: 'Files__AllowWrites', value: 'false' }
+          { name: 'Files__MaxUploadBytes', value: '10485760' }
+          // The web app's own ARM path, so the Admin tab's Azure card reads this
+          // web app and the plan it runs on. An identifier, not a secret (ADR-010).
           { name: 'Azure__SelfResourceId', value: resourceId('Microsoft.Web/sites', s.name) }
         ]
       }

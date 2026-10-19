@@ -3,19 +3,16 @@ using System.Text.RegularExpressions;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The two deploy workflows carry the same constants twice (ADR: A permanent
-/// address for the second site), and on 14 September one of them was changed
-/// and the other was not: 1.0.0.128 pointed the first site at the Basic
-/// database while the second site's workflow still named the paused one, and
-/// its health card read the relational check as failed until 1.0.0.129
-/// (ADR: The SQL Server backend, addendum of 14 September). This holds the
-/// two files to one answer, and holds the database name to the one the
-/// record says the sites run on.
+/// The deploy workflows. Until 19 October two of them carried the same constants
+/// twice (ADR: A permanent address for the second site), and on 14 September one
+/// was changed and the other was not: 1.0.0.128 pointed the first site at the Basic
+/// database while the second site's workflow still named the paused one (ADR: The
+/// SQL Server backend, addendum of 14 September). One web app now serves both
+/// sites and The Shed (ADR: One web app for every .NET process), so one workflow
+/// rolls it, and these hold that workflow to what it rolls and verifies.
 /// </summary>
 public class DeployWorkflowTests
 {
-    private static readonly string[] Shared = ["ACR", "RG", "AI_NAME", "SQL_SERVER", "SQL_DB", "MI_CLIENT_ID"];
-
     private static Dictionary<string, string> EnvOf(string workflow)
     {
         string path = Path.Combine(Repo.Root(), ".github", "workflows", workflow);
@@ -72,23 +69,21 @@ public class DeployWorkflowTests
     }
 
     /// <summary>
-    /// The prune reads which image the second site runs by its app name, a
-    /// third copy of that name; it has to be the one the second site's own
-    /// workflow deploys to, or the prune refuses on every run.
+    /// The prune reads which image the web app runs before it deletes anything. One web app
+    /// runs the image since 19 October, so it reads that one and names no retired site.
     /// </summary>
     [Fact]
-    public void The_prune_names_the_second_site_the_way_its_own_workflow_does()
+    public void The_prune_reads_the_image_of_the_one_web_app_it_rolls()
     {
-        var match = Regex.Match(File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml")), @"^\s+COSMOS_APP: (\S+)\s*$", RegexOptions.Multiline);
-        Assert.True(match.Success, "deploy.yml's prune should name the second site");
-        Assert.Equal(EnvOf("deploy-cosmos.yml")["APP"], match.Groups[1].Value);
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
+        Assert.Contains("for app in \"$APP\"; do", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("COSMOS_APP", workflow, StringComparison.Ordinal);
     }
     // #endregion keep-ten
 
     // #region warm-edge
     [Theory]
     [InlineData("deploy.yml")]
-    [InlineData("deploy-cosmos.yml")]
     public void Each_deploy_warms_the_edge_through_the_public_address_after_the_site_answers_and_never_fails_for_it(string file)
     {
         string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
@@ -98,6 +93,7 @@ public class DeployWorkflowTests
         string body = workflow[step..workflow.IndexOf("#endregion warm-edge", step, StringComparison.Ordinal)];
         Assert.Contains("continue-on-error: true", body, StringComparison.Ordinal);
         Assert.Contains("node scripts/warm-edge.mjs \"$SITE\" deploy", body, StringComparison.Ordinal);
+        Assert.Contains("node scripts/warm-edge.mjs \"$COSMOS_SITE\" deploy", body, StringComparison.Ordinal);
         Assert.StartsWith("https://theyard", EnvOf(file)["SITE"], StringComparison.Ordinal);
         Assert.Contains("TheYard-SelfRead/1", File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "warm-edge.mjs")), StringComparison.Ordinal);
     }
@@ -112,7 +108,6 @@ public class DeployWorkflowTests
     /// </summary>
     [Theory]
     [InlineData("deploy.yml")]
-    [InlineData("deploy-cosmos.yml")]
     public void Each_deploy_waits_for_readiness_before_it_reads_the_filters(string file)
     {
         string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
@@ -138,7 +133,6 @@ public class DeployWorkflowTests
     /// </summary>
     [Theory]
     [InlineData("deploy.yml")]
-    [InlineData("deploy-cosmos.yml")]
     public void Each_deploy_waits_long_enough_for_the_roll_it_measured(string file)
     {
         string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
@@ -188,25 +182,67 @@ public class DeployWorkflowTests
     }
     // #endregion deploy-render
 
-    // #region workflows-agree
+    // #region one-web-app
+    /// <summary>
+    /// Deploy rolls the one web app the template describes, and nothing rolls the three it
+    /// replaced (ADR: One web app for every .NET process).
+    /// </summary>
     [Fact]
-    public void The_two_deploy_workflows_name_the_same_registry_group_server_database_and_identity()
+    public void Deploy_rolls_the_one_web_app_the_template_describes_and_the_retired_deploys_are_gone()
     {
-        var first = EnvOf("deploy.yml");
-        var second = EnvOf("deploy-cosmos.yml");
-        var wrong = Shared
-            .Where(key => first.GetValueOrDefault(key) != second.GetValueOrDefault(key))
-            .Select(key => $"{key}: deploy.yml says {first.GetValueOrDefault(key) ?? "(nothing)"} and deploy-cosmos.yml says {second.GetValueOrDefault(key) ?? "(nothing)"}")
-            .ToList();
-        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+        var env = EnvOf("deploy.yml");
+        Assert.Equal("APP-THEYARD-ONE-SS-ZMNETJ67BN5H2", env["APP"]);
+        Assert.Equal($"https://{env["APP"].ToLowerInvariant()}.azurewebsites.net", env["ORIGIN"]);
+        Assert.Contains("'APP-${toUpper(baseName)}-ONE-${toUpper(ownerTag)}-${toUpper(suffix)}'", File.ReadAllText(Path.Combine(Repo.Root(), "infra", "appservice.bicep")), StringComparison.Ordinal);
+        foreach (string retired in new[] { "deploy-cosmos.yml", "deploy-shed.yml" })
+        {
+            Assert.False(File.Exists(Path.Combine(Repo.Root(), ".github", "workflows", retired)), $"{retired} rolled a web app that no longer exists");
+        }
+        Assert.Equal(env["ACR"], EnvOf("deploy-render.yml")["ACR"]);
+    }
+
+    /// <summary>
+    /// Before any domain, Verify reads the other two names at the origin, as the edge sends
+    /// them: the Cosmos DB site's name must get Azure Cosmos DB with no store named, and The
+    /// Shed's name must reach The Shed's own health check and page. A roll that lost the host
+    /// routing would otherwise go green while one domain served the other site's store.
+    /// </summary>
+    [Fact]
+    public void Verify_reads_each_name_at_the_origin_before_any_domain()
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
+        int names = workflow.IndexOf("#region verify-names", StringComparison.Ordinal);
+        int domains = workflow.IndexOf("#region verify-domains", StringComparison.Ordinal);
+        Assert.True(names > 0 && domains > names, "deploy.yml should read the names at the origin before the domains");
+        string body = workflow[names..domains];
+        Assert.Contains("-H \"X-Yard-Host: ${COSMOS_SITE#https://}\" \"$ORIGIN/api/stores\"", body, StringComparison.Ordinal);
+        Assert.Contains("'\"current\":\"cosmos\"'", body, StringComparison.Ordinal);
+        Assert.Contains("-H \"X-Yard-Host: ${SHED_SITE#https://}\" \"$ORIGIN/healthz\"", body, StringComparison.Ordinal);
+        Assert.Contains("<title>The Shed</title>", body, StringComparison.Ordinal);
+        Assert.Equal("X-Yard-Host", TheYard.Api.SiteHosts.HeaderName);
+    }
+
+    /// <summary>
+    /// The edge moves after Deploy succeeds and never beside it, and reads both names until each
+    /// serves the build: a rule that moved before its origin was verified would send visitors to a
+    /// web app still starting (ADR: One web app for every .NET process).
+    /// </summary>
+    [Fact]
+    public void The_edge_moves_only_after_deploy_succeeds_and_reads_both_names()
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "edge-branch.yml"));
+        Assert.Contains("workflow_run:\n    workflows: [Deploy]\n    types: [completed]", workflow.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.Contains("github.event.workflow_run.conclusion == 'success'", workflow, StringComparison.Ordinal);
+        Assert.Contains("git diff --quiet origin/edge HEAD -- edge/ netlify.toml", workflow, StringComparison.Ordinal);
+        Assert.Contains("https://theyard.stevenstout.biz https://theyard-cosmos.stevenstout.biz", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("  push:", workflow, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void The_deploys_point_at_the_database_the_record_says_the_sites_run_on()
+    public void The_deploy_points_at_the_database_the_record_says_the_sites_run_on()
     {
         // The Basic tier beside the paused serverless one, Steve's pick on 14 September.
         Assert.Equal("sqldb-theyard-ss-basic", EnvOf("deploy.yml")["SQL_DB"]);
-        Assert.Equal("sqldb-theyard-ss-basic", EnvOf("deploy-cosmos.yml")["SQL_DB"]);
     }
-    // #endregion workflows-agree
+    // #endregion one-web-app
 }

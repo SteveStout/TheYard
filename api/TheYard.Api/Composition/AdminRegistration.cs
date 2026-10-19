@@ -30,17 +30,21 @@ public static class AdminRegistration
         }));
         // #endregion proof-clients
 
-        // Identifiers, not secrets: the identity's client id and this site's ARM path. The
-        // deploy sets the path for each of the two sites; the default is the first site's.
+        // Identifiers, not secrets: the identity's client id and this web app's ARM path. The
+        // template sets the path; the default is the one web app's.
         var azureSelf = new AzureSelf(
             YardComposition.AzureClientId(builder.Configuration),
             builder.Configuration["Azure:SelfResourceId"]
-                ?? $"/subscriptions/{YardComposition.AzureSubscriptionId(builder.Configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-SS-ZMNETJ67BN5H2");
+                ?? $"/subscriptions/{YardComposition.AzureSubscriptionId(builder.Configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-ONE-SS-ZMNETJ67BN5H2");
         builder.Services.AddSingleton(azureSelf);
-        // The other container's metrics, read server side with a short patience (ADR: Backends, side by side).
+        // The other container's metrics, read server side with a short patience (ADR: Backends, side by
+        // side). Since 19 October no deploy sets Peer:Url: both sites are this process, and the card
+        // says so in a sentence (ADR: One web app for every .NET process).
+        var siteHosts = SiteHosts.From(builder.Configuration);
         var peer = new PeerReader(
             builder.Configuration["Peer:Url"],
-            OutboundHttp.Client(PeerReader.Patience + TimeSpan.FromSeconds(1)));
+            OutboundHttp.Client(PeerReader.Patience + TimeSpan.FromSeconds(1)),
+            bothStoresHere: siteHosts.Sql is not null && siteHosts.Cosmos is not null);
         builder.Services.AddSingleton(peer);
         // Once an hour, the certificate the site answers with and how full the relational store
         // is, for the Azure card (HourlyReadings.cs). Only a container with a public https address

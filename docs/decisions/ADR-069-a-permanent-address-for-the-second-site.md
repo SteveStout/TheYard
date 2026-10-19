@@ -4,7 +4,7 @@ Status: accepted, 2026-09-09. The second container, the one whose default
 store is Azure Cosmos DB, gets a name under the site's own domain,
 https://theyard-cosmos.stevenstout.biz, with HTTPS from the same certificate
 authority the live site uses, through the same edge. Parent: ADR: One
-container, both stores.
+container, both stores. Since 19 October the name reaches the one web app both sites run in, which picks the Cosmos DB store by the name (ADR: One web app for every .NET process).
 
 ## In plain words
 
@@ -231,6 +231,15 @@ what the domain layer in front of the origin was for. The container groups' addr
 answering while the groups are stopped, and the rules file carries them in a comment for the week
 they remain the way back.
 
+
+## Addendum, 2026-10-19: the same two names, one origin
+
+Steve, 07:47 to 07:49 CDT: "since I've demoed the shed, let merge all .net into one new app service, and delete the old", and "on the existing ADRs indicate the separate app services would be for increased load and separation down the road but we merged due to low traffic on the update and ram".
+
+The separate web apps were the design for increased load and separation down the road: one process per site and per product, so one could roll, fail or be scaled without the others. They were merged on 19 October because traffic is low and the memory on the B2 plan is better spent (read live at 13:46 UTC that morning: the plan at 72 per cent, 2.52 of 3.5 GB; the four apps 977 MB together, the SQL site 404 MB, the Cosmos DB site 370, the rendering service 105 and The Shed 98; and the plan outside the apps 1,603 MB). The split is one bicep change and one edge rule away when load returns: a second entry in `infra/appservice.bicep`'s `sites` list with its own names, and that domain's rule in `netlify.toml` pointed at it.
+
+The address this record gave the second site does not change, and neither do the three CNAME records and the A record at Wix or the Netlify certificate. What changed is where the edge sends the name, and how the origin knows it: both Yard names go to the one web app's address, and since that address is the same for both, the edge's rule says which name the visitor typed in an `X-Yard-Host` header. Those two rules moved from `edge/_redirects` to `netlify.toml`, the only place a rule can add a header to a proxied request; the page rules stay in `edge/_redirects`, which Netlify reads first. The Shed's own name is not behind the edge: it is bound to the web app, with App Service's managed certificate, and its move from The Shed's web app to the one web app is in ADR: One web app for every .NET process.
+
 ## Where it sits
 
 No ring: this is a hosting decision about the DNS name and the Netlify edge in front of the second site, so the onion and SOLID do not apply to it.
@@ -240,6 +249,6 @@ No ring: this is a hosting decision about the DNS name and the Netlify edge in f
 - [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the two new lines, above the catch-all, shown live above.
 - [`edge/README.md`](https://github.com/SteveStout/TheYard/blob/main/edge/README.md): what the edge answers for now.
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml): the ignore rule that made the order of operations matter.
-- [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard-cosmos.yaml): the fixed `dnsNameLabel` the edge proxies to.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the live group's `Peer__Site`, which points at the new name once it answers.
+- [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard-cosmos.yaml): the fixed `dnsNameLabel` the edge proxies to.
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml): the live group's `Peer__Site`, which points at the new name once it answers.
 - [`docs/hosting/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/hosting/HOSTING.md): the chain, with the second name in it.

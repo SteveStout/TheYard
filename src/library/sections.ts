@@ -178,7 +178,7 @@ export const MENUS: Record<
   },
   hosting: {
     label: 'Hosting',
-    items: [{ key: 'hosting' }, { key: 'bicep', sub: true }],
+    items: [{ key: 'hosting' }, { key: 'whatIsWatched', sub: true }, { key: 'bicep', sub: true }],
   },
   /**
    * What the AI wrote, what the owner decided and what governed it, beside

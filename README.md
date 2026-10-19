@@ -14,23 +14,23 @@ What that is worth: a developer can read each choice beside the code and the tes
 
 ## Tests, and the gate every version passes
 
-The suites hold 1016 xUnit tests, 468 Vitest tests at 1.0.3.183 and 163 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.183 hold 2,893 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 1018 xUnit tests, 469 Vitest tests at 1.0.3.184 and 163 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.3.184 hold 2,898 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
-| API | xUnit | 1016 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
-| Frontend | Vitest | 468 at 1.0.3.183 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
+| API | xUnit | 1018 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
+| Frontend | Vitest | 469 at 1.0.3.184 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
 | End to end | Playwright | 160 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe's eleven scans across nine views at WCAG 2.1 AA. |
 
-**How 2,893 is counted**, from the gate's own results file for 1.0.3.183 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 468 Vitest tests, 1098 xUnit tests on SQLite and the same 1098 booted on Cosmos DB, the 8 that need the live Cosmos DB account, 168 browser runs on SQLite from the 163 declared tests (a loop runs one of them more than once) and 53 of those again on Cosmos DB, which is 2,893. The xUnit and browser counts above are read from the source; a test written after 1.0.3.183 first runs in the gate of the version that ships it.
+**How 2,898 is counted**, from the gate's own results file for 1.0.3.184 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 469 Vitest tests, 1100 xUnit tests on SQLite and the same 1100 booted on Cosmos DB, the 8 that need the live Cosmos DB account, 168 browser runs on SQLite from the 163 declared tests (a loop runs one of them more than once) and 53 of those again on Cosmos DB, which is 2,898. The xUnit and browser counts above are read from the source; a test written after 1.0.3.184 first runs in the gate of the version that ships it.
 
-**The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The gate runs on the machine that ships: format, lint and type checks, the SQL project, xUnit on SQLite, the seven live Cosmos DB tests, and then Vitest and the browser suite, one side after the other. Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-cosmos.yml) build the image and roll both sites, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites again on GitHub's runners for every push to main, beside the deploy and without holding it up, and for a pull request, which has had no gate.
+**The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The gate runs on the machine that ships: format, lint and type checks, the SQL project, xUnit on SQLite, the seven live Cosmos DB tests, and then Vitest and the browser suite, one side after the other. Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml) build the image and roll both sites, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites again on GitHub's runners for every push to main, beside the deploy and without holding it up, and for a pull request, which has had no gate.
 
 **The time.** The target is five minutes (ADR-068), and every gate quoted here is over it: 831 seconds on 1.0.3.36 with every pass run, 657 seconds on 1.0.3.38 with the two store passes carried forward, 973 seconds on 1.0.3.39 with every pass run and 641 seconds on 1.0.3.59 with the two store passes carried forward, on a four-core laptop shared with the browser I work in. Every result ships with the version, test by test with its milliseconds; the Admin tab shows it. [ADR-021](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-021-tests-explained.md) walks the three suites for a developer new to the stack.
 
 ## Architecture and decisions
 
-One hundred and four decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Six to read first:
+One hundred and five decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Six to read first:
 
 - [ADR-088, onion and SOLID, how this codebase holds them](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-088-onion-and-solid.md): the rings, the ten tests that fail the gate when a dependency points outward, and what is kept simple on purpose.
 - [ADR-075, the rules a change has to pass](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-075-the-rules-a-change-has-to-pass.md): every standing rule beside the test that holds it.
@@ -78,7 +78,7 @@ A failing suite prints everything it printed, then the summary, and the command 
 
 Built by one engineer, with AI drafting against my tests and records. I specify every test before the AI writes
 the first draft of the code against it, three suites of tests run once per version inside the one gate before anything rolls (the counts are at the top of this page, held to the suites
-by a test), and one hundred and four decision records carry the trade-off and the number behind each choice. What went
+by a test), and one hundred and five decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
 millisecond speeds on free-tier stores and one small container, in
@@ -103,7 +103,7 @@ it has sent and how long the database took.
 
 Everything about how it is built and hosted is served from inside the running app, under
 App Architecture, API Reference, SQL vs Cosmos DB, Performance, Diagrams, Style, Hosting, Built with AI, CI/CD
-and Best Practices in the sidebar. One hundred and four decision records explain each choice, and the code samples in them are read from the running build
+and Best Practices in the sidebar. One hundred and five decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
@@ -273,12 +273,13 @@ walkthrough can happen without leaving it.
   auction status; all auction math lives in Domain and travels on the wire, so the
   browser only formats. `src/lib/data.ts` is the frontend's single data seam.
 - **Hosting:** a hand-authored multi-stage Dockerfile, an image in Azure Container
-  Registry, and three web apps for containers sharing one Linux B2 App Service plan at
-  $24.82 a month: one per site, and a rendering service that draws every page for both
+  Registry, and two web apps for containers sharing one Linux B2 App Service plan at
+  $24.82 a month: one that serves both sites and The Shed from one process, by the name
+  each request arrived on, and a rendering service that draws every page for both sites
   from its own 62 MB image, with Netlify's free tier as the TLS edge in front of them
-  (ADR: One plan, two sites; ADR: A rendering service beside the API). GitHub Actions
-  builds both images and rolls the two sites and the service on every green push.
-  `infra/main.bicep` is what runs: the plan, the two sites and the service's web app with
+  (ADR: One web app for every .NET process; ADR: A rendering service beside the API).
+  GitHub Actions builds both images and rolls both web apps on every green push.
+  `infra/main.bicep` is what runs: the plan, the one web app and the service's web app with
   every setting, with Azure Front Door and the origin lock behind a parameter that stays
   off while the subscription refuses Front Door; the Hosting page explains both.
 - **Database:** Azure SQL Database through EF Core, behind the same ports the JSON
@@ -328,7 +329,7 @@ walkthrough can happen without leaving it.
   Records, Changelog, About and Author, holding the
   architecture and style pages, the two stores side by side, the data flow,
   infrastructure, entity relationship, two-sites, store comparison and rings diagrams on their
-  own zoomable pages, one hundred and four decision records in one numbered index, the Bicep
+  own zoomable pages, one hundred and five decision records in one numbered index, the Bicep
   infrastructure, my resume, and How this was built, which says plainly that an AI agent
   wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -504,7 +505,7 @@ walkthrough can happen without leaving it.
 
 ## Testing
 
-**API (1016 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (1018 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`InventoryService` and `BidService` with in-memory
@@ -523,7 +524,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (468 Vitest tests at 1.0.3.183):** presentation logic only, since the API owns the rules.
+**Frontend (469 Vitest tests at 1.0.3.184):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,

@@ -3,56 +3,52 @@ using System.Text.RegularExpressions;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The template for the plan and its two sites, held to the two container
-/// group files it took over from (ADR: One plan, two sites). The move's
-/// instruction was to read every setting out of those files rather than
-/// remember it, and a list copied once is a list that drifts: a setting added
-/// to a container group tomorrow and not to the sites would come up missing on
-/// the machine that actually serves, with nothing red anywhere.
+/// The template for the plan and the one web app that serves both sites and The
+/// Shed (ADR: One web app for every .NET process), held to what the code reads,
+/// to what the deploy rolls and to where the edge sends each name. Until 19
+/// October it was held to the two container group files it took over from (ADR:
+/// One plan, two sites), which retired with the per-site settings they carried.
 /// </summary>
 public class AppServiceTemplateTests
 {
     private static string Read(params string[] parts) =>
         File.ReadAllText(Path.Combine([Repo.Root(), .. parts]));
 
-    private static HashSet<string> SettingsOf(string containerGroupFile)
-    {
-        // The container's environment: "- name: X" followed by a value or a
-        // secureValue. The container's own name is a "- name:" too, followed
-        // by "properties:", which is how it is told apart.
-        var names = Regex.Matches(
-                Read("infra", containerGroupFile),
-                @"^\s*- name: (\S+)\s*\n(?:\s*#.*\n)*\s*(?:value|secureValue):",
-                RegexOptions.Multiline)
-            .Select(match => match.Groups[1].Value)
-            .ToHashSet(StringComparer.Ordinal);
-        Assert.True(names.Count >= 10, $"{containerGroupFile} should carry the container's settings, and {names.Count} were found");
-        return names;
-    }
-
     // #region settings-carried
-    [Theory]
-    [InlineData("aci-theyard.yaml")]
-    [InlineData("aci-theyard-cosmos.yaml")]
-    public void Every_setting_a_container_group_carried_is_a_setting_the_sites_carry(string containerGroupFile)
+    /// <summary>
+    /// The names the process answers to and The Shed's folder are settings the code reads
+    /// (SiteHosts.cs, ShedMount.cs), so a template without them is a web app that serves one
+    /// store on every name and no Shed at all, with nothing red anywhere. The per-site settings
+    /// of the four-app shape are gone: a Store__Default left behind would pin every name to one
+    /// store, and a Peer__Url would read a web app that no longer exists.
+    /// </summary>
+    [Fact]
+    public void The_web_app_carries_the_names_and_the_sheds_folder_and_none_of_the_per_site_settings()
     {
         string template = Read("infra", "appservice.bicep");
-        var missing = SettingsOf(containerGroupFile)
-            .Where(name => !template.Contains($"{{ name: '{name}', value: ", StringComparison.Ordinal))
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToList();
-
-        Assert.True(missing.Count == 0, $"{containerGroupFile} sets these and infra/appservice.bicep does not: {string.Join(", ", missing)}");
+        foreach (string setting in new[] { "Hosts__Sql", "Hosts__Cosmos", "Hosts__Shed", "Shed__ContentRoot", "Files__Home", "Files__AllowWrites", "Files__MaxUploadBytes", "Site__Url", "Catalogue__Keep" })
+        {
+            Assert.Contains($"{{ name: '{setting}', value: ", template, StringComparison.Ordinal);
+        }
+        foreach (string retired in new[] { "Store__Default", "Peer__Url", "Peer__Site" })
+        {
+            Assert.DoesNotContain(retired, template, StringComparison.Ordinal);
+        }
+        Assert.Contains("ENV Shed__ContentRoot=/app/shed", Read("Dockerfile"), StringComparison.Ordinal);
+        Assert.Contains("{ name: 'Shed__ContentRoot', value: '/app/shed' }", template, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(Repo.Root(), "infra", "aci-theyard.yaml")));
+        Assert.False(File.Exists(Path.Combine(Repo.Root(), "samples", "theshed", "infra", "site.bicep")));
     }
     // #endregion settings-carried
 
     [Fact]
-    public void The_two_sites_default_to_the_two_stores_and_listen_where_the_image_listens()
+    public void The_one_web_app_answers_the_three_names_and_listens_where_the_image_listens()
     {
         string template = Read("infra", "appservice.bicep");
 
-        Assert.Contains("storeDefault: 'sql'", template, StringComparison.Ordinal);
-        Assert.Contains("storeDefault: 'cosmos'", template, StringComparison.Ordinal);
+        Assert.Contains("hostSql: 'theyard.stevenstout.biz'", template, StringComparison.Ordinal);
+        Assert.Contains("hostCosmos: 'theyard-cosmos.stevenstout.biz'", template, StringComparison.Ordinal);
+        Assert.Contains("hostShed: 'theshed.stevenstout.biz'", template, StringComparison.Ordinal);
         Assert.Contains("{ name: 'WEBSITES_PORT', value: '8080' }", template, StringComparison.Ordinal);
         Assert.Contains("ENV ASPNETCORE_URLS=http://+:8080", Read("Dockerfile"), StringComparison.Ordinal);
         Assert.Contains("healthCheckPath: '/healthz'", template, StringComparison.Ordinal);
@@ -70,26 +66,47 @@ public class AppServiceTemplateTests
     }
 
     // #region edge-and-rolls-agree
-    [Theory]
-    [InlineData("deploy.yml", "/* ")]
-    [InlineData("deploy-cosmos.yml", "https://theyard-cosmos.stevenstout.biz/* ")]
-    public void The_edge_sends_each_name_to_the_origin_its_deploy_verifies(string workflow, string rule)
+    /// <summary>
+    /// Netlify proxy rules from netlify.toml, in file order: where each comes from, where it
+    /// goes, and the X-Yard-Host header it adds.
+    /// </summary>
+    private static List<(string From, string To, string? Host)> ProxyRules()
     {
-        // Three places name an origin: the template creates it, the deploy
-        // verifies it, and the edge sends visitors to it. A site renamed in
-        // one of them is a roll that goes green while the public name serves
-        // something else.
-        var origin = Regex.Match(Read(".github", "workflows", workflow), @"^\s{6}ORIGIN: (\S+)\s*$", RegexOptions.Multiline);
-        Assert.True(origin.Success, $"{workflow} should name the origin it verifies");
+        return Regex.Matches(
+                Read("netlify.toml"),
+                @"\[\[redirects\]\]\s*\n\s*from = ""([^""]+)""\s*\n\s*to = ""([^""]+)""\s*\n\s*status = 200\s*\n\s*force = true\s*\n\s*headers = \{X-Yard-Host = ""([^""]+)""\}")
+            .Select(match => (match.Groups[1].Value, match.Groups[2].Value, (string?)match.Groups[3].Value))
+            .ToList();
+    }
 
-        string line = Read("edge", "_redirects")
-            .Split('\n')
-            .Single(candidate => candidate.StartsWith(rule, StringComparison.Ordinal));
-        Assert.Equal($"{rule}{origin.Groups[1].Value}/:splat 200!", line.TrimEnd());
+    [Theory]
+    [InlineData("/*", "theyard.stevenstout.biz", "SITE")]
+    [InlineData("https://theyard-cosmos.stevenstout.biz/*", "theyard-cosmos.stevenstout.biz", "COSMOS_SITE")]
+    public void The_edge_sends_each_name_to_the_origin_the_deploy_verifies_and_says_which_name_it_was(string from, string host, string siteKey)
+    {
+        // Three places name the origin: the template creates it, the deploy verifies it, and the
+        // edge sends visitors to it. A web app renamed in one of them is a roll that goes green
+        // while the public name serves something else. And the edge says which name the visitor
+        // typed, because both names reach the same origin and the store follows the name.
+        string workflow = Read(".github", "workflows", "deploy.yml");
+        var origin = Regex.Match(workflow, @"^\s{6}ORIGIN: (\S+)\s*$", RegexOptions.Multiline);
+        Assert.True(origin.Success, "deploy.yml should name the origin it verifies");
+        var site = Regex.Match(workflow, $@"^\s{{6}}{siteKey}: (\S+)\s*$", RegexOptions.Multiline);
+        Assert.Equal($"https://{host}", site.Groups[1].Value);
 
-        var app = Regex.Match(Read(".github", "workflows", workflow), @"^\s{6}APP: (\S+)\s*$", RegexOptions.Multiline);
-        Assert.True(app.Success, $"{workflow} should name the web app it rolls");
+        var rule = ProxyRules().Single(candidate => candidate.From == from);
+        Assert.Equal($"{origin.Groups[1].Value}/:splat", rule.To);
+        Assert.Equal(host, rule.Host);
+        Assert.Contains($"host{(host.StartsWith("theyard-cosmos", StringComparison.Ordinal) ? "Cosmos" : "Sql")}: '{host}'", Read("infra", "appservice.bicep"), StringComparison.Ordinal);
+
+        var app = Regex.Match(workflow, @"^\s{6}APP: (\S+)\s*$", RegexOptions.Multiline);
         Assert.Equal($"https://{app.Groups[1].Value.ToLowerInvariant()}.azurewebsites.net", origin.Groups[1].Value);
+        // The Cosmos DB site's rule comes before the catch-all, because the first that matches wins.
+        var rules = ProxyRules();
+        Assert.True(rules.FindIndex(r => r.From.StartsWith("https://theyard-cosmos", StringComparison.Ordinal)) < rules.FindIndex(r => r.From == "/*"));
+        // And edge/_redirects, which Netlify reads first, proxies nothing to a web app of the API's.
+        Assert.DoesNotContain("app-theyard-ss-", Read("edge", "_redirects"), StringComparison.Ordinal);
+        Assert.DoesNotContain("/* https://app-theyard-one", Read("edge", "_redirects"), StringComparison.Ordinal);
     }
 
     [Theory]
@@ -99,16 +116,15 @@ public class AppServiceTemplateTests
     {
         // The page is the bare path; the renderer draws it for the site the path names, and the
         // address it is sent to is the one Deploy Render verifies (ADR: A rendering service beside the API).
+        // These are in edge/_redirects, which Netlify reads before netlify.toml's proxy rules, so the
+        // page is never caught by the catch-all.
         var origin = Regex.Match(Read(".github", "workflows", "deploy-render.yml"), @"^\s{6}ORIGIN: (\S+)\s*$", RegexOptions.Multiline);
         Assert.True(origin.Success, "deploy-render.yml should name the origin it verifies");
         var lines = Read("edge", "_redirects").Split('\n').Select(line => line.TrimEnd()).ToList();
         int page = lines.FindIndex(line => line.StartsWith(rule, StringComparison.Ordinal));
         Assert.True(page >= 0, $"the edge should have a rule for {rule.Trim()}");
         Assert.Equal($"{rule}{origin.Groups[1].Value}/site/{site} 200!", lines[page]);
-        // Above the catch-all for the same name, because the first rule that matches wins.
-        int rest = lines.FindIndex(line => line.StartsWith(rule.TrimEnd() + "* ", StringComparison.Ordinal));
-        Assert.True(rest > page, $"the page rule for {rule.Trim()} has to come before its catch-all");
-        Assert.Contains($"sites.get(named[1])", Read("render", "server.mjs"), StringComparison.Ordinal);
+        Assert.Contains("sites.get(name)", Read("render", "server.mjs"), StringComparison.Ordinal);
         Assert.Contains($"{site}=https://", Read("infra", "render.bicep"), StringComparison.Ordinal);
     }
 
@@ -147,10 +163,11 @@ public class AppServiceTemplateTests
 
     // #region the-renderer
     /// <summary>
-    /// The rendering service's web app (ADR: A rendering service beside the API) is a third site on the
-    /// plan. It holds no secret and no store: it listens where its image listens, answers the platform's
-    /// health check at the path its door answers, reads the two sites at the addresses the template
-    /// gives them, and pulls its image as the identity the sites run as. It is a template of its own,
+    /// The rendering service's web app (ADR: A rendering service beside the API) is the second web app
+    /// on the plan. It holds no secret and no store: it listens where its image listens, answers the
+    /// platform's health check at the path its door answers, reads both sites at the one web app's
+    /// address with the site's store named on each read, and pulls its image as the identity the
+    /// web app runs as. It is a template of its own,
     /// which main.bicep names as a module, so a deployment that creates it cannot touch either site.
     /// </summary>
     [Fact]
@@ -163,7 +180,7 @@ public class AppServiceTemplateTests
         Assert.Contains("healthCheckPath: '/healthz'", template, StringComparison.Ordinal);
         Assert.Contains("url.pathname === '/healthz'", Read("render", "server.mjs"), StringComparison.Ordinal);
         Assert.Contains("acrUseManagedIdentityCreds: true", template, StringComparison.Ordinal);
-        Assert.Contains("{ name: 'YARD_SITES', value: 'sql=https://${toLower(sqlSite)}.azurewebsites.net,cosmos=https://${toLower(cosmosSite)}.azurewebsites.net' }", template, StringComparison.Ordinal);
+        Assert.Contains("{ name: 'YARD_SITES', value: 'sql=https://${toLower(oneSite)}.azurewebsites.net,cosmos=https://${toLower(oneSite)}.azurewebsites.net' }", template, StringComparison.Ordinal);
         foreach (string secret in new[] { "Auth__SigningKey", "Admin__Key", "ConnectionStrings", "APPLICATIONINSIGHTS_CONNECTION_STRING", "Cosmos__", "@secure()" })
         {
             Assert.DoesNotContain(secret, template, StringComparison.Ordinal);

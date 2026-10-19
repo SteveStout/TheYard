@@ -1,6 +1,6 @@
 # ADR: The starter, kept as given
 
-Status: accepted, 2026-09-29.
+Status: accepted, 2026-09-29. Since 19 October The Shed runs inside TheYard's one web app, and its own web app is retired (TheYard: ADR: One web app for every .NET process); the addendum of that day says how, and what did not change.
 
 ## Context
 
@@ -57,6 +57,15 @@ the file they sent.
 ## Addendum, 2026-10-03: one more test package, two more records
 
 The test project now also references NetArchTest, which reads the compiled app to check which folder may use which (ADR-013). Its version is the one TheYard pins, like the others. There are fourteen records now, not twelve: ADR-013 and ADR-014 are new.
+
+
+## Addendum, 2026-10-19: one web app with TheYard
+
+Steve, 07:47 to 07:49 CDT: "since I've demoed the shed, let merge all .net into one new app service, and delete the old", and "on the existing ADRs indicate the separate app services would be for increased load and separation down the road but we merged due to low traffic on the update and ram".
+
+The separate web apps were the design for increased load and separation down the road: one process per site and per product, so one could roll, fail or be scaled without the others. They were merged on 19 October because traffic is low and the memory on the B2 plan is better spent (read live at 13:46 UTC that morning: the plan at 72 per cent, 2.52 of 3.5 GB; the four apps 977 MB together, the SQL site 404 MB, the Cosmos DB site 370, the rendering service 105 and The Shed 98; and the plan outside the apps 1,603 MB). The split is one bicep change and one edge rule away when load returns: a second entry in `infra/appservice.bicep`'s `sites` list with its own names, and that domain's rule in `netlify.toml` pointed at it.
+
+What did not change: this app's Program.cs, its four registrations, its pipeline, its controllers, its documents and its tests are as they were, and a reader still starts it on their own machine with `dotnet run`. What changed is where it runs. TheYard's image publishes it to a folder of its own, `/app/shed`, and TheYard's process starts this same application from that folder, with its own builder and its own service container, and hands it every request that arrives on `theshed.stevenstout.biz`. Its own web app, its template (`infra/site.bicep`) and its own deploy are retired; its domain is bound to the one web app with a managed certificate. One build setting changed here: static web assets are off, so the page in `wwwroot` is served from the folder and is not handed to TheYard's API, which references this project for its assembly.
 
 ## Where it sits
 

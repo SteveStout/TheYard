@@ -43,6 +43,12 @@ export const PAGES = {
     url: '/api/docs/hosting',
     kind: 'overview',
   },
+  whatIsWatched: {
+    title: 'What is watched',
+    menuLabel: 'What is watched',
+    url: '/api/docs/what-is-watched',
+    kind: 'overview',
+  },
   bicep: {
     title: 'Infrastructure (Bicep)',
     menuLabel: 'Infrastructure (Bicep)',

@@ -162,7 +162,7 @@ No ring: this is a hosting decision about what stands in front of the App Servic
   live below.
 - [`docs/hosting/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/hosting/HOSTING.md): why the site does not run this today, and what
   runs instead.
-- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/main/infra/aci-theyard.yaml): the container group that does run, per
+- [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml): the container group that does run, per
   ADR: Deployment strategy.
 
 The origin lock, read from this build:

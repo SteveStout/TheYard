@@ -129,4 +129,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '104',
   },
+  adrOneWebAppForEveryNetProcess: {
+    title: 'ADR: One web app for every .NET process',
+    menuLabel: 'ADR: One web app for every .NET process',
+    url: '/api/docs/adr-one-web-app-for-every-net-process',
+    kind: 'adr',
+    number: '105',
+  },
 } as const satisfies Record<string, RecordEntry>;

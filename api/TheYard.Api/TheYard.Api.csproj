@@ -39,6 +39,12 @@
          Server schema is the SQL project (ADR: Data first, and the database in
          source control). -->
     <ProjectReference Include="..\TheYard.Migrations.Sqlite\TheYard.Migrations.Sqlite.csproj" />
+    <!-- The Shed, the getting-started sample beside this app, served by this process under its own
+         name since 19 October (Composition/ShedMount.cs; ADR: One web app for every .NET process).
+         Referenced for its assembly only: its documents, sample home and page are published to a
+         folder of their own by the Dockerfile and read from there, so none of its files is copied
+         beside this app's, where its appsettings.json and README.md would collide with these. -->
+    <ProjectReference Include="..\..\samples\theshed\TestProject.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -64,5 +70,22 @@
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
   <!-- #endregion runtime-settings -->
+
+  <!-- #region shed-files -->
+  <!-- The Shed's documents, sample home, page and appsettings.json would be published beside this app's, where its
+       appsettings.json and README.md have the same names as this app's and the publish stops (NETSDK1152). They are
+       The Shed's, published by the Dockerfile to a folder of its own that Shed__ContentRoot names, so they are left
+       out of this publish: only The Shed's assembly comes here, through the project reference. -->
+  <Target Name="LeaveTheShedsFilesToItsOwnFolder" AfterTargets="GetCopyToPublishDirectoryItems">
+    <PropertyGroup>
+      <TheShedFolder>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../samples/theshed/'))</TheShedFolder>
+    </PropertyGroup>
+    <ItemGroup>
+      <_SourceItemsToCopyToPublishDirectory Remove="@(_SourceItemsToCopyToPublishDirectory)" Condition="$([System.String]::Copy('%(FullPath)').StartsWith('$(TheShedFolder)', StringComparison.OrdinalIgnoreCase))" />
+      <_SourceItemsToCopyToPublishDirectoryAlways Remove="@(_SourceItemsToCopyToPublishDirectoryAlways)" Condition="$([System.String]::Copy('%(FullPath)').StartsWith('$(TheShedFolder)', StringComparison.OrdinalIgnoreCase))" />
+      <_SourceItemsToCopyToPublishDirectoryIfDifferent Remove="@(_SourceItemsToCopyToPublishDirectoryIfDifferent)" Condition="$([System.String]::Copy('%(FullPath)').StartsWith('$(TheShedFolder)', StringComparison.OrdinalIgnoreCase))" />
+    </ItemGroup>
+  </Target>
+  <!-- #endregion shed-files -->
 
 </Project>

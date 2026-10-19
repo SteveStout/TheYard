@@ -55,9 +55,10 @@ public sealed class CostRecorder(
     // #endregion cost-retry
 
     /// <summary>
-    /// How long after the start the first read waits. Both sites are rolled together, so the
-    /// site whose default store is the document store waits a minute longer than the other,
-    /// and the two first reads never reach Cost Management in the same second.
+    /// How long after the start the first read waits. Where each site has a process of its own and
+    /// both roll together, the one whose default store is the document store waits a minute longer,
+    /// so the two first reads never reach Cost Management in the same second; the one web app that
+    /// serves both sites sets no default store and waits the shorter time.
     /// </summary>
     public static TimeSpan FirstReadAfter(string? defaultStore) =>
         string.Equals(defaultStore, "cosmos", StringComparison.OrdinalIgnoreCase)
