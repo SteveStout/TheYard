@@ -40,7 +40,7 @@ application that cannot change its own schema cannot be made to.
 is a JWT this service signs and reads itself, carried in an httpOnly cookie, so a
 script on the page cannot read it and cannot be tricked into sending it elsewhere
 (ADR: Accounts and per-user bids). The key it signs with is a repository secret
-the deploy hands both containers at roll time; a container given none invents
+the deploy hands the web app at roll time; a container given none invents
 one and logs that it did, and every session ends with it. A session is a year
 long and is re-issued once a day while it is in use, so a login lasts a year
 past the last visit and a sign-out still ends it at once (the accounts record's
@@ -105,6 +105,8 @@ itself is part of what it is showing. The cost is that everything on that page
 has to be safe to publish, which is a constraint the page is designed around and
 which has been got wrong twice and corrected twice, both recorded.
 
+**The site a request is for is a header the sender can write.** Both Yard domains reach the one web app's address, and the edge says which one the visitor typed in `X-Yard-Host`. Anybody can send that header to the origin directly. It counts only when the Host is not already one of the three names and only when it names one of them (`SiteHosts.cs`), so the most a sender can choose is which of the three sites answers, the choice typing the other address already gives them: the store a listing comes from, the Store bar's link, and which of the two Yard addresses a reset link names. It grants nothing, and The Shed's domain, routed by its Host, cannot be told it is a Yard site.
+
 **The origin is reachable without going through the edge.** The design is Front
 Door with a locked origin, it is in the template, and it needs a subscription
 this project does not pay for. That trade was easy when the origin held nothing.
@@ -129,14 +131,13 @@ caller can make that persists, and because every request through it pays for a
 deliberately expensive password hash on a container that serves everything else.
 What it costs is stated rather than hidden: while somebody is spending the
 hour's allowance, a real visitor cannot register either, and browsing, signing
-in and bidding are untouched. The window is in memory per container, and
-there are two containers on the same stores now, so the site's real ceiling
-is two windows, 240 an hour across both; a durable bound belongs with the
-origin lock (ADR-054).
+in and bidding are untouched. The window is in memory in the one process
+that serves both sites since 19 October, so the ceiling is one window, 120 an
+hour across both; a durable bound belongs with the origin lock (ADR-054).
 
 **The hop from the edge to the origins is HTTPS, and the origins are still
 open.** The visitor's connection is TLS to the edge, and since 1.0.0.156 the
-edge reaches each site over HTTPS as well, at its own `azurewebsites.net` name
+edge reaches the one web app over HTTPS as well, at its own `azurewebsites.net` name (The Shed's name is bound to it directly)
 on the certificate Azure manages for that domain, so the session cookie is
 encrypted on both legs. Until then the origin was a container group with no
 TLS listener and this hop was plain HTTP on port 8080, which the accounts

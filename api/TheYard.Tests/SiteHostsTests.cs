@@ -62,6 +62,9 @@ public class SiteHostsTests
         // the most a sender can choose is which of the three sites answers.
         Assert.Null(Three.Of(Arriving(edgeSaid: "evil.example")));
         Assert.Equal("theyard.example", Three.Of(Arriving("theyard.example", edgeSaid: "evil.example")));
+        // A name App Service routed by wins over the header: The Shed's domain cannot be told it is a Yard site.
+        Assert.Equal("theshed.example", Three.Of(Arriving("theshed.example", edgeSaid: "theyard.example")));
+        Assert.True(Three.IsShed(Arriving("theshed.example", edgeSaid: "theyard-cosmos.example")));
         Assert.Null(Three.SiteOrigin(Arriving(edgeSaid: "theshed.example")));
         Assert.Equal("https://theyard-cosmos.example", Three.SiteOrigin(Arriving(edgeSaid: "theyard-cosmos.example")));
         Assert.True(Three.IsShed(Arriving("theshed.example")));
@@ -115,12 +118,20 @@ public class SiteHostsTests
         var yardPage = await (await Get(client, "/index.html", "theyard.example")).Content.ReadAsStringAsync();
         Assert.DoesNotContain("<title>The Shed</title>", yardPage, StringComparison.Ordinal);
         var stores = await (await Get(client, "/api/stores", "theyard-cosmos.example")).Content.ReadFromJsonAsync<JsonElement>();
+        // The gate runs this both ways: on SQLite alone there is no Cosmos DB store to pick, and
+        // the name falls back to the one there is; with Cosmos DB configured the name must pick it.
         bool hasCosmos = stores.GetProperty("stores").EnumerateArray().Any(store => store.GetProperty("key").GetString() == "cosmos");
         Assert.Equal(hasCosmos ? "cosmos" : "sql", stores.GetProperty("current").GetString());
+        // The Shed's name by its Host header, the way App Service routes it, with a Yard name in the
+        // edge's header: still The Shed.
+        using var byHost = new HttpRequestMessage(HttpMethod.Get, "/healthz");
+        byHost.Headers.Host = "theshed.example";
+        byHost.Headers.Add(SiteHosts.HeaderName, "theyard.example");
+        Assert.Contains("\"healthy\"", await (await client.SendAsync(byHost)).Content.ReadAsStringAsync(), StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task Without_the_sheds_folder_nothing_is_mounted_and_the_name_is_the_yards()
+    public async Task Without_the_sheds_folder_its_name_answers_503_and_the_yard_carries_on()
     {
         await using var api = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -129,8 +140,10 @@ public class SiteHostsTests
         });
         var client = api.CreateClient();
 
-        var page = await (await Get(client, "/index.html", "theshed.example")).Content.ReadAsStringAsync();
-        Assert.DoesNotContain("<title>The Shed</title>", page, StringComparison.Ordinal);
+        var shed = await Get(client, "/", "theshed.example");
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, shed.StatusCode);
+        Assert.Contains("The Shed is not running", await shed.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/version")).StatusCode);
     }
     // #endregion shed-mounted
 }

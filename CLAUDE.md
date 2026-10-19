@@ -38,8 +38,8 @@ codebase holds them):
 Beside the six: `api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
 `api/TheYard.Migrations.Sqlite` (the SQLite schema's history), `api/TheYard.Experiment` (a console tool
 for the partition key experiment), and `api/TheYard.Tests`. One process runs BOTH stores side by side and
-picks one per request from the `X-Yard-Store` header or the container's default (ADR-066); the two
-web apps default to different stores and each is one site.
+picks one per request from the `X-Yard-Store` header, else by the name the request arrived on
+(`SiteHosts.cs`, ADR-105); one web app serves both sites and The Shed (ADR-066, ADR-105).
 
 Frontend keeps the same discipline: `components` -> `hooks` -> `lib`. **`src/lib` imports nothing from
 React.** Every component has a folder of its own, `src/components/<section>/<Name>/`, holding its `.tsx`,

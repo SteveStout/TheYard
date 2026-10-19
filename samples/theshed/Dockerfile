@@ -1,4 +1,5 @@
-# The Shed in a container, the way it runs beside TheYard on the same App Service plan.
+# The Shed in a container of its own, for a local or standalone run. Live, TheYard's own image
+# publishes The Shed to /app/shed and serves it from the one web app (TheYard: ADR-105).
 # Two stages: the SDK publishes, the runtime image serves. The publish carries the
 # documents, the sample home and the source files the live samples read (ADR-012),
 # because the container is the content root at runtime.

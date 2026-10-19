@@ -1,5 +1,9 @@
 """Measure both stores in one session, the way the search index was measured.
 
+Since 19 October both sites are one web app (ADR: One web app for every .NET process): pass the two public
+domains, or the one origin twice, and the origin answers each store by the domain's name; at the bare origin a
+side gets the store its X-Yard-Store header names, which this script does not send, so it would read SQL twice.
+
 Paired rounds, both containers inside each round, alternating which goes
 first, and the median of the per-round differences alongside each side's own
 medians. Sequential timings on a shared network measure the network; pairing

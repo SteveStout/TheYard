@@ -9,9 +9,10 @@ namespace TheYard.Api;
 
 /// <summary>
 /// Each store's catalogue: a query per listing against the store, and the expansion of the seed
-/// only to fill it. A site fills the catalogue of the store it defaults to, and only when the
-/// deploy says so with Catalogue:Keep; the two sites share both stores, and two fills
-/// of one store would pay for it twice.
+/// only to fill it, and only when the deploy says so with Catalogue:Keep. The one web app fills
+/// both stores' catalogues, being the only process that keeps them; were the sites split again,
+/// each would fill the store it defaults to and watch the other, since two fills of one store
+/// would pay for it twice.
 /// </summary>
 internal static class Catalogues
 {

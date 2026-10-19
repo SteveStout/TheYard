@@ -1,6 +1,6 @@
 # ADR: One web app for every .NET process
 
-Status: accepted, 2026-10-19. The SQL site, the Cosmos DB site and The Shed run in one process in one web app, APP-THEYARD-ONE-SS, on the same B2 plan, and each request is answered by the name it arrived on. The three web apps they ran in, APP-THEYARD-SS, APP-THEYARD-COSMOS-SS and APP-THESHED-SS, are retired: their names move to the new web app, and then the three are deleted on Steve's word of the same morning. The times and the memory before and after go in the addendum below as they are read. The rendering service stays a web app of its own.
+Status: accepted, 2026-10-19. The SQL site, the Cosmos DB site and The Shed run in one process in one web app, APP-THEYARD-ONE-SS, on the same B2 plan, and each request is answered by the name it arrived on. The three web apps they ran in are retired: APP-THEYARD-SS and APP-THEYARD-COSMOS-SS were deleted at 15:52 and 15:53 UTC on Steve's word of the same morning, and APP-THESHED-SS is stopped until The Shed's DNS record names the new web app, then deleted. The cutover, its times and the memory before and after are in the addendum below. The rendering service stays a web app of its own.
 
 ## Reading list
 
@@ -13,7 +13,7 @@ For Steve, when he is fresh, in this order:
 
 ## In plain words
 
-Three small programs were each running on their own rented computer slot, and each slot costs memory just for existing, whether anyone visits or not. The plan they share had more memory going to that overhead than to the programs themselves. So the three now run as one program in one slot. It looks at the address a visitor typed and answers as the right site: the SQL site, the Cosmos DB site, or The Shed. Nothing a visitor sees changes, and splitting them apart again later is one file and one rule.
+Three of the four small programs on the plan were each running on their own rented computer slot, and each slot costs memory just for existing, whether anyone visits or not. The plan they share had more memory going to that overhead than to the programs themselves. So the three now run as one program in one slot. It looks at the address a visitor typed and answers as the right site: the SQL site, the Cosmos DB site, or The Shed. Nothing a visitor sees changes, and splitting them apart again later is one file and one rule.
 
 ## Context
 
@@ -23,7 +23,7 @@ The separate web apps were the design for load and separation: one process per s
 
 ## Decision
 
-**One image, one process, three names.** The image carries TheYard and The Shed. The process answers `theyard.stevenstout.biz`, `theyard-cosmos.stevenstout.biz` and `theshed.stevenstout.biz` (the `Hosts` settings). Which name a request arrived on is its Host header when App Service routed it by that name, which is how The Shed's domain arrives, bound straight to the web app; the two Yard domains arrive through the edge, which proxies both to the web app's own address and says which domain the visitor typed in `X-Yard-Host`. A header counts only when it names one of the three configured names, so the most a sender can choose is which of the three sites answers.
+**One image, one process, three names.** The image carries TheYard and The Shed. The process answers `theyard.stevenstout.biz`, `theyard-cosmos.stevenstout.biz` and `theshed.stevenstout.biz` (the `Hosts` settings). Which name a request arrived on is its Host header when App Service routed it by one of the three names, which is how The Shed's domain arrives, bound straight to the web app; the two Yard domains arrive through the edge, which proxies both to the web app's own address and says which domain the visitor typed in `X-Yard-Host`, read only when the Host is not one of the three. A header counts only when it names one of the three configured names, so the most a sender can choose is which of the three sites answers.
 
 ```live path=api/TheYard.Api/SiteHosts.cs region=site-hosts
 ```
@@ -33,7 +33,7 @@ The separate web apps were the design for load and separation: one process per s
 ```live path=api/TheYard.Api/Stores.cs region=backends
 ```
 
-**The Shed is its own application, started inside this process.** The Shed's Program.cs stays the way a reader starts it on their own machine. `ShedMount` starts the same application in this process: The Shed's own builder, its own four registrations, its own pipeline and controllers, in a service container of its own, with a server that has no socket where Kestrel would be. A request on The Shed's name is handed to that application before anything of TheYard's pipeline sees it. Starting it whole, rather than registering its services on TheYard's builder, removes every collision by construction: its Kestrel body limit configures a server that never listens, and its upload limit is set on each of its own requests instead; its rate limiter, exception handler and snake_case JSON stay in its container; its `/healthz` is reached only on its name; its documents, sample home and live sources are read from its own published folder, `/app/shed`, which `Shed__ContentRoot` names.
+**The Shed is its own application, started inside this process.** The Shed's Program.cs stays the way a reader starts it on their own machine. `ShedMount` starts the same application in this process: The Shed's own builder, its own four registrations, its own pipeline and controllers, in a service container of its own, with a server that has no socket where Kestrel would be. A request on The Shed's name is handed to that application before anything of TheYard's pipeline sees it. Starting it whole, rather than registering its services on TheYard's builder, removes every collision between the two service containers by construction: its Kestrel body limit configures a server that never listens, and its upload limit is set on each of its own requests instead; its rate limiter, exception handler and snake_case JSON stay in its container; its `/healthz` is reached only on its name; its documents, sample home and live sources are read from its own published folder, `/app/shed`, which `Shed__ContentRoot` names. What the two still share is the process: one memory limit, one set of environment variables (each reads only its own settings), and the framework's process-wide telemetry sources, so Application Insights may see a Shed request at both layers. Its lifetime is TheYard's: it answers no signal of its own and is stopped when TheYard stops. A Shed that cannot start answers its name with a 503 and leaves the Yard names running; a failure past The Shed's own error handler is logged in TheYard's log.
 
 ```live path=api/TheYard.Api/Composition/ShedMount.cs region=shed-mount
 ```
@@ -46,16 +46,47 @@ The separate web apps were the design for load and separation: one process per s
 
 **Deploy rolls one web app.** `deploy.yml` builds the image, rolls APP-THEYARD-ONE-SS and, before any domain, reads the Cosmos DB site's name and The Shed's name at the origin with `X-Yard-Host`: the first must get Azure Cosmos DB with no store named, the second The Shed's own health check and page. Deploy Cosmos and Deploy The Shed retired with their web apps, and so did the two container group files and The Shed's own template.
 
+## What was considered
+
+- **The Shed's services on TheYard's builder, routed with `RequireHost` and a host-conditioned `MapWhen` for its files.** The framework's own answer to one app on several names, and the merge brief's first design. Rejected because it puts two applications in one service container: The Shed's Kestrel body limit would apply to TheYard, its exception handler and snake_case JSON settings would reach TheYard's endpoints, and its rate limiter policies would share a namespace with TheYard's. Each could be scoped by hand; starting The Shed as its own application removes them all.
+- **The Shed in a container beside TheYard in the same web app (a sidecar).** Keeps two processes, which is the memory this change is for.
+- **A smaller second plan for The Shed.** Costs money the project does not spend, and the plan's outside-the-apps share goes with it.
+- **Keep the three web apps.** Right for load; the plan card's last row says this plan has none to speak of.
+
 ## Consequences
 
 - One process holds both catalogues' upkeep, both stores' connections and The Shed. A failure that takes the process down takes all three names down; before, it took one. The health check, the roll and the readiness wait are one each instead of three.
 - One roll for everything: a change to The Shed rolls TheYard and the renderer too, and CI runs on a push that touches only The Shed, because The Shed is built into the app.
 - The kept rings and the machines history are this process's, so the Admin tab on either Yard name reads the same history; it was two histories of two processes before.
-- The split is one entry in `infra/appservice.bicep`'s `sites` list and one rule in `netlify.toml` away when load returns: a second web app from the same image with its own `Hosts` values, and that domain's rule pointed at it.
+- The split is one entry in `infra/appservice.bicep`'s `sites` list and one rule in `netlify.toml` away when load returns: a second web app from the same image with its own `Hosts` values, and that domain's rule pointed at it. The Shed's own domain is the exception: its binding and certificate are set in Azure, not in a template, and move by hand, as they did on 19 October.
+
+## Addendum, 2026-10-19: the cutover, as it happened
+
+Read live through the day from the operator's PC; every time is UTC.
+
+| when | what |
+| --- | --- |
+| 13:46 | Before: the plan at 72 per cent, 2.52 of 3.5 GB; the SQL site 404 MB, the Cosmos DB site 370, the rendering service 105, The Shed 98, together 977 MB; the plan outside the apps 1,603 MB |
+| 13:53 | APP-THEYARD-ONE-SS created from `infra/appservice.bicep` on the plan, on the 1.0.3.183 image with the SQL site's three secret values read across; the only new resource |
+| 14:28 | 1.0.3.184 on main (30ee0dc) after its second gate run. The first was red on Prettier for three files under `render/` and on one Cosmos DB bid test that read a cached minimum; both fixed |
+| 14:34 | Deploy #367 built and pushed the image and was refused at Roll the site: the GitHub deploy identity holds Website Contributor on each web app it rolls, and none on the new one. The grant is the owner's to give |
+| 15:21 | The new web app rolled to 1.0.3.184 from the operator's PC instead; at its own address the Cosmos DB site's name got Azure Cosmos DB, the SQL site's got Azure SQL Database, and The Shed's name got The Shed's page, health, version and search |
+| 15:22 | The edge moved (Edge branch, run by hand once the origin was verified); both Yard domains served 1.0.3.184 eleven seconds later |
+| 15:25 to 15:35 | The rendering service pointed at the new web app; pages drawn on both sites again |
+| 15:35 to 15:36 | The Shed's name moved to the new web app with its existing certificate: 5 of 206 reads every 2 seconds failed, all between 15:36:05 and 15:36:38 |
+| 15:43 | Every public page on the three domains read green: 33 checks, the Store bar both ways, the proof, plan and peer cards |
+| 15:44 | The three old web apps stopped; 15:46 every check green again |
+| 15:52 and 15:53 | APP-THEYARD-SS and APP-THEYARD-COSMOS-SS deleted. The plan, the databases, the registry, the identity and the rendering service untouched |
+| 15:54 | The plan at 60 per cent, 2.10 of 3.5 GB: the one web app 388 MB, the rendering service 137 MB |
+| 16:54 | An hour after the delete, the number for the record: the plan at 61 per cent, 2.14 of 3.5 GB; the one web app 434 MB, the rendering service 139 MB, The Shed's old web app stopped at 0; the plan outside the apps 1,613 MB. Azure Monitor's own five-minute averages read 59.0 to 61.6 per cent from 15:54 to 16:49 |
+
+What moved and what did not. The plan went from 72 to 61 per cent, 2.52 to 2.14 GB, and all of it came from the apps: 977 MB for four became 573 MB for two, because the one process holding both sites and The Shed (434 MB) is far less than the three it replaced (876 MB). The row outside the apps, the one this record was argued from, did not shrink in the hour: 1,603 MB before, 1,613 MB after. So the share the platform holds outside the apps is not one sidecar per app in any way an hour shows, and the saving is the apps' own: two .NET runtimes and their caches that no longer exist. The record keeps the argument it was made on and this reading beside it; the outside row is worth reading again a day on.
+
+The Netlify edge read 782 credits left and 212 used in the billing period before its one deploy for this change.
 
 ## Where it sits
 
-The host ring only, and the deploy around it. Domain, Application and Infrastructure are unchanged: a store is still chosen per request by the host, and the rule for which one moved from a container setting to the request's name. The Shed's rings are its own and untouched; TheYard's host references its assembly and starts it. Single responsibility held at the file level: `SiteHosts` knows the names, `Backends` picks the store, `ShedMount` routes The Shed's name and `ShedApplication` runs it. The cost is blast radius, said under Consequences.
+The host ring only, and the deploy around it. Domain, Application and Infrastructure are unchanged: a store is still chosen per request in the host, by the `X-Yard-Store` header, else by the request's name, where until now it was the header, else a container setting. The Shed's rings are its own and untouched; TheYard's host references its assembly and starts it. Single responsibility held at the file level: `SiteHosts` knows the names, `Backends` picks the store, `ShedMount` routes The Shed's name and `ShedApplication` runs it. The cost is blast radius, said under Consequences.
 
 ## Files
 

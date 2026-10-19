@@ -22,10 +22,9 @@ public static class AuthRegistration
         // worth not writing twice; the session is a JWT this service signs and reads
         // itself, carried in a cookie the page cannot touch.
         //
-        // The signing key is configuration. The deploy hands both containers the same
-        // one from a repository secret (Auth__SigningKey in the container spec, filled
-        // at roll time like the connection strings), so a session survives a roll and
-        // a token minted by one container reads on the other. Without a usable one,
+        // The signing key is configuration. The deploy hands the web app one from a
+        // repository secret (Auth__SigningKey in infra/appservice.bicep, filled at roll
+        // time like the connection strings), so a session survives a roll. Without a usable one,
         // which is what a developer's machine, a test and a roll whose substitution
         // failed all have, the process invents a random key and says so: every session
         // ends with the process, and no key is ever committed (ADR: Three readers with

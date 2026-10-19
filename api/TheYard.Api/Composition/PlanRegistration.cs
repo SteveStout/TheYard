@@ -6,7 +6,7 @@ namespace TheYard.Api;
 /// <summary>
 /// The App Service plan card (ADR: The App Service plan, read every minute): the reader that asks
 /// Azure Monitor with the site's own identity, the keep in the document store, the recorder that
-/// runs on the SQL site alone, and the cached reader the endpoint answers from.
+/// runs in the one process, and the cached reader the endpoint answers from.
 /// </summary>
 public static class PlanRegistration
 {
@@ -25,8 +25,9 @@ public static class PlanRegistration
             : new MemoryPlanHistory("kept in this process's memory, so the readings end with it; the document store is not configured here");
         builder.Services.AddSingleton(history);
 
-        // One reading of a shared plan is the whole truth, so only the site whose default store
-        // is SQL records it; the Cosmos DB site reads the same keep.
+        // One reading of a shared plan is the whole truth, so one process records it: the one
+        // whose default store is SQL, which the one web app is, having no store default set. Were
+        // the sites split again, the Cosmos DB site would read the same keep without recording.
         bool records = string.Equals(host.Backends.Default.Key, "sql", StringComparison.Ordinal);
         if (records)
         {

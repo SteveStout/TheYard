@@ -7,7 +7,7 @@ namespace TheYard.Api;
 /// <summary>
 /// The six resource cards under Cloud infrastructure (ADR: One frame for every resource): one
 /// reader of Azure Monitor and one of Netlify, the resource group's list each card finds its
-/// resource in, a keep per card, the one recorder on the SQL site and the one cached reader the
+/// resource in, a keep per card, the one recorder and the one cached reader the
 /// endpoint answers from. Each card's own file says what it reads and how it draws.
 /// </summary>
 public static class CloudRegistration
@@ -25,8 +25,8 @@ public static class CloudRegistration
             : new MemoryResourceHistory("kept in this process's memory, so the readings end with it; the document store is not configured here");
         var kept = cards.Select(card => (card, KeepOf(card))).ToList();
 
-        // One reading of a shared resource is the whole truth, so only the SQL site records, as
-        // with the plan; the Cosmos DB site reads the same keeps.
+        // One reading of a shared resource is the whole truth, so one process records it, as with
+        // the plan: the one whose default store is SQL, which the one web app is.
         bool records = string.Equals(host.Backends.Default.Key, "sql", StringComparison.Ordinal) && IdentityTokens.OnAppService;
         if (records)
         {

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="650" viewBox="0 0 1400 650" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>Every app TheYard runs ships the same way: build the Docker image, push it to the registry, point the web app at the tag, verify</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .lane { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 600; }
+      .lane-title { fill: #3f3a37; font-size: 17px; font-weight: 700; }
+      .lane-sub { fill: #62666f; font-size: 13px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 10.5px; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+  <rect width="1400" height="650" fill="#e9e6e7"/>
+  <text x="30" y="44" class="heading">One shape for every app that runs: a Docker image, by tag</text>
+  <text x="30" y="68" class="caption">Both web apps run a container image built from this repository's own Dockerfile and pulled from the registry as the identity. Nothing is zip-deployed or built on the server.</text>
+  <rect x="30" y="110" width="1340" height="210" class="lane"/>
+  <text x="50" y="140" class="lane-title">The one web app: both sites and The Shed</text>
+  <text x="50" y="160" class="lane-sub">.github/workflows/deploy.yml, on every push to main</text>
+  <rect x="50" y="176" width="300" height="128" class="box"/>
+  <text x="64" y="202" class="title">Build the image</text>
+  <text x="64" y="223" class="mono">Dockerfile, three stages</text>
+  <text x="64" y="246" class="body">Node builds the page; the SDK</text>
+  <text x="64" y="263" class="body">publishes TheYard and The Shed;</text>
+  <text x="64" y="280" class="body">the runtime image holds both.</text>
+  <rect x="380" y="176" width="300" height="128" class="box"/>
+  <text x="394" y="202" class="title">Push to the registry</text>
+  <text x="394" y="223" class="mono">crtheyardsszmnetj67bn5h2/theyard:vN</text>
+  <text x="394" y="246" class="body">One tag per version, signed in</text>
+  <text x="394" y="263" class="body">as the workflow (OIDC), no</text>
+  <text x="394" y="280" class="body">password anywhere.</text>
+  <path d="M350 240 L380 240" class="flow"/>
+  <rect x="710" y="176" width="300" height="128" class="box"/>
+  <text x="724" y="202" class="title">Point the web app at the tag</text>
+  <text x="724" y="223" class="mono">APP-THEYARD-ONE-SS: DOCKER|...:vN</text>
+  <text x="724" y="246" class="body">The settings it holds, then the</text>
+  <text x="724" y="263" class="body">image; App Service pulls it as</text>
+  <text x="724" y="280" class="body">id-theyard-ss.</text>
+  <path d="M680 240 L710 240" class="flow"/>
+  <rect x="1040" y="176" width="300" height="128" class="box"/>
+  <text x="1054" y="202" class="title">Verify, then the edge</text>
+  <text x="1054" y="223" class="mono">origin, the three names, domains</text>
+  <text x="1054" y="246" class="body">The version, readiness, the Cosmos</text>
+  <text x="1054" y="263" class="body">DB name and The Shed's name; the</text>
+  <text x="1054" y="280" class="body">edge moves after, if it changed.</text>
+  <path d="M1010 240 L1040 240" class="flow"/>
+  <rect x="30" y="350" width="1340" height="210" class="lane"/>
+  <text x="50" y="380" class="lane-title">The rendering service</text>
+  <text x="50" y="400" class="lane-sub">.github/workflows/deploy-render.yml, on every push to main</text>
+  <rect x="50" y="416" width="300" height="128" class="box"/>
+  <text x="64" y="442" class="title">Build the image</text>
+  <text x="64" y="463" class="mono">render/Dockerfile, two stages</text>
+  <text x="64" y="486" class="body">Node builds the renderer from</text>
+  <text x="64" y="503" class="body">the site's own source; the</text>
+  <text x="64" y="520" class="body">runtime is Node and that build.</text>
+  <rect x="380" y="416" width="300" height="128" class="box"/>
+  <text x="394" y="442" class="title">Push to the registry</text>
+  <text x="394" y="463" class="mono">crtheyardsszmnetj67bn5h2/theyard-render:vN</text>
+  <text x="394" y="486" class="body">The same version as the API,</text>
+  <text x="394" y="503" class="body">the same registry, the same</text>
+  <text x="394" y="520" class="body">sign-in.</text>
+  <path d="M350 480 L380 480" class="flow"/>
+  <rect x="710" y="416" width="300" height="128" class="box"/>
+  <text x="724" y="442" class="title">Point the web app at the tag</text>
+  <text x="724" y="463" class="mono">APP-THEYARD-RENDER-SS: DOCKER|...:vN</text>
+  <text x="724" y="486" class="body">One call: every other setting</text>
+  <text x="724" y="503" class="body">is infra/render.bicep's.</text>
+  <text x="724" y="520" class="body"></text>
+  <path d="M680 480 L710 480" class="flow"/>
+  <rect x="1040" y="416" width="300" height="128" class="box"/>
+  <text x="1054" y="442" class="title">Verify</text>
+  <text x="1054" y="463" class="mono">its own /readyz</text>
+  <text x="1054" y="486" class="body">Ready as the version it was</text>
+  <text x="1054" y="503" class="body">built as, and says whether the</text>
+  <text x="1054" y="520" class="body">API has caught up.</text>
+  <path d="M1010 480 L1040 480" class="flow"/>
+  <text x="30" y="624" class="caption">Source: docs/images/deploy-shape.svg, drawn by docs/images/deploy-shape.mjs from the two workflows it names.</text>
+</svg>

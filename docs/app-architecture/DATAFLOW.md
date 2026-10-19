@@ -55,7 +55,8 @@ What that is worth: a developer can trace any request to the file that handles i
 3. **Enrich and cache.** `InventoryService` (`api/TheYard.Application/InventoryService.cs`)
    applies each vehicle's photo gallery (hash-picked by `api/TheYard.Domain/PhotoGallery.cs`
    from `api/TheYard.Api/photo-manifest.json` pools, preferring the vehicle's own make)
-   and materializes the list plus an id index, once, eagerly at startup.
+   and fills the store's catalogue with them, which a page is then a query against: the
+   process holds none of the hundred thousand in memory (ADR: The store does the work).
 4. **Query.** A request like `GET /api/vehicles?make=Ford&status=live&sort=price-asc`
    binds through `api/TheYard.Api/VehicleQueryParams.cs`, which validates and produces
    a filter, a sort, and a clock (`api/TheYard.Api/Clocks.cs`): now, and the UTC

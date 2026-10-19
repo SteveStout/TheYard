@@ -72,7 +72,7 @@ Here: reading a picture's size used to load the whole file, up to 941 KB, on eve
 
 Why: Server GC gives each core its own heap and is tuned for a machine of one's own; on a small shared plan, Workstation GC with concurrent collection keeps the footprint small. A heap limit makes a regression the runtime's problem inside its own share rather than the neighbours'.
 
-Here: Workstation and concurrent since ADR-094; the limit is `DOTNET_GCHeapHardLimitPercent=0x1E` on each .NET site. Settings read from the environment are hexadecimal, so `0x1E` is thirty per cent, and a plain `30` would have been forty-eight.
+Here: Workstation and concurrent since ADR-094; the limit is `DOTNET_GCHeapHardLimitPercent=0x1E` on the .NET web app (one since 19 October). Settings read from the environment are hexadecimal, so `0x1E` is thirty per cent, and a plain `30` would have been forty-eight.
 
 ```live path=api/TheYard.Tests/MemoryRulesTests.cs region=rule-e
 ```
@@ -96,7 +96,7 @@ Here: none was found; the request, log, error and SQL rings were already rings. 
 
 Why: a rule nobody measures is a guess. The Node rendering service ran under `--max-old-space-size=192`; whether that was tight or padded is a reading, not an opinion. Read on 19 October it used 18 MB of heap with 79 MB resident, so it runs under `--max-old-space-size=128` now, with room still to spare. `--optimize_for_size` was tried beside it the same night and is a flag Node refuses in `NODE_OPTIONS`: the container did not start until it was taken out, and a test now holds it out, and each .NET site runs with `DOTNET_GCConserveMemory=7`, which has the collector compact the large object heap once it is fragmented.
 
-Here: the rendering service's `/readyz` answers its heap used against its limit, and each .NET site's `/api/admin/machines` answers the collector's own reading.
+Here: the rendering service's `/readyz` answers its heap used against its limit, and the .NET web app's `/api/admin/machines` answers the collector's own reading.
 
 ```live path=api/TheYard.Api/Machines.cs region=gc-reading
 ```

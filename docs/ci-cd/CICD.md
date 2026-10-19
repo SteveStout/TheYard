@@ -5,7 +5,7 @@ reviewer or anyone learning how small projects ship safely.
 
 ## In plain words
 
-This page shows how a code change gets from a laptop to the live site. Every test runs before a version can ship (the ship's gate), and a push to the main branch then builds the API's container image beside the rendering service's and rolls each onto its web apps with no human step.
+This page shows how a code change gets from a laptop to the live site. Every test runs before a version can ship (the ship's gate), and a push to the main branch then builds the API's container image beside the rendering service's and rolls each onto its web app with no human step.
 
 What that is worth: a developer can merge knowing a failing test stops the change before it reaches anyone, and the organization ships often with no Azure password or key stored anywhere to leak.
 
@@ -42,6 +42,12 @@ repository's main branch, so no Azure password or key is stored anywhere. The
 version in the page footer is stamped by that build. The full record is
 ADR: The deploy pipeline, below this entry in the menu.
 
+Both web apps ship the same way: a Docker image built from this repository's own Dockerfile, pushed to the registry, set on the web app by its tag, and verified before anything else moves. Nothing is zip-deployed and nothing is built on the server:
+
+[![Every app TheYard runs ships the same way: build the Docker image, push it to the registry, point the web app at the tag, verify](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/deploy-shape.svg)](https://theyard.stevenstout.biz/api/docs/diagrams/deploy-shape)
+
+*A preview. [Open the deployment diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/deploy-shape) to zoom in.*
+
 ![The Deploy workflow's runs on GitHub Actions, one green run per version on the live site](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-deploy-runs.jpg)
 
 One run, step by step: compute the version, sign in to Azure with the
@@ -65,8 +71,10 @@ when a site's API has not caught up yet:
 ```
 
 **The edge deploys itself.** The HTTPS front door of this site (see the
-Hosting menu) is three files in this repository. Netlify watches the repo and
-redeploys the edge only when those files change, with no human in the loop.
+Hosting menu) is three files in this repository. Netlify builds the `edge`
+branch, which `edge-branch.yml` moves to main only after Deploy has verified
+the origin the rules name and only when those files changed, with no human in
+the loop.
 The rule that keeps an app push from redeploying three unchanged files is in
 the edge's own configuration:
 

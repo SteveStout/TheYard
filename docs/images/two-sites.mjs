@@ -181,7 +181,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <!-- ===================== Lane 1: the names ===================== -->
   <rect x="${L1.x}" y="92" width="${L1.w}" height="${lane1Bottom - 92}" class="lane"/>
   <text x="${L1.x + 20}" y="120" class="lane-title">The names, at Wix DNS</text>
-  <text x="${L1.x + 20}" y="140" class="lane-sub">Three names at the edge, and The Shed's at the web app.</text>
+  <text x="${L1.x + 20}" y="140" class="lane-sub">Four names at the edge, and The Shed's at the web app.</text>
 
   <!-- ===================== Lane 2: the edge ===================== -->
   <rect x="${L2.x}" y="92" width="${L2.w}" height="${lane2Bottom - 92}" class="lane"/>

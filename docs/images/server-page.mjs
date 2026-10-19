@@ -35,7 +35,7 @@ const FIRST = [
   ['The address', 'the visitor\'s browser', [
     'theyard.stevenstout.biz/?view=inventory, ?vehicle= or ?doc=. A page is the bare path with its query; the bundle, the photographs and /api are other paths, which never come this way.']],
   ['The edge', 'edge/_redirects', [
-    'Netlify matches the bare path on either name and rewrites it, query and all, to the rendering service as that site: /site/sql or /site/cosmos. Everything else goes to that site\'s API as before.']],
+    'Netlify matches the bare path on either name and rewrites it, query and all, to the rendering service as that site: /site/sql or /site/cosmos. Everything else goes, by netlify.toml, to the one web app with X-Yard-Host naming the site.']],
   ['The page and the build', 'render/page.ts', [
     'The service reads index.html and /api/version from the API it draws for, kept fifteen seconds. The page names the bundle that API serves; the service draws only when the API runs the build the service was made from, and during a roll it sends the API\'s page untouched for the browser to draw.']],
   ['One loader per view, under one deadline', 'render/loaders.ts', [

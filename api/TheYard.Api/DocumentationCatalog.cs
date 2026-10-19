@@ -178,6 +178,7 @@ public static class DocumentationCatalog
         ["solid"] = ("docs/images/solid.svg", "SOLID, in plain words"),
         ["plan-minute"] = ("docs/images/plan-minute.svg", "The plan's minute, from Azure to the card"),
         ["cloud-infrastructure"] = ("docs/images/cloud-infrastructure.svg", "Cloud infrastructure: seven resources, one frame"),
+        ["deploy-shape"] = ("docs/images/deploy-shape.svg", "One shape for every app that runs"),
     };
     // #endregion diagrams
 }

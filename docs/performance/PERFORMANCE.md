@@ -496,6 +496,24 @@ The whole gate, same-shaped ships compared: a version that leaves `api/` alone r
 
 **The lesson that cost two red takes.** The one-tab measurement of 1.0.3.116 said the read spent four fifths of its time waiting and would fall by two thirds; at the gate it fell by nothing, because on a saturated machine a tab that waits is lending its core to another tab. A measurement taken in a different shape from the thing it predicts is a hypothesis, not a reading; the gate's own line decided, and the next lever was chosen from what that line said.
 
+## One web app, measured on 19 October
+
+Read at the domains from the operator's PC at 15:54 UTC on 19 October, after the two Yard sites and The Shed moved into one web app (ADR: One web app for every .NET process), five reads each with `curl`, compressed as a browser asks. Time to first byte and the whole response, in milliseconds:
+
+| page | SQL site, first byte (median, slowest) | Cosmos DB site, first byte (median, slowest) | whole page, median | bytes |
+| --- | --- | --- | --- | --- |
+| `/` | 273, 403 | 209, 222 | 311 and 292 | 14,726 |
+| a vehicle | 203, 293 | 203, 232 | 337 and 323 | 25,790 |
+| a record | 225, 238 | 231, 269 | 317 and 402 | 28,200 |
+| the Admin tab | 224, 450 | 222, 431 | 293 and 334 | 11,317 |
+| The Shed's home | 249, 405 | | 249 | 4,545 |
+
+The same pages in Chrome on the same PC: `/` on the SQL site answered its first byte at 226 ms, finished its document at 461 ms and loaded at 684 ms with 19 requests; the Admin tab on the Cosmos DB site painted first at 496 ms and loaded at 630 ms with 69; The Shed painted first at 668 ms and loaded at 951 ms with 29, most of them its stylesheets at about 205 ms each. Every request on every page went to the page's own domain.
+
+The cache rules, read off the same responses: every hashed file under `/assets` (the bundle, the stylesheet, the font) is `public, max-age=31536000, immutable` and kept at the edge; the API and the documents say `no-cache` and are compressed with Brotli. The Shed's files keep plain names and answer with an `ETag`, so a browser asks before reusing them, which The Shed's own request pipeline chose and says why in its comments.
+
+What this read was for: the list of fixes to make in order of what they cost a visitor, and it named none. No page took over 500 ms to its first byte, the slowest single read was 450 ms, nothing loads from another domain, and nothing immutable is uncached. The one shape worth a later look is the Admin tab's cards, whose code is fetched at about 1.9 s, after the tab's first reads, because each card is its own chunk; it does not delay the first paint, so it was left as it is and named here.
+
 ## Check any of it yourself
 
 - Open the **Admin** tab on either site: live health checks per store, the paired-round comparison card,

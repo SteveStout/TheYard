@@ -32,7 +32,7 @@
   <!-- ===================== Lane 1: the names ===================== -->
   <rect x="40" y="92" width="400" height="678" class="lane"/>
   <text x="60" y="120" class="lane-title">The names, at Wix DNS</text>
-  <text x="60" y="140" class="lane-sub">Three names at the edge, and The Shed's at the web app.</text>
+  <text x="60" y="140" class="lane-sub">Four names at the edge, and The Shed's at the web app.</text>
 
   <!-- ===================== Lane 2: the edge ===================== -->
   <rect x="470" y="92" width="460" height="745" class="lane"/>

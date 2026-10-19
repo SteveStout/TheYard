@@ -61,9 +61,9 @@
   <text x="75" y="607" class="title">InventoryService</text>
   <text x="75" y="629" class="mono">api/TheYard.Application/InventoryService.cs</text>
   <text x="75" y="651" class="body">Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the</text>
-  <text x="75" y="668" class="body">pools in api/TheYard.Api/photo-manifest.json) and materializes the list plus an id index</text>
-  <text x="75" y="685" class="body">once. The host awaits that load in api/TheYard.Api/Composition/Startup.cs before it</text>
-  <text x="75" y="702" class="body">serves.</text>
+  <text x="75" y="668" class="body">pools in api/TheYard.Api/photo-manifest.json) and fills the store's catalogue, which</text>
+  <text x="75" y="685" class="body">every page then queries; the process holds none of them (ADR: The store does the work).</text>
+  <text x="75" y="702" class="body">The warm runs beside the server and /readyz waits for it.</text>
   <path d="M120 716 L120 750" class="flow"/>
   <text x="132" y="738" class="flow-label">then, for every request</text>
   <rect x="60" y="752" width="760" height="118" class="box"/>
@@ -81,8 +81,8 @@
   <text x="75" y="1010" class="body">figures the page shows.</text>
   <text x="75" y="1027" class="body">2. Where: api/TheYard.Domain/VehicleFilter.cs</text>
   <text x="75" y="1044" class="body">3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs</text>
-  <text x="75" y="1061" class="body">4. Skip and Take for the page. Auction windows come from</text>
-  <text x="75" y="1078" class="body">api/TheYard.Domain/AuctionSchedule.cs, all in memory.</text>
+  <text x="75" y="1061" class="body">4. The store filters, orders and pages; only the page comes back. Auction windows come</text>
+  <text x="75" y="1078" class="body">from api/TheYard.Domain/AuctionSchedule.cs.</text>
   <path d="M120 1092 L120 1126" class="flow"/>
   <rect x="60" y="1128" width="760" height="101" class="box"/>
   <text x="75" y="1154" class="title">VehicleWire</text>

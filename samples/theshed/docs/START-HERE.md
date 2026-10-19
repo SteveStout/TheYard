@@ -42,7 +42,8 @@ method of [TheYard](https://theyard.stevenstout.biz).
 | `tests/` | xUnit under `TestProject.Tests`, `node --test` under `js`. |
 | `docs/` | These documents. |
 | `sample-home/` | What is browsed when nothing else is configured. |
-| `infra/` | The Azure web app The Shed runs on, as Bicep. |
+
+Live, The Shed runs inside TheYard's one web app, which starts this same application from its published folder and hands it every request on `theshed.stevenstout.biz`; that web app's Bicep is TheYard's `infra/appservice.bicep` (ADR-001, the addendum of 19 October).
 
 ## The records
 

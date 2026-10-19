@@ -155,8 +155,8 @@ that one file.
 
 `samples/theshed` is The Shed, a sample that is not one of the eleven pieces: its own
 solution (`TestProject.sln`, net10.0, controllers, a page in TypeScript compiled by tsc alone), its own tests,
-its own twelve records served from its own running app, and its own deploy to a third web app
-on the plan the two sites share. It was built as a developer test project in
+its own twelve records served from its own running app; since 19 October it is built into TheYard's
+image and served by the one web app on its own name (Composition/ShedMount.cs, ADR-105). It was built as a developer test project in
 September 2026 on the starter that came with it, in this project's working method: dependencies
 inward in four folders instead of five projects, sealed records on the wire, a problem document
 on every failure, a rules table beside the tests that hold it, and the palette carried over.

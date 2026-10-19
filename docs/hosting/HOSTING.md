@@ -15,7 +15,7 @@ In practice, a developer sees how a small production setup fits together, with i
 
 ## The picture
 
-[![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to the rendering service and the site's web app on the App Service plan on Azure; a green gate's push through the three deploys to the registry and the roll; and Azure Front Door, designed, parameterized and still refused](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
+[![TheYard infrastructure: a request from the browser through Wix DNS and the Netlify edge to the rendering service and the site's web app on the App Service plan on Azure; a green gate's push through the two deploys to the registry and the roll; and Azure Front Door, designed, parameterized and still refused](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 
 *A preview. [Open the infrastructure diagram in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
 to zoom in and follow it; every diagram on this site opens that way (ADR: Diagram pages).*
@@ -120,30 +120,46 @@ Azure, and App Service's front end routes it there by the Host header. No rule
 in this repository is involved.
 
 **Inside the web app: which name.** One class knows the three names and which
-one a request arrived on. The Host header counts when App Service routed by it;
-the edge's `X-Yard-Host` counts when it names one of the three, so a sender can
-choose between the three sites and nothing else:
+one a request arrived on. The Host header first, when App Service routed the
+request by one of the three names; only on any other Host, which is the web
+app's own address where the edge sends both Yard names, the edge's
+`X-Yard-Host`, and only when it names one of the three. A sender can choose
+between the three sites and nothing else:
 
 ```live path=api/TheYard.Api/SiteHosts.cs region=site-hosts
 ```
 
 **The Shed's name goes to The Shed.** Before anything of TheYard's pipeline sees
 it, a request on The Shed's name is handed to The Shed's own application,
-started inside the same process from its own published folder:
+started inside the same process from its own published folder. The mount sits
+in `Program.cs` right after the app is built, so it runs ahead of TheYard's
+whole request pipeline:
 
 ```live path=api/TheYard.Api/Composition/ShedMount.cs region=shed-mount
+```
+
+The application it hands the request to is The Shed's own: its builder, its
+registrations, then its request pipeline (`samples/theshed/Composition/RequestPipeline.cs`)
+and its controllers (`samples/theshed/Controllers`), on a server with no socket:
+
+```live path=api/TheYard.Api/ShedApplication.cs region=shed-application
 ```
 
 **A Yard name picks the store.** A request that names a store with
 `X-Yard-Store` gets it, which is how the proof card and the measurements ask for
 one; otherwise the name picks it, and a request on no name (a health probe, the
-deploy's first read) gets the relational store:
+deploy's first read) gets the relational store. Every endpoint then asks
+`CurrentBackend`, resolved once per request from that answer, and awaits the
+store's warmth before it reads:
 
 ```live path=api/TheYard.Api/Stores.cs region=backends
 ```
 
-**The rendering service calls back.** For a page it reads the one web app,
-naming the site's store on every read, because both sites share one address:
+**The rendering service calls back.** The edge sends a page to it as
+`/site/sql` or `/site/cosmos`; `render/server.mjs` looks the name up in
+`YARD_SITES`, where both names are the one web app's address, and the name is
+also the store's key. Every read then names that store, because both sites
+share one address:
 
 ```live path=render/loaders.ts region=reads
 ```
@@ -160,8 +176,9 @@ Let's Encrypt at the edge, issued and renewed automatically, one certificate
 for all four names (the bare domain, www, theyard and theyard-cosmos).
 Nothing was purchased and nothing expires by surprise. The edge-to-origin hop was plain
 HTTP while the origin was a container group with no TLS listener; since 1.0.0.156 it is
-HTTPS, on the certificate Azure manages for `azurewebsites.net`, so the chain is
-encrypted end to end.
+HTTPS, on the certificate Azure manages for `azurewebsites.net`, so both legs are
+encrypted: the browser to Netlify, and Netlify to the origin. The Shed's name has
+one leg, the browser to App Service, on its managed certificate.
 
 ## Why not Front Door today
 
