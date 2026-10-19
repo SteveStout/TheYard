@@ -132,6 +132,7 @@ public static class DocumentationCatalog
         ["adr-the-app-service-plan-read-every-minute"] = "docs/decisions/ADR-101-the-app-service-plan-read-every-minute.md",
         ["adr-one-frame-for-every-resource"] = "docs/decisions/ADR-102-one-frame-for-every-resource.md",
         ["adr-the-store-does-the-work"] = "docs/decisions/ADR-103-the-store-does-the-work.md",
+        ["adr-memory-follows-traffic"] = "docs/decisions/ADR-104-memory-follows-traffic.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

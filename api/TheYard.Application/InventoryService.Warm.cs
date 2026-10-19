@@ -219,6 +219,12 @@ public sealed partial class InventoryService
         {
             try
             {
+                if (attempt > 1)
+                {
+                    // Said once the fill is running again, so the Admin tab does not show a refusal
+                    // that has already been got past.
+                    _note = $"the store holds {from:N0} of {store.Target:N0}; filling it beside the site again after a refused batch";
+                }
                 await FillAsync(store, expansion, from, pause: true);
                 int filled = await store.FilledAsync();
                 Volatile.Write(ref _filled, filled);

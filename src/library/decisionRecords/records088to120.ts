@@ -122,4 +122,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '103',
   },
+  adrMemoryFollowsTraffic: {
+    title: 'ADR: Memory follows traffic',
+    menuLabel: 'ADR: Memory follows traffic',
+    url: '/api/docs/adr-memory-follows-traffic',
+    kind: 'adr',
+    number: '104',
+  },
 } as const satisfies Record<string, RecordEntry>;

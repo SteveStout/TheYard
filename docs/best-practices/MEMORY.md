@@ -105,6 +105,8 @@ Here: the rendering service's `/readyz` answers its heap used against its limit,
 
 `GET /api/admin/machines` answers, for the process that served it, the GC mode in effect, the heap against the limit it may grow to, generation 2 and the large object heap after the last collection, how much is pinned or fragmented, the share of time spent in collections, and how many vehicles the process holds. The two numbers worth watching first are the heap against the limit and the catalogue held, which reads zero.
 
+The card Memory against traffic, under Cloud infrastructure, draws the working set and the processor against requests a minute and reads red when memory climbs while traffic is flat, the shape a leak or an unbounded cache makes; on the readings the site kept it reads red the week the catalogue moved into each process (ADR: Memory follows traffic).
+
 ## Further reading
 
 - Microsoft Learn, [Fundamentals of garbage collection](https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/fundamentals)

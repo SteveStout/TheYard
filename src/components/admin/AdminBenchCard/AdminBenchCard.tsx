@@ -34,6 +34,7 @@ export const CARD_CHUNKS = {
   ProofCard: () => import('../ProofCard/ProofCard'),
   SpendCard: () => import('../SpendCard/SpendCard'),
   MachinesCard: () => import('../MachinesCard/MachinesCard'),
+  FollowsCard: () => import('../FollowsCard/FollowsCard'),
   PlanCard: () => import('../PlanCard/PlanCard'),
   CloudResourceCard: () => import('../CloudResourceCard/CloudResourceCard'),
   ExperimentCard: () => import('../ExperimentCard/ExperimentCard'),
@@ -70,6 +71,8 @@ const ProofCard = lazy(CARD_CHUNKS.ProofCard);
 const SpendCard = lazy(CARD_CHUNKS.SpendCard);
 /** The Machines card, its code fetched the first time it is drawn. */
 const MachinesCard = lazy(CARD_CHUNKS.MachinesCard);
+/** Memory against traffic, its code fetched the first time it is drawn. */
+const FollowsCard = lazy(CARD_CHUNKS.FollowsCard);
 const PlanCard = lazy(CARD_CHUNKS.PlanCard);
 const CloudResourceCard = lazy(CARD_CHUNKS.CloudResourceCard);
 /** The Experiment card, its code fetched the first time it is drawn. */
@@ -174,6 +177,14 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
             machines={machines}
             window={machineWindow}
             toolbar={toolbar('on the machines card', 'machines-card-window')}
+          />
+        );
+      case 'follows':
+        return (
+          <FollowsCard
+            tick={tick}
+            window={machineWindow}
+            toolbar={toolbar('on the memory against traffic card', 'follows-window')}
           />
         );
       case 'plan':

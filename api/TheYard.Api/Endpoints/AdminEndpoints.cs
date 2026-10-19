@@ -2,6 +2,7 @@
 // wire format two replies share, and the map of every route. The handlers live beside it, one
 // file per card group:
 //   AdminEndpoints.Observability.cs      the rings, the timing, the Store bar, Azure, the peer, the machines
+//   AdminEndpoints.Follows.cs            memory against traffic, and the verdict on it
 //   AdminEndpoints.Activity.cs           site activity, the visitor rows and the kept log
 //   AdminEndpoints.ProofAndPages.cs      the page sweep, the tests, the proof and the experiment
 //   AdminEndpoints.CostsAndTelemetry.cs  what Azure charges, and the last hour from Application Insights
@@ -149,6 +150,16 @@ public static partial class AdminEndpoints
             .WithTags("Admin")
             .WithSummary("What the container and the two stores are doing, each as that machine reports itself, over the last hour or a kept window of 24h, 7d or 30d");
         // #endregion machines-endpoint
+
+        // #region follows-endpoint
+        // Memory against traffic: the processor should follow the requests and memory should
+        // not, so memory that climbs while traffic is flat is read as a leak or an unbounded
+        // cache, the shape the catalogue held in memory made (ADR: Memory follows traffic).
+        app.MapGet("/api/admin/follows", Follows)
+            .WithName("GetFollows")
+            .WithTags("Admin")
+            .WithSummary("The processor and memory against requests a minute over the last hour or a kept window of 24h, 7d or 30d, and whether memory climbed while traffic stayed flat");
+        // #endregion follows-endpoint
 
         // #region page-status-endpoints
         // The last sweep, whoever asked for it. Public, like every other reading on

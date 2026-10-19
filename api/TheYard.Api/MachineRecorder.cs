@@ -203,5 +203,26 @@ public sealed class MachineHistoryReader(IMachineHistory history, string site)
 
         return view;
     }
+
+    /// <summary>
+    /// A kept window's buckets as the memory-against-traffic card reads them: the same query the
+    /// machines card makes, with the bucket's length, or nothing when the window is the hour or
+    /// the store keeps nothing (ADR: Memory follows traffic).
+    /// </summary>
+    public async Task<(IReadOnlyList<MachineBucket> Buckets, int BucketMinutes)> BucketsAsync(string window, DateTimeOffset now, CancellationToken cancellation)
+    {
+        if (MachineWindows.Parse(window) is not { } chosen || !(await history.AvailabilityAsync(cancellation)).Available)
+        {
+            return ([], 0);
+        }
+        var buckets = await history.QueryAsync(site, now - chosen.Length, chosen.Grain, cancellation);
+        int minutes = chosen.Grain switch
+        {
+            MachineGrain.FiveMinutes => 5,
+            MachineGrain.Hour => 60,
+            _ => 240,
+        };
+        return (buckets, minutes);
+    }
 }
 // #endregion machine-recorder

@@ -84,6 +84,9 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   // An instrument's scale, drawn at the weights a scale is read at, not an icon.
   'PulseBand.module.css': ['.axis', '.minor', '.major', '.fill', '.marker'],
   'Watermark.module.css': ['.rows'],
+  // Memory against traffic (ADR: Memory follows traffic): each scatter's frame and the straight
+  // line through its dots. Drawings, not icons.
+  'FollowsCard.module.css': ['.frame', '.trend'],
 };
 
 describe('the icons', () => {

@@ -30,6 +30,9 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
         ? new CatalogueFillPace(5_000, TimeSpan.Zero, int.MaxValue)
         : new CatalogueFillPace(1_000, TimeSpan.FromMilliseconds(200), 5_000);
 
+    /// <summary>The offset from which a page reads its places off the index first and its rows after.</summary>
+    public const int DeepSkip = 1_000;
+
     // Whether the table holds vehicles past this catalogue, assumed so until it has been counted.
     private volatile bool _beyond = true;
 
@@ -196,15 +199,20 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
             return [];
         }
         await using var db = await contexts.CreateDbContextAsync();
-        if (!local || filter.Tokens.Count == 0)
+        bool word = local && filter.Tokens.Count > 0;
+        if (!word && skip < DeepSkip)
         {
             var rows = await Ordered(Query(db, filter), order).Skip(skip).Take(take).ToListAsync();
             return [.. rows.Select(row => row.ToEntry())];
         }
-        // With a typed word on a SQLite file, the page's places first, off the words index alone and in an order no
-        // index serves, so the planner cannot walk an order's index reading every row for its text;
-        // then the page's rows by their place.
-        var places = await Unindexed(Query(db, filter), order).Skip(skip).Take(take).Select(row => row.Seq).ToListAsync();
+        // A page deep in the order, or a typed word on a SQLite file: the page's places first, then
+        // its rows by their place. Deep, the places are read off the order's own index, which holds
+        // the place, so the rows skipped over are index entries and never the table's rows (an
+        // offset of 40,000 took 6.4 seconds on Azure SQL Database read the other way). With a word,
+        // the places come off the words index in an order no index serves, so the planner cannot
+        // walk an order's index reading every row for its text.
+        var places = await (word ? Unindexed(Query(db, filter), order) : Ordered(Query(db, filter), order))
+            .Skip(skip).Take(take).Select(row => row.Seq).ToListAsync();
         if (places.Count == 0)
         {
             return [];

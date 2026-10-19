@@ -247,6 +247,17 @@ public sealed class StoreCatalogueTests
                 Assert.False(plan.Contains("TEMP B-TREE FOR ORDER BY", StringComparison.Ordinal), $"the {order} page for {filter.Key()} sorts every match: {plan}");
             }
 
+            // A page deep in the order reads its places off the order's own index alone, so the rows
+            // it skips over are index entries and never the table's.
+            foreach (var order in new[] { CatalogueOrder.EndAscending, CatalogueOrder.PriceAscending, CatalogueOrder.BidsDescending })
+            {
+                capture.Clear();
+                var live = new CatalogueFilter { SinceAnchorMs = since, Segment = CatalogueSegment.Live };
+                await store.PageAsync(live, order, EfVehicleCatalogue.DeepSkip, 100);
+                string plan = await PlanAsync(file, capture.Taken[0]);
+                Assert.True(plan.Contains("COVERING INDEX", StringComparison.Ordinal), $"the deep {order} page reads the table for the rows it skips: {plan}");
+            }
+
             // A typed word is looked for in the words index alone: the page's places are read off it
             // first, and only the page's own rows come from the table after.
             var word = new CatalogueToken(vehicles[3].Model.ToLowerInvariant(), []);

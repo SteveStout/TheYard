@@ -67,6 +67,7 @@ export const BENCH_CARDS: BenchCard[] = [
   card('edge', 'The Netlify edge', 'cloud'),
   card('azure', "Azure's view of the container", 'cloud'),
   card('machines', 'What the machines are doing', 'cloud'),
+  card('follows', 'Memory against traffic', 'cloud'),
   card('errors', 'Recent errors', 'broke'),
   card('log', 'The log, as the console got it', 'broke'),
   card('kept', 'Kept log', 'broke', 'kept-logs-card'),
