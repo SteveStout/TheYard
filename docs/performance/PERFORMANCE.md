@@ -150,6 +150,18 @@ From a desk in Missouri through the edge the listing answered in a median of 418
 439 ms on the other over ten reads each, which is what a visitor waits. That is the trade, stated:
 $56 a month against about a tenth of a second on the listing and four tenths on a sign-in.
 
+### Then the store did the work, and the listing moved again
+
+From 1.0.3.178 the hundred thousand vehicles live in the stores and nowhere else, and a listing is a query
+that filters, orders and pages in the store (ADR: The store does the work). Read on 1.0.3.179 the night it
+rolled, 32 listing pages per site at the offsets a visitor reaches, timed by the server: **19 ms** at the
+median on Azure SQL Database, where it had read 28 from memory, because each order is an index and a page is
+a seek that stops; **387 ms** on Azure Cosmos DB, where it had read 43, because its `OFFSET` reads every
+document it skips and the account is a region away from the plan. Each site's memory halved, 750 MB to
+about 370, and the plan went from 82 per cent to 68. The proof card's own listing row moves on its next run,
+which a signed-in visitor starts; the fix for the Cosmos DB side, a keyset read, is the next change to that
+record.
+
 The verdict is arithmetic, and here it is: the median of the paired differences, one round trip per
 operation taken off each side, and the rule for how far apart two medians may sit and still be called
 the same.

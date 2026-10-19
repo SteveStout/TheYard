@@ -240,3 +240,7 @@ to `?view=account`, and after a sign-in the label offers the run.
 ## Addendum, 2026-10-03: the relational round trip
 
 The relational side's `SELECT 1` is now `YardDatabase.PingAsync` in the relational adapter, so the proof runner in the host asks the adapter for a round trip instead of running a statement itself. The document side does two point reads and halves the time, which the paragraph above calls one point read; the arithmetic it reports is the same.
+
+## Addendum, 2026-10-19: the listing after the store did the work
+
+From 1.0.3.178 a listing is a query against the store rather than a walk down a list each process held (ADR: The store does the work). Read on 1.0.3.179, 32 listing pages per site at offsets 0 to 3,100, timed by the server: 19 ms at the median on Azure SQL Database, where it had read 28 from memory, and 387 ms on Azure Cosmos DB, where it had read 43. The difference between the two is not the engines either: Cosmos DB's `OFFSET` charges for every document it skips, 16 RU for the first page and 1,665 for an offset of 40,000, and its account is the one a region away from the plan. The proof's own rounds were not run again for this addendum, because a run needs a signed-in visitor; the Listing page row in the table above moves on the next run, and the page this record feeds says so.

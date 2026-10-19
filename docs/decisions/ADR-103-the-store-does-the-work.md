@@ -131,3 +131,20 @@ What would change it: a catalogue too big for one physical partition or for the 
 - [`api/TheYard.Tests/MemoryRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MemoryRulesTests.cs) - the memory rules a test can hold
 - [`docs/best-practices/MEMORY.md`](https://github.com/SteveStout/TheYard/blob/main/docs/best-practices/MEMORY.md) - the eight rules, for a reader new to them
 
+## Addendum, 2026-10-19: what it measured after
+
+Read on 1.0.3.179 at 04:43 UTC, ten minutes after both fills had finished at 04:33, with the same readings the table under Context used, from each site's own `/api/admin/machines`, the plan card and 32 listing reads per site at the offsets a visitor reaches (0 to 3,100), timed by the server:
+
+| reading | SQL site | Cosmos DB site |
+| --- | ---: | ---: |
+| working set | 753.2 to 360.0 MB | 746.6 to 383.0 MB |
+| GC heap | 418.5 to 82.4 MB | 461.2 to 108.2 MB |
+| managed bytes in use | 386.3 to 93.7 MB | 341.3 to 85.1 MB |
+| catalogues held in memory | 2 x 100,000 to 0 | 2 x 100,000 to 0 |
+| heap limit | none to 986.4 MB | none to 986.4 MB |
+| listing p50, server | 28 to 19 ms | 43 to 387 ms |
+| listing p95, server | 68 to 103 ms | 69 to 4,162 ms |
+
+The plan: 82 per cent before, 68 per cent after, 2.38 of 3.5 GB, below its amber line for the first time since the catalogue moved into the processes on 8 October. The rendering service read about 90 MB and The Shed about 37 MB, as before.
+
+The SQL side is faster than it was from memory, because each order is an index and a page is a seek that stops. The Cosmos DB side is slower, and the record says so rather than averaging it away: its `OFFSET` reads every document it skips, so the request units grow with the offset (16 RU for the first page, 1,665 for an offset of 40,000, which took 8.4 seconds and is more than the account's 1,000 RU a second), and the account is a region away from the plan, the 38 to 40 ms round trip ADR-079 measured, paid several times by a cross-partition ordered query. The p95 above includes three deep reads at 5,000, 20,000 and 40,000 on each site. On Azure SQL Database the same deep reads took 243, 299 and 298 ms once 1.0.3.179 read a deep page's places off the order's index; on 1.0.3.178 an offset of 40,000 took 6.4 seconds. The fix on the Cosmos DB side is a keyset read, the next page asked for after the last row's end and place rather than by a count of rows to skip, and it is the next change to this record.
