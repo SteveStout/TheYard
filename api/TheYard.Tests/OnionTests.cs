@@ -225,8 +225,11 @@ public sealed class OnionTests
     private static List<string> RuntimeLookups(string assemblyPath)
     {
         using var module = ModuleDefinition.ReadModule(assemblyPath);
+        // Coverlet's tracker, which a coverage run injects into the host's assembly and which reads
+        // the environment itself, is left out the way the ring rules leave out CoverageTracker: it
+        // is the measuring tool's code, not this codebase's (CI on main ran red on it from 1.0.3.188).
         return [.. module.GetTypes()
-            .Where(type => !IsCompositionRoot(type))
+            .Where(type => !IsCompositionRoot(type) && !(type.Namespace ?? "").StartsWith(CoverageTracker, StringComparison.Ordinal))
             .SelectMany(type => type.Methods.Where(method => method.HasBody))
             .SelectMany(method => method.Body.Instructions
                 .Select(instruction => instruction.Operand)

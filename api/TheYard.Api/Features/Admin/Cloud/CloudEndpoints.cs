@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application;
+using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 
@@ -22,6 +23,6 @@ public static class CloudEndpoints
         return app;
     }
 
-    private static async Task<Results<Ok<CloudReport>, NotFound>> Card(string key, string? window, CloudReader reader, CancellationToken cancellation) =>
-        reader.Knows(key) ? TypedResults.Ok(await reader.ReadAsync(key, window, cancellation)) : TypedResults.NotFound();
+    private static async Task<Results<Ok<CloudReport>, NotFound>> Card(string key, string? window, ReadCloudCardHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(key, window, cancellation) is { } report ? TypedResults.Ok(report) : TypedResults.NotFound();
 }

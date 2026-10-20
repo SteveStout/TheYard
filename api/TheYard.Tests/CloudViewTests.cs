@@ -72,6 +72,8 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
 
 
     [Fact]
+    [Covers("GET", "/api/admin/cloud/{key}", 200)]
+    [Covers("GET", "/api/admin/cloud/{key}", 404)]
     public async Task The_route_answers_for_the_six_keys_and_404s_for_any_other()
     {
         using var client = factory.CreateClient();

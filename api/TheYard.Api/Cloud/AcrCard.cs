@@ -73,7 +73,7 @@ public static class AcrCard
             $"{inputs.Availability.Reason}, one minute each; the catalogue hourly from the registry");
         return new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0,
-            ResourceView.Note(inputs, "no minute kept yet; the first is read a minute after the SQL site starts"),
+            ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute")),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
             "Container Registry",
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),

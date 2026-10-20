@@ -24,6 +24,6 @@ public sealed class ReadPlanHandler(IPlanCard card)
     /// <param name="window">The window the page asked for, or none.</param>
     /// <param name="cancellation">The request's cancellation.</param>
     public Task<CloudReport> HandleAsync(string? window, CancellationToken cancellation) =>
-        card.ReadAsync(MachineWindows.Parse(window) is { } chosen ? chosen.Name : "24h", cancellation);
+        card.ReadAsync(CardWindows.Of(window), cancellation);
 }
 // #endregion read-plan-handler

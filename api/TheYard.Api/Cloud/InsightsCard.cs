@@ -70,7 +70,7 @@ public static class InsightsCard
             $"{inputs.Availability.Reason}, one document an hour from the workspace's Usage table");
         return new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0,
-            ResourceView.Note(inputs, "no hour kept yet; the first is read a minute after the SQL site starts"),
+            ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "hour")),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
             "Application Insights",
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),

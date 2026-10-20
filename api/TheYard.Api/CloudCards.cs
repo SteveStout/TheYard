@@ -17,6 +17,7 @@ namespace TheYard.Api;
 /// <param name="Month">The last thirty days at five minutes, for the dials' 95th and peak.</param>
 /// <param name="Hours">The hours kept in the window, oldest first.</param>
 /// <param name="CostMonth">The resource's month to date from the bill; null when the bill does not name it yet.</param>
+/// <param name="RecordingSite">The configured name of the site whose process records, which the empty-keep sentence names.</param>
 public sealed record ResourceCardInputs(
     string Window,
     TimeSpan Length,
@@ -26,7 +27,8 @@ public sealed record ResourceCardInputs(
     IReadOnlyList<ResourceBucket> Buckets,
     IReadOnlyList<ResourceBucket> Month,
     IReadOnlyList<ResourceHour> Hours,
-    double? CostMonth);
+    double? CostMonth,
+    string RecordingSite = "the recording site");
 
 /// <summary>One card under Cloud infrastructure, as the recorder and the reader see it.</summary>
 /// <param name="Key">The card's route and container key: sql, cosmos, registry, insights, mail, edge.</param>

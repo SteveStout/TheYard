@@ -68,9 +68,9 @@ public class CloudThresholdTests
 
 
     [Fact]
-    public void The_cosmos_card_reads_against_the_free_thousand_and_marks_every_throttled_bucket()
+    public void The_cosmos_card_reads_against_the_throughput_the_account_provisions_and_marks_every_throttled_bucket()
     {
-        var view = CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["container_count"] = "17" }, new Dictionary<string, double?> { ["throttled"] = 4 }));
+        var view = CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["container_count"] = "17", ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 4 }));
         Assert.Equal(90, view.Dials[0].Percent);
         Assert.Equal("alarm", view.Dials[0].Tone);
         Assert.Equal("warning", view.Rows.Single(r => r.Key == "throttling").Tone);

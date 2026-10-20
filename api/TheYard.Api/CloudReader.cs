@@ -2,6 +2,7 @@
 // card's window from its keep, the month for the dials cached ten minutes, and a live read first
 // only when the newest kept reading is stale and this is the recording site.
 using TheYard.Application;
+using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Api;
 
@@ -10,7 +11,7 @@ namespace TheYard.Api;
 /// One card's window from its keep, cached a minute per card and window, with a live read first
 /// when the newest kept minute is more than a minute past its end and this is the recording site.
 /// </summary>
-public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHistory History)> cards, CloudRecorder? recorder, Func<string, CancellationToken, Task<double?>> cost, TimeProvider clock)
+public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHistory History)> cards, CloudRecorder? recorder, Func<string, CancellationToken, Task<double?>> cost, TimeProvider clock, string recordingSite = "the recording site") : ICloudCards
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, (DateTimeOffset At, CloudReport View)> _cached = new(StringComparer.Ordinal);
@@ -61,7 +62,8 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             await history.BucketsAsync(now - length, grain, card.Readings, cancellation),
             await MonthAsync(key, history, card.Readings, now, cancellation),
             await history.HoursAsync(now - length, cancellation),
-            await cost(card.ResourceName, cancellation)));
+            await cost(card.ResourceName, cancellation),
+            recordingSite));
         lock (_gate)
         {
             _cached[slot] = (now, view);

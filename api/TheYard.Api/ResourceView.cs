@@ -139,6 +139,12 @@ public static class ResourceView
             : inputs.LastHour.Count == 0 ? firstRead
             : null;
 
+    /// <summary>The empty-keep sentence, naming the recording site by its configured name.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    /// <param name="grain">What the card keeps: minute or hour.</param>
+    public static string FirstRead(ResourceCardInputs inputs, string grain) =>
+        $"no {grain} kept yet; the first is read a minute after {inputs.RecordingSite} starts";
+
     /// <summary>A sum of a reading over the newest sixty minutes.</summary>
     public static double? HourSum(ResourceCardInputs inputs, string reading)
     {

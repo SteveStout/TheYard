@@ -26,9 +26,6 @@ public static class SqlCard
     public static readonly (double Amber, double Red) Dtu = CloudThresholds.SqlDtu;
     public static readonly (double Amber, double Red) Space = CloudThresholds.SqlSpace;
 
-    /// <summary>What the next tier up costs a month, for the "Is Basic still right?" row.</summary>
-    public const double S0PerMonth = 14.72;
-
     /// <summary>The card in the shared frame.</summary>
     public static CloudReport View(ResourceCardInputs inputs)
     {
@@ -67,8 +64,8 @@ public static class SqlCard
             new("azure", "What did Azure do to it?", inputs.Hours.Count == 0 ? "not read yet" : $"{events.Count} events, {CloudTones.WindowWords(inputs.Window)}",
                 [new(events.Count == 0 ? "no failover, no maintenance" : string.Join(" · ", events.TakeLast(3).Select(e => $"{e.At.ToString("d MMM HH:mm", CultureInfo.InvariantCulture)} {e.Title}")), null)],
                 CloudTones.Of(PlanThresholds.EventsTone(events))),
-            new("tier", "Is Basic still right?", inputs.Month.Count == 0 ? "not enough kept yet" : dtuTone == PlanTone.Alarm ? "no, DTU is past its line" : "yes, DTU first",
-                [new($"S0 10 DTU ${S0PerMonth.ToString("0.00", CultureInfo.InvariantCulture)}/mo · red at {Dtu.Red} % held 15 min", null)],
+            new("tier", $"Is {ResourceView.Fact(inputs, "tier", "the tier")} still right?", inputs.Month.Count == 0 ? "not enough kept yet" : dtuTone == PlanTone.Alarm ? "no, DTU is past its line" : "yes, DTU first",
+                [new($"DTU p95 {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "dtu").P95)} over 30 d · red at {Dtu.Red} % held {PlanThresholds.Sustained} min", null)],
                 CloudTones.Of(dtuTone == PlanTone.Alarm ? PlanTone.Alarm : PlanTone.Good)),
         };
         var readout = new CloudReadout(
@@ -80,7 +77,7 @@ public static class SqlCard
                 new("DTU p95, 30 d", PlanView.Percent(ResourceFolding.Spread(inputs.Month, "dtu").P95), "info"),
                 new("Data space", ResourceView.Now(inputs, "storage_gb") is { } used && spaceLimit is { } l ? $"{used.ToString("0.00", CultureInfo.InvariantCulture)} / {l} GB" : "not read", "info"),
                 new("Log space", PlanView.Percent(ResourceView.Now(inputs, "log_write")), "info"),
-                new("Sessions", $"{ResourceView.Number(sessions)} / 300", "info"),
+                new("Sessions", ResourceView.Number(sessions), "info"),
                 new("Workers", PlanView.Percent(ResourceView.Now(inputs, "workers")), "info"),
                 new("Blocked", ResourceView.Number(blocked), blocked is > 0 ? "warning" : "info"),
                 new("Deadlocks", ResourceView.Number(deadlocks), deadlocks is > 0 ? "alarm" : "info"),
@@ -92,15 +89,15 @@ public static class SqlCard
             $"{inputs.Availability.Reason}, one minute each; live every 60 s from Azure Monitor");
         return new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0,
-            ResourceView.Note(inputs, "no minute kept yet; the first is read a minute after the SQL site starts"),
+            ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute")),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
             "Azure SQL Database",
             Latest(inputs, "spec"),
             ResourceView.Resource(inputs),
             dials,
-            [ResourceView.Spark(inputs, "dtu", "DTU, 60 min", 100, percentReading: true), ResourceView.Spark(inputs, "sessions", "Sessions, 60 min", 300)],
-            $"Normal: DTU amber {Dtu.Amber} %, red {Dtu.Red} % held 15 min; data space amber {Space.Amber} %, red {Space.Red} %; any deadlock is red.",
-            ResourceView.Chart(inputs, "DTU and data space", ("dtu", "DTU", 100, true), ("storage_gb", "Data space", spaceLimit, false), Dtu.Red, "teal DTU · green data space · gold deploys · red event · dashed 90 %"),
+            [ResourceView.Spark(inputs, "dtu", "DTU, 60 min", 100, percentReading: true), ResourceView.Spark(inputs, "workers", "Workers, 60 min", 100, percentReading: true)],
+            $"Normal: DTU amber {Dtu.Amber} %, red {Dtu.Red} % held {PlanThresholds.Sustained} min; data space amber {Space.Amber} %, red {Space.Red} %; any deadlock is red.",
+            ResourceView.Chart(inputs, "DTU and data space", ("dtu", "DTU", 100, true), ("storage_gb", "Data space", spaceLimit, false), Dtu.Red, $"teal DTU · green data space · gold deploys · red event · dashed {Dtu.Red} %"),
             rows,
             readout);
     }

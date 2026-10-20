@@ -1,4 +1,5 @@
 using TheYard.Application;
+using TheYard.Application.Features.Admin.Cloud;
 using TheYard.Infrastructure;
 using TheYard.Infrastructure.Cosmos;
 
@@ -55,7 +56,10 @@ public sealed class Module : IModule
             provider.GetRequiredService<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>(),
             records ? provider.GetRequiredService<CloudRecorder>() : null,
             (name, cancellation) => PlanCost.ForResourceAsync(provider.GetRequiredService<ICostHistory>(), name, TimeProvider.System, cancellation),
-            TimeProvider.System));
+            TimeProvider.System,
+            sqlName ?? "the SQL site"));
+        services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
+        services.AddScoped<ReadCloudCardHandler>();
         // #endregion resource-wiring
     }
 

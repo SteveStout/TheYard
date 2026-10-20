@@ -118,3 +118,8 @@ What changed instead. Seven readers each held a static `HttpClient` of their own
 
 ```live path=api/TheYard.Api/OutboundHttp.cs region=outbound-http
 ```
+
+## Addendum, 2026-10-20: the database cards read what they typed
+
+From 1.0.3.195 the route asks one handler, `ReadCloudCardHandler`, over an `ICloudCards` port that `CloudReader` implements (ADR: The onion cut into vertical slices, rule 7). The Azure SQL Database card's last question names the tier the database's own record gives instead of saying Basic, its detail names the 30-day DTU 95th against the red line instead of the next tier's price, and the sessions sparkline, which was scaled to a typed ceiling of 300, became the workers share Azure reports as a percentage. The Cosmos DB card's RU dial and sparkline are read against the account's provisioned throughput, read each hour from the database's throughput record, where they were read against a typed thousand; its last row names the 30-day 95th against that figure and the free tier as the account record says it, and the price of 400 provisioned RU/s is gone. The second sparkline is the normalized RU share Azure reports, where it was latency against a typed 50 ms. One figure stays typed, with its reason on the constant: the free tier's 25 GB of storage, which no record Azure returns for the account states. Every card's threshold sentence and dashed line is written from the levels its tones use, and the sentence a card prints before its first minute names the recording site by its configured host.
+

@@ -78,7 +78,7 @@ public static class EdgeCard
             inputs.Window, PlanView.Windows, configured && inputs.Availability.Available && inputs.LastHour.Count > 0,
             !configured ? "NETLIFY_TOKEN is not set, so the edge is not read."
                 : ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("site") is { } missing ? $"NETLIFY_TOKEN is set, but {missing}, so the edge is not read."
-                : ResourceView.Note(inputs, "no hour kept yet; the first is read a minute after the SQL site starts"),
+                : ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "hour")),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
             "Netlify edge",
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("plan") is { } plan ? $"{plan.ToUpperInvariant()} PLAN · 300 CREDITS" : "FREE PLAN · 300 CREDITS",
