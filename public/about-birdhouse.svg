@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DDEBEE"/><stop offset="1" stop-color="#F4F8F9"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C9A06A"/><stop offset="0.5" stop-color="#D8B07A"/><stop offset="1" stop-color="#B98C55"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1A6E80"/><stop offset="1" stop-color="#125568"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#sky)"/>
+  <!-- post -->
+  <rect x="282" y="430" width="36" height="170" fill="#8A6236"/>
+  <rect x="282" y="430" width="8" height="170" fill="#7A552E"/>
+  <!-- base -->
+  <rect x="190" y="418" width="220" height="18" rx="3" fill="#9C7140"/>
+  <!-- body -->
+  <polygon points="210,250 390,250 390,420 210,420" fill="url(#wood)"/>
+  <!-- grain lines -->
+  <g stroke="#B08048" stroke-width="2" opacity="0.45" fill="none">
+    <path d="M225 260 C230 320, 222 360, 228 415"/>
+    <path d="M262 258 C268 310, 258 370, 266 415"/>
+    <path d="M338 258 C332 320, 342 360, 334 415"/>
+    <path d="M372 260 C366 310, 376 370, 370 415"/>
+  </g>
+  <!-- gable -->
+  <polygon points="210,252 300,175 390,252" fill="#C9A06A"/>
+  <!-- roof -->
+  <polygon points="180,262 300,150 312,162 200,276" fill="url(#roof)"/>
+  <polygon points="420,262 300,150 288,162 400,276" fill="#0F4A5A"/>
+  <rect x="292" y="140" width="16" height="16" rx="3" fill="#B8923F"/>
+  <!-- entrance -->
+  <circle cx="300" cy="305" r="30" fill="#3B2A1A"/>
+  <circle cx="300" cy="305" r="30" fill="none" stroke="#B8923F" stroke-width="5"/>
+  <!-- perch -->
+  <rect x="294" y="355" width="12" height="26" rx="4" fill="#8A6236" transform="rotate(90 300 368)"/>
+  <circle cx="300" cy="368" r="6" fill="#7A552E"/>
+  <!-- nails -->
+  <g fill="#6B6B6B"><circle cx="222" cy="410" r="3"/><circle cx="378" cy="410" r="3"/><circle cx="222" cy="262" r="3"/><circle cx="378" cy="262" r="3"/></g>
+  <!-- little bird -->
+  <g transform="translate(395 205)">
+    <ellipse cx="0" cy="0" rx="26" ry="18" fill="#125568"/>
+    <circle cx="20" cy="-12" r="12" fill="#125568"/>
+    <polygon points="31,-13 44,-9 31,-6" fill="#B8923F"/>
+    <circle cx="23" cy="-15" r="2.4" fill="#fff"/>
+    <path d="M-22 -2 Q-44 -6 -40 10 Q-28 4 -18 8 Z" fill="#0F4A5A"/>
+    <path d="M-6 -4 Q4 10 16 0" stroke="#DDEBEE" stroke-width="3" fill="none"/>
+    <line x1="-4" y1="17" x2="-6" y2="30" stroke="#8A6236" stroke-width="3"/>
+    <line x1="6" y1="17" x2="6" y2="30" stroke="#8A6236" stroke-width="3"/>
+  </g>
+  <!-- ground -->
+  <rect x="0" y="560" width="600" height="40" fill="#B9D3D8"/>
+</svg>

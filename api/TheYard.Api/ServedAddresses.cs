@@ -31,6 +31,7 @@ public static class ServedAddresses
         new("/sitemap.xml", "sitemap.xml", "file"),
         new("/og.png", "The preview card", "file"),
         new("/about-lead.svg", "The drawing beside How I lead", "file"),
+        new("/about-birdhouse.svg", "The drawing beside The workshop", "file"),
     ];
 
     /// <summary>

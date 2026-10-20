@@ -41,6 +41,16 @@ public static class AboutPage
 
     /// <summary>What the picture beside How I lead shows, for a reader who cannot see it.</summary>
     public const string LeadImageAlt = "A team drawn in teal, formed into an arrow, with one gold figure out in front";
+
+    /// <summary>Where he comes from as a builder, in his own words, word for word as he approved them.</summary>
+    public const string Workshop =
+        "I have been building things since I was a kid. My grandpa and I built my first birdhouse together, and I have kept woodworking in my garage ever since. Software is the same habit for me: plan the cut, build it to last, and finish what I start.";
+
+    /// <summary>The small drawing beside Workshop, a path the site serves (public/about-birdhouse.svg, in the site's palette).</summary>
+    public const string WorkshopImage = "/about-birdhouse.svg";
+
+    /// <summary>What the drawing beside Workshop shows, for a reader who cannot see it.</summary>
+    public const string WorkshopImageAlt = "Wooden birdhouse with a teal roof";
     // #endregion words
 
     // #region page
@@ -135,6 +145,12 @@ public static class AboutPage
               ul.tenets strong { color: #3f3a37; }
               .lead-image { margin: 0 0 16px; }
               .lead-image img { display: block; width: 100%; height: auto; border-radius: 8px; }
+              .workshop { margin: 28px 0 0; padding-top: 20px; border-top: 1px solid rgba(16, 73, 90, 0.18); }
+              .workshop-row { display: flex; align-items: center; gap: 20px; }
+              .workshop-row p { flex: 1 1 auto; min-width: 0; margin: 0; }
+              .workshop-image { flex: 0 0 160px; margin: 0; }
+              .workshop-image img { display: block; width: 100%; height: auto; border: 1px solid rgba(16, 73, 90, 0.18); border-radius: 8px; }
+              @media (max-width: 639.98px) { .workshop-row { flex-direction: column; align-items: flex-start; } .workshop-image { flex-basis: auto; width: 160px; } }
               footer { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; font-size: 13px; color: #4a4e57; }
             </style>
             </head>
@@ -155,6 +171,13 @@ public static class AboutPage
               <li><strong>Tradeoffs in the open.</strong> When the roadmap is bigger than the team, I put scope and date on the table, with the cost of each, and leadership chooses. <a href="https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-059-a-second-store-priced.md">Adding a second database</a> was one of those calls, priced in writing before it shipped.</li>
               <li><strong>Coaching inside the system.</strong> Good systems give engineers a safe place to learn fast. My favorite part of leading is helping each person on the team become the best version of themselves.</li>
             </ul>
+            </section>
+            <section class="workshop" aria-labelledby="the-workshop">
+            <h2 id="the-workshop">The workshop</h2>
+            <div class="workshop-row">
+            <p>{{e(Workshop)}}</p>
+            <figure class="workshop-image"><img src="{{e(WorkshopImage)}}" alt="{{e(WorkshopImageAlt)}}" width="600" height="600" loading="lazy"></figure>
+            </div>
             </section>
             <ul class="links">
               <li><a href="{{e(Profiles[0])}}" rel="me">LinkedIn</a></li>

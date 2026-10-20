@@ -189,9 +189,17 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         // with none named there is no empty frame.
         Assert.Contains($"<img src=\"{AboutPage.LeadImage}\"", page);
         Assert.Contains("width=\"960\" height=\"540\"", page);
-        Assert.DoesNotContain("<figure", AboutPage.Render("https://theyard.stevenstout.biz/", null));
+        Assert.DoesNotContain("<figure class=\"lead-image\"", AboutPage.Render("https://theyard.stevenstout.biz/", null));
         string pictured = AboutPage.Render("https://theyard.stevenstout.biz/", "/about-lead.webp");
         Assert.Contains($"<figure class=\"lead-image\"><img src=\"/about-lead.webp\" alt=\"{AboutPage.LeadImageAlt}\"", pictured);
+
+        // The workshop: his approved words exactly as written, the birdhouse beside them with its
+        // words and its size, and no age or count of years in those words.
+        Assert.Contains("<h2 id=\"the-workshop\">The workshop</h2>", page);
+        Assert.Contains($"<p>{System.Net.WebUtility.HtmlEncode(AboutPage.Workshop)}</p>", page);
+        Assert.Contains($"<img src=\"{AboutPage.WorkshopImage}\" alt=\"Wooden birdhouse with a teal roof\" width=\"600\" height=\"600\"", page);
+        Assert.True(File.Exists(Path.Combine(Repo.Root(), "public", AboutPage.WorkshopImage.TrimStart('/'))), "the birdhouse drawing should be in public/");
+        Assert.DoesNotMatch(@"(?i)\b(age \d|aged \d|\d+ years? old|since \d{4}|\d+ years of woodworking)", AboutPage.Workshop);
     }
     // #endregion about-page
     // #endregion page-tests
